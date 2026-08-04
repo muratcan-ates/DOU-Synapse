@@ -15,10 +15,12 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.modules.ingestion import parsers
 from app.modules.ingestion.chunking import chunk_blocks
+from app.modules.ingestion.embedding import get_embedding_provider
 from app.modules.ingestion.storage import DocumentStorage
 
 logger = get_logger("app.ingestion")
@@ -62,14 +64,27 @@ async def process_document(
     if not chunks:
         raise AppError("Belgeden aranabilir içerik çıkarılamadı.")
 
+    # Embedding chunk'lar yazılmadan ÖNCE üretilir: sağlayıcı hata verirse belge
+    # "completed" görünüp aranamayan chunk'lar bırakmaz.
+    provider = get_embedding_provider()
+    batch_size = get_settings().embedding_batch_size
+    embeddings: list[list[float]] = []
+    for start in range(0, len(chunks), batch_size):
+        batch = [chunk.text for chunk in chunks[start : start + batch_size]]
+        embeddings.extend(provider.embed_documents(batch))
+
+    if len(embeddings) != len(chunks):  # pragma: no cover - sağlayıcı sözleşme ihlali
+        raise AppError("Embedding üretimi beklenen sayıda vektör döndürmedi.")
+
     await session.execute(text("DELETE FROM chunks WHERE document_id = :id"), {"id": document_id})
 
     await session.execute(
         text(
             "INSERT INTO chunks (course_id, document_id, chunk_index, page_number, "
-            "slide_number, section_title, content_type, text, token_count) "
+            "slide_number, section_title, content_type, text, token_count, embedding) "
             "VALUES (:course_id, :document_id, :chunk_index, :page_number, :slide_number, "
-            ":section_title, CAST(:content_type AS chunk_content_type), :text, :token_count)"
+            ":section_title, CAST(:content_type AS chunk_content_type), :text, :token_count, "
+            "CAST(:embedding AS vector))"
         ),
         [
             {
@@ -82,8 +97,9 @@ async def process_document(
                 "content_type": chunk.content_type.value,
                 "text": chunk.text,
                 "token_count": chunk.token_count,
+                "embedding": str(embedding),
             }
-            for index, chunk in enumerate(chunks)
+            for index, (chunk, embedding) in enumerate(zip(chunks, embeddings, strict=True))
         ],
     )
 

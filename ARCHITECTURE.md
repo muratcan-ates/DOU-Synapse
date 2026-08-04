@@ -14,7 +14,7 @@ ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim:
 | Veritabanı + Vektör | **Supabase PostgreSQL + pgvector** (tek veritabanı). Geliştirme de Supabase'in kendisinde (veya `supabase` CLI lokal stack) — Compose'daki düz Postgres yalnızca fallback | Qdrant/FAISS/Chroma (ikinci veri deposu = senkron + yetki sızıntı riski), Azure AI Search ($73+/ay), iki ayrı dev/prod DB (migration/RLS sapması) |
 | Auth + Storage | **Supabase Auth + Storage** | Sıfırdan JWT/upload yazmak |
 | Doküman işleme | **PyMuPDF + python-pptx + düz parser**; Docling sorunlu dosyalara fallback | Docling ana parser (H1 entegrasyon riski) |
-| Embedding | **bge-m3, int8-quantize ONNX (fastembed), model Docker imajına GÖMÜLÜ** — çalışma zamanında HuggingFace'e bağımlılık yok. **`EMBEDDING_PROVIDER` ingest-zamanı kararıdır: değiştirmek tam re-index gerektirir, runtime'da çevrilmez** | İngilizce-odaklı embedding (TR materyalde çöker); API-only (per-query maliyet + offline demo imkânsız); fp32 model (~2.2 GB, ACA belleğine sığmaz) |
+| Embedding | **`intfloat/multilingual-e5-large` (1024 boyut), ONNX/fastembed, model Docker imajına GÖMÜLÜ** — çalışma zamanında HuggingFace'e bağımlılık yok. **`EMBEDDING_PROVIDER` ingest-zamanı kararıdır: değiştirmek tam re-index gerektirir, runtime'da çevrilmez** | bge-m3 (fastembed dense kataloğunda yok — bkz. aşağıdaki not); İngilizce-odaklı embedding (TR materyalde çöker); API-only (per-query maliyet + offline demo imkânsız) |
 | Sparse arama | **PostgreSQL FTS, `simple` + `unaccent` konfigürasyonu** (köklendirme yok → `fork()`, `O(n log n)` gibi teknik tokenlar korunur); turkish/english konfigürasyonlarıyla gold set üzerinde karşılaştırılıp raporlanır | turkish snowball (İngilizce terimleri bozar), english (Türkçe ekleri bozar) |
 | Füzyon | **Reciprocal Rank Fusion** (k=60) | Öğrenilmiş fusion (veri yok), skor normalizasyonu (kırılgan) |
 | Reranker | **P1, bayrak arkasında** (bge-reranker-v2-m3) | Ana hatta zorunlu (latency + deployment riski) |
@@ -25,6 +25,24 @@ ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim:
 | Deploy | **Vercel + Azure Container Apps + Supabase, G1'den itibaren sürekli deploy** — kapılar canlı URL'de geçilir. Demo/prova günleri api+worker **minReplicas=1** (parametrik). Docker Compose lokal/fallback | Son haftada ilk deploy (CORS/JWT/cold-start sürprizleri teslime 2 gün kala), tek VM, K8s |
 | CI | **GitHub Actions**: ruff + pytest + tsc + docker build (+ "model imaj içinde, konteyner network'süz ayağa kalkıyor" assertion'ı) | — |
 | Gözlemleme | **Yapılandırılmış JSON log + request/hata tabloları** (redaction'lı) | Langfuse/Sentry (v2) |
+
+### Embedding modeli: bge-m3'ten multilingual-e5-large'a
+
+İlk tercih bge-m3'tü. Uygulama sırasında fastembed'in **dense model kataloğunda bge-m3
+bulunmadığı** görüldü (yalnız seyrek/çok-vektörlü biçimde). İki seçenek vardı: ek bir
+çalışma zamanı (sentence-transformers/optimum) getirmek ya da fastembed'de doğrudan
+desteklenen çok dilli bir modele geçmek. `intfloat/multilingual-e5-large` seçildi:
+aynı **1024 boyut** (şema değişmedi), çok dilli, tek bağımlılık.
+
+**E5 önek kuralı (sessiz kalite kaybı riski):** E5 ailesi, belgelerin `passage: ` ve
+sorguların `query: ` önekiyle verilmesini bekler. fastembed'in `query_embed()` metodu
+düz `embed()`'e düşer ve bu önekleri eklemez; önek uygulama katmanında açıkça ekleniyor.
+Atlanırsa hata alınmaz, yalnızca retrieval kalitesi düşer — bu yüzden davranış
+`tests/test_embedding_prefix.py` ile sabitlendi.
+
+bge-m3 kapsam dışı değil, **3. haftadaki embedding A/B karşılaştırmasının adayı**
+(PLAN.md G11): multilingual-e5-large ile ≥40 soru üzerinde Recall@5 ve MRR karşılaştırılıp
+sonuç test raporunda "embedding seçim gerekçesi" başlığında yayımlanacak.
 
 ### Deploy gerçekliği (ölçülecek ve raporlanacak)
 

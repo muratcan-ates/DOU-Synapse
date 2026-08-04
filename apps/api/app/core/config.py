@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -60,6 +61,15 @@ class Settings(BaseSettings):
     storage_root: str = "./storage"
     # Worker'ın tek turda işleyeceği azami iş sayısı; bir belgenin kuyruğu tıkamaması için.
     worker_batch_size: int = 5
+
+    # --- Embedding ----------------------------------------------------------
+    # DİKKAT: Bu ayar ingest zamanına aittir. Değiştirmek vektör uzayını değiştirir ve
+    # tüm korpusun yeniden işlenmesini gerektirir; çalışma zamanı yedeği olarak kullanılamaz.
+    # "fastembed" = bge-m3 (üretim), "hashing" = deterministik yerel (test/çevrimdışı).
+    embedding_provider: Literal["fastembed", "hashing"] = "hashing"
+    embedding_model: str = "intfloat/multilingual-e5-large"
+    embedding_cache_dir: str | None = None
+    embedding_batch_size: int = 32
     allowed_upload_extensions: set[str] = {
         ".pdf",
         ".pptx",
