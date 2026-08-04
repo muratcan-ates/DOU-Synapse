@@ -42,3 +42,6 @@ uploads/
 
 # uv
 uv.lock.bak
+
+# Yerel belge deposu
+/apps/api/storage/

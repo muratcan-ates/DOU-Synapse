@@ -54,8 +54,12 @@ class Settings(BaseSettings):
     # --- CORS ---------------------------------------------------------------
     cors_origins: list[str] = ["http://localhost:3000"]
 
-    # --- Yükleme sınırları --------------------------------------------------
+    # --- Yükleme ve depolama ------------------------------------------------
     max_upload_bytes: int = 20 * 1024 * 1024
+    # Yerel belge deposu. Bulutta Supabase Storage adaptörüyle değiştirilir.
+    storage_root: str = "./storage"
+    # Worker'ın tek turda işleyeceği azami iş sayısı; bir belgenin kuyruğu tıkamaması için.
+    worker_batch_size: int = 5
     allowed_upload_extensions: set[str] = {
         ".pdf",
         ".pptx",

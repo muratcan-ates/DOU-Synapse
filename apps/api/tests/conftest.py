@@ -27,6 +27,10 @@ ADMIN_DSN = os.environ.get("TEST_ADMIN_DSN", f"postgresql+psycopg://localhost/{T
 APP_DSN = os.environ.get(
     "TEST_APP_DSN", f"postgresql+psycopg://dou_app:dou_app_local@localhost/{TEST_DB}"
 )
+# Worker üretimde olduğu gibi ayrı, RLS'i atlayan rolle bağlanır.
+WORKER_DSN = os.environ.get(
+    "TEST_WORKER_DSN", f"postgresql+psycopg://dou_worker:dou_worker_local@localhost/{TEST_DB}"
+)
 
 
 def _psql(database: str, *args: str) -> None:
@@ -45,7 +49,8 @@ def database() -> Iterator[None]:
     for migration in sorted(MIGRATIONS.glob("*.sql")):
         _psql(TEST_DB, "-f", str(migration))
     _psql(TEST_DB, "-c", "ALTER ROLE dou_app LOGIN PASSWORD 'dou_app_local'")
-    _psql(TEST_DB, "-c", f'GRANT CONNECT ON DATABASE "{TEST_DB}" TO dou_app')
+    _psql(TEST_DB, "-c", "ALTER ROLE dou_worker LOGIN PASSWORD 'dou_worker_local'")
+    _psql(TEST_DB, "-c", f'GRANT CONNECT ON DATABASE "{TEST_DB}" TO dou_app, dou_worker')
     yield
     _psql("postgres", "-c", f'DROP DATABASE IF EXISTS "{TEST_DB}"')
 
@@ -55,6 +60,7 @@ def environment(database: None) -> Iterator[None]:
     """Ayarları test veritabanına yönlendirir ve geliştirme kimliğini açar."""
     os.environ["ENVIRONMENT"] = "local"
     os.environ["DATABASE_URL"] = APP_DSN
+    os.environ["WORKER_DATABASE_URL"] = WORKER_DSN
     os.environ["DEV_AUTH_ENABLED"] = "true"
     os.environ.pop("SUPABASE_JWT_SECRET", None)
 
@@ -63,6 +69,24 @@ def environment(database: None) -> Iterator[None]:
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def storage(tmp_path: Path) -> Iterator[None]:
+    """Her test kendi geçici belge deposunu kullanır."""
+    from app.modules.ingestion.storage import LocalFileStorage, set_storage
+
+    set_storage(LocalFileStorage(tmp_path / "storage"))
+    yield
+    set_storage(None)
+
+
+@pytest.fixture(autouse=True)
+async def worker_cleanup() -> AsyncIterator[None]:
+    yield
+    from app import worker
+
+    await worker.dispose()
 
 
 @pytest.fixture

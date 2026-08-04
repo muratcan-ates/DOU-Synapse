@@ -14,11 +14,13 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     TIMESTAMP,
     BigInteger,
-    Enum as SaEnum,
     ForeignKey,
     Integer,
     Text,
     func,
+)
+from sqlalchemy import (
+    Enum as SaEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
