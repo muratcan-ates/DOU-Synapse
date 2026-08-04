@@ -23,9 +23,12 @@ out/
 .turbo/
 *.tsbuildinfo
 
-# Model önbelleği (imaja gömülür, repoya girmez)
+# Embedding model ağırlıkları (imaja gömülür, repoya girmez).
+# Dikkat: yalnız `models/` yazmayın — app/models/ Python paketini de yutar.
 .cache/
-models/
+/model_cache/
+*.onnx
+*.safetensors
 
 # Yerel veri ve yüklemeler
 uploads/
@@ -36,3 +39,6 @@ uploads/
 .DS_Store
 .idea/
 .vscode/
+
+# uv
+uv.lock.bak
