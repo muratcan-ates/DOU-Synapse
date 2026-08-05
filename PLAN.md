@@ -105,7 +105,7 @@ Sert kapılar: **G5 (Pzt 10 Ağu) dikey demo kapısı** ve **G10 (Pzt 17 Ağu) �
 | Sal 4 (G1) | Repo/monorepo iskeleti, CI, **"hello world" üçlü deploy (Vercel + ACA + Supabase)**, çekirdek 3-4 tablo. Hocaya 1 sayfalık kapsam özeti e-postası (asenkron ön-onay) | **Canlı URL 1. günden yaşıyor** |
 | Çar 5 (G2) | Auth + roller + ders/üyelik + **RLS (auth'la birlikte) + izolasyon smoke testi**; **OpenAPI sözleşmesi dondurulur** → frontend mock'larla başlar | Giriş + izolasyon çalışır |
 | Per 6 (G3) | Upload (validasyon) + job tablosu + PyMuPDF/pptx/kod parser'ları; `sample_data/` v1 (≥3 PDF + 1 PPTX + 2 kod dosyası). **20:00 hoca toplantısı: ilerleme demosu + plan sunumu** | Sayfa metadata'lı chunk'lar |
-| Cum 7 (G4) | Chunking + embedding (bge-m3, imaja gömülü) + pgvector; LLM+citation işi **mock retrieval üzerinde paralel** başlar; kalibrasyon setinin ilk 15-20 sorusu | Aranabilir ders indeksi |
+| Cum 7 (G4) | Chunking + embedding (multilingual-e5-large, fastembed/ONNX, imaja gömülü — gerekçe: specs/001 research.md §4) + pgvector; LLM+citation işi **mock retrieval üzerinde paralel** başlar; kalibrasyon seti (~15-20 soru; tasks T041/T043 ile aynı sayı) | Aranabilir ders indeksi |
 | Cmt-Paz | **Buffer** (planlı iş yok) | — |
 
 ### Hafta 2: Pzt 10 – Cum 14 — Çekirdek RAG + eğitim modları
@@ -178,7 +178,7 @@ Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göste
 |---|---|---|
 | Retrieval hattı G5'te çalışmıyor | Kapı demosu başarısız | OpenAI File Search yedeği; mimari büyütülmez |
 | PDF ayrıştırma bozuk | Sayfa sırası/tablolar anlamsız | Docling'i sorunlu dosyalara fallback yap |
-| TR retrieval kalitesi düşük | Embedding A/B'de Recall düşük | bge-m3 ↔ multilingual-e5 ↔ API; **karar ingest-zamanıdır, geçiş tam re-index demektir** |
+| TR retrieval kalitesi düşük | Embedding A/B'de Recall düşük | multilingual-e5 ↔ bge-m3 ↔ API; **karar ingest-zamanıdır, geçiş tam re-index demektir** |
 | LLM kota/kesinti | 429/timeout | **LiteLLM Router otomatik failover (Groq→Gemini) + backoff — manuel geçiş değil**; kota bütçesi; demo soruları cache'ten |
 | Supabase kesintisi / free-tier pause | Login çalışmıyor; proje uykuda | Demo sabahı oturumlar önceden açılır; günlük keep-alive ping; pg_dump + Compose restore provası (G14) |
 | Sokratik mod cevabı hemen veriyor | Davranış testi kırmızı | State machine + fail-closed filtre; prompt'a tek başına güvenilmez |

@@ -17,7 +17,7 @@ Veritabanı (lokal):
 
 ```bash
 createdb dou_synapse
-psql -d dou_synapse -f ../../supabase/migrations/0001_init.sql
+psql -d dou_synapse -f ../../supabase/migrations/0001_core_schema.sql
 ```
 
 ## Kalite kapıları

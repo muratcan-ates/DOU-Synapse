@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     # --- Embedding ----------------------------------------------------------
     # DİKKAT: Bu ayar ingest zamanına aittir. Değiştirmek vektör uzayını değiştirir ve
     # tüm korpusun yeniden işlenmesini gerektirir; çalışma zamanı yedeği olarak kullanılamaz.
-    # "fastembed" = bge-m3 (üretim), "hashing" = deterministik yerel (test/çevrimdışı).
+    # "fastembed" = multilingual-e5-large (üretim), "hashing" = deterministik yerel (test).
     embedding_provider: Literal["fastembed", "hashing"] = "hashing"
     embedding_model: str = "intfloat/multilingual-e5-large"
     embedding_cache_dir: str | None = None
