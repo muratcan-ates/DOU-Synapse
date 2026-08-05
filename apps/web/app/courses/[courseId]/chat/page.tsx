@@ -9,10 +9,11 @@
  * kimse bunu çalışan retrieval sanmasın.
  */
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { CourseNav } from "@/components/course-nav";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
+import { SocraticLadder } from "@/components/socratic-ladder";
 import { Input, Button } from "@/components/ui";
 
 export default function ChatPreviewPage() {
@@ -20,16 +21,7 @@ export default function ChatPreviewPage() {
 
   return (
     <AppShell>
-      <nav className="mb-4 text-xs text-fg-subtle">
-        <Link href="/courses" className="hover:text-fg">
-          Derslerim
-        </Link>{" "}
-        /{" "}
-        <Link href={`/courses/${courseId}`} className="hover:text-fg">
-          Ders
-        </Link>{" "}
-        / <span className="text-fg-muted">Asistan</span>
-      </nav>
+      <CourseNav courseId={courseId} />
 
       <div className="mb-6 rounded-lg border border-border bg-brand-subtle px-4 py-2">
         <p className="text-sm text-brand">
@@ -65,6 +57,27 @@ export default function ChatPreviewPage() {
               }}
             />
           </div>
+
+          {/* Sokratik mod örneği: öğrenci ödev sorusu sorduğunda cevap yerine merdiven */}
+          <div className="flex justify-end">
+            <p className="max-w-[85%] rounded-lg bg-surface px-4 py-3 text-sm text-fg">
+              FCFS için ortalama bekleme süresini hesaplayan ödev sorusunun
+              cevabı ne?
+            </p>
+          </div>
+          <SocraticLadder
+            hints={[
+              {
+                level: 0,
+                text: "Önce proseslerin varış sırasını ve her birinin CPU patlama süresini alt alta yazmayı dene. İlk prosesin bekleme süresi kaçtır?",
+              },
+              {
+                level: 1,
+                text: "Bekleme süresi, prosesin hazır kuyrukta geçirdiği toplam süredir; kendi çalıştığı süre buna dahil değildir.",
+                source: { fileName: "os_hafta3.pdf", location: "Sayfa 8" },
+              },
+            ]}
+          />
 
           {/* Kapsam dışı örneği */}
           <div className="flex justify-end">

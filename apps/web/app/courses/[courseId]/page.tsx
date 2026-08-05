@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, getStoredUser } from "@/lib/api";
 import type { ChunkPreview, Course, CourseDocument } from "@/lib/types";
 import { AppShell } from "@/components/app-shell";
+import { CourseNav } from "@/components/course-nav";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
 
 export default function CourseDetailPage() {
@@ -82,20 +83,17 @@ function CourseDetail() {
         / <span className="text-fg-muted">{course.code}</span>
       </nav>
 
-      <div className="rise mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-fg">
-            {course.title}
-          </h1>
-          <p className="mt-1 text-sm text-fg-muted">
-            {documents.length} materyal ·{" "}
-            {documents.filter((d) => d.status === "completed").length} hazır
-          </p>
-        </div>
-        <Link href={`/courses/${courseId}/chat`}>
-          <Button>Asistana sor</Button>
-        </Link>
+      <div className="rise mb-6">
+        <h1 className="text-3xl font-semibold tracking-tight text-fg">
+          {course.title}
+        </h1>
+        <p className="mt-1 text-sm text-fg-muted">
+          {documents.length} materyal ·{" "}
+          {documents.filter((d) => d.status === "completed").length} hazır
+        </p>
       </div>
+
+      <CourseNav courseId={courseId} />
 
       {isInstructor && <UploadBox courseId={courseId} onUploaded={load} />}
 
@@ -220,6 +218,7 @@ function DocumentRow({
               {open ? "Gizle" : "İçerik önizle"}
             </Button>
           )}
+          {isInstructor && <DeleteDocumentButton courseId={courseId} doc={doc} />}
         </div>
       </div>
 
@@ -251,5 +250,57 @@ function DocumentRow({
         </div>
       )}
     </li>
+  );
+}
+
+function DeleteDocumentButton({
+  courseId,
+  doc,
+}: {
+  courseId: string;
+  doc: CourseDocument;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!confirming) {
+    return (
+      <Button variant="ghost" aria-label={`${doc.file_name} dosyasını sil`}
+        onClick={() => setConfirming(true)}>
+        Sil
+      </Button>
+    );
+  }
+
+  return (
+    <span className="flex items-center gap-2">
+      <span className="hidden text-xs text-fg-muted sm:inline">
+        Materyal ve tüm parçaları silinecek.
+      </span>
+      <Button
+        variant="danger"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            await api.delete(`/courses/${courseId}/documents/${doc.id}`);
+            // Liste, üstteki polling/yenileme yerine tam sayfa durum tazelemesiyle döner.
+            window.location.reload();
+          } catch (e) {
+            setError(e instanceof ApiError ? e.message : "Silinemedi.");
+            setBusy(false);
+            setConfirming(false);
+          }
+        }}
+      >
+        {busy ? "Siliniyor…" : "Evet, sil"}
+      </Button>
+      <Button variant="ghost" onClick={() => setConfirming(false)}>
+        Vazgeç
+      </Button>
+      {error && <span className="text-xs text-danger">{error}</span>}
+    </span>
   );
 }
