@@ -116,7 +116,7 @@ description: "DOU-Synapse CourseGPT MVP — kalan işlerin görev listesi (G5-G1
 ## Faz E: Mastery-Lite + eğitmen analitiği (PLAN G9-G10)
 
 - [ ] T036 [E] YENİ: `apps/api/app/modules/mastery/service.py` — konu bazlı EWMA: `yeni = 0.7×eski + 0.3×son_skor`; ipucu kademesi çarpanları (0→1.00, 1→0.85, 2→0.70, 3→0.50, 4→0.25); seviye eşikleri (<0.40 Geliştirilmeli, 0.40-0.74 Orta, ≥0.75 İyi). Sadeleştirme gerekçesi (BKT/IRT verisi yok) modül docstring'ine yazılır.
-- [ ] T037 [E] Sınav bitişi ve Sokratik oturum kapanışına mastery güncelleme entegrasyonu — `apps/api/app/api/exams.py` (grading sonrası) ve `apps/api/app/api/chat.py` (ipucu kademesi çarpanıyla) `mastery` tablosunu günceller.
+- [ ] T037 [E] Sınav bitişi ve Sokratik oturum kapanışına mastery güncelleme entegrasyonu — `apps/api/app/api/exams.py` (grading sonrası) ve `apps/api/app/api/chat.py` (ipucu kademesi çarpanıyla) `mastery` tablosunu günceller. **SAHİPLİK NOTU: exams.py entegrasyonu R3'ün; chat.py'deki Sokratik-kapanış çağrısı R1'e devredilir (R3, arayüz imzasını R1'e yazılı verir) — çapraz düzenleme yok.**
 - [ ] T038 [E] YENİ: `apps/api/app/api/analytics.py` — öğrenci: konu bazlı mastery listesi; eğitmen: konu bazlı sınıf ortalaması, en çok yanlış yapılan sorular, kapsam dışı ret istatistiği (`request_logs`/`chat_messages`'tan). `main.py` + `openapi.json` güncellenir.
 - [ ] T039 [P] [E] YENİ: `apps/api/tests/test_mastery.py` — EWMA hesabı, ipucu çarpanları, seviye sınır değerleri (0.40 ve 0.75 tam sınırda), ilk cevapta başlangıç davranışı.
 - [ ] T040 [E] YENİ: `apps/web/app/courses/[courseId]/analytics/page.tsx` — eğitmen özet ekranı (tek kart sayfası) + öğrenci mastery liste görünümü; arayüzde "resmî not değil, çalışma önerisi göstergesidir" ibaresi (ARCHITECTURE §5, KVKK notu); nav bağlantısı `apps/web/components/course-nav.tsx`'e eklenir.
@@ -162,7 +162,7 @@ description: "DOU-Synapse CourseGPT MVP — kalan işlerin görev listesi (G5-G1
 - [ ] T057 [P] [H] YENİ: `docs/runbook.md` — demo günü A/B/C planı (A: canlı bulut minReplicas=1 + sabah warm-up + önceden açık oturumlar; B: telefon hotspot; C: Compose + dev-auth + answer_cache), hesap listesi, prova kontrol listesi, restore adımları (T054).
 - [ ] T058 [P] [H] YENİ: `docs/instructor-guide.md` — ders açma, materyal yükleme + n/m ilerleme, soru üretimi ve onayı, sınav yayınlama, analitik ekranı; ekran görüntülü, rol bazlı.
 - [ ] T059 [P] [H] YENİ: `docs/student-guide.md` — derse katılım, kaynaklı sohbet, Sokratik mod, sınav provası, "neden yanlış?", mastery görünümü; ekran görüntülü.
-- [ ] T060 [H] Teslim kapanışı — kök `README.md` güncellenir (canlı URL, `docker compose up` kurulumu, teslim paketi haritası); KVKK aydınlatma metni sayfası YENİ: `apps/web/app/privacy/page.tsx` (sohbet kayıtları saklama notu); sürüm etiketi `v1.0.0` + son demo provası (G15).
+- [ ] T060 [H] Teslim kapanışı — kök `README.md` güncellenir (canlı URL, `docker compose up` kurulumu, teslim paketi haritası); KVKK aydınlatma metni sayfası YENİ: `apps/web/app/privacy/page.tsx` (sohbet kayıtları saklama notu); sürüm etiketi `v1.0.0` + son demo provası (G15). **(KVKK/privacy sayfası ayağı R4'ündür.)**
 
 **Kapanış kabul kriteri**: Hocanın 3 teslim kalemi eksiksiz karşılanır: (1) canlı URL + Compose kurulum, (2) `sample_data/` + `docs/test-report.md`, (3) iki kılavuz; repo `v1.0.0` etiketli.
 
