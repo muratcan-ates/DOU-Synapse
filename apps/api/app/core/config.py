@@ -84,6 +84,12 @@ class Settings(BaseSettings):
         ".cpp",
     }
 
+    # --- Assessment ---------------------------------------------------------
+    exam_question_count: int = 10
+    exam_duration_minutes: int = 20
+    question_generation_batch: int = 5
+    mastery_alpha: float = 0.3  # yeni = (1-alpha)*eski + alpha*son
+
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION
