@@ -83,10 +83,11 @@ dışında ve ondan önce** yapılır. Sinyal semaforu beklemesi mutex kilitliyk
 (yanlış sıra), tampon doluyken bekleyen üretici mutex'i tutar durumda kilitlenmiş
 kalabilir ve tüketici mutex'i hiç alamadığı için tamponu boşaltamaz — sistem
 **kilitlenir (deadlock)**. Bu yanlış sıralama, `sample_data/isletim-sistemleri/
-producer_consumer.py` dosyasındaki hatalı örnekte kasıtlı olarak gösterilmiştir: `wait()`
-ve `signal()` çağrıları yanlış sırada olduğunda tamponun taşması (overflow) veya
-taşınması (underflow) da mümkün hale gelir, çünkü sayaç semaforları artık gerçek boş/dolu
-yuva sayısını doğru yansıtmaz.
+producer_consumer.py` dosyasındaki hatalı örnekte kasıtlı olarak gösterilmiştir (30
+koşumluk deneyle doğrulandı: 30/30 deadlock, başka sonuç yok). Tamponun taşması
+(overflow) veya taşınması (underflow), bu koddaki hatadan DEĞİL, `signal(full)`'ün
+tampona ekleme işleminden önce çağrılması gibi ayrı bir hatadan kaynaklanır — burada
+karıştırılmamalı.
 
 # 5. Mutex mi, Semafor mu?
 
@@ -103,5 +104,5 @@ yuva sayısını doğru yansıtmaz.
 - Mutex sahiplikli bir kilittir; semafor sayaç tabanlı, sahipliksiz bir senkronizasyon
   aracıdır ve sinyalleşme için de kullanılabilir.
 - Üretici-tüketici probleminde `wait()`/`signal()` sırası kritiktir: sinyal semaforu
-  beklemesi her zaman mutex'ten ÖNCE ve dışında yapılır; aksi halde deadlock veya
-  tampon taşması/taşınması riski doğar.
+  beklemesi her zaman mutex'ten ÖNCE ve dışında yapılır; aksi halde deadlock riski
+  doğar (bkz. `producer_consumer.py`'deki hatalı örnek).

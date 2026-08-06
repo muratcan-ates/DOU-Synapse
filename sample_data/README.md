@@ -32,8 +32,9 @@ fork() + wait()) yeniden yazılmış halidir; birebir alıntı değildir.
   bu tokenlar bozulmadan aranabilmeli).
 - **Bilinçli hatalı kod:** `producer_consumer.py` — `wait(empty)`/`wait(full)` çağrıları
   mutex kritik bölgesinin İÇİNDE yapılıyor; doğrusu mutex'ten önce ve dışında olmalı
-  (04-synchronization.md'de doğru sıra anlatılır). Bu hata deadlock riski ve sayaç
-  tutarsızlığına yol açar — `bug_hunt` sorusunun cevap anahtarı budur.
+  (04-synchronization.md'de doğru sıra anlatılır). Bu hatanın tek doğrulanmış sonucu
+  **deadlock**'tur (15/15 koşumda kilitlenme, tampon taşması/taşınması hiç gözlenmedi) —
+  `bug_hunt` sorusunun cevap anahtarı budur.
 - **Aynı konu iki dosyada, farklı açılardan:**
   - **context switch**: `01-processes.pdf` süreç/thread açısından tanımlar;
     `02-cpu-scheduling.pdf` round-robin quantum seçiminin context switch maliyetiyle

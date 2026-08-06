@@ -6,9 +6,10 @@ Doğru sürüm 04-synchronization.md dosyasındadır. Buradaki hata: wait(empty)
 
 Bu sıralama hatasının sonucu: tampon doluyken üretici, mutex'i tutarken wait(empty)'de
 sonsuza kadar bloke olabilir. Mutex tutulduğu sürece tüketici de mutex.acquire() içinde
-bekler ve tamponu asla boşaltamaz -> KİLİTLENME (deadlock). Ayrıca sinyal semaforları
-mutex dışında beklenmediği için sayaçlar gerçek boş/dolu yuva sayısını doğru
-yansıtmayabilir.
+bekler ve tamponu asla boşaltamaz -> KİLİTLENME (deadlock). Bu, doğrulanmış tek sonuçtur
+(15/15 koşumda deadlock, PR incelemesinde ayrıca 30/30 koşumda deadlock; hiçbir koşumda
+tampon taşması/taşınması gözlenmedi). Taşma/taşınma bu koddaki hatadan kaynaklanmaz;
+o, `signal(full)`'ün ekleme işleminden önce çağrılması gibi AYRI bir hatanın sonucudur.
 """
 
 from __future__ import annotations
