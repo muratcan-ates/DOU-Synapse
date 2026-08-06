@@ -185,8 +185,12 @@ CREATE POLICY exam_sessions_self_read ON exam_sessions
     );
 CREATE POLICY exam_sessions_self_insert ON exam_sessions
     FOR INSERT WITH CHECK (user_id = app.current_user_id() AND app.is_member(course_id));
+-- WITH CHECK eklendi: eklenmezse Postgres güncellenen satır için de USING'i kullanır,
+-- ki bu yalnızca user_id kontrol eder — oturum course_id'si üyesi olunmayan bir derse
+-- kaydırılabilirdi (PR incelemesi, kalem 2'yle aynı sınıf açık; koştu, kapandı).
 CREATE POLICY exam_sessions_self_update ON exam_sessions
-    FOR UPDATE USING (user_id = app.current_user_id());
+    FOR UPDATE USING (user_id = app.current_user_id())
+    WITH CHECK (user_id = app.current_user_id() AND app.is_member(course_id));
 
 -- answers: kullanıcı yalnız kendi cevaplarını görür/yazar; eğitmen kendi dersininkileri
 -- yalnız OKUR.
@@ -202,7 +206,13 @@ CREATE POLICY answers_self_insert ON answers
     FOR INSERT WITH CHECK (
         EXISTS (
             SELECT 1 FROM exam_sessions s
-            WHERE s.id = answers.session_id AND s.user_id = app.current_user_id()
+            WHERE s.id = answers.session_id
+              AND s.user_id = app.current_user_id()
+              -- Satırın taşıdığı course_id, oturumun gerçek course_id'siyle eşleşmeli;
+              -- aksi halde kendi oturumuna sahte bir course_id iliştirilip başka
+              -- dersin eğitmen analitiğine satır enjekte edilebilir (PR incelemesi,
+              -- kalem 2).
+              AND s.course_id = answers.course_id
         )
     );
 
@@ -212,9 +222,13 @@ CREATE POLICY mastery_self_read ON mastery
     FOR SELECT USING (
         user_id = app.current_user_id() OR app.is_instructor(course_id)
     );
+-- app.is_member(course_id) eksikti: yalnızca user_id kontrolü, kullanıcının o dersin
+-- üyesi olup olmadığına bakmıyordu. Üye olunmayan bir derse mastery satırı yazılıp o
+-- dersin eğitmeninin analitiğine sahte veri enjekte edilebiliyordu (PR incelemesi,
+-- kalem 2 — üye olmayan öğrenciyle canlı doğrulandı).
 CREATE POLICY mastery_self_insert ON mastery
-    FOR INSERT WITH CHECK (user_id = app.current_user_id());
+    FOR INSERT WITH CHECK (user_id = app.current_user_id() AND app.is_member(course_id));
 CREATE POLICY mastery_self_update ON mastery
-    FOR UPDATE USING (user_id = app.current_user_id());
+    FOR UPDATE USING (user_id = app.current_user_id() AND app.is_member(course_id));
 
 COMMIT;

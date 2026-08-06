@@ -8,8 +8,14 @@ davranışı, MCQ "neden yanlış", boş havuzda sınav reddi, oturuma dönüş,
 
 from __future__ import annotations
 
-from httpx import AsyncClient
+from uuid import UUID
 
+import pytest
+from httpx import AsyncClient
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
+
+from app.core.db import rls_session
 from tests.conftest import UserFactory
 
 
@@ -134,3 +140,62 @@ class TestTopicListing:
         response = await client.get(f"/courses/{course_id}/topics", headers=disari)
 
         assert response.status_code == 404
+
+
+class TestMasteryAndAnswersCourseIsolation:
+    """PR incelemesi kalem 2 regresyon testi.
+
+    mastery_self_insert / mastery_self_update ve answers_self_insert politikaları
+    yalnızca user_id kontrol ediyordu; kullanıcının o dersin üyesi olup olmadığına
+    bakmıyordu. Üye olunmayan bir derse mastery satırı yazılabiliyordu (elle psql ile
+    kanıtlandı: bkz. PR_INCELEME_2026-08-06.md kalem 2). Bu test, düzeltmenin gerçekten
+    kapattığını otomatik olarak doğrular.
+    """
+
+    async def test_uye_olmayan_ders_icin_mastery_satiri_yazilamaz(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        burak_id = await users.create("burak@dogus.edu.tr")
+        # Burak hiçbir derse üye değil.
+        course_id = await _create_course(client, ayse, "COME301")
+        topic_response = await client.post(
+            f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse
+        )
+        topic_id = UUID(topic_response.json()["id"])
+
+        with pytest.raises(DBAPIError):
+            async with rls_session(burak_id) as session:
+                await session.execute(
+                    text(
+                        "INSERT INTO mastery (user_id, topic_id, course_id, score, "
+                        "answer_count) VALUES (:uid, :tid, :cid, 0.8, 1)"
+                    ),
+                    {"uid": burak_id, "tid": topic_id, "cid": UUID(course_id)},
+                )
+
+    async def test_uye_olan_kullanici_kendi_mastery_satirini_yazabilir(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        """Düzeltmenin aşırıya kaçıp meşru yazımı da engellemediğinin kontrolü."""
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        burak_id = await users.create("burak@dogus.edu.tr")
+        course_id = await _create_course(client, ayse, "COME301")
+        await client.post(
+            f"/courses/{course_id}/members",
+            json={"email": "burak@dogus.edu.tr", "role": "student"},
+            headers=ayse,
+        )
+        topic_response = await client.post(
+            f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse
+        )
+        topic_id = UUID(topic_response.json()["id"])
+
+        async with rls_session(burak_id) as session:
+            await session.execute(
+                text(
+                    "INSERT INTO mastery (user_id, topic_id, course_id, score, "
+                    "answer_count) VALUES (:uid, :tid, :cid, 0.8, 1)"
+                ),
+                {"uid": burak_id, "tid": topic_id, "cid": UUID(course_id)},
+            )
