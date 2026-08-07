@@ -89,7 +89,9 @@ jobs:
   web:
     name: Web — lint, tip
     runs-on: ubuntu-latest
-    if: hashFiles('apps/web/package.json') != ''
+    # NOT: burada `if: hashFiles(...)` KULLANILAMAZ. hashFiles yalnız adım düzeyinde
+    # (steps.*.if) tanımlıdır; job düzeyinde workflow dosyasının tamamı parse edilemez
+    # ve HİÇBİR job çalışmaz (startup_failure). `apps/web` artık her zaman var.
     defaults:
       run:
         working-directory: apps/web
