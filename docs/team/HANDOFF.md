@@ -112,7 +112,7 @@ git clone https://github.com/muratcan-ates/DOU-Synapse.git ~/code/DOU-Synapse
 cd ~/code/DOU-Synapse
 export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
 createdb dou_synapse
-psql -d dou_synapse -f supabase/migrations/0001_core_schema.sql
+for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -d dou_synapse -f "$f"; done
 psql -d dou_synapse -f supabase/local_dev_setup.sql
 psql -d dou_synapse -f supabase/seed_demo.sql
 

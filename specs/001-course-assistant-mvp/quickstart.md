@@ -64,7 +64,11 @@ kullanıcılarını yazar.
 createdb dou_synapse
 
 # 1) Şema + RLS politikaları + roller (vector/unaccent/pgcrypto extension'ları dahil)
-psql -d dou_synapse -f supabase/migrations/0001_core_schema.sql
+#    TÜM migration'lar sırayla uygulanır — tek tek saymayın, yenisi eklendiğinde
+#    bu döngü onu da alır (CI ve conftest.py da aynı şekilde sıralı glob kullanır).
+for f in supabase/migrations/*.sql; do
+  psql -v ON_ERROR_STOP=1 -d dou_synapse -f "$f"
+done
 
 # 2) YALNIZCA YEREL: dou_app / dou_worker rollerine LOGIN + parola
 #    (dou_app_local / dou_worker_local — .env.example'daki DSN'lerle eşleşir)
