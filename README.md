@@ -4,7 +4,7 @@
 
 ### CourseGPT — Yapay Zekâ Destekli Kişiselleştirilmiş Ders ve Sınav Asistanı
 
-**Doğuş Üniversitesi · COME 491/492 Bitirme Projesi · 2026**
+**Doğuş Üniversitesi · COME 492 Bitirme Projesi · 2026**
 
 Danışman: Yasemin Karagül · Takım: Muratcan Ateş (frontend + lead) · Eren Onur(backend/RAG + guardrail) · Metehan Alphan (assessment + değerlendirme)
 
