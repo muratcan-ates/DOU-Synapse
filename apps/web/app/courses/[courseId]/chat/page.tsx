@@ -1,119 +1,400 @@
 "use client";
 
 /**
- * Sohbet ekranı — TASARIM ÖNİZLEMESİ.
+ * Sohbet ekranı — gerçek cevap hattına bağlı (T022).
  *
- * Retrieval + cevap hattı backend'de G5-G6'da bağlanacak (PLAN.md); bu ekran o
- * güne kadar imza bileşenlerini (kaynak kartı, kapsam dışı bildirimi, Sokratik
- * kademe) gerçek yerleşimiyle gösterir. İçerik örnek veridir ve öyle etiketlenir —
- * kimse bunu çalışan retrieval sanmasın.
+ * Örnek veri ve önizleme şeridi kaldırıldı: hat canlı, ekranın "yakında"
+ * demesi çalışan ürünü çalışmıyor gösteriyordu.
+ *
+ * Ekranın taşıdığı üç kural:
+ *  - Abstention hata değildir: `insufficient_context` / `out_of_scope` normal
+ *    200'dür ve nötr bir bildirimle gösterilir (Anayasa VII).
+ *  - 429/503/ağ hatası GERÇEK hatadır: satır içi gösterilir ve konuşmayı silmez.
+ *  - Gösterilen her metin backend'den gelir; arayüz hata cümlesi uydurmaz.
+ *
+ * Saf mantık (istek gövdesi, kademe eşlemesi, döküm blokları) `lib/chat.ts`'te
+ * ve `lib/chat.test.ts` ile sınanıyor; burada yalnız durum ve yerleşim var.
  */
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { api } from "@/lib/api";
+import {
+  buildChatRequest,
+  canSubmitDraft,
+  CHAT_MODE_LABEL,
+  CHAT_UI_MODES,
+  citationSource,
+  fromAnswer,
+  fromHistory,
+  isSocraticFollowUp,
+  openSessionKey,
+  QUESTION_MAX_LENGTH,
+  toBlocks,
+  userMessage,
+  type ChatUiMode,
+  type TranscriptMessage,
+} from "@/lib/chat";
+import { errorMessage } from "@/lib/errors";
+import { DOCUMENT_STATUS } from "@/lib/labels";
+import type {
+  ChatAnswer,
+  ChatMessage,
+  ChatSessionSummary,
+  CourseDocument,
+} from "@/lib/types";
+import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
-import { AbstentionNotice, SourceCard } from "@/components/source-card";
+import { ErrorNote, Loading } from "@/components/page-state";
 import { SocraticLadder } from "@/components/socratic-ladder";
-import { PreviewBanner } from "@/components/page-state";
-import { Input, Button } from "@/components/ui";
+import { AbstentionNotice, SourceCard } from "@/components/source-card";
+import { Badge, Button, EmptyState, Input } from "@/components/ui";
 
-export default function ChatPreviewPage() {
+export default function ChatPage() {
   const { courseId } = useParams<{ courseId: string }>();
 
   return (
     <AppShell>
       <CourseNav courseId={courseId} />
+      <ChatScreen courseId={courseId} />
+    </AppShell>
+  );
+}
 
-      <PreviewBanner>
-        aşağıdaki konuşma örnek veridir. Cevap hattı geliştirme planının 5-6.
-        gününde bağlanacak.
-      </PreviewBanner>
+function ChatScreen({ courseId }: { courseId: string }) {
+  const [mode, setMode] = useState<ChatUiMode>("qa");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+  const [draft, setDraft] = useState("");
+  /** Uçuştaki soru — sunucu onaylamadan dökümde yer tutar. */
+  const [pending, setPending] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        {/* Konuşma sütunu: max 70ch okuma genişliği */}
-        <div className="space-y-6">
-          {/* Öğrenci sorusu */}
-          <div className="flex justify-end">
-            <p className="max-w-[85%] rounded-lg bg-surface px-4 py-3 text-sm text-fg">
-              Deadlock oluşması için hangi koşulların sağlanması gerekir?
-            </p>
-          </div>
+  const fetchSessions = useCallback(
+    () => api.get<ChatSessionSummary[]>(`/courses/${courseId}/chat/sessions`),
+    [courseId],
+  );
+  const sessions = useResource(fetchSessions, [courseId]);
 
-          {/* Kaynaklı cevap */}
-          <div className="prose-tr space-y-3">
-            <p className="text-base text-fg">
-              Bir sistemde deadlock oluşabilmesi için dört Coffman koşulunun{" "}
-              <em>aynı anda</em> sağlanması gerekir: karşılıklı dışlama, tut ve
-              bekle, kesintiye uğratamama ve döngüsel bekleme. Bu koşullardan
-              herhangi biri kırılırsa deadlock oluşmaz.
-            </p>
-            <SourceCard
-              source={{
-                fileName: "os_hafta3.pdf",
-                location: "Sayfa 12",
-                quote:
-                  "Deadlock için dört Coffman koşulunun birlikte sağlanması gerekir: mutual exclusion, hold and wait, no preemption, circular wait.",
-              }}
-            />
-          </div>
+  const fetchDocuments = useCallback(
+    () => api.get<CourseDocument[]>(`/courses/${courseId}/documents`),
+    [courseId],
+  );
+  const documents = useResource(fetchDocuments, [courseId]);
 
-          {/* Sokratik mod örneği: öğrenci ödev sorusu sorduğunda cevap yerine merdiven */}
-          <div className="flex justify-end">
-            <p className="max-w-[85%] rounded-lg bg-surface px-4 py-3 text-sm text-fg">
-              FCFS için ortalama bekleme süresini hesaplayan ödev sorusunun
-              cevabı ne?
-            </p>
-          </div>
-          <SocraticLadder
-            hints={[
-              {
-                level: 0,
-                text: "Önce proseslerin varış sırasını ve her birinin CPU patlama süresini alt alta yazmayı dene. İlk prosesin bekleme süresi kaçtır?",
-              },
-              {
-                level: 1,
-                text: "Bekleme süresi, prosesin hazır kuyrukta geçirdiği toplam süredir; kendi çalıştığı süre buna dahil değildir.",
-                source: { fileName: "os_hafta3.pdf", location: "Sayfa 8" },
-              },
-            ]}
-          />
+  /*
+   * Uçuştaki geçmiş isteğini geçersizleştiren sayaç.
+   *
+   * Hızlı iki tıklamada birinci oturumun geç gelen yanıtı ikincinin dökümünü
+   * eziyordu: ekranda A oturumu seçili, içerik B'nin. Sayaç, gecikmiş yanıtı
+   * sessizce düşürür.
+   */
+  const historyToken = useRef(0);
 
-          {/* Kapsam dışı örneği */}
-          <div className="flex justify-end">
-            <p className="max-w-[85%] rounded-lg bg-surface px-4 py-3 text-sm text-fg">
-              Bugünkü dolar kuru ne kadar?
-            </p>
-          </div>
-          <AbstentionNotice />
+  const openSession = useCallback(
+    async (summary: ChatSessionSummary) => {
+      const token = ++historyToken.current;
+      setSessionId(summary.id);
+      // Sohbet ucu `exam` kabul etmiyor; yine de tip daraltması burada yapılır.
+      setMode(summary.mode === "socratic" ? "socratic" : "qa");
+      setMessages([]);
+      setPending(null);
+      setSendError(null);
+      setHistoryError(null);
+      setHistoryLoading(true);
+      try {
+        const history = await api.get<ChatMessage[]>(
+          `/courses/${courseId}/chat/sessions/${summary.id}`,
+        );
+        if (historyToken.current !== token) return;
+        setMessages(fromHistory(history));
+        localStorage.setItem(openSessionKey(courseId), summary.id);
+      } catch (e) {
+        if (historyToken.current !== token) return;
+        setHistoryError(errorMessage(e));
+      } finally {
+        if (historyToken.current === token) setHistoryLoading(false);
+      }
+    },
+    [courseId],
+  );
 
-          {/* Girdi alanı */}
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => e.preventDefault()}
-            aria-disabled
+  /*
+   * Sayfa yenilenince açık oturum geri açılır. Anahtar ders bazlıdır: başka
+   * dersin oturumunu açmak RLS'ten zaten dönmez ama kullanıcıya boş bir hata
+   * göstermenin anlamı yok — liste kontrolü bunu baştan eler.
+   */
+  const restoredFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (restoredFor.current === courseId) return;
+    const list = sessions.data;
+    if (list === null) return;
+    restoredFor.current = courseId;
+    const storedId = localStorage.getItem(openSessionKey(courseId));
+    const target = list.find((summary) => summary.id === storedId);
+    if (target) void openSession(target);
+  }, [courseId, sessions.data, openSession]);
+
+  /** Yeni oturum: mod değişimi de buradan geçer — mod ortada değiştirilemez. */
+  const startNewSession = (nextMode: ChatUiMode) => {
+    historyToken.current++;
+    setMode(nextMode);
+    setSessionId(null);
+    setMessages([]);
+    setPending(null);
+    setSendError(null);
+    setHistoryError(null);
+    setHistoryLoading(false);
+    localStorage.removeItem(openSessionKey(courseId));
+    // Yazılmış metin korunur: mod değiştirmek yazdığını silmek için bir sebep değil.
+  };
+
+  const openingQuestion =
+    messages.find((message) => message.role === "user")?.content ?? null;
+  const followUp = isSocraticFollowUp({ mode, sessionId, openingQuestion });
+  const submittable = canSubmitDraft(draft, followUp);
+
+  const send = async () => {
+    if (sending || !submittable) return;
+    const text = draft.trim();
+    const body = buildChatRequest({ mode, draft: text, sessionId, openingQuestion });
+    const isNewSession = sessionId === null;
+
+    setSending(true);
+    setSendError(null);
+    setPending(text);
+    setDraft("");
+    try {
+      const answer = await api.post<ChatAnswer>(`/courses/${courseId}/chat`, body);
+      setMessages((prev) => [
+        ...prev,
+        // Kullanıcı mesajının kimliği zarfta yok; asistan kimliğinden türetiliyor.
+        userMessage(`user:${answer.message_id}`, text),
+        fromAnswer(answer),
+      ]);
+      setSessionId(answer.session_id);
+      localStorage.setItem(openSessionKey(courseId), answer.session_id);
+      setPending(null);
+      // Liste yalnız yeni oturum açıldığında tazelenir; her turda çekmek
+      // değişmeyen veriyi tekrar istemek olurdu (Anayasa XI).
+      if (isNewSession) void sessions.reload();
+    } catch (e) {
+      // Konuşma geçmişi DURUR; yalnız gönderilemeyen tur geri alınır ve metin
+      // girdiye iade edilir — yazdığını kaybetmek hatanın cezası olmamalı.
+      setSendError(errorMessage(e));
+      setPending(null);
+      setDraft(text);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const blocks = toBlocks(messages, { mode, pending });
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      {/* Konuşma sütunu: okuma genişliği bileşenlerin içinde 70ch ile sınırlı */}
+      <div className="space-y-6">
+        {historyError && <ErrorNote message={historyError} />}
+        {historyLoading && <Loading label="Sohbet geçmişi yükleniyor…" />}
+
+        {blocks.length === 0 && !historyLoading && (
+          <EmptyState title="Ders materyalinden bir soru sorarak başlayın. Her cevap dayandığı sayfayla birlikte gelir; Sokratik modda cevap yerine adım adım ipucu verilir." />
+        )}
+
+        {blocks.map((block) => {
+          switch (block.kind) {
+            case "question":
+              return (
+                <div key={block.id} className="flex justify-end">
+                  <p className="max-w-[85%] rounded-lg bg-surface px-4 py-3 text-sm whitespace-pre-line text-fg">
+                    {block.text}
+                  </p>
+                </div>
+              );
+            case "answer":
+              return (
+                <div key={block.id} className="space-y-3">
+                  <p className="prose-tr text-base whitespace-pre-line text-fg">
+                    {block.text}
+                  </p>
+                  {block.citations.map((citation, index) => (
+                    <SourceCard
+                      key={`${citation.chunk_id}:${index}`}
+                      source={citationSource(citation)}
+                    />
+                  ))}
+                </div>
+              );
+            case "abstention":
+              return (
+                <AbstentionNotice
+                  key={block.id}
+                  status={block.status}
+                  message={block.text}
+                />
+              );
+            case "ladder":
+              return <SocraticLadder key={block.id} rungs={block.rungs} />;
+          }
+        })}
+
+        {sending && <Loading label="Cevap hazırlanıyor…" />}
+        {sendError && <ErrorNote message={sendError} />}
+
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+        >
+          <div
+            role="group"
+            aria-label="Sohbet modu"
+            className="flex w-fit gap-1 rounded-lg border border-border p-1"
           >
-            <Input placeholder="Ders materyaline soru sorun… (yakında)" disabled />
-            <Button disabled>Gönder</Button>
-          </form>
-        </div>
+            {CHAT_UI_MODES.map((value) => {
+              const active = mode === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={sending}
+                  onClick={() => {
+                    // Mod oturum ortasında değişemez (sunucu 422 döner): değişim
+                    // yeni oturum açar, hata göstermez.
+                    if (!active) startNewSession(value);
+                  }}
+                  className={`h-8 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40 ${
+                    active
+                      ? "border-border-strong bg-surface font-medium text-fg"
+                      : "border-transparent text-fg-muted hover:text-fg"
+                  }`}
+                >
+                  {CHAT_MODE_LABEL[value]}
+                </button>
+              );
+            })}
+          </div>
 
-        {/* Kaynak paneli: masaüstünde sabit sütun, mobilde içerik altına iner */}
-        <aside className="space-y-3">
+          <div className="flex gap-2">
+            {/* Placeholder etiket yerine geçmez (DESIGN.md): etiket gizli ama var. */}
+            <label htmlFor="chat-draft" className="sr-only">
+              {followUp ? "Denemen" : "Sorun"}
+            </label>
+            <Input
+              id="chat-draft"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              disabled={sending}
+              maxLength={QUESTION_MAX_LENGTH}
+              autoComplete="off"
+              placeholder={
+                followUp
+                  ? "Bu ipucuyla ne denedin? Kendi cevabını yaz…"
+                  : "Ders materyaline soru sorun…"
+              }
+            />
+            <Button type="submit" disabled={sending || !submittable}>
+              {sending ? "Gönderiliyor…" : "Gönder"}
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      {/* Kaynak paneli: masaüstünde sabit sütun, mobilde içeriğin altına iner */}
+      <aside className="space-y-8">
+        <section className="space-y-3">
           <h2 className="text-sm font-medium text-fg">Bu dersin kaynakları</h2>
-          <p className="text-xs text-fg-muted">
+          <p className="prose-tr text-xs text-fg-muted">
             Asistan yalnızca eğitmenin yüklediği bu materyallerden cevap verir;
             her cevap sayfa numarasıyla gelir.
           </p>
-          <ul className="space-y-2 text-sm">
-            <li className="rounded border border-border bg-surface px-3 py-2 font-mono text-xs text-fg-muted">
-              os_hafta3.pdf · 24 sayfa
-            </li>
-            <li className="rounded border border-border bg-surface px-3 py-2 font-mono text-xs text-fg-muted">
-              scheduler_slaytlari.pptx · 18 slayt
-            </li>
-          </ul>
-        </aside>
-      </div>
-    </AppShell>
+          {documents.error && <ErrorNote message={documents.error} />}
+          {documents.loading && <Loading label="Materyaller yükleniyor…" />}
+          {documents.data?.length === 0 && (
+            <p className="prose-tr text-xs text-fg-muted">
+              Bu derste henüz materyal yok. Eğitmen materyal yükleyene kadar
+              asistan kaynak gösteremez.
+            </p>
+          )}
+          {documents.data && documents.data.length > 0 && (
+            <ul className="space-y-2">
+              {documents.data.map((doc) => (
+                <li
+                  key={doc.id}
+                  className="rounded-lg border border-border bg-surface px-3 py-2"
+                >
+                  <p className="truncate font-mono text-xs text-fg">{doc.file_name}</p>
+                  <p className="mt-1.5 flex items-center gap-2">
+                    <Badge tone={DOCUMENT_STATUS[doc.status].tone}>
+                      {DOCUMENT_STATUS[doc.status].label}
+                    </Badge>
+                    <span className="text-xs text-fg-muted">
+                      {doc.page_count === null
+                        ? `${doc.chunk_count} parça`
+                        : `${doc.page_count} sayfa`}
+                    </span>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-medium text-fg">Sohbetlerin</h2>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={sending}
+              onClick={() => startNewSession(mode)}
+            >
+              Yeni sohbet
+            </Button>
+          </div>
+          {sessions.error && <ErrorNote message={sessions.error} />}
+          {sessions.loading && <Loading label="Sohbetler yükleniyor…" />}
+          {sessions.data?.length === 0 && (
+            <p className="text-xs text-fg-muted">Henüz bir sohbet açmadın.</p>
+          )}
+          {sessions.data && sessions.data.length > 0 && (
+            <ul className="max-h-72 space-y-1 overflow-y-auto">
+              {sessions.data.map((summary) => {
+                const active = summary.id === sessionId;
+                return (
+                  <li key={summary.id}>
+                    <button
+                      type="button"
+                      aria-current={active ? "true" : undefined}
+                      onClick={() => void openSession(summary)}
+                      className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
+                        active
+                          ? "border-border-strong bg-surface"
+                          : "border-transparent hover:bg-surface"
+                      }`}
+                    >
+                      <span className="block truncate text-xs text-fg">
+                        {summary.title ?? "Başlıksız sohbet"}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-fg-subtle">
+                        {CHAT_MODE_LABEL[summary.mode]}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      </aside>
+    </div>
   );
 }

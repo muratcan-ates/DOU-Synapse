@@ -1,53 +1,59 @@
 /**
  * Sokratik ipucu merdiveni (DESIGN.md §Components).
  *
- * Kademe göstergesi ilerleme çubuğu DEĞİL, ayrık noktalardır: "4 adımda biter"
+ * Kademe göstergesi ilerleme çubuğu DEĞİL, ayrık noktalardır: "beş adımda biter"
  * hissi düşünmeyi hızlandırma baskısı yaratır. Verilen ipuçları silinmez, üst
  * üste birikir; öğrenci nereden geldiğini görür. Doğrudan cevap butonu yoktur.
+ *
+ * Kademeler sözleşmedeki `SocraticStage` enum'undan gelir (beş kademe, ilki
+ * `diagnose`). Daha önce burada 0-3 arası bir sayı vardı; sunucunun beşinci
+ * kademesi ekranda hiç görünmüyordu.
  */
 
-const STEPS = ["Yönlendirme", "Kavram ipucu", "Benzer örnek", "Kaynaklı açıklama"];
+import { SOCRATIC_STAGES, stageIndex, stageLabel, type LadderRung } from "@/lib/chat";
 
-export interface SocraticHint {
-  /** 0-3: NUDGE → CONCEPT_HINT → SIMILAR_EXAMPLE → EXPLAIN_WITH_SOURCE */
-  level: number;
-  text: string;
-  source?: { fileName: string; location: string };
-}
-
-export function SocraticLadder({ hints }: { hints: SocraticHint[] }) {
-  const reached = hints.length > 0 ? Math.max(...hints.map((h) => h.level)) : -1;
+export function SocraticLadder({ rungs }: { rungs: LadderRung[] }) {
+  const reached = rungs.reduce((max, rung) => Math.max(max, stageIndex(rung.stage)), -1);
+  const current = rungs.length > 0 ? rungs[rungs.length - 1] : null;
 
   return (
     <div className="rounded-xl border border-border bg-surface">
-      <div className="flex items-center justify-between border-b border-border px-5 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
         <span className="text-sm font-medium text-fg">Sokratik mod</span>
-        {/* Ayrık kademe noktaları */}
-        <div className="flex items-center gap-2" aria-label="İpucu kademesi">
-          {STEPS.map((step, index) => (
-            <span
-              key={step}
-              title={step}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                index <= reached ? "bg-brand" : "bg-border-strong"
-              }`}
-            />
-          ))}
+        <div className="flex items-center gap-2">
+          {/*
+            Kademe adı METİN olarak da duruyor: gösterge bilgiyi yalnız renkle
+            taşımamalı. Noktalar bu metnin görsel yankısı olduğu için ekran
+            okuyucudan gizlendi — iki kez okunması bilgi katmaz.
+          */}
+          <span className="text-xs text-fg-muted">{stageLabel(current?.stage ?? null)}</span>
+          <span className="flex items-center gap-2" aria-hidden="true">
+            {SOCRATIC_STAGES.map((stage, index) => (
+              <span
+                key={stage}
+                className={`h-2 w-2 rounded-full ${
+                  index <= reached ? "bg-fg" : "bg-border-strong"
+                }`}
+              />
+            ))}
+          </span>
         </div>
       </div>
 
       <ol className="divide-y divide-border">
-        {hints.map((hint) => (
-          <li key={hint.level} className="px-5 py-4">
-            <p className="text-xs font-medium text-fg-subtle">
-              {STEPS[hint.level]}
-            </p>
-            <p className="prose-tr mt-1 text-sm leading-6 text-fg">{hint.text}</p>
-            {hint.source && (
-              <p className="mt-2 font-mono text-xs text-fg-subtle">
-                {hint.source.fileName} · {hint.source.location}
+        {rungs.map((rung) => (
+          <li key={rung.id} className="px-5 py-4">
+            {rung.attempt !== null && (
+              <p className="prose-tr mb-3 border-l-2 border-border-strong pl-3 text-xs text-fg-subtle">
+                Denemen: {rung.attempt}
               </p>
             )}
+            <p className="text-xs font-medium text-fg-subtle">{stageLabel(rung.stage)}</p>
+            <p className="prose-tr mt-1 text-sm leading-6 text-fg">{rung.text}</p>
+            {/* Kaynak konumu her ipucunda görünür (Anayasa I). */}
+            <p className="mt-2 font-mono text-xs text-fg-subtle">
+              {rung.source.fileName} · {rung.source.location}
+            </p>
           </li>
         ))}
       </ol>

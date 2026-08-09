@@ -3,27 +3,33 @@
 /**
  * Uygulama iskeleti: 56px üst çubuk (DESIGN.md §Layout).
  * Giriş yapılmamışsa login'e yönlendirir.
+ *
+ * Oturum burada YENİDEN OKUNMAZ. Depoyu kendi state'ine kopyalayan her bileşen,
+ * lib/session.ts'in "tek kaynak" iddiasını sessizce boşa çıkarır: rol kuralı
+ * değiştiğinde (ör. asistan rolü eklendiğinde) hangi kopyanın güncellendiği
+ * takip edilemez (Anayasa XI).
  */
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
-import { getStoredUser, signOut, type DemoUser } from "@/lib/api";
+import { useEffect, type ReactNode } from "react";
+import { Button } from "@/components/ui";
+import { signOut } from "@/lib/api";
+import { useSession } from "@/lib/session";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<DemoUser | null>(null);
-  const [ready, setReady] = useState(false);
+  const { user, ready } = useSession();
 
+  /*
+   * Yönlendirme `ready` beklenerek yapılır. `ready` false demek "oturum yok"
+   * değil, "depo henüz okunmadı" demektir; ikisi karıştırılırsa her yenilemede
+   * giriş yapmış kullanıcı da dışarı atılır. Yan etki render gövdesinde değil
+   * burada durur.
+   */
   useEffect(() => {
-    const stored = getStoredUser();
-    if (!stored) {
-      router.replace("/");
-      return;
-    }
-    setUser(stored);
-    setReady(true);
-  }, [router]);
+    if (ready && !user) router.replace("/");
+  }, [ready, user, router]);
 
   if (!ready || !user) return null;
 
@@ -40,15 +46,21 @@ export function AppShell({ children }: { children: ReactNode }) {
               {user.fullName} ·{" "}
               {user.role === "instructor" ? "Eğitmen" : "Öğrenci"}
             </span>
-            <button
+            {/*
+             * Elde çizilmiş buton kaldırıldı: 28px yüksekliğindeydi (DESIGN.md
+             * §Responsive 44×44px ister) ve odak halkası yoktu — klavyeyle
+             * gezen kullanıcı çıkış butonunu göremiyordu. Ortak `Button` her
+             * ikisini de taşıyor; kural tek yerde durur (Anayasa XI).
+             */}
+            <Button
+              variant="ghost"
               onClick={() => {
                 signOut();
                 router.replace("/");
               }}
-              className="rounded-lg px-3 py-1.5 text-xs text-fg-muted hover:bg-surface hover:text-fg"
             >
               Çıkış
-            </button>
+            </Button>
           </div>
         </div>
       </header>

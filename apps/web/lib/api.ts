@@ -83,16 +83,66 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (response.status === 204) return undefined as T;
 
-  const body = await response.json().catch(() => null);
+  const raw = await response.text();
+  let body: unknown = null;
+  let parsed = false;
+  try {
+    body = raw.trim() === "" ? null : JSON.parse(raw);
+    parsed = true;
+  } catch {
+    // Ayrıştırılamadı; aşağıda ele alınıyor.
+  }
+
   if (!response.ok) {
-    const error = body?.error;
+    const error = errorEnvelope(body);
     throw new ApiError(
       error?.message ?? "İşlem tamamlanamadı. Lütfen tekrar deneyin.",
       error?.code ?? "unknown",
       response.status,
     );
   }
+
+  /*
+   * Başarılı ama okunamayan yanıt bir HATADIR, boş veri değil.
+   *
+   * Eskiden ayrıştırma başarısız olunca sessizce `null` dönüyordu. `useResource`
+   * "yükleniyor"u `data === null && error === null` diye tanımladığı için ekran
+   * sonsuza kadar "Yükleniyor…" kalıyordu: kullanıcı bekliyor, yenilemek de
+   * kurtarmıyor, hiçbir yerde hata görünmüyor. Fail-closed doğru davranış
+   * (Anayasa IV): hattın bozuk olduğunu söyle.
+   *
+   * Gövdesiz başarılı yanıt da buraya düşer; 204 yukarıda zaten ayrıldı ve
+   * başka hiçbir uç boş gövdeyle 2xx dönmüyor (contracts/openapi.json).
+   */
+  if (!parsed || body === null) {
+    throw new ApiError(
+      "Sunucudan beklenmeyen bir yanıt geldi. Lütfen tekrar deneyin.",
+      "invalid_response",
+      response.status,
+    );
+  }
   return body as T;
+}
+
+/**
+ * Hata zarfını okur — backend'in TEK biçimi: `{ error: { code, message } }`
+ * (`app/core/errors.py`).
+ *
+ * FastAPI'nin ham `{detail: [...]}` doğrulama biçimi için istemcide savunma kodu
+ * YOK, çünkü sunucu 9 Ağustos'ta `validation_error_handler` ile her 422'yi de bu
+ * zarfa çeviriyor (main.py'de `RequestValidationError`'a kayıtlı, doğrulandı).
+ * İki biçimi istemcide tanımaya çalışmak kapanmış bir deliği ikinci kez yamamak
+ * olurdu ve ham İngilizce Pydantic metnini kullanıcıya taşırdı (Anayasa V).
+ */
+function errorEnvelope(body: unknown): { code?: string; message?: string } | null {
+  if (typeof body !== "object" || body === null) return null;
+  const error = (body as { error?: unknown }).error;
+  if (typeof error !== "object" || error === null) return null;
+  const { code, message } = error as { code?: unknown; message?: unknown };
+  return {
+    code: typeof code === "string" ? code : undefined,
+    message: typeof message === "string" ? message : undefined,
+  };
 }
 
 export const api = {
