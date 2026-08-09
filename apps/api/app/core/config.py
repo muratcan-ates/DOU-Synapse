@@ -39,6 +39,32 @@ EVIDENCE_THRESHOLD_BY_PROVIDER: dict[str, float] = {
     "hashing": 0.10,
 }
 
+# --- 9 Ağustos akşamı: üç şerit eşiği ölçtü, üçü farklı şey söyledi -----------
+#
+# R2 (n=40 kalibrasyon, kapsam dışı n=18, v2 korpus): 0.815 önerdi; 0.81'de doğru
+#   ret oranı %61. En büyük ve en dengeli set bu.
+# R3 (n=16, tek ders): 0.81'in GEÇERLİ soruları kestiğini ölçtü — doğru belgesi
+#   en üstte gelen iki soru 0.7973 ve 0.8051 ile reddedildi, en yüksek gerçekten
+#   kapsam dışı soru 0.7867. İki sınıf yalnız 0.0106 ile ayrılıyor.
+# R4 (n=15): eşiği DEĞİŞTİRMEDİ ve sebebini gösterdi — elde üç sinyal var, kapı
+#   en zayıfına bakıyor (boşluk/yayılım: dense 0.050, sözlüksel kapsama 0.223,
+#   ts_rank 0.235). Sorun eşiğin DEĞERİ değil, baktığı sinyalin darlığı.
+#
+# EŞİK BUGÜN DEĞİŞTİRİLMİYOR. Gerekçe, üç ölçümün de aynı dünyada yapılmamış
+# olması: R4'ün `retrieval/scope.py` modülü bu ölçümlerden SONRA indi ve eşiğin
+# işini değiştirdi. Artık kapsam dışı sorular ayrı, ölçülmüş bir sinyalle
+# ayrılıyor (`out_of_scope`); eşik tek başına "kapsam dışını da yakala" görevini
+# taşımıyor. Üç öneri de o görev hâlâ eşikteyken üretildi.
+#
+# Yani doğru sıra: önce scope modülüyle birlikte yeniden ölç, sonra karar ver.
+# Şimdi 0.815'e çekmek, ölçülmemiş bir dünyada ölçülmüş bir sayı kullanmak olurdu
+# ve tam olarak bu projenin kaçındığı hata (Anayasa III).
+#
+# R3'ün bulgusu yine de en somut riski gösteriyor: geçerli sorular reddedilebilir.
+# Dev korpusunda bugün gözlenmedi (üç kapsam içi soru da atıflı cevaplandı), ama
+# R3'ün korpusu farklıydı — yani sonuç korpusa duyarlı ve bu, tek başına bir
+# uyarı.
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(

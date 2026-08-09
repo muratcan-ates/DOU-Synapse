@@ -1,6 +1,6 @@
 # Lider şeridi — devir teslim
 
-> **Güncellendi: 9 Ağustos 2026, ~18:30.** Önce `00_OKU_ONCE.md`, sonra burası.
+> **Güncellendi: 9 Ağustos 2026, ~21:00.** Önce `00_OKU_ONCE.md`, sonra burası.
 > Faz 2'nin beş şeridi için `10_OKU_ONCE_FAZ2.md`.
 > Şerit: **frontend'in tamamı + entegrasyon + CI + sözleşme dikişleri.**
 
@@ -40,31 +40,37 @@ kurulamadı" der — ürün hatası gibi görünen bir kurulum hatası.
 **Test koştururken `bunx playwright` KULLANMA** — ayrı kopya indirip "two
 different versions" hatası veriyor. `node_modules/.bin/playwright`.
 
-## 3. Durum — 9 Ağustos 18:30
+## 3. Durum — 9 Ağustos 21:00
 
-`main` = `932ce6d`.
+`main` = beş şeridin **tamamı birleşti**, dalları duruyor (silinmedi).
 
 | Katman | Durum |
 |---|---|
-| Backend testleri | **479 geçiyor** |
-| mypy | temiz, 59 dosya |
+| Backend testleri | **657 geçiyor** |
+| mypy | temiz, 62 dosya |
 | ruff | temiz (check + format) |
-| Frontend birim | **184 geçiyor** (sabah 25'ti) |
-| Frontend uçtan uca | **19 vaka** — 16 geçiyor, 3 gerekçeli atlanıyor |
+| Frontend birim | **197 geçiyor** |
+| Frontend uçtan uca | 19 vaka — 16 geçiyor, 3 gerekçeli atlanıyor |
 | `next build` | temiz |
-| Kontrast kapısı | temiz, CI'da koşuyor |
-| OpenAPI | kodla birebir, 24 yol |
-| Şema | `0001` `0003` `0004` `0005` — 15 tablo |
+| Kontrast kapısı | temiz, CI'da |
+| OpenAPI | 24 yol |
+| Şema | `0001`–`0006`, **15 tablo** |
 
-**Dört ekranın dördü de gerçek uçlara bağlı** ve tarayıcıda doğrulandı:
-sohbet (T022), sınav provası (T034), soru havuzu (T035), ilerleme (T040).
-Hiçbirinde `PreviewBanner` kalmadı; uydurma veri kalmadı.
+**Faz 2'nin beşi de indi:** R1 kimlik (`0002`, JWT sertleştirme, 98 RLS iddiası /
+52 mutasyon), R2 ölçüm (korpus 33→167, T045/T046 koştu, test raporu kapandı),
+R3 dağıtım (`/internal/drain`, Dockerfile, çevrimdışı prova 10/10),
+R4 kalite (`0006`, `out_of_scope`, guardrail'in atladığı dört yol),
+R5 belgeler (runbook, demo senaryosu, iki kılavuz, KVKK, 15 ekran görüntüsü).
 
-Faz 2'nin beş şeridi `10_OKU_ONCE_FAZ2.md` ile başlatıldı.
-
-**Atlanan üç uçtan uca vakası** koşulmadı çünkü soru üretimi API anahtarı
-olmadan sahte sağlayıcıya düşüyor ve hiç soru döndürmüyor. Atlama koşullu ve
-kendi kendini açar: üretim çalıştığı gün üç vaka da kendiliğinden koşar.
+**Merge sonrası liderin uyguladıkları:**
+- `0006` **yedi veritabanının hepsine** uygulandı (beşinde eksikti; `dense.py`
+  o sütunu seçiyor, eksikse retrieval tamamen düşerdi)
+- R4'ün üç yaması: `out_of_scope` üretimi, önbellek eleme, damga yazımı
+- `jwt_issuer` + `worker_drain_url` → `Settings` (iki şerit de etrafından
+  dolaşarak çalışıyordu)
+- `allow_credentials=False`, fastembed `0.8.x`'e sabitlendi
+- FTS eşitlik bozma `c.id` → `(document_id, chunk_index)`
+- KVKK sayfası (`/kvkk`), metni `docs/kvkk.md`'den okuyor
 
 ## 4. Bugün kapatılan üç sessiz kusur
 
