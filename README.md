@@ -12,7 +12,7 @@ Danışman: Yasemin Karagül · Takım: Muratcan Ateş (frontend + lead) · Eren
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-479_ge%C3%A7ti-brightgreen)
+![Tests](https://img.shields.io/badge/tests-664_ge%C3%A7ti-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/muratcan-ates/DOU-Synapse?style=flat-square)
 
@@ -49,7 +49,7 @@ iş taslakları onaylamak. Onaylanmayan hiçbir soru öğrenciye görünmez.
 | **Nedir** | Ders materyaliyle sınırlı, kaynak zorunlu, Sokratik bir RAG ders ve sınav asistanı |
 | **Kimin için** | Soru hazırlama ve sınıf görünürlüğü yükü taşıyan eğitmen; müfredat dahilinde güvenilir kaynakla çalışmak isteyen öğrenci |
 | **Farkı ne** | Cevap üretmek değil, **doğrulanabilir** cevap üretmek: mekanik atıf doğrulaması, kademeli Sokratik yönlendirme, eğitmen onaylı soru havuzu, iki katmanlı ders izolasyonu |
-| **Kanıtı ne** | 479 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak |
+| **Kanıtı ne** | 664 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak |
 | **Bilerek ne değil** | Üretim sistemi değil; internete açılmaz, kod çalıştırmaz, resmî not vermez — [aşağıda](#yapar--bilerek-yapmaz) |
 
 ## Yapay zekânın üç rolü
@@ -88,8 +88,10 @@ Sağ sütun eksik iş listesi değil, tasarım kararıdır:
 
 ## Ekran görüntüleri
 
-Aşağıdaki görüntüler **9 Ağustos 2026'da çalışan sistemden** alındı: gerçek materyal
-(8 dosya · 33 parça), gerçek arama, gerçek atıflar.
+Aşağıdaki görüntüler **9 Ağustos 2026'da çalışan sistemden** alındı: gerçek ders
+materyali (3 dosya · 13 parça), gerçek arama, gerçek atıflar. Hepsi
+`apps/web/e2e/screenshots.spec.ts` ile üretiliyor — elle alınmadıkları için arayüz
+değiştiğinde tek komutla tazeleniyorlar ve sessizce bayatlamıyorlar.
 
 **Materyal yönetimi** — yükleme, doğrulama ve canlı işleme durumu. Her dosyanın yanında
 kaç parçaya bölündüğü yazar; kaynak referansının hammaddesi budur:
@@ -118,11 +120,30 @@ Diğer gerçek ekranlar: [giriş](docs/images/01-giris.png) ·
 [Sokratik ilk kademe](docs/images/11-sokratik-kademe-1.png) ·
 [Sokratik ikinci kademe](docs/images/12-sokratik-kademe-2.png)
 
-**Hâlâ tasarım önizlemesi olan üç ekran** — backend uçları çalışıyor ve uçtan uca
-doğrulandı, bağlanmayı bekleyen yalnız arayüz:
-[soru havuzu](docs/images/05-egitmen-soru-havuzu.png) ·
-[sınav provası](docs/images/14-ogrenci-sinav-provasi.png) ·
-[ilerleme/analitik](docs/images/06-egitmen-sinif-analitigi.png)
+**Soru havuzu — üretimin dürüst muhasebesi.** Eğitmen çerçeveyi kurar (konu, biçim,
+isterse örnek soru); sistem materyalden üretir ve **her taslak eğitmen onayından
+geçmeden öğrenciye görünmez**. Ekran istenen/dönen/kabul edilen sayılarını ve
+**elenme gerekçelerini** gizlemez — bugün bu ortamda üretim sıfır soru döndürüyor
+(gerçek LLM anahtarı yok) ve sebebi ekranda yazılı:
+
+![Soru havuzu](docs/images/05-egitmen-soru-havuzu.png)
+
+**Sınav provası** — süre sunucunun kararıdır (istemci saatine güvenilmez), sayaç
+ekran okuyucuyu boğmaz, ve bir cevap değerlendirilemediyse **puan uydurulmaz**:
+
+![Sınav provası](docs/images/14-ogrenci-sinav-provasi.png)
+
+**Sınıf analitiği** — çalışılmamış konu sıfır puanla **gösterilmez** ("bilmiyoruz"
+ile "kötüsün" farklı şeylerdir), ölçülemeyen oran uydurulmaz, ve "resmî not
+değildir" ibaresi kalıcıdır:
+
+![Sınıf analitiği](docs/images/06-egitmen-sinif-analitigi.png)
+
+**KVKK aydınlatma metni** — girişten önce, hesap açmadan okunabilir. Metin
+`docs/kvkk.md`'den derleme anında okunur; sayfa onu kopyalamaz, dolayısıyla iki
+nüsha ayrışamaz:
+
+![KVKK](docs/images/16-kvkk.png)
 
 **İzolasyon kanıtı** — öğrenci, üye olmadığı dersin adresini elle yazarsa "yetkiniz yok"
 değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
@@ -131,7 +152,7 @@ değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
 
 ## Yapılanlar ✅
 
-Hepsi bu depoda çalışır ve testlidir — **479 otomatik test** + CI (ruff, mypy, pytest,
+Hepsi bu depoda çalışır ve testlidir — **664 otomatik test** + CI (ruff, mypy, pytest,
 RLS izolasyon kanıtı):
 
 - **İki katmanlı ders izolasyonu** — uygulama katmanı (istemciden gelen ders kimliği
@@ -162,19 +183,52 @@ RLS izolasyon kanıtı):
 - **Soru üretimi + onay akışı**, **sınav prova motoru**, **"neden yanlış"**,
   **mastery + analitik** — uçlar çalışıyor ve test kapsamında
 
+**9 Ağustos akşamı tamamlananlar** — dört ekranın dördü de gerçek uçlara bağlandı:
+
+- **Dört ekran gerçek veride** — sohbet, sınav provası, soru havuzu, ilerleme.
+  Hiçbirinde önizleme şeridi ya da uydurma veri kalmadı; her biri tarayıcıda
+  sürülerek doğrulandı
+- **Kimlik katmanı** — Supabase Auth köprüsü (`0002`), JWT sertleştirmesi
+  (`exp`/`aud`/`iss`/`sub` zorunlu, `alg=none` reddediliyor, üretimde `dev:` öneki
+  kabul edilmiyor), 98 RLS iddiası + **52/52 mutasyon** yakalandı
+- **Kapsam dışı ayrımı** — kapsam dışı sorular artık `out_of_scope` etiketiyle
+  dönüyor; önceden hepsi `insufficient_context`'e düşüyordu ve SC-005 yapısal
+  olarak ölçülemiyordu
+- **Embedding kökeni** (`0006`) — her parça hangi sağlayıcı+sürümle gömüldüğünü
+  taşıyor; uyuşmazlık sorgu zamanında fail-closed reddediliyor
+- **Dağıtım altyapısı** — `/internal/drain` (sabit zamanlı sır karşılaştırması),
+  model gömülü Dockerfile, çevrimdışı restore provası **10/10 adım**
+- **Ölçüm** — korpus 33 → **167 parça**, gold set 161 holdout + 40 kalibrasyon;
+  T045 (embedding A/B) ve T046 (injection, 38 vaka) koştu
+- **Teslim belgeleri** — runbook (üç planlı), demo senaryosu, eğitmen ve öğrenci
+  kılavuzları, KVKK aydınlatma metni + sayfası, güvenlik belgesi
+
 ## Yapılacaklar ⏳
 
-- **Üç ekranın bağlanması** — soru havuzu, sınav provası, ilerleme/analitik hâlâ tasarım
-  önizlemesi; arka uçları hazır
-- **Supabase Auth** — bugün geliştirme kimliği (`DEV_AUTH`) kullanılıyor. Üretimde
-  yapılandırma düzeyinde zaten reddediliyor, ama köprü yazılmadı
-- **Bulut dağıtımı** — canlı URL yok; model henüz imaja gömülmüyor, HTTP worker tetiği
-  (`/internal/drain`) yazılmadı
-- **Ölçüm koşuları** — gold set ve harness hazır; Recall@5/@8, atıf hassasiyeti,
-  faithfulness ve injection testleri **koşulmadı** (LLM anahtarı bekliyor)
-- **Kanıt eşiği** — kalibre edildi (0.81) ama holdout'ta hedefi tutturmadı: kapsam dışı
-  doğru ret **%80**, hedef %90. Eşik holdout'a bakılarak değiştirilmedi;
-  gerekçesi [`evaluation/calibration.md`](evaluation/calibration.md) §7'de
+Görev listesinin **%93'ü kapandı** (56/60). Açık kalan dördünün **tamamı dış
+erişim bekliyor** — kod tarafında yapılabilecek iş kalmadı:
+
+| Görev | Neyi bekliyor |
+|---|---|
+| **T023** Supabase Auth'un canlı koşusu | Gerçek Supabase projesi + anahtarları. Köprü (`0002`) ve doğrulama yazıldı, sahte `auth.users` üstünde sınandı |
+| **T047** Faithfulness örneklemi | Gerçek LLM anahtarı. Şablon, örnekleyici ve süreç hazır |
+| **T050** Prod ortam doğrulaması | Bulut erişimi (ACA/Vercel/Supabase) |
+| **T051** RLS kanıtının prod'da koşması | Aynı erişim. Yerelde 98 iddia / 52 mutasyon geçiyor |
+
+**Bilinen ve kayda geçmiş üç açık:**
+
+- **Soru üretimi bu ortamda sıfır soru döndürüyor.** Gerçek LLM anahtarı yokken
+  sahte sağlayıcı devreye giriyor ve soru şemasını üretemiyor. Sistem fail-closed
+  davranıyor (uydurma soru havuza girmiyor) ama sınav demosu elle tohumlanmış
+  havuza bağlı ve üç uçtan uca vakası bu yüzden atlanıyor
+- **Kanıt eşiği** kalibre edildi (0.81) ama holdout'ta hedefi tutturmadı: doğru ret
+  **%80**, hedef %90. Üç şerit üç farklı sayı önerdi; **değiştirilmedi**, çünkü
+  üçü de kapsam ayrımı (`retrieval/scope.py`) inmeden önce ölçüldü ve o modül
+  eşiğin işini değiştirdi. Doğru sıra: yeniden ölç, sonra karar ver
+- **Embedding sürüm uyuşmazlığı** — `fastembed` 0.8.0 bu modeli mean pooling'e
+  geçirdiğini yalnız bir uyarıyla söylüyor. Sürüm `0.8.x`'e sabitlendi ve her
+  parça damgalanıyor, ama farklı sürümle gömülmüş eski bir korpus hâlâ sessizce
+  yanlış komşu döndürebilir
 
 Tasarlanıp uygulanmayanların tam listesi sahipleriyle birlikte:
 [ARCHITECTURE.md §10](ARCHITECTURE.md#10-uygulanmayanlar--tasarlandı-kodda-yok).
@@ -216,7 +270,7 @@ cd apps/api
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 cp ../../.env.example .env        # varsayılanlar yerel için yeterli
-uv run pytest -q                  # 479 test yeşil olmalı (~50-100 sn)
+uv run pytest -q                  # 664 test yeşil olmalı (~70-120 sn)
 ```
 
 **4. Servisleri başlat** (üç ayrı terminal)
@@ -236,6 +290,20 @@ cd apps/web && bun install && bun run dev
 **5. Aç:** http://localhost:3000 — girişte **Ayşe Hoca** (eğitmen) veya **Burak Yılmaz**
 (öğrenci) demo kartına tıkla.
 
+> **Anlamlı cevaplar için tek ayar.** Varsayılan `EMBEDDING_PROVIDER=hashing`
+> deterministik ve hızlıdır (testler ve CI onunla koşar) ama **anlamsal değildir**:
+> karma tabanlıdır, "context switch" ile "döviz kuru" arasındaki farkı göremez.
+> Gerçek arama için sunucuyu şöyle başlatın — model ilk çağrıda iner (~2 GB) ve
+> sonrasında önbellekten gelir:
+>
+> ```bash
+> EMBEDDING_PROVIDER=fastembed uv run uvicorn app.main:app --port 8000
+> ```
+>
+> Korpus hangi sağlayıcıyla gömüldüyse sorgu da onunla yapılmalıdır. Uyuşmazlık
+> **çökmez**, sessizce alakasız sonuç döndürür — bu yüzden her parça hangi
+> uzayda gömüldüğünü kaydeder (`0006`) ve uyuşmazlık fail-closed reddedilir.
+
 ## Mimari — ne nerede çalışıyor
 
 ```mermaid
@@ -248,7 +316,8 @@ flowchart LR
     R --> L["LLM (LiteLLM: Groq → Gemini)"]
     L --> G{"guardrail zinciri<br/>mekanik atıf doğrulaması"}
     G -->|"kanıt var"| C["kaynaklı cevap<br/>dosya + sayfa/slayt"]
-    G -->|"kanıt yok"| A["dürüst ret:<br/>'materyalde bulamadım'"]
+    G -->|"kanıt zayıf"| A["dürüst ret:<br/>'materyalde bulamadım'"]
+    G -->|"ders dışı"| O["kapsam dışı reddi<br/>ayrı ölçülen sinyal"]
     C -.->|"Sokratik mod"| SM["kademeli ipucu<br/>denemesiz ilerlemez"]
 ```
 
@@ -411,7 +480,7 @@ sonra [ARCHITECTURE](ARCHITECTURE.md) (kararlar ve **uygulanmayanlar**).
 | [DESIGN.md](DESIGN.md) | Tasarım token'ları — arayüzün tek otoritesi |
 | [.specify/memory/constitution.md](.specify/memory/constitution.md) | Anayasa — 11 pazarlıksız ilke |
 | [docs/requirements-analysis.md](docs/requirements-analysis.md) | Gereksinim analizi — danışman taslağı → FR izlenebilirliği |
-| [specs/001-course-assistant-mvp/](specs/001-course-assistant-mvp/) | Spec (35 FR), plan, görev listesi, quickstart, OpenAPI sözleşmesi (24 yol) |
+| [specs/001-course-assistant-mvp/](specs/001-course-assistant-mvp/) | Spec (35 FR), plan, görev listesi, quickstart, OpenAPI sözleşmesi (25 yol) |
 
 ### Ölçüm
 
