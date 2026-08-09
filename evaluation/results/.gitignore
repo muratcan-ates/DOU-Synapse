@@ -1,0 +1,4 @@
+# Devam edilebilir koşunun ilerleme dosyaları burada yaşar ve repoya girmez:
+# ara çıktıdır, tarihli sonuç JSON'u değildir. Sonuç dosyaları (*.json) commit'lenir —
+# raporda her sayının yanında hangi koşudan geldiği yazılır ve o dosya bulunabilmelidir.
+.progress/
