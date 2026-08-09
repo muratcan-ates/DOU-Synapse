@@ -238,7 +238,7 @@ Başlangıç 473'tü; 112 test eklendi.
 | 1 — `out_of_scope` üretilmiyor | **Çözüldü**, yaması lider'de | kalibrasyon 3/3, yanlış pozitif 0/12 |
 | 2 — eşik holdout'ta tutmuyor | **Ölçüldü**, eşik değiştirilmedi | sinyal karşılaştırması, aşağıda |
 | 3 — ipucu denemeyi kullanıyor mu | **Kök neden bulundu ve düzeltildi** | prompt testleri; çıktı farkı ÖLÇÜLMEDİ |
-| 4 — sahte sağlayıcı mod duyarsız | **Çözüldü** | 4 soru tipi gerçek şemadan geçiyor |
+| 4 — sahte sağlayıcı mod duyarsız (**lider: en yüksek öncelik**) | **Çözüldü** | liderin tekrar üretimi §4'te birebir koşuldu: 3/3 |
 | 5 — guardrail mutasyon kanıtı | **Çözüldü + 1 açık kapatıldı** | 23/33/1 → sanitize 1'den 4'e |
 | 6 — `answer_cache` mod güvenliği | **Çözüldü** | 20 test, yeni dosya |
 | EK — embedding sürüm damgası | **Şema + kapı hazır**, ingest yaması lider'de | 0006 + fail-closed kontrol |
@@ -406,6 +406,41 @@ kanıtlamaz.
 
 ## 4. Kusur 4 — sahte sağlayıcı görev duyarlı
 
+### Liderin tekrar üretimi (9 Ağustos 18:50) bu dalda GEÇİYOR
+
+Aynı senaryo, gerçek korpus (`dou_synapse_eval_e5`, E5 vektörleri), gerçek
+`HybridRetriever`, gerçek `question_gen.generate_questions`, `LLM_FAKE_PROVIDER=true`,
+`count=3`. Tek fark HTTP ucu yerine fonksiyonun doğrudan çağrılması — uç zaten bu
+raporu olduğu gibi döndürüyor.
+
+```
+ÖNCE  (lider, canlı sunucu)
+  mcq          requested=3 returned=0 accepted=0
+               reasons=["yanıtta 'questions' dizisi yok", "yanıtta 'questions' dizisi yok"]
+
+SONRA (bu dal, aynı korpus)
+  mcq          requested=3 returned=3 accepted=3 rejected=0 reasons=[]
+  open         requested=3 returned=3 accepted=3 rejected=0 reasons=[]
+  code_trace   requested=3 returned=3 accepted=3 rejected=0 reasons=[]
+  bug_hunt     requested=3 returned=3 accepted=3 rejected=0 reasons=[]
+```
+
+Dört soru tipinin dördü de, her biri farklı bir kaynak chunk'a bağlı ve hepsi `draft`.
+Kaynak uydurma kapısından geçiyorlar, yani `source_chunk_id` prompt'ta gerçekten
+listelenmiş bir kimlik.
+
+Liderin kilitlediğini söylediği üç şey bununla açılıyor: sınav provası elle
+tohumlanmış satır gerektirmiyor, uçtan uca paketteki üç vaka artık havuz kurabiliyor,
+ve SC-009 (kabul oranı) ölçülebilir hâle geliyor — bu koşuda 12/12.
+
+**Anahtar hipotezine dair:** lider "gerçek anahtar bunu çözebilir ama varsayma, ölç"
+dedi; haklı ve şunu ekleyebilirim — gerçek anahtar bu kusuru zaten çözmezdi.
+Kusur sağlayıcının kalitesinde değil, isteğin `mode` alanının soru üretimini
+anlatamamasındaydı; gerçek sağlayıcı prompt'u okuduğu için tesadüfen doğru şeyi
+yapardı, ama çevrimdışı yedek yine çalışmazdı. Şimdi ikisi de çalışıyor.
+
+### Sebep ve çözüm
+
 Sebep yapısaldı: `LlmRequest.mode` bir SOHBET kipidir ve soru üretiminin karşılığı
 yoktur; `question_gen` isteği varsayılan `ChatMode.QA` ile gönderiyordu, sahte
 sağlayıcı `<source>` etiketi arıyordu, bulamıyordu ve "kaynak yok" sohbet cevabı
@@ -529,13 +564,38 @@ görünür ve yalnız bazı belgeler hiç bulunmaz.
 
 ---
 
-## 8. LİDERE — uygulanacak üç yama
+## 8. LİDERE — ÖNCE BU: 0006 uygulanmadan bu dal veritabanını kırar
+
+**Birleştirmeden önce `0006_embedding_provenance.sql` var olan HER veritabanına
+uygulanmalı.** `dense.py` artık `chunks.embedding_space` sütununu seçiyor; sütun
+yoksa retrieval'ın tamamı `UndefinedColumn` ile düşer — sohbet, soru üretimi, sınav,
+hepsi. Bu normal göç disiplini ama sırası pazarlıksız ve bugün bir kez canlı yaşandı
+(ölçüm korpusu `dou_synapse_eval_e5`'te tam olarak bu hatayla karşılaşıldı, göç
+uygulanınca geçti).
+
+```bash
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
+for DB in dou_synapse dou_synapse_eval_e5; do
+  psql -v ON_ERROR_STOP=1 -d "$DB" -f supabase/migrations/0006_embedding_provenance.sql
+done
+```
+
+Göç idempotent (`ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`), tekrar
+koşturmak zararsız. Test veritabanları `conftest.py` göçleri sırayla uyguladığı için
+kendiliğinden düzelir; **elle kurulmuş hiçbir veritabanı düzelmez.**
+
+R3'e ayrıca: dağıtım hattında göç adımı imaj başlatmadan ÖNCE koşmalı; tersi sırada
+API ayağa kalkar ve ilk aramada 500 verir.
+
+---
+
+## 9. LİDERE — uygulanacak üç yama
 
 Üçü de **uygulandı, ölçüldü, sonra geri alındı**; commit'lerde bu iki dosya el
 değmemiş durumda. Üçü de dalın kendisinde 585 test yeşil, mypy temiz, ruff temiz
 iken doğrulandı.
 
-### 8.1 `apps/api/app/api/chat.py` — `out_of_scope` üretimi
+### 9.1 `apps/api/app/api/chat.py` — `out_of_scope` üretimi
 
 **Bu yama olmadan Kusur 1 KAPANMAZ.** Modül, testler ve ölçüm hazır; eksik olan tek
 şey uç akışının yeni kararı okuması.
@@ -622,7 +682,7 @@ Notlar:
   yeni bir ret statüsü eklendiğinde `KeyError` verir, sessizce yanlış metin göstermez.
 - `_has_evidence` çağıran başka bir yer yok; test de yok.
 
-### 8.2 `apps/api/app/modules/ingestion/pipeline.py` — damgayı yaz
+### 9.2 `apps/api/app/modules/ingestion/pipeline.py` — damgayı yaz
 
 **Bu yama olmadan 0006'nın kapısı hiçbir satırı korumaz** (her damga NULL kalır).
 `ingestion/**` bu şeridin dosyası değil, o yüzden commit edilmedi.
@@ -675,7 +735,7 @@ Doğrulandı: gerçek bir yükleme worker üzerinden koşturuldu, yazılan chunk
 damgası `hashing/hashing-v1@builtin-1` çıktı ve `current_space()` ile birebir eşleşti.
 32 ingestion/documents testi yeşil kaldı.
 
-### 8.3 Dev korpusunu damgalamak (opsiyonel, operatör kararı)
+### 9.3 Dev korpusunu damgalamak (opsiyonel, operatör kararı)
 
 Dev korpusu 9 Ağustos'ta E5 ile yeniden embed edildi (`c4d4c7b`), yani sağlayıcısı
 BİLİNİYOR. Damgalanmak istenirse:
@@ -691,9 +751,9 @@ yakalamak için var olduğu uyuşmazlığı gizler. Sürüm numarası koşulduğ
 
 ---
 
-## 9. R2'YE — yeniden koşulacaklar ve yeni imkânlar
+## 10. R2'YE — yeniden koşulacaklar ve yeni imkânlar
 
-### 9.1 Yeniden koşulması gereken
+### 10.1 Yeniden koşulması gereken
 
 - **SC-005 (kapsam dışı doğru ret), uçtan uca holdout.** Bugün yapısal olarak %0
   ölçülüyordu; 8.1 yaması indikten sonra ilk kez gerçek bir sayı çıkacak. Bu koşu
@@ -705,7 +765,7 @@ yakalamak için var olduğu uyuşmazlığı gizler. Sürüm numarası koşulduğ
   yok, ama bir kontrol koşusu yaparsanız aynı sayıyı görmelisiniz — görmezseniz
   bende bir hata var demektir.
 
-### 9.2 Kalibrasyon setini büyütünce yapılabilecek karşılaştırma
+### 10.2 Kalibrasyon setini büyütünce yapılabilecek karşılaştırma
 
 `calibration.md` §7'nin 1. maddesi (kapsam dışı n=3 → n≥15) yapıldığında, üç kapıyı
 karşılaştırmak için **kod değiştirmenize gerek yok**:
@@ -717,7 +777,7 @@ assess_evidence(chunks, query=q, threshold=t, fts_ceiling=x, coverage_ceiling=y)
 
 Bugün seçilemedi çünkü üçü de kalibrasyon setinde 15/15; ayırt edecek olan büyük set.
 
-### 9.3 Koşu meta verisine eklenmesi gereken
+### 10.3 Koşu meta verisine eklenmesi gereken
 
 Liderin EK'te sizden istediği sağlayıcı+sürüm damgası artık kanonik bir dize olarak
 üretilebiliyor:
@@ -731,7 +791,7 @@ Koşu çıktısına bunu yazarsanız, o koşunun hangi vektör uzayında yapıld
 tartışmaya kapalı olur. Bugün `evaluate.py` yalnız sağlayıcı adı ve model adı yazıyor;
 eksik olan **sürüm**, yani uyarının konusu olan parça.
 
-### 9.4 Ölçüm betikleri
+### 10.4 Ölçüm betikleri
 
 Dört betik kullandım; hiçbiri `evaluation/`'a KONMADI çünkü o klasör sizin. Dondurulmuş
 eşikleri üreteni **EK A'da tam metin olarak** duruyor, diğer üçünün farkı aynı ekte
@@ -740,7 +800,7 @@ tabloyla anlatıldı. Kalıcı olmaları gerekiyorsa yerlerini siz seçin — be
 
 ---
 
-## 10. GRUBA — `contracts.py` / `config.py` istekleri
+## 11. GRUBA — `contracts.py` / `config.py` istekleri
 
 Hiçbiri bugünü bloke etmiyor; hepsi "daha temiz olurdu" düzeyinde.
 
@@ -771,9 +831,9 @@ Hiçbiri bugünü bloke etmiyor; hepsi "daha temiz olurdu" düzeyinde.
 
 ---
 
-## 11. BAŞKA ŞERİTLERİ ETKİLEYEN KARARLAR
+## 12. BAŞKA ŞERİTLERİ ETKİLEYEN KARARLAR
 
-- **R2:** yukarıdaki §9. Özellikle SC-005'in ilk gerçek ölçümü 8.1 yamasına bağlı.
+- **R2:** yukarıdaki §10. Özellikle SC-005'in ilk gerçek ölçümü §9.1 yamasına bağlı.
 - **R3 (dağıtım):** `EmbeddingSpaceMismatchError` **503** döndürüyor. Sağlık ucunuz
   bu hatayı "servis hazır değil" diye yorumlamalı; imajın gömdüğü model korpusunkinden
   farklı bir sürümdeyse uç bu hatayı verir ve bu doğru davranıştır. Ayrıca
@@ -791,7 +851,7 @@ Hiçbiri bugünü bloke etmiyor; hepsi "daha temiz olurdu" düzeyinde.
 
 ---
 
-## 12. ANAHTAR GEREKTİREN, YAPILMAYAN İŞLER
+## 13. ANAHTAR GEREKTİREN, YAPILMAYAN İŞLER
 
 `10_OKU_ONCE_FAZ2.md` §8.4 uyarınca en sona bırakıldı ve anahtarsız yapılabilecek
 her hazırlık bitirildi.
@@ -803,15 +863,15 @@ her hazırlık bitirildi.
 3. **Sızıntı oranı (SC-007)**. Dedektörler ve mutasyon kanıtı hazır; kalıpsız
    (düzyazı) sızıntının oranı yalnız gerçek model çıktısında ölçülebilir.
 
-## 13. BİTTİ SAYILMA ÖLÇÜTÜ — durum
+## 14. BİTTİ SAYILMA ÖLÇÜTÜ — durum
 
 - [x] `out_of_scope` üretiliyor **ve** doğruluğu bir sette ölçüldü — modül+ölçüm
-      bitti (3/3, 0/12); uç yaması §8.1'de, lider uygular
+      bitti (3/3, 0/12); uç yaması §9.1'de, lider uygular
 - [x] Eşik/sinyal iyileştirmesi ölçümle yazıldı — üç sinyal karşılaştırıldı, eşik
       bilinçli olarak DEĞİŞTİRİLMEDİ, gerekçesi §2'de; RRF `k` kalibre edilemedi,
       sebebiyle birlikte
 - [x] Sokratik ipucunun denemeye göre şekillendiği — **gösterilemedi ve kök neden
-      düzeltildi**: prompt'ta kural yoktu. Çıktı farkı anahtar bekliyor (§12.1)
+      düzeltildi**: prompt'ta kural yoktu. Çıktı farkı anahtar bekliyor (§13.1)
 - [x] Sahte sağlayıcı mod duyarlı, deterministik kalıyor
 - [x] Her guardrail halkası için mutasyon kanıtı var — ve sanitize'ın açığı kapatıldı
 - [x] `answer_cache` mod/izolasyon davranışı testli — 20 test
@@ -1053,7 +1113,7 @@ atıflı cevabı saklıyor. Maliyet sıfıra yakın: iki halka da saf fonksiyon.
 Yedi test bunu kilitliyor (`TestOnbellekZinciri`), Sokratik modda sızıntının hâlâ
 bloklandığı ve QA'da materyal kodunun bloklanmadığı dahil.
 
-### 8.4 `apps/api/app/api/chat.py` — önbellek isabetini zincirden geçir
+### 9.4 `apps/api/app/api/chat.py` — önbellek isabetini zincirden geçir
 
 `screen_cached` hazır ve testli; eksik olan tek şey uç akışının çağırması.
 
@@ -1085,7 +1145,7 @@ Not: `file_name` temizlikte neredeyse tamamen gidebiliyor (`'.pdf'` gibi). Çirk
 doğru yön: alternatifi yükü göstermek. Arayüz boş/kırpılmış dosya adını nasıl
 göstereceğine karar vermek isterse bu lider tarafında bir sunum kararı.
 
-Bu yama §8.1 ile aynı dosyaya dokunuyor ve **birbirlerinden bağımsızlar**; ayrı ayrı
+Bu yama §9.1 ile aynı dosyaya dokunuyor ve **birbirlerinden bağımsızlar**; ayrı ayrı
 uygulanabilirler.
 
 ---
