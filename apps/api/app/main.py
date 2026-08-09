@@ -11,7 +11,17 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import analytics, chat, courses, documents, exams, health, internal, questions
+from app.api import (
+    analytics,
+    blueprints,
+    chat,
+    courses,
+    documents,
+    exams,
+    health,
+    internal,
+    questions,
+)
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import (
@@ -61,6 +71,11 @@ def create_app() -> FastAPI:
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        # `call_next`'ten ÖNCE yazılır: hata handler'ları kimliği buradan okuyor
+        # ve zarfa koyuyor (`core/errors.py::request_id_of`). Sonra yazılsaydı
+        # yanıt başlığı kimliği taşırdı ama gövde taşımazdı — kullanıcıya
+        # gösterilen destek kodu ile logdaki kayıt ayrı düşerdi.
+        request.state.request_id = request_id
         started = time.perf_counter()
         response = await call_next(request)
         duration_ms = round((time.perf_counter() - started) * 1000, 1)
@@ -95,6 +110,9 @@ def create_app() -> FastAPI:
     # eklemez, yani sözleşme de bugün değişmez.
     app.include_router(chat.router)
     app.include_router(exams.router)
+    # Bugün yol eklemiyor; blueprint şeridi `main.py`'ye dokunmadan doldursun
+    # diye lider turunda önden kaydedildi (bkz. api/blueprints.py).
+    app.include_router(blueprints.router)
     app.include_router(analytics.router)
     # Faz G'nin dahili tetik ucu. Modül bugün boş ama kaydı önden yapıldı; boş
     # router hiçbir yol eklemez, yani sözleşme bugün değişmez.

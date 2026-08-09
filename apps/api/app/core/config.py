@@ -243,6 +243,33 @@ class Settings(BaseSettings):
     #: Sınırın penceresi (saniye).
     chat_rate_limit_window_seconds: float = 60.0
 
+    # --- Soru üretimi sınırları (002 / FR-222, FR-223) ----------------------
+    # Adlar lider turunda sabitlendi ki iki şerit aynı ayara iki farklı ad
+    # vermesin. Değerler sohbet sınırının KOPYASI DEĞİL: tek çağrı 20 soruya
+    # kadar üretiyor ve her soru ayrı bir LLM turu demek, yani maliyet profili
+    # sohbetten bir büyüklük mertebesi farklı. Sohbetin 20/dk'sı buraya
+    # uygulansaydı bir öğretmen dakikada 400 soru üretimi tetikleyebilirdi.
+    #
+    #: Kullanıcı+ders başına, pencere başına azami soru üretimi isteği.
+    question_gen_rate_limit_requests: int = 5
+    #: Sınırın penceresi (saniye).
+    question_gen_rate_limit_window_seconds: float = 300.0
+    #: Aynı kullanıcının aynı anda yürütebileceği üretim sayısı. 1 olmasının
+    #: sebebi maliyet değil tutarlılık: eşzamanlı iki üretim aynı konuya iki
+    #: taslak kümesi yazar ve öğretmen hangisinin hangi istekten geldiğini
+    #: ayırt edemez. Kapı LLM çağrısından ÖNCE kapanmalı (FR-222).
+    question_gen_max_concurrent: int = 1
+
+    # --- Embedding ısıtma (002 / FR-221) ------------------------------------
+    #: Açıkken uygulama başlarken embedding modeli arka planda yüklenir ve ilk
+    #: gerçek istek soğuk başlangıç cezasını tek başına ödemez. Isıtma
+    #: `lifespan`'i BLOKLAMAZ; hazır olup olmadığı readiness ucundan bildirilir.
+    #:
+    #: Testte varsayılan olarak kapalı tutulmalıdır: pytest her koşuda 2,1 GB'lık
+    #: ONNX modelini yüklerse paket dakikalarca uzar ve ölçtüğü şey model
+    #: yükleme süresi olur.
+    embedding_warmup_enabled: bool = True
+
     @model_validator(mode="after")
     def _resolve_evidence_threshold(self) -> Settings:
         """Eşiği, açıkça verilmediyse embedding sağlayıcısından çözer.

@@ -1,9 +1,11 @@
 /**
  * API istemcisi.
  *
- * Backend'in hata sözleşmesi tekildir: { error: { code, message } }.
+ * Backend'in hata sözleşmesi tekildir: { error: { code, message, request_id } }.
  * Buradaki tek iş, o mesajı kullanıcıya olduğu gibi taşımak — arayüz kendi hata
  * metnini uydurmaz, backend zaten anlaşılır Türkçe üretir (app/core/errors.py).
+ * `request_id` 002 lider turunda zarfa eklendi: destek kodu yanıt başlığında
+ * değil gövdede taşınır, böylece tarayıcının başlık politikasına bağlı kalmaz.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -69,6 +71,19 @@ export class ApiError extends Error {
     message: string,
     public readonly code: string,
     public readonly status: number,
+    /**
+     * Sunucunun ürettiği istek kimliği; destek için kullanıcıya gösterilir ve
+     * aynı kimlik sunucu loglarında aranabilir.
+     *
+     * `null` olabilir: ağ hatası gibi sunucuya hiç ulaşmayan durumlarda ortada
+     * bir istek kaydı yoktur. Sunucudan dönen HER hata zarfı taşır
+     * (`apps/api/app/core/errors.py::ErrorDetail`), dolayısıyla `null` "sunucu
+     * vermedi" değil "sunucuya varılamadı" demektir.
+     *
+     * Bu alan lider turunda sözleşme olarak sabitlendi; ekranda nasıl
+     * gösterileceği güvenilirlik şeridinin işi (T406 frontend).
+     */
+    public readonly requestId: string | null = null,
   ) {
     super(message);
   }
@@ -99,6 +114,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       error?.message ?? "İşlem tamamlanamadı. Lütfen tekrar deneyin.",
       error?.code ?? "unknown",
       response.status,
+      error?.requestId ?? null,
     );
   }
 
@@ -125,8 +141,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 /**
- * Hata zarfını okur — backend'in TEK biçimi: `{ error: { code, message } }`
- * (`app/core/errors.py`).
+ * Hata zarfını okur — backend'in TEK biçimi:
+ * `{ error: { code, message, request_id } }` (`app/core/errors.py::ErrorEnvelope`).
  *
  * FastAPI'nin ham `{detail: [...]}` doğrulama biçimi için istemcide savunma kodu
  * YOK, çünkü sunucu 9 Ağustos'ta `validation_error_handler` ile her 422'yi de bu
@@ -134,14 +150,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
  * İki biçimi istemcide tanımaya çalışmak kapanmış bir deliği ikinci kez yamamak
  * olurdu ve ham İngilizce Pydantic metnini kullanıcıya taşırdı (Anayasa V).
  */
-function errorEnvelope(body: unknown): { code?: string; message?: string } | null {
+function errorEnvelope(
+  body: unknown,
+): { code?: string; message?: string; requestId?: string } | null {
   if (typeof body !== "object" || body === null) return null;
   const error = (body as { error?: unknown }).error;
   if (typeof error !== "object" || error === null) return null;
-  const { code, message } = error as { code?: unknown; message?: unknown };
+  const { code, message, request_id: requestId } = error as {
+    code?: unknown;
+    message?: unknown;
+    request_id?: unknown;
+  };
   return {
     code: typeof code === "string" ? code : undefined,
     message: typeof message === "string" ? message : undefined,
+    // Alan adı sunucuda `request_id`; burada tek yerde camelCase'e çevrilir ki
+    // zarf biçimi arayüzün geri kalanına sızmasın.
+    requestId: typeof requestId === "string" ? requestId : undefined,
   };
 }
 
