@@ -18,10 +18,40 @@ export interface DemoUser {
   role: "instructor" | "student";
 }
 
+/**
+ * Depodaki oturumu okur.
+ *
+ * Bozuk değer uygulamayı ÇÖKERTMEMELİ: `JSON.parse` doğrudan çağrıldığında
+ * hatalı bir localStorage kaydı bütün sayfayı düşürüyordu ve yenilemek de
+ * kurtarmıyordu — kayıt hâlâ bozuk olduğu için kullanıcı kalıcı olarak kilitli
+ * kalıyordu. Artık bozuk kayıt temizlenir ve giriş ekranına düşülür.
+ *
+ * Biçim de doğrulanır: eksik alanlı bir nesne daha sonra `user.role` okunurken
+ * patlamak yerine burada reddedilir.
+ */
 export function getStoredUser(): DemoUser | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(USER_KEY);
-  return raw ? (JSON.parse(raw) as DemoUser) : null;
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (isDemoUser(parsed)) return parsed;
+  } catch {
+    // düşülecek: aşağıda temizlenir
+  }
+  signOut();
+  return null;
+}
+
+function isDemoUser(value: unknown): value is DemoUser {
+  if (typeof value !== "object" || value === null) return false;
+  const u = value as Record<string, unknown>;
+  return (
+    typeof u.id === "string" &&
+    typeof u.email === "string" &&
+    typeof u.fullName === "string" &&
+    (u.role === "instructor" || u.role === "student")
+  );
 }
 
 export function signIn(user: DemoUser): void {

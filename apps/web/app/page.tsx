@@ -38,7 +38,7 @@ export default function LoginPage() {
       {/* Sol: tez paneli */}
       <section className="flex flex-col justify-between p-8 lg:p-14">
         <p className="rise text-sm font-medium tracking-wide text-brand">
-          Doğuş Üniversitesi · COME 491
+          Doğuş Üniversitesi · COME 492
         </p>
 
         <div className="py-16 lg:py-0">

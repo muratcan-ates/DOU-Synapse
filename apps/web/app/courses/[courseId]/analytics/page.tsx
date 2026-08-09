@@ -8,98 +8,45 @@
  * - Eğitmen: "sınıf nerede zorlanıyor?" → konu bazlı sınıf ortalaması + en çok
  *   yanlış yapılan sorular + kapsam dışı ret oranı
  *
- * Tasarım kararları:
- * - Sıralama en düşük skordan başlar. Listenin tepesi "önce şuna bak" demektir;
- *   alfabetik sıra bu ekranın tek işini yapmasını engellerdi.
- * - Skor sayısı mono, seviye etiketi metinle birlikte. Renk tek başına bilgi
- *   taşımaz (DESIGN.md): "Geliştirilmeli" yazısı rozetin içindedir.
- * - Geliştirilmeli = warning, danger DEĞİL. Kırmızı bu üründe hata rengi değildir
- *   ve düşük skor bir hata değil, çalışma yönüdür.
- * - "Resmî not değildir" ibaresi ekranda zorunludur (ARCHITECTURE §5, KVKK notu).
+ * Sıralama en düşük skordan başlar: listenin tepesi "önce şuna bak" demektir.
+ * Alfabetik sıra bu ekranın tek işini yapmasını engellerdi.
  */
 
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { MetricRow, PageHeader, PreviewBanner } from "@/components/page-state";
 import { Badge, Card } from "@/components/ui";
-import { getStoredUser } from "@/lib/api";
-
-/** Seviye eşikleri spec FR-027 ile birebir: <0.40 · 0.40-0.74 · >=0.75 */
-function levelFor(score: number) {
-  if (score >= 0.75) return { label: "İyi", tone: "success" as const };
-  if (score >= 0.4) return { label: "Orta", tone: "info" as const };
-  return { label: "Geliştirilmeli", tone: "warning" as const };
-}
-
-interface TopicRow {
-  name: string;
-  /** 0-1 arası EWMA skoru */
-  score: number;
-  answers: number;
-  /** Eğitmen görünümünde sınıf ortalaması, öğrencide kendi skoru */
-  classAverage?: number;
-}
-
-const STUDENT_TOPICS: TopicRow[] = [
-  { name: "Deadlock", score: 0.32, answers: 6 },
-  { name: "Bellek yönetimi", score: 0.48, answers: 4 },
-  { name: "CPU zamanlama", score: 0.71, answers: 9 },
-  { name: "Senkronizasyon", score: 0.78, answers: 5 },
-  { name: "Süreçler ve thread'ler", score: 0.86, answers: 11 },
-];
-
-const INSTRUCTOR_TOPICS: TopicRow[] = [
-  { name: "Deadlock", score: 0.38, answers: 84, classAverage: 0.38 },
-  { name: "Senkronizasyon", score: 0.52, answers: 61, classAverage: 0.52 },
-  { name: "Bellek yönetimi", score: 0.63, answers: 73, classAverage: 0.63 },
-  { name: "CPU zamanlama", score: 0.74, answers: 96, classAverage: 0.74 },
-  { name: "Süreçler ve thread'ler", score: 0.81, answers: 108, classAverage: 0.81 },
-];
-
-const MISSED_QUESTIONS = [
-  { topic: "Deadlock", stem: "Banker's algoritmasında güvenli durum ne demektir?", wrongRate: 0.68 },
-  { topic: "Senkronizasyon", stem: "wait() çağrısı mutex içinde yapılırsa ne olur?", wrongRate: 0.61 },
-  { topic: "Bellek yönetimi", stem: "Sayfa hatası (page fault) hangi anda oluşur?", wrongRate: 0.54 },
-];
+import { masteryLevel, MASTERY_THRESHOLDS } from "@/lib/labels";
+import { CLASS_TOPICS, MISSED_QUESTIONS, STUDENT_TOPICS, type PreviewTopic } from "@/lib/preview-data";
+import { useSession } from "@/lib/session";
 
 /**
- * Özet metrik kartı: dört sayı tek satırda, etiket sayının ALTINDA.
- * Sayı büyük ve mono; göz önce rakama, sonra etikete gider.
+ * Konu satırı: sıra · ad · ince ilerleme şeridi · cevap sayısı · skor · seviye.
+ * Şerit dekoratif değil; iki konuyu karşılaştırmayı sayıdan hızlı yapar.
  */
-function SummaryCard({ items }: { items: { value: string; label: string }[] }) {
-  return (
-    <Card className="mb-6">
-      <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-        {items.map((item) => (
-          <div key={item.label}>
-            <p className="font-mono text-2xl text-fg">{item.value}</p>
-            <p className="mt-1 text-xs text-fg-muted">{item.label}</p>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
-/**
- * Konu satırı: sıra numarası · ad · skor · seviye rozeti · ince ilerleme şeridi.
- * Şerit dekoratif değil; iki konuyu yan yana karşılaştırmayı sayıdan hızlı yapar.
- */
-function TopicRowItem({ row, rank }: { row: TopicRow; rank: number }) {
-  const level = levelFor(row.score);
+function TopicRow({ row, rank }: { row: PreviewTopic; rank: number }) {
+  const level = masteryLevel(row.score);
+  const percent = Math.round(row.score * 100);
   return (
     <li className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0">
       <span className="w-6 shrink-0 font-mono text-xs text-fg-subtle">#{rank}</span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-fg">{row.name}</p>
-        <div className="mt-1.5 h-1 w-full max-w-[220px] rounded-full bg-border">
+        <div
+          className="mt-1.5 h-1 w-full max-w-[220px] rounded-full bg-border"
+          role="img"
+          aria-label={`${row.name}: yüzde ${percent}`}
+        >
           <div
             className="h-1 rounded-full bg-fg-subtle"
-            style={{ width: `${Math.round(row.score * 100)}%` }}
+            style={{ width: `${percent}%` }}
           />
         </div>
       </div>
-      <span className="shrink-0 text-xs text-fg-subtle">{row.answers} cevap</span>
+      <span className="hidden shrink-0 text-xs text-fg-subtle sm:inline">
+        {row.answers} cevap
+      </span>
       <span className="w-10 shrink-0 text-right font-mono text-sm text-fg">
         {row.score.toFixed(2)}
       </span>
@@ -112,50 +59,46 @@ function TopicRowItem({ row, rank }: { row: TopicRow; rank: number }) {
 
 export default function AnalyticsPreviewPage() {
   const { courseId } = useParams<{ courseId: string }>();
-  const isInstructor = getStoredUser()?.role === "instructor";
+  const { isInstructor } = useSession();
 
-  const topics = isInstructor ? INSTRUCTOR_TOPICS : STUDENT_TOPICS;
+  const topics = isInstructor ? CLASS_TOPICS : STUDENT_TOPICS;
   const sorted = [...topics].sort((a, b) => a.score - b.score);
   const average = topics.reduce((sum, t) => sum + t.score, 0) / topics.length;
-  const needsWork = topics.filter((t) => t.score < 0.4).length;
+  const needsWork = topics.filter((t) => t.score < MASTERY_THRESHOLDS.medium).length;
   const totalAnswers = topics.reduce((sum, t) => sum + t.answers, 0);
 
   return (
     <AppShell>
       <CourseNav courseId={courseId} />
 
-      <div className="mb-6 rounded-lg border border-border bg-brand-subtle px-4 py-2">
-        <p className="text-sm text-brand">
-          Tasarım önizlemesi: sayılar örnek veridir. İlerleme motoru (EWMA servisi)
-          yazıldı ve testli; bu ekranı besleyen analitik uçları E fazında bağlanacak.
-        </p>
-      </div>
+      <PreviewBanner>
+        sayılar örnek veridir. İlerleme motoru (EWMA servisi) yazıldı ve testli;
+        bu ekranı besleyen analitik uçları E fazında bağlanacak.
+      </PreviewBanner>
 
-      <div className="mb-6">
-        <h1 className="text-2xl text-fg">
-          {isInstructor ? "Sınıf analitiği" : "İlerlemem"}
-        </h1>
-        <p className="prose-tr mt-1 text-sm text-fg-muted">
-          {isInstructor
+      <PageHeader
+        title={isInstructor ? "Sınıf analitiği" : "İlerlemem"}
+        description={
+          isInstructor
             ? "Konu bazlı sınıf ortalaması, en çok yanlış yapılan sorular ve kapsam dışı ret oranı."
-            : "Konu bazlı çalışma göstergen. En düşük skordan başlayarak sıralı."}
-        </p>
-      </div>
+            : "Konu bazlı çalışma göstergen. En düşük skordan başlayarak sıralı."
+        }
+      />
 
-      <SummaryCard
+      <MetricRow
         items={
           isInstructor
             ? [
                 { value: average.toFixed(2), label: "Sınıf ortalaması" },
-                { value: String(needsWork), label: "Zorlanılan konu" },
-                { value: String(totalAnswers), label: "Cevaplanan soru" },
+                { value: needsWork, label: "Zorlanılan konu" },
+                { value: totalAnswers, label: "Cevaplanan soru" },
                 { value: "%7", label: "Kapsam dışı ret oranı" },
               ]
             : [
                 { value: average.toFixed(2), label: "Genel skorun" },
-                { value: String(needsWork), label: "Çalışman gereken konu" },
-                { value: String(totalAnswers), label: "Cevapladığın soru" },
-                { value: String(topics.length), label: "Takip edilen konu" },
+                { value: needsWork, label: "Çalışman gereken konu" },
+                { value: totalAnswers, label: "Cevapladığın soru" },
+                { value: topics.length, label: "Takip edilen konu" },
               ]
         }
       />
@@ -169,7 +112,7 @@ export default function AnalyticsPreviewPage() {
         </div>
         <ul>
           {sorted.map((row, index) => (
-            <TopicRowItem key={row.name} row={row} rank={index + 1} />
+            <TopicRow key={row.name} row={row} rank={index + 1} />
           ))}
         </ul>
       </Card>

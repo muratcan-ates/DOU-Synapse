@@ -3,12 +3,16 @@
 /** Katılımcı yönetimi (yalnız eğitmen). API: GET/POST/DELETE /courses/{id}/members */
 
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { api, ApiError, getStoredUser } from "@/lib/api";
+import { useCallback, useState } from "react";
+import { api } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
+import { useSession } from "@/lib/session";
 import type { Member } from "@/lib/types";
+import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
-import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
+import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
+import { Badge, Button, Card, ConfirmAction, EmptyState, Input } from "@/components/ui";
 
 export default function MembersPage() {
   return (
@@ -20,44 +24,27 @@ export default function MembersPage() {
 
 function MembersView() {
   const { courseId } = useParams<{ courseId: string }>();
-  const [members, setMembers] = useState<Member[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const me = getStoredUser();
+  const { user } = useSession();
 
-  const load = useCallback(() => {
-    api
-      .get<Member[]>(`/courses/${courseId}/members`)
-      .then((data) => {
-        setMembers(data);
-        setError(null);
-      })
-      .catch((e: unknown) =>
-        setError(e instanceof ApiError ? e.message : "Bağlantı kurulamadı."),
-      );
-  }, [courseId]);
-
-  useEffect(load, [load]);
+  const fetchMembers = useCallback(
+    () => api.get<Member[]>(`/courses/${courseId}/members`),
+    [courseId],
+  );
+  const { data: members, error, loading, reload } = useResource(fetchMembers, [courseId]);
 
   return (
     <div>
       <CourseNav courseId={courseId} />
 
-      <div className="rise mb-6">
-        <h1 className="text-3xl font-semibold tracking-tight text-fg">
-          Katılımcılar
-        </h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          Öğrenciler yalnızca kayıtlı oldukları dersin materyalini görür; asistan
-          da yalnız o materyalden cevap verir.
-        </p>
-      </div>
+      <PageHeader
+        title="Katılımcılar"
+        description="Öğrenciler yalnızca kayıtlı oldukları dersin materyalini görür; asistan da yalnız o materyalden cevap verir."
+      />
 
-      <AddMemberForm courseId={courseId} onAdded={load} />
+      <AddMemberForm courseId={courseId} onAdded={reload} />
 
-      {error && <p className="mb-4 text-sm text-danger">{error}</p>}
-      {members === null && !error && (
-        <p className="text-sm text-fg-muted">Yükleniyor…</p>
-      )}
+      {error && <ErrorNote message={error} />}
+      {loading && <Loading />}
 
       {members?.length === 0 && (
         <EmptyState title="Bu derste henüz katılımcı yok." />
@@ -73,7 +60,7 @@ function MembersView() {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-fg">
                   {member.full_name ?? member.email}
-                  {member.user_id === me?.id && (
+                  {member.user_id === user?.id && (
                     <span className="ml-2 text-xs text-fg-subtle">(siz)</span>
                   )}
                 </p>
@@ -88,11 +75,21 @@ function MembersView() {
                 {member.status === "revoked" ? (
                   <Badge tone="warning">Erişim kapalı</Badge>
                 ) : (
-                  member.user_id !== me?.id && (
-                    <RevokeButton
-                      courseId={courseId}
-                      userId={member.user_id}
-                      onRevoked={load}
+                  // Kendini çıkarma yok: dersin son eğitmeni kendini atarsa
+                  // ders sahipsiz kalır.
+                  member.user_id !== user?.id && (
+                    <ConfirmAction
+                      label="Çıkar"
+                      confirmLabel="Evet, çıkar"
+                      busyLabel="Çıkarılıyor…"
+                      question="Erişimi kapatılacak."
+                      ariaLabel={`${member.email} kullanıcısını dersten çıkar`}
+                      onConfirm={async () => {
+                        await api.delete(
+                          `/courses/${courseId}/members/${member.user_id}`,
+                        );
+                        await reload();
+                      }}
                     />
                   )
                 )}
@@ -126,7 +123,7 @@ function AddMemberForm({
       setEmail("");
       onAdded();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "İşlem tamamlanamadı.");
+      setError(errorMessage(err, "İşlem tamamlanamadı."));
     } finally {
       setBusy(false);
     }
@@ -161,53 +158,11 @@ function AddMemberForm({
       <p className="mt-2 text-xs text-fg-subtle">
         Kullanıcının sisteme daha önce giriş yapmış olması gerekir.
       </p>
-      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+      {error && (
+        <div className="mt-2">
+          <ErrorNote message={error} />
+        </div>
+      )}
     </Card>
-  );
-}
-
-function RevokeButton({
-  courseId,
-  userId,
-  onRevoked,
-}: {
-  courseId: string;
-  userId: string;
-  onRevoked: () => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  if (!confirming) {
-    return (
-      <Button variant="ghost" onClick={() => setConfirming(true)}>
-        Çıkar
-      </Button>
-    );
-  }
-
-  return (
-    <span className="flex items-center gap-2">
-      <span className="text-xs text-fg-muted">Emin misiniz?</span>
-      <Button
-        variant="danger"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            await api.delete(`/courses/${courseId}/members/${userId}`);
-            onRevoked();
-          } finally {
-            setBusy(false);
-            setConfirming(false);
-          }
-        }}
-      >
-        Evet, çıkar
-      </Button>
-      <Button variant="ghost" onClick={() => setConfirming(false)}>
-        Vazgeç
-      </Button>
-    </span>
   );
 }

@@ -3,7 +3,11 @@
  * Shape lock: konteyner/buton/girdi radius 8px; pill YALNIZ rozetlerde.
  * Gölge yok denecek kadar az; ayrım kenarlık ve boşlukla kurulur.
  */
+"use client";
+
+import { useState } from "react";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
+import { errorMessage } from "@/lib/errors";
 
 export function Button({
   variant = "primary",
@@ -78,6 +82,82 @@ export function Badge({
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium tracking-wide ${styles}`}
     >
       {children}
+    </span>
+  );
+}
+
+/**
+ * Onayla-sonra-uygula: yıkıcı eylemler tek tıkla gerçekleşmez.
+ *
+ * Belge silme ve üyelik çıkarma aynı deseni ayrı ayrı yazıyordu ve biri hatayı
+ * sessizce yutuyordu — istek başarısız olunca kullanıcı hiçbir şey görmüyor,
+ * satır da yerinde duruyordu. Tek bileşende hata gösterimi zorunlu.
+ *
+ * Modal yok: onay, eylemin kendi satırında açılır; bağlam kaybolmaz.
+ */
+export function ConfirmAction({
+  label,
+  confirmLabel,
+  busyLabel,
+  question,
+  ariaLabel,
+  onConfirm,
+}: {
+  label: string;
+  confirmLabel: string;
+  busyLabel: string;
+  question: string;
+  ariaLabel?: string;
+  onConfirm: () => Promise<void>;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!confirming) {
+    return (
+      <span className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          aria-label={ariaLabel}
+          onClick={() => setConfirming(true)}
+        >
+          {label}
+        </Button>
+        {error && (
+          <span role="alert" className="text-xs text-danger">
+            {error}
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex items-center gap-2">
+      <span className="hidden text-xs text-fg-muted sm:inline">{question}</span>
+      <Button
+        variant="danger"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          setError(null);
+          try {
+            await onConfirm();
+            setConfirming(false);
+          } catch (e) {
+            setError(errorMessage(e, "İşlem tamamlanamadı."));
+            setConfirming(false);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? busyLabel : confirmLabel}
+      </Button>
+      <Button variant="ghost" onClick={() => setConfirming(false)}>
+        Vazgeç
+      </Button>
     </span>
   );
 }

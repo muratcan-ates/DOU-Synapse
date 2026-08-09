@@ -3,18 +3,29 @@
 /**
  * Ders detayı: materyal listesi, yükleme ve işlenme durumu.
  *
- * İşlenme durumu belirsiz spinner değil, durum rozetiyle gösterilir; `processing`
- * sürerken 2 sn'de bir tazelenir (DESIGN.md: uzun ingestion "takıldı" hissi vermemeli).
+ * İşlenme durumu belirsiz spinner değil, durum rozetiyle gösterilir; işlenen
+ * belge varken 2 sn'de bir tazelenir, bitince durur (DESIGN.md: uzun ingestion
+ * "takıldı" hissi vermemeli).
  */
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { api, ApiError, getStoredUser } from "@/lib/api";
+import { useCallback, useRef, useState } from "react";
+import { api } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
+import { chunkLocation, DOCUMENT_STATUS, formatBytes } from "@/lib/labels";
+import { useSession } from "@/lib/session";
 import type { ChunkPreview, Course, CourseDocument } from "@/lib/types";
+import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
+
+interface CourseView {
+  course: Course;
+  documents: CourseDocument[];
+}
 
 export default function CourseDetailPage() {
   return (
@@ -24,55 +35,29 @@ export default function CourseDetailPage() {
   );
 }
 
-const STATUS_LABELS: Record<
-  CourseDocument["status"],
-  { tone: "success" | "warning" | "danger" | "neutral"; label: string }
-> = {
-  uploaded: { tone: "neutral", label: "Sırada" },
-  processing: { tone: "warning", label: "İşleniyor" },
-  completed: { tone: "success", label: "Hazır" },
-  failed: { tone: "danger", label: "Başarısız" },
-};
-
 function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
-  const [course, setCourse] = useState<Course | null>(null);
-  const [documents, setDocuments] = useState<CourseDocument[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const user = getStoredUser();
-  const isInstructor = user?.role === "instructor";
+  const { isInstructor } = useSession();
 
-  const load = useCallback(async () => {
-    try {
-      const [c, docs] = await Promise.all([
-        api.get<Course>(`/courses/${courseId}`),
-        api.get<CourseDocument[]>(`/courses/${courseId}/documents`),
-      ]);
-      setCourse(c);
-      setDocuments(docs);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Bağlantı kurulamadı.");
-    }
+  const fetchView = useCallback(async (): Promise<CourseView> => {
+    const [course, documents] = await Promise.all([
+      api.get<Course>(`/courses/${courseId}`),
+      api.get<CourseDocument[]>(`/courses/${courseId}/documents`),
+    ]);
+    return { course, documents };
   }, [courseId]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const { data, error, loading, reload } = useResource(fetchView, [courseId], {
+    // İşlenmeyi bekleyen belge varken tazele; hepsi bitince dur.
+    pollWhile: (v) =>
+      v.documents.some((d) => d.status === "uploaded" || d.status === "processing"),
+  });
 
-  // İşlenen belge varken kısa aralıkla tazele; bittiğinde dur.
-  const hasActive = documents?.some(
-    (d) => d.status === "uploaded" || d.status === "processing",
-  );
-  useEffect(() => {
-    if (!hasActive) return;
-    const timer = setInterval(load, 2000);
-    return () => clearInterval(timer);
-  }, [hasActive, load]);
+  if (error) return <ErrorNote message={error} />;
+  if (loading || !data) return <Loading />;
 
-  if (error) return <p className="text-sm text-danger">{error}</p>;
-  if (!course || documents === null)
-    return <p className="text-sm text-fg-muted">Yükleniyor…</p>;
+  const { course, documents } = data;
+  const ready = documents.filter((d) => d.status === "completed").length;
 
   return (
     <div>
@@ -83,19 +68,14 @@ function CourseDetail() {
         / <span className="text-fg-muted">{course.code}</span>
       </nav>
 
-      <div className="rise mb-6">
-        <h1 className="text-3xl font-semibold tracking-tight text-fg">
-          {course.title}
-        </h1>
-        <p className="mt-1 text-sm text-fg-muted">
-          {documents.length} materyal ·{" "}
-          {documents.filter((d) => d.status === "completed").length} hazır
-        </p>
-      </div>
+      <PageHeader
+        title={course.title}
+        description={`${documents.length} materyal · ${ready} hazır`}
+      />
 
       <CourseNav courseId={courseId} />
 
-      {isInstructor && <UploadBox courseId={courseId} onUploaded={load} />}
+      {isInstructor && <UploadBox courseId={courseId} onUploaded={reload} />}
 
       {documents.length === 0 ? (
         <EmptyState
@@ -115,6 +95,7 @@ function CourseDetail() {
               courseId={courseId}
               doc={doc}
               isInstructor={isInstructor}
+              onDeleted={reload}
             />
           ))}
         </ul>
@@ -141,8 +122,7 @@ function UploadBox({
       await api.upload(`/courses/${courseId}/documents`, file);
       onUploaded();
     } catch (e) {
-      // Backend'in anlaşılır Türkçe mesajı olduğu gibi gösterilir.
-      setError(e instanceof ApiError ? e.message : "Yükleme tamamlanamadı.");
+      setError(errorMessage(e, "Yükleme tamamlanamadı."));
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";
@@ -172,7 +152,11 @@ function UploadBox({
           {busy ? "Yükleniyor…" : "Dosya seç"}
         </Button>
       </div>
-      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+      {error && (
+        <div className="mt-2">
+          <ErrorNote message={error} />
+        </div>
+      )}
     </Card>
   );
 }
@@ -181,23 +165,38 @@ function DocumentRow({
   courseId,
   doc,
   isInstructor,
+  onDeleted,
 }: {
   courseId: string;
   doc: CourseDocument;
   isInstructor: boolean;
+  onDeleted: () => void;
 }) {
   const [chunks, setChunks] = useState<ChunkPreview[] | null>(null);
   const [open, setOpen] = useState(false);
-  const status = STATUS_LABELS[doc.status];
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const status = DOCUMENT_STATUS[doc.status];
 
   async function togglePreview() {
-    if (!open && chunks === null) {
-      const data = await api.get<ChunkPreview[]>(
-        `/courses/${courseId}/documents/${doc.id}/chunks`,
-      );
-      setChunks(data);
+    if (open) {
+      setOpen(false);
+      return;
     }
-    setOpen((v) => !v);
+    if (chunks === null) {
+      try {
+        setChunks(
+          await api.get<ChunkPreview[]>(
+            `/courses/${courseId}/documents/${doc.id}/chunks`,
+          ),
+        );
+      } catch (e) {
+        // Önizleme çekilemezse panel açılmaz; sessizce boş açılırsa kullanıcı
+        // "parça yok" sanır — oysa yalnız istek başarısız oldu.
+        setPreviewError(errorMessage(e, "Önizleme alınamadı."));
+        return;
+      }
+    }
+    setOpen(true);
   }
 
   return (
@@ -206,7 +205,7 @@ function DocumentRow({
         <div className="min-w-0">
           <p className="truncate font-mono text-sm text-fg">{doc.file_name}</p>
           <p className="mt-0.5 text-xs text-fg-subtle">
-            {(doc.byte_size / 1024).toFixed(0)} KB
+            {formatBytes(doc.byte_size)}
             {doc.page_count ? ` · ${doc.page_count} sayfa` : ""}
             {doc.status === "completed" ? ` · ${doc.chunk_count} parça` : ""}
           </p>
@@ -214,11 +213,21 @@ function DocumentRow({
         <div className="flex items-center gap-2">
           <Badge tone={status.tone}>{status.label}</Badge>
           {isInstructor && doc.status === "completed" && (
-            <Button variant="ghost" onClick={togglePreview}>
+            <Button
+              variant="ghost"
+              aria-expanded={open}
+              onClick={togglePreview}
+            >
               {open ? "Gizle" : "İçerik önizle"}
             </Button>
           )}
-          {isInstructor && <DeleteDocumentButton courseId={courseId} doc={doc} />}
+          {isInstructor && (
+            <DeleteDocumentButton
+              courseId={courseId}
+              doc={doc}
+              onDeleted={onDeleted}
+            />
+          )}
         </div>
       </div>
 
@@ -228,37 +237,63 @@ function DocumentRow({
         </p>
       )}
 
-      {open && chunks && (
-        <div className="space-y-2 border-t border-border bg-bg px-6 py-4">
-          {chunks.slice(0, 5).map((chunk) => (
-            <div key={chunk.id} className="border-l-2 border-border-strong pl-4 py-1">
-              <p className="text-xs text-fg-subtle">
-                {chunk.page_number != null && `Sayfa ${chunk.page_number}`}
-                {chunk.slide_number != null && `Slayt ${chunk.slide_number}`}
-                {chunk.section_title && ` · ${chunk.section_title}`}
-                {` · ${chunk.token_count} token`}
-              </p>
-              <p
-                className={`prose-tr mt-1 line-clamp-3 text-sm text-fg-muted ${
-                  chunk.content_type === "code" ? "font-mono text-xs" : ""
-                }`}
-              >
-                {chunk.text}
-              </p>
-            </div>
-          ))}
-        </div>
+      {previewError && (
+        <p className="border-t border-border px-6 py-2 text-sm text-danger">
+          {previewError}
+        </p>
       )}
+
+      {open && chunks && <ChunkPreviewList chunks={chunks} />}
     </li>
+  );
+}
+
+/**
+ * Parça önizlemesi — ürünün tezinin görünür kanıtı: her parçanın yanında
+ * hangi sayfadan geldiği yazar. Atıflar bu metadata'dan üretilir, model
+ * metninden değil.
+ */
+function ChunkPreviewList({ chunks }: { chunks: ChunkPreview[] }) {
+  if (chunks.length === 0) {
+    return (
+      <p className="border-t border-border bg-bg px-6 py-4 text-sm text-fg-muted">
+        Bu belgeden parça çıkarılmamış.
+      </p>
+    );
+  }
+  return (
+    <div className="space-y-2 border-t border-border bg-bg px-6 py-4">
+      {chunks.slice(0, 5).map((chunk) => (
+        <div key={chunk.id} className="border-l-2 border-border-strong py-1 pl-4">
+          <p className="text-xs text-fg-subtle">
+            {chunkLocation(chunk)} · {chunk.token_count} token
+          </p>
+          <p
+            className={`prose-tr mt-1 line-clamp-3 text-sm text-fg-muted ${
+              chunk.content_type === "code" ? "font-mono text-xs" : ""
+            }`}
+          >
+            {chunk.text}
+          </p>
+        </div>
+      ))}
+      {chunks.length > 5 && (
+        <p className="pl-4 text-xs text-fg-subtle">
+          ve {chunks.length - 5} parça daha
+        </p>
+      )}
+    </div>
   );
 }
 
 function DeleteDocumentButton({
   courseId,
   doc,
+  onDeleted,
 }: {
   courseId: string;
   doc: CourseDocument;
+  onDeleted: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -266,8 +301,11 @@ function DeleteDocumentButton({
 
   if (!confirming) {
     return (
-      <Button variant="ghost" aria-label={`${doc.file_name} dosyasını sil`}
-        onClick={() => setConfirming(true)}>
+      <Button
+        variant="ghost"
+        aria-label={`${doc.file_name} dosyasını sil`}
+        onClick={() => setConfirming(true)}
+      >
         Sil
       </Button>
     );
@@ -286,10 +324,11 @@ function DeleteDocumentButton({
           setError(null);
           try {
             await api.delete(`/courses/${courseId}/documents/${doc.id}`);
-            // Liste, üstteki polling/yenileme yerine tam sayfa durum tazelemesiyle döner.
-            window.location.reload();
+            // Tam sayfa yenileme yerine listeyi tazele: sayfa konumu ve açık
+            // önizlemeler korunur, ağ trafiği tek isteğe iner.
+            onDeleted();
           } catch (e) {
-            setError(e instanceof ApiError ? e.message : "Silinemedi.");
+            setError(errorMessage(e, "Silinemedi."));
             setBusy(false);
             setConfirming(false);
           }

@@ -14,6 +14,7 @@ import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
 import { SocraticLadder } from "@/components/socratic-ladder";
+import { PreviewBanner } from "@/components/page-state";
 import { Input, Button } from "@/components/ui";
 
 export default function ChatPreviewPage() {
@@ -23,12 +24,10 @@ export default function ChatPreviewPage() {
     <AppShell>
       <CourseNav courseId={courseId} />
 
-      <div className="mb-6 rounded-lg border border-border bg-brand-subtle px-4 py-2">
-        <p className="text-sm text-brand">
-          Tasarım önizlemesi: aşağıdaki konuşma örnek veridir. Cevap hattı
-          geliştirme planının 5-6. gününde bağlanacak.
-        </p>
-      </div>
+      <PreviewBanner>
+        aşağıdaki konuşma örnek veridir. Cevap hattı geliştirme planının 5-6.
+        gününde bağlanacak.
+      </PreviewBanner>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         {/* Konuşma sütunu: max 70ch okuma genişliği */}

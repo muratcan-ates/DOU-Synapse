@@ -3,10 +3,14 @@
 /** Ders listesi + ders açma (eğitmen). */
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { api, ApiError, getStoredUser } from "@/lib/api";
+import { useCallback, useState } from "react";
+import { api } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
+import { useSession } from "@/lib/session";
 import type { Course } from "@/lib/types";
+import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
+import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 
 export default function CoursesPage() {
@@ -18,40 +22,41 @@ export default function CoursesPage() {
 }
 
 function CourseList() {
-  const [courses, setCourses] = useState<Course[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const user = getStoredUser();
+  const { isInstructor } = useSession();
 
-  const load = useCallback(() => {
-    api
-      .get<Course[]>("/courses")
-      .then(setCourses)
-      .catch((e: unknown) => setError(e instanceof ApiError ? e.message : "Bağlantı kurulamadı."));
-  }, []);
+  const fetchCourses = useCallback(() => api.get<Course[]>("/courses"), []);
+  const { data: courses, error, loading, reload } = useResource(fetchCourses, []);
 
-  useEffect(load, [load]);
-
-  if (error) return <p className="text-sm text-danger">{error}</p>;
-  if (courses === null) return <p className="text-sm text-fg-muted">Yükleniyor…</p>;
+  if (error) return <ErrorNote message={error} />;
+  if (loading || !courses) return <Loading />;
 
   return (
     <div>
-      <div className="rise mb-8 flex items-end justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight text-fg">Derslerim</h1>
-        {user?.role === "instructor" && (
-          <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
-            {creating ? "Vazgeç" : "Yeni ders"}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Derslerim"
+        action={
+          isInstructor && (
+            <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
+              {creating ? "Vazgeç" : "Yeni ders"}
+            </Button>
+          )
+        }
+      />
 
-      {creating && <CreateCourseForm onCreated={() => { setCreating(false); load(); }} />}
+      {creating && (
+        <CreateCourseForm
+          onCreated={() => {
+            setCreating(false);
+            reload();
+          }}
+        />
+      )}
 
       {courses.length === 0 && !creating ? (
         <EmptyState
           title={
-            user?.role === "instructor"
+            isInstructor
               ? "Henüz dersiniz yok. Yeni ders açarak materyal yüklemeye başlayın."
               : "Henüz bir derse kayıtlı değilsiniz. Eğitmeninizin sizi eklemesini bekleyin."
           }
@@ -97,7 +102,7 @@ function CreateCourseForm({ onCreated }: { onCreated: () => void }) {
       await api.post("/courses", { code, title });
       onCreated();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "İşlem tamamlanamadı.");
+      setError(errorMessage(err, "İşlem tamamlanamadı."));
     } finally {
       setBusy(false);
     }
@@ -130,7 +135,11 @@ function CreateCourseForm({ onCreated }: { onCreated: () => void }) {
           {busy ? "Oluşturuluyor…" : "Oluştur"}
         </Button>
       </form>
-      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+      {error && (
+        <div className="mt-2">
+          <ErrorNote message={error} />
+        </div>
+      )}
     </Card>
   );
 }

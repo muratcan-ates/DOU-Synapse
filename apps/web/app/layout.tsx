@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DOU-Synapse",
   description:
-    "Ders materyaliyle sınırlandırılmış, kaynak gösteren yapay zekâ ders asistanı. Doğuş Üniversitesi COME 491/492",
+    "Ders materyaliyle sınırlandırılmış, kaynak gösteren yapay zekâ ders asistanı. Doğuş Üniversitesi COME 492",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
