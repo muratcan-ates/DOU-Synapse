@@ -703,6 +703,277 @@
         }
       }
     },
+    "/courses/{course_id}/chat/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Delete Chat Session",
+        "operationId": "delete_chat_session_courses__course_id__chat_sessions__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatDeletionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "List Messages",
+        "operationId": "list_messages_courses__course_id__chat_sessions__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatMessageOut"
+                  },
+                  "title": "Response List Messages Courses  Course Id  Chat Sessions  Session Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat/sessions": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Delete Course Chat History",
+        "operationId": "delete_course_chat_history_courses__course_id__chat_sessions_delete",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatDeletionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "List Sessions",
+        "description": "Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez.",
+        "operationId": "list_sessions_courses__course_id__chat_sessions_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatSessionOut"
+                  },
+                  "title": "Response List Sessions Courses  Course Id  Chat Sessions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/chat-history": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Delete All Chat History",
+        "description": "Aktif üyelikten bağımsız olarak kullanıcının tüm sohbet geçmişini sil.",
+        "operationId": "delete_all_chat_history_me_chat_history_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatDeletionOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/export": {
+      "get": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Export My Data",
+        "description": "Kullanıcının verisini açık uygulama filtreleriyle tek JSON dosyası olarak ver.",
+        "operationId": "export_my_data_me_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDataExportOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Anonymize My Account",
+        "description": "Kişisel profili anonimleştir, geçmişi sil ve üyelikleri iptal et.\n\nDers/materyal/konu sahipliği RESTRICT bağları nedeniyle silinmez. Profil satırı\nbenzersiz bir tombstone olarak kalır; bağlı akademik kayıtların bütünlüğü korunur.\nGerçek auth hesabı kimlik sağlayıcısında ayrıca kapatılmalıdır.",
+        "operationId": "anonymize_my_account_me_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountAnonymizationOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/topics": {
       "post": {
         "tags": [
@@ -1209,115 +1480,6 @@
         }
       }
     },
-    "/courses/{course_id}/chat/sessions": {
-      "get": {
-        "tags": [
-          "chat"
-        ],
-        "summary": "List Sessions",
-        "description": "Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez.",
-        "operationId": "list_sessions_courses__course_id__chat_sessions_get",
-        "parameters": [
-          {
-            "name": "course_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "Ders kimliği",
-              "title": "Course Id"
-            },
-            "description": "Ders kimliği"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatSessionOut"
-                  },
-                  "title": "Response List Sessions Courses  Course Id  Chat Sessions Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/courses/{course_id}/chat/sessions/{session_id}": {
-      "get": {
-        "tags": [
-          "chat"
-        ],
-        "summary": "List Messages",
-        "operationId": "list_messages_courses__course_id__chat_sessions__session_id__get",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Session Id"
-            }
-          },
-          {
-            "name": "course_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "Ders kimliği",
-              "title": "Course Id"
-            },
-            "description": "Ders kimliği"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatMessageOut"
-                  },
-                  "title": "Response List Messages Courses  Course Id  Chat Sessions  Session Id  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/courses/{course_id}/exams": {
       "post": {
         "tags": [
@@ -1773,6 +1935,44 @@
   },
   "components": {
     "schemas": {
+      "AccountAnonymizationOut": {
+        "properties": {
+          "anonymized": {
+            "type": "boolean",
+            "title": "Anonymized",
+            "default": true
+          },
+          "deleted_chat_sessions": {
+            "type": "integer",
+            "title": "Deleted Chat Sessions"
+          },
+          "revoked_memberships": {
+            "type": "integer",
+            "title": "Revoked Memberships"
+          },
+          "retained_owned_courses": {
+            "type": "integer",
+            "title": "Retained Owned Courses"
+          },
+          "identity_provider_action_required": {
+            "type": "boolean",
+            "title": "Identity Provider Action Required",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted_chat_sessions",
+          "revoked_memberships",
+          "retained_owned_courses",
+          "message"
+        ],
+        "title": "AccountAnonymizationOut"
+      },
       "AnswerFeedbackOut": {
         "properties": {
           "question_id": {
@@ -1966,6 +2166,19 @@
         ],
         "title": "ChatAvailabilityOut",
         "description": "Asistanın bu kullanıcı için açık olup olmadığı.\n\nArayüzün sekmeyi kilitlemek için ihtiyaç duyduğu tek bilgi. `reason` ve\n`message` sunucudan gelir; arayüz kendi metnini uydurmaz (Anayasa V) ve\nmuafiyet kuralını tekrarlamaz — eğitmene her zaman `available=True` döner."
+      },
+      "ChatDeletionOut": {
+        "properties": {
+          "deleted_sessions": {
+            "type": "integer",
+            "title": "Deleted Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted_sessions"
+        ],
+        "title": "ChatDeletionOut"
       },
       "ChatMessageOut": {
         "properties": {
@@ -2793,6 +3006,395 @@
         },
         "type": "object",
         "title": "ExamStartRequest"
+      },
+      "ExportAnswerOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "given": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "hint_level": {
+            "type": "integer",
+            "title": "Hint Level"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "answered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Answered At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question_id",
+          "given",
+          "is_correct",
+          "score",
+          "hint_level",
+          "feedback",
+          "answered_at"
+        ],
+        "title": "ExportAnswerOut"
+      },
+      "ExportChatMessageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ChatRole"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "citations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "content",
+          "status",
+          "socratic_stage",
+          "seq",
+          "created_at"
+        ],
+        "title": "ExportChatMessageOut"
+      },
+      "ExportChatSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode"
+          },
+          "state": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "State"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ExportChatMessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "mode",
+          "title",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExportChatSessionOut"
+      },
+      "ExportExamSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ExamMode"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Question Ids"
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/ExportAnswerOut"
+            },
+            "type": "array",
+            "title": "Answers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "mode",
+          "started_at",
+          "expires_at",
+          "finished_at",
+          "score",
+          "question_ids"
+        ],
+        "title": "ExportExamSessionOut"
+      },
+      "ExportMasteryOut": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "topic_id",
+          "score",
+          "answer_count",
+          "updated_at"
+        ],
+        "title": "ExportMasteryOut"
+      },
+      "ExportMembershipOut": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "role",
+          "status",
+          "created_at"
+        ],
+        "title": "ExportMembershipOut"
+      },
+      "ExportProfileOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "created_at"
+        ],
+        "title": "ExportProfileOut"
       },
       "HTTPValidationError": {
         "properties": {
@@ -3625,6 +4227,62 @@
         ],
         "title": "TopicProgress",
         "description": "Öğrencinin tek bir konudaki durumu."
+      },
+      "UserDataExportOut": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1",
+            "title": "Schema Version",
+            "default": "1"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ExportProfileOut"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/ExportMembershipOut"
+            },
+            "type": "array",
+            "title": "Memberships"
+          },
+          "chat_sessions": {
+            "items": {
+              "$ref": "#/components/schemas/ExportChatSessionOut"
+            },
+            "type": "array",
+            "title": "Chat Sessions"
+          },
+          "exam_sessions": {
+            "items": {
+              "$ref": "#/components/schemas/ExportExamSessionOut"
+            },
+            "type": "array",
+            "title": "Exam Sessions"
+          },
+          "mastery": {
+            "items": {
+              "$ref": "#/components/schemas/ExportMasteryOut"
+            },
+            "type": "array",
+            "title": "Mastery"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "profile",
+          "memberships",
+          "chat_sessions",
+          "exam_sessions",
+          "mastery"
+        ],
+        "title": "UserDataExportOut"
       },
       "ValidationError": {
         "properties": {

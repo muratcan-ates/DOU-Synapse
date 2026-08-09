@@ -159,7 +159,9 @@ class TestBosBlueprintRouter:
         assert blueprints.router.prefix == "/courses/{course_id}"
         assert blueprints.router.routes == [], "blueprint şeridi başlayana kadar boş kalmalı"
         # Kaynak bağlamı + eğitmen retrieval laboratuvarı iki yeni yol ekler.
-        assert len(yollar) == 28, f"yol sayısı değişmiş: {len(yollar)}"
+        # Privacy router beş işlem ekler; ikisi mevcut sohbet yollarına DELETE
+        # metodu eklediği için OpenAPI'de üç yeni path görünür: 28 + 3 = 31.
+        assert len(yollar) == 31, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:
