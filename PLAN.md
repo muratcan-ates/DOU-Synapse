@@ -222,6 +222,6 @@ Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göste
 | [`docs/student-guide.md`](docs/student-guide.md) | Öğrenci ne yapar | ✅ |
 | [`docs/kvkk.md`](docs/kvkk.md) | Hangi kişisel veri nasıl işleniyor | ✅ metin hazır, **sayfa lider'de** |
 | [`docs/test-report.md`](docs/test-report.md) | Ölçülen kalite | R2 |
-| [`docs/security.md`](docs/security.md) | Güvenlik testleri | R1 |
-| [`docs/deployment.md`](docs/deployment.md) | Dağıtım | R3 |
+| `docs/security.md` | Güvenlik testleri | R1 — **dosya henüz yok** |
+| `docs/deployment.md` | Dağıtım | R3 — **dosya henüz yok** |
 | [`evaluation/calibration.md`](evaluation/calibration.md) | Eşik neden 0.81, neden hedefi tutmadı | ✅ |
