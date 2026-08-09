@@ -166,7 +166,7 @@ class TestBlueprintRouter:
         }
 
         assert len(blueprint_yollari) == 7, f"blueprint yolları: {sorted(blueprint_yollari)}"
-        assert len(yollar) == 35, f"yol sayısı değişmiş: {len(yollar)}"
+        assert len(yollar) == 38, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

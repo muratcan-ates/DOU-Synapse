@@ -22,7 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { user, ready } = useSession();
 
   /*
-   * Yönlendirme `ready` beklenerek yapılır. `ready` false demek "oturum yok"
+   * Yönlendirme ready beklenerek yapılır. ready false demek "oturum yok"
    * değil, "depo henüz okunmadı" demektir; ikisi karıştırılırsa her yenilemede
    * giriş yapmış kullanıcı da dışarı atılır. Yan etki render gövdesinde değil
    * burada durur.
@@ -42,6 +42,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-sm font-semibold text-fg">Synapse</span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              href="/account"
+              className="rounded-sm px-2 py-2 text-xs font-medium text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              Verilerim
+            </Link>
             <span className="hidden text-xs text-fg-muted sm:block">
               {user.fullName} ·{" "}
               {user.role === "instructor" ? "Eğitmen" : "Öğrenci"}
@@ -49,7 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {/*
              * Elde çizilmiş buton kaldırıldı: 28px yüksekliğindeydi (DESIGN.md
              * §Responsive 44×44px ister) ve odak halkası yoktu — klavyeyle
-             * gezen kullanıcı çıkış butonunu göremiyordu. Ortak `Button` her
+             * gezen kullanıcı çıkış butonunu göremiyordu. Ortak Button her
              * ikisini de taşıyor; kural tek yerde durur (Anayasa XI).
              */}
             <Button
