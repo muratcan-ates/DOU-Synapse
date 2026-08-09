@@ -502,9 +502,17 @@ async def post_chat(
 
     state: socratic.SocraticState | None = None
     decision: socratic.SocraticDecision | None = None
+    # Aranacak metin. QA'da mesajın kendisi; Sokratik modda OTURUMUN AÇILIŞ SORUSU.
+    #
+    # Sokratik turlarda gelen mesaj bir denemedir, bir soru değil: "sanırım dört koşul",
+    # "hı", "sadece söyle". Bunlarla arama yapılırsa hiçbir parça bulunmaz ve merdiven,
+    # kanıt eşiğine takılıp çöker — canlı koşuda birebir bu gözlendi. Merdiven tek bir
+    # sorunun etrafında ilerler, dolayısıyla arama da o soruya bağlı kalır.
+    search_query = question
     if chat_session.mode is ChatMode.SOCRATIC:
         state = _stored_state(chat_session) if not _is_first_turn(chat_session) else None
         decision = socratic.advance(state, question)
+        search_query = await _opening_question(session, chat_session, fallback=question)
 
     cached_answer = None
     if chat_session.mode is ChatMode.QA:
@@ -514,7 +522,7 @@ async def post_chat(
         answer = cached_answer
     else:
         answer = await produce_answer(
-            question=question,
+            question=search_query,
             course_id=context.course_id,
             mode=chat_session.mode,
             decision=decision,
@@ -524,7 +532,8 @@ async def post_chat(
             settings=settings,
         )
 
-    await _record_turn(session, context, chat_session, question, answer, decision)
+    # Soru metni hiçbir log satırına yazılmaz (FR-035 redaksiyonu).
+    await _record_turn(session, context, chat_session, answer, decision)
 
     if cached_answer is None and chat_session.mode is ChatMode.QA:
         await _store_cache(session, context.course_id, question, answer)
@@ -666,6 +675,31 @@ async def _load_or_create_session(
     return chat_session
 
 
+async def _opening_question(
+    session: AsyncSession, chat_session: ChatSession, *, fallback: str
+) -> str:
+    """Oturumu açan kullanıcı mesajı — Sokratik merdivenin üzerinde ilerlediği soru.
+
+    Ayrı bir sütunda kopyalanmıyor, ilk mesajdan okunuyor: aynı veriyi iki yerde
+    tutmak, birinin güncellenip diğerinin unutulduğu bir hata sınıfı açardı
+    (Anayasa XI). `chat_messages` üzerinde (session_id, created_at, seq) indeksi var.
+
+    NOT (gruba iletildi): öğrencinin son denemesi üretime geçirilemiyor çünkü
+    `contracts.Generator.generate` imzasında böyle bir alan yok. Kademe metni bu
+    yüzden denemeye değil yalnız kademeye ve soruya göre şekilleniyor.
+    """
+    content = await session.scalar(
+        select(ChatMessage.content)
+        .where(
+            ChatMessage.session_id == chat_session.id,
+            ChatMessage.role == ChatRole.USER,
+        )
+        .order_by(ChatMessage.created_at, ChatMessage.seq)
+        .limit(1)
+    )
+    return content or fallback
+
+
 async def _lookup_cache(
     session: AsyncSession, course_id: UUID, question: str
 ) -> GeneratedAnswer | None:
@@ -721,12 +755,20 @@ async def _record_turn(
     session: AsyncSession,
     context: CourseContext,
     chat_session: ChatSession,
-    question: str,
     answer: GeneratedAnswer,
     decision: socratic.SocraticDecision | None,
 ) -> None:
-    """Sokratik durumu kalıcılaştırır ve kademe geçişini olay olarak loglar."""
-    if decision is None:
+    """Sokratik durumu kalıcılaştırır ve kademe geçişini olay olarak loglar.
+
+    Durum **yalnız gerçekten ipucu servis edildiyse** yazılır. Kanıt eşiği aşılamadıysa
+    ya da soru kapsam dışıysa kullanıcı hiçbir ipucu almamıştır; o turu ilerleme saymak,
+    öğrenciyi hiç yardım almadığı bir kademeye taşırdı. Canlı koşuda gözlendi: materyali
+    olmayan bir soruya yapılan deneme, merdiveni sessizce bir kademe yukarı itiyordu.
+
+    Ölçü olarak `answer.socratic_stage` kullanılıyor çünkü bu alan tam olarak "bu turda
+    şu kademenin ipucu gösterildi" demektir; abstention yollarında None kalır.
+    """
+    if decision is None or answer.socratic_stage is None:
         return
 
     chat_session.state = {**chat_session.state, "socratic": decision.state.to_json()}
@@ -759,8 +801,6 @@ async def _record_turn(
                 }
             },
         )
-    # Soru metni loglanmaz: kişisel veri redaksiyonu (FR-035) burada da geçerli.
-    _ = (question, answer)
 
 
 async def _append_messages(

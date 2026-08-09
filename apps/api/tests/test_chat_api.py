@@ -57,10 +57,11 @@ class CourseScopedRetriever:
     def __init__(self) -> None:
         self.by_course: dict[UUID, list[RetrievedChunk]] = {}
         self.seen_course_ids: list[UUID] = []
+        self.seen_queries: list[str] = []
 
     async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
-        del query
         self.seen_course_ids.append(course_id)
+        self.seen_queries.append(query)
         return self.by_course.get(course_id, [])[:limit]
 
 
@@ -582,6 +583,95 @@ class TestSokratikUc:
             assert response.json()["socratic_stage"] == SocraticStage.DIAGNOSE.value
             assert chunk.file_name in response.json()["answer"]
             assert response.json()["citations"][0]["chunk_id"] == str(chunk.chunk_id)
+
+    async def test_sokratik_arama_denemeyle_degil_acilis_sorusuyla_yapilir(
+        self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
+    ) -> None:
+        """Canlı koşuda yakalanan ikinci kusurun regresyon testi.
+
+        Sokratik turlarda gelen mesaj bir denemedir, bir soru değil. Denemeyle arama
+        yapılırsa ("hı", "sadece söyle") hiçbir parça bulunmaz, kanıt eşiği devreye
+        girer ve merdiven ikinci turda çöker.
+        """
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_id = await _create_course(client, ayse, "COME301")
+        chunk = pipeline.serve(course_id, make_chunk())
+        pipeline.answers(
+            GeneratedAnswer(
+                status=AnswerStatus.ANSWERED,
+                mode=ChatMode.SOCRATIC,
+                text="Bir ipucu.",
+                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
+            )
+        )
+        acilis = "Kritik bölge koşulları nelerdir?"
+
+        ilk = await client.post(
+            f"/courses/{course_id}/chat",
+            json={"message": acilis, "mode": "socratic"},
+            headers=ayse,
+        )
+        await client.post(
+            f"/courses/{course_id}/chat",
+            json={
+                "message": "sanırım karşılıklı dışlama",
+                "mode": "socratic",
+                "session_id": ilk.json()["session_id"],
+            },
+            headers=ayse,
+        )
+
+        assert pipeline.retriever.seen_queries == [acilis, acilis]
+
+    async def test_ipucu_verilmeyen_tur_merdiveni_ilerletmez(
+        self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
+    ) -> None:
+        """Canlı koşuda yakalanan kusurun regresyon testi.
+
+        Kanıt bulunamayan bir turda öğrenci hiçbir ipucu almaz. O turu ilerleme
+        saymak, öğrenciyi hiç yardım almadığı bir kademeye taşırdı: birkaç kanıtsız
+        soruyla merdiven sessizce tırmanılabilirdi.
+        """
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_id = await _create_course(client, ayse, "COME301")
+        pipeline.answers()  # derste materyal yok → her tur insufficient_context
+
+        ilk = await client.post(
+            f"/courses/{course_id}/chat",
+            json={"message": "Kaynaksız bir soru", "mode": "socratic"},
+            headers=ayse,
+        )
+        session_id = ilk.json()["session_id"]
+        for _ in range(3):
+            tur = await client.post(
+                f"/courses/{course_id}/chat",
+                json={
+                    "message": "gerçek bir denemem var burada",
+                    "mode": "socratic",
+                    "session_id": session_id,
+                },
+                headers=ayse,
+            )
+            assert tur.json()["status"] == "insufficient_context"
+            assert tur.json()["socratic_stage"] is None
+
+        # Materyal gelince merdiven en baştan, DIAGNOSE'dan başlamalı.
+        chunk = pipeline.serve(course_id, make_chunk())
+        pipeline.answers(
+            GeneratedAnswer(
+                status=AnswerStatus.ANSWERED,
+                mode=ChatMode.SOCRATIC,
+                text="Bir ipucu.",
+                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
+            )
+        )
+        sonraki = await client.post(
+            f"/courses/{course_id}/chat",
+            json={"message": "yeni denemem", "mode": "socratic", "session_id": session_id},
+            headers=ayse,
+        )
+
+        assert sonraki.json()["socratic_stage"] == SocraticStage.DIAGNOSE.value
 
     async def test_oturum_modu_ortada_degistirilemez(
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
