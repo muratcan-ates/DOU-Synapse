@@ -44,7 +44,6 @@ from app.api.deps import CourseContext, CourseMemberDep, SessionDep
 from app.core.config import Settings, get_settings
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
 from app.models.assessment import Answer, ExamMode, ExamSession, Question, QuestionStatus, Topic
-from app.modules.assessment import question_gen
 from app.modules.assessment.grading import (
     GradingOutcome,
     SourceMaterial,
@@ -375,9 +374,9 @@ async def submit_answer(
     if question is None:
         raise NotFoundError("Soru bulunamadı.")
 
-    outcome = await grade_answer(
-        session, question, payload.given, completion=question_gen.resolve_completion()
-    )
+    # Sağlayıcı burada çözümlenmez: MCQ ve kısa cevap LLM'siz puanlanır ve
+    # sağlayıcı arızası sınavı düşürmemeli (grading.grade_answer, FR-020).
+    outcome = await grade_answer(session, question, payload.given)
 
     answer = Answer(
         session_id=exam.id,

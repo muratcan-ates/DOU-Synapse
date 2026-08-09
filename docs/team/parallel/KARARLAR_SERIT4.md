@@ -247,21 +247,20 @@ kullanılıyor. Adaptör `question_gen.py` içinde, çünkü `app/modules/genera
 Çözümleme sırası (`resolve_retriever` / `resolve_completion`): önce testlerin
 bağladığı sahteler, sonra gerçek modüller, ikisi de yoksa `None` → uç **503**.
 
-**Geçici dikiş, bilerek:** gerçek modüllerin import'u `try/except ImportError`
-içinde. Sebep, Şerit 1/2/4'ün `main`'e hangi sırayla ineceğinin garanti olmaması.
-Üçü `main`'de buluştuğunda bu iki `try/except` **düz import'a sadeleşmeli** —
-dosyada da yazılı.
+Geçici olarak `try/except ImportError`'lı bir dikiş kullanıldı (modüller o an
+`main`'de değildi); **lider üç şeridi birleştirince dikiş söküldü**, artık düz
+import var. Söz verilen sadeleştirme yapıldı, borç bırakılmadı.
 
-**Gerçek modüllerle doğrulandı** (üç dal geçici bir dalda birleştirilip koşuldu,
-341 test yeşil):
+**Gerçek modüllerle, `main` üzerinde doğrulandı** (411 test yeşil, mypy 58 dosyada
+temiz):
 
 ```
 RETRIEVER  -> HybridRetriever
-COMPLETION -> _GenerationCompletion
-RETRIEVAL  -> 2 chunk bulundu
+COMPLETION -> _GenerationCompletion / FakeLlmClient
+RETRIEVAL  -> 2 chunk
 UC         -> HTTP 200
-RAPOR      -> requested 2 · returned 0 · accepted 0 ·
-              sebep: "yanıtta 'questions' dizisi yok" (x2)
+RAPOR      -> requested=2 returned=0 accepted=0 rejected=0
+SEBEPLER   -> ["yanıtta 'questions' dizisi yok", x2]
 ```
 
 Yani hat uçtan uca bağlı. **Soru üretilmemesinin tek sebebi API anahtarının
@@ -270,6 +269,21 @@ düşüyor, o da sohbet cevabı üretmek için yazıldığı için soru şeması
 karşılamıyor. Bu fail-closed davranıştır — uydurma soru havuza girmiyor — ama
 `07_SERIT_RAPORLARI.md §7`'deki "gerçek LLM çağrısı yapılamadı" kalemi soru
 üretimini de kapsıyor: **anahtar geldiğinde tek gerçek üretim turu koşulmalı.**
+
+O turda ölçülecek tek sayı `accepted / returned`, yani SC-009. Rapor bu oranı
+zaten taşıyor ve paydası dürüst: ayrıştırılamayan bir yanıt `returned`'a
+yazılmıyor (bu bir kez yanlış yazılmıştı, canlı denemede yakalandı ve testle
+sabitlendi).
+
+**Sağlayıcı hatası iki uçta iki farklı şey demektir, karıştırılmadı:**
+
+| | Soru üretimi | Puanlama |
+|---|---|---|
+| Sağlayıcı kurulamazsa | **503** — LLM'siz yapılacak bir şey yok | cevap kaydedilir, o cevap "değerlendirilemedi" (FR-020) |
+| Neden | uydurma soru havuza girmemeli | bir sağlayıcı arızası öğrencinin MCQ cevaplarını da düşürmemeli |
+
+Bu yüzden `grade_answer` sağlayıcıyı **ancak LLM yoluna girdiğinde** çözümler;
+`mcq` ve `short_answer` sağlayıcı hiç kurulamıyorken bile puanlanır.
 
 `contracts.py`'ye bir alan eklenmesi gerekmedi.
 

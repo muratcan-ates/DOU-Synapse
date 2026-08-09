@@ -166,15 +166,6 @@ async def generate_questions(
     """
     settings = get_settings()
 
-    retriever = question_gen.resolve_retriever(session)
-    completion = question_gen.resolve_completion()
-    if retriever is None or completion is None:
-        raise question_gen.ProviderUnavailableError(
-            "Soru üretimi şu anda kullanılamıyor: arama ve dil modeli servisleri "
-            "henüz bağlanmadı. Havuzdaki mevcut sorular ve sınav provası çalışmaya "
-            "devam ediyor."
-        )
-
     topic = await session.get(Topic, payload.topic_id)
     if topic is None or topic.course_id != context.course_id:
         raise NotFoundError("Konu bulunamadı.")
@@ -189,8 +180,8 @@ async def generate_questions(
         question_type=payload.question_type,
         count=payload.count or settings.question_generation_batch,
         created_by=context.user_id,
-        retriever=retriever,
-        completion=completion,
+        retriever=question_gen.resolve_retriever(session),
+        completion=question_gen.resolve_completion(),
         answer_format=payload.answer_format,
         example_questions=payload.example_questions,
         retrieval_limit=settings.retrieval_top_k,
