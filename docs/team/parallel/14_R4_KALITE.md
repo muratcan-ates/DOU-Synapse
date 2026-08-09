@@ -108,11 +108,36 @@ Yap:
   testle (denemenin prompt'a girdiği doğrulanabilir; çıktının kalitesi
   sahte sağlayıcıyla doğrulanamaz, bunu karıştırma).
 
-## Kusur 4 — sahte sağlayıcı "cevap gibi" metin üretiyor
+## Kusur 4 — sahte sağlayıcı "cevap gibi" metin üretiyor (**EN YÜKSEK ÖNCELİK — DOĞRULANDI**)
 
-Şerit 4'ün bulgusu: API anahtarı yokken soru üretimi istendiğinde sahte
-sağlayıcı **sohbet cevabı** üretiyor, soru değil. Fail-closed davranıyor
-(uydurma soru havuza girmiyor) ama sahte sağlayıcı moda duyarlı değil.
+Şerit 4'ün bulgusuydu; 9 Ağustos 18:50'de lider **birebir üretti**. Artık şüphe
+değil, tekrarlanabilir bir kusur:
+
+```bash
+curl -s -X POST "http://localhost:<port>/courses/<course_id>/questions/generate" \
+  -H "Authorization: Bearer dev:11111111-1111-1111-1111-111111111111" \
+  -H 'Content-Type: application/json' \
+  -d '{"topic_id":"<topic_id>","question_type":"mcq","count":3}'
+```
+
+```json
+{"requested": 3, "returned": 0, "accepted": 0, "rejected": 0,
+ "rejection_reasons": ["yanıtta 'questions' dizisi yok",
+                       "yanıtta 'questions' dizisi yok"]}
+```
+
+Sahte sağlayıcı sohbet cevabı üretiyor, soru değil; şema doğrulaması onu haklı
+olarak eliyor. Sistem fail-closed davranıyor (uydurma soru havuza GİRMİYOR, ki
+doğrusu bu) ama **sonuç şu: bu ortamda soru üretimi hiç çalışmadı.**
+
+**Neden en yüksek öncelik:** bu tek kusur üç şeyi birden kilitliyor.
+1. Sınav provası yalnız ELLE tohumlanmış sorularla gösterilebiliyor.
+2. Uçtan uca paketteki **üç vaka atlanıyor** (havuz kurulamadığı için).
+3. SC-009 (üretim kabul oranı) ölçülemiyor.
+
+Anahtar geldiğinde gerçek sağlayıcı bunu çözebilir — ama **çözeceğini
+varsayma, ölç.** Ve çevrimdışı demo yedeği (`LLM_FAKE_PROVIDER`) yine de
+çalışmak zorunda: R3'ün Plan C'si buna bağlı.
 
 Sahte sağlayıcı sadece bir test aracı değil — **çevrimdışı demo yedeği**
 (`LLM_FAKE_PROVIDER`). Modu tanımalı: QA'da kaynaklı cevap taslağı, Sokratik'te
