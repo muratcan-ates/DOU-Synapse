@@ -376,7 +376,7 @@ async def submit_answer(
         raise NotFoundError("Soru bulunamadı.")
 
     outcome = await grade_answer(
-        session, question, payload.given, completion=question_gen.get_completion()
+        session, question, payload.given, completion=question_gen.resolve_completion()
     )
 
     answer = Answer(
