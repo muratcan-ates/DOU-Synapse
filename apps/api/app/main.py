@@ -38,6 +38,12 @@ from app.core.warmup import start_warmup
 
 logger = get_logger("app.request")
 
+API_SECURITY_HEADERS: dict[str, str] = {
+    "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -78,6 +84,16 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def security_headers(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        """API JSON yanıtlarına yüzeye uygun, fail-closed tarayıcı politikası ekle."""
+        response = await call_next(request)
+        for key, value in API_SECURITY_HEADERS.items():
+            response.headers[key] = value
+        return response
 
     @app.middleware("http")
     async def request_logging(
