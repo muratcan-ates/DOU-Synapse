@@ -130,10 +130,58 @@ değiştirilebilir. Değişikliği bu şerit yapmaz; dosya Şerit 1'in.
 - **Eşik kapsam dışı soruların hepsini yakalasa bile atıf doğruluğunu garanti
   etmez.** İkisi ayrı mekanizma, ayrı metrik.
 
-## 7. Sonraki adım — holdout doğrulaması
+## 7. Holdout doğrulaması — kalibrasyondaki ayrışma TUTMADI
 
-Eşik dondurulduktan sonra holdout üzerinde koşuldu. Sonuç `docs/test-report.md`'de.
+Eşik dondurulduktan sonra holdout üzerinde koşuldu
+(`evaluation/results/2026-08-09T1412-holdout-hybrid-retrieval.json`).
 
-**Kural:** holdout sonucu kötü çıkarsa eşik holdout'a bakarak DEĞİŞTİRİLMEZ. Doğru
-hamle kalibrasyon setini büyütüp yeniden kalibre etmektir; aksi hâlde holdout ikinci
-bir kalibrasyon setine dönüşür ve ölçüm bölümünün tamamı düşer.
+| | Kalibrasyon (n=15) | Holdout (n=55) |
+|---|---|---|
+| Kapsam dışı `best_dense_score` | 0.7824 – 0.8066 (n=3) | 0.7824 – 0.8173 (n=10) |
+| Cevaplanabilir `best_dense_score` | 0.8121 – 0.8963 (n=12) | **0.7629** – 0.9083 (n=45) |
+| İki sınıf ayrık mı | **EVET** | **HAYIR — örtüşüyor** |
+
+Seçilen eşik 0.81'de holdout'ta ölçülen davranış:
+
+| | Sayı | Oran |
+|---|---:|---:|
+| Doğru ret (kapsam dışı yakalandı) | 8 / 10 | **%80** |
+| Kaçan kapsam dışı | 2 / 10 | %20 |
+| Yanlış ret (cevaplanabilir soru reddedildi) | 5 / 45 | %11 |
+
+**PLAN §5 hedefi "kapsam dışı doğru ret ≥ %90" idi; retrieval kapısı düzeyinde
+ölçülen değer %80 ile hedefin ALTINDA.**
+
+### Bunun anlamı
+
+Kalibrasyon setindeki temiz ayrışma bir yapaylıktı. Üç kapsam dışı soruyla ölçülen
+0.0054 genişliğindeki aralık, on kapsam dışı soruyla bakıldığında kayboldu:
+holdout'ta en düşük skorlu **cevaplanabilir** soru (0.7629), en yüksek skorlu
+**kapsam dışı** sorudan (0.8173) daha düşük skor aldı. Tek bir dense skor eşiğiyle
+bu iki sınıfı bu materyalde ayırmak mümkün değil.
+
+Bu, kalibrasyon-holdout ayrımının tam olarak yakalaması gereken durumdur ve ayrımın
+neden pazarlıksız olduğunun somut kanıtıdır: eşik holdout'ta ayarlansaydı %100 doğru
+ret raporlanır, sayı gerçekte hiçbir şey ifade etmezdi.
+
+### Eşik holdout'a bakılarak DEĞİŞTİRİLMEYECEK
+
+Tarama, holdout'ta 0.820'nin 10/10 kapsam dışı yakaladığını gösteriyor. **O değere
+geçmek yasaktır.** Geçilseydi holdout ikinci bir kalibrasyon setine dönüşür ve
+raporlanan bütün ret sayıları geçersiz olurdu (Anayasa III).
+
+Doğru hamleler, öncelik sırasıyla:
+
+1. **Kalibrasyon setini büyüt** (kapsam dışı n=3 → n≥15) ve yeniden kalibre et.
+   Bugünkü ayrışma bu kadar dar bir örneklemle ölçülemezdi.
+2. **Tek dense skor eşiğinin yeterliliğini sorgula.** Kapı yalnız `best_dense_score`
+   bakıyor; füzyonlu skor, ilk-k skorlarının dağılımı veya FTS sinyalinin varlığı
+   daha ayırt edici olabilir. Bu bir Şerit 1 tasarım kararıdır.
+3. **Kapsam dışı reddi tek başına retrieval kapısına yükleme.** Uçtan uca hatta
+   generation ve guardrail halkaları da reddedebilir; SC-005'in gerçek değeri uçtan
+   uca ölçümle belirlenir. Buradaki %80 **yalnız retrieval kapısı** düzeyindedir.
+
+**Şerit 1'e bildirim (güncellenmiş):** `config.py`'deki `0.35` atıl (hiç
+tetiklenmiyor) ve mutlaka değişmeli. Kalibrasyondan çıkan değer **0.81**, ama
+holdout bu değerin hedefi tutturmadığını gösteriyor. Karar Şerit 1'in: 0.81'e geçip
+sınırlılığı raporlamak, ya da kapının tasarımını gözden geçirmek.

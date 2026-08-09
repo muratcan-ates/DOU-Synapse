@@ -94,19 +94,28 @@ class MissedQuestion(BaseModel):
 class OutOfScopeStat(BaseModel):
     """Kapsam dışı ret istatistiği (SC-005).
 
+    Kaynak `request_logs`, `chat_messages` DEĞİL. Sebep bir gizlilik kararı: sohbet
+    mesajları eğitmene bilinçli olarak kapalıdır (0003), çünkü öğrencinin hocasına
+    sormaya çekindiği soruyu sisteme sorabilmesi ürünün gerekçelerinden biri.
+    `request_logs` ise şema gereği serbest metin taşımaz — eğitmen "kaç soru kapsam
+    dışı diye reddedildi" sorusunun cevabını alır, kimsenin ne sorduğunu göremez.
+
     `source` alanı zorunlu: sayının nereden geldiği görünmeden sayı raporlanamaz.
-    `chat_messages` tablosu (migration 0003, Şerit 3) henüz inmemişse alan
-    `unavailable` döner ve oran None kalır — tahmin üretilmez.
+    Henüz hiç cevap üretilmemişse `rate` None kalır — 0.0 döndürmek "bu derste hiçbir
+    soru reddedilmedi" demek olurdu ve bu, ölçülmemiş bir şeyi ölçülmüş gibi
+    göstermek olurdu (Anayasa III).
     """
 
-    source: Literal["chat_messages", "unavailable"]
+    source: Literal["request_logs"]
     rate: float | None
-    out_of_scope_count: int | None
+    out_of_scope_count: int
     #: `insufficient_context` AYRI tutulur: "materyalde var olabilir ama kanıt zayıf"
     #: ile "bu ders bu konuyu hiç kapsamıyor" farklı şeylerdir ve SC-005 yalnız
     #: ikincisini ölçer (contracts.AnswerStatus).
-    insufficient_context_count: int | None
-    assistant_message_count: int | None
+    insufficient_context_count: int
+    #: Payda: bir cevap durumu üretmiş istekler. Durumu olmayan istekler (ör. oturum
+    #: listeleme) sayılmaz — onlar reddedilebilecek bir soru taşımıyor.
+    answered_request_count: int
     note: str
 
 
@@ -134,61 +143,38 @@ async def _course_topic_count(session: AsyncSession, course_id: UUID) -> int:
     return int(result.scalar_one())
 
 
-_CHAT_MESSAGES_PROBE = text(
-    """
-    SELECT count(*) FROM information_schema.columns
-    WHERE table_schema = 'public'
-      AND table_name = 'chat_messages'
-      AND column_name IN ('course_id', 'role', 'status')
-    """
-)
-
 _OUT_OF_SCOPE_QUERY = text(
     """
     SELECT count(*) FILTER (WHERE status = 'out_of_scope')          AS out_of_scope,
            count(*) FILTER (WHERE status = 'insufficient_context')  AS insufficient_context,
-           count(*)                                                 AS total
-    FROM chat_messages
-    WHERE course_id = :course_id AND role = 'assistant'
+           count(*) FILTER (WHERE status IS NOT NULL)               AS answered
+    FROM request_logs
+    WHERE course_id = :course_id
     """
 )
 
 
 async def _out_of_scope_stat(session: AsyncSession, course_id: UUID) -> OutOfScopeStat:
-    """Kapsam dışı ret oranı — kaynağı yoksa sayı da yok.
+    """Kapsam dışı ret oranı (SC-005) — ölçüm kaydından.
 
-    Tablo varlığı her istekte sorulur (tek ucuz katalog sorgusu) çünkü süreç ömrü
-    boyunca önbelleğe alınırsa 0003 uygulandıktan sonra API yeniden başlatılana
-    kadar "kaynak yok" demeye devam ederdi — ve bunu kimse fark etmezdi.
+    Okuma yetkisi `0005_analytics.sql`'deki eğitmen kapsamlı SELECT politikasından
+    gelir; RLS aynı oturumda devrede olduğu için eğitmen yalnız kendi dersinin
+    satırlarını sayar. Öğrenci bu uca zaten erişemez (CourseInstructorDep).
     """
-    available = int((await session.execute(_CHAT_MESSAGES_PROBE)).scalar_one()) == 3
-    if not available:
-        return OutOfScopeStat(
-            source="unavailable",
-            rate=None,
-            out_of_scope_count=None,
-            insufficient_context_count=None,
-            assistant_message_count=None,
-            note=(
-                "Sohbet kayıtları henüz bu ortamda yok (migration 0003). "
-                "Kapsam dışı ret oranı ölçülmedi."
-            ),
-        )
-
     row = (await session.execute(_OUT_OF_SCOPE_QUERY, {"course_id": course_id})).one()
-    out_of_scope, insufficient_context, total = int(row[0]), int(row[1]), int(row[2])
+    out_of_scope, insufficient_context, answered = int(row[0]), int(row[1]), int(row[2])
     return OutOfScopeStat(
-        source="chat_messages",
-        rate=(out_of_scope / total) if total else None,
+        source="request_logs",
+        rate=(out_of_scope / answered) if answered else None,
         out_of_scope_count=out_of_scope,
         insufficient_context_count=insufficient_context,
-        assistant_message_count=total,
+        answered_request_count=answered,
         note=(
-            "Oran, asistanın verdiği cevaplar içinde kapsam dışı diye reddedilenlerin "
+            "Oran, cevap üretilen istekler içinde kapsam dışı diye reddedilenlerin "
             "payıdır. Kanıt yetersizliği (insufficient_context) bu orana girmez."
         )
-        if total
-        else "Bu derste henüz asistan cevabı yok; oran hesaplanamadı.",
+        if answered
+        else "Bu derste henüz cevap üretilmemiş; oran hesaplanmadı.",
     )
 
 

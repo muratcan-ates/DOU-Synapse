@@ -1,6 +1,6 @@
 # Başarı testi raporu (T056)
 
-**Sürüm: taslak · 9 Ağustos 2026**
+**Sürüm: taslak · 9 Ağustos 2026** (retrieval katmanı ölçüldü; uçtan uca katman KOŞULMADI)
 **Ölçüm dalı:** `feat/analytics-eval` · **git:** bu belgenin her sayısı bir koşu
 dosyasına ya da yeniden koşturulabilir bir komuta dayanır.
 
@@ -110,12 +110,14 @@ Recall'a katılırsa metriği yapay olarak düşürür.
 | Metrik | Hedef | Ölçülen | Kaynak |
 |---|---:|---|---|
 | Dersler arası veri sızıntısı | 0 | **0** (çekirdek şema, 8/8 iddia) | `supabase/tests/rls_isolation.sql` |
-| Ölçme katmanı izolasyonu (0004, 15 politika) | 0 sızıntı | **0** (53/53 iddia, 21/21 mutasyon yakalandı) | `supabase/tests/rls_assessment.sql` + `rls_assessment_mutation_check.sh` |
+| Ölçme + analitik izolasyonu (0004'ün 15, 0005'in 1 politikası) | 0 sızıntı | **0** (58/58 iddia, 24/24 mutasyon yakalandı) | `supabase/tests/rls_assessment.sql` + `rls_assessment_mutation_check.sh` |
 | Kaynaksız gösterilen akademik cevap | %0 | **KOŞULMADI** | generation + guardrail hattı inmedi |
-| Holdout Recall@5 | ≥ %80 | **KOŞULMADI** | retrieval hattı inmedi |
-| Holdout Recall@8 | ≥ %80 | **KOŞULMADI** | retrieval hattı inmedi |
-| Citation precision | ≥ %90 | **KOŞULMADI** | uçtan uca hat inmedi |
-| Kapsam dışı doğru ret | ≥ %90 | **KOŞULMADI** | uçtan uca hat inmedi |
+| Holdout Recall@5 | ≥ %80 | **%100** (45/45) — §6'daki uyarıyla | `2026-08-09T1412-holdout-hybrid-retrieval.json` |
+| Holdout Recall@8 | ≥ %80 | **%100** (45/45) — §6'daki uyarıyla | aynı dosya |
+| Holdout MRR | — | **0.893** (hibrit) · 0.774 (dense) | aynı dosya + dense koşusu |
+| Citation precision | ≥ %90 | **KOŞULMADI** | uçtan uca koşu yapılmadı |
+| Kapsam dışı doğru ret (retrieval kapısı) | ≥ %90 | **%80** (8/10) — hedefin ALTINDA | `evaluation/calibration.md` §7 |
+| Kapsam dışı doğru ret (uçtan uca, SC-005) | ≥ %90 | **KOŞULMADI** | uçtan uca koşu yapılmadı |
 | Faithfulness (20-30 cevap, 2 etiketleyici) | raporlanır | **KOŞULMADI** | gerçek cevap üretilmedi |
 | Sokratik modda kod/çözüm sızıntısı | test setinde 0 | **KOŞULMADI** | Sokratik hat inmedi |
 | Injection testleri (≥15 vaka) | geçer | **KOŞULMADI** (vakalar hazır: 15) | guardrail zinciri inmedi |
@@ -147,10 +149,10 @@ kapısı geçiyordu — aynı anda psql'de öğrenci taslak sınav sorusunu gör
 | Kanıt | Sayı |
 |---|---|
 | Çekirdek şema iddiaları (`rls_isolation.sql`) | 8 PASS / 0 FAIL |
-| Ölçme katmanı iddiaları (`rls_assessment.sql`) | 53 PASS / 0 FAIL |
-| Kapsanan politika | 0004'ün 15 politikasının tamamı |
+| Ölçme + analitik iddiaları (`rls_assessment.sql`) | 58 PASS / 0 FAIL |
+| Kapsanan politika | 0004'ün 15 politikasının tamamı + 0005'in eğitmen okuma politikası |
 | Politikası olmayan işlemler (fail-closed sınandı) | questions DELETE, answers UPDATE, mastery DELETE |
-| Mutasyon testi | 21 mutasyon, **21'i yakalandı** |
+| Mutasyon testi | 24 mutasyon, **24'ü yakalandı** |
 
 Mutasyon testi "politika var" demekle yetinmez: her politikayı teker teker bozar ve
 **hangi iddianın** kırmızıya döndüğünü doğrular. Yalnız "bir yerde FAIL çıktı" demek
@@ -199,19 +201,86 @@ yapılacaktır. `build_corpus.py` ve `evaluate.py` bu durumda uyarır.
 
 ---
 
-## 6. Baseline vs hybrid (T044)
+## 6. Holdout retrieval metrikleri ve baseline vs hybrid (T044)
 
-**KOŞULMADI.** Retrieval hattı `main`'e inmedi.
+**KOŞULDU — 9 Ağustos 2026.** Aynı holdout, aynı gün, aynı config; yalnız arama
+modu değişti. Korpus `fastembed` (`intfloat/multilingual-e5-large`) ile gömüldü.
 
-Yöntem hazır: aynı holdout, aynı gün, aynı config üzerinde `--mode dense` ve
-`--mode hybrid`; soru başına isabet/ıskalama üzerinden **eşleştirilmiş bootstrap**
-(10.000 yeniden örnekleme, sabit tohum, %95 güven aralığı) ve **McNemar'ın tam
-testi**. İkisi de `evaluation/metrics.py`'de yazılı ve testli.
+### Holdout metrikleri (n=45 puanlanabilir soru, 55 soru soruldu)
 
-Eşleştirme şart: iki kol aynı soruları görür, dolayısıyla bağımsız örneklem varsayan
-bir test buradaki korelasyonu görmezden gelir ve aralığı olduğundan geniş verir.
-McNemar'ın ki-kare yaklaşımı değil tam biçimi kullanılır: n≈50'lik bir sette ayrışan
-soru sayısı çoğu zaman tek haneli kalır ve yaklaşım o aralıkta güvenilmez.
+| Metrik | Dense-only | Hibrit (dense+FTS+RRF) |
+|---|---:|---:|
+| Recall@5 | 1.000 | 1.000 |
+| Recall@8 | 1.000 | 1.000 |
+| MRR | 0.774 | **0.893** |
+| Tam kapsama@8 (çok kaynaklı, n=14) | 0.929 | 0.857 |
+| p95 gecikme (retrieval, LLM'siz) | 0.102 sn | 0.089 sn |
+
+Kategori kırılımı (hibrit): `direct` n=20 MRR 0.892 · `multi_chunk` n=10 MRR 0.950 ·
+`technical_term` n=10 MRR 0.850 · `code_review` n=5 MRR 0.867.
+
+### ⚠️ Recall %100 bir başarı ölçüsü DEĞİL — korpus çok küçük
+
+Korpusun tamamı **33 chunk**. `top_k=8`, yani her sorguda korpusun yaklaşık **dörtte
+biri** dönüyor. Bu boyutta Recall@8'in 1.0 çıkması retrieval kalitesinden çok
+korpusun küçüklüğünün sonucudur. **Hedef tutturuldu ama test zayıftır ve bu sayı
+"retrieval iyi çalışıyor" diye okunmamalıdır.**
+
+Ayırt edici olan metrik burada **MRR**: aynı sonuçlar bulunuyor ama hibrit onları
+belirgin biçimde daha üst sıralara koyuyor.
+
+Bu sınırlılığı gidermenin yolu materyali büyütmektir (daha çok dosya/sayfa). Şu anki
+paket chunking, atıf ve sayfa metadata'sı testleri için tasarlandı; retrieval
+sıralamasını zorlamak için değil.
+
+### Eşleştirilmiş anlamlılık
+
+Referans dense-only, aday hibrit. Eşleştirilmiş bootstrap 10.000 yeniden örnekleme,
+tohum sabit (20260809), %95 GA. McNemar yalnız ikili ölçütlerde, tam (binom) biçimde.
+Kaynak: `evaluation/results/holdout-dense-vs-hybrid-comparison.json`.
+
+| Ölçüt | n | Dense | Hibrit | Fark | %95 GA | Sıfırı dışlıyor mu |
+|---|---:|---:|---:|---:|---|---|
+| İsabet@5 | 45 | 1.000 | 1.000 | +0.000 | [0.000, 0.000] | hayır (McNemar p=1.00, 0 ayrışan) |
+| İsabet@8 | 45 | 1.000 | 1.000 | +0.000 | [0.000, 0.000] | hayır (McNemar p=1.00, 0 ayrışan) |
+| **Karşılıklı sıra (MRR)** | 45 | 0.774 | 0.893 | **+0.119** | **[+0.054, +0.191]** | **evet** |
+| Tam kapsama@8 | 14 | 0.929 | 0.857 | −0.071 | [−0.286, +0.143] | hayır (McNemar p=1.00, 2/1 ayrışan) |
+
+**Okuma:** hibrit, doğru parçayı dense-only'den daha üst sıraya koyuyor ve bu fark
+%95 güven aralığında sıfırı dışlıyor. "Buldu mu" sorusunda iki kol ayrışmıyor —
+ama yukarıda anlatıldığı gibi o ölçüt bu korpusta doygun, yani ayrışamaz.
+
+Tam kapsamada dense sayısal olarak önde görünüyor; aralık sıfırı içeriyor ve yalnız
+3 soru ayrışıyor, dolayısıyla **fark olduğu söylenemez.**
+
+**n=45 — yön göstergesi, kesin hüküm değildir.** Alt kümeler n≈10-14'tür.
+
+---
+
+## 6b. Kanıt eşiği kalibrasyonu ve holdout doğrulaması (T043)
+
+**KOŞULDU.** Ayrıntı ve tam tablolar `evaluation/calibration.md`'de. Özet:
+
+Seçilen eşik **0.81**, kalibrasyon setinde (n=15) iki sınıfın ayrıştığı 0.0054
+genişliğindeki aralığın orta noktası. **Holdout'ta bu ayrışma tutmadı**: kapsam dışı
+skorlar [0.7824, 0.8173], cevaplanabilir skorlar [0.7629, 0.9083] — örtüşüyorlar.
+
+Holdout'ta 0.81 eşiğinde: **8/10 doğru ret (%80)**, 2 kaçan, 45 cevaplanabilir
+sorunun 5'i yanlışlıkla reddedildi. **PLAN §5 hedefi %90; tutturulmadı.**
+
+İki bulgu ayrıca kayda değer:
+
+1. **`config.py`'deki varsayılan 0.35 atıl.** Ölçülen hiçbir skor 0.76'nın altına
+   inmiyor, yani o eşik hiçbir zaman tetiklenmez — kapı kodda var ama pratikte
+   kapalı bir anahtar. Tahmin olarak makul görünen bir sayının ölçülünce işlevsiz
+   çıkmasının somut örneği.
+2. **Eşik holdout'a bakılarak değiştirilmedi ve değiştirilmeyecek.** Tarama 0.820'nin
+   holdout'ta 10/10 yakaladığını gösteriyor; o değere geçmek holdout'u ikinci bir
+   kalibrasyon setine çevirir ve raporlanan bütün ret sayılarını geçersiz kılardı.
+   Doğru hamle kalibrasyon setini büyütmektir.
+
+Bu bölüm, kalibrasyon-holdout ayrımının neden pazarlıksız olduğunun kanıtıdır:
+ayrım olmasaydı bu rapor %100 doğru ret yazardı ve sayı hiçbir şey ifade etmezdi.
 
 ---
 
@@ -286,22 +355,44 @@ Raporlanabilir üç davranış kararı:
   başarısız olduğunu söylerdi.
 - "En çok yanlış yapılan sorular" payda ile birlikte döner. Değerlendirilmemiş
   cevaplar paydaya girmez: doğru saymak oranı düşürür, yanlış saymak yükseltir.
-- **Kapsam dışı ret oranı `chat_messages` tablosunu gerektirir (migration 0003).**
-  Tablo yoksa uç sayı uydurmaz: `source: "unavailable"`, `rate: null` döner.
+- **Kapsam dışı ret oranı `request_logs`'tan okunur, `chat_messages`'tan DEĞİL.**
+  Bu bir gizlilik kararının sonucu; §11b'ye bakınız.
+
+## 11b. Analitik ile sohbet gizliliği arasındaki çakışma ve çözümü
+
+T038 eğitmene kapsam dışı ret oranını göstermeyi gerektiriyor. İlk uygulama kaynağı
+`chat_messages` seçti ve **eğitmen bağlamında her zaman sıfır satır gördü.** Sebep
+kusur değildi: 0003, sohbet mesajlarını eğitmene bilinçli olarak kapatmış.
+
+> "Eğitmene okuma yetkisi bilinçli olarak VERİLMEDİ: öğrencinin hocasına sorma
+> çekindiği soruyu sisteme sorabilmesi ürünün gerekçelerinden biri, eğitmenin bunu
+> satır satır okuyabilmesi bunu bozar." — `0003_chat.sql`
+
+Aynı dosya çözümü de işaret etmişti: ölçüm kaydı için eğitmen kapsamlı bir SELECT
+politikası **0005'te** açılacaktı ve 0005 bu şeridin ayrılmış migration numarası.
+
+**Çözüm:** `0005_analytics.sql` yalnız `request_logs` üzerinde eğitmen kapsamlı bir
+SELECT politikası açar; analitik oradan okur. Fark belirleyici: `request_logs` şema
+gereği **serbest metin taşımaz** (soru metni, cevap metni yok; yalnız sayısal ve
+kategorik alanlar). Eğitmen "kaç soru kapsam dışı diye reddedildi" sorusunun cevabını
+alır, kimsenin ne sorduğunu göremez. Gizlilik kararı korunur, ölçüm mümkün olur.
+
+Kararın sessizce delinmediği ayrıca sınanıyor: `rls_assessment.sql` içinde
+`chat_messages_read__egitmen_ogrenci_sohbetini_OKUYAMAZ` iddiası var ve mutasyon
+testi, o politika eğitmene açılırsa iddianın kırmızı yandığını doğruluyor.
 
 ---
 
 ## 12. Test durumu
 
-**Ölçüldü (9 Ağustos):** `feat/analytics-eval` dalında **140 test yeşil**, ruff lint
-ve biçim temiz.
+**Ölçüldü (9 Ağustos):** `feat/analytics-eval` dalında (origin/main üzerine rebase
+edilmiş hâlde) **405 test yeşil**, ruff lint ve biçim temiz.
 
 ```bash
 cd apps/api && uv run pytest -q && uv run ruff check . && uv run ruff format --check .
 ```
 
-Bunun 92'si ölçüm dalı başlamadan önce vardı; 48'i bu dalda eklendi (11 analitik,
-37 metrik + harness).
+Bunun 52'si bu dalda eklendi: 13 analitik ucu, 39 metrik + harness testi.
 
 ---
 

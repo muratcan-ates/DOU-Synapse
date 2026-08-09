@@ -66,6 +66,9 @@ MUTATIONS=(
 "mastery_self_insert: uyelik sarti duserse|DROP POLICY mastery_self_insert ON mastery; CREATE POLICY mastery_self_insert ON mastery FOR INSERT WITH CHECK (user_id = app.current_user_id());|mastery_insert__uye_olunmayan_derse_yazilamaz"
 "mastery_self_update acilirsa|DROP POLICY mastery_self_update ON mastery; CREATE POLICY mastery_self_update ON mastery FOR UPDATE USING (true) WITH CHECK (true);|mastery_update__egitmen_ogrenci_skorunu_guncelleyemez"
 "mastery: DELETE politikasi eklenirse|CREATE POLICY mastery_delete_leak ON mastery FOR DELETE USING (true);|mastery_delete__politika_yok_gecmis_silinemez"
+"request_logs_instructor_read acilirsa|DROP POLICY request_logs_instructor_read ON request_logs; CREATE POLICY request_logs_instructor_read ON request_logs FOR SELECT USING (true);|request_logs_read__ogrenci_hicbir_kaydi_goremez"
+"request_logs_instructor_read dususe|DROP POLICY request_logs_instructor_read ON request_logs;|request_logs_read__egitmen_dersinin_kaydini_gorur"
+"chat_messages egitmene acilirsa|CREATE POLICY chat_messages_instructor_leak ON chat_messages FOR SELECT USING (app.is_instructor(course_id));|chat_messages_read__egitmen_ogrenci_sohbetini_OKUYAMAZ"
 )
 
 # Referans koşu: bozulmamış şemada hiçbir iddia kırmızı olmamalı. Bu kontrol olmadan

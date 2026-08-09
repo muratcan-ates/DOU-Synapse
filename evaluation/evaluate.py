@@ -689,22 +689,129 @@ def resweep(result_path: Path, gold_set_dir: Path, thresholds: tuple[float, ...]
     answerable = [s for s, category, _ in scores if category != "out_of_scope"]
 
     print(f"koşu: {result['run_id']} · embedding={result['embedding_provider']}")
-    print(f"  kapsam dışı (n={len(out_of_scope)}): "
-          f"min={min(out_of_scope):.4f} max={max(out_of_scope):.4f}")
-    print(f"  cevaplanabilir (n={len(answerable)}): "
-          f"min={min(answerable):.4f} max={max(answerable):.4f}")
+    print(
+        f"  kapsam dışı (n={len(out_of_scope)}): "
+        f"min={min(out_of_scope):.4f} max={max(out_of_scope):.4f}"
+    )
+    print(
+        f"  cevaplanabilir (n={len(answerable)}): "
+        f"min={min(answerable):.4f} max={max(answerable):.4f}"
+    )
     separable = max(out_of_scope) < min(answerable)
     print(f"  iki sınıf ayrık mı: {'EVET' if separable else 'HAYIR (örtüşüyor)'}")
     if separable:
-        print(f"  ayrışma aralığı: ({max(out_of_scope):.4f}, {min(answerable):.4f}] "
-              f"— genişlik {min(answerable) - max(out_of_scope):.4f}")
+        print(
+            f"  ayrışma aralığı: ({max(out_of_scope):.4f}, {min(answerable):.4f}] "
+            f"— genişlik {min(answerable) - max(out_of_scope):.4f}"
+        )
 
     print("\n  eşik   doğru_ret  kaçan  yanlış_ret  cevaplanan")
     for row in rows:
         print(
-            f"  {row['threshold']:.3f}  {row['correct_refusal']:>9}  {row['missed_out_of_scope']:>5}"
+            f"  {row['threshold']:.3f}  {row['correct_refusal']:>9}"
+            f"  {row['missed_out_of_scope']:>5}"
             f"  {row['incorrect_refusal']:>10}  {row['answered']:>10}"
         )
+    return 0
+
+
+def compare_runs(baseline_path: Path, candidate_path: Path, results_dir: Path) -> int:
+    """T044: iki kolun EŞLEŞTİRİLMİŞ karşılaştırması.
+
+    Eşleştirme şart — iki kol aynı soruları görür, dolayısıyla bağımsız örneklem
+    varsayan bir test buradaki korelasyonu görmezden gelir ve aralığı olduğundan
+    geniş verir. Yeniden örnekleme soru düzeyinde yapılır.
+
+    Üç ölçüt ayrı ayrı karşılaştırılır çünkü aynı şeyi ölçmüyorlar: isabet@5 "buldu
+    mu", karşılıklı sıra "kaçıncı sırada buldu", tam kapsama "hepsini buldu mu".
+    Biri doygunluğa ulaşmışken diğeri hâlâ ayrım yapabilir.
+    """
+    baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+    candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+
+    if baseline["set"] != candidate["set"]:
+        print("İki koşu farklı setlerde — karşılaştırma anlamsız.", file=sys.stderr)
+        return 1
+
+    def indexed(run: dict[str, Any]) -> dict[str, dict[str, Any]]:
+        return {
+            entry["item_id"]: entry
+            for entry in run["per_item"]
+            if entry["category"] in goldset.RETRIEVAL_CATEGORIES and entry["expected_sources"]
+        }
+
+    left, right = indexed(baseline), indexed(candidate)
+    shared = sorted(set(left) & set(right))
+    if not shared:
+        print("İki koşuda ortak puanlanabilir soru yok.", file=sys.stderr)
+        return 1
+
+    def ranks(entry: dict[str, Any]) -> list[int]:
+        return [rank for source in entry["ranks_by_source"] for rank in source]
+
+    def hit_at(entry: dict[str, Any], k: int) -> bool:
+        flat = ranks(entry)
+        return bool(flat) and min(flat) <= k
+
+    def reciprocal(entry: dict[str, Any]) -> float:
+        flat = ranks(entry)
+        return 1.0 / min(flat) if flat else 0.0
+
+    def full_coverage(entry: dict[str, Any], k: int) -> bool:
+        sources = entry["ranks_by_source"]
+        return bool(sources) and all(any(r <= k for r in source) for source in sources)
+
+    # Tam kapsama YALNIZ çok kaynaklı sorularda anlamlıdır (metrics.full_coverage_at_k
+    # ile aynı tanım). Tek kaynaklılar dahil edilseydi bu satırdaki sayı koşu
+    # dosyasındaki aynı adlı metrikten farklı çıkar ve raporda iki farklı "tam
+    # kapsama" dolaşırdı.
+    multi_source = [item_id for item_id in shared if len(left[item_id]["ranks_by_source"]) > 1]
+
+    comparisons: dict[str, Any] = {}
+    for name, extract, subset in (
+        ("hit_at_5", lambda e: 1.0 if hit_at(e, 5) else 0.0, shared),
+        ("hit_at_8", lambda e: 1.0 if hit_at(e, 8) else 0.0, shared),
+        ("reciprocal_rank", reciprocal, shared),
+        ("full_coverage_at_8", lambda e: 1.0 if full_coverage(e, 8) else 0.0, multi_source),
+    ):
+        if not subset:
+            continue
+        base_values = [extract(left[item_id]) for item_id in subset]
+        cand_values = [extract(right[item_id]) for item_id in subset]
+        bootstrap = metrics.paired_bootstrap(base_values, cand_values)
+        entry: dict[str, Any] = {
+            "n": len(subset),
+            "baseline_mean": sum(base_values) / len(base_values),
+            "candidate_mean": sum(cand_values) / len(cand_values),
+            "bootstrap": bootstrap.as_dict(),
+        }
+        if all(value in (0.0, 1.0) for value in base_values + cand_values):
+            entry["mcnemar"] = metrics.mcnemar(
+                [value == 1.0 for value in base_values],
+                [value == 1.0 for value in cand_values],
+            ).as_dict()
+        comparisons[name] = entry
+
+    output = {
+        "kind": "paired_comparison",
+        "set": baseline["set"],
+        "n_items": len(shared),
+        "baseline": {"run_id": baseline["run_id"], "mode": baseline["mode"]},
+        "candidate": {"run_id": candidate["run_id"], "mode": candidate["mode"]},
+        "embedding_provider": baseline["embedding_provider"],
+        "comparisons": comparisons,
+        "note": (
+            f"n={len(shared)} — yön göstergesi, kesin hüküm değildir. Eşleştirilmiş "
+            "bootstrap 10.000 yeniden örneklemeli, tohum sabit; McNemar tam (binom) "
+            "biçimde, yalnız ikili ölçütlerde."
+        ),
+    }
+    results_dir.mkdir(parents=True, exist_ok=True)
+    name = f"{baseline['set']}-{baseline['mode']}-vs-{candidate['mode']}-comparison.json"
+    path = results_dir / name
+    path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(output, ensure_ascii=False, indent=2))
+    print(f"\nsonuç: {path}")
     return 0
 
 
@@ -738,12 +845,19 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--sweep-min", type=float, default=0.0)
     parser.add_argument("--sweep-max", type=float, default=1.0)
     parser.add_argument("--sweep-step", type=float, default=0.05)
+    parser.add_argument(
+        "--compare",
+        type=Path,
+        nargs=2,
+        metavar=("REFERANS", "ADAY"),
+        help="İki koşu dosyasını eşleştirilmiş olarak karşılaştır (T044).",
+    )
     args = parser.parse_args(argv)
 
-    if args.sweep_from:
+    if args.sweep_from or args.compare:
         return args
     if not args.gold_set or not args.layer:
-        parser.error("--set ve --layer gerekir (ya da --sweep-from).")
+        parser.error("--set ve --layer gerekir (ya da --sweep-from / --compare).")
 
     args.corpus_provider = None
     if args.corpus:
@@ -758,8 +872,10 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 async def execute(args: argparse.Namespace) -> int:
+    if args.compare:
+        return compare_runs(args.compare[0], args.compare[1], args.results_dir)
     if args.sweep_from:
-        steps = int(round((args.sweep_max - args.sweep_min) / args.sweep_step)) + 1
+        steps = round((args.sweep_max - args.sweep_min) / args.sweep_step) + 1
         grid = tuple(
             round(args.sweep_min + index * args.sweep_step, 4) for index in range(max(1, steps))
         )

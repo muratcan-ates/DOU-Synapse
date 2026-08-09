@@ -165,6 +165,26 @@ async def _seed_answer(
         )
 
 
+async def _seed_requests(
+    engine: AsyncEngine, *, course_id: UUID, user_id: UUID, statuses: list[str | None]
+) -> None:
+    """`request_logs` satırları yazar; None = cevap durumu üretmeyen istek.
+
+    Durumu NULL olan satır paydaya girmemeli: oturum listeleme gibi istekler
+    reddedilebilecek bir soru taşımıyor ve oranı sulandırırlardı.
+    """
+    async with engine.begin() as conn:
+        for status in statuses:
+            await conn.execute(
+                text(
+                    "INSERT INTO request_logs (course_id, user_id, route, mode, status, "
+                    "http_status, latency_ms) VALUES (:cid, :uid, '/chat', 'qa', "
+                    "CAST(:status AS answer_status), 200, 120)"
+                ),
+                {"cid": course_id, "uid": user_id, "status": status},
+            )
+
+
 class TestStudentProgress:
     async def test_konular_en_dusuk_skordan_siralanir(
         self, client: AsyncClient, users: UserFactory
@@ -416,13 +436,13 @@ class TestClassAnalytics:
         assert missed[1]["graded_answer_count"] == 2  # NULL cevap paydaya girmedi
         assert missed[0]["topic_name"] == "Deadlock"
 
-    async def test_kapsam_disi_orani_kaynak_yokken_olculmedi_der(
+    async def test_hic_asistan_cevabi_yokken_oran_sifir_degil_none(
         self, client: AsyncClient, users: UserFactory
     ) -> None:
-        """Sohbet kayıtları (migration 0003) yoksa oran uydurulmaz.
+        """0.0 döndürmek 'bu derste hiçbir soru reddedilmedi' demek olurdu.
 
-        Anayasa III: çalıştırılmayan ölçüm için sayı yazılmaz. Uç, sayının nereden
-        geldiğini her zaman söyler; kaynak yoksa `unavailable` döner.
+        Anayasa III: ölçülmemiş bir şey sayı olarak raporlanamaz. Kaynak her zaman
+        bildirilir, oran ancak ölçülecek veri varsa doldurulur.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         course_id = await _create_course(client, ayse, "COME301")
@@ -430,10 +450,68 @@ class TestClassAnalytics:
         body = (await client.get(f"/courses/{course_id}/analytics/class", headers=ayse)).json()
 
         out_of_scope = body["out_of_scope"]
-        assert out_of_scope["source"] == "unavailable"
+        assert out_of_scope["source"] == "request_logs"
         assert out_of_scope["rate"] is None
-        assert out_of_scope["out_of_scope_count"] is None
-        assert "ölçülmedi" in out_of_scope["note"]
+        assert out_of_scope["answered_request_count"] == 0
+
+    async def test_kapsam_disi_ret_orani_olcum_kaydindan_hesaplanir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """SC-005 yalnız `out_of_scope` sayar; `insufficient_context` orana girmez.
+
+        İkisi farklı şeydir: biri "bu ders bu konuyu hiç kapsamıyor", diğeri
+        "materyalde olabilir ama kanıt zayıf" (contracts.AnswerStatus). Aynı orana
+        katılsalardı SC-005 ölçtüğünü iddia ettiği şeyi ölçmezdi.
+        """
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        burak_id = await users.create("burak@dogus.edu.tr")
+        course_id = await _create_course(client, ayse, "COME301")
+        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+
+        # 4 cevap üretilmiş istek: 1 kapsam dışı, 1 kanıt yetersiz, 2 cevaplanmış.
+        # Beşinci satır durumu olmayan bir istek: paydaya GİRMEMELİ.
+        await _seed_requests(
+            admin_engine,
+            course_id=course_id,
+            user_id=burak_id,
+            statuses=["out_of_scope", "insufficient_context", "answered", "answered", None],
+        )
+
+        body = (await client.get(f"/courses/{course_id}/analytics/class", headers=ayse)).json()
+
+        out_of_scope = body["out_of_scope"]
+        assert out_of_scope["source"] == "request_logs"
+        assert out_of_scope["answered_request_count"] == 4
+        assert out_of_scope["out_of_scope_count"] == 1
+        assert out_of_scope["insufficient_context_count"] == 1
+        assert out_of_scope["rate"] == pytest.approx(0.25)
+
+    async def test_kapsam_disi_orani_baska_dersin_kaydini_saymaz(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        burak_id = await users.create("burak@dogus.edu.tr")
+        os_course = await _create_course(client, ayse, "COME301")
+        ds_course = await _create_course(client, ayse, "COME302")
+        await _add_student(client, ayse, os_course, "burak@dogus.edu.tr")
+        await _add_student(client, ayse, ds_course, "burak@dogus.edu.tr")
+
+        await _seed_requests(
+            admin_engine, course_id=os_course, user_id=burak_id, statuses=["answered"]
+        )
+        await _seed_requests(
+            admin_engine,
+            course_id=ds_course,
+            user_id=burak_id,
+            statuses=["out_of_scope", "out_of_scope"],
+        )
+
+        body = (await client.get(f"/courses/{os_course}/analytics/class", headers=ayse)).json()
+
+        assert body["out_of_scope"]["answered_request_count"] == 1
+        assert body["out_of_scope"]["out_of_scope_count"] == 0
 
     async def test_baska_dersin_verisi_sizmaz(
         self, client: AsyncClient, users: UserFactory

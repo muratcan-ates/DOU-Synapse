@@ -1,4 +1,4 @@
--- Ölçme (assessment) katmanının RLS kanıtı — 0004_assessment.sql'in 15 politikası.
+-- Ölçme ve analitik katmanının RLS kanıtı — 0004'ün 15 politikası + 0005'in biri.
 --
 -- NEDEN VAR: 6 Ağustos PR incelemesinde ölçüldü ki `0004`'ün on beş politikasının
 -- hiçbirinin otomatik kanıtı yoktu. `questions_read` politikasından
@@ -145,6 +145,26 @@ INSERT INTO answers (id, session_id, question_id, course_id, given, is_correct, 
     ('66666666-0000-0000-0000-000000000001', '55555555-0000-0000-0000-000000000001',
      '99999999-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-000000000001',
      'dört koşul', true, 100);
+
+-- Analitik kaynakları (0003 + 0005). Sohbet mesajı ile ölçüm kaydı BİLE BİLE ayrı
+-- ele alınır: eğitmen ölçüm kaydını okuyabilmeli, sohbet mesajını okuyamamalı.
+INSERT INTO chat_sessions (id, course_id, user_id) VALUES
+    ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+     '22222222-2222-2222-2222-222222222222');
+
+INSERT INTO chat_messages (session_id, course_id, role, content, status, seq) VALUES
+    ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+     'user', 'utanarak sordugum soru', NULL, 0),
+    ('eeeeeeee-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+     'assistant', 'cevap', 'out_of_scope', 1);
+
+INSERT INTO request_logs (course_id, user_id, route, mode, status, http_status, latency_ms) VALUES
+    ('aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222',
+     '/chat', 'qa', 'out_of_scope', 200, 120),
+    ('aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222',
+     '/chat', 'qa', 'answered', 200, 340),
+    ('bbbbbbbb-0000-0000-0000-000000000002', '33333333-3333-3333-3333-333333333333',
+     '/chat', 'qa', 'answered', 200, 210);
 
 INSERT INTO mastery (user_id, topic_id, course_id, score, answer_count) VALUES
     ('22222222-2222-2222-2222-222222222222', '77777777-0000-0000-0000-000000000001',
@@ -714,6 +734,42 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
 FROM removed;
 
 -- ===========================================================================
+-- request_logs_instructor_read (0005) — analitiğin okuma yetkisi
+-- ===========================================================================
+--
+-- 0003 bu tabloyu istemciye tamamen kapalı bıraktı ve eğitmen kapsamlı SELECT
+-- politikasını 0005'e devretti. Aşağıdaki dört iddia o politikanın SINIRINI çizer:
+-- eğitmen ölçüm kaydını okur, öğrenci okumaz, başka ders görünmez ve en önemlisi —
+-- sohbet mesajları eğitmene KAPALI KALIR.
+
+SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
+SELECT CASE WHEN count(*) = 2 THEN 'PASS' ELSE 'FAIL' END
+       || '  request_logs_read__egitmen_dersinin_kaydini_gorur (beklenen 2, gelen '
+       || count(*) || ')'
+FROM request_logs;
+
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  request_logs_read__egitmen_baska_dersi_goremez (beklenen 0, gelen '
+       || count(*) || ')'
+FROM request_logs WHERE course_id = 'bbbbbbbb-0000-0000-0000-000000000002';
+
+-- 0005 YALNIZ request_logs'u açtı. Sohbet mesajları eğitmene kapalı kalmalı:
+-- öğrencinin hocasına sormaya çekindiği soruyu sisteme sorabilmesi ürünün
+-- gerekçelerinden biri (0003'ün gizlilik kararı). Bu iddia, analitik uğruna o
+-- kararın sessizce delinmediğinin kanıtıdır.
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  chat_messages_read__egitmen_ogrenci_sohbetini_OKUYAMAZ (beklenen 0, gelen '
+       || count(*) || ')'
+FROM chat_messages;
+
+-- Öğrenci kendi satırını bile okuyamaz: tablo uygulama rolü için yazma-yalnız.
+SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  request_logs_read__ogrenci_hicbir_kaydi_goremez (beklenen 0, gelen '
+       || count(*) || ')'
+FROM request_logs;
+
+-- ===========================================================================
 -- Fail-closed: oturum bağlamı yoksa hiçbir satır görünmez (Anayasa IV)
 -- ===========================================================================
 
@@ -733,5 +789,8 @@ FROM answers;
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
        || '  baglamsiz__mastery_gorunmez (beklenen 0, gelen ' || count(*) || ')'
 FROM mastery;
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  baglamsiz__request_logs_gorunmez (beklenen 0, gelen ' || count(*) || ')'
+FROM request_logs;
 
 ROLLBACK;
