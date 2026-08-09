@@ -13,6 +13,13 @@ bağımlılığının altına sokardı.
 Hücre kümesi hep BÜTÜN olarak yazılır (sil + yaz). Tek hücrelik güncelleme ne
 politika ne yetki olarak vardır: FR-112 doğrulaması küme üzerinde yapılır ve tekil
 bir güncelleme doğrulamayı atlayıp tutarsız bir dağılım bırakabilirdi.
+
+**Güncelleme ve kalem yazma neden PATCH/PUT değil POST.** İkisi de bu yolların
+doğal fiili olurdu, ama `apps/web/lib/api.ts` yalnız get/post/upload/delete
+taşıyor ve o dosya bu şeritte DEĞİŞTİRİLMEYECEK dosyalar arasında (frontend
+reliability şeridinin T401-T403'ü orada yaşıyor). İki fiil eklemek için ortak bir
+dosyaya dokunmak, REST saflığından daha pahalıydı. Yol sayısı değişmedi; yalnız
+aynı yolların fiili farklı.
 """
 
 from __future__ import annotations
@@ -318,7 +325,7 @@ async def get_blueprint(
     return await _blueprint_out(session, blueprint)
 
 
-@router.patch("/blueprints/{blueprint_id}", response_model=BlueprintOut)
+@router.post("/blueprints/{blueprint_id}", response_model=BlueprintOut)
 async def update_blueprint(
     blueprint_id: UUID,
     payload: BlueprintUpdate,
@@ -455,7 +462,7 @@ async def list_versions(
     return [await _version_out(session, version) for version in rows.scalars().all()]
 
 
-@router.put(
+@router.post(
     "/blueprints/{blueprint_id}/versions/{version_id}/items",
     response_model=list[ExamItemOut],
 )
