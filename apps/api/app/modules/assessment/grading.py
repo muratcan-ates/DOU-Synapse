@@ -42,6 +42,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import text_tr
 from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.models.assessment import Question
@@ -49,7 +50,6 @@ from app.models.core import Chunk, Document
 from app.modules.assessment.question_gen import (
     StructuredCompletion,
     extract_json_object,
-    normalize_tr,
     resolve_completion,
 )
 from app.schemas.assessment import (
@@ -91,12 +91,12 @@ def _best_snippet(text: str, focus: str | None) -> str:
     if not focus:
         return condensed[:SNIPPET_CHARS]
 
-    needle = set(normalize_tr(focus).split())
+    needle = set(text_tr.normalize(focus).split())
     sentences = [part.strip() for part in condensed.replace("!", ".").split(".") if part.strip()]
     if not sentences:
         return condensed[:SNIPPET_CHARS]
 
-    best = max(sentences, key=lambda part: len(needle & set(normalize_tr(part).split())))
+    best = max(sentences, key=lambda part: len(needle & set(text_tr.normalize(part).split())))
     return best[:SNIPPET_CHARS]
 
 
@@ -245,13 +245,13 @@ def grade_short_answer(
     "İşletim sistemi çekirdeği" gibi cümle içinde verilen doğru cevapları kurtarır;
     kelime sınırı şartı "ram" ile "program"ı birbirine karıştırmayı önler.
     """
-    answer = normalize_tr(given)
+    answer = text_tr.normalize(given)
     if not answer:
         return GradingOutcome(graded=True, score=0, is_correct=False, focus=given)
 
     haystack = f" {answer} "
     for accepted in payload.accepted_answers:
-        needle = normalize_tr(accepted)
+        needle = text_tr.normalize(accepted)
         if needle and (answer == needle or f" {needle} " in haystack):
             return GradingOutcome(graded=True, score=100, is_correct=True, focus=given)
 

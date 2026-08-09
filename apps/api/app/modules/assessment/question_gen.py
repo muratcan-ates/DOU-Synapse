@@ -46,6 +46,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk, Retriever
+from app.core import text_tr
 from app.core.logging import get_logger
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
 from app.modules.generation.llm import LlmRequest, build_llm_client
@@ -150,12 +151,6 @@ def resolve_completion() -> StructuredCompletion:
 # Metin yardımcıları
 # ---------------------------------------------------------------------------
 
-_WORD_RE = re.compile(r"\w+", re.UNICODE)
-
-#: Türkçe küçültme. `str.lower()` "İ" için birleşik nokta üretir, `upper()` ise
-#: "i"yi "I" yapıp anlamı bozar (Anayasa V). Bu yüzden iki harf önce elle eşlenir.
-_TR_LOWER = str.maketrans({"İ": "i", "I": "ı"})
-
 #: Örtüşme skorunda ayırt ediciliği olmayan sık kelimeler.
 _STOPWORDS = frozenset(
     """
@@ -165,18 +160,14 @@ _STOPWORDS = frozenset(
 )
 
 
-def normalize_tr(text: str) -> str:
-    """Türkçe güvenli sadeleştirme: küçült, noktalamayı at, boşlukları tekle.
-
-    Kısa cevap eşleştirmesi (T031) ve çeldirici→kaynak eşlemesi aynı normalizasyonu
-    kullanır; iki yerde iki farklı kural olması sessiz tutarsızlık üretirdi.
-    """
-    lowered = text.translate(_TR_LOWER).lower()
-    return " ".join(_WORD_RE.findall(lowered))
-
-
 def _tokens(text: str) -> set[str]:
-    return {word for word in normalize_tr(text).split() if len(word) > 2} - _STOPWORDS
+    """Örtüşme skoru için ayırt edici sözcükler.
+
+    Katlama seviyesi `core.text_tr.normalize`'dır (aksan KORUNUR), `fold` değil:
+    çeldirici→kaynak eşlemesi puanlama tarafındadır ve "acı"/"açı" ayrımını
+    kaybetmemelidir. Gerekçenin tamamı `text_tr.normalize` docstring'inde.
+    """
+    return {word for word in text_tr.normalize(text).split() if len(word) > 2} - _STOPWORDS
 
 
 def match_chunk(text: str, chunks: Sequence[RetrievedChunk]) -> UUID:
@@ -191,9 +182,14 @@ def match_chunk(text: str, chunks: Sequence[RetrievedChunk]) -> UUID:
     best = chunks[0]
     best_score = -1.0
     for chunk in chunks:
-        overlap = needle & _tokens(chunk.text)
+        # Chunk metni tur başına BİR kez tokenleştirilir. Eskiden aynı chunk aynı
+        # döngü adımında iki kez (örtüşme ve payda için), üstelik her çeldirici
+        # için baştan tokenleştiriliyordu: 4 şıklı bir soruda 8 chunk, aynı
+        # metinlerde 48 tokenleştirme demekti.
+        chunk_tokens = _tokens(chunk.text)
+        overlap = needle & chunk_tokens
         # Uzun chunk'lar tesadüfen daha çok örtüşür; kök karekökle bastırılır.
-        score = len(overlap) / (len(_tokens(chunk.text)) ** 0.5 + 1)
+        score = len(overlap) / (len(chunk_tokens) ** 0.5 + 1)
         if score > best_score:
             best, best_score = chunk, score
     return best.chunk_id
