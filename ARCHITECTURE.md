@@ -3,8 +3,9 @@
 Bu belge 9 araştırma raporunun çeliştiği her noktada verilen **nihai** kararları, gerekçelerini
 ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim: [PLAN.md](PLAN.md)
 
-> **Kodla hizalama — 9 Ağustos 2026 (R5).** Bu belge 9 Ağustos'tan önce yazıldı ve o gün
-> sistem epey değişti. Belge o tarihte kodla satır satır karşılaştırılıp hizalandı.
+> **Kodla hizalama — 9 Ağustos 2026 (R5), beş şerit birleştikten sonra tazelendi.**
+> Bu belge 9 Ağustos'tan önce yazıldı ve o gün sistem epey değişti. Kodla satır satır
+> karşılaştırılıp hizalandı; şeritler birleşince §5 ve §10 yeniden ölçülüp güncellendi.
 > Hizalama kuralı: **belge koda uydurulur, kod belgeye değil.** Tasarlanmış ama
 > uygulanmamış her karar, silinmek yerine [§10 Uygulanmayanlar](#10-uygulanmayanlar--tasarlandı-kodda-yok)
 > bölümünde açıkça "uygulanmadı" olarak listelenir; sessizce duran bir iddia yalandır
@@ -215,6 +216,8 @@ Sıralama kritiktir; her adım bir güvenlik sınırıdır:
    gate         Eşik sağlayıcıya bağlıdır (fastembed 0.81 · hashing 0.10) ve kalibrasyon
                 setiyle ayarlanmıştır; holdout'ta doğrulanmadı (§7, evaluation/calibration.md).
                 Eşik füzyon skoruna UYGULANAMAZ: RRF sıralamadan üretilir, üst sınırı ~0.033'tür.
+                Kapı reddi TEK ETİKETE düşürmez: `retrieval/scope.assess_evidence` sözlüksel
+                örtüşmeye bakıp `out_of_scope` ile `insufficient_context` arasında seçer.
 5. Generation   context XML etiketli (<source id file location>); çıktı Pydantic şemasına
                 valide (1 retry, sonra abstention)
 6. Citation     cevaptaki chunk_id'ler ⊆ retrieve edilen küme mi? (set-membership: deterministik)
@@ -284,27 +287,42 @@ Tekilleştirme R4'e iletildi.
 - Sağlayıcı/model adı zarfta **dışarı verilmez** (altyapı ayrıntısı kullanıcıya gitmez);
   ölçüm için `GeneratedAnswer` üzerinde taşınır.
 
-### `out_of_scope` pratikte ulaşılamaz — ölçülen davranış
+### İki ret, tek kapı — ölçülen davranış
 
-Zarf üç statü tanımlar ama canlı QA yolunda **kapsam dışı bir soru `insufficient_context`
-döner**, `out_of_scope` değil. Sebep sıradadır: kanıt kapısı (adım 4) LLM'den ÖNCE gelir ve
-konu dışı sorularda zaten kapanır; `out_of_scope`'u yalnız LLM üretebilir, ama ona hiç
-gidilmez.
+Zarf üç statü tanımlar ve üçü de canlı yolda üretilebilir. Bu **9 Ağustos akşamına kadar
+böyle değildi:** kanıt kapısı eşiğin altındaki her sorguyu tek bir etikete
+(`insufficient_context`) düşürüyordu, çünkü `out_of_scope`'u yalnız LLM üretebiliyordu ve
+kapı LLM'den önce kapanıyordu. Sonuç, eğitmen analitiğindeki kapsam dışı ret oranının
+**yapısal olarak %0** ölçülmesiydi (SC-005). Bulgu R5'in koşusundan çıktı ve
+`modules/retrieval/scope.py` ile kapatıldı.
 
-Ölçüldü (9 Ağustos, COME 331, fastembed): üç kapsam dışı soru ("İtalya'nın başkenti",
-"bugün hava", "pizza tarifi") üçü de `insufficient_context` döndü, atıf sayısı 0.
+Bugün ayrım **kapının kendi içinde**, ölçülmüş ikinci bir sinyalle (sözlüksel örtüşme)
+yapılıyor: `assess_evidence()` bir `EvidenceLevel` döndürür, uç de onun `refusal_status`
+alanını kullanır. **Cevaplanan küme değişmedi** — "yeterli kanıt" koşulu eskisiyle birebir
+aynı; değişen yalnız reddin nasıl etiketlendiği.
 
-İki sonucu var ve ikisi de kayda değer:
+Ölçülen (9 Ağustos akşamı, COME 331, fastembed):
 
-1. Kullanıcı, kapsam dışı sorusuna `MESSAGE_OUT_OF_SCOPE` ("bu soru dersin kapsamı dışında
-   görünüyor") yerine `MESSAGE_INSUFFICIENT_CONTEXT` ("yeterli dayanak bulamadım") metnini
-   görür. İkincisi doğru ama daha az isabetli.
-2. Eğitmen analitiğindeki **kapsam dışı ret oranı `request_logs`'tan okunduğu için %0
-   görünür** — sistem üç soruyu doğru reddetmiş olsa bile. Ölçülen: `out_of_scope_count: 0`,
-   `insufficient_context_count: 3`.
+| Soru | Statü |
+|---|---|
+| İtalya'nın başkenti neresidir? | `out_of_scope` |
+| Bugün hava nasıl? | `out_of_scope` |
+| Fenerbahçe dün kaç attı? | `out_of_scope` |
+| Bugünkü dolar kuru ne kadar? | `insufficient_context` |
+| En iyi pizza tarifi nedir? | `insufficient_context` |
+| Osmanlı Devleti ne zaman kuruldu? | `insufficient_context` |
+| Python'da liste nasıl sıralanır? | `answered` (3 atıf — derste `producer_consumer.py` var) |
 
-Bu bir kusurdur ve gruba iletildi; belgeye "böyle çalışıyor" diye yazılması, ölçümü okuyan
-kişinin yanlış sonuç çıkarmasını engellemek içindir.
+**Sınır, dürüstçe:** ayrım mükemmel değil. Yukarıdaki üç `insufficient_context` sorusu
+insan gözüyle de kapsam dışıdır; sözlüksel örtüşme sinyali onları yakalamıyor. Yani
+kapsam dışı ret oranı artık **ölçülebilir**, ama **eksik sayıyor** — gerçek oran
+raporlanandan yüksektir. Bu, hiç ölçememekten iyidir ve sayı bu kaydıyla birlikte
+kullanılmalıdır.
+
+Kullanıcıya dönen metinler de ayrışır: `out_of_scope` için *"Bu soru dersin kapsamı
+dışında görünüyor"*, `insufficient_context` için *"Bu soruya ders materyalinde yeterli
+dayanak bulamadım"*. İkisi de nötr bir bildirimle gösterilir, hata rengiyle değil
+(Anayasa VII).
 
 ### Sokratik state machine (backend'de tutulur)
 
@@ -496,25 +514,29 @@ yazılıyor (Anayasa III).
 |---|---|---|---|
 | 1 | Embedding modeli **Docker imajına gömülü**, runtime'da HuggingFace bağımlılığı yok | **Uygulanmadı.** `apps/api/Dockerfile` yalnız "ileride gömülecek" notu taşıyor. Model çalışma zamanında indiriliyor ve macOS'ta `$TMPDIR/fastembed_cache` altına (2,1 GB) düşüyor — bu dizini işletim sistemi temizler | R3 |
 | 2 | CI'da **"model imaj içinde, konteyner ağsız ayağa kalkıyor"** assertion'ı | **Uygulanmadı.** CI'da docker build işi yok | R3 |
-| 3 | **HTTP-tetiklemeli worker** (`POST /internal/drain`), ACA scale-to-zero ile uyumlu | **Uygulanmadı.** Router kayıtlı ama boş; `worker_drain_secret` ayarı hazır. Bugün çalışan tetik süreç içi `BackgroundTasks` | R3 |
+| 3 | **HTTP-tetiklemeli worker** (`POST /internal/drain`), ACA scale-to-zero ile uyumlu | **Uygulanmadı.** `app/api/internal.py` hâlâ yol eklemiyor; `worker_drain_secret` ayarı hazır. Çalışan tetik süreç içi `BackgroundTasks`. Compose'a ayrı bir `worker` servisi eklendi ama HTTP tetiği yok | R3 |
 | 4 | **Vercel + Azure Container Apps + Supabase** canlı dağıtım | **Uygulanmadı.** Depoda yalnız Compose + Dockerfile var; canlı URL yok | R3 |
-| 5 | **Supabase Auth** ile gerçek kimlik | **Uygulanmadı.** Bugün yalnız `DEV_AUTH_ENABLED=true` ve imzasız `Bearer dev:<uuid>`. JWT doğrulama kodu var (`core/security.py`), köprü migration'ı (`0002`) yok | R1 |
+| 5 | **Supabase Auth** ile gerçek kimlik | **Kısmen.** Köprü migration'ı indi (`0002_supabase_auth_bridge.sql`, `auth` şeması varsa koşullu kurulur) ve JWT doğrulama kodu var; ama yerel/demo kurulum hâlâ `DEV_AUTH_ENABLED=true` ve imzasız `Bearer dev:<uuid>` ile koşuyor | R1 |
 | 6 | **Supabase Storage** (private bucket) | **Uygulanmadı.** Yerel dosya sistemi deposu (`STORAGE_ROOT`) kullanılıyor | R3 |
 | 7 | Kanıt eşiğinin **holdout'ta hedefi tutturması** (kapsam dışı doğru ret ≥ %90) | **Tutturulmadı.** Ölçülen %80. Eşik holdout'a bakılarak DEĞİŞTİRİLMEDİ; gerekçe `evaluation/calibration.md` §7 | R2 / R4 |
-| 8 | Chunk başına **embedding sağlayıcı + sürüm damgası** | **Uygulanmadı.** Sürüm uyuşmazlığı sessizce yanlış komşu döndürebilir (§1) | R4 |
+| 8 | Chunk başına **embedding sağlayıcı + sürüm damgası** | ✅ **KAPANDI** — `0006_embedding_provenance.sql`. `chunks.embedding_space` sütunu; ölçülen değer `fastembed/intfloat/multilingual-e5-large@0.8.0` | R4 |
 | 9 | `AnswerPipeline`'ın **tekilleştirilmesi** — üretim yolu kendi kopyasını koşuyor (§5) | **Uygulanmadı.** İki orkestratör yan yana duruyor | R4 |
-| 10 | Compose yığınında **RLS'in devrede olması** | **Uygulanmadı.** `postgres` superuser'ı ile bağlanılıyor, RLS atlanıyor (§6) | R3 |
-| 11 | Sahte LLM sağlayıcısının **soru üretimini** desteklemesi | **Uygulanmadı.** `FakeLlmClient` yalnız sohbet şemasını üretir; anahtarsız ortamda soru üretimi 0 soru döndürür ("yanıtta 'questions' dizisi yok"). Çevrimdışı demoda sınav akışı önceden onaylanmış sorulara muhtaç | R4 |
+| 10 | Compose yığınında **RLS'in devrede olması** | **Uygulanmadı.** `api` ve `worker` servislerinin ikisi de `postgres` superuser'ı ile bağlanıyor; superuser `FORCE ROW LEVEL SECURITY`'yi de atlar. İzolasyon kanıtı bu yığında alınamaz (§6) | R3 |
+| 11 | Sahte LLM sağlayıcısının **soru üretimini** desteklemesi | ✅ **KAPANDI.** Ölçüldü: anahtarsız ortamda 3 soru istendi, **3'ü de üretildi ve şemadan geçti.** Çevrimdışı demoda soru üretimi artık gösterilebilir | R4 |
 | 12 | Reranker (`ENABLE_RERANKER`), RAGAS, streaming (SSE) | **Uygulanmadı** — P1, bilinçli olarak dondurma sonrasına bırakıldı | — |
 
-Ayrıca **kodda bayat kalmış üç yorum** tespit edildi (davranış doğru, yorum yanlış):
+**Şeritler birleştikten sonra kapananlar** (bu belgenin ilk hizalamasında açıktı):
 
-- `app/api/chat.py::_has_evidence` — "Eşik değeri KALİBRE EDİLMEMİŞTİR (T043); hiçbir raporda
-  kullanılamaz" diyor; eşik 9 Ağustos'ta kalibre edildi.
-- `app/api/chat.py::_opening_question` — "öğrencinin son denemesi üretime geçirilemiyor çünkü
-  `contracts.Generator.generate` imzasında böyle bir alan yok" diyor; `student_attempt` alanı
-  imzada var ve uç onu geçiriyor.
-- `app/modules/retrieval/service.py` modül docstring'i — "Eşik kalibre EDİLMEMİŞTİR
-  (`config.evidence_threshold = 0.35`)" diyor; değer artık sağlayıcıya göre 0.81/0.10.
+- Soru havuzu, sınav provası ve ilerleme/analitik ekranları **bağlandı**; hiçbirinde
+  önizleme şeridi kalmadı. Bu belgenin ilk sürümü üçünü de "arka ucu var, ekranı yok"
+  diye kaydediyordu.
+- Kanıt kapısının kapsam dışı ile dayanaksızı ayırmaması **düzeldi** (§5).
+- KVKK aydınlatma metni **sayfa oldu** (`apps/web/app/kvkk`), `docs/kvkk.md`'yi okuyarak.
 
-Üçü de bu şeridin sahipliğindeki dosyalar değil; gruba iletildi.
+Bildirilen **üç bayat yorumdan ikisi düzeltildi**; biri duruyor:
+
+- `app/api/chat.py::_opening_question` — "öğrencinin son denemesi üretime geçirilemiyor
+  çünkü `contracts.Generator.generate` imzasında böyle bir alan yok" diyor;
+  `student_attempt` alanı imzada var ve uç onu geçiriyor. **Hâlâ yanlış.**
+
+Bu dosya bu şeridin sahipliğinde değil; gruba iletildi.
