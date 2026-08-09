@@ -151,11 +151,7 @@ async def list_questions(
     ]
 
 
-@router.post(
-    "/questions/generate",
-    response_model=QuestionGenerationOut,
-    status_code=status.HTTP_201_CREATED,
-)
+@router.post("/questions/generate", response_model=QuestionGenerationOut)
 async def generate_questions(
     payload: QuestionGenerateRequest, context: CourseInstructorDep, session: SessionDep
 ) -> QuestionGenerationOut:
@@ -163,11 +159,15 @@ async def generate_questions(
 
     Eğitmen çerçeveyi kurar: konu, tip, biçim ve isterse örnek sorular. Sistem o
     üslupta üretir ama onay vermez — bu uçtan `approved` çıkmaz.
+
+    Yanıt `201` değil `200`: bu uç N kaynak yaratan bir toplu iştir ve kaçının
+    yazıldığı gövdedeki raporda durur. Hiçbiri şemadan geçmediğinde `201 Created`
+    dönmek, yaratılmamış bir şeyi yaratıldı diye bildirmek olurdu.
     """
     settings = get_settings()
 
-    retriever = question_gen.get_retriever()
-    completion = question_gen.get_completion()
+    retriever = question_gen.resolve_retriever(session)
+    completion = question_gen.resolve_completion()
     if retriever is None or completion is None:
         raise question_gen.ProviderUnavailableError(
             "Soru üretimi şu anda kullanılamıyor: arama ve dil modeli servisleri "
