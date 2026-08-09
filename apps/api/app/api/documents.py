@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, File, UploadFile, status
 from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import CourseInstructorDep, CourseMemberDep, SessionDep, SettingsDep
 from app.core.errors import ConflictError, NotFoundError, ValidationError
@@ -162,6 +163,11 @@ async def delete_document(
 
     Chunk'lar FK cascade ile gider: materyal kaldırıldığında ondan üretilmiş vektörlerin
     aramada kalmaması, "yalnızca yüklenen materyalden cevap" garantisinin parçasıdır.
+
+    Ama cascade her yere ulaşmaz: `questions.source_chunk_id` `ON DELETE RESTRICT`
+    taşır, yani o chunk'tan üretilmiş bir soru havuzdaysa silme veritabanı düzeyinde
+    reddedilir. Bu kısıt bilinçlidir — kaynağı silinmiş bir soru, kaynağına karşı
+    doğrulanamayan bir sorudur (Anayasa I). Kısıtı gevşetmek yerine hatayı çeviriyoruz.
     """
     document = await session.get(Document, document_id)
     if document is None or document.course_id != context.course_id:
@@ -169,5 +175,17 @@ async def delete_document(
 
     storage_key = document.storage_path
     await session.delete(document)
-    await session.flush()
+    try:
+        await session.flush()
+    except IntegrityError as exc:
+        # Şerit 4 teşhis etti: soru üretimi inince bu yol ULAŞILABİLİR hâle geldi ve
+        # kullanıcı 409 yerine 500 görüyordu — yani "yapamazsın, şu yüzden" yerine
+        # "bir şeyler ters gitti". Kısıtın kendisi doğru, mesajı yoktu.
+        raise ConflictError(
+            "Bu belgeden üretilmiş sorular havuzda olduğu için belge silinemiyor. "
+            "Önce ilgili soruları kaldırın."
+        ) from exc
+
+    # Depodaki dosya en sona bırakılır: satır silinemezse dosya da durmalı, yoksa
+    # veritabanında kaydı olan ama dosyası olmayan bir belge kalırdı.
     await get_storage().delete(storage_key)

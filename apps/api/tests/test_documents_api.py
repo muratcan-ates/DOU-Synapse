@@ -153,6 +153,66 @@ class TestUpload:
             await client.get(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
         ).status_code == 404
 
+    async def test_havuzda_sorusu_olan_belge_409_ile_reddedilir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Kaynağı silinecek soru varsa silme reddedilir — 500 ile değil, 409 ile.
+
+        `questions.source_chunk_id` `ON DELETE RESTRICT` taşır ve bu kısıt bilinçli:
+        kaynağı silinmiş bir soru, kaynağına karşı doğrulanamayan bir sorudur
+        (Anayasa I). Kısıt doğruydu ama uç `IntegrityError`'ı yakalamadığı için
+        kullanıcı "bir şeyler ters gitti" görüyordu. Şerit 4 soru üretimini indirince
+        bu yol ulaşılabilir hâle geldi.
+        """
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = UserFactory.auth(ayse_id)
+        course_id = await _course(client, ayse, "COME301")
+        document_id = (
+            await _upload(client, ayse, course_id, "d.pdf", make_pdf(["Kaynak icerik"]))
+        ).json()["document"]["id"]
+
+        from app import worker
+
+        await worker.drain()
+        chunks = (
+            await client.get(f"/courses/{course_id}/documents/{document_id}/chunks", headers=ayse)
+        ).json()
+        assert chunks, "chunk üretilmeden bu testin kuracağı durum oluşmaz"
+
+        # Soruyu doğrudan yazıyoruz: üretim ucu gerçek LLM ister ve bu test onun
+        # değil, silme davranışının testi.
+        async with admin_engine.begin() as conn:
+            topic_id = await conn.scalar(
+                text(
+                    "INSERT INTO topics (course_id, name, created_by) "
+                    "VALUES (:c, 'Konu', :u) RETURNING id"
+                ),
+                {"c": course_id, "u": ayse_id},
+            )
+            await conn.execute(
+                text(
+                    "INSERT INTO questions "
+                    "(course_id, topic_id, source_chunk_id, type, payload, status, created_by) "
+                    "VALUES (:c, :t, :ch, 'mcq', '{}'::jsonb, 'draft', :u)"
+                ),
+                {"c": course_id, "t": topic_id, "ch": chunks[0]["id"], "u": ayse_id},
+            )
+
+        response = await client.delete(
+            f"/courses/{course_id}/documents/{document_id}", headers=ayse
+        )
+
+        assert response.status_code == 409, response.text
+        assert response.json()["error"]["code"] == "conflict"
+        assert "soru" in response.json()["error"]["message"].lower()
+
+        # Reddedilen silme HİÇBİR ŞEYİ silmemiş olmalı: belge de dosyası da yerinde.
+        # Depodaki dosya `flush()` başarılı olduktan SONRA siliniyor; sıra ters
+        # olsaydı kayıt duran ama dosyası olmayan bir belge kalırdı.
+        assert (
+            await client.get(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
+        ).status_code == 200
+
 
 class TestDocumentAccess:
     async def test_ogrenci_belge_yukleyemez(self, client: AsyncClient, users: UserFactory) -> None:
