@@ -42,8 +42,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CourseContext, CourseMemberDep, SessionDep
 from app.core.config import Settings, get_settings
+from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
 from app.models.assessment import Answer, ExamMode, ExamSession, Question, QuestionStatus, Topic
+from app.modules.assessment.exam_state import effective_expiry, remaining_seconds
 from app.modules.assessment.grading import (
     GradingOutcome,
     SourceMaterial,
@@ -75,32 +77,10 @@ router = APIRouter(prefix="/courses/{course_id}", tags=["exams"])
 # ---------------------------------------------------------------------------
 
 
-async def db_now(session: AsyncSession) -> datetime:
-    """İşlemin veritabanı saati.
-
-    İşlem içinde sabittir, dolayısıyla aynı istekte yapılan iki karşılaştırma
-    (süre doldu mu / kalan kaç saniye) tutarlıdır.
-    """
-    value = await session.scalar(select(func.now()))
-    if value is None:  # pragma: no cover - now() hiçbir zaman NULL dönmez
-        raise RuntimeError("veritabanı saati okunamadı")
-    return value
-
-
-def effective_expiry(exam: ExamSession, *, settings: Settings) -> datetime | None:
-    """Kırpılmış bitiş zamanı. practice modda None (süresiz)."""
-    if exam.mode is ExamMode.PRACTICE:
-        return None
-    cap = exam.started_at + timedelta(minutes=settings.exam_duration_minutes)
-    if exam.expires_at is None:  # pragma: no cover - CHECK kısıtı bunu engeller
-        return cap
-    return min(exam.expires_at, cap)
-
-
-def _remaining_seconds(expiry: datetime | None, now: datetime) -> int | None:
-    if expiry is None:
-        return None
-    return max(0, int((expiry - now).total_seconds()))
+# Zaman yardımcıları `app/modules/assessment/exam_state.py`'ye taşındı: aynı süre
+# kuralına asistan kilidi de (`api/deps.py`) ihtiyaç duyuyor ve `deps.py`'nin bu
+# dosyayı içe aktarması döngü olurdu. Yukarıdaki üç zaman kuralından ikincisinin
+# (kırpma) gerekçesi artık orada yaşıyor.
 
 
 # ---------------------------------------------------------------------------
@@ -246,7 +226,7 @@ async def _session_out(
         mode=exam.mode,
         started_at=exam.started_at,
         expires_at=expiry,
-        remaining_seconds=_remaining_seconds(expiry, now),
+        remaining_seconds=remaining_seconds(expiry, now),
         expired=expiry is not None and now >= expiry,
         finished_at=exam.finished_at,
         score=score_of(outcomes) if exam.finished_at else None,

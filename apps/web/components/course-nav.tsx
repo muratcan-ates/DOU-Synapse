@@ -12,11 +12,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useChatAvailability } from "@/lib/chat-availability";
 import { useSession } from "@/lib/session";
 
 const TABS = [
   { slug: "", label: "Materyaller" },
-  { slug: "/chat", label: "Asistan" },
+  // `locksWithAssistant`: yürüyen sınav oturumu bu sekmeyi kapatır. Bayrak
+  // `instructorOnly`'nin simetriği — hangi sekmenin neye bağlı olduğu tabloda
+  // görünür kalsın diye koşul bileşen gövdesine yazılmadı.
+  { slug: "/chat", label: "Asistan", locksWithAssistant: true },
   { slug: "/exam", label: "Sınav provası" },
   { slug: "/questions", label: "Soru havuzu", instructorOnly: true },
   { slug: "/analytics", label: "İlerleme" },
@@ -26,6 +30,13 @@ const TABS = [
 export function CourseNav({ courseId }: { courseId: string }) {
   const pathname = usePathname();
   const { isInstructor, ready } = useSession();
+  /*
+   * Kilit kararı sunucudan okunur, burada hesaplanmaz. Sekmeyi gizlemek yerine
+   * kilitli çizmek bilinçli: gizlenen sekme "sistem bozuldu" gibi okunur,
+   * kilitli sekme sebebini söyler. Ayrıca gizleme bir yetki değildir — asıl
+   * kapı sunucudadır ve bu yüzey yalnız kullanıcıyı duvara koşturmamak için var.
+   */
+  const lock = useChatAvailability(courseId);
   const base = `/courses/${courseId}`;
 
   return (
@@ -44,10 +55,32 @@ export function CourseNav({ courseId }: { courseId: string }) {
       className={`mb-8 flex gap-1 overflow-x-auto border-b border-border ${
         ready ? "" : "invisible"
       }`}
+      aria-label={lock.locked ? lock.message ?? undefined : undefined}
     >
       {TABS.filter((tab) => !tab.instructorOnly || isInstructor).map((tab) => {
         const href = `${base}${tab.slug}`;
         const active = pathname === href;
+        const locked = Boolean(tab.locksWithAssistant) && lock.locked;
+        if (locked) {
+          /*
+           * Kilitli sekme `Link` değil: tıklanabilir bırakılsaydı kullanıcı
+           * boş bir ekrana giderdi. Durum renkle değil METİNLE işaretlenir —
+           * renk tek başına bilgi taşımaz (Anayasa VII).
+           */
+          return (
+            <span
+              key={tab.slug}
+              aria-disabled="true"
+              title={lock.message ?? undefined}
+              className="-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm text-fg-subtle"
+            >
+              {tab.label}
+              <span className="rounded-sm border border-border px-1.5 py-0.5 text-xs text-fg-muted">
+                Kilitli
+              </span>
+            </span>
+          );
+        }
         return (
           /*
            * Odak halkası negatif offset ile öğenin İÇİNE çizilir: şerit

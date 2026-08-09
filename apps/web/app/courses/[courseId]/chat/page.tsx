@@ -45,6 +45,7 @@ import type {
   ChatSessionSummary,
   CourseDocument,
 } from "@/lib/types";
+import { useChatAvailability } from "@/lib/chat-availability";
 import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
@@ -55,11 +56,23 @@ import { Badge, Button, EmptyState, Input } from "@/components/ui";
 
 export default function ChatPage() {
   const { courseId } = useParams<{ courseId: string }>();
+  /*
+   * Sekme kilitliyken bu sayfaya doğrudan URL ile de gelinebilir; ekran o zaman
+   * besteci yerine sebebi gösterir. Bu bir yetki kapısı DEĞİLDİR — sunucu her
+   * isteği zaten 403 ile reddediyor (Anayasa II: istemci yetki vermez).
+   * Buradaki tek amaç kullanıcıyı boş bir ekrana ya da art arda hataya
+   * koşturmamak.
+   */
+  const lock = useChatAvailability(courseId);
 
   return (
     <AppShell>
       <CourseNav courseId={courseId} />
-      <ChatScreen courseId={courseId} />
+      {lock.locked ? (
+        <EmptyState title={lock.message ?? "Asistan şu anda kullanılamıyor."} />
+      ) : (
+        <ChatScreen courseId={courseId} />
+      )}
     </AppShell>
   );
 }

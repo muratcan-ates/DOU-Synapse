@@ -342,3 +342,16 @@ export interface ClassAnalytics {
   answered_questions: number;
   out_of_scope: OutOfScopeStat;
 }
+
+/**
+ * Asistanın bu kullanıcı için açık olup olmadığı.
+ *
+ * `reason` ve `message` sunucudan gelir; arayüz kilit metnini uydurmaz.
+ * Kararın sahibi `GET /courses/{id}/chat/availability` ve aynı kararı
+ * `POST /chat` de 403 ile uygular — iki yüzey tek fonksiyonu okur.
+ */
+export interface ChatAvailability {
+  available: boolean;
+  reason: string | null;
+  message: string | null;
+}

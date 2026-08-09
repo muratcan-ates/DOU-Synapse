@@ -1051,6 +1051,52 @@
         }
       }
     },
+    "/courses/{course_id}/chat/availability": {
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Chat Availability",
+        "description": "Asistan bu kullanıcı için açık mı?\n\nBu uç bilerek `CourseMemberDep` alır, `UnlockedCourseMemberDep` DEĞİL:\nkilitliyken de cevap verebilmesi gerekiyor, yoksa arayüz kilidin sebebini\nhiç öğrenemez ve kullanıcıya \"bir şeyler ters gitti\" demek zorunda kalır.\n\nKararı `deps.require_assistant_unlocked` ile AYNI fonksiyondan okur; iki\nyüzey ayrı ayrı hesaplasaydı biri diğerinden sapardı (Anayasa XI) ve sapma\nsessiz olurdu — sekme açık görünüp istek 403 dönerdi.",
+        "operationId": "chat_availability_courses__course_id__chat_availability_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAvailabilityOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/chat/sessions": {
       "get": {
         "tags": [
@@ -1772,6 +1818,42 @@
           "file"
         ],
         "title": "Body_upload_document_courses__course_id__documents_post"
+      },
+      "ChatAvailabilityOut": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available"
+        ],
+        "title": "ChatAvailabilityOut",
+        "description": "Asistanın bu kullanıcı için açık olup olmadığı.\n\nArayüzün sekmeyi kilitlemek için ihtiyaç duyduğu tek bilgi. `reason` ve\n`message` sunucudan gelir; arayüz kendi metnini uydurmaz (Anayasa V) ve\nmuafiyet kuralını tekrarlamaz — eğitmene her zaman `available=True` döner."
       },
       "ChatMessageOut": {
         "properties": {

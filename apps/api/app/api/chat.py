@@ -54,7 +54,13 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseMemberDep, SessionDep, SettingsDep
+from app.api.deps import (
+    CourseContext,
+    CourseMemberDep,
+    SessionDep,
+    SettingsDep,
+    UnlockedCourseMemberDep,
+)
 from app.contracts import (
     AnswerStatus,
     ChatMode,
@@ -68,10 +74,11 @@ from app.contracts import (
     SocraticStage,
 )
 from app.core.config import Settings
+from app.core.db import db_now
 from app.core.errors import AppError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.chat import AnswerCache, ChatMessage, ChatRole, ChatSession, RequestLog
-from app.modules.assessment import socratic
+from app.modules.assessment import exam_state, socratic
 from app.schemas.chat import (
     MAX_QUESTION_LENGTH,
     ChatRequest,
@@ -277,6 +284,19 @@ class ChatMessageOut(BaseModel):
     status: AnswerStatus | None = None
     socratic_stage: SocraticStage | None = None
     created_at: Any
+
+
+class ChatAvailabilityOut(BaseModel):
+    """Asistanın bu kullanıcı için açık olup olmadığı.
+
+    Arayüzün sekmeyi kilitlemek için ihtiyaç duyduğu tek bilgi. `reason` ve
+    `message` sunucudan gelir; arayüz kendi metnini uydurmaz (Anayasa V) ve
+    muafiyet kuralını tekrarlamaz — eğitmene her zaman `available=True` döner.
+    """
+
+    available: bool
+    reason: str | None = None
+    message: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -561,7 +581,7 @@ async def produce_answer(
 @router.post("/chat", response_model=ChatResponse)
 async def post_chat(
     payload: ChatRequest,
-    context: CourseMemberDep,
+    context: UnlockedCourseMemberDep,
     session: SessionDep,
     settings: SettingsDep,
 ) -> ChatResponse:
@@ -698,8 +718,45 @@ async def post_chat(
     )
 
 
+@router.get("/chat/availability", response_model=ChatAvailabilityOut)
+async def chat_availability(
+    context: CourseMemberDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> ChatAvailabilityOut:
+    """Asistan bu kullanıcı için açık mı?
+
+    Bu uç bilerek `CourseMemberDep` alır, `UnlockedCourseMemberDep` DEĞİL:
+    kilitliyken de cevap verebilmesi gerekiyor, yoksa arayüz kilidin sebebini
+    hiç öğrenemez ve kullanıcıya "bir şeyler ters gitti" demek zorunda kalır.
+
+    Kararı `deps.require_assistant_unlocked` ile AYNI fonksiyondan okur; iki
+    yüzey ayrı ayrı hesaplasaydı biri diğerinden sapardı (Anayasa XI) ve sapma
+    sessiz olurdu — sekme açık görünüp istek 403 dönerdi.
+    """
+    if context.is_instructor:
+        return ChatAvailabilityOut(available=True)
+    now = await db_now(session)
+    active = await exam_state.active_exam_session(
+        session,
+        user_id=context.user_id,
+        course_id=context.course_id,
+        now=now,
+        settings=settings,
+    )
+    if active is None:
+        return ChatAvailabilityOut(available=True)
+    return ChatAvailabilityOut(
+        available=False,
+        reason=exam_state.EXAM_LOCK_REASON,
+        message=exam_state.EXAM_LOCK_MESSAGE,
+    )
+
+
 @router.get("/chat/sessions", response_model=list[ChatSessionOut])
-async def list_sessions(context: CourseMemberDep, session: SessionDep) -> list[ChatSessionOut]:
+async def list_sessions(
+    context: UnlockedCourseMemberDep, session: SessionDep
+) -> list[ChatSessionOut]:
     """Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez."""
     result = await session.execute(
         select(ChatSession)
@@ -711,7 +768,7 @@ async def list_sessions(context: CourseMemberDep, session: SessionDep) -> list[C
 
 @router.get("/chat/sessions/{session_id}", response_model=list[ChatMessageOut])
 async def list_messages(
-    session_id: UUID, context: CourseMemberDep, session: SessionDep
+    session_id: UUID, context: UnlockedCourseMemberDep, session: SessionDep
 ) -> list[ChatMessageOut]:
     chat_session = await session.get(ChatSession, session_id)
     # RLS başka kullanıcının/dersin oturumunu zaten gizler; ders eşleşmesi ayrıca

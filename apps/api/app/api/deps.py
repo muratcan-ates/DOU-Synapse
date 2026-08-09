@@ -18,10 +18,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.core.db import rls_session
+from app.core.db import db_now, rls_session
 from app.core.errors import AuthenticationError, NotFoundError, PermissionDeniedError
 from app.core.security import Principal, authenticate
 from app.models.core import CourseMembership, MembershipRole, MembershipStatus
+from app.modules.assessment import exam_state
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 
@@ -122,3 +123,54 @@ async def require_course_instructor(context: CourseMemberDep) -> CourseContext:
 
 
 CourseInstructorDep = Annotated[CourseContext, Depends(require_course_instructor)]
+
+
+async def require_assistant_unlocked(
+    context: CourseMemberDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> CourseContext:
+    """Yürüyen sınav oturumu varsa asistan yüzeylerini kapatır.
+
+    **Neden bağımlılık, neden uç gövdesi değil.** Kural moddan bağımsız olmak
+    zorunda (FR-102): gövdeye yazılsaydı `payload.mode` elin altında olurdu ve
+    moda bağlı bir istisna eklemek bir satırlık iş hâline gelirdi. Bağımlılık
+    modu göremez, dolayısıyla mod bağımsızlığı yapısaldır.
+
+    **Neden `require_course_member`'a gömülmedi.** Aynı bağımlılığı sınav uçları
+    da kullanıyor; oraya gömülse sınav veren öğrenci kendi sınavına cevap
+    veremez hâle gelirdi.
+
+    **Kapsam POST ile sınırlı değil.** Geçmiş okuma ucu (`GET
+    /chat/sessions/{id}`) önceki turların kaynaklı cevap metnini ve atıflarını
+    aynen döndürüyor; sınav sırasında açılan ikinci sekmede okunabilen bir
+    yardım yüzeyi. Bu yüzden kilit üç ucun üçünde de aynı kapıdan geçer.
+
+    Eğitmen muafiyeti ilk satırdadır (FR-103): sorgu hiç koşmaz. Kilit
+    değerlendirilen kişiyi hedefler; kendi dersinin sınavını açan bir eğitmen
+    asistandan mahrum kalmaz.
+
+    Modül `exam_state` olarak içe aktarılıp `exam_state.active_exam_session(...)`
+    diye çağrılıyor: `from ... import active_exam_session` bağlanmış bir kopya
+    bırakır ve mutasyon testinin monkeypatch'i etkisiz kalırdı — testin
+    kırılabilirliği FR-106'nın kendisidir.
+    """
+    if context.is_instructor:
+        return context
+    now = await db_now(session)
+    active = await exam_state.active_exam_session(
+        session,
+        user_id=context.user_id,
+        course_id=context.course_id,
+        now=now,
+        settings=settings,
+    )
+    if active is not None:
+        raise exam_state.ExamLockedError(exam_state.EXAM_LOCK_MESSAGE)
+    return context
+
+
+#: Adı bilerek göze batıcı: chat router'ına eklenecek dördüncü bir uç
+#: `CourseMemberDep` yazarsa kilidi sessizce atlar, ve bu annotation'ın yokluğu
+#: incelemede fark edilebilir olmalı.
+UnlockedCourseMemberDep = Annotated[CourseContext, Depends(require_assistant_unlocked)]
