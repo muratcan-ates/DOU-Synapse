@@ -151,3 +151,36 @@ Ayrıca **üç dürüstlük notunu** koru ve güncelle:
 - [ ] T047: ya koştu ya "anahtar bekliyor" diye kayda geçti — şablon ve süreç hazır
 - [ ] `docs/test-report.md`'de tahmin yok, her satır ölçüm ya da KOŞULMADI
 - [ ] 473+ test yeşil, mypy temiz, ruff temiz
+
+## EK (lider, 9 Ağustos ~17:00) — embedding sürüm uyuşmazlığı, AÇIK RİSK
+
+Ölçüldü: `fastembed` bu makinede `intfloat/multilingual-e5-large` modelini
+**mean pooling** ile kuruyor ve şu uyarıyı veriyor:
+
+```
+The model intfloat/multilingual-e5-large now uses mean pooling instead of CLS
+embedding. In order to preserve the previous behaviour, consider either pinning
+fastembed version to 0.5.1 ...
+```
+
+Bu bir uyarı değil, **vektör uzayı değişikliğidir.** Farklı fastembed
+sürümleriyle embed edilmiş bir korpusa karşı sorgu yapmak sessizce yanlış
+komşular döndürür — çöker değil, kötüleşir; yani ölçmeden fark edilmez.
+
+Aynı gün bunun kardeşi bir kusur canlıda yakalandı: kanıt eşiği `fastembed`
+uzayında kalibre edilmişti, dev korpusu `hashing` ile ingest edilmişti ve eşik
+**her soruyu** reddediyordu. Eşik artık sağlayıcıdan çözülüyor, ama bu sınıfın
+yalnız yarısı: ikinci yarı **sürüm**.
+
+**Bu sizi ilgilendiriyor:**
+- **R2:** ölçtüğünüz her sayı, korpusun hangi sağlayıcı+sürümle embed edildiğine
+  bağlıdır. Koşu çıktılarına bu ikisini yazın; yoksa sayı tekrar üretilemez.
+  T045 (embedding A/B) zaten iki uzayı karşılaştırıyor — aynı disiplini sürüme
+  de uygulayın.
+- **R3:** T048 modeli imaja gömüyor. Gömülen sürümü **sabitleyin** (`pyproject`'te
+  fastembed pinli mi, kontrol edin) ve imajın ürettiği vektörle korpusun
+  vektörünün aynı uzayda olduğunu ölçün (aynı metin → kosinüs ~1.0).
+  int8 quantize ölçümünüzün yanına bunu da koyun.
+- **R4:** kalıcı çözüm sizde: chunk'ın hangi sağlayıcı+sürümle embed edildiği
+  kayda geçmeli (`0006`), sorgu zamanında uyuşmazlık **fail-closed** davranmalı.
+  Bugün bu bilgi hiçbir yerde tutulmuyor.

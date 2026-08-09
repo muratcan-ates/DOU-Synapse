@@ -92,6 +92,18 @@ class Settings(BaseSettings):
     # DİKKAT: Bu ayar ingest zamanına aittir. Değiştirmek vektör uzayını değiştirir ve
     # tüm korpusun yeniden işlenmesini gerektirir; çalışma zamanı yedeği olarak kullanılamaz.
     # "fastembed" = multilingual-e5-large (üretim), "hashing" = deterministik yerel (test).
+    #
+    # AÇIK RİSK (9 Ağustos, ölçüldü): fastembed bu modeli artık **mean pooling** ile
+    # çalıştırıyor, eski sürümler **CLS** kullanıyordu ve kütüphane bunu yalnız bir
+    # UserWarning ile söylüyor. Pooling değişikliği vektör uzayını değiştirir; yani
+    # farklı fastembed sürümleriyle ingest edilmiş bir korpusla sorgu yapmak, sessizce
+    # yanlış komşuları döndürür. Kanıt eşiğinin sağlayıcıya bağlı olması bu sınıfın
+    # yalnız bir yarısını kapatıyor — ikinci yarısı SÜRÜM.
+    #
+    # Kapatılması gereken: chunk'ın hangi sağlayıcı VE hangi sürümle embed edildiği
+    # kayda geçmeli, sorgu zamanında uyuşmazlık fail-closed davranmalı. Şema
+    # değişikliği gerektiriyor (R4'ün `0006`'sı) ve R2'nin ölçüm koşularını da
+    # ilgilendiriyor; ikisine de iletildi.
     embedding_provider: Literal["fastembed", "hashing"] = "hashing"
     embedding_model: str = "intfloat/multilingual-e5-large"
     embedding_cache_dir: str | None = None
