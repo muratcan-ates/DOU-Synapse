@@ -43,7 +43,11 @@ export interface Member {
 
 // --- Sohbet (T021) — backend `app/schemas/chat.py` ile birebir ---------------
 
-export type AnswerStatus = "answered" | "insufficient_context" | "out_of_scope";
+export type AnswerStatus =
+  | "answered"
+  | "insufficient_context"
+  | "out_of_scope"
+  | "budget_exhausted";
 export type ChatMode = "qa" | "socratic" | "exam";
 export type SocraticStage =
   | "diagnose"
@@ -354,4 +358,6 @@ export interface ChatAvailability {
   available: boolean;
   reason: string | null;
   message: string | null;
+  allowed_modes: ChatMode[];
+  hint_limit: number;
 }

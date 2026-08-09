@@ -23,6 +23,7 @@ const TABS = [
   { slug: "/chat", label: "Asistan", locksWithAssistant: true },
   { slug: "/exam", label: "Sınav provası" },
   { slug: "/questions", label: "Soru havuzu", instructorOnly: true },
+  { slug: "/settings", label: "AI politikası", instructorOnly: true },
   { slug: "/analytics", label: "İlerleme" },
   { slug: "/members", label: "Katılımcılar", instructorOnly: true },
 ];

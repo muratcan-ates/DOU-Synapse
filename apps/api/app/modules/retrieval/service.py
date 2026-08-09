@@ -136,9 +136,16 @@ class HybridRetriever:
     bağlamına (ve dolayısıyla o isteğin RLS oturumuna) bağlı kurulur.
     """
 
-    def __init__(self, session: AsyncSession, settings: Settings | None = None) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        settings: Settings | None = None,
+        *,
+        document_ids: tuple[UUID, ...] | None = None,
+    ) -> None:
         self._session = session
         self._settings = settings or get_settings()
+        self._document_ids = document_ids
 
     async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
         """Hibrit arama, HAM sonuç. Kanıt eşiği uygulanmaz — bkz. modül docstring'i."""
@@ -154,12 +161,14 @@ class HybridRetriever:
             course_id=course_id,
             query=query,
             limit=settings.retrieval_dense_candidates,
+            document_ids=self._document_ids,
         )
         fts_hits = await fts_search(
             self._session,
             course_id=course_id,
             query=query,
             limit=settings.retrieval_fts_candidates,
+            document_ids=self._document_ids,
         )
         return fuse(dense_hits, fts_hits, limit=limit, rrf_k=settings.retrieval_rrf_k)
 

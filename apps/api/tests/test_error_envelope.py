@@ -161,7 +161,8 @@ class TestBosBlueprintRouter:
         # Kaynak bağlamı + eğitmen retrieval laboratuvarı iki yeni yol ekler.
         # Privacy router beş işlem ekler; ikisi mevcut sohbet yollarına DELETE
         # metodu eklediği için OpenAPI'de üç yeni path görünür: 28 + 3 = 31.
-        assert len(yollar) == 31, f"yol sayısı değişmiş: {len(yollar)}"
+        # Ders AI politikası iki yeni yol ekler (`GET/PUT` aynı yolu paylaşır).
+        assert len(yollar) == 33, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

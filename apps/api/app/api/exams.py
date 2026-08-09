@@ -40,7 +40,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseMemberDep, SessionDep
+from app.api.deps import CourseContext, CourseMemberDep, SessionDep, SettingsDep
 from app.core.config import Settings, get_settings
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
@@ -457,6 +457,7 @@ async def request_hint(
     payload: HintRequest,
     context: CourseMemberDep,
     session: SessionDep,
+    settings: SettingsDep,
 ) -> HintOut:
     """Kademeli ipucu — yalnız `practice` modunda.
 
@@ -464,7 +465,6 @@ async def request_hint(
     dayandığı chunk'tan daha çoğu açılır. Böylece ipucu her zaman gerçek bir
     materyal parçasına dayanır (Anayasa I) ve LLM ayakta olmasa da çalışır.
     """
-    settings = get_settings()
     exam = await _load_exam(session, session_id, context)
 
     if exam.mode is ExamMode.EXAM:
@@ -487,7 +487,10 @@ async def request_hint(
     if source is None:
         raise NotFoundError("Bu sorunun kaynağı okunamadı; ipucu üretilemiyor.")
 
-    level = min(payload.hint_level, settings.socratic_max_stage)
+    from app.modules.policy.service import resolve_policy
+
+    policy = await resolve_policy(session, course_id=context.course_id, settings=settings)
+    level = min(payload.hint_level, policy.max_hints)
     return HintOut(
         question_id=question.id,
         hint_level=level,
