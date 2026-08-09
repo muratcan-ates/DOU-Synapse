@@ -15,7 +15,7 @@ testin neyi kanıtladığını bilmesi ve 002'nin her User Story'sini elle doğr
 > (`docs/team/parallel/20_DEVIR_9_AGUSTOS.md:128-147`).
 
 > **Bu belgede ölçülen sayılar (9 Ağustos 2026, bu ağaçta koşuldu):**
-> `cd apps/api && uv run pytest -q` → **664 passed, 75,48 sn.**
+> `cd apps/api && uv run pytest -q` → **677 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir.
 > `cd apps/web && bun test lib/` → **211 pass, 0 fail, 8 dosya.**
 > Bunların dışındaki her sayı ya bir dosyadan alıntıdır ya da **KOŞULMADI** yazar
 > (Anayasa III).
@@ -126,7 +126,7 @@ gördüğünüz artış budur.
 
 ```bash
 cd apps/api
-uv run pytest -q        # 664 passed, ~75 sn (9 Ağustos'ta bu ağaçta ölçüldü)
+uv run pytest -q        # 677 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)
 uv run mypy app
 uv run ruff check . && uv run ruff format --check .
 
@@ -592,7 +592,7 @@ issuer adı, event loop ölçümü, ısıtma. Bunları "anahtar gelince" diye er
 Anayasa VIII: davranış **gerçek ortamda** gözlenmeden bitti denmez; bu şeritte gerçek
 ortam **tarayıcı + bu ağacın API'si**, `curl` değil. Her User Story için:
 
-- [ ] `uv run pytest -q` yeşil ve **sayı bu belgeye yazıldı** (bugün: 664)
+- [ ] `uv run pytest -q` yeşil ve **sayı bu belgeye yazıldı** (US1 sonrası: 677)
 - [ ] `bun test lib/` yeşil (bugün: 211)
 - [ ] `uv run mypy app` · `ruff check` · `ruff format --check` temiz
 - [ ] Yeni uç eklendiyse OpenAPI **yeniden export edildi** (elle düzenlenmez —

@@ -14,7 +14,7 @@
 
 ## Bağlam: bu şartname neden var
 
-001 numaralı özellik (CourseGPT MVP) yerelde çalışan bir sistem üretti: 664 backend testi, 211 frontend testi, dört ekran gerçek uçlarda. Bu şartname yeni bir ürün tanımlamıyor; **var olan ürünü gerçek kullanıcıların önüne çıkarılabilir hale getiriyor** ve hocanın toplantıda vurguladığı "önce sınavın çatısını kur" isteğini karşılıyor.
+001 numaralı özellik (CourseGPT MVP) yerelde çalışan bir sistem üretti: dört ekran gerçek uçlarda, backend ve frontend test paketleri yeşil. Bu şartname yeni bir ürün tanımlamıyor; **var olan ürünü gerçek kullanıcıların önüne çıkarılabilir hale getiriyor** ve hocanın toplantıda vurguladığı "önce sınavın çatısını kur" isteğini karşılıyor.
 
 Şartnamenin çıkış noktası olan üç gözlem:
 
