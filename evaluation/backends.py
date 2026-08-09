@@ -33,7 +33,12 @@ class BackendUnavailable(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class RetrievedItem:
-    """Arka uçtan dönen tek sonuç — `contracts.RetrievedChunk`'ın ölçüme yeten kısmı."""
+    """Arka uçtan dönen tek sonuç — `contracts.RetrievedChunk`'ın ölçüme yeten kısmı.
+
+    Skorlar ayrı taşınır çünkü kanıt kapısı yalnız `dense_score`'a bakar
+    (`service.retrieve`). Eşik kalibrasyonu (T043) tam olarak bu sayının dağılımını
+    ister ve LLM'e hiç gitmeden yapılabilir.
+    """
 
     chunk_id: str | None
     file_name: str
@@ -41,12 +46,22 @@ class RetrievedItem:
     slide_number: int | None
     section_title: str | None
     text: str
+    dense_score: float = 0.0
+    fts_score: float = 0.0
+    fused_score: float = 0.0
 
 
-#: Aday giriş noktaları, tercih sırasıyla. Şerit 1'in nihai isimleri kesinleştiğinde
-#: listenin başına eklenir; gerisi eski/alternatif adlandırmalara karşı tampon.
+#: Aday giriş noktaları, tercih sırasıyla.
+#:
+#: Hibritte `HybridRetriever` (yani `contracts.Retriever` protokolünün uygulaması)
+#: ÖNCE denenir, `service.retrieve` sonra. Gerekçe: `retrieve` kanıt kapısını uygular
+#: ve eşiğin altında kalan sorguda `chunks=[]` döner. Ölçüm katmanının işi arama
+#: kalitesini ölçmek; kalibre EDİLMEMİŞ bir eşikle Recall ölçmek, retrieval'ı eşiğin
+#: kusuru yüzünden kötü gösterirdi. Kapının kararı ayrıca ve her eşik için
+#: hesaplanıyor (evaluate.py, eşik taraması) — kaydedilen dense skorlardan.
 RETRIEVAL_ENTRY_POINTS: dict[str, tuple[str, ...]] = {
     "hybrid": (
+        "app.modules.retrieval.service:HybridRetriever",
         "app.modules.retrieval.service:retrieve",
         "app.modules.retrieval.service:search",
         "app.modules.retrieval.service:hybrid_search",
@@ -161,6 +176,9 @@ def _normalize(results: Any) -> list[RetrievedItem]:
                 slide_number=getattr(result, "slide_number", None),
                 section_title=getattr(result, "section_title", None),
                 text=getattr(result, "text", ""),
+                dense_score=float(getattr(result, "dense_score", 0.0) or 0.0),
+                fts_score=float(getattr(result, "fts_score", 0.0) or 0.0),
+                fused_score=float(getattr(result, "fused_score", 0.0) or 0.0),
             )
         )
     return normalized
@@ -188,16 +206,24 @@ class RetrievalBackend:
         from app.core.db import rls_session
 
         async with rls_session(self._as_user) as session:
-            arguments = _build_arguments(
-                self._callable,
-                session=session,
-                course_id=course_id,
-                query=question,
-                limit=self._top_k,
-            )
-            result = self._callable(**arguments)
-            if inspect.isawaitable(result):
-                result = await result
+            if inspect.isclass(self._callable):
+                # `contracts.Retriever` protokolünü uygulayan sınıf: oturumu
+                # kurucuda alır, aramayı `search` yapar. İmzası sözleşmede sabit
+                # olduğu için burada tahmine gerek yok.
+                result = await self._callable(session).search(
+                    course_id=course_id, query=question, limit=self._top_k
+                )
+            else:
+                arguments = _build_arguments(
+                    self._callable,
+                    session=session,
+                    course_id=course_id,
+                    query=question,
+                    limit=self._top_k,
+                )
+                result = self._callable(**arguments)
+                if inspect.isawaitable(result):
+                    result = await result
         return _normalize(result)
 
 

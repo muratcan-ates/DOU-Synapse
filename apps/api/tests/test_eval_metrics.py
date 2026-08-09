@@ -262,9 +262,67 @@ class TestGoldSetSelection:
         gold = goldset.load(EVALUATION_ROOT / "gold_set" / "calibration.json")
         retrieval_items = evaluate.select_items(gold, "retrieval", None)
         e2e_items = evaluate.select_items(gold, "e2e", None)
-        assert all(item.expected_sources for item in retrieval_items)
-        assert not any(item.category == "out_of_scope" for item in retrieval_items)
-        assert len(e2e_items) > len(retrieval_items)
+
+        # Kapsam dışı sorular SORULUR (eşik taraması onların skor dağılımını ister)
+        # ama Recall'a girmezler; eleme puanlamada yapılır.
+        assert any(item.category == "out_of_scope" for item in retrieval_items)
+        assert all(
+            item.expected_sources or item.category == "out_of_scope" for item in retrieval_items
+        )
+        assert len(e2e_items) == len(retrieval_items)  # kalibrasyonda ikisi de 15
+
+        # Holdout'ta fark görünür: injection ve sızıntı senaryoları YALNIZ uçtan uca
+        # katmanda sorulur, retrieval katmanında sorulacak bir şeyleri yoktur.
+        holdout = goldset.load(EVALUATION_ROOT / "gold_set" / "holdout.json")
+        holdout_retrieval = evaluate.select_items(holdout, "retrieval", None)
+        holdout_e2e = evaluate.select_items(holdout, "e2e", None)
+        assert len(holdout_e2e) - len(holdout_retrieval) == 21  # 15 injection + 6 sızıntı
+        assert not any(
+            item.category in {"injection", "socratic_leak"} for item in holdout_retrieval
+        )
+
+    def test_kapsam_disi_sorular_recall_a_girmez(self) -> None:
+        """Beklenen kaynağı olmayan soru Recall'a girerse metriği yapay olarak düşürür."""
+        gold = goldset.load(EVALUATION_ROOT / "gold_set" / "calibration.json")
+        entries = [
+            {
+                "item_id": item.id,
+                "category": item.category,
+                "expected_sources": [s.label() for s in item.expected_sources],
+                "ranks_by_source": [[1] for _ in item.expected_sources],
+                "retrieved_count": 8,
+                "latency_seconds": 0.1,
+                "best_dense_score": 0.9,
+            }
+            for item in evaluate.select_items(gold, "retrieval", None)
+        ]
+        scored = evaluate.score_retrieval(entries, gold)
+
+        assert scored["n_asked"] == 15  # 12 kaynaklı + 3 kapsam dışı soruldu
+        assert scored["n_items"] == 12  # yalnız 12'si puanlandı
+        assert scored["recall_at_5"] == pytest.approx(1.0)
+
+    def test_esik_taramasi_her_esikte_iki_hatayi_ayri_sayar(self) -> None:
+        """İki hata simetrik değil: tek skorda toplanmaz, ayrı ayrı raporlanır."""
+        gold = goldset.load(EVALUATION_ROOT / "gold_set" / "calibration.json")
+        items = evaluate.select_items(gold, "retrieval", None)
+        entries = [
+            {
+                "item_id": item.id,
+                "category": item.category,
+                # Kapsam dışı sorular düşük, cevaplanabilirler yüksek skor alsın:
+                # ideal ayrışma. 0.30'luk bir eşik ikisini de doğru ayırmalı.
+                "best_dense_score": 0.10 if item.category == "out_of_scope" else 0.60,
+            }
+            for item in items
+        ]
+        sweep = {row["threshold"]: row for row in evaluate.threshold_sweep(entries, gold)}
+
+        assert sweep[0.0]["correct_refusal"] == 0  # kapı hiç kapanmıyor
+        assert sweep[0.0]["missed_out_of_scope"] == 3
+        assert sweep[0.3]["correct_refusal"] == 3  # üçü de doğru reddedildi
+        assert sweep[0.3]["incorrect_refusal"] == 0
+        assert sweep[0.7]["incorrect_refusal"] == 12  # eşik fazla yüksek: hepsi kapandı
 
 
 class TestLeakFlags:
@@ -367,7 +425,10 @@ class TestHarnessPlumbing:
             evaluate.ProgressLog(tmp_path / "p.jsonl"),
             uuid4(),
         )
-        scored = evaluate.score_retrieval(entries)
+        gold = goldset.GoldSet(
+            name="oyuncak", version="0", material="-", items=tuple(items), path=Path("oyuncak.json")
+        )
+        scored = evaluate.score_retrieval(entries, gold)
 
         assert scored["recall_at_5"] == pytest.approx(0.5)
         assert scored["mrr"] == pytest.approx(0.25)  # (1/2 + 0) / 2

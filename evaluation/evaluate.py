@@ -351,14 +351,24 @@ class RunOutput:
 
 
 def select_items(gold: goldset.GoldSet, layer: str, limit: int | None) -> list[goldset.GoldItem]:
-    """Katmana göre hangi soruların sorulacağı.
+    """Katmana göre hangi soruların SORULACAĞI. Puanlama ayrı bir karar.
 
-    Retrieval katmanı yalnız beklenen kaynağı olan soruları alır: kapsam dışı bir
-    sorunun beklenen kaynağı yoktur ve Recall'a katılırsa metriği yapay olarak
-    düşürür. Uçtan uca katman tüm soruları alır — ret davranışı ve sızıntı ancak
-    orada ölçülür.
+    Retrieval katmanında beklenen kaynağı olan sorulara ek olarak `out_of_scope`
+    soruları da sorulur — ama Recall'a GİRMEZLER (`score_retrieval` onları eler).
+    Sorulmalarının sebebi eşik kalibrasyonu: kanıt kapısı yalnız `dense_score`'a
+    bakar, dolayısıyla kapsam dışı soruların skor dağılımı olmadan hiçbir eşik
+    değerlendirilemez. Bu sayede T043 taraması LLM'e hiç gitmeden yapılabiliyor.
+
+    Uçtan uca katman tüm soruları alır — ret davranışı ve sızıntı ancak orada ölçülür.
     """
-    items = list(gold.scored_items()) if layer == "retrieval" else list(gold.items)
+    if layer == "retrieval":
+        items = [
+            item
+            for item in gold.items
+            if item.is_retrieval_scored or item.category == "out_of_scope"
+        ]
+    else:
+        items = list(gold.items)
     return items[:limit] if limit else items
 
 
@@ -383,6 +393,11 @@ async def run_retrieval_layer(
             "category": item.category,
             "question": item.question,
             "retrieved_count": len(retrieved),
+            # Kanıt kapısının BAKTIĞI sayı (`service.retrieve`: füzyonlu listedeki en
+            # yüksek dense skor). Kaydedilirse her eşik için kapının kararı sonradan,
+            # yeni bir koşu yapmadan hesaplanabilir.
+            "best_dense_score": max((r.dense_score for r in retrieved), default=0.0),
+            "best_fused_score": max((r.fused_score for r in retrieved), default=0.0),
             "ranks_by_source": [list(source) for source in ranks],
             "expected_sources": [source.label() for source in item.expected_sources],
             "top_results": [
@@ -458,7 +473,60 @@ async def run_e2e_layer(
 # ---------------------------------------------------------------------------
 
 
-def score_retrieval(entries: list[dict[str, Any]]) -> dict[str, Any]:
+#: Eşik taraması için denenen değerler. Aralık geniş tutuldu: dar bir aralık,
+#: seçilen değerin kenarda kalıp kalmadığını göstermez.
+THRESHOLD_CANDIDATES = tuple(round(0.05 * step, 2) for step in range(20))
+
+
+def threshold_sweep(
+    entries: list[dict[str, Any]],
+    gold: goldset.GoldSet,
+    thresholds: tuple[float, ...] = THRESHOLD_CANDIDATES,
+) -> list[dict[str, Any]]:
+    """Her aday eşikte kanıt kapısının ne yapacağı — LLM'e gitmeden.
+
+    Kapı `service.retrieve` içinde `best_dense_score < threshold` ile karar veriyor.
+    Bu sayı koşu sırasında kaydedildiği için her eşiğin sonucu sonradan, yeni bir
+    koşu yapmadan hesaplanabiliyor. Yedi ayrı koşu yerine tek koşu + aritmetik:
+    ölçüm ucuzladığı için eşik "denenerek" değil taranarak seçilebiliyor.
+
+    İki hata simetrik DEĞİL: kapsam dışı bir soruyu cevaplamak sistemin merkezi
+    vaadini çiğner, cevaplanabilir bir soruyu reddetmek kullanıcıyı rahatsız eder.
+    O yüzden iki sayı da ayrı ayrı raporlanır, tek bir skorda toplanmaz.
+    """
+    by_id = {item.id: item for item in gold.items}
+    rows: list[dict[str, Any]] = []
+    for threshold in thresholds:
+        correct_refusal = incorrect_refusal = missed_out_of_scope = answered = 0
+        for entry in entries:
+            item = by_id[entry["item_id"]]
+            abstains = entry.get("best_dense_score", 0.0) < threshold
+            if item.category == "out_of_scope":
+                correct_refusal += abstains
+                missed_out_of_scope += not abstains
+            else:
+                incorrect_refusal += abstains
+                answered += not abstains
+        rows.append(
+            {
+                "threshold": threshold,
+                "correct_refusal": correct_refusal,
+                "missed_out_of_scope": missed_out_of_scope,
+                "incorrect_refusal": incorrect_refusal,
+                "answered": answered,
+            }
+        )
+    return rows
+
+
+def score_retrieval(entries: list[dict[str, Any]], gold: goldset.GoldSet) -> dict[str, Any]:
+    # Recall/MRR yalnız beklenen kaynağı olan sorularda. `out_of_scope` soruları
+    # koşuya eşik taraması için girdi; metriğe girerlerse Recall'ı yapay olarak düşürür.
+    scored = [
+        entry
+        for entry in entries
+        if entry["category"] in goldset.RETRIEVAL_CATEGORIES and entry["expected_sources"]
+    ]
     outcomes = [
         metrics.RetrievalOutcome(
             item_id=entry["item_id"],
@@ -466,11 +534,18 @@ def score_retrieval(entries: list[dict[str, Any]]) -> dict[str, Any]:
             ranks_by_source=tuple(tuple(source) for source in entry["ranks_by_source"]),
             retrieved_count=entry["retrieved_count"],
         )
-        for entry in entries
+        for entry in scored
     ]
     computed = metrics.retrieval_metrics(outcomes).as_dict()
+    computed["n_asked"] = len(entries)
     computed["latency_p95_seconds"] = metrics.percentile(
         [entry["latency_seconds"] for entry in entries], 0.95
+    )
+    computed["threshold_sweep"] = threshold_sweep(entries, gold)
+    computed["threshold_sweep_note"] = (
+        "Kaydedilen best_dense_score'lardan hesaplandı; kapının üretimdeki formülü "
+        "(service.retrieve: best_dense_score < threshold) birebir uygulandı. "
+        "Kapsam dışı ret oranı YALNIZ holdout'ta raporlanır."
     )
     return computed
 
@@ -596,10 +671,47 @@ def write_review_file(path: Path, entries: list[dict[str, Any]]) -> None:
 # ---------------------------------------------------------------------------
 
 
+def resweep(result_path: Path, gold_set_dir: Path, thresholds: tuple[float, ...]) -> int:
+    """Kaydedilmiş bir koşudan eşik taramasını YENİDEN hesaplar; hiçbir istek atmaz.
+
+    `best_dense_score` koşu sırasında kaydedildiği için tarama çözünürlüğü sonradan
+    değiştirilebiliyor. Bu önemli çıktı: e5 kosinüs skorları dar bir bantta toplanıyor
+    ve 0.05'lik bir ızgara iki sınıfın ayrıştığı yeri hiç göstermiyordu. Yeni koşu
+    yapmadan ızgarayı sıklaştırmak, "eşiği deneyerek bulduk" ile "eşiği taradık"
+    arasındaki farkı yaratıyor.
+    """
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    gold = goldset.load(gold_set_dir / f"{result['set']}.json")
+    rows = threshold_sweep(result["per_item"], gold, thresholds)
+
+    scores = [(e["best_dense_score"], e["category"], e["item_id"]) for e in result["per_item"]]
+    out_of_scope = [s for s, category, _ in scores if category == "out_of_scope"]
+    answerable = [s for s, category, _ in scores if category != "out_of_scope"]
+
+    print(f"koşu: {result['run_id']} · embedding={result['embedding_provider']}")
+    print(f"  kapsam dışı (n={len(out_of_scope)}): "
+          f"min={min(out_of_scope):.4f} max={max(out_of_scope):.4f}")
+    print(f"  cevaplanabilir (n={len(answerable)}): "
+          f"min={min(answerable):.4f} max={max(answerable):.4f}")
+    separable = max(out_of_scope) < min(answerable)
+    print(f"  iki sınıf ayrık mı: {'EVET' if separable else 'HAYIR (örtüşüyor)'}")
+    if separable:
+        print(f"  ayrışma aralığı: ({max(out_of_scope):.4f}, {min(answerable):.4f}] "
+              f"— genişlik {min(answerable) - max(out_of_scope):.4f}")
+
+    print("\n  eşik   doğru_ret  kaçan  yanlış_ret  cevaplanan")
+    for row in rows:
+        print(
+            f"  {row['threshold']:.3f}  {row['correct_refusal']:>9}  {row['missed_out_of_scope']:>5}"
+            f"  {row['incorrect_refusal']:>10}  {row['answered']:>10}"
+        )
+    return 0
+
+
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="DOU-Synapse değerlendirme harness'ı")
-    parser.add_argument("--set", dest="gold_set", choices=("calibration", "holdout"), required=True)
-    parser.add_argument("--layer", choices=("retrieval", "e2e"), required=True)
+    parser.add_argument("--set", dest="gold_set", choices=("calibration", "holdout"))
+    parser.add_argument("--layer", choices=("retrieval", "e2e"))
     parser.add_argument("--mode", choices=("dense", "hybrid"), default="hybrid")
     parser.add_argument("--chat-mode", choices=("qa", "socratic"), default="qa")
     parser.add_argument("--gold-set-dir", type=Path, default=GOLD_SET_DIR)
@@ -620,12 +732,25 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         action="store_true",
         help="evidence_threshold T043 ile kalibre edildiyse işaretleyin (varsayılan: hayır).",
     )
+    parser.add_argument(
+        "--sweep-from", type=Path, help="Kayıtlı koşudan eşik taramasını yeniden hesapla."
+    )
+    parser.add_argument("--sweep-min", type=float, default=0.0)
+    parser.add_argument("--sweep-max", type=float, default=1.0)
+    parser.add_argument("--sweep-step", type=float, default=0.05)
     args = parser.parse_args(argv)
 
+    if args.sweep_from:
+        return args
+    if not args.gold_set or not args.layer:
+        parser.error("--set ve --layer gerekir (ya da --sweep-from).")
+
+    args.corpus_provider = None
     if args.corpus:
         corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
         args.course_id = args.course_id or corpus["course_id"]
         args.as_user = args.as_user or corpus["instructor_id"]
+        args.corpus_provider = corpus.get("embedding_provider")
     if not args.course_id or not args.as_user:
         parser.error("--corpus ya da (--course-id ve --as-user) gerekir.")
     args.course_id = UUID(args.course_id)
@@ -633,6 +758,13 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 async def execute(args: argparse.Namespace) -> int:
+    if args.sweep_from:
+        steps = int(round((args.sweep_max - args.sweep_min) / args.sweep_step)) + 1
+        grid = tuple(
+            round(args.sweep_min + index * args.sweep_step, 4) for index in range(max(1, steps))
+        )
+        return resweep(args.sweep_from, args.gold_set_dir, grid)
+
     calibration = goldset.load(args.gold_set_dir / "calibration.json")
     holdout = goldset.load(args.gold_set_dir / "holdout.json")
     gold = calibration if args.gold_set == "calibration" else holdout
@@ -647,6 +779,20 @@ async def execute(args: argparse.Namespace) -> int:
         return 1
 
     metadata = build_metadata(args, gold)
+
+    # Korpus bir sağlayıcıyla gömüldü, sorgu başka biriyle gömülürse iki vektör ayrı
+    # uzaylardadır: arama hata vermez, yalnız sonuçlar gürültü olur ve Recall sessizce
+    # anlamsızlaşır. Yakalanması en zor hata sınıfı bu olduğu için koşu hiç başlamaz.
+    if args.corpus_provider and args.corpus_provider != metadata["embedding_provider"]:
+        print(
+            f"Korpus '{args.corpus_provider}' ile gömülmüş, koşu "
+            f"'{metadata['embedding_provider']}' ile başlatılıyor. Sorgu ve belge "
+            "vektörleri farklı uzaylarda olur; sonuç anlamsız olurdu.\n"
+            f"  EMBEDDING_PROVIDER={args.corpus_provider} ile tekrar deneyin.",
+            file=sys.stderr,
+        )
+        return 1
+
     fingerprint = config_fingerprint(metadata)
     metadata["config_fingerprint"] = fingerprint
     items = select_items(gold, args.layer, args.limit)
@@ -690,7 +836,7 @@ async def execute(args: argparse.Namespace) -> int:
             )
             metadata["entry_point"] = backend.entry_point
             entries = await run_retrieval_layer(items, backend, runner, progress, args.course_id)
-            computed = score_retrieval(entries)
+            computed = score_retrieval(entries, gold)
         else:
             token = args.token or f"dev:{args.as_user}"
             async with ChatBackend(args.api_url, token) as chat:
