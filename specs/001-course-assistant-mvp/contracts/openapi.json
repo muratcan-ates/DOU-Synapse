@@ -1410,6 +1410,110 @@
           }
         }
       }
+    },
+    "/courses/{course_id}/analytics/me": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "My Progress",
+        "description": "Kendi konu bazlı ilerlemem. Dersin her üyesi kendi satırlarını görür.\n\nBu gösterge resmî bir not DEĞİLDİR; nereye çalışılacağını gösteren bir öneridir\n(ARCHITECTURE §5). İbare arayüzde zorunludur.",
+        "operationId": "my_progress_courses__course_id__analytics_me_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentAnalytics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/analytics/class": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Class Progress",
+        "description": "Sınıf analitiği. Yalnız dersin eğitmeni görebilir.",
+        "operationId": "class_progress_courses__course_id__analytics_class_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassAnalytics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1912,6 +2016,110 @@
         "title": "CitationOut",
         "description": "Kullanıcıya gösterilen atıf.\n\n`file_name`, `location` ve `snippet` chunk metadata'sından gelir. Modelin\nmetninden türetilen tek alan `claim`'dir ve o da yalnız açıklayıcıdır —\nhiçbir güvenlik kararı ona bakmaz."
       },
+      "ClassAnalytics": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/ClassTopicProgress"
+            },
+            "type": "array",
+            "title": "Topics"
+          },
+          "missed_questions": {
+            "items": {
+              "$ref": "#/components/schemas/MissedQuestion"
+            },
+            "type": "array",
+            "title": "Missed Questions"
+          },
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "tracked_topics": {
+            "type": "integer",
+            "title": "Tracked Topics"
+          },
+          "untracked_topics": {
+            "type": "integer",
+            "title": "Untracked Topics"
+          },
+          "student_count": {
+            "type": "integer",
+            "title": "Student Count"
+          },
+          "answered_questions": {
+            "type": "integer",
+            "title": "Answered Questions"
+          },
+          "out_of_scope": {
+            "$ref": "#/components/schemas/OutOfScopeStat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "topics",
+          "missed_questions",
+          "average_score",
+          "tracked_topics",
+          "untracked_topics",
+          "student_count",
+          "answered_questions",
+          "out_of_scope"
+        ],
+        "title": "ClassAnalytics"
+      },
+      "ClassTopicProgress": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "average_score": {
+            "type": "number",
+            "title": "Average Score"
+          },
+          "level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "student_count": {
+            "type": "integer",
+            "title": "Student Count"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id",
+          "name",
+          "average_score",
+          "level",
+          "student_count",
+          "answer_count"
+        ],
+        "title": "ClassTopicProgress"
+      },
       "CourseCreate": {
         "properties": {
           "code": {
@@ -2319,6 +2527,15 @@
         ],
         "title": "HintRequest"
       },
+      "MasteryLevel": {
+        "type": "string",
+        "enum": [
+          "needs_work",
+          "medium",
+          "good"
+        ],
+        "title": "MasteryLevel"
+      },
       "MembershipCreate": {
         "properties": {
           "email": {
@@ -2392,6 +2609,87 @@
           "revoked"
         ],
         "title": "MembershipStatus"
+      },
+      "MissedQuestion": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "topic_name": {
+            "type": "string",
+            "title": "Topic Name"
+          },
+          "stem": {
+            "type": "string",
+            "title": "Stem"
+          },
+          "wrong_rate": {
+            "type": "number",
+            "title": "Wrong Rate"
+          },
+          "graded_answer_count": {
+            "type": "integer",
+            "title": "Graded Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "topic_name",
+          "stem",
+          "wrong_rate",
+          "graded_answer_count"
+        ],
+        "title": "MissedQuestion"
+      },
+      "OutOfScopeStat": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "const": "request_logs",
+            "title": "Source"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          },
+          "out_of_scope_count": {
+            "type": "integer",
+            "title": "Out Of Scope Count"
+          },
+          "insufficient_context_count": {
+            "type": "integer",
+            "title": "Insufficient Context Count"
+          },
+          "answered_request_count": {
+            "type": "integer",
+            "title": "Answered Request Count"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "rate",
+          "out_of_scope_count",
+          "insufficient_context_count",
+          "answered_request_count",
+          "note"
+        ],
+        "title": "OutOfScopeStat",
+        "description": "Kapsam dışı ret istatistiği (SC-005).\n\nKaynak `request_logs`, `chat_messages` DEĞİL. Sebep bir gizlilik kararı: sohbet\nmesajları eğitmene bilinçli olarak kapalıdır (0003), çünkü öğrencinin hocasına\nsormaya çekindiği soruyu sisteme sorabilmesi ürünün gerekçelerinden biri.\n`request_logs` ise şema gereği serbest metin taşımaz — eğitmen \"kaç soru kapsam\ndışı diye reddedildi\" sorusunun cevabını alır, kimsenin ne sorduğunu göremez.\n\n`source` alanı zorunlu: sayının nereden geldiği görünmeden sayı raporlanamaz.\nHenüz hiç cevap üretilmemişse `rate` None kalır — 0.0 döndürmek \"bu derste hiçbir\nsoru reddedilmedi\" demek olurdu ve bu, ölçülmemiş bir şeyi ölçülmüş gibi\ngöstermek olurdu (Anayasa III)."
       },
       "QuestionGenerateRequest": {
         "properties": {
@@ -2642,6 +2940,60 @@
         "title": "SourceRefOut",
         "description": "Kaynak referansı. Dosya adı ve konum **chunk metadata'sından** gelir.\n\nModel metninden üretilmez (Anayasa I); bu yüzden burada bir `text` alanı değil,\nkısaltılmış `snippet` vardır — gösterilen alıntı gerçekten o chunk'ın içindedir."
       },
+      "StudentAnalytics": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/TopicProgress"
+            },
+            "type": "array",
+            "title": "Topics"
+          },
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "tracked_topics": {
+            "type": "integer",
+            "title": "Tracked Topics"
+          },
+          "untracked_topics": {
+            "type": "integer",
+            "title": "Untracked Topics"
+          },
+          "needs_work_topics": {
+            "type": "integer",
+            "title": "Needs Work Topics"
+          },
+          "answered_questions": {
+            "type": "integer",
+            "title": "Answered Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "topics",
+          "average_score",
+          "tracked_topics",
+          "untracked_topics",
+          "needs_work_topics",
+          "answered_questions"
+        ],
+        "title": "StudentAnalytics"
+      },
       "TopicCreate": {
         "properties": {
           "name": {
@@ -2696,6 +3048,40 @@
           "created_at"
         ],
         "title": "TopicOut"
+      },
+      "TopicProgress": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id",
+          "name",
+          "score",
+          "level",
+          "answer_count"
+        ],
+        "title": "TopicProgress",
+        "description": "Öğrencinin tek bir konudaki durumu."
       },
       "ValidationError": {
         "properties": {

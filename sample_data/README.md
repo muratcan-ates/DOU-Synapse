@@ -53,9 +53,49 @@ teknik terim yoğun materyal sağlamaktı — sayfa sayısı değil içerik çe�
 Gerekirse her dosya aynı desende genişletilebilir (yeni alt başlıklar eklenerek); şema ve
 format değişmez.
 
-## Kabul kriteri (brief §Teslimat 1)
+## Kabul kriteri (brief §Teslimat 1) — 9 Ağustos 2026'da doğrulandı
 
-Paket `apps/web` üzerinden bir derse yüklendiğinde tüm dosyaların `completed` durumuna
-geçtiği ve chunk'ların sayfa/slayt metadata'sı taşıdığı **gerçek bir yüklemeyle
-doğrulanmalıdır** (Anayasa VIII). Bu depoda yerel Postgres/pgvector çalıştıramadığım
-için bu adımı ben yapamadım — Metehan'ın yerel ortamında ilk iş bu olmalı.
+Paket gerçek ingest hattından geçirildi (Anayasa VIII: gözlenmeden bitmedi). Koşu
+`evaluation/build_corpus.py` ile yapıldı — gerçek yükleme ucu, gerçek doğrulama,
+gerçek worker, gerçek chunking ve embedding; hiçbir satır doğrudan INSERT edilmedi:
+
+```bash
+cd apps/api
+uv run python ../../evaluation/build_corpus.py --database dou_synapse_eval --recreate
+```
+
+**Sonuç: 8/8 dosya `completed`, 33 chunk.**
+
+| Dosya | Chunk | Sayfa no'lu | Slayt no'lu | Embedding'li |
+|---|---:|---:|---:|---:|
+| `01-processes.pdf` | 3 | 3 | — | 3 |
+| `02-cpu-scheduling.pdf` | 4 | 4 | — | 4 |
+| `03-memory-management.pdf` | 3 | 3 | — | 3 |
+| `04-synchronization.pdf` | 4 | 4 | — | 4 |
+| `05-deadlock-demo.pdf` | 4 | 4 | — | 4 |
+| `06-file-systems.pptx` | 7 | — | 7 | 7 |
+| `fork_example.c` | 2 | — | — | 2 |
+| `producer_consumer.py` | 6 | — | — | 6 |
+
+Her PDF chunk'ı sayfa, her slayt chunk'ı slayt numarası taşıyor; kod chunk'larında
+ikisi de yok ve olmamalı (konum bilgisi `section_title` içinde satır aralığı olarak
+durur). Chunk sayısının sayfa sayısından fazla olduğu dosyalarda bir sayfa birden çok
+chunk'a bölünmüş; **hiçbir chunk iki sayfayı birleştirmiyor** (ARCHITECTURE §3).
+
+Aynı korpusa karşı gold set kaynakları da doğrulandı — `calibration.json` ve
+`holdout.json` içindeki her `expected_sources` girdisinin karşılığı korpusta var:
+
+```bash
+uv run python ../../evaluation/verify_gold_set.py --corpus <build_corpus çıktısı>.json
+```
+
+**`.md` dosyaları korpusa girmez.** Pakette her ders notunun hem `.md` hem `.pdf`
+hâli var; derse yüklenen PDF'tir, Markdown kaynak metindir. İkisi birden yüklenirse
+her sayfa iki kez temsil edilir ve Recall olduğundan yüksek çıkar.
+
+**Ölçüm koşusu için not:** yukarıdaki doğrulama yerel varsayılan olan
+`EMBEDDING_PROVIDER=hashing` ile yapıldı. Bu deterministik SAHTE bir embedding'dir;
+ingest hattının çalıştığını kanıtlar ama **bu korpusta ölçülen Recall rapora giremez**.
+Ölçüm koşuları `EMBEDDING_PROVIDER=fastembed` ile yeniden kurulmuş korpusta yapılır;
+`build_corpus.py` hangi sağlayıcıyla kurduğunu her özetine yazar ve `hashing` ise
+uyarır.
