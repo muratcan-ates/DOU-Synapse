@@ -22,7 +22,6 @@ uydurulmuş bir referans üretmiş olurduk — kullanıcı açısından en köt�
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field, replace
 from uuid import UUID
 
@@ -36,6 +35,7 @@ from app.contracts import (
     SocraticStage,
 )
 from app.core.config import Settings, get_settings
+from app.core.llm_json import first_json_object
 from app.core.logging import get_logger
 from app.modules.generation import prompts
 from app.modules.generation.llm import LlmClient, build_llm_client
@@ -241,27 +241,13 @@ def _parse_payload(raw: str) -> LlmAnswerPayload | None:
     """Sağlayıcı metninden şemaya uyan gövdeyi çıkarır.
 
     Modeller JSON'u kod çiti içine almaya ya da önüne bir cümle koymaya
-    meyillidir. `json.loads`'u doğrudan çağırmak bu yüzden gereksiz retry üretir;
-    önce metindeki ilk geçerli JSON nesnesi taranır.
+    meyillidir; `core.llm_json` o gürültüyü tek kuralla kaldırır (aynı kuralı
+    soru üretimi ve puanlama da kullanır).
     """
-    data = _first_json_object(raw)
+    data = first_json_object(raw)
     if data is None:
         return None
     try:
         return LlmAnswerPayload.model_validate(data)
     except ValidationError:
         return None
-
-
-def _first_json_object(raw: str) -> dict[str, object] | None:
-    decoder = json.JSONDecoder()
-    for index, char in enumerate(raw):
-        if char != "{":
-            continue
-        try:
-            value, _ = decoder.raw_decode(raw[index:])
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict):
-            return value
-    return None

@@ -35,8 +35,6 @@ bağladığı sahteler varsa onlar, yoksa gerçek modüller. Hiçbir sağlayıc�
 
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -47,6 +45,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk, Retriever
 from app.core import text_tr
+from app.core.llm_json import first_json_object
 from app.core.logging import get_logger
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
 from app.modules.generation.llm import LlmRequest, build_llm_client
@@ -364,23 +363,6 @@ def build_prompt(
 # ---------------------------------------------------------------------------
 
 
-def extract_json_object(raw: str) -> dict[str, Any]:
-    """Modelin metnindeki JSON nesnesini çıkarır.
-
-    Sağlayıcılar zaman zaman JSON'u ```json çitiyle sarar. Çitleri temizlemek
-    "şemaya uymayan çıktıyı kabul etmek" değildir: içerik yine tam doğrulamadan
-    geçer, yalnız taşıyıcı gürültü atılır.
-    """
-    text = raw.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
-        text = re.sub(r"\n?```$", "", text).strip()
-    parsed = json.loads(text)
-    if not isinstance(parsed, dict):
-        raise ValueError("Beklenen JSON nesnesi değil.")
-    return parsed
-
-
 @dataclass(slots=True)
 class _AttemptResult:
     """Tek bir model çağrısının sonucu.
@@ -404,9 +386,8 @@ class _AttemptResult:
 def _drafts_from_response(raw: str, question_type: QuestionType) -> _AttemptResult:
     """Ham yanıttan geçerli taslakları çıkarır; her reddin sebebini de döndürür."""
     model = _DRAFT_MODELS[question_type]
-    try:
-        envelope = extract_json_object(raw)
-    except (json.JSONDecodeError, ValueError):
+    envelope = first_json_object(raw)
+    if envelope is None:
         return _AttemptResult(envelope_reason="yanıt JSON olarak ayrıştırılamadı")
 
     items = envelope.get("questions")
