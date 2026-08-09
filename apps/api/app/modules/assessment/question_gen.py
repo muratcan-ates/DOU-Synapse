@@ -42,12 +42,19 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk, Retriever
 from app.core.logging import get_logger
-from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.models.assessment import (
+    LearningOutcome,
+    Question,
+    QuestionDifficulty,
+    QuestionStatus,
+    QuestionType,
+    Topic,
+)
 from app.modules.generation.llm import LlmRequest, build_llm_client
 from app.modules.retrieval.service import HybridRetriever
 from app.schemas.assessment import (
@@ -226,6 +233,22 @@ class _OpenDraft(_Draft):
     rubric: list[RubricItem] = Field(default_factory=list, max_length=12)
     accepted_answers: list[str] = Field(default_factory=list, max_length=12)
 
+    @model_validator(mode="after")
+    def _rubrik_agirliklari_yuze_tamamlanmali(self) -> _OpenDraft:
+        """Ağırlık toplamı kısıtı YALNIZ ÜRETİMDE zorlanır (FR-117).
+
+        Okuma yolunda normalize ediliyor (`schemas.assessment.normalized_rubric`),
+        çünkü havuzda bugün toplamı 100 etmeyen onaylı sorular var ve kısıtı okuma
+        yoluna koymak onları şema doğrulamasından düşürür, yani sessizce
+        DEĞERLENDİRİLEMEZ hâle getirirdi. Yeni üretilen bir taslak için ise böyle
+        bir bedel yok: kısıtı sağlamayan taslak havuza hiç girmez (fail-closed).
+        """
+        if self.rubric:
+            toplam = sum(item.weight for item in self.rubric)
+            if toplam != 100:
+                raise ValueError(f"rubrik ağırlıkları 100 etmeli, {toplam} geldi")
+        return self
+
 
 class _CodeTraceDraft(_Draft):
     language: str = Field(min_length=1, max_length=40)
@@ -324,6 +347,15 @@ def _format_chunks(chunks: Sequence[RetrievedChunk]) -> str:
     )
 
 
+#: Zorluk seviyesinin prompt karşılığı. Tek sözlük: seviye adlarının ürün anlamı
+#: burada yaşar, her çağrı yerinde yeniden hatırlanmaz (Anayasa XI).
+_DIFFICULTY_INSTRUCTIONS: dict[QuestionDifficulty, str] = {
+    QuestionDifficulty.EASY: "kolay — tanım ya da doğrudan hatırlama düzeyinde",
+    QuestionDifficulty.MEDIUM: "orta — kavramı yeni bir örneğe uygulamayı gerektirsin",
+    QuestionDifficulty.HARD: "zor — birden çok kavramı birlikte kullanmayı gerektirsin",
+}
+
+
 def build_prompt(
     *,
     topic_name: str,
@@ -333,6 +365,8 @@ def build_prompt(
     answer_format: AnswerFormat | None = None,
     example_questions: Sequence[str] = (),
     retry_hint: str | None = None,
+    learning_outcome_text: str | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> str:
     """Kullanıcı mesajını kurar. Şema tarifi ve kaynak listesi tek yerden gelir."""
     parts = [
@@ -340,6 +374,13 @@ def build_prompt(
         "",
         _TYPE_INSTRUCTIONS[question_type],
     ]
+    # FR-113: çıktı ve zorluk prompt'a BİRER SATIR olarak girer. Ayrı bir talimat
+    # bloğu yazılmadı — kalitesi ölçülmemiş bir yönlendirmeyi büyütmek, ölçmeden
+    # iddia etmek olurdu (Anayasa III). Pedagojik kalitenin ölçümü T047'nin işi.
+    if learning_outcome_text:
+        parts.append(f"Bu soru şu öğrenme çıktısını ölçmeli: {learning_outcome_text}")
+    if difficulty is not None:
+        parts.append(f"Zorluk seviyesi: {_DIFFICULTY_INSTRUCTIONS[difficulty]}")
     if question_type is QuestionType.OPEN and answer_format is AnswerFormat.SHORT_ANSWER:
         parts.append(_SHORT_ANSWER_INSTRUCTION)
     parts += [
@@ -471,6 +512,8 @@ async def generate_questions(
     answer_format: AnswerFormat | None = None,
     example_questions: Sequence[str] = (),
     retrieval_limit: int = 8,
+    learning_outcome: LearningOutcome | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> GenerationReport:
     """Konu adıyla retrieve edilen chunk'lardan `status=draft` soru üretir.
 
@@ -502,6 +545,12 @@ async def generate_questions(
         chunks=chunks,
         answer_format=answer_format,
         example_questions=example_questions,
+        learning_outcome_text=(
+            f"{learning_outcome.code}: {learning_outcome.description}"
+            if learning_outcome is not None
+            else None
+        ),
+        difficulty=difficulty,
     )
     # Payda yalnız modelin gerçekten döndürdüğü sorulardır; ayrıştırılamayan bir
     # yanıt sayıya değil, sebep listesine yazılır.
@@ -538,6 +587,11 @@ async def generate_questions(
             source_chunk_id=draft.source_chunk_id,
             status=QuestionStatus.DRAFT,
             created_by=created_by,
+            # FR-113: üretilen taslak, istendiyse hücre ekseniyle birlikte doğar.
+            # Verilmezse NULL kalır ve yayın kapısı onu "sınıflandırılmamış" diye
+            # ayrıca raporlar — sessizce bir hücreye sayılmaz.
+            learning_outcome_id=learning_outcome.id if learning_outcome is not None else None,
+            difficulty=difficulty,
         )
         session.add(question)
         report.questions.append(question)
@@ -571,6 +625,8 @@ async def _request_drafts(
     chunks: Sequence[RetrievedChunk],
     answer_format: AnswerFormat | None,
     example_questions: Sequence[str],
+    learning_outcome_text: str | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> tuple[_AttemptResult, list[str]]:
     """Modeli çağırır; hiç geçerli taslak çıkmazsa BİR KEZ yeniden dener (FR-020).
 
@@ -589,6 +645,8 @@ async def _request_drafts(
             answer_format=answer_format,
             example_questions=example_questions,
             retry_hint=("Çıktı şemaya uymadı." if attempt else None),
+            learning_outcome_text=learning_outcome_text,
+            difficulty=difficulty,
         )
         try:
             raw = await completion.complete(system=_SYSTEM_PROMPT, user=prompt)

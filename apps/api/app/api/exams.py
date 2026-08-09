@@ -56,7 +56,11 @@ from app.models.assessment import (
     Topic,
 )
 from app.modules.assessment.exam_paper import paper_question_ids
-from app.modules.assessment.exam_state import effective_expiry, remaining_seconds
+from app.modules.assessment.exam_state import (
+    effective_expiry,
+    remaining_seconds,
+    session_cap_minutes,
+)
 from app.modules.assessment.grading import (
     GradingOutcome,
     SourceMaterial,
@@ -75,6 +79,7 @@ from app.schemas.assessment import (
     ExamStartRequest,
     HintOut,
     HintRequest,
+    RubricCriterionScore,
     SourceRefOut,
     public_payload,
     solution_payload,
@@ -150,6 +155,9 @@ def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
         ),
         "mesaj": outcome.message,
         "odak": outcome.focus,
+        # FR-117: ölçüt kırılımı. Yeni tablo açılmadı — `answers.feedback` tam bu iş
+        # için var (0004:110-112) ve içeriği tek bir yerden üretiliyor.
+        "rubrik_kirilimi": [row.model_dump() for row in outcome.rubric_breakdown],
     }
 
 
@@ -201,8 +209,21 @@ def _answer_feedback(
         why_wrong=reference(why_wrong),
         evidence=reference(evidence),
         solution=solution_payload(question.type, question.payload) if question else None,
+        rubric_breakdown=_rubric_breakdown(feedback),
         message=str(feedback.get("mesaj")) if feedback.get("mesaj") else None,
     )
+
+
+def _rubric_breakdown(feedback: dict[str, object]) -> list[RubricCriterionScore]:
+    """Kaydedilmiş kırılımı okur.
+
+    Kayıt anında yazılmayan (0008 öncesi) cevaplarda anahtar yoktur ve boş liste
+    döner; eski cevaplar geriye dönük olarak yeniden puanlanmaz.
+    """
+    raw = feedback.get("rubrik_kirilimi")
+    if not isinstance(raw, list):
+        return []
+    return [RubricCriterionScore.model_validate(row) for row in raw]
 
 
 async def _session_out(
@@ -222,7 +243,11 @@ async def _session_out(
     questions = await _load_questions(session, paper) if with_questions else {}
     answers = await _answers_of(session, exam.id)
     answered = {answer.question_id for answer in answers}
-    expiry = effective_expiry(exam, settings=settings)
+    expiry = effective_expiry(
+        exam,
+        settings=settings,
+        cap_minutes=await session_cap_minutes(session, exam, settings=settings),
+    )
 
     outcomes = [
         GradingOutcome(
@@ -481,7 +506,11 @@ async def submit_answer(
     if exam.finished_at is not None:
         raise ConflictError("Bu oturum tamamlandı; yeni cevap kabul edilmiyor.")
 
-    expiry = effective_expiry(exam, settings=settings)
+    expiry = effective_expiry(
+        exam,
+        settings=settings,
+        cap_minutes=await session_cap_minutes(session, exam, settings=settings),
+    )
     if expiry is not None and now >= expiry:
         raise ConflictError("Sınav süresi doldu; cevap kabul edilmiyor.")
 

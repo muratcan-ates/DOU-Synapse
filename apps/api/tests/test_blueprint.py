@@ -22,12 +22,16 @@ from uuid import UUID, uuid4
 
 import pytest
 from httpx import AsyncClient
+from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.db import rls_session
 from app.models.assessment import QuestionType
+from app.modules.assessment.grading import _LlmVerdict, _rubric_breakdown
+from app.modules.assessment.question_gen import _OpenDraft
+from app.schemas.assessment import OpenPayload, RubricItem, normalized_rubric
 from tests.conftest import UserFactory
 from tests.test_assessment import (
     DEADLOCK_TEXTS,
@@ -38,8 +42,6 @@ from tests.test_assessment import (
     seed_chunks,
     seed_question,
 )
-
-pytestmark = pytest.mark.asyncio
 
 
 class BlueprintFixture:
@@ -202,7 +204,7 @@ async def set_items(
     version_id: UUID,
     question_ids: list[UUID],
 ) -> Any:
-    return await client.put(
+    return await client.post(
         f"/courses/{fixture.course_id}/blueprints/{blueprint_id}/versions/{version_id}/items",
         json=[{"question_id": str(qid)} for qid in question_ids],
         headers=fixture.instructor,
@@ -463,7 +465,7 @@ class TestSurumDegismezligi:
         assert donmus[0]["learning_outcome_code"] == "CO1"
 
         # Blueprint'in hücresi SONRADAN değişiyor (kilitli değil).
-        guncelleme = await client.patch(
+        guncelleme = await client.post(
             f"/courses/{fixture.course_id}/blueprints/{blueprint_id}",
             json={"cells": [cell(outcome, count=7, points=3)]},
             headers=fixture.instructor,
@@ -627,6 +629,110 @@ class TestYayinPenceresi:
         assert response.status_code == 404, response.text
         assert response.json()["error"]["message"] == "Sınav bulunamadı."
 
+    async def test_blueprint_suresi_global_ayarla_KIRPILMAZ(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """FR-111: süre blueprint'in alanı; global 20 dakika artık yalnız provanın.
+
+        Bu kusur tarayıcıda ölçüldü: 45 dakikalık sınav 1200 saniye kalan süreyle
+        açılıyordu, çünkü `effective_expiry` her oturumu global sınırla kırpıyordu.
+        Kırpma kuralı kalkmadı — yalnız blueprint oturumunda sınav kendi süresini
+        veriyor.
+        """
+        fixture = await build(client, users, admin_engine, code="WIN 104")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client, fixture, cells=[cell(outcome, count=1)], duration=45
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        soru = await make_question(admin_engine, fixture, outcome_id=outcome, difficulty="easy")
+        await set_items(client, fixture, blueprint_id, version_id, [soru])
+        await publish(client, fixture, blueprint_id, version_id)
+
+        oturum = (
+            await client.post(
+                f"/courses/{fixture.course_id}/exams",
+                json={"blueprint_id": str(blueprint_id)},
+                headers=fixture.student,
+            )
+        ).json()
+
+        # 45 dakika = 2700 sn. Global varsayılan 20 dakika (1200 sn) olsaydı kırpardı.
+        assert oturum["remaining_seconds"] > 2000, oturum["remaining_seconds"]
+        assert oturum["remaining_seconds"] <= 45 * 60
+
+    async def test_prova_oturumu_global_sinirla_KIRPILMAYA_devam_eder(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Regresyon: kırpma kuralı prova akışında aynen duruyor."""
+        fixture = await build(client, users, admin_engine, code="WIN 105")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        await make_question(admin_engine, fixture, outcome_id=outcome, difficulty="easy")
+
+        oturum = (
+            await client.post(
+                f"/courses/{fixture.course_id}/exams",
+                json={"mode": "exam"},
+                headers=fixture.student,
+            )
+        ).json()
+
+        assert oturum["remaining_seconds"] <= 20 * 60
+
+    async def test_blueprint_suresi_boyunca_asistan_KILITLI_kalir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """US1 kilidi blueprint süresini görmeli, global sınırı değil.
+
+        Bu testi mutasyon koşusu ısmarladı: `active_exam_session` içindeki kırpma
+        global sınıra sabitlendiğinde HİÇBİR test kırmızı yanmıyordu. Oysa kusur
+        ağır: 45 dakikalık sınavın 21. dakikasında asistan kendiliğinden açılırdı —
+        fail-open, yani kilidin tam tersi (Anayasa IV).
+
+        Kurgu: oturum 25 dakika geriye alınır. Blueprint süresi 45 olduğu için
+        oturum HÂLÂ yürüyor; global 20 dakikalık sınır uygulansaydı çoktan bitmiş
+        sayılırdı.
+        """
+        fixture = await build(client, users, admin_engine, code="LOCK 101")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client, fixture, cells=[cell(outcome, count=1)], duration=45
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        soru = await make_question(admin_engine, fixture, outcome_id=outcome, difficulty="easy")
+        await set_items(client, fixture, blueprint_id, version_id, [soru])
+        await publish(client, fixture, blueprint_id, version_id)
+
+        oturum = (
+            await client.post(
+                f"/courses/{fixture.course_id}/exams",
+                json={"blueprint_id": str(blueprint_id)},
+                headers=fixture.student,
+            )
+        ).json()
+
+        async with admin_engine.begin() as conn:
+            await conn.execute(
+                text(
+                    "UPDATE exam_sessions SET started_at = started_at - interval '25 min' "
+                    "WHERE id = :id"
+                ),
+                {"id": oturum["id"]},
+            )
+
+        yoklama = await client.get(
+            f"/courses/{fixture.course_id}/chat/availability", headers=fixture.student
+        )
+        assert yoklama.json()["available"] is False, "45 dakikalık sınav sürerken asistan açık"
+
+        sohbet = await client.post(
+            f"/courses/{fixture.course_id}/chat",
+            json={"message": "Kilitlenme nedir?", "mode": "qa"},
+            headers=fixture.student,
+        )
+        assert sohbet.status_code == 403, sohbet.text
+        assert sohbet.json()["error"]["code"] == "exam_in_progress"
+
     async def test_deneme_hakki_bitince_reddedilir(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
@@ -695,3 +801,78 @@ class TestYetkiler:
     async def test_dou_app_exam_sessions_suresini_yazamaz(self, client: AsyncClient) -> None:
         """0007'nin koruması 0008'den sonra da ayakta (regresyon)."""
         await _yetki_reddedilmeli("UPDATE exam_sessions SET expires_at = now()")
+
+
+class TestRubrikKirilimi:
+    """FR-117 — ölçüt kırılımı ve toplamın nereden geldiği.
+
+    Yeni tablo yok: kırılım `answers.feedback` jsonb'sine yazılır (0004:110-112 tam
+    bu iş için var). Sınanan şey toplamın MODELDEN OKUNMADIĞI: ağırlıklarla biz
+    hesaplıyoruz, yoksa model hem kırılım hem ayrı bir toplam verdiğinde ikisi
+    çelişebilir ve öğrenciye gösterilen tablonun toplamı tutmazdı (Anayasa III).
+    """
+
+    def _payload(self, agirliklar: list[int]) -> OpenPayload:
+        return OpenPayload(
+            prompt="Kilitlenmenin dört koşulunu açıkla.",
+            answer_key="Karşılıklı dışlama, tut ve bekle, kesintisizlik, dairesel bekleme.",
+            key_points=["dört koşul"],
+            rubric=[RubricItem(point=f"olcut-{i}", weight=w) for i, w in enumerate(agirliklar)],
+        )
+
+    def _verdict(self, puanlar: dict[str, int] | None) -> _LlmVerdict:
+        return _LlmVerdict(
+            score=99,  # Model kendi toplamını verir; OKUNMAMALI.
+            eksik_noktalar=[],
+            dayanak_chunk_id=None,
+            rubrik=(
+                [] if puanlar is None else [{"olcut": k, "puan": v} for k, v in puanlar.items()]
+            ),
+        )
+
+    def test_toplam_agirliklarla_hesaplanir_modelin_skoru_okunmaz(self) -> None:
+        kirilim = _rubric_breakdown(
+            self._payload([60, 40]), self._verdict({"olcut-0": 100, "olcut-1": 50})
+        )
+
+        assert [row.earned for row in kirilim] == [60, 20]
+        assert sum(row.earned for row in kirilim) == 80  # modelin dediği 99 değil
+
+    def test_modelin_atladigi_olcut_SIFIR_puanla_girer(self) -> None:
+        """Fail-closed: atlanan ölçütü paydadan düşürmek puanı şişirirdi."""
+        kirilim = _rubric_breakdown(self._payload([50, 50]), self._verdict({"olcut-0": 100}))
+
+        assert [row.score for row in kirilim] == [100, 0]
+        assert sum(row.earned for row in kirilim) == 50
+
+    def test_model_HIC_kirilim_vermezse_puan_sessizce_sifirlanmaz(self) -> None:
+        """İlk yazımda bu dal yoktu ve gerçekten 75 alan cevap 0'a düşüyordu."""
+        kirilim = _rubric_breakdown(self._payload([50, 50]), self._verdict(None))
+
+        assert kirilim == [], "kırılım yoksa çağıran modelin kendi skorunu kullanmalı"
+
+    def test_rubriksiz_soru_bugunku_davranisini_surdurur(self) -> None:
+        kirilim = _rubric_breakdown(self._payload([]), self._verdict({"x": 100}))
+
+        assert kirilim == []
+
+    def test_agirliklar_100_etmiyorsa_OKUMA_yolunda_normalize_edilir(self) -> None:
+        """Kısıt yalnız yeni üretimde zorlanır; havuzdaki eski sorular düşmemeli."""
+        normalize = normalized_rubric(
+            [RubricItem(point="a", weight=30), RubricItem(point="b", weight=30)]
+        )
+
+        assert sum(item.weight for item in normalize) == 100
+        assert [item.point for item in normalize] == ["a", "b"]
+
+    def test_uretimde_agirlik_toplami_100_degilse_taslak_havuza_girmez(self) -> None:
+        with pytest.raises(PydanticValidationError) as hata:
+            _OpenDraft(
+                source_chunk_id=uuid4(),
+                prompt="Soru metni burada.",
+                answer_key="Cevap",
+                key_points=["nokta"],
+                rubric=[RubricItem(point="a", weight=30), RubricItem(point="b", weight=30)],
+            )
+
+        assert "100 etmeli" in str(hata.value)
