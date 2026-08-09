@@ -155,6 +155,38 @@ def screen(
     return ScreenOutcome(current, verdicts)
 
 
+def screen_cached(answer: GeneratedAnswer) -> ScreenOutcome:
+    """Önbellekten okunan cevabı zincirin **metne bakan** halkalarından geçirir.
+
+    Neden gerekli: önbellek isabetinde cevap doğrudan kullanıcıya gidiyor ve
+    hiçbir halka koşmuyordu. Ölçüldü — `answer_cache` satırına konmuş bir
+    `<script>alert(document.cookie)</script>`, hem cevap metninde hem atıf
+    kartında zarfa olduğu gibi çıkıyor. "Kullanıcının gördüğü her şey zincirden
+    geçti" garantisi, isabet eden her istekte yanlıştı.
+
+    Satırların temiz yazıldığı doğru ama yetmez, üç sebeple:
+
+    1. Bugünkü satırlar sanitize'ın atıf kartına uygulanmasından ÖNCE yazıldı;
+       içlerindeki alıntılar hiç temizlenmedi.
+    2. Zincir sertleştikçe (bugün iki halka sertleşti) eski satırlar eski
+       kurallarla donmuş kalır — garanti "yazıldığı gün geçerli olan zincir"e
+       iner ve bu kimsenin kastettiği garanti değil.
+    3. Tablo dışarıdan yazılabilir bir yüzeydir: `answer_cache`'e satır koyabilen
+       biri, kullanıcıya doğrudan HTML gönderebilirdi.
+
+    **Atıf halkası bilerek KOŞULMAZ.** İşi, cevaptaki `chunk_id`'leri BU İSTEKTE
+    retrieve edilen kümeye karşı sınamaktır; önbellek isabetinde retrieval hiç
+    yapılmaz, dolayısıyla karşılaştırılacak küme yoktur. Boş kümeyle koşmak her
+    atıfı düşürür ve her önbellek isabetini bloklardı. Kimlikler zaten yazılırken
+    doğrulandı ve `_store_cache` yalnız tam hattan geçmiş, atıflı cevabı saklıyor.
+
+    Maliyet sıfıra yakın: iki halka da saf fonksiyon, LLM çağırmaz, veritabanına
+    dokunmaz. Önbelleğin var oluş sebebi olan hız korunur.
+    """
+    chain: list[Guardrail] = [_LEAKAGE, _SANITIZE]
+    return screen(answer, [], chain)
+
+
 def is_leakage_block(reason: str | None) -> bool:
     return bool(reason) and reason.startswith(f"{leakage.REASON_PREFIX}:")  # type: ignore[union-attr]
 

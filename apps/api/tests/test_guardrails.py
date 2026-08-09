@@ -856,3 +856,117 @@ class TestCevapAnahtariKalibi:
         assert sonuc.blocked
         assert sonuc.block_reason is not None
         assert leakage.DETECTOR_ANSWER_KEY in sonuc.block_reason
+
+
+# ---------------------------------------------------------------------------
+# Önbellek isabetinde zincir — `screen_cached`
+#
+# Önbellekten dönen cevap bugüne kadar HİÇBİR halkadan geçmiyordu. Ölçüldü:
+# `answer_cache` satırına konmuş bir `<script>` etiketi hem cevap metninde hem
+# atıf kartında zarfa olduğu gibi çıkıyordu.
+# ---------------------------------------------------------------------------
+
+ONBELLEKTEN_ZARARLI = "Ders notu: <script>alert(document.cookie)</script> yaz: a@dogus.edu.tr"
+
+
+class TestOnbellekZinciri:
+    def _onbellek_cevabi(self, *, mode: ChatMode = ChatMode.QA) -> GeneratedAnswer:
+        return GeneratedAnswer(
+            status=AnswerStatus.ANSWERED,
+            mode=mode,
+            text=ONBELLEKTEN_ZARARLI,
+            citations=[
+                Citation(
+                    chunk_id=uuid4(),
+                    file_name="<img src=x onerror=alert(1)>.pdf",
+                    location="Sayfa 1",
+                    quote=ONBELLEKTEN_ZARARLI,
+                )
+            ],
+        )
+
+    def test_metin_ve_atif_temizlenir(self) -> None:
+        from app.modules.guardrails.chain import screen_cached
+
+        sonuc = screen_cached(self._onbellek_cevabi())
+
+        assert not sonuc.blocked
+        assert "<script>" not in sonuc.answer.text
+        assert "a@dogus.edu.tr" not in sonuc.answer.text
+        atif = sonuc.answer.citations[0]
+        assert "<script>" not in atif.quote
+        assert "onerror" not in atif.file_name
+
+    def test_atif_DUSMEZ(self) -> None:
+        """Atıf halkası bilerek koşmuyor: karşılaştırılacak retrieve kümesi yok.
+
+        Boş kümeyle koşsaydı her atıf düşer ve her önbellek isabeti bloklanırdı —
+        yani düzeltme, düzelttiğinden fazlasını bozardı.
+        """
+        from app.modules.guardrails.chain import screen_cached
+
+        cevap = self._onbellek_cevabi()
+        beklenen = cevap.citations[0].chunk_id
+
+        sonuc = screen_cached(cevap)
+
+        assert [c.chunk_id for c in sonuc.answer.citations] == [beklenen]
+
+    def test_girdi_degistirilmez(self) -> None:
+        """`screen` girdisini kopyalar; çağıran elindeki nesneyi kaybetmemeli."""
+        from app.modules.guardrails.chain import screen_cached
+
+        cevap = self._onbellek_cevabi()
+        screen_cached(cevap)
+
+        assert cevap.text == ONBELLEKTEN_ZARARLI
+
+    def test_temiz_satir_dokunulmadan_gecer(self) -> None:
+        from app.modules.guardrails.chain import screen_cached
+
+        cevap = GeneratedAnswer(
+            status=AnswerStatus.ANSWERED,
+            mode=ChatMode.QA,
+            text="Deadlock için dört koşulun aynı anda sağlanması gerekir.",
+            citations=[Citation(uuid4(), "OS-Hafta3.pdf", "Sayfa 7", "dört koşul")],
+        )
+
+        sonuc = screen_cached(cevap)
+
+        assert not sonuc.blocked
+        assert sonuc.answer.text == cevap.text
+        assert sonuc.answer.citations[0].quote == "dört koşul"
+
+    def test_sokratik_modda_sizinti_hala_bloklanir(self) -> None:
+        """Önbellek bugün yalnız QA'da okunuyor; halka yine de moda duyarlı kalmalı.
+
+        Çağrı yerindeki `if` bir gün gevşerse, sızdıran bir satırın önbellekten
+        servis edilmesini engelleyen tek şey bu halka olur (Anayasa II deseni).
+        """
+        from app.modules.guardrails.chain import screen_cached
+
+        cevap = GeneratedAnswer(
+            status=AnswerStatus.ANSWERED,
+            mode=ChatMode.SOCRATIC,
+            text="Çözüm şöyle:\n\n```python\ndef cevap(n):\n    return n * 2\n```",
+            citations=[Citation(uuid4(), "OS-Hafta3.pdf", "Sayfa 7", "…")],
+        )
+
+        sonuc = screen_cached(cevap)
+
+        assert sonuc.blocked
+        assert sonuc.block_reason is not None
+        assert sonuc.block_reason.startswith(leakage.REASON_PREFIX)
+
+    def test_qa_modunda_kod_bloklanmaz(self) -> None:
+        """Materyaldeki kodu QA'da göstermek meşru; halka orada çalışmaz."""
+        from app.modules.guardrails.chain import screen_cached
+
+        cevap = GeneratedAnswer(
+            status=AnswerStatus.ANSWERED,
+            mode=ChatMode.QA,
+            text="Materyaldeki örnek:\n\n    for i in range(3):\n        print(i)",
+            citations=[Citation(uuid4(), "OS-Hafta3.pdf", "Sayfa 7", "…")],
+        )
+
+        assert not screen_cached(cevap).blocked
