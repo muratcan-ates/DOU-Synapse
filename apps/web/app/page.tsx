@@ -7,6 +7,7 @@
  * kullanıcı supabase/seed_demo.sql ile oluşturulur. Canlıda yerini Supabase Auth alır.
  */
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn, type DemoUser } from "@/lib/api";
@@ -140,6 +141,22 @@ export default function LoginPage() {
               <ErrorNote message={error} />
             </div>
           )}
+
+          {/*
+            Aydınlatma metni GİRİŞTEN ÖNCE erişilebilir. Kişisel verisinin nasıl
+            işleneceğini öğrenmek için önce hesap açmak zorunda kalmak, metnin
+            amacını tersine çevirirdi.
+          */}
+          <p className="mt-8 text-xs text-fg-muted">
+            <Link
+              href="/kvkk"
+              className="underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              KVKK aydınlatma metni
+            </Link>{" "}
+            — hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
+            paylaşıldığını anlatır.
+          </p>
         </div>
       </section>
     </main>
