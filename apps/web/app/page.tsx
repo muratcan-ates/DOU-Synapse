@@ -8,7 +8,10 @@
  */
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { signIn, type DemoUser } from "@/lib/api";
+import { errorMessage } from "@/lib/errors";
+import { ErrorNote } from "@/components/page-state";
 
 const DEMO_USERS: DemoUser[] = [
   {
@@ -27,14 +30,32 @@ const DEMO_USERS: DemoUser[] = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   function enter(user: DemoUser) {
-    signIn(user);
+    /*
+     * `signIn` localStorage'a yazar ve bu yazma GERÇEKTEN patlayabilir: site
+     * verileri engellenmiş bir tarayıcıda `setItem` SecurityError atar. Sarmasız
+     * hâlinde düğme sessizce hiçbir şey yapmıyordu — etkin görünüp iş yapmayan
+     * yüzey kusurdur (Anayasa XI). Metin `errorMessage` üzerinden geçer: bu bir
+     * API hatası değil, o yüzden yedek cümle kullanılır.
+     */
+    try {
+      signIn(user);
+    } catch (e) {
+      setError(
+        errorMessage(
+          e,
+          "Oturum bilgisi tarayıcıya yazılamadı. Site verilerine izin verip tekrar deneyin.",
+        ),
+      );
+      return;
+    }
     router.push("/courses");
   }
 
   return (
-    <main className="ambient grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+    <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       {/* Sol: tez paneli */}
       <section className="flex flex-col justify-between p-8 lg:p-14">
         <p className="rise text-sm font-medium tracking-wide text-brand">
@@ -71,42 +92,54 @@ export default function LoginPage() {
         </p>
       </section>
 
-      {/* Sağ: giriş paneli */}
-      <section className="flex items-center border-t border-border bg-surface/60 p-8 backdrop-blur-sm lg:border-t-0 lg:border-l lg:p-14">
+      {/* Sağ: giriş paneli. Panel ayrımı kenarlık + hafif yüzey tonuyla kurulur. */}
+      <section className="flex items-center border-t border-border bg-surface/60 p-8 lg:border-t-0 lg:border-l lg:p-14">
         <div className="w-full max-w-sm">
           <h2 className="rise text-sm font-medium text-fg">Oturum aç</h2>
           <p className="rise rise-1 mt-1 text-xs text-fg-subtle">
             Geliştirme ortamı girişi; canlıda üniversite hesabı kullanılır
           </p>
 
-          <div className="mt-6 space-y-3">
+          {/* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek
+              olduğunu peşinen söyler. */}
+          <ul className="mt-6 space-y-3">
             {DEMO_USERS.map((user, index) => (
-              <button
-                key={user.id}
-                onClick={() => enter(user)}
-                className={`rise rise-${index + 2} group flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-[border,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_2px_8px_rgba(28,25,23,0.04)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`}
-              >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-subtle font-mono text-sm font-semibold text-brand">
-                  {user.fullName.charAt(0)}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-fg">
-                    {user.fullName}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-fg-muted">
-                    {user.role === "instructor" ? "Eğitmen" : "Öğrenci"} ·{" "}
-                    {user.email}
-                  </span>
-                </span>
-                <span
-                  aria-hidden
-                  className="ml-auto text-fg-subtle transition-transform duration-200 group-hover:translate-x-0.5"
+              <li key={user.id}>
+                <button
+                  onClick={() => enter(user)}
+                  className={`rise rise-${index + 2} group flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-[border,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_2px_8px_rgba(28,25,23,0.04)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`}
                 >
-                  →
-                </span>
-              </button>
+                  <span
+                    aria-hidden
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-subtle font-mono text-sm font-semibold text-brand"
+                  >
+                    {user.fullName.charAt(0)}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-fg">
+                      {user.fullName}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-fg-muted">
+                      {user.role === "instructor" ? "Eğitmen" : "Öğrenci"} ·{" "}
+                      {user.email}
+                    </span>
+                  </span>
+                  <span
+                    aria-hidden
+                    className="ml-auto text-fg-subtle transition-transform duration-200 group-hover:translate-x-0.5"
+                  >
+                    →
+                  </span>
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
+
+          {error && (
+            <div className="mt-4">
+              <ErrorNote message={error} />
+            </div>
+          )}
         </div>
       </section>
     </main>

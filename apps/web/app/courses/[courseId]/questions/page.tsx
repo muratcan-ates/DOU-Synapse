@@ -23,7 +23,7 @@
  * kararın yanında yazılıdır.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
@@ -39,6 +39,16 @@ export default function QuestionsPreviewPage() {
   // Önizleme kararları burada tutulur; sayfadan çıkınca sıfırlanır.
   const [decisions, setDecisions] = useState<Record<string, QuestionStatus>>({});
   const [selectedId, setSelectedId] = useState(PREVIEW_QUESTIONS[0].id);
+  /*
+   * Son kararın cümlesi. Panelin sessizce başka soruya geçmesi, ekranı
+   * görmeyen kullanıcı için "hiçbir şey olmadı" demekti; rozet değişimi de
+   * yalnız göz için bir sinyaldi. Cümle hem yazılır hem duyurulur.
+   */
+  const [notice, setNotice] = useState<{ text: string; movesPanel: boolean } | null>(
+    null,
+  );
+
+  const stemRef = useRef<HTMLHeadingElement>(null);
 
   const questions = useMemo(
     () =>
@@ -49,6 +59,22 @@ export default function QuestionsPreviewPage() {
   const selected = questions.find((q) => q.id === selectedId) ?? questions[0];
   const drafts = questions.filter((q) => q.status === "draft").length;
   const approved = questions.filter((q) => q.status === "approved").length;
+  // Sayı elle yazılmaz: "4 kaynak materyal" verideki beş dosyayla çelişiyordu.
+  const sourceFiles = useMemo(
+    () => new Set(questions.map((q) => q.source.fileName)).size,
+    [questions],
+  );
+
+  /*
+   * Karar panelin içeriğini değiştirdiyse odak yeni sorunun başlığına taşınır.
+   * Taşınmazsa odak "Onayla" düğmesinde kalır ve düğmenin altındaki içeriğin
+   * tamamı başkalaşmış olur; düğme `disabled` olsaydı odak büsbütün <body>'ye
+   * düşerdi (bu yüzden aşağıda `aria-disabled` var). Panel yerinde kaldığında
+   * odak da yerinde bırakılır: sebepsiz odak sıçraması da bir kusurdur.
+   */
+  useEffect(() => {
+    if (notice?.movesPanel) stemRef.current?.focus();
+  }, [notice]);
 
   function decide(id: string, status: QuestionStatus) {
     setDecisions((prev) => ({ ...prev, [id]: status }));
@@ -56,6 +82,13 @@ export default function QuestionsPreviewPage() {
     // geçirirken her seferinde listeye dönmek zorunda kalmamalı.
     const next = questions.find((q) => q.id !== id && q.status === "draft");
     if (next) setSelectedId(next.id);
+    // Etiket lib/labels.ts'ten gelir; ikinci bir durum sözlüğü yazılmaz.
+    setNotice({
+      text: next
+        ? `${id}: ${QUESTION_STATUS[status].label}. Sıradaki taslak: ${next.id}.`
+        : `${id}: ${QUESTION_STATUS[status].label}. Onay bekleyen başka taslak yok.`,
+      movesPanel: Boolean(next),
+    });
   }
 
   return (
@@ -77,7 +110,7 @@ export default function QuestionsPreviewPage() {
           { value: drafts, label: "Onay bekleyen" },
           { value: approved, label: "Öğrenciye açık" },
           { value: questions.length, label: "Toplam soru" },
-          { value: 4, label: "Kaynak materyal" },
+          { value: sourceFiles, label: "Kaynak materyal" },
         ]}
       />
 
@@ -131,7 +164,18 @@ export default function QuestionsPreviewPage() {
             </span>
           </div>
 
-          <p className="prose-tr text-lg text-fg">{selected.stem}</p>
+          {/*
+            Panelin başlığı soru metnidir; karardan sonra odak buraya taşınır,
+            bu yüzden `tabIndex={-1}` (klavye sırasına GİRMEZ, yalnız programla
+            odaklanabilir).
+          */}
+          <h2
+            ref={stemRef}
+            tabIndex={-1}
+            className="prose-tr rounded-lg text-lg font-normal text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+          >
+            {selected.stem}
+          </h2>
 
           {selected.options && (
             <ul className="mt-5 space-y-2">
@@ -170,17 +214,23 @@ export default function QuestionsPreviewPage() {
             <SourceCard source={selected.source} />
           </div>
 
+          {/*
+            `disabled` yerine `aria-disabled`: tarayıcı devre dışı bırakılan
+            öğeden odağı <body>'ye atar, yani son taslağı onaylayan klavye
+            kullanıcısı odağını tamamen kaybederdi. Button aria-disabled'ta
+            tıklamayı zaten yutuyor (components/ui.tsx).
+          */}
           <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
             <Button
               variant="primary"
-              disabled={selected.status === "approved"}
+              aria-disabled={selected.status === "approved"}
               onClick={() => decide(selected.id, "approved")}
             >
               {selected.status === "approved" ? "Onaylandı" : "Onayla ve öğrenciye aç"}
             </Button>
             <Button
               variant="secondary"
-              disabled={selected.status === "rejected"}
+              aria-disabled={selected.status === "rejected"}
               onClick={() => decide(selected.id, "rejected")}
             >
               {selected.status === "rejected" ? "Reddedildi" : "Reddet"}
@@ -190,6 +240,15 @@ export default function QuestionsPreviewPage() {
               kaydedilmez.
             </p>
           </div>
+
+          {/*
+            Karar sonucu: hem görünür hem duyurulur. `role="status"` örtük
+            olarak polite'tır — karar bir hata değildir, `alert` kullanılmaz
+            (DESIGN.md: hata dışı durumlar hata gibi gösterilmez).
+          */}
+          <p role="status" className="mt-3 text-xs text-fg-muted">
+            {notice?.text ?? ""}
+          </p>
         </Card>
       </div>
     </AppShell>

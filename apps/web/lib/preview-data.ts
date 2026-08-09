@@ -8,6 +8,11 @@
  *
  * Sayılar ve metinler sample_data/isletim-sistemleri paketiyle tutarlıdır;
  * uydurma dosya adı veya sayfa numarası kullanılmaz.
+ *
+ * Sayfa numaraları `evaluation/gold_set/{calibration,holdout}.json` içindeki
+ * doğrulanmış `expected_sources` kayıtlarıyla karşılaştırılarak yazıldı
+ * (o dosyalar gerçek ingest koşusuna karşı `verify_gold_set.py` ile sınandı).
+ * Önizleme de olsa konum uydurulmaz: ürünün tek iddiası "kaynağı şu sayfa".
  */
 
 import type { SourceInfo } from "@/components/source-card";
@@ -70,8 +75,11 @@ export const PREVIEW_QUESTIONS: PreviewQuestion[] = [
     answerKey:
       "Quantum küçüldükçe bağlam değiştirme sayısı artar; bağlam değiştirme maliyetinin toplam işlemci zamanı içindeki payı büyür ve yararlı iş için kalan süre azalır.",
     source: {
+      // "Sayfa 2" yazıyordu: quantum ödünleşimi materyalin 1. sayfasında.
+      // Kanıt: gold_set/holdout.json → "Quantum'un çok küçük seçilmesi hangi
+      // maliyetleri artırır" → 02-cpu-scheduling.pdf, page_number 1.
       fileName: "02-cpu-scheduling.pdf",
-      location: "Sayfa 2",
+      location: "Sayfa 1",
       quote:
         "Quantum çok küçük seçilirse bağlam değiştirme maliyeti toplam işlemci zamanının kayda değer bir bölümünü tüketir.",
     },
@@ -84,8 +92,12 @@ export const PREVIEW_QUESTIONS: PreviewQuestion[] = [
     stem: "Verilen sayfalama örneğinde 4 KB sayfa boyutu ve 12 bitlik ofset ile 0x1A2B mantıksal adresinin sayfa numarası kaçtır?",
     answerKey: "Sayfa numarası 1, ofset 0xA2B.",
     source: {
+      // "Sayfa 2" yazıyordu: sayfalama/ofset anlatımı 1. sayfada, 2. sayfa
+      // TLB ve sayfa değiştirme algoritmalarına ayrılmış. Kanıt:
+      // gold_set/holdout.json → "Bir sayfa tablosu girdisi hangi kontrol
+      // bitlerini taşır" → 03-memory-management.pdf, page_number 1.
       fileName: "03-memory-management.pdf",
-      location: "Sayfa 2",
+      location: "Sayfa 1",
       quote:
         "4 KB sayfa boyutunda ofset alanı 12 bittir; kalan üst bitler sayfa numarasını verir.",
     },
@@ -104,7 +116,90 @@ export const PREVIEW_QUESTIONS: PreviewQuestion[] = [
       quote: "fork() başarısızlıkta ebeveyne -1 döndürür ve yeni süreç yaratılmaz.",
     },
   },
+  /*
+   * Aşağıdaki üçü onaylanmış çoktan seçmeli sorulardır ve sınav önizlemesini
+   * besleyen tek kaynak budur (bkz. EXAM_PREVIEW_QUESTIONS). Sınav ekranına
+   * ayrı bir soru listesi geri eklenmesin: aynı adı taşıyan ama farklı şekilde
+   * olan ikinci bir liste, iki ekranın sessizce ayrışmasını üretiyordu.
+   */
+  {
+    id: "S-006",
+    topic: "CPU zamanlama",
+    type: "mcq",
+    status: "approved",
+    stem: "Round Robin zamanlamada quantum süresinin çok büyük seçilmesinin doğrudan sonucu nedir?",
+    options: [
+      "Zamanlama pratikte FCFS'ye yaklaşır ve yanıt süresi kötüleşir",
+      "Bağlam değiştirme sıklığı artar ve verim çöker",
+      "Kısa süreçler süresiz olarak ertelenir",
+      "Deadlock olasılığı doğrudan artar",
+    ],
+    answerKey: "Zamanlama pratikte FCFS'ye yaklaşır ve yanıt süresi kötüleşir",
+    source: {
+      fileName: "02-cpu-scheduling.pdf",
+      location: "Sayfa 1",
+      quote:
+        "Quantum çok büyükse RR, pratikte First-Come-First-Served'e (FCFS) yaklaşır ve yanıt süresi kötüleşir.",
+    },
+  },
+  {
+    id: "S-007",
+    topic: "Bellek yönetimi",
+    type: "mcq",
+    status: "approved",
+    stem: "Sayfalama kullanan bir sistemde sayfa hatası (page fault) hangi anda oluşur?",
+    options: [
+      "İstenen sayfa fiziksel bellekte bulunmadığında",
+      "Sayfa tablosu tamamen dolduğunda",
+      "Süreç kendi adres uzayının dışına yazmaya çalıştığında",
+      "Bağlam değiştirme sırasında her zaman",
+    ],
+    answerKey: "İstenen sayfa fiziksel bellekte bulunmadığında",
+    source: {
+      fileName: "03-memory-management.pdf",
+      location: "Sayfa 1",
+      quote:
+        "Erişilen sayfa şu an fiziksel bellekte değilse donanım bir tuzak (trap) üretir; işletim sistemi sayfayı diskten yükler, sayfa tablosunu günceller ve komutu yeniden çalıştırır.",
+    },
+  },
+  {
+    id: "S-008",
+    topic: "Senkronizasyon",
+    type: "mcq",
+    status: "approved",
+    stem: "Mutex ile korunan bir kritik bölgede aşağıdakilerden hangisi tanımsız davranışa yol açar?",
+    options: [
+      "Kilidi alan thread'in kritik bölge sonunda kilidi kendisinin açması",
+      "Kilidi alan thread dışında bir thread'in kilidi açmaya çalışması",
+      "Kritik bölge içinde paylaşımlı veriye yazılması",
+      "Kilit alınmadan önce yerel bir değişkenin okunması",
+    ],
+    answerKey: "Kilidi alan thread dışında bir thread'in kilidi açmaya çalışması",
+    source: {
+      fileName: "04-synchronization.pdf",
+      location: "Sayfa 1",
+      quote:
+        "Mutex'i kilitleyen thread onu açmalıdır; başka bir thread'in kilidini açmaya çalışması tanımsız davranıştır.",
+    },
+  },
 ];
+
+/** Şıkları kesin olan soru — sınav ekranı şıksız soru çizemez. */
+export type ExamPreviewQuestion = PreviewQuestion & { options: string[] };
+
+/**
+ * Sınav önizlemesinin soruları: havuzun ONAYLANMIŞ çoktan seçmeli soruları.
+ *
+ * Filtre kozmetik değil, ürün kuralının kendisidir: "onaylanmayan soru öğrenci
+ * akışında hiç görünmez" (soru havuzu ekranında yazılı). Ayrı bir sınav listesi
+ * tutulsaydı bu kural iki yerde ayrı ayrı hatırlanmak zorunda kalırdı ve
+ * reddedilmiş S-005 er geç sınava sızardı (Anayasa XI).
+ */
+export const EXAM_PREVIEW_QUESTIONS: ExamPreviewQuestion[] =
+  PREVIEW_QUESTIONS.filter(
+    (q): q is ExamPreviewQuestion =>
+      q.type === "mcq" && q.status === "approved" && q.options !== undefined,
+  );
 
 export interface PreviewTopic {
   name: string;
@@ -128,6 +223,15 @@ export const CLASS_TOPICS: PreviewTopic[] = [
   { name: "CPU zamanlama", score: 0.74, answers: 96 },
   { name: "Süreçler ve thread'ler", score: 0.81, answers: 108 },
 ];
+
+/**
+ * Kapsam dışı ret (abstention) oranı — 0-1 arası.
+ *
+ * Analitik ekranında "%7" diye gömülüydü. Örnek veri üretim kodundan ayrı
+ * dosyada durur (Anayasa XI): sınır ancak bu dosya silinerek sınanabiliyorsa
+ * gerçektir, ekrana serpiştirilen tek bir sabit o sınırı deler.
+ */
+export const ABSTENTION_RATE = 0.07;
 
 export const MISSED_QUESTIONS = [
   {

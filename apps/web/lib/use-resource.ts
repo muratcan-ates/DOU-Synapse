@@ -11,14 +11,140 @@
  * `pollWhile` opsiyonu: veri "hâlâ değişiyor" olduğu sürece kısa aralıkla
  * tazeler, koşul düşünce durur. Materyal işlenirken canlı durum rozetleri
  * bunun üzerine kurulu.
+ *
+ * Kancanın iki kuralı saf fonksiyonlara çıkarıldı (`createRequestGate` ve
+ * `resourceReducer`): DOM'suz koşan `use-resource.test.ts` bunları doğrudan
+ * sınıyor. React'ın içinde kalsalardı ikisi de yalnız tarayıcıda, yalnız
+ * şanslı zamanlamada gözlenebilirdi — yani pratikte hiç.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage } from "@/lib/errors";
 
-export interface Resource<T> {
+/* -------------------------------------------------------------------------
+ * Saf çekirdek 1: istek sıra kapısı
+ * ---------------------------------------------------------------------- */
+
+/**
+ * "Yalnız en son başlayan istek yazar" kapısı.
+ *
+ * Neden gerekli: `reload()` çağrıları üst üste binebiliyor — elle tazeleme,
+ * polling turu, `pulse` penceresi ve ders değişimi aynı anda uçabilir.
+ * Cevapların başlama sırasıyla dönme garantisi YOKTUR. Ağ eski isteği geç
+ * teslim ettiğinde, o eski cevap taze veriyi kalıcı olarak eziyordu: silinen
+ * belge listeye geri geliyor, kullanıcı sayfayı elle yenileyene kadar da
+ * orada kalıyordu. Eski kod bunu sökülme (unmount) sorunu sanıp `cancelled`
+ * bayrağı koymuştu; bayrak `setData`'yı hiç korumadığı için hiçbir şey
+ * yapmıyordu.
+ *
+ * Kapı yalnız iki sayı tutar; yarış çözümü zamanlayıcıya değil sıraya bağlı.
+ */
+export interface RequestGate {
+  /** Yeni istek başlatır ve ona bir kimlik verir. */
+  begin(): number;
+  /** Bu kimlik hâlâ en son başlatılan istek mi? Değilse yazma yapılmaz. */
+  isCurrent(token: number): boolean;
+  /** Uçuştaki tüm istekleri geçersizler (deps değişimi, sökülme). */
+  invalidate(): void;
+}
+
+export function createRequestGate(): RequestGate {
+  let latest = 0;
+  return {
+    begin: () => (latest += 1),
+    isCurrent: (token) => token === latest,
+    invalidate: () => {
+      latest += 1;
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------
+ * Saf çekirdek 2: durum makinesi
+ * ---------------------------------------------------------------------- */
+
+export interface ResourceState<T> {
   data: T | null;
   error: string | null;
+  refreshError: string | null;
+}
+
+export type ResourceAction<T> =
+  | { type: "reset" }
+  | { type: "loaded"; data: T }
+  | { type: "failed"; message: string };
+
+export const EMPTY_RESOURCE_STATE: ResourceState<never> = {
+  data: null,
+  error: null,
+  refreshError: null,
+};
+
+/**
+ * Tek kural: elde gösterilecek sağlam veri varken hata onu SİLMEZ.
+ *
+ * Eskiden tazeleme sırasındaki tek bir geçici hata (kilitli ekran, uyanan
+ * dizüstü, bir saniyelik kopma) `error`'ı doldurup sayfaları erken döndürüyordu:
+ * başlık, sekmeler, liste — hepsi gidiyordu ve geri dönüş yolu yoktu, çünkü
+ * ekranda artık hiçbir düğme kalmıyordu. Polling saniyede bir koştuğu için bu
+ * "nadir" değil, sıradan bir olaydı.
+ *
+ * Bu yüzden hata iki yere ayrıldı: `error` ekranı kapatan (elde veri yokken
+ * oluşan) hatadır, `refreshError` ise veri dururken başarısız olan tazelemedir.
+ * `refreshError` satır içinde gösterilir, sayfa yerinde kalır.
+ */
+export function resourceReducer<T>(
+  state: ResourceState<T>,
+  action: ResourceAction<T>,
+): ResourceState<T> {
+  switch (action.type) {
+    case "reset":
+      return settle(state, null, null, null);
+    case "loaded":
+      // Başarılı tur her iki hatayı da temizler: ekranda eskimiş uyarı kalmaz.
+      return settle(state, action.data, null, null);
+    case "failed":
+      return state.data === null
+        ? settle(state, null, action.message, null)
+        : settle(state, state.data, null, action.message);
+  }
+}
+
+/**
+ * Üç alan da aynıysa ESKİ nesneyi döndür.
+ *
+ * React durumu `Object.is` ile karşılaştırır; her seferinde yeni nesne
+ * dönersek hiçbir şey değişmese bile render tetiklenir. Bu iki yerde bedava
+ * değil: her ekranın ilk `reset`i (kanca dokuz ekranda) ve saniyede bir koşan
+ * polling'in aynı hatayı tekrar tekrar yazması.
+ */
+function settle<T>(
+  state: ResourceState<T>,
+  data: T | null,
+  error: string | null,
+  refreshError: string | null,
+): ResourceState<T> {
+  const same =
+    state.data === data && state.error === error && state.refreshError === refreshError;
+  return same ? state : { data, error, refreshError };
+}
+
+/* -------------------------------------------------------------------------
+ * Kanca
+ * ---------------------------------------------------------------------- */
+
+export interface Resource<T> {
+  data: T | null;
+  /**
+   * Ekranı kapatan hata: elde gösterilecek veri YOKKEN oluşmuştur.
+   * `if (error) return <ErrorNote .../>` kalıbı bunu kullanır.
+   */
+  error: string | null;
+  /**
+   * Veri ekranda dururken başarısız olan tazeleme. Sayfa çizilmeye devam
+   * eder; bu metin satır içinde, tercihen "Tekrar dene" ile gösterilir.
+   */
+  refreshError: string | null;
   /** İlk yükleme tamamlanmadı; veri de hata da yok. */
   loading: boolean;
   /** Elle tazeleme — yazma işleminden sonra çağrılır. */
@@ -37,8 +163,6 @@ export interface Resource<T> {
    * olmuyor, elle yenileyene kadar da olmuyor.
    */
   pulse: (durationMs?: number) => void;
-  /** İyimser güncelleme: sunucuyu beklemeden listeyi düzeltmek için. */
-  setData: (next: T | null) => void;
 }
 
 export function useResource<T>(
@@ -46,8 +170,17 @@ export function useResource<T>(
   deps: readonly unknown[],
   options: { pollWhile?: (data: T) => boolean; intervalMs?: number } = {},
 ): Resource<T> {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<ResourceState<T>>(EMPTY_RESOURCE_STATE);
+
+  const dispatch = useCallback((action: ResourceAction<T>) => {
+    setState((current) => resourceReducer(current, action));
+  }, []);
+
+  // Kapı kancanın ömrü boyunca tek: her render'da yenisi kurulursa geçmiş
+  // istekleri hatırlayan kimse kalmaz.
+  const gateRef = useRef<RequestGate | null>(null);
+  if (gateRef.current === null) gateRef.current = createRequestGate();
+  const gate = gateRef.current;
 
   // fetcher her render'da yeniden kurulur; kancayı bağımlılık döngüsüne
   // sokmamak için ref'te tutulur. Yenileme tetiği `deps`tir.
@@ -55,29 +188,27 @@ export function useResource<T>(
   fetcherRef.current = fetcher;
 
   const reload = useCallback(async () => {
+    const token = gate.begin();
     try {
       const next = await fetcherRef.current();
-      setData(next);
-      setError(null);
+      // Geç dönen eski cevap taze veriyi ezmesin (bkz. RequestGate).
+      if (!gate.isCurrent(token)) return;
+      dispatch({ type: "loaded", data: next });
     } catch (e) {
-      setError(errorMessage(e));
+      if (!gate.isCurrent(token)) return;
+      dispatch({ type: "failed", message: errorMessage(e) });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
   useEffect(() => {
-    let cancelled = false;
     // Bağımlılık değişince eski veri ekranda kalmasın: yeni dersin listesi
     // gelene kadar öncekini göstermek yanlış derse bakıyormuş hissi verir.
-    setData(null);
-    setError(null);
-    reload().then(() => {
-      if (cancelled) return;
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [reload]);
+    dispatch({ type: "reset" });
+    void reload();
+    // Sökülme ve deps değişimi: uçuştaki cevaplar artık hiçbir şey yazamaz.
+    return () => gate.invalidate();
+  }, [reload, dispatch, gate]);
 
   // Yazma sonrası kısa tazeleme penceresi (bkz. `pulse` docstring'i).
   const [pulsing, setPulsing] = useState(false);
@@ -94,6 +225,7 @@ export function useResource<T>(
     if (pulseTimer.current) clearTimeout(pulseTimer.current);
   }, []);
 
+  const { data, error, refreshError } = state;
   const { pollWhile, intervalMs = 2000 } = options;
   const activeByData = data !== null && pollWhile ? pollWhile(data) : false;
   const shouldPoll = activeByData || pulsing;
@@ -107,9 +239,9 @@ export function useResource<T>(
   return {
     data,
     error,
+    refreshError,
     loading: data === null && error === null,
     reload,
     pulse,
-    setData,
   };
 }

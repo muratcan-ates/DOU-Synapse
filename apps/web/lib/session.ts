@@ -7,6 +7,12 @@
  * tekrarlanıyordu. Rol mantığı tek yerde olmazsa, ileride rol eklendiğinde
  * (ör. asistan/gözlemci) hangi ekranın güncellendiği takip edilemez.
  *
+ * İddia artık gerçekten tutuyor: `getStoredUser`'ın tek çağıranı bu dosyadır.
+ * Bileşenler depoya doğrudan dokunmaz — dokunan bir bileşen, sunucuda var
+ * olmayan `localStorage`'ı render sırasında okumaya kalkar ve iki kusur üretir:
+ * sunucu ile istemci farklı ağaç çizer (hidrasyon uyuşmazlığı), ayrıca okuma
+ * bir kez daha kopyalanmış olur (Anayasa XI).
+ *
  * Not: kimlik yalnızca ARAYÜZÜ şekillendirir. Yetki her zaman sunucuda
  * doğrulanır — localStorage'daki rol bir yetki belgesi değildir (Anayasa II).
  */
@@ -17,7 +23,13 @@ import { getStoredUser, type DemoUser } from "@/lib/api";
 export interface Session {
   user: DemoUser | null;
   isInstructor: boolean;
-  /** localStorage yalnız istemcide okunur; ilk render'da henüz bilinmez. */
+  /**
+   * localStorage yalnız istemcide okunur; ilk render'da henüz bilinmez.
+   *
+   * `ready === false` "oturum yok" DEĞİL, "henüz bilinmiyor" demektir. İkisini
+   * karıştıran çağrı yeri ya girmiş kullanıcıyı dışarı atar ya da rolü bilmeden
+   * eğitmen arayüzünü açar; belirsizlikte kapanmak esastır (Anayasa IV).
+   */
   ready: boolean;
 }
 

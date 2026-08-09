@@ -15,10 +15,16 @@
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
-import { MetricRow, PageHeader, PreviewBanner } from "@/components/page-state";
+import { Loading, MetricRow, PageHeader, PreviewBanner } from "@/components/page-state";
 import { Badge, Card } from "@/components/ui";
 import { masteryLevel, MASTERY_THRESHOLDS } from "@/lib/labels";
-import { CLASS_TOPICS, MISSED_QUESTIONS, STUDENT_TOPICS, type PreviewTopic } from "@/lib/preview-data";
+import {
+  ABSTENTION_RATE,
+  CLASS_TOPICS,
+  MISSED_QUESTIONS,
+  STUDENT_TOPICS,
+  type PreviewTopic,
+} from "@/lib/preview-data";
 import { useSession } from "@/lib/session";
 
 /**
@@ -33,10 +39,15 @@ function TopicRow({ row, rank }: { row: PreviewTopic; rank: number }) {
       <span className="w-6 shrink-0 font-mono text-xs text-fg-subtle">#{rank}</span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm text-fg">{row.name}</p>
+        {/*
+          Şerit `aria-hidden`: taşıdığı bilgi satırın kendisinde zaten yazılı
+          (konu adı, skor, seviye rozeti). `role="img"` + aria-label o metni
+          birebir tekrarlıyordu, yani ekran okuyucu her satırı iki kez okuyordu.
+          Görsel karşılaştırmayı hızlandırır, bilgi eklemez.
+        */}
         <div
+          aria-hidden="true"
           className="mt-1.5 h-1 w-full max-w-[220px] rounded-full bg-border"
-          role="img"
-          aria-label={`${row.name}: yüzde ${percent}`}
         >
           <div
             className="h-1 rounded-full bg-fg-subtle"
@@ -44,7 +55,13 @@ function TopicRow({ row, rank }: { row: PreviewTopic; rank: number }) {
           />
         </div>
       </div>
-      <span className="hidden shrink-0 text-xs text-fg-subtle sm:inline">
+      {/*
+        Cevap sayısı dar ekranda `hidden` ile gizleniyordu; `display:none`
+        erişilebilirlik ağacından da düşürür, yani telefonda ekran okuyucu
+        kullanan öğrenci skoru hangi hacme dayandığını hiç öğrenemiyordu.
+        `sr-only` görsel olarak yine gizler ama okunur bırakır.
+      */}
+      <span className="sr-only shrink-0 text-xs text-fg-subtle sm:not-sr-only">
         {row.answers} cevap
       </span>
       <span className="w-10 shrink-0 text-right font-mono text-sm text-fg">
@@ -59,7 +76,14 @@ function TopicRow({ row, rank }: { row: PreviewTopic; rank: number }) {
 
 export default function AnalyticsPreviewPage() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor } = useSession();
+  /*
+   * `ready` gelmeden rol dalına girilmez (Anayasa IV, fail-closed): rol
+   * localStorage'dan ilk efektte okunur ve o ana kadar "eğitmen değil"
+   * varsayımı geçerlidir — yani eğitmen, sınıf analitiği yerine bir kare
+   * boyunca "İlerlemem" başlığını ve ÖĞRENCİ sayılarını görüyordu.
+   * Rol kapısı yalnız arayüzü şekillendirir; yetki sunucuda doğrulanır.
+   */
+  const { isInstructor, ready } = useSession();
 
   const topics = isInstructor ? CLASS_TOPICS : STUDENT_TOPICS;
   const sorted = [...topics].sort((a, b) => a.score - b.score);
@@ -76,79 +100,88 @@ export default function AnalyticsPreviewPage() {
         bu ekranı besleyen analitik uçları E fazında bağlanacak.
       </PreviewBanner>
 
-      <PageHeader
-        title={isInstructor ? "Sınıf analitiği" : "İlerlemem"}
-        description={
-          isInstructor
-            ? "Konu bazlı sınıf ortalaması, en çok yanlış yapılan sorular ve kapsam dışı ret oranı."
-            : "Konu bazlı çalışma göstergen. En düşük skordan başlayarak sıralı."
-        }
-      />
+      {!ready ? (
+        <Loading />
+      ) : (
+        <>
+          <PageHeader
+            title={isInstructor ? "Sınıf analitiği" : "İlerlemem"}
+            description={
+              isInstructor
+                ? "Konu bazlı sınıf ortalaması, en çok yanlış yapılan sorular ve kapsam dışı ret oranı."
+                : "Konu bazlı çalışma göstergen. En düşük skordan başlayarak sıralı."
+            }
+          />
 
-      <MetricRow
-        items={
-          isInstructor
-            ? [
-                { value: average.toFixed(2), label: "Sınıf ortalaması" },
-                { value: needsWork, label: "Zorlanılan konu" },
-                { value: totalAnswers, label: "Cevaplanan soru" },
-                { value: "%7", label: "Kapsam dışı ret oranı" },
-              ]
-            : [
-                { value: average.toFixed(2), label: "Genel skorun" },
-                { value: needsWork, label: "Çalışman gereken konu" },
-                { value: totalAnswers, label: "Cevapladığın soru" },
-                { value: topics.length, label: "Takip edilen konu" },
-              ]
-        }
-      />
+          <MetricRow
+            items={
+              isInstructor
+                ? [
+                    { value: average.toFixed(2), label: "Sınıf ortalaması" },
+                    { value: needsWork, label: "Zorlanılan konu" },
+                    { value: totalAnswers, label: "Cevaplanan soru" },
+                    {
+                      value: `%${Math.round(ABSTENTION_RATE * 100)}`,
+                      label: "Kapsam dışı ret oranı",
+                    },
+                  ]
+                : [
+                    { value: average.toFixed(2), label: "Genel skorun" },
+                    { value: needsWork, label: "Çalışman gereken konu" },
+                    { value: totalAnswers, label: "Cevapladığın soru" },
+                    { value: topics.length, label: "Takip edilen konu" },
+                  ]
+            }
+          />
 
-      <Card className="mb-6 p-0">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-sm font-medium text-fg">
-            {isInstructor ? "Konu bazlı sınıf durumu" : "Konularım"}
-          </h2>
-          <span className="text-xs text-fg-subtle">önce zorlanılan konu</span>
-        </div>
-        <ul>
-          {sorted.map((row, index) => (
-            <TopicRow key={row.name} row={row} rank={index + 1} />
-          ))}
-        </ul>
-      </Card>
+          <Card className="mb-6 p-0">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="text-sm font-medium text-fg">
+                {isInstructor ? "Konu bazlı sınıf durumu" : "Konularım"}
+              </h2>
+              <span className="text-xs text-fg-subtle">önce zorlanılan konu</span>
+            </div>
+            <ul>
+              {sorted.map((row, index) => (
+                <TopicRow key={row.name} row={row} rank={index + 1} />
+              ))}
+            </ul>
+          </Card>
 
-      {isInstructor && (
-        <Card className="mb-6 p-0">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="text-sm font-medium text-fg">
-              En çok yanlış yapılan sorular
-            </h2>
-          </div>
-          <ul>
-            {MISSED_QUESTIONS.map((q) => (
-              <li
-                key={q.stem}
-                className="flex items-start gap-4 border-b border-border px-4 py-3 last:border-0"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="prose-tr text-sm text-fg">{q.stem}</p>
-                  <p className="mt-1 text-xs text-fg-subtle">{q.topic}</p>
-                </div>
-                <span className="shrink-0 font-mono text-sm text-fg">
-                  %{Math.round(q.wrongRate * 100)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
+          {isInstructor && (
+            <Card className="mb-6 p-0">
+              <div className="border-b border-border px-4 py-3">
+                <h2 className="text-sm font-medium text-fg">
+                  En çok yanlış yapılan sorular
+                </h2>
+              </div>
+              <ul>
+                {MISSED_QUESTIONS.map((q) => (
+                  <li
+                    key={q.stem}
+                    className="flex items-start gap-4 border-b border-border px-4 py-3 last:border-0"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="prose-tr text-sm text-fg">{q.stem}</p>
+                      <p className="mt-1 text-xs text-fg-subtle">{q.topic}</p>
+                    </div>
+                    <span className="shrink-0 font-mono text-sm text-fg">
+                      %{Math.round(q.wrongRate * 100)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {/* ARCHITECTURE §5: bu ibare ekranda zorunludur, dipnot değil. */}
+          <p className="prose-tr text-xs text-fg-muted">
+            Bu gösterge resmî bir not değildir; nereye çalışılacağını gösteren
+            bir çalışma önerisidir. Skor, konu bazlı ağırlıklı ortalamayla
+            hesaplanır ve alınan ipucu kademesi cevabın katkısını düşürür.
+          </p>
+        </>
       )}
-
-      {/* ARCHITECTURE §5: bu ibare ekranda zorunludur, dipnot değil. */}
-      <p className="prose-tr text-xs text-fg-muted">
-        Bu gösterge resmî bir not değildir; nereye çalışılacağını gösteren bir
-        çalışma önerisidir. Skor, konu bazlı ağırlıklı ortalamayla hesaplanır ve
-        alınan ipucu kademesi cevabın katkısını düşürür.
-      </p>
     </AppShell>
   );
 }
