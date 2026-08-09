@@ -25,8 +25,18 @@
   --fg-subtle: #78716c;
   --bg: #fbfbfa;
   --surface: #ffffff;
+  /* İki kenarlık token'ı iki AYRI iş yapar; oranları da ayrı eşiğe tabidir.
+     --border DEKORATİF ayraçtır (kart kenarı, liste ayracı, şerit altı): bir
+     kontrolün sınırını çizmez, kaldırılsa da hiçbir öğe kullanılamaz hâle
+     gelmez. WCAG 1.4.11 onu kapsamaz, 3:1 zorunlu değildir.
+     --border-strong KONTROL SINIRIDIR: girdinin ve ikincil butonun nerede
+     başlayıp bittiğini yalnız o gösteriyor (girdi zemini --surface, sayfa
+     zemini --bg; ikisi arasında 1.04:1 var, yani zemin farkı sınır işi
+     görmez). 1.4.11 tam olarak bunu ister → 3:1 ZORUNLU.
+     0.14 idi: --surface üstünde 1.33:1 ile eşiğin çok altındaydı. 0.48 ile
+     3.16:1 (--surface) ve 3.13:1 (--bg). Ölçüm: scripts/contrast.mjs. */
   --border: rgba(28, 25, 23, 0.08);
-  --border-strong: rgba(28, 25, 23, 0.14);
+  --border-strong: rgba(28, 25, 23, 0.48);
 
   /* Durum renkleri: metin koyu, zemin soluk pastel. Rozet metni kendi zemininin
      üstünde ölçülür (en düşük çift: --warning/--warning-bg 4.62:1).
@@ -58,7 +68,10 @@
     --bg: #191715;
     --surface: #211f1c;
     --border: rgba(245, 244, 242, 0.08);
-    --border-strong: rgba(245, 244, 242, 0.16);
+    /* 0.16 idi: --surface üstünde 1.62:1. Koyu temada en kötü zemin --surface
+       (daha açık), eşik ona göre kurulur. 0.36 ile 3.12:1 (--surface) ve
+       3.15:1 (--bg). Ölçüm: scripts/contrast.mjs. */
+    --border-strong: rgba(245, 244, 242, 0.36);
 
     --success: #7bc47f;
     --success-bg: #1d2a1e;

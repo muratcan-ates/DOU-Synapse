@@ -12,10 +12,11 @@
  * tazeler, koşul düşünce durur. Materyal işlenirken canlı durum rozetleri
  * bunun üzerine kurulu.
  *
- * Kancanın iki kuralı saf fonksiyonlara çıkarıldı (`createRequestGate` ve
- * `resourceReducer`): DOM'suz koşan `use-resource.test.ts` bunları doğrudan
- * sınıyor. React'ın içinde kalsalardı ikisi de yalnız tarayıcıda, yalnız
- * şanslı zamanlamada gözlenebilirdi — yani pratikte hiç.
+ * Kancanın üç kuralı saf fonksiyonlara çıkarıldı (`createRequestGate`,
+ * `resourceReducer` ve `isFirstLoadSettled`): DOM'suz koşan
+ * `use-resource.test.ts` bunları doğrudan sınıyor. React'ın içinde kalsalardı
+ * üçü de yalnız tarayıcıda, yalnız şanslı zamanlamada gözlenebilirdi — yani
+ * pratikte hiç.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -111,6 +112,29 @@ export function resourceReducer<T>(
 }
 
 /**
+ * Saf çekirdek 3: "ilk tur bitti mi?" kuralı.
+ *
+ * `loading` eskiden `data === null && error === null` diye TÜRETİLİYORDU. Türev
+ * iki varsayıma yaslanıyordu ve ikincisi doğru değil: (1) ilk tur bitince ya veri
+ * ya hata olur, (2) veri asla `null` olamaz. Bir uç meşru olarak JSON `null`
+ * döndürürse — "aktif sınav oturumu yok", "henüz özet üretilmedi" gibi bir yokluk
+ * cevabı — tur BAŞARIYLA biter ama iki alan da `null` kalır ve ekran sonsuza
+ * kadar "Yükleniyor…" gösterir. Kullanıcı için fark yok: sistem donmuş görünür.
+ *
+ * Bayrak artık sonuca değil TURUN KENDİSİNE bakıyor: `reset` yeniden bekletir
+ * (deps değişti, yeni dersin ilk turu başlıyor), `loaded` ve `failed` ise sonucu
+ * ne olursa olsun ilk turu kapatır.
+ *
+ * Kural neden ayrı bir fonksiyon: `ResourceState`'e dördüncü alan eklemek
+ * sözleşmeyi değiştirirdi (dokuz ekran ve mevcut testler o üç alanı biliyor).
+ * Bayrak kancada ayrı tutuluyor ama kararı burada, tek satırda ve DOM'suz
+ * sınanabilir biçimde veriliyor.
+ */
+export function isFirstLoadSettled(action: ResourceAction<unknown>): boolean {
+  return action.type !== "reset";
+}
+
+/**
  * Üç alan da aynıysa ESKİ nesneyi döndür.
  *
  * React durumu `Object.is` ile karşılaştırır; her seferinde yeni nesne
@@ -145,7 +169,12 @@ export interface Resource<T> {
    * eder; bu metin satır içinde, tercihen "Tekrar dene" ile gösterilir.
    */
   refreshError: string | null;
-  /** İlk yükleme tamamlanmadı; veri de hata da yok. */
+  /**
+   * İlk yükleme tamamlanmadı. Anlamı değişmedi; yalnız ölçümü düzeldi —
+   * eskiden `data`/`error` boşluğundan türetiliyordu, artık turun bitişinden
+   * geliyor (bkz. `isFirstLoadSettled`). `null` dönen bir uç artık ekranı
+   * "Yükleniyor…" hâlinde kilitlemez.
+   */
   loading: boolean;
   /** Elle tazeleme — yazma işleminden sonra çağrılır. */
   reload: () => Promise<void>;
@@ -171,9 +200,14 @@ export function useResource<T>(
   options: { pollWhile?: (data: T) => boolean; intervalMs?: number } = {},
 ): Resource<T> {
   const [state, setState] = useState<ResourceState<T>>(EMPTY_RESOURCE_STATE);
+  const [settled, setSettled] = useState(false);
 
+  // Her eylem tek kapıdan geçer; bayrak ile durum böylece ayrışamaz. İkisini
+  // ayrı ayrı güncelleyen bir çağrı yeri olsaydı, birini güncelleyip diğerini
+  // unutan bir dal er geç yazılırdı (Anayasa XI).
   const dispatch = useCallback((action: ResourceAction<T>) => {
     setState((current) => resourceReducer(current, action));
+    setSettled(isFirstLoadSettled(action));
   }, []);
 
   // Kapı kancanın ömrü boyunca tek: her render'da yenisi kurulursa geçmiş
@@ -240,7 +274,7 @@ export function useResource<T>(
     data,
     error,
     refreshError,
-    loading: data === null && error === null,
+    loading: !settled,
     reload,
     pulse,
   };

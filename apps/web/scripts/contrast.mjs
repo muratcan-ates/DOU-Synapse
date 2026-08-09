@@ -11,10 +11,11 @@
  *   cd apps/web && node scripts/contrast.mjs          # tablo + geçti/kaldı
  *   cd apps/web && node scripts/contrast.mjs --md     # DESIGN.md'ye yapıştırılacak markdown
  *
- * Çıkış kodu: bilgi taşıyan bir METİN çifti AA eşiğinin (4.5:1) altındaysa 1.
- * Metin olmayan çiftler (kenarlık, çubuk dolgusu — WCAG 1.4.11, 3:1) ölçülür ve
- * basılır ama kapı değildir: bunlar tasarım kararıdır ve durumları DESIGN.md
- * §Colors altında açıkça yazılıdır. Kapıyı genişletmeden önce oradaki kaydı güncelle.
+ * Çıkış kodu: ölçülen HERHANGİ bir çift kendi eşiğinin altındaysa 1. İki eşik
+ * var — metin için AA 4.5:1, metin olmayan arayüz öğeleri için WCAG 1.4.11 3:1 —
+ * ama ikisi de kapıdır. Metin dışı bölüm bir süre "kayıt, kapı değil" olarak
+ * koştu; --border-strong o boşlukta 1.33:1'de kaldı ve kimse fark etmedi. Ölçülüp
+ * çıkış kodunu etkilemeyen sayı, ölçülmemiş sayıdır.
  *
  * Formül: WCAG 2.1 relative luminance (§ Relative luminance) ve
  * contrast ratio (L1 + 0.05) / (L2 + 0.05).
@@ -152,9 +153,21 @@ const BUTTON_PAIRS = {
   dark: [["#191715", "brand", "birincil buton metni"]],
 };
 
-/** Metin olmayan ama bilgi taşıyan yüzeyler: 3:1 eşiği (WCAG 1.4.11). */
+/**
+ * Metin olmayan ama bilgi taşıyan yüzeyler: 3:1 eşiği (WCAG 1.4.11).
+ *
+ * Buraya yalnız BİR KONTROLÜN SINIRINI ya da durumunu çizen öğe girer.
+ * `--border` bilerek YOK: o dekoratif ayraç (kart kenarı, şerit altı çizgisi),
+ * kaldırılsa hiçbir öğe kullanılamaz hâle gelmez ve 1.4.11 onu kapsamaz.
+ * `--border-strong` ise girdinin ve ikincil butonun tek görünür sınırıdır;
+ * ikisini aynı eşiğe sokmak dekoratif çizgiyi gereksizce kalınlaştırır.
+ *
+ * Kenarlık iki zemine birden komşudur (kontrolün içi `--surface`, sayfanın
+ * kendisi `--bg`), bu yüzden ikisine karşı da ölçülür — düşük olan kazanır.
+ */
 const NON_TEXT = [
-  ["border-strong", "surface", "girdi/ikincil buton kenarlığı"],
+  ["border-strong", "surface", "girdi/ikincil buton kenarlığı (kontrolün içi)"],
+  ["border-strong", "bg", "girdi/ikincil buton kenarlığı (sayfa zemini)"],
   ["fg-subtle", "surface", "ilerleme çubuğu dolgusu (bg-fg-subtle)"],
 ];
 
@@ -249,7 +262,7 @@ function printTable(theme, rows) {
   rows.filter((r) => r.kind !== "non-text").forEach(line);
   const nonText = rows.filter((r) => r.kind === "non-text");
   if (nonText.length) {
-    console.log("  -- metin dışı (WCAG 1.4.11, 3:1) — kayıt, kapı değil --");
+    console.log("  -- metin dışı arayüz öğesi (WCAG 1.4.11, 3:1) — kapı --");
     nonText.forEach(line);
   }
 }
@@ -278,10 +291,10 @@ if (!asMarkdown) {
       ? "\nMetin: tüm çiftler AA 4.5:1 eşiğini geçti."
       : `\nMetin: ${textFailures} çift AA eşiğinin altında.`,
   );
-  if (nonTextFailures > 0) {
-    console.log(
-      `Metin dışı: ${nonTextFailures} çift 3:1 altında (DESIGN.md §Colors'ta yazılı açık karar; çıkış kodunu etkilemez).`,
-    );
-  }
+  console.log(
+    nonTextFailures === 0
+      ? "Metin dışı arayüz öğesi: tüm çiftler WCAG 1.4.11 3:1 eşiğini geçti."
+      : `Metin dışı arayüz öğesi: ${nonTextFailures} çift 3:1 altında.`,
+  );
 }
-process.exit(textFailures === 0 ? 0 : 1);
+process.exit(textFailures === 0 && nonTextFailures === 0 ? 0 : 1);
