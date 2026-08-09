@@ -8,6 +8,7 @@ kuyruktaki işleri işler.
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
@@ -20,7 +21,7 @@ from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.core.vector_space import current_space
 from app.modules.ingestion import parsers
-from app.modules.ingestion.chunking import chunk_blocks
+from app.modules.ingestion.chunking import Chunk, chunk_blocks
 from app.modules.ingestion.embedding import get_embedding_provider
 from app.modules.ingestion.storage import DocumentStorage
 
@@ -34,6 +35,17 @@ class IngestionResult:
     document_id: UUID
     chunk_count: int
     page_count: int | None
+
+
+def _parse_and_chunk(content: bytes, file_type: str) -> tuple[parsers.ParsedDocument, list[Chunk]]:
+    """Ayrıştırma ve chunk'lama — tek senkron blok.
+
+    İkisi tek `to_thread` sıçramasında birlikte koşar çünkü aralarında await
+    edilecek hiçbir şey yok; ayrı ayrı sarmak iki thread sıçraması demek olurdu ve
+    bedeli karşılıksız kalırdı.
+    """
+    parsed = parsers.parse(content, file_type)
+    return parsed, chunk_blocks(parsed.blocks)
 
 
 async def process_document(
@@ -59,8 +71,14 @@ async def process_document(
     )
 
     content = await storage.load(row.storage_path)
-    parsed = parsers.parse(content, row.file_type)
-    chunks = chunk_blocks(parsed.blocks)
+    # Ayrıştırma ve embedding üretimi SENKRON ve CPU'ya bağlı işlerdir; doğrudan
+    # çağrılırsa event loop'u tutarlar (FR-220). Bu zincir bugün API sürecinde
+    # koşuyor: `documents.py` yüklemeden sonra `internal.trigger_drain()` çağırıyor
+    # ve `WORKER_DRAIN_URL` tanımsızken (yerel + Compose + demo yolu) drain aynı
+    # süreçte yapılıyor — yani "arka planda koşuyor" savunması bu satırları
+    # kurtarmıyor. Desen yeni değil: `storage.py` aynı modülde üç yerde
+    # `asyncio.to_thread` kullanıyor, pahalı olan tarafa uygulanmamıştı.
+    parsed, chunks = await asyncio.to_thread(_parse_and_chunk, content, row.file_type)
 
     if not chunks:
         raise AppError("Belgeden aranabilir içerik çıkarılamadı.")
@@ -76,7 +94,11 @@ async def process_document(
     embeddings: list[list[float]] = []
     for start in range(0, len(chunks), batch_size):
         batch = [chunk.text for chunk in chunks[start : start + batch_size]]
-        embeddings.extend(provider.embed_documents(batch))
+        # Sarma DÖNGÜNÜN İÇİNDE, parti başına: N partilik bir belge event loop'a N
+        # geri dönüş noktası verir. Döngünün tamamı tek `to_thread`'e alınsaydı
+        # tek nokta kalırdı ve `worker_batch_size=5` ile arka arkaya beş belge
+        # işlenirken loop yine uzun aralıklarla susardı.
+        embeddings.extend(await asyncio.to_thread(provider.embed_documents, batch))
 
     if len(embeddings) != len(chunks):  # pragma: no cover - sağlayıcı sözleşme ihlali
         raise AppError("Embedding üretimi beklenen sayıda vektör döndürmedi.")
