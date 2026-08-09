@@ -9,8 +9,8 @@ ve onu okuyan iki fonksiyonun) regresyon koruması ve o mekanizma bugün en zay�
 korunan yer. Sohbet ucu testlerinin arasına dağıtılsalardı "önbellek anahtarında
 mod var mı" sorusu bir daha tek bakışta cevaplanamazdı.
 
-Sahte hat sınıfları `test_chat_api`'den içe aktarılıyor; üçüncü bir kopya yazmak
-Anayasa XI'e aykırı olurdu (aynı gerekçeyle o dosya da `test_socratic`'ten alıyor).
+Sahte hat sınıfları `tests/factories.py`'den içe aktarılıyor; üçüncü bir kopya
+yazmak Anayasa XI'e aykırı olurdu.
 """
 
 from __future__ import annotations
@@ -28,14 +28,19 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from app.api.chat import question_hash, reset_rate_limit, set_pipeline
 from app.contracts import ChatMode
 from tests.conftest import WORKER_DSN, UserFactory
-from tests.test_chat_api import Pipeline, _create_course, _install, sourced_answer
-from tests.test_socratic import make_chunk
+from tests.factories import (
+    Pipeline,
+    create_course,
+    install_pipeline,
+    make_chunk,
+    sourced_answer,
+)
 
 
 @pytest.fixture
 def pipeline() -> Iterator[Pipeline]:
     fake = Pipeline()
-    _install(fake)
+    install_pipeline(fake)
     reset_rate_limit()
     yield fake
     set_pipeline()
@@ -125,7 +130,7 @@ class TestOnbellekAnahtari:
 
 
 async def _ask(
-    client: AsyncClient, course_id: str, headers: dict[str, str], question: str, **extra: object
+    client: AsyncClient, course_id: UUID, headers: dict[str, str], question: str, **extra: object
 ) -> dict[str, object]:
     response = await client.post(
         f"/courses/{course_id}/chat", json={"question": question, **extra}, headers=headers
@@ -145,7 +150,7 @@ class TestModGuvenligi:
         tam cevap dönerdi ve merdiven hiç çalışmazdı.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
         pipeline.answers(
             sourced_answer(parca, "QA cevabı: dört koşul aynı anda sağlanır."),
@@ -169,7 +174,7 @@ class TestModGuvenligi:
         soruya bağlı bir anahtarla saklanamaz.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
         pipeline.answers(
             sourced_answer(parca, "Sokratik ipucu"),
@@ -187,7 +192,7 @@ class TestModGuvenligi:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
         pipeline.answers(
             sourced_answer(parca, "birinci"),
@@ -203,7 +208,7 @@ class TestModGuvenligi:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(parca, "tek cevap"))
 
@@ -254,7 +259,7 @@ class TestBozukOnbellekSatiri:
         del ad  # parametre kimliği yalnız hata mesajında okunur
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(parca, "yeniden üretilmiş cevap"))
         soru = "Deadlock nedir?"
@@ -266,7 +271,7 @@ class TestBozukOnbellekSatiri:
                     "VALUES (:cid, :hash, CAST(:answer AS jsonb))"
                 ),
                 {
-                    "cid": UUID(course_id),
+                    "cid": course_id,
                     "hash": question_hash(ChatMode.QA, soru),
                     "answer": json.dumps(bozuk),
                 },
@@ -291,7 +296,7 @@ class TestBozukOnbellekSatiri:
         """
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(parca, "üretimden gelen"))
         soru = "Deadlock nedir?"
@@ -303,7 +308,7 @@ class TestBozukOnbellekSatiri:
                     "VALUES (:cid, :hash, CAST(:answer AS jsonb))"
                 ),
                 {
-                    "cid": UUID(course_id),
+                    "cid": course_id,
                     "hash": question_hash(ChatMode.QA, soru),
                     "answer": json.dumps(
                         {
@@ -345,8 +350,8 @@ class TestDersIzolasyonuVeritabaninda:
         """
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
-        ders_a = await _create_course(client, ayse, "COME301")
-        ders_b = await _create_course(client, ayse, "COME302")
+        ders_a = await create_course(client, ayse, "COME301")
+        ders_b = await create_course(client, ayse, "COME302")
         parca_a = pipeline.serve(ders_a, make_chunk(file_name="a.pdf"))
         parca_b = pipeline.serve(ders_b, make_chunk(file_name="b.pdf"))
         pipeline.answers(
@@ -372,7 +377,7 @@ class TestDersIzolasyonuVeritabaninda:
                 )
             ).all()
 
-        assert [(str(r.course_id), r.metin) for r in satirlar] == [
+        assert [(r.course_id, r.metin) for r in satirlar] == [
             (ders_a, "A cevabı"),
             (ders_b, "B cevabı"),
         ]
@@ -395,7 +400,7 @@ class TestNeyinSaklandigi:
 
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.serve(course_id, make_chunk())
         pipeline.answers(
             GeneratedAnswer(

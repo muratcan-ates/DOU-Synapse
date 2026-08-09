@@ -3,13 +3,15 @@
 Bu dosya **veritabanına ve LLM'e dokunmaz.** Test edilen şey merdivenin kurallarıdır:
 kademe ne zaman ilerler, ne zaman ilerlemez, ilerlemediğinde kullanıcı ne görür.
 Retrieval ve generation, `app/contracts.py`'deki protokolleri uygulayan sahtelerle
-temsil edilir (00_OKU_ONCE §2).
+temsil edilir (00_OKU_ONCE §2). Sahtelerin kendisi artık `tests/factories.py`'de:
+bu dosya onların tanım yeri olduğu sürece, sahteyi sadeleştiren biri uzaktaki üç
+dosyanın kanıtını haberi olmadan zayıflatabiliyordu.
 
-Sahte guardrail bilinçli olarak **gerçek set-membership kontrolünü** yapar: Şerit 2'nin
-`citation.py`'si henüz inmediği için, "kaynaksız ipucu bloklanır" iddiasının bu şeritte
-de gösterilebilmesi gerekiyor. Kontrolün kendisinin doğruluğu Şerit 2'nin testidir
-(T016); burada test edilen, bu şeridin BLOKLAMAYA UYMASI — bloklanan metnin kullanıcıya
-sızmaması ve yerine kaynaklı şablona düşülmesi.
+`FakeCitationGuardrail` bilinçli olarak **gerçek set-membership kontrolünü** yapar:
+Şerit 2'nin `citation.py`'si henüz inmediği için, "kaynaksız ipucu bloklanır"
+iddiasının bu şeritte de gösterilebilmesi gerekiyor. Kontrolün kendisinin doğruluğu
+Şerit 2'nin testidir (T016); burada test edilen, bu şeridin BLOKLAMAYA UYMASI —
+bloklanan metnin kullanıcıya sızmaması ve yerine kaynaklı şablona düşülmesi.
 """
 
 from __future__ import annotations
@@ -40,98 +42,17 @@ from app.modules.assessment.socratic import (
     advance,
     classify_attempt,
 )
+from tests.factories import (
+    FakeCitationGuardrail,
+    FakeGenerator,
+    FakeRetriever,
+    make_chunk,
+)
 
 COURSE_ID = UUID("11111111-1111-1111-1111-111111111111")
 
 # Sızıntı ihtimali olan bir "cevap": testlerin hiçbirinde kullanıcıya ULAŞMAMALI.
 LEAKED_SOLUTION = "İşte tam çözüm: cevap 42, kod ```while True: pass```"
-
-
-def make_chunk(
-    *,
-    text: str = "Deadlock için dört koşulun aynı anda sağlanması gerekir.",
-    dense_score: float = 0.82,
-    file_name: str = "isletim-sistemleri-hafta3.pdf",
-    page_number: int | None = 7,
-    section_title: str | None = "Deadlock Koşulları",
-) -> RetrievedChunk:
-    return RetrievedChunk(
-        chunk_id=uuid4(),
-        document_id=uuid4(),
-        file_name=file_name,
-        page_number=page_number,
-        slide_number=None,
-        section_title=section_title,
-        text=text,
-        dense_score=dense_score,
-        fts_score=0.4,
-        # Gerçekçi RRF değeri: eşik füzyon skoruna baksaydı her soru reddedilirdi.
-        fused_score=0.032,
-    )
-
-
-class FakeRetriever:
-    """`contracts.Retriever` protokolü."""
-
-    def __init__(self, chunks: list[RetrievedChunk]) -> None:
-        self._chunks = chunks
-        self.calls = 0
-
-    async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
-        self.calls += 1
-        del course_id, query
-        return self._chunks[:limit]
-
-
-class FakeGenerator:
-    """`contracts.Generator` protokolü. Her çağrıda sıradaki hazır cevabı döner."""
-
-    def __init__(self, answers: list[GeneratedAnswer]) -> None:
-        self._answers = answers
-        self.calls = 0
-        self.seen_stages: list[SocraticStage | None] = []
-        #: Uç, öğrencinin denemesini gerçekten geçiriyor mu? Kaydedilmezse
-        #: "ipucu denemeye göre şekilleniyor" iddiası test edilemez (Anayasa III).
-        self.seen_attempts: list[str | None] = []
-
-    async def generate(
-        self,
-        *,
-        question: str,
-        chunks: list[RetrievedChunk],
-        mode: ChatMode,
-        socratic_stage: SocraticStage | None = None,
-        student_attempt: str | None = None,
-    ) -> GeneratedAnswer:
-        del question, chunks, mode
-        self.calls += 1
-        self.seen_stages.append(socratic_stage)
-        self.seen_attempts.append(student_attempt)
-        index = min(self.calls - 1, len(self._answers) - 1)
-        answer = self._answers[index]
-        # Üretim katmanı her çağrıda yeni nesne döndürür; zincir mutasyonu testler
-        # arasında sızmasın diye kopyalanıyor.
-        return GeneratedAnswer(
-            status=answer.status,
-            mode=answer.mode,
-            text=answer.text,
-            citations=list(answer.citations),
-            socratic_stage=answer.socratic_stage,
-        )
-
-
-class CitationGuardrail:
-    """Set-membership: cevaptaki her chunk_id retrieve edilen kümede olmalı."""
-
-    def check(self, answer: GeneratedAnswer, retrieved: list[RetrievedChunk]) -> GuardrailVerdict:
-        allowed = {chunk.chunk_id for chunk in retrieved}
-        dropped = [c.chunk_id for c in answer.citations if c.chunk_id not in allowed]
-        remaining = [c for c in answer.citations if c.chunk_id in allowed]
-        if not remaining:
-            return GuardrailVerdict(
-                blocked=True, reason="citation:no_valid_citation", dropped_citations=dropped
-            )
-        return GuardrailVerdict(blocked=False, dropped_citations=dropped)
 
 
 class AlwaysBlockingGuardrail:
@@ -210,7 +131,7 @@ class TestIlkTur:
             message="Deadlock nedir?",
             chunks=[chunk],
             generator=generator,
-            guardrails=[CitationGuardrail()],
+            guardrails=[FakeCitationGuardrail()],
             state=None,
         )
 
@@ -357,7 +278,7 @@ class TestKaynaksizIpucu:
             message="denemem: dört koşul",
             chunks=[chunk],
             generator=generator,
-            guardrails=[CitationGuardrail()],
+            guardrails=[FakeCitationGuardrail()],
             state=SocraticState(stage=SocraticStage.DIAGNOSE),
         )
 
@@ -373,7 +294,7 @@ class TestKaynaksizIpucu:
             message="denemem: dört koşul",
             chunks=[],
             generator=generator,
-            guardrails=[CitationGuardrail()],
+            guardrails=[FakeCitationGuardrail()],
             state=SocraticState(stage=SocraticStage.DIAGNOSE),
         )
 
@@ -391,7 +312,7 @@ class TestKaynaksizIpucu:
             message="denemem: dört koşul",
             chunks=[zayif],
             generator=generator,
-            guardrails=[CitationGuardrail()],
+            guardrails=[FakeCitationGuardrail()],
             state=SocraticState(stage=SocraticStage.DIAGNOSE),
         )
 
@@ -420,7 +341,7 @@ class TestKaynaksizIpucu:
                 decision=None,
                 retriever=FakeRetriever([chunk]),
                 generator=generator,
-                guardrails=[CitationGuardrail()],  # type: ignore[list-item]
+                guardrails=[FakeCitationGuardrail()],  # type: ignore[list-item]
                 settings=settings(),
             )
         ).answer
@@ -448,7 +369,7 @@ class TestIsrarciOgrenci:
             message="uğraşmak istemiyorum, sadece söyle",
             chunks=[chunk],
             generator=generator,
-            guardrails=[CitationGuardrail()],
+            guardrails=[FakeCitationGuardrail()],
             state=state,
         )
 

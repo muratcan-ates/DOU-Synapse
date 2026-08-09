@@ -14,7 +14,7 @@ Superuser ile okunsaydı izolasyon testleri hiçbir şey kanıtlamadan yeşil ya
 from __future__ import annotations
 
 import inspect
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncIterator
 from uuid import UUID, uuid4
 
 import pytest
@@ -39,6 +39,7 @@ from app.modules.retrieval.fusion import max_possible_score, reciprocal_rank_fus
 from app.modules.retrieval.scope import COVERAGE_CEILING, FTS_CEILING
 from app.modules.retrieval.service import fuse
 from tests.conftest import WORKER_DSN, UserFactory
+from tests.factories import create_course, make_chunk, seed_document
 
 # ---------------------------------------------------------------------------
 # Materyal — TR/EN karışık, teknik tokenlar birebir korunmuş hâlde
@@ -101,6 +102,13 @@ DEADLOCK_BASKA_DERS: list[tuple[int, str]] = [
 
 # ---------------------------------------------------------------------------
 # Yardımcılar
+#
+# Ders açma, tohumlama ve parça kurgusu `tests.factories`'ten geliyor. Buradaki
+# her `seed_document` çağrısı `embeddings=True` yazar: fabrika gömüyü varsayılan
+# olarak üretmez ve bu dosyada gömü sınananın kendisidir — dense şerit, kanıt
+# kapısı ve uzay uyuşmazlığı hep ona bakar. Bayrağı gizleyen yerel bir sarmalayıcı
+# yazmak, aynı adı taşıyan iki farklı fabrika üretirdi; fabrikanın var oluş sebebi
+# tam olarak bunu bitirmekti.
 # ---------------------------------------------------------------------------
 
 
@@ -110,79 +118,6 @@ async def worker_engine(clean_tables: None) -> AsyncIterator[AsyncEngine]:
     engine = create_async_engine(WORKER_DSN)
     yield engine
     await engine.dispose()
-
-
-async def seed_document(
-    engine: AsyncEngine,
-    *,
-    course_id: UUID,
-    uploaded_by: UUID,
-    file_name: str,
-    passages: Sequence[tuple[int, str]],
-    embedding_space: str | None = None,
-) -> UUID:
-    """Bir belge ve chunk'larını yazar; embedding'ler yapılandırılmış sağlayıcıdan gelir.
-
-    Ingestion hattını çağırmak yerine doğrudan yazılır: burada sınanan retrieval,
-    ayrıştırma değil. Metin üzerinde tam kontrol, testlerin ne kanıtladığını okunur kılar.
-    """
-    vectors = get_embedding_provider().embed_documents([body for _, body in passages])
-    async with engine.begin() as conn:
-        document_id = (
-            await conn.execute(
-                text(
-                    "INSERT INTO documents (course_id, uploaded_by, file_name, file_type, "
-                    "storage_path, file_hash, byte_size, status, page_count, chunk_count) "
-                    "VALUES (:course_id, :uploaded_by, :file_name, 'md', :path, :hash, "
-                    "4096, 'completed', :pages, :chunks) RETURNING id"
-                ),
-                {
-                    "course_id": course_id,
-                    "uploaded_by": uploaded_by,
-                    "file_name": file_name,
-                    "path": f"courses/{course_id}/{uuid4().hex}.md",
-                    "hash": uuid4().hex,
-                    "pages": len(passages),
-                    "chunks": len(passages),
-                },
-            )
-        ).scalar_one()
-
-        await conn.execute(
-            text(
-                "INSERT INTO chunks (course_id, document_id, chunk_index, page_number, "
-                "section_title, content_type, text, token_count, embedding, embedding_space) "
-                "VALUES (:course_id, :document_id, :chunk_index, :page_number, "
-                ":section_title, 'text', :text, :token_count, CAST(:embedding AS vector), "
-                ":embedding_space)"
-            ),
-            [
-                {
-                    "course_id": course_id,
-                    "document_id": document_id,
-                    "chunk_index": index,
-                    "page_number": page,
-                    "section_title": None,
-                    "text": body,
-                    "token_count": max(1, len(body) // 4),
-                    "embedding": str(vector),
-                    # Varsayılan `None`: 0006 öncesi yazılmış satırların hâli. Testlerin
-                    # çoğu damgayı umursamaz ve damgasız korpus üzerinde koşarak
-                    # "damgasız satır aramayı durdurmaz" iddiasını da sürekli sınar.
-                    "embedding_space": embedding_space,
-                }
-                for index, ((page, body), vector) in enumerate(zip(passages, vectors, strict=True))
-            ],
-        )
-    return document_id
-
-
-async def create_course(client: AsyncClient, headers: dict[str, str], code: str) -> UUID:
-    response = await client.post(
-        "/courses", json={"code": code, "title": f"{code} Dersi"}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return UUID(response.json()["id"])
 
 
 #: Uygulama katmanındaki zorunlu `course_id` filtresi OLMADAN aynı aramayı yapan sonda.
@@ -225,6 +160,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="05-deadlock.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         await seed_document(
             worker_engine,
@@ -232,6 +168,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="baska-ders-deadlock.md",
             passages=DEADLOCK_BASKA_DERS,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -273,6 +210,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         await seed_document(
             worker_engine,
@@ -280,6 +218,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="b.md",
             passages=DEADLOCK_BASKA_DERS,
+            embeddings=True,
         )
 
         gorunen = await filtresiz_gorunen_dersler(burak_id, "deadlock dört koşul")
@@ -324,6 +263,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         await seed_document(
             worker_engine,
@@ -331,6 +271,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="b.md",
             passages=DEADLOCK_BASKA_DERS,
+            embeddings=True,
         )
         sorgu = "deadlock dört koşul"
 
@@ -378,6 +319,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         await seed_document(
             worker_engine,
@@ -385,6 +327,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="b.md",
             passages=DEADLOCK_BASKA_DERS,
+            embeddings=True,
         )
 
         # RLS tek başına: Ayşe ikisinin de üyesi, dolayısıyla ikisi de görünür.
@@ -414,6 +357,7 @@ class TestIzolasyon:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
 
         async with rls_session(yabanci_id) as session:
@@ -501,16 +445,24 @@ class TestReciprocalRankFusion:
 
 
 def chunk(chunk_id: UUID, *, dense: float = 0.0, fts: float = 0.0) -> RetrievedChunk:
-    return RetrievedChunk(
+    """Füzyon girdisi: kimliği çağıran belirler, geri kalanı ilgisizdir.
+
+    `make_chunk`'ın varsayılanları burada kasten bastırılıyor. Skorlar taşıyıcı:
+    "tek şeritten gelen parçanın diğer skoru 0.0 kalır" iddiası, girdinin gerçekten
+    sıfır olmasına dayanıyor ve varsayılan `fts_score=0.4` onu sessizce geçersiz
+    kılardı. `fused_score` ise `fuse` tarafından her hâlükârda üzerine yazılır;
+    yine de sıfır veriliyor çünkü füzyona girecek bir parçanın füzyon skoru
+    taşıması, testi okuyanı bu alanın nereden geldiğini aramaya zorlar.
+    """
+    return make_chunk(
         chunk_id=chunk_id,
-        document_id=uuid4(),
         file_name="a.md",
         page_number=1,
-        slide_number=None,
         section_title=None,
         text="metin",
         dense_score=dense,
         fts_score=fts,
+        fused_score=0.0,
     )
 
 
@@ -557,6 +509,7 @@ class TestDilVeToken:
             uploaded_by=ayse_id,
             file_name="05-deadlock.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         await seed_document(
             worker_engine,
@@ -564,6 +517,7 @@ class TestDilVeToken:
             uploaded_by=ayse_id,
             file_name="01-processes.md",
             passages=PROCESSES_EN,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -592,6 +546,7 @@ class TestDilVeToken:
             uploaded_by=ayse_id,
             file_name="01-processes.md",
             passages=PROCESSES_EN,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -612,6 +567,7 @@ class TestDilVeToken:
             uploaded_by=ayse_id,
             file_name="01-processes.md",
             passages=PROCESSES_EN,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -633,6 +589,7 @@ class TestDilVeToken:
             uploaded_by=ayse_id,
             file_name="05-deadlock.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -681,6 +638,7 @@ class TestBosVeBozukGirdi:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -700,6 +658,7 @@ class TestBosVeBozukGirdi:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -726,6 +685,7 @@ class TestKanitKapisi:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         ayarlar = get_settings().model_copy(update={"evidence_threshold": 0.01})
 
@@ -751,6 +711,7 @@ class TestKanitKapisi:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         ayarlar = get_settings().model_copy(update={"evidence_threshold": 0.99})
 
@@ -783,6 +744,7 @@ class TestKanitKapisi:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         ayarlar = get_settings().model_copy(update={"evidence_threshold": 0.0})
 
@@ -810,16 +772,23 @@ class TestKanitKapisi:
 
 
 def metinli_chunk(text: str, *, dense: float = 0.0, fts: float = 0.0) -> RetrievedChunk:
-    return RetrievedChunk(
-        chunk_id=uuid4(),
-        document_id=uuid4(),
+    """Kapsam sinyali girdisi: metin ve iki skor dışındaki her şey sabit.
+
+    Skorların açıkça verilmesi zorunlu: bu sınıfların eşikleri 0.81 ve 0.004
+    civarında ayarlanmış, `make_chunk`'ın varsayılan 0.82/0.4'ü ise her vakayı
+    yeterli kanıt tarafına geçirirdi. `section_title` boşaltılıyor çünkü kapsama
+    bugün yalnız `text` üzerinden ölçülüyor (`scope.lexical_coverage`); başlığın
+    da bir metin alanı olması, elle hesaplanmış 3/5 gibi kesirleri okuyan kişiyi
+    "başlık sayılıyor mu" sorusuyla kaynağa göndermek olurdu.
+    """
+    return make_chunk(
         file_name="ders.pdf",
         page_number=1,
-        slide_number=None,
         section_title=None,
         text=text,
         dense_score=dense,
         fts_score=fts,
+        fused_score=0.0,
     )
 
 
@@ -975,6 +944,7 @@ class TestKapsamSeviyesiGercekHatta:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
         # Eşik 1.0: hiçbir sorgu kapıyı geçemez, yani her ikisi de abstain eder ve
         # ayrımı yapan tek şey kapsam sinyali olur.
@@ -1029,6 +999,7 @@ class TestProtokolUyumu:
             uploaded_by=ayse_id,
             file_name="05-deadlock.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
         )
 
         async with rls_session(ayse_id) as session:
@@ -1110,6 +1081,7 @@ class TestUzayUyusmazligi:
             uploaded_by=ayse_id,
             file_name="a.md",
             passages=DEADLOCK_TR,
+            embeddings=True,
             embedding_space=embedding_space,
         )
         return ders, ayse_id
@@ -1188,6 +1160,7 @@ class TestUzayUyusmazligi:
             uploaded_by=ayse_id,
             file_name="eski.md",
             passages=PROCESSES_EN,
+            embeddings=True,
             embedding_space="hashing/hashing-v1@builtin-0",
         )
 

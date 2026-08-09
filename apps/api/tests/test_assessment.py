@@ -10,13 +10,15 @@ kuralını kapsar:
 2. **Cevap anahtarı öğrenciye sızmaz.** Onaylı bir soru bile öğrenciye
    `public_payload()` beyaz listesinden geçerek gider.
 
-Yardımcılar (`seed_chunks`, `seed_question`, ...) `test_exams.py` tarafından da
-kullanılır; iki dosyada iki kopya kurulum olmasın diye burada tutulur (Anayasa XI).
+Ders/üyelik/konu/belge/soru satırlarını `tests/factories.py` yazar. Burada kalan
+korpus sabitleri ve sahte LLM `test_exams.py` tarafından da kullanılır; ortak
+fabrikanın eşiği üç dosyadır ve bunlar ikide kalıyor (Anayasa XI).
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -34,131 +36,19 @@ from app.modules.assessment import question_gen
 from app.modules.generation.llm import LlmUnavailableError
 from app.schemas.assessment import AnswerFormat, McqPayload, OpenPayload
 from tests.conftest import UserFactory
+from tests.factories import (
+    FakeRetriever,
+    create_course,
+    create_topic,
+    enroll_student,
+    make_chunk,
+    seed_document,
+    seed_question,
+)
 
 # ---------------------------------------------------------------------------
 # Kurulum yardımcıları
 # ---------------------------------------------------------------------------
-
-
-async def _create_course(client: AsyncClient, headers: dict[str, str], code: str) -> str:
-    response = await client.post(
-        "/courses", json={"code": code, "title": f"{code} Dersi"}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["id"]
-
-
-async def enroll(
-    client: AsyncClient, instructor: dict[str, str], course_id: str, email: str
-) -> None:
-    response = await client.post(
-        f"/courses/{course_id}/members",
-        json={"email": email, "role": "student"},
-        headers=instructor,
-    )
-    assert response.status_code == 201, response.text
-
-
-async def create_topic(
-    client: AsyncClient, instructor: dict[str, str], course_id: str, name: str
-) -> UUID:
-    response = await client.post(
-        f"/courses/{course_id}/topics", json={"name": name}, headers=instructor
-    )
-    assert response.status_code == 201, response.text
-    return UUID(response.json()["id"])
-
-
-async def seed_chunks(
-    admin_engine: AsyncEngine,
-    *,
-    course_id: UUID,
-    uploaded_by: UUID,
-    texts: list[str],
-    file_name: str = "isletim-sistemleri.pdf",
-) -> list[UUID]:
-    """Belge + chunk satırlarını doğrudan yazar.
-
-    Yükleme hattı (ingestion) bu dosyanın konusu değil; soru havuzunun ihtiyacı
-    yalnız "kaynağı olan chunk"lar. `fts` sütunu GENERATED olduğu için yazılmaz.
-    """
-    document_id = uuid4()
-    chunk_ids = [uuid4() for _ in texts]
-    async with admin_engine.begin() as conn:
-        await conn.execute(
-            text(
-                "INSERT INTO documents (id, course_id, uploaded_by, file_name, file_type, "
-                "storage_path, file_hash, byte_size, status, chunk_count) VALUES "
-                "(:id, :course_id, :uploaded_by, :file_name, 'pdf', :path, :hash, 1024, "
-                "'completed', :count)"
-            ),
-            {
-                "id": document_id,
-                "course_id": course_id,
-                "uploaded_by": uploaded_by,
-                "file_name": file_name,
-                "path": f"{course_id}/{document_id}.pdf",
-                "hash": document_id.hex,
-                "count": len(texts),
-            },
-        )
-        for index, (chunk_id, body) in enumerate(zip(chunk_ids, texts, strict=True)):
-            await conn.execute(
-                text(
-                    "INSERT INTO chunks (id, course_id, document_id, chunk_index, page_number, "
-                    "text, token_count) VALUES (:id, :course_id, :document_id, :index, :page, "
-                    ":text, :tokens)"
-                ),
-                {
-                    "id": chunk_id,
-                    "course_id": course_id,
-                    "document_id": document_id,
-                    "index": index,
-                    "page": index + 1,
-                    "text": body,
-                    "tokens": max(1, len(body.split())),
-                },
-            )
-    return chunk_ids
-
-
-async def seed_question(
-    admin_engine: AsyncEngine,
-    *,
-    course_id: UUID,
-    topic_id: UUID,
-    source_chunk_id: UUID,
-    payload: dict[str, Any],
-    question_type: QuestionType = QuestionType.MCQ,
-    status: str = "draft",
-    reviewed_by: UUID | None = None,
-) -> UUID:
-    """Havuza soru yazar. `approved`/`rejected` için inceleyen kullanıcı zorunludur."""
-    if status != "draft" and reviewed_by is None:
-        raise AssertionError("questions_reviewed_consistency: reviewed_by verilmeli")
-
-    question_id = uuid4()
-    async with admin_engine.begin() as conn:
-        await conn.execute(
-            text(
-                "INSERT INTO questions (id, course_id, topic_id, type, payload, "
-                "source_chunk_id, status, reviewed_by, reviewed_at) VALUES "
-                "(:id, :course_id, :topic_id, CAST(:type AS question_type), "
-                "CAST(:payload AS jsonb), :chunk_id, CAST(:status AS question_status), "
-                ":reviewed_by, CASE WHEN :status = 'draft' THEN NULL ELSE now() END)"
-            ),
-            {
-                "id": question_id,
-                "course_id": course_id,
-                "topic_id": topic_id,
-                "type": question_type.value,
-                "payload": json.dumps(payload),
-                "chunk_id": source_chunk_id,
-                "status": status,
-                "reviewed_by": reviewed_by,
-            },
-        )
-    return question_id
 
 
 DEADLOCK_TEXTS = [
@@ -167,6 +57,94 @@ DEADLOCK_TEXTS = [
     "Kesme (preemption) zorunluluğu bir deadlock koşulu değildir; tam tersine "
     "kaynağın zorla geri alınabilmesi deadlock'u kırar.",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class PoolFixture:
+    """Soru havuzu testlerinin ortak zemini: ders, iki rol, konu ve kaynak parçalar.
+
+    On iki test bu beş adımı elle yazıyordu. Sıra rastgele değil zorunlu — soru
+    bir konuya, konu bir derse, kaynak bir belgeye bağlı ve öğrenci derse üye
+    olmadan hiçbir görünürlük iddiası kurulamıyor. Adımların elle tekrarlanması
+    bir testin neyi kurduğunu değil, kurulumun kaç satır sürdüğünü okutuyordu.
+    """
+
+    course_id: UUID
+    instructor_id: UUID
+    instructor: dict[str, str]
+    student_id: UUID
+    student: dict[str, str]
+    topic_id: UUID
+    chunk_ids: list[UUID]
+
+
+async def build_pool(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    *,
+    code: str = "COME301",
+    texts: list[str] = DEADLOCK_TEXTS,
+) -> PoolFixture:
+    """Ders + eğitmen + kayıtlı öğrenci + konu + kaynak parçalar.
+
+    `texts` boş verilirse belge HİÇ yazılmaz: "materyal yok" senaryosunun
+    kurulumu sıfır parçalı bir belge satırı değil, belgenin hiç olmamasıdır.
+
+    Öğrenci koşulsuz açılıyor: bugün hiçbir test "derste başka üye yok" diye bir
+    iddia kurmuyor, buna karşılık taslak görünmezliği ve yetki testlerinin çoğu
+    kayıtlı bir öğrenci olmadan kurulamıyor.
+    """
+    instructor_id = await users.create("ayse@dogus.edu.tr")
+    instructor = users.auth(instructor_id)
+    student_id = await users.create("burak@dogus.edu.tr")
+    course_id = await create_course(client, instructor, code)
+    await enroll_student(client, instructor, course_id, "burak@dogus.edu.tr")
+    topic_id = await create_topic(client, instructor, course_id, "Deadlock")
+
+    chunk_ids: list[UUID] = []
+    if texts:
+        seeded = await seed_document(
+            admin_engine, course_id=course_id, uploaded_by=instructor_id, passages=texts
+        )
+        chunk_ids = seeded.chunk_ids
+
+    return PoolFixture(
+        course_id=course_id,
+        instructor_id=instructor_id,
+        instructor=instructor,
+        student_id=student_id,
+        student=users.auth(student_id),
+        topic_id=topic_id,
+        chunk_ids=chunk_ids,
+    )
+
+
+async def generate(
+    pool: PoolFixture,
+    *,
+    completion: FakeCompletion,
+    chunks: list[RetrievedChunk],
+    count: int = 1,
+) -> question_gen.GenerationReport:
+    """Eğitmenin RLS oturumunda soru üretir.
+
+    Üretimin eğitmen oturumunda koşması kurulumun süsü değil şartı:
+    `questions_insert` politikası yazanın dersin eğitmeni olmasını istiyor.
+    Oturumu düşüren bir sadeleştirme testleri sessizce anlamsızlaştırırdı.
+    """
+    async with rls_session(pool.instructor_id) as session:
+        topic = await _load_topic(session, pool.topic_id)
+        return await question_gen.generate_questions(
+            session,
+            course_id=pool.course_id,
+            topic=topic,
+            question_type=QuestionType.MCQ,
+            count=count,
+            created_by=pool.instructor_id,
+            retriever=FakeRetriever(chunks),
+            completion=completion,
+        )
 
 
 def mcq_payload(chunk_ids: list[UUID]) -> dict[str, Any]:
@@ -198,17 +176,6 @@ def short_answer_payload() -> dict[str, Any]:
     }
 
 
-class FakeRetriever:
-    """`contracts.Retriever` protokolünün test uygulaması (00_OKU_ONCE §2)."""
-
-    def __init__(self, chunks: list[RetrievedChunk]) -> None:
-        self._chunks = chunks
-
-    async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
-        del course_id, query
-        return self._chunks[:limit]
-
-
 class FakeCompletion:
     """Sırayla hazır yanıt döndüren sahte LLM. Çağrı sayısı sayılır."""
 
@@ -224,15 +191,23 @@ class FakeCompletion:
 
 
 def retrieved(chunk_ids: list[UUID], texts: list[str]) -> list[RetrievedChunk]:
+    """Soru üretimine verilecek arama sonucu.
+
+    `dense_score`/`fts_score` AÇIKÇA sıfırlanıyor. `make_chunk`'ın varsayılanları
+    sohbet tarafının gerçekçi değerleridir (dense 0.82) ve kanıt eşiği oraya
+    bakar; soru üretimi ise eşiğe hiç bakmaz, sıralamayı yalnız `fused_score`
+    belirler. Varsayılanlar devralınsaydı bu testler ölçmedikleri bir eşiğe
+    bağlanır ve eşik bir gün değiştiğinde sebepsiz kırılırlardı.
+    """
     return [
-        RetrievedChunk(
+        make_chunk(
             chunk_id=chunk_id,
-            document_id=uuid4(),
+            text=body,
             file_name="isletim-sistemleri.pdf",
             page_number=index + 1,
-            slide_number=None,
             section_title=None,
-            text=body,
+            dense_score=0.0,
+            fts_score=0.0,
             fused_score=1.0 - index * 0.1,
         )
         for index, (chunk_id, body) in enumerate(zip(chunk_ids, texts, strict=True))
@@ -247,7 +222,7 @@ def retrieved(chunk_ids: list[UUID], texts: list[str]) -> list[RetrievedChunk]:
 class TestTopicCreation:
     async def test_egitmen_konu_olusturur(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(
             f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse
@@ -256,17 +231,13 @@ class TestTopicCreation:
         assert response.status_code == 201, response.text
         body = response.json()
         assert body["name"] == "Deadlock"
-        assert body["course_id"] == course_id
+        assert body["course_id"] == str(course_id)
 
     async def test_ogrenci_konu_olusturamaz(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         response = await client.post(
             f"/courses/{course_id}/topics",
@@ -282,7 +253,7 @@ class TestTopicCreation:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         disari = users.auth(await users.create("disari@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(
             f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=disari
@@ -295,8 +266,8 @@ class TestTopicCreation:
         self, client: AsyncClient, users: UserFactory
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse)
+        course_id = await create_course(client, ayse, "COME301")
+        await create_topic(client, ayse, course_id, "Deadlock")
 
         response = await client.post(
             f"/courses/{course_id}/topics", json={"name": "deadlock"}, headers=ayse
@@ -311,16 +282,10 @@ class TestTopicListing:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
-        await client.post(f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse)
-        await client.post(
-            f"/courses/{course_id}/topics", json={"name": "CPU Zamanlama"}, headers=ayse
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        await create_topic(client, ayse, course_id, "Deadlock")
+        await create_topic(client, ayse, course_id, "CPU Zamanlama")
 
         response = await client.get(f"/courses/{course_id}/topics", headers=users.auth(burak_id))
 
@@ -333,12 +298,10 @@ class TestTopicListing:
     ) -> None:
         """İzolasyon: course_id istemciden gelse bile başka dersin verisi sızmaz (Anayasa II)."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_a = await _create_course(client, ayse, "COME301")
-        course_b = await _create_course(client, ayse, "COME302")
-        await client.post(f"/courses/{course_a}/topics", json={"name": "Deadlock"}, headers=ayse)
-        await client.post(
-            f"/courses/{course_b}/topics", json={"name": "Bellek Yönetimi"}, headers=ayse
-        )
+        course_a = await create_course(client, ayse, "COME301")
+        course_b = await create_course(client, ayse, "COME302")
+        await create_topic(client, ayse, course_a, "Deadlock")
+        await create_topic(client, ayse, course_b, "Bellek Yönetimi")
 
         response_a = await client.get(f"/courses/{course_a}/topics", headers=ayse)
         response_b = await client.get(f"/courses/{course_b}/topics", headers=ayse)
@@ -351,8 +314,8 @@ class TestTopicListing:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         disari = users.auth(await users.create("disari@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse)
+        course_id = await create_course(client, ayse, "COME301")
+        await create_topic(client, ayse, course_id, "Deadlock")
 
         response = await client.get(f"/courses/{course_id}/topics", headers=disari)
 
@@ -370,37 +333,28 @@ class TestDraftInvisibility:
     async def test_ogrenci_taslak_soruyu_goremez_egitmen_gorur(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine,
-            course_id=UUID(course_id),
-            uploaded_by=ayse_id,
-            texts=DEADLOCK_TEXTS,
-        )
+        pool = await build_pool(client, users, admin_engine)
         draft_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
         approved_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
             status="approved",
-            reviewed_by=ayse_id,
+            reviewed_by=pool.instructor_id,
         )
 
-        student = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
-        instructor = await client.get(f"/courses/{course_id}/questions", headers=ayse)
+        student = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
+        instructor = await client.get(
+            f"/courses/{pool.course_id}/questions", headers=pool.instructor
+        )
 
         assert student.status_code == 200, student.text
         assert {item["id"] for item in student.json()} == {str(approved_id)}
@@ -410,25 +364,17 @@ class TestDraftInvisibility:
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         """Uygulama katmanı: `?status=draft` öğrenci için sunucuda yok sayılır."""
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
 
         response = await client.get(
-            f"/courses/{course_id}/questions?status=draft", headers=users.auth(burak_id)
+            f"/courses/{pool.course_id}/questions?status=draft", headers=pool.student
         )
 
         assert response.status_code == 200
@@ -444,28 +390,20 @@ class TestDraftInvisibility:
         kırmızıya döner; kanıt olarak politika bilerek düşürülüp koşuldu ve
         gerçekten kırmızı yandı (bkz. KARARLAR_SERIT4.md §RLS kanıtı).
         """
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
 
-        async with rls_session(burak_id) as session:
+        async with rls_session(pool.student_id) as session:
             rows = (await session.execute(text("SELECT id, status FROM questions"))).all()
         assert rows == []
 
-        async with rls_session(ayse_id) as session:
+        async with rls_session(pool.instructor_id) as session:
             rows = (await session.execute(text("SELECT status FROM questions"))).all()
         assert [row.status for row in rows] == ["draft"]
 
@@ -473,29 +411,23 @@ class TestDraftInvisibility:
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         """Onaylı soru bile öğrenciye beyaz listeden geçerek gider."""
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
             status="approved",
-            reviewed_by=ayse_id,
+            reviewed_by=pool.instructor_id,
         )
 
         student = (
-            await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
+            await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
         ).json()[0]
-        instructor = (await client.get(f"/courses/{course_id}/questions", headers=ayse)).json()[0]
+        instructor = (
+            await client.get(f"/courses/{pool.course_id}/questions", headers=pool.instructor)
+        ).json()[0]
 
         assert set(student["payload"]) == {"stem", "options"}
         assert "answer_key" in instructor["payload"]
@@ -514,64 +446,48 @@ class TestQuestionReview:
     async def test_egitmen_onaylayinca_ogrenci_gorur(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
 
-        before = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
+        before = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
         approve = await client.post(
-            f"/courses/{course_id}/questions/{question_id}/approve", headers=ayse
+            f"/courses/{pool.course_id}/questions/{question_id}/approve", headers=pool.instructor
         )
-        after = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
+        after = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
 
         assert before.json() == []
         assert approve.status_code == 200, approve.text
         body = approve.json()
         assert body["status"] == "approved"
         # questions_reviewed_consistency CHECK'i ikisini birden ister.
-        assert body["reviewed_by"] == str(ayse_id)
+        assert body["reviewed_by"] == str(pool.instructor_id)
         assert body["reviewed_at"] is not None
         assert [item["id"] for item in after.json()] == [str(question_id)]
 
     async def test_reddedilen_soru_ogrenciye_gorunmez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
             status="approved",
-            reviewed_by=ayse_id,
+            reviewed_by=pool.instructor_id,
         )
 
         reject = await client.post(
-            f"/courses/{course_id}/questions/{question_id}/reject", headers=ayse
+            f"/courses/{pool.course_id}/questions/{question_id}/reject", headers=pool.instructor
         )
-        student = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
+        student = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
 
         assert reject.status_code == 200, reject.text
         assert reject.json()["status"] == "rejected"
@@ -580,25 +496,17 @@ class TestQuestionReview:
     async def test_ogrenci_onaylayamaz(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
 
         response = await client.post(
-            f"/courses/{course_id}/questions/{question_id}/approve", headers=users.auth(burak_id)
+            f"/courses/{pool.course_id}/questions/{question_id}/approve", headers=pool.student
         )
 
         assert response.status_code == 403
@@ -608,24 +516,21 @@ class TestQuestionReview:
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         """Yol parametresindeki ders kimliği yetki değildir (Anayasa II)."""
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        course_a = await _create_course(client, ayse, "COME301")
-        course_b = await _create_course(client, ayse, "COME302")
-        topic_id = await create_topic(client, ayse, course_b, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_b), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
+        # Soru havuzdaki derste; onay isteği aynı eğitmenin BAŞKA dersinin
+        # yolundan geliyor. Eğitmen ikisinde de yetkili, yani reddin sebebi
+        # yetki değil yalnızca yolun sorunun dersiyle eşleşmemesi olabilir.
+        diger_ders = await create_course(client, pool.instructor, "COME302")
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_b),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
 
         response = await client.post(
-            f"/courses/{course_a}/questions/{question_id}/approve", headers=ayse
+            f"/courses/{diger_ders}/questions/{question_id}/approve", headers=pool.instructor
         )
 
         assert response.status_code == 404
@@ -672,58 +577,50 @@ class TestQuestionDelete:
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         """Zincirin tamamı: soru siliniyor → belgenin kilidi açılıyor."""
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
         async with admin_engine.begin() as conn:
             document_id = await conn.scalar(
-                text("SELECT document_id FROM chunks WHERE id = :c"), {"c": chunk_ids[0]}
+                text("SELECT document_id FROM chunks WHERE id = :c"), {"c": pool.chunk_ids[0]}
             )
 
         # Önce belge silinemiyor: soru onu kilitliyor.
-        kilitli = await client.delete(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
+        kilitli = await client.delete(
+            f"/courses/{pool.course_id}/documents/{document_id}", headers=pool.instructor
+        )
         assert kilitli.status_code == 409, kilitli.text
 
-        silme = await client.delete(f"/courses/{course_id}/questions/{question_id}", headers=ayse)
+        silme = await client.delete(
+            f"/courses/{pool.course_id}/questions/{question_id}", headers=pool.instructor
+        )
         assert silme.status_code == 204, silme.text
 
         # Kilit açıldı: mesajın önerdiği çıkış yolu gerçekten çalışıyor.
-        acildi = await client.delete(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
+        acildi = await client.delete(
+            f"/courses/{pool.course_id}/documents/{document_id}", headers=pool.instructor
+        )
         assert acildi.status_code == 204, acildi.text
 
     async def test_ogrenci_soru_silemez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
         )
 
         response = await client.delete(
-            f"/courses/{course_id}/questions/{question_id}", headers=users.auth(burak_id)
+            f"/courses/{pool.course_id}/questions/{question_id}", headers=pool.student
         )
 
         assert response.status_code == 403
@@ -736,23 +633,15 @@ class TestQuestionDelete:
         Veritabanı bunu `answers.question_id` RESTRICT ile zaten reddediyor;
         sınanan şey, uçun bunu 500 yerine anlaşılır bir 409'a çevirmesi.
         """
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
             status="approved",
-            reviewed_by=ayse_id,
+            reviewed_by=pool.instructor_id,
         )
         async with admin_engine.begin() as conn:
             exam_id = await conn.scalar(
@@ -760,18 +649,18 @@ class TestQuestionDelete:
                     "INSERT INTO exam_sessions (course_id, user_id, mode, question_ids) "
                     "VALUES (:c, :u, 'practice', ARRAY[:q]::uuid[]) RETURNING id"
                 ),
-                {"c": course_id, "u": burak_id, "q": question_id},
+                {"c": pool.course_id, "u": pool.student_id, "q": question_id},
             )
             await conn.execute(
                 text(
                     "INSERT INTO answers (session_id, question_id, course_id, given, "
                     "is_correct, score) VALUES (:s, :q, :c, 'A', true, 100)"
                 ),
-                {"s": exam_id, "q": question_id, "c": course_id},
+                {"s": exam_id, "q": question_id, "c": pool.course_id},
             )
 
         response = await client.delete(
-            f"/courses/{course_id}/questions/{question_id}", headers=ayse
+            f"/courses/{pool.course_id}/questions/{question_id}", headers=pool.instructor
         )
 
         assert response.status_code == 409, response.text
@@ -783,27 +672,15 @@ class TestQuestionGeneration:
     async def test_gecerli_cikti_havuza_draft_yazilir(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
-        chunks = retrieved(chunk_ids, DEADLOCK_TEXTS)
+        pool = await build_pool(client, users, admin_engine)
+        chunks = retrieved(pool.chunk_ids, DEADLOCK_TEXTS)
 
-        async with rls_session(ayse_id) as session:
-            topic = await _load_topic(session, topic_id)
-            report = await question_gen.generate_questions(
-                session,
-                course_id=UUID(course_id),
-                topic=topic,
-                question_type=QuestionType.MCQ,
-                count=2,
-                created_by=ayse_id,
-                retriever=FakeRetriever(chunks),
-                completion=FakeCompletion(_mcq_response(chunk_ids[0], count=2)),
-            )
+        report = await generate(
+            pool,
+            chunks=chunks,
+            count=2,
+            completion=FakeCompletion(_mcq_response(pool.chunk_ids[0], count=2)),
+        )
 
         assert report.accepted == 2
         assert report.rejected == 0
@@ -811,33 +688,20 @@ class TestQuestionGeneration:
         # distractor_sources modelden istenmedi; bizim eşlememizle doldu.
         payload = McqPayload.model_validate(report.questions[0].payload)
         assert set(payload.distractor_sources) == {"A", "B", "D"}
-        assert set(payload.distractor_sources.values()) <= set(chunk_ids)
+        assert set(payload.distractor_sources.values()) <= set(pool.chunk_ids)
 
     async def test_bozuk_sema_iki_denemede_de_reddedilir(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         """SC-009: şemadan geçmeyen çıktı havuza YAZILMAZ, bir kez yeniden denenir."""
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
         completion = FakeCompletion('{"questions": [{"stem": "eksik"}]}')
 
-        async with rls_session(ayse_id) as session:
-            topic = await _load_topic(session, topic_id)
-            report = await question_gen.generate_questions(
-                session,
-                course_id=UUID(course_id),
-                topic=topic,
-                question_type=QuestionType.MCQ,
-                count=1,
-                created_by=ayse_id,
-                retriever=FakeRetriever(retrieved(chunk_ids, DEADLOCK_TEXTS)),
-                completion=completion,
-            )
+        report = await generate(
+            pool,
+            chunks=retrieved(pool.chunk_ids, DEADLOCK_TEXTS),
+            completion=completion,
+        )
 
         assert report.accepted == 0
         assert completion.calls == 2, "şema tutmadığında bir kez yeniden denenmeli"
@@ -851,47 +715,26 @@ class TestQuestionGeneration:
         SC-009 şema geçerliliği `accepted / returned` oranıdır; paydaya hiç
         gelmemiş soruları yazmak oranı uydurulmuş bir sayıyla raporlamak olur.
         """
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
-        chunks = retrieved(chunk_ids, DEADLOCK_TEXTS)
+        pool = await build_pool(client, users, admin_engine)
+        chunks = retrieved(pool.chunk_ids, DEADLOCK_TEXTS)
 
-        async with rls_session(ayse_id) as session:
-            topic = await _load_topic(session, topic_id)
-            # 1. Model hiç soru döndürmedi: yanıt bile ayrıştırılamadı.
-            unparseable = await question_gen.generate_questions(
-                session,
-                course_id=UUID(course_id),
-                topic=topic,
-                question_type=QuestionType.MCQ,
-                count=2,
-                created_by=ayse_id,
-                retriever=FakeRetriever(chunks),
-                completion=FakeCompletion("elbette, işte sorular:"),
-            )
-            # 2. Model iki soru döndürdü, biri şemadan geçti.
-            half_valid = json.dumps(
-                {
-                    "questions": [
-                        json.loads(_mcq_response(chunk_ids[0]))["questions"][0],
-                        {"stem": "eksik soru"},
-                    ]
-                }
-            )
-            mixed = await question_gen.generate_questions(
-                session,
-                course_id=UUID(course_id),
-                topic=topic,
-                question_type=QuestionType.MCQ,
-                count=2,
-                created_by=ayse_id,
-                retriever=FakeRetriever(chunks),
-                completion=FakeCompletion(half_valid),
-            )
+        # 1. Model hiç soru döndürmedi: yanıt bile ayrıştırılamadı.
+        unparseable = await generate(
+            pool,
+            chunks=chunks,
+            count=2,
+            completion=FakeCompletion("elbette, işte sorular:"),
+        )
+        # 2. Model iki soru döndürdü, biri şemadan geçti.
+        half_valid = json.dumps(
+            {
+                "questions": [
+                    json.loads(_mcq_response(pool.chunk_ids[0]))["questions"][0],
+                    {"stem": "eksik soru"},
+                ]
+            }
+        )
+        mixed = await generate(pool, chunks=chunks, count=2, completion=FakeCompletion(half_valid))
 
         assert (unparseable.returned, unparseable.accepted, unparseable.rejected) == (0, 0, 0)
         assert len(unparseable.rejection_reasons) == 2, "iki deneme de sebebini bırakmalı"
@@ -901,51 +744,27 @@ class TestQuestionGeneration:
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         """Anayasa I: retrieve edilmemiş bir chunk'a atıf yapan soru düşer."""
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
+        pool = await build_pool(client, users, admin_engine)
 
-        async with rls_session(ayse_id) as session:
-            topic = await _load_topic(session, topic_id)
-            report = await question_gen.generate_questions(
-                session,
-                course_id=UUID(course_id),
-                topic=topic,
-                question_type=QuestionType.MCQ,
-                count=1,
-                created_by=ayse_id,
-                retriever=FakeRetriever(retrieved(chunk_ids, DEADLOCK_TEXTS)),
-                completion=FakeCompletion(_mcq_response(uuid4())),
-            )
+        report = await generate(
+            pool,
+            chunks=retrieved(pool.chunk_ids, DEADLOCK_TEXTS),
+            completion=FakeCompletion(_mcq_response(uuid4())),
+        )
 
         assert report.accepted == 0
         assert any("kaynak uydurma" in reason for reason in report.rejection_reasons)
 
     async def test_materyal_yoksa_soru_uretilmez(
-        self, client: AsyncClient, users: UserFactory
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        # `texts=[]`: derse hiç belge yazılmıyor. Boş retriever tek başına da
+        # aynı raporu üretirdi, ama o zaman test "arama bulamadı"yı ölçerdi;
+        # sınanan iddia "ders boş".
+        pool = await build_pool(client, users, admin_engine, texts=[])
         completion = FakeCompletion(_mcq_response(uuid4()))
 
-        async with rls_session(ayse_id) as session:
-            topic = await _load_topic(session, topic_id)
-            report = await question_gen.generate_questions(
-                session,
-                course_id=UUID(course_id),
-                topic=topic,
-                question_type=QuestionType.MCQ,
-                count=1,
-                created_by=ayse_id,
-                retriever=FakeRetriever([]),
-                completion=completion,
-            )
+        report = await generate(pool, chunks=[], completion=completion)
 
         assert report.accepted == 0
         assert completion.calls == 0, "kaynak yoksa modele hiç gidilmez"
@@ -964,7 +783,7 @@ class TestQuestionGeneration:
 
         monkeypatch.setattr(question_gen, "build_llm_client", _unavailable)
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         topic_id = await create_topic(client, ayse, course_id, "Deadlock")
 
         response = await client.post(
@@ -980,25 +799,17 @@ class TestQuestionGeneration:
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         """Sağlayıcılar bağlıyken uç gerçekten soru yazar ve öğrenciye göstermez."""
-        ayse_id = await users.create("ayse@dogus.edu.tr")
-        ayse = users.auth(ayse_id)
-        burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
-            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
-        )
-        chunks = retrieved(chunk_ids, DEADLOCK_TEXTS)
+        pool = await build_pool(client, users, admin_engine)
+        chunks = retrieved(pool.chunk_ids, DEADLOCK_TEXTS)
         question_gen.set_providers(
             retriever_factory=lambda _session: FakeRetriever(chunks),
-            completion=FakeCompletion(_mcq_response(chunk_ids[0], count=2)),
+            completion=FakeCompletion(_mcq_response(pool.chunk_ids[0], count=2)),
         )
         try:
             response = await client.post(
-                f"/courses/{course_id}/questions/generate",
-                json={"topic_id": str(topic_id), "question_type": "mcq", "count": 2},
-                headers=ayse,
+                f"/courses/{pool.course_id}/questions/generate",
+                json={"topic_id": str(pool.topic_id), "question_type": "mcq", "count": 2},
+                headers=pool.instructor,
             )
         finally:
             question_gen.reset_providers()
@@ -1010,7 +821,7 @@ class TestQuestionGeneration:
         assert body["rejected"] == 0
         assert {question["status"] for question in body["questions"]} == {"draft"}
 
-        student = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
+        student = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
         assert student.json() == [], "yeni üretilen sorular onaysız görünmemeli"
 
 
@@ -1261,11 +1072,8 @@ class TestMasteryAndAnswersCourseIsolation:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
         # Burak hiçbir derse üye değil.
-        course_id = await _create_course(client, ayse, "COME301")
-        topic_response = await client.post(
-            f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse
-        )
-        topic_id = UUID(topic_response.json()["id"])
+        course_id = await create_course(client, ayse, "COME301")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
 
         with pytest.raises(DBAPIError):
             async with rls_session(burak_id) as session:
@@ -1274,7 +1082,7 @@ class TestMasteryAndAnswersCourseIsolation:
                         "INSERT INTO mastery (user_id, topic_id, course_id, score, "
                         "answer_count) VALUES (:uid, :tid, :cid, 0.8, 1)"
                     ),
-                    {"uid": burak_id, "tid": topic_id, "cid": UUID(course_id)},
+                    {"uid": burak_id, "tid": topic_id, "cid": course_id},
                 )
 
     async def test_uye_olan_kullanici_kendi_mastery_satirini_yazabilir(
@@ -1283,16 +1091,9 @@ class TestMasteryAndAnswersCourseIsolation:
         """Düzeltmenin aşırıya kaçıp meşru yazımı da engellemediğinin kontrolü."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
-        topic_response = await client.post(
-            f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse
-        )
-        topic_id = UUID(topic_response.json()["id"])
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
 
         async with rls_session(burak_id) as session:
             await session.execute(
@@ -1300,5 +1101,5 @@ class TestMasteryAndAnswersCourseIsolation:
                     "INSERT INTO mastery (user_id, topic_id, course_id, score, "
                     "answer_count) VALUES (:uid, :tid, :cid, 0.8, 1)"
                 ),
-                {"uid": burak_id, "tid": topic_id, "cid": UUID(course_id)},
+                {"uid": burak_id, "tid": topic_id, "cid": course_id},
             )
