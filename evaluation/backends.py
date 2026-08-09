@@ -238,10 +238,19 @@ class ChatBackend:
     ölçülür; üretim fonksiyonlarını doğrudan çağırmak zinciri atlamayı kolaylaştırır
     ve ölçülen şey kullanıcının gördüğü şey olmaktan çıkar.
 
-    Sözleşme (Şerit 3, `app/api/chat.py`):
+    Sözleşme (`app/schemas/chat.py`, 9 Ağustos 2026'da doğrulandı):
         POST /courses/{course_id}/chat
-        {"message": str, "mode": "qa"|"socratic"|"exam", "session_id": uuid|null}
-        -> {"status", "answer", "citations": [{"chunk_id", "file_name", "location"}], ...}
+        {"question": str, "mode": "qa"|"socratic"|"exam",
+         "session_id": uuid|null, "student_attempt": str|null}
+        -> {"session_id", "message_id", "status", "mode", "answer",
+            "citations": [{"chunk_id", "claim", "file_name", "location", "snippet"}],
+            "hints": [...], "socratic_stage": int|null, "cached": bool}
+
+    **Alan adı `question`, `message` DEĞİL.** Bu dosya `message` gönderiyordu ve
+    `ChatRequest` `extra="forbid"` taşıdığı için her istek 422 alıyordu — yani uçtan
+    uca katman bugünkü sözleşmeye karşı hiç koşamazdı. Hata sessiz değildi (harness
+    4xx'te düşer), ama ancak koşmayı deneyince görülüyordu. Sözleşme buraya artık
+    alan alan yazıldı ki bir sonraki değişiklik gözden kaçmasın.
     """
 
     def __init__(self, base_url: str, token: str, *, timeout: float = 60.0) -> None:
@@ -273,7 +282,7 @@ class ChatBackend:
         if self._client is None:
             raise RuntimeError("ChatBackend `async with` bloğu içinde kullanılır.")
         response = await self._client.post(
-            f"/courses/{course_id}/chat", json={"message": question, "mode": mode}
+            f"/courses/{course_id}/chat", json={"question": question, "mode": mode}
         )
         if response.status_code == 404:
             raise BackendUnavailable(
