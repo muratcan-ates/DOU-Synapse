@@ -61,6 +61,7 @@ ikinci katmanı `chunks_member_read` RLS politikasıdır ve aynı oturumda zaten
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 from uuid import UUID
 
@@ -173,7 +174,11 @@ async def dense_search(
     if limit <= 0 or not query.strip():
         return []
 
-    vector = get_embedding_provider().embed_query(query)
+    # Üç sarmanın en kritiği burası (FR-220): ingestion ayrı bir worker sürecine
+    # taşınsa bile sorgu embedding'i HER sohbet isteğinde API sürecinde koşar.
+    # fastembed/ONNX çıkarımı senkron ve CPU'ya bağlıdır; doğrudan çağrıldığında
+    # o süre boyunca sağlık yoklaması dahil hiçbir istek işlenemez.
+    vector = await asyncio.to_thread(get_embedding_provider().embed_query, query)
     rows = (
         await session.execute(
             _SQL,

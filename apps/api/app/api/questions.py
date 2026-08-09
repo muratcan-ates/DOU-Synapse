@@ -16,6 +16,7 @@ Yetkilendirme daima `CourseMemberDep` / `CourseInstructorDep` ile yapılır; ken
 
 from __future__ import annotations
 
+import math
 from typing import Annotated
 from uuid import UUID
 
@@ -26,7 +27,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CourseContext, CourseInstructorDep, CourseMemberDep, SessionDep
 from app.core.config import get_settings
-from app.core.errors import ConflictError, NotFoundError, ValidationError
+from app.core.errors import ConflictError, NotFoundError, RateLimitError, ValidationError
+from app.core.rate_limit import get_concurrency_gate, get_limiter
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
 from app.modules.assessment import question_gen
 from app.modules.assessment.grading import load_source_refs
@@ -41,6 +43,30 @@ from app.schemas.assessment import (
 )
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["assessment"])
+
+#: Sayaç kapsamı. Sınırlayıcı `api/chat.py` ile PAYLAŞILIYOR ve iki ucun doğal
+#: anahtarı da `kullanıcı:ders`; kapsam olmasaydı sohbet etmek soru üretim
+#: kotasını sessizce tüketirdi (`core/rate_limit.py`).
+QUESTION_GEN_SCOPE = "qgen"
+
+
+def _bekleme_metni(saniye: float) -> str:
+    """Kalan süreyi kullanıcıya okunur biçimde yazar.
+
+    YUKARI yuvarlanıyor: 4,2 saniye kaldığında "4 saniye" demek, kullanıcıyı
+    hâlâ reddedilecek bir denemeye yollamak olurdu.
+
+    Sayı hata METNİNE giriyor, ayrı bir alana değil: hata zarfı
+    `{code, message, request_id}` olarak sabittir (lider sözleşmesi) ve
+    `Retry-After` başlığı `expose_headers` olmadan çapraz-origin JavaScript'e
+    görünmüyor — `core/errors.py` aynı gerekçeyi istek kimliği için zaten
+    yazmış. Arayüz backend'in mesajını olduğu gibi gösteriyor (`lib/api.ts`),
+    yani bilgi kullanıcıya ulaşıyor.
+    """
+    kalan = max(1, math.ceil(saniye))
+    if kalan < 60:
+        return f"{kalan} saniye"
+    return f"{math.ceil(kalan / 60)} dakika"
 
 
 # ---------------------------------------------------------------------------
@@ -166,41 +192,79 @@ async def generate_questions(
     """
     settings = get_settings()
 
-    topic = await session.get(Topic, payload.topic_id)
-    if topic is None or topic.course_id != context.course_id:
-        raise NotFoundError("Konu bulunamadı.")
+    # İki kapı da gövdenin İLK işi (FR-222): sınıra takılan bir istek hiçbir iş
+    # yapmamalı — ne konu doğrulaması, ne retrieval, ne LLM turu. Kapı üretim
+    # başladıktan sonra kapansaydı maliyet zaten ödenmiş olurdu.
+    #
+    # Sıra bilinçli: önce eşzamanlılık, sonra kota. Tersi olsaydı eşzamanlılığa
+    # takılan istek hiç iş yapmadığı hâlde bir kota hakkı yakardı.
+    #
+    # İki kapının ANAHTARLARI farklı ve bu bir tutarsızlık değil. Kota
+    # `kullanıcı:ders` — bir öğretmenin iki dersteki kullanımı ayrı ölçülür.
+    # Eşzamanlılık yalnız `kullanıcı`: sınırın gerekçesi maliyet değil
+    # tutarlılık, ve karışan şey öğretmenin kendi dikkati (`config.py`).
+    gate = get_concurrency_gate()
+    limiter = get_limiter()
+    kota_anahtari = f"{context.user_id}:{context.course_id}"
 
-    if payload.answer_format is not None and payload.question_type is not QuestionType.OPEN:
-        raise ValidationError("answer_format yalnızca 'open' tipi sorular için verilebilir.")
+    with gate.hold(
+        QUESTION_GEN_SCOPE,
+        str(context.user_id),
+        limit=settings.question_gen_max_concurrent,
+        message=(
+            "Başlattığın bir soru üretimi hâlâ sürüyor. O tamamlandığında yenisini başlatabilirsin."
+        ),
+    ):
+        if not limiter.allow(
+            QUESTION_GEN_SCOPE,
+            kota_anahtari,
+            limit=settings.question_gen_rate_limit_requests,
+            window_seconds=settings.question_gen_rate_limit_window_seconds,
+        ):
+            bekleme = limiter.retry_after(
+                QUESTION_GEN_SCOPE,
+                kota_anahtari,
+                window_seconds=settings.question_gen_rate_limit_window_seconds,
+            )
+            raise RateLimitError(
+                f"Soru üretimi kotan doldu. {_bekleme_metni(bekleme)} sonra tekrar deneyebilirsin."
+            )
 
-    report = await question_gen.generate_questions(
-        session,
-        course_id=context.course_id,
-        topic=topic,
-        question_type=payload.question_type,
-        count=payload.count or settings.question_generation_batch,
-        created_by=context.user_id,
-        retriever=question_gen.resolve_retriever(session),
-        completion=question_gen.resolve_completion(),
-        answer_format=payload.answer_format,
-        example_questions=payload.example_questions,
-        retrieval_limit=settings.retrieval_top_k,
-    )
+        topic = await session.get(Topic, payload.topic_id)
+        if topic is None or topic.course_id != context.course_id:
+            raise NotFoundError("Konu bulunamadı.")
 
-    refs = await load_source_refs(
-        session, [question.source_chunk_id for question in report.questions]
-    )
-    return QuestionGenerationOut(
-        requested=report.requested,
-        returned=report.returned,
-        accepted=report.accepted,
-        rejected=report.rejected,
-        rejection_reasons=report.rejection_reasons,
-        questions=[
-            _build_out(question, context=context, source=refs.get(question.source_chunk_id))
-            for question in report.questions
-        ],
-    )
+        if payload.answer_format is not None and payload.question_type is not QuestionType.OPEN:
+            raise ValidationError("answer_format yalnızca 'open' tipi sorular için verilebilir.")
+
+        report = await question_gen.generate_questions(
+            session,
+            course_id=context.course_id,
+            topic=topic,
+            question_type=payload.question_type,
+            count=payload.count or settings.question_generation_batch,
+            created_by=context.user_id,
+            retriever=question_gen.resolve_retriever(session),
+            completion=question_gen.resolve_completion(),
+            answer_format=payload.answer_format,
+            example_questions=payload.example_questions,
+            retrieval_limit=settings.retrieval_top_k,
+        )
+
+        refs = await load_source_refs(
+            session, [question.source_chunk_id for question in report.questions]
+        )
+        return QuestionGenerationOut(
+            requested=report.requested,
+            returned=report.returned,
+            accepted=report.accepted,
+            rejected=report.rejected,
+            rejection_reasons=report.rejection_reasons,
+            questions=[
+                _build_out(question, context=context, source=refs.get(question.source_chunk_id))
+                for question in report.questions
+            ],
+        )
 
 
 async def _review(

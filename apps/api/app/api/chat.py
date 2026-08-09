@@ -41,7 +41,6 @@ from __future__ import annotations
 import hashlib
 import time
 import unicodedata
-from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -75,8 +74,9 @@ from app.contracts import (
 )
 from app.core.config import Settings
 from app.core.db import db_now
-from app.core.errors import AppError, NotFoundError, ValidationError
+from app.core.errors import AppError, NotFoundError, RateLimitError, ValidationError
 from app.core.logging import get_logger
+from app.core.rate_limit import get_limiter, reset_rate_limit
 from app.models.chat import AnswerCache, ChatMessage, ChatRole, ChatSession, RequestLog
 from app.modules.assessment import exam_state, socratic
 from app.schemas.chat import (
@@ -108,11 +108,6 @@ RetrieverFactory = Callable[[AsyncSession], Retriever]
 MAX_QUESTION_CHARS = MAX_QUESTION_LENGTH
 
 
-class RateLimitError(AppError):
-    status_code = status.HTTP_429_TOO_MANY_REQUESTS
-    code = "rate_limited"
-
-
 class PipelineUnavailableError(AppError):
     """Retrieval/generation modülleri henüz takılı değil.
 
@@ -125,42 +120,10 @@ class PipelineUnavailableError(AppError):
     code = "pipeline_unavailable"
 
 
-class _SlidingWindowLimiter:
-    """Süreç içi kayan pencere sayacı.
-
-    Dürüst sınır (Anayasa III): sayaç **süreç içidir.** Birden fazla uvicorn worker'ı
-    çalıştığında sınır worker başına uygulanır; MVP tek süreçle koşuyor. Dağıtık sınır
-    Redis ister ve kapsam dışıdır — raporda bu haliyle anlatılacak.
-
-    Sınır ve pencere kurucuda değil `allow()` çağrısında verilir: değerler artık
-    ayarlardan (`Settings.chat_rate_limit_*`) geliyor ve ayarlar isteğe bağlı bir
-    bağımlılık. Sayaç süreç ömürlü, eşik ise istek başına okunuyor — böylece sayı
-    değişince süreç yeniden başlatılmadan da geçerli olur.
-    """
-
-    def __init__(self) -> None:
-        self._hits: defaultdict[str, deque[float]] = defaultdict(deque)
-
-    def allow(self, key: str, *, limit: int, window_seconds: float) -> bool:
-        now = time.monotonic()
-        hits = self._hits[key]
-        while hits and now - hits[0] > window_seconds:
-            hits.popleft()
-        if len(hits) >= limit:
-            return False
-        hits.append(now)
-        return True
-
-    def reset(self) -> None:
-        self._hits.clear()
-
-
-_rate_limiter = _SlidingWindowLimiter()
-
-
-def reset_rate_limit() -> None:
-    """Testler için sayaç sıfırlama."""
-    _rate_limiter.reset()
+#: Bu ucun sayaç kapsamı. Kapsam adı zorunlu çünkü sayaç `questions.py` ile
+#: PAYLAŞILIYOR ve iki ucun doğal anahtarı da `kullanıcı:ders` — kapsam olmasaydı
+#: sohbet etmek soru üretim kotasını sessizce tüketirdi.
+RATE_LIMIT_SCOPE = "chat"
 
 
 # ---------------------------------------------------------------------------
@@ -606,7 +569,8 @@ async def post_chat(
         raise ValidationError(
             "Sınav modunda asistan ipucu veremez. Sınav soruları sınav ekranından yanıtlanır."
         )
-    if not _rate_limiter.allow(
+    if not get_limiter().allow(
+        RATE_LIMIT_SCOPE,
         f"{context.user_id}:{context.course_id}",
         limit=settings.chat_rate_limit_requests,
         window_seconds=settings.chat_rate_limit_window_seconds,

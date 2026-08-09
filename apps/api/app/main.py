@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -31,6 +33,7 @@ from app.core.errors import (
     validation_error_handler,
 )
 from app.core.logging import configure_logging, get_logger
+from app.core.warmup import start_warmup
 
 logger = get_logger("app.request")
 
@@ -43,7 +46,16 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         "api başlatıldı",
         extra={"context": {"environment": settings.environment, "version": settings.api_version}},
     )
+    # Isıtma BAŞLATILIR, BEKLENMEZ (FR-221). `await` edilseydi üretim
+    # sağlayıcısında ~19 sn'lik bir startup oluşur ve orkestratörün startup
+    # probe penceresi aşılırdı — çözdüğünden büyük bir arıza. Hazır olup
+    # olmadığı `/health/ready` üzerinden bildiriliyor (bkz. core/warmup.py).
+    warmup_task = start_warmup()
     yield
+    if warmup_task is not None:
+        warmup_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await warmup_task
     await dispose_engine()
 
 
