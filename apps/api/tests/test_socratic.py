@@ -90,6 +90,9 @@ class FakeGenerator:
         self._answers = answers
         self.calls = 0
         self.seen_stages: list[SocraticStage | None] = []
+        #: Uç, öğrencinin denemesini gerçekten geçiriyor mu? Kaydedilmezse
+        #: "ipucu denemeye göre şekilleniyor" iddiası test edilemez (Anayasa III).
+        self.seen_attempts: list[str | None] = []
 
     async def generate(
         self,
@@ -98,10 +101,12 @@ class FakeGenerator:
         chunks: list[RetrievedChunk],
         mode: ChatMode,
         socratic_stage: SocraticStage | None = None,
+        student_attempt: str | None = None,
     ) -> GeneratedAnswer:
         del question, chunks, mode
         self.calls += 1
         self.seen_stages.append(socratic_stage)
+        self.seen_attempts.append(student_attempt)
         index = min(self.calls - 1, len(self._answers) - 1)
         answer = self._answers[index]
         # Üretim katmanı her çağrıda yeni nesne döndürür; zincir mutasyonu testler
@@ -155,7 +160,7 @@ async def run_turn(
     state: SocraticState | None,
 ) -> tuple[GeneratedAnswer, socratic.SocraticDecision]:
     decision = advance(state, message)
-    answer = await produce_answer(
+    outcome = await produce_answer(
         question=message,
         course_id=COURSE_ID,
         mode=ChatMode.SOCRATIC,
@@ -165,7 +170,7 @@ async def run_turn(
         guardrails=guardrails,  # type: ignore[arg-type]
         settings=settings(),
     )
-    return answer, decision
+    return outcome.answer, decision
 
 
 # ---------------------------------------------------------------------------
@@ -407,16 +412,18 @@ class TestKaynaksizIpucu:
             ]
         )
 
-        answer = await produce_answer(
-            question="Deadlock nedir?",
-            course_id=COURSE_ID,
-            mode=ChatMode.QA,
-            decision=None,
-            retriever=FakeRetriever([chunk]),
-            generator=generator,
-            guardrails=[CitationGuardrail()],  # type: ignore[list-item]
-            settings=settings(),
-        )
+        answer = (
+            await produce_answer(
+                question="Deadlock nedir?",
+                course_id=COURSE_ID,
+                mode=ChatMode.QA,
+                decision=None,
+                retriever=FakeRetriever([chunk]),
+                generator=generator,
+                guardrails=[CitationGuardrail()],  # type: ignore[list-item]
+                settings=settings(),
+            )
+        ).answer
 
         assert answer.status is AnswerStatus.INSUFFICIENT_CONTEXT
         assert answer.text == MESSAGE_BLOCKED

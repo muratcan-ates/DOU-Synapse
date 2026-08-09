@@ -367,7 +367,9 @@ class TestUctanUca:
         pipeline = AnswerPipeline(GenerationService(llm=FakeLlmClient()))
 
         result = await pipeline.run(question="Kilitlenme nedir?", chunks=[kaynak], mode=ChatMode.QA)
-        response = to_chat_response(result.answer, claims=result.claims)
+        response = to_chat_response(
+            result.answer, session_id=uuid4(), message_id=uuid4(), claims=result.claims
+        )
 
         assert response.status is AnswerStatus.ANSWERED
         assert len(response.citations) == 1
@@ -386,7 +388,9 @@ class TestUctanUca:
             mode=ChatMode.SOCRATIC,
             socratic_stage=SocraticStage.CONCEPT_HINT,
         )
-        response = to_chat_response(result.answer, claims=result.claims)
+        response = to_chat_response(
+            result.answer, session_id=uuid4(), message_id=uuid4(), claims=result.claims
+        )
 
         assert len(response.hints) == 1
         assert response.hints[0].chunk_id == kaynak.chunk_id

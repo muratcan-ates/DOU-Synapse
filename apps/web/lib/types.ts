@@ -55,11 +55,24 @@ export type SocraticStage =
 export interface Citation {
   chunk_id: string;
   /** Atıfın hangi iddiayı desteklediği — sunum verisi, guardrail buna bakmaz. */
-  claim: string | null;
+  claim: string;
   file_name: string;
   /** "Sayfa 7" · "Slayt 3" — chunk metadata'sından üretilir, model metninden değil. */
   location: string;
   snippet: string;
+}
+
+/**
+ * Sokratik ipucu. Kaynaksız ipucu istemciye HİÇ ulaşmaz (FR-013/FR-016), bu yüzden
+ * `chunk_id`/`file_name`/`location` opsiyonel değildir — arayüz kaynağı her zaman
+ * gösterebilir.
+ */
+export interface Hint {
+  text: string;
+  chunk_id: string;
+  file_name: string;
+  location: string;
+  stage: SocraticStage | null;
 }
 
 export interface ChatAnswer {
@@ -69,21 +82,46 @@ export interface ChatAnswer {
   mode: ChatMode;
   answer: string;
   citations: Citation[];
-  hints: string[];
+  hints: Hint[];
   socratic_stage: SocraticStage | null;
+  /** Cevap birebir eşleşmeli önbellekten geldi mi (FR-034). */
+  cached: boolean;
 }
 
 export interface ChatRequest {
   question: string;
   mode: ChatMode;
   session_id?: string;
-  /** Sokratik modda öğrencinin bu turdaki denemesi; ipucu buna göre şekillenir. */
+  /**
+   * Sokratik modda öğrencinin bu turdaki denemesi; ipucu buna göre şekillenir.
+   *
+   * Sokratik turlarda `question` OTURUMU AÇAN soru olarak tekrar gönderilir ve
+   * yeni yazılan metin buraya konur. Sebep sunucuda: arama açılış sorusuna bağlı
+   * kalmalı, yoksa "hı" gibi bir denemeyle yapılan arama hiçbir parça bulmaz ve
+   * merdiven kanıt eşiğine takılıp çöker.
+   */
   student_attempt?: string;
+}
+
+export type ChatRole = "user" | "assistant";
+
+/** Oturum geçmişindeki tek mesaj (`GET /chat/sessions/{id}`). */
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  citations: Citation[];
+  status: AnswerStatus | null;
+  socratic_stage: SocraticStage | null;
+  created_at: string;
 }
 
 export interface ChatSessionSummary {
   id: string;
+  course_id: string;
   mode: ChatMode;
   title: string | null;
+  socratic_stage: SocraticStage | null;
   created_at: string;
+  updated_at: string;
 }

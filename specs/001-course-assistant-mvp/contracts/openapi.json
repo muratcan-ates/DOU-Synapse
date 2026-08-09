@@ -953,9 +953,11 @@
       },
       "ChatRequest": {
         "properties": {
-          "message": {
+          "question": {
             "type": "string",
-            "title": "Message"
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Question"
           },
           "mode": {
             "$ref": "#/components/schemas/ChatMode",
@@ -972,13 +974,27 @@
               }
             ],
             "title": "Session Id"
+          },
+          "student_attempt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Attempt"
           }
         },
+        "additionalProperties": false,
         "type": "object",
         "required": [
-          "message"
+          "question"
         ],
-        "title": "ChatRequest"
+        "title": "ChatRequest",
+        "description": "Sohbet isteği.\n\n`socratic_stage` bilinçli olarak YOKTUR: kademe ilerletme kararı istemcide\ndeğil, sunucudaki state machine'de verilir (spec FR-014). İstemci kademe\nseçebilseydi öğrenci tek istekle `EXPLAIN_WITH_SOURCE` isteyip merdiveni\natlardı."
       },
       "ChatResponse": {
         "properties": {
@@ -1009,6 +1025,13 @@
             "type": "array",
             "title": "Citations"
           },
+          "hints": {
+            "items": {
+              "$ref": "#/components/schemas/HintOut"
+            },
+            "type": "array",
+            "title": "Hints"
+          },
           "socratic_stage": {
             "anyOf": [
               {
@@ -1033,7 +1056,8 @@
           "mode",
           "answer"
         ],
-        "title": "ChatResponse"
+        "title": "ChatResponse",
+        "description": "ARCHITECTURE §5 cevap zarfı.\n\nAbstention bir HATA DEĞİLDİR: `insufficient_context` ve `out_of_scope` normal\n200 gövdesiyle döner (Anayasa VII — abstention hata gibi gösterilmez).\nSağlayıcı/model adı bilinçli olarak dışarı verilmez; altyapı ayrıntısı\nkullanıcıya gitmez, ölçüm için `GeneratedAnswer` üzerinde loglanır.\n\n`session_id`/`message_id` zarfın parçasıdır ve opsiyonel DEĞİLDİR: istemci bir\nsonraki turu aynı oturuma bağlamak zorundadır ve oturum kimliğini kendisi\nuyduramaz. 9 Ağustos'a kadar bu iki alan yalnız `api/chat.py`'nin geçici\nkopyasında vardı; zarfın iki ayrı tanımı olması istemciyi hiçbir zaman\nkoşmamış bir sözleşmeye karşı yazdırdı (bkz. modül docstring'i)."
       },
       "ChatRole": {
         "type": "string",
@@ -1176,18 +1200,22 @@
             "format": "uuid",
             "title": "Chunk Id"
           },
+          "claim": {
+            "type": "string",
+            "title": "Claim",
+            "default": ""
+          },
           "file_name": {
             "type": "string",
             "title": "File Name"
           },
           "location": {
             "type": "string",
-            "title": "Location",
-            "description": "'Sayfa 7' | 'Slayt 3' | bölüm adı"
+            "title": "Location"
           },
-          "quote": {
+          "snippet": {
             "type": "string",
-            "title": "Quote"
+            "title": "Snippet"
           }
         },
         "type": "object",
@@ -1195,9 +1223,10 @@
           "chunk_id",
           "file_name",
           "location",
-          "quote"
+          "snippet"
         ],
-        "title": "CitationOut"
+        "title": "CitationOut",
+        "description": "Kullanıcıya gösterilen atıf.\n\n`file_name`, `location` ve `snippet` chunk metadata'sından gelir. Modelin\nmetninden türetilen tek alan `claim`'dir ve o da yalnız açıklayıcıdır —\nhiçbir güvenlik kararı ona bakmaz."
       },
       "CourseCreate": {
         "properties": {
@@ -1370,6 +1399,46 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HintOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "chunk_id",
+          "file_name",
+          "location"
+        ],
+        "title": "HintOut",
+        "description": "Sokratik ipucu. Kaynağı olmayan ipucu istemciye hiç ulaşmaz."
       },
       "MembershipCreate": {
         "properties": {

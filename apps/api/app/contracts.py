@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 # ---------------------------------------------------------------------------
@@ -168,6 +168,42 @@ class Generator(Protocol):
         #: vardı, Şerit 3 ise yokluğunda ipucunu kişiselleştiremiyordu.
         student_attempt: str | None = None,
     ) -> GeneratedAnswer: ...
+
+
+class ClaimedAnswer(Protocol):
+    """`ClaimingGenerator`'ın döndürdüğü şekil: cevap + chunk başına iddia metni.
+
+    Yapısal tiptir, taşıyıcı sınıf değil: üretim servisi kendi `GenerationResult`
+    dataclass'ını döndürmeye devam eder, buraya bir bağımlılık eklemez.
+    """
+
+    answer: GeneratedAnswer
+    claims: dict[UUID, str]
+
+
+@runtime_checkable
+class ClaimingGenerator(Protocol):
+    """`Generator`'ın isteğe bağlı uzantısı: atıfın hangi iddiayı desteklediği.
+
+    Ayrı bir protokol olmasının sebebi, `Generator`'ı bozmamak. `claim` sunum
+    verisidir ve hiçbir guardrail kararı ona bakmaz (bkz. `Citation` notu), yani
+    onu üretmek zorunlu bir yükümlülük olmamalı — sahte üreteçler ve test
+    ikizleri `Generator`'ı uygulamaya devam eder.
+
+    Buna karşılık üreten bir uygulama varsa çağıran bunu KULLANMALIDIR: aksi
+    hâlde istemci zarfında hiçbir zaman dolmayan bir alan kalır ve arayüz onu
+    boş yere çizer (Anayasa XI — iş yapmayan yüzey kusurdur).
+    """
+
+    async def generate_with_claims(
+        self,
+        *,
+        question: str,
+        chunks: list[RetrievedChunk],
+        mode: ChatMode,
+        socratic_stage: SocraticStage | None = None,
+        student_attempt: str | None = None,
+    ) -> ClaimedAnswer: ...
 
 
 # ---------------------------------------------------------------------------

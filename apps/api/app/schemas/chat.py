@@ -163,14 +163,24 @@ class ChatResponse(BaseModel):
     200 gövdesiyle döner (Anayasa VII — abstention hata gibi gösterilmez).
     Sağlayıcı/model adı bilinçli olarak dışarı verilmez; altyapı ayrıntısı
     kullanıcıya gitmez, ölçüm için `GeneratedAnswer` üzerinde loglanır.
+
+    `session_id`/`message_id` zarfın parçasıdır ve opsiyonel DEĞİLDİR: istemci bir
+    sonraki turu aynı oturuma bağlamak zorundadır ve oturum kimliğini kendisi
+    uyduramaz. 9 Ağustos'a kadar bu iki alan yalnız `api/chat.py`'nin geçici
+    kopyasında vardı; zarfın iki ayrı tanımı olması istemciyi hiçbir zaman
+    koşmamış bir sözleşmeye karşı yazdırdı (bkz. modül docstring'i).
     """
 
+    session_id: UUID
+    message_id: UUID
     status: AnswerStatus
     mode: ChatMode
     answer: str
     citations: list[CitationOut] = Field(default_factory=list)
     hints: list[HintOut] = Field(default_factory=list)
     socratic_stage: SocraticStage | None = None
+    #: Cevap birebir eşleşmeli önbellekten geldi mi (FR-034). Ölçüm için taşınır.
+    cached: bool = False
 
 
 def snippet_of(chunk: RetrievedChunk, limit: int = SNIPPET_LENGTH) -> str:
@@ -189,7 +199,10 @@ def snippet_of(chunk: RetrievedChunk, limit: int = SNIPPET_LENGTH) -> str:
 def to_chat_response(
     answer: GeneratedAnswer,
     *,
+    session_id: UUID,
+    message_id: UUID,
     claims: Mapping[UUID, str] | None = None,
+    cached: bool = False,
 ) -> ChatResponse:
     """`GuardrailVerdict`'lerden GEÇMİŞ bir cevabı istemci zarfına çevirir.
 
@@ -229,10 +242,13 @@ def to_chat_response(
         )
 
     return ChatResponse(
+        session_id=session_id,
+        message_id=message_id,
         status=answer.status,
         mode=answer.mode,
         answer=answer.text,
         citations=citations,
         hints=hints,
         socratic_stage=answer.socratic_stage,
+        cached=cached,
     )

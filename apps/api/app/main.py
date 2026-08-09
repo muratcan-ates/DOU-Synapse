@@ -8,12 +8,18 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import analytics, chat, courses, documents, exams, health, questions
 from app.core.config import get_settings
 from app.core.db import dispose_engine
-from app.core.errors import AppError, app_error_handler, unhandled_error_handler
+from app.core.errors import (
+    AppError,
+    app_error_handler,
+    unhandled_error_handler,
+    validation_error_handler,
+)
 from app.core.logging import configure_logging, get_logger
 
 logger = get_logger("app.request")
@@ -71,6 +77,9 @@ def create_app() -> FastAPI:
         return response
 
     app.add_exception_handler(AppError, app_error_handler)
+    # Şema doğrulaması da projenin tek hata zarfını kullanır; aksi hâlde istemci
+    # FastAPI'nin İngilizce `{"detail": [...]}` biçimini ayrıca tanımak zorunda kalır.
+    app.add_exception_handler(RequestValidationError, validation_error_handler)
     app.add_exception_handler(Exception, unhandled_error_handler)
 
     app.include_router(health.router)

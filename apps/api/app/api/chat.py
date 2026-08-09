@@ -20,16 +20,20 @@ henüz yoktu. Bu dosya onların **gövdesine değil, `app/contracts.py`'deki imz
 karşı yazıldı. `set_pipeline()` ile gerçek uygulamalar takılır; takılı değilse uç
 fail-closed davranıp 503 döner — sessizce boş cevap üretmez.
 
-## Geçici sahiplik notu (gruba iletildi)
+## Sözleşme sahipliği (9 Ağustos'ta kapatıldı)
 
-`ChatRequest`/`ChatResponse` normalde `app/schemas/chat.py`'ye (T010, Şerit 2) aittir.
-O dosya bu şeridin sahipliğinde olmadığı için şemalar geçici olarak burada duruyor;
-T010 indiğinde buradan silinip oradan import edilecek.
+`ChatRequest`/`ChatResponse` bu dosyada GEÇİCİ olarak duruyordu, çünkü yazıldığı gün
+`app/schemas/chat.py` (T010, Şerit 2) henüz inmemişti. T010 indi ve iki tanım aynı
+anda yaşamaya devam etti; sonuç, istemcinin hiç koşmamış olana karşı yazmasıydı:
+frontend `question`/`student_attempt` gönderiyor ve `hints[]`/`snippet` bekliyordu,
+canlı uç ise `message` alıyor ve `quote` döndürüyordu. Her istek 422 olurdu.
 
-ARCHITECTURE §5 cevap zarfındaki ayrı `hints[]` dizisi bilinçli olarak YOK: bu tasarımda
-bir Sokratik tur tam olarak bir ipucu üretir ve o ipucu mesajın kendisidir. Ayrı bir
-dizi `answer` alanını birebir tekrarlardı (Anayasa XI). Kademe `socratic_stage`
-alanında taşınır. Nihai karar T010'un.
+Artık tek tanım `app/schemas/chat.py`'dedir ve buraya import edilir. Bu dosya zarfı
+yeniden tanımlamaz.
+
+`hints[]` dizisi zarfta VARDIR ama `answer`'ı tekrarlamaz: `to_chat_response`, ipucunu
+yalnız Sokratik + `answered` + atıflı turlarda üretir ve ipucunun kaynağı cevabın
+kaynağıyla aynı kümedir — tek atıf kümesi, tek doğrulama (Anayasa XI).
 """
 
 from __future__ import annotations
@@ -39,6 +43,7 @@ import time
 import unicodedata
 from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
@@ -54,6 +59,7 @@ from app.contracts import (
     AnswerStatus,
     ChatMode,
     Citation,
+    ClaimingGenerator,
     GeneratedAnswer,
     Generator,
     Guardrail,
@@ -66,6 +72,13 @@ from app.core.errors import AppError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.chat import AnswerCache, ChatMessage, ChatRole, ChatSession, RequestLog
 from app.modules.assessment import socratic
+from app.schemas.chat import (
+    MAX_QUESTION_LENGTH,
+    ChatRequest,
+    ChatResponse,
+    CitationOut,
+    to_chat_response,
+)
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["chat"])
 logger = get_logger("app.chat")
@@ -77,12 +90,13 @@ RetrieverFactory = Callable[[AsyncSession], Retriever]
 # FR-035 sınırları
 # ---------------------------------------------------------------------------
 
-# Bu üç sayı normalde `core/config.py`'ye aittir; o dosya paralel geliştirme süresince
+# Bu iki sayı normalde `core/config.py`'ye aittir; o dosya paralel geliştirme süresince
 # dondurulduğu için (00_OKU_ONCE §1) burada sabit duruyorlar ve gruba iletildi.
 #
 #: Bir sorunun azami uzunluğu. Aşılırsa 422 — kesilerek işlenmez, çünkü kesilmiş bir
-#: soruya verilen cevap kullanıcının sormadığı bir sorunun cevabıdır.
-MAX_QUESTION_CHARS = 2000
+#: soruya verilen cevap kullanıcının sormadığı bir sorunun cevabıdır. Sayı artık
+#: `schemas/chat.py`'de tek yerde duruyor; burada yalnız eski adıyla yankılanıyor.
+MAX_QUESTION_CHARS = MAX_QUESTION_LENGTH
 #: Kullanıcı başına, pencere başına azami istek.
 RATE_LIMIT_REQUESTS = 20
 RATE_LIMIT_WINDOW_SECONDS = 60.0
@@ -231,37 +245,12 @@ MESSAGE_BLOCKED = (
 
 
 # ---------------------------------------------------------------------------
-# İstek / yanıt şemaları (geçici — bkz. modül docstring'i)
+# Uç düzeyi şemalar
+#
+# `ChatRequest`/`ChatResponse`/`CitationOut` burada TANIMLANMAZ — `schemas/chat.py`'den
+# gelir (bkz. modül docstring'i). Aşağıdaki ikisi yalnız bu uçta kullanılır: geçmiş
+# okuma yüzeyi zarf katmanının değil, bu router'ın sözleşmesidir.
 # ---------------------------------------------------------------------------
-
-
-class ChatRequest(BaseModel):
-    # Uzunluk ve boşluk denetimi Pydantic'te DEĞİL, uçta yapılır: böylece hata zarfı
-    # projenin geri kalanıyla aynı ({"error": {"code", "message"}}) ve mesaj Türkçe olur.
-    message: str
-    mode: ChatMode = ChatMode.QA
-    #: Yoksa yeni oturum açılır.
-    session_id: UUID | None = None
-
-
-class CitationOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    chunk_id: UUID
-    file_name: str
-    location: str = Field(description="'Sayfa 7' | 'Slayt 3' | bölüm adı")
-    quote: str
-
-
-class ChatResponse(BaseModel):
-    session_id: UUID
-    message_id: UUID
-    status: AnswerStatus
-    mode: ChatMode
-    answer: str
-    citations: list[CitationOut] = Field(default_factory=list)
-    socratic_stage: SocraticStage | None = None
-    cached: bool = False
 
 
 class ChatSessionOut(BaseModel):
@@ -305,12 +294,13 @@ def question_hash(mode: ChatMode, question: str) -> str:
     return hashlib.sha256(f"{mode.value}\n{normalized}".encode()).hexdigest()
 
 
-def _citation_to_json(citation: Citation) -> dict[str, str]:
+def _citation_to_json(citation: Citation, claim: str = "") -> dict[str, str]:
     return {
         "chunk_id": str(citation.chunk_id),
         "file_name": citation.file_name,
         "location": citation.location,
         "quote": citation.quote,
+        "claim": claim,
     }
 
 
@@ -320,6 +310,24 @@ def _citation_from_json(raw: dict[str, Any]) -> Citation:
         file_name=str(raw["file_name"]),
         location=str(raw["location"]),
         quote=str(raw.get("quote", "")),
+    )
+
+
+def _citation_out_from_json(raw: dict[str, Any]) -> CitationOut:
+    """Saklanan atıf satırını istemci zarfına çevirir.
+
+    `quote` → `snippet` eşlemesi burada yapılır ve tek yerdedir: saklama biçimi
+    `contracts.Citation`'ın alan adlarını izler, zarf ise arayüzün sözleşmesini.
+    İkisini aynı ada zorlamak, sözleşme dosyasını sunum kaygısıyla değiştirmek
+    olurdu. `.get` kullanılıyor çünkü `claim` alanı 9 Ağustos'tan önce yazılmış
+    satırlarda yok — eski geçmiş okunamaz hâle gelmemeli.
+    """
+    return CitationOut(
+        chunk_id=UUID(str(raw["chunk_id"])),
+        claim=str(raw.get("claim", "")),
+        file_name=str(raw["file_name"]),
+        location=str(raw["location"]),
+        snippet=str(raw.get("quote", "")),
     )
 
 
@@ -347,8 +355,22 @@ def apply_guardrails(
     return outcome.answer, outcome.blocked, outcome.dropped_citations
 
 
-def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> GeneratedAnswer:
-    return GeneratedAnswer(status=status_value, mode=mode, text=text, citations=[])
+@dataclass(frozen=True, slots=True)
+class AnswerOutcome:
+    """Bir turun sonucu: cevap + atıf başına iddia metni.
+
+    `claims` ayrı taşınır çünkü `contracts.Citation` bilinçli olarak `claim`
+    taşımaz (sözleşme dosyasındaki karara bakın): guardrail hiçbir kararında ona
+    bakmaz, dolayısıyla zincirin sözleşmesine girmemesi gerekir. Sunum katmanına
+    ulaşması gereken tek yer burasıdır.
+    """
+
+    answer: GeneratedAnswer
+    claims: dict[UUID, str] = field(default_factory=dict)
+
+
+def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> AnswerOutcome:
+    return AnswerOutcome(GeneratedAnswer(status=status_value, mode=mode, text=text, citations=[]))
 
 
 def _has_evidence(chunks: list[RetrievedChunk], threshold: float) -> bool:
@@ -368,6 +390,41 @@ def _has_evidence(chunks: list[RetrievedChunk], threshold: float) -> bool:
     return bool(chunks) and max(c.dense_score for c in chunks) >= threshold
 
 
+async def _generate(
+    generator: Generator,
+    *,
+    question: str,
+    chunks: list[RetrievedChunk],
+    mode: ChatMode,
+    stage: SocraticStage | None,
+    student_attempt: str | None,
+) -> tuple[GeneratedAnswer, dict[UUID, str]]:
+    """Üreteci çağırır ve varsa iddia metinlerini de alır.
+
+    `ClaimingGenerator` uygulayan bir üreteç `generate_with_claims` sunar; sunmayan
+    (test ikizleri, sahte üreteç) yalnız `Generator`'ı uygular. Kontrol burada tek
+    yerde yapılır, çağıranların her birinde değil.
+    """
+    if isinstance(generator, ClaimingGenerator):
+        result = await generator.generate_with_claims(
+            question=question,
+            chunks=chunks,
+            mode=mode,
+            socratic_stage=stage,
+            student_attempt=student_attempt,
+        )
+        return result.answer, dict(result.claims)
+
+    answer = await generator.generate(
+        question=question,
+        chunks=chunks,
+        mode=mode,
+        socratic_stage=stage,
+        student_attempt=student_attempt,
+    )
+    return answer, {}
+
+
 async def produce_answer(
     *,
     question: str,
@@ -378,12 +435,17 @@ async def produce_answer(
     generator: Generator,
     guardrails: Sequence[Guardrail],
     settings: Settings,
-) -> GeneratedAnswer:
+    student_attempt: str | None = None,
+) -> AnswerOutcome:
     """Bir turun cevabını üretir. Veritabanına dokunmaz, oturum durumu yazmaz.
 
     `decision` yalnız Sokratik modda doludur ve kademeyi TAŞIR: servis edilecek kademe
     state machine'in kararıdır, modelin değil. Model kendini bir üst kademeye terfi
     ettiremez.
+
+    `student_attempt` öğrencinin bu turdaki denemesidir ve üretime GEÇİRİLİR: neyi
+    yanlış anladığını görmeden verilen ipucu yönlendirme değil tahmindir. 9 Ağustos'a
+    kadar alan sözleşmede vardı ama bu uç onu hiç göndermiyordu.
     """
     chunks = await retriever.search(
         course_id=course_id, query=question, limit=settings.retrieval_top_k
@@ -399,16 +461,23 @@ async def produce_answer(
     # kaynak yine taşınır (FR-013/FR-016) ve LLM bütçesi ısrarla tüketilemez.
     if decision is not None and decision.refusal_notice is not None:
         hint_text, citation = socratic.template_hint(decision.stage, chunks[0])
-        return GeneratedAnswer(
-            status=AnswerStatus.ANSWERED,
-            mode=mode,
-            text=f"{decision.refusal_notice}\n\n{hint_text}",
-            citations=[citation],
-            socratic_stage=decision.stage,
+        return AnswerOutcome(
+            GeneratedAnswer(
+                status=AnswerStatus.ANSWERED,
+                mode=mode,
+                text=f"{decision.refusal_notice}\n\n{hint_text}",
+                citations=[citation],
+                socratic_stage=decision.stage,
+            )
         )
 
-    answer = await generator.generate(
-        question=question, chunks=chunks, mode=mode, socratic_stage=stage
+    answer, claims = await _generate(
+        generator,
+        question=question,
+        chunks=chunks,
+        mode=mode,
+        stage=stage,
+        student_attempt=student_attempt,
     )
 
     if answer.status is AnswerStatus.OUT_OF_SCOPE:
@@ -422,8 +491,13 @@ async def produce_answer(
 
     if blocked and mode is ChatMode.SOCRATIC:
         # FR-015: ihlalde BİR kez yeniden üret, sürerse deterministik şablona düş.
-        regenerated = await generator.generate(
-            question=question, chunks=chunks, mode=mode, socratic_stage=stage
+        regenerated, claims = await _generate(
+            generator,
+            question=question,
+            chunks=chunks,
+            mode=mode,
+            stage=stage,
+            student_attempt=student_attempt,
         )
         regenerated.socratic_stage = stage
         regenerated, blocked, _ = apply_guardrails(regenerated, chunks, guardrails)
@@ -432,12 +506,14 @@ async def produce_answer(
     if blocked:
         if mode is ChatMode.SOCRATIC and stage is not None:
             hint_text, citation = socratic.template_hint(stage, chunks[0])
-            return GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=mode,
-                text=hint_text,
-                citations=[citation],
-                socratic_stage=stage,
+            return AnswerOutcome(
+                GeneratedAnswer(
+                    status=AnswerStatus.ANSWERED,
+                    mode=mode,
+                    text=hint_text,
+                    citations=[citation],
+                    socratic_stage=stage,
+                )
             )
         # QA modunda deterministik bir son durak yoktur: gösterilemeyen cevap
         # gösterilmez (FR-012, fail-closed).
@@ -447,7 +523,10 @@ async def produce_answer(
         # Zincir bloklamasa bile kaynaksız akademik cevap kullanıcıya gitmez (FR-013).
         return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_BLOCKED)
 
-    return answer
+    # Düşen atıfların iddiaları da düşer: guardrail bir atıfı elediyse onun iddia
+    # metnini taşımak, gösterilmeyen bir kaynağa ait cümleyi ekranda bırakırdı.
+    kept = {c.chunk_id for c in answer.citations}
+    return AnswerOutcome(answer, {k: v for k, v in claims.items() if k in kept})
 
 
 # ---------------------------------------------------------------------------
@@ -470,14 +549,12 @@ async def post_chat(
     """
     started = time.perf_counter()
 
-    question = payload.message.strip()
+    question = payload.question.strip()
+    # Sokratik turlarda öğrencinin denemesi ayrı alanda gelir; gelmiyorsa sorunun
+    # kendisi denemedir. İkinci hâl QA'ya ve merdivenin ilk turuna karşılık gelir.
+    attempt = (payload.student_attempt or payload.question).strip()
     if not question:
         raise ValidationError("Soru boş olamaz.")
-    if len(question) > MAX_QUESTION_CHARS:
-        raise ValidationError(
-            f"Soru çok uzun ({len(question)} karakter). "
-            f"En fazla {MAX_QUESTION_CHARS} karakter gönderebilirsin."
-        )
     if payload.mode is ChatMode.EXAM:
         # Mod politikaları backend'de zorlanır (FR-017): sınavda ipucu tamamen kapalıdır
         # ve bu uç bir ipucu/cevap yüzeyidir. Sınav etkileşimi exams.py üzerinden gider;
@@ -492,16 +569,16 @@ async def post_chat(
 
     state: socratic.SocraticState | None = None
     decision: socratic.SocraticDecision | None = None
-    # Aranacak metin. QA'da mesajın kendisi; Sokratik modda OTURUMUN AÇILIŞ SORUSU.
+    # Aranacak metin. QA'da sorunun kendisi; Sokratik modda OTURUMUN AÇILIŞ SORUSU.
     #
-    # Sokratik turlarda gelen mesaj bir denemedir, bir soru değil: "sanırım dört koşul",
-    # "hı", "sadece söyle". Bunlarla arama yapılırsa hiçbir parça bulunmaz ve merdiven,
-    # kanıt eşiğine takılıp çöker — canlı koşuda birebir bu gözlendi. Merdiven tek bir
-    # sorunun etrafında ilerler, dolayısıyla arama da o soruya bağlı kalır.
+    # Sokratik turlarda öğrencinin yazdığı bir denemedir, bir soru değil: "sanırım dört
+    # koşul", "hı", "sadece söyle". Bunlarla arama yapılırsa hiçbir parça bulunmaz ve
+    # merdiven, kanıt eşiğine takılıp çöker — canlı koşuda birebir bu gözlendi. Merdiven
+    # tek bir sorunun etrafında ilerler, dolayısıyla arama da o soruya bağlı kalır.
     search_query = question
     if chat_session.mode is ChatMode.SOCRATIC:
         state = _stored_state(chat_session) if not _is_first_turn(chat_session) else None
-        decision = socratic.advance(state, question)
+        decision = socratic.advance(state, attempt)
         search_query = await _opening_question(session, chat_session, fallback=question)
 
     cached_answer = None
@@ -509,9 +586,9 @@ async def post_chat(
         cached_answer = await _lookup_cache(session, context.course_id, question)
 
     if cached_answer is not None:
-        answer = cached_answer
+        outcome = AnswerOutcome(cached_answer)
     else:
-        answer = await produce_answer(
+        outcome = await produce_answer(
             question=search_query,
             course_id=context.course_id,
             mode=chat_session.mode,
@@ -520,7 +597,9 @@ async def post_chat(
             generator=get_generator(),
             guardrails=get_guardrails(),
             settings=settings,
+            student_attempt=payload.student_attempt,
         )
+    answer, claims = outcome.answer, outcome.claims
 
     # Soru metni hiçbir log satırına yazılmaz (FR-035 redaksiyonu).
     await _record_turn(session, context, chat_session, answer, decision)
@@ -528,7 +607,14 @@ async def post_chat(
     if cached_answer is None and chat_session.mode is ChatMode.QA:
         await _store_cache(session, context.course_id, question, answer)
 
-    assistant_message = await _append_messages(session, context, chat_session, question, answer)
+    # Geçmişe öğrencinin GERÇEKTEN yazdığı metin yazılır. Sokratik turlarda bu, her
+    # turda tekrarlanan açılış sorusu değil o turun denemesidir; soruyu tekrar yazmak
+    # dökümü okunmaz hâle getirir ve "öğrenci ne denedi" sorusunu cevapsız bırakırdı.
+    # İlk turda ikisi zaten aynı metindir, dolayısıyla açılış sorusu araması bozulmaz.
+    turn_text = attempt if chat_session.mode is ChatMode.SOCRATIC else question
+    assistant_message = await _append_messages(
+        session, context, chat_session, turn_text, answer, claims
+    )
 
     latency_ms = int((time.perf_counter() - started) * 1000)
     # RETURNING'siz Core INSERT — `.inline()` bunu zorlar.
@@ -559,14 +645,15 @@ async def post_chat(
     )
     await session.flush()
 
-    return ChatResponse(
+    # Mod OTURUMUN modudur, üretecin bildirdiği değil: oturum modu sunucuda kilitlidir
+    # (`_load_or_create_session`), üretecin döndürdüğü alan ise yalnız bir yankı. Sahte
+    # bir üreteç yanlış modu yankılarsa zarf Sokratik turu QA gibi gösterirdi.
+    answer.mode = chat_session.mode
+    return to_chat_response(
+        answer,
         session_id=chat_session.id,
         message_id=assistant_message.id,
-        status=answer.status,
-        mode=chat_session.mode,
-        answer=answer.text,
-        citations=[CitationOut(**_citation_to_json(c)) for c in answer.citations],
-        socratic_stage=answer.socratic_stage,
+        claims=claims,
         cached=cached_answer is not None,
     )
 
@@ -603,7 +690,7 @@ async def list_messages(
             id=message.id,
             role=message.role,
             content=message.content,
-            citations=[CitationOut(**raw) for raw in message.citations],
+            citations=[_citation_out_from_json(raw) for raw in message.citations],
             status=message.status,
             socratic_stage=message.socratic_stage,
             created_at=message.created_at,
@@ -647,7 +734,7 @@ async def _load_or_create_session(
             user_id=context.user_id,
             mode=payload.mode,
             state={},
-            title=payload.message.strip()[:80],
+            title=payload.question.strip()[:80],
         )
         session.add(chat_session)
         await session.flush()
@@ -800,15 +887,16 @@ async def _append_messages(
     session: AsyncSession,
     context: CourseContext,
     chat_session: ChatSession,
-    question: str,
+    turn_text: str,
     answer: GeneratedAnswer,
+    claims: dict[UUID, str],
 ) -> ChatMessage:
     session.add(
         ChatMessage(
             session_id=chat_session.id,
             course_id=context.course_id,
             role=ChatRole.USER,
-            content=question,
+            content=turn_text,
             citations=[],
             status=None,
             socratic_stage=None,
@@ -820,7 +908,7 @@ async def _append_messages(
         course_id=context.course_id,
         role=ChatRole.ASSISTANT,
         content=answer.text,
-        citations=[_citation_to_json(c) for c in answer.citations],
+        citations=[_citation_to_json(c, claims.get(c.chunk_id, "")) for c in answer.citations],
         status=answer.status,
         socratic_stage=answer.socratic_stage,
         seq=1,
