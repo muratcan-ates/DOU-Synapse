@@ -20,6 +20,7 @@ from app.api import (
     exams,
     health,
     internal,
+    privacy,
     questions,
     sources,
 )
@@ -121,6 +122,7 @@ def create_app() -> FastAPI:
     app.include_router(courses.router)
     app.include_router(documents.router)
     app.include_router(sources.router)
+    app.include_router(privacy.router)
     app.include_router(questions.router)
     # Paralel geliştirme kirişi: aşağıdaki üç router'ın MODÜLLERİ henüz boş, ama
     # kaydı önden yapıldı. Beş oturum kendi ucunu eklerken bu dosyaya dokunmaz;
