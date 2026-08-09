@@ -9,7 +9,7 @@ from enum import StrEnum
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, PostgresDsn, model_validator
+from pydantic import AliasChoices, Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -94,10 +94,22 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
     jwt_audience: str = "authenticated"
     #: Beklenen `iss` claim'i. Tanımlanmazsa issuer DOĞRULANMAZ ve o zaman başka bir
-    #: Supabase projesinin token'ı da kabul edilir — `security.py` bu alanı
-    #: `getattr` ile arıyordu (R1, alan burada yoktu). Üretimde MUTLAKA verilmeli;
+    #: Supabase projesinin token'ı da kabul edilir. Üretimde MUTLAKA verilmeli;
     #: değeri Supabase proje URL'sinin `/auth/v1` eki.
-    jwt_issuer: str | None = None
+    #:
+    #: Ortam değişkeni adı açıkça `SUPABASE_JWT_ISSUER`'a sabitlendi. Alan adı
+    #: `jwt_issuer` olduğu için pydantic-settings varsayılan olarak `JWT_ISSUER`
+    #: arıyordu; `.env.example` ve `docs/deployment.md` ise komşusu
+    #: `supabase_jwt_secret` ile aynı önekten türeyen `SUPABASE_JWT_ISSUER` adını
+    #: söylüyordu. `extra="ignore"` tanınmayan adı sessizce attığı için, kurulum
+    #: belgesini birebir uygulayan operatör hiçbir hata almadan issuer
+    #: doğrulamasını KAPALI bırakıyordu — tam da belgenin uyardığı durum.
+    #: Alias, adı belgeye uydurur; iki ad da kabul edilir ki mevcut kurulumlar
+    #: bozulmasın. Uyuşmazlığın tekrarını `tests/test_config.py` sabitliyor.
+    jwt_issuer: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SUPABASE_JWT_ISSUER", "JWT_ISSUER"),
+    )
     jwt_algorithms: list[str] = ["HS256"]
 
     # Çevrimdışı demo ve yerel geliştirme için kimlik doğrulama bypass'ı.
