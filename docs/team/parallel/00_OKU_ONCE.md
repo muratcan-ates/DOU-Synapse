@@ -213,11 +213,11 @@ Kendi numaran dışına çıkma.
 
 | Şerit | Alan | Bağımlılık | Handoff |
 |---|---|---|---|
-| 1 | Retrieval hattı (T003-T007) | yok — hemen tam hız | `01_RETRIEVAL.md` |
-| 2 | Generation + guardrails (T008-T016) | yok — sahte retrieval'la | `02_GENERATION.md` |
-| 3 | Chat API + Sokratik (T017-T020, T026-T028) | 1+2'nin **imzası** | `03_CHAT_SOKRATIK.md` |
-| 4 | Soru üretimi + sınav (T029-T033) | 2'nin **imzası** | `04_SORU_SINAV.md` |
-| 5 | Analitik + değerlendirme (T037-T047) | yok | `05_ANALITIK_EVAL.md` |
+| 1 | Retrieval hattı (T003-T007) | ✅ **BİTTİ, main'de** | `01_RETRIEVAL.md` |
+| 2 | Generation + guardrails (T008-T016) | ✅ **BİTTİ, main'de** | `02_GENERATION.md` |
+| 3 | Chat API + Sokratik (T017-T020, T026-T028) | ✅ **BİTTİ, main'de** | `03_CHAT_SOKRATIK.md` |
+| 4 | Soru üretimi + sınav (T029-T033) | çalışıyor · bağımlılıkları **hazır** | `04_SORU_SINAV.md` |
+| 5 | Analitik + değerlendirme (T037-T047) | çalışıyor | `05_ANALITIK_EVAL.md` |
 | — | Frontend + RLS kanıtı + CI | — | lider (bu oturum değil) |
 
 Şerit 3 ve 4, bağımlı oldukları modüller henüz yazılmamışken **sahte

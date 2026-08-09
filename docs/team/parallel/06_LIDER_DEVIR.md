@@ -1,17 +1,12 @@
 # Lider şeridi — devir teslim
 
-> **9 Ağustos 2026, saat ~14:00.** Bu belge, lider oturumunun bittiği yerden devam
-> edecek yeni oturum içindir. Önce `00_OKU_ONCE.md` oku, sonra burayı.
->
-> Şerit: **frontend + CI + belgeler + entegrasyon.** Backend'e dokunmuyorsun;
-> beş paralel oturum orada çalışıyor.
+> **Güncellendi: 9 Ağustos 2026, ~14:15.** Önce `00_OKU_ONCE.md`, sonra burası.
+> Şerit: **frontend + entegrasyon + CI + belgeler.** Backend'e yalnız
+> entegrasyon dikişleri için dokunulur.
 
 ---
 
-## 1. İlk iş — doğru klasörde çalış
-
-Lider için ayrı bir çalışma ağacı açıldı. **`~/code/DOU-Synapse` klasörüne
-dokunma**, orada başka bir oturum kendi dalında çalışıyor.
+## 1. İlk iş — doğru klasör
 
 ```bash
 cd ~/code/dou-lead
@@ -19,7 +14,8 @@ git branch --show-current      # "main" yazmalı
 git pull origin main
 ```
 
-`~/code/dou-lead` yoksa:
+`~/code/DOU-Synapse` klasörüne **dokunma** — orada başka bir oturum kendi
+dalında çalışıyor. Klasör yoksa:
 
 ```bash
 git -C ~/code/DOU-Synapse worktree add ~/code/dou-lead main
@@ -27,188 +23,148 @@ cd ~/code/dou-lead/apps/web && bun install
 cd ../api && uv venv --python 3.12 && uv pip install -e ".[dev]" && cp ../../.env.example .env
 ```
 
-**Neden ayrı ağaç:** beş oturum aynı makinede çalışıyor ve `git checkout` dalı
-klasörü kullanan herkes için değiştiriyor. Bu 9 Ağustos'ta yaşandı — lider
-farkında olmadan Şerit 3'ün dalında çalışıyordu, commit'siz iş onların dalının
-üstünde birikmişti. İş kaybolmadı ama kurtarmak vakit aldı.
-
-## 2. Sunucuları ayağa kaldır
+## 2. Sunucular
 
 ```bash
-# API (ayrı terminal)
-cd ~/code/dou-lead/apps/api && uv run uvicorn app.main:app --port 8000
-# Worker (ayrı terminal, materyal işlenmesi için)
-cd ~/code/dou-lead/apps/api && uv run python -m app.worker
-# Web (ayrı terminal)
-cd ~/code/dou-lead/apps/web && bun run dev
+cd ~/code/dou-lead/apps/api && uv run uvicorn app.main:app --port 8000   # terminal 1
+cd ~/code/dou-lead/apps/api && uv run python -m app.worker               # terminal 2
+cd ~/code/dou-lead/apps/web && bun run dev                               # terminal 3
 ```
 
-**Tuzak:** bu makinede `NEXT_PUBLIC_API_URL` ortamda `:9100`'e (önizleme proxy'si)
-işaret edebiliyor. Tarayıcı API'ye ulaşamıyorsa önce bunu kontrol et:
+**Tuzak:** bu makinede `NEXT_PUBLIC_API_URL` ortamda `:9100`'e (önizleme
+proxy'si) kayabiliyor. Tarayıcı API'ye ulaşamıyorsa:
+`NEXT_PUBLIC_API_URL=http://localhost:8000 bun run dev`
 
-```bash
-cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:8000 bun run dev
-```
+**Test koştururken `bunx playwright` KULLANMA** — ayrı kopya indirip "two
+different versions" hatası veriyor. `node_modules/.bin/playwright` ya da
+`bun run test:e2e`.
 
-Uçtan uca testler bu sorundan etkilenmez — kendi sunucusunu açıkça
-yapılandırılmış adresle başlatıyorlar (`playwright.config.ts`).
+## 3. Durum — 9 Ağustos 14:15
 
-## 3. Şu anki durum
-
-`main` = `7fd38bd` (bu belge işlendiğinde daha ileride olabilir).
+`main` = `0270f9d`.
 
 | Katman | Durum |
 |---|---|
-| Backend testleri | **159 geçiyor** (92'ydi; Şerit 3'ün chat + Sokratik testleri geldi) |
-| Frontend birim | **25 geçiyor** — `cd apps/web && bun test lib/` |
-| Frontend uçtan uca | **9 geçiyor** — `cd apps/web && node_modules/.bin/playwright test` |
-| Lint / tip / derleme | temiz, 9 rota |
+| Backend testleri | **353 geçiyor** |
+| mypy | **temiz, 56 dosya** (eskiden `parsers.py` tüm koşumu durduruyordu) |
+| Frontend birim | 25 geçiyor · uçtan uca 9 geçiyor |
+| OpenAPI | kodla birebir, 13/13 yol |
+| Şema | 15 tablo, sıfırdan hatasız |
 | CI | üç job: `api`, `web`, `e2e` |
 
-**Test koştururken:** `bunx playwright` KULLANMA — ayrı bir kopya indirip
-"two different versions" hatası veriyor. `node_modules/.bin/playwright` ya da
-`bun run test:e2e` kullan.
+**Üç şerit `main`'de ve dalları silindi:** retrieval (hibrit arama + RRF),
+generation + guardrails (LLM failover, atıf doğrulama, sızıntı filtresi),
+chat + Sokratik (state machine, `0003` şeması, chat uçları).
 
-## 4. Bekleyen iş: 47 doğrulanmış arayüz bulgusu
+**İki şerit hâlâ çalışıyor** — dallarına dokunma:
+`feat/questions-exams` (Şerit 4) · `feat/analytics-eval` (Şerit 5)
 
-Altı mercekli bir inceleme (62 ajan, her bulgu ayrı bir çürütme turundan geçti)
-47 geçerli bulgu üretti. Hepsi makine tarafından doğrulandı; 10 tanesi
-çürütüldü ve **listeye alınmadı** — onları yeniden açma.
+## 4. Sıradaki iş — T022, chat ekranını gerçek veriye bağla
 
-Tam liste: [`BULGULAR_ARAYUZ.json`](BULGULAR_ARAYUZ.json) — her kayıtta
-`siddet`, `dosya`, `satir`, `baslik`, `fix` var.
+**Bu en yüksek değerli tek iş.** Backend hazır, tipler indi, ekran hâlâ örnek
+veri gösteriyor.
 
-Dağılım: **6 major · 26 minor · 15 nit.**
+Sözleşme (`apps/web/lib/types.ts`, backend `app/schemas/chat.py` ile birebir):
 
-### Önce bu altısı (major)
+```
+POST /courses/{course_id}/chat
+  gövde:  { question, mode: "qa"|"socratic", session_id?, student_attempt? }
+  yanıt:  { session_id, message_id, status, mode, answer, citations[], hints[], socratic_stage }
 
-**1. Belge silme hatası ekranda hiç görünmüyor** — `app/courses/[courseId]/page.tsx:289-345`
-`DeleteDocumentButton`, `ConfirmAction`'a taşınmamış tek çağrı yeri; kendi hata
-state'ini tutuyor ama hiçbir yerde göstermiyor. Refactor'da atlanmış.
-*Düzeltme:* `DeleteDocumentButton`'ı tamamen sil, yerine `ConfirmAction` koy.
-
-**2. `--fg-subtle` WCAG AA'yı geçmiyor** — `app/globals.css:18` (açık), `:47` (koyu)
-Ölçülen: 3.53:1 açık temada, 4.09:1 koyu temada. **29 yerde bilgi taşıyan metin**
-için kullanılıyor (dosya boyutu, sayfa numarası, cevap sayısı). DESIGN.md "WCAG AA
-ölçülmüş" diyor; ölçüm bunu yalanlıyor.
-*Düzeltme:* açıkta `#6f6a65`, koyuda `#9a948e` civarına taşı ve **DESIGN.md
-tablosunu gerçek ölçülen oranla güncelle**.
-
-**3. Her rotada `document.title` sabit** — `app/layout.tsx:16-20`
-Tüm sayfalar "DOU-Synapse" başlığını taşıyor; Next'in rota duyurucusu hiçbir
-sayfa değişimini ekran okuyucuya duyurmuyor.
-*Düzeltme:* rota başına ince bir sunucu `layout.tsx` ile `metadata`, ya da sayfa
-başına `useEffect` ile `document.title`.
-
-**4. Tek geçici hata bütün sayfayı kalıcı olarak siliyor** — `app/courses/[courseId]/page.tsx:56`
-`if (error) return <ErrorNote/>` elde sağlam veri varken bile her şeyi atıyor:
-başlık, sekmeler, liste gidiyor, "tekrar dene" yok, polling durmuş, kullanıcının
-tek çıkışı tarayıcıyı yenilemek. Polling sırasında tek bir 503 bunu tetikliyor.
-*Düzeltme:* `if (error && !data)` yap; veri varken hatayı listenin üstünde satır
-içi uyarı olarak göster (üye ekranındaki desen).
-
-**5-6.** Aynı iki bulgunun ikinci mercekten gelen kopyaları — 1 ve 2 ile aynı.
-
-### Sonra: `useResource` yarış koşulu (minor ama kökü derin)
-
-`cancelled` bayrağı hiçbir şey korumuyor: `setData` bayraktan bağımsız çalışıyor.
-Üst üste binen isteklerde **son dönen kazanıyor**, ilk gönderilen değil. Ölçülen
-sonuç: art arda iki silmede, geç dönen bayat cevap silinmiş belgeyi geri
-getiriyor ve polling kapalı olduğu için **kendiliğinden düzelmiyor**.
-
-Doğrulayıcı şiddeti `blocker`'dan `minor`'a indirdi çünkü tetiklenmesi için ~5 ms'lik
-bir isteğin ~1000 kat gecikmesi gerekiyor ve tek gezinme temizliyor. Ama düzeltme
-üç satır:
-
-```ts
-const seq = useRef(0);
-const reload = useCallback(async () => {
-  const my = ++seq.current;
-  try {
-    const next = await fetcherRef.current();
-    if (my !== seq.current) return;   // bayat cevap yazamaz
-    setData(next); setError(null);
-  } catch (e) {
-    if (my !== seq.current) return;
-    setError(errorMessage(e));
-  }
-}, deps);
+GET  /courses/{course_id}/chat/sessions            → oturum listesi
+GET  /courses/{course_id}/chat/sessions/{id}       → oturum geçmişi
 ```
 
-Ve mount efektindeki ölü `.then(() => { if (cancelled) return; })` bloğunu kaldır —
-yanıltıcı, hiçbir şey yapmıyor.
+`Citation`: `{ chunk_id, claim, file_name, location, snippet }` —
+`location` zaten "Sayfa 7" biçiminde gelir, arayüz biçimlendirmez.
 
-### Tema: erişilebilirlik
+Yapılacaklar:
+1. `lib/api.ts`'e chat fonksiyonları (`postChat`, `getChatSessions`, `getChatSession`)
+2. `app/courses/[courseId]/chat/page.tsx` — örnek veriyi sil, gerçek akışa geç
+3. `status` üç değeri de ele al: `answered` · `insufficient_context` ·
+   `out_of_scope`. **İkisi de "cevap yok" ama farklı metin gösterir** ve
+   abstention **hata gibi görünmez** (DESIGN.md'nin en kritik kuralı)
+4. Sokratik modda `socratic_stage` göstergesini gerçek kademeye bağla;
+   `student_attempt` alanını gönder — ipucu buna göre şekilleniyor
+5. **`PreviewBanner`'ı kaldır** — bırakılırsa çalışan ürün çalışmıyor görünür
+6. E2E'ye vaka ekle: kaynaklı cevap sayfa numarası gösteriyor, kapsam dışı
+   soru nazik ret alıyor
 
-Bulguların büyük kısmı buradan: odak `<body>`'ye düşüyor (`ConfirmAction`),
-odak halkası `overflow-x-auto` tarafından kırpılıyor (`course-nav`), sınav sayacı
-saniyede bir `aria-live` duyurusu üretiyor (ekran okuyucu 12 dakika boyunca soru
-metnini basıyor), formlarda görünür etiket yok (placeholder etiket görevinde —
-DESIGN.md açıkça yasaklıyor), dokunma hedefleri 44px değil 40px.
+Ekranın mevcut bileşenleri hazır: `SourceCard` (dosya adı + konum + alıntı),
+`SocraticLadder` (kademe göstergesi), `AbstentionNotice`.
 
-### Tema: DESIGN.md ile kod ayrışmış
+## 5. Bekleyen: 47 doğrulanmış arayüz bulgusu
 
-Renk token'larının çoğu belgedeki tablodan sapmış, tipografi ölçeği hiç
-uygulanmamış, `.ambient` iki radial-gradient uyguluyor (belge "gradyan: hiçbiri"
-diyor), fontlar belgede yazandan farklı. **Karar gerekiyor:** kodu belgeye mi
-uyduracağız, belgeyi koda mı? İkisi de meşru; ayrık kalması değil.
+Altı mercekli inceleme (62 ajan, her bulgu ayrı çürütme turundan geçti).
+Tam liste: [`BULGULAR_ARAYUZ.json`](BULGULAR_ARAYUZ.json) — `siddet`, `dosya`,
+`satir`, `baslik`, `fix` alanlarıyla. **6 major · 26 minor · 15 nit.**
+Çürütülen 10 bulgu listeye alınmadı; yeniden açma.
 
-## 5. Bekleyen iş: entegrasyon
+Dört major:
 
-Backend şeritleri indikçe frontend'i gerçek veriye bağlamak **senin işin**:
+1. **Belge silme hatası ekranda hiç görünmüyor** — `[courseId]/page.tsx:289-345`.
+   `DeleteDocumentButton`, `ConfirmAction`'a taşınmayı atlamış tek yer.
+   *Düzeltme:* sil, yerine `ConfirmAction` koy.
+2. **`--fg-subtle` WCAG AA'nın altında** — `globals.css`. Ölçülen 3.53:1 (açık),
+   4.09:1 (koyu); **29 yerde bilgi taşıyan metin** için kullanılıyor ve DESIGN.md
+   "ölçülmüş AA" iddia ediyor. *Düzeltme:* açıkta `#6f6a65`, koyuda `#9a948e`
+   civarı; **DESIGN.md tablosunu gerçek ölçümle güncelle**.
+3. **Her rota aynı `document.title`** — ekran okuyucu gezinmeyi duyuramıyor.
+4. **Tek geçici hata bütün sayfayı siliyor** — `if (error) return <ErrorNote/>`
+   elde sağlam veri varken bile başlığı, sekmeleri, listeyi atıyor; "tekrar dene"
+   yok. *Düzeltme:* `if (error && !data)`, veri varken satır içi uyarı.
+
+Ayrıca `useResource`'ta yarış koşulu (minor, düzeltme üç satır — belgede hazır):
+`cancelled` bayrağı `setData`'yı korumuyor, üst üste binen isteklerde son dönen
+kazanıyor.
+
+## 6. Şerit 4 ve 5 indiğinde
 
 | Görev | Ne zaman |
 |---|---|
-| T021-T022 chat ekranı gerçek veriye | Şerit 3 `main`'e inince |
-| Soru havuzu ekranı gerçek uçlara | Şerit 4 inince |
+| Soru havuzu ekranı gerçek uçlara | Şerit 4 `main`'e inince |
 | Sınav ekranı gerçek motora | Şerit 4 inince |
 | Analitik ekranı gerçek veriye | Şerit 5 inince |
 
-Dört ekran da bugün **tasarım önizlemesi** olarak çalışıyor ve şeritlerinde
-"tasarım önizlemesi" şeridi var. Gerçek veriye geçerken o şeridi kaldırmayı
-unutma — kaldırılmazsa çalışan ürün çalışmıyormuş gibi görünür.
+Üçü de bugün **tasarım önizlemesi**. Gerçek veriye geçerken şeridi kaldır.
 
-## 6. Backend'e iletilecek tek kalem
+Merge sırası: şerit bitmiş diyorsa `main`'e al, `pytest` + `mypy` + `ruff`
+koştur, **mypy'a özellikle bak** — üç şeridin birleşiminde iki uyuşmazlığı
+testler değil mypy yakaladı (o kod yolları hiçbir testte koşmuyordu).
+
+## 7. Backend'e iletilecek tek kalem
 
 **Yükleme ucu yanıttan sonra commit ediyor.** Ölçüm: `POST /documents` `202`
 dönüyor, hemen sonraki `GET` **0 belge**, bir saniye sonraki **1 belge**. Sebep
 FastAPI'nin `yield` bağımlılığını yanıt üretildikten sonra kapatması.
 
-Frontend'de geçici çözüm var (`useResource`'ın `pulse`'ı: yazma sonrası kısa
-tazeleme penceresi). **Kalıcı çözüm sunucu tarafında** — yanıt gönderilmeden önce
-commit. Şerit 3 ya da 4'e yazılmalı; bu belgeyi okuyan kişi henüz iletmediyse
-gruba yazsın.
+Frontend'de geçici çözüm var (`useResource`'ın `pulse`'ı). **Kalıcı çözüm
+sunucu tarafında** — yanıt gönderilmeden önce commit.
 
-## 7. Elenen 10 bulgu — yeniden açma
+## 8. Kayda geçmiş teknik borç
 
-Çürütme turundan geçemeyenler: önizleme ekranlarında rol/üyelik kontrolü
-olmaması (bunlar önizleme, gerçek yetki sunucuda), soru listesinde ok tuşu
-gezinme olmaması (Tab yeterli, otuz taslak varsayımı gerçek değil), `ConfirmAction`'ın
-katman yönü, ölü tip export'ları (bir kısmı gerçekten kullanılıyor), isimlendirme
-tutarsızlıkları.
+[`07_SERIT_RAPORLARI.md`](07_SERIT_RAPORLARI.md) §6'da tablo halinde:
+`_pg_enum` üçüncü kopyası `models/base.py`'ye taşınmalı, `api/chat.py`'deki
+sabitler `config.py`'ye, `schemas/chat.py` uzlaşması.
 
-Tam gerekçeler `wwqem4qpb.output` çıktısındaydı; kaybolduysa yeniden üretme —
-bir bulgu iki kez çürütülmüşse üçüncü kez açmak zaman kaybı.
+Bir de merge sırasında kapatılan borç: guardrail zincirinin iki uygulayıcısı
+vardı, `screen()` enjekte edilebilir yapıldı ve kopya silindi.
 
-## 8. Çalışma kuralları
+## 9. Çalışma kuralları
 
-- **Anayasa XI** (modülerlik) artık yazılı: aynı davranış üçüncü kez yazılıyorsa
-  ortak modüle çıkar; etkin görünüp iş yapmayan buton kusurdur; ölü kod commit'te
-  temizlenir.
-- **Anayasa VIII**: davranış gerçek ortamda gözlenmeden "bitti" denmez. Arayüz
-  değişikliğini tarayıcıda gör, tercihen E2E testine dönüştür.
+- **Anayasa XI** (modülerlik): aynı davranış üçüncü kez yazılıyorsa ortak
+  modüle çıkar; etkin görünüp iş yapmayan buton kusurdur; ölü kod temizlenir.
+- **Anayasa VIII**: davranış gerçek ortamda gözlenmeden "bitti" denmez.
 - Commit gövdesi "ne"yi değil **"neden"i** anlatır; `Co-Authored-By` asla.
-- Commit ve push için **tam yetki sende**, izin sorma.
-- `apps/api/app/contracts.py` yalnız liderin — ama şu an lider sensin; yine de
-  bir alan değiştireceksen önce ona karşı yazmış üç şeridi düşün.
+- **Commit ve push için tam yetki sende**, izin sorma.
 
-## 9. Bir sonraki oturuma önerilen sıra
+## 10. Önerilen sıra
 
-1. Dört major bulguyu düzelt (silme hatası, kontrast, sayfa başlıkları, hata
-   ekranı) — hepsi küçük, hepsi kullanıcıya dokunuyor
-2. `useResource` yarış düzeltmesi (3 satır) + ölü `.then` temizliği
-3. Erişilebilirlik kümesi: odak yönetimi, görünür etiketler, sayaç duyurusu
-4. DESIGN.md ↔ kod ayrışması için karar ver ve tek yönde hizala
-5. Şeritler indikçe entegrasyon
+1. **T022** — chat ekranı gerçek veriye (en yüksek değer, backend hazır)
+2. Dört major arayüz bulgusu
+3. `useResource` yarış düzeltmesi (3 satır)
+4. Erişilebilirlik kümesi (odak yönetimi, görünür etiketler, sayaç duyurusu)
+5. Şerit 4 ve 5 indikçe merge + entegrasyon
+6. DESIGN.md ↔ kod ayrışması için karar ver ve tek yönde hizala
 
-Her düzeltmeyi E2E'ye bir vaka olarak ekle — 9 vakalık paket bu şekilde büyümeli.
+Her düzeltmeyi E2E'ye vaka olarak ekle — 9 vakalık paket böyle büyümeli.
