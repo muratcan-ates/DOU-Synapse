@@ -311,5 +311,16 @@ Yalnız bir SELECT politikası ve bir COMMENT ekler; veri değiştirmez. Bunu ya
 eğitmen analitiği ekran görüntüsü boş çıkardı ve sebebini yanlış yazardım.
 
 Ayrıca **kendi demo veritabanımı** kurdum (`dou_synapse_docs`, fastembed korpuslu) —
-liderin `dou_synapse`'indeki chunk'lar `hashing` ile gömülü olduğu için orada kaynaklı
-cevap alınamıyordu. Liderin verisine dokunulmadı.
+ölçüm anında liderin `dou_synapse`'indeki chunk'lar `hashing` ile gömülüydü ve orada
+kaynaklı cevap alınamıyordu. Liderin verisine dokunulmadı; bütün ekran görüntüleri
+`dou_synapse_docs` üzerinden alındı (COME 331, 8 materyal, 33 chunk, e5).
+
+> **Sonradan gelen düzeltme (`c4d4c7b`, 17:40):** lider `dou_synapse`'teki 54 chunk'ı
+> gerçek E5 modeliyle yerinde yeniden embed etti. Yani yukarıdaki `hashing` ölçümü
+> **o andaki paylaşılan korpusa** aittir; bugün `dou_synapse` de fastembed uzayındadır.
+> Ölçümün sonucu geçersizleşmedi — `hashing`'in bu materyalde ayırt etme gücü taşımadığı
+> bulgusu duruyor ve liderin commit gövdesi de aynı sonuca varıyor. Değişen tek şey,
+> paylaşılan veritabanının artık o sağlayıcıda olmaması.
+>
+> **§3 madde 8 hâlâ açık:** `10_OKU_ONCE_FAZ2.md` satır 20 ve 133'teki "19 tablo"
+> ifadesi bu commit'te düzeltilmedi. Doğrusu **15**.

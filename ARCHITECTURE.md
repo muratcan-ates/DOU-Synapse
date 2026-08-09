@@ -72,10 +72,15 @@ Bu bir nokta kontrolüdür, kalibrasyonun yeniden koşulması değildir.
 Sebep yapısaldır: iki sağlayıcının kosinüs dağılımları farklı bantlarda oturur, birinde
 kalibre edilmiş sayı diğerinde anlamsızdır.
 
-Ölçülen (9 Ağustos, `hashing` korpusu, COME 331): ilgili sorgular 0.1715–0.1951, konu dışı
-sorgu 0.1789. **Konu dışı sorgu, ilgili sorgulardan birinden yüksek skor aldı** — yani
-`hashing` bu materyalde ayırt etme gücü taşımıyor. Bu sağlayıcı test ve çevrimdışı
-geliştirme içindir; **demo ve ölçüm bu sağlayıcıyla koşulmaz.**
+Ölçülen (9 Ağustos, `hashing` ile gömülmüş korpus, COME 331): ilgili sorgular
+0.1715–0.1951, konu dışı sorgu 0.1789. **Konu dışı sorgu, ilgili sorgulardan birinden
+yüksek skor aldı** — yani `hashing` bu materyalde ayırt etme gücü taşımıyor. Bu sağlayıcı
+test ve çevrimdışı geliştirme içindir; **demo ve ölçüm bu sağlayıcıyla koşulmaz.**
+
+Testler `hashing`'de kalır ve bu doğrudur: kendi veritabanlarını kurup **sorguladıkları
+sağlayıcıyla** ingest ederler, yani kendi içlerinde tutarlıdırlar ve model indirmezler.
+Kural şudur: **bir sunucu paylaşılan korpusa bağlanıyorsa o korpusun gömüldüğü sağlayıcıyı
+kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular döndürür.
 
 ### Deploy gerçekliği (ölçülecek ve raporlanacak)
 
