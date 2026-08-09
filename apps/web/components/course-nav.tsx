@@ -14,6 +14,8 @@ const TABS = [
   { slug: "", label: "Materyaller" },
   { slug: "/chat", label: "Asistan" },
   { slug: "/exam", label: "Sınav provası" },
+  { slug: "/questions", label: "Soru havuzu", instructorOnly: true },
+  { slug: "/analytics", label: "İlerleme" },
   { slug: "/members", label: "Katılımcılar", instructorOnly: true },
 ];
 

@@ -110,6 +110,22 @@ geçecek, şeritte açıkça belirtiliyor):
 
 ![Sınav](docs/screenshots/06-sinav.png)
 
+**Soru havuzu ve eğitmen onayı** (tasarım önizlemesi) — sistem soruyu cevap anahtarı
+ve kaynak parçasıyla üretir, eğitmen tek ekranda inceleyip onaylar. Onaylanmayan soru
+öğrenci akışında hiç görünmez:
+
+![Soru havuzu](docs/screenshots/09-soru-havuzu.png)
+
+**Sınıf analitiği** (tasarım önizlemesi) — konu bazlı sınıf durumu en zorlanılandan
+sıralı, en çok yanlış yapılan sorularla birlikte:
+
+![Sınıf analitiği](docs/screenshots/10-sinif-analitigi.png)
+
+**Öğrenci ilerlemesi** (tasarım önizlemesi) — aynı ekran, öğrenci rolünde farklı soruya
+cevap verir: "hangi konuya çalışmalıyım?" Skorun resmî not olmadığı ekranda yazılıdır:
+
+![Öğrenci ilerlemesi](docs/screenshots/11-ogrenci-ilerleme.png)
+
 **İzolasyon kanıtı** — öğrenci, üye olmadığı dersin adresini elle yazarsa "yetkiniz yok"
 değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
 
@@ -137,7 +153,7 @@ RLS izolasyon kanıtı):
   oturumları, konu bazlı mastery (EWMA servisi yazıldı ve testli)
 - **Örnek materyal paketi** — `sample_data/isletim-sistemleri/` (5 PDF + PPTX + 2 kod
   dosyası, bug_hunt için bilinçli hatalı örnek dahil)
-- **6 ekranlı web arayüzü** — Türkçe, koyu tema, mobil uyumlu
+- **8 ekranlı web arayüzü** — Türkçe, koyu tema, 375px mobil uyumlu
 - **Gereksinim analizi** — danışman taslağının 12 maddesi → numaralı FR izlenebilirliği
 
 ## Yapılacaklar ⏳
