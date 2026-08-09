@@ -55,8 +55,11 @@ def settings_for(**overrides: Any) -> Settings:
         "dev_auth_enabled": True,
         "llm_primary_model": "groq/llama-3.3-70b-versatile",
         "llm_fallback_model": "gemini/gemini-2.0-flash",
-        "groq_api_key": "gsk_test_key_placeholder_value",
-        "gemini_api_key": "AIzaTestKeyPlaceholderValue",
+        # Sağlayıcı önekiyle başlamayan değerler bilinçli: gerçek anahtar
+        # biçimini taklit eden bir test sabiti, sızıntı taramalarında
+        # kalıcı yanlış pozitif üretir.
+        "groq_api_key": "test-groq-anahtari",
+        "gemini_api_key": "test-gemini-anahtari",
         "llm_max_retries": 0,
     }
     base.update(overrides)
