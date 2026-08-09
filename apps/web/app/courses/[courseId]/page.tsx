@@ -20,7 +20,7 @@ import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { Badge, Button, Card, ConfirmAction, EmptyState } from "@/components/ui";
 
 interface CourseView {
   course: Course;
@@ -47,14 +47,16 @@ function CourseDetail() {
     return { course, documents };
   }, [courseId]);
 
-  const { data, error, loading, reload, pulse } = useResource(fetchView, [courseId], {
+  const { data, error, reload, pulse } = useResource(fetchView, [courseId], {
     // İşlenmeyi bekleyen belge varken tazele; hepsi bitince dur.
     pollWhile: (v) =>
       v.documents.some((d) => d.status === "uploaded" || d.status === "processing"),
   });
 
-  if (error) return <ErrorNote message={error} />;
-  if (loading || !data) return <Loading />;
+  // Sayfa 2 sn'de bir tazelendiği için başarısız tek istek sıradan: elde sağlam
+  // liste varken başlık, sekmeler ve satırlar kalır, hata listenin üstüne iner.
+  if (error && !data) return <RetryNote message={error} onRetry={reload} />;
+  if (!data) return <Loading />;
 
   const { course, documents } = data;
   const ready = documents.filter((d) => d.status === "completed").length;
@@ -68,14 +70,17 @@ function CourseDetail() {
         / <span className="text-fg-muted">{course.code}</span>
       </nav>
 
+      {/* Sekme şeridi diğer beş ders ekranında da başlığın üstünde. */}
+      <CourseNav courseId={courseId} />
+
       <PageHeader
         title={course.title}
         description={`${documents.length} materyal · ${ready} hazır`}
       />
 
-      <CourseNav courseId={courseId} />
-
       {isInstructor && <UploadBox courseId={courseId} onUploaded={pulse} />}
+
+      {error && <RetryNote message={error} onRetry={reload} />}
 
       {documents.length === 0 ? (
         <EmptyState
@@ -100,6 +105,18 @@ function CourseDetail() {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/** Hata + çıkış yolu: hatayı gösterip kullanıcıyı elle yenilemeye mahkûm etmemek için. */
+function RetryNote({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-3">
+      <ErrorNote message={message} />
+      <Button variant="secondary" onClick={onRetry}>
+        Tekrar dene
+      </Button>
     </div>
   );
 }
@@ -177,12 +194,16 @@ function DocumentRow({
   const [open, setOpen] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const status = DOCUMENT_STATUS[doc.status];
+  const panelId = `chunks-${doc.id}`;
 
   async function togglePreview() {
     if (open) {
       setOpen(false);
       return;
     }
+    // Önceki denemenin hatası ekranda kalmasın: bu kez istek başarılıyken de
+    // panelin altında durup bir şey bozukmuş gibi görünüyordu.
+    setPreviewError(null);
     if (chunks === null) {
       try {
         setChunks(
@@ -217,16 +238,25 @@ function DocumentRow({
             <Button
               variant="ghost"
               aria-expanded={open}
+              aria-controls={open ? panelId : undefined}
               onClick={togglePreview}
             >
               {open ? "Gizle" : "İçerik önizle"}
             </Button>
           )}
           {isInstructor && (
-            <DeleteDocumentButton
-              courseId={courseId}
-              doc={doc}
-              onDeleted={onDeleted}
+            <ConfirmAction
+              label="Sil"
+              confirmLabel="Evet, sil"
+              busyLabel="Siliniyor…"
+              question="Materyal ve tüm parçaları silinecek."
+              ariaLabel={`${doc.file_name} dosyasını sil`}
+              onConfirm={async () => {
+                await api.delete(`/courses/${courseId}/documents/${doc.id}`);
+                // Tam sayfa yenileme yerine listeyi tazele: sayfa konumu ve
+                // açık önizlemeler korunur, ağ trafiği tek isteğe iner.
+                onDeleted();
+              }}
             />
           )}
         </div>
@@ -239,12 +269,13 @@ function DocumentRow({
       )}
 
       {previewError && (
-        <p className="border-t border-border px-6 py-2 text-sm text-danger">
-          {previewError}
-        </p>
+        // Ortak bileşen: `role="alert"` ve ton tek yerden gelir.
+        <div className="border-t border-border px-6 py-2">
+          <ErrorNote message={previewError} />
+        </div>
       )}
 
-      {open && chunks && <ChunkPreviewList chunks={chunks} />}
+      {open && chunks && <ChunkPreviewList id={panelId} chunks={chunks} />}
     </li>
   );
 }
@@ -254,16 +285,16 @@ function DocumentRow({
  * hangi sayfadan geldiği yazar. Atıflar bu metadata'dan üretilir, model
  * metninden değil.
  */
-function ChunkPreviewList({ chunks }: { chunks: ChunkPreview[] }) {
+function ChunkPreviewList({ id, chunks }: { id: string; chunks: ChunkPreview[] }) {
   if (chunks.length === 0) {
     return (
-      <p className="border-t border-border bg-bg px-6 py-4 text-sm text-fg-muted">
+      <p id={id} className="border-t border-border bg-bg px-6 py-4 text-sm text-fg-muted">
         Bu belgeden parça çıkarılmamış.
       </p>
     );
   }
   return (
-    <div className="space-y-2 border-t border-border bg-bg px-6 py-4">
+    <div id={id} className="space-y-2 border-t border-border bg-bg px-6 py-4">
       {chunks.slice(0, 5).map((chunk) => (
         <div key={chunk.id} className="border-l-2 border-border-strong py-1 pl-4">
           <p className="text-xs text-fg-subtle">
@@ -284,63 +315,5 @@ function ChunkPreviewList({ chunks }: { chunks: ChunkPreview[] }) {
         </p>
       )}
     </div>
-  );
-}
-
-function DeleteDocumentButton({
-  courseId,
-  doc,
-  onDeleted,
-}: {
-  courseId: string;
-  doc: CourseDocument;
-  onDeleted: () => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  if (!confirming) {
-    return (
-      <Button
-        variant="ghost"
-        aria-label={`${doc.file_name} dosyasını sil`}
-        onClick={() => setConfirming(true)}
-      >
-        Sil
-      </Button>
-    );
-  }
-
-  return (
-    <span className="flex items-center gap-2">
-      <span className="hidden text-xs text-fg-muted sm:inline">
-        Materyal ve tüm parçaları silinecek.
-      </span>
-      <Button
-        variant="danger"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setError(null);
-          try {
-            await api.delete(`/courses/${courseId}/documents/${doc.id}`);
-            // Tam sayfa yenileme yerine listeyi tazele: sayfa konumu ve açık
-            // önizlemeler korunur, ağ trafiği tek isteğe iner.
-            onDeleted();
-          } catch (e) {
-            setError(errorMessage(e, "Silinemedi."));
-            setBusy(false);
-            setConfirming(false);
-          }
-        }}
-      >
-        {busy ? "Siliniyor…" : "Evet, sil"}
-      </Button>
-      <Button variant="ghost" onClick={() => setConfirming(false)}>
-        Vazgeç
-      </Button>
-      {error && <span className="text-xs text-danger">{error}</span>}
-    </span>
   );
 }

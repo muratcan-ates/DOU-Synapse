@@ -15,7 +15,9 @@
   /* Sıcak monokrom kanvas (minimalist-ui): saf beyaz değil, kemik. */
   --fg: #1c1917;
   --fg-muted: #57534e;
-  --fg-subtle: #8a8580;
+  /* #8a8580 idi: --bg üstünde 3.53:1 ile AA'nın altındaydı ve 29 yerde bilgi
+     taşıyan 12px metin bu token'la yazılıyor. Ölçüm: scripts/contrast.mjs. */
+  --fg-subtle: #78716c;
   --bg: #fbfbfa;
   --surface: #ffffff;
   --border: rgba(28, 25, 23, 0.08);
@@ -41,7 +43,9 @@
 
     --fg: #f5f4f2;
     --fg-muted: #b0aaa4;
-    --fg-subtle: #7d7873;
+    /* #7d7873 idi: --surface üstünde 3.76:1 — AA'nın altı. Koyu temada en
+       kötü zemin --surface'tır (daha açık), eşik ona göre kurulur. */
+    --fg-subtle: #8f8a84;
     --bg: #191715;
     --surface: #211f1c;
     --border: rgba(245, 244, 242, 0.08);
@@ -80,6 +84,28 @@
 
   --font-sans: var(--font-geist), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /*
+   * Tipografi ölçeği — DESIGN.md §Typography (1.250 major third, 16px taban).
+   * Bu adımlar tanımlanmazsa `text-lg` / `text-2xl` Tailwind varsayılanına düşer
+   * ve belgedeki ölçek yalnız kâğıtta kalır. Ham px: 12 · 14 · 16 · 20 · 25 ·
+   * 31.25 · 39.06. `text-4xl` ve üstü bilerek tanımlanmadı: ölçek ürün metnini
+   * kapsar, giriş ekranı başlığı ölçek dışı display boyudur (DESIGN.md'de yazılı).
+   */
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: 1rem; /* 16 */
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--line-height: 1.25rem; /* 20 */
+  --text-base: 1rem; /* 16px */
+  --text-base--line-height: 1.625rem; /* 26 — uzun okuma için bilinçli yüksek */
+  --text-lg: 1.25rem; /* 20px */
+  --text-lg--line-height: 1.75rem; /* 28 */
+  --text-xl: 1.5625rem; /* 25px */
+  --text-xl--line-height: 2rem; /* 32 */
+  --text-2xl: 1.9375rem; /* 31px */
+  --text-2xl--line-height: 2.375rem; /* 38 */
+  --text-3xl: 2.4375rem; /* 39px */
+  --text-3xl--line-height: 2.75rem; /* 44 */
 }
 
 body {
@@ -123,16 +149,12 @@ body {
   }
 }
 
-/* Ambiyans: giriş ekranı arkasında tek, sabit, çok soluk ışık lekesi. */
-.ambient {
-  background:
-    radial-gradient(560px 380px at 18% 22%, rgba(197, 12, 31, 0.05), transparent 68%),
-    radial-gradient(480px 340px at 85% 78%, rgba(197, 12, 31, 0.03), transparent 70%);
-}
-@media (prefers-color-scheme: dark) {
-  .ambient {
-    background:
-      radial-gradient(560px 380px at 18% 22%, rgba(255, 107, 120, 0.05), transparent 68%),
-      radial-gradient(480px 340px at 85% 78%, rgba(255, 107, 120, 0.03), transparent 70%);
-  }
-}
+/*
+ * `.ambient` kaldırıldı (9 Ağustos). İki radial-gradient uyguluyordu; DESIGN.md
+ * "Gradyan (zemin, metin, buton — hiçbiri)" diyor ve gradyanlar marka kırmızısının
+ * saydam tonuydu — kırmızının üç meşru kullanımı (birincil eylem, aktif navigasyon,
+ * marka işareti) arasında dekoratif zemin lekesi yok. Giriş ekranındaki panel ayrımı
+ * zaten `border-l` + `bg-surface/60` ile kuruluyor; sınıf silinince ekran düz --bg
+ * üstünde kalır. app/page.tsx hâlâ atıl `ambient` sınıf adını taşıyor, o dosyanın
+ * sahibi temizlemeli.
+ */
