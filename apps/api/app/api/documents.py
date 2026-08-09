@@ -23,16 +23,12 @@ async def _trigger_worker() -> None:
     """Worker'ı bir tur çalıştırır.
 
     Yükleme yanıtı istemciye döndükten sonra çalışır; böylece kullanıcı belgenin
-    işlenmesini beklemez. Bulutta bu tetik worker servisine HTTP çağrısına dönüşecek
-    (ARCHITECTURE.md §1) — çağıran kod aynı kalır.
+    işlenmesini beklemez. Bulutta bu tetik worker servisine HTTP çağrısına dönüşür
+    (ARCHITECTURE.md §1) — çağıran kod aynı kalır, seçimi `trigger_drain` yapar.
     """
-    from app import worker
+    from app.api.internal import trigger_drain
 
-    try:
-        await worker.drain()
-    except Exception:
-        # İş kuyrukta kalır; bir sonraki tetik veya döngü onu alır.
-        logger.exception("worker tetiklenemedi")
+    await trigger_drain()
 
 
 @router.post("", response_model=DocumentUploadOut, status_code=status.HTTP_202_ACCEPTED)
