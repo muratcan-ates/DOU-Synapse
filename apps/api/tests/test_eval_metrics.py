@@ -428,3 +428,34 @@ class TestRateLimitBackoff:
         with pytest.raises(BackendUnavailable):
             await runner.run(missing, "T-3")
         assert runner.stats.retries == 0
+
+
+class TestLabelAgreement:
+    def test_ham_uyum_orani(self) -> None:
+        first = ["destekleniyor", "kısmen", "desteklenmiyor", "destekleniyor"]
+        second = ["destekleniyor", "destekleniyor", "desteklenmiyor", "destekleniyor"]
+        result = metrics.label_agreement(first, second)
+        assert (result.n, result.agreed) == (4, 3)
+        assert result.raw == pytest.approx(0.75)
+
+    def test_tam_uyumda_kappa_tanimsiz_kalabilir(self) -> None:
+        """Herkes her şeye aynı etiketi verdiyse şans uyumu 1'dir; kappa anlamsızlaşır.
+
+        Ham uyum yine de raporlanır — tanımsız bir kappa ölçülmüş uyumu geçersiz kılmaz.
+        """
+        labels = ["destekleniyor"] * 5
+        result = metrics.label_agreement(labels, labels)
+        assert result.raw == pytest.approx(1.0)
+        assert result.kappa is None
+
+    def test_kappa_sans_uyumunu_duser(self) -> None:
+        first = ["a", "a", "b", "b", "a", "b"]
+        second = ["a", "b", "b", "a", "a", "b"]
+        result = metrics.label_agreement(first, second)
+        assert result.raw == pytest.approx(4 / 6)
+        assert result.kappa is not None
+        assert result.kappa < result.raw
+
+    def test_esit_olmayan_uzunluk_reddedilir(self) -> None:
+        with pytest.raises(ValueError, match="aynı sayıda"):
+            metrics.label_agreement(["a"], ["a", "b"])

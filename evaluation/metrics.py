@@ -336,3 +336,53 @@ def mcnemar(baseline: Sequence[bool], candidate: Sequence[bool]) -> McNemarResul
         only_b_correct=only_b,
         p_value=min(1.0, 2 * tail),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class AgreementResult:
+    """İki bağımsız etiketleyicinin uyumu (T047).
+
+    `raw` zorunlu, `kappa` bonustur. Ham uyum, ÇÖZÜM ÖNCESİ hâliyle raporlanır:
+    anlaşmazlıklar tartışılıp karara bağlanır ama uyum oranı tartışmadan önceki
+    etiketlerden hesaplanır. Sonrasından hesaplanan bir uyum her zaman %100 çıkar
+    ve hiçbir şey ölçmez.
+    """
+
+    n: int
+    agreed: int
+    raw: float
+    kappa: float | None
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "n": self.n,
+            "agreed": self.agreed,
+            "raw_agreement": self.raw,
+            "cohens_kappa": self.kappa,
+        }
+
+
+def label_agreement(first: Sequence[str], second: Sequence[str]) -> AgreementResult:
+    """Ham uyum oranı ve (mümkünse) Cohen's kappa.
+
+    Kappa, şansa bağlı uyumu düşer; iki etiketleyici de her şeye aynı etiketi
+    verdiğinde beklenen uyum 1'e gider ve kappa tanımsız kalır — bu durumda None
+    döner. Ham uyumu yine de raporlarız: tanımsız bir kappa, ölçülmüş bir uyumu
+    geçersiz kılmaz.
+    """
+    if len(first) != len(second):
+        raise ValueError("İki etiketleyici aynı sayıda cevabı etiketlemeli.")
+    if not first:
+        raise ValueError("Boş örneklemde uyum hesaplanamaz.")
+
+    n = len(first)
+    agreed = sum(1 for a, b in zip(first, second, strict=True) if a == b)
+    raw = agreed / n
+
+    labels = set(first) | set(second)
+    expected = sum(
+        (sum(1 for a in first if a == label) / n) * (sum(1 for b in second if b == label) / n)
+        for label in labels
+    )
+    kappa = None if expected >= 1.0 else (raw - expected) / (1 - expected)
+    return AgreementResult(n=n, agreed=agreed, raw=raw, kappa=kappa)
