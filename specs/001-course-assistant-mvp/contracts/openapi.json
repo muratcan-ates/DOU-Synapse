@@ -784,7 +784,7 @@
           "assessment"
         ],
         "summary": "Generate Questions",
-        "description": "Materyalden soru üretir. Üretilen her soru `draft`'tır (FR-023).\n\nEğitmen çerçeveyi kurar: konu, tip, biçim ve isterse örnek sorular. Sistem o\nüslupta üretir ama onay vermez — bu uçtan `approved` çıkmaz.",
+        "description": "Materyalden soru üretir. Üretilen her soru `draft`'tır (FR-023).\n\nEğitmen çerçeveyi kurar: konu, tip, biçim ve isterse örnek sorular. Sistem o\nüslupta üretir ama onay vermez — bu uçtan `approved` çıkmaz.\n\nYanıt `201` değil `200`: bu uç N kaynak yaratan bir toplu iştir ve kaçının\nyazıldığı gövdedeki raporda durur. Hiçbiri şemadan geçmediğinde `201 Created`\ndönmek, yaratılmamış bir şeyi yaratıldı diye bildirmek olurdu.",
         "operationId": "generate_questions_courses__course_id__questions_generate_post",
         "parameters": [
           {
@@ -811,7 +811,7 @@
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {

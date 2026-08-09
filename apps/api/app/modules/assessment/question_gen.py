@@ -24,16 +24,20 @@ uymayan sorular sessizce düşer, geçerli olanlar yazılır ve kaçının düş
 
 Bağımlılık notu: LLM erişimi için `contracts.Generator` KULLANILAMAZ; o protokol
 bir sohbet cevabı (`GeneratedAnswer`) üretir, burada gereken ise şemalı JSON'dur.
-Bu yüzden aşağıda dar bir `StructuredCompletion` protokolü tanımlandı. Şerit 2'nin
-servisi bu imzayı karşıladığında `api/questions.py`'deki sağlayıcı tek satırla
-gerçeğe bağlanır (bkz. docs/team/parallel/KARARLAR_SERIT4.md §3).
+Bu yüzden aşağıda dar bir `StructuredCompletion` protokolü ve Şerit 2'nin
+`LlmClient`'ını ona çeviren küçük bir adaptör var. Retrieval tarafında sapma yok:
+`contracts.Retriever` doğrudan kullanılıyor.
+
+Sağlayıcılar `resolve_retriever` / `resolve_completion` ile çözümlenir — önce
+testlerin bağladığı sahteler, sonra gerçek modüller. Gerçek modüller ağaçta yoksa
+uç 503 döner; sahte soru üretilmez (bkz. docs/team/parallel/KARARLAR_SERIT4.md §3).
 """
 
 from __future__ import annotations
 
 import json
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import UUID
@@ -73,54 +77,98 @@ class StructuredCompletion(Protocol):
     async def complete(self, *, system: str, user: str) -> str: ...
 
 
-class ProviderUnavailableError(AppError):
-    """Retrieval ya da LLM sağlayıcısı bağlı değil.
+#: Retrieval oturuma bağlıdır (`HybridRetriever(session)`), yani süreç ömürlü tek
+#: bir nesne olamaz; kayıt bir fabrika tutar.
+type RetrieverFactory = Callable[[AsyncSession], Retriever]
 
-    Şerit 1 ve 2 `main`'e inene kadar soru ÜRETİMİ bu hatayı döner. Sahte bir
-    üretici koymak, jüriye ve öğrenciye materyalden gelmemiş soru göstermek
-    demek olurdu; fail-closed davranış 503'tür (Anayasa IV). Havuz uçları,
-    MCQ/kısa cevap puanlaması ve sınav akışı bu hatadan etkilenmez.
+
+class ProviderUnavailableError(AppError):
+    """Retrieval ya da LLM sağlayıcısı çözümlenemedi.
+
+    Sahte bir üretici koyup soru uydurmaktansa uç kapanır (Anayasa IV). Havuz
+    uçları, MCQ/kısa cevap puanlaması ve sınav akışı bu hatadan etkilenmez.
     """
 
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     code = "provider_unavailable"
 
 
+class _GenerationCompletion:
+    """Şerit 2'nin `LlmClient`'ını `StructuredCompletion` yüzeyine çevirir.
+
+    İki protokol de "system + user ver, metin al" diyor; aradaki tek fark
+    `LlmRequest` zarfı. Adaptör burada duruyor çünkü `app/modules/generation/`
+    Şerit 2'nin dosyası ve oraya Şerit 4 kod yazmaz.
+    """
+
+    def __init__(self, client: object) -> None:
+        self._client = client
+
+    async def complete(self, *, system: str, user: str) -> str:
+        from app.modules.generation.llm import LlmRequest
+
+        completion = await self._client.complete(  # type: ignore[attr-defined]
+            LlmRequest(system=system, user=user, json_output=True)
+        )
+        return str(completion.text)
+
+
 #: Süreç ömrü boyunca geçerli sağlayıcı kaydı. Bir DI konteyneri değil, tek
-#: kancadır: Şerit 1/2 indiğinde uygulama açılışında bir kez doldurulur, testlerde
-#: sahte uygulamalarla değiştirilir. Yüzey küçük tutuldu ki gerçek DI gerektiğinde
-#: sökülmesi kolay olsun.
-_retriever: Retriever | None = None
+#: kancadır: testler sahte uygulamalarla doldurur, üretimde boş kalır ve aşağıdaki
+#: çözümleyiciler gerçek modülleri bulur.
+_retriever_factory: RetrieverFactory | None = None
 _completion: StructuredCompletion | None = None
 
 
 def set_providers(
-    *, retriever: Retriever | None = None, completion: StructuredCompletion | None = None
+    *,
+    retriever_factory: RetrieverFactory | None = None,
+    completion: StructuredCompletion | None = None,
 ) -> None:
     """Sağlayıcıları bağlar. `None` geçilen sağlayıcı olduğu gibi bırakılır."""
-    global _retriever, _completion
-    if retriever is not None:
-        _retriever = retriever
+    global _retriever_factory, _completion
+    if retriever_factory is not None:
+        _retriever_factory = retriever_factory
     if completion is not None:
         _completion = completion
 
 
 def reset_providers() -> None:
-    global _retriever, _completion
-    _retriever = _completion = None
+    global _retriever_factory, _completion
+    _retriever_factory = _completion = None
 
 
-def get_retriever() -> Retriever | None:
-    return _retriever
+def resolve_retriever(session: AsyncSession) -> Retriever | None:
+    """Kayıtlı fabrika varsa ondan, yoksa Şerit 1'in gerçek uygulamasından.
+
+    İçe aktarma **tembel ve isteğe bağlıdır**: Şerit 1 ile Şerit 4 paralel
+    geliştirildi ve `main`'e hangisinin önce ineceği garanti değil. Modül
+    ağaçta yoksa None döner ve uç 503 verir; geldiği anda hiçbir uç
+    değişmeden çalışmaya başlar. Modüller `main`'de buluştuğunda bu
+    `try/except` doğrudan import'a sadeleştirilmelidir — geçici bir dikiştir.
+    """
+    if _retriever_factory is not None:
+        return _retriever_factory(session)
+    try:
+        from app.modules.retrieval.service import HybridRetriever
+    except ImportError:
+        return None
+    return HybridRetriever(session)
 
 
-def get_completion() -> StructuredCompletion | None:
-    """Bağlıysa LLM yüzeyi, değilse None.
+def resolve_completion() -> StructuredCompletion | None:
+    """Bağlıysa LLM yüzeyi, değilse Şerit 2'nin istemcisi, o da yoksa None.
 
     Çağıranlar `None`'ı hata saymaz: puanlama LLM'siz tipleri yine değerlendirir,
     yalnız LLM gerektiren tipler "tamamlanamadı" der (FR-020).
     """
-    return _completion
+    if _completion is not None:
+        return _completion
+    try:
+        from app.modules.generation.llm import build_llm_client
+    except ImportError:
+        return None
+    return _GenerationCompletion(build_llm_client())
 
 
 # ---------------------------------------------------------------------------
@@ -362,29 +410,48 @@ def extract_json_object(raw: str) -> dict[str, Any]:
     return parsed
 
 
-def _drafts_from_response(raw: str, question_type: QuestionType) -> tuple[list[_Draft], list[str]]:
+@dataclass(slots=True)
+class _AttemptResult:
+    """Tek bir model çağrısının sonucu.
+
+    Soru düzeyindeki redler (`item_reasons`) ile yanıt düzeyindeki hatalar
+    (`envelope_reason`) AYRI tutulur ve bu ayrım kozmetik değildir: SC-009
+    "şema geçerliliği" oranının paydası **modelin döndürdüğü soru sayısıdır.**
+    Ayrıştırılamayan bir yanıtı "iki soru geldi, ikisi de düştü" diye saymak
+    oranı uydurulmuş bir paydayla raporlamak olurdu (Anayasa III).
+    """
+
+    drafts: list[_Draft] = field(default_factory=list)
+    item_reasons: list[str] = field(default_factory=list)
+    envelope_reason: str | None = None
+
+    @property
+    def returned(self) -> int:
+        return len(self.drafts) + len(self.item_reasons)
+
+
+def _drafts_from_response(raw: str, question_type: QuestionType) -> _AttemptResult:
     """Ham yanıttan geçerli taslakları çıkarır; her reddin sebebini de döndürür."""
     model = _DRAFT_MODELS[question_type]
     try:
         envelope = extract_json_object(raw)
     except (json.JSONDecodeError, ValueError):
-        return [], ["yanıt JSON olarak ayrıştırılamadı"]
+        return _AttemptResult(envelope_reason="yanıt JSON olarak ayrıştırılamadı")
 
     items = envelope.get("questions")
     if not isinstance(items, list):
-        return [], ["yanıtta 'questions' dizisi yok"]
+        return _AttemptResult(envelope_reason="yanıtta 'questions' dizisi yok")
 
-    drafts: list[_Draft] = []
-    reasons: list[str] = []
+    result = _AttemptResult()
     for item in items:
         if not isinstance(item, dict):
-            reasons.append("şema: soru bir nesne değil")
+            result.item_reasons.append("şema: soru bir nesne değil")
             continue
         try:
-            drafts.append(model.model_validate(item))
+            result.drafts.append(model.model_validate(item))
         except ValidationError as exc:
-            reasons.append(f"şema: {exc.error_count()} alan hatalı")
-    return drafts, reasons
+            result.item_reasons.append(f"şema: {exc.error_count()} alan hatalı")
+    return result
 
 
 def _payload_from_draft(
@@ -452,7 +519,7 @@ async def generate_questions(
 
     valid_ids = {chunk.chunk_id for chunk in chunks}
 
-    drafts, reasons = await _request_drafts(
+    attempt, attempt_reasons = await _request_drafts(
         completion,
         topic_name=topic.name,
         question_type=question_type,
@@ -461,10 +528,13 @@ async def generate_questions(
         answer_format=answer_format,
         example_questions=example_questions,
     )
-    report.returned = len(drafts) + len(reasons)
-    report.rejection_reasons.extend(reasons)
+    # Payda yalnız modelin gerçekten döndürdüğü sorulardır; ayrıştırılamayan bir
+    # yanıt sayıya değil, sebep listesine yazılır.
+    report.returned = attempt.returned
+    report.rejection_reasons.extend(attempt_reasons)
+    report.rejection_reasons.extend(attempt.item_reasons)
 
-    for draft in drafts:
+    for draft in attempt.drafts:
         # 1. Kaynak uydurma kontrolü — düzeltme yok, atma var (Anayasa I).
         if draft.source_chunk_id not in valid_ids:
             report.rejection_reasons.append("kaynak uydurma: source_chunk_id retrieve edilmedi")
@@ -526,13 +596,15 @@ async def _request_drafts(
     chunks: Sequence[RetrievedChunk],
     answer_format: AnswerFormat | None,
     example_questions: Sequence[str],
-) -> tuple[list[_Draft], list[str]]:
+) -> tuple[_AttemptResult, list[str]]:
     """Modeli çağırır; hiç geçerli taslak çıkmazsa BİR KEZ yeniden dener (FR-020).
 
-    Yeniden deneme yalnız "hiçbiri geçmedi" durumunda yapılır. Kısmen geçen bir
-    turu tekrarlamak, geçenleri iki kez yazma riski getirirdi.
+    İki değer döner: kullanılacak deneme sonucu ve **yanıt düzeyindeki** hata
+    sebepleri. Yeniden deneme yalnız "hiçbiri geçmedi" durumunda yapılır; kısmen
+    geçen bir turu tekrarlamak, geçenleri iki kez yazma riski getirirdi.
     """
-    reasons: list[str] = []
+    envelope_reasons: list[str] = []
+    last = _AttemptResult()
     for attempt in range(2):
         prompt = build_prompt(
             topic_name=topic_name,
@@ -547,12 +619,13 @@ async def _request_drafts(
             raw = await completion.complete(system=_SYSTEM_PROMPT, user=prompt)
         except Exception:  # sağlayıcı hatası üretimi düşürür, isteği patlatmaz
             logger.exception("soru üretiminde sağlayıcı hatası")
-            reasons.append("sağlayıcı yanıt vermedi")
+            envelope_reasons.append("sağlayıcı yanıt vermedi")
             continue
 
-        drafts, attempt_reasons = _drafts_from_response(raw, question_type)
-        if drafts:
-            return drafts, reasons + attempt_reasons
-        reasons.extend(attempt_reasons)
+        last = _drafts_from_response(raw, question_type)
+        if last.envelope_reason is not None:
+            envelope_reasons.append(last.envelope_reason)
+        if last.drafts:
+            return last, envelope_reasons
 
-    return [], reasons
+    return last, envelope_reasons

@@ -238,17 +238,45 @@ class StructuredCompletion(Protocol):
     async def complete(self, *, system: str, user: str) -> str: ...
 ```
 
-**Şerit 2'den istenen:** LLM servisiniz bu imzayı karşılayan bir sınıf/fonksiyon
-dışa versin (litellm sarmalayıcınızın üzerine 5 satır). O gelince
-`app/api/questions.py`'deki `get_structured_completion()` ve
-`get_retriever()` sağlayıcıları tek satırla gerçek uygulamaya bağlanır; sahte
-uygulamalar testlerde kalır.
+**Bağlantı yapıldı — bekleyen bir iş kalmadı.** Şerit 2'nin `LlmClient`'ı
+(`complete(LlmRequest) -> LlmCompletion`) bu imzaya `_GenerationCompletion`
+adaptörüyle çevriliyor; Şerit 1'in `HybridRetriever(session)`'ı doğrudan
+kullanılıyor. Adaptör `question_gen.py` içinde, çünkü `app/modules/generation/`
+Şerit 2'nin dosyası.
 
-**Bugünkü davranış:** ikisi de bağlı değilken `POST /questions/generate`
-**503 + Türkçe mesaj** döner (fail-closed; sahte soru üretilmez). Havuz uçları,
-puanlama ve sınav akışının tamamı bu bağımlılıktan **etkilenmez** ve bugün çalışır.
+Çözümleme sırası (`resolve_retriever` / `resolve_completion`): önce testlerin
+bağladığı sahteler, sonra gerçek modüller, ikisi de yoksa `None` → uç **503**.
+
+**Geçici dikiş, bilerek:** gerçek modüllerin import'u `try/except ImportError`
+içinde. Sebep, Şerit 1/2/4'ün `main`'e hangi sırayla ineceğinin garanti olmaması.
+Üçü `main`'de buluştuğunda bu iki `try/except` **düz import'a sadeleşmeli** —
+dosyada da yazılı.
+
+**Gerçek modüllerle doğrulandı** (üç dal geçici bir dalda birleştirilip koşuldu,
+341 test yeşil):
+
+```
+RETRIEVER  -> HybridRetriever
+COMPLETION -> _GenerationCompletion
+RETRIEVAL  -> 2 chunk bulundu
+UC         -> HTTP 200
+RAPOR      -> requested 2 · returned 0 · accepted 0 ·
+              sebep: "yanıtta 'questions' dizisi yok" (x2)
+```
+
+Yani hat uçtan uca bağlı. **Soru üretilmemesinin tek sebebi API anahtarının
+olmaması:** anahtar yokken `build_llm_client()` deterministik sahte sağlayıcıya
+düşüyor, o da sohbet cevabı üretmek için yazıldığı için soru şemasını
+karşılamıyor. Bu fail-closed davranıştır — uydurma soru havuza girmiyor — ama
+`07_SERIT_RAPORLARI.md §7`'deki "gerçek LLM çağrısı yapılamadı" kalemi soru
+üretimini de kapsıyor: **anahtar geldiğinde tek gerçek üretim turu koşulmalı.**
 
 `contracts.py`'ye bir alan eklenmesi gerekmedi.
+
+**Uç değişikliği:** `POST /questions/generate` artık `201` değil **`200`** döner.
+N kaynak yaratan bir toplu iş bu; kaçının yazıldığı gövdedeki raporda. Hiçbiri
+şemadan geçmediğinde `201 Created` dönmek yaratılmamış bir şeyi bildirmek olurdu.
+Sözleşme yeniden export edildi.
 
 ### 4. Lider devri §6 — "yazma ucu yanıttan sonra commit ediyor" · ölçüldü, teşhis düzeltildi
 

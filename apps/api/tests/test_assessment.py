@@ -720,6 +720,60 @@ class TestQuestionGeneration:
         assert completion.calls == 2, "şema tutmadığında bir kez yeniden denenmeli"
         assert any("şema" in reason for reason in report.rejection_reasons)
 
+    async def test_sc009_paydasi_yalniz_modelin_dondurdugu_sorulari_sayar(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Ayrıştırılamayan yanıt "iki soru geldi, ikisi düştü" diye sayılmaz.
+
+        SC-009 şema geçerliliği `accepted / returned` oranıdır; paydaya hiç
+        gelmemiş soruları yazmak oranı uydurulmuş bir sayıyla raporlamak olur.
+        """
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        course_id = await _create_course(client, ayse, "COME301")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        chunk_ids = await seed_chunks(
+            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
+        )
+        chunks = retrieved(chunk_ids, DEADLOCK_TEXTS)
+
+        async with rls_session(ayse_id) as session:
+            topic = await _load_topic(session, topic_id)
+            # 1. Model hiç soru döndürmedi: yanıt bile ayrıştırılamadı.
+            unparseable = await question_gen.generate_questions(
+                session,
+                course_id=UUID(course_id),
+                topic=topic,
+                question_type=QuestionType.MCQ,
+                count=2,
+                created_by=ayse_id,
+                retriever=FakeRetriever(chunks),
+                completion=FakeCompletion("elbette, işte sorular:"),
+            )
+            # 2. Model iki soru döndürdü, biri şemadan geçti.
+            half_valid = json.dumps(
+                {
+                    "questions": [
+                        json.loads(_mcq_response(chunk_ids[0]))["questions"][0],
+                        {"stem": "eksik soru"},
+                    ]
+                }
+            )
+            mixed = await question_gen.generate_questions(
+                session,
+                course_id=UUID(course_id),
+                topic=topic,
+                question_type=QuestionType.MCQ,
+                count=2,
+                created_by=ayse_id,
+                retriever=FakeRetriever(chunks),
+                completion=FakeCompletion(half_valid),
+            )
+
+        assert (unparseable.returned, unparseable.accepted, unparseable.rejected) == (0, 0, 0)
+        assert len(unparseable.rejection_reasons) == 2, "iki deneme de sebebini bırakmalı"
+        assert (mixed.returned, mixed.accepted, mixed.rejected) == (2, 1, 1)
+
     async def test_uydurulmus_kaynak_sorusu_havuza_girmez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
@@ -773,10 +827,16 @@ class TestQuestionGeneration:
         assert report.accepted == 0
         assert completion.calls == 0, "kaynak yoksa modele hiç gidilmez"
 
-    async def test_saglayici_baglanmadan_uretim_uctan_reddedilir(
-        self, client: AsyncClient, users: UserFactory
+    async def test_saglayici_cozumlenemezse_uretim_uctan_reddedilir(
+        self, client: AsyncClient, users: UserFactory, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Fail-closed: sahte soru üretmektense 503 dönülür (Anayasa IV)."""
+        """Fail-closed: sahte soru üretmektense 503 dönülür (Anayasa IV).
+
+        Çözümleyiciler doğrudan susturuluyor; test "Şerit 2 henüz inmedi"
+        varsayımına değil, sözleşmenin kendisine bakıyor. Böylece modüller
+        `main`'e indiğinde bu test anlamını ve yeşilliğini korur.
+        """
+        monkeypatch.setattr(question_gen, "resolve_completion", lambda: None)
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         course_id = await _create_course(client, ayse, "COME301")
         topic_id = await create_topic(client, ayse, course_id, "Deadlock")
@@ -789,6 +849,43 @@ class TestQuestionGeneration:
 
         assert response.status_code == 503
         assert response.json()["error"]["code"] == "provider_unavailable"
+
+    async def test_uc_uctan_uca_uretir_ve_havuza_draft_yazar(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Sağlayıcılar bağlıyken uç gerçekten soru yazar ve öğrenciye göstermez."""
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        burak_id = await users.create("burak@dogus.edu.tr")
+        course_id = await _create_course(client, ayse, "COME301")
+        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        chunk_ids = await seed_chunks(
+            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
+        )
+        chunks = retrieved(chunk_ids, DEADLOCK_TEXTS)
+        question_gen.set_providers(
+            retriever_factory=lambda _session: FakeRetriever(chunks),
+            completion=FakeCompletion(_mcq_response(chunk_ids[0], count=2)),
+        )
+        try:
+            response = await client.post(
+                f"/courses/{course_id}/questions/generate",
+                json={"topic_id": str(topic_id), "question_type": "mcq", "count": 2},
+                headers=ayse,
+            )
+        finally:
+            question_gen.reset_providers()
+
+        # 201 değil 200: toplu iş, kaçının yazıldığı raporda.
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["accepted"] == 2
+        assert body["rejected"] == 0
+        assert {question["status"] for question in body["questions"]} == {"draft"}
+
+        student = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
+        assert student.json() == [], "yeni üretilen sorular onaysız görünmemeli"
 
 
 async def _load_topic(session: Any, topic_id: UUID) -> Any:
