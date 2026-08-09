@@ -25,10 +25,14 @@ açtığı soruyu kapatır:
 | 3 | Ödev sorusu sorulur | Cevap yerine **Sokratik merdiven** | 90 sn |
 | 4 | "Sadece söyle" denir | Merdiven **ilerlemez** | 60 sn |
 | 5 | Ders dışı soru sorulur | **Nazik ret — bu bir özellik** | 60 sn |
-| 6 | Sınav provası + "neden yanlış" | Öğrenme döngüsü kapanır | 120 sn |
+| 6 | Sınav provası + "neden yanlış" | Öğrenme döngüsü kapanır | 120 sn ⚠️ |
 
 En özgün an **5. sahnedir**: bilmediğini söyleyebilen asistan. Bunu bir eksiklik gibi değil,
 **tasarım kararı** olarak anlatın.
+
+⚠️ **6. sahne bugün arayüzde gösterilemez** — backend'i çalışıyor, ekranı hâlâ tasarım
+önizlemesi. Ayrıntı ve yedek anlatım [Sahne 6](#sahne-6--sınav-provası-ve-neden-yanlış-120-sn)
+başlığında. Ekranlar sunuma kadar bağlanmazsa demo **5 sahne / ~7 dakika** olur.
 
 ---
 
@@ -223,6 +227,32 @@ kanıt kapısı dil modelinden önce kapanıyor. Anlatırken "kapsam dışı old
 ---
 
 ## Sahne 6 — Sınav provası ve "neden yanlış" (120 sn)
+
+> ### ⚠️ Bu sahne bugün ARAYÜZDE GÖSTERİLEMEZ
+>
+> 9 Ağustos itibarıyla **soru havuzu, sınav provası ve ilerleme ekranları hâlâ tasarım
+> önizlemesidir**: örnek veri gösteriyorlar ve üstlerinde "Tasarım önizlemesi: … onay
+> kararı kaydedilmez" şeridi var. Backend uçları **çalışıyor ve bugün uçtan uca
+> doğrulandı** (aşağıdaki ölçüm), yalnız ekranlar henüz bağlanmadı. Bağlama işi liderde.
+>
+> **Sunumdan önce ekranlar bağlanmazsa bu sahne atlanır.** Önizleme şeridi taşıyan bir
+> ekranı jüriye çalışan ürün gibi göstermek, runbook'un [§6 Ne gösterilmeyecek](runbook.md#6-ne-gösterilmeyecek)
+> maddesinin tam olarak yasakladığı şeydir.
+>
+> **Backend'in bugün ölçülen davranışı** (`curl`, COME 331, 4 onaylı MCQ):
+>
+> | Kontrol | Sonuç |
+> |---|---|
+> | Öğrenci taslak soruları görüyor mu | **Hayır** — havuz boş döndü |
+> | Onaysızken sınav başlatılabiliyor mu | **Hayır** — "Bu derste henüz onaylanmış soru yok" |
+> | Öğrenciye `answer_key` gidiyor mu | **Hayır** — beyaz liste eliyor |
+> | Yanlış cevapta "neden yanlış" | **Evet** — `04-synchronization.pdf · Sayfa 3` + alıntı |
+> | `exam` modunda ipucu | **Reddediliyor**; `practice` modunda veriliyor |
+> | Sınav sonucu | skor 50.0 · 4 cevap · 0 boş · 0 değerlendirilemeyen |
+> | Konu bazlı mastery | 0.51 · seviye `medium` · 4 cevap |
+>
+> Yani anlatılacak şey **var ve doğru**; gösterilecek ekran yok. Ekranlar bağlanırsa
+> aşağıdaki adımlar olduğu gibi geçerlidir.
 
 **Ön koşul:** derste **onaylanmış soru** olmalı. Soru üretimi gerçek LLM anahtarı ister;
 anahtar yoksa sorular T-60'ta üretilip onaylanmış olmalıdır ([runbook §3](runbook.md#3-sabah-kontrol-listesi)).

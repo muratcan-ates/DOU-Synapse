@@ -257,6 +257,11 @@ yarım bir ekranı gösterirsek onu sorar.
   retler `insufficient_context` olarak kaydediliyor. Sayı yanlış okunmaya açık.
 - **Compose yığınında izolasyon kanıtı.** O yığında RLS devrede değil.
 - **Soru üretimi ekranı**, gerçek LLM anahtarı yoksa (0 soru döner).
+- **Üstünde "Tasarım önizlemesi" şeridi olan hiçbir ekran.** 9 Ağustos itibarıyla üç ekran
+  bu durumda: **soru havuzu, sınav provası, ilerleme/analitik.** Backend uçları çalışıyor ve
+  uçtan uca doğrulandı; bağlanmayı bekleyen yalnız arayüz (liderde). Bağlanmazsa demo
+  **5 sahne** olarak koşulur ve 6. sahne atlanır — örnek veri gösteren bir ekranı çalışan
+  ürün diye göstermek, bu listedeki her maddeden daha pahalıya patlar.
 - **Dev veritabanının ham ders listesi** (onlarca test dersi).
 - **Ham stack trace / 500 ekranı.** Görülürse Plan C'ye geçilir (§1 ölçüt 4).
 
