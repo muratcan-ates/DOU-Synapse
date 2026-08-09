@@ -126,8 +126,8 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 
 | Metrik | Hedef | Ölçülen | Geçerli mi | Kaynak |
 |---|---:|---|---|---|
-| Dersler arası veri sızıntısı | 0 | **0** (8/8 iddia) | evet | `supabase/tests/rls_isolation.sql` |
-| Ölçme + analitik izolasyonu | 0 sızıntı | **0** (58/58 iddia, 24/24 mutasyon) | evet | `rls_assessment.sql` + mutasyon betiği |
+| Dersler arası veri sızıntısı | 0 | **0** (8/8 iddia, v2'de yeniden koşuldu) | evet | `supabase/tests/rls_isolation.sql` |
+| Ölçme + analitik izolasyonu | 0 sızıntı | **0** (58/58 iddia, 24/24 mutasyon, v2'de yeniden) | evet | `rls_assessment.sql` + mutasyon betiği |
 | Holdout Recall@5 | ≥ %80 | **%98,1** (103/105) | evet | `…1551-holdout-hybrid-fastembed-retrieval.json` |
 | Holdout Recall@8 | ≥ %80 | **%98,1** (103/105) | evet | aynı dosya |
 | Holdout MRR | — | **0,852** hibrit · 0,807 dense | evet | aynı + dense koşusu |
@@ -151,9 +151,9 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 
 ## 4. RLS canlılık kanıtı
 
-**Bu bölüm v1'den devralındı ve v2'de YENİDEN KOŞULMADI.** Şema değişmediği için
-sonuçların geçerli kalması beklenir, ama bu bir varsayımdır; teslimden önce yeniden
-koşturulmalıdır.
+**KOŞULDU — 9 Ağustos 2026, v2 dalında yeniden.** Sıfırdan kurulan bir veritabanında
+(`rls_check`), bütün migration'lar uygulandıktan sonra. Önceki sürümde bu bölüm
+"devralındı, yeniden koşulmadı" notuyla duruyordu; varsayım yerine ölçüm kondu.
 
 | Kanıt | Sayı |
 |---|---|
@@ -162,14 +162,20 @@ koşturulmalıdır.
 | Kapsanan politika | 0004'ün 15 politikası + 0005'in eğitmen okuma politikası |
 | Mutasyon testi | 24 mutasyon, **24'ü yakalandı** |
 
+Mutasyon testi "politika var" demekle yetinmez: her politikayı teker teker bozar ve
+**hangi iddianın** kırmızıya döndüğünü doğrular. Yalnız "bir yerde FAIL çıktı" demek
+yetersiz olurdu, çünkü alakasız bir bozulma da FAIL üretir.
+
 ```bash
 createdb rls_check && for f in supabase/migrations/*.sql; do psql -q -d rls_check -f "$f"; done
-psql -d rls_check -f supabase/tests/rls_isolation.sql
-psql -d rls_check -f supabase/tests/rls_assessment.sql
-supabase/tests/rls_assessment_mutation_check.sh
+psql -q -d rls_check -f supabase/local_dev_setup.sql
+psql -d rls_check -f supabase/tests/rls_isolation.sql    # 8 PASS, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_assessment.sql   # 58 PASS, 0 FAIL
+bash supabase/tests/rls_assessment_mutation_check.sh     # 24/24 yakalandı
 ```
 
 **Henüz yapılmadı:** T051 — aynı kanıtın üretim kopyası üzerinde koşturulması.
+Yerel ve CI ortamında koşuldu; bulut kopyasında koşulmadı.
 
 ---
 
@@ -562,7 +568,7 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
   olmadığını kanıtlamaz; insan incelemesi dosyası boş.
 - **Materyal tek ders, tek dil karışımı.** T045'in "bge-m3 üstün değil" sonucu bu
   materyal içindir, genel bir hüküm değildir.
-- **RLS ve analitik bölümleri v2'de yeniden koşulmadı.**
+- **Analitik bölümü (§12) v2'de yeniden koşulmadı;** RLS bölümü (§4) koşuldu.
 
 ---
 
