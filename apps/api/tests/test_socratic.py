@@ -658,3 +658,23 @@ class TestSablonMetadatasi:
 
         assert citation.quote == citation.location
         assert citation.quote
+
+
+class TestKademeSayisiTekSayidir:
+    """`MAX_STAGE_INDEX` üç yerde aynı '4'ü ifade ediyor; biri kayarsa yakala.
+
+    Sabit bugün ürün kodunda hiçbir yerden çağrılmıyor — ölü kod süpürmesinde
+    silinmeye aday görünüyor. SİLİNMEMELİ: planlanan `advance(..., max_stage_index=...)`
+    işi (research.md, FR-131) onun üzerine kurulu. Silinmemesinin bedeli, kimsenin
+    doğrulamadığı bir iddia taşıması; bu test o bedeli ödüyor.
+    """
+
+    def test_kademe_sayisi_uc_yerde_ayni(self) -> None:
+        from app.core.config import Settings
+        from app.modules.mastery.service import HINT_MULTIPLIERS
+
+        # Beyan edilen VARSAYILAN'a bakılır, `get_settings()`e değil: ayar
+        # ortamdan geçersiz kılınabilir ve SOCRATIC_MAX_STAGE=2 diyen meşru bir
+        # kurulumda bekçi, ortada kod kusuru yokken kırmızı yanardı.
+        assert socratic.MAX_STAGE_INDEX == Settings(_env_file=None).socratic_max_stage
+        assert socratic.MAX_STAGE_INDEX == max(HINT_MULTIPLIERS)

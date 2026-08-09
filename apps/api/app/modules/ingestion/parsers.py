@@ -178,7 +178,7 @@ _CODE_BOUNDARY = re.compile(
 _SYMBOL_NAME = re.compile(r"(?:def|class|function)\s+(\w+)|(\w+)\s*\(")
 
 
-def parse_code(content: bytes, extension: str) -> ParsedDocument:
+def parse_code(content: bytes) -> ParsedDocument:
     """Kod dosyasını fonksiyon/sınıf sınırlarından böler.
 
     Satır aralığı `section_title` içinde taşınır; öğrenciye "şu dosyanın 25-47. satırları"
@@ -229,5 +229,5 @@ def parse(content: bytes, extension: str) -> ParsedDocument:
     if extension == ".md":
         return parse_markdown(content)
     if extension in CODE_EXTENSIONS:
-        return parse_code(content, extension)
+        return parse_code(content)
     return parse_text(content)

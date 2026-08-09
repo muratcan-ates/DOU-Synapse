@@ -48,7 +48,7 @@ from app.core import text_tr
 from app.core.llm_json import first_json_object
 from app.core.logging import get_logger
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
-from app.modules.generation.llm import LlmRequest, build_llm_client
+from app.modules.generation.llm import LlmRequest, LlmTask, build_llm_client
 from app.modules.retrieval.service import HybridRetriever
 from app.schemas.assessment import (
     AnswerFormat,
@@ -88,15 +88,20 @@ class _GenerationCompletion:
     İki protokol de "system + user ver, metin al" diyor; aradaki tek fark
     `LlmRequest` zarfı. Adaptör burada duruyor çünkü `app/modules/generation/`
     başka bir şeridin dosyası ve oraya Şerit 4 kod yazmaz.
+
+    `task` yapıcıya alınır, sınıfa sabitlenmez: aynı adaptörü hem soru üretimi
+    hem sınav puanlaması kullanıyor ve ikisi farklı görevler. Sabitlenseydi
+    puanlama da `QUESTION_GEN` etiketiyle giderdi.
     """
 
-    def __init__(self, client: Any, request_cls: Any) -> None:
+    def __init__(self, client: Any, request_cls: Any, *, task: LlmTask = LlmTask.CHAT) -> None:
         self._client = client
         self._request_cls = request_cls
+        self._task = task
 
     async def complete(self, *, system: str, user: str) -> str:
         completion = await self._client.complete(
-            self._request_cls(system=system, user=user, json_output=True)
+            self._request_cls(system=system, user=user, json_output=True, task=self._task)
         )
         return str(completion.text)
 
@@ -133,17 +138,22 @@ def resolve_retriever(session: AsyncSession) -> Retriever:
     return HybridRetriever(session)
 
 
-def resolve_completion() -> StructuredCompletion:
+def resolve_completion(task: LlmTask = LlmTask.CHAT) -> StructuredCompletion:
     """Kayıtlı sahte varsa ondan, yoksa üretim LLM istemcisinden.
 
     Sağlayıcı hiç kurulamıyorsa `build_llm_client()` `LlmUnavailableError` (503)
     fırlatır — yerelde ve CI'da anahtar yokken deterministik sahteye düşer.
     Buradan `None` DÖNMEZ; "sağlayıcı yok" durumu bir istisnadır, sessiz bir
     değer değil.
+
+    `task` çağıranın beyanıdır ve varsayılanı `CHAT`'tir: bu fonksiyonu
+    puanlama da çağırıyor. Beyan, deterministik sahte sağlayıcının hangi şemayı
+    üreteceğini bilmesi için gerekli — eskiden bilmiyordu ve prompt metnindeki
+    işaretlere bakarak tahmin ediyordu.
     """
     if _completion is not None:
         return _completion
-    return _GenerationCompletion(build_llm_client(), LlmRequest)
+    return _GenerationCompletion(build_llm_client(), LlmRequest, task=task)
 
 
 # ---------------------------------------------------------------------------
