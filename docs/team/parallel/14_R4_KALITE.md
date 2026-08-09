@@ -584,6 +584,13 @@ Göç idempotent (`ADD COLUMN IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`), tek
 koşturmak zararsız. Test veritabanları `conftest.py` göçleri sırayla uyguladığı için
 kendiliğinden düzelir; **elle kurulmuş hiçbir veritabanı düzelmez.**
 
+**Bu iki veritabanına GÖÇ UYGULANDI (9 Ağustos, R4):** `dou_synapse` (278 chunk,
+hepsi damgasız) ve `dou_synapse_eval_e5` (33 chunk, hepsi damgasız). Paylaşılan
+kaynağa dokunmanın gerekçesi: sütun eklemesi katkılı, nullable ve bugün benim
+dalım dışında hiçbir kod ona bakmıyor — yani diğer şeritleri etkilemesi mümkün değil,
+ama eksikliği bu dalı çeken herkesi kırardı. Damgalar NULL bırakıldı; `0006`'nın
+"bilmediğimizi biliyormuş gibi yazmayız" kararı bu (bkz. göç dosyası).
+
 R3'e ayrıca: dağıtım hattında göç adımı imaj başlatmadan ÖNCE koşmalı; tersi sırada
 API ayağa kalkar ve ilk aramada 500 verir.
 
