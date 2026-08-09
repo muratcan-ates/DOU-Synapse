@@ -250,7 +250,53 @@ puanlama ve sınav akışının tamamı bu bağımlılıktan **etkilenmez** ve b
 
 `contracts.py`'ye bir alan eklenmesi gerekmedi.
 
-### 4. Uç adlandırma sapması — bilinçli
+### 4. Lider devri §6 — "yazma ucu yanıttan sonra commit ediyor" · ölçüldü, teşhis düzeltildi
+
+`06_LIDER_DEVIR.md` §6 bunu "Şerit 3 ya da 4'e yazılmalı" diye bırakmış. Şerit 4
+olarak ölçtüm; sonuç, belgede yazandan biraz farklı ve fark önemli.
+
+**Ölçüm** (gerçek uvicorn sunucusu, temiz veritabanı, 127.0.0.1):
+
+```
+OLCUM: 40 turda, 201 aldiktan hemen sonraki GET yeni konuyu 0 kez GOREMEDI (0%)
+YUKLEME OLCUMU: 10 turda, 202 sonrasi GET belgeyi 0 kez GOREMEDI (0%)
+```
+
+Yani ne benim yazma uçlarımda ne de yükleme ucunda yarış **bu kurulumda** üremedi.
+Bu, sorunun olmadığı anlamına gelmiyor — pencerenin ne kadar açık kaldığına bağlı.
+
+**Mekanizma, kod düzeyinde doğrulandı** (fastapi 0.141.1 / starlette 1.4.1):
+
+- `fastapi/routing.py:140-145` — `await response(scope, receive, send)` bağımlılık
+  `AsyncExitStack`'lerinin **içinde** çağrılıyor. Yani `get_session`'ın commit'i
+  yanıt baytları gönderildikten sonra koşuyor. Bu her yazma ucu için doğru.
+- `starlette/responses.py:169` — `await self.background()` de `response.__call__`
+  içinde, yani exit stack kapanmadan **önce** koşuyor.
+
+Sıra şu: **gövde gider → BackgroundTasks koşar → oturum commit edilir.**
+
+Buradan çıkan teşhis: pencere normalde milisaniyenin altında (ölçüm 0/40), ama
+`POST /documents` bir `BackgroundTasks` ile `worker.drain()` çağırdığı için o uçta
+pencere **ingestion'ın tamamı kadar** açık kalıyor. Benim ölçümümde küçük bir `.md`
+ve `embedding_provider=hashing` ile drain milisaniyeler sürdü; fastembed + gerçek
+bir PDF ile saniyeler sürer — liderin gözlediği "bir saniye sonra göründü" tam
+olarak bu.
+
+Yani sorun "yazma uçları geç commit ediyor" değil, **"yükleme ucunda commit ile
+yanıt arasına bütün ingestion giriyor"**. Doğru düzeltme de buna göre daralıyor:
+
+- **Dar ve yeterli** (`documents.py`, liderin dosyası): belge satırını yanıt
+  gönderilmeden önce kalıcı kıl — worker tetiğini `BackgroundTasks`'a vermeden önce
+  commit et. 202'nin anlamı korunur, pencere kapanır.
+- **Genel ama daha invaziv** (`deps.py`/`db.py`): oturumu bağımlılık sökümünde değil
+  uç gövdesi biterken commit eden bir sarmalayıcı. Beş şeridin tamamını etkiler;
+  paralel çalışma bitmeden yapılmamalı.
+
+Şerit 4'ün uçlarında `BackgroundTasks` **yok**, dolayısıyla bu kalem soru havuzu ve
+sınav akışını etkilemiyor. Ölçüm betikleri tek kullanımlıktı, repoya konmadı;
+yöntem yukarıda birebir yazılı.
+
+### 5. Uç adlandırma sapması — bilinçli
 
 `tasks.md` T030 `PATCH .../approve|reject` diyor; `04_SORU_SINAV.md` `POST` diyor.
 Handoff daha yeni ve daha ayrıntılı olduğu için **`POST` uygulandı**. Frontend bu
