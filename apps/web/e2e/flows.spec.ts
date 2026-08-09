@@ -203,7 +203,7 @@ async function apiUpload(courseId: string, fileName: string, bytes: Buffer, user
 async function belgeHazirOlanaKadarBekle(courseId: string, user: DemoUser) {
   for (let deneme = 0; deneme < 40; deneme++) {
     const belgeler = await apiGet<BelgeOzeti[]>(`/courses/${courseId}/documents`, user);
-    if (belgeler.length > 0 && belgeler.every((b) => b.status === "completed")) return belgeler;
+    if (belgeler.length > 0 && belgeler.every((b) => b.status === "completed")) return;
     const bozuk = belgeler.find((b) => b.status === "failed");
     if (bozuk) throw new Error(`belge işlenemedi: ${bozuk.file_name}`);
     await new Promise((r) => setTimeout(r, 500));
@@ -226,10 +226,14 @@ async function materyalliDers(suffix: string) {
 
 interface HavuzFiksturu {
   course: { id: string; title: string };
-  topicId: string;
-  /** Onaylanmış sorular. Boşsa üretim hiçbir şey döndürmedi (bkz. `HAVUZ_YOK`). */
-  onaylanan: { id: string }[];
-  /** Üretimin kendi gerekçeleri — atlama sebebini raporda okunur kılar. */
+  /**
+   * Üretilen sorular — hepsi `draft`. Onay BİLEREK verilmiyor: eğitmen onayını
+   * sınayan vaka, önceden onaylanmış bir soruda "Onayla" düğmesini pasif bulur
+   * ve hiçbir şeyi sınayamaz. Sınav vakaları onayı `hepsiniOnayla` ile alır.
+   * Boşsa üretim hiçbir şey döndürmedi (bkz. `HAVUZ_YOK`).
+   */
+  taslaklar: { id: string }[];
+  /** Üretimin kendi gerekçeleri — atlama sebebini okunur kılar. */
   gerekce: string[];
 }
 
@@ -260,13 +264,18 @@ async function soruHavuzuKur(suffix: string): Promise<HavuzFiksturu> {
     AYSE,
   );
 
-  const uretilen: { id: string }[] = rapor.questions ?? [];
-  const onaylanan: { id: string }[] = [];
-  for (const soru of uretilen) {
-    onaylanan.push(await apiPost(`/courses/${course.id}/questions/${soru.id}/approve`, {}, AYSE));
-  }
+  return {
+    course,
+    taslaklar: rapor.questions ?? [],
+    gerekce: rapor.rejection_reasons ?? [],
+  };
+}
 
-  return { course, topicId: topic.id, onaylanan, gerekce: rapor.rejection_reasons ?? [] };
+/** Sınav ancak onaylanmış sorularla başlar; onayı veren tek yer eğitmen ucudur. */
+async function hepsiniOnayla(havuz: HavuzFiksturu) {
+  for (const soru of havuz.taslaklar) {
+    await apiPost(`/courses/${havuz.course.id}/questions/${soru.id}/approve`, {}, AYSE);
+  }
 }
 
 /* -------------------------------------------------------------------------
@@ -593,16 +602,15 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     await expect(page.getByRole("button", { name: "Reddedildi" })).toBeVisible();
   });
 
-  test("üretim sıfır soru döndürdüğünde ekran bunu HATA GİBİ GÖSTERMEZ", async ({ page }) => {
+  test("üretim muhasebesi GİZLENMEZ ama hata gibi de gösterilmez", async ({ page }) => {
     /*
+     * İstenen / dönen / kabul edilen sayıları ekranda durur (Anayasa III) ve
      * `returned: 0` bir çökme değildir: sağlayıcı şemaya ve kaynağa uyan soru
-     * döndürmediğinde sistem uydurmak yerine hiçbir şey yazmıyor (Anayasa IV).
-     * Muhasebe gizlenmez (Anayasa III) ama kırmızıya da boyanmaz — abstention
-     * kararının soru havuzundaki eşi.
+     * döndürmediğinde sistem uydurmak yerine hiçbir şey yazıyor (Anayasa IV).
+     * Abstention kararının soru havuzundaki eşi — ton nötr kalmalı.
      *
-     * Bu vaka bugünkü ortamda gerçekten sıfır dönen yolu koşuyor; üretim
-     * çalışmaya başladığında da geçerli kalır, çünkü ölçtüğü şey RAPORUN TONU:
-     * hangi sayı dönerse dönsün ekranda hata dili olmamalı.
+     * Vaka sayıya bağlanmadı, RAPORUN VARLIĞINA ve TONUNA bağlandı: bugün sıfır
+     * dönüyor, üretim çalışmaya başlayınca beş dönecek ve iddia ikisinde de aynı.
      */
     const course = await materyalliDers("URETIM");
     await apiPost(`/courses/${course.id}/topics`, { name: "Deadlock" }, AYSE);
@@ -611,6 +619,7 @@ test.describe("soru havuzu — eğitmen onayı", () => {
 
     await page.getByRole("button", { name: "Soru üret" }).click();
     await expect(page.getByText("Üretim raporu")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText(/soru istendi/)).toBeVisible();
 
     await expect(hataDuyurulari(page)).toHaveCount(0);
     await expect(page.locator(".text-danger")).toHaveCount(0);
@@ -778,5 +787,14 @@ test.describe("izolasyon", () => {
 
     await expect(page.getByText("Ders bulunamadı.")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText("E2E Test Dersi IZOLASYON")).toBeHidden();
+
+    /*
+     * Aynı zamanda yukarıdaki "hata gibi görünmemeli" vakalarının kalibrasyonu.
+     * Onlar `hataDuyurulari` ve `.text-danger` SAYISININ SIFIR olmasına dayanıyor
+     * ve bir seçici yanlış yazılırsa sıfır her ekranda sağlanır — vakalar sessizce
+     * boşa döner. Burada gerçek bir hata var; sayaçların onu GÖRDÜĞÜ gösteriliyor.
+     */
+    await expect(hataDuyurulari(page)).toHaveCount(1);
+    await expect(page.locator(".text-danger")).toHaveCount(1);
   });
 });
