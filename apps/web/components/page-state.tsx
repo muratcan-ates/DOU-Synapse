@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Sayfa durumu bileşenleri: yükleniyor · hata · başlık · metrik satırı.
  *
@@ -12,16 +14,57 @@
  * tutmak, ölü kodun en yaygın gerekçesidir (Anayasa XI).
  */
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button, Card } from "@/components/ui";
+import { shouldOfferRetry, type ErrorKind } from "@/lib/errors";
 
-/** Belirsiz spinner yok: metin, ekranı zıplatmadan yerini tutar. */
+/** Bu süreyi aşan bekleyiş açıklanır (FR-154). */
+export const SLOW_LOAD_MS = 4000;
+
+/**
+ * Uzayan bekleyişin açıklaması (T405).
+ *
+ * `docs/runbook.md:123-125`'teki cümle BİLEREK kopyalanmadı: orası jüriye
+ * söylenen bir anlatıcı repliği ("birazdan göreceksiniz") ve em dash içeriyor;
+ * Anayasa V arayüz metninde em dash'i yasaklıyor. Ekran metni ayrı yazıldı.
+ *
+ * Sayı uydurulmadı: 001'in ölçümlerinde ilk sayfa yüklemesi 19,1 saniye, ilk
+ * soru 11,7 saniye, ikinci soru 0,08 saniye sürdü. "20 saniyeye kadar" o
+ * gözlenen en kötü duruma yuvarlanmış hâlidir; hızlanma iddiası da ölçülmüş
+ * ikinci soruya dayanıyor (Anayasa III).
+ */
+export const SLOW_LOAD_NOTICE =
+  "Sunucu ilk isteği hazırlıyor. Uygulama yeni başlatıldıysa ilk yanıt 20 saniyeye " +
+  "kadar sürebilir; sonraki istekler çok daha hızlı gelir.";
+
+/**
+ * Belirsiz spinner yok: metin, ekranı zıplatmadan yerini tutar.
+ *
+ * Dört saniyeyi aşan bekleyişe ikinci satır eklenir. Neden eşik: soğuk
+ * başlangıç açıklaması HER yüklemede görünseydi, 0,08 saniyede dönen ikinci
+ * sorunun altında da yanıp sönerdi ve kullanıcı onu okumayı bırakırdı.
+ * Açıklama yalnız açıklanacak bir şey varken çıkar.
+ */
 export function Loading({ label = "Yükleniyor…" }: { label?: string }) {
+  const slow = useElapsedBeyond(SLOW_LOAD_MS);
   return (
-    <p role="status" aria-live="polite" className="text-sm text-fg-muted">
-      {label}
-    </p>
+    // Canlı bölge dıştaki kapsayıcıda: ikinci satır sonradan eklendiğinde ekran
+    // okuyucu onu da duyursun, ilk satırı yeniden okumak zorunda kalmadan.
+    <div role="status" aria-live="polite">
+      <p className="text-sm text-fg-muted">{label}</p>
+      {slow && <p className="prose-tr mt-1 text-xs text-fg-muted">{SLOW_LOAD_NOTICE}</p>}
+    </div>
   );
+}
+
+/** Bileşen `ms` milisaniyedir ekranda mı? Zamanlayıcı sökülmede temizlenir. */
+function useElapsedBeyond(ms: number): boolean {
+  const [elapsed, setElapsed] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setElapsed(true), ms);
+    return () => clearTimeout(timer);
+  }, [ms]);
+  return elapsed;
 }
 
 /**
@@ -30,18 +73,31 @@ export function Loading({ label = "Yükleniyor…" }: { label?: string }) {
  *
  * `onRetry` verilirse metnin yanına "Tekrar dene" düğmesi çıkar. Neden zorunlu
  * değil: her hata tekrar denenebilir değildir (ders bulunamadı, yetki yok) ve
- * çalışmayan bir düğme koymak Anayasa XI'in yasakladığı kusurdur. Verilmediğinde
- * bileşen eskisiyle birebir aynı çizilir. Verildiğinde kullanıcının tek çıkışı
- * tarayıcıyı yenilemek olmaktan çıkar; tazeleme hatasında sayfa yerinde durduğu
- * için hatayı gerçekten kapatabilen tek şey bu düğmedir.
+ * çalışmayan bir düğme koymak Anayasa XI'in yasakladığı kusurdur.
+ *
+ * `kind` verilirse o karar ARTIK HATIRLANMAK ZORUNDA DEĞİL (T403, FR-153):
+ * düğme yalnız geçici hatada çıkar, kalıcı ve kimlik hatalarında `onRetry`
+ * geçilmiş olsa bile gizlenir. Sınıfı bilmeyen çağrı yerleri eskisi gibi
+ * davranmaya devam eder — `kind` yokluğu "sınıflandırılmadı" demektir,
+ * "kalıcı" değil, ve sınıflandırılmamış bir hatada çalışan bir düğmeyi
+ * kaldırmak kullanıcıdan çıkış yolunu almak olurdu.
+ *
+ * `requestId` verilirse destek kodu gösterilir (T406). Kod sunucudan gelir;
+ * `null` ise sunucuya hiç varılamamıştır ve satır çizilmez.
  */
 export function ErrorNote({
   message,
+  kind,
+  requestId,
   onRetry,
 }: {
   message: string;
+  kind?: ErrorKind | null;
+  requestId?: string | null;
   onRetry?: () => void;
 }) {
+  const showRetry = shouldOfferRetry(kind, Boolean(onRetry));
+
   // `role="alert"` metnin kendisinde kalır: ekran okuyucu düğme etiketini
   // hatanın parçası gibi okumasın.
   const note = (
@@ -50,15 +106,38 @@ export function ErrorNote({
     </p>
   );
 
-  if (!onRetry) return note;
+  // Destek kodu ve düğme yoksa çıktı eskisiyle BİREBİR aynı: hatayı tek
+  // paragraf olarak çizen ekranların boşluk ritmi değişmesin.
+  if (!showRetry && !requestId) return note;
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      {note}
-      <Button variant="secondary" onClick={onRetry}>
-        Tekrar dene
-      </Button>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-3">
+        {note}
+        {showRetry && onRetry && (
+          <Button variant="secondary" onClick={onRetry}>
+            Tekrar dene
+          </Button>
+        )}
+      </div>
+      {requestId && <SupportCode requestId={requestId} />}
     </div>
+  );
+}
+
+/**
+ * Destek kodu satırı (T406).
+ *
+ * Kod `font-mono` çünkü kullanıcı onu okuyup yazacak; orantılı yazı tipinde
+ * 1/l ve 0/O ayrımı kaybolur. Etiket kodun ne işe yaradığını söylüyor: kimlik
+ * numarası gibi görünen ama neden orada olduğu yazmayan bir dize, kullanıcıya
+ * hata mesajının bir parçası gibi okunur.
+ */
+function SupportCode({ requestId }: { requestId: string }) {
+  return (
+    <p className="text-xs text-fg-muted">
+      Destek kodu: <span className="font-mono">{requestId}</span>
+    </p>
   );
 }
 

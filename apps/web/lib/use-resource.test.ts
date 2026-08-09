@@ -1,26 +1,43 @@
 /**
- * `useResource`'un iki sessiz kuralının testi.
+ * `useResource`'un sessiz kurallarının testi.
  *
  * Kanca React'e bağlı olduğu için doğrudan koşturulamıyor (bu paket DOM'suz
- * `bun test` ile koşar). Bu yüzden kancanın iki kararı saf fonksiyonlara
+ * `bun test` ile koşar). Bu yüzden kancanın kararları saf fonksiyonlara
  * çıkarıldı ve testler onları sınıyor: `createRequestGate` (hangi cevap
- * yazabilir) ve `resourceReducer` (hata veriyi ne zaman siler).
+ * yazabilir), `resourceReducer` (hata veriyi ne zaman siler) ve `pollDelayMs`
+ * (yoklama ne zaman yavaşlar).
  *
- * Neden bu iki şey test edilmeli: ikisinin de bozulması sessizdir. Yarış
- * koşulu yalnız cevaplar sıra dışı döndüğünde görünür — geliştirme
- * makinesinde localhost her zaman sırayla döner, hata demo günü çıkar.
+ * Neden bunlar test edilmeli: hepsinin bozulması sessizdir. Yarış koşulu
+ * yalnız cevaplar sıra dışı döndüğünde görünür — geliştirme makinesinde
+ * localhost her zaman sırayla döner, hata demo günü çıkar. Yoklamanın
+ * yavaşlaması da yalnız sunucu ölüyken gözlenir.
  * Aşağıdaki `simulateHook`, kancanın `reload` gövdesinin birebir aynısını
  * kurar; kancadaki sıra bozulursa bu testler tutmaz.
  */
 
 import { describe, expect, test } from "bun:test";
-import { errorMessage } from "./errors";
+import { ApiError } from "./api";
+import { describeError, type ErrorInfo } from "./errors";
 import {
   createRequestGate,
   EMPTY_RESOURCE_STATE,
+  POLL_BACKOFF_CAP_MS,
+  pollDelayMs,
   resourceReducer,
+  type ResourceAction,
   type ResourceState,
 } from "./use-resource";
+
+/**
+ * Başarısızlık eylemi kısayolu.
+ *
+ * Reducer'ın okuduğu tek alan mesaj; sınıf ve destek kodu kancanın diğer
+ * çıktılarını besliyor (T403/T406). Testler o ikisini her satırda tekrar
+ * yazmasın diye burada varsayılıyor.
+ */
+function failed(message: string): ResourceAction<string> {
+  return { type: "failed", error: { message, kind: "transient", requestId: null } };
+}
 
 /** Elle çözülen söz: cevapların dönüş sırasını testin kontrolüne verir. */
 function deferred<T>() {
@@ -35,30 +52,53 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-/** Kancanın `reload` gövdesi + durumu — React olmadan. */
+/**
+ * Kancanın `reload` gövdesi + durumu — React olmadan.
+ *
+ * Kancadaki `dispatch` üç türevi birden yazıyor (durum, hata bilgisi, ardışık
+ * başarısızlık sayacı); buradaki `apply` de öyle. Kancada bunlardan biri
+ * unutulursa test tutmaz.
+ */
 function simulateHook<T>() {
   const gate = createRequestGate();
   let state: ResourceState<T> = EMPTY_RESOURCE_STATE;
+  let failure: ErrorInfo | null = null;
+  let failureStreak = 0;
+
+  const apply = (action: ResourceAction<T>) => {
+    state = resourceReducer(state, action);
+    failure = action.type === "failed" ? action.error : null;
+    failureStreak = action.type === "failed" ? failureStreak + 1 : 0;
+  };
 
   return {
     gate,
     get state() {
       return state;
     },
+    get errorKind() {
+      return failure?.kind ?? null;
+    },
+    get errorRequestId() {
+      return failure?.requestId ?? null;
+    },
+    get failureStreak() {
+      return failureStreak;
+    },
     async reload(fetcher: () => Promise<T>) {
       const token = gate.begin();
       try {
         const next = await fetcher();
         if (!gate.isCurrent(token)) return;
-        state = resourceReducer(state, { type: "loaded", data: next });
+        apply({ type: "loaded", data: next });
       } catch (e) {
         if (!gate.isCurrent(token)) return;
-        state = resourceReducer(state, { type: "failed", message: errorMessage(e) });
+        apply({ type: "failed", error: describeError(e) });
       }
     },
     reset() {
       gate.invalidate();
-      state = resourceReducer(state, { type: "reset" });
+      apply({ type: "reset" });
     },
   };
 }
@@ -152,35 +192,32 @@ describe("durum makinesi — geçici hata sayfayı silmez", () => {
   };
 
   test("elde veri YOKKEN hata ekranı kapatan hatadır", () => {
-    const next = resourceReducer(EMPTY_RESOURCE_STATE as ResourceState<string>, {
-      type: "failed",
-      message: "Ders bulunamadı.",
-    });
+    const next = resourceReducer(
+      EMPTY_RESOURCE_STATE as ResourceState<string>,
+      failed("Ders bulunamadı."),
+    );
     expect(next.error).toBe("Ders bulunamadı.");
     expect(next.refreshError).toBeNull();
     expect(next.data).toBeNull();
   });
 
   test("elde veri VARKEN hata `data`'yı silmez, `error`'ı doldurmaz", () => {
-    const next = resourceReducer(dolu, {
-      type: "failed",
-      message: "Bağlantı kurulamadı.",
-    });
+    const next = resourceReducer(dolu, failed("Bağlantı kurulamadı."));
     expect(next.data).toBe("ders listesi");
     expect(next.error).toBeNull();
     expect(next.refreshError).toBe("Bağlantı kurulamadı.");
   });
 
   test("üst üste başarısız tazeleme de veriyi silmez", () => {
-    let s = resourceReducer(dolu, { type: "failed", message: "bir" });
-    s = resourceReducer(s, { type: "failed", message: "iki" });
+    let s = resourceReducer(dolu, failed("bir"));
+    s = resourceReducer(s, failed("iki"));
     expect(s.data).toBe("ders listesi");
     expect(s.error).toBeNull();
     expect(s.refreshError).toBe("iki");
   });
 
   test("başarılı tur her iki hatayı da temizler", () => {
-    const bozuk = resourceReducer(dolu, { type: "failed", message: "kopma" });
+    const bozuk = resourceReducer(dolu, failed("kopma"));
     const next = resourceReducer(bozuk, { type: "loaded", data: "yeni liste" });
     expect(next.data).toBe("yeni liste");
     expect(next.error).toBeNull();
@@ -188,7 +225,7 @@ describe("durum makinesi — geçici hata sayfayı silmez", () => {
   });
 
   test("reset her şeyi sıfırlar (deps değişimi)", () => {
-    const bozuk = resourceReducer(dolu, { type: "failed", message: "kopma" });
+    const bozuk = resourceReducer(dolu, failed("kopma"));
     expect(resourceReducer(bozuk, { type: "reset" })).toEqual({
       data: null,
       error: null,
@@ -201,10 +238,10 @@ describe("durum makinesi — geçici hata sayfayı silmez", () => {
     // İlk mount: durum zaten boşken reset gelir.
     expect(resourceReducer(bos, { type: "reset" })).toBe(bos);
     // Polling saniyede bir aynı hatayı yazmaya çalışır.
-    const bozuk = resourceReducer(dolu, { type: "failed", message: "kopma" });
-    expect(resourceReducer(bozuk, { type: "failed", message: "kopma" })).toBe(bozuk);
+    const bozuk = resourceReducer(dolu, failed("kopma"));
+    expect(resourceReducer(bozuk, failed("kopma"))).toBe(bozuk);
     // Ama gerçek değişimde yeni nesne döner, yoksa React güncellemeyi kaçırır.
-    expect(resourceReducer(bozuk, { type: "failed", message: "başka" })).not.toBe(bozuk);
+    expect(resourceReducer(bozuk, failed("başka"))).not.toBe(bozuk);
   });
 
   test("`loading` yalnız ilk yüklemede doğrudur", () => {
@@ -214,15 +251,105 @@ describe("durum makinesi — geçici hata sayfayı silmez", () => {
     expect(isLoading(dolu)).toBe(false);
     expect(
       isLoading(
-        resourceReducer(EMPTY_RESOURCE_STATE as ResourceState<string>, {
-          type: "failed",
-          message: "hata",
-        }),
+        resourceReducer(EMPTY_RESOURCE_STATE as ResourceState<string>, failed("hata")),
       ),
     ).toBe(false);
     // Tazeleme hatası "yükleniyor"a geri döndürmez.
-    expect(isLoading(resourceReducer(dolu, { type: "failed", message: "hata" }))).toBe(
-      false,
-    );
+    expect(isLoading(resourceReducer(dolu, failed("hata")))).toBe(false);
+  });
+});
+
+describe("yoklama aralığı — başarısızlıkta yavaşlar (T404, FR-156)", () => {
+  test("her şey yolundayken taban aralık kullanılır", () => {
+    expect(pollDelayMs(2000, 0)).toBe(2000);
+  });
+
+  test("ardışık başarısızlıkta aralık ikişer katlanır", () => {
+    expect(pollDelayMs(2000, 1)).toBe(4000);
+    expect(pollDelayMs(2000, 2)).toBe(8000);
+    expect(pollDelayMs(2000, 3)).toBe(16_000);
+  });
+
+  test("tavan var: yoklama seyrekleşir ama BÜSBÜTÜN durmaz", () => {
+    // Durdurmak, sunucu geri geldiğinde ekranın bunu hiç fark etmemesi olurdu.
+    expect(pollDelayMs(2000, 20)).toBe(POLL_BACKOFF_CAP_MS);
+    expect(pollDelayMs(2000, 20)).toBeLessThan(Number.POSITIVE_INFINITY);
+  });
+
+  test("taban tavandan büyükse aralık SESSİZCE kısalmaz", () => {
+    // US1 kilidi 30 saniyeyle yokluyor; bir gün taban tavanı aşarsa
+    // yavaşlatma isteği hızlandırmaya dönüşmemeli.
+    expect(pollDelayMs(90_000, 3)).toBe(90_000);
+    expect(pollDelayMs(90_000, 0)).toBe(90_000);
+  });
+
+  test("başarılı tek tur sayacı sıfırlar", async () => {
+    const store = simulateHook<string>();
+    await store.reload(async () => {
+      throw new ApiError("kopma", "internal_error", 503, "r1");
+    });
+    await store.reload(async () => {
+      throw new ApiError("kopma", "internal_error", 503, "r2");
+    });
+    expect(store.failureStreak).toBe(2);
+    expect(pollDelayMs(2000, store.failureStreak)).toBe(8000);
+
+    await store.reload(async () => "liste");
+    expect(store.failureStreak).toBe(0);
+    expect(pollDelayMs(2000, store.failureStreak)).toBe(2000);
+  });
+
+  test("deps değişimi de sayacı sıfırlar: yeni dersin suçu yok", () => {
+    const store = simulateHook<string>();
+    store.reset();
+    expect(store.failureStreak).toBe(0);
+  });
+});
+
+describe("hata sınıfı ve destek kodu kancadan çıkar (T403/T406)", () => {
+  test("sunucu hatası sınıfını ve destek kodunu taşır", async () => {
+    const store = simulateHook<string>();
+    await store.reload(async () => {
+      throw new ApiError("Ders bulunamadı.", "not_found", 404, "abc123");
+    });
+    expect(store.state.error).toBe("Ders bulunamadı.");
+    expect(store.errorKind).toBe("permanent");
+    expect(store.errorRequestId).toBe("abc123");
+  });
+
+  test("ağ hatası geçicidir ve destek kodu taşımaz", async () => {
+    const store = simulateHook<string>();
+    await store.reload(async () => {
+      throw new TypeError("fetch failed");
+    });
+    expect(store.errorKind).toBe("transient");
+    expect(store.errorRequestId).toBeNull();
+  });
+
+  test("başarılı tur sınıfı ve kodu temizler: ekranda eskimiş uyarı kalmaz", async () => {
+    const store = simulateHook<string>();
+    await store.reload(async () => {
+      throw new ApiError("Ders bulunamadı.", "not_found", 404, "abc123");
+    });
+    await store.reload(async () => "liste");
+    expect(store.errorKind).toBeNull();
+    expect(store.errorRequestId).toBeNull();
+  });
+
+  test("geç dönen eski hata taze verinin sınıfını da bozmaz", async () => {
+    const store = simulateHook<string>();
+    const eski = deferred<string>();
+    const taze = deferred<string>();
+
+    const ilk = store.reload(() => eski.promise);
+    const ikinci = store.reload(() => taze.promise);
+    taze.resolve("taze liste");
+    await ikinci;
+
+    eski.reject(new ApiError("Ders bulunamadı.", "not_found", 404, "abc123"));
+    await ilk;
+
+    expect(store.errorKind).toBeNull();
+    expect(store.errorRequestId).toBeNull();
   });
 });
