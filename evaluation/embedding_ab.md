@@ -207,7 +207,11 @@ uv run python ../../evaluation/evaluate.py --compare \
     ../../evaluation/results/<e5-dense>.json ../../evaluation/results/<bge-dense>.json
 ```
 
-Model bir kez indirilir (~2,3 GB):
+**Model kopyası diskte DEĞİL.** T045 bittikten sonra `~/.cache/dou-eval-models`
+silindi: 2,1 GB tutuyordu ve makinede beş şerit birden çalışırken boş alan 1 GB'a
+inmişti. Model bir sonuç değil, yeniden indirilebilir bir önbellektir; ölçümün
+kendisi `results/` altındaki koşu dosyalarında duruyor. Yeniden koşmak isteyen
+önce indirir (~2,3 GB):
 
 ```bash
 uv run python -c "from huggingface_hub import snapshot_download; \

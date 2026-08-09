@@ -275,6 +275,19 @@ tamamlanacak işler `test-report.md` §16'da listeli.
 2. **`backends.py` sohbet sözleşmesine karşı kırıktı** — uç `question` bekliyor,
    harness `message` gönderiyordu; `extra="forbid"` yüzünden her istek 422 alırdı.
 
+## Makine durumu (lider bilsin)
+
+Koşular sırasında boş disk 1,0 GB'a indi; beş şerit aynı makinede çalışıyor.
+bge-m3 model önbelleği (`~/.cache/dou-eval-models`, 2,1 GB) T045 bittikten sonra
+silindi ve boş alan 3,2 GB'a çıktı. Model bir sonuç değil, yeniden indirilebilir bir
+önbellek; ölçüm `evaluation/results/` altında duruyor ve indirme komutu
+`embedding_ab.md` §8'de. fastembed'in e5 önbelleği (2,1 GB, `/var/folders/...`)
+DURUYOR — onu diğer şeritler de kullanıyor.
+
+Ölçüm veritabanları duruyor ve küçük (~12 MB): `dou_synapse_eval`,
+`dou_synapse_eval_bge`, `dou_synapse_inject`. Silinirlerse `build_corpus.py` ile
+yeniden kurulurlar.
+
 ## Frontend'den istenen (lider yapar)
 
 Yok. Bu şeridin çıktısı belge ve ölçüm; arayüzde bir şeye ihtiyaç doğmadı.
