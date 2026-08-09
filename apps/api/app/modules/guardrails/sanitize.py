@@ -23,8 +23,10 @@ from __future__ import annotations
 
 import html
 import re
+from collections.abc import Iterable
+from dataclasses import replace
 
-from app.contracts import GeneratedAnswer, GuardrailVerdict, RetrievedChunk
+from app.contracts import Citation, GeneratedAnswer, GuardrailVerdict, RetrievedChunk
 from app.core.logging import redact
 
 BLOCK_REASON_EMPTY_AFTER_SANITIZE = "empty_after_sanitize"
@@ -107,8 +109,50 @@ def clean(text: str) -> str:
     return "\n".join(line.rstrip() for line in text.splitlines()).strip()
 
 
+def clean_citation(citation: Citation) -> Citation:
+    """Atıf kartının GÖSTERİLEN üç alanını temizler.
+
+    9 Ağustos'a kadar bu halka yalnız `answer.text`'e bakıyordu ve atıf kartı
+    filtreden hiç geçmiyordu. Ölçüldü: `<script>alert(1)</script>` ve bir e-posta
+    adresi taşıyan bir chunk, cevap metni tertemiz olsa bile kaynak kartında
+    kullanıcıya olduğu gibi ulaşıyordu.
+
+    Üç alan da güvenilmez girdiden beslenir ve üçü de ekranda görünür:
+
+    * `quote` — chunk metninin kesiti, yani doğrudan ders materyali.
+    * `file_name` — kullanıcının yüklediği dosyanın adı. `<img onerror=...>.pdf`
+      diye bir dosya yüklemek hiçbir kuralı çiğnemez.
+    * `location` — sayfa/slayt metninden türer.
+
+    `chunk_id` temizlenmez ve temizlenmemelidir: UUID'dir, biz üretiriz, ve atıf
+    doğrulamasının anahtarıdır — üzerinde yapılacak her dönüşüm set-membership'i
+    bozar.
+
+    Temizlik sonrası alıntı boşalırsa atıf DÜŞMEZ. Atfın değeri `chunk_id` ile
+    dosya/konum metadata'sındadır; metni düşmanca diye geçerli bir kaynağı
+    silmek, gösterilebilecek doğru bilgiyi de silmek olurdu (Anayasa I).
+    """
+    return replace(
+        citation,
+        file_name=clean(citation.file_name),
+        location=clean(citation.location),
+        quote=clean(citation.quote),
+    )
+
+
+def clean_citations(citations: Iterable[Citation]) -> list[Citation]:
+    return [clean_citation(citation) for citation in citations]
+
+
 class SanitizeGuardrail:
-    """`Guardrail` protokolünü uygular. Zincirin üçüncü ve son halkası."""
+    """`Guardrail` protokolünü uygular. Zincirin üçüncü ve son halkası.
+
+    `check()` yalnız METNİN kararını döner; atıf temizliği `clean_citations` ile
+    ayrı yapılır ve uygulayan zincirdir (`chain.screen`). Sebep sözleşmedir:
+    `GuardrailVerdict` yalnız `sanitized_text` taşır ve o dosya bu şeridin değil.
+    Ayrım ayrıca zaten kurulu desene uyuyor — `check()` saf kalır, girdisini
+    değiştirmez, kararı uygulamak çağıranın işidir.
+    """
 
     def check(self, answer: GeneratedAnswer, retrieved: list[RetrievedChunk]) -> GuardrailVerdict:
         del retrieved  # bu halka yalnız metne bakar; imza protokol gereği ortaktır

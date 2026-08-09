@@ -181,9 +181,7 @@ def _summarize(text: str, limit: int = _SUMMARY_LENGTH) -> str:
     return cut.rsplit(" ", 1)[0] + "…"
 
 
-def _socratic_text(
-    stage: SocraticStage | None, source: ParsedSource, *, attempt: str = ""
-) -> str:
+def _socratic_text(stage: SocraticStage | None, source: ParsedSource, *, attempt: str = "") -> str:
     """Kademeye uygun, çözüm İÇERMEYEN tek ipucu.
 
     Metinler bilerek soruyla biter: Sokratik modun ölçütü öğrencinin bir sonraki
