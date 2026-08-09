@@ -16,7 +16,7 @@
  */
 
 import type { SourceInfo } from "@/components/source-card";
-import type { QuestionStatus, QuestionType } from "@/lib/labels";
+import type { QuestionStatus, QuestionType } from "@/lib/types";
 
 export interface PreviewQuestion {
   id: string;

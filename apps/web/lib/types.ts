@@ -125,3 +125,220 @@ export interface ChatSessionSummary {
   created_at: string;
   updated_at: string;
 }
+
+// --- Değerlendirme: soru havuzu + sınav (Şerit 4) ---------------------------
+//
+// Backend `app/schemas/assessment.py` ile birebir; kaynak openapi.json.
+// `payload` bilinçli olarak `unknown` değil dar tiplerle modellenmiyor: soru
+// tipine göre şekli değişiyor ve backend onu jsonb olarak taşıyor. Arayüz
+// `question_type`'a bakıp daraltır (bkz. `isMcqPayload` vb. yardımcılar).
+
+export type ExamMode = "practice" | "exam";
+export type QuestionType = "mcq" | "open" | "code_trace" | "bug_hunt";
+export type QuestionStatus = "draft" | "approved" | "rejected";
+export type AnswerFormat = "essay" | "short_answer";
+
+/**
+ * Kaynak referansı. `file_name`/`location`/`snippet` chunk metadata'sından gelir,
+ * model metninden ÜRETİLMEZ (Anayasa I) — arayüz bunları olduğu gibi gösterir.
+ */
+export interface SourceRef {
+  chunk_id: string;
+  file_name: string;
+  location: string;
+  snippet: string;
+}
+
+export interface Topic {
+  id: string;
+  course_id: string;
+  name: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface Question {
+  id: string;
+  course_id: string;
+  topic_id: string;
+  type: QuestionType;
+  /** Soru tipine göre şekil değişir; daraltma arayüzün işi. */
+  payload: Record<string, unknown>;
+  status: QuestionStatus;
+  created_by: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  source?: SourceRef | null;
+}
+
+export interface QuestionGenerateRequest {
+  topic_id: string;
+  question_type?: QuestionType;
+  answer_format?: AnswerFormat | null;
+  count?: number | null;
+  example_questions?: string[];
+}
+
+/**
+ * Üretim turunun dürüst muhasebesi: istenen, dönen, kabul edilen, reddedilen.
+ * `rejected` sıfırdan büyükse sebepleri `rejection_reasons`'ta — bunlar
+ * gizlenmez, eğitmen neyin neden elendiğini görür (Anayasa III).
+ */
+export interface QuestionGeneration {
+  requested: number;
+  returned: number;
+  accepted: number;
+  rejected: number;
+  rejection_reasons?: string[];
+  questions?: Question[];
+}
+
+export interface ExamQuestion {
+  id: string;
+  type: QuestionType;
+  payload: Record<string, unknown>;
+  answered: boolean;
+}
+
+export interface ExamSession {
+  id: string;
+  course_id: string;
+  mode: ExamMode;
+  started_at: string;
+  expires_at: string | null;
+  /** Kalan süre SUNUCUDAN gelir; istemci saatine güvenilmez. */
+  remaining_seconds: number | null;
+  expired: boolean;
+  finished_at: string | null;
+  score: number | null;
+  question_count: number;
+  answered_count: number;
+  questions?: ExamQuestion[];
+}
+
+export interface ExamStartRequest {
+  mode?: ExamMode;
+  topic_id?: string | null;
+}
+
+export interface AnswerSubmitRequest {
+  question_id: string;
+  given: string;
+  hint_level?: number;
+}
+
+/**
+ * Tek cevabın geri bildirimi.
+ *
+ * `graded` false olabilir (açık uçlu cevap LLM'e gidemediyse): o durumda
+ * `is_correct` ve `score` null'dır ve arayüz **puan uydurmaz** — "değerlendirilemedi"
+ * der. `why_wrong` ve `evidence` kaynaklıdır; kaynaksız açıklama gösterilmez.
+ */
+export interface AnswerFeedback {
+  question_id: string;
+  recorded?: boolean;
+  graded: boolean;
+  is_correct?: boolean | null;
+  score?: number | null;
+  missing_points?: string[];
+  why_wrong?: SourceRef | null;
+  evidence?: SourceRef | null;
+  solution?: Record<string, unknown> | null;
+  message?: string | null;
+}
+
+export interface ExamFinish {
+  session_id: string;
+  score: number | null;
+  answered_count: number;
+  unanswered_count: number;
+  /** Değerlendirilemeyen cevap sayısı — puanın paydası bu kadar eksik. */
+  ungraded_count: number;
+  message: string;
+  results?: AnswerFeedback[];
+}
+
+export interface ExamHintRequest {
+  question_id: string;
+  hint_level?: number;
+}
+
+export interface ExamHint {
+  question_id: string;
+  hint_level: number;
+  text: string;
+  source: SourceRef;
+}
+
+// --- Analitik (Şerit 5) -----------------------------------------------------
+
+export type MasteryLevel = "needs_work" | "medium" | "good";
+
+export interface TopicProgress {
+  topic_id: string;
+  name: string;
+  score: number;
+  level: MasteryLevel;
+  answer_count: number;
+}
+
+export interface ClassTopicProgress {
+  topic_id: string;
+  name: string;
+  average_score: number;
+  level: MasteryLevel;
+  student_count: number;
+  answer_count: number;
+}
+
+export interface MissedQuestion {
+  question_id: string;
+  topic_name: string;
+  stem: string;
+  wrong_rate: number;
+  graded_answer_count: number;
+}
+
+/**
+ * Kapsam dışı ret istatistiği.
+ *
+ * `rate` null olabilir — kaynak veri yoksa oran UYDURULMAZ. `note` neden
+ * ölçülemediğini Türkçe anlatır ve arayüz o cümleyi gösterir.
+ */
+export interface OutOfScopeStat {
+  source: "request_logs";
+  rate: number | null;
+  out_of_scope_count: number;
+  insufficient_context_count: number;
+  answered_request_count: number;
+  note: string;
+}
+
+/**
+ * Öğrencinin kendi ilerlemesi.
+ *
+ * `untracked_topics`: hiç cevaplanmamış konular. Bunlar listede 0.0 skorla
+ * GÖSTERİLMEZ — çalışılmamış bir konu "sıfır aldın" demek değildir.
+ */
+export interface StudentAnalytics {
+  course_id: string;
+  topics: TopicProgress[];
+  average_score: number | null;
+  tracked_topics: number;
+  untracked_topics: number;
+  needs_work_topics: number;
+  answered_questions: number;
+}
+
+export interface ClassAnalytics {
+  course_id: string;
+  topics: ClassTopicProgress[];
+  missed_questions: MissedQuestion[];
+  average_score: number | null;
+  tracked_topics: number;
+  untracked_topics: number;
+  student_count: number;
+  answered_questions: number;
+  out_of_scope: OutOfScopeStat;
+}

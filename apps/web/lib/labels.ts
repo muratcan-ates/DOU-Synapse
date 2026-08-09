@@ -9,7 +9,13 @@
  * Kural: renk tek başına bilgi taşımaz — her girdinin bir `label` metni vardır.
  */
 
-import type { DocumentStatus } from "@/lib/types";
+// Soru tipi/durumu SÖZLEŞME tipleridir (backend enum'ları), etiket sözlüğü değil:
+// tanımları `types.ts`'te durur ve buradan yalnız yeniden dışa aktarılır. İkinci bir
+// tanım, backend'e yeni bir soru tipi eklendiğinde birinin güncellenip diğerinin
+// unutulacağı bir ayrışma açardı (Anayasa XI).
+import type { DocumentStatus, QuestionStatus, QuestionType } from "@/lib/types";
+
+export type { QuestionStatus, QuestionType };
 
 export type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
@@ -26,8 +32,6 @@ export const DOCUMENT_STATUS: Record<DocumentStatus, LabelSpec> = {
   failed: { label: "Başarısız", tone: "danger" },
 };
 
-export type QuestionType = "mcq" | "open" | "code_trace" | "bug_hunt";
-export type QuestionStatus = "draft" | "approved" | "rejected";
 
 export const QUESTION_TYPE: Record<QuestionType, string> = {
   mcq: "Çoktan seçmeli",
