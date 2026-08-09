@@ -111,10 +111,15 @@ export type AbstentionStatus = Exclude<AnswerStatus, "answered">;
 export const ABSTENTION_LABEL: Record<AbstentionStatus, string> = {
   insufficient_context: "Materyalde dayanak bulunamadı",
   out_of_scope: "Dersin kapsamı dışında",
+  budget_exhausted: "Dersin günlük AI sınırına ulaşıldı",
 };
 
 export function isAbstention(status: AnswerStatus | null): status is AbstentionStatus {
-  return status === "insufficient_context" || status === "out_of_scope";
+  return (
+    status === "insufficient_context" ||
+    status === "out_of_scope" ||
+    status === "budget_exhausted"
+  );
 }
 
 // ---------------------------------------------------------------------------

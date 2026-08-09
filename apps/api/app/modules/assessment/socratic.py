@@ -307,6 +307,10 @@ _REFUSAL_UNSURE = (
     "İlk adımda «bilmiyorum» yeterliydi, şimdi bir tahmin istiyorum. "
     "Yanlış olması sorun değil; nereden başlayacağını görmem için gerekli."
 )
+_REFUSAL_HINT_LIMIT = (
+    "Bu ders için belirlenen ipucu sınırına ulaştın. Mevcut ipucuyla kendi "
+    "çözümünü tamamlamayı dene."
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -328,6 +332,7 @@ def advance(
     message: str,
     *,
     occurred_at: datetime | None = None,
+    max_stage_index: int = MAX_STAGE_INDEX,
 ) -> SocraticDecision:
     """Öğrenci mesajını değerlendirip kademeyi ilerletir ya da yerinde tutar.
 
@@ -354,13 +359,15 @@ def advance(
 
     # Buraya gelen her mesaj bir denemedir: SUBSTANTIVE, ya da DIAGNOSE'daki UNSURE.
     attempts = state.attempts + 1
-    if state.is_final_stage:
+    bounded_max = max(0, min(max_stage_index, MAX_STAGE_INDEX))
+    if state.stage_index >= bounded_max:
         # Son kademede kalınır; merdiven bitmiştir, deneme sayacı işlemeye devam eder.
         return SocraticDecision(
             state=replace(state, attempts=attempts),
             stage=state.stage,
             attempt_kind=kind,
             advanced=False,
+            refusal_notice=_REFUSAL_HINT_LIMIT,
         )
 
     next_stage = STAGE_ORDER[state.stage_index + 1]

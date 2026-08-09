@@ -79,6 +79,7 @@ from app.core.logging import get_logger
 from app.core.rate_limit import get_limiter, reset_rate_limit
 from app.models.chat import AnswerCache, ChatMessage, ChatRole, ChatSession, RequestLog
 from app.modules.assessment import exam_state, socratic
+from app.modules.policy import service as policy_service
 from app.schemas.chat import (
     MAX_QUESTION_LENGTH,
     ChatRequest,
@@ -151,16 +152,34 @@ def set_pipeline(
     _guardrails = guardrails
 
 
-def get_retriever(session: AsyncSession) -> Retriever:
+class _DocumentScopedRetriever:
+    """Enjekte edilen test retriever'larında da kaynak politikasını uygular."""
+
+    def __init__(self, inner: Retriever, document_ids: frozenset[UUID]) -> None:
+        self._inner = inner
+        self._document_ids = document_ids
+
+    async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
+        chunks = await self._inner.search(course_id=course_id, query=query, limit=limit)
+        return [chunk for chunk in chunks if chunk.document_id in self._document_ids][:limit]
+
+
+def get_retriever(session: AsyncSession, document_ids: frozenset[UUID] | None = None) -> Retriever:
     if _retriever_factory is not None:
-        return _retriever_factory(session)
+        injected = _retriever_factory(session)
+        return (
+            injected if document_ids is None else _DocumentScopedRetriever(injected, document_ids)
+        )
     try:  # Şerit 1, T006
         from app.modules.retrieval.service import HybridRetriever
     except ImportError as exc:
         raise PipelineUnavailableError(
             "Arama hattı henüz hazır değil. Lütfen daha sonra tekrar deneyin."
         ) from exc
-    return HybridRetriever(session)
+    return HybridRetriever(
+        session,
+        document_ids=None if document_ids is None else tuple(sorted(document_ids, key=str)),
+    )
 
 
 def get_generator() -> Generator:
@@ -260,6 +279,8 @@ class ChatAvailabilityOut(BaseModel):
     available: bool
     reason: str | None = None
     message: str | None = None
+    allowed_modes: list[ChatMode]
+    hint_limit: int
 
 
 # ---------------------------------------------------------------------------
@@ -354,8 +375,24 @@ class AnswerOutcome:
     claims: dict[UUID, str] = field(default_factory=dict)
 
 
-def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> AnswerOutcome:
-    return AnswerOutcome(GeneratedAnswer(status=status_value, mode=mode, text=text, citations=[]))
+def _refusal(
+    status_value: AnswerStatus,
+    mode: ChatMode,
+    text: str,
+    *,
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+) -> AnswerOutcome:
+    return AnswerOutcome(
+        GeneratedAnswer(
+            status=status_value,
+            mode=mode,
+            text=text,
+            citations=[],
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+        )
+    )
 
 
 #: Reddin statüsü → kullanıcıya gidecek sabit metin. Sözlük, çağrı yerinde bir
@@ -364,6 +401,9 @@ def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> AnswerOut
 _REFUSAL_TEXT: dict[AnswerStatus, str] = {
     AnswerStatus.OUT_OF_SCOPE: MESSAGE_OUT_OF_SCOPE,
     AnswerStatus.INSUFFICIENT_CONTEXT: MESSAGE_INSUFFICIENT_CONTEXT,
+    AnswerStatus.BUDGET_EXHAUSTED: (
+        "Bu dersin günlük sohbet AI bütçesi doldu. Bütçe gece yarısı yenilenir."
+    ),
 }
 
 
@@ -440,6 +480,7 @@ async def produce_answer(
     guardrails: Sequence[Guardrail],
     settings: Settings,
     student_attempt: str | None = None,
+    evidence_threshold: float | None = None,
 ) -> AnswerOutcome:
     """Bir turun cevabını üretir. Veritabanına dokunmaz, oturum durumu yazmaz.
 
@@ -454,7 +495,8 @@ async def produce_answer(
     chunks = await retriever.search(
         course_id=course_id, query=question, limit=settings.retrieval_top_k
     )
-    refusal = _evidence_refusal(chunks, question, settings.evidence_threshold)
+    threshold = settings.evidence_threshold if evidence_threshold is None else evidence_threshold
+    refusal = _evidence_refusal(chunks, question, threshold)
     if refusal is not None:
         # LLM'e HİÇ gidilmez: kanıt yoksa üretilecek bir şey de yoktur. Kapsam dışı
         # olduğu deterministik olarak saptanmışsa da gidilmez — modele sormak hem
@@ -488,9 +530,21 @@ async def produce_answer(
     )
 
     if answer.status is AnswerStatus.OUT_OF_SCOPE:
-        return _refusal(AnswerStatus.OUT_OF_SCOPE, mode, MESSAGE_OUT_OF_SCOPE)
+        return _refusal(
+            AnswerStatus.OUT_OF_SCOPE,
+            mode,
+            MESSAGE_OUT_OF_SCOPE,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
     if answer.status is AnswerStatus.INSUFFICIENT_CONTEXT:
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_INSUFFICIENT_CONTEXT)
+        return _refusal(
+            AnswerStatus.INSUFFICIENT_CONTEXT,
+            mode,
+            MESSAGE_INSUFFICIENT_CONTEXT,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
 
     # Kademe sunucu otoritesindedir.
     answer.socratic_stage = stage
@@ -508,6 +562,8 @@ async def produce_answer(
         )
         regenerated.socratic_stage = stage
         regenerated, blocked, _ = apply_guardrails(regenerated, chunks, guardrails)
+        regenerated.prompt_tokens += answer.prompt_tokens
+        regenerated.completion_tokens += answer.completion_tokens
         answer = regenerated
 
     if blocked:
@@ -520,15 +576,29 @@ async def produce_answer(
                     text=hint_text,
                     citations=[citation],
                     socratic_stage=stage,
+                    prompt_tokens=answer.prompt_tokens,
+                    completion_tokens=answer.completion_tokens,
                 )
             )
         # QA modunda deterministik bir son durak yoktur: gösterilemeyen cevap
         # gösterilmez (FR-012, fail-closed).
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_BLOCKED)
+        return _refusal(
+            AnswerStatus.INSUFFICIENT_CONTEXT,
+            mode,
+            MESSAGE_BLOCKED,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
 
     if not answer.citations:
         # Zincir bloklamasa bile kaynaksız akademik cevap kullanıcıya gitmez (FR-013).
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_BLOCKED)
+        return _refusal(
+            AnswerStatus.INSUFFICIENT_CONTEXT,
+            mode,
+            MESSAGE_BLOCKED,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
 
     # Düşen atıfların iddiaları da düşer: guardrail bir atıfı elediyse onun iddia
     # metnini taşımak, gösterilmeyen bir kaynağa ait cümleyi ekranda bırakırdı.
@@ -569,6 +639,10 @@ async def post_chat(
         raise ValidationError(
             "Sınav modunda asistan ipucu veremez. Sınav soruları sınav ekranından yanıtlanır."
         )
+    policy = await policy_service.resolve_policy(
+        session, course_id=context.course_id, settings=settings
+    )
+    policy_service.assert_mode_allowed(policy, payload.mode, is_instructor=context.is_instructor)
     if not get_limiter().allow(
         RATE_LIMIT_SCOPE,
         f"{context.user_id}:{context.course_id}",
@@ -576,6 +650,9 @@ async def post_chat(
         window_seconds=settings.chat_rate_limit_window_seconds,
     ):
         raise RateLimitError("Çok sık soru gönderiyorsun. Bir dakika bekleyip tekrar dener misin?")
+    budget_exhausted = await policy_service.budget_exhausted(
+        session, course_id=context.course_id, policy=policy
+    )
 
     chat_session = await _load_or_create_session(session, context, payload)
 
@@ -588,16 +665,22 @@ async def post_chat(
     # merdiven, kanıt eşiğine takılıp çöker — canlı koşuda birebir bu gözlendi. Merdiven
     # tek bir sorunun etrafında ilerler, dolayısıyla arama da o soruya bağlı kalır.
     search_query = question
-    if chat_session.mode is ChatMode.SOCRATIC:
+    if not budget_exhausted and chat_session.mode is ChatMode.SOCRATIC:
         state = _stored_state(chat_session) if not _is_first_turn(chat_session) else None
-        decision = socratic.advance(state, attempt)
+        decision = socratic.advance(state, attempt, max_stage_index=policy.max_hints)
         search_query = await _opening_question(session, chat_session, fallback=question)
 
     cached_answer = None
-    if chat_session.mode is ChatMode.QA:
+    if not budget_exhausted and chat_session.mode is ChatMode.QA:
         cached_answer = await _lookup_cache(session, context.course_id, question)
 
-    if cached_answer is not None:
+    if budget_exhausted:
+        outcome = _refusal(
+            AnswerStatus.BUDGET_EXHAUSTED,
+            chat_session.mode,
+            _REFUSAL_TEXT[AnswerStatus.BUDGET_EXHAUSTED],
+        )
+    elif cached_answer is not None:
         # Önbellekten dönen cevap da zincirin metne bakan halkalarından geçer.
         # Geçmiyordu ve ölçüldü: satıra konmuş bir `<script>` etiketi hem cevap
         # metninde hem atıf kartında zarfa çıkıyordu. Atıf halkası bilerek
@@ -617,11 +700,12 @@ async def post_chat(
             course_id=context.course_id,
             mode=chat_session.mode,
             decision=decision,
-            retriever=get_retriever(session),
+            retriever=get_retriever(session, policy.source_document_ids),
             generator=get_generator(),
             guardrails=get_guardrails(),
             settings=settings,
             student_attempt=payload.student_attempt,
+            evidence_threshold=policy.evidence_threshold,
         )
     answer, claims = outcome.answer, outcome.claims
 
@@ -661,9 +745,7 @@ async def post_chat(
             status=answer.status,
             http_status=status.HTTP_200_OK,
             latency_ms=latency_ms,
-            # Token sayısı sözleşmede taşınmıyor; Şerit 2 GeneratedAnswer'a eklerse
-            # burası dolar. Uydurulmuş bir sayı yazmaktansa boş bırakılıyor (Anayasa III).
-            token_count=None,
+            token_count=answer.prompt_tokens + answer.completion_tokens,
             cache_hit=cached_answer is not None,
         )
     )
@@ -698,8 +780,18 @@ async def chat_availability(
     yüzey ayrı ayrı hesaplasaydı biri diğerinden sapardı (Anayasa XI) ve sapma
     sessiz olurdu — sekme açık görünüp istek 403 dönerdi.
     """
+    policy = await policy_service.resolve_policy(
+        session, course_id=context.course_id, settings=settings
+    )
+    allowed_modes = [
+        mode for mode in (ChatMode.QA, ChatMode.SOCRATIC) if mode in policy.allowed_modes
+    ]
     if context.is_instructor:
-        return ChatAvailabilityOut(available=True)
+        return ChatAvailabilityOut(
+            available=True,
+            allowed_modes=allowed_modes,
+            hint_limit=policy.max_hints,
+        )
     now = await db_now(session)
     active = await exam_state.active_exam_session(
         session,
@@ -709,11 +801,25 @@ async def chat_availability(
         settings=settings,
     )
     if active is None:
-        return ChatAvailabilityOut(available=True)
+        if not allowed_modes:
+            return ChatAvailabilityOut(
+                available=False,
+                reason="policy_all_modes_closed",
+                message="Bu ders için asistan modları eğitmen tarafından kapatıldı.",
+                allowed_modes=allowed_modes,
+                hint_limit=policy.max_hints,
+            )
+        return ChatAvailabilityOut(
+            available=True,
+            allowed_modes=allowed_modes,
+            hint_limit=policy.max_hints,
+        )
     return ChatAvailabilityOut(
         available=False,
         reason=exam_state.EXAM_LOCK_REASON,
         message=exam_state.EXAM_LOCK_MESSAGE,
+        allowed_modes=allowed_modes,
+        hint_limit=policy.max_hints,
     )
 
 

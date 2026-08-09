@@ -146,6 +146,8 @@ class GenerationService:
         payload: LlmAnswerPayload | None = None
         provider: str | None = None
         model: str | None = None
+        prompt_tokens = 0
+        completion_tokens = 0
 
         for attempt in range(self._settings.llm_max_retries + 1):
             current = (
@@ -153,6 +155,8 @@ class GenerationService:
             )
             completion = await self._llm.complete(current)
             provider, model = completion.provider, completion.model
+            prompt_tokens += completion.prompt_tokens
+            completion_tokens += completion.completion_tokens
             payload = _parse_payload(completion.text)
             if payload is not None:
                 break
@@ -164,7 +168,15 @@ class GenerationService:
         if payload is None:
             # Israrla bozuk çıktı: uydurmaya çalışmak yerine kapan (Anayasa IV).
             return GenerationResult(
-                answer=_abstain(AnswerStatus.INSUFFICIENT_CONTEXT, mode, socratic_stage)
+                answer=_abstain(
+                    AnswerStatus.INSUFFICIENT_CONTEXT,
+                    mode,
+                    socratic_stage,
+                    provider=provider,
+                    model=model,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                )
             )
 
         return _to_answer(
@@ -174,11 +186,20 @@ class GenerationService:
             socratic_stage=socratic_stage,
             provider=provider,
             model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
         )
 
 
 def _abstain(
-    status: AnswerStatus, mode: ChatMode, socratic_stage: SocraticStage | None
+    status: AnswerStatus,
+    mode: ChatMode,
+    socratic_stage: SocraticStage | None,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
 ) -> GeneratedAnswer:
     return GeneratedAnswer(
         status=status,
@@ -186,6 +207,10 @@ def _abstain(
         text=USER_TEXT[status.value],
         citations=[],
         socratic_stage=socratic_stage,
+        provider=provider,
+        model=model,
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
     )
 
 
@@ -197,6 +222,8 @@ def _to_answer(
     socratic_stage: SocraticStage | None,
     provider: str | None,
     model: str | None,
+    prompt_tokens: int,
+    completion_tokens: int,
 ) -> GenerationResult:
     """Model çıktısını, metadata'dan doldurulmuş cevaba çevirir.
 
@@ -232,6 +259,8 @@ def _to_answer(
             socratic_stage=socratic_stage,
             provider=provider,
             model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
         ),
         claims=claims,
     )

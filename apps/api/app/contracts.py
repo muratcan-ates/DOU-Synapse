@@ -82,7 +82,7 @@ class Retriever(Protocol):
 
 
 class AnswerStatus(StrEnum):
-    """Cevabın üç meşru sonucu. İkisi 'cevap yok' ama SEBEPLERİ farklı.
+    """Cevabın dört meşru sonucu. Üçü 'cevap yok' ama SEBEPLERİ farklı.
 
     Karıştırılmamalı: `insufficient_context` "materyalde var olabilir ama kanıt
     zayıf", `out_of_scope` "bu ders bu konuyu hiç kapsamıyor". Kullanıcıya
@@ -92,6 +92,7 @@ class AnswerStatus(StrEnum):
     ANSWERED = "answered"
     INSUFFICIENT_CONTEXT = "insufficient_context"
     OUT_OF_SCOPE = "out_of_scope"
+    BUDGET_EXHAUSTED = "budget_exhausted"
 
 
 class ChatMode(StrEnum):
@@ -150,6 +151,9 @@ class GeneratedAnswer:
     #: Sağlayıcı adı ve model — hangi cevabın neyle üretildiği raporlanabilmeli.
     provider: str | None = None
     model: str | None = None
+    #: Sağlayıcının ölçtüğü kullanım. Retry ve guardrail yeniden üretimleri toplanır.
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
 
 
 class Generator(Protocol):

@@ -99,11 +99,13 @@ describe("Sokratik kademeler — sözleşme beş kademeli", () => {
   });
 });
 
-describe("abstention — iki durum ayrı ayrı adlandırılır", () => {
-  test("iki durumun da başlığı var ve birbirinden farklı", () => {
+describe("abstention — üç durum ayrı ayrı adlandırılır", () => {
+  test("üç durumun da başlığı var ve birbirinden farklı", () => {
     expect(ABSTENTION_LABEL.insufficient_context).not.toBe(ABSTENTION_LABEL.out_of_scope);
+    expect(ABSTENTION_LABEL.budget_exhausted).not.toBe(ABSTENTION_LABEL.out_of_scope);
     expect(ABSTENTION_LABEL.insufficient_context.length).toBeGreaterThan(0);
     expect(ABSTENTION_LABEL.out_of_scope.length).toBeGreaterThan(0);
+    expect(ABSTENTION_LABEL.budget_exhausted.length).toBeGreaterThan(0);
   });
 
   test("başlıklarda ünlem yok — abstention hata gibi görünmez", () => {
@@ -117,6 +119,7 @@ describe("abstention — iki durum ayrı ayrı adlandırılır", () => {
     expect(isAbstention(null)).toBe(false);
     expect(isAbstention("insufficient_context")).toBe(true);
     expect(isAbstention("out_of_scope")).toBe(true);
+    expect(isAbstention("budget_exhausted")).toBe(true);
   });
 });
 
@@ -276,6 +279,26 @@ describe("toBlocks — QA dökümü", () => {
       id: "a1",
       text: "Bu konu dersin kapsamı dışında görünüyor.",
       status: "out_of_scope",
+    });
+  });
+
+  test("günlük bütçe sınırı hata bloğuna dönüşmez", () => {
+    const blocks = toBlocks(
+      [
+        userMessage("u1", "Deadlock nedir?"),
+        assistant("a1", {
+          status: "budget_exhausted",
+          citations: [],
+          content: "Bu dersin günlük sohbet AI bütçesi doldu.",
+        }),
+      ],
+      { mode: "qa" },
+    );
+    expect(blocks[1]).toEqual({
+      kind: "abstention",
+      id: "a1",
+      text: "Bu dersin günlük sohbet AI bütçesi doldu.",
+      status: "budget_exhausted",
     });
   });
 

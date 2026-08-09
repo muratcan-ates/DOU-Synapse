@@ -24,6 +24,7 @@ const TABS = [
   { slug: "/exam", label: "Sınav provası" },
   { slug: "/questions", label: "Soru havuzu", instructorOnly: true },
   { slug: "/blueprints", label: "Sınav blueprint'i", instructorOnly: true },
+  { slug: "/settings", label: "AI politikası", instructorOnly: true },
   { slug: "/analytics", label: "İlerleme" },
   { slug: "/members", label: "Katılımcılar", instructorOnly: true },
 ];

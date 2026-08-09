@@ -92,6 +92,10 @@ _SQL = text(
                c.embedding <=> CAST(:query_vector AS vector) AS distance
         FROM chunks c
         WHERE c.course_id = :course_id
+          AND (
+              NOT CAST(:filter_documents AS boolean)
+              OR c.document_id = ANY(CAST(:document_ids AS uuid[]))
+          )
           AND c.embedding IS NOT NULL
         ORDER BY c.embedding <=> CAST(:query_vector AS vector)
         LIMIT :limit
@@ -160,7 +164,12 @@ def _assert_same_space(rows: list[Any], expected: str) -> None:
 
 
 async def dense_search(
-    session: AsyncSession, *, course_id: UUID, query: str, limit: int
+    session: AsyncSession,
+    *,
+    course_id: UUID,
+    query: str,
+    limit: int,
+    document_ids: tuple[UUID, ...] | None = None,
 ) -> list[RetrievedChunk]:
     """Sorguya anlamsal olarak en yakın `limit` parçayı döndürür.
 
@@ -182,7 +191,13 @@ async def dense_search(
     rows = (
         await session.execute(
             _SQL,
-            {"query_vector": str(vector), "course_id": course_id, "limit": limit},
+            {
+                "query_vector": str(vector),
+                "course_id": course_id,
+                "limit": limit,
+                "filter_documents": document_ids is not None,
+                "document_ids": list(document_ids or ()),
+            },
         )
     ).all()
     _assert_same_space(list(rows), current_space())

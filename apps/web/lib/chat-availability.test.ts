@@ -12,6 +12,8 @@ describe("toChatLock", () => {
         available: false,
         reason: "exam_in_progress",
         message: "Şu anda süren bir sınav oturumun var.",
+        allowed_modes: ["qa", "socratic"],
+        hint_limit: 4,
       },
       true,
     );
@@ -22,7 +24,16 @@ describe("toChatLock", () => {
   });
 
   test("sunucu açık derse kilit yok ve mesaj taşınmaz", () => {
-    const lock = toChatLock({ available: true, reason: null, message: null }, true);
+    const lock = toChatLock(
+      {
+        available: true,
+        reason: null,
+        message: null,
+        allowed_modes: ["qa", "socratic"],
+        hint_limit: 4,
+      },
+      true,
+    );
 
     expect(lock.locked).toBe(false);
     expect(lock.message).toBeNull();
@@ -31,7 +42,16 @@ describe("toChatLock", () => {
   test("açıkken gelen bir mesaj yine de gösterilmez", () => {
     // Sunucu tutarsız cevap verirse (available=true + message dolu) arayüz
     // kilit metnini sızdırmamalı: gösterilen her metnin bir durumu olmalı.
-    const lock = toChatLock({ available: true, reason: null, message: "artık" }, true);
+    const lock = toChatLock(
+      {
+        available: true,
+        reason: null,
+        message: "artık",
+        allowed_modes: ["qa", "socratic"],
+        hint_limit: 4,
+      },
+      true,
+    );
 
     expect(lock.message).toBeNull();
   });
