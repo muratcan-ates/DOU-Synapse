@@ -106,8 +106,29 @@ class Settings(BaseSettings):
     #: RRF sabiti: k büyüdükçe sıralama farkları yumuşar (standart başlangıç 60).
     retrieval_rrf_k: int = 60
     #: Kanıt eşiği: altında kalan sorgu cevaplanmaz, abstention döner.
-    #: KALİBRE EDİLMEMİŞTİR — T043'e kadar bu sayı hiçbir raporda kullanılamaz.
-    evidence_threshold: float = 0.35
+    #:
+    #: KALİBRE EDİLDİ (T043, 9 Ağustos) — 0.35'ten 0.81'e çekildi. Eski değer ölü bir
+    #: kapıydı: ölçülen hiçbir dense skor 0.76'nın altına inmiyordu, yani eşik hiç
+    #: tetiklenmiyordu ve "kanıt yoksa cevap yok" güvencesi pratikte kapalı bir
+    #: anahtardı. 0.81, 15 soruluk kalibrasyon setinde iki sınıfı ayıran değerdir ve
+    #: karar holdout'a BAKILMADAN önce donduruldu (evaluation/calibration.md).
+    #:
+    #: Dürüst sınır (Anayasa III): 55 soruluk holdout'ta kalibrasyondaki temiz ayrışma
+    #: TUTMADI — 0.81'de doğru ret oranı %80, hedef %90. Tarama 0.820'nin 10/10
+    #: yakaladığını gösteriyor ama oraya geçmek holdout'u ikinci bir kalibrasyon
+    #: setine çevirirdi, o yüzden geçilmedi. Raporda bu haliyle duruyor.
+    evidence_threshold: float = 0.81
+
+    # --- Değerlendirme koşuları (Faz F) -------------------------------------
+    #: Ölçüm koşularının kullandığı LLM anahtarı. Üretim anahtarından AYRI tutulur:
+    #: bir ölçüm koşusu üretim kotasını tüketmemeli ve tersi de olmamalı.
+    eval_llm_api_key: str | None = None
+
+    # --- Worker tetiği (Faz G) ----------------------------------------------
+    #: `POST /internal/drain` ucunu koruyan paylaşılan sır. Tanımsızsa uç KAPALIDIR
+    #: (fail-closed): sırsız açık bir drain ucu, dışarıdan iş kuyruğu tetiklemeye
+    #: izin verirdi.
+    worker_drain_secret: str | None = None
 
     # --- LLM (Faz B) --------------------------------------------------------
     #: Sağlayıcı sırası: ilki denenir, hata/kota durumunda sıradakine düşülür.

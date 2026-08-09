@@ -11,7 +11,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import analytics, chat, courses, documents, exams, health, questions
+from app.api import analytics, chat, courses, documents, exams, health, internal, questions
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import (
@@ -93,6 +93,9 @@ def create_app() -> FastAPI:
     app.include_router(chat.router)
     app.include_router(exams.router)
     app.include_router(analytics.router)
+    # Faz G'nin dahili tetik ucu. Modül bugün boş ama kaydı önden yapıldı; boş
+    # router hiçbir yol eklemez, yani sözleşme bugün değişmez.
+    app.include_router(internal.router)
     return app
 
 
