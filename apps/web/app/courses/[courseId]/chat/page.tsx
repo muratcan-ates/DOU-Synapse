@@ -65,9 +65,29 @@ export default function ChatPage() {
    */
   const lock = useChatAvailability(courseId);
 
+  /*
+   * Yoklama dönene kadar HİÇBİRİ çizilmez. Bu bir estetik tercih değil:
+   * `ChatScreen` monte olur olmaz oturum listesini çekiyor ve kilitli
+   * öğrencide o istek 403 dönüyordu — tarayıcı konsolunda her yüklemede iki
+   * hata, ekranda ise bir an beliren besteci. Kullanıcı "yazabilirim" sanıp
+   * yazmaya başlıyor, sonra alan kayboluyor.
+   *
+   * Bekleme "kilitli" olarak da çizilemez: sınavı olmayan her öğrencinin
+   * sekmesi bir an kilitli görünürdü. Doğru üçüncü hâl "henüz bilinmiyor" ve
+   * karşılığı yükleme göstergesi (`lib/session.ts`'in `ready` kuralıyla aynı).
+   */
+  if (!lock.ready) {
+    return (
+      <AppShell>
+        <CourseNav courseId={courseId} lock={lock} />
+        <Loading label="Yükleniyor…" />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
-      <CourseNav courseId={courseId} />
+      <CourseNav courseId={courseId} lock={lock} />
       {lock.locked ? (
         <EmptyState title={lock.message ?? "Asistan şu anda kullanılamıyor."} />
       ) : (

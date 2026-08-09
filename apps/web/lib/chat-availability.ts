@@ -31,9 +31,19 @@ export interface ChatLock {
   ready: boolean;
 }
 
-export function useChatAvailability(courseId: string): ChatLock {
+/**
+ * `courseId` null verilirse yoklama YAPILMAZ ve kilit yokmuş gibi dönülür.
+ *
+ * Kancalar koşullu çağrılamaz, ama iş koşullu yapılabilir: kilidi zaten
+ * dışarıdan alan bir çağıran (bkz. `CourseNav`) aynı ucu ikinci kez çağırmasın
+ * diye kapı burada. Kancanın kendisi her render'da aynı sırada çalışır.
+ */
+export function useChatAvailability(courseId: string | null): ChatLock {
   const { data, loading } = useResource<ChatAvailability>(
-    () => api.get<ChatAvailability>(`/courses/${courseId}/chat/availability`),
+    () =>
+      courseId === null
+        ? Promise.resolve({ available: true, reason: null, message: null })
+        : api.get<ChatAvailability>(`/courses/${courseId}/chat/availability`),
     [courseId],
     { pollWhile: (state) => !state.available, intervalMs: POLL_INTERVAL_MS },
   );

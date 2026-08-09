@@ -12,7 +12,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useChatAvailability } from "@/lib/chat-availability";
+import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
 import { useSession } from "@/lib/session";
 
 const TABS = [
@@ -27,7 +27,17 @@ const TABS = [
   { slug: "/members", label: "Katılımcılar", instructorOnly: true },
 ];
 
-export function CourseNav({ courseId }: { courseId: string }) {
+/**
+ * `lock` verilirse şerit kendi yoklamasını YAPMAZ.
+ *
+ * Sohbet ekranı kilidi zaten okumak zorunda (besteciyi çizip çizmeyeceğine
+ * karar veriyor). İkisi de kendi kancasını çağırınca aynı uç sayfa başına iki
+ * kez çağrılıyordu — Anayasa XI bunu açıkça kusur sayıyor ("aynı veriyi iki kez
+ * çekme"). Kilidi zaten elinde olan çağıran onu aşağı verir; vermeyen sayfalar
+ * (materyaller, sınav, ilerleme) kendi yoklamasını yapmaya devam eder, çünkü
+ * kilit rozeti her sekmede görünmeli.
+ */
+export function CourseNav({ courseId, lock: providedLock }: { courseId: string; lock?: ChatLock }) {
   const pathname = usePathname();
   const { isInstructor, ready } = useSession();
   /*
@@ -36,7 +46,8 @@ export function CourseNav({ courseId }: { courseId: string }) {
    * kilitli sekme sebebini söyler. Ayrıca gizleme bir yetki değildir — asıl
    * kapı sunucudadır ve bu yüzey yalnız kullanıcıyı duvara koşturmamak için var.
    */
-  const lock = useChatAvailability(courseId);
+  const ownLock = useChatAvailability(providedLock ? null : courseId);
+  const lock = providedLock ?? ownLock;
   const base = `/courses/${courseId}`;
 
   return (
