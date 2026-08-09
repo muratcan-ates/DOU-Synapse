@@ -40,6 +40,7 @@ from app.models.assessment import Question, QuestionType
 from app.models.core import Chunk, Document
 from app.modules.assessment.question_gen import (
     StructuredCompletion,
+    extract_json_object,
     normalize_tr,
 )
 from app.schemas.assessment import (
@@ -278,13 +279,15 @@ def _sources_block(refs: Sequence[tuple[UUID, str]]) -> str:
 
 
 def _parse_verdict(raw: str) -> _LlmVerdict | None:
-    text = raw.strip()
-    if text.startswith("```"):
-        text = text.strip("`")
-        text = text.partition("\n")[2] if "\n" in text else text
+    """Ham yanıtı şemaya çevirir; uymuyorsa None (çağıran yeniden dener).
+
+    Çit temizleme kuralı `question_gen.extract_json_object` ile ortaktır: üretim ve
+    değerlendirme aynı sağlayıcıdan aynı gürültüyü alır, iki farklı temizleme
+    kuralı sessiz tutarsızlık üretirdi (Anayasa XI).
+    """
     try:
-        return _LlmVerdict.model_validate(json.loads(text))
-    except (json.JSONDecodeError, ValidationError, TypeError):
+        return _LlmVerdict.model_validate(extract_json_object(raw))
+    except (json.JSONDecodeError, ValidationError, ValueError):
         return None
 
 

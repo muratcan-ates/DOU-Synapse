@@ -15,17 +15,23 @@ tutulmaz (Anayasa XI).
 
 from __future__ import annotations
 
+import json
+from collections.abc import Callable, Iterator
 from uuid import UUID, uuid4
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.db import rls_session
 from app.models.assessment import QuestionType
+from app.modules.assessment import question_gen
 from tests.conftest import UserFactory
 from tests.test_assessment import (
     DEADLOCK_TEXTS,
+    ESSAY_PAYLOAD,
+    FakeCompletion,
     _create_course,
     create_topic,
     enroll,
@@ -34,6 +40,19 @@ from tests.test_assessment import (
     seed_question,
     short_answer_payload,
 )
+
+
+@pytest.fixture
+def bind_completion() -> Iterator[Callable[[FakeCompletion], None]]:
+    """Sahte LLM sağlayıcısını süreç geneline bağlar ve test bitince söker.
+
+    Sağlayıcı kaydı modül düzeyinde tutulduğu için sızıntı riski var; fixture
+    `reset_providers()` ile kapatır, böylece bir sonraki test yine "bağlı değil"
+    hâlinde başlar.
+    """
+    yield lambda completion: question_gen.set_providers(completion=completion)
+    question_gen.reset_providers()
+
 
 EXAM_DURATION_SECONDS = 20 * 60  # Settings.exam_duration_minutes varsayılanı
 
@@ -680,6 +699,56 @@ class TestMasteryIntegration:
         )
 
         assert await _mastery_rows(fixture.student_id) == [(1.0, 1)]
+
+    async def test_llm_bagliyken_acik_uclu_soru_uctan_puanlanir(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+        bind_completion: Callable[[FakeCompletion], None],
+    ) -> None:
+        """Şerit 2 indiğinde açık uçlu yolun uçtan uca çalıştığının kanıtı.
+
+        Sağlayıcı bağlandığında hiçbir uç değişmez: aynı cevap ucu, aynı akış,
+        yalnız `grade_answer` artık LLM yolunu bulur.
+        """
+        fixture = await build_course(client, users, admin_engine, approved=0)
+        essay_id = await seed_question(
+            admin_engine,
+            course_id=UUID(fixture.course_id),
+            topic_id=fixture.topic_id,
+            source_chunk_id=fixture.chunk_ids[0],
+            payload=ESSAY_PAYLOAD,
+            question_type=QuestionType.OPEN,
+            status="approved",
+            reviewed_by=fixture.instructor_id,
+        )
+        bind_completion(
+            FakeCompletion(
+                json.dumps(
+                    {
+                        "score": 75,
+                        "eksik_noktalar": ["kesilemezlik"],
+                        "dayanak_chunk_id": str(fixture.chunk_ids[0]),
+                    }
+                )
+            )
+        )
+        session_id = (await start(client, fixture, "practice"))["id"]
+
+        body = (
+            await client.post(
+                f"/courses/{fixture.course_id}/exams/{session_id}/answers",
+                json={"question_id": str(essay_id), "given": "Üç koşulu sayıyorum."},
+                headers=fixture.student,
+            )
+        ).json()
+
+        assert body["graded"] is True
+        assert body["score"] == 75
+        assert body["missing_points"] == ["kesilemezlik"]
+        assert body["evidence"]["file_name"] == "isletim-sistemleri.pdf"
+        assert await _mastery_rows(fixture.student_id) == [(0.75, 1)]
 
     async def test_ipucu_kademesi_mastery_puanini_kirpar(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
