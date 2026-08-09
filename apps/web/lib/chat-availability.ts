@@ -66,7 +66,13 @@ export function useChatAvailability(courseId: string | null): ChatLock {
   const { data, loading, reload } = useResource<ChatAvailability>(
     () =>
       courseId === null
-        ? Promise.resolve({ available: true, reason: null, message: null })
+        ? Promise.resolve({
+            available: true,
+            reason: null,
+            message: null,
+            allowed_modes: ["qa", "socratic"],
+            hint_limit: 4,
+          } satisfies ChatAvailability)
         : api.get<ChatAvailability>(`/courses/${courseId}/chat/availability`),
     [courseId],
     { pollWhile: (state) => !state.available, intervalMs: POLL_INTERVAL_MS },

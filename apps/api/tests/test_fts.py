@@ -319,3 +319,55 @@ class TestSiralamaYenidenUretilebilir:
                 ).all()
             )
         assert [konum[c.chunk_id] for c in sonuclar] == [0, 1, 2]
+
+
+class TestBelgePolitikasi:
+    """Ders politikası adayları LIMIT uygulanmadan önce SQL'de daraltır."""
+
+    async def test_izinli_belgeler_fts_aday_kumesini_daraltir(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        ayse_id = await users.create("policy-filter@dogus.edu.tr")
+        ayse = UserFactory.auth(ayse_id)
+        course_id = await create_course(client, ayse, "POL-FTS")
+        allowed = await seed_document(
+            worker_engine,
+            course_id=course_id,
+            uploaded_by=ayse_id,
+            file_name="izinli.md",
+            passages=[(1, "Deadlock Coffman koşulları kaynak bekleme döngüsüdür.")],
+        )
+        blocked = await seed_document(
+            worker_engine,
+            course_id=course_id,
+            uploaded_by=ayse_id,
+            file_name="kapali.md",
+            passages=[(1, "Deadlock Coffman koşulları kaynak bekleme döngüsüdür.")],
+        )
+
+        async with rls_session(ayse_id) as session:
+            only_allowed = await fts_search(
+                session,
+                course_id=course_id,
+                query="deadlock",
+                limit=10,
+                document_ids=(allowed,),
+            )
+            none_allowed = await fts_search(
+                session,
+                course_id=course_id,
+                query="deadlock",
+                limit=10,
+                document_ids=(),
+            )
+            unrestricted = await fts_search(
+                session,
+                course_id=course_id,
+                query="deadlock",
+                limit=10,
+                document_ids=None,
+            )
+
+        assert {chunk.document_id for chunk in only_allowed} == {allowed}
+        assert none_allowed == []
+        assert {chunk.document_id for chunk in unrestricted} == {allowed, blocked}

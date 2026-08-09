@@ -120,6 +120,8 @@ class LlmAnswerPayload(BaseModel):
         zincirin ilerisinde kaynaksız bir cevaba dönüşürdü. Burada reddetmek
         fail-closed davranışın en ucuz noktasıdır.
         """
+        if self.status is AnswerStatus.BUDGET_EXHAUSTED:
+            raise ValueError("budget_exhausted yalnız sunucu politika kapısı tarafından üretilir")
         if self.status is AnswerStatus.ANSWERED and not self.answer.strip():
             if not any(hint.text.strip() for hint in self.hints):
                 raise ValueError("answered durumunda boş cevap metni kabul edilmez")
@@ -159,8 +161,9 @@ class HintOut(BaseModel):
 class ChatResponse(BaseModel):
     """ARCHITECTURE §5 cevap zarfı.
 
-    Abstention bir HATA DEĞİLDİR: `insufficient_context` ve `out_of_scope` normal
-    200 gövdesiyle döner (Anayasa VII — abstention hata gibi gösterilmez).
+    Abstention bir HATA DEĞİLDİR: `insufficient_context`, `out_of_scope` ve
+    `budget_exhausted` normal 200 gövdesiyle döner (Anayasa VII — abstention
+    hata gibi gösterilmez).
     Sağlayıcı/model adı bilinçli olarak dışarı verilmez; altyapı ayrıntısı
     kullanıcıya gitmez, ölçüm için `GeneratedAnswer` üzerinde loglanır.
 

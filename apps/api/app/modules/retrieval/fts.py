@@ -101,6 +101,10 @@ _SQL = text(
                ts_rank(c.fts, q.query) AS rank
         FROM chunks c, q
         WHERE c.course_id = :course_id
+          AND (
+              NOT CAST(:filter_documents AS boolean)
+              OR c.document_id = ANY(CAST(:document_ids AS uuid[]))
+          )
           AND c.fts @@ q.query
         -- Eşitlik bozma `c.id` DEĞİL: birincil anahtar `gen_random_uuid()` ile
         -- üretiliyor, yani aynı korpus yeniden ingest edildiğinde aynı parça
@@ -141,7 +145,12 @@ def uses_explicit_operators(query: str) -> bool:
 
 
 async def fts_search(
-    session: AsyncSession, *, course_id: UUID, query: str, limit: int
+    session: AsyncSession,
+    *,
+    course_id: UUID,
+    query: str,
+    limit: int,
+    document_ids: tuple[UUID, ...] | None = None,
 ) -> list[RetrievedChunk]:
     """Sorguyla kelime düzeyinde eşleşen `limit` parçayı `ts_rank` sırasıyla döndürür.
 
@@ -158,6 +167,8 @@ async def fts_search(
                 "strict": uses_explicit_operators(query),
                 "course_id": course_id,
                 "limit": limit,
+                "filter_documents": document_ids is not None,
+                "document_ids": list(document_ids or ()),
             },
         )
     ).all()

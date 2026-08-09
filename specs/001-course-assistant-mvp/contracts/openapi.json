@@ -974,6 +974,176 @@
         }
       }
     },
+    "/courses/{course_id}/ai-policy": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Get Policy",
+        "operationId": "get_policy_courses__course_id__ai_policy_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseAiPolicyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Put Policy",
+        "operationId": "put_policy_courses__course_id__ai_policy_put",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseAiPolicyIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseAiPolicyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/ai-policy/history": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Policy History",
+        "operationId": "policy_history_courses__course_id__ai_policy_history_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourseAiPolicyAuditOut"
+                  },
+                  "title": "Response Policy History Courses  Course Id  Ai Policy History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/topics": {
       "post": {
         "tags": [
@@ -2083,10 +2253,11 @@
         "enum": [
           "answered",
           "insufficient_context",
-          "out_of_scope"
+          "out_of_scope",
+          "budget_exhausted"
         ],
         "title": "AnswerStatus",
-        "description": "Cevabın üç meşru sonucu. İkisi 'cevap yok' ama SEBEPLERİ farklı.\n\nKarıştırılmamalı: `insufficient_context` \"materyalde var olabilir ama kanıt\nzayıf\", `out_of_scope` \"bu ders bu konuyu hiç kapsamıyor\". Kullanıcıya\nverilen metin de ölçüm kategorisi de farklıdır (SC-005 yalnız ikincisini ölçer)."
+        "description": "Cevabın dört meşru sonucu. Üçü 'cevap yok' ama SEBEPLERİ farklı.\n\nKarıştırılmamalı: `insufficient_context` \"materyalde var olabilir ama kanıt\nzayıf\", `out_of_scope` \"bu ders bu konuyu hiç kapsamıyor\". Kullanıcıya\nverilen metin de ölçüm kategorisi de farklıdır (SC-005 yalnız ikincisini ölçer)."
       },
       "AnswerSubmitRequest": {
         "properties": {
@@ -2158,11 +2329,24 @@
               }
             ],
             "title": "Message"
+          },
+          "allowed_modes": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMode"
+            },
+            "type": "array",
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "type": "integer",
+            "title": "Hint Limit"
           }
         },
         "type": "object",
         "required": [
-          "available"
+          "available",
+          "allowed_modes",
+          "hint_limit"
         ],
         "title": "ChatAvailabilityOut",
         "description": "Asistanın bu kullanıcı için açık olup olmadığı.\n\nArayüzün sekmeyi kilitlemek için ihtiyaç duyduğu tek bilgi. `reason` ve\n`message` sunucudan gelir; arayüz kendi metnini uydurmaz (Anayasa V) ve\nmuafiyet kuralını tekrarlamaz — eğitmene her zaman `available=True` döner."
@@ -2349,7 +2533,7 @@
           "answer"
         ],
         "title": "ChatResponse",
-        "description": "ARCHITECTURE §5 cevap zarfı.\n\nAbstention bir HATA DEĞİLDİR: `insufficient_context` ve `out_of_scope` normal\n200 gövdesiyle döner (Anayasa VII — abstention hata gibi gösterilmez).\nSağlayıcı/model adı bilinçli olarak dışarı verilmez; altyapı ayrıntısı\nkullanıcıya gitmez, ölçüm için `GeneratedAnswer` üzerinde loglanır.\n\n`session_id`/`message_id` zarfın parçasıdır ve opsiyonel DEĞİLDİR: istemci bir\nsonraki turu aynı oturuma bağlamak zorundadır ve oturum kimliğini kendisi\nuyduramaz. 9 Ağustos'a kadar bu iki alan yalnız `api/chat.py`'nin geçici\nkopyasında vardı; zarfın iki ayrı tanımı olması istemciyi hiçbir zaman\nkoşmamış bir sözleşmeye karşı yazdırdı (bkz. modül docstring'i)."
+        "description": "ARCHITECTURE §5 cevap zarfı.\n\nAbstention bir HATA DEĞİLDİR: `insufficient_context`, `out_of_scope` ve\n`budget_exhausted` normal 200 gövdesiyle döner (Anayasa VII — abstention\nhata gibi gösterilmez).\nSağlayıcı/model adı bilinçli olarak dışarı verilmez; altyapı ayrıntısı\nkullanıcıya gitmez, ölçüm için `GeneratedAnswer` üzerinde loglanır.\n\n`session_id`/`message_id` zarfın parçasıdır ve opsiyonel DEĞİLDİR: istemci bir\nsonraki turu aynı oturuma bağlamak zorundadır ve oturum kimliğini kendisi\nuyduramaz. 9 Ağustos'a kadar bu iki alan yalnız `api/chat.py`'nin geçici\nkopyasında vardı; zarfın iki ayrı tanımı olması istemciyi hiçbir zaman\nkoşmamış bir sözleşmeye karşı yazdırdı (bkz. modül docstring'i)."
       },
       "ChatRole": {
         "type": "string",
@@ -2624,6 +2808,271 @@
         ],
         "title": "ClassTopicProgress"
       },
+      "CourseAiPolicyAuditOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "changed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed By"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Changed At"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "changed_by",
+          "changed_at",
+          "before",
+          "after"
+        ],
+        "title": "CourseAiPolicyAuditOut"
+      },
+      "CourseAiPolicyIn": {
+        "properties": {
+          "allowed_modes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChatMode"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Limit"
+          },
+          "evidence_threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Threshold"
+          },
+          "daily_llm_budget": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Llm Budget"
+          },
+          "source_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CourseAiPolicyIn"
+      },
+      "CourseAiPolicyOut": {
+        "properties": {
+          "allowed_modes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChatMode"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Limit"
+          },
+          "evidence_threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Threshold"
+          },
+          "daily_llm_budget": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Llm Budget"
+          },
+          "source_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Ids"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "effective": {
+            "$ref": "#/components/schemas/EffectivePolicyOut"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "budget_used_today": {
+            "type": "integer",
+            "title": "Budget Used Today",
+            "default": 0
+          },
+          "budget_remaining_today": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Remaining Today"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "course_id",
+          "effective"
+        ],
+        "title": "CourseAiPolicyOut"
+      },
       "CourseCreate": {
         "properties": {
           "code": {
@@ -2782,6 +3231,60 @@
         ],
         "title": "DocumentUploadOut",
         "description": "Yükleme kabul yanıtı.\n\nBelge arka planda işlendiği için 202 döner; istemci `status` alanını izleyerek\nilerlemeyi gösterir."
+      },
+      "EffectivePolicyOut": {
+        "properties": {
+          "allowed_modes": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMode"
+            },
+            "type": "array",
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "type": "integer",
+            "title": "Hint Limit"
+          },
+          "evidence_threshold": {
+            "type": "number",
+            "title": "Evidence Threshold"
+          },
+          "daily_llm_budget": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Llm Budget"
+          },
+          "source_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "allowed_modes",
+          "hint_limit",
+          "evidence_threshold",
+          "daily_llm_budget",
+          "source_document_ids"
+        ],
+        "title": "EffectivePolicyOut"
       },
       "EvidenceLevel": {
         "type": "string",
