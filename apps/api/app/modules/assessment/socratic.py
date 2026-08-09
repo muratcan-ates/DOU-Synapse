@@ -61,6 +61,7 @@ from typing import Any
 
 from app.contracts import Citation, RetrievedChunk, SocraticStage
 from app.core import text_tr
+from app.modules.guardrails import sanitize
 
 # Merdivenin sırası. `contracts.SocraticStage` tanımlıdır ama Python enum'ında sıra
 # anlamlı bir API değildir; ilerleme mantığı bu listeye dayanır.
@@ -433,9 +434,23 @@ def template_hint(stage: SocraticStage, chunk: RetrievedChunk) -> tuple[str, Cit
     Üretim pedagojik filtreden geçemediğinde (FR-015) kullanıcıya bu gider. Metin
     chunk'tan alıntı YAPMAZ; yalnız dosya adı ve konum işaret eder, bu yüzden
     kod/çözüm sızdırması yapısal olarak imkânsızdır.
+
+    **Metadata temizlikten geçirilir.** Şablon metnine giren iki alan da güvenilmez
+    girdiden beslenir: `file_name` yükleyenin seçtiği dosya adı, `section_title`
+    belgenin kendi metninden ayrıştırılır. Ölçüldü — `<img src=x onerror=alert(1)>.pdf`
+    adlı bir dosya ve `<script>` taşıyan bir bölüm başlığı, ipucu metninin ve atıf
+    kartının içine olduğu gibi giriyordu.
+
+    Temizliğin burada yapılmasının sebebi bu yolun **zinciri yapısı gereği
+    atlamasıdır**: şablon ipucu, üretim filtreden geçemediğinde devreye giren
+    deterministik son duraktır ve `chat.produce_answer` onu doğrudan döndürür.
+    Yani son savunma hattı, tam da modele güvenilmediği anda yükü taşıyordu.
+    Çağıranların hepsinin temizlemeyi hatırlamasına bel bağlamak, bugün iki kez
+    başarısız olmuş bir varsayım (bkz. önbellek isabeti, atıf kartı).
     """
-    kaynak = f"{chunk.file_name} — {chunk.location}"
-    text = _TEMPLATES[stage].format(kaynak=kaynak, konu=chunk.section_title or "ilgili")
+    kaynak = f"{sanitize.clean(chunk.file_name)} — {sanitize.clean(chunk.location)}"
+    konu = sanitize.clean(chunk.section_title or "") or "ilgili"
+    text = _TEMPLATES[stage].format(kaynak=kaynak, konu=konu)
     return text, hint_citation(chunk)
 
 
@@ -445,10 +460,13 @@ def hint_citation(chunk: RetrievedChunk) -> Citation:
     `quote` alanına chunk METNİ konmaz, bölüm başlığı veya konum konur. Sokratik modda
     kaynak bir "oku" işaretidir, gösterilecek içerik değil; parçanın kendisi çözümü
     içeriyorsa atıf kutusundan sızardı.
+
+    Üç görünen alan da temizlenir; gerekçe `template_hint`'te.
     """
+    location = sanitize.clean(chunk.location)
     return Citation(
         chunk_id=chunk.chunk_id,
-        file_name=chunk.file_name,
-        location=chunk.location,
-        quote=chunk.section_title or chunk.location,
+        file_name=sanitize.clean(chunk.file_name),
+        location=location,
+        quote=sanitize.clean(chunk.section_title or "") or location,
     )
