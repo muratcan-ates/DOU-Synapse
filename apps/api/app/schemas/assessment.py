@@ -259,6 +259,9 @@ class ExamStartRequest(BaseModel):
     mode: ExamMode = ExamMode.PRACTICE
     #: Verilirse yalnız o konunun onaylı soruları çekilir.
     topic_id: UUID | None = None
+    #: Verilirse blueprint sınavı açılır: kâğıt yayınlanmış sürümün `exam_items`'ından
+    #: gelir, `topic_id` ve rastgele seçim devre dışı kalır (0008, FR-115/FR-116).
+    blueprint_id: UUID | None = None
 
 
 class ExamQuestionOut(BaseModel):
@@ -284,6 +287,12 @@ class ExamSessionOut(BaseModel):
     question_count: int
     answered_count: int
     questions: list[ExamQuestionOut] = Field(default_factory=list)
+    #: Blueprint sınavında oturumun bağlandığı sürüm. Prova oturumlarında None.
+    #: Yürüyen oturum bu sürümü görmeye devam eder; yeni sürüm yayınlanması
+    #: başlamış bir sınavı değiştirmez (data-model.md §8 madde 9).
+    exam_version_id: UUID | None = None
+    exam_blueprint_id: UUID | None = None
+    attempt_no: int | None = None
 
 
 class AnswerSubmitRequest(BaseModel):

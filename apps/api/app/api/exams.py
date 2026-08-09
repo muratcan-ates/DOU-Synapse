@@ -44,7 +44,17 @@ from app.api.deps import CourseContext, CourseMemberDep, SessionDep
 from app.core.config import Settings, get_settings
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
-from app.models.assessment import Answer, ExamMode, ExamSession, Question, QuestionStatus, Topic
+from app.models.assessment import (
+    Answer,
+    ExamBlueprint,
+    ExamMode,
+    ExamSession,
+    ExamVersion,
+    ExamVersionStatus,
+    Question,
+    QuestionStatus,
+    Topic,
+)
 from app.modules.assessment.exam_paper import paper_question_ids
 from app.modules.assessment.exam_state import effective_expiry, remaining_seconds
 from app.modules.assessment.grading import (
@@ -234,6 +244,9 @@ async def _session_out(
         score=score_of(outcomes) if exam.finished_at else None,
         question_count=len(paper),
         answered_count=len(answered),
+        exam_version_id=exam.exam_version_id,
+        exam_blueprint_id=exam.exam_blueprint_id,
+        attempt_no=exam.attempt_no,
         questions=[
             ExamQuestionOut(
                 id=question_id,
@@ -252,17 +265,105 @@ async def _session_out(
 # ---------------------------------------------------------------------------
 
 
+async def _start_blueprint_exam(
+    blueprint_id: UUID,
+    context: CourseContext,
+    session: AsyncSession,
+    settings: Settings,
+) -> ExamSessionOut:
+    """Yayınlanmış bir sınava oturum açar (FR-115, FR-116).
+
+    Üç kapı da burada Türkçe konuşur; hepsinin veritabanı tarafında ikinci bir
+    katmanı var ve iki katman bağımsız olarak doğru davranmalı (Anayasa II):
+
+    - **Görünürlük.** Öğrenci yayınlanmamış bir blueprint'i `exam_blueprints_read`
+      politikası yüzünden zaten göremez; burada 404 döner ve varlığı sızmaz.
+    - **Yayın penceresi.** `exam_sessions_self_insert` politikası
+      `app.is_exam_open(...)` çağırıyor, yani pencere kapalıyken INSERT'i
+      veritabanı da reddeder. Buradaki kontrol yalnız anlaşılır bir cümle
+      kurabilmek için var — politika ihlali kısıt adıyla döner (Anayasa V).
+    - **Deneme hakkı.** Sayım burada yapılır, yarış `exam_sessions_attempt_key`
+      tekil indeksiyle kapanır ve ikinci eşzamanlı istek 409'a çevrilir.
+
+    Süre blueprint'in kendi `duration_minutes`'ıdır; global `exam_duration_minutes`
+    bundan sonra yalnız prova akışının varsayılanıdır.
+    """
+    blueprint = await session.get(ExamBlueprint, blueprint_id)
+    if blueprint is None or blueprint.course_id != context.course_id:
+        raise NotFoundError("Sınav bulunamadı.")
+
+    version = await session.scalar(
+        select(ExamVersion).where(
+            ExamVersion.blueprint_id == blueprint.id,
+            ExamVersion.status == ExamVersionStatus.PUBLISHED,
+        )
+    )
+    if version is None:
+        raise ConflictError("Bu sınav henüz yayınlanmadı.")
+
+    now = await db_now(session)
+    if blueprint.opens_at is not None and now < blueprint.opens_at:
+        raise ConflictError("Bu sınav henüz açılmadı; yayın penceresi başlamadan girilemez.")
+    if blueprint.closes_at is not None and now >= blueprint.closes_at:
+        raise ConflictError("Bu sınavın süresi doldu; yeni oturum başlatılamaz.")
+
+    used = await session.scalar(
+        select(func.count(ExamSession.id)).where(
+            ExamSession.exam_blueprint_id == blueprint.id,
+            ExamSession.user_id == context.user_id,
+        )
+    )
+    used = int(used or 0)
+    if used >= blueprint.max_attempts:
+        raise ConflictError(
+            f"Bu sınav için {blueprint.max_attempts} deneme hakkınız vardı ve hepsini kullandınız."
+        )
+
+    exam = ExamSession(
+        course_id=context.course_id,
+        user_id=context.user_id,
+        mode=ExamMode.EXAM,
+        started_at=now,
+        expires_at=now + timedelta(minutes=blueprint.duration_minutes),
+        # Kâğıt `exam_items`'tan okunur; iki kaynak birden yazılamaz.
+        question_ids=None,
+        exam_version_id=version.id,
+        exam_blueprint_id=blueprint.id,
+        attempt_no=used + 1,
+    )
+    session.add(exam)
+    try:
+        await session.flush()
+    except IntegrityError as exc:
+        raise ConflictError(
+            "Bu sınav için başka bir oturum aynı anda başlatıldı; sayfayı yenileyin."
+        ) from exc
+
+    return await _session_out(session, exam, settings=settings, now=now)
+
+
 @router.post("/exams", response_model=ExamSessionOut, status_code=status.HTTP_201_CREATED)
 async def start_exam(
     payload: ExamStartRequest, context: CourseMemberDep, session: SessionDep
 ) -> ExamSessionOut:
     """Sınav ya da alıştırma oturumu açar.
 
-    Onaylı havuz boşsa oturum açılmaz: "kaynak yoksa cevap yok"un sınav ayağıdır.
-    Sorular burada sabitlenir; sonradan yapılan onay/red başlamış oturumun soru
-    listesini değiştirmez.
+    İki akış var ve ayrımı `blueprint_id` yapar:
+
+    - **Prova (bugünkü akış).** Onaylı havuzdan rastgele soru çekilir ve oturumun
+      `question_ids`'ine sabitlenir. Onaylı havuz boşsa oturum açılmaz: "kaynak
+      yoksa cevap yok"un sınav ayağıdır.
+    - **Blueprint sınavı (0008).** Kâğıt yayınlanmış sürümün `exam_items`'ından
+      gelir; `question_ids` NULL kalır ve oturum `exam_version_id` ile o sürüme
+      bağlanır. Sonradan yeni sürüm yayınlanması başlamış oturumu değiştirmez.
+
+    İki akış aynı satırda karışamaz: `exam_sessions_paper_source` kısıtı kâğıdın
+    iki kaynağı olmasını ifade edilemez kılıyor.
     """
     settings = get_settings()
+
+    if payload.blueprint_id is not None:
+        return await _start_blueprint_exam(payload.blueprint_id, context, session, settings)
 
     if payload.topic_id is not None:
         topic = await session.get(Topic, payload.topic_id)
