@@ -101,14 +101,15 @@ async def build(
 ) -> dict[str, object]:
     """Dersi açar, materyali yükler, worker'ı boşaltır ve korpusu özetler."""
     ensure_api_on_path()
+    from httpx import ASGITransport, AsyncClient
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
+
     from app import worker
     from app.core.config import get_settings
     from app.core.db import dispose_engine, rls_session
     from app.main import create_app
     from app.modules.ingestion.storage import LocalFileStorage, set_storage
-    from httpx import ASGITransport, AsyncClient
-    from sqlalchemy import text
-    from sqlalchemy.ext.asyncio import create_async_engine
 
     settings = get_settings()
     set_storage(LocalFileStorage(storage_root))
