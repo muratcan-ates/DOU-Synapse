@@ -140,6 +140,44 @@ chunk'tan gelir.
 
 ---
 
+## RLS kanıtı — iki katman ayrı ayrı sınandı
+
+Anayasa II "RLS'in gerçekten tetiklendiği, politika bilerek bozularak kanıtlanır"
+diyor. T033 vaka 2 için bu üç adımda yapıldı. Temiz bir veritabanına migration'lar
+uygulandı, bir ders + bir eğitmen + bir öğrenci + bir **taslak** soru kuruldu.
+
+**1. Politika sağlamken, uygulama katmanı hiç devrede değilken.** Ham SQL:
+`SET ROLE dou_app` + öğrencinin `app.current_user_id`'si + `SELECT count(*) FROM questions`.
+
+```
+1. POLITIKA SAGLAM  · ogrenci kac taslak goruyor -> 0
+```
+
+**2. Politika bozulduğunda.** `questions_read` düşürülüp `AND status = 'approved'`
+olmadan yeniden kuruldu. Aynı sorgu:
+
+```
+2. POLITIKA BOZUK   · ogrenci kac taslak goruyor -> 1
+```
+
+Yani `test_rls_katmani_tek_basina_da_taslagi_gizler` bu durumda **kırmızı yanar**.
+Testin yeşilliği politikadan geliyor, tesadüften değil.
+
+**3. Politika bozuk bırakılıp gerçek uygulama aynı veritabanına bağlandığında.**
+Uygulama katmanının tek başına tuttuğunun kontrolü:
+
+```
+3. RLS BOZUK, UYGULAMA KATMANI ACIK · ogrenci kac soru goruyor -> 0 (HTTP 200)
+3. RLS BOZUK, UYGULAMA KATMANI ACIK · egitmen kac soru goruyor -> 1 (HTTP 200)
+4. RLS BOZUK, ogrenci ?status=draft ile istiyor -> 0
+```
+
+İki katman da tek başına yeterli; ikisi birden "iki katmanlı izolasyon"dur. Kanıt
+veritabanı üretilebilir olduğu için kurulum betiği kalıcı olarak saklanmadı, ama
+adımlar yukarıda birebir yazılı.
+
+---
+
 ## Gruptan istenenler
 
 Aşağıdakiler Şerit 4'ün dışında. Hiçbiri Şerit 4'ü bloke etmiyor — hepsinin
