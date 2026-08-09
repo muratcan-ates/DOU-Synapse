@@ -105,7 +105,7 @@ DEADLOCK_BASKA_DERS: list[tuple[int, str]] = [
 
 
 @pytest.fixture
-async def worker_engine() -> AsyncIterator[AsyncEngine]:
+async def worker_engine(clean_tables: None) -> AsyncIterator[AsyncEngine]:
     """Chunk yazımı üretimdeki gibi RLS'i atlayan `dou_worker` rolüyle yapılır."""
     engine = create_async_engine(WORKER_DSN)
     yield engine
