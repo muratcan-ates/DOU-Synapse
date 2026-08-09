@@ -338,6 +338,24 @@ Mod politikaları backend'de:
 | `practice` sınav | **açık** (`POST /exams/{id}/hint`, kademe mastery çarpanına girer) | anında |
 | `exam` sınav | **kapalı** — `hint` ucu reddeder, `hint_level > 0` reddedilir | sınav sonunda |
 | sohbet `exam` modu | **kapalı** — `POST /chat` `exam` modunu hiç kabul etmez (422) | — |
+| **yürüyen `exam` oturumu** | **asistanın tamamı kapalı** — `POST /chat` (her mod), `GET /chat/sessions` ve geçmiş okuma 403 döner (`api/deps.py::require_assistant_unlocked`) | — |
+
+Son satır 002'de eklendi ve yukarıdakilerden farklı bir eksende çalışıyor. İlk üçü
+**mod** politikasıdır: istemcinin ne istediğine bakar. Sonuncusu **durum**
+politikasıdır: öğrencinin o anda sınav verip vermediğine bakar. Ayrım gerekliydi
+çünkü mod ekseni tek başına delinebiliyordu — öğrenci sınavı başlatıp ikinci
+sekmede `mode=qa` ile sınav sorusunun tam, atıflı cevabını alabiliyordu.
+
+Kilidin üç sınırı, üçü de bilinçli:
+
+- **Ders bazlıdır.** A dersinde sınav veren öğrenci B dersinin asistanını
+  kullanabilir. Kilidin amacı o sınavın bütünlüğü, öğrencinin gününü kapatmak
+  değil.
+- **Yürüyen oturuma bağlıdır, bitmemiş oturuma değil.** Süresi dolmuş ama
+  kapatılmamış oturum kilitlemez; aksi hâlde sınav sekmesini kapatıp giden bir
+  öğrenci asistanını kalıcı olarak kaybederdi.
+- **Yalnız değerlendirilene uygulanır.** Kendi dersinde oturum açan eğitmen muaf;
+  muafiyet sunucuda ve sorgudan önce.
 
 ### Açık uçlu cevap değerlendirme (hocanın "eksiği söyle" gereksinimi)
 

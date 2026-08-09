@@ -599,13 +599,19 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     // düğmenin kendi etiketi de yeni duruma döner.
     await page.getByRole("button", { name: /Onayla ve öğrenciye aç/ }).click();
     await expect(page.getByText(/Soru onaylandı/)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Onaylandı" })).toBeVisible();
+    /*
+     * `exact: true` şart: havuzda onaylı soru olunca üstteki süzgeç çipi de
+     * "Onaylandı (1)" oluyor ve satırın erişilebilir adı da bu kelimeyi
+     * taşıyor. Gevşek eşleşme üç öğeye birden uyup strict mode ihlali veriyordu
+     * — testin ölçmek istediği tek şey EYLEM düğmesinin yeni etiketi.
+     */
+    await expect(page.getByRole("button", { name: "Onaylandı", exact: true })).toBeVisible();
 
     // Red de öyle.
     await satirlar.nth(1).click();
     await page.getByRole("button", { name: /^Reddet$/ }).click();
     await expect(page.getByText(/Soru reddedildi/)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Reddedildi" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reddedildi", exact: true })).toBeVisible();
   });
 
   test("üretim muhasebesi GİZLENMEZ ama hata gibi de gösterilmez", async ({ page }) => {
@@ -715,6 +721,53 @@ test.describe("sınav provası", () => {
     await page.getByRole("button", { name: "Sınav başlat" }).click();
     await expect(page.getByRole("button", { name: "Cevabı gönder" })).toBeVisible();
     await expect(ipucu).toHaveCount(0);
+  });
+
+  test("sınav başlayınca Asistan AYNI SEKMEDE kilitlenir, bitince açılır", async ({ page }) => {
+    /*
+     * İki ayrı kusurun testi, ikisi de canlı tarayıcıda bulundu.
+     *
+     * Birincisi ve asıl olanı: kilit sunucuda çalışıyordu ama açık→kilitli
+     * geçişi izlenmiyordu. Kilit yoklaması yalnız KİLİTLİYKEN koşuyor (kilit
+     * kalkınca kendiliğinden dursun diye) ve bu, izlenmesi gereken kenarı ters
+     * seçmekti: öğrenci sınavı başlattığı sekmede "Asistan" bağlantısı açık
+     * kalıyordu. Yeni sekmede kilitliydi, backend her yolu 403 ile reddediyordu
+     * — yani güvenlik açığı değil, ama etkin görünüp iş yapmayan bir yüzey
+     * (Anayasa XI). Bu vaka o geçişi sabitler.
+     *
+     * İkincisi: kilidin GERİ AÇILDIĞI. Fazla kapatan bir kilit, kapatmayan bir
+     * kilit kadar kusurludur ve sınavını bitiren öğrenciyi asistandan mahrum
+     * bırakırdı.
+     */
+    const havuz = await soruHavuzuKur("KILIT");
+    test.skip(havuz.taslaklar.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    await hepsiniOnayla(havuz);
+
+    const asistanBaglantisi = page.getByRole("link", { name: "Asistan" });
+    const kilitliSekme = page.getByText("Kilitli");
+
+    await signIn(page, BURAK);
+    await page.goto(`/courses/${havuz.course.id}/exam`);
+    await expect(asistanBaglantisi).toBeVisible();
+
+    await page.getByRole("button", { name: "Sınav başlat" }).click();
+    await expect(page.getByRole("button", { name: "Cevabı gönder" })).toBeVisible();
+
+    // Sayfa YENİLENMEDEN: geçişin izlendiğinin kanıtı burası.
+    await expect(kilitliSekme).toBeVisible();
+    await expect(asistanBaglantisi).toHaveCount(0);
+
+    // Sunucu da aynı kararı veriyor: kilitli sekme bir süs değil.
+    await page.goto(`/courses/${havuz.course.id}/chat`);
+    await expect(page.getByText(/süren bir sınav oturumun var/)).toBeVisible();
+    await expect(page.getByPlaceholder("Ders materyaline soru sorun…")).toHaveCount(0);
+
+    await page.goto(`/courses/${havuz.course.id}/exam`);
+    await page.getByRole("button", { name: "Sınavı bitir" }).click();
+    await page.getByRole("button", { name: "Bitir ve sonucu gör" }).click();
+
+    await expect(asistanBaglantisi).toBeVisible();
+    await expect(kilitliSekme).toHaveCount(0);
   });
 
   test("onaylanmış sorusu olmayan derste sınav bir HATA değil, boş durumdur", async ({ page }) => {
