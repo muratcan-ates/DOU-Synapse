@@ -50,21 +50,6 @@ export const QUESTION_STATUS: Record<QuestionStatus, LabelSpec> = {
   rejected: { label: "Reddedildi", tone: "neutral" },
 };
 
-/**
- * Konu hâkimiyeti seviyeleri — eşikler spec FR-027 ile birebir:
- * <0.40 Geliştirilmeli · 0.40-0.74 Orta · >=0.75 İyi (sınırlar dahildir).
- *
- * "Geliştirilmeli" WARNING tonundadır, danger değil: düşük skor bir hata
- * değil, çalışma yönüdür.
- */
-export const MASTERY_THRESHOLDS = { good: 0.75, medium: 0.4 } as const;
-
-export function masteryLevel(score: number): LabelSpec {
-  if (score >= MASTERY_THRESHOLDS.good) return { label: "İyi", tone: "success" };
-  if (score >= MASTERY_THRESHOLDS.medium) return { label: "Orta", tone: "info" };
-  return { label: "Geliştirilmeli", tone: "warning" };
-}
-
 /** Dosya boyutu — listede tek satırda okunur kalmalı, ondalık yok. */
 export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

@@ -15,6 +15,7 @@
  */
 
 import type { SourceInfo } from "@/components/source-card";
+import { toSourceInfo } from "@/lib/source";
 import type {
   AnswerFormat,
   Question,
@@ -22,7 +23,6 @@ import type {
   QuestionGenerateRequest,
   QuestionStatus,
   QuestionType,
-  SourceRef,
 } from "@/lib/types";
 
 /* -------------------------------------------------------------------------
@@ -105,22 +105,6 @@ export interface QuestionView {
   source: SourceInfo | null;
 }
 
-/**
- * `SourceRef` → `SourceCard`'ın beklediği biçim.
- *
- * İki alan adı bilerek eşlenmiyor: sözleşmede `snippet`, bileşende `quote`.
- * Dönüşüm tek yerde durur, yoksa her çağrı yeri kendi eşlemesini yazar ve
- * biri `snippet`i `location` sanır.
- */
-export function toSourceInfo(source: SourceRef | null | undefined): SourceInfo | null {
-  if (!source) return null;
-  return {
-    fileName: source.file_name,
-    location: source.location,
-    quote: source.snippet,
-  };
-}
-
 /** `mcq` şıkları: `{key, text}` nesneleri; bozuk öğeler sessizce düşer. */
 function readOptions(
   payload: Record<string, unknown>,
@@ -193,7 +177,9 @@ export function toQuestionView(question: Question): QuestionView {
     rubric: [] as RubricItemView[],
     acceptedAnswers: [] as string[],
     answerFormat: null as AnswerFormat | null,
-    source: toSourceInfo(question.source),
+    // Kaynaksız soru kart çizdirmez; null koruması eşlemenin değil bu çağrının
+    // işi (bkz. `lib/source.ts`).
+    source: question.source ? toSourceInfo(question.source) : null,
   };
 
   switch (question.type) {
