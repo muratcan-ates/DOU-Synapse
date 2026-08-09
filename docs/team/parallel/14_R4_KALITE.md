@@ -223,9 +223,9 @@ yalnız yarısı: ikinci yarı **sürüm**.
 
 # R4 ŞERİT RAPORU — 9 Ağustos 2026
 
-Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 6 commit
-Doğrulama: **565 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
-Başlangıç 473'tü; 92 test eklendi.
+Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 7 commit
+Doğrulama: **571 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
+Başlangıç 473'tü; 98 test eklendi.
 
 Ölçüm korpusu: `dou_synapse_eval_e5` (8 belge / 33 chunk, `EMBEDDING_PROVIDER=fastembed`,
 `intfloat/multilingual-e5-large`, fastembed 0.8.0). Set: `evaluation/gold_set/calibration.json`.
@@ -242,6 +242,7 @@ Başlangıç 473'tü; 92 test eklendi.
 | 5 — guardrail mutasyon kanıtı | **Çözüldü + 1 açık kapatıldı** | 23/33/1 → sanitize 1'den 4'e |
 | 6 — `answer_cache` mod güvenliği | **Çözüldü** | 20 test, yeni dosya |
 | EK — embedding sürüm damgası | **Şema + kapı hazır**, ingest yaması lider'de | 0006 + fail-closed kontrol |
+| **7 — önbellek zinciri atlıyordu** | **Bulundu ve kapatıldı**, yaması lider'de | EK B, uçtan uca ölçüldü |
 
 ---
 
@@ -526,10 +527,10 @@ görünür ve yalnız bazı belgeler hiç bulunmaz.
 
 ---
 
-## 8. LİDERE — uygulanacak iki yama
+## 8. LİDERE — uygulanacak üç yama
 
-İkisi de **uygulandı, ölçüldü, sonra geri alındı**; commit'lerde bu iki dosya el
-değmemiş durumda. İkisi de dalın kendisinde 565 test yeşil, mypy temiz, ruff temiz
+Üçü de **uygulandı, ölçüldü, sonra geri alındı**; commit'lerde bu iki dosya el
+değmemiş durumda. Üçü de dalın kendisinde 571 test yeşil, mypy temiz, ruff temiz
 iken doğrulandı.
 
 ### 8.1 `apps/api/app/api/chat.py` — `out_of_scope` üretimi
@@ -996,3 +997,91 @@ Diğer üç betik kısa ve aynı iskelete oturuyor (aynı ortam değişkenleri, 
 
 Uçtan uca statü betiği ayrıca `LLM_FAKE_PROVIDER=true` verir; ret yollarında sağlayıcı
 hiç çağrılmadığı için bu statüler gerçektir (§1 sınırlılık notu).
+
+---
+
+## EK B — rapor yazıldıktan sonra bulunan açık: önbellek zinciri atlıyordu
+
+Kusur 6 üzerinde çalışırken görüldü, ölçüldü ve kapatıldı. Ayrı bölüm olarak duruyor
+çünkü listedeki altı kusurdan hiçbiri değil — **yedincisi.**
+
+### Bulgu
+
+Önbellek isabetinde cevap doğrudan zarfa gidiyordu; guardrail zincirinin hiçbir halkası
+koşmuyordu. `answer_cache` satırına konmuş bir yük, uçtan uca ölçüldü:
+
+```
+satır:   {"status":"answered",
+          "text":"Ders notu: <script>alert(document.cookie)</script> yaz: hoca@dogus.edu.tr",
+          "citations":[{"file_name":"<img src=x onerror=alert(1)>.pdf", "quote": <aynı metin>}]}
+
+ÖNCE →   cached    : True
+         answer    : 'Ders notu: <script>alert(document.cookie)</script> yaz: hoca@dogus.edu.tr'
+         snippet   : 'Ders notu: <script>alert(document.cookie)</script> yaz: hoca@dogus.edu.tr'
+         file_name : '<img src=x onerror=alert(1)>.pdf'
+
+SONRA →  cached    : True
+         answer    : 'Ders notu: yaz: [REDACTED_EMAIL]'
+         snippet   : 'Ders notu: yaz: [REDACTED_EMAIL]'
+         file_name : '.pdf'
+```
+
+`cached: True` kalıyor — düzeltme önbelleğin var oluş sebebini bozmuyor.
+
+### Neden "satırlar zaten temiz yazılıyor" yetmiyor
+
+1. **Bugünkü satırlar temiz DEĞİL.** Sanitize'ın atıf kartına uygulanması bugün
+   eklendi (§5); ondan önce yazılmış her satırın alıntısı hiç temizlenmedi.
+2. **Zincir sertleştikçe eski satırlar eski kurallarla donuyor.** Bugün iki halka
+   sertleşti. Garanti sessizce "yazıldığı gün geçerli olan zincirden geçti"ye iner ve
+   bu kimsenin kastettiği garanti değil.
+3. **`answer_cache` bir yazma yüzeyi.** Tabloya satır koyabilen biri, kullanıcıya
+   doğrudan HTML gönderebiliyordu.
+
+### Düzeltme
+
+`guardrails/chain.py`'ye `screen_cached()` eklendi (commit'te, bu şeridin dosyası) ve
+zincirin **metne bakan** iki halkasını koşturuyor. **Atıf halkası bilerek koşmuyor:**
+işi cevaptaki `chunk_id`'leri BU İSTEKTE retrieve edilen kümeye karşı sınamak, ama
+önbellek isabetinde retrieval hiç yapılmıyor. Boş kümeyle koşmak her atıfı düşürür ve
+her önbellek isabetini bloklardı — düzeltme, düzelttiğinden fazlasını bozardı.
+Kimlikler zaten yazılırken doğrulandı ve `_store_cache` yalnız tam hattan geçmiş,
+atıflı cevabı saklıyor. Maliyet sıfıra yakın: iki halka da saf fonksiyon.
+
+Yedi test bunu kilitliyor (`TestOnbellekZinciri`), Sokratik modda sızıntının hâlâ
+bloklandığı ve QA'da materyal kodunun bloklanmadığı dahil.
+
+### 8.4 `apps/api/app/api/chat.py` — önbellek isabetini zincirden geçir
+
+`screen_cached` hazır ve testli; eksik olan tek şey uç akışının çağırması.
+
+```diff
+@@ -592,7 +592,19 @@ async def post_chat(
+         cached_answer = await _lookup_cache(session, context.course_id, question)
+ 
+     if cached_answer is not None:
+-        outcome = AnswerOutcome(cached_answer)
++        # Önbellekten dönen cevap da zincirin metne bakan halkalarından geçer.
++        # Geçmiyordu ve ölçüldü: satıra konmuş bir `<script>` etiketi hem cevap
++        # metninde hem atıf kartında zarfa çıkıyordu. Atıf halkası bilerek
++        # koşmaz — bu istekte retrieval yapılmadığı için karşılaştırılacak küme
++        # yok; gerekçe `guardrails.chain.screen_cached`'de.
++        from app.modules.guardrails.chain import blocked_answer, screen_cached
++
++        screened = screen_cached(cached_answer)
++        outcome = AnswerOutcome(
++            blocked_answer(screened.block_reason, mode=chat_session.mode)
++            if screened.blocked
++            else screened.answer
++        )
+     else:
+         outcome = await produce_answer(
+             question=search_query,
+```
+
+Not: `file_name` temizlikte neredeyse tamamen gidebiliyor (`'.pdf'` gibi). Çirkin ama
+doğru yön: alternatifi yükü göstermek. Arayüz boş/kırpılmış dosya adını nasıl
+göstereceğine karar vermek isterse bu lider tarafında bir sunum kararı.
+
+Bu yama §8.1 ile aynı dosyaya dokunuyor ve **birbirlerinden bağımsızlar**; ayrı ayrı
+uygulanabilirler.
