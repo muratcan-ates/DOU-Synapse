@@ -54,5 +54,5 @@
 
 ### Ölçülerek kapatılan iki şüphe (9 Ağustos)
 
-- **Test sayısı**: `uv run pytest -q` → **664 passed**. README doğru; `docs/security.md:358` (530) ve `docs/test-report.md:577` (473) bayat.
+- **Test sayısı**: `uv run pytest -q` → **664 passed**. README doğru; `docs/security.md:358` (530) ve `docs/test-report.md:577` (473) bayat. <!-- docs-check: tarihsel 664 · 2026-08-09 -->
 - **RLS iddia sayısı**: `rls_isolation.sql` sıfırdan kurulan bir veritabanında koşturuldu → **98 iddia, 0 FAIL, hata yok, betik sonuna kadar çalışıyor.** `docs/test-report.md:160`'taki "8 PASS" yalnız bayat bir sayı; "betik sessizce erken duruyor olabilir" ihtimali **elendi**.

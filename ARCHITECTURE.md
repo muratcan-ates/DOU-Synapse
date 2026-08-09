@@ -131,7 +131,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 15 tablo (`supabase/migrations/0001,0003,0004,0005`):
+Kodda gerçekten var olan 15 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007`): <!-- docs-check: tables.count = 15 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -394,7 +394,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. 15 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani
+  yazar. 15 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 15 -->
   tablo sahibi bile politikalara tabidir.
   **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
   yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`
@@ -479,10 +479,10 @@ DOU-Synapse/
 │           ├── models/ schemas/ core/
 │           └── worker.py       # /drain ile tetiklenen job consumer
 ├── evaluation/                 # gold_set/, calibration.md, evaluate.py, results/
-├── sample_data/                # İşletim Sistemleri paketi (8 dosya → 33 chunk)
+├── sample_data/                # İşletim Sistemleri paketi (sayılar README'de)
 ├── docs/                       # runbook, demo-script, instructor-guide, student-guide,
 │                               # kvkk, test-report, security, deployment, images/
-├── supabase/                   # migrations/ (0001,0003,0004,0005), tests/ (RLS kanıtı),
+├── supabase/                   # migrations/ (numaraları §3'te), tests/ (RLS kanıtı),
 │                               # local_dev_setup.sql, seed_demo.sql
 ├── .github/workflows/ci.yml    # api: ruff+format+mypy+pytest+RLS · web: lint+tsc · e2e
 ├── docker-compose.yml          # db (pgvector:pg16) + api — fallback profili, web YOK
