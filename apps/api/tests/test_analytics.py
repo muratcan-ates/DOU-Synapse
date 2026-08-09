@@ -436,6 +436,50 @@ class TestClassAnalytics:
         assert missed[1]["graded_answer_count"] == 2  # NULL cevap paydaya girmedi
         assert missed[0]["topic_name"] == "Deadlock"
 
+    async def test_hic_yanlis_yapilmamis_soru_listeye_girmez(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """`missed_questions` adı ne diyorsa onu içerir.
+
+        Süzgeç yalnız `graded > 0` iken, hiç yanlış yapılmamış sorular da listeye
+        giriyordu — canlı veride gözlendi (COME 331'de dört satırdan birinin
+        `wrong_rate` değeri 0). Eğitmen bu panele "sınıf nerede zorlanıyor" diye
+        bakıyor; oraya sorunu olmayan bir soruyu koymak, olmayan bir sorunu
+        varmış gibi raporlamaktır.
+
+        Liste boş dönerse bu anlamlı bir cevaptır: henüz kimse yanlış yapmadı.
+        """
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        burak_id = await users.create("burak@dogus.edu.tr")
+        course_id = await _create_course(client, ayse, "COME301")
+        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+
+        topic_id = await _create_topic(client, ayse, course_id, "Deadlock")
+        chunk_id = await _seed_chunk(admin_engine, course_id, ayse_id)
+        herkes_dogru = await _seed_question(
+            admin_engine,
+            course_id=course_id,
+            topic_id=topic_id,
+            chunk_id=chunk_id,
+            instructor_id=ayse_id,
+            stem="Deadlock kaç koşulun birlikte sağlanmasıyla oluşur?",
+        )
+
+        for _ in range(2):
+            session_id = await _seed_session(admin_engine, course_id=course_id, user_id=burak_id)
+            await _seed_answer(
+                admin_engine,
+                session_id=session_id,
+                question_id=herkes_dogru,
+                course_id=course_id,
+                is_correct=True,
+            )
+
+        body = (await client.get(f"/courses/{course_id}/analytics/class", headers=ayse)).json()
+
+        assert body["missed_questions"] == []
+
     async def test_hic_asistan_cevabi_yokken_oran_sifir_degil_none(
         self, client: AsyncClient, users: UserFactory
     ) -> None:

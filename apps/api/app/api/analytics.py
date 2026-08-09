@@ -24,7 +24,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
-from sqlalchemy import Float, cast, func, select, text
+from sqlalchemy import Float, and_, cast, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CourseInstructorDep, CourseMemberDep, SessionDep
@@ -276,7 +276,14 @@ async def class_progress(
             .join(Topic, Topic.id == Question.topic_id)
             .where(Answer.course_id == context.course_id)
             .group_by(Question.id, Topic.name, stem)
-            .having(graded > 0)
+            # `wrong > 0` de şart: alan adı `missed_questions` ve eğitmen bu panele
+            # "sınıfın takıldığı yerler" diye bakıyor. Yalnız `graded > 0` süzgeciyle,
+            # yanlış yapılmamış sorular da listeye giriyordu — canlı veride
+            # gözlendi (COME 331: dört satırdan birinin `wrong_rate` değeri 0).
+            # Hiç yanlışı olmayan bir soruyu "en çok yanlış yapılanlar"ın içinde
+            # göstermek, olmayan bir sorunu varmış gibi raporlamaktır. Liste boş
+            # dönerse bu anlamlı bir cevaptır: henüz kimse yanlış yapmadı.
+            .having(and_(graded > 0, wrong > 0))
             .order_by(wrong_rate.desc(), graded.desc())
             .limit(limit)
         )
