@@ -140,7 +140,7 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
       du -sh "$EMBEDDING_CACHE_DIR"      # 2,1G görmelisin
       ```
       Boşsa: modeli **şimdi**, iyi ağdayken indir (§5.1).
-- [ ] Şema doğrulaması — **15 tablo** görmelisin: <!-- docs-check: tables.count = 15 -->
+- [ ] Şema doğrulaması — **22 tablo** görmelisin: <!-- docs-check: tables.count = 22 -->
       ```bash
       psql -d dou_synapse -tAc "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE'"
       ```

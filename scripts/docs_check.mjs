@@ -94,10 +94,14 @@ function tekSayi(cikti, kalip, ne) {
 const METRIKLER = {
   "backend.tests": {
     aciklama: "Backend'de toplanan test sayısı",
-    komut: "cd apps/api && uv run pytest --collect-only -q",
+    komut: "cd apps/api && uv run --extra dev pytest --collect-only -q",
     olc: () =>
       tekSayi(
-        calistir("uv", ["run", "pytest", "--collect-only", "-q"], "apps/api"),
+        calistir(
+          "uv",
+          ["run", "--extra", "dev", "pytest", "--collect-only", "-q"],
+          "apps/api",
+        ),
         /^(\d+) tests? collected/m,
         "backend test sayısı",
       ),
