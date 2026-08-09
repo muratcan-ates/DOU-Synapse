@@ -345,7 +345,7 @@ def build_prompt(
 # ---------------------------------------------------------------------------
 
 
-def _extract_json_object(raw: str) -> dict[str, Any]:
+def extract_json_object(raw: str) -> dict[str, Any]:
     """Modelin metnindeki JSON nesnesini çıkarır.
 
     Sağlayıcılar zaman zaman JSON'u ```json çitiyle sarar. Çitleri temizlemek
@@ -366,7 +366,7 @@ def _drafts_from_response(raw: str, question_type: QuestionType) -> tuple[list[_
     """Ham yanıttan geçerli taslakları çıkarır; her reddin sebebini de döndürür."""
     model = _DRAFT_MODELS[question_type]
     try:
-        envelope = _extract_json_object(raw)
+        envelope = extract_json_object(raw)
     except (json.JSONDecodeError, ValueError):
         return [], ["yanıt JSON olarak ayrıştırılamadı"]
 

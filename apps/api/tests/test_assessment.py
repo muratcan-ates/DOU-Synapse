@@ -878,6 +878,141 @@ class TestDeterministicGrading:
 
 
 # ---------------------------------------------------------------------------
+# Açık uçlu değerlendirme — şemalı LLM yolu (FR-019, FR-020)
+# ---------------------------------------------------------------------------
+
+
+ESSAY_PAYLOAD = {
+    "prompt": "Deadlock'un dört koşulunu açıklayın.",
+    "answer_key": "Karşılıklı dışlama, tut ve bekle, kesilemezlik, döngüsel bekleme.",
+    "key_points": ["karşılıklı dışlama", "tut ve bekle", "döngüsel bekleme"],
+    "rubric": [{"point": "Dört koşulu sayar", "weight": 100}],
+}
+
+
+def _verdict(score: int, chunk_id: UUID | str | None, *, missing: list[str] | None = None) -> str:
+    return json.dumps(
+        {
+            "score": score,
+            "eksik_noktalar": missing or [],
+            "dayanak_chunk_id": str(chunk_id) if chunk_id else None,
+        }
+    )
+
+
+class TestLlmGrading:
+    async def test_semali_cikti_puana_cevrilir(self) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        payload = OpenPayload.model_validate(ESSAY_PAYLOAD)
+        chunk_id = uuid4()
+        completion = FakeCompletion(_verdict(80, chunk_id, missing=["kesilemezlik"]))
+
+        outcome = await grade_with_llm(
+            completion,
+            payload=payload,
+            given="Karşılıklı dışlama, tut ve bekle ve döngüsel bekleme.",
+            sources=[(chunk_id, DEADLOCK_TEXTS[0])],
+        )
+
+        assert outcome.graded is True
+        assert outcome.score == 80
+        assert outcome.is_correct is True
+        assert outcome.missing_points == ["kesilemezlik"]
+        assert outcome.evidence_chunk_id == chunk_id
+
+    async def test_kod_citli_yanit_da_ayristirilir(self) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        chunk_id = uuid4()
+        fenced = f"```json\n{_verdict(60, chunk_id)}\n```"
+
+        outcome = await grade_with_llm(
+            FakeCompletion(fenced),
+            payload=OpenPayload.model_validate(ESSAY_PAYLOAD),
+            given="Kısmen doğru.",
+            sources=[(chunk_id, DEADLOCK_TEXTS[0])],
+        )
+
+        assert outcome.score == 60
+
+    async def test_bozuk_sema_bir_kez_yeniden_denenir(self) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        chunk_id = uuid4()
+        completion = FakeCompletion("puan: yüksek", _verdict(70, chunk_id))
+
+        outcome = await grade_with_llm(
+            completion,
+            payload=OpenPayload.model_validate(ESSAY_PAYLOAD),
+            given="Cevap.",
+            sources=[(chunk_id, DEADLOCK_TEXTS[0])],
+        )
+
+        assert completion.calls == 2
+        assert outcome.graded is True
+        assert outcome.score == 70
+
+    async def test_iki_denemede_de_bozuksa_uydurma_puan_verilmez(self) -> None:
+        """FR-020: fail-closed. Puan yok, açık bir Türkçe mesaj var."""
+        from app.modules.assessment.grading import grade_with_llm
+
+        completion = FakeCompletion("bilmiyorum")
+
+        outcome = await grade_with_llm(
+            completion,
+            payload=OpenPayload.model_validate(ESSAY_PAYLOAD),
+            given="Cevap.",
+            sources=[(uuid4(), DEADLOCK_TEXTS[0])],
+        )
+
+        assert completion.calls == 2
+        assert outcome.graded is False
+        assert outcome.score is None
+        assert "tamamlanamadı" in (outcome.message or "")
+
+    async def test_uydurulmus_dayanak_dusurulur_puan_kalir(self) -> None:
+        """Anayasa I: set-membership'ten geçmeyen dayanak gösterilmez.
+
+        Kaynağı uydurmak cevabı geçersiz kılmaz; yalnız kaynağı geçersiz kılar.
+        """
+        from app.modules.assessment.grading import grade_with_llm
+
+        chunk_id = uuid4()
+
+        outcome = await grade_with_llm(
+            FakeCompletion(_verdict(90, uuid4())),
+            payload=OpenPayload.model_validate(ESSAY_PAYLOAD),
+            given="Cevap.",
+            sources=[(chunk_id, DEADLOCK_TEXTS[0])],
+        )
+
+        assert outcome.score == 90
+        assert outcome.evidence_chunk_id is None
+
+    async def test_saglayici_patlarsa_degerlendirme_tamamlanmaz(self) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        class BrokenCompletion:
+            calls = 0
+
+            async def complete(self, *, system: str, user: str) -> str:
+                del system, user
+                BrokenCompletion.calls += 1
+                raise RuntimeError("sağlayıcı 503")
+
+        outcome = await grade_with_llm(
+            BrokenCompletion(),
+            payload=OpenPayload.model_validate(ESSAY_PAYLOAD),
+            given="Cevap.",
+            sources=[(uuid4(), DEADLOCK_TEXTS[0])],
+        )
+
+        assert BrokenCompletion.calls == 2
+        assert outcome.graded is False
+
+
+# ---------------------------------------------------------------------------
 # PR incelemesi kalem 2 regresyonu (mevcut kapsam)
 # ---------------------------------------------------------------------------
 
