@@ -23,10 +23,10 @@ import {
   formatClock,
   formatScore,
   HINT_MAX_LEVEL,
-  isClosed,
   isEmptyPool,
   isLastMinute,
   nextHintLevel,
+  SCORE_SCALE,
   shouldPoll,
   shownQuestions,
   showsHints,
@@ -134,11 +134,6 @@ describe("süre — karar sunucunun, sayaç yalnız görsel", () => {
 
   test("süresiz oturum kendiliğinden kapanmaz", () => {
     expect(timeIsUp(session(), null)).toBe(false);
-    expect(isClosed(session(), null)).toBe(false);
-  });
-
-  test("bitmiş oturum kapalıdır", () => {
-    expect(isClosed(session({ finished_at: "2026-08-09T12:09:37Z" }), null)).toBe(true);
   });
 });
 
@@ -357,9 +352,14 @@ describe("puan — yoksa uydurulmaz", () => {
   });
 
   test("tam sayı ondalıksız, kesir tek basamak", () => {
-    expect(formatScore(0)).toBe("0 / 100");
-    expect(formatScore(50)).toBe("50 / 100");
-    expect(formatScore(66.66)).toBe("66.7 / 100");
+    expect(formatScore(0)).toBe("0");
+    expect(formatScore(50)).toBe("50");
+    expect(formatScore(66.66)).toBe("66.7");
+  });
+
+  test("ölçek metni rakama gömülmez — yüzeyler onu kendi yoğunluğunda yazar", () => {
+    expect(formatScore(50)).not.toContain("/");
+    expect(SCORE_SCALE).toBe(100);
   });
 });
 

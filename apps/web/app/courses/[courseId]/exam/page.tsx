@@ -43,10 +43,10 @@ import {
   examSessionKey,
   formatClock,
   formatScore,
-  isClosed,
   isEmptyPool,
   isLastMinute,
   nextHintLevel,
+  SCORE_SCALE,
   shouldPoll,
   shownQuestions,
   showsHints,
@@ -719,7 +719,11 @@ function FeedbackPanel({ feedback }: { feedback: AnswerFeedback }) {
         {/* Renk tek başına bilgi taşımaz: rozetin metni her zaman vardır. */}
         <Badge tone={spec.tone}>{spec.label}</Badge>
         {/* Puan yoksa yazılmaz — "0" yazmak olmayan bir ölçümü iddia etmektir. */}
-        {score && <span className="font-mono text-sm text-fg">{score}</span>}
+        {score && (
+          <span className="font-mono text-sm text-fg">
+            {score} / {SCORE_SCALE}
+          </span>
+        )}
       </div>
 
       {feedback.message && (
@@ -813,10 +817,16 @@ function FinishedExam({
         }
       />
 
+      {/*
+        Puan yoksa "Puan" kutusu HİÇ çizilmez. İki sebep: sayı uydurulmaz
+        (Anayasa III) ve sebebi zaten sunucunun başlıktaki mesajında yazıyor —
+        "hesaplanmadı"yı ikinci kez yazmak bilgi katmaz. Ayrıca `MetricRow`
+        rakam için ayarlı (`font-mono text-2xl`); oraya konan uzun bir kelime
+        yan sütuna taşıyor (bkz. rapor).
+      */}
       <MetricRow
         items={[
-          // Puan hesaplanmadıysa sayı uydurulmaz.
-          { value: score ?? "Hesaplanmadı", label: "Puan" },
+          ...(score ? [{ value: score, label: `Puan · ${SCORE_SCALE} üzerinden` }] : []),
           { value: answered, label: "Cevaplanan" },
           { value: unanswered, label: "Boş bırakılan" },
           ...(finish ? [{ value: finish.ungraded_count, label: "Değerlendirilemeyen" }] : []),

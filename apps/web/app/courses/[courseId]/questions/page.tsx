@@ -162,7 +162,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
     return { topics, questions };
   }, [courseId]);
 
-  const { data, error, refreshError, loading, reload } = useResource(fetchPool, [courseId]);
+  const { data, error, refreshError, reload } = useResource(fetchPool, [courseId]);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [topicFilter, setTopicFilter] = useState<string>("all");
@@ -184,8 +184,10 @@ function QuestionPool({ courseId }: { courseId: string }) {
     if (focusRequest > 0) stemRef.current?.focus();
   }, [focusRequest]);
 
+  // `error` yalnız elde veri YOKKEN dolar (bkz. use-resource.ts); tazeleme
+  // hatası ekranı kapatmaz, aşağıda satır içinde gösterilir.
   if (error) return <ErrorNote message={error} onRetry={reload} />;
-  if (loading || !data) return <Loading />;
+  if (!data) return <Loading />;
 
   const { topics, questions } = data;
   const counts = countByStatus(questions);
@@ -363,19 +365,27 @@ function StatusTabs({
   const countOf = (filter: StatusFilter) =>
     filter === "all" ? counts.total : counts[filter];
 
+  /*
+   * Segment düğmesinin dili `chat/page.tsx`'teki mod seçicisiyle BİREBİR aynı:
+   * kenarlıklı bir grup, seçili olan `border-strong` + `font-medium` + `--fg`.
+   * Kırmızı kullanılmadı — süzgeç, kırmızının üç meşru işinden (birincil eylem,
+   * aktif navigasyon, kurum işareti) hiçbiri değil. İki ekranda aynı desen var;
+   * üçüncüsü yazılırken ortak bileşene çıkmalı (Anayasa XI, raporda).
+   */
   return (
-    <div className="flex flex-wrap gap-1">
+    <div role="group" aria-label="Durum süzgeci" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border p-1">
       {STATUS_FILTERS.map((filter) => {
         const active = filter.value === value;
         return (
           <button
             key={filter.value}
+            type="button"
             onClick={() => onChange(filter.value)}
             aria-pressed={active}
-            className={`rounded-sm px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+            className={`h-8 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
               active
-                ? "bg-brand-subtle text-brand"
-                : "text-fg-muted hover:bg-brand-subtle/30 hover:text-fg"
+                ? "border-border-strong bg-surface font-medium text-fg"
+                : "border-transparent text-fg-muted hover:text-fg"
             }`}
           >
             {filter.label} ({countOf(filter.value)})

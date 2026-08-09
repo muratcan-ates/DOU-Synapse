@@ -96,7 +96,7 @@ export function examSessionKey(courseId: string): string {
  * dakikalık sınavda 1200 duyuru yerine dört duyuru duyar — saniyede bir konuşan
  * bir sayaç sınavı yapılamaz kılar.
  */
-export const TIME_NOTICES = [
+const TIME_NOTICES = [
   { at: 0, text: "Süre doldu." },
   { at: 30, text: "30 saniye kaldı." },
   { at: 60, text: "1 dakika kaldı." },
@@ -142,8 +142,14 @@ export function timeIsUp(session: ExamSession, localRemaining: number | null): b
   return localRemaining !== null && localRemaining <= 0;
 }
 
-/** Oturum bitmiş mi (öğrenci bitirdi ya da süresi doldu). */
-export function isClosed(session: ExamSession, localRemaining: number | null): boolean {
+/**
+ * Oturum kapalı mı (öğrenci bitirdi ya da süresi doldu).
+ *
+ * Dışa açılmadı: tek çağıranı `canSubmitAnswer` ve davranışı oradan sınanıyor.
+ * Yalnız test görsün diye açılan bir export, kullanılmayan yüzeyi "kullanılıyor"
+ * gibi gösterir (Anayasa XI).
+ */
+function isClosed(session: ExamSession, localRemaining: number | null): boolean {
   return session.finished_at !== null || timeIsUp(session, localRemaining);
 }
 
@@ -332,14 +338,20 @@ export const VERDICT_LABEL: Record<AnswerVerdict, { label: string; tone: Tone }>
   recorded: { label: "Cevabınız kaydedildi", tone: "neutral" },
 };
 
+/** Puanın ölçeği: sunucu 0-100 verir (`grade_mcq` 0/100, LLM verdict'i 0-100). */
+export const SCORE_SCALE = 100;
+
 /**
- * Puan metni. Sunucu 0-100 arası verir (`grade_mcq` 0/100, LLM verdict'i 0-100).
+ * Puanın rakamı. Ölçek metni burada DEĞİL çünkü iki yüzey onu farklı yoğunlukta
+ * yazar: metrik kutusunda etiket ("Puan · 100 üzerinden"), geri bildirimde
+ * satır içi ("100 / 100"). Rakamın kendisi tek yerde biçimlenir.
+ *
  * Puan yoksa null döner — "0" yazmak "her şeyi yanlış yaptın" demektir ve
  * yanlıştır (backend `score_of` da bu yüzden None döndürüyor).
  */
 export function formatScore(score: number | null | undefined): string | null {
   if (typeof score !== "number" || Number.isNaN(score)) return null;
-  return Number.isInteger(score) ? `${score} / 100` : `${score.toFixed(1)} / 100`;
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
 }
 
 /* -------------------------------------------------------------------------
