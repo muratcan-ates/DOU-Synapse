@@ -72,15 +72,14 @@ def prepare_database(database: str, *, recreate: bool, pg_bin: str) -> None:
 async def build(material: Path, storage_root: Path, admin_dsn: str) -> dict[str, object]:
     """Dersi açar, materyali yükler, worker'ı boşaltır ve korpusu özetler."""
     ensure_api_on_path()
-    from httpx import ASGITransport, AsyncClient
-    from sqlalchemy import text
-    from sqlalchemy.ext.asyncio import create_async_engine
-
     from app import worker
     from app.core.config import get_settings
     from app.core.db import dispose_engine, rls_session
     from app.main import create_app
     from app.modules.ingestion.storage import LocalFileStorage, set_storage
+    from httpx import ASGITransport, AsyncClient
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
 
     settings = get_settings()
     set_storage(LocalFileStorage(storage_root))
@@ -108,7 +107,9 @@ async def build(material: Path, storage_root: Path, admin_dsn: str) -> dict[str,
         course_id = UUID(response.json()["id"])
 
         uploaded: list[str] = []
-        for path in sorted(material.iterdir()):
+        # ASYNC240: dosya okuma bloklar ama bu tek seferlik bir kurulum betiği; eşzamanlı
+        # başka bir iş yok ve anyio bağımlılığı eklemek maliyeti karşılamaz.
+        for path in sorted(material.iterdir()):  # noqa: ASYNC240
             if path.suffix.lower() not in CORPUS_SUFFIXES:
                 continue
             with path.open("rb") as handle:
@@ -204,7 +205,9 @@ def main(argv: list[str] | None = None) -> int:
     if not args.skip_setup:
         prepare_database(args.database, recreate=args.recreate, pg_bin=args.pg_bin)
 
-    os.environ["DATABASE_URL"] = f"postgresql+psycopg://dou_app:dou_app_local@localhost/{args.database}"
+    os.environ["DATABASE_URL"] = (
+        f"postgresql+psycopg://dou_app:dou_app_local@localhost/{args.database}"
+    )
     os.environ["WORKER_DATABASE_URL"] = (
         f"postgresql+psycopg://dou_worker:dou_worker_local@localhost/{args.database}"
     )
