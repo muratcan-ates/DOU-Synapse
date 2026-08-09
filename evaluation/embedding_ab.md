@@ -7,10 +7,10 @@ Koşu dosyaları:
 
 | Kol | Dosya |
 |---|---|
-| e5, hibrit | `results/2026-08-09T1551-holdout-hybrid-fastembed-retrieval.json` |
-| e5, dense | `results/2026-08-09T1552-holdout-dense-fastembed-retrieval.json` |
-| bge-m3, hibrit | `results/2026-08-09T1552-holdout-hybrid-bge-m3-onnx-retrieval.json` |
-| bge-m3, dense | `results/2026-08-09T1553-holdout-dense-bge-m3-onnx-retrieval.json` |
+| e5, hibrit | `results/2026-08-09T1657-holdout-hybrid-fastembed-retrieval.json` |
+| e5, dense | `results/2026-08-09T1658-holdout-dense-fastembed-retrieval.json` |
+| bge-m3, hibrit | `results/2026-08-09T1657-holdout-hybrid-bge-m3-onnx-retrieval.json` |
+| bge-m3, dense | `results/2026-08-09T1658-holdout-dense-bge-m3-onnx-retrieval.json` |
 | karşılaştırma (dense) | `results/holdout-dense-fastembed-vs-dense-bge-m3-onnx-comparison.json` |
 | karşılaştırma (hibrit) | `results/holdout-hybrid-fastembed-vs-hybrid-bge-m3-onnx-comparison.json` |
 
@@ -76,10 +76,10 @@ düşürür. Her kol kendi doğru biçiminde koştu:
 
 | Kol | Recall@5 | Recall@8 | MRR | Tam kapsama@8 (n=26) | p95 (sn) |
 |---|---:|---:|---:|---:|---:|
-| e5, hibrit | **0.981** | **0.981** | **0.852** | **0.885** | 0.152 |
-| e5, dense | 0.962 | 0.981 | 0.807 | 0.885 | 0.133 |
-| bge-m3, hibrit | **0.981** | **0.981** | 0.846 | 0.846 | 0.119 |
-| bge-m3, dense | 0.914 | 0.933 | 0.800 | 0.885 | 0.109 |
+| e5, hibrit | **0,971** | **0,981** | **0,854** | 0,885 | 0,106 |
+| e5, dense | 0,962 | **0,981** | 0,807 | 0,885 | 0,103 |
+| bge-m3, hibrit | **0,971** | **0,981** | 0,839 | **0,923** | 0,099 |
+| bge-m3, dense | 0,914 | 0,933 | 0,800 | 0,885 | 0,096 |
 
 ### Eşleştirilmiş karşılaştırma — dense kolu
 
@@ -101,19 +101,19 @@ sabit (20260809), %95 GA. McNemar tam (binom) biçimde.
 
 | Ölçüt | n | e5 | bge-m3 | Fark | %95 GA | Sıfırı dışlıyor mu |
 |---|---:|---:|---:|---:|---|---|
-| İsabet@5 | 105 | 0.981 | 0.981 | ±0.000 | [−0.029, +0.029] | hayır (p=1.00) |
-| İsabet@8 | 105 | 0.981 | 0.981 | ±0.000 | [−0.029, +0.029] | hayır (p=1.00) |
-| Karşılıklı sıra | 105 | 0.852 | 0.846 | −0.006 | [−0.044, +0.031] | hayır |
-| Tam kapsama@8 | 26 | 0.885 | 0.846 | −0.038 | [−0.115, +0.000] | hayır (p=1.00) |
+| İsabet@5 | 105 | 0,971 | 0,971 | ±0,000 | [−0,029, +0,029] | hayır (p=1,00) |
+| İsabet@8 | 105 | 0,981 | 0,981 | ±0,000 | [−0,029, +0,029] | hayır (p=1,00) |
+| Karşılıklı sıra | 105 | 0,854 | 0,839 | −0,014 | [−0,050, +0,020] | hayır |
+| Tam kapsama@8 | 26 | 0,885 | 0,923 | +0,038 | [+0,000, +0,115] | hayır (p=1,00) |
 
 ### Kategori kırılımı (MRR / Recall@5)
 
 | Kategori | n | e5 dense | bge dense | e5 hibrit | bge hibrit |
 |---|---:|---|---|---|---|
-| `direct` | 45 | 0.781 / 0.98 | 0.798 / 0.93 | 0.878 / 1.00 | 0.880 / 0.98 |
-| `multi_chunk` | 22 | 0.848 / 0.95 | **0.909 / 1.00** | 0.864 / 1.00 | 0.902 / 1.00 |
-| `technical_term` | 24 | 0.726 / 0.92 | **0.630 / 0.75** | 0.806 / 0.92 | 0.753 / 0.96 |
-| `code_review` | 14 | 0.964 / 1.00 | 0.929 / 1.00 | 0.833 / 1.00 | 0.812 / 1.00 |
+| `direct` | 45 | 0,781 / 0,98 | 0,798 / 0,93 | 0,889 / 1,00 | 0,869 / 0,98 |
+| `multi_chunk` | 22 | 0,848 / 0,95 | **0,909 / 1,00** | 0,864 / 1,00 | 0,894 / 1,00 |
+| `technical_term` | 24 | 0,726 / 0,92 | **0,630 / 0,75** | 0,806 / 0,92 | 0,753 / 0,96 |
+| `code_review` | 14 | 0,964 / 1,00 | 0,929 / 1,00 | 0,807 / 0,93 | 0,807 / 0,93 |
 
 ## 4. Okuma
 
@@ -162,7 +162,25 @@ kat üstündedir. Ölçülebilir bir kazanç olmadan katlanılacak bir maliyet d
 - **Bu bir retrieval katmanı ölçümüdür.** Cevap kalitesi, atıf doğruluğu ve
   faithfulness ölçülmedi; embedding'in onlara etkisi bu koşudan çıkarılamaz.
 
-## 7. Yeniden üretme
+## 7. Ek sınırlılık — hibrit kol korpus yeniden kurulunca oynuyor
+
+Bu karşılaştırma iki kez koşuldu: korpuslar silinip aynı materyalden, aynı sağlayıcı
+ve sürümle yeniden kuruldu. **Dense kol birebir aynı sonucu verdi** (İsabet@5 0,9619
+ve MRR 0,8071, iki kurulumda da). **Hibrit kol oynadı** (İsabet@5 0,981 → 0,971).
+
+Sebep `fts.py`'deki `ORDER BY rank DESC, c.id`: eşit `ts_rank`'li chunk'lar arasında
+sıralamayı belirleyen `chunks.id` her ingest'te yeniden üretiliyor. Ayrıntı
+`docs/test-report.md` §6.4'te.
+
+**Bu karşılaştırma için sonucu değiştirmiyor:** iki kurulumda da hibrit kolda dört
+ölçütün dördü sıfırdan ayrılmadı ve dense koldaki İsabet@8 farkı korundu. Ama
+karşılaştırmanın hibrit yarısının **ondalık basamakları** yeniden üretilebilir
+değildir ve öyle sunulmamalıdır.
+
+Yukarıdaki tablolar **son** kurulumun sayılarıdır; iki kolun ikisi de aynı kurulum
+turundan gelir, dolayısıyla karşılaştırma kendi içinde tutarlıdır.
+
+## 8. Yeniden üretme
 
 ```bash
 cd apps/api

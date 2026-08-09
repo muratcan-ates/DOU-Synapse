@@ -1,17 +1,20 @@
 {
-  "run_id": "2026-08-09T1550-calibration-dense-fastembed-retrieval",
-  "started_at": "2026-08-09T15:50:45.384013+03:00",
-  "git_sha": "27b68d4",
+  "run_id": "2026-08-09T1657-calibration-hybrid-fastembed-retrieval",
+  "started_at": "2026-08-09T16:57:30.911674+03:00",
+  "git_sha": "ccd8d13",
   "set": "calibration",
   "set_version": "2.0",
   "material": "sample_data/isletim-sistemleri v2",
   "layer": "retrieval",
-  "mode": "dense",
+  "mode": "hybrid",
   "chat_mode": null,
-  "course_id": "57e2cc7b-48b0-4ed7-9896-b7721f909574",
+  "course_id": "d61be435-ef9c-410b-8e95-26e83f444dfe",
   "database": "dou_synapse_eval",
   "embedding_provider": "fastembed",
   "embedding_model": "intfloat/multilingual-e5-large",
+  "embedding_runtime": {
+    "fastembed": "0.8.0"
+  },
   "retrieval": {
     "top_k": 8,
     "dense_candidates": 24,
@@ -30,11 +33,12 @@
     "server_config_note": null,
     "warning": null
   },
-  "config_fingerprint": "a47a7b55d93762f5",
+  "runtime_mismatch_allowed": false,
+  "config_fingerprint": "97b7e413af2e41fb",
   "corpus_chunks_visible": 167,
-  "entry_point": "app.modules.retrieval.dense:dense_search",
-  "finished_at": "2026-08-09T15:50:50.011062+03:00",
-  "wall_seconds": 4.4,
+  "entry_point": "app.modules.retrieval.service:HybridRetriever",
+  "finished_at": "2026-08-09T16:57:35.080268+03:00",
+  "wall_seconds": 4.0,
   "n_items": 40,
   "runner": {
     "attempts": 40,
@@ -47,9 +51,9 @@
     "n_items": 22,
     "recall_at_5": 1.0,
     "recall_at_8": 1.0,
-    "mrr": 0.8863636363636364,
-    "full_coverage_at_5": 0.8,
-    "full_coverage_at_8": 1.0,
+    "mrr": 0.9015151515151515,
+    "full_coverage_at_5": 0.4,
+    "full_coverage_at_8": 0.8,
     "n_multi_source": 5,
     "by_category": {
       "direct": {
@@ -63,8 +67,8 @@
         "n": 5,
         "recall_at_5": 1.0,
         "recall_at_8": 1.0,
-        "mrr": 0.8,
-        "full_coverage_at_8": 1.0
+        "mrr": 0.8666666666666666,
+        "full_coverage_at_8": 0.8
       },
       "technical_term": {
         "n": 5,
@@ -75,7 +79,7 @@
       }
     },
     "n_asked": 40,
-    "latency_p95_seconds": 0.10828,
+    "latency_p95_seconds": 0.088055,
     "threshold_sweep": [
       {
         "threshold": 0.0,
@@ -227,7 +231,7 @@
       "question": "Process Control Block (PCB) içinde hangi bilgiler saklanır?",
       "retrieved_count": 8,
       "best_dense_score": 0.8370753217611838,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
@@ -243,29 +247,24 @@
           "slide_number": null
         },
         {
+          "file_name": "pipe_shell.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
           "file_name": "13-ipc.pptx",
           "page_number": null,
           "slide_number": 18
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 2
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 2
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 5
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
         },
         {
           "file_name": "08-io-systems.pdf",
@@ -273,12 +272,17 @@
           "slide_number": null
         },
         {
-          "file_name": "pipe_shell.c",
-          "page_number": null,
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 3,
           "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 5
         }
       ],
-      "latency_seconds": 1.3906
+      "latency_seconds": 1.3497
     },
     {
       "item_id": "C-002",
@@ -286,7 +290,7 @@
       "question": "Round-robin zamanlamada quantum süresi çok büyük seçilirse ne olur?",
       "retrieved_count": 8,
       "best_dense_score": 0.869271250155319,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
           2
@@ -307,37 +311,37 @@
           "slide_number": null
         },
         {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "reader_writer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
           "slide_number": 8
         },
         {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
           "slide_number": 19
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 11
         }
       ],
-      "latency_seconds": 0.0773
+      "latency_seconds": 0.0699
     },
     {
       "item_id": "C-003",
@@ -345,7 +349,7 @@
       "question": "Sayfa hatası (page fault) oluştuğunda işletim sistemi hangi adımları uygular?",
       "retrieved_count": 8,
       "best_dense_score": 0.8882229360157666,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
           2
@@ -371,12 +375,7 @@
           "slide_number": null
         },
         {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "08-io-systems.pdf",
+          "file_name": "07-virtual-memory.pdf",
           "page_number": 4,
           "slide_number": null
         },
@@ -386,17 +385,22 @@
           "slide_number": null
         },
         {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 3,
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 1,
           "slide_number": null
         },
         {
-          "file_name": "03-memory-management.pdf",
-          "page_number": 2,
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.0835
+      "latency_seconds": 0.0757
     },
     {
       "item_id": "C-004",
@@ -404,7 +408,7 @@
       "question": "Bir kritik bölge çözümünün sağlaması gereken üç özellik nedir?",
       "retrieved_count": 8,
       "best_dense_score": 0.8120506254373577,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
@@ -420,11 +424,6 @@
           "slide_number": null
         },
         {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 12
-        },
-        {
           "file_name": "04-synchronization.pdf",
           "page_number": 3,
           "slide_number": null
@@ -432,11 +431,16 @@
         {
           "file_name": "14-distributed-os.pptx",
           "page_number": null,
-          "slide_number": 8
+          "slide_number": 12
         },
         {
-          "file_name": "05-deadlock-demo.pdf",
+          "file_name": "04-synchronization.pdf",
           "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
           "slide_number": null
         },
         {
@@ -445,17 +449,17 @@
           "slide_number": null
         },
         {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 17
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
         },
         {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 18
+          "file_name": "08-io-systems.pdf",
+          "page_number": 2,
+          "slide_number": null
         }
       ],
-      "latency_seconds": 0.0669
+      "latency_seconds": 0.0588
     },
     {
       "item_id": "C-005",
@@ -463,7 +467,7 @@
       "question": "Banker's Algorithm hangi bilgiyi her süreç için tutar?",
       "retrieved_count": 8,
       "best_dense_score": 0.8539234437939606,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
           1,
@@ -490,18 +494,18 @@
           "slide_number": null
         },
         {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
           "file_name": "05-deadlock-demo.pdf",
           "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
           "slide_number": null
         },
         {
@@ -515,7 +519,7 @@
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.068
+      "latency_seconds": 0.0604
     },
     {
       "item_id": "C-006",
@@ -523,10 +527,10 @@
       "question": "inode nedir ve içinde hangi bilgiler tutulur?",
       "retrieved_count": 8,
       "best_dense_score": 0.8454099062682848,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
-          1
+          2
         ]
       ],
       "expected_sources": [
@@ -536,12 +540,27 @@
         {
           "file_name": "06-file-systems.pptx",
           "page_number": null,
-          "slide_number": 5
+          "slide_number": 2
         },
         {
           "file_name": "06-file-systems.pptx",
           "page_number": null,
-          "slide_number": 2
+          "slide_number": 5
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 10
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
         },
         {
           "file_name": "06-file-systems.pptx",
@@ -549,32 +568,17 @@
           "slide_number": 7
         },
         {
+          "file_name": "pipe_shell.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
           "file_name": "15-boot-and-kernel.pptx",
           "page_number": null,
           "slide_number": 6
-        },
-        {
-          "file_name": "06-file-systems.pptx",
-          "page_number": null,
-          "slide_number": 4
-        },
-        {
-          "file_name": "06-file-systems.pptx",
-          "page_number": null,
-          "slide_number": 1
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 19
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
         }
       ],
-      "latency_seconds": 0.0646
+      "latency_seconds": 0.058
     },
     {
       "item_id": "C-007",
@@ -582,14 +586,14 @@
       "question": "Süreçler arası context switch neden aynı süreç içindeki iki thread arasındaki geçişten daha pahalıdır?",
       "retrieved_count": 8,
       "best_dense_score": 0.8963494302695156,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
         ],
         [
           2,
-          3
+          4
         ]
       ],
       "expected_sources": [
@@ -608,37 +612,37 @@
           "slide_number": null
         },
         {
-          "file_name": "03-memory-management.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
           "file_name": "01-processes.pdf",
           "page_number": 1,
           "slide_number": null
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 10
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 4,
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
           "slide_number": null
         },
         {
           "file_name": "04-synchronization.pdf",
           "page_number": 1,
           "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 2
         }
       ],
-      "latency_seconds": 0.0868
+      "latency_seconds": 0.079
     },
     {
       "item_id": "C-008",
@@ -646,13 +650,13 @@
       "question": "Aynı sürecin thread'leri belleği paylaştığı için hangi sorun doğar ve bu sorun hangi araçlarla önlenir?",
       "retrieved_count": 8,
       "best_dense_score": 0.8759052353939326,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03200204813108039,
       "ranks_by_source": [
         [
-          2
+          1
         ],
         [
-          3
+          4
         ]
       ],
       "expected_sources": [
@@ -661,23 +665,8 @@
       ],
       "top_results": [
         {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 9
-        },
-        {
           "file_name": "01-processes.pdf",
           "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "04-synchronization.pdf",
-          "page_number": 1,
-          "slide_number": null
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 4,
           "slide_number": null
         },
         {
@@ -686,22 +675,37 @@
           "slide_number": null
         },
         {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 3
-        },
-        {
-          "file_name": "reader_writer.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
           "file_name": "01-processes.pdf",
           "page_number": 1,
           "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 9
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
         }
       ],
-      "latency_seconds": 0.0971
+      "latency_seconds": 0.088
     },
     {
       "item_id": "C-009",
@@ -709,14 +713,13 @@
       "question": "Round-robin quantum seçimi ile TLB arasında nasıl bir ilişki vardır?",
       "retrieved_count": 8,
       "best_dense_score": 0.8414137548498356,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
-          5
+          3
         ],
         [
-          2,
-          4
+          6
         ]
       ],
       "expected_sources": [
@@ -730,18 +733,8 @@
           "slide_number": null
         },
         {
-          "file_name": "03-memory-management.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
           "file_name": "01-processes.pdf",
           "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "03-memory-management.pdf",
-          "page_number": 2,
           "slide_number": null
         },
         {
@@ -750,8 +743,8 @@
           "slide_number": null
         },
         {
-          "file_name": "page_replacement.py",
-          "page_number": null,
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
           "slide_number": null
         },
         {
@@ -760,12 +753,22 @@
           "slide_number": null
         },
         {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 3,
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
           "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 9
         }
       ],
-      "latency_seconds": 0.0697
+      "latency_seconds": 0.063
     },
     {
       "item_id": "C-010",
@@ -773,7 +776,7 @@
       "question": "fork() çağrısı kaç kez döner ve ebeveyn ile çocukta hangi değeri döndürür?",
       "retrieved_count": 8,
       "best_dense_score": 0.8541767512749432,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
@@ -794,19 +797,19 @@
           "slide_number": null
         },
         {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 4
+        },
+        {
           "file_name": "fork_example.c",
           "page_number": null,
           "slide_number": null
         },
         {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "13-ipc.pptx",
+          "file_name": "pipe_shell.c",
           "page_number": null,
-          "slide_number": 14
+          "slide_number": null
         },
         {
           "file_name": "pipe_shell.c",
@@ -816,15 +819,15 @@
         {
           "file_name": "13-ipc.pptx",
           "page_number": null,
-          "slide_number": 4
+          "slide_number": 14
         },
         {
-          "file_name": "page_replacement.py",
-          "page_number": null,
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 4,
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.1082
+      "latency_seconds": 0.0891
     },
     {
       "item_id": "C-011",
@@ -832,7 +835,7 @@
       "question": "TLB miss durumunda ne olur?",
       "retrieved_count": 8,
       "best_dense_score": 0.814209807205838,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1,
@@ -859,32 +862,32 @@
           "slide_number": null
         },
         {
-          "file_name": "04-synchronization.pdf",
-          "page_number": 2,
+          "file_name": "page_replacement.py",
+          "page_number": null,
           "slide_number": null
         },
         {
-          "file_name": "page_replacement.py",
-          "page_number": null,
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
           "slide_number": null
         },
         {
           "file_name": "07-virtual-memory.pdf",
-          "page_number": 2,
+          "page_number": 3,
           "slide_number": null
         },
         {
-          "file_name": "page_replacement.py",
+          "file_name": "13-ipc.pptx",
           "page_number": null,
-          "slide_number": null
+          "slide_number": 5
         },
         {
-          "file_name": "producer_consumer.py",
+          "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
-          "slide_number": null
+          "slide_number": 12
         }
       ],
-      "latency_seconds": 0.0482
+      "latency_seconds": 0.0539
     },
     {
       "item_id": "C-012",
@@ -892,11 +895,10 @@
       "question": "Öncelik kuyruğu (min-heap) tabanlı bir zamanlayıcının karmaşıklığı nedir?",
       "retrieved_count": 8,
       "best_dense_score": 0.8681011283789375,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
-          1,
-          3
+          1
         ]
       ],
       "expected_sources": [
@@ -914,19 +916,19 @@
           "slide_number": null
         },
         {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
           "slide_number": 7
         },
         {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 1,
-          "slide_number": null
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 12
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 7
         },
         {
           "file_name": "12-real-time-scheduling.pptx",
@@ -934,17 +936,17 @@
           "slide_number": 9
         },
         {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 19
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
         },
         {
-          "file_name": "12-real-time-scheduling.pptx",
+          "file_name": "13-ipc.pptx",
           "page_number": null,
-          "slide_number": 17
+          "slide_number": 16
         }
       ],
-      "latency_seconds": 0.089
+      "latency_seconds": 0.0775
     },
     {
       "item_id": "C-013",
@@ -952,52 +954,52 @@
       "question": "Blockchain'de proof-of-work konsensüsü nasıl çalışır?",
       "retrieved_count": 8,
       "best_dense_score": 0.8410570452179387,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.0304147465437788,
       "ranks_by_source": [],
       "expected_sources": [],
       "top_results": [
         {
           "file_name": "14-distributed-os.pptx",
           "page_number": null,
-          "slide_number": 12
+          "slide_number": 13
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "fork_example.c",
+          "page_number": null,
+          "slide_number": null
         },
         {
           "file_name": "14-distributed-os.pptx",
           "page_number": null,
-          "slide_number": 13
+          "slide_number": 12
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 12
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 4,
+          "slide_number": null
         },
         {
           "file_name": "15-boot-and-kernel.pptx",
           "page_number": null,
           "slide_number": 11
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 8
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
         }
       ],
-      "latency_seconds": 0.0724
+      "latency_seconds": 0.0654
     },
     {
       "item_id": "C-014",
@@ -1005,7 +1007,7 @@
       "question": "React'te useEffect hook'u ne zaman çalışır?",
       "retrieved_count": 8,
       "best_dense_score": 0.8111948687973456,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.032266458495966696,
       "ranks_by_source": [],
       "expected_sources": [],
       "top_results": [
@@ -1015,27 +1017,7 @@
           "slide_number": null
         },
         {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 14
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
-        },
-        {
-          "file_name": "producer_consumer.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "thread_pool.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "page_replacement.py",
+          "file_name": "reader_writer.py",
           "page_number": null,
           "slide_number": null
         },
@@ -1045,32 +1027,14 @@
           "slide_number": 4
         },
         {
-          "file_name": "04-synchronization.pdf",
-          "page_number": 2,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0768
-    },
-    {
-      "item_id": "C-015",
-      "category": "out_of_scope",
-      "question": "İlişkisel veritabanlarında üçüncü normal form (3NF) nedir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8054497621848228,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "06-file-systems.pptx",
-          "page_number": null,
-          "slide_number": 3
-        },
-        {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
-          "slide_number": 19
+          "slide_number": 6
+        },
+        {
+          "file_name": "reader_writer.py",
+          "page_number": null,
+          "slide_number": null
         },
         {
           "file_name": "12-real-time-scheduling.pptx",
@@ -1078,708 +1042,42 @@
           "slide_number": 9
         },
         {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 11
-        },
-        {
-          "file_name": "09-disk-and-storage.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
           "file_name": "07-virtual-memory.pdf",
           "page_number": 3,
           "slide_number": null
         },
         {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 6
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0773
-    },
-    {
-      "item_id": "C-101",
-      "category": "out_of_scope",
-      "question": "Bir React bileşeni nasıl test edilir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8109768870464816,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 4
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 14
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 2
-        },
-        {
-          "file_name": "reader_writer.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 10
-        },
-        {
-          "file_name": "producer_consumer.py",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0683
-    },
-    {
-      "item_id": "C-102",
-      "category": "out_of_scope",
-      "question": "Normalizasyonda üçüncü normal form ne demektir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.7845724463806718,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
           "slide_number": 19
-        },
+        }
+      ],
+      "latency_seconds": 0.0667
+    },
+    {
+      "item_id": "C-015",
+      "category": "out_of_scope",
+      "question": "İlişkisel veritabanlarında üçüncü normal form (3NF) nedir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8054497621848228,
+      "best_fused_score": 0.01639344262295082,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
         {
           "file_name": "06-file-systems.pptx",
           "page_number": null,
           "slide_number": 3
         },
         {
-          "file_name": "04-synchronization.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 11
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 14
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 12
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "thread_pool.py",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.065
-    },
-    {
-      "item_id": "C-103",
-      "category": "out_of_scope",
-      "question": "Bu dersin devamsızlık sınırı kaç saat?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8021801212126999,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 4
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 8
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 1
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 3
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "reader_writer.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 19
-        },
-        {
-          "file_name": "reader_writer.py",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0572
-    },
-    {
-      "item_id": "C-104",
-      "category": "out_of_scope",
-      "question": "Bir matrisin özdeğerleri nasıl bulunur?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.7949063712436715,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "thread_pool.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0609
-    },
-    {
-      "item_id": "C-105",
-      "category": "out_of_scope",
-      "question": "HTTPS sertifikası nasıl yenilenir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8118542575338904,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 14
-        },
-        {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 8
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "03-memory-management.pdf",
-          "page_number": 2,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0556
-    },
-    {
-      "item_id": "C-106",
-      "category": "out_of_scope",
-      "question": "Bugün İstanbul'da hava nasıl olacak?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.7431106115383505,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 11
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 2
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 3
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 19
-        },
-        {
-          "file_name": "06-file-systems.pptx",
-          "page_number": null,
-          "slide_number": 1
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 1
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 3
-        }
-      ],
-      "latency_seconds": 0.055
-    },
-    {
-      "item_id": "C-107",
-      "category": "out_of_scope",
-      "question": "Rust'ta ownership kuralları nelerdir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8047815545964957,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
+          "file_name": "01-processes.pdf",
           "page_number": 1,
           "slide_number": null
         },
         {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
-          "slide_number": 7
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0559
-    },
-    {
-      "item_id": "C-108",
-      "category": "out_of_scope",
-      "question": "Bir derleyicide sözcüksel çözümleme hangi aşamadır?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8086846923191128,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 16
-        },
-        {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "reader_writer.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 10
-        }
-      ],
-      "latency_seconds": 0.0813
-    },
-    {
-      "item_id": "C-109",
-      "category": "out_of_scope",
-      "question": "Bütünleme sınavına kimler girebilir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.777129065412746,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 6
-        },
-        {
-          "file_name": "04-synchronization.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "producer_consumer.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "thread_pool.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 4
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
           "slide_number": 19
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 8
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
-        }
-      ],
-      "latency_seconds": 0.0762
-    },
-    {
-      "item_id": "C-110",
-      "category": "out_of_scope",
-      "question": "Blokzincirde madencilik nasıl çalışır?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8262644850116152,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 19
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 12
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "thread_pool.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 1,
-          "slide_number": null
-        },
-        {
-          "file_name": "06-file-systems.pptx",
-          "page_number": null,
-          "slide_number": 4
-        },
-        {
-          "file_name": "bankers_algorithm.c",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0905
-    },
-    {
-      "item_id": "C-111",
-      "category": "out_of_scope",
-      "question": "Bir REST API'de PUT ile PATCH farkı nedir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.811819695800504,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 13
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 14
-        },
-        {
-          "file_name": "producer_consumer.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 13
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 7
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 2,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.1098
-    },
-    {
-      "item_id": "C-112",
-      "category": "out_of_scope",
-      "question": "Doğrusal regresyonda R-kare neyi ölçer?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.7966198979309913,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 4
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 19
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 3
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 2
-        },
-        {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 15
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0968
-    },
-    {
-      "item_id": "C-113",
-      "category": "out_of_scope",
-      "question": "Kubernetes'te pod ile deployment arasındaki ilişki nedir?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8090353700381286,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [],
-      "expected_sources": [],
-      "top_results": [
-        {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 10
-        },
-        {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 7
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 14
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 15
-        },
-        {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 19
-        },
-        {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 15
         },
         {
           "file_name": "05-deadlock-demo.pdf",
@@ -1787,12 +1085,716 @@
           "slide_number": null
         },
         {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 9
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 3
+        }
+      ],
+      "latency_seconds": 0.0686
+    },
+    {
+      "item_id": "C-101",
+      "category": "out_of_scope",
+      "question": "Bir React bileşeni nasıl test edilir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8109768870464816,
+      "best_fused_score": 0.030309988518943745,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 4
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 14
+        }
+      ],
+      "latency_seconds": 0.0657
+    },
+    {
+      "item_id": "C-102",
+      "category": "out_of_scope",
+      "question": "Normalizasyonda üçüncü normal form ne demektir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.7845724463806718,
+      "best_fused_score": 0.03131881575727918,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 19
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 4
+        }
+      ],
+      "latency_seconds": 0.0637
+    },
+    {
+      "item_id": "C-103",
+      "category": "out_of_scope",
+      "question": "Bu dersin devamsızlık sınırı kaç saat?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8021801212126999,
+      "best_fused_score": 0.03200204813108039,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 8
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 4
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 1
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 3
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 4,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0578
+    },
+    {
+      "item_id": "C-104",
+      "category": "out_of_scope",
+      "question": "Bir matrisin özdeğerleri nasıl bulunur?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.7949063712436715,
+      "best_fused_score": 0.029418126757516764,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0543
+    },
+    {
+      "item_id": "C-105",
+      "category": "out_of_scope",
+      "question": "HTTPS sertifikası nasıl yenilenir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8118542575338904,
+      "best_fused_score": 0.030621785881252923,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 16
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 8
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0511
+    },
+    {
+      "item_id": "C-106",
+      "category": "out_of_scope",
+      "question": "Bugün İstanbul'da hava nasıl olacak?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.7431106115383505,
+      "best_fused_score": 0.029571646010002173,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 3
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0535
+    },
+    {
+      "item_id": "C-107",
+      "category": "out_of_scope",
+      "question": "Rust'ta ownership kuralları nelerdir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8047815545964957,
+      "best_fused_score": 0.03028233151183971,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0514
+    },
+    {
+      "item_id": "C-108",
+      "category": "out_of_scope",
+      "question": "Bir derleyicide sözcüksel çözümleme hangi aşamadır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8086846923191128,
+      "best_fused_score": 0.03055037313432836,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "pipe_shell.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 16
+        }
+      ],
+      "latency_seconds": 0.072
+    },
+    {
+      "item_id": "C-109",
+      "category": "out_of_scope",
+      "question": "Bütünleme sınavına kimler girebilir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.777129065412746,
+      "best_fused_score": 0.029551337359792925,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 6
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "producer_consumer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 4
+        },
+        {
           "file_name": "15-boot-and-kernel.pptx",
           "page_number": null,
           "slide_number": 19
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 8
         }
       ],
-      "latency_seconds": 0.0837
+      "latency_seconds": 0.0532
+    },
+    {
+      "item_id": "C-110",
+      "category": "out_of_scope",
+      "question": "Blokzincirde madencilik nasıl çalışır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8262644850116152,
+      "best_fused_score": 0.029877369007803793,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 16
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 12
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 19
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 4
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0632
+    },
+    {
+      "item_id": "C-111",
+      "category": "out_of_scope",
+      "question": "Bir REST API'de PUT ile PATCH farkı nedir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.811819695800504,
+      "best_fused_score": 0.027583600982429624,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 13
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0685
+    },
+    {
+      "item_id": "C-112",
+      "category": "out_of_scope",
+      "question": "Doğrusal regresyonda R-kare neyi ölçer?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.7966198979309913,
+      "best_fused_score": 0.03200204813108039,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 3
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 4
+        },
+        {
+          "file_name": "reader_writer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 19
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0715
+    },
+    {
+      "item_id": "C-113",
+      "category": "out_of_scope",
+      "question": "Kubernetes'te pod ile deployment arasındaki ilişki nedir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8090353700381286,
+      "best_fused_score": 0.030834914611005692,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 19
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 3
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 10
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 14
+        }
+      ],
+      "latency_seconds": 0.0657
     },
     {
       "item_id": "C-114",
@@ -1800,7 +1802,7 @@
       "question": "Bir grafik kartının CUDA çekirdek sayısı ne anlama gelir?",
       "retrieved_count": 8,
       "best_dense_score": 0.8395408985001669,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [],
       "expected_sources": [],
       "top_results": [
@@ -1815,37 +1817,37 @@
           "slide_number": null
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 5
-        },
-        {
           "file_name": "10-security-and-protection.pdf",
           "page_number": 1,
           "slide_number": null
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
+          "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
-          "slide_number": 16
+          "slide_number": 17
         },
         {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 2,
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
           "slide_number": null
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 7
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 4,
+          "slide_number": null
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 19
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 2,
+          "slide_number": null
         }
       ],
-      "latency_seconds": 0.0945
+      "latency_seconds": 0.0782
     },
     {
       "item_id": "C-115",
@@ -1853,29 +1855,29 @@
       "question": "Ders kaydı hangi tarihler arasında yapılır?",
       "retrieved_count": 8,
       "best_dense_score": 0.7997454574534669,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.030798389007344232,
       "ranks_by_source": [],
       "expected_sources": [],
       "top_results": [
         {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
-          "slide_number": 4
-        },
-        {
-          "file_name": "06-file-systems.pptx",
-          "page_number": null,
           "slide_number": 1
         },
         {
-          "file_name": "12-real-time-scheduling.pptx",
+          "file_name": "reader_writer.py",
           "page_number": null,
-          "slide_number": 1
-        },
-        {
-          "file_name": "09-disk-and-storage.pdf",
-          "page_number": 1,
           "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 1
         },
         {
           "file_name": "13-ipc.pptx",
@@ -1883,22 +1885,22 @@
           "slide_number": 1
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
+          "file_name": "11-virtualization-containers.pptx",
           "page_number": null,
-          "slide_number": 8
+          "slide_number": 1
         },
         {
-          "file_name": "06-file-systems.pptx",
+          "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
-          "slide_number": 3
+          "slide_number": 4
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
         }
       ],
-      "latency_seconds": 0.0599
+      "latency_seconds": 0.0569
     },
     {
       "item_id": "C-116",
@@ -1906,7 +1908,7 @@
       "question": "Sanal bellekte offset alanı çevrim sırasında değişir mi?",
       "retrieved_count": 8,
       "best_dense_score": 0.8731481522610598,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
@@ -1927,80 +1929,6 @@
           "slide_number": null
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 11
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 8
-        },
-        {
-          "file_name": "03-memory-management.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 8
-        },
-        {
-          "file_name": "03-memory-management.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        }
-      ],
-      "latency_seconds": 0.0715
-    },
-    {
-      "item_id": "C-117",
-      "category": "direct",
-      "question": "Yoklama (polling) hangi durumda kesmeden daha mantıklıdır?",
-      "retrieved_count": 8,
-      "best_dense_score": 0.8166434511079961,
-      "best_fused_score": 0.0,
-      "ranks_by_source": [
-        [
-          2
-        ]
-      ],
-      "expected_sources": [
-        "08-io-systems.pdf#s2"
-      ],
-      "top_results": [
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 9
-        },
-        {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 17
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 16
-        },
-        {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 14
-        },
-        {
           "file_name": "07-virtual-memory.pdf",
           "page_number": 4,
           "slide_number": null
@@ -2008,50 +1936,55 @@
         {
           "file_name": "13-ipc.pptx",
           "page_number": null,
-          "slide_number": 16
+          "slide_number": 8
         },
         {
-          "file_name": "14-distributed-os.pptx",
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "13-ipc.pptx",
           "page_number": null,
-          "slide_number": 10
+          "slide_number": 3
         }
       ],
-      "latency_seconds": 0.0933
+      "latency_seconds": 0.0698
     },
     {
-      "item_id": "C-118",
+      "item_id": "C-117",
       "category": "direct",
-      "question": "LOOK algoritması SCAN'den hangi noktada ayrılır?",
+      "question": "Yoklama (polling) hangi durumda kesmeden daha mantıklıdır?",
       "retrieved_count": 8,
-      "best_dense_score": 0.8537893941764242,
-      "best_fused_score": 0.0,
+      "best_dense_score": 0.8166434511079961,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
           1
         ]
       ],
       "expected_sources": [
-        "09-disk-and-storage.pdf#s2"
+        "08-io-systems.pdf#s2"
       ],
       "top_results": [
         {
-          "file_name": "09-disk-and-storage.pdf",
+          "file_name": "08-io-systems.pdf",
           "page_number": 2,
           "slide_number": null
         },
         {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 3,
-          "slide_number": null
-        },
-        {
-          "file_name": "page_replacement.py",
-          "page_number": null,
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
           "slide_number": null
         },
         {
@@ -2070,12 +2003,81 @@
           "slide_number": null
         },
         {
-          "file_name": "10-security-and-protection.pdf",
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 9
+        }
+      ],
+      "latency_seconds": 0.0621
+    },
+    {
+      "item_id": "C-118",
+      "category": "direct",
+      "question": "LOOK algoritması SCAN'den hangi noktada ayrılır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8537893941764242,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1
+        ]
+      ],
+      "expected_sources": [
+        "09-disk-and-storage.pdf#s2"
+      ],
+      "top_results": [
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
           "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.0779
+      "latency_seconds": 0.0696
     },
     {
       "item_id": "C-119",
@@ -2083,7 +2085,7 @@
       "question": "ACL ile yetenek listesi arasındaki fark hangi soruyu kolay cevaplar?",
       "retrieved_count": 8,
       "best_dense_score": 0.8199308137730784,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
           1
@@ -2099,6 +2101,26 @@
           "slide_number": null
         },
         {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
           "file_name": "11-virtualization-containers.pptx",
           "page_number": null,
           "slide_number": 14
@@ -2109,32 +2131,12 @@
           "slide_number": null
         },
         {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 1,
-          "slide_number": null
-        },
-        {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 1,
-          "slide_number": null
-        },
-        {
-          "file_name": "10-security-and-protection.pdf",
-          "page_number": 4,
-          "slide_number": null
-        },
-        {
-          "file_name": "08-io-systems.pdf",
-          "page_number": 3,
+          "file_name": "pipe_shell.c",
+          "page_number": null,
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.078
+      "latency_seconds": 0.0732
     },
     {
       "item_id": "C-120",
@@ -2142,7 +2144,7 @@
       "question": "Tip 1 hipervizör Tip 2'den neden daha hızlıdır?",
       "retrieved_count": 8,
       "best_dense_score": 0.8639267116850232,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
@@ -2158,14 +2160,9 @@
           "slide_number": 4
         },
         {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 3
-        },
-        {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 19
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
         },
         {
           "file_name": "03-memory-management.pdf",
@@ -2173,27 +2170,32 @@
           "slide_number": null
         },
         {
-          "file_name": "11-virtualization-containers.pptx",
-          "page_number": null,
-          "slide_number": 5
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
         },
         {
-          "file_name": "09-disk-and-storage.pdf",
+          "file_name": "03-memory-management.pdf",
           "page_number": 2,
           "slide_number": null
         },
         {
-          "file_name": "13-ipc.pptx",
-          "page_number": null,
-          "slide_number": 3
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 1,
+          "slide_number": null
         },
         {
-          "file_name": "01-processes.pdf",
-          "page_number": 3,
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.0792
+      "latency_seconds": 0.071
     },
     {
       "item_id": "C-121",
@@ -2201,7 +2203,7 @@
       "question": "EDF tek işlemcide hangi koşulda tüm görev kümesini zamanlayabilir?",
       "retrieved_count": 8,
       "best_dense_score": 0.8736812943320937,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
@@ -2219,22 +2221,7 @@
         {
           "file_name": "12-real-time-scheduling.pptx",
           "page_number": null,
-          "slide_number": 19
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
           "slide_number": 11
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 6
-        },
-        {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 1,
-          "slide_number": null
         },
         {
           "file_name": "12-real-time-scheduling.pptx",
@@ -2242,17 +2229,32 @@
           "slide_number": 10
         },
         {
-          "file_name": "02-cpu-scheduling.pdf",
-          "page_number": 3,
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 6
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 12
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
           "slide_number": null
         },
         {
-          "file_name": "02-cpu-scheduling.pdf",
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
           "page_number": 2,
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.0765
+      "latency_seconds": 0.0653
     },
     {
       "item_id": "C-122",
@@ -2260,10 +2262,10 @@
       "question": "Adlandırılmış boru (FIFO) sıradan borudan hangi yönüyle ayrılır?",
       "retrieved_count": 8,
       "best_dense_score": 0.873021717720956,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
-          2
+          6
         ],
         [
           1
@@ -2280,9 +2282,19 @@
           "slide_number": 6
         },
         {
+          "file_name": "pipe_shell.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
           "file_name": "13-ipc.pptx",
           "page_number": null,
-          "slide_number": 4
+          "slide_number": 15
         },
         {
           "file_name": "13-ipc.pptx",
@@ -2290,19 +2302,9 @@
           "slide_number": 5
         },
         {
-          "file_name": "page_replacement.py",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
-          "file_name": "pipe_shell.c",
-          "page_number": null,
-          "slide_number": null
-        },
-        {
           "file_name": "13-ipc.pptx",
           "page_number": null,
-          "slide_number": 15
+          "slide_number": 4
         },
         {
           "file_name": "pipe_shell.c",
@@ -2315,7 +2317,7 @@
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.1065
+      "latency_seconds": 0.0849
     },
     {
       "item_id": "C-123",
@@ -2323,14 +2325,12 @@
       "question": "Lamport mantıksal saatinin veremediği bilgi nedir?",
       "retrieved_count": 8,
       "best_dense_score": 0.8695028136809171,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
         ],
-        [
-          6
-        ]
+        []
       ],
       "expected_sources": [
         "14-distributed-os.pptx#slayt6",
@@ -2348,9 +2348,24 @@
           "slide_number": 18
         },
         {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
           "file_name": "14-distributed-os.pptx",
           "page_number": null,
           "slide_number": 5
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
         },
         {
           "file_name": "12-real-time-scheduling.pptx",
@@ -2358,27 +2373,12 @@
           "slide_number": 19
         },
         {
-          "file_name": "page_replacement.py",
-          "page_number": null,
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 4,
           "slide_number": null
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 7
-        },
-        {
-          "file_name": "04-synchronization.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 11
         }
       ],
-      "latency_seconds": 0.0694
+      "latency_seconds": 0.064
     },
     {
       "item_id": "C-124",
@@ -2386,7 +2386,7 @@
       "question": "initramfs hangi yumurta-tavuk problemini çözer?",
       "retrieved_count": 8,
       "best_dense_score": 0.8500776526964016,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03252247488101534,
       "ranks_by_source": [
         [
           1
@@ -2407,6 +2407,11 @@
           "slide_number": 19
         },
         {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 18
+        },
+        {
           "file_name": "04-synchronization.pdf",
           "page_number": 2,
           "slide_number": null
@@ -2417,27 +2422,22 @@
           "slide_number": null
         },
         {
+          "file_name": "pipe_shell.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
           "file_name": "05-deadlock-demo.pdf",
           "page_number": 1,
           "slide_number": null
         },
         {
-          "file_name": "producer_consumer.py",
-          "page_number": null,
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
           "slide_number": null
-        },
-        {
-          "file_name": "04-synchronization.pdf",
-          "page_number": 2,
-          "slide_number": null
-        },
-        {
-          "file_name": "14-distributed-os.pptx",
-          "page_number": null,
-          "slide_number": 18
         }
       ],
-      "latency_seconds": 0.071
+      "latency_seconds": 0.0638
     },
     {
       "item_id": "C-125",
@@ -2445,7 +2445,7 @@
       "question": "Kernel oops ile kernel panic arasındaki fark nedir?",
       "retrieved_count": 8,
       "best_dense_score": 0.9261492104582584,
-      "best_fused_score": 0.0,
+      "best_fused_score": 0.03278688524590164,
       "ranks_by_source": [
         [
           1
@@ -2461,16 +2461,6 @@
           "slide_number": 18
         },
         {
-          "file_name": "15-boot-and-kernel.pptx",
-          "page_number": null,
-          "slide_number": 7
-        },
-        {
-          "file_name": "05-deadlock-demo.pdf",
-          "page_number": 1,
-          "slide_number": null
-        },
-        {
           "file_name": "10-security-and-protection.pdf",
           "page_number": 1,
           "slide_number": null
@@ -2481,22 +2471,32 @@
           "slide_number": 19
         },
         {
-          "file_name": "12-real-time-scheduling.pptx",
-          "page_number": null,
-          "slide_number": 17
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 2,
+          "slide_number": null
         },
         {
-          "file_name": "10-security-and-protection.pdf",
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
           "page_number": 3,
           "slide_number": null
         },
         {
-          "file_name": "07-virtual-memory.pdf",
-          "page_number": 4,
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
           "slide_number": null
         }
       ],
-      "latency_seconds": 0.0716
+      "latency_seconds": 0.065
     }
   ]
 }

@@ -128,12 +128,12 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 |---|---:|---|---|---|
 | Dersler arası veri sızıntısı | 0 | **0** (8/8 iddia, v2'de yeniden koşuldu) | evet | `supabase/tests/rls_isolation.sql` |
 | Ölçme + analitik izolasyonu | 0 sızıntı | **0** (58/58 iddia, 24/24 mutasyon, v2'de yeniden) | evet | `rls_assessment.sql` + mutasyon betiği |
-| Holdout Recall@5 | ≥ %80 | **%98,1** (103/105) | evet | `…1551-holdout-hybrid-fastembed-retrieval.json` |
-| Holdout Recall@8 | ≥ %80 | **%98,1** (103/105) | evet | aynı dosya |
-| Holdout MRR | — | **0,852** hibrit · 0,807 dense | evet | aynı + dense koşusu |
+| Holdout Recall@5 | ≥ %80 | **%97,1** (102/105) hibrit · %96,2 dense | evet | `…1657-holdout-hybrid-fastembed-retrieval.json` |
+| Holdout Recall@8 | ≥ %80 | **%98,1** (103/105) her iki kol | evet | aynı dosya |
+| Holdout MRR | — | **0,854** hibrit · 0,807 dense | evet | aynı + dense koşusu |
 | Tam kapsama@8 (n=26) | — | **0,885** | evet | aynı dosya |
 | Embedding A/B (T045) | raporlanır | **bge-m3 üstün DEĞİL** | evet | `evaluation/embedding_ab.md` |
-| Kapsam dışı doğru ret (retrieval kapısı, holdout) | ≥ %90 | **%50** (11/22) — hedefin ALTINDA | evet | `…1627-holdout-hybrid-fastembed-e2e.json` |
+| Kapsam dışı doğru ret (retrieval kapısı, holdout) | ≥ %90 | **%50** (11/22) — hedefin ALTINDA | evet | `…1705-holdout-hybrid-fastembed-e2e.json` |
 | Kapsam dışı doğru ret (uçtan uca, SC-005) | ≥ %90 | **%0** (0/22) — etiket hiç üretilmiyor | kısmen (§8b) | aynı dosya |
 | Ret F1 | — | **0,537** (P 0,579 / R 0,500) | kısmen (§8) | aynı dosya |
 | Injection testleri (≥15 vaka) | geçer | **35 vakanın 3'ü ihlal** (deterministik) | evet | `…1616-injection.json` |
@@ -210,14 +210,14 @@ dolayısıyla bu bölümdeki her sayı sahte sağlayıcıdan bağımsızdır ve 
 
 | Metrik | Dense-only | Hibrit (dense+FTS+RRF) |
 |---|---:|---:|
-| Recall@5 | 0,962 | **0,981** |
-| Recall@8 | 0,981 | **0,981** |
-| MRR | 0,807 | **0,852** |
+| Recall@5 | 0,962 | **0,971** |
+| Recall@8 | 0,981 | 0,981 |
+| MRR | 0,807 | **0,854** |
 | Tam kapsama@8 (n=26) | 0,885 | 0,885 |
-| p95 gecikme (retrieval, LLM'siz) | 0,133 sn | 0,152 sn |
+| p95 gecikme (retrieval, LLM'siz) | 0,103 sn | 0,106 sn |
 
-Kategori kırılımı (hibrit): `direct` n=45 MRR 0,878 · `multi_chunk` n=22 MRR 0,864 ·
-`technical_term` n=24 MRR 0,806 · `code_review` n=14 MRR 0,833.
+Kategori kırılımı (hibrit): `direct` n=45 MRR 0,889 · `multi_chunk` n=22 MRR 0,864 ·
+`technical_term` n=24 MRR 0,806 · `code_review` n=14 MRR 0,807.
 
 ### 6.2. v1'deki doygunluk uyarısı — giderildi
 
@@ -229,10 +229,10 @@ ortadan kaldırıldı:**
 |---|---|---|
 | Korpus | 33 chunk | 167 chunk |
 | `top_k=8` korpusun ne kadarı | **%24** | **%4,8** |
-| Recall@5 | 1,000 (doygun) | 0,981 (ayrım yapıyor) |
+| Recall@5 | 1,000 (doygun) | 0,971 (ayrım yapıyor) |
 
-Recall artık 1,0 değil: iki soruda beklenen kaynak ilk 5'te bulunamıyor. Ölçüt
-doygunluktan çıktı, dolayısıyla **hedefin tutturulması (%98,1 ≥ %80) bu kez bir şey
+Recall artık 1,0 değil: üç soruda beklenen kaynak ilk 5'te bulunamıyor. Ölçüt
+doygunluktan çıktı, dolayısıyla **hedefin tutturulması (%97,1 ≥ %80) bu kez bir şey
 ifade ediyor.**
 
 Yine de n=105 **yön göstericidir**; alt kümeler n=14-45 arasında.
@@ -245,14 +245,66 @@ Kaynak: `results/holdout-dense-fastembed-vs-hybrid-fastembed-comparison.json`.
 
 | Ölçüt | n | Dense | Hibrit | Fark | %95 GA | Sıfırı dışlıyor mu |
 |---|---:|---:|---:|---:|---|---|
-| İsabet@5 | 105 | 0,962 | 0,981 | +0,019 | [+0,000, +0,048] | hayır (McNemar p=0,50) |
+| İsabet@5 | 105 | 0,962 | 0,971 | +0,010 | [−0,019, +0,038] | hayır (McNemar p=1,00) |
 | İsabet@8 | 105 | 0,981 | 0,981 | ±0,000 | [−0,029, +0,029] | hayır (p=1,00) |
-| **Karşılıklı sıra (MRR)** | 105 | 0,807 | 0,852 | **+0,045** | **[+0,002, +0,092]** | **evet** |
+| Karşılıklı sıra (MRR) | 105 | 0,807 | 0,854 | +0,047 | **[−0,0002, +0,095]** | **hayır — sınırda** |
 | Tam kapsama@8 | 26 | 0,885 | 0,885 | ±0,000 | [−0,154, +0,154] | hayır (p=1,00) |
 
-**Okuma:** hibrit, doğru parçayı dense-only'den daha üst sıraya koyuyor ve bu fark
-sıfırı dışlıyor. "Buldu mu" sorusunda iki kol ayrışmıyor. Bu sonuç v1'dekiyle aynı
-yönde ama artık doygun olmayan bir ölçütte alınmış durumda.
+**Okuma — v1'e göre DEĞİŞTİ ve bu değişikliğin kendisi bir bulgudur.** Hibrit, doğru
+parçayı dense-only'den ortalama daha üst sıraya koyuyor (+0,047) ama %95 aralık artık
+sıfırı **dışlamıyor**: alt sınır −0,0002, yani sıfıra teğet. v1 raporu bu farkı
+"sıfırı dışlıyor" diye yazmıştı; korpus yeniden kurulduğunda aralık kenardan sıfırın
+diğer tarafına geçti.
+
+**Dolayısıyla "hibrit dense'ten iyidir" hükmü verilemez.** Verilebilecek olan:
+*hibrit ortalamada önde, fark küçük ve bu örneklemde ayırt edilemiyor.* Aralığın
+kenarda durması, sonucun korpusun yeniden kurulması gibi küçük bir değişikliğe
+duyarlı olduğunu gösteriyor — sebebi §6.4'te.
+
+### 6.4. AÇIK KUSUR — hibrit sonuçlar korpus yeniden kurulunca değişiyor
+
+Bu bulgu, ölçümün **yeniden koşturulmasıyla** ortaya çıktı. Korpus aynı materyalden,
+aynı sağlayıcıyla, aynı kütüphane sürümüyle yeniden kuruldu ve holdout yeniden
+koşuldu. Sonuç:
+
+| Kol | İlk kurulum | Yeniden kurulum | Aynı mı |
+|---|---:|---:|---|
+| Dense — Recall@5 | 0,9619 | 0,9619 | **birebir aynı** |
+| Dense — MRR | 0,8071 | 0,8071 | **birebir aynı** |
+| Hibrit — Recall@5 | 0,9810 | 0,9714 | **DEĞİŞTİ** (1 soru) |
+| Hibrit — MRR | 0,8524 | 0,8536 | değişti |
+
+Aynı korpusa karşı iki kez koşulduğunda sonuç **birebir aynı** çıkıyor (denendi, iki
+koşu da 0,9714 / 0,8536). Yani belirsizlik koşuda değil, **korpusun yeniden
+kurulmasında.**
+
+**Sebep bulundu.** `app/modules/retrieval/fts.py`:
+
+```sql
+ORDER BY rank DESC, c.id
+LIMIT :limit
+```
+
+Eşit `ts_rank` değerine sahip chunk'lar arasında sıralamayı `c.id` belirliyor —
+ve `chunks.id` her ingest'te `gen_random_uuid()` ile **yeniden üretiliyor.** Yani
+eşitlik bozma kuralı bir korpus içinde tutarlı, korpuslar arasında **rastgele**.
+FTS listesi değişince RRF füzyonu değişiyor ve hibrit sıralama kayıyor. Dense kol
+etkilenmiyor çünkü kosinüs mesafesinde birebir eşitlik pratikte oluşmuyor.
+
+**Neden önemli:** §6.3'teki MRR aralığının sıfırı dışlayıp dışlamaması bu kaymaya
+bağlı çıktı. Yani bir kabul kriterinin sonucu, ölçümle ilgisi olmayan bir uygulama
+ayrıntısına duyarlı.
+
+**Şerit 1'e öneri:** eşitlik bozma kuralı **kalıcı** bir alana bağlanmalı — örneğin
+`(document_id, page_number, slide_number, section_title)` ya da chunk'ın belge
+içindeki sıra numarası. `c.id` yerine kalıcı bir anahtar kullanmak sonucu ingest'ten
+bağımsız hale getirir ve bu satırın raporda dipnot olmasına gerek kalmaz. Aynı
+kırılganlık `dense.py`'nin `LIMIT`'li alt sorgusunda da var (orada eşitlik bozma
+alanı hiç yok), bugün tetiklenmiyor ama aynı sınıftan.
+
+**Bu raporda ne yapıldı:** tüm sayılar **son** korpus kurulumundan alındı ve o
+kurulumun koşu dosyaları depoda. Önceki kurulumun dosyaları silindi; iki farklı
+kurulumdan gelen sayıları yan yana koymak karşılaştırmayı geçersiz kılardı.
 
 ---
 
@@ -312,7 +364,9 @@ kolda da aynıdır, embedding farkı orada seyrelir.
 | Karşılıklı sıra | 105 | 0,807 | 0,800 | −0,007 | [−0,053, +0,041] | hayır |
 | Tam kapsama@8 | 26 | 0,885 | 0,885 | ±0,000 | [−0,115, +0,115] | hayır |
 
-Hibrit kolda dört ölçütün dördünde de fark sıfırdan ayrılmıyor.
+Hibrit kolda dört ölçütün dördünde de fark sıfırdan ayrılmıyor (İsabet@5 ve @8
+birebir eşit: 0,971 ve 0,981; MRR 0,854 → 0,839, GA [−0,050, +0,020]; tam kapsama
+0,885 → 0,923, GA [+0,000, +0,115]).
 
 **Dürüstlük notu:** ayrışan tek ölçütte iki test aynı şeyi söylemiyor — bootstrap
 aralığı sıfırı kıl payı dışlıyor (üst sınır −0,010), McNemar tam testi p=0,0625 ile
@@ -389,8 +443,13 @@ anlatmak) kalıpla yakalanmaz.
 
 ## 8b. Uçtan uca ret davranışı ve SC-005
 
-**Koşuldu** (161 soru, `results/2026-08-09T1627-holdout-hybrid-fastembed-e2e.json`),
+**Koşuldu** (161 soru, `results/2026-08-09T1705-holdout-hybrid-fastembed-e2e.json`),
 sunucu `LLM_FAKE_PROVIDER=true`.
+
+**Yeniden üretilebilirlik:** bu koşu, korpus yeniden kurulduktan sonra ikinci kez
+yapıldı ve **karışıklık matrisinin dört hücresi de, citation sayıları da birebir
+aynı çıktı.** Yani §6.4'teki hibrit kayması uçtan uca ret davranışını etkilemiyor —
+ret kararı `best_dense_score`'a bakıyor ve o sayı deterministik.
 
 ### Ret F1 — kısmen geçerli
 
@@ -482,13 +541,16 @@ chunk'a atıf verip o chunk'ın söylemediği bir şeyi de yazabilir.
 (sahte sağlayıcı); gerçek modelde bu sayı saniyeler mertebesine çıkar. Hedefle
 (< 10 sn) karşılaştırmak anlamsız olurdu.
 
-**Geçerli olan:** retrieval katmanı p95 = **0,152 sn** (hibrit) / **0,133 sn**
+**Geçerli olan:** retrieval katmanı p95 = **0,106 sn** (hibrit) / **0,103 sn**
 (dense), 127 sorguda, sıcak veritabanında. Bu, uçtan uca gecikmenin LLM dışı
 bileşenidir.
 
-**Bir gözlem:** uçtan uca koşuda 161 cevabın **26'sı önbellekten** geldi. Sebep,
-faithfulness örnekleminin aynı ders üzerinde daha önce çekilmiş olması (FR-034,
-birebir soru eşleşmesi). p95 hesabı önbellekli cevapları zaten dışlıyor.
+Ölçülen uçtan uca p95 (LLM'siz) **0,111 sn**, 161 soruda, **0 önbellek isabeti**.
+Önbellek sayısı burada bir ayrıntı değil: ilk denemede aynı ders üzerinde daha önce
+faithfulness örneklemi çekildiği için 161 cevabın 26'sı önbellekten geldi (FR-034,
+birebir soru eşleşmesi). p95 hesabı önbellekli cevapları zaten dışlıyor, ama koşu
+sırası ölçümü etkileyebiliyor; bu koşu temiz bir korpusta, örneklemden ÖNCE
+yapıldı.
 
 **Cold-start ölçülmedi.**
 
@@ -568,6 +630,10 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
   olmadığını kanıtlamaz; insan incelemesi dosyası boş.
 - **Materyal tek ders, tek dil karışımı.** T045'in "bge-m3 üstün değil" sonucu bu
   materyal içindir, genel bir hüküm değildir.
+- **Hibrit kolun ondalık basamakları yeniden üretilebilir değil** (§6.4): korpus
+  yeniden kurulduğunda FTS eşitlik bozma kuralı değişiyor ve sıralama kayıyor.
+  Dense kol etkilenmiyor. Bu, T044'ün MRR aralığını sıfırın bir yanından diğerine
+  geçirecek kadar büyük bir etki.
 - **Analitik bölümü (§12) v2'de yeniden koşulmadı;** RLS bölümü (§4) koşuldu.
 
 ---
@@ -581,7 +647,8 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 | T046 `review.md` doldurma | uçtan uca koşu | R2 + R4 |
 | `out_of_scope` etiketini kim üretecek — SC-005 ölçülebilir hâle gelsin | tasarım kararı | R4 / Şerit 1 |
 | `evidence_threshold` kararı (öneri 0,815) | tasarım kararı | Şerit 1 |
-| Kapsam kayması kusurunun düzeltilmesi | tasarım kararı | R4 / Şerit 1 |
+| Kapsam kayması kusurunun düzeltilmesi (§8.2) | tasarım kararı | R4 / Şerit 1 |
+| FTS eşitlik bozmasının kalıcı alana bağlanması (§6.4) | tasarım kararı | Şerit 1 |
 | RLS kanıtının üretim kopyasında koşturulması (T051) | dağıtım | R3 |
 | Eğitmen gözden geçirmesi | gold set dondurulmuş | lider |
 

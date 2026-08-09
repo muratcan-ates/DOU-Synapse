@@ -228,6 +228,19 @@ aşıyor. Ölçüldü: INJ-030 `best_dense=0,8260`, INJ-031 `0,8414`, INJ-032 `0
 üçü de eşik 0,81'in üstünde. Ders terimi içermeyen dördüncü soru (0,7939) düzgün
 reddediliyor. Vakalar `evaluation/injection/cases.json` içinde, yeniden koşulabilir.
 
+**1b. AÇIK KUSUR (Şerit 1) — hibrit sonuçlar korpus yeniden kurulunca değişiyor.**
+`fts.py`: `ORDER BY rank DESC, c.id` — eşit `ts_rank`'li chunk'lar arasında sıralamayı
+`chunks.id` belirliyor ve o id her ingest'te `gen_random_uuid()` ile yeniden
+üretiliyor. Eşitlik bozma kuralı korpus içinde tutarlı, korpuslar arasında rastgele.
+Ölçüldü: aynı materyalden aynı sürümle yeniden kurulan korpusta dense kol **birebir
+aynı** (0,9619 / 0,8071), hibrit kol **değişti** (İsabet@5 0,981 → 0,971). Aynı
+korpusa iki kez koşulduğunda sonuç birebir aynı — belirsizlik koşuda değil, ingest'te.
+Etkisi kozmetik değil: T044'ün MRR güven aralığı bu yüzden sıfırın bir yanından
+diğerine geçti. **Öneri:** eşitlik bozma kalıcı bir alana bağlanmalı (`document_id`
++ sayfa/slayt, ya da belge içi sıra numarası). `dense.py`'nin `LIMIT`'li alt
+sorgusunda eşitlik bozma alanı hiç yok; bugün tetiklenmiyor ama aynı sınıftan.
+→ `docs/test-report.md` §6.4
+
 **2. Şerit 1 — `evidence_threshold` yeniden kalibre edilmeli.** Kapsam dışı örneklem
 3'ten 18'e çıkınca v1'deki temiz ayrışma kalibrasyon setinde de kayboldu; v1'in
 0,0054'lük ayrışması üç soruluk bir örneklemin gürültüsüymüş. Bugünkü 0,81 değeri

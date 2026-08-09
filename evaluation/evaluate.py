@@ -118,6 +118,7 @@ def config_fingerprint(metadata: dict[str, Any]) -> str:
             "database",
             "embedding_provider",
             "embedding_model",
+            "embedding_runtime",
             "retrieval",
             "llm",
             "chat_mode",
@@ -131,6 +132,31 @@ def config_fingerprint(metadata: dict[str, Any]) -> str:
 def _database_name(dsn: str) -> str:
     """DSN'den yalnız veritabanı adı. Parola meta veriye ve rapora sızmasın."""
     return dsn.rstrip("/").rsplit("/", 1)[-1].split("?")[0]
+
+
+def embedding_runtime(provider: str) -> dict[str, str]:
+    """Vektörü ÜRETEN kütüphanenin sürümü — sağlayıcı adı tek başına yetmez.
+
+    Liderin 9 Ağustos eki (12_R2_OLCUM.md): `fastembed` bu makinede
+    `multilingual-e5-large` modelini **mean pooling** ile kuruyor ve eski sürümlerde
+    CLS pooling kullanıyordu. Bu bir uyarı değil, **vektör uzayı değişikliğidir**:
+    farklı sürümlerle gömülmüş bir korpusa karşı sorgu yapmak çökmez, yalnız sessizce
+    yanlış komşular döndürür. Sağlayıcı adı ("fastembed") iki uzayda da aynı olduğu
+    için tek başına koşuyu yeniden üretilebilir kılmaz.
+
+    Sürüm parmak izine de girer (`config_fingerprint`): kütüphane güncellendiğinde
+    devam dosyasındaki eski cevaplar yeni koşuya sızmaz.
+    """
+    from importlib.metadata import PackageNotFoundError, version
+
+    packages = ["fastembed"] if provider == "fastembed" else ["onnxruntime", "tokenizers"]
+    runtime: dict[str, str] = {}
+    for package in packages:
+        try:
+            runtime[package] = version(package)
+        except PackageNotFoundError:  # pragma: no cover - kurulu olmayan sağlayıcı
+            runtime[package] = "kurulu değil"
+    return runtime
 
 
 def build_metadata(args: argparse.Namespace, gold: goldset.GoldSet) -> dict[str, Any]:
@@ -165,6 +191,7 @@ def build_metadata(args: argparse.Namespace, gold: goldset.GoldSet) -> dict[str,
         "embedding_model": args.embedding_names[1]
         if args.embedding_names
         else settings.embedding_model,
+        "embedding_runtime": embedding_runtime(provider),
         "retrieval": {
             "top_k": settings.retrieval_top_k,
             "dense_candidates": settings.retrieval_dense_candidates,
@@ -974,6 +1001,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="evidence_threshold T043 ile kalibre edildiyse işaretleyin (varsayılan: hayır).",
     )
     parser.add_argument(
+        "--allow-runtime-mismatch",
+        action="store_true",
+        help="Korpus başka bir kütüphane sürümüyle gömülmüşse yine de koş. Kaçış "
+        "kapısı; kullanıldığı sonuç dosyasına yazılır.",
+    )
+    parser.add_argument(
         "--sweep-from", type=Path, help="Kayıtlı koşudan eşik taramasını yeniden hesapla."
     )
     parser.add_argument("--sweep-min", type=float, default=0.0)
@@ -995,11 +1028,13 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
 
     args.corpus_provider = None
     args.corpus_database = None
+    args.corpus_runtime = None
     if args.corpus:
         corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
         args.course_id = args.course_id or corpus["course_id"]
         args.as_user = args.as_user or corpus["instructor_id"]
         args.corpus_provider = corpus.get("embedding_provider")
+        args.corpus_runtime = corpus.get("embedding_runtime")
         # Korpus özeti hangi veritabanında kurulduğunu taşıyorsa oraya bağlanılır.
         # `--corpus` vermek "bu korpusu ölç" demektir; korpusun yaşadığı veritabanını
         # ayrıca ortam değişkeniyle söyletmek, unutulduğunda sessizce yanlış (ve boş)
@@ -1061,6 +1096,30 @@ async def execute(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
+
+    # Aynı hata sınıfının ikinci yarısı: sağlayıcı aynı, SÜRÜM farklı. fastembed
+    # 0.5.1'den sonra e5-large'ı CLS yerine mean pooling ile kuruyor; iki uzayın adı da
+    # "fastembed" olduğu için yukarıdaki denetim bunu göremez. Fark sessizdir —
+    # arama çökmez, yalnız yanlış komşular döner (12_R2_OLCUM.md, lider eki).
+    metadata["runtime_mismatch_allowed"] = bool(args.allow_runtime_mismatch)
+    if args.corpus_runtime and args.corpus_runtime != metadata["embedding_runtime"]:
+        message = (
+            f"Korpus {args.corpus_runtime} ile gömülmüş, koşu "
+            f"{metadata['embedding_runtime']} ile başlatılıyor. Aynı sağlayıcının "
+            "farklı sürümleri farklı vektör uzayı üretebilir."
+        )
+        if not args.allow_runtime_mismatch:
+            print(
+                message + "\n  Korpusu yeniden kurun ya da --allow-runtime-mismatch "
+                "verin (kullanıldığı sonuç dosyasına yazılır).",
+                file=sys.stderr,
+            )
+            return 1
+        metadata["runtime_mismatch"] = {
+            "corpus": args.corpus_runtime,
+            "run": metadata["embedding_runtime"],
+        }
+        print(f"  UYARI: {message} (--allow-runtime-mismatch ile geçildi)", file=sys.stderr)
 
     # Korpus görünür mü? Retrieval katmanı doğrudan veritabanına bağlanır; uçtan uca
     # katman API sunucusuna gider ve onun veritabanını buradan göremeyiz, o yüzden

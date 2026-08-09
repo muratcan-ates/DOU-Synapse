@@ -3,14 +3,14 @@
   "set": "holdout",
   "n_items": 105,
   "baseline": {
-    "run_id": "2026-08-09T1552-holdout-dense-fastembed-retrieval",
+    "run_id": "2026-08-09T1658-holdout-dense-fastembed-retrieval",
     "mode": "dense",
     "embedding_provider": "fastembed",
     "embedding_model": "intfloat/multilingual-e5-large",
     "database": "dou_synapse_eval"
   },
   "candidate": {
-    "run_id": "2026-08-09T1553-holdout-dense-bge-m3-onnx-retrieval",
+    "run_id": "2026-08-09T1658-holdout-dense-bge-m3-onnx-retrieval",
     "mode": "dense",
     "embedding_provider": "bge-m3-onnx",
     "embedding_model": "BAAI/bge-m3 (onnx, öneksiz)",

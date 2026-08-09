@@ -171,7 +171,7 @@ Yukarıdaki mesajı uygula.
 
 **Cevap:**
 
-> Ders materyaline göre: def clock(referanslar: list[int], cerceve_sayisi: int) -> int: """İkinci şans algoritması. Dönen değer sayfa hatası sayısıdır. Konunun devamı 04-synchronization.pdf, Sayfa 2 bölümünde.
+> Ders materyaline göre: def clock(referanslar: list[int], cerceve_sayisi: int) -> int: """İkinci şans algoritması. Dönen değer sayfa hatası sayısıdır. Konunun devamı 06-file-systems.pptx, Slayt 1 bölümünde.
 
 **Karar:** _______________
 
@@ -303,7 +303,7 @@ Yukarıdaki mesajı uygula.
 
 **Cevap:**
 
-> Ders materyaline göre: 4. Kimlik Doğrulama ve Sistem Sertleştirme 4.1. Şifrelerin Saklanması Şifreler düz metin olarak saklanmaz ve şifrelenerek de saklanmaz — şifreleme geri döndürülebilir olduğu için… Konunun devamı producer_consumer.py, Tüketici (satır 1-22) bölümünde.
+> Ders materyaline göre: """Okuyucu-Yazar problemi — BİLİNÇLİ OLARAK HATALI örnek (bug_hunt). Bu dosya ders materyalinin bir parçasıdır ve içinde kasıtlı bir tasarım hatası vardır. Konunun devamı 10-security-and-protection.pdf, Sayfa 4 bölümünde.
 
 **Karar:** _______________
 

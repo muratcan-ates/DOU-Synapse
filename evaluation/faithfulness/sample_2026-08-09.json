@@ -1,11 +1,11 @@
 {
   "kind": "faithfulness_sample",
-  "pulled_at": "2026-08-09T16:24:36.007674+03:00",
+  "pulled_at": "2026-08-09T17:15:01.085199+03:00",
   "seed": 20260809,
   "size": 25,
   "api_url": "http://127.0.0.1:8022",
-  "course_id": "57e2cc7b-48b0-4ed7-9896-b7721f909574",
-  "llm_server_note": "LLM_FAKE_PROVIDER=true (gerçek anahtar yok); EMBEDDING_PROVIDER=fastembed; DB=dou_synapse_eval",
+  "course_id": "d61be435-ef9c-410b-8e95-26e83f444dfe",
+  "llm_server_note": "LLM_FAKE_PROVIDER=true (gerçek anahtar yok); EMBEDDING_PROVIDER=fastembed; fastembed 0.8.0; DB=dou_synapse_eval",
   "fake_provider_declared": true,
   "warning": "Sahte sağlayıcıyla çekilmiş cevaplar faithfulness KANITI DEĞİLDİR. Sahte sağlayıcı getirilen chunk'ları özetleyip döndürüyor; böyle bir cevabı 'kaynağa sadık' diye etiketlemek totolojidir.",
   "records": [
@@ -21,22 +21,22 @@
       "answer": "Ders materyaline göre: CPU Zamanlama Algoritmaları İşletim Sistemleri — Konu 2 1. Zamanlamanın Amacı CPU zamanlayıcısı (scheduler), ready durumundaki süreçler/thread’ler arasından bir sonraki hangisinin… Konunun devamı 02-cpu-scheduling.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "0d59eb6f-fd08-4455-a59a-3698acee8382",
-          "claim": "CPU Zamanlama Algoritmaları İşletim Sistemleri — Konu 2 1.",
+          "chunk_id": "4e821e9f-3035-4de1-8704-838fbc0eb084",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 1",
           "snippet": "CPU Zamanlama Algoritmaları İşletim Sistemleri — Konu 2 1. Zamanlamanın Amacı CPU zamanlayıcısı (scheduler), ready durumundaki süreçler/thread’ler arasından bir sonraki hangisinin CPU’yu kullanacağına karar verir. İyi bir zamanlama algorit…"
         },
         {
-          "chunk_id": "34cf60a7-98c5-4a0e-89be-7abd65c96188",
-          "claim": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse…",
+          "chunk_id": "b52f0fa8-d1fb-4a49-a7a3-9022abe26afc",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 2",
           "snippet": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse bile yarıda kesilmez. • Preemptive SJF (Shortest Remaining Time First, SRTF): Yeni gelen sürecin kalan süresi, çalışmakta olanınkinden kısaysa çalışan…"
         },
         {
-          "chunk_id": "17ffdb80-4ee2-46dc-8d51-128d9e8d6180",
-          "claim": "2. Disk Zamanlama Algoritmaları Aşağıdaki örneklerde kuyruk 98, 183, 37, 122, 14, 124,…",
+          "chunk_id": "943defe2-2928-455a-a33a-7511589cbb9d",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Disk Zamanlama Algoritmaları Aşağıdaki örneklerde kuyruk 98, 183, 37, 122, 14, 124, 65, 67, kafa başlangıçta 53 numaralı silindirdedir ve disk 0­199 silindirlerinden oluşur. 2.1. FCFS İstekler geliş sırasıyla işlenir. Adildir ve açlığa…"
@@ -57,22 +57,22 @@
       "answer": "Ders materyaline göre: /* * fork_example.c — Süreç yaratma, wait() ve dosya tanımlayıcısı yönetimi örneği. * * Bu dosya DOĞRU bir örnektir (code_trace soru tipi için, T002): fork() ile bir çocuk * süreç… Konunun devamı fork_example.c, main (satır 18-54) bölümünde.",
       "citations": [
         {
-          "chunk_id": "4832215a-e24c-4603-a2cb-be031093ba65",
-          "claim": "/* * fork_example.c — Süreç yaratma, wait() ve dosya tanımlayıcısı yönetimi örneği.",
+          "chunk_id": "110c7872-9fb6-4f35-899d-bc003771a8a3",
+          "claim": "",
           "file_name": "fork_example.c",
           "location": "satır 1-17",
           "snippet": "/* * fork_example.c — Süreç yaratma, wait() ve dosya tanımlayıcısı yönetimi örneği. * * Bu dosya DOĞRU bir örnektir (code_trace soru tipi için, T002): fork() ile bir çocuk * süreç yaratılır, ebeveyn wait() ile çocuğun bitmesini bekler ve p…"
         },
         {
-          "chunk_id": "e76b3aec-e984-4ebc-817b-83b95fac63d9",
-          "claim": "int main(void) { int fd = open(\"ornek.txt\", O_CREAT | O_WRONLY | O_TRUNC, 0644); if (fd…",
+          "chunk_id": "2ee9f5a0-83c8-426f-a766-ff4da1720121",
+          "claim": "",
           "file_name": "fork_example.c",
           "location": "main (satır 18-54)",
           "snippet": "int main(void) { int fd = open(\"ornek.txt\", O_CREAT | O_WRONLY | O_TRUNC, 0644); if (fd == -1) { perror(\"open\"); return 1; } pid_t pid = fork(); if (pid < 0) { perror(\"fork\"); close(fd); return 1; } if (pid == 0) { /* Çocuk süreç: fd, fork…"
         },
         {
-          "chunk_id": "74622005-0daa-43cd-9afc-75efa7d83935",
-          "claim": "paylaşır; ama her thread’in kendine ait bir yığın (stack), program sayacı ve yazmaç…",
+          "chunk_id": "139a6c4d-c9d4-4464-bc81-41501705ac4c",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 2",
           "snippet": "paylaşır; ama her thread’in kendine ait bir yığın (stack), program sayacı ve yazmaç kümesi vardır. Özellik Süreç Thread Adres uzayı Kendine özel Süreç içindeki diğer thread’lerle paylaşılır Oluşturma maliyeti Yüksek (yeni adres uzayı, sayf…"
@@ -92,22 +92,22 @@
       "answer": "Ders materyaline göre: 4. Kimlik Doğrulama ve Sistem Sertleştirme 4.1. Şifrelerin Saklanması Şifreler düz metin olarak saklanmaz ve şifrelenerek de saklanmaz — şifreleme geri döndürülebilir olduğu için… Konunun devamı 09-disk-and-storage.pdf, Sayfa 4 bölümünde.",
       "citations": [
         {
-          "chunk_id": "a309c01a-1f71-4e61-8cbd-1c5ae59707d3",
-          "claim": "4. Kimlik Doğrulama ve Sistem Sertleştirme 4.1.",
+          "chunk_id": "178af155-d390-4bbe-a3cc-a83be911a6f9",
+          "claim": "",
           "file_name": "10-security-and-protection.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Kimlik Doğrulama ve Sistem Sertleştirme 4.1. Şifrelerin Saklanması Şifreler düz metin olarak saklanmaz ve şifrelenerek de saklanmaz — şifreleme geri döndürülebilir olduğu için anahtarı ele geçiren herkes tüm şifreleri okur. Doğrusu tek…"
         },
         {
-          "chunk_id": "e0ed23d5-46d2-4375-8450-f573a5ec6db0",
-          "claim": "4. RAID: Çoklu Diskle Başarım ve Dayanıklılık RAID (Redundant Array of Independent…",
+          "chunk_id": "a4233fd2-cdcb-443a-bbe2-d2d05191f523",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 4",
           "snippet": "4. RAID: Çoklu Diskle Başarım ve Dayanıklılık RAID (Redundant Array of Independent Disks), birden çok fiziksel diski tek bir mantıksal birim gibi kullanır. İki ayrı amacı vardır ve bunlar karıştırılmamalıdır: başarım ve hata dayanıklılığı.…"
         },
         {
-          "chunk_id": "dcefb2af-75a5-402f-96ca-9ea6bf6cc087",
-          "claim": "Sanal Bellek: Talep Üzerine Sayfalama ve Sayfa Değiştirme İşletim Sistemleri — Konu 7 1.",
+          "chunk_id": "aa87518c-04bb-418e-995f-7f6303b24e7c",
+          "claim": "",
           "file_name": "07-virtual-memory.pdf",
           "location": "Sayfa 1",
           "snippet": "Sanal Bellek: Talep Üzerine Sayfalama ve Sayfa Değiştirme İşletim Sistemleri — Konu 7 1. Sanal Belleğin Amacı Sanal bellek (virtual memory), bir sürecin kullandığı adres uzayını fiziksel bellekten (RAM) ayıran soyutlamadır. Süreç 0'dan baş…"
@@ -127,22 +127,22 @@
       "answer": "Ders materyaline göre: Disk Zamanlama, SSD ve RAID İşletim Sistemleri — Konu 9 1. Manyetik Diskin Yapısı ve Erişim Maliyeti Bir sabit disk (HDD), üst üste duran dönen plakalardan (platter) oluşur. Konunun devamı 08-io-systems.pdf, Sayfa 4 bölümünde.",
       "citations": [
         {
-          "chunk_id": "8a8e969e-473b-4c74-91eb-1871be9a67d6",
-          "claim": "Disk Zamanlama, SSD ve RAID İşletim Sistemleri — Konu 9 1.",
+          "chunk_id": "dafbffd7-e443-4888-8959-f8e4d64a1098",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 1",
           "snippet": "Disk Zamanlama, SSD ve RAID İşletim Sistemleri — Konu 9 1. Manyetik Diskin Yapısı ve Erişim Maliyeti Bir sabit disk (HDD), üst üste duran dönen plakalardan (platter) oluşur. Her plaka yüzeyinde eşmerkezli izler (track) vardır; izler sektör…"
         },
         {
-          "chunk_id": "598e05ad-fb57-4b7e-84a2-3a3ae5cd48e4",
-          "claim": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık…",
+          "chunk_id": "4236e82c-96ae-47cc-89fd-dd4f3a3fb097",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık görüldüğü yerdir: kablo çıkar, disk bloğu bozulur, ağ paketi düşer. Çekirdek geçici (transient) hataları genelde yeniden deneyerek çözer; kalıcı hataları…"
         },
         {
-          "chunk_id": "17ffdb80-4ee2-46dc-8d51-128d9e8d6180",
-          "claim": "2. Disk Zamanlama Algoritmaları Aşağıdaki örneklerde kuyruk 98, 183, 37, 122, 14, 124,…",
+          "chunk_id": "943defe2-2928-455a-a33a-7511589cbb9d",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Disk Zamanlama Algoritmaları Aşağıdaki örneklerde kuyruk 98, 183, 37, 122, 14, 124, 65, 67, kafa başlangıçta 53 numaralı silindirdedir ve disk 0­199 silindirlerinden oluşur. 2.1. FCFS İstekler geliş sırasıyla işlenir. Adildir ve açlığa…"
@@ -162,22 +162,22 @@
       "answer": "Ders materyaline göre: 3. Sayfa Değiştirme Algoritmaları Boş çerçeve kalmadığında hangi sayfanın çıkarılacağına sayfa değiştirme algoritması karar verir. Konunun devamı 03-memory-management.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "f506343d-af25-4d5e-ade9-4bd62aebad2b",
-          "claim": "3. Sayfa Değiştirme Algoritmaları Boş çerçeve kalmadığında hangi sayfanın çıkarılacağına…",
+          "chunk_id": "34f8d99f-89f7-48c4-8908-fd0c1f10375f",
+          "claim": "",
           "file_name": "07-virtual-memory.pdf",
           "location": "Sayfa 3",
           "snippet": "3. Sayfa Değiştirme Algoritmaları Boş çerçeve kalmadığında hangi sayfanın çıkarılacağına sayfa değiştirme algoritması karar verir. Algoritmalar aynı referans dizisi (reference string) üzerinde karşılaştırılır; ölçüt üretilen sayfa hatası s…"
         },
         {
-          "chunk_id": "3ab36b31-0fea-4253-bcc0-c760c23afdf2",
-          "claim": "pratikte iyi performans gösterir ama tam LRU takibi donanım maliyetlidir, çoğu sistem…",
+          "chunk_id": "53b59bb2-9653-4b93-b11f-cf5b1edec3f7",
+          "claim": "",
           "file_name": "03-memory-management.pdf",
           "location": "Sayfa 2",
           "snippet": "pratikte iyi performans gösterir ama tam LRU takibi donanım maliyetlidir, çoğu sistem yaklaşık (approximate) LRU kullanır (ör. “second chance”/clock algorit- ması). • Optimal (Belady’s algorithm): Gelecekte en uzun süre kullanılmayacak say…"
         },
         {
-          "chunk_id": "8a10268b-f721-4d39-b1dc-152eb147f233",
-          "claim": "• TLB hit: Çeviri TLB’de bulunur, fiziksel adres doğrudan alınır — tek CPU çevrimi…",
+          "chunk_id": "01455c9b-8a4d-42b4-948f-fd938e68f2ab",
+          "claim": "",
           "file_name": "03-memory-management.pdf",
           "location": "Sayfa 2",
           "snippet": "• TLB hit: Çeviri TLB’de bulunur, fiziksel adres doğrudan alınır — tek CPU çevrimi mertebesinde hızlıdır. • TLB miss: Çeviri TLB’de yok; sayfa tablosuna gidilir (yavaş), bulunan çeviri TLB’ye eklenir. TLB ve context switch ilişkisi: TLB gi…"
@@ -197,22 +197,22 @@
       "answer": "Ders materyaline göre: Koruma ve Güvenlik: Ayrıcalık, Erişim Denetimi ve Bellek Saldırıları İşletim Sistemleri — Konu 10 1. Konunun devamı 08-io-systems.pdf, Sayfa 3 bölümünde.",
       "citations": [
         {
-          "chunk_id": "ffa05b4c-6625-483b-8388-2a9807ea2956",
-          "claim": "Koruma ve Güvenlik: Ayrıcalık, Erişim Denetimi ve Bellek Saldırıları İşletim Sistemleri —…",
+          "chunk_id": "e42a9198-21c0-4946-948f-61e2f2ff756c",
+          "claim": "",
           "file_name": "10-security-and-protection.pdf",
           "location": "Sayfa 1",
           "snippet": "Koruma ve Güvenlik: Ayrıcalık, Erişim Denetimi ve Bellek Saldırıları İşletim Sistemleri — Konu 10 1. Koruma ile Güvenlik Aynı Şey Değil İki terim günlük dilde karışır, ders bağlamında ayrıdır: • Koruma (protection) iç bir mekanizmadır: sis…"
         },
         {
-          "chunk_id": "4578e9eb-10e8-476f-9bc1-f048a1f3d3f5",
-          "claim": "3. Çekirdek İçindeki G/Ç Katmanları Çekirdek G/Ç'yi katmanlı bir yapıyla ele alır; her…",
+          "chunk_id": "91bdd239-d03a-483f-bdd8-d9aeba3aad3a",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 3",
           "snippet": "3. Çekirdek İçindeki G/Ç Katmanları Çekirdek G/Ç'yi katmanlı bir yapıyla ele alır; her katman altındakinin ayrıntısını gizler: 1. Kullanıcı seviyesi kütüphaneler: tamponlanmış fread/fwrite gibi çağrılar. 2. Aygıttan bağımsız çekirdek katma…"
         },
         {
-          "chunk_id": "6c6f76cd-0d12-4e51-945b-75139f22f44a",
-          "claim": "Özet Açılış zinciri ürün yazılımından önyükleyiciye, oradan çekirdeğe ve PID 1'e uzanır;…",
+          "chunk_id": "741342b2-cdcd-4fad-832a-6adacad2deef",
+          "claim": "",
           "file_name": "15-boot-and-kernel.pptx",
           "location": "Slayt 19",
           "snippet": "Özet Açılış zinciri ürün yazılımından önyükleyiciye, oradan çekirdeğe ve PID 1'e uzanır; her halka bir sonrakini yükler. initramfs, kök dosya sistemini okumak için gereken sürücülerin yumurta-tavuk problemini çözer. Sistem çağrısı, kullanı…"
@@ -232,22 +232,22 @@
       "answer": "Ders materyaline göre: 4. Banker’s Algorithm (Kaçınma) Banker’s Algorithm, her kaynak isteğini yalnızca sistemin güvenli durumda (safe state) kalmasını garanti ediyorsa onaylayan bir kaçınma… Konunun devamı 05-deadlock-demo.pdf, Sayfa 1 bölümünde.",
       "citations": [
         {
-          "chunk_id": "5d534a90-d40c-4d5c-926e-96bd7fca60b6",
-          "claim": "4. Banker’s Algorithm (Kaçınma) Banker’s Algorithm, her kaynak isteğini yalnızca sistemin…",
+          "chunk_id": "2bed387b-8bd7-4cf8-9c42-98a0aeac7bcd",
+          "claim": "",
           "file_name": "05-deadlock-demo.pdf",
           "location": "Sayfa 2",
           "snippet": "4. Banker’s Algorithm (Kaçınma) Banker’s Algorithm, her kaynak isteğini yalnızca sistemin güvenli durumda (safe state) kalmasını garanti ediyorsa onaylayan bir kaçınma algoritmasıdır. Bir durum güvenlidir, eğer tüm süreçlerin, mevcut kayna…"
         },
         {
-          "chunk_id": "0bcd02bf-3a2e-48f1-9ccb-830663a86650",
-          "claim": "• Tespit ve kurtarma (detection & recovery): Deadlock’un oluşmasına izin verip periyodik…",
+          "chunk_id": "e8fe8b61-b30e-42a9-a7a7-b02a938cd71b",
+          "claim": "",
           "file_name": "05-deadlock-demo.pdf",
           "location": "Sayfa 1",
           "snippet": "• Tespit ve kurtarma (detection & recovery): Deadlock’un oluşmasına izin verip periyodik olarak kaynak ayırma grafiğinde döngü arayarak tespit etmek; bulunca bir süreci sonlandırıp veya kaynağını geri alıp kurtarmak. • Görmezden gelme (ost…"
         },
         {
-          "chunk_id": "56f11110-4067-4583-a22c-6a763ee1eca1",
-          "claim": "Deadlock: Dört Koşul ve Banker’s Algorithm İşletim Sistemleri — Konu 5 (Canlı Demo…",
+          "chunk_id": "1f8bb334-0fae-44d5-81f8-0dad9853d524",
+          "claim": "",
           "file_name": "05-deadlock-demo.pdf",
           "location": "Sayfa 1",
           "snippet": "Deadlock: Dört Koşul ve Banker’s Algorithm İşletim Sistemleri — Konu 5 (Canlı Demo Materyali) 1. Deadlock Nedir? Deadlock (kilitlenme), iki veya daha fazla sürecin, birbirlerinin elinde tuttuğu ve asla serbest bırakmayacağı kaynakları bekl…"
@@ -267,22 +267,22 @@
       "answer": "Ders materyaline göre: 2. Üç Aktarım Yöntemi 2.1. Yoklama (Polling) CPU, durum yazmacını bir döngü içinde tekrar tekrar okur ve \"meşgul\" biti düşene kadar bekler. Konunun devamı 08-io-systems.pdf, Sayfa 4 bölümünde.",
       "citations": [
         {
-          "chunk_id": "e222ed42-5419-4bb4-af69-363c7792e619",
-          "claim": "2. Üç Aktarım Yöntemi 2.1. Yoklama (Polling) CPU, durum yazmacını bir döngü içinde tekrar…",
+          "chunk_id": "83954e9e-55b6-48f1-a414-b3a95ef1ba7e",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Üç Aktarım Yöntemi 2.1. Yoklama (Polling) CPU, durum yazmacını bir döngü içinde tekrar tekrar okur ve \"meşgul\" biti düşene kadar bekler. Kodu en basit olan yöntemdir ve gecikmesi çok düşüktür — aygıt hazır olduğu an CPU zaten bakıyordur…"
         },
         {
-          "chunk_id": "598e05ad-fb57-4b7e-84a2-3a3ae5cd48e4",
-          "claim": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık…",
+          "chunk_id": "4236e82c-96ae-47cc-89fd-dd4f3a3fb097",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık görüldüğü yerdir: kablo çıkar, disk bloğu bozulur, ağ paketi düşer. Çekirdek geçici (transient) hataları genelde yeniden deneyerek çözer; kalıcı hataları…"
         },
         {
-          "chunk_id": "d3284f48-ac62-4928-a0c1-7709706b77b5",
-          "claim": "4. Context Switch Bir CPU çekirdeği aynı anda yalnız bir thread çalıştırabilir.",
+          "chunk_id": "41554d48-33b5-43dd-8e09-b739673bfd6a",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 3",
           "snippet": "4. Context Switch Bir CPU çekirdeği aynı anda yalnız bir thread çalıştırabilir. Zamanlayıcı (scheduler) çalışan thread’i değiştirmeye karar verdiğinde bir context switch gerçekleşir: 1. Çalışmakta olan thread’in yazmaçları, program sayacı…"
@@ -302,22 +302,22 @@
       "answer": "Ders materyaline göre: doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse bile yarıda kesilmez. Konunun devamı 02-cpu-scheduling.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "34cf60a7-98c5-4a0e-89be-7abd65c96188",
-          "claim": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse…",
+          "chunk_id": "b52f0fa8-d1fb-4a49-a7a3-9022abe26afc",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 2",
           "snippet": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse bile yarıda kesilmez. • Preemptive SJF (Shortest Remaining Time First, SRTF): Yeni gelen sürecin kalan süresi, çalışmakta olanınkinden kısaysa çalışan…"
         },
         {
-          "chunk_id": "09f77d1f-9a54-4af4-8c64-912d1eacc97a",
-          "claim": "Bu yüzden üretim zamanlayıcıları (ör. Linux’un eski O(1) zamanlayıcısı ve sonraki…",
+          "chunk_id": "7ebc0bac-96ff-438b-a1c1-8b0aa43fde58",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 2",
           "snippet": "Bu yüzden üretim zamanlayıcıları (ör. Linux’un eski O(1) zamanlayıcısı ve sonraki Completely Fair Scheduler’ın kırmızı-siyah ağacı) sıralı veri yapıları kullanır. 6. Karşılaştırma Tablosu Algoritma Preemptive? Açlık riski Tipik kullanım FC…"
         },
         {
-          "chunk_id": "4e9e5262-9606-4495-a448-0099ae498fe2",
-          "claim": "7. Özet • Zamanlama, CPU kullanımı, verim, dönüş süresi, bekleme süresi ve yanıt süresi…",
+          "chunk_id": "5feac2b2-2382-4635-84a8-6eae43519808",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 3",
           "snippet": "7. Özet • Zamanlama, CPU kullanımı, verim, dönüş süresi, bekleme süresi ve yanıt süresi arasında ödünleşim yapar. • Round-robin’de quantum seçimi context switch maliyeti ile yanıt süresi arasında bir ödünleşimdir; çok küçük quantum sistemi…"
@@ -338,22 +338,22 @@
       "answer": "Ders materyaline göre: İki Fazlı Commit Birden çok düğümde atomik bir işlem yapmayı hedefler: ya hepsi uygular ya hiçbiri. Konunun devamı 14-distributed-os.pptx, Slayt 11 bölümünde.",
       "citations": [
         {
-          "chunk_id": "0164536c-3c82-4468-b06d-e0dc58741396",
-          "claim": "İki Fazlı Commit Birden çok düğümde atomik bir işlem yapmayı hedefler: ya hepsi uygular…",
+          "chunk_id": "a79f7b77-100d-4fda-b563-8e7478317b25",
+          "claim": "",
           "file_name": "14-distributed-os.pptx",
           "location": "Slayt 10",
           "snippet": "İki Fazlı Commit Birden çok düğümde atomik bir işlem yapmayı hedefler: ya hepsi uygular ya hiçbiri. Birinci faz: koordinatör tüm katılımcılara hazır mısın diye sorar, her biri hazır ya da iptal yanıtı verir. İkinci faz: tüm yanıtlar hazır…"
         },
         {
-          "chunk_id": "a9a3ee73-58ab-433f-8e6e-a509b990e506",
-          "claim": "İki Fazlı Commit'in Zayıflığı Koordinatör, katılımcılar hazır dedikten sonra çökerse…",
+          "chunk_id": "5074cbf4-7c5f-430e-9acc-9fafcf1213d3",
+          "claim": "",
           "file_name": "14-distributed-os.pptx",
           "location": "Slayt 11",
           "snippet": "İki Fazlı Commit'in Zayıflığı Koordinatör, katılımcılar hazır dedikten sonra çökerse katılımcılar süresiz bekler; kaynaklar kilitli kalır. Bu duruma engelleyici (blocking) protokol denir ve 2PC'nin bilinen temel kusurudur. Üç fazlı commit…"
         },
         {
-          "chunk_id": "13a811ee-c89a-4d52-9107-db87fae07f14",
-          "claim": "Özet Dağıtık sistemin iki eksiği paylaşılan bellek ve paylaşılan saattir; tüm karmaşıklık…",
+          "chunk_id": "2df43800-b0dc-429d-a9d7-6d31feb3011c",
+          "claim": "",
           "file_name": "14-distributed-os.pptx",
           "location": "Slayt 18",
           "snippet": "Özet Dağıtık sistemin iki eksiği paylaşılan bellek ve paylaşılan saattir; tüm karmaşıklık buradan doğar. Mantıksal saatler sıralama sorununu, konsensüs algoritmaları anlaşma sorununu çözer. 2PC atomikliği sağlar ama koordinatör arızasında…"
@@ -374,22 +374,22 @@
       "answer": "Ders materyaline göre: doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse bile yarıda kesilmez. Konunun devamı 02-cpu-scheduling.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "34cf60a7-98c5-4a0e-89be-7abd65c96188",
-          "claim": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse…",
+          "chunk_id": "b52f0fa8-d1fb-4a49-a7a3-9022abe26afc",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 2",
           "snippet": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse bile yarıda kesilmez. • Preemptive SJF (Shortest Remaining Time First, SRTF): Yeni gelen sürecin kalan süresi, çalışmakta olanınkinden kısaysa çalışan…"
         },
         {
-          "chunk_id": "09f77d1f-9a54-4af4-8c64-912d1eacc97a",
-          "claim": "Bu yüzden üretim zamanlayıcıları (ör. Linux’un eski O(1) zamanlayıcısı ve sonraki…",
+          "chunk_id": "7ebc0bac-96ff-438b-a1c1-8b0aa43fde58",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 2",
           "snippet": "Bu yüzden üretim zamanlayıcıları (ör. Linux’un eski O(1) zamanlayıcısı ve sonraki Completely Fair Scheduler’ın kırmızı-siyah ağacı) sıralı veri yapıları kullanır. 6. Karşılaştırma Tablosu Algoritma Preemptive? Açlık riski Tipik kullanım FC…"
         },
         {
-          "chunk_id": "d3284f48-ac62-4928-a0c1-7709706b77b5",
-          "claim": "4. Context Switch Bir CPU çekirdeği aynı anda yalnız bir thread çalıştırabilir.",
+          "chunk_id": "41554d48-33b5-43dd-8e09-b739673bfd6a",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 3",
           "snippet": "4. Context Switch Bir CPU çekirdeği aynı anda yalnız bir thread çalıştırabilir. Zamanlayıcı (scheduler) çalışan thread’i değiştirmeye karar verdiğinde bir context switch gerçekleşir: 1. Çalışmakta olan thread’in yazmaçları, program sayacı…"
@@ -409,22 +409,22 @@
       "answer": "Ders materyaline göre: 4. Kimlik Doğrulama ve Sistem Sertleştirme 4.1. Şifrelerin Saklanması Şifreler düz metin olarak saklanmaz ve şifrelenerek de saklanmaz — şifreleme geri döndürülebilir olduğu için… Konunun devamı 10-security-and-protection.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "a309c01a-1f71-4e61-8cbd-1c5ae59707d3",
-          "claim": "4. Kimlik Doğrulama ve Sistem Sertleştirme 4.1.",
+          "chunk_id": "178af155-d390-4bbe-a3cc-a83be911a6f9",
+          "claim": "",
           "file_name": "10-security-and-protection.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Kimlik Doğrulama ve Sistem Sertleştirme 4.1. Şifrelerin Saklanması Şifreler düz metin olarak saklanmaz ve şifrelenerek de saklanmaz — şifreleme geri döndürülebilir olduğu için anahtarı ele geçiren herkes tüm şifreleri okur. Doğrusu tek…"
         },
         {
-          "chunk_id": "5a84b597-bc96-4dc5-b6bc-cd83f7f47074",
-          "claim": "2. Erişim Denetimi Modelleri Erişim yetkilerinin tamamı kavramsal olarak bir erişim…",
+          "chunk_id": "207e8f7d-8c03-4f79-95aa-2c8fc6d159c4",
+          "claim": "",
           "file_name": "10-security-and-protection.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Erişim Denetimi Modelleri Erişim yetkilerinin tamamı kavramsal olarak bir erişim matrisidir: satırlar alanlar (domain / kullanıcı), sütunlar nesneler (dosya, aygıt), hücreler izinler. Matris pratikte seyrektir ve bütün hâlinde saklanmaz…"
         },
         {
-          "chunk_id": "ffa05b4c-6625-483b-8388-2a9807ea2956",
-          "claim": "Koruma ve Güvenlik: Ayrıcalık, Erişim Denetimi ve Bellek Saldırıları İşletim Sistemleri —…",
+          "chunk_id": "e42a9198-21c0-4946-948f-61e2f2ff756c",
+          "claim": "",
           "file_name": "10-security-and-protection.pdf",
           "location": "Sayfa 1",
           "snippet": "Koruma ve Güvenlik: Ayrıcalık, Erişim Denetimi ve Bellek Saldırıları İşletim Sistemleri — Konu 10 1. Koruma ile Güvenlik Aynı Şey Değil İki terim günlük dilde karışır, ders bağlamında ayrıdır: • Koruma (protection) iç bir mekanizmadır: sis…"
@@ -444,22 +444,22 @@
       "answer": "Ders materyaline göre: Bellek Sanallaştırma İki kat çeviri vardır: konuk sanal adresi, konuk fiziksel adresi ve ana makine fiziksel adresi. Konunun devamı 07-virtual-memory.pdf, Sayfa 1 bölümünde.",
       "citations": [
         {
-          "chunk_id": "3de76799-f0a3-4224-ba1f-7182e9c27321",
-          "claim": "Bellek Sanallaştırma İki kat çeviri vardır: konuk sanal adresi, konuk fiziksel adresi ve…",
+          "chunk_id": "fd4ac91d-18b4-4b7b-bbb5-709329d59ca7",
+          "claim": "",
           "file_name": "11-virtualization-containers.pptx",
           "location": "Slayt 8",
           "snippet": "Bellek Sanallaştırma İki kat çeviri vardır: konuk sanal adresi, konuk fiziksel adresi ve ana makine fiziksel adresi. Gölge sayfa tabloları (shadow page tables) bu iki katı yazılımla tek bir tabloda birleştirir; güncelleme maliyeti yüksekti…"
         },
         {
-          "chunk_id": "dcefb2af-75a5-402f-96ca-9ea6bf6cc087",
-          "claim": "Sanal Bellek: Talep Üzerine Sayfalama ve Sayfa Değiştirme İşletim Sistemleri — Konu 7 1.",
+          "chunk_id": "aa87518c-04bb-418e-995f-7f6303b24e7c",
+          "claim": "",
           "file_name": "07-virtual-memory.pdf",
           "location": "Sayfa 1",
           "snippet": "Sanal Bellek: Talep Üzerine Sayfalama ve Sayfa Değiştirme İşletim Sistemleri — Konu 7 1. Sanal Belleğin Amacı Sanal bellek (virtual memory), bir sürecin kullandığı adres uzayını fiziksel bellekten (RAM) ayıran soyutlamadır. Süreç 0'dan baş…"
         },
         {
-          "chunk_id": "04d7e8b0-1bec-4e2c-86fa-43d6f5a24e8d",
-          "claim": "Bellek Yönetimi: Sayfalama ve TLB İşletim Sistemleri — Konu 3 1.",
+          "chunk_id": "c40f21f5-ddf2-4509-abd1-9f8f9933689c",
+          "claim": "",
           "file_name": "03-memory-management.pdf",
           "location": "Sayfa 1",
           "snippet": "Bellek Yönetimi: Sayfalama ve TLB İşletim Sistemleri — Konu 3 1. Sanal Bellek ve Adres Çevirisi Modern işletim sistemleri her sürece kendi sanal adres uzayını verir; süreç gerçekte hangi fiziksel bellek adresinde çalıştığını bilmez. Sanal…"
@@ -479,22 +479,22 @@
       "answer": "Ders materyaline göre: 4. Çerçeve Tahsisi ve Thrashing 4.1. Kaç Çerçeve Verilmeli Çerçeveler süreçler arasında eşit (equal) ya da adres uzayı boyutuyla orantılı (proportional) dağıtılabilir. Konunun devamı 07-virtual-memory.pdf, Sayfa 4 bölümünde.",
       "citations": [
         {
-          "chunk_id": "71c2454e-da9a-46d3-8e99-5dc7ed3c2fbd",
-          "claim": "4. Çerçeve Tahsisi ve Thrashing 4.1. Kaç Çerçeve Verilmeli Çerçeveler süreçler arasında…",
+          "chunk_id": "a3a7ff04-1682-4684-bcee-188e06543c19",
+          "claim": "",
           "file_name": "07-virtual-memory.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Çerçeve Tahsisi ve Thrashing 4.1. Kaç Çerçeve Verilmeli Çerçeveler süreçler arasında eşit (equal) ya da adres uzayı boyutuyla orantılı (proportional) dağıtılabilir. Orantılı dağıtım genelde daha iyidir, ama tek başına yetmez: bir süreci…"
         },
         {
-          "chunk_id": "bd054df4-d3d7-49e4-acb4-5e4f7a615f48",
-          "claim": "Model şunu söyler: bir süreç çalışma kümesi bellekte tutulduğu sürece az sayfa hatası…",
+          "chunk_id": "b534a298-daa5-438a-ba95-c47bfa4cc807",
+          "claim": "",
           "file_name": "07-virtual-memory.pdf",
           "location": "Sayfa 4",
           "snippet": "Model şunu söyler: bir süreç çalışma kümesi bellekte tutulduğu sürece az sayfa hatası üretir. Toplam talep D = Σ WSS(i) mevcut çerçeve sayısını aşarsa thrashing kaçınılmazdır. İşletim sistemi D'yi izleyip aşım gördüğünde bir süreci askıya…"
         },
         {
-          "chunk_id": "e222ed42-5419-4bb4-af69-363c7792e619",
-          "claim": "2. Üç Aktarım Yöntemi 2.1. Yoklama (Polling) CPU, durum yazmacını bir döngü içinde tekrar…",
+          "chunk_id": "83954e9e-55b6-48f1-a414-b3a95ef1ba7e",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Üç Aktarım Yöntemi 2.1. Yoklama (Polling) CPU, durum yazmacını bir döngü içinde tekrar tekrar okur ve \"meşgul\" biti düşene kadar bekler. Kodu en basit olan yöntemdir ve gecikmesi çok düşüktür — aygıt hazır olduğu an CPU zaten bakıyordur…"
@@ -514,22 +514,22 @@
       "answer": "Ders materyaline göre: 4. RAID: Çoklu Diskle Başarım ve Dayanıklılık RAID (Redundant Array of Independent Disks), birden çok fiziksel diski tek bir mantıksal birim gibi kullanır. Konunun devamı 03-memory-management.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "e0ed23d5-46d2-4375-8450-f573a5ec6db0",
-          "claim": "4. RAID: Çoklu Diskle Başarım ve Dayanıklılık RAID (Redundant Array of Independent…",
+          "chunk_id": "a4233fd2-cdcb-443a-bbe2-d2d05191f523",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 4",
           "snippet": "4. RAID: Çoklu Diskle Başarım ve Dayanıklılık RAID (Redundant Array of Independent Disks), birden çok fiziksel diski tek bir mantıksal birim gibi kullanır. İki ayrı amacı vardır ve bunlar karıştırılmamalıdır: başarım ve hata dayanıklılığı.…"
         },
         {
-          "chunk_id": "8a10268b-f721-4d39-b1dc-152eb147f233",
-          "claim": "• TLB hit: Çeviri TLB’de bulunur, fiziksel adres doğrudan alınır — tek CPU çevrimi…",
+          "chunk_id": "01455c9b-8a4d-42b4-948f-fd938e68f2ab",
+          "claim": "",
           "file_name": "03-memory-management.pdf",
           "location": "Sayfa 2",
           "snippet": "• TLB hit: Çeviri TLB’de bulunur, fiziksel adres doğrudan alınır — tek CPU çevrimi mertebesinde hızlıdır. • TLB miss: Çeviri TLB’de yok; sayfa tablosuna gidilir (yavaş), bulunan çeviri TLB’ye eklenir. TLB ve context switch ilişkisi: TLB gi…"
         },
         {
-          "chunk_id": "598e05ad-fb57-4b7e-84a2-3a3ae5cd48e4",
-          "claim": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık…",
+          "chunk_id": "4236e82c-96ae-47cc-89fd-dd4f3a3fb097",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık görüldüğü yerdir: kablo çıkar, disk bloğu bozulur, ağ paketi düşer. Çekirdek geçici (transient) hataları genelde yeniden deneyerek çözer; kalıcı hataları…"
@@ -549,22 +549,22 @@
       "answer": "Ders materyaline göre: 3. Sayfa Değiştirme Algoritmaları Boş çerçeve kalmadığında hangi sayfanın çıkarılacağına sayfa değiştirme algoritması karar verir. Konunun devamı 03-memory-management.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "f506343d-af25-4d5e-ade9-4bd62aebad2b",
-          "claim": "3. Sayfa Değiştirme Algoritmaları Boş çerçeve kalmadığında hangi sayfanın çıkarılacağına…",
+          "chunk_id": "34f8d99f-89f7-48c4-8908-fd0c1f10375f",
+          "claim": "",
           "file_name": "07-virtual-memory.pdf",
           "location": "Sayfa 3",
           "snippet": "3. Sayfa Değiştirme Algoritmaları Boş çerçeve kalmadığında hangi sayfanın çıkarılacağına sayfa değiştirme algoritması karar verir. Algoritmalar aynı referans dizisi (reference string) üzerinde karşılaştırılır; ölçüt üretilen sayfa hatası s…"
         },
         {
-          "chunk_id": "3ab36b31-0fea-4253-bcc0-c760c23afdf2",
-          "claim": "pratikte iyi performans gösterir ama tam LRU takibi donanım maliyetlidir, çoğu sistem…",
+          "chunk_id": "53b59bb2-9653-4b93-b11f-cf5b1edec3f7",
+          "claim": "",
           "file_name": "03-memory-management.pdf",
           "location": "Sayfa 2",
           "snippet": "pratikte iyi performans gösterir ama tam LRU takibi donanım maliyetlidir, çoğu sistem yaklaşık (approximate) LRU kullanır (ör. “second chance”/clock algorit- ması). • Optimal (Belady’s algorithm): Gelecekte en uzun süre kullanılmayacak say…"
         },
         {
-          "chunk_id": "8a10268b-f721-4d39-b1dc-152eb147f233",
-          "claim": "• TLB hit: Çeviri TLB’de bulunur, fiziksel adres doğrudan alınır — tek CPU çevrimi…",
+          "chunk_id": "01455c9b-8a4d-42b4-948f-fd938e68f2ab",
+          "claim": "",
           "file_name": "03-memory-management.pdf",
           "location": "Sayfa 2",
           "snippet": "• TLB hit: Çeviri TLB’de bulunur, fiziksel adres doğrudan alınır — tek CPU çevrimi mertebesinde hızlıdır. • TLB miss: Çeviri TLB’de yok; sayfa tablosuna gidilir (yavaş), bulunan çeviri TLB’ye eklenir. TLB ve context switch ilişkisi: TLB gi…"
@@ -584,22 +584,22 @@
       "answer": "Ders materyaline göre: Dosya Tahsis Yöntemleri Bitişik tahsis (contiguous): dosya diskte ardışık bloklarda tutulur; hızlı sıralı/rastgele erişim ama harici parçalanma (fragmentation) riski. Konunun devamı 10-security-and-protection.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "c379e8e9-8ced-492e-91a1-2896df2d4cc9",
-          "claim": "Dosya Tahsis Yöntemleri Bitişik tahsis (contiguous): dosya diskte ardışık bloklarda…",
+          "chunk_id": "d8e495d8-50f0-41e4-a95e-ef29c01105ac",
+          "claim": "",
           "file_name": "06-file-systems.pptx",
           "location": "Slayt 4",
           "snippet": "Dosya Tahsis Yöntemleri Bitişik tahsis (contiguous): dosya diskte ardışık bloklarda tutulur; hızlı sıralı/rastgele erişim ama harici parçalanma (fragmentation) riski. Bağlı liste (linked): her blok bir sonrakinin adresini tutar; parçalanma…"
         },
         {
-          "chunk_id": "5a84b597-bc96-4dc5-b6bc-cd83f7f47074",
-          "claim": "2. Erişim Denetimi Modelleri Erişim yetkilerinin tamamı kavramsal olarak bir erişim…",
+          "chunk_id": "207e8f7d-8c03-4f79-95aa-2c8fc6d159c4",
+          "claim": "",
           "file_name": "10-security-and-protection.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Erişim Denetimi Modelleri Erişim yetkilerinin tamamı kavramsal olarak bir erişim matrisidir: satırlar alanlar (domain / kullanıcı), sütunlar nesneler (dosya, aygıt), hücreler izinler. Matris pratikte seyrektir ve bütün hâlinde saklanmaz…"
         },
         {
-          "chunk_id": "598e05ad-fb57-4b7e-84a2-3a3ae5cd48e4",
-          "claim": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık…",
+          "chunk_id": "4236e82c-96ae-47cc-89fd-dd4f3a3fb097",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık görüldüğü yerdir: kablo çıkar, disk bloğu bozulur, ağ paketi düşer. Çekirdek geçici (transient) hataları genelde yeniden deneyerek çözer; kalıcı hataları…"
@@ -620,22 +620,22 @@
       "answer": "Ders materyaline göre: Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1. Neden Senkronizasyon Gerekir? Aynı sürece ait thread’ler adres uzayını paylaşır (Konu 1). Konunun devamı 05-deadlock-demo.pdf, Sayfa 1 bölümünde.",
       "citations": [
         {
-          "chunk_id": "3aab5557-d344-4917-9415-c3fc10cd4216",
-          "claim": "Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1.",
+          "chunk_id": "0eff6103-5261-4f9b-b5b3-49483fa685bb",
+          "claim": "",
           "file_name": "04-synchronization.pdf",
           "location": "Sayfa 1",
           "snippet": "Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1. Neden Senkronizasyon Gerekir? Aynı sürece ait thread’ler adres uzayını paylaşır (Konu 1). Birden fazla thread aynı paylaşımlı veriyi eşzamanlı okuyup yazarsa b…"
         },
         {
-          "chunk_id": "56f11110-4067-4583-a22c-6a763ee1eca1",
-          "claim": "Deadlock: Dört Koşul ve Banker’s Algorithm İşletim Sistemleri — Konu 5 (Canlı Demo…",
+          "chunk_id": "1f8bb334-0fae-44d5-81f8-0dad9853d524",
+          "claim": "",
           "file_name": "05-deadlock-demo.pdf",
           "location": "Sayfa 1",
           "snippet": "Deadlock: Dört Koşul ve Banker’s Algorithm İşletim Sistemleri — Konu 5 (Canlı Demo Materyali) 1. Deadlock Nedir? Deadlock (kilitlenme), iki veya daha fazla sürecin, birbirlerinin elinde tuttuğu ve asla serbest bırakmayacağı kaynakları bekl…"
         },
         {
-          "chunk_id": "2f829fcc-feac-42cc-a282-67f78213debc",
-          "claim": "tam tespit için Banker’s Algorithm’e benzer bir azaltma (reduction) prosedürü gerekir. 6.",
+          "chunk_id": "1daf9989-4971-47ac-ae31-ed163cab0971",
+          "claim": "",
           "file_name": "05-deadlock-demo.pdf",
           "location": "Sayfa 2",
           "snippet": "tam tespit için Banker’s Algorithm’e benzer bir azaltma (reduction) prosedürü gerekir. 6. Özet • Deadlock, dört koşulun (karşılıklı dışlama, tut-ve-bekle, önceliksiz alma, dairesel bekleme) aynı anda sağlanmasıyla oluşur; birini kırmak dea…"
@@ -655,22 +655,22 @@
       "answer": "Ders materyaline göre: Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir? Bir süreç (process), çalışmakta olan bir programın işletim sistemi tarafından yönetilen… Konunun devamı bankers_algorithm.c, satır 1-190 bölümünde.",
       "citations": [
         {
-          "chunk_id": "63ca8b93-211f-4427-8c09-ff0f2e4338d7",
-          "claim": "Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir?",
+          "chunk_id": "48ac6e95-e4b0-4bf9-812c-6ede724ab78e",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 1",
           "snippet": "Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir? Bir süreç (process), çalışmakta olan bir programın işletim sistemi tarafından yönetilen soyutlamasıdır. Diskteki bir program dosyası pasiftir; işleti…"
         },
         {
-          "chunk_id": "37d4ec4f-b00e-4fa4-a59e-155b546aef56",
-          "claim": "} } } /* * Güvenlik algoritması. * * Sistemin GÜVENLİ olması, tüm süreçlerin…",
+          "chunk_id": "2cfb1894-caee-40a9-988b-8a52feb7f552",
+          "claim": "",
           "file_name": "bankers_algorithm.c",
           "location": "satır 1-190",
           "snippet": "} } } /* * Güvenlik algoritması. * * Sistemin GÜVENLİ olması, tüm süreçlerin tamamlanmasını sağlayan en az bir * sıralamanın var olması demektir. Böyle bir sıralama bulunamazsa durum güvensizdir. * * Güvensiz olmak kilitlenmiş olmakla aynı…"
         },
         {
-          "chunk_id": "3aab5557-d344-4917-9415-c3fc10cd4216",
-          "claim": "Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1.",
+          "chunk_id": "0eff6103-5261-4f9b-b5b3-49483fa685bb",
+          "claim": "",
           "file_name": "04-synchronization.pdf",
           "location": "Sayfa 1",
           "snippet": "Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1. Neden Senkronizasyon Gerekir? Aynı sürece ait thread’ler adres uzayını paylaşır (Konu 1). Birden fazla thread aynı paylaşımlı veriyi eşzamanlı okuyup yazarsa b…"
@@ -690,22 +690,22 @@
       "answer": "Ders materyaline göre: 2. Disk Zamanlama Algoritmaları Aşağıdaki örneklerde kuyruk 98, 183, 37, 122, 14, 124, 65, 67, kafa başlangıçta 53 numaralı silindirdedir ve disk 0­199 silindirlerinden oluşur. Konunun devamı 09-disk-and-storage.pdf, Sayfa 3 bölümünde.",
       "citations": [
         {
-          "chunk_id": "17ffdb80-4ee2-46dc-8d51-128d9e8d6180",
-          "claim": "2. Disk Zamanlama Algoritmaları Aşağıdaki örneklerde kuyruk 98, 183, 37, 122, 14, 124,…",
+          "chunk_id": "943defe2-2928-455a-a33a-7511589cbb9d",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Disk Zamanlama Algoritmaları Aşağıdaki örneklerde kuyruk 98, 183, 37, 122, 14, 124, 65, 67, kafa başlangıçta 53 numaralı silindirdedir ve disk 0­199 silindirlerinden oluşur. 2.1. FCFS İstekler geliş sırasıyla işlenir. Adildir ve açlığa…"
         },
         {
-          "chunk_id": "be92be97-8552-49a3-869c-8aecd7faadc4",
-          "claim": "3. Katı Hal Diskleri (SSD) SSD'de hareketli parça yoktur; veri NAND flash hücrelerinde…",
+          "chunk_id": "ef24b324-643c-44f6-876f-07e96efabecb",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 3",
           "snippet": "3. Katı Hal Diskleri (SSD) SSD'de hareketli parça yoktur; veri NAND flash hücrelerinde tutulur. Arama süresi ve dönme gecikmesi ortadan kalkar, dolayısıyla disk zamanlama algoritmalarının varlık sebebi de ortadan kalkar. Rastgele okuma ile…"
         },
         {
-          "chunk_id": "34cf60a7-98c5-4a0e-89be-7abd65c96188",
-          "claim": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse…",
+          "chunk_id": "b52f0fa8-d1fb-4a49-a7a3-9022abe26afc",
+          "claim": "",
           "file_name": "02-cpu-scheduling.pdf",
           "location": "Sayfa 2",
           "snippet": "doğruysa). • Non-preemptive SJF: Bir süreç başladıktan sonra, daha kısa bir süreç gelse bile yarıda kesilmez. • Preemptive SJF (Shortest Remaining Time First, SRTF): Yeni gelen sürecin kalan süresi, çalışmakta olanınkinden kısaysa çalışan…"
@@ -725,22 +725,22 @@
       "answer": "Ders materyaline göre: Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir? Bir süreç (process), çalışmakta olan bir programın işletim sistemi tarafından yönetilen… Konunun devamı 01-processes.pdf, Sayfa 3 bölümünde.",
       "citations": [
         {
-          "chunk_id": "63ca8b93-211f-4427-8c09-ff0f2e4338d7",
-          "claim": "Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir?",
+          "chunk_id": "48ac6e95-e4b0-4bf9-812c-6ede724ab78e",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 1",
           "snippet": "Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir? Bir süreç (process), çalışmakta olan bir programın işletim sistemi tarafından yönetilen soyutlamasıdır. Diskteki bir program dosyası pasiftir; işleti…"
         },
         {
-          "chunk_id": "d3284f48-ac62-4928-a0c1-7709706b77b5",
-          "claim": "4. Context Switch Bir CPU çekirdeği aynı anda yalnız bir thread çalıştırabilir.",
+          "chunk_id": "41554d48-33b5-43dd-8e09-b739673bfd6a",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 3",
           "snippet": "4. Context Switch Bir CPU çekirdeği aynı anda yalnız bir thread çalıştırabilir. Zamanlayıcı (scheduler) çalışan thread’i değiştirmeye karar verdiğinde bir context switch gerçekleşir: 1. Çalışmakta olan thread’in yazmaçları, program sayacı…"
         },
         {
-          "chunk_id": "74622005-0daa-43cd-9afc-75efa7d83935",
-          "claim": "paylaşır; ama her thread’in kendine ait bir yığın (stack), program sayacı ve yazmaç…",
+          "chunk_id": "139a6c4d-c9d4-4464-bc81-41501705ac4c",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 2",
           "snippet": "paylaşır; ama her thread’in kendine ait bir yığın (stack), program sayacı ve yazmaç kümesi vardır. Özellik Süreç Thread Adres uzayı Kendine özel Süreç içindeki diğer thread’lerle paylaşılır Oluşturma maliyeti Yüksek (yeni adres uzayı, sayf…"
@@ -761,22 +761,22 @@
       "answer": "Ders materyaline göre: Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1. Neden Senkronizasyon Gerekir? Aynı sürece ait thread’ler adres uzayını paylaşır (Konu 1). Konunun devamı 13-ipc.pptx, Slayt 9 bölümünde.",
       "citations": [
         {
-          "chunk_id": "3aab5557-d344-4917-9415-c3fc10cd4216",
-          "claim": "Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1.",
+          "chunk_id": "0eff6103-5261-4f9b-b5b3-49483fa685bb",
+          "claim": "",
           "file_name": "04-synchronization.pdf",
           "location": "Sayfa 1",
           "snippet": "Senkronizasyon: Mutex, Semafor, Üretici-Tüketici İşletim Sistemleri — Konu 4 1. Neden Senkronizasyon Gerekir? Aynı sürece ait thread’ler adres uzayını paylaşır (Konu 1). Birden fazla thread aynı paylaşımlı veriyi eşzamanlı okuyup yazarsa b…"
         },
         {
-          "chunk_id": "1bd57f37-f407-4f77-bb69-2fdf978c3b78",
-          "claim": "Paylaşımlı Bellekte Senkronizasyon Çekirdek yalnız eşlemeyi kurar; kimin ne zaman…",
+          "chunk_id": "8130042b-ee59-44f1-9a74-ce2f046fe550",
+          "claim": "",
           "file_name": "13-ipc.pptx",
           "location": "Slayt 9",
           "snippet": "Paylaşımlı Bellekte Senkronizasyon Çekirdek yalnız eşlemeyi kurar; kimin ne zaman yazacağına karışmaz. İki süreç aynı anda yazarsa sonuç tanımsızdır ve hata sessizce oluşur. Çözüm, paylaşımlı bölgenin içine ya da yanına konan bir senkroniz…"
         },
         {
-          "chunk_id": "d6d8dc8c-fb3a-41db-a4d2-e9fe6e31d2f5",
-          "claim": "• signal() (bazı kaynaklarda V() veya release()): sayacı 1 artırır ve bekleyen bir thread…",
+          "chunk_id": "29372a5a-798b-4e6d-aabc-b6feb6203b9e",
+          "claim": "",
           "file_name": "04-synchronization.pdf",
           "location": "Sayfa 2",
           "snippet": "• signal() (bazı kaynaklarda V() veya release()): sayacı 1 artırır ve bekleyen bir thread varsa uyandırır. İkili semafor (binary semaphore), mutex’e benzer ama sahiplik zorlaması yok- tur — signal’i başka bir thread çağırabilir; bu da onu…"
@@ -796,25 +796,25 @@
       "answer": "Ders materyaline göre: 3. Katı Hal Diskleri (SSD) SSD'de hareketli parça yoktur; veri NAND flash hücrelerinde tutulur. Konunun devamı 15-boot-and-kernel.pptx, Slayt 6 bölümünde.",
       "citations": [
         {
-          "chunk_id": "be92be97-8552-49a3-869c-8aecd7faadc4",
-          "claim": "3. Katı Hal Diskleri (SSD) SSD'de hareketli parça yoktur; veri NAND flash hücrelerinde…",
+          "chunk_id": "ef24b324-643c-44f6-876f-07e96efabecb",
+          "claim": "",
           "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 3",
           "snippet": "3. Katı Hal Diskleri (SSD) SSD'de hareketli parça yoktur; veri NAND flash hücrelerinde tutulur. Arama süresi ve dönme gecikmesi ortadan kalkar, dolayısıyla disk zamanlama algoritmalarının varlık sebebi de ortadan kalkar. Rastgele okuma ile…"
         },
         {
-          "chunk_id": "2cf8584d-03ce-4573-af54-c1e294b95d37",
-          "claim": "initramfs Neden Var? Kök dosya sistemi bir RAID dizisinde ya da şifreli bir birimde…",
+          "chunk_id": "43aac7e3-929a-48bf-91d1-2a22998dba10",
+          "claim": "",
           "file_name": "15-boot-and-kernel.pptx",
           "location": "Slayt 6",
           "snippet": "initramfs Neden Var? Kök dosya sistemi bir RAID dizisinde ya da şifreli bir birimde olabilir; onu okumak için sürücü gerekir. O sürücü de kök dosya sisteminde durur: yumurta-tavuk problemi. initramfs, belleğe yüklenen geçici küçük bir kök…"
         },
         {
-          "chunk_id": "04d7e8b0-1bec-4e2c-86fa-43d6f5a24e8d",
-          "claim": "Bellek Yönetimi: Sayfalama ve TLB İşletim Sistemleri — Konu 3 1.",
-          "file_name": "03-memory-management.pdf",
+          "chunk_id": "dafbffd7-e443-4888-8959-f8e4d64a1098",
+          "claim": "",
+          "file_name": "09-disk-and-storage.pdf",
           "location": "Sayfa 1",
-          "snippet": "Bellek Yönetimi: Sayfalama ve TLB İşletim Sistemleri — Konu 3 1. Sanal Bellek ve Adres Çevirisi Modern işletim sistemleri her sürece kendi sanal adres uzayını verir; süreç gerçekte hangi fiziksel bellek adresinde çalıştığını bilmez. Sanal…"
+          "snippet": "Disk Zamanlama, SSD ve RAID İşletim Sistemleri — Konu 9 1. Manyetik Diskin Yapısı ve Erişim Maliyeti Bir sabit disk (HDD), üst üste duran dönen plakalardan (platter) oluşur. Her plaka yüzeyinde eşmerkezli izler (track) vardır; izler sektör…"
         }
       ],
       "kanit_degil": true
@@ -831,22 +831,22 @@
       "answer": "Ders materyaline göre: 2. Erişim Denetimi Modelleri Erişim yetkilerinin tamamı kavramsal olarak bir erişim matrisidir: satırlar alanlar (domain / kullanıcı), sütunlar nesneler (dosya, aygıt), hücreler… Konunun devamı 15-boot-and-kernel.pptx, Slayt 9 bölümünde.",
       "citations": [
         {
-          "chunk_id": "5a84b597-bc96-4dc5-b6bc-cd83f7f47074",
-          "claim": "2. Erişim Denetimi Modelleri Erişim yetkilerinin tamamı kavramsal olarak bir erişim…",
+          "chunk_id": "207e8f7d-8c03-4f79-95aa-2c8fc6d159c4",
+          "claim": "",
           "file_name": "10-security-and-protection.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Erişim Denetimi Modelleri Erişim yetkilerinin tamamı kavramsal olarak bir erişim matrisidir: satırlar alanlar (domain / kullanıcı), sütunlar nesneler (dosya, aygıt), hücreler izinler. Matris pratikte seyrektir ve bütün hâlinde saklanmaz…"
         },
         {
-          "chunk_id": "d691e507-dff2-43b8-af32-bbec577ed029",
-          "claim": "Sistem Çağrısı Mekanizması Kullanıcı süreci çekirdeğe doğrudan atlayamaz; özel bir komut…",
+          "chunk_id": "ba85445e-4090-4899-82cf-a592e7585b63",
+          "claim": "",
           "file_name": "15-boot-and-kernel.pptx",
           "location": "Slayt 9",
           "snippet": "Sistem Çağrısı Mekanizması Kullanıcı süreci çekirdeğe doğrudan atlayamaz; özel bir komut kullanır. x86-64'te bu komut syscall'dır; eski sistemlerde int 0x80 yazılım kesmesi kullanılırdı. Çağrı numarası bir yazmaca (rax) konur, argümanlar b…"
         },
         {
-          "chunk_id": "63ca8b93-211f-4427-8c09-ff0f2e4338d7",
-          "claim": "Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir?",
+          "chunk_id": "48ac6e95-e4b0-4bf9-812c-6ede724ab78e",
+          "claim": "",
           "file_name": "01-processes.pdf",
           "location": "Sayfa 1",
           "snippet": "Süreçler, Thread’ler ve Context Switch İşletim Sistemleri — Konu 1 1. Giriş: Süreç Nedir? Bir süreç (process), çalışmakta olan bir programın işletim sistemi tarafından yönetilen soyutlamasıdır. Diskteki bir program dosyası pasiftir; işleti…"
@@ -866,22 +866,22 @@
       "answer": "Ders materyaline göre: 4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık görüldüğü yerdir: kablo çıkar, disk bloğu bozulur, ağ paketi düşer. Konunun devamı 08-io-systems.pdf, Sayfa 2 bölümünde.",
       "citations": [
         {
-          "chunk_id": "598e05ad-fb57-4b7e-84a2-3a3ae5cd48e4",
-          "claim": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık…",
+          "chunk_id": "4236e82c-96ae-47cc-89fd-dd4f3a3fb097",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 4",
           "snippet": "4. Hata, Koruma ve Başarım 4.1. Hataların Ele Alınışı G/Ç, çekirdekte hatanın en sık görüldüğü yerdir: kablo çıkar, disk bloğu bozulur, ağ paketi düşer. Çekirdek geçici (transient) hataları genelde yeniden deneyerek çözer; kalıcı hataları…"
         },
         {
-          "chunk_id": "e222ed42-5419-4bb4-af69-363c7792e619",
-          "claim": "2. Üç Aktarım Yöntemi 2.1. Yoklama (Polling) CPU, durum yazmacını bir döngü içinde tekrar…",
+          "chunk_id": "83954e9e-55b6-48f1-a414-b3a95ef1ba7e",
+          "claim": "",
           "file_name": "08-io-systems.pdf",
           "location": "Sayfa 2",
           "snippet": "2. Üç Aktarım Yöntemi 2.1. Yoklama (Polling) CPU, durum yazmacını bir döngü içinde tekrar tekrar okur ve \"meşgul\" biti düşene kadar bekler. Kodu en basit olan yöntemdir ve gecikmesi çok düşüktür — aygıt hazır olduğu an CPU zaten bakıyordur…"
         },
         {
-          "chunk_id": "8b157c88-0afd-45a8-931a-7b43cdbf6534",
-          "claim": "Kesmeli Çekirdek İhtiyacı Geleneksel çekirdekler sistem çağrısı işlenirken kesilemez; bu,…",
+          "chunk_id": "c4c80f9d-d794-49f9-9a72-e3807bc54d58",
+          "claim": "",
           "file_name": "12-real-time-scheduling.pptx",
           "location": "Slayt 17",
           "snippet": "Kesmeli Çekirdek İhtiyacı Geleneksel çekirdekler sistem çağrısı işlenirken kesilemez; bu, yüksek öncelikli bir görevin çekirdeğin işini bitirmesini beklemesi demektir. Gerçek zamanlı çekirdekler kesme noktaları (preemption points) ekler ya…"

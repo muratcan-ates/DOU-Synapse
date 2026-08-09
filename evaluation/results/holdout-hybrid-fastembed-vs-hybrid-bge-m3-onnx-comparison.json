@@ -3,14 +3,14 @@
   "set": "holdout",
   "n_items": 105,
   "baseline": {
-    "run_id": "2026-08-09T1551-holdout-hybrid-fastembed-retrieval",
+    "run_id": "2026-08-09T1657-holdout-hybrid-fastembed-retrieval",
     "mode": "hybrid",
     "embedding_provider": "fastembed",
     "embedding_model": "intfloat/multilingual-e5-large",
     "database": "dou_synapse_eval"
   },
   "candidate": {
-    "run_id": "2026-08-09T1552-holdout-hybrid-bge-m3-onnx-retrieval",
+    "run_id": "2026-08-09T1657-holdout-hybrid-bge-m3-onnx-retrieval",
     "mode": "hybrid",
     "embedding_provider": "bge-m3-onnx",
     "embedding_model": "BAAI/bge-m3 (onnx, öneksiz)",
@@ -24,8 +24,8 @@
   "comparisons": {
     "hit_at_5": {
       "n": 105,
-      "baseline_mean": 0.9809523809523809,
-      "candidate_mean": 0.9809523809523809,
+      "baseline_mean": 0.9714285714285714,
+      "candidate_mean": 0.9714285714285714,
       "bootstrap": {
         "difference": 0.0,
         "ci_lower": -0.02857142857142857,
@@ -64,12 +64,12 @@
     },
     "reciprocal_rank": {
       "n": 105,
-      "baseline_mean": 0.8523809523809524,
-      "candidate_mean": 0.8463492063492063,
+      "baseline_mean": 0.8535714285714285,
+      "candidate_mean": 0.8392857142857143,
       "bootstrap": {
-        "difference": -0.006031746031746095,
-        "ci_lower": -0.044126984126984126,
-        "ci_upper": 0.030952380952380953,
+        "difference": -0.014285714285714285,
+        "ci_lower": -0.05,
+        "ci_upper": 0.01984126984126984,
         "confidence": 0.95,
         "iterations": 10000,
         "seed": 20260809,
@@ -79,19 +79,19 @@
     "full_coverage_at_8": {
       "n": 26,
       "baseline_mean": 0.8846153846153846,
-      "candidate_mean": 0.8461538461538461,
+      "candidate_mean": 0.9230769230769231,
       "bootstrap": {
-        "difference": -0.038461538461538464,
-        "ci_lower": -0.11538461538461539,
-        "ci_upper": 0.0,
+        "difference": 0.038461538461538464,
+        "ci_lower": 0.0,
+        "ci_upper": 0.11538461538461539,
         "confidence": 0.95,
         "iterations": 10000,
         "seed": 20260809,
         "excludes_zero": false
       },
       "mcnemar": {
-        "only_a_correct": 1,
-        "only_b_correct": 0,
+        "only_a_correct": 0,
+        "only_b_correct": 1,
         "discordant": 1,
         "p_value": 1.0
       }

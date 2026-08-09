@@ -69,6 +69,20 @@ def prepare_database(database: str, *, recreate: bool, pg_bin: str) -> None:
     )
 
 
+def _embedding_runtime(provider: str) -> dict[str, str]:
+    """Vektörü üreten kütüphanenin sürümü. Gerekçe için `summary` içindeki nota bakın."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    packages = ["fastembed"] if provider == "fastembed" else ["onnxruntime", "tokenizers"]
+    runtime: dict[str, str] = {}
+    for package in packages:
+        try:
+            runtime[package] = version(package)
+        except PackageNotFoundError:  # pragma: no cover
+            runtime[package] = "kurulu değil"
+    return runtime
+
+
 def install_embedding_override(name: str | None) -> tuple[str, str] | None:
     """Ölçüme özgü bir embedding sağlayıcısını üretim kancasına takar (T045).
 
@@ -177,6 +191,14 @@ async def build(
             "database_url": str(settings.database_url),
             "embedding_provider": override[0] if override else settings.embedding_provider,
             "embedding_model": override[1] if override else settings.embedding_model,
+            # Vektörü ÜRETEN kütüphanenin sürümü. Sağlayıcı adı yetmiyor: fastembed
+            # 0.5.1'den sonra e5-large'ı CLS yerine mean pooling ile kuruyor ve bu bir
+            # vektör uzayı değişikliği. Aynı "fastembed" adıyla iki farklı uzay
+            # üretilebiliyor; korpus hangisiyle gömüldüğünü kendi taşımalı, yoksa
+            # üzerinde ölçülen hiçbir sayı yeniden üretilemez (12_R2_OLCUM.md eki).
+            "embedding_runtime": _embedding_runtime(
+                override[0] if override else settings.embedding_provider
+            ),
             "uploaded": uploaded,
             "documents": [
                 {
