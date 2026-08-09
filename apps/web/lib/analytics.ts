@@ -8,12 +8,15 @@
  * bileşenin içinde kalırsa yalnız tarayıcıda ve yalnız doğru veriyle gözlenir.
  * Buraya çıkarıldıkları için `analytics.test.ts` üçünü de doğrudan sınıyor.
  *
- * Seviye etiketi (`MASTERY_LEVEL`) burada, `lib/labels.ts`'teki
- * `masteryLevel(score)` fonksiyonunda DEĞİL: sunucu her satırda `level`
- * gönderiyor (`app/api/analytics.py`, `level_for`). İki taraf aynı eşiği ayrı
- * ayrı hesaplarsa eşik bir gün yalnız bir tarafta değişir ve arayüz sunucunun
- * "needs_work" dediği satıra "Orta" yazar. Skordan seviye türetmek bu ekranda
- * bilerek YAPILMIYOR; sunucudan gelen `level` etiketleniyor.
+ * Seviye etiketi (`MASTERY_LEVEL`) burada ve YALNIZ burada: sunucu her satırda
+ * `level` gönderiyor (`app/api/analytics.py`, `level_for`). İki taraf aynı eşiği
+ * ayrı ayrı hesaplarsa eşik bir gün yalnız bir tarafta değişir ve arayüz
+ * sunucunun "needs_work" dediği satıra "Orta" yazar. Skordan seviye türetmek bu
+ * ekranda bilerek YAPILMIYOR; sunucudan gelen `level` etiketleniyor.
+ *
+ * `lib/labels.ts`'te bir zamanlar ikinci bir eşik tablosu (`masteryLevel(score)`)
+ * duruyordu ve tam olarak yukarıdaki riski taşıyordu. Ürün onu hiç çağırmadı,
+ * 10 Ağustos'ta silindi.
  */
 
 import type { Tone } from "@/lib/labels";

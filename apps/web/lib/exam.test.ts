@@ -30,7 +30,6 @@ import {
   shouldPoll,
   shownQuestions,
   showsHints,
-  sourceInfo,
   tickRemaining,
   timeIsUp,
   timeNotice,
@@ -409,23 +408,6 @@ describe("çözüm — bug_hunt'ın cevap anahtarı nesnedir", () => {
     expect(describeSolution(null)).toEqual([]);
     expect(describeSolution(undefined)).toEqual([]);
     expect(describeSolution({})).toEqual([]);
-  });
-});
-
-describe("kaynak — dosya adı ve konum taşınır, üretilmez", () => {
-  test("SourceRef olduğu gibi karta geçer", () => {
-    expect(
-      sourceInfo({
-        chunk_id: "93c8e336",
-        file_name: "04-synchronization.pdf",
-        location: "Sayfa 3",
-        snippet: "Mutex sahiplikli bir kilittir…",
-      }),
-    ).toEqual({
-      fileName: "04-synchronization.pdf",
-      location: "Sayfa 3",
-      quote: "Mutex sahiplikli bir kilittir…",
-    });
   });
 });
 
