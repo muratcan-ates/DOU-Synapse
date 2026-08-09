@@ -6,24 +6,25 @@ o şemayı yansıtır. Migration'lar düz SQL olarak tutulur, ORM'den üretilmez
 
 from __future__ import annotations
 
-from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
-    TIMESTAMP,
     BigInteger,
     ForeignKey,
     Integer,
     Text,
-    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, created_at, pg_enum, uuid_fk, uuid_pk
+from app.models.base import Base, created_at, pg_enum, ts_now, ts_optional, uuid_fk, uuid_pk
 
-EMBEDDING_DIM = 1024  # bge-m3
+# Şemadaki `vector(1024)` ile eşleşmek zorunda (0001_core_schema.sql): sayı burada
+# değişirse indeks anlamsızlaşır. Üretim modeli bge-m3 değil
+# intfloat/multilingual-e5-large; ikisi de 1024 boyutlu, gerekçe
+# modules/ingestion/embedding.py docstring'inde.
+EMBEDDING_DIM = 1024
 
 
 class MembershipRole(StrEnum):
@@ -110,9 +111,7 @@ class Document(Base):
     chunk_count: Mapped[int] = mapped_column(Integer, default=0)
     error_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[created_at]
-    updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=func.now()
-    )
+    updated_at: Mapped[ts_now]
 
 
 class Chunk(Base):
@@ -146,6 +145,6 @@ class IngestionJob(Base):
     )
     attempt_count: Mapped[int] = mapped_column(Integer, default=0)
     last_error: Mapped[str | None] = mapped_column(Text)
-    started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
-    completed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    started_at: Mapped[ts_optional]
+    completed_at: Mapped[ts_optional]
     created_at: Mapped[created_at]
