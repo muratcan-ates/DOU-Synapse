@@ -121,11 +121,14 @@ Her oturum kendi klasöründe, kendi dalında, aynı depoyu paylaşarak çalış
 ```bash
 cd ~/code/DOU-Synapse
 git fetch origin
-git worktree add ~/code/dou-<serit-adi> -b feat/<serit-adi> origin/main
-cd ~/code/dou-<serit-adi>
+git worktree add ~/code/.dou-synapse-<serit-adi> -b feat/<serit-adi> origin/main
+cd ~/code/.dou-synapse-<serit-adi>
 ```
 
-Örnek: Şerit 1 için `git worktree add ~/code/dou-retrieval -b feat/retrieval origin/main`
+Örnek: Şerit 1 için `git worktree add ~/code/.dou-synapse-retrieval -b feat/retrieval origin/main`
+
+(İlk şeritlerin kurduğu desen budur; klasör adı önemsiz, dal/worktree eşlemesi
+doğru olsun yeter. Zaten başka bir adla kurduysan taşıma — venv'i kırarsın.)
 
 Bundan sonra **hep o klasörde** çalış. `~/code/DOU-Synapse` klasörüne dokunma.
 
@@ -230,8 +233,8 @@ ama devam etmeden önce kendi ağacınıza taşıyın:
 cd ~/code/DOU-Synapse
 git status                      # commit'siz iş var mı?
 git stash push -u -m "gecis"    # varsa sakla
-git worktree add ~/code/dou-<serit-adi> feat/<serit-adi>
-cd ~/code/dou-<serit-adi>
+git worktree add ~/code/.dou-synapse-<serit-adi> feat/<serit-adi>
+cd ~/code/.dou-synapse-<serit-adi>
 git stash pop                   # sakladıysan geri al
 ```
 
@@ -257,6 +260,12 @@ Bunun dışında: kendi başına karar ver, yaz, test et, commit'le, push et.
 3. **Postgres 16 keg-only** — `PATH`'e `/opt/homebrew/opt/postgresql@16/bin` ekle.
 4. **`.test` TLD'li e-postalar** — email-validator reddeder; testlerde `@dogus.edu.tr`.
 5. **FTS altyapısı 0001'de ZATEN VAR** (`chunks.fts` + GIN) — yeniden inşa etme.
+5b. **Test veritabanı artık worktree başına ayrı** (9 Ağu düzeltmesi). Ad klasör
+   adından türetiliyor; elle `TEST_DB_NAME` vermene gerek YOK. Bundan önce üç
+   şerit aynı veritabanını paylaşıyordu ve eşzamanlı `pytest` koşumları
+   birbirini siliyordu — hatalar rastgele ve ilgisiz görünüyordu.
+5c. **`mypy app` artık temiz** (9 Ağu düzeltmesi). `parsers.py`'deki iki hata
+   bütün paket için tip denetimini durduruyordu. Kendi modülünü mypy'dan geçir.
 6. **E5 embedding `query:`/`passage:` öneki zorunlu** ve fastembed bunu EKLEMEZ —
    bizim kodda, testle sabit (`test_embedding_prefix.py`).
 7. **Next.js 16 + Tailwind v4 eğitim verinden farklı** — frontend'e dokunmuyorsun

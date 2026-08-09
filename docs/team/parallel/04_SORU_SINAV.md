@@ -35,6 +35,21 @@ specs/001-course-assistant-mvp/tasks.md          yalnız T029-T033 satırları
 
 `app/api/exams.py` **zaten var ve `main.py`'ye kayıtlı**. `main.py`'ye dokunma.
 
+## Bağımlılıkların HAZIR — sahteleri bırakabilirsin
+
+`Retriever` ve `Generator`'ın gerçek uygulamaları yazıldı (`feat/retrieval`,
+`feat/generation` dallarında; `main`'e inmediyse oradan rebase al):
+
+- `retriever: Retriever = HybridRetriever(session)` — mypy'dan geçiyor
+- `AnswerPipeline.run()` tek giriş noktası — guardrail sırasını kendin dizme
+
+`Generator.generate` artık `student_attempt` kwarg'ı da taşıyor.
+
+Ayrıca [`07_SERIT_RAPORLARI.md`](07_SERIT_RAPORLARI.md)'ndaki iki kalem seni
+ilgilendiriyor: kanıt eşiği `dense_score`'a uygulanır (`fused_score`'a değil,
+yoksa her soru reddedilir), ve `answer_cache` sütunu `answer`'dır — `response`
+değil.
+
 ## Önce yapılacak: üç şema kararı
 
 Bunlar `0004`'ten sonra ortaya çıkan açıklar. **Kod yazmadan önce karar ver ve

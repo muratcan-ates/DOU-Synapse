@@ -8,6 +8,7 @@ yeşil yanardı.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
@@ -21,7 +22,26 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MIGRATIONS = REPO_ROOT / "supabase" / "migrations"
 
-TEST_DB = os.environ.get("TEST_DB_NAME", "dou_synapse_test")
+
+def _default_test_db() -> str:
+    """Çalışma ağacı başına ayrı test veritabanı adı üretir.
+
+    Neden gerekli: `database` fixture'ı oturum başında bu veritabanını DROP+CREATE
+    ediyor. Sabit tek bir ad kullanıldığında, paralel çalışan iki oturum aynı anda
+    pytest koştuğunda birbirinin veritabanını siliyor ve hatalar rastgele, hiçbir
+    değişiklikle ilişkisiz görünüyor. Beş şeridin üçü bu tuzağa bağımsız olarak
+    çarptı ve her biri kendi `TEST_DB_NAME`'ini elle verdi.
+
+    Ad, çalışma ağacının klasör adından türetilir; böylece kimse bir şey
+    ayarlamak zorunda kalmadan her worktree kendi veritabanına sahip olur.
+    Tek ağaçta çalışan biri için sonuç yine tek ve sabit bir addır.
+    `TEST_DB_NAME` verilirse o kazanır (CI bunu kullanıyor).
+    """
+    slug = re.sub(r"[^a-z0-9]+", "_", REPO_ROOT.name.lower()).strip("_")
+    return f"dou_synapse_test_{slug}" if slug else "dou_synapse_test"
+
+
+TEST_DB = os.environ.get("TEST_DB_NAME") or _default_test_db()
 PG_BIN = os.environ.get("PG_BIN", "/opt/homebrew/opt/postgresql@16/bin")
 ADMIN_DSN = os.environ.get("TEST_ADMIN_DSN", f"postgresql+psycopg://localhost/{TEST_DB}")
 APP_DSN = os.environ.get(

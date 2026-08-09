@@ -42,6 +42,13 @@ class RetrievedChunk:
     text: str
     # Skorlar açıklanabilirlik için ayrı taşınır: bir parçanın neden geldiğini
     # (anlamsal mı, kelime eşleşmesi mi) söyleyemezsek eşik kalibrasyonu körleşir.
+    #
+    # KANIT EŞİĞİ `dense_score`'a UYGULANIR — `fused_score`'a değil.
+    # RRF skoru sıralamadan üretilir ve üst sınırı ~0.033'tür; alakadan bağımsız
+    # olarak küçüktür, yani 0.35 gibi bir eşikle KARŞILAŞTIRILAMAZ ve her soru
+    # reddedilir. `ts_rank` de mutlak ölçekli değildir. Hattaki tek mutlak ölçekli
+    # sayı `dense_score`'dur. Şerit 1 ve Şerit 3 bu tuzağa ayrı ayrı düştü;
+    # kural buraya yazıldı ki üçüncü kez düşülmesin.
     dense_score: float = 0.0
     fts_score: float = 0.0
     fused_score: float = 0.0
@@ -120,6 +127,12 @@ class Citation:
     location: str
     quote: str
 
+    # KARAR (9 Ağu): ARCHITECTURE §5'teki `claim` alanı buraya EKLENMEDİ.
+    # Bu dosya guardrail zincirinin sözleşmesidir; `claim` ise sunum verisidir ve
+    # hiçbir guardrail kararı ona bakmaz. Zarf katmanında (`schemas/chat.py`)
+    # taşınır. Buraya konsaydı, hiçbir kontrolün okumadığı bir alanı üç modül
+    # birden doldurmak zorunda kalırdı. Tartışma yeniden açılmasın.
+
 
 @dataclass(slots=True)
 class GeneratedAnswer:
@@ -149,6 +162,11 @@ class Generator(Protocol):
         chunks: list[RetrievedChunk],
         mode: ChatMode,
         socratic_stage: SocraticStage | None = None,
+        #: Öğrencinin bu turdaki denemesi (Sokratik mod). İpucu buna göre şekillenir:
+        #: neyi yanlış anladığını görmeden verilen ipucu yönlendirme değil, tahmindir.
+        #: Sözleşmeye 9 Ağustos'ta eklendi — Şerit 2'nin gerçek servisinde zaten
+        #: vardı, Şerit 3 ise yokluğunda ipucunu kişiselleştiremiyordu.
+        student_attempt: str | None = None,
     ) -> GeneratedAnswer: ...
 
 

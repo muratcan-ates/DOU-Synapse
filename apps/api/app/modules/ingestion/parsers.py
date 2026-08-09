@@ -60,7 +60,12 @@ def parse_pdf(content: bytes) -> ParsedDocument:
         if document.needs_pass:
             raise ValidationError("Parola korumalı PDF'ler desteklenmiyor.")
 
-        for index, page in enumerate(document, start=1):
+        # `pymupdf.Document` çalışma zamanında yinelenebilir ama tip bilgisi bunu
+        # söylemiyor; açık `page_count` döngüsü hem mypy'ı geçiyor hem niyeti
+        # daha net anlatıyor. Bu iki hata `mypy app` koşumunu tamamen durduruyordu,
+        # yani tüm paket için tip denetimi fiilen kapalıydı.
+        for index in range(1, document.page_count + 1):
+            page = document.load_page(index - 1)
             text = _clean(page.get_text("text"))
             if text:
                 blocks.append(ParsedBlock(text=text, page_number=index))

@@ -34,6 +34,38 @@ docs/test-report.md                              YENİ (T056, en son)
 specs/001-course-assistant-mvp/tasks.md          yalnız T038, T041-T047 satırları
 ```
 
+## ÖNCE OKU — biten şeritlerden iki bulgu görevlerini değiştiriyor
+
+Tam bağlam: [`07_SERIT_RAPORLARI.md`](07_SERIT_RAPORLARI.md). Özet:
+
+**1. Kanıt kapısı bugün fiilen açık (T043'ü doğrudan etkiler).** Şerit 1'in
+ölçümü: `evidence_threshold=0.35` ile konu dışı 10 sorgunun **10'u da geçiyor**
+("makarna nasıl pişirilir" → 0.766). Sinyal sağlam, değer yanlış: en iyi kesim
+**0.7963**'te doğruluk **0.96** (n=24, yön göstergesi). Kalibrasyonun başlangıç
+noktası bu; sıfırdan aramana gerek yok.
+
+Eşik `dense_score`'a uygulanır, `fused_score`'a DEĞİL — RRF skoru sıralamadan
+üretilir ve üst sınırı ~0.033'tür, 0.35 ile karşılaştırılamaz. İki şerit bu
+tuzağa ayrı ayrı düştü.
+
+**2. SC-005 bu haliyle yanlış ölçer.** Şerit 3'ün bulgusu: müfredat dışı sorular
+çoğunlukla kanıt eşiğine takılıyor, yani `out_of_scope` değil
+`insufficient_context` etiketi alıyorlar. FR-011 sıralaması gereği bu davranış
+**doğru**, ama SC-005 yalnız `out_of_scope`'u sayıyor — metrik iyi çalışan bir
+sistemde bile düşük çıkar.
+
+Karar senin: ya SC-005'i "doğru ret" olarak yeniden tanımla (iki durumu birden
+say), ya kapsam sınıflandırmasını kanıt kapısından önce koştur. Gerekçesini yaz;
+bu bir ölçüm tasarımı kararıdır ve raporda savunulacak.
+
+**3. Injection vakaları hazır.** `evaluation/gold_set/injection_cases.json` —
+Şerit 2'nin bonusu: 19 injection (yedi kalıp ailesi) + 12 sızıntı senaryosu,
+3'ü yanlış pozitif kontrolü. Gold set senin dosyan, **birleştirme sende**.
+Rapor dili uyarısı dosyanın içinde.
+
+**4. `request_logs` yazma-yalnız.** SELECT politikası yok. Satır bazlı okuma
+istersen `0005`'te açman gerekiyor (migration numarası zaten senin).
+
 ## Öncelik sırası — bu sıra önemli
 
 ### 1. Gold set (T041) — BUGÜN BAŞLA, her gün devam
