@@ -24,6 +24,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Protocol
 
 from fastapi import status
@@ -75,14 +76,32 @@ class LlmUnavailableError(AppError):
         )
 
 
+class LlmTask(StrEnum):
+    """İsteğin ne İSTEDİĞİ — `ChatMode`'dan farklı bir eksen.
+
+    `ChatMode` bir sohbet turunun pedagojik kipidir (QA / Sokratik / sınav) ve
+    üçünün de çıktısı bir cevap zarfıdır. Soru üretimi ise bambaşka bir şema
+    ister (`{"questions": [...]}`) ve hiçbir `ChatMode` değeri onu anlatamaz;
+    varsayılan `QA` ile gönderildiği için sahte sağlayıcı soru üretimi
+    isteğine SOHBET CEVABI dönüyordu (14_R4 Kusur 4).
+
+    Gerçek sağlayıcı bu alanı kullanmaz — prompt zaten göreve göre kurulur.
+    Alan, deterministik sahte sağlayıcının hangi şemayı üreteceğini bilmesi
+    için var; çevrimdışı demo (PLAN plan C) soru üretimini de göstermek zorunda.
+    """
+
+    CHAT = "chat"
+    QUESTION_GEN = "question_gen"
+
+
 @dataclass(frozen=True, slots=True)
 class LlmRequest:
     """Sağlayıcıya gidecek tek istek.
 
-    `mode` ve `socratic_stage`'i gerçek sağlayıcı kullanmaz — prompt zaten moda
-    göre kurulmuştur. Burada durmalarının sebebi deterministik sahte sağlayıcı:
-    ağsız koşarken de moda uygun, gerçekten atıf yapan bir cevap üretebilmesi
-    gerekiyor (bkz. `fake.py`).
+    `mode`, `socratic_stage` ve `task`'ı gerçek sağlayıcı kullanmaz — prompt
+    zaten göreve ve moda göre kurulmuştur. Burada durmalarının sebebi
+    deterministik sahte sağlayıcı: ağsız koşarken de göreve ve moda uygun,
+    gerçekten atıf yapan bir çıktı üretebilmesi gerekiyor (bkz. `fake.py`).
     """
 
     system: str
@@ -94,6 +113,10 @@ class LlmRequest:
     #: Guardrail ihlali sonrası yeniden üretim. Prompt zaten sıkılaşır; sahte
     #: sağlayıcı da bu bayrakla ihlalsiz cevaba geçer.
     strict_retry: bool = False
+    #: Varsayılan `CHAT`: alanı bilmeyen çağıranlar bugünkü davranışı korur.
+    #: Sahte sağlayıcı, alan verilmemişse prompt'un biçiminden görevi çıkarır —
+    #: gerekçe ve o çıkarımın nasıl kilitlendiği `fake.py`'de.
+    task: LlmTask = LlmTask.CHAT
 
 
 @dataclass(frozen=True, slots=True)
