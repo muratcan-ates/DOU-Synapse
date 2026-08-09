@@ -101,6 +101,12 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun test lib/
+      # Kontrast kapısı: DESIGN.md "ölçülmüş AA" iddia ediyor ve bu iddianın tek
+      # koruması bu adım. Betik her token çiftini iki temada ölçer ve eşiğin
+      # altında kalan varsa sıfırdan farklı çıkar. 9 Ağustos'ta `--fg-subtle` 29
+      # yerde AA'nın altındaydı ve kimse fark etmemişti; kapı olmadan aynı sapma
+      # bir sonraki renk değişikliğinde sessizce geri gelir.
+      - run: node scripts/contrast.mjs
       - run: bun run build
 
   e2e:

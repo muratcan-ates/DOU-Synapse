@@ -212,3 +212,13 @@ yalnız yarısı: ikinci yarı **sürüm**.
 - **R4:** kalıcı çözüm sizde: chunk'ın hangi sağlayıcı+sürümle embed edildiği
   kayda geçmeli (`0006`), sorgu zamanında uyuşmazlık **fail-closed** davranmalı.
   Bugün bu bilgi hiçbir yerde tutulmuyor.
+
+## EK 2 (lider, 9 Ağustos ~17:20) — `ci.yml`'de çakışma önlemi
+
+Lider `ci.yml`'in **`web` job'una** bir adım ekledi (`node scripts/contrast.mjs`).
+Senin ekleyeceğin `rls_assessment` satırı **`api` job'unda** — farklı bölüm,
+çakışmaz. Rebase'te yine de bu dosyaya bak.
+
+R1 aynı dosyaya `rls_isolation` satırını ekleyecek; o da `api` job'unda olacak.
+İkiniz aynı bölüme yazacaksınız: **önce inen kazansın, sonraki rebase alıp
+kendi satırını eklesin.** Elle birleştirme yeter, karmaşık değil.
