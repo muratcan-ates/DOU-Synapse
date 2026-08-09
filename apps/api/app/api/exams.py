@@ -45,6 +45,7 @@ from app.core.config import Settings, get_settings
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
 from app.models.assessment import Answer, ExamMode, ExamSession, Question, QuestionStatus, Topic
+from app.modules.assessment.exam_paper import paper_question_ids
 from app.modules.assessment.exam_state import effective_expiry, remaining_seconds
 from app.modules.assessment.grading import (
     GradingOutcome,
@@ -207,7 +208,8 @@ async def _session_out(
     `with_questions=False` yalnız liste ucunda kullanılır: orada soru metinleri
     gerekmiyor ve N oturum için N soru sorgusu koşturmanın da anlamı yok.
     """
-    questions = await _load_questions(session, list(exam.question_ids)) if with_questions else {}
+    paper = await paper_question_ids(session, exam)
+    questions = await _load_questions(session, paper) if with_questions else {}
     answers = await _answers_of(session, exam.id)
     answered = {answer.question_id for answer in answers}
     expiry = effective_expiry(exam, settings=settings)
@@ -230,7 +232,7 @@ async def _session_out(
         expired=expiry is not None and now >= expiry,
         finished_at=exam.finished_at,
         score=score_of(outcomes) if exam.finished_at else None,
-        question_count=len(exam.question_ids),
+        question_count=len(paper),
         answered_count=len(answered),
         questions=[
             ExamQuestionOut(
@@ -239,7 +241,7 @@ async def _session_out(
                 payload=public_payload(questions[question_id].type, questions[question_id].payload),
                 answered=question_id in answered,
             )
-            for question_id in exam.question_ids
+            for question_id in paper
             if question_id in questions
         ],
     )
@@ -382,7 +384,7 @@ async def submit_answer(
     if expiry is not None and now >= expiry:
         raise ConflictError("Sınav süresi doldu; cevap kabul edilmiyor.")
 
-    if payload.question_id not in exam.question_ids:
+    if payload.question_id not in await paper_question_ids(session, exam):
         raise NotFoundError("Bu soru bu sınav oturumunda yok.")
 
     if exam.mode is ExamMode.EXAM and payload.hint_level > 0:
@@ -475,7 +477,7 @@ async def request_hint(
     if exam.finished_at is not None:
         raise ConflictError("Bu oturum tamamlandı.")
 
-    if payload.question_id not in exam.question_ids:
+    if payload.question_id not in await paper_question_ids(session, exam):
         raise NotFoundError("Bu soru bu sınav oturumunda yok.")
 
     question = await session.get(Question, payload.question_id)
@@ -577,7 +579,7 @@ async def finish_exam(
         ],
     )
 
-    unanswered = len(exam.question_ids) - len(answers)
+    unanswered = len(await paper_question_ids(session, exam)) - len(answers)
     return ExamFinishOut(
         session_id=exam.id,
         score=total,
