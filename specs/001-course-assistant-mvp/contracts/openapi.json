@@ -946,6 +946,55 @@
         }
       }
     },
+    "/courses/{course_id}/questions/{question_id}": {
+      "delete": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Delete Question",
+        "description": "Soruyu havuzdan tamamen siler. Reddetmekten FARKLI bir iş.\n\nReddetmek pedagojik bir karardır: soru öğrenciye görünmez ama satır durur ve\n\"havuzun neyi elediği\" ölçülebilir kalır. Silmek yapısal bir işlemdir ve tek\nbir gerçek ihtiyaçtan doğuyor: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşıyor, yani bir belgeden üretilmiş soru havuzda durduğu sürece o BELGE\nsilinemiyor.\n\nBu uç olmadan `documents.py`'nin 409 mesajı (\"Önce ilgili soruları kaldırın\")\nvar olmayan bir çıkış yolunu tarif ediyordu — yapılamayacak bir şeyi öneren\nhata mesajı, hiç mesaj vermemekten kötüdür.\n\nCevaplanmış soru silinmez: `answers.question_id` de RESTRICT taşır ve bir\nöğrencinin verdiği cevabın sorusunu silmek, o cevabı okunamaz hâle getirirdi.\nVeritabanı bunu zaten reddediyor; burada hata anlaşılır Türkçeye çevriliyor.",
+        "operationId": "delete_question_courses__course_id__questions__question_id__delete",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/chat": {
       "post": {
         "tags": [
@@ -1150,6 +1199,54 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExamSessionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "List Exams",
+        "description": "Kullanıcının bu dersteki sınav oturumları, en yenisi başta.\n\nNeden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —\ntarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam\neden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci\nyeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin\nhafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak\nda sunucunun işi olmalı.\n\nŞerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`\ndiyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.\n\nRLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile\nkontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).\n\nSorular gövdede TAŞINMAZ. Liste \"hangi oturumlarım var\" sorusunu cevaplar;\nsoru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı\nvermek olurdu ve ekranın bu bilgiye ihtiyacı yok.",
+        "operationId": "list_exams_courses__course_id__exams_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamSessionOut"
+                  },
+                  "title": "Response List Exams Courses  Course Id  Exams Get"
                 }
               }
             }

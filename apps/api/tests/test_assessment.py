@@ -657,6 +657,127 @@ def _mcq_response(source_chunk_id: UUID | str, *, count: int = 1) -> str:
     )
 
 
+class TestQuestionDelete:
+    """Silme, reddetmekten farklı bir iş ve tek bir gerçek kilidi açıyor.
+
+    `questions.source_chunk_id` `ON DELETE RESTRICT` taşıyor: bir belgeden
+    üretilmiş soru havuzda durduğu sürece o BELGE silinemiyor. `documents.py`
+    bunu 409 ile reddedip "önce ilgili soruları kaldırın" diyor — ve bu uç
+    yazılana kadar kaldırmanın hiçbir yolu yoktu. Yapılamayacak bir şeyi öneren
+    hata mesajı, hiç mesaj vermemekten kötüdür.
+    """
+
+    async def test_egitmen_soruyu_silince_belge_de_silinebilir_hale_gelir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Zincirin tamamı: soru siliniyor → belgenin kilidi açılıyor."""
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        course_id = await _create_course(client, ayse, "COME301")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        chunk_ids = await seed_chunks(
+            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
+        )
+        question_id = await seed_question(
+            admin_engine,
+            course_id=UUID(course_id),
+            topic_id=topic_id,
+            source_chunk_id=chunk_ids[0],
+            payload=mcq_payload(chunk_ids),
+        )
+        async with admin_engine.begin() as conn:
+            document_id = await conn.scalar(
+                text("SELECT document_id FROM chunks WHERE id = :c"), {"c": chunk_ids[0]}
+            )
+
+        # Önce belge silinemiyor: soru onu kilitliyor.
+        kilitli = await client.delete(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
+        assert kilitli.status_code == 409, kilitli.text
+
+        silme = await client.delete(f"/courses/{course_id}/questions/{question_id}", headers=ayse)
+        assert silme.status_code == 204, silme.text
+
+        # Kilit açıldı: mesajın önerdiği çıkış yolu gerçekten çalışıyor.
+        acildi = await client.delete(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
+        assert acildi.status_code == 204, acildi.text
+
+    async def test_ogrenci_soru_silemez(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        burak_id = await users.create("burak@dogus.edu.tr")
+        course_id = await _create_course(client, ayse, "COME301")
+        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        chunk_ids = await seed_chunks(
+            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
+        )
+        question_id = await seed_question(
+            admin_engine,
+            course_id=UUID(course_id),
+            topic_id=topic_id,
+            source_chunk_id=chunk_ids[0],
+            payload=mcq_payload(chunk_ids),
+        )
+
+        response = await client.delete(
+            f"/courses/{course_id}/questions/{question_id}", headers=users.auth(burak_id)
+        )
+
+        assert response.status_code == 403
+
+    async def test_cevaplanmis_soru_silinmez_ve_sebebi_soylenir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Bir öğrencinin cevabının sorusunu silmek, o cevabı okunamaz kılardı.
+
+        Veritabanı bunu `answers.question_id` RESTRICT ile zaten reddediyor;
+        sınanan şey, uçun bunu 500 yerine anlaşılır bir 409'a çevirmesi.
+        """
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        burak_id = await users.create("burak@dogus.edu.tr")
+        course_id = await _create_course(client, ayse, "COME301")
+        await enroll(client, ayse, course_id, "burak@dogus.edu.tr")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        chunk_ids = await seed_chunks(
+            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
+        )
+        question_id = await seed_question(
+            admin_engine,
+            course_id=UUID(course_id),
+            topic_id=topic_id,
+            source_chunk_id=chunk_ids[0],
+            payload=mcq_payload(chunk_ids),
+            status="approved",
+            reviewed_by=ayse_id,
+        )
+        async with admin_engine.begin() as conn:
+            exam_id = await conn.scalar(
+                text(
+                    "INSERT INTO exam_sessions (course_id, user_id, mode, question_ids) "
+                    "VALUES (:c, :u, 'practice', ARRAY[:q]::uuid[]) RETURNING id"
+                ),
+                {"c": course_id, "u": burak_id, "q": question_id},
+            )
+            await conn.execute(
+                text(
+                    "INSERT INTO answers (session_id, question_id, course_id, given, "
+                    "is_correct, score) VALUES (:s, :q, :c, 'A', true, 100)"
+                ),
+                {"s": exam_id, "q": question_id, "c": course_id},
+            )
+
+        response = await client.delete(
+            f"/courses/{course_id}/questions/{question_id}", headers=ayse
+        )
+
+        assert response.status_code == 409, response.text
+        assert response.json()["error"]["code"] == "conflict"
+        assert "cevaplanmış" in response.json()["error"]["message"]
+
+
 class TestQuestionGeneration:
     async def test_gecerli_cikti_havuza_draft_yazilir(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine

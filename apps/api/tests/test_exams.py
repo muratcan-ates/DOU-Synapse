@@ -22,6 +22,7 @@ from uuid import UUID, uuid4
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.db import rls_session
@@ -282,13 +283,20 @@ class TestSessionResume:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
 
-        async with rls_session(fixture.student_id) as session:
-            await session.execute(
-                text(
-                    "UPDATE exam_sessions SET expires_at = now() + interval '1 day' WHERE id = :id"
-                ),
-                {"id": UUID(session_id)},
-            )
+        # `0007` öncesi öğrenci bu sütunu YAZABİLİYORDU ve tek koruma sunucu
+        # tarafındaki kırpmaydı. Artık kolon GRANT'i yazmayı veritabanı düzeyinde
+        # reddediyor — kırpma ikinci katman olarak duruyor (Anayasa II: iki katman
+        # da bağımsız olarak doğru davranmalı).
+        with pytest.raises(ProgrammingError) as reddedildi:
+            async with rls_session(fixture.student_id) as session:
+                await session.execute(
+                    text(
+                        "UPDATE exam_sessions SET expires_at = now() + interval '1 day' "
+                        "WHERE id = :id"
+                    ),
+                    {"id": UUID(session_id)},
+                )
+        assert "permission denied" in str(reddedildi.value)
 
         response = await client.get(
             f"/courses/{fixture.course_id}/exams/{session_id}", headers=fixture.student
@@ -300,6 +308,76 @@ class TestSessionResume:
 # ---------------------------------------------------------------------------
 # Cevap gönderme — vaka 3, 4
 # ---------------------------------------------------------------------------
+
+
+class TestOturumListesi:
+    """`GET /exams` — öğrenci devam eden sınavına oturum kimliği olmadan dönebilmeli.
+
+    Bu uç, kimliğin yalnız istemcide tutulmasının açtığı iki boşluğu birden
+    kapatıyor: tarayıcı verisi silinince oturumun kaybolması, ve kaybolan
+    oturumun yerine yenisini açıp süreyi baştan alabilmek. Süre sunucunun
+    kararıysa, oturumu bulmak da sunucunun işi.
+    """
+
+    async def test_kendi_oturumlarini_yeniden_eskiye_listeler(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build_course(client, users, admin_engine)
+        birinci = (await start(client, fixture, "practice"))["id"]
+        ikinci = (await start(client, fixture, "practice"))["id"]
+
+        response = await client.get(f"/courses/{fixture.course_id}/exams", headers=fixture.student)
+
+        assert response.status_code == 200, response.text
+        kimlikler = [row["id"] for row in response.json()]
+        assert kimlikler == [ikinci, birinci], "en yeni oturum başta olmalı"
+
+    async def test_devam_eden_oturum_kalan_suresiyle_bulunur(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Ucun var olma sebebi: kimlik kaybolsa bile süre kaybolmuyor."""
+        fixture = await build_course(client, users, admin_engine)
+        session_id = (await start(client, fixture, "exam"))["id"]
+        await rewind(admin_engine, session_id, minutes=5)
+
+        satir = (
+            await client.get(f"/courses/{fixture.course_id}/exams", headers=fixture.student)
+        ).json()[0]
+
+        assert satir["id"] == session_id
+        assert satir["finished_at"] is None
+        assert 15 * 60 - 10 <= satir["remaining_seconds"] <= 15 * 60
+
+    async def test_baska_ogrencinin_oturumu_listeye_girmez(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """RLS + ders kontrolü: iki katman da bağımsız olarak doğru davranmalı."""
+        fixture = await build_course(client, users, admin_engine)
+        await start(client, fixture, "exam")
+        ceren_id = await users.create("ceren@dogus.edu.tr")
+        await enroll(client, fixture.instructor, fixture.course_id, "ceren@dogus.edu.tr")
+
+        response = await client.get(
+            f"/courses/{fixture.course_id}/exams", headers=users.auth(ceren_id)
+        )
+
+        assert response.status_code == 200
+        assert response.json() == [], "başka öğrencinin oturumu görünmemeli"
+
+    async def test_liste_soru_metinlerini_tasimaz(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Liste "hangi oturumlarım var" sorusunu cevaplar, sınavın içeriğini değil."""
+        fixture = await build_course(client, users, admin_engine)
+        await start(client, fixture, "exam")
+
+        satir = (
+            await client.get(f"/courses/{fixture.course_id}/exams", headers=fixture.student)
+        ).json()[0]
+
+        assert satir["questions"] == []
+        # Sayaçlar yine de dolu: ekran ilerlemeyi soru metni olmadan gösterebilmeli.
+        assert satir["question_count"] > 0
 
 
 class TestAnswerSubmission:

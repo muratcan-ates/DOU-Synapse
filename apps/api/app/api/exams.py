@@ -215,9 +215,19 @@ def _answer_feedback(
 
 
 async def _session_out(
-    session: AsyncSession, exam: ExamSession, *, settings: Settings, now: datetime
+    session: AsyncSession,
+    exam: ExamSession,
+    *,
+    settings: Settings,
+    now: datetime,
+    with_questions: bool = True,
 ) -> ExamSessionOut:
-    questions = await _load_questions(session, list(exam.question_ids))
+    """Oturumu istemci zarfına çevirir.
+
+    `with_questions=False` yalnız liste ucunda kullanılır: orada soru metinleri
+    gerekmiyor ve N oturum için N soru sorgusu koşturmanın da anlamı yok.
+    """
+    questions = await _load_questions(session, list(exam.question_ids)) if with_questions else {}
     answers = await _answers_of(session, exam.id)
     answered = {answer.question_id for answer in answers}
     expiry = effective_expiry(exam, settings=settings)
@@ -312,6 +322,42 @@ async def start_exam(
     await session.flush()
 
     return await _session_out(session, exam, settings=settings, now=now)
+
+
+@router.get("/exams", response_model=list[ExamSessionOut])
+async def list_exams(context: CourseMemberDep, session: SessionDep) -> list[ExamSessionOut]:
+    """Kullanıcının bu dersteki sınav oturumları, en yenisi başta.
+
+    Neden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —
+    tarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam
+    eden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci
+    yeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin
+    hafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak
+    da sunucunun işi olmalı.
+
+    Şerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`
+    diyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.
+
+    RLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile
+    kontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).
+
+    Sorular gövdede TAŞINMAZ. Liste "hangi oturumlarım var" sorusunu cevaplar;
+    soru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı
+    vermek olurdu ve ekranın bu bilgiye ihtiyacı yok.
+    """
+    settings = get_settings()
+    now = await db_now(session)
+    rows = (
+        await session.execute(
+            select(ExamSession)
+            .where(ExamSession.course_id == context.course_id)
+            .order_by(ExamSession.started_at.desc())
+        )
+    ).scalars()
+    return [
+        await _session_out(session, exam, settings=settings, now=now, with_questions=False)
+        for exam in rows
+    ]
 
 
 @router.get("/exams/{session_id}", response_model=ExamSessionOut)
@@ -517,7 +563,12 @@ async def finish_exam(
     ungraded = sum(1 for outcome in outcomes if not outcome.graded)
 
     exam.finished_at = now
-    exam.score = total
+    # `exam.score` YAZILMIYOR. Puan `answers`'tan türetiliyor (bu dosyanın
+    # başındaki 3. kural ve `_session_out`); sütuna yazmak ölü bir yazmaydı ve
+    # `0007`'nin kolon GRANT'i onu görünür kıldı — `dou_app` artık yalnız
+    # `finished_at` yazabiliyor. Kısıt Şerit 4'ün Karar 2'si: öğrenci kendi
+    # oturumunun süresini ve puanını değiştirememeli, ve RLS sütun kısıtı
+    # veremediği için koruma GRANT'te.
     await session.flush()
 
     if exam.mode is ExamMode.EXAM:

@@ -239,3 +239,34 @@ async def reject_question(
 ) -> QuestionOut:
     """Soruyu reddeder. Kayıt silinmez: havuzun neyi elediği de bir veridir."""
     return await _review(session, context, question_id, QuestionStatus.REJECTED)
+
+
+@router.delete("/questions/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_question(
+    question_id: UUID, context: CourseInstructorDep, session: SessionDep
+) -> None:
+    """Soruyu havuzdan tamamen siler. Reddetmekten FARKLI bir iş.
+
+    Reddetmek pedagojik bir karardır: soru öğrenciye görünmez ama satır durur ve
+    "havuzun neyi elediği" ölçülebilir kalır. Silmek yapısal bir işlemdir ve tek
+    bir gerçek ihtiyaçtan doğuyor: `questions.source_chunk_id` `ON DELETE RESTRICT`
+    taşıyor, yani bir belgeden üretilmiş soru havuzda durduğu sürece o BELGE
+    silinemiyor.
+
+    Bu uç olmadan `documents.py`'nin 409 mesajı ("Önce ilgili soruları kaldırın")
+    var olmayan bir çıkış yolunu tarif ediyordu — yapılamayacak bir şeyi öneren
+    hata mesajı, hiç mesaj vermemekten kötüdür.
+
+    Cevaplanmış soru silinmez: `answers.question_id` de RESTRICT taşır ve bir
+    öğrencinin verdiği cevabın sorusunu silmek, o cevabı okunamaz hâle getirirdi.
+    Veritabanı bunu zaten reddediyor; burada hata anlaşılır Türkçeye çevriliyor.
+    """
+    question = await _load_question(session, question_id, context.course_id)
+    await session.delete(question)
+    try:
+        await session.flush()
+    except IntegrityError as exc:
+        raise ConflictError(
+            "Bu soru bir sınavda cevaplanmış, bu yüzden silinemiyor. "
+            "Öğrencilere görünmesini istemiyorsanız reddedebilirsiniz."
+        ) from exc
