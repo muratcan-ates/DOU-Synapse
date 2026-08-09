@@ -39,9 +39,21 @@ retrieval kalitesini kör bir yazı-turaya bırakmak olurdu.
 
 **Bilinen sınır — filtrelenmiş ANN.** `WHERE course_id = ...` + RLS ile birlikte HNSW,
 `ef_search` kadar aday üretip sonra filtreler; korpus büyüdükçe küçük bir dersin
-sonuçları eksik dönebilir. Bugünkü ölçekte planlayıcı sıralı tarama seçiyor, dolayısıyla
-sonuç tam; korpus büyüdüğünde çözüm pgvector 0.8'in `hnsw.iterative_scan` ayarıdır.
-Bugün açılmadı çünkü davranışı gerçek ölçekte ölçülmedi (Anayasa III).
+sonuçları eksik dönebilir. Bugünkü ölçekte bu risk **gerçekleşmiyor, çünkü HNSW hiç
+kullanılmıyor** — gerçek materyal yüklü veritabanında (33 chunk, 8 belge) alınan plan::
+
+    Limit
+      ->  Sort  (Sort Key: (embedding <=> '...'))
+            ->  Bitmap Heap Scan on chunks c
+                  Recheck Cond: (course_id = '...')
+                  Filter: app.is_member(course_id)
+                  ->  Bitmap Index Scan on chunks_course_idx
+
+Planlayıcı `course_id` indeksinden gidip tam sıralama yapıyor, yani sonuç kesin.
+(Plandaki `Filter: app.is_member(course_id)` satırı ayrıca RLS'in `dou_app` bağlantısında
+gerçekten devrede olduğunun doğrudan kanıtı.) Korpus büyüyüp planlayıcı HNSW'ye geçtiğinde
+çözüm pgvector 0.8'in `hnsw.iterative_scan` ayarıdır; bugün açılmadı çünkü davranışı
+gerçek ölçekte ölçülmedi (Anayasa III).
 
 Yetki notu: `course_id` bir yetki belgesi değildir, arama alanını daraltır. İzolasyonun
 ikinci katmanı `chunks_member_read` RLS politikasıdır ve aynı oturumda zaten devrededir.
