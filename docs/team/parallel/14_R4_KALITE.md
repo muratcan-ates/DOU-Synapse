@@ -223,9 +223,9 @@ yalnız yarısı: ikinci yarı **sürüm**.
 
 # R4 ŞERİT RAPORU — 9 Ağustos 2026
 
-Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 7 commit
-Doğrulama: **571 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
-Başlangıç 473'tü; 98 test eklendi.
+Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 8 commit
+Doğrulama: **577 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
+Başlangıç 473'tü; 104 test eklendi.
 
 Ölçüm korpusu: `dou_synapse_eval_e5` (8 belge / 33 chunk, `EMBEDDING_PROVIDER=fastembed`,
 `intfloat/multilingual-e5-large`, fastembed 0.8.0). Set: `evaluation/gold_set/calibration.json`.
@@ -243,6 +243,7 @@ Başlangıç 473'tü; 98 test eklendi.
 | 6 — `answer_cache` mod güvenliği | **Çözüldü** | 20 test, yeni dosya |
 | EK — embedding sürüm damgası | **Şema + kapı hazır**, ingest yaması lider'de | 0006 + fail-closed kontrol |
 | **7 — önbellek zinciri atlıyordu** | **Bulundu ve kapatıldı**, yaması lider'de | EK B, uçtan uca ölçüldü |
+| **8 — şablon ipucu metadata'sı temizlenmiyordu** | **Bulundu ve tamamen kapatıldı** | EK C, yama gerekmiyor |
 
 ---
 
@@ -530,7 +531,7 @@ görünür ve yalnız bazı belgeler hiç bulunmaz.
 ## 8. LİDERE — uygulanacak üç yama
 
 Üçü de **uygulandı, ölçüldü, sonra geri alındı**; commit'lerde bu iki dosya el
-değmemiş durumda. Üçü de dalın kendisinde 571 test yeşil, mypy temiz, ruff temiz
+değmemiş durumda. Üçü de dalın kendisinde 577 test yeşil, mypy temiz, ruff temiz
 iken doğrulandı.
 
 ### 8.1 `apps/api/app/api/chat.py` — `out_of_scope` üretimi
@@ -1085,3 +1086,71 @@ göstereceğine karar vermek isterse bu lider tarafında bir sunum kararı.
 
 Bu yama §8.1 ile aynı dosyaya dokunuyor ve **birbirlerinden bağımsızlar**; ayrı ayrı
 uygulanabilirler.
+
+---
+
+## EK C — sekizinci açık: şablon ipucu, zincirin atladığı üçüncü yol
+
+EK B'yi yazarken "zincirin başka nerede atlandığını" aramak doğal oldu. Bir yer daha
+çıktı ve bu üçünün en kötüsü: **deterministik son durak.**
+
+### Bulgu
+
+`socratic.template_hint` üretim pedagojik filtreden geçemediğinde devreye girer ve
+`chat.produce_answer` onu **doğrudan döndürür** — `apply_guardrails` çağrılmaz. Şablon
+metninin kendisi güvenlidir (bizim sabitimiz, model devrede değil), ama içine iki
+güvenilmez alan enterpole ediliyor: `file_name` (yükleyenin seçtiği ad) ve
+`section_title` (belgeden ayrıştırılan başlık).
+
+```
+chunk.file_name     = '<img src=x onerror=alert(1)>.pdf'
+chunk.section_title = '<script>alert(1)</script> Deadlock'
+
+ÖNCE →  ipucu metni : 'Bu soru <script>alert(1)</script> Deadlock kavramına dayanıyor;
+                       kaynağı <img src=x onerror=alert(1)>.pdf — Sayfa 1. ...'
+        atıf quote  : '<script>alert(1)</script> Deadlock'
+        atıf file   : '<img src=x onerror=alert(1)>.pdf'
+
+SONRA → ipucu metni : 'Bu soru Deadlock kavramına dayanıyor; kaynağı .pdf — Sayfa 1. ...'
+        atıf quote  : 'Deadlock'
+        atıf file   : '.pdf'
+```
+
+Bunun kötü olmasının sebebi ulaşıldığı AN: bu yol, model çözüm sızdırdığı ve yeniden
+üretim de tutmadığı zaman devreye giren son savunma hattı. Yani tam olarak hiçbir
+şeyin güvenilmediği anda yükü taşıyordu.
+
+### Düzeltme ve yeri
+
+`socratic.template_hint` ve `hint_citation` (ikisi de bu şeridin dosyasında) artık
+`sanitize.clean`'den geçiriyor. **Bu tam olarak kapandı, lider yaması gerekmiyor.**
+
+Temizliğin şablonun kendisinde olması bilinçli bir seçim. Mimari olarak daha temiz
+alternatif, `chat.produce_answer`'ın iki şablon dalını da `apply_guardrails`'den
+geçirmesiydi ve zincirin "tek uygulayıcı" olma ilkesine daha sadık olurdu. Ama bugün
+üç kez ölçülen şey şu: **uygulamayı çağırana bırakmak, çağıran sayısı kadar açık
+üretiyor** (önbellek isabeti, atıf kartı, şablon ipucu). Şablon zaten zinciri yapısı
+gereği atlıyor; garantiyi ürettiği yere koymak, dördüncü bir çağıranın aynı hatayı
+yapmasını imkânsız kılıyor.
+
+`chunk_id` temizlenmiyor ve teste bağlandı: atıf doğrulamasının anahtarı odur, üzerinde
+yapılacak her dönüşüm geçerli bir atfı uydurma saydırır.
+
+Yedi test bunu kilitliyor; meşru Türkçe dosya adlarının (`işletim-sistemleri-hafta3.pdf`)
+bozulmadığı ve başlık temizlikte boşalırsa alıntının konuma düştüğü dahil.
+
+### Aynı sınıftan üç açık — ortak ders
+
+| nerede | zinciri neden atlıyordu | durum |
+|---|---|---|
+| atıf kartı | `GuardrailVerdict` yalnız metni taşıyor, atıflar kimsenin işi değildi | kapatıldı (§5) |
+| önbellek isabeti | retrieval yapılmıyor, zincir hiç çağrılmıyordu | kapatıldı, yama §8.4 |
+| şablon ipucu | son durak, tanımı gereği zincirin dışında | kapatıldı (EK C) |
+
+Üçünün ortak sebebi tek bir varsayım: **"metin zincirden geçti" ile "kullanıcının
+gördüğü her şey zincirden geçti" aynı şey sanılıyordu.** Kullanıcının gördüğü şey
+cevap metninden ibaret değil — atıf kartı, dosya adı, konum ve şablon metni de ekranda.
+
+Öneri (lider/R5): bu üçü rapora **tek bir bulgu** olarak girmeli. Üç ayrı XSS düzeltmesi
+gibi anlatılırsa üç şanslı yakalama gibi okunur; oysa tek bir yanlış varsayımın üç
+tezahürü ve onu bulan şey mutasyon merceğiydi.

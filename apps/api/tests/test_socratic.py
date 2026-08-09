@@ -582,3 +582,79 @@ class TestDurumKaliciligi:
             state = advance(state, "yeni bir denemem").state
 
         assert len(state.transitions) <= socratic.MAX_TRANSITIONS_KEPT
+
+
+# ---------------------------------------------------------------------------
+# Vaka 6 — şablon ipucu metadata'sı temizlenir
+#
+# Şablon ipucu zinciri YAPISI GEREĞİ atlar: üretim filtreden geçemediğinde
+# devreye girer ve `chat.produce_answer` onu doğrudan döndürür. Yani son savunma
+# hattı, tam olarak modele güvenilmediği anda güvenilmez metadata taşıyordu.
+# ---------------------------------------------------------------------------
+
+#: Yükleyenin seçtiği dosya adı ve belgeden ayrıştırılan bölüm başlığı — ikisi de
+#: güvenilmez girdi, ikisi de şablon metninin İÇİNE giriyor.
+ZARARLI_DOSYA = "<img src=x onerror=alert(1)>.pdf"
+ZARARLI_BASLIK = "<script>alert(document.cookie)</script> Deadlock"
+
+
+class TestSablonMetadatasi:
+    def _kotu_chunk(self) -> RetrievedChunk:
+        return make_chunk(file_name=ZARARLI_DOSYA, section_title=ZARARLI_BASLIK)
+
+    def test_ipucu_metninde_etiket_kalmaz(self) -> None:
+        for stage in socratic.STAGE_ORDER:
+            text, _ = socratic.template_hint(stage, self._kotu_chunk())
+
+            assert "<script>" not in text, stage
+            assert "onerror" not in text, stage
+            assert "<img" not in text, stage
+
+    def test_atif_kartinda_etiket_kalmaz(self) -> None:
+        _, citation = socratic.template_hint(SocraticStage.CONCEPT_HINT, self._kotu_chunk())
+
+        assert "<script>" not in citation.quote
+        assert "onerror" not in citation.file_name
+        assert "<" not in citation.location
+
+    def test_hint_citation_tek_basina_da_temiz(self) -> None:
+        """İki giriş noktası var; ikisi de aynı garantiyi vermeli.
+
+        `hint_citation` doğrudan çağrılabiliyor (`leakage.build_template_hint`
+        deseni); yalnız `template_hint` temizleseydi ikinci kapı açık kalırdı.
+        """
+        citation = socratic.hint_citation(self._kotu_chunk())
+
+        assert "<script>" not in citation.quote
+        assert "onerror" not in citation.file_name
+
+    def test_chunk_kimligi_DEGISMEZ(self) -> None:
+        """Temizlik `chunk_id`'ye dokunamaz: atıf doğrulamasının anahtarı odur.
+
+        Üzerinde yapılacak her dönüşüm set-membership'i bozar ve geçerli bir atıf
+        uydurma sayılmaya başlar.
+        """
+        chunk = self._kotu_chunk()
+        _, citation = socratic.template_hint(SocraticStage.NUDGE, chunk)
+
+        assert citation.chunk_id == chunk.chunk_id
+
+    def test_temiz_metadata_dokunulmadan_gecer(self) -> None:
+        """Temizlik meşru dosya adlarını bozmamalı — Türkçe karakterler dahil."""
+        chunk = make_chunk(
+            file_name="işletim-sistemleri-hafta3.pdf", section_title="Deadlock Koşulları"
+        )
+        text, citation = socratic.template_hint(SocraticStage.CONCEPT_HINT, chunk)
+
+        assert citation.file_name == "işletim-sistemleri-hafta3.pdf"
+        assert citation.quote == "Deadlock Koşulları"
+        assert "işletim-sistemleri-hafta3.pdf" in text
+        assert "Deadlock Koşulları" in text
+
+    def test_baslik_temizlikte_bosalirsa_konuma_dusulur(self) -> None:
+        """Alıntı boş kalmaz: konum her zaman gösterilebilir bir işarettir."""
+        chunk = make_chunk(file_name="a.pdf", section_title="<script>x</script>")
+        _, citation = socratic.template_hint(SocraticStage.NUDGE, chunk)
+
+        assert citation.quote == citation.location
+        assert citation.quote
