@@ -124,8 +124,9 @@ async def db_source_errors(gold: goldset.GoldSet, course_id: str, as_user: str) 
     karşı doğrulanmalı, sahibin gördüğü ham tabloya karşı değil.
     """
     ensure_api_on_path()
-    from app.core.db import dispose_engine, rls_session
     from sqlalchemy import text as sql_text
+
+    from app.core.db import dispose_engine, rls_session
 
     try:
         async with rls_session(UUID(as_user)) as session:

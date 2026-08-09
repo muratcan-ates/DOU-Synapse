@@ -53,7 +53,10 @@ async def pull(args: argparse.Namespace) -> int:
     gold = goldset.load(GOLD_SET)
 
     pool = [item for item in gold.items if item.category in SAMPLE_CATEGORIES]
-    random.Random(args.seed).shuffle(pool)
+    # S311: kriptografik değil — tam tersine, örneklemin YENİDEN ÜRETİLEBİLİR olması
+    # için sabit tohumlu bir üreteç şart. Tahmin edilemez olsaydı "beğendiğiniz
+    # cevapları seçtiniz" itirazına verecek cevap kalmazdı.
+    random.Random(args.seed).shuffle(pool)  # noqa: S311
     chosen = pool[: args.size]
 
     fake = bool(args.llm_note and "FAKE_PROVIDER=TRUE" in args.llm_note.upper())
