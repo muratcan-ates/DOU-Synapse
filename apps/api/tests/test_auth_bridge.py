@@ -313,6 +313,64 @@ class TestSilme:
         assert await _profile(auth_schema, user_id) == ("silinen@dogus.edu.tr", "Silinen")
 
 
+class TestKopruYuzeyi:
+    """Köprü fonksiyonlarının uygulama rolüne KAPALI olduğu.
+
+    Bu sınıf, köprünün kendisinin açtığı bir yüzeyi kapatır. PostgreSQL yeni bir
+    fonksiyona varsayılan olarak PUBLIC'e EXECUTE verir; fonksiyonlar SECURITY DEFINER
+    ve sahipleri BYPASSRLS taşıdığı için varsayılan bırakılsaydı `dou_app` doğrudan
+    profil yaratabilir ve var olan bir profilin e-postasını üstüne alabilirdi. İkincisi
+    somut: `app.add_course_member` kullanıcıyı e-postayla bulur.
+
+    Migration'ın REVOKE bloğu bunu kapatıyor. Testler o bloğun silinmesi ya da yeni bir
+    fonksiyonun yetkisiz bırakılması hâlinde kırmızı yanar.
+    """
+
+    async def test_uygulama_rolu_profil_uyduramaz(self, auth_schema: AsyncEngine) -> None:
+        with pytest.raises(Exception, match="permission denied"):
+            async with auth_schema.begin() as conn:
+                await conn.execute(text("SET LOCAL ROLE dou_app"))
+                await conn.execute(
+                    text(
+                        "SELECT app.upsert_profile_from_auth("
+                        ":id, 'sahte@dogus.edu.tr', '{}'::jsonb)"
+                    ),
+                    {"id": uuid4()},
+                )
+
+    async def test_uygulama_rolu_mevcut_profilin_epostasini_alamaz(
+        self, auth_schema: AsyncEngine
+    ) -> None:
+        """En kritik vakası: e-posta devralma, derse eğitmen olarak eklenmenin yoludur."""
+        kurban = uuid4()
+        async with auth_schema.begin() as conn:
+            await conn.execute(
+                text("INSERT INTO profiles (id, email, full_name) VALUES (:id, :e, :n)"),
+                {"id": kurban, "e": "ayse@dogus.edu.tr", "n": "Ayşe Eğitmen"},
+            )
+
+        with pytest.raises(Exception, match="permission denied"):
+            async with auth_schema.begin() as conn:
+                await conn.execute(text("SET LOCAL ROLE dou_app"))
+                await conn.execute(
+                    text(
+                        "SELECT app.upsert_profile_from_auth("
+                        ":id, 'saldirgan@dogus.edu.tr', '{}'::jsonb)"
+                    ),
+                    {"id": kurban},
+                )
+
+        assert await _profile(auth_schema, kurban) == ("ayse@dogus.edu.tr", "Ayşe Eğitmen")
+
+    async def test_uygulama_rolu_kopruyu_kuramaz(self, auth_schema: AsyncEngine) -> None:
+        """Kurulum ve backfill yönetim işlemidir; uygulama rolüne kapalı."""
+        for fonksiyon in ("app.install_auth_user_bridge()", "app.backfill_profiles_from_auth()"):
+            with pytest.raises(Exception, match="permission denied"):
+                async with auth_schema.begin() as conn:
+                    await conn.execute(text("SET LOCAL ROLE dou_app"))
+                    await conn.execute(text(f"SELECT {fonksiyon}"))
+
+
 class TestFailClosed:
     async def test_ayni_eposta_ikinci_kimlige_baglanmaz(self, auth_schema: AsyncEngine) -> None:
         """Silinen kullanıcı aynı e-postayla yeniden kaydolursa kayıt DÜŞER.

@@ -255,6 +255,53 @@ BEGIN
 END
 $fn$;
 
+-- ---------------------------------------------------------------------------
+-- Çalıştırma yetkileri — bu bloğun yokluğu bir yetki yükseltmesidir
+-- ---------------------------------------------------------------------------
+--
+-- PostgreSQL yeni bir fonksiyona varsayılan olarak PUBLIC'e EXECUTE verir. Bu üç
+-- fonksiyon `SECURITY DEFINER` ve sahibi `BYPASSRLS` taşıyor; varsayılan bırakılırsa
+-- API'nin rolü (`dou_app`) `app.upsert_profile_from_auth(...)` çağırarak istediği
+-- kimliğe profil YARATABİLİR ve var olan bir profilin E-POSTASINI DEĞİŞTİREBİLİR.
+-- İkincisi somut bir saldırı: `app.add_course_member` kullanıcıyı e-postayla bulur,
+-- yani eğitmenin e-postasını üstüne almak derse eğitmen olarak eklenmenin yoludur.
+--
+-- Ölçüldü (psql, 9 Ağustos): REVOKE'suz hâlde `SET ROLE dou_app` ile her iki saldırı
+-- da geçiyordu. Sömürüsü `dou_app` olarak serbest SQL koşturabilmeyi gerektirir —
+-- bugün böyle bir yol bilinmiyor, kod her yerde bağlı parametre kullanıyor — ama
+-- profilin YALNIZ kimlik sağlayıcısından doğması bu projenin bir değişmezi
+-- (0001'de `profiles`ın INSERT politikası bu yüzden yok) ve bir SQL enjeksiyonu
+-- bulunduğu gün aradaki fark, "veri okundu" ile "saldırgan eğitmen oldu" farkıdır.
+--
+-- Trigger bundan etkilenmez: trigger fonksiyonunu OID ile bağlar ve tetiklenme anında
+-- EXECUTE denetimi yapmaz (test_auth_bridge.py, yetkisiz taklit rol testi).
+REVOKE EXECUTE ON FUNCTION app.upsert_profile_from_auth(uuid, text, jsonb) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION app.sync_profile_from_auth_user() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION app.install_auth_user_bridge() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION app.backfill_profiles_from_auth() FROM PUBLIC;
+
+-- 0001'in toplu GRANT'i bu fonksiyonlardan önce koştuğu için onları kapsamıyor; yine de
+-- açıkça geri alınıyor ki ileride o satır `ALTER DEFAULT PRIVILEGES`e çevrilirse
+-- yetki sessizce geri gelmesin.
+REVOKE EXECUTE ON FUNCTION app.upsert_profile_from_auth(uuid, text, jsonb)
+    FROM dou_app, dou_worker;
+REVOKE EXECUTE ON FUNCTION app.sync_profile_from_auth_user() FROM dou_app, dou_worker;
+REVOKE EXECUTE ON FUNCTION app.install_auth_user_bridge() FROM dou_app, dou_worker;
+REVOKE EXECUTE ON FUNCTION app.backfill_profiles_from_auth() FROM dou_app, dou_worker;
+
+-- Kurulumu yapan role geri verilir. Gerekçe: `install_auth_user_bridge` ve
+-- `backfill_profiles_from_auth` SECURITY INVOKER'dır ve migration'ı koşturan rolle
+-- çalışır; Supabase'de o rol (`postgres`) superuser DEĞİLDİR, yani EXECUTE denetimine
+-- tabidir. Rol adı ortama göre değiştiği için `current_user`'dan alınıyor.
+DO $$
+BEGIN
+    EXECUTE format(
+        'GRANT EXECUTE ON FUNCTION app.upsert_profile_from_auth(uuid, text, jsonb), '
+        'app.sync_profile_from_auth_user(), app.install_auth_user_bridge(), '
+        'app.backfill_profiles_from_auth() TO %I', current_user);
+END
+$$;
+
 DO $$
 DECLARE
     v_inserted integer;

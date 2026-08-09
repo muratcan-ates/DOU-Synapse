@@ -169,7 +169,7 @@ Rapor sonunda ayrı başlık altında:
 # R1 raporu — 9 Ağustos 2026
 
 Dal: `feat/auth` · Worktree: `~/code/.dou-auth` · Taban: `c4d4c7b` (rebase'li)
-Doğrulama: **527 test yeşil**, mypy temiz (59 dosya), ruff temiz.
+Doğrulama: **530 test yeşil**, mypy temiz (59 dosya), ruff temiz.
 
 ## Bitti sayılma ölçütü
 
@@ -231,7 +231,7 @@ konfigürasyonlarının ikisi de ayarlar yüklenirken reddedildi.
 tarafından tutuluyordu (`lsof` sandbox'ta sahibini göstermiyor). Koşu **8121**'de
 yapıldı; başka şeridin portuna girilmedi.
 
-## Ölçerken bulunan üç şey
+## Ölçerken bulunan dört şey
 
 **1. `0003`'ün "`INSERT ... RETURNING` yapılamaz" cümlesi artık dar.** `0005`
 eğitmene kendi dersi için SELECT açtığından eğitmen bağlamında RETURNING geçiyor
@@ -246,6 +246,19 @@ onlardan geçmesini istiyor. Sonucu: "başkasının satırını değiştiremez" 
 iddialar UPDATE politikasını hiç ölçmüyor. Bu, `rls_assessment.sql`'i de ilgilendirir
 ama oradaki iddialar zaten mutasyonla doğrulanmış olduğu için bir işlem gerekmiyor;
 yeni iddia yazan herkesin bilmesi gereken bir tuzak (rls_isolation.sql, OKUMA NOTU 2).
+
+**4. Köprünün kendisi bir yetki yükseltmesi açmıştı — kapatıldı.** PostgreSQL yeni
+bir fonksiyona varsayılan olarak PUBLIC'e EXECUTE verir. `0002`'nin fonksiyonları
+`SECURITY DEFINER` ve sahipleri `BYPASSRLS` taşıdığı için, `SET ROLE dou_app` ile
+`app.upsert_profile_from_auth(...)` çağırmak hem istediğim kimliğe profil yaratıyor
+hem de **var olan bir profilin e-postasını üstüme alabiliyordu** (psql'de ölçüldü).
+İkincisi somut bir saldırı: `app.add_course_member` kullanıcıyı e-postayla bulur, yani
+eğitmenin e-postasını devralmak derse eğitmen olarak eklenmenin yoludur. Sömürüsü
+`dou_app` olarak serbest SQL koşturabilmeyi gerektirir ve bugün öyle bir yol yok, ama
+açık benim eklediğim yüzeydeydi ve `0002` henüz `main`'e girmediği için yerinde
+düzeltildi: REVOKE bloğu + üç test (`TestKopruYuzeyi`). Trigger etkilenmiyor —
+tetiklenme anında EXECUTE denetimi yapılmıyor, yetkisiz taklit rol testi bunu
+gösteriyor.
 
 **3. Köprünün iki tasarım hatası testle yakalandı**, ikisi de üretimde ancak gerçek
 bir kayıt denemesiyle görülürdü: backfill `SECURITY DEFINER` iken köprü rolünün

@@ -81,11 +81,18 @@ oluşur ([`0002_supabase_auth_bridge.sql`](../supabase/migrations/0002_supabase_
   `FORCE ROW LEVEL SECURITY` taşır ve INSERT politikası yoktur, yani kullanıcı
   kendi profilini yaratamaz — profil yalnız kimlik sağlayıcısından doğar.
 - Köprü rolünün yetkisi `profiles` ile sınırlıdır; `auth` şemasını okumaz.
+- **Köprü fonksiyonları uygulama rolüne KAPALIDIR.** PostgreSQL yeni bir
+  fonksiyona varsayılan olarak PUBLIC'e EXECUTE verir; `0002` bunu geri alır ve
+  yetkiyi yalnız kurulumu yapan role verir. Geri alınmasaydı `dou_app`
+  doğrudan profil yaratabilir ve **var olan bir profilin e-postasını üstüne
+  alabilirdi** — `app.add_course_member` kullanıcıyı e-postayla bulduğu için bu,
+  derse eğitmen olarak eklenmenin yoludur. Açık bu şeritte ölçülerek bulundu ve
+  aynı oturumda kapatıldı; testleri `TestKopruYuzeyi`.
 - Kullanıcı `auth.users`'tan silinirse **profil kalır** (cascade yok). Gerekçe
   ve kabul edilen bedeli migration'ın KARAR 2 bölümünde yazılı; özeti: akademik
   kayıt ve ölçüm geçmişi sessizce silinmemelidir.
 
-Testleri: `tests/test_auth_bridge.py` (15 test). Bunlardan biri, `app` şemasına
+Testleri: `tests/test_auth_bridge.py` (18 test). Bunlardan biri, `app` şemasına
 ve `profiles`'a hiçbir yetkisi olmayan bir rolün — üretimdeki
 `supabase_auth_admin`'in taklidi — trigger'ı tetikleyebildiğini gösterir.
 
@@ -348,7 +355,7 @@ aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
 ## 10. Doğrulama komutları (tümü)
 
 ```bash
-cd apps/api && uv run pytest -q                 # 527 test
+cd apps/api && uv run pytest -q                 # 530 test
 cd apps/api && uv run mypy app                  # temiz, 59 dosya
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
