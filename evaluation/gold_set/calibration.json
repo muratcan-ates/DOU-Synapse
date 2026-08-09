@@ -1,8 +1,8 @@
 {
   "set": "calibration",
-  "version": "1.0",
+  "version": "2.0",
   "created": "2026-08-09",
-  "material": "sample_data/isletim-sistemleri v1",
+  "material": "sample_data/isletim-sistemleri v2",
   "purpose": "Eşik ayarı (T043). Metrik RAPORLANMAZ; raporlanan her sayı holdout'tan gelir.",
   "verification": {
     "page_numbers": "app.modules.ingestion.parsers.parse() ile üretim ayrıştırıcısından doğrulandı (evaluation/verify_gold_set.py). Sayfa numarası tahmin edilmedi.",
@@ -14,7 +14,12 @@
       "id": "C-001",
       "question": "Process Control Block (PCB) içinde hangi bilgiler saklanır?",
       "category": "direct",
-      "expected_sources": [{ "file_name": "01-processes.pdf", "page_number": 1 }],
+      "expected_sources": [
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "PID, süreç durumu, program sayacı/yazmaçlar, bellek yönetim bilgisi, açık dosya tablosu, zamanlama bilgisi."
@@ -23,7 +28,12 @@
       "id": "C-002",
       "question": "Round-robin zamanlamada quantum süresi çok büyük seçilirse ne olur?",
       "category": "direct",
-      "expected_sources": [{ "file_name": "02-cpu-scheduling.pdf", "page_number": 1 }],
+      "expected_sources": [
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "RR pratikte FCFS'e yaklaşır, yanıt süresi kötüleşir. C-002 bilinçli olarak 'çok küçük' değil 'çok büyük' yönünü sorar; holdout'taki quantum soruları küçük yönü ve pratik kuralı sorar."
@@ -32,7 +42,12 @@
       "id": "C-003",
       "question": "Sayfa hatası (page fault) oluştuğunda işletim sistemi hangi adımları uygular?",
       "category": "direct",
-      "expected_sources": [{ "file_name": "03-memory-management.pdf", "page_number": 1 }],
+      "expected_sources": [
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "Donanım trap üretir; OS sayfayı diskten yükler, sayfa tablosunu günceller, komutu yeniden çalıştırır."
@@ -41,7 +56,12 @@
       "id": "C-004",
       "question": "Bir kritik bölge çözümünün sağlaması gereken üç özellik nedir?",
       "category": "direct",
-      "expected_sources": [{ "file_name": "04-synchronization.pdf", "page_number": 1 }],
+      "expected_sources": [
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "Karşılıklı dışlama, ilerleme, sınırlı bekleme."
@@ -50,7 +70,12 @@
       "id": "C-005",
       "question": "Banker's Algorithm hangi bilgiyi her süreç için tutar?",
       "category": "direct",
-      "expected_sources": [{ "file_name": "05-deadlock-demo.pdf", "page_number": 2 }],
+      "expected_sources": [
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "Max, Allocation, Need = Max - Allocation."
@@ -59,7 +84,12 @@
       "id": "C-006",
       "question": "inode nedir ve içinde hangi bilgiler tutulur?",
       "category": "direct",
-      "expected_sources": [{ "file_name": "06-file-systems.pptx", "slide_number": 5 }],
+      "expected_sources": [
+        {
+          "file_name": "06-file-systems.pptx",
+          "slide_number": 5
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "Slayt kaynağı: 'Sayfa' değil 'Slayt N' gösterilmeli — konum biçimi de bu soruyla sınanır."
@@ -69,8 +99,14 @@
       "question": "Süreçler arası context switch neden aynı süreç içindeki iki thread arasındaki geçişten daha pahalıdır?",
       "category": "multi_chunk",
       "expected_sources": [
-        { "file_name": "01-processes.pdf", "page_number": 3 },
-        { "file_name": "03-memory-management.pdf", "page_number": 2 }
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2
+        }
       ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
@@ -81,8 +117,14 @@
       "question": "Aynı sürecin thread'leri belleği paylaştığı için hangi sorun doğar ve bu sorun hangi araçlarla önlenir?",
       "category": "multi_chunk",
       "expected_sources": [
-        { "file_name": "01-processes.pdf", "page_number": 2 },
-        { "file_name": "04-synchronization.pdf", "page_number": 1 }
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1
+        }
       ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
@@ -93,8 +135,14 @@
       "question": "Round-robin quantum seçimi ile TLB arasında nasıl bir ilişki vardır?",
       "category": "multi_chunk",
       "expected_sources": [
-        { "file_name": "02-cpu-scheduling.pdf", "page_number": 1 },
-        { "file_name": "03-memory-management.pdf", "page_number": 2 }
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2
+        }
       ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
@@ -104,7 +152,12 @@
       "id": "C-010",
       "question": "fork() çağrısı kaç kez döner ve ebeveyn ile çocukta hangi değeri döndürür?",
       "category": "technical_term",
-      "expected_sources": [{ "file_name": "01-processes.pdf", "page_number": 2 }],
+      "expected_sources": [
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "FTS token testi: 'fork()' parantezleriyle birlikte aranabilmeli (simple + unaccent, köklendirme yok)."
@@ -113,7 +166,12 @@
       "id": "C-011",
       "question": "TLB miss durumunda ne olur?",
       "category": "technical_term",
-      "expected_sources": [{ "file_name": "03-memory-management.pdf", "page_number": 2 }],
+      "expected_sources": [
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "Sayfa tablosuna gidilir (yavaş), bulunan çeviri TLB'ye eklenir. 'TLB' büyük harfli kısaltma token'ı."
@@ -122,7 +180,12 @@
       "id": "C-012",
       "question": "Öncelik kuyruğu (min-heap) tabanlı bir zamanlayıcının karmaşıklığı nedir?",
       "category": "technical_term",
-      "expected_sources": [{ "file_name": "02-cpu-scheduling.pdf", "page_number": 2 }],
+      "expected_sources": [
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2
+        }
+      ],
       "expected_chunk_ids": [],
       "expected_behavior": "answered",
       "notes": "Ekleme/çıkarma O(log n); n süreç için O(n log n). Boşluklu matematiksel token — PDF'te 'O(n log n)' satır sarmasıyla bölünmüş olabilir, retrieval bunu yakalamalı."
@@ -150,6 +213,280 @@
       "expected_chunk_ids": [],
       "expected_behavior": "out_of_scope",
       "notes": "Bilgisayar bilimi ama bu dersin materyalinde yok — eşiğin 'yakın ama kapsam dışı' davranışını görmek için."
+    },
+    {
+      "id": "C-101",
+      "question": "Bir React bileşeni nasıl test edilir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-102",
+      "question": "Normalizasyonda üçüncü normal form ne demektir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-103",
+      "question": "Bu dersin devamsızlık sınırı kaç saat?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-104",
+      "question": "Bir matrisin özdeğerleri nasıl bulunur?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-105",
+      "question": "HTTPS sertifikası nasıl yenilenir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-106",
+      "question": "Bugün İstanbul'da hava nasıl olacak?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-107",
+      "question": "Rust'ta ownership kuralları nelerdir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-108",
+      "question": "Bir derleyicide sözcüksel çözümleme hangi aşamadır?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-109",
+      "question": "Bütünleme sınavına kimler girebilir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-110",
+      "question": "Blokzincirde madencilik nasıl çalışır?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-111",
+      "question": "Bir REST API'de PUT ile PATCH farkı nedir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-112",
+      "question": "Doğrusal regresyonda R-kare neyi ölçer?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-113",
+      "question": "Kubernetes'te pod ile deployment arasındaki ilişki nedir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-114",
+      "question": "Bir grafik kartının CUDA çekirdek sayısı ne anlama gelir?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-115",
+      "question": "Ders kaydı hangi tarihler arasında yapılır?",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope"
+    },
+    {
+      "id": "C-116",
+      "question": "Sanal bellekte offset alanı çevrim sırasında değişir mi?",
+      "category": "direct",
+      "expected_sources": [
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 1
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Offset değişmez; yalnız sayfa numarası çerçeve numarasına çevrilir."
+    },
+    {
+      "id": "C-117",
+      "question": "Yoklama (polling) hangi durumda kesmeden daha mantıklıdır?",
+      "category": "direct",
+      "expected_sources": [
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 2
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Aygıt çok hızlıysa ya da bekleme kesme kurma maliyetinden kısaysa."
+    },
+    {
+      "id": "C-118",
+      "question": "LOOK algoritması SCAN'den hangi noktada ayrılır?",
+      "category": "direct",
+      "expected_sources": [
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 2
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Diskin fiziksel ucuna kadar gitmez; o yöndeki son isteğe kadar gider ve döner."
+    },
+    {
+      "id": "C-119",
+      "question": "ACL ile yetenek listesi arasındaki fark hangi soruyu kolay cevaplar?",
+      "category": "direct",
+      "expected_sources": [
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 2
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "ACL 'bu nesneye kimler erişebilir', yetenek 'bu özne nelere erişebilir' sorusunu kolaylaştırır."
+    },
+    {
+      "id": "C-120",
+      "question": "Tip 1 hipervizör Tip 2'den neden daha hızlıdır?",
+      "category": "direct",
+      "expected_sources": [
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "slide_number": 4
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Doğrudan donanım üzerinde çalışır, daha az katman geçer."
+    },
+    {
+      "id": "C-121",
+      "question": "EDF tek işlemcide hangi koşulda tüm görev kümesini zamanlayabilir?",
+      "category": "direct",
+      "expected_sources": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "slide_number": 9
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Toplam kullanım oranı U ≤ 1 olduğunda."
+    },
+    {
+      "id": "C-122",
+      "question": "Adlandırılmış boru (FIFO) sıradan borudan hangi yönüyle ayrılır?",
+      "category": "multi_chunk",
+      "expected_sources": [
+        {
+          "file_name": "13-ipc.pptx",
+          "slide_number": 4
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "slide_number": 6
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Dosya sisteminde ismi vardır; akraba olmayan süreçler de kullanabilir."
+    },
+    {
+      "id": "C-123",
+      "question": "Lamport mantıksal saatinin veremediği bilgi nedir?",
+      "category": "multi_chunk",
+      "expected_sources": [
+        {
+          "file_name": "14-distributed-os.pptx",
+          "slide_number": 6
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "slide_number": 7
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "İki olayın eşzamanlı mı yoksa nedensel olarak sıralı mı olduğunu ayırt edemez; vektör saat ayırır."
+    },
+    {
+      "id": "C-124",
+      "question": "initramfs hangi yumurta-tavuk problemini çözer?",
+      "category": "technical_term",
+      "expected_sources": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "slide_number": 6
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Kök dosya sistemini okumak için gereken sürücünün kök dosya sisteminde olması."
+    },
+    {
+      "id": "C-125",
+      "question": "Kernel oops ile kernel panic arasındaki fark nedir?",
+      "category": "technical_term",
+      "expected_sources": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "slide_number": 18
+        }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Oops'ta ilgili süreç öldürülür, sistem devam eder; panic'te sistem durdurulur."
     }
-  ]
+  ],
+  "category_targets": {
+    "direct": 12,
+    "multi_chunk": 5,
+    "technical_term": 5,
+    "out_of_scope": 18
+  }
 }
