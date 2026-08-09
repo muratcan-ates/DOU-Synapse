@@ -47,6 +47,7 @@ import type {
 } from "@/lib/types";
 import { useChatAvailability } from "@/lib/chat-availability";
 import { useResource } from "@/lib/use-resource";
+import { sourceContextHref } from "@/lib/source-quality";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading } from "@/components/page-state";
@@ -281,6 +282,7 @@ function ChatScreen({ courseId }: { courseId: string }) {
                     <SourceCard
                       key={`${citation.chunk_id}:${index}`}
                       source={citationSource(citation)}
+                      href={sourceContextHref(courseId, citation.chunk_id)}
                     />
                   ))}
                 </div>

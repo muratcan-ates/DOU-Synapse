@@ -23,6 +23,7 @@ from app.api import (
     health,
     internal,
     questions,
+    sources,
 )
 from app.core.config import get_settings
 from app.core.db import dispose_engine
@@ -131,6 +132,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(courses.router)
     app.include_router(documents.router)
+    app.include_router(sources.router)
     app.include_router(questions.router)
     # Paralel geliştirme kirişi: aşağıdaki üç router'ın MODÜLLERİ henüz boş, ama
     # kaydı önden yapıldı. Beş oturum kendi ucunu eklerken bu dosyaya dokunmaz;

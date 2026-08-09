@@ -6,6 +6,7 @@
  * gelir, model tarafından yeniden yazılmaz.
  */
 
+import Link from "next/link";
 import { ABSTENTION_LABEL, type AbstentionStatus } from "@/lib/chat";
 
 export interface SourceInfo {
@@ -15,8 +16,8 @@ export interface SourceInfo {
   quote: string;
 }
 
-export function SourceCard({ source }: { source: SourceInfo }) {
-  return (
+export function SourceCard({ source, href }: { source: SourceInfo; href?: string }) {
+  const card = (
     <div className="rounded-lg border border-border bg-bg">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
         <span className="truncate font-mono text-xs text-fg">{source.fileName}</span>
@@ -34,6 +35,16 @@ export function SourceCard({ source }: { source: SourceInfo }) {
         &ldquo;{source.quote}&rdquo;
       </blockquote>
     </div>
+  );
+  if (!href) return card;
+  return (
+    <Link
+      href={href}
+      aria-label={`${source.fileName}, ${source.location} kaynak bağlamını aç`}
+      className="block rounded-lg transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    >
+      {card}
+    </Link>
   );
 }
 
