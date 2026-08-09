@@ -36,6 +36,7 @@ from app.contracts import (
     RetrievedChunk,
     SocraticStage,
 )
+from app.core import text_tr
 from app.schemas.chat import snippet_of
 
 #: Filtrenin uygulandığı modlar. Tek yerde durur ki "sınavda da geçerli miydi?"
@@ -51,15 +52,31 @@ _TR_UPPER = str.maketrans("iı", "İI")
 
 
 def _tr_variants(word: str) -> list[str]:
-    """Bir sözcüğün küçük/Başlık/BÜYÜK yazımları.
+    """Bir sözcüğün küçük/Başlık/BÜYÜK ve AKSANSIZ yazımları.
 
     `re.IGNORECASE` Türkçede güvenilmez: 'İ'.lower() nokta birleştiricili iki
     kod noktasına çözülür ve 'i' ile eşleşmez. Varyantları açıkça üretmek,
     "Çözüm:" yazan bir sızıntının büyük harfli olduğu için kaçmasını engeller.
+
+    Aksansız yazımlar 9 Ağustos'ta eklendi. Sebep ölçülebilir bir kaçış yoluydu:
+    modeller Türkçe çıktıda diyakritikleri düşürebiliyor ve "Cozum: ..." yazan bir
+    cevap, "Çözüm:" arayan desenden geçiyordu. Filtre modelin imlasına
+    güvenemez — bir sızıntı, doğru yazılmadığı için sızıntı olmaktan çıkmaz.
+
+    Katlama `core.text_tr` ile yapılır (Anayasa XI): kalıp listesi burada,
+    Türkçe kuralları orada, tek yerde.
     """
     upper = word.translate(_TR_UPPER).upper()
     title = (word[0].translate(_TR_UPPER).upper() + word[1:]) if word else word
-    return sorted({word, title, upper})
+    forms = {word, title, upper}
+    folded = text_tr.fold(word)
+    if folded != word:
+        # Dört ASCII yazım: hepsi gerçek model çıktısında görülebilir. Yalnız
+        # `.title()` eklemek "Dogru sik" gibi cümle başı büyütmelerini kaçırırdı —
+        # ve kaçan tek bir yazım, dedektörü olmayan bir dedektöre çevirir.
+        sentence = folded[0].upper() + folded[1:] if folded else folded
+        forms |= {folded, sentence, folded.title(), folded.upper()}
+    return sorted(forms)
 
 
 def _alt(*words: str) -> str:
@@ -76,6 +93,7 @@ def _alt(*words: str) -> str:
 DETECTOR_CODE_FENCE = "code_fence"
 DETECTOR_INDENTED_CODE = "indented_code"
 DETECTOR_DIRECT_ANSWER = "direct_answer"
+DETECTOR_ANSWER_KEY = "answer_key"
 DETECTOR_PSEUDOCODE = "pseudocode"
 DETECTOR_CODE_SIGNATURE = "code_signature"
 DETECTOR_STEP_BY_STEP = "step_by_step_solution"
@@ -85,6 +103,24 @@ _FENCE = re.compile(r"(?:```|~~~)|<\s*(?:code|pre)\b", re.IGNORECASE)
 _DIRECT_ANSWER = re.compile(
     _alt("cevap", "yanıt", "sonuç", "çözüm") + r"\s*[:=]\s*\S"
     r"|\b(?i:answer|result|solution)\s*[:=]\s*\S"
+)
+
+#: Cevap anahtarı kalıpları. `_DIRECT_ANSWER`'dan ayrı bir dedektör çünkü ayrı
+#: bir sızıntı türü: "cevap: 42" bir sonuç verir, "doğru şık B" bir sınav
+#: sorusunun anahtarını verir. Ölçümde ikisini ayırmak, hangi kalıbın kaç kez
+#: tetiklendiğini raporlayabilmek demek (Anayasa III).
+#:
+#: Desenler bilerek DAR: yalnız iki nokta ya da tek harflik bir seçenek takip
+#: ediyorsa tetiklenir. Geniş bir desen ("doğru cevap" geçen her cümle) meşru bir
+#: yönlendirmeyi de ("doğru cevaba ulaşmak için önce...") bloklar, her turda
+#: yeniden üretim tetikler ve öğrenciyi şablon ipucuna hapseder.
+_ANSWER_KEY = re.compile(
+    _alt("doğru cevap", "doğru şık", "doğru seçenek", "doğru yanıt")
+    + r"\s*(?:[:=]\s*|\b(?:şu|su|şudur|sudur)?\s*)[\"'«]?[A-Ea-e]\b"
+    r"|" + _alt("cevap anahtarı", "çözüm anahtarı", "yanıt anahtarı") + r"\b"
+    r"|\b(?i:answer\s*key)\b"
+    r"|\b(?i:the\s+(?:correct\s+)?answer\s+is)\b"
+    r"|\b(?i:correct\s+option\s+is)\b"
 )
 
 _PSEUDOCODE_PATTERNS = (
@@ -180,6 +216,11 @@ def detect(text: str) -> list[LeakageFinding]:
     if match := _DIRECT_ANSWER.search(text):
         findings.append(
             LeakageFinding(DETECTOR_DIRECT_ANSWER, _excerpt(text, match.start(), match.end()))
+        )
+
+    if match := _ANSWER_KEY.search(text):
+        findings.append(
+            LeakageFinding(DETECTOR_ANSWER_KEY, _excerpt(text, match.start(), match.end()))
         )
 
     for pattern in _PSEUDOCODE_PATTERNS:

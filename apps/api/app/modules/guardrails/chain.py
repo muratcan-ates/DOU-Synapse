@@ -40,7 +40,7 @@ from app.contracts import (
 )
 from app.core.logging import get_logger
 from app.modules.generation.service import USER_TEXT
-from app.modules.guardrails import leakage
+from app.modules.guardrails import leakage, sanitize
 from app.modules.guardrails.citation import (
     BLOCK_REASON_NO_VALID_CITATION,
     CitationGuardrail,
@@ -136,6 +136,18 @@ def screen(
             )
         if verdict.sanitized_text is not None:
             current.text = verdict.sanitized_text
+        if isinstance(guard, SanitizeGuardrail):
+            # Atıf kartı da kullanıcıya GÖSTERİLEN metindir ve 9 Ağustos'a kadar
+            # bu halkayı hiç görmüyordu: cevap metni temizlenirken kaynak kutusu
+            # ders materyalini olduğu gibi taşıyordu. Uygulama burada, çünkü
+            # `GuardrailVerdict` yalnız `sanitized_text` taşıyor (contracts.py bu
+            # şeridin dosyası değil) — gerekçe `sanitize.clean_citation`'da.
+            #
+            # `isinstance` kontrolü bilinçli: zincir daraltılarak sınandığında
+            # (testler tek halka enjekte ediyor) sanitize'ın etkisi de daralmalı,
+            # yoksa mutasyon kanıtı anlamsızlaşır — halkayı devre dışı bıraktığın
+            # hâlde etkisi sürüyorsa neyin neyi koruduğu ölçülemez.
+            current.citations = sanitize.clean_citations(current.citations)
         if verdict.blocked:
             # Bloklanan cevabı sonraki halkalar "düzeltemez"; zincir burada durur.
             return ScreenOutcome(current, verdicts, verdict.reason)
