@@ -29,20 +29,12 @@ from app.core.rate_limit import ConcurrencyGate, SlidingWindowLimiter, reset_rat
 from app.modules.assessment import question_gen
 from tests.conftest import UserFactory
 
-# Soru üretimi ortamını kuran yardımcılar `test_assessment.py`'de yaşıyor ve
-# oradan ithal ediliyor. İkinci bir kopya yazmak (chunk seed'i, sahte MCQ
-# yanıtı) Anayasa XI'in yasakladığı şey olurdu; testler arası ithal bu depoda
-# zaten kurulu bir desen (`test_documents_api` → `test_ingestion`).
-from tests.test_assessment import (
-    DEADLOCK_TEXTS,
-    FakeCompletion,
-    FakeRetriever,
-    _create_course,
-    _mcq_response,
-    create_topic,
-    retrieved,
-    seed_chunks,
-)
+# Genel kurulum `tests/factories.py`'den gelir. Bu dosya yazıldığında yardımcılar
+# hâlâ `test_assessment.py`'deydi ve oradan ithal ediliyordu; o çapraz bağ aynı
+# gün ortak fabrikaya taşındı. Kalan üç ad (korpus, sahte tamamlayıcı, MCQ yanıtı)
+# yalnız iki dosyada geçtiği için taşınmadı — eşik üçtür (Anayasa XI).
+from tests.factories import FakeRetriever, create_course, create_topic, seed_document
+from tests.test_assessment import DEADLOCK_TEXTS, FakeCompletion, _mcq_response, retrieved
 
 
 @pytest.fixture(autouse=True)
@@ -183,19 +175,19 @@ class _BlokeEdenCompletion:
 
 async def _uretim_ortami(
     client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
-) -> tuple[dict[str, str], str, UUID, list[UUID]]:
+) -> tuple[dict[str, str], UUID, UUID, list[UUID]]:
     """Eğitmen + ders + konu + kaynak chunk'lar."""
     ayse_id = await users.create("ayse@dogus.edu.tr")
     ayse = users.auth(ayse_id)
-    course_id = await _create_course(client, ayse, "COME301")
+    course_id = await create_course(client, ayse, "COME301")
     topic_id = await create_topic(client, ayse, course_id, "Deadlock")
-    chunk_ids = await seed_chunks(
-        admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
+    seeded = await seed_document(
+        admin_engine, course_id=course_id, uploaded_by=ayse_id, passages=DEADLOCK_TEXTS
     )
-    return ayse, course_id, topic_id, chunk_ids
+    return ayse, course_id, topic_id, seeded.chunk_ids
 
 
-def _uret(client: AsyncClient, headers: dict[str, str], course_id: str, topic_id: UUID):
+def _uret(client: AsyncClient, headers: dict[str, str], course_id: UUID, topic_id: UUID):
     return client.post(
         f"/courses/{course_id}/questions/generate",
         json={"topic_id": str(topic_id), "question_type": "mcq", "count": 1},
