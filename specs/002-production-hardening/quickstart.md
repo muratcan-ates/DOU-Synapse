@@ -15,8 +15,8 @@ testin neyi kanıtladığını bilmesi ve 002'nin her User Story'sini elle doğr
 > (`docs/team/parallel/20_DEVIR_9_AGUSTOS.md:128-147`).
 
 > **Bu belgede ölçülen sayılar (9 Ağustos 2026, bu ağaçta koşuldu):**
-> `cd apps/api && uv run pytest -q` → **677 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir.
-> `cd apps/web && bun test lib/` → **211 pass, 0 fail, 8 dosya.**
+> `cd apps/api && uv run pytest -q` → **724 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 724 -->
+> `cd apps/web && bun test lib/` → **262 pass, 0 fail, 10 dosya.** <!-- docs-check: frontend.tests = 262 --><!-- docs-check: frontend.testFiles = 10 -->
 > Bunların dışındaki her sayı ya bir dosyadan alıntıdır ya da **KOŞULMADI** yazar
 > (Anayasa III).
 
@@ -126,12 +126,12 @@ gördüğünüz artış budur.
 
 ```bash
 cd apps/api
-uv run pytest -q        # 677 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)
+uv run pytest -q        # 724 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 724
 uv run mypy app
 uv run ruff check . && uv run ruff format --check .
 
 cd ../web
-bun test lib/           # 211 pass, ~0,2 sn
+bun test lib/           # 262 pass, ~0,2 sn   # docs-check: frontend.tests = 262
 bun run typecheck
 ```
 
@@ -522,8 +522,8 @@ grep -rn "15 tablo\|19 tablo\|20 tablo" README.md docs/ specs/
 ```
 
 Bu belgeyi yazarken bulunan bir çelişki, yöntemin işlediğinin kanıtıdır:
-`specs/001-course-assistant-mvp/quickstart.md:195` **479 test** diyor; bugün ölçülen
-**664** (`uv run pytest -q`, 75,48 sn). Aynı dosya satır 86 ve 120'de RLS testi için
+`specs/001-course-assistant-mvp/quickstart.md:195` **479 test** diyor; 9 Ağustos'ta ölçülen
+**664** (`uv run pytest -q`, 75,48 sn). Aynı dosya satır 86 ve 120'de RLS testi için <!-- docs-check: tarihsel 664 · 2026-08-09 -->
 "8 PASS" diyor; `supabase/tests/rls_isolation.sql` bugün **26 farklı iddia adı** taşıyor.
 İkisi de FR-180/FR-181 ihlalidir ve 002'nin 5. sıradaki işidir.
 
@@ -592,8 +592,8 @@ issuer adı, event loop ölçümü, ısıtma. Bunları "anahtar gelince" diye er
 Anayasa VIII: davranış **gerçek ortamda** gözlenmeden bitti denmez; bu şeritte gerçek
 ortam **tarayıcı + bu ağacın API'si**, `curl` değil. Her User Story için:
 
-- [ ] `uv run pytest -q` yeşil ve **sayı bu belgeye yazıldı** (US1 sonrası: 677)
-- [ ] `bun test lib/` yeşil (bugün: 211)
+- [ ] `uv run pytest -q` yeşil ve **sayı bu belgeye yazıldı** (US1 sonrası, 9 Ağustos: 677) <!-- docs-check: tarihsel 677 · 2026-08-09 -->
+- [ ] `bun test lib/` yeşil (9 Ağustos: 211) <!-- docs-check: tarihsel 211 · 2026-08-09 -->
 - [ ] `uv run mypy app` · `ruff check` · `ruff format --check` temiz
 - [ ] Yeni uç eklendiyse OpenAPI **yeniden export edildi** (elle düzenlenmez —
       `20_DEVIR_9_AGUSTOS.md:153-155`) ve yol sayısı güncellendi

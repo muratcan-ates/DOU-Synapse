@@ -190,6 +190,38 @@ jobs:
       - run: node scripts/contrast.mjs
       - run: bun run build
 
+  docs:
+    name: Belgeler — canlı sayı kapısı
+    runs-on: ubuntu-latest
+    # Kendi işi, çünkü kapı HER İKİ araç zincirini birden ister: backend sayısı
+    # `pytest --collect-only`den, frontend ve E2E sayıları `bun`dan gelir. `api` ya da
+    # `web` işine iliştirilseydi kapı yalnız yarısını ölçebilir, kalanı için sabit sayıya
+    # düşerdi — kapının varlık sebebi tam olarak o sabit sayıdır.
+    #
+    # Veritabanı YOK: `--collect-only` test toplar, koşturmaz; `playwright --list`
+    # yapılandırmayı okur, sunucu ayağa kaldırmaz. Kapı saniyeler sürer ve `api`
+    # işinin yavaş geri bildirimini beklemez.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: oven-sh/setup-bun@v2
+
+      - name: API bağımlılıkları
+        working-directory: apps/api
+        run: |
+          uv venv --python 3.12
+          uv pip install -e ".[dev]"
+
+      - name: Web bağımlılıkları
+        working-directory: apps/web
+        run: bun install --frozen-lockfile
+
+      - name: Belgelerdeki canlı sayılar ölçümle uyuşuyor mu
+        run: node scripts/docs_check.mjs
+
   e2e:
     name: Uçtan uca — gerçek API + tarayıcı
     runs-on: ubuntu-latest
