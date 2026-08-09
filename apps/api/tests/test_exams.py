@@ -602,6 +602,64 @@ class TestExamFinish:
         assert result["why_wrong"]["file_name"] == "isletim-sistemleri.pdf"
         assert result["solution"]["answer_key"] == "C"
 
+    async def test_neden_yanlis_alintisi_secilen_celdiriciye_odaklanir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Aynı kaynak, farklı çeldirici → farklı cümle.
+
+        Alıntı chunk'ın başından kesilseydi iki öğrenci de aynı metni görürdü ve
+        "neden yanlış" hiçbir şey açıklamazdı.
+        """
+        instructor_id = await users.create("ayse@dogus.edu.tr")
+        instructor = users.auth(instructor_id)
+        student_id = await users.create("burak@dogus.edu.tr")
+        student = users.auth(student_id)
+        course_id = await _create_course(client, instructor, "COME301")
+        await enroll(client, instructor, course_id, "burak@dogus.edu.tr")
+        topic_id = await create_topic(client, instructor, course_id, "Deadlock")
+        chunk_ids = await seed_chunks(
+            admin_engine,
+            course_id=UUID(course_id),
+            uploaded_by=instructor_id,
+            texts=[
+                "Karşılıklı dışlama, kaynağın aynı anda tek süreç tarafından "
+                "kullanılabilmesidir. Tut ve bekle, elindeki kaynağı bırakmadan "
+                "yenisini istemektir. Döngüsel bekleme ise süreçlerin halka "
+                "oluşturmasıdır."
+            ],
+        )
+        payload = mcq_payload(chunk_ids)
+        payload["distractor_sources"] = {key: str(chunk_ids[0]) for key in ("A", "B", "D")}
+        question_id = await seed_question(
+            admin_engine,
+            course_id=UUID(course_id),
+            topic_id=topic_id,
+            source_chunk_id=chunk_ids[0],
+            payload=payload,
+            status="approved",
+            reviewed_by=instructor_id,
+        )
+
+        snippets = {}
+        for chosen in ("A", "D"):
+            started = await client.post(
+                f"/courses/{course_id}/exams", json={"mode": "exam"}, headers=student
+            )
+            session_id = started.json()["id"]
+            await client.post(
+                f"/courses/{course_id}/exams/{session_id}/answers",
+                json={"question_id": str(question_id), "given": chosen},
+                headers=student,
+            )
+            finished = await client.post(
+                f"/courses/{course_id}/exams/{session_id}/finish", headers=student
+            )
+            snippets[chosen] = finished.json()["results"][0]["why_wrong"]["snippet"]
+
+        assert "Karşılıklı dışlama" in snippets["A"]
+        assert "Tut ve bekle" in snippets["D"]
+        assert snippets["A"] != snippets["D"]
+
     async def test_hic_cevap_yoksa_puan_gosterilmez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
