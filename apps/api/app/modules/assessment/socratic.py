@@ -54,13 +54,13 @@ böylece kaynaksız ipucu yasağı (FR-013, FR-016) şablonlarda da sağlanır.
 from __future__ import annotations
 
 import re
-import unicodedata
 from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
 from app.contracts import Citation, RetrievedChunk, SocraticStage
+from app.core import text_tr
 
 # Merdivenin sırası. `contracts.SocraticStage` tanımlıdır ama Python enum'ında sıra
 # anlamlı bir API değildir; ilerleme mantığı bu listeye dayanır.
@@ -99,19 +99,17 @@ class AttemptKind(StrEnum):
 # Metin normalizasyonu
 # ---------------------------------------------------------------------------
 
-# Türkçe büyük harfler önce Türkçe kurallarıyla küçültülür: Python'un varsayılan
-# `lower()`'ı "I" → "i" yapar (Türkçede "ı" olmalı) ve "İ" → "i̇" (birleşik nokta)
-# üretir. Anayasa V'in yasakladığı `uppercase` dönüşümü değil ama aynı i/İ tuzağı.
-_TR_LOWER = str.maketrans({"İ": "i", "I": "ı", "Ş": "ş", "Ğ": "ğ", "Ü": "ü", "Ö": "ö", "Ç": "ç"})
-# Eşleştirme ASCII üzerinde yapılır: öğrenci "sadece söyle" de yazabilir "sadece soyle"
-# de. Kalıpları iki kez yazmak yerine metin tek biçime indirgenir.
-_TR_ASCII = str.maketrans({"ı": "i", "ş": "s", "ğ": "g", "ü": "u", "ö": "o", "ç": "c"})
-
 
 def normalize(text: str) -> str:
-    """Eşleştirme için metni tek biçime indirger (kullanıcıya dönen metinde KULLANILMAZ)."""
-    folded = unicodedata.normalize("NFC", text).translate(_TR_LOWER).lower()
-    return folded.translate(_TR_ASCII)
+    """Eşleştirme için metni tek biçime indirger (kullanıcıya dönen metinde KULLANILMAZ).
+
+    Gövde 9 Ağustos'ta `app/core/text_tr.py`'ye taşındı: aynı Türkçe katlama üçüncü
+    kez yazılmak üzereydi (burası, `question_gen.normalize_tr`, ve yeni kapsam
+    sinyali) — Anayasa XI. Ad burada kalıyor çünkü bu modülün kalıpları ASCII'ye
+    indirgenmiş metne göre yazılmış ve okurun kalıpları anlamak için başka dosyaya
+    gitmesi gerekmiyor.
+    """
+    return text_tr.fold(text)
 
 
 # "Sadece söyle" ailesi. Öğrenci ısrar ettiğinde kademe ilerlemez; bu kalıplar o

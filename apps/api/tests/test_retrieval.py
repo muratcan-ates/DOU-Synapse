@@ -26,10 +26,17 @@ from app.contracts import RetrievedChunk, Retriever
 from app.core.config import get_settings
 from app.core.db import rls_session
 from app.modules.ingestion.embedding import get_embedding_provider
-from app.modules.retrieval import HybridRetriever, retrieve
+from app.modules.retrieval import (
+    EvidenceLevel,
+    HybridRetriever,
+    assess_evidence,
+    lexical_coverage,
+    retrieve,
+)
 from app.modules.retrieval.dense import dense_search
 from app.modules.retrieval.fts import fts_search
 from app.modules.retrieval.fusion import max_possible_score, reciprocal_rank_fusion
+from app.modules.retrieval.scope import COVERAGE_CEILING, FTS_CEILING
 from app.modules.retrieval.service import fuse
 from tests.conftest import WORKER_DSN, UserFactory
 
@@ -785,6 +792,203 @@ class TestKanitKapisi:
             )
 
         assert ilgili.best_dense_score > konu_disi.best_dense_score
+
+
+# ---------------------------------------------------------------------------
+# 6b. Kapsam sinyali — reddin SEBEBİ (R4 / Kusur 1-2)
+#
+# Kapının kararı değişmiyor; değişen, kapı kapandığında ne denildiği. Bu yüzden
+# testlerin çoğu `assess_evidence`'a doğrudan bakar: sınanan şey sınıflandırma,
+# retrieval kalitesi değil.
+# ---------------------------------------------------------------------------
+
+
+def metinli_chunk(text: str, *, dense: float = 0.0, fts: float = 0.0) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk_id=uuid4(),
+        document_id=uuid4(),
+        file_name="ders.pdf",
+        page_number=1,
+        slide_number=None,
+        section_title=None,
+        text=text,
+        dense_score=dense,
+        fts_score=fts,
+    )
+
+
+DEADLOCK_PASAJI = (
+    "Deadlock oluşması için dört koşulun aynı anda sağlanması gerekir: karşılıklı "
+    "dışlama, tut ve bekle, kesintiye uğratılamama, döngüsel bekleme."
+)
+
+
+class TestSozlukselKapsama:
+    """`lexical_coverage` — ölçekten bağımsız, Türkçe güvenli örtüşme."""
+
+    def test_sorgu_sozcukleri_parcada_geciyorsa_kapsama_yuksek(self) -> None:
+        kapsama = lexical_coverage(
+            "deadlock için dört koşul nedir", [metinli_chunk(DEADLOCK_PASAJI)]
+        )
+        # "deadlock", "dort", "kosul" geçiyor; "icin"/"nedir" geçmiyor.
+        assert kapsama == pytest.approx(3 / 5)
+
+    def test_alakasiz_sorguda_kapsama_dusuk(self) -> None:
+        kapsama = lexical_coverage(
+            "Kubernetes yatay pod ölçekleme", [metinli_chunk(DEADLOCK_PASAJI)]
+        )
+        assert kapsama == 0.0
+
+    def test_turkce_buyuk_harf_ve_aksan_eslesmeyi_bozmaz(self) -> None:
+        """i/İ ve ı/I tuzağı: `lower()` tek başına bu testi geçemez."""
+        assert lexical_coverage(
+            "İŞLETİM SİSTEMİ", [metinli_chunk("işletim sistemi çekirdeği")]
+        ) == pytest.approx(1.0)
+        assert lexical_coverage(
+            "cozum kosulu", [metinli_chunk("çözüm koşulu aranır")]
+        ) == pytest.approx(1.0)
+
+    def test_kapsama_en_iyi_TEK_parcadan_okunur(self) -> None:
+        """Parçaların BİRLEŞİMİ ölçüldü ve ayırmıyor — gerekçe scope.py'de.
+
+        Sorgunun sözcükleri sekiz ayrı parçaya dağılmışsa bu bir kanıt değildir;
+        ayırt edici olan, birlikte TEK bir pasajda bulunmalarıdır.
+        """
+        dagilmis = [metinli_chunk("deadlock tanımı"), metinli_chunk("dört koşul listesi")]
+        birarada = [metinli_chunk("deadlock dört koşul birlikte anlatılır")]
+        assert lexical_coverage("deadlock dört koşul", dagilmis) == pytest.approx(2 / 3)
+        assert lexical_coverage("deadlock dört koşul", birarada) == pytest.approx(1.0)
+
+    def test_iki_harfli_sozcukler_sayilmaz(self) -> None:
+        """Her metinde bulunan parçacıklar kapsamayı sabit bir tabana oturtur."""
+        assert lexical_coverage("bu ve şu", [metinli_chunk("bu ve şu her yerde")]) == 0.0
+
+    def test_bos_sorgu_sifir_kapsama(self) -> None:
+        assert lexical_coverage("", [metinli_chunk(DEADLOCK_PASAJI)]) == 0.0
+        assert lexical_coverage("deadlock", []) == 0.0
+
+
+class TestKanitSeviyesi:
+    """`assess_evidence` — üç seviyenin sınırları."""
+
+    def test_esik_asilinca_seviye_yeterli(self) -> None:
+        karar = assess_evidence(
+            [metinli_chunk(DEADLOCK_PASAJI, dense=0.85, fts=0.05)],
+            query="deadlock dört koşul",
+            threshold=0.81,
+        )
+        assert karar.level is EvidenceLevel.SUFFICIENT
+        assert karar.abstained is False
+
+    def test_esik_altinda_ama_konu_derste_ise_zayif(self) -> None:
+        """Kapsam içi soru, dayanağı zayıf olduğunda 'kapsam dışı' DENMEZ."""
+        karar = assess_evidence(
+            [metinli_chunk(DEADLOCK_PASAJI, dense=0.70, fts=0.05)],
+            query="deadlock dört koşul",
+            threshold=0.81,
+        )
+        assert karar.level is EvidenceLevel.WEAK
+        assert karar.abstained is True
+
+    def test_esik_altinda_ve_sozcuksel_iz_yoksa_kapsam_disi(self) -> None:
+        karar = assess_evidence(
+            [metinli_chunk(DEADLOCK_PASAJI, dense=0.79, fts=0.004)],
+            query="Kubernetes yatay pod ölçekleme",
+            threshold=0.81,
+        )
+        assert karar.level is EvidenceLevel.OUT_OF_SCOPE
+
+    def test_iki_sinyal_ayrisirsa_zayifa_dusulur(self) -> None:
+        """Fail-closed yönü: 'kapsam dışı' demek 'kaynak bulamadım'dan daha iddialı.
+
+        Sözlüksel kapsama sıfır ama FTS tavanı aşılmış — bir sinyal 'kapsam dışı'
+        diyor, diğeri demiyor. Bu durumda öğrenciye dersi hakkında yanlış bir şey
+        söylemek yerine soruyu yeniden sorması istenir.
+        """
+        karar = assess_evidence(
+            [metinli_chunk(DEADLOCK_PASAJI, dense=0.60, fts=0.9)],
+            query="Kubernetes yatay pod ölçekleme",
+            threshold=0.81,
+        )
+        assert karar.level is EvidenceLevel.WEAK
+
+    def test_hic_parca_yoksa_kapsam_disi_denmez(self) -> None:
+        """Materyalsiz ders sistemin eksiğidir, öğrencinin sorusunun değil."""
+        karar = assess_evidence([], query="deadlock nedir", threshold=0.81)
+        assert karar.level is EvidenceLevel.WEAK
+        assert karar.best_dense_score == 0.0
+
+    def test_karar_gerekcesini_tasir(self) -> None:
+        karar = assess_evidence(
+            [metinli_chunk(DEADLOCK_PASAJI, dense=0.79, fts=0.004)],
+            query="Kubernetes ölçekleme",
+            threshold=0.81,
+        )
+        assert karar.best_dense_score == pytest.approx(0.79)
+        assert karar.best_fts_score == pytest.approx(0.004)
+        assert karar.lexical_coverage == 0.0
+        assert karar.threshold == pytest.approx(0.81)
+
+    def test_esikler_kalibrasyonda_olculen_ayrisma_araliginda(self) -> None:
+        """Dondurulmuş sayıların regresyon koruması.
+
+        Kalibrasyon setinde (n=15, `scope.py` docstring'i) ölçülen ayrışma:
+        FTS  → kapsam dışı max 0.0171, cevaplanabilir min 0.0289
+        kaps → kapsam dışı max 0.2000, cevaplanabilir min 0.3333
+
+        Bir eşik bu aralığın DIŞINA çıkarsa kalibrasyon geçersizdir; bu test o
+        değişikliği sessiz bırakmaz.
+        """
+        assert 0.0171 < FTS_CEILING < 0.0289
+        assert 0.2000 < COVERAGE_CEILING < 0.3333
+
+    def test_kapsam_esikleri_disaridan_verilebilir(self) -> None:
+        """R2'nin daha büyük bir kalibrasyon setinde tarama yapabilmesi için."""
+        parcalar = [metinli_chunk(DEADLOCK_PASAJI, dense=0.70, fts=0.05)]
+        gevsek = assess_evidence(
+            parcalar,
+            query="Kubernetes ölçekleme",
+            threshold=0.81,
+            fts_ceiling=0.10,
+            coverage_ceiling=0.50,
+        )
+        assert gevsek.level is EvidenceLevel.OUT_OF_SCOPE
+
+
+class TestKapsamSeviyesiGercekHatta:
+    async def test_konu_disi_sorgu_kapsam_disi_isaretlenir(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        """Uçtan uca değil ama gerçek indeks üzerinde: kapı + sınıflandırma birlikte."""
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        ders = await create_course(client, ayse, "COME301")
+        await seed_document(
+            worker_engine,
+            course_id=ders,
+            uploaded_by=ayse_id,
+            file_name="a.md",
+            passages=DEADLOCK_TR,
+        )
+        # Eşik 1.0: hiçbir sorgu kapıyı geçemez, yani her ikisi de abstain eder ve
+        # ayrımı yapan tek şey kapsam sinyali olur.
+        ayarlar = get_settings().model_copy(update={"evidence_threshold": 1.0})
+
+        async with rls_session(ayse_id) as session:
+            konu_disi = await retrieve(
+                session,
+                course_id=ders,
+                query="Kubernetes yatay pod ölçekleme yapılandırması",
+                settings=ayarlar,
+            )
+            ilgili = await retrieve(
+                session, course_id=ders, query="deadlock dört koşul", settings=ayarlar
+            )
+
+        assert konu_disi.abstained and ilgili.abstained
+        assert konu_disi.level is EvidenceLevel.OUT_OF_SCOPE
+        assert ilgili.level is EvidenceLevel.WEAK
+        assert ilgili.lexical_coverage > konu_disi.lexical_coverage
 
 
 # ---------------------------------------------------------------------------

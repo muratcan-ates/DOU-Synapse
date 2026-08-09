@@ -31,10 +31,19 @@ Hattaki üç skorun yalnız biri mutlak ölçeklidir:
 
 Bu yüzden kapı **en iyi parçanın `dense_score`'una** bakar.
 
-**Eşik kalibre EDİLMEMİŞTİR** (`config.evidence_threshold = 0.35`, T043). Bu kod eşiği
-seçmez, yalnızca uygular. Ama uygulanacak yeri seçerken dağılım ölçüldü ve çıkan tablo
-T043'e devredilmesi gereken bir bulgu — 8 konuyla ilgili + 4 konu dışı sorgu, gerçek
-materyalin 80 pasajı üzerinde, en iyi parçanın kosinüs benzerliği::
+**Eşik 9 Ağustos'ta kalibre edildi:** `config.evidence_threshold = 0.81`
+(`evaluation/calibration.md`, T043). Bu kod eşiği hâlâ SEÇMEZ, yalnızca uygular —
+değer çağırandan (`Settings`) gelir.
+
+Kalibrasyonun kendi holdout doğrulaması bu eşiğin **hedefi tutturmadığını** gösterdi
+(kapsam dışı doğru ret %80, hedef %90) ve sebebi eşiğin değeri değil, **sinyalin
+kendisidir**: `best_dense_score` elde bulunan üç sinyalin en dar ayrımlısıdır. Kapı
+artık tek başına bu sayıya bakmıyor — reddin SEBEBİ (`scope.EvidenceLevel`) ikinci ve
+üçüncü sinyalden çıkıyor; ölçüm ve gerekçe `scope.py` modül docstring'inde.
+
+Aşağıdaki tarihsel ölçüm, eşiğin uygulanacağı yer seçilirken alınmıştı ve `0.35`
+varsayılanının neden atıl olduğunu gösterdiği için duruyor — 8 konuyla ilgili + 4 konu
+dışı sorgu, gerçek materyalin 80 pasajı üzerinde, en iyi parçanın kosinüs benzerliği::
 
     sağlayıcı            ilgili sorgular   konu dışı sorgular   ayrım    0.35 ne yapar
     multilingual-e5      0.834 - 0.888     0.690 - 0.782        +0.051   hiç kapanmaz
@@ -65,15 +74,16 @@ Aday bir alternatif sinyal de ölçüldü: en iyi parçanın skoru eksi korpusun
 kosinüste kalındı.
 
 n=24 bir **yön göstergesidir, kalibrasyon değildir**; kalibrasyon ve holdout setleri
-ayrılmadan bu sayı rapora giremez (ARCHITECTURE.md §7). `config.py` ve kalibrasyon bu
-şeridin dosyaları değil — bulgu gruba ve T043'e bırakıldı, varsayılan değere
-dokunulmadı. Bugün buradan çıkan tek iddia şudur: kapı **belirlenimcidir ve kapalı
-tarafa düşer** — seçilen sayının doğruluğu iddia edilmiyor.
+ayrılmadan bu sayı rapora giremez (ARCHITECTURE.md §7). O ayrım T043'te yapıldı ve
+`evaluation/calibration.md` bugün geçerli kaynaktır; yukarısı yalnız tarihçedir.
 
-`candidate_count` çağırana bırakılmış bir ayrımdır: sıfırsa ders bu konuyu hiç
-kapsamıyor olabilir (`out_of_scope`), sıfır değilken abstain edildiyse kanıt zayıf
-demektir (`insufficient_context`). Bu eşleme cevap katmanının kararıdır; retrieval
-ikisini ayırt edecek anlamsal bilgiye sahip değildir (contracts.AnswerStatus).
+`candidate_count` çağırana bırakılmış bir ayrım DEĞİLDİR artık. Öyle bırakılmıştı ve
+sonuç, hiçbir çağıranın ayrımı yapmaması oldu: kapsam dışı sorular da
+`insufficient_context` dönüyordu ve SC-005 yapısal olarak %0 ölçülüyordu (Şerit 5
+bulgusu). Ayrım şimdi `scope.assess_evidence` içinde, tek yerde ve ölçülmüş bir
+sinyalle yapılıyor; sonucu `RetrievalResult.level` taşır. Retrieval'ın "ikisini ayırt
+edecek anlamsal bilgisi yok" gerekçesi de yanlıştı — sözlüksel örtüşme tam olarak o
+bilgidir ve retrieval katmanının elindedir.
 """
 
 from __future__ import annotations
@@ -89,6 +99,7 @@ from app.core.logging import get_logger
 from app.modules.retrieval.dense import dense_search
 from app.modules.retrieval.fts import fts_search
 from app.modules.retrieval.fusion import reciprocal_rank_fusion
+from app.modules.retrieval.scope import EvidenceLevel, assess_evidence
 
 logger = get_logger("app.retrieval")
 
@@ -100,6 +111,12 @@ class RetrievalResult:
     `abstained` ise `chunks` boştur. Kararın gerekçesi (`best_dense_score`,
     `threshold`, `candidate_count`) taşınır; aksi hâlde "neden cevap vermedi"
     sorusu ancak sorguyu elle tekrarlayarak yanıtlanabilirdi.
+
+    `level` reddin SEBEBİNİ ayırır (`scope.EvidenceLevel`): kapsam dışı bir soru
+    ile kapsam içi ama dayanağı zayıf bir soru aynı `abstained=True` değerini
+    üretir, oysa kullanıcıya farklı şey söylenmeli ve SC-005 yalnız birincisini
+    sayar. `abstained` alanı geriye dönük uyumluluk için duruyor ve `level`'dan
+    türetilebilir; iki alan asla ayrışamaz çünkü ikisi de tek bir karardan çıkar.
     """
 
     chunks: list[RetrievedChunk]
@@ -107,6 +124,9 @@ class RetrievalResult:
     best_dense_score: float
     threshold: float
     candidate_count: int
+    level: EvidenceLevel = EvidenceLevel.SUFFICIENT
+    best_fts_score: float = 0.0
+    lexical_coverage: float = 0.0
 
 
 class HybridRetriever:
@@ -203,9 +223,8 @@ async def retrieve(
     retriever = HybridRetriever(session, settings)
     chunks = await retriever.search(course_id=course_id, query=query, limit=top_k)
 
-    best_dense = max((chunk.dense_score for chunk in chunks), default=0.0)
-    threshold = settings.evidence_threshold
-    abstained = best_dense < threshold
+    verdict = assess_evidence(chunks, query=query, threshold=settings.evidence_threshold)
+    abstained = verdict.abstained
 
     if abstained:
         logger.info(
@@ -214,8 +233,14 @@ async def retrieve(
                 "context": {
                     "course_id": str(course_id),
                     "candidate_count": len(chunks),
-                    "best_dense_score": round(best_dense, 4),
-                    "threshold": threshold,
+                    "best_dense_score": round(verdict.best_dense_score, 4),
+                    "threshold": verdict.threshold,
+                    # Reddin sebebi loga da yazılır: "hiç cevaplamıyor" şikâyeti
+                    # geldiğinde kapsam dışı sorularla zayıf dayanağı ayırmak
+                    # sorguyu elle tekrarlamadan mümkün olmalı.
+                    "level": verdict.level.value,
+                    "best_fts_score": round(verdict.best_fts_score, 4),
+                    "lexical_coverage": round(verdict.lexical_coverage, 4),
                 }
             },
         )
@@ -223,9 +248,12 @@ async def retrieve(
     return RetrievalResult(
         chunks=[] if abstained else chunks,
         abstained=abstained,
-        best_dense_score=best_dense,
-        threshold=threshold,
+        best_dense_score=verdict.best_dense_score,
+        threshold=verdict.threshold,
         candidate_count=len(chunks),
+        level=verdict.level,
+        best_fts_score=verdict.best_fts_score,
+        lexical_coverage=verdict.lexical_coverage,
     )
 
 
