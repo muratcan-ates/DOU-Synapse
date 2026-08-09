@@ -44,6 +44,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import insert as sa_insert
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -531,8 +532,19 @@ async def post_chat(
     assistant_message = await _append_messages(session, context, chat_session, question, answer)
 
     latency_ms = int((time.perf_counter() - started) * 1000)
-    session.add(
-        RequestLog(
+    # RETURNING'siz Core INSERT — `.inline()` bunu zorlar.
+    #
+    # `request_logs` istemciye kapalıdır: SELECT politikası bilinçli olarak yoktur.
+    # Hem ORM `session.add()` hem de düz Core insert, birincil anahtarı geri okumak
+    # için örtük `INSERT ... RETURNING` üretir; RETURNING ise RLS altında SELECT
+    # politikası ister. psql'de doğrulandı: RETURNING'li ekleme "new row violates
+    # row-level security policy" ile düşer, RETURNING'siz ekleme geçer. Uygulamanın
+    # bu satırı geri okumaya ihtiyacı yok, dolayısıyla doğru düzeltme politikayı
+    # gevşetmek değil RETURNING'i bırakmaktır.
+    await session.execute(
+        sa_insert(RequestLog)
+        .inline()
+        .values(
             course_id=context.course_id,
             user_id=context.user_id,
             route="POST /courses/{course_id}/chat",
@@ -584,7 +596,8 @@ async def list_messages(
     result = await session.execute(
         select(ChatMessage)
         .where(ChatMessage.session_id == session_id)
-        .order_by(ChatMessage.created_at, ChatMessage.id)
+        # created_at turlar arasını, seq tur içini sıralar — bkz. models/chat.py.
+        .order_by(ChatMessage.created_at, ChatMessage.seq)
     )
     return [
         ChatMessageOut(
@@ -766,6 +779,7 @@ async def _append_messages(
             citations=[],
             status=None,
             socratic_stage=None,
+            seq=0,
         )
     )
     assistant = ChatMessage(
@@ -776,6 +790,7 @@ async def _append_messages(
         citations=[_citation_to_json(c) for c in answer.citations],
         status=answer.status,
         socratic_stage=answer.socratic_stage,
+        seq=1,
     )
     session.add(assistant)
     await session.flush()

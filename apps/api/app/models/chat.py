@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Integer, Text, func
+from sqlalchemy import TIMESTAMP, Boolean, Integer, SmallInteger, Text, func
 from sqlalchemy import ForeignKey as FK
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -69,6 +69,9 @@ class ChatMessage(Base):
     socratic_stage: Mapped[SocraticStage | None] = mapped_column(
         pg_enum(SocraticStage, "socratic_stage")
     )
+    # Tur içi sıra (kullanıcı 0, asistan 1). Turlar arası sıra created_at'tedir;
+    # tek başına yetmez çünkü now() işlem zaman damgasıdır. Bkz. 0003_chat.sql.
+    seq: Mapped[int] = mapped_column(SmallInteger, default=0)
     created_at: Mapped[created_at]
 
 

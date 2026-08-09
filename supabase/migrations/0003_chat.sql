@@ -80,13 +80,21 @@ CREATE TABLE chat_messages (
     -- durum aynı sütunda ama ayrı değerlerle tutulur, birleştirilmez.
     status         answer_status,
     socratic_stage socratic_stage,
+    -- Aynı TUR içindeki sıra: kullanıcı mesajı 0, asistan cevabı 1.
+    --
+    -- Turlar arası sıralama created_at'e düşer ama tur İÇİ sıralamaya yetmez:
+    -- now() işlem zaman damgasıdır ve bir turun iki mesajı aynı işlemde yazıldığı
+    -- için birebir aynı created_at'i taşır. Bu sütun olmadan sıralama birincil
+    -- anahtara, yani rastgele bir UUID'ye kalırdı ve sohbet geçmişi kimi zaman
+    -- cevabı sorudan önce gösterirdi (testle yakalandı).
+    seq            smallint NOT NULL DEFAULT 0,
     created_at     timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT chat_messages_status_by_role CHECK (
         (role = 'user' AND status IS NULL) OR (role = 'assistant' AND status IS NOT NULL)
     )
 );
 
-CREATE INDEX chat_messages_session_idx ON chat_messages (session_id, created_at);
+CREATE INDEX chat_messages_session_idx ON chat_messages (session_id, created_at, seq);
 CREATE INDEX chat_messages_course_idx ON chat_messages (course_id);
 
 -- ---------------------------------------------------------------------------
@@ -218,6 +226,11 @@ CREATE POLICY answer_cache_instructor_delete ON answer_cache
 -- uygulama rolü için yazma-yalnız davranır. Ölçüm raporları sahip rolle (psql,
 -- evaluation/) okunur. Analitik ekranı satır bazlı erişime ihtiyaç duyarsa eğitmen
 -- kapsamlı bir SELECT politikası 0005'te açılır (Şerit 5) — burada değil.
+--
+-- SONUCU: bu tabloya `INSERT ... RETURNING` yapılamaz. RETURNING, RLS altında SELECT
+-- politikası ister ve yoktur; ekleme "new row violates row-level security policy" ile
+-- düşer (psql ile doğrulandı). Uygulama tarafında ORM `session.add()` yerine
+-- RETURNING üretmeyen Core INSERT kullanılır — bkz. app/api/chat.py.
 CREATE POLICY request_logs_self_insert ON request_logs
     FOR INSERT WITH CHECK (
         user_id = app.current_user_id() AND app.is_member(course_id)
