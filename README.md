@@ -12,7 +12,7 @@ Danışman: Yasemin Karagül · Takım: Muratcan Ateş (frontend + lead) · Eren
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-478_ge%C3%A7ti-brightgreen)
+![Tests](https://img.shields.io/badge/tests-479_ge%C3%A7ti-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/muratcan-ates/DOU-Synapse?style=flat-square)
 
@@ -49,7 +49,7 @@ iş taslakları onaylamak. Onaylanmayan hiçbir soru öğrenciye görünmez.
 | **Nedir** | Ders materyaliyle sınırlı, kaynak zorunlu, Sokratik bir RAG ders ve sınav asistanı |
 | **Kimin için** | Soru hazırlama ve sınıf görünürlüğü yükü taşıyan eğitmen; müfredat dahilinde güvenilir kaynakla çalışmak isteyen öğrenci |
 | **Farkı ne** | Cevap üretmek değil, **doğrulanabilir** cevap üretmek: mekanik atıf doğrulaması, kademeli Sokratik yönlendirme, eğitmen onaylı soru havuzu, iki katmanlı ders izolasyonu |
-| **Kanıtı ne** | 478 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak |
+| **Kanıtı ne** | 479 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak |
 | **Bilerek ne değil** | Üretim sistemi değil; internete açılmaz, kod çalıştırmaz, resmî not vermez — [aşağıda](#yapar--bilerek-yapmaz) |
 
 ## Yapay zekânın üç rolü
@@ -131,7 +131,7 @@ değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
 
 ## Yapılanlar ✅
 
-Hepsi bu depoda çalışır ve testlidir — **478 otomatik test** + CI (ruff, mypy, pytest,
+Hepsi bu depoda çalışır ve testlidir — **479 otomatik test** + CI (ruff, mypy, pytest,
 RLS izolasyon kanıtı):
 
 - **İki katmanlı ders izolasyonu** — uygulama katmanı (istemciden gelen ders kimliği
@@ -216,7 +216,7 @@ cd apps/api
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 cp ../../.env.example .env        # varsayılanlar yerel için yeterli
-uv run pytest -q                  # 478 test yeşil olmalı (~100 sn)
+uv run pytest -q                  # 479 test yeşil olmalı (~50-100 sn)
 ```
 
 **4. Servisleri başlat** (üç ayrı terminal)

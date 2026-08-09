@@ -5,7 +5,7 @@ kaldırır: PostgreSQL 16 + pgvector, şema + seed, FastAPI backend'i, testler v
 Next.js frontend'i. Tüm komutlar repo kökünden (`~/code/DOU-Synapse`) verilmiştir.
 
 > **Son doğrulama: 9 Ağustos 2026.** Adım 2'deki migration döngüsü boş bir veritabanında
-> baştan koşuldu (**15 tablo**, hatasız), adım 3-4 aynı gün tekrarlandı (**478 test
+> baştan koşuldu (**15 tablo**, hatasız), adım 3-4 aynı gün tekrarlandı (**479 test
 > yeşil**), adım 5-6 tarayıcıda gerçek materyalle sınandı.
 >
 > **Bir adımı atlarsanız bile §6.1'i okuyun:** varsayılan ayarlarla sistem ayağa kalkar
@@ -192,7 +192,7 @@ uv run python -m app.worker
 
 ```bash
 cd apps/api
-uv run pytest          # 478 test yeşil olmalı (~100 sn)
+uv run pytest          # 479 test yeşil olmalı (~50-100 sn)
 uv run mypy app        # temiz
 uv run ruff check .
 uv run ruff format --check .

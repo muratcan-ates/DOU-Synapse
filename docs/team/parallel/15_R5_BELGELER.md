@@ -192,7 +192,7 @@ migration'ları sırayla koşturuyor mu, gerçekten kontrol et.
 # R5 ŞERİT RAPORU — 9 Ağustos 2026
 
 Dal: `feat/docs` · Worktree: `~/code/.dou-docs` · Port: 8025
-Rebase tabanı: `9406e6d` · Commit'ler: 5 · Backend testleri: **478 yeşil** · mypy temiz · ruff temiz
+Rebase tabanı: `9406e6d` · Commit'ler: 5 · Backend testleri: **479 yeşil** (rebase sonrası) · mypy temiz · ruff temiz
 
 ## 1. Teslim edilenler
 
@@ -276,7 +276,7 @@ brief'im (`15_R5_BELGELER.md`) **lidere** veriyor. İkisi çelişiyor — kimin 
 | Önbellek isabeti | 0,011 sn |
 | İlk materyal yükleme | 19,1 sn · sonrakiler 2,1 – 6,7 sn |
 | `sample_data` ingesti | 8/8 `completed`, **33 chunk** |
-| Backend testleri | **478 geçti** (103 sn) |
+| Backend testleri | **479 geçti** |
 | Migration'lar sıfırdan | 4 dosya, hatasız, **15 tablo** |
 | RLS izolasyon kanıtı (temiz DB) | **8/8 PASS** |
 
