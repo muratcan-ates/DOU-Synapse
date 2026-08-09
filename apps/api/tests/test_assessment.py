@@ -27,6 +27,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.contracts import RetrievedChunk
+from app.core import text_tr
 from app.core.db import rls_session
 from app.models.assessment import QuestionType
 from app.modules.assessment import question_gen
@@ -1094,9 +1095,14 @@ class TestDeterministicGrading:
         assert outcome.why_wrong_chunk_id == source
 
     def test_turkce_normalizasyon_i_harfini_bozmaz(self) -> None:
-        """Anayasa V: `upper()` kullanılmaz; İ/I ayrımı elle eşlenir."""
-        assert question_gen.normalize_tr("İŞLETİM Sistemi") == "işletim sistemi"
-        assert question_gen.normalize_tr("IŞIK") == "ışık"
+        """Anayasa V: `upper()` kullanılmaz; İ/I ayrımı elle eşlenir.
+
+        Kural artık `core.text_tr`'de; kısa cevap puanlaması onu kullanıyor.
+        Bu test o bağın kopmadığını, `test_text_tr.py` ise kuralın kendisini
+        doğrular.
+        """
+        assert text_tr.normalize("İŞLETİM Sistemi") == "işletim sistemi"
+        assert text_tr.normalize("IŞIK") == "ışık"
 
 
 # ---------------------------------------------------------------------------
