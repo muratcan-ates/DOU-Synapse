@@ -534,3 +534,82 @@ class TestLabelAgreement:
     def test_esit_olmayan_uzunluk_reddedilir(self) -> None:
         with pytest.raises(ValueError, match="aynı sayıda"):
             metrics.label_agreement(["a"], ["a", "b"])
+
+
+class TestSessizHataKorumalari:
+    """9 Ağustos'ta ölçüm aracında bulunan iki sessiz hatanın nöbetçileri.
+
+    İkisi de üretim kusuru değildi; ölçüm aracının sessizce yanlış sayı üretmesiydi
+    ve bu daha tehlikelidir — ölçülen sistemin hatası raporda görünür, ölçüm aracının
+    hatası raporu kendisi yazar.
+    """
+
+    def test_veritabani_parmak_izine_girer(self) -> None:
+        """Başka bir veritabanında üretilmiş cevap devam dosyasından sızmamalı.
+
+        Harness bir kez `.env`'deki geliştirme veritabanına bağlandı, her soru sıfır
+        sonuç döndü ve `recall_at_5: 0.0` yazan bir dosya üretildi. Veritabanı adı
+        parmak izinde olmasaydı, düzeltmeden sonraki koşu o boş cevapları devam
+        dosyasından okumaya devam ederdi.
+        """
+        base = {
+            "set": "holdout",
+            "set_version": "2.0",
+            "layer": "retrieval",
+            "mode": "hybrid",
+            "database": "dou_synapse_eval",
+            "embedding_provider": "fastembed",
+            "embedding_model": "e5",
+            "embedding_runtime": {"fastembed": "0.8.0"},
+            "retrieval": {"top_k": 8},
+        }
+        other = {**base, "database": "dou_synapse"}
+        assert evaluate.config_fingerprint(base) != evaluate.config_fingerprint(other)
+
+    def test_embedding_surumu_parmak_izine_girer(self) -> None:
+        """Aynı sağlayıcının iki sürümü farklı vektör uzayı üretebilir.
+
+        fastembed 0.5.1'den sonra e5-large'ı CLS yerine mean pooling ile kuruyor.
+        İki uzayın da adı "fastembed"; sağlayıcı adı tek başına ayırt etmiyor.
+        """
+        base = {
+            "set": "holdout",
+            "set_version": "2.0",
+            "layer": "retrieval",
+            "mode": "hybrid",
+            "database": "dou_synapse_eval",
+            "embedding_provider": "fastembed",
+            "embedding_model": "e5",
+            "embedding_runtime": {"fastembed": "0.8.0"},
+            "retrieval": {"top_k": 8},
+        }
+        older = {**base, "embedding_runtime": {"fastembed": "0.5.1"}}
+        assert evaluate.config_fingerprint(base) != evaluate.config_fingerprint(older)
+
+    def test_veritabani_adi_parolayi_tasimaz(self) -> None:
+        """Meta veri rapora giriyor; DSN'in parolası oraya sızmamalı."""
+        dsn = "postgresql+psycopg://dou_app:gizli_parola@localhost:5432/dou_synapse_eval"
+        assert evaluate._database_name(dsn) == "dou_synapse_eval"
+        assert "gizli_parola" not in evaluate._database_name(dsn)
+
+    def test_embedding_runtime_surum_dondurur(self) -> None:
+        """Sürüm okunamıyorsa sessizce boş geçilmez, 'kurulu değil' yazılır."""
+        runtime = evaluate.embedding_runtime("fastembed")
+        assert "fastembed" in runtime
+        assert runtime["fastembed"]
+
+        other = evaluate.embedding_runtime("bge-m3-onnx")
+        assert set(other) == {"onnxruntime", "tokenizers"}
+
+    def test_sohbet_ucu_question_alani_bekler(self) -> None:
+        """`ChatRequest` `question` ister ve `extra="forbid"` taşır.
+
+        Harness bir süre `message` gönderdi; her istek 422 alırdı, yani uçtan uca
+        katman bu sözleşmeye karşı hiç koşamazdı. Sözleşme testle sabitleniyor:
+        alan adı değişirse burası kırılır, koşu sırasında değil.
+        """
+        from app.schemas.chat import ChatRequest
+
+        assert "question" in ChatRequest.model_fields
+        assert "message" not in ChatRequest.model_fields
+        assert ChatRequest.model_config.get("extra") == "forbid"
