@@ -48,7 +48,10 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_credentials=True,
+        # Kimlik `Authorization` başlığıyla taşınıyor, çerezle değil; bu bayrak
+        # tarayıcıya çerez/kimlik bilgisi göndermesini söyler ve karşılığında
+        # `allow_origins` joker olamaz. Kullanılmayan bir gevşetme (R1 bildirdi).
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )

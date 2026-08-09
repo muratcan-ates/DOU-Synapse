@@ -54,7 +54,7 @@ different versions" hatası veriyor. `node_modules/.bin/playwright`.
 | `next build` | temiz |
 | Kontrast kapısı | temiz, CI'da koşuyor |
 | OpenAPI | kodla birebir, 24 yol |
-| Şema | `0001` `0003` `0004` `0005` — 19 tablo |
+| Şema | `0001` `0003` `0004` `0005` — 15 tablo |
 
 **Dört ekranın dördü de gerçek uçlara bağlı** ve tarayıcıda doğrulandı:
 sohbet (T022), sınav provası (T034), soru havuzu (T035), ilerleme (T040).

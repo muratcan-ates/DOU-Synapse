@@ -17,7 +17,7 @@
 | mypy | temiz, 59 dosya |
 | ruff | temiz (check + format) |
 | OpenAPI | kodla birebir, **24 yol** |
-| Şema | `0001`, `0003`, `0004`, `0005` — 19 tablo |
+| Şema | `0001`–`0006` — **15 tablo** (`0002` ve `0006` 9 Ağu akşamı indi) |
 | Frontend birim | 25 · uçtan uca 9 |
 
 Çalışan hat: yükleme → parçalama → embedding → hibrit arama (RRF) → kanıt eşiği
@@ -130,8 +130,13 @@ sohbet ekranı 500 veriyordu; lider elle uyguladı. Kendi worktree'nde bir şey
 çalışmıyorsa önce şemayı doğrula:
 
 ```bash
-psql -d dou_synapse -c "\dt"    # 19 tablo görmelisin
+psql -d dou_synapse -c "\dt"    # 15 tablo görmelisin
 ```
+
+**Düzeltme (lider, 9 Ağu 20:00):** bu sayı bir süre **19** yazıyordu ve yanlıştı.
+R5 ile R3 bağımsız olarak bildirdi; sıfırdan kurulan bir veritabanında da,
+paylaşılan `dou_synapse`'te de **15**. Ölçmeden yazılmış bir sayının maliyeti
+tam olarak buydu: iki şerit sağlam bir veritabanını bozuk sanıp zaman harcadı.
 
 ### PAYLAŞILAN DEV VERİTABANI ARTIK **fastembed (E5)** UZAYINDA
 

@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     # Supabase JWT'lerini doğrulamak için proje JWT secret'ı (HS256).
     supabase_jwt_secret: str | None = None
     jwt_audience: str = "authenticated"
+    #: Beklenen `iss` claim'i. Tanımlanmazsa issuer DOĞRULANMAZ ve o zaman başka bir
+    #: Supabase projesinin token'ı da kabul edilir — `security.py` bu alanı
+    #: `getattr` ile arıyordu (R1, alan burada yoktu). Üretimde MUTLAKA verilmeli;
+    #: değeri Supabase proje URL'sinin `/auth/v1` eki.
+    jwt_issuer: str | None = None
     jwt_algorithms: list[str] = ["HS256"]
 
     # Çevrimdışı demo ve yerel geliştirme için kimlik doğrulama bypass'ı.
@@ -165,6 +170,11 @@ class Settings(BaseSettings):
     #: (fail-closed): sırsız açık bir drain ucu, dışarıdan iş kuyruğu tetiklemeye
     #: izin verirdi.
     worker_drain_secret: str | None = None
+    #: Ayrı bir worker servisinin drain ucu. Tanımlıysa yükleme tetiği oraya HTTP
+    #: çağrısı yapar; tanımsızsa süreç içi `drain()` koşar (bulutta ayrı servis,
+    #: yerelde tek süreç). R3 bunu ortamdan okuyordu çünkü bu dosya o faz boyunca
+    #: kapalıydı; `internal.py` artık ayarı buradan alabilir.
+    worker_drain_url: str | None = None
 
     # --- LLM (Faz B) --------------------------------------------------------
     #: Sağlayıcı sırası: ilki denenir, hata/kota durumunda sıradakine düşülür.
