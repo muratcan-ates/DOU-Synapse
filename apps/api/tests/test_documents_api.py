@@ -7,24 +7,18 @@ chunk'lar sayfa numarasıyla kaydedilir → öğrenci belgeyi görür ama başka
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import UserFactory
-from tests.test_ingestion import make_pdf, make_pptx
-
-
-async def _course(client: AsyncClient, headers: dict[str, str], code: str) -> str:
-    response = await client.post(
-        "/courses", json={"code": code, "title": f"{code} Dersi"}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["id"]
+from tests.factories import create_course, enroll_student, make_pdf, make_pptx
 
 
 async def _upload(
-    client: AsyncClient, headers: dict[str, str], course_id: str, name: str, data: bytes
+    client: AsyncClient, headers: dict[str, str], course_id: UUID | str, name: str, data: bytes
 ):
     return await client.post(
         f"/courses/{course_id}/documents",
@@ -36,7 +30,7 @@ async def _upload(
 class TestUpload:
     async def test_pdf_yuklenir_ve_islenir(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         pdf = make_pdf(
             [
@@ -71,7 +65,7 @@ class TestUpload:
         self, client: AsyncClient, users: UserFactory
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pdf = make_pdf(["Birinci sayfadaki konu.", "Ikinci sayfadaki baska konu."])
         document_id = (await _upload(client, ayse, course_id, "d.pdf", pdf)).json()["document"][
             "id"
@@ -92,7 +86,7 @@ class TestUpload:
 
     async def test_pptx_slayt_numarasi_tasir(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pptx = make_pptx([("Deadlock", "Dort kosul"), ("Semafor", "Karsilikli dislama")])
         document_id = (await _upload(client, ayse, course_id, "slayt.pptx", pptx)).json()[
             "document"
@@ -112,7 +106,7 @@ class TestUpload:
         self, client: AsyncClient, users: UserFactory
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pdf = make_pdf(["Ayni icerik"])
 
         assert (await _upload(client, ayse, course_id, "a.pdf", pdf)).status_code == 202
@@ -123,7 +117,7 @@ class TestUpload:
         self, client: AsyncClient, users: UserFactory
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await _upload(client, ayse, course_id, "sahte.pdf", b"MZ\x90\x00bozuk")
 
@@ -135,7 +129,7 @@ class TestUpload:
     ) -> None:
         """Materyal kaldırılınca ondan üretilen içerik aramada kalmamalı."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         document_id = (
             await _upload(client, ayse, course_id, "d.pdf", make_pdf(["Silinecek icerik"]))
         ).json()["document"]["id"]
@@ -166,7 +160,7 @@ class TestUpload:
         """
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = UserFactory.auth(ayse_id)
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         document_id = (
             await _upload(client, ayse, course_id, "d.pdf", make_pdf(["Kaynak icerik"]))
         ).json()["document"]["id"]
@@ -218,12 +212,8 @@ class TestDocumentAccess:
     async def test_ogrenci_belge_yukleyemez(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         response = await _upload(client, users.auth(burak_id), course_id, "x.pdf", make_pdf(["x"]))
 
@@ -234,12 +224,8 @@ class TestDocumentAccess:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
         document_id = (
             await _upload(client, ayse, course_id, "d.pdf", make_pdf(["icerik"]))
         ).json()["document"]["id"]
@@ -259,8 +245,8 @@ class TestDocumentAccess:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         ceren = users.auth(await users.create("ceren@dogus.edu.tr"))
-        course_a = await _course(client, ayse, "COME301")
-        await _course(client, ceren, "COME302")
+        course_a = await create_course(client, ayse, "COME301")
+        await create_course(client, ceren, "COME302")
         await _upload(client, ayse, course_a, "d.pdf", make_pdf(["gizli"]))
 
         response = await client.get(f"/courses/{course_a}/documents", headers=ceren)
@@ -296,7 +282,7 @@ class TestWorkerQueue:
         monkeypatch.setattr(documents_api, "_trigger_worker", tetikleme_yok)
 
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         upload = await _upload(client, ayse, course_id, "d.pdf", make_pdf(["icerik"]))
         document_id = upload.json()["document"]["id"]
 
@@ -368,7 +354,7 @@ class TestYazmaGorunurlugu:
 
         transport = ASGITransport(app=probe)  # type: ignore[arg-type]
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            course_id = await _course(client, ayse, "COME301")
+            course_id = await create_course(client, ayse, "COME301")
             gorulen.clear()
             response = await _upload(
                 client, ayse, course_id, "hafta3.pdf", make_pdf(["Deadlock kosullari."])
@@ -396,7 +382,7 @@ class TestYazmaGorunurlugu:
         gizlerdi.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         upload = await _upload(
             client, ayse, course_id, "tetik.pdf", make_pdf(["Deadlock kosullari."])

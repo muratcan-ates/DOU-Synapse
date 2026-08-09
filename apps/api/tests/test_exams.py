@@ -9,8 +9,12 @@ Zamanı hızlandırmak için `sleep` yok: oturumun `started_at`/`expires_at` sü
 sahip bağlantısıyla geriye alınır. Süre karşılaştırması zaten veritabanı saatine
 göre yapıldığı için bu, gerçekten süre geçmiş bir oturumla aynı durumdur.
 
-Kurulum yardımcıları `test_assessment.py`'den gelir; iki dosyada iki kopya kurulum
-tutulmaz (Anayasa XI).
+Ders/üyelik/konu/belge/soru satırlarını `tests/factories.py` yazar. Soru havuzunun
+KORPUSU (`DEADLOCK_TEXTS`, iki payload üreteci, `ESSAY_PAYLOAD`) ve sahte LLM hâlâ
+`test_assessment.py`'den geliyor: ortak fabrikaya taşımanın eşiği üç dosyadır ve
+bunlar ikide kalıyor (Anayasa XI). Kalan tek çapraz bağ budur ve kasıtlıdır —
+sınav testleri havuzun ürettiği soruların aynısını görmek zorunda; ayrı bir korpus
+yazmak iki dosyanın sessizce ayrışmasına açık kapı bırakırdı.
 """
 
 from __future__ import annotations
@@ -20,7 +24,7 @@ from collections.abc import Callable, Iterator
 from uuid import UUID, uuid4
 
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -29,16 +33,18 @@ from app.core.db import rls_session
 from app.models.assessment import QuestionType
 from app.modules.assessment import question_gen
 from tests.conftest import UserFactory
+from tests.factories import (
+    create_course,
+    create_topic,
+    enroll_student,
+    seed_document,
+    seed_question,
+)
 from tests.test_assessment import (
     DEADLOCK_TEXTS,
     ESSAY_PAYLOAD,
     FakeCompletion,
-    _create_course,
-    create_topic,
-    enroll,
     mcq_payload,
-    seed_chunks,
-    seed_question,
     short_answer_payload,
 )
 
@@ -59,7 +65,14 @@ EXAM_DURATION_SECONDS = 20 * 60  # Settings.exam_duration_minutes varsayılanı
 
 
 class ExamFixture:
-    """Bir ders, bir eğitmen, bir öğrenci ve onaylı bir soru havuzu."""
+    """Bir ders, bir eğitmen, bir öğrenci ve onaylı bir soru havuzu.
+
+    `course_id` `str` KALIYOR, `UUID` değil: `tests/test_exam_lock.py` bu sınıfı
+    içe aktarıyor ve kendi yardımcılarını `str` olarak imzalıyor. Fabrika artık
+    `UUID` döndürdüğü için dönüşüm `build_course`'un içinde yapılıyor — tipi
+    burada değiştirmek, bu turda dokunulmayan bir dosyanın imzalarını yalancı
+    çıkarırdı.
+    """
 
     def __init__(
         self,
@@ -95,12 +108,13 @@ async def build_course(
     instructor_id = await users.create("ayse@dogus.edu.tr")
     instructor = users.auth(instructor_id)
     student_id = await users.create("burak@dogus.edu.tr")
-    course_id = await _create_course(client, instructor, "COME301")
-    await enroll(client, instructor, course_id, "burak@dogus.edu.tr")
+    course_id = await create_course(client, instructor, "COME301")
+    await enroll_student(client, instructor, course_id, "burak@dogus.edu.tr")
     topic_id = await create_topic(client, instructor, course_id, "Deadlock")
-    chunk_ids = await seed_chunks(
-        admin_engine, course_id=UUID(course_id), uploaded_by=instructor_id, texts=DEADLOCK_TEXTS
+    seeded = await seed_document(
+        admin_engine, course_id=course_id, uploaded_by=instructor_id, passages=DEADLOCK_TEXTS
     )
+    chunk_ids = seeded.chunk_ids
 
     question_ids: list[UUID] = []
     for index in range(approved):
@@ -108,7 +122,7 @@ async def build_course(
         question_ids.append(
             await seed_question(
                 admin_engine,
-                course_id=UUID(course_id),
+                course_id=course_id,
                 topic_id=topic_id,
                 source_chunk_id=chunk_ids[index % len(chunk_ids)],
                 payload=short_answer_payload() if use_short else mcq_payload(chunk_ids),
@@ -120,14 +134,14 @@ async def build_course(
     for _ in range(drafts):
         await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
+            course_id=course_id,
             topic_id=topic_id,
             source_chunk_id=chunk_ids[0],
             payload=mcq_payload(chunk_ids),
         )
 
     return ExamFixture(
-        course_id=course_id,
+        course_id=str(course_id),
         instructor=instructor,
         instructor_id=instructor_id,
         student=users.auth(student_id),
@@ -156,6 +170,62 @@ async def rewind(admin_engine: AsyncEngine, session_id: str, *, minutes: int) ->
             ),
             {"m": minutes, "id": UUID(session_id)},
         )
+
+
+# ---------------------------------------------------------------------------
+# Uç sarmalayıcıları — YALNIZ bu dosyaya ait
+#
+# Üçü de ham `Response` döndürür ve HİÇBİR durum kodu iddia etmez. Sebebi
+# testlerin kendisi: aynı üç uca 201 de bekleniyor, 403/404/409 da. İddiayı
+# yardımcıya taşımak reddedilme senaryolarını — sınav bitince cevap kabul
+# edilmemesi, sınav modunda ipucunun kapalı olması — kurulamaz hâle getirirdi.
+#
+# `tests/factories.py`'ye TAŞINMADILAR: bu üç ucu bugün yalnız bu dosya çağırıyor.
+# ---------------------------------------------------------------------------
+
+
+async def answer(
+    client: AsyncClient,
+    fixture: ExamFixture,
+    session_id: str,
+    question_id: UUID | str,
+    given: str,
+    **extra: object,
+) -> Response:
+    """Öğrencinin bir soruya cevabını gönderir.
+
+    `**extra` bugün yalnız `hint_level` taşıyor ve varsayılan olarak GÖNDERİLMEZ:
+    ipucu beyanının yokluğu birçok testte iddianın parçası (sınavda ipucu beyan
+    eden cevap 403 alır, prova modunda puanı kırpılır).
+    """
+    return await client.post(
+        f"/courses/{fixture.course_id}/exams/{session_id}/answers",
+        json={"question_id": str(question_id), "given": given, **extra},
+        headers=fixture.student,
+    )
+
+
+async def finish(client: AsyncClient, fixture: ExamFixture, session_id: str) -> Response:
+    """Oturumu bitirir."""
+    return await client.post(
+        f"/courses/{fixture.course_id}/exams/{session_id}/finish", headers=fixture.student
+    )
+
+
+async def hint(
+    client: AsyncClient,
+    fixture: ExamFixture,
+    session_id: str,
+    question_id: UUID | str,
+    *,
+    level: int,
+) -> Response:
+    """Bir soru için ipucu ister."""
+    return await client.post(
+        f"/courses/{fixture.course_id}/exams/{session_id}/hint",
+        json={"question_id": str(question_id), "hint_level": level},
+        headers=fixture.student,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +321,7 @@ class TestSessionResume:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
         ceren_id = await users.create("ceren@dogus.edu.tr")
-        await enroll(client, fixture.instructor, fixture.course_id, "ceren@dogus.edu.tr")
+        await enroll_student(client, fixture.instructor, fixture.course_id, "ceren@dogus.edu.tr")
 
         response = await client.get(
             f"/courses/{fixture.course_id}/exams/{session_id}", headers=users.auth(ceren_id)
@@ -355,7 +425,7 @@ class TestOturumListesi:
         fixture = await build_course(client, users, admin_engine)
         await start(client, fixture, "exam")
         ceren_id = await users.create("ceren@dogus.edu.tr")
-        await enroll(client, fixture.instructor, fixture.course_id, "ceren@dogus.edu.tr")
+        await enroll_student(client, fixture.instructor, fixture.course_id, "ceren@dogus.edu.tr")
 
         response = await client.get(
             f"/courses/{fixture.course_id}/exams", headers=users.auth(ceren_id)
@@ -388,11 +458,7 @@ class TestAnswerSubmission:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "C"},
-            headers=fixture.student,
-        )
+        response = await answer(client, fixture, session_id, fixture.question_ids[0], "C")
 
         assert response.status_code == 201, response.text
         body = response.json()
@@ -406,18 +472,11 @@ class TestAnswerSubmission:
     ) -> None:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
-        payload = {"question_id": str(fixture.question_ids[0]), "given": "C"}
+        question_id = fixture.question_ids[0]
 
-        first = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json=payload,
-            headers=fixture.student,
-        )
-        second = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={**payload, "given": "A"},
-            headers=fixture.student,
-        )
+        first = await answer(client, fixture, session_id, question_id, "C")
+        # Şık değişiyor: reddin sebebi "aynı cevap" değil "aynı soru" olmalı.
+        second = await answer(client, fixture, session_id, question_id, "A")
 
         assert first.status_code == 201
         assert second.status_code == 409
@@ -430,10 +489,8 @@ class TestAnswerSubmission:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "C", "hint_level": 2},
-            headers=fixture.student,
+        response = await answer(
+            client, fixture, session_id, fixture.question_ids[0], "C", hint_level=2
         )
 
         assert response.status_code == 403
@@ -445,11 +502,7 @@ class TestAnswerSubmission:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(uuid4()), "given": "C"},
-            headers=fixture.student,
-        )
+        response = await answer(client, fixture, session_id, uuid4(), "C")
 
         assert response.status_code == 404
 
@@ -461,11 +514,7 @@ class TestAnswerSubmission:
         session_id = (await start(client, fixture, "exam"))["id"]
         await rewind(admin_engine, session_id, minutes=25)
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "C"},
-            headers=fixture.student,
-        )
+        response = await answer(client, fixture, session_id, fixture.question_ids[0], "C")
 
         assert response.status_code == 409
         assert "süresi doldu" in response.json()["error"]["message"]
@@ -500,11 +549,7 @@ class TestPracticeMode:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "practice"))["id"]
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "D"},
-            headers=fixture.student,
-        )
+        response = await answer(client, fixture, session_id, fixture.question_ids[0], "D")
 
         assert response.status_code == 201, response.text
         body = response.json()
@@ -521,13 +566,7 @@ class TestPracticeMode:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "practice"))["id"]
 
-        body = (
-            await client.post(
-                f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-                json={"question_id": str(fixture.question_ids[0]), "given": "C"},
-                headers=fixture.student,
-            )
-        ).json()
+        body = (await answer(client, fixture, session_id, fixture.question_ids[0], "C")).json()
 
         assert body["is_correct"] is True
         assert body["score"] == 100
@@ -539,16 +578,8 @@ class TestPracticeMode:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "practice"))["id"]
 
-        first = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/hint",
-            json={"question_id": str(fixture.question_ids[0]), "hint_level": 1},
-            headers=fixture.student,
-        )
-        deeper = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/hint",
-            json={"question_id": str(fixture.question_ids[0]), "hint_level": 4},
-            headers=fixture.student,
-        )
+        first = await hint(client, fixture, session_id, fixture.question_ids[0], level=1)
+        deeper = await hint(client, fixture, session_id, fixture.question_ids[0], level=4)
 
         assert first.status_code == 200, first.text
         assert "isletim-sistemleri.pdf" in first.json()["text"]
@@ -563,11 +594,7 @@ class TestPracticeMode:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/hint",
-            json={"question_id": str(fixture.question_ids[0]), "hint_level": 1},
-            headers=fixture.student,
-        )
+        response = await hint(client, fixture, session_id, fixture.question_ids[0], level=1)
 
         assert response.status_code == 403
         assert "ipucu kapalıdır" in response.json()["error"]["message"]
@@ -580,11 +607,7 @@ class TestPracticeMode:
         session_id = (await start(client, fixture, "practice"))["id"]
 
         body = (
-            await client.post(
-                f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-                json={"question_id": str(fixture.question_ids[0]), "given": "Döngüsel Bekleme"},
-                headers=fixture.student,
-            )
+            await answer(client, fixture, session_id, fixture.question_ids[0], "Döngüsel Bekleme")
         ).json()
 
         assert body["graded"] is True
@@ -617,13 +640,7 @@ class TestPracticeMode:
         )
         session_id = (await start(client, fixture, "practice"))["id"]
 
-        body = (
-            await client.post(
-                f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-                json={"question_id": str(essay_id), "given": "Dört koşul vardır."},
-                headers=fixture.student,
-            )
-        ).json()
+        body = (await answer(client, fixture, session_id, essay_id, "Dört koşul vardır.")).json()
 
         assert body["recorded"] is True
         assert body["graded"] is False
@@ -643,16 +660,10 @@ class TestExamFinish:
         """Vaka 4: iki sorudan biri doğru cevaplanır, diğeri boş kalır → puan 100."""
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "C"},
-            headers=fixture.student,
-        )
+        await answer(client, fixture, session_id, fixture.question_ids[0], "C")
         await rewind(admin_engine, session_id, minutes=25)
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/finish", headers=fixture.student
-        )
+        response = await finish(client, fixture, session_id)
 
         assert response.status_code == 200, response.text
         body = response.json()
@@ -667,18 +678,9 @@ class TestExamFinish:
     ) -> None:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "A"},
-            headers=fixture.student,
-        )
+        await answer(client, fixture, session_id, fixture.question_ids[0], "A")
 
-        body = (
-            await client.post(
-                f"/courses/{fixture.course_id}/exams/{session_id}/finish",
-                headers=fixture.student,
-            )
-        ).json()
+        body = (await finish(client, fixture, session_id)).json()
 
         result = body["results"][0]
         assert result["is_correct"] is False
@@ -693,50 +695,40 @@ class TestExamFinish:
         Alıntı chunk'ın başından kesilseydi iki öğrenci de aynı metni görürdü ve
         "neden yanlış" hiçbir şey açıklamazdı.
         """
-        instructor_id = await users.create("ayse@dogus.edu.tr")
-        instructor = users.auth(instructor_id)
-        student_id = await users.create("burak@dogus.edu.tr")
-        student = users.auth(student_id)
-        course_id = await _create_course(client, instructor, "COME301")
-        await enroll(client, instructor, course_id, "burak@dogus.edu.tr")
-        topic_id = await create_topic(client, instructor, course_id, "Deadlock")
-        chunk_ids = await seed_chunks(
+        # `approved=0`: havuz boş kuruluyor, tek onaylı soru aşağıda elle yazılıyor.
+        # Kaynak metin standart korpustan farklı olmak ZORUNDA — üç çeldiricinin
+        # üçü de aynı chunk'ı gösteriyor ve iddia, alıntının hangi cümleye
+        # düştüğü. Tek cümlelik bir kaynakta iki çeldirici aynı metni verirdi.
+        fixture = await build_course(client, users, admin_engine, approved=0)
+        seeded = await seed_document(
             admin_engine,
-            course_id=UUID(course_id),
-            uploaded_by=instructor_id,
-            texts=[
+            course_id=UUID(fixture.course_id),
+            uploaded_by=fixture.instructor_id,
+            passages=[
                 "Karşılıklı dışlama, kaynağın aynı anda tek süreç tarafından "
                 "kullanılabilmesidir. Tut ve bekle, elindeki kaynağı bırakmadan "
                 "yenisini istemektir. Döngüsel bekleme ise süreçlerin halka "
                 "oluşturmasıdır."
             ],
         )
+        chunk_ids = seeded.chunk_ids
         payload = mcq_payload(chunk_ids)
         payload["distractor_sources"] = {key: str(chunk_ids[0]) for key in ("A", "B", "D")}
         question_id = await seed_question(
             admin_engine,
-            course_id=UUID(course_id),
-            topic_id=topic_id,
+            course_id=UUID(fixture.course_id),
+            topic_id=fixture.topic_id,
             source_chunk_id=chunk_ids[0],
             payload=payload,
             status="approved",
-            reviewed_by=instructor_id,
+            reviewed_by=fixture.instructor_id,
         )
 
         snippets = {}
         for chosen in ("A", "D"):
-            started = await client.post(
-                f"/courses/{course_id}/exams", json={"mode": "exam"}, headers=student
-            )
-            session_id = started.json()["id"]
-            await client.post(
-                f"/courses/{course_id}/exams/{session_id}/answers",
-                json={"question_id": str(question_id), "given": chosen},
-                headers=student,
-            )
-            finished = await client.post(
-                f"/courses/{course_id}/exams/{session_id}/finish", headers=student
-            )
+            session_id = (await start(client, fixture, "exam"))["id"]
+            await answer(client, fixture, session_id, question_id, chosen)
+            finished = await finish(client, fixture, session_id)
             snippets[chosen] = finished.json()["results"][0]["why_wrong"]["snippet"]
 
         assert "Karşılıklı dışlama" in snippets["A"]
@@ -749,12 +741,7 @@ class TestExamFinish:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
 
-        body = (
-            await client.post(
-                f"/courses/{fixture.course_id}/exams/{session_id}/finish",
-                headers=fixture.student,
-            )
-        ).json()
+        body = (await finish(client, fixture, session_id)).json()
 
         # 0 değil None: "hiç cevaplamadın" ile "hepsini yanlış yaptın" aynı şey değil.
         assert body["score"] is None
@@ -766,13 +753,9 @@ class TestExamFinish:
     ) -> None:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/finish", headers=fixture.student
-        )
+        await finish(client, fixture, session_id)
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/finish", headers=fixture.student
-        )
+        response = await finish(client, fixture, session_id)
 
         assert response.status_code == 409
 
@@ -781,15 +764,9 @@ class TestExamFinish:
     ) -> None:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/finish", headers=fixture.student
-        )
+        await finish(client, fixture, session_id)
 
-        response = await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "C"},
-            headers=fixture.student,
-        )
+        response = await answer(client, fixture, session_id, fixture.question_ids[0], "C")
 
         assert response.status_code == 409
 
@@ -811,16 +788,10 @@ class TestMasteryIntegration:
     ) -> None:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "exam"))["id"]
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "C"},
-            headers=fixture.student,
-        )
+        await answer(client, fixture, session_id, fixture.question_ids[0], "C")
 
         before = await _mastery_rows(fixture.student_id)
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/finish", headers=fixture.student
-        )
+        await finish(client, fixture, session_id)
         after = await _mastery_rows(fixture.student_id)
 
         assert before == []
@@ -833,11 +804,7 @@ class TestMasteryIntegration:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "practice"))["id"]
 
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={"question_id": str(fixture.question_ids[0]), "given": "C"},
-            headers=fixture.student,
-        )
+        await answer(client, fixture, session_id, fixture.question_ids[0], "C")
 
         assert await _mastery_rows(fixture.student_id) == [(1.0, 1)]
 
@@ -877,13 +844,7 @@ class TestMasteryIntegration:
         )
         session_id = (await start(client, fixture, "practice"))["id"]
 
-        body = (
-            await client.post(
-                f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-                json={"question_id": str(essay_id), "given": "Üç koşulu sayıyorum."},
-                headers=fixture.student,
-            )
-        ).json()
+        body = (await answer(client, fixture, session_id, essay_id, "Üç koşulu sayıyorum.")).json()
 
         assert body["graded"] is True
         assert body["score"] == 75
@@ -898,14 +859,6 @@ class TestMasteryIntegration:
         fixture = await build_course(client, users, admin_engine)
         session_id = (await start(client, fixture, "practice"))["id"]
 
-        await client.post(
-            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
-            json={
-                "question_id": str(fixture.question_ids[0]),
-                "given": "C",
-                "hint_level": 2,
-            },
-            headers=fixture.student,
-        )
+        await answer(client, fixture, session_id, fixture.question_ids[0], "C", hint_level=2)
 
         assert await _mastery_rows(fixture.student_id) == [(0.70, 1)]

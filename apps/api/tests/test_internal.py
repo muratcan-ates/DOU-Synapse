@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import secrets
 from collections.abc import Iterator
+from uuid import UUID
 
 import httpx
 import pytest
@@ -26,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.api import internal
 from tests.conftest import UserFactory
-from tests.test_ingestion import make_pdf
+from tests.factories import create_course, make_pdf
 
 SECRET = "cok-uzun-ve-rastgele-bir-sir-0123456789"
 
@@ -47,7 +48,7 @@ def drain_secret(monkeypatch: pytest.MonkeyPatch) -> Iterator[str]:
 
 async def _course_with_pending_job(
     client: AsyncClient, users: UserFactory, monkeypatch: pytest.MonkeyPatch
-) -> str:
+) -> UUID:
     """Kuyrukta GERÇEKTEN bekleyen bir iş bırakır ve ders kimliğini döndürür.
 
     Yüklemenin arka plan tetiği bilerek devre dışı bırakılır: aksi hâlde iş,
@@ -57,11 +58,7 @@ async def _course_with_pending_job(
     monkeypatch.setattr("app.api.documents._trigger_worker", _noop)
 
     headers = users.auth(await users.create("ayse@dogus.edu.tr"))
-    course = await client.post(
-        "/courses", json={"code": "COME360", "title": "Dagitim"}, headers=headers
-    )
-    assert course.status_code == 201, course.text
-    course_id: str = course.json()["id"]
+    course_id = await create_course(client, headers, "COME360", title="Dagitim")
 
     pdf = make_pdf(["Kuyruga giren tek belgenin tek sayfasi."])
     upload = await client.post(
