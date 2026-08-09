@@ -695,14 +695,14 @@
         }
       }
     },
-    "/courses/{course_id}/chat": {
-      "post": {
+    "/courses/{course_id}/analytics/me": {
+      "get": {
         "tags": [
-          "chat"
+          "analytics"
         ],
-        "summary": "Post Chat",
-        "description": "Bir soru sorar ve kaynaklı cevabı (ya da gerekçeli reddi) döndürür.\n\nAbstention bir HATA DEĞİLDİR: kanıt yetersizse de kapsam dışıysa da yanıt 200'dür,\n`status` alanı sebebi söyler. Hata zarfına düşürülseydi istemci bunu bir arıza gibi\ngösterirdi; oysa reddetmek ürünün çalıştığının kanıtı.",
-        "operationId": "post_chat_courses__course_id__chat_post",
+        "summary": "My Progress",
+        "description": "Kendi konu bazlı ilerlemem. Dersin her üyesi kendi satırlarını görür.\n\nBu gösterge resmî bir not DEĞİLDİR; nereye çalışılacağını gösteren bir öneridir\n(ARCHITECTURE §5). İbare arayüzde zorunludur.",
+        "operationId": "my_progress_courses__course_id__analytics_me_get",
         "parameters": [
           {
             "name": "course_id",
@@ -717,23 +717,13 @@
             "description": "Ders kimliği"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChatRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatResponse"
+                  "$ref": "#/components/schemas/StudentAnalytics"
                 }
               }
             }
@@ -751,14 +741,14 @@
         }
       }
     },
-    "/courses/{course_id}/chat/sessions": {
+    "/courses/{course_id}/analytics/class": {
       "get": {
         "tags": [
-          "chat"
+          "analytics"
         ],
-        "summary": "List Sessions",
-        "description": "Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez.",
-        "operationId": "list_sessions_courses__course_id__chat_sessions_get",
+        "summary": "Class Progress",
+        "description": "Sınıf analitiği. Yalnız dersin eğitmeni görebilir.",
+        "operationId": "class_progress_courses__course_id__analytics_class_get",
         "parameters": [
           {
             "name": "course_id",
@@ -771,6 +761,18 @@
               "title": "Course Id"
             },
             "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limit"
+            }
           }
         ],
         "responses": {
@@ -779,70 +781,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatSessionOut"
-                  },
-                  "title": "Response List Sessions Courses  Course Id  Chat Sessions Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/courses/{course_id}/chat/sessions/{session_id}": {
-      "get": {
-        "tags": [
-          "chat"
-        ],
-        "summary": "List Messages",
-        "operationId": "list_messages_courses__course_id__chat_sessions__session_id__get",
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Session Id"
-            }
-          },
-          {
-            "name": "course_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "Ders kimliği",
-              "title": "Course Id"
-            },
-            "description": "Ders kimliği"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatMessageOut"
-                  },
-                  "title": "Response List Messages Courses  Course Id  Chat Sessions  Session Id  Get"
+                  "$ref": "#/components/schemas/ClassAnalytics"
                 }
               }
             }
@@ -863,16 +802,6 @@
   },
   "components": {
     "schemas": {
-      "AnswerStatus": {
-        "type": "string",
-        "enum": [
-          "answered",
-          "insufficient_context",
-          "out_of_scope"
-        ],
-        "title": "AnswerStatus",
-        "description": "Cevabın üç meşru sonucu. İkisi 'cevap yok' ama SEBEPLERİ farklı.\n\nKarıştırılmamalı: `insufficient_context` \"materyalde var olabilir ama kanıt\nzayıf\", `out_of_scope` \"bu ders bu konuyu hiç kapsamıyor\". Kullanıcıya\nverilen metin de ölçüm kategorisi de farklıdır (SC-005 yalnız ikincisini ölçer)."
-      },
       "Body_upload_document_courses__course_id__documents_post": {
         "properties": {
           "file": {
@@ -887,216 +816,6 @@
           "file"
         ],
         "title": "Body_upload_document_courses__course_id__documents_post"
-      },
-      "ChatMessageOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "role": {
-            "$ref": "#/components/schemas/ChatRole"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "citations": {
-            "items": {
-              "$ref": "#/components/schemas/CitationOut"
-            },
-            "type": "array",
-            "title": "Citations"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AnswerStatus"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "socratic_stage": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SocraticStage"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "created_at": {
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "role",
-          "content",
-          "created_at"
-        ],
-        "title": "ChatMessageOut"
-      },
-      "ChatMode": {
-        "type": "string",
-        "enum": [
-          "qa",
-          "socratic",
-          "exam"
-        ],
-        "title": "ChatMode"
-      },
-      "ChatRequest": {
-        "properties": {
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "mode": {
-            "$ref": "#/components/schemas/ChatMode",
-            "default": "qa"
-          },
-          "session_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Session Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "message"
-        ],
-        "title": "ChatRequest"
-      },
-      "ChatResponse": {
-        "properties": {
-          "session_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Session Id"
-          },
-          "message_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Message Id"
-          },
-          "status": {
-            "$ref": "#/components/schemas/AnswerStatus"
-          },
-          "mode": {
-            "$ref": "#/components/schemas/ChatMode"
-          },
-          "answer": {
-            "type": "string",
-            "title": "Answer"
-          },
-          "citations": {
-            "items": {
-              "$ref": "#/components/schemas/CitationOut"
-            },
-            "type": "array",
-            "title": "Citations"
-          },
-          "socratic_stage": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SocraticStage"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "cached": {
-            "type": "boolean",
-            "title": "Cached",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "session_id",
-          "message_id",
-          "status",
-          "mode",
-          "answer"
-        ],
-        "title": "ChatResponse"
-      },
-      "ChatRole": {
-        "type": "string",
-        "enum": [
-          "user",
-          "assistant"
-        ],
-        "title": "ChatRole",
-        "description": "Mesajın sahibi. `contracts.py`'de yok çünkü modüller arası bir tip değil."
-      },
-      "ChatSessionOut": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "course_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Course Id"
-          },
-          "mode": {
-            "$ref": "#/components/schemas/ChatMode"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "socratic_stage": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/SocraticStage"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "created_at": {
-            "title": "Created At"
-          },
-          "updated_at": {
-            "title": "Updated At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "course_id",
-          "mode",
-          "title",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "ChatSessionOut"
       },
       "ChunkPreview": {
         "properties": {
@@ -1169,35 +888,109 @@
         "title": "ChunkPreview",
         "description": "Eğitmenin, sistemin belgeden ne çıkardığını görebilmesi için."
       },
-      "CitationOut": {
+      "ClassAnalytics": {
         "properties": {
-          "chunk_id": {
+          "course_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Chunk Id"
+            "title": "Course Id"
           },
-          "file_name": {
-            "type": "string",
-            "title": "File Name"
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/ClassTopicProgress"
+            },
+            "type": "array",
+            "title": "Topics"
           },
-          "location": {
-            "type": "string",
-            "title": "Location",
-            "description": "'Sayfa 7' | 'Slayt 3' | bölüm adı"
+          "missed_questions": {
+            "items": {
+              "$ref": "#/components/schemas/MissedQuestion"
+            },
+            "type": "array",
+            "title": "Missed Questions"
           },
-          "quote": {
-            "type": "string",
-            "title": "Quote"
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "tracked_topics": {
+            "type": "integer",
+            "title": "Tracked Topics"
+          },
+          "untracked_topics": {
+            "type": "integer",
+            "title": "Untracked Topics"
+          },
+          "student_count": {
+            "type": "integer",
+            "title": "Student Count"
+          },
+          "answered_questions": {
+            "type": "integer",
+            "title": "Answered Questions"
+          },
+          "out_of_scope": {
+            "$ref": "#/components/schemas/OutOfScopeStat"
           }
         },
         "type": "object",
         "required": [
-          "chunk_id",
-          "file_name",
-          "location",
-          "quote"
+          "course_id",
+          "topics",
+          "missed_questions",
+          "average_score",
+          "tracked_topics",
+          "untracked_topics",
+          "student_count",
+          "answered_questions",
+          "out_of_scope"
         ],
-        "title": "CitationOut"
+        "title": "ClassAnalytics"
+      },
+      "ClassTopicProgress": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "average_score": {
+            "type": "number",
+            "title": "Average Score"
+          },
+          "level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "student_count": {
+            "type": "integer",
+            "title": "Student Count"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id",
+          "name",
+          "average_score",
+          "level",
+          "student_count",
+          "answer_count"
+        ],
+        "title": "ClassTopicProgress"
       },
       "CourseCreate": {
         "properties": {
@@ -1371,6 +1164,15 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "MasteryLevel": {
+        "type": "string",
+        "enum": [
+          "needs_work",
+          "medium",
+          "good"
+        ],
+        "title": "MasteryLevel"
+      },
       "MembershipCreate": {
         "properties": {
           "email": {
@@ -1445,17 +1247,164 @@
         ],
         "title": "MembershipStatus"
       },
-      "SocraticStage": {
-        "type": "string",
-        "enum": [
-          "diagnose",
-          "nudge",
-          "concept_hint",
-          "similar_example",
-          "explain_with_source"
+      "MissedQuestion": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "topic_name": {
+            "type": "string",
+            "title": "Topic Name"
+          },
+          "stem": {
+            "type": "string",
+            "title": "Stem"
+          },
+          "wrong_rate": {
+            "type": "number",
+            "title": "Wrong Rate"
+          },
+          "graded_answer_count": {
+            "type": "integer",
+            "title": "Graded Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "topic_name",
+          "stem",
+          "wrong_rate",
+          "graded_answer_count"
         ],
-        "title": "SocraticStage",
-        "description": "Sokratik merdiven. Sıra ANLAMLIDIR ve atlanamaz (spec FR-014).\n\nÖğrenci kendi denemesini yapmadan bir sonraki kademeye geçilmez; bu kural\nstate machine'de zorlanır, prompt'a bırakılmaz."
+        "title": "MissedQuestion"
+      },
+      "OutOfScopeStat": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "chat_messages",
+              "unavailable"
+            ],
+            "title": "Source"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          },
+          "out_of_scope_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Out Of Scope Count"
+          },
+          "insufficient_context_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insufficient Context Count"
+          },
+          "assistant_message_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Message Count"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "rate",
+          "out_of_scope_count",
+          "insufficient_context_count",
+          "assistant_message_count",
+          "note"
+        ],
+        "title": "OutOfScopeStat",
+        "description": "Kapsam dışı ret istatistiği (SC-005).\n\n`source` alanı zorunlu: sayının nereden geldiği görünmeden sayı raporlanamaz.\n`chat_messages` tablosu (migration 0003, Şerit 3) henüz inmemişse alan\n`unavailable` döner ve oran None kalır — tahmin üretilmez."
+      },
+      "StudentAnalytics": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/TopicProgress"
+            },
+            "type": "array",
+            "title": "Topics"
+          },
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "tracked_topics": {
+            "type": "integer",
+            "title": "Tracked Topics"
+          },
+          "untracked_topics": {
+            "type": "integer",
+            "title": "Untracked Topics"
+          },
+          "needs_work_topics": {
+            "type": "integer",
+            "title": "Needs Work Topics"
+          },
+          "answered_questions": {
+            "type": "integer",
+            "title": "Answered Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "topics",
+          "average_score",
+          "tracked_topics",
+          "untracked_topics",
+          "needs_work_topics",
+          "answered_questions"
+        ],
+        "title": "StudentAnalytics"
       },
       "TopicCreate": {
         "properties": {
@@ -1511,6 +1460,40 @@
           "created_at"
         ],
         "title": "TopicOut"
+      },
+      "TopicProgress": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id",
+          "name",
+          "score",
+          "level",
+          "answer_count"
+        ],
+        "title": "TopicProgress",
+        "description": "Öğrencinin tek bir konudaki durumu."
       },
       "ValidationError": {
         "properties": {
