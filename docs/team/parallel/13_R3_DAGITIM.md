@@ -222,3 +222,136 @@ Senin ekleyeceğin `rls_assessment` satırı **`api` job'unda** — farklı böl
 R1 aynı dosyaya `rls_isolation` satırını ekleyecek; o da `api` job'unda olacak.
 İkiniz aynı bölüme yazacaksınız: **önce inen kazansın, sonraki rebase alıp
 kendi satırını eklesin.** Elle birleştirme yeter, karmaşık değil.
+
+---
+
+# R3 RAPORU — 9 Ağustos 2026
+
+Dal: `feat/deploy` · 6 commit · 487 test yeşil (473 + 14 yeni), mypy temiz, ruff temiz.
+OpenAPI **değişmedi** (24 yol): `/internal/drain` `include_in_schema=False`.
+
+## Bitti sayılma ölçütü
+
+- [x] `/internal/drain` çalışıyor, sırsız 404, sabit zamanlı karşılaştırma, testli
+- [ ] Docker imajı modeli gömüyor; `--network none` ile embedding üretiliyor — **Dockerfile yazıldı, KOŞULMADI** (bu makinede konteyner çalışma zamanı yok)
+- [ ] int8 ↔ fp32 vektör uzayı denkliği — **e5-large için KOŞULMADI** (disk yetmedi); yakın bir model üzerinde ölçüldü, aşağıya bakın
+- [x] `fill_answer_cache.py` çalışıyor, `cached: true` doğrulandı
+- [x] Restore provası ağsız koştu; 10/10 adım
+- [x] Cold start + p95 ölçüldü, sıcak/soğuk **ayrı** raporlandı
+- [x] `keepalive.yml` + `ci.yml`'de RLS assessment koşuyor
+- [x] `docs/deployment.md` yazıldı
+- [x] 487 test yeşil, mypy temiz, ruff temiz
+
+## En önemli üç bulgu
+
+### 1. int8 quantizasyonu vektör uzayını koruyamayabilir
+
+Aynı dinamik int8 yolu `all-MiniLM-L6-v2` üzerinde **en düşük 0.9326 / ortalama
+0.9513** kosinüs verdi ve **en yakın komşu sırası korunmadı**. `multilingual-e5-large`
+için sayı **KOŞULMADI**: quantizasyon ~4.5 GB tepe disk istiyor, makinede 5.9 GB
+boş vardı ve on saniyede 1.0 GB'ye düştü; koşu emniyet için durduruldu.
+
+Build bunu kendi ölçüyor ve kosinüs 0.99'un altındaysa **build düşüyor**. Kapı
+düşerse `--build-arg EMBEDDING_QUANTIZE=false` ile fp32 gömülür: imaj ~2 GB
+büyür, vektör uzayı indekstekiyle birebir aynı kalır. Alternatifi korpusu int8
+ile yeniden ingest etmektir ve bu bir **ingest zamanı kararıdır** — demo sabahı
+alınamaz.
+
+### 2. Kanıt eşiği 0.81 kapsam içi soruları reddediyor
+
+`fill_answer_cache.py` provasında 14 demo sorusundan **ikisi**, doğru belge zaten
+en iyi sonuçken reddedildi:
+
+| Soru | Dense skor | En iyi kaynak |
+|---|---|---|
+| Dairesel bekleme koşulu nedir? | **0.7973** | 05-deadlock-demo.pdf |
+| inode ne saklar? | **0.8051** | 06-file-systems.pptx |
+| *(kapsam dışı)* Bu dersin vize sınavı ne zaman? | 0.7867 | — |
+| *(kapsam dışı)* Bugün İstanbul'da hava nasıl? | 0.7441 | — |
+
+Kapsam içi en düşük 0.7973, kapsam dışı en yüksek 0.7867 → **ayrım payı yalnız
++0.0106** ve **0.81 bu payın üstünde**, yani doğru soruları kesiyor. Bu 16
+soruluk tek bir ders üzerinde ölçüldü; bir yön göstergesidir, hüküm değil.
+
+**R2 ve R4'e:** `uv run python scripts/probe_evidence_threshold.py --course-id <uuid> --user-id <uuid>`
+
+### 3. Sınav havuzu ağ kesilmeden önce hazırlanmalı
+
+Soru üretimi gerçek LLM anahtarı ister; deterministik sahte sağlayıcı üretim
+şemasını uygulamıyor ve `returned: 0` dönüyor (`rejection_reasons: ["yanıtta
+'questions' dizisi yok"]`). Çevrimdışı yığında havuz üretilemez. **Runbook'a
+(R5):** havuz üretimi ve onayı, ağ hâlâ varken yapılan bir hazırlık adımıdır.
+
+## Ölçümler
+
+| Ölçüm | Değer | Koşul |
+|---|---|---|
+| Sıcak `/chat` p95, önbellek **ıskası** | 72.7 ms (medyan 57.8) | yerel uvicorn, n=30 |
+| Sıcak `/chat` p95, **önbellekten** | 9.2 ms (medyan 7.9) | yerel uvicorn, n=15 |
+| Süreç başlangıcı → `/health/ready` | 0.61 sn | 5 tekrar |
+| Süreç başlangıcı → **ilk soru** | 1.43–1.55 sn | 5 tekrar, model yükleme dâhil |
+| ACA uyanma, imaj boyutu, RSS | **KOŞULMADI** | bulut/konteyner erişimi yok |
+
+**Bu sayılar üretim p95'i DEĞİLDİR** (Anayasa III, tuzak 7): LLM anahtarı yokken
+generation terimi ~0'dır; ölçülen yol retrieval + guardrail + veritabanıdır.
+Model dosyası sayfa önbelleğindeydi, yani 1.47 sn bir **alt sınırdır**.
+
+İlk sıcak ölçüm p95'i 81.7 ms verdi ve 30 isteğin 15'i önbellekten geliyordu —
+14 soru 30 istekte tekrarlanınca yarısı isabet ediyor. Önbellek isabeti LLM'i
+tamamen atladığı için birleşik p95, sistemin değil isabet oranının fonksiyonu
+olur. İki yol artık ayrı raporlanıyor.
+
+## Çevrimdışı prova (T054) — 10/10
+
+Geri yüklenmiş veritabanına karşı, tüm dış HTTP çıkışı ölü proxy'ye
+yönlendirilerek (huggingface.co ve api.groq.com o ortamdan erişilemez olduğu
+**doğrulandı**, sunucu sürecinin ortamı da kontrol edildi):
+
+`/health/ready` ok · 1 ders · 13/13 belge `completed` · önbellekten `answered` +
+3 atıf + `cached: true` · atıf `05-deadlock-demo.pdf` Sayfa 2'ye çözülüyor ·
+kapsam dışı soru `insufficient_context` · sınav aç→cevapla→bitir, MCQ
+deterministik puanlandı.
+
+Yedek: `pg_dump -Fc` 467K + storage 289K. Geri yükleme sonrası **40 RLS
+politikası ve 15 RLS'li tablo** — kaynakla birebir aynı.
+
+**Koşulmayan:** compose fallback profilinin kendisi. Yığın yerel süreçler olarak
+koşturuldu.
+
+## Lidere iletilecekler
+
+1. **`WORKER_DRAIN_URL` ortamdan okunuyor, `Settings` alanı değil**
+   (`app/api/internal.py`). `config.py` bu fazda kapalıydı. Faz kapanınca
+   `Settings.worker_drain_url` olarak taşınmalı.
+2. **`.env.example`'a eklenecekler** (dosya bende değil):
+   `WORKER_DRAIN_URL` — worker drain ucunun tam adresi; boşsa tetik süreç içi kalır.
+3. **`apps/web` isteği yok.** Arayüzde bu şerit için gereken bir değişiklik çıkmadı.
+   Tek not: önbellekten gelen cevap zarfta `cached: true` taşıyor; demo sırasında
+   hangi cevabın önbellekten geldiğini göstermek istenirse arayüz bunu kullanabilir.
+4. **Brifingdeki "19 tablo" sayısı yanlış.** Hem paylaşılan `dou_synapse` hem
+   sıfırdan kurulan bir veritabanı **15 tablo** veriyor. `10_OKU_ONCE_FAZ2.md §4`
+   bunu bir sağlık kontrolü olarak öneriyor; 15 gören biri veritabanını bozuk
+   sanabilir.
+5. **`fastembed>=0.5` alt sınırı riskli.** Kurulu 0.8.0, `multilingual-e5-large`
+   için **CLS yerine mean pooling** kullandığını uyarıyor. Sürüm serbest
+   bırakıldığı için ileride bir kurulum farklı pooling'le gelebilir ve **indeksteki
+   vektörlerle sorgu vektörleri sessizce farklı uzaylarda olur.** `pyproject.toml`
+   benim sahipliğimde değil; sürümün sabitlenmesini öneriyorum.
+6. **Sohbet sınırı toplu işleri kesiyor.** `fill_answer_cache.py` tek kullanıcı
+   olarak 32 istek atıyor ve 20/60 sn sınırına takılıyor. Betik artık bekleyip
+   yeniden deniyor (sınırı baypas etmiyor), ama demo hazırlığında bu ~2 dakika
+   ek süre demek.
+
+## Dosyalar
+
+Yeni: `apps/api/tests/test_internal.py`, `apps/api/scripts/bake_embedding_model.py`,
+`fill_answer_cache.py`, `demo_questions.json`, `probe_evidence_threshold.py`,
+`measure_latency.py`, `.github/workflows/keepalive.yml`, `docs/deployment.md`.
+
+Değişen: `apps/api/app/api/internal.py` (gövde), `apps/api/app/api/documents.py`
+(**yalnız `_trigger_worker`**), `apps/api/Dockerfile`, `docker-compose.yml`,
+`.github/workflows/ci.yml` (**yalnız `rls_assessment` satırı**; `rls_isolation`
+R1'e bırakıldı), `specs/001-course-assistant-mvp/tasks.md` (yalnız kendi satırlarım).
+
+Sahipliğim dışında hiçbir dosyaya dokunulmadı; `config.py`, `contracts.py`,
+`main.py`, `apps/web/**` ellenmedi.

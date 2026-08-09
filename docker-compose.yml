@@ -40,5 +40,48 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- Çevrimdışı yedek profili (T054, PLAN §6 C planı) --------------------
+  #
+  # `docker compose --profile fallback up` ile açılır. Yukarıdaki `api`
+  # servisinden farkı, DIŞARIYA HİÇBİR BAĞIMLILIĞI OLMAMASI:
+  #
+  #   * embedding modeli imajın içinde (T048), indirme yok
+  #   * LLM_FAKE_PROVIDER yerine ÖNCEDEN DOLDURULMUŞ answer_cache (T053) —
+  #     sahte sağlayıcı uydurma metin üretir ve jüriye onu göstermek dürüst
+  #     olmaz; önbellekten gelen cevap ise gerçek hattan geçmiş bir cevaptır
+  #     ve zarfta `cached: true` ile işaretlidir.
+  #   * DEV_AUTH_ENABLED=true — Supabase Auth'a çıkış yok
+  #
+  # `network_mode` bilerek kısıtlanmadı: konteynerin ağa ihtiyacı OLMADIĞI
+  # iddiası `docker run --network none` ile ayrıca kanıtlanır (CI, image işi).
+  # Compose yığınının kendi içinde db↔api konuşması gerekir.
+  api-fallback:
+    profiles: ["fallback"]
+    build:
+      context: ./apps/api
+    environment:
+      ENVIRONMENT: demo
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/dou_synapse
+      DEV_AUTH_ENABLED: "true"
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      # Model imajın içinde; Dockerfile bunu zaten ayarlıyor, burada açıkça
+      # tekrarlanması çevrimdışı yığında yanlışlıkla değiştirilmesini zorlaştırır.
+      EMBEDDING_PROVIDER: fastembed
+      EMBEDDING_CACHE_DIR: /opt/models
+      HF_HUB_OFFLINE: "1"
+      # Anahtar YOK: önbellekte olmayan bir soru LLM'e gidemez ve nazikçe
+      # reddedilir. Sessizce uydurulmuş bir cevaptan iyidir (Anayasa IV).
+      GROQ_API_KEY: ""
+      GEMINI_API_KEY: ""
+    ports: ["8000:8000"]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   db_data:
