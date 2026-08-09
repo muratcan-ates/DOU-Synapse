@@ -119,6 +119,7 @@ async def seed_document(
     uploaded_by: UUID,
     file_name: str,
     passages: Sequence[tuple[int, str]],
+    embedding_space: str | None = None,
 ) -> UUID:
     """Bir belge ve chunk'larını yazar; embedding'ler yapılandırılmış sağlayıcıdan gelir.
 
@@ -150,9 +151,10 @@ async def seed_document(
         await conn.execute(
             text(
                 "INSERT INTO chunks (course_id, document_id, chunk_index, page_number, "
-                "section_title, content_type, text, token_count, embedding) "
+                "section_title, content_type, text, token_count, embedding, embedding_space) "
                 "VALUES (:course_id, :document_id, :chunk_index, :page_number, "
-                ":section_title, 'text', :text, :token_count, CAST(:embedding AS vector))"
+                ":section_title, 'text', :text, :token_count, CAST(:embedding AS vector), "
+                ":embedding_space)"
             ),
             [
                 {
@@ -164,6 +166,10 @@ async def seed_document(
                     "text": body,
                     "token_count": max(1, len(body) // 4),
                     "embedding": str(vector),
+                    # Varsayılan `None`: 0006 öncesi yazılmış satırların hâli. Testlerin
+                    # çoğu damgayı umursamaz ve damgasız korpus üzerinde koşarak
+                    # "damgasız satır aramayı durdurmaz" iddiasını da sürekli sınar.
+                    "embedding_space": embedding_space,
                 }
                 for index, ((page, body), vector) in enumerate(zip(passages, vectors, strict=True))
             ],
@@ -1036,3 +1042,173 @@ class TestProtokolUyumu:
             assert parca.page_number is not None
             assert parca.location.startswith("Sayfa ")
             assert parca.text
+
+
+# ---------------------------------------------------------------------------
+# 8. Embedding uzayı kökeni — 0006, fail-closed uyuşmazlık
+#
+# Korunan hata sınıfı SESSİZDİR: iki farklı uzaydan gelen vektörlerin kosinüsü
+# de bir sayı üretir, sıralama da üretilir; yalnızca anlamsızdır. Bu yüzden
+# testler "hata veriyor mu"ya değil, "durduruyor mu"ya bakar.
+# ---------------------------------------------------------------------------
+
+
+class TestVektorUzayiKimligi:
+    def test_kanonik_bicim_uc_bileseni_de_tasir(self) -> None:
+        from app.core.vector_space import current_space
+
+        kimlik = current_space()
+        saglayici, _, kalan = kimlik.partition("/")
+        model, _, surum = kalan.rpartition("@")
+
+        assert saglayici, "sağlayıcı türü yok"
+        assert model, "model adı yok"
+        assert surum, "sürüm yok"
+
+    def test_farkli_saglayicilar_farkli_uzaylardir(self) -> None:
+        from app.core.vector_space import space_of
+        from app.modules.ingestion.embedding import FastEmbedProvider, HashingEmbeddingProvider
+
+        assert space_of(HashingEmbeddingProvider()) != space_of(FastEmbedProvider())
+
+    def test_ayni_saglayici_farkli_model_farkli_uzaydir(self) -> None:
+        """Boyut eşitliği yeterli bir kontrol DEĞİL: iki model de vector(1024)'e sığar."""
+        from app.core.vector_space import space_of
+        from app.modules.ingestion.embedding import FastEmbedProvider
+
+        assert space_of(FastEmbedProvider("intfloat/multilingual-e5-large")) != space_of(
+            FastEmbedProvider("BAAI/bge-m3")
+        )
+
+    def test_taninmayan_saglayici_kendi_uzayini_alir(self) -> None:
+        """Uydurma bir kimlik değil, eşleşmeyen bir kimlik: fail-closed."""
+        from app.core.vector_space import space_of
+
+        class Yabanci:
+            name = "kimse"
+
+        kimlik = space_of(Yabanci())
+        assert "Yabanci" in kimlik
+        assert kimlik != space_of(get_embedding_provider())
+
+
+class TestUzayUyusmazligi:
+    async def _ders_kur(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        worker_engine: AsyncEngine,
+        *,
+        embedding_space: str | None,
+    ) -> tuple[UUID, UUID]:
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        ders = await create_course(client, ayse, "COME301")
+        await seed_document(
+            worker_engine,
+            course_id=ders,
+            uploaded_by=ayse_id,
+            file_name="a.md",
+            passages=DEADLOCK_TR,
+            embedding_space=embedding_space,
+        )
+        return ders, ayse_id
+
+    async def test_ayni_uzaydaki_korpus_normal_aranir(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        """Pozitif kontrol: kapı meşru aramayı kapatmıyor."""
+        from app.core.vector_space import current_space
+
+        ders, ayse_id = await self._ders_kur(
+            client, users, worker_engine, embedding_space=current_space()
+        )
+
+        async with rls_session(ayse_id) as session:
+            sonuc = await HybridRetriever(session).search(course_id=ders, query="deadlock nedir")
+
+        assert sonuc
+
+    async def test_baska_uzaydaki_korpus_aramayi_durdurur(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        """Asıl iddia: uyuşmazlıkta sonuç DÖNMEZ, hata döner.
+
+        Sessizce devam etmek, alakasız parçalara dayanan "kaynaklı" bir cevap
+        üretmek demektir — kullanıcının yanlışlığını anlayamayacağı tek hata türü.
+        """
+        from app.modules.retrieval.dense import EmbeddingSpaceMismatchError
+
+        ders, ayse_id = await self._ders_kur(
+            client,
+            users,
+            worker_engine,
+            embedding_space="fastembed/baska/model@0.0.1",
+        )
+
+        async with rls_session(ayse_id) as session:
+            with pytest.raises(EmbeddingSpaceMismatchError) as hata:
+                await HybridRetriever(session).search(course_id=ders, query="deadlock nedir")
+
+        assert hata.value.status_code == 503
+        assert hata.value.found == ["fastembed/baska/model@0.0.1"]
+
+    async def test_damgasiz_korpus_aramayi_durdurmaz(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        """0006 öncesi satırların hâli. Bilinçli sınır — göç kimseyi durdurmaz.
+
+        Bu testin yeşil olması korumanın çalıştığını DEĞİL, kapsamının bilindiğini
+        gösterir: damga yazılmaya başlanana kadar korunan satır yoktur.
+        """
+        ders, ayse_id = await self._ders_kur(client, users, worker_engine, embedding_space=None)
+
+        async with rls_session(ayse_id) as session:
+            sonuc = await HybridRetriever(session).search(course_id=ders, query="deadlock nedir")
+
+        assert sonuc
+
+    async def test_karisik_uzay_da_durdurur(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        """Kısmi yeniden embed etme: bir belge yenilenmiş, diğeri eski uzayda kalmış.
+
+        Bu, tek bir sağlayıcı değişikliğinden daha sinsi: ders çalışıyor görünür,
+        yalnız bazı belgeler hiç bulunmaz.
+        """
+        from app.core.vector_space import current_space
+        from app.modules.retrieval.dense import EmbeddingSpaceMismatchError
+
+        ders, ayse_id = await self._ders_kur(
+            client, users, worker_engine, embedding_space=current_space()
+        )
+        await seed_document(
+            worker_engine,
+            course_id=ders,
+            uploaded_by=ayse_id,
+            file_name="eski.md",
+            passages=PROCESSES_EN,
+            embedding_space="hashing/hashing-v1@builtin-0",
+        )
+
+        async with rls_session(ayse_id) as session:
+            with pytest.raises(EmbeddingSpaceMismatchError):
+                await HybridRetriever(session).search(
+                    course_id=ders, query="fork context switch", limit=24
+                )
+
+    async def test_uyusmazlik_fts_seridini_etkilemez(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        """Denetim yalnız dense şeridinde: `ts_rank` embedding sağlayıcısını bilmez.
+
+        FTS'i de durdurmak, uyuşmazlığın etkilemediği bir yeteneği kapatmak olurdu.
+        """
+        ders, ayse_id = await self._ders_kur(
+            client, users, worker_engine, embedding_space="fastembed/baska/model@0.0.1"
+        )
+
+        async with rls_session(ayse_id) as session:
+            sonuc = await fts_search(session, course_id=ders, query="deadlock", limit=8)
+
+        assert sonuc

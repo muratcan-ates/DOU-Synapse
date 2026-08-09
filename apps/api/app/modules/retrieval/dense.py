@@ -61,13 +61,20 @@ ikinci katmanı `chunks_member_read` RLS politikasıdır ve aynı oturumda zaten
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
+from fastapi import status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk
+from app.core.errors import AppError
+from app.core.logging import get_logger
+from app.core.vector_space import current_space
 from app.modules.ingestion.embedding import get_embedding_provider
+
+logger = get_logger("app.retrieval.dense")
 
 # Aday kümesi chunks üzerinde seçilir, dosya adı SONRA join'lenir: documents'e katılmak
 # sıralama adımına girerse planlayıcı HNSW indeksinden düşebilir.
@@ -80,6 +87,7 @@ _SQL = text(
                c.slide_number,
                c.section_title,
                c.text,
+               c.embedding_space,
                c.embedding <=> CAST(:query_vector AS vector) AS distance
         FROM chunks c
         WHERE c.course_id = :course_id
@@ -94,12 +102,60 @@ _SQL = text(
            n.slide_number,
            n.section_title,
            n.text,
+           n.embedding_space,
            1 - n.distance AS similarity
     FROM nearest n
     JOIN documents d ON d.id = n.document_id
     ORDER BY n.distance, n.id
     """
 )
+
+
+class EmbeddingSpaceMismatchError(AppError):
+    """Korpus bir vektör uzayında, sorgu başkasında (0006).
+
+    Neden fail-closed: uyuşmazlık ÇÖKMEZ. Kosinüs hesabı iki uzaydan gelen
+    vektörlerde de bir sayı üretir, sıralama da üretilir — yalnızca anlamsızdır.
+    Sessizce devam etmek, alakasız parçalara dayanan "kaynaklı" bir cevap üretmek
+    demektir ve kullanıcı açısından en kötü hata türüdür: yanlış olduğunu
+    anlamanın yolu yoktur (Anayasa I + IV).
+
+    503 seçildi, 500 değil: bu bir kod hatası değil, yapılandırma/veri durumu.
+    Korpus doğru sağlayıcıyla yeniden embed edildiğinde ya da sunucu doğru
+    `EMBEDDING_PROVIDER` ile başlatıldığında düzelir.
+    """
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "embedding_space_mismatch"
+
+    def __init__(self, expected: str, found: set[str]) -> None:
+        super().__init__(
+            "Ders materyalinin arama indeksi bu sunucununkinden farklı bir modelle "
+            "üretilmiş. Güvenilmez sonuç döndürmemek için aramayı durdurdum."
+        )
+        self.expected = expected
+        self.found = sorted(found)
+
+
+def _assert_same_space(rows: list[Any], expected: str) -> None:
+    """Dönen satırların damgası bu sürecin uzayıyla uyuşuyor mu.
+
+    Kontrol **dönen satırlar üzerinde** yapılıyor, dersin tamamı üzerinde değil.
+    İki sebep, ikisi de aynı yöne çıkıyor: (1) ekstra sorgu yok, damga zaten
+    seçilen satırlarla geliyor; (2) korunması gereken şey kullanılacak parçalar —
+    top-k'ya girmemiş bir satırın uzayı bu cevabı etkilemez.
+
+    `NULL` damga uyuşmazlık SAYILMAZ. 0006 öncesi yazılmış her satır damgasızdır;
+    onları reddetmek göçün uygulandığı anda çalışan her kurulumu durdururdu.
+    Gerekçe ve sınırı `supabase/migrations/0006_embedding_provenance.sql`'de.
+    """
+    found = {row.embedding_space for row in rows if row.embedding_space}
+    if found and found != {expected}:
+        logger.error(
+            "embedding uzayı uyuşmazlığı",
+            extra={"context": {"expected": expected, "found": sorted(found)}},
+        )
+        raise EmbeddingSpaceMismatchError(expected, found)
 
 
 async def dense_search(
@@ -110,6 +166,9 @@ async def dense_search(
     Yalnızca `dense_score` doldurulur; `fts_score` ve `fused_score` birleştirme
     adımının işidir (service.py). Bir parçanın neden geldiğini ayrı ayrı taşımak,
     eşik kalibrasyonunun (T043) ön koşuludur.
+
+    Uzay denetimi burada, FTS tarafında değil: uyuşmazlıktan etkilenen tek şerit
+    bu. `ts_rank` sözcüklere bakar ve embedding sağlayıcısı değişince kıpırdamaz.
     """
     if limit <= 0 or not query.strip():
         return []
@@ -121,6 +180,7 @@ async def dense_search(
             {"query_vector": str(vector), "course_id": course_id, "limit": limit},
         )
     ).all()
+    _assert_same_space(list(rows), current_space())
 
     return [
         RetrievedChunk(
