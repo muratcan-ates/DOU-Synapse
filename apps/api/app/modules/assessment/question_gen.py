@@ -101,14 +101,13 @@ class _GenerationCompletion:
     Şerit 2'nin dosyası ve oraya Şerit 4 kod yazmaz.
     """
 
-    def __init__(self, client: object) -> None:
+    def __init__(self, client: Any, request_cls: Any) -> None:
         self._client = client
+        self._request_cls = request_cls
 
     async def complete(self, *, system: str, user: str) -> str:
-        from app.modules.generation.llm import LlmRequest
-
-        completion = await self._client.complete(  # type: ignore[attr-defined]
-            LlmRequest(system=system, user=user, json_output=True)
+        completion = await self._client.complete(
+            self._request_cls(system=system, user=user, json_output=True)
         )
         return str(completion.text)
 
@@ -138,22 +137,39 @@ def reset_providers() -> None:
     _retriever_factory = _completion = None
 
 
+def _optional_module(name: str) -> Any | None:
+    """Ağaçta varsa modülü verir, yoksa None.
+
+    `import_module` kullanılıyor, düz `import` değil — ve bu bilinçli: Şerit 1/2
+    modülleri bu dalda henüz yok, düz import mypy'da "stub yok" hatası verirdi.
+    `warn_unused_ignores` açık olduğu için `# type: ignore` koymak da çözüm değil;
+    modüller `main`'de buluştuğu gün bu kez o ignore'lar hata üretirdi. Dinamik
+    çözümleme iki durumda da temiz kalıyor.
+
+    **Bu geçici bir dikiştir.** Üç şerit `main`'de birleştiğinde burası düz
+    import'a sadeleşmeli ve bu fonksiyon silinmelidir.
+    """
+    from importlib import import_module
+
+    try:
+        return import_module(name)
+    except ModuleNotFoundError:
+        return None
+
+
 def resolve_retriever(session: AsyncSession) -> Retriever | None:
     """Kayıtlı fabrika varsa ondan, yoksa Şerit 1'in gerçek uygulamasından.
 
-    İçe aktarma **tembel ve isteğe bağlıdır**: Şerit 1 ile Şerit 4 paralel
-    geliştirildi ve `main`'e hangisinin önce ineceği garanti değil. Modül
-    ağaçta yoksa None döner ve uç 503 verir; geldiği anda hiçbir uç
-    değişmeden çalışmaya başlar. Modüller `main`'de buluştuğunda bu
-    `try/except` doğrudan import'a sadeleştirilmelidir — geçici bir dikiştir.
+    Modül ağaçta yoksa None döner ve uç 503 verir; geldiği anda hiçbir uç
+    değişmeden çalışmaya başlar.
     """
     if _retriever_factory is not None:
         return _retriever_factory(session)
-    try:
-        from app.modules.retrieval.service import HybridRetriever
-    except ImportError:
+    module = _optional_module("app.modules.retrieval.service")
+    if module is None:
         return None
-    return HybridRetriever(session)
+    retriever: Retriever = module.HybridRetriever(session)
+    return retriever
 
 
 def resolve_completion() -> StructuredCompletion | None:
@@ -164,11 +180,10 @@ def resolve_completion() -> StructuredCompletion | None:
     """
     if _completion is not None:
         return _completion
-    try:
-        from app.modules.generation.llm import build_llm_client
-    except ImportError:
+    module = _optional_module("app.modules.generation.llm")
+    if module is None:
         return None
-    return _GenerationCompletion(build_llm_client())
+    return _GenerationCompletion(module.build_llm_client(), module.LlmRequest)
 
 
 # ---------------------------------------------------------------------------
