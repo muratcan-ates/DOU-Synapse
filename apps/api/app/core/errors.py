@@ -104,6 +104,33 @@ class PayloadTooLargeError(AppError):
     code = "payload_too_large"
 
 
+class RateLimitError(AppError):
+    """Kota aşıldı. `api/chat.py`'den buraya taşındı (002/FR-222).
+
+    İkinci bir modül aynı hata tipine ihtiyaç duyduğu an, hata sözlüğünün tek
+    yeri burasıdır; bir uç dosyasının içinde yaşayan hata tipi, ikinci ucu o uca
+    bağımlı kılardı.
+    """
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "rate_limited"
+
+
+class ConcurrencyLimitError(AppError):
+    """Aynı kullanıcının hâlâ süren bir işi var (FR-222).
+
+    409, 429 DEĞİL. İkisi farklı sorular: 429 "çok sık istedin, şu kadar bekle",
+    409 ise "senin başlattığın iş hâlâ sürüyor". Kullanıcının yapması gereken de
+    farklı, dolayısıyla istemcinin ikisini ayırt edebilmesi gerekiyor. Hata
+    zarfı `{code, message, request_id}` olarak sabit (lider sözleşmesi) ve
+    `Retry-After` başlığı çapraz-origin JavaScript'e `expose_headers` olmadan
+    görünmüyor — geriye ayırt edici kanal olarak durum kodu ve `code` kalıyor.
+    """
+
+    status_code = status.HTTP_409_CONFLICT
+    code = "concurrent_request"
+
+
 async def app_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)
     return error_response(request, status_code=exc.status_code, code=exc.code, message=exc.message)
