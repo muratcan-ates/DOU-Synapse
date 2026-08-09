@@ -10,6 +10,12 @@
 > geçirilerek revize edilmiştir. Raporların çeliştiği her noktada tek karar verildi;
 > gerekçeler ARCHITECTURE.md'dedir.
 
+> **Gerçekle hizalama — 9 Ağustos 2026 (R5).** Takvim tablosu planlandığı gibi bırakıldı
+> (plan bir tarih kaydıdır, sonradan yazılmaz), ama **§2 kapsam tablosuna gerçekleşme
+> sütunu** ve **§5 kabul kriterlerine ölçülen değer sütunu** eklendi. Ölçülmemiş bir satıra
+> sonuç yazılmadı; "KOŞULMADI" yazmak tahmin yazmaktan iyidir (Anayasa III).
+> Uygulanmayan mimari kararların tam listesi: [ARCHITECTURE.md §10](ARCHITECTURE.md#10-uygulanmayanlar--tasarlandı-kodda-yok).
+
 ---
 
 ## 1. Karar Özeti
@@ -50,26 +56,29 @@
 
 ### P0 — Teslim için zorunlu
 
-| # | Özellik | 3 haftalık biçimi |
-|---|---|---|
-| 1 | Eğitmen/öğrenci girişi ve rolleri | Supabase Auth; RBAC backend'de |
-| 2 | Ders oluşturma + öğrenci kaydı | `courses`, `course_memberships` |
-| 3 | PDF / PPTX / Markdown / kod yükleme | Tür+boyut+magic byte kontrolü; asenkron ingestion + n/m ilerleme göstergesi |
-| 4 | Ders bazlı mutlak izolasyon | Server-side `course_id` + RLS (gerçekten tetiklendiği kanıtlanarak) |
-| 5 | Kaynaklı sohbet | Cevap + dosya adı + sayfa/slayt; kaynak chunk metadata'sından üretilir |
-| 6 | Kapsam dışı ret (abstention) | Kanıt eşiği (kalibrasyon setiyle ayarlanır) + kaynaksız cevabı bloklama |
-| 7 | Sokratik mod | Backend state machine; **ipuçları da retrieve edilmiş kaynaklardan türetilir ve kaynak taşır** |
-| 8 | Sınav prova modu | Süreli MCQ + açık uçlu; ipucu kapalı, tek deneme |
-| 9 | "Neden yanlış?" analizi | MCQ'da distractor→kaynak eşlemesi (birincil); açık uçlu için rubrik geri bildirimi |
-| 10 | Soru havuzu üretici | JSON şemalı; `mcq / open / code_trace / bug_hunt` tipleri; **eğitmen onayı olmadan yayınlanmaz** |
-| 11 | Kod/senaryo inceleme | `code_trace` (çıktı tahmini) + `bug_hunt` (hata buldurma) soru tipleri; kod ÇALIŞTIRMADAN |
-| 12 | Açık uçlu değerlendirme | Rubrik + şemalı LLM değerlendirmesi (skor, eksik_noktalar[], dayanak_chunk_id) |
-| 13 | Guardrail zinciri | Citation validator + kod sızıntı filtresi + evidence gate (fail-closed) |
-| 14 | Mastery-Lite | Konu bazlı EWMA puanı + eğitmen özet ekranı (tek sayfa) |
-| 15 | Demo cevap cache'i | Exact-match cache; demo senaryosu soruları önceden doldurulur (offline sigortası) |
-| 16 | Gold test seti + başarı raporu | ≥50 soru (kalibrasyon/holdout ayrık); metrikler + faithfulness örneklemi (20-30 cevap, elle) |
-| 17 | Canlı URL (1. günden) + Docker Compose | Sürekli deploy; Compose lokal/fallback |
-| 18 | Kullanım kılavuzları + örnek ders paketi | Eğitmen + öğrenci kılavuzu; İşletim Sistemleri materyal seti |
+Son sütun **9 Ağustos 2026'da kod okunarak ve sistem çalıştırılarak** dolduruldu.
+✅ çalışıyor · ⚠️ çalışıyor ama sınırı var · ❌ henüz yok.
+
+| # | Özellik | 3 haftalık biçimi | Durum (9 Ağu) |
+|---|---|---|---|
+| 1 | Eğitmen/öğrenci girişi ve rolleri | Supabase Auth; RBAC backend'de | ⚠️ RBAC ders bazlı ve çalışıyor; kimlik hâlâ `DEV_AUTH` (`Bearer dev:<uuid>`). Supabase Auth köprüsü R1'de |
+| 2 | Ders oluşturma + öğrenci kaydı | `courses`, `course_memberships` | ✅ |
+| 3 | PDF / PPTX / Markdown / kod yükleme | Tür+boyut+magic byte kontrolü; asenkron ingestion + n/m ilerleme göstergesi | ✅ 8 dosya → 33 chunk, hepsi `completed` |
+| 4 | Ders bazlı mutlak izolasyon | Server-side `course_id` + RLS (gerçekten tetiklendiği kanıtlanarak) | ⚠️ Yerel/CI'da ✅ (`dou_app` rolü + FORCE RLS + CI'da izolasyon kanıtı); **Compose yığınında RLS devre dışı** (superuser) |
+| 5 | Kaynaklı sohbet | Cevap + dosya adı + sayfa/slayt; kaynak chunk metadata'sından üretilir | ✅ |
+| 6 | Kapsam dışı ret (abstention) | Kanıt eşiği (kalibrasyon setiyle ayarlanır) + kaynaksız cevabı bloklama | ⚠️ Çalışıyor ama statü `insufficient_context` dönüyor, `out_of_scope` değil (ARCHITECTURE §5); holdout'ta %80 |
+| 7 | Sokratik mod | Backend state machine; **ipuçları da retrieve edilmiş kaynaklardan türetilir ve kaynak taşır** | ✅ Israrcı öğrenci yolu dahil canlıda doğrulandı |
+| 8 | Sınav prova modu | Süreli MCQ + açık uçlu; ipucu kapalı, tek deneme | ✅ `exam` modunda ipucu kapalı; `practice` modunda açık ve mastery çarpanına giriyor |
+| 9 | "Neden yanlış?" analizi | MCQ'da distractor→kaynak eşlemesi (birincil); açık uçlu için rubrik geri bildirimi | ✅ MCQ yolu deterministik, dosya+sayfa ile doğrulandı |
+| 10 | Soru havuzu üretici | JSON şemalı; `mcq / open / code_trace / bug_hunt` tipleri; **eğitmen onayı olmadan yayınlanmaz** | ⚠️ Onay kapısı ✅ (öğrenci taslak göremiyor, `answer_key` beyaz listeyle eleniyor); **üretim gerçek LLM anahtarı ister** — sahte sağlayıcı 0 soru döndürüyor |
+| 11 | Kod/senaryo inceleme | `code_trace` (çıktı tahmini) + `bug_hunt` (hata buldurma) soru tipleri; kod ÇALIŞTIRMADAN | ⚠️ Şema ve puanlama var; üretim #10'un kısıtına tabi |
+| 12 | Açık uçlu değerlendirme | Rubrik + şemalı LLM değerlendirmesi (skor, eksik_noktalar[], dayanak_chunk_id) | ⚠️ Kod yolu var; anahtarsız ortamda ölçülemedi |
+| 13 | Guardrail zinciri | Citation validator + kod sızıntı filtresi + evidence gate (fail-closed) | ✅ Sıra tek yerde sabit; **iki orkestratör var, üretimde biri koşuyor** (ARCHITECTURE §5) |
+| 14 | Mastery-Lite | Konu bazlı EWMA puanı + eğitmen özet ekranı (tek sayfa) | ✅ Öğrenci ve sınıf görünümü canlıda doğrulandı |
+| 15 | Demo cevap cache'i | Exact-match cache; demo senaryosu soruları önceden doldurulur (offline sigortası) | ⚠️ Cache mekanizması ✅ (yalnız `qa` modu, birebir eşleşme); **doldurma betiği R3'te, soru listesi `docs/demo-script.md`'de** |
+| 16 | Gold test seti + başarı raporu | ≥50 soru (kalibrasyon/holdout ayrık); metrikler + faithfulness örneklemi (20-30 cevap, elle) | ⚠️ Set ve harness var; uçtan uca metrikler R2'de, anahtar bekliyor |
+| 17 | Canlı URL (1. günden) + Docker Compose | Sürekli deploy; Compose lokal/fallback | ❌ Canlı URL yok; Compose var ama RLS'siz. R3'ün işi |
+| 18 | Kullanım kılavuzları + örnek ders paketi | Eğitmen + öğrenci kılavuzu; İşletim Sistemleri materyal seti | ✅ Bu şerit (R5): iki kılavuz + runbook + demo script + KVKK metni |
 
 ### P1 — Zaman kalırsa (dondurmadan sonra yalnızca bayrak arkasında)
 
@@ -153,22 +162,23 @@ kriterli görevlerle; auth, RLS, `course_id` filtreleri, migration'lar insan inc
 
 ## 5. Kabul Kriterleri (başarı raporunun iskeleti)
 
-| Metrik | Hedef | Kayıt |
-|---|---:|---|
-| Dersler arası veri sızıntısı | 0 | RLS'in tetiklendiği ayrıca kanıtlanır |
-| Kaynaksız gösterilen akademik cevap (ipuçları dahil) | %0 | — |
-| Holdout sette Recall@5 ve Recall@8 | ≥ %80 | @8 = üretim k'sı; @5 = karşılaştırılabilirlik |
-| Citation precision (doğru dosya+sayfa) | ≥ %90 | — |
-| Kapsam dışı doğru ret | ≥ %90 | **Holdout üzerinde** (eşik kalibrasyon setiyle ayarlı) |
-| Faithfulness (manuel örneklem, 20-30 cevap, 2 etiketleyici) | raporlanır | Uyum oranıyla birlikte |
-| Sokratik modda kod/çözüm sızıntısı | Test setinde 0 | Set fence'siz kod, pseudocode, sözel çözüm vakaları içerir |
-| Injection testleri (≥15 vaka, kalıp aileleri) | Geçer | "Smoke-test edildi" olarak raporlanır, "dayanıklı" denmez |
-| Soru üretiminde şema geçerliliği | ≥ %98 | — |
-| Uçtan uca cevap p95 | < 10 sn | **Sıcak replika, sorgu yolu** |
-| Demo akışında kritik hata | 0 | — |
+| Metrik | Hedef | Ölçülen (9 Ağu 2026) | Kayıt |
+|---|---:|---|---|
+| Dersler arası veri sızıntısı | 0 | **0** — CI her koşuda `supabase/tests/rls_isolation.sql` çalıştırıyor | RLS'in tetiklendiği ayrıca kanıtlanır |
+| Kaynaksız gösterilen akademik cevap (ipuçları dahil) | %0 | **%0** — kod yolu fail-closed; uçtan uca örneklem KOŞULMADI | — |
+| Holdout sette Recall@5 ve Recall@8 | ≥ %80 | **KOŞULMADI** (R2) | @8 = üretim k'sı; @5 = karşılaştırılabilirlik |
+| Citation precision (doğru dosya+sayfa) | ≥ %90 | **KOŞULMADI** (R2) | — |
+| Kapsam dışı doğru ret | ≥ %90 | **%80 — HEDEFİN ALTINDA.** Retrieval kapısı düzeyinde, 55 soruluk holdout, eşik 0.81 | `evaluation/calibration.md` §7. Uçtan uca değer R2'de |
+| Faithfulness (manuel örneklem, 20-30 cevap, 2 etiketleyici) | raporlanır | **KOŞULMADI** (R2, LLM anahtarı bekliyor) | Uyum oranıyla birlikte |
+| Sokratik modda kod/çözüm sızıntısı | Test setinde 0 | **Birim testlerinde 0**; gerçek LLM ile KOŞULMADI | Set fence'siz kod, pseudocode, sözel çözüm vakaları içerir |
+| Injection testleri (≥15 vaka, kalıp aileleri) | Geçer | **KOŞULMADI** (R4) | "Smoke-test edildi" olarak raporlanır, "dayanıklı" denmez |
+| Soru üretiminde şema geçerliliği | ≥ %98 | **ÖLÇÜLEMEDİ** — sahte sağlayıcı soru üretmiyor; gerçek anahtar gerekiyor | — |
+| Uçtan uca cevap p95 | < 10 sn | **KOŞULMADI.** Yerel ölçüm: ilk yükleme 19,1 sn (model yükleme dahil), sonraki yüklemeler 2–7 sn | **Sıcak replika, sorgu yolu** |
+| Demo akışında kritik hata | 0 | Altı sahnenin **beşi** canlıda koşuldu ve geçti; 6. sahne (sınav) önceden onaylanmış soru gerektirdi | `docs/demo-script.md` |
+| Backend testleri | yeşil | **479 geçiyor** (`uv run pytest -q`) | — |
 
 Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göstergesi, kesin hüküm değil.*
-Çalıştırılmayan deney için sonuç yazılmaz.
+Çalıştırılmayan deney için sonuç yazılmaz — yukarıdaki **KOŞULMADI** satırları bunun içindir.
 
 ---
 
@@ -197,3 +207,21 @@ Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göste
    testleri, faithfulness örneklemi, embedding seçim gerekçesi)
 3. **Kılavuzlar** → `docs/instructor-guide.md`, `docs/student-guide.md` (G12'den itibaren rol
    bazlı yazılır; G14-15 yalnızca ekran görüntüsü + son okuma)
+
+### Jürinin eline geçen belgeler (harita)
+
+| Belge | Ne cevaplar | Durum |
+|---|---|---|
+| [`README.md`](README.md) | Proje ne, nasıl kurulur, hangi belge nerede | ✅ |
+| [`specs/001-course-assistant-mvp/quickstart.md`](specs/001-course-assistant-mvp/quickstart.md) | Sıfırdan kurulum, adım adım | ✅ sıfırdan koşuldu |
+| [`ARCHITECTURE.md`](ARCHITECTURE.md) | Hangi karar neden verildi; **ne uygulanmadı** | ✅ kodla hizalı |
+| [`PLAN.md`](PLAN.md) | Takvim, kapsam, kabul kriterleri ve **ölçülen değerler** | ✅ |
+| [`docs/runbook.md`](docs/runbook.md) | Demo günü ne yapılır, bozulursa ne yapılır | ✅ |
+| [`docs/demo-script.md`](docs/demo-script.md) | Sahne sahne ne anlatılır | ✅ |
+| [`docs/instructor-guide.md`](docs/instructor-guide.md) | Eğitmen ne yapar | ✅ |
+| [`docs/student-guide.md`](docs/student-guide.md) | Öğrenci ne yapar | ✅ |
+| [`docs/kvkk.md`](docs/kvkk.md) | Hangi kişisel veri nasıl işleniyor | ✅ metin hazır, **sayfa lider'de** |
+| [`docs/test-report.md`](docs/test-report.md) | Ölçülen kalite | R2 |
+| `docs/security.md` | Güvenlik testleri | R1 — **dosya henüz yok** |
+| `docs/deployment.md` | Dağıtım | R3 — **dosya henüz yok** |
+| [`evaluation/calibration.md`](evaluation/calibration.md) | Eşik neden 0.81, neden hedefi tutmadı | ✅ |

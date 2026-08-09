@@ -3,6 +3,13 @@
 Bu belge 9 araştırma raporunun çeliştiği her noktada verilen **nihai** kararları, gerekçelerini
 ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim: [PLAN.md](PLAN.md)
 
+> **Kodla hizalama — 9 Ağustos 2026 (R5).** Bu belge 9 Ağustos'tan önce yazıldı ve o gün
+> sistem epey değişti. Belge o tarihte kodla satır satır karşılaştırılıp hizalandı.
+> Hizalama kuralı: **belge koda uydurulur, kod belgeye değil.** Tasarlanmış ama
+> uygulanmamış her karar, silinmek yerine [§10 Uygulanmayanlar](#10-uygulanmayanlar--tasarlandı-kodda-yok)
+> bölümünde açıkça "uygulanmadı" olarak listelenir; sessizce duran bir iddia yalandır
+> (Anayasa III).
+
 ---
 
 ## 1. Nihai Teknoloji Yığını
@@ -14,16 +21,16 @@ ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim:
 | Veritabanı + Vektör | **Supabase PostgreSQL + pgvector** (tek veritabanı). Geliştirme de Supabase'in kendisinde (veya `supabase` CLI lokal stack) — Compose'daki düz Postgres yalnızca fallback | Qdrant/FAISS/Chroma (ikinci veri deposu = senkron + yetki sızıntı riski), Azure AI Search ($73+/ay), iki ayrı dev/prod DB (migration/RLS sapması) |
 | Auth + Storage | **Supabase Auth + Storage** | Sıfırdan JWT/upload yazmak |
 | Doküman işleme | **PyMuPDF + python-pptx + düz parser**; Docling sorunlu dosyalara fallback | Docling ana parser (H1 entegrasyon riski) |
-| Embedding | **`intfloat/multilingual-e5-large` (1024 boyut), ONNX/fastembed, model Docker imajına GÖMÜLÜ** — çalışma zamanında HuggingFace'e bağımlılık yok. **`EMBEDDING_PROVIDER` ingest-zamanı kararıdır: değiştirmek tam re-index gerektirir, runtime'da çevrilmez** | bge-m3 (fastembed dense kataloğunda yok — bkz. aşağıdaki not); İngilizce-odaklı embedding (TR materyalde çöker); API-only (per-query maliyet + offline demo imkânsız) |
+| Embedding | **`intfloat/multilingual-e5-large` (1024 boyut), ONNX/fastembed.** **`EMBEDDING_PROVIDER` ingest-zamanı kararıdır: değiştirmek tam re-index gerektirir, runtime'da çevrilmez.** Modelin imaja gömülmesi **HENÜZ UYGULANMADI** (§10) | bge-m3 (fastembed dense kataloğunda yok — bkz. aşağıdaki not); İngilizce-odaklı embedding (TR materyalde çöker); API-only (per-query maliyet + offline demo imkânsız) |
 | Sparse arama | **PostgreSQL FTS, `simple` + `unaccent` konfigürasyonu** (köklendirme yok → `fork()`, `O(n log n)` gibi teknik tokenlar korunur); turkish/english konfigürasyonlarıyla gold set üzerinde karşılaştırılıp raporlanır | turkish snowball (İngilizce terimleri bozar), english (Türkçe ekleri bozar) |
 | Füzyon | **Reciprocal Rank Fusion** (k=60) | Öğrenilmiş fusion (veri yok), skor normalizasyonu (kırılgan) |
 | Reranker | **P1, bayrak arkasında** (bge-reranker-v2-m3) | Ana hatta zorunlu (latency + deployment riski) |
 | LLM | **LiteLLM Router: Groq (Llama) → Gemini Flash OTOMATİK failover + retry/backoff** (kod seviyesinde; manuel anahtar değişimi değil). Failover H2'de bilerek Groq anahtarı bozularak test edilir | Tek sağlayıcı; yerel LLM hosting (GPU/cold-start) |
 | Yapılandırılmış çıktı | **Pydantic şema + server-side validasyon + 1 retry** | Sağlayıcıya özel structured-output'a tam güven |
 | Orkestrasyon | **Düz Python servis kodu + açık state machine** | LangChain/LlamaIndex/LangGraph (debug şeffaflığı) |
-| Arka plan işleri | **Postgres job tablosu (`FOR UPDATE SKIP LOCKED`) + HTTP-tetiklemeli worker**: upload handler 202 döndükten sonra worker'ın `/drain` endpoint'ini çağırır → ACA HTTP scale-to-zero doğal çalışır. (Alternatif: KEDA PostgreSQL scaler) | Sürekli poll eden worker (scale-to-zero ile çelişir: ya hiç sıfıra inmez ve free tier'ı yer, ya iner ve job'lar asılı kalır), Redis+Celery |
-| Deploy | **Vercel + Azure Container Apps + Supabase, G1'den itibaren sürekli deploy** — kapılar canlı URL'de geçilir. Demo/prova günleri api+worker **minReplicas=1** (parametrik). Docker Compose lokal/fallback | Son haftada ilk deploy (CORS/JWT/cold-start sürprizleri teslime 2 gün kala), tek VM, K8s |
-| CI | **GitHub Actions**: ruff + pytest + tsc + docker build (+ "model imaj içinde, konteyner network'süz ayağa kalkıyor" assertion'ı) | — |
+| Arka plan işleri | **Postgres job tablosu (`FOR UPDATE SKIP LOCKED`).** Bugün çalışan tetik **süreç içidir**: upload handler 202 döndükten sonra `BackgroundTasks` ile `worker.drain()` çağrılır (`app/api/documents.py`). HTTP tetiği (`POST /internal/drain`) **UYGULANMADI** — router kayıtlı ama boş (§10) | Sürekli poll eden worker (scale-to-zero ile çelişir: ya hiç sıfıra inmez ve free tier'ı yer, ya iner ve job'lar asılı kalır), Redis+Celery |
+| Deploy | **Vercel + Azure Container Apps + Supabase** hedeflenir; bugün depoda yalnız `docker-compose.yml` + `apps/api/Dockerfile` var. Bulut dağıtımı **R3'ün açık işi** (§10) | Son haftada ilk deploy (CORS/JWT/cold-start sürprizleri teslime 2 gün kala), tek VM, K8s |
+| CI | **GitHub Actions**: ruff + ruff format + mypy + pytest + RLS izolasyon kanıtı (api) · lint + tsc (web) · Playwright uçtan uca. **Docker build ve "model imaj içinde" assertion'ı henüz YOK** (§10) | — |
 | Gözlemleme | **Yapılandırılmış JSON log + request/hata tabloları** (redaction'lı) | Langfuse/Sentry (v2) |
 
 ### Embedding modeli: bge-m3'ten multilingual-e5-large'a
@@ -43,6 +50,37 @@ Atlanırsa hata alınmaz, yalnızca retrieval kalitesi düşer — bu yüzden da
 bge-m3 kapsam dışı değil, **3. haftadaki embedding A/B karşılaştırmasının adayı**
 (PLAN.md G11): multilingual-e5-large ile ≥40 soru üzerinde Recall@5 ve MRR karşılaştırılıp
 sonuç test raporunda "embedding seçim gerekçesi" başlığında yayımlanacak.
+
+**Sürüm uyuşmazlığı — AÇIK RİSK (9 Ağustos, ölçüldü).** fastembed 0.8.0 bu modeli artık
+**mean pooling** ile çalıştırıyor; eski sürümler **CLS** kullanıyordu ve kütüphane bunu
+yalnız bir `UserWarning` ile söylüyor. Pooling değişikliği vektör uzayını değiştirir: bir
+sürümle ingest edilmiş korpusa başka bir sürümle sorgu atmak sessizce yanlış komşular
+döndürür — hiçbir şey çökmez, retrieval kalitesi düşer ve bunu söyleyen bir mekanizma
+yoktur. Kanıt eşiğinin sağlayıcıya göre çözülmesi bu sınıfın yalnız yarısını (sağlayıcı
+uyuşmazlığı) kapatır; ikinci yarısı **sürüm**dür ve chunk başına sağlayıcı+sürüm damgası
+gerektirir (R4'ün `0006` migration'ı).
+
+Bugünkü durum ölçüldü: `dou_synapse_eval_e5` korpusuna (33 chunk) fastembed 0.8.0 ile beş
+sonda sorgu atıldı; ilgili sorular 0.8130–0.8699, konu dışı sorular 0.7238–0.7587 kosinüs
+aldı ve 0.81 eşiği ikisini doğru ayırdı. Yani **bu korpus-sürüm çifti bugün tutarlı**.
+Bu bir nokta kontrolüdür, kalibrasyonun yeniden koşulması değildir.
+
+### Kanıt eşiği sağlayıcıya bağlıdır
+
+`EVIDENCE_THRESHOLD_BY_PROVIDER` (`app/core/config.py`) iki değer taşır: `fastembed` → **0.81**
+(kalibre edildi, T043), `hashing` → **0.10** (kalibre edilemez, yalnız yaklaşık davranış).
+Sebep yapısaldır: iki sağlayıcının kosinüs dağılımları farklı bantlarda oturur, birinde
+kalibre edilmiş sayı diğerinde anlamsızdır.
+
+Ölçülen (9 Ağustos, `hashing` ile gömülmüş korpus, COME 331): ilgili sorgular
+0.1715–0.1951, konu dışı sorgu 0.1789. **Konu dışı sorgu, ilgili sorgulardan birinden
+yüksek skor aldı** — yani `hashing` bu materyalde ayırt etme gücü taşımıyor. Bu sağlayıcı
+test ve çevrimdışı geliştirme içindir; **demo ve ölçüm bu sağlayıcıyla koşulmaz.**
+
+Testler `hashing`'de kalır ve bu doğrudur: kendi veritabanlarını kurup **sorguladıkları
+sağlayıcıyla** ingest ederler, yani kendi içlerinde tutarlıdırlar ve model indirmezler.
+Kural şudur: **bir sunucu paylaşılan korpusa bağlanıyorsa o korpusun gömüldüğü sağlayıcıyı
+kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular döndürür.
 
 ### Deploy gerçekliği (ölçülecek ve raporlanacak)
 
@@ -93,9 +131,11 @@ sonuç test raporunda "embedding seçim gerekçesi" başlığında yayımlanacak
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
+Kodda gerçekten var olan 15 tablo (`supabase/migrations/0001,0003,0004,0005`):
+
 ```
-profiles            (id→auth.users, full_name, role: instructor|student)
-courses             (id, code, title, instructor_id)
+profiles            (id, email, full_name, created_at)
+courses             (id, code, title, created_by, created_at)
 course_memberships  (user_id, course_id, role, status)
 documents           (id, course_id, uploaded_by, file_name, file_type,
                      storage_path, file_hash, status: uploaded|processing|completed|failed)
@@ -106,21 +146,38 @@ ingestion_jobs      (id, document_id, status, attempt_count, last_error, ...)
 topics              (id, course_id, name)                    -- eğitmen tanımlar
 questions           (id, course_id, topic_id,
                      type: mcq|open|code_trace|bug_hunt,     -- kod inceleme = ayrı soru tipleri
-                     payload jsonb, source_chunk_id, status: draft|approved|rejected)
+                     payload jsonb, source_chunk_id, status: draft|approved|rejected,
+                     created_by, reviewed_by, reviewed_at)
 exam_sessions       (id, user_id, course_id, mode: practice|exam, started_at, ...)
 answers             (id, session_id, question_id, given, is_correct,
                      feedback jsonb: {score, eksik_noktalar[], dayanak_chunk_id})
-mastery             (user_id, topic_id, score float, updated_at)
-answer_cache        (course_id, question_hash, response jsonb)   -- exact-match demo cache (P0)
-chat_sessions / chat_messages (mode: qa|socratic, state, citations jsonb)
-request_logs        (redaction'lı; latency, status, course_id, token_count)
+mastery             (user_id, topic_id, course_id, score float, answer_count, updated_at)
+answer_cache        (id, course_id, question_hash, answer jsonb, created_at)
+chat_sessions       (id, course_id, user_id, mode: qa|socratic|exam, state jsonb, title, ...)
+chat_messages       (id, session_id, course_id, role, content, citations jsonb,
+                     status, socratic_stage, seq, created_at)
+request_logs        (id, course_id, user_id, route, mode, status, http_status,
+                     latency_ms, token_count, cache_hit, created_at)
 ```
 
 Kurallar:
 - `chunks.course_id` **denormalize** — filtre JOIN'e bağlı kalmaz.
 - Bir chunk **iki sayfayı birleştirmez**; 400–600 token, ~%15 overlap; kod dosyaları
   fonksiyon/sınıf sınırından bölünür.
-- `file_hash` ile tekrar embed engellenir. Günlük token tüketimi loglanır (kota bütçesi).
+- `file_hash` ile tekrar embed engellenir.
+
+Belgenin eski hâlinden düzeltilen dört ad/alan (kod kaynak alındı):
+
+| Eski belge | Kodda | Neden önemli |
+|---|---|---|
+| `profiles.role: instructor\|student` | **yok** | Sistem geneli rol yoktur; yetki daima ders bazlıdır (`course_memberships.role`). Global rol sütunu, iki katmanlı izolasyonu delen bir kestirme olurdu |
+| `courses.instructor_id` | `courses.created_by` | Dersin eğitmeni üyelik tablosundan gelir; dersin tek bir "sahibi" alanı yok |
+| `answer_cache.response` | `answer_cache.answer` | — |
+| `mastery(user_id, topic_id, score)` | `+ course_id, answer_count` | `answer_count` "kaç cevaba dayanıyor" sorusunu cevaplar; tek cevaptan çıkan bir seviye rozetini gösterirken bu bilinmeli |
+
+**Migration numaraları:** `0002` R1'e (Supabase Auth köprüsü), `0006` R4'e, `0007` R3'e
+ayrılmıştır ve bugün depoda yoktur. Bu yüzden numaralar `0001, 0003, 0004, 0005` diye
+atlamalı gider — eksik dosya değil, ayrılmış numaradır.
 
 ---
 
@@ -146,50 +203,141 @@ Demo notu: canlı yükleme gösterimi için 5-10 sayfalık küçük PDF kullanı
 Sıralama kritiktir; her adım bir güvenlik sınırıdır:
 
 ```
-1. AuthZ        JWT doğrula → user_id → course_memberships kontrolü
+0. Sınırlar     soru uzunluğu ≤ 2000 karakter · kullanıcı+ders başına 20 istek / 60 sn
+                (süreç içi kayan pencere — çok worker'lı koşuda worker başına uygulanır)
+1. AuthZ        Bearer token → user_id → course_memberships kontrolü (CourseMemberDep)
                 (course_id İSTEMCİDEN ASLA güvenilmez; backend belirler)
-2. Retrieval    dense top-20 (pgvector) ∥ FTS top-20  →  RRF  →  top-8
+2. Önbellek     birebir eşleşme, YALNIZ qa modunda: sha256(mode + normalize edilmiş soru).
+                İsabette LLM'e hiç gidilmez. Benzerlik tabanlı eşleşme YOKTUR.
+3. Retrieval    dense top-24 (pgvector) ∥ FTS top-24  →  RRF (k=60)  →  top-8
                 her sorguda zorunlu WHERE course_id = :authorized_course_id
-3. Evidence     en iyi sonuç eşik altındaysa → ABSTAIN
-   gate         Eşik KALİBRASYON setiyle ayarlanır (G6); ret oranı HOLDOUT sette raporlanır
-                — kalibrasyon ve test verisi asla karışmaz.
-4. Generation   context XML etiketli (<source id page>); çıktı Pydantic şemasına valide (1 retry)
-5. Citation     cevaptaki chunk_id'ler ⊆ retrieve edilen küme mi? (set-membership: deterministik)
+4. Evidence     en iyi parçanın DENSE skoru eşik altındaysa → ABSTAIN, LLM HİÇ ÇAĞRILMAZ.
+   gate         Eşik sağlayıcıya bağlıdır (fastembed 0.81 · hashing 0.10) ve kalibrasyon
+                setiyle ayarlanmıştır; holdout'ta doğrulanmadı (§7, evaluation/calibration.md).
+                Eşik füzyon skoruna UYGULANAMAZ: RRF sıralamadan üretilir, üst sınırı ~0.033'tür.
+5. Generation   context XML etiketli (<source id file location>); çıktı Pydantic şemasına
+                valide (1 retry, sonra abstention)
+6. Citation     cevaptaki chunk_id'ler ⊆ retrieve edilen küme mi? (set-membership: deterministik)
    validator    Değilse temizle; geçerli citation kalmadıysa CEVAP GÖSTERİLMEZ (fail-closed).
                 Dosya adı + sayfa, model metninden DEĞİL chunk metadata'sından üretilir.
                 NOT: Bu kontrol atıf uydurmayı engeller; iddia-kaynak tutarlılığını (faithfulness)
                 garanti ETMEZ — o ayrıca örneklem üzerinde ölçülür (§7).
-6. Pedagojik    (Sokratik/sınav modunda) kod bloğu + doğrudan-çözüm dedektörü (kural tabanlı:
+7. Pedagojik    (Sokratik/sınav modunda) kod bloğu + doğrudan-çözüm dedektörü (kural tabanlı:
    filtre       fence, girinti deseni, "cevap: X" kalıpları) → ihlalde 1 regen (stokastik);
                 yine ihlalse ŞABLON İPUCUNA DÜŞ (fail-closed, deterministik son durak).
                 Kalıp dışı sızıntı (pseudocode, sözel çözüm) MİTİGASYONDUR, garanti değil —
                 test seti bu vakaları içerir ve sızıntı oranı raporlanır.
-7. Sanitize     Markdown/HTML temizliği (XSS) → gönder + event log
+8. Sanitize     Markdown/HTML temizliği (XSS)
+9. Kayıt        chat_messages + oturum durumu + request_logs (soru METNİ yazılmaz)
 ```
 
-### Cevap şeması
+Zincirin sırası (`citation → leakage → sanitize`) **tek yerde** sabittir:
+`modules/guardrails/chain.py:GUARDRAIL_CHAIN`. Çağıranlar halkaları kendileri dizmez.
+
+### İki orkestratör var ve üretimde biri koşuyor
+
+Bu, belgenin kodla ayrıştığı en önemli nokta ve bilerek kayda geçiriliyor:
+
+| | `api/chat.py::produce_answer` | `modules/guardrails/chain.py::AnswerPipeline` |
+|---|---|---|
+| Kim çağırıyor | **canlı sohbet ucu** | yalnız testler (`test_guardrails.py`, `test_generation.py`) |
+| Sızıntıda yeniden üretim | var, ama **aynı parametrelerle** | var, `strict_retry=True` ile |
+| Şablon son durak | `assessment.socratic.template_hint` | `leakage.build_template_hint` |
+| Bloklanan cevabın metni | `chat.py:MESSAGE_BLOCKED` | `generation.service.USER_TEXT[...]` |
+
+Yani `AnswerPipeline`'ın `strict_retry` yolu ve `USER_TEXT` sabitleri **üretimde hiç
+koşmuyor**. Davranış her iki yolda da fail-closed olduğu için bu bir güvenlik açığı
+değildir, ama Anayasa XI ihlalidir: aynı iş iki yerde yazılı ve ikisi şimdiden ayrışmış.
+Tekilleştirme R4'e iletildi.
+
+### Cevap şeması (istemciye dönen zarf — `app/schemas/chat.py:ChatResponse`)
 
 ```json
 {
+  "session_id": "…", "message_id": "…",
   "status": "answered | insufficient_context | out_of_scope",
   "mode": "qa | socratic | exam",
   "answer": "...",
-  "citations": [{"chunk_id": "…", "claim": "…"}],
-  "hints": [{"text": "…", "chunk_id": "…"}]
+  "citations": [{"chunk_id": "…", "claim": "…",
+                 "file_name": "…", "location": "Sayfa 7", "snippet": "…"}],
+  "hints": [{"text": "…", "chunk_id": "…",
+             "file_name": "…", "location": "…", "stage": "nudge"}],
+  "socratic_stage": "diagnose | nudge | concept_hint | similar_example | explain_with_source",
+  "cached": false
 }
 ```
-- Backend `chunk_id` → `{file_name, page_number, snippet}` eşlemesini kendisi yapar.
-- **İpuçları da retrieve edilmiş chunk'lardan türetilir, `chunk_id` taşır ve evidence-gate'ten
-  geçer** — hocanın "her yanıtta kaynak" şartı hint'leri de kapsar; davranış testlerinde
-  "kaynaksız hint" senaryosu vardır.
+
+- Backend `chunk_id` → `{file_name, location, snippet}` eşlemesini kendisi yapar; bu üç alan
+  chunk metadata'sından gelir, model metninden değil.
+- `session_id`/`message_id` opsiyonel DEĞİLDİR: istemci bir sonraki turu aynı oturuma bağlamak
+  zorundadır ve oturum kimliğini uyduramaz.
+- `cached` alanı ölçüm içindir: bir cevabın önbellekten mi geldiği raporlanabilmeli.
+- **`claim` alanı `contracts.Citation`'da bilinçli olarak YOKTUR.** `contracts.py` guardrail
+  zincirinin sözleşmesidir ve **hiçbir guardrail kararı `claim`'e bakmaz**; o bir sunum
+  verisidir. Sözleşmeye konsaydı, hiçbir kontrolün okumadığı bir alanı üç modül birden
+  doldurmak zorunda kalırdı. Zarf katmanında (`schemas/chat.py`, `to_chat_response(claims=…)`)
+  taşınır. Üreteci olan uygulamalar `ClaimingGenerator` protokolünü uygular.
+- **`hints[]` dizisi zarfta VARDIR ve Sokratik turda dolar** ama `answer`'ı tekrarlamaz:
+  `to_chat_response` ipucunu yalnız `socratic + answered + atıflı` turlarda üretir ve ipucunun
+  kaynağı cevabın kaynağıyla **aynı kümedir** — tek atıf kümesi, tek doğrulama. Hocanın "her
+  yanıtta kaynak" şartı ipuçlarını da kapsar.
+- Sağlayıcı/model adı zarfta **dışarı verilmez** (altyapı ayrıntısı kullanıcıya gitmez);
+  ölçüm için `GeneratedAnswer` üzerinde taşınır.
+
+### `out_of_scope` pratikte ulaşılamaz — ölçülen davranış
+
+Zarf üç statü tanımlar ama canlı QA yolunda **kapsam dışı bir soru `insufficient_context`
+döner**, `out_of_scope` değil. Sebep sıradadır: kanıt kapısı (adım 4) LLM'den ÖNCE gelir ve
+konu dışı sorularda zaten kapanır; `out_of_scope`'u yalnız LLM üretebilir, ama ona hiç
+gidilmez.
+
+Ölçüldü (9 Ağustos, COME 331, fastembed): üç kapsam dışı soru ("İtalya'nın başkenti",
+"bugün hava", "pizza tarifi") üçü de `insufficient_context` döndü, atıf sayısı 0.
+
+İki sonucu var ve ikisi de kayda değer:
+
+1. Kullanıcı, kapsam dışı sorusuna `MESSAGE_OUT_OF_SCOPE` ("bu soru dersin kapsamı dışında
+   görünüyor") yerine `MESSAGE_INSUFFICIENT_CONTEXT` ("yeterli dayanak bulamadım") metnini
+   görür. İkincisi doğru ama daha az isabetli.
+2. Eğitmen analitiğindeki **kapsam dışı ret oranı `request_logs`'tan okunduğu için %0
+   görünür** — sistem üç soruyu doğru reddetmiş olsa bile. Ölçülen: `out_of_scope_count: 0`,
+   `insufficient_context_count: 3`.
+
+Bu bir kusurdur ve gruba iletildi; belgeye "böyle çalışıyor" diye yazılması, ölçümü okuyan
+kişinin yanlış sonuç çıkarmasını engellemek içindir.
 
 ### Sokratik state machine (backend'de tutulur)
 
 ```
 DIAGNOSE → NUDGE → CONCEPT_HINT → SIMILAR_EXAMPLE → EXPLAIN_WITH_SOURCE
 ```
-Öğrenci denemesi olmadan ilerlenmez; her kademe event olarak loglanır. Mod politikaları
-backend'de: `exam` → hint kapalı, tek deneme, geri bildirim sınav sonunda.
+
+Öğrenci denemesi olmadan ilerlenmez; her kademe geçişi hem oturum `state` jsonb'sine hem
+yapılandırılmış loga yazılır. `ChatRequest`'te `socratic_stage` alanı **bilinçli olarak
+yoktur**: kademe kararı sunucudadır, istemci seçebilseydi öğrenci tek istekle
+`EXPLAIN_WITH_SOURCE` isteyip merdiveni atlardı.
+
+İki incelik kodda var, belgede yoktu:
+
+- **Arama, turun metniyle değil OTURUMUN AÇILIŞ SORUSUYLA yapılır.** Sokratik turlarda
+  öğrencinin yazdığı bir denemedir ("hı", "sanırım dört koşul"), soru değil; onunla arama
+  yapılırsa hiçbir parça bulunmaz ve merdiven kanıt eşiğine takılıp çöker. Canlı koşuda
+  birebir bu gözlendi.
+- **Kademe yalnız gerçekten ipucu servis edildiyse ilerler.** Kanıt eşiği aşılamadıysa
+  kullanıcı hiçbir yardım almamıştır; o turu ilerleme saymak öğrenciyi hiç görmediği bir
+  kademeye taşırdı.
+
+Israrcı öğrenci yolu (ölçüldü, 9 Ağustos): deneme yapılmadan "sadece söyle" denirse üretim
+**hiç çalıştırılmaz**; kullanıcı nazik uyarıyı ve AYNI kademenin deterministik şablon
+ipucunu alır. Merdiven ilerlemez, kaynak yine taşınır, LLM bütçesi ısrarla tüketilemez.
+
+Mod politikaları backend'de:
+
+| | ipucu | geri bildirim |
+|---|---|---|
+| `practice` sınav | **açık** (`POST /exams/{id}/hint`, kademe mastery çarpanına girer) | anında |
+| `exam` sınav | **kapalı** — `hint` ucu reddeder, `hint_level > 0` reddedilir | sınav sonunda |
+| sohbet `exam` modu | **kapalı** — `POST /chat` `exam` modunu hiç kabul etmez (422) | — |
 
 ### Açık uçlu cevap değerlendirme (hocanın "eksiği söyle" gereksinimi)
 
@@ -206,10 +354,12 @@ soru tipleri; kod asla çalıştırılmaz, değerlendirme cevap anahtarına kar�
 ### Mastery-Lite ("çalışma performans göstergesi")
 
 ```
-yeni_puan = 0.7 × eski_puan + 0.3 × son_cevap_skoru          (konu bazında EWMA)
+yeni_puan = (1 - α) × eski_puan + α × son_cevap_skoru        (konu bazında EWMA, α = 0.3)
 İpucu kademesi çarpanları: 0→1.00 · 1→0.85 · 2→0.70 · 3→0.50 · 4→0.25
 Seviye eşikleri: <0.40 Geliştirilmeli · 0.40-0.74 Orta · ≥0.75 İyi
 ```
+
+α tek yerde: `Settings.mastery_alpha = 0.3`. Kademe sayısı `Settings.socratic_max_stage = 4`.
 **Gerekçe (raporda aynen savunulur):** Bu bilinçli bir sadeleştirmedir. BKT/IRT gibi yerleşik
 öğrenci modelleri parametre kestirimi için bizde olmayan öğrenci verisi gerektirir; EWMA,
 yakın geçmişe ağırlık veren üstel unutma modellerine kaba bir yaklaşımdır. 0.7/0.3 duyarlılık
@@ -221,11 +371,22 @@ yapılan sorular, ret istatistiği (tek sayfa).
 
 ## 6. Güvenlik
 
-- **İzolasyon çift katman — ama dürüst kurulumla:** backend'de zorunlu `course_id` filtresi +
-  Postgres RLS. RLS'in gerçekten tetiklenmesi için backend **anon key + kullanıcı JWT'sini
-  geçirir** (service-role ile RLS sessizce bypass olur ve testler sahte yeşil yanar).
-  Service-role yalnızca worker'ın iç işlerinde. G13 testi: **policy bilerek bozulur, izolasyon
-  testinin KIRMIZI yandığı görülür** — RLS'in canlı olduğunun kanıtı raporda yer alır.
+- **İzolasyon çift katman — ama dürüst kurulumla:** backend'de zorunlu üyelik doğrulaması
+  (`CourseMemberDep`/`CourseInstructorDep`) + Postgres RLS. Bugünkü kurulumda API,
+  **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
+  başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
+  (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
+  yazar. 15 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani
+  tablo sahibi bile politikalara tabidir.
+  **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
+  yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`
+  çalıştırır.
+  Erişimi olmayan derste **404 döner, 403 değil**: 403, üye olunmayan bir dersin var
+  olduğunu sızdırırdı.
+- **Compose yığınında RLS DEVREDE DEĞİLDİR.** `docker-compose.yml` API'yi `postgres`
+  (superuser) rolüyle bağlar; superuser `FORCE` işaretine rağmen RLS'i atlar. Bu yığın
+  yerel/çevrimdışı fallback içindir ve **izolasyon kanıtı bu yığında alınamaz**. Düzeltme
+  R3'e iletildi (§10).
 - **Upload:** uzantı beyaz listesi + MIME + magic byte; 20 MB; UUID yeniden adlandırma;
   worker'da zaman/bellek sınırı (zip-bomb/dev PDF).
 - **Indirect prompt injection:** belge metni `<retrieved_context>` içinde veri olarak
@@ -242,13 +403,22 @@ yapılan sorular, ret istatistiği (tek sayfa).
 - **KVKK notu:** sohbet kayıtları saklama süresi + aydınlatma metni sayfası; mastery çıktısı
   "öneri"dir (human-in-the-loop).
 
-### Demo günü runbook (özet)
+### İşlem sınırı: `SessionDep` `scope="function"`
 
-A planı: canlı bulut (minReplicas=1, sabah warm-up + önceden açık oturumlar).
-B planı: telefon hotspot + aynı canlı bulut.
-C planı (tam offline): Compose + dev-auth bypass (seed'li oturum) + demo senaryosu cevapları
-`answer_cache`'ten (LLM'siz senaryolu akış; sınırları sunumda dürüstçe söylenir).
-En az bir prova Wi-Fi kapalı yapılır.
+Veritabanı oturumu `Depends(get_session, scope="function")` ile bağlanır. Varsayılan
+(`scope="request"`) kapsamda FastAPI, yanıtı istemciye yazdıktan SONRA commit eder;
+istemcinin hemen yaptığı ikinci istek işlemi henüz görmez. Ölçülen kusur: `POST /documents`
+`202` dönüyor, hemen ardındaki `GET` **0 belge** görüyordu.
+
+Yan etkisi belgeye giriyor çünkü davranışı değiştiriyor: **yükleme ucunun arka plan worker
+tetiği artık gerçekten çalışıyor** (önceden boş kuyruk görüp sessizce sıfır dönüyordu).
+`BackgroundTasks` hâlâ yanıttan sonra koşar ve bu doğrudur — worker tetiği kullanıcıyı
+bekletmemeli; öne alınan yalnız veritabanı işlemidir.
+
+### Demo günü runbook
+
+Üç plan ve geçiş ölçütleri artık ayrı bir belgededir: **[docs/runbook.md](docs/runbook.md)**.
+Sahne sahne anlatım: **[docs/demo-script.md](docs/demo-script.md)**.
 
 ---
 
@@ -290,14 +460,20 @@ DOU-Synapse/
 │           │                   # assessment/ mastery/
 │           ├── models/ schemas/ core/
 │           └── worker.py       # /drain ile tetiklenen job consumer
-├── evaluation/                 # gold_set/ (calibration.json, holdout.json), evaluate.py
-├── sample_data/                # İşletim Sistemleri paketi (G3'te v1)
-├── docs/                       # test-report, instructor-guide, student-guide, runbook
-├── supabase/                   # migrations, RLS policies, seed
-├── .github/workflows/ci.yml    # ruff+pytest+tsc+docker build+model-gömülü assertion
-├── docker-compose.yml          # web+api+worker+pgvector-postgres+dev-auth (fallback profili)
+├── evaluation/                 # gold_set/, calibration.md, evaluate.py, results/
+├── sample_data/                # İşletim Sistemleri paketi (8 dosya → 33 chunk)
+├── docs/                       # runbook, demo-script, instructor-guide, student-guide,
+│                               # kvkk, test-report, security, deployment, images/
+├── supabase/                   # migrations/ (0001,0003,0004,0005), tests/ (RLS kanıtı),
+│                               # local_dev_setup.sql, seed_demo.sql
+├── .github/workflows/ci.yml    # api: ruff+format+mypy+pytest+RLS · web: lint+tsc · e2e
+├── docker-compose.yml          # db (pgvector:pg16) + api — fallback profili, web YOK
 └── .env.example
 ```
+
+`docker-compose.yml` bir **iki servisli** yığındır: frontend Compose'da değildir, `bun` ile
+ayrıca çalıştırılır. Worker da ayrı servis değildir; yükleme sonrası tetik API sürecinin
+içinde koşar.
 
 ---
 
@@ -307,4 +483,38 @@ DOU-Synapse/
 - Parent-child chunking + reranker varsayılan açık; RAGAS sürekli eval
 - Sınıf düzeyi kavram yanılgısı kümeleme panosu; Langfuse; LMS entegrasyonu
 - Ölçek büyürse (1M+ chunk) Qdrant'a geçiş yolu
-```
+
+---
+
+## 10. Uygulanmayanlar — tasarlandı, kodda yok
+
+Bu bölüm 9 Ağustos 2026'da kod okunarak çıkarıldı. Bir karar burada listeliyse **bugün
+çalışmıyor** demektir. Silinmiyorlar çünkü karar hâlâ geçerli; yalnız durumları dürüst
+yazılıyor (Anayasa III).
+
+| # | Tasarlanan | Bugünkü durum | Sahibi |
+|---|---|---|---|
+| 1 | Embedding modeli **Docker imajına gömülü**, runtime'da HuggingFace bağımlılığı yok | **Uygulanmadı.** `apps/api/Dockerfile` yalnız "ileride gömülecek" notu taşıyor. Model çalışma zamanında indiriliyor ve macOS'ta `$TMPDIR/fastembed_cache` altına (2,1 GB) düşüyor — bu dizini işletim sistemi temizler | R3 |
+| 2 | CI'da **"model imaj içinde, konteyner ağsız ayağa kalkıyor"** assertion'ı | **Uygulanmadı.** CI'da docker build işi yok | R3 |
+| 3 | **HTTP-tetiklemeli worker** (`POST /internal/drain`), ACA scale-to-zero ile uyumlu | **Uygulanmadı.** Router kayıtlı ama boş; `worker_drain_secret` ayarı hazır. Bugün çalışan tetik süreç içi `BackgroundTasks` | R3 |
+| 4 | **Vercel + Azure Container Apps + Supabase** canlı dağıtım | **Uygulanmadı.** Depoda yalnız Compose + Dockerfile var; canlı URL yok | R3 |
+| 5 | **Supabase Auth** ile gerçek kimlik | **Uygulanmadı.** Bugün yalnız `DEV_AUTH_ENABLED=true` ve imzasız `Bearer dev:<uuid>`. JWT doğrulama kodu var (`core/security.py`), köprü migration'ı (`0002`) yok | R1 |
+| 6 | **Supabase Storage** (private bucket) | **Uygulanmadı.** Yerel dosya sistemi deposu (`STORAGE_ROOT`) kullanılıyor | R3 |
+| 7 | Kanıt eşiğinin **holdout'ta hedefi tutturması** (kapsam dışı doğru ret ≥ %90) | **Tutturulmadı.** Ölçülen %80. Eşik holdout'a bakılarak DEĞİŞTİRİLMEDİ; gerekçe `evaluation/calibration.md` §7 | R2 / R4 |
+| 8 | Chunk başına **embedding sağlayıcı + sürüm damgası** | **Uygulanmadı.** Sürüm uyuşmazlığı sessizce yanlış komşu döndürebilir (§1) | R4 |
+| 9 | `AnswerPipeline`'ın **tekilleştirilmesi** — üretim yolu kendi kopyasını koşuyor (§5) | **Uygulanmadı.** İki orkestratör yan yana duruyor | R4 |
+| 10 | Compose yığınında **RLS'in devrede olması** | **Uygulanmadı.** `postgres` superuser'ı ile bağlanılıyor, RLS atlanıyor (§6) | R3 |
+| 11 | Sahte LLM sağlayıcısının **soru üretimini** desteklemesi | **Uygulanmadı.** `FakeLlmClient` yalnız sohbet şemasını üretir; anahtarsız ortamda soru üretimi 0 soru döndürür ("yanıtta 'questions' dizisi yok"). Çevrimdışı demoda sınav akışı önceden onaylanmış sorulara muhtaç | R4 |
+| 12 | Reranker (`ENABLE_RERANKER`), RAGAS, streaming (SSE) | **Uygulanmadı** — P1, bilinçli olarak dondurma sonrasına bırakıldı | — |
+
+Ayrıca **kodda bayat kalmış üç yorum** tespit edildi (davranış doğru, yorum yanlış):
+
+- `app/api/chat.py::_has_evidence` — "Eşik değeri KALİBRE EDİLMEMİŞTİR (T043); hiçbir raporda
+  kullanılamaz" diyor; eşik 9 Ağustos'ta kalibre edildi.
+- `app/api/chat.py::_opening_question` — "öğrencinin son denemesi üretime geçirilemiyor çünkü
+  `contracts.Generator.generate` imzasında böyle bir alan yok" diyor; `student_attempt` alanı
+  imzada var ve uç onu geçiriyor.
+- `app/modules/retrieval/service.py` modül docstring'i — "Eşik kalibre EDİLMEMİŞTİR
+  (`config.evidence_threshold = 0.35`)" diyor; değer artık sağlayıcıya göre 0.81/0.10.
+
+Üçü de bu şeridin sahipliğindeki dosyalar değil; gruba iletildi.

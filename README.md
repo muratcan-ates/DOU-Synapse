@@ -12,7 +12,7 @@ Danışman: Yasemin Karagül · Takım: Muratcan Ateş (frontend + lead) · Eren
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-92_ge%C3%A7ti-brightgreen)
+![Tests](https://img.shields.io/badge/tests-479_ge%C3%A7ti-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/muratcan-ates/DOU-Synapse?style=flat-square)
 
@@ -49,7 +49,7 @@ iş taslakları onaylamak. Onaylanmayan hiçbir soru öğrenciye görünmez.
 | **Nedir** | Ders materyaliyle sınırlı, kaynak zorunlu, Sokratik bir RAG ders ve sınav asistanı |
 | **Kimin için** | Soru hazırlama ve sınıf görünürlüğü yükü taşıyan eğitmen; müfredat dahilinde güvenilir kaynakla çalışmak isteyen öğrenci |
 | **Farkı ne** | Cevap üretmek değil, **doğrulanabilir** cevap üretmek: mekanik atıf doğrulaması, kademeli Sokratik yönlendirme, eğitmen onaylı soru havuzu, iki katmanlı ders izolasyonu |
-| **Kanıtı ne** | 92 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak |
+| **Kanıtı ne** | 479 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak |
 | **Bilerek ne değil** | Üretim sistemi değil; internete açılmaz, kod çalıştırmaz, resmî not vermez — [aşağıda](#yapar--bilerek-yapmaz) |
 
 ## Yapay zekânın üç rolü
@@ -88,55 +88,50 @@ Sağ sütun eksik iş listesi değil, tasarım kararıdır:
 
 ## Ekran görüntüleri
 
-**Giriş** — geliştirme ortamı demo kartları (canlıda üniversite hesabı):
+Aşağıdaki görüntüler **9 Ağustos 2026'da çalışan sistemden** alındı: gerçek materyal
+(8 dosya · 33 parça), gerçek arama, gerçek atıflar.
 
-![Giriş ekranı](docs/screenshots/01-giris.png)
+**Materyal yönetimi** — yükleme, doğrulama ve canlı işleme durumu. Her dosyanın yanında
+kaç parçaya bölündüğü yazar; kaynak referansının hammaddesi budur:
 
-**Materyal yönetimi** — yükleme, doğrulama ve canlı işleme durumu:
+![Materyaller](docs/images/03-egitmen-materyaller.png)
 
-![Materyaller](docs/screenshots/03-materyaller.png)
+**Kaynaklı cevap** — cevabın altında dosya adı, sayfa numarası ve materyalden birebir
+alıntı. Dosya adı ve sayfa **modelin metninden değil**, getirilen parçanın kaydından gelir:
 
-**Parça önizleme** — her parçanın yanında geldiği sayfa/satır aralığı. Cevaplardaki
-kaynak referansı buradan üretilir, modelin kendi metninden değil:
+![Kaynaklı cevap](docs/images/09-sohbet-kaynakli-cevap.png)
 
-![Parça önizleme](docs/screenshots/04-parca-onizleme.png)
+**Sokratik mod, ısrar karşısında** — öğrenci "sadece söyle" dedi; merdiven **ilerlemedi**
+ve sistem dil modeline hiç gitmeden nazikçe reddetti. Kademe kararı sunucudaki durum
+makinesindedir, modele bırakılmaz:
 
-**Asistan + Sokratik mod** (tasarım önizlemesi — cevap hattı bağlanınca gerçek veriye
-geçecek, şeritte açıkça belirtiliyor):
+![Sokratik mod](docs/images/13-sokratik-israr-ilerlemiyor.png)
 
-![Asistan](docs/screenshots/05-asistan.png)
+**Kapsam dışı soruya nazik ret** — bu bir hata değil, ürünün çalıştığının kanıtı.
+Hata rengiyle değil nötr bir bildirimle gösterilir:
 
-**Sınav provası** (tasarım önizlemesi):
+![Nazik ret](docs/images/10-sohbet-nazik-ret.png)
 
-![Sınav](docs/screenshots/06-sinav.png)
+Diğer gerçek ekranlar: [giriş](docs/images/01-giris.png) ·
+[ders listesi](docs/images/02-egitmen-ders-listesi.png) ·
+[katılımcılar](docs/images/04-egitmen-katilimcilar.png) ·
+[Sokratik ilk kademe](docs/images/11-sokratik-kademe-1.png) ·
+[Sokratik ikinci kademe](docs/images/12-sokratik-kademe-2.png)
 
-**Soru havuzu ve eğitmen onayı** (tasarım önizlemesi) — sistem soruyu cevap anahtarı
-ve kaynak parçasıyla üretir, eğitmen tek ekranda inceleyip onaylar. Onaylanmayan soru
-öğrenci akışında hiç görünmez:
-
-![Soru havuzu](docs/screenshots/09-soru-havuzu.png)
-
-**Sınıf analitiği** (tasarım önizlemesi) — konu bazlı sınıf durumu en zorlanılandan
-sıralı, en çok yanlış yapılan sorularla birlikte:
-
-![Sınıf analitiği](docs/screenshots/10-sinif-analitigi.png)
-
-**Öğrenci ilerlemesi** (tasarım önizlemesi) — aynı ekran, öğrenci rolünde farklı soruya
-cevap verir: "hangi konuya çalışmalıyım?" Skorun resmî not olmadığı ekranda yazılıdır:
-
-![Öğrenci ilerlemesi](docs/screenshots/11-ogrenci-ilerleme.png)
+**Hâlâ tasarım önizlemesi olan üç ekran** — backend uçları çalışıyor ve uçtan uca
+doğrulandı, bağlanmayı bekleyen yalnız arayüz:
+[soru havuzu](docs/images/05-egitmen-soru-havuzu.png) ·
+[sınav provası](docs/images/14-ogrenci-sinav-provasi.png) ·
+[ilerleme/analitik](docs/images/06-egitmen-sinif-analitigi.png)
 
 **İzolasyon kanıtı** — öğrenci, üye olmadığı dersin adresini elle yazarsa "yetkiniz yok"
 değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
 
 ![İzolasyon](docs/screenshots/08-izolasyon-404.png)
 
-Diğerleri: [ders listesi](docs/screenshots/02-ders-listesi.png) ·
-[katılımcı yönetimi](docs/screenshots/07-katilimcilar.png)
-
 ## Yapılanlar ✅
 
-Hepsi bu depoda çalışır ve testlidir — **92 otomatik test** + CI (ruff, mypy, pytest,
+Hepsi bu depoda çalışır ve testlidir — **479 otomatik test** + CI (ruff, mypy, pytest,
 RLS izolasyon kanıtı):
 
 - **İki katmanlı ders izolasyonu** — uygulama katmanı (istemciden gelen ders kimliği
@@ -156,23 +151,33 @@ RLS izolasyon kanıtı):
 - **8 ekranlı web arayüzü** — Türkçe, koyu tema, 375px mobil uyumlu
 - **Gereksinim analizi** — danışman taslağının 12 maddesi → numaralı FR izlenebilirliği
 
+**9 Ağustos'ta tamamlanan cevap hattı** — hepsi canlı sistemde koşturularak doğrulandı:
+
+- **Hibrit retrieval** (dense + PostgreSQL FTS, RRF k=60) → **kanıt eşiği** → LLM →
+  **guardrail zinciri** (atıf doğrulama → sızıntı → sanitize)
+- **Mekanik atıf doğrulaması** — modelin verdiği `chunk_id`'ler getirilen kümeye karşı
+  sınanır; kümede olmayan atıf düşer, geçerli atıf kalmazsa cevap gösterilmez
+- **Sokratik durum makinesi** — beş kademe, denemesiz ilerlemez, ısrarda dil modeline
+  hiç gidilmez
+- **Soru üretimi + onay akışı**, **sınav prova motoru**, **"neden yanlış"**,
+  **mastery + analitik** — uçlar çalışıyor ve test kapsamında
+
 ## Yapılacaklar ⏳
 
-Sıradaki iş **cevap üretim hattı** — hedef: 10 Ağustos uçtan uca dikey demo kapısı:
+- **Üç ekranın bağlanması** — soru havuzu, sınav provası, ilerleme/analitik hâlâ tasarım
+  önizlemesi; arka uçları hazır
+- **Supabase Auth** — bugün geliştirme kimliği (`DEV_AUTH`) kullanılıyor. Üretimde
+  yapılandırma düzeyinde zaten reddediliyor, ama köprü yazılmadı
+- **Bulut dağıtımı** — canlı URL yok; model henüz imaja gömülmüyor, HTTP worker tetiği
+  (`/internal/drain`) yazılmadı
+- **Ölçüm koşuları** — gold set ve harness hazır; Recall@5/@8, atıf hassasiyeti,
+  faithfulness ve injection testleri **koşulmadı** (LLM anahtarı bekliyor)
+- **Kanıt eşiği** — kalibre edildi (0.81) ama holdout'ta hedefi tutturmadı: kapsam dışı
+  doğru ret **%80**, hedef %90. Eşik holdout'a bakılarak değiştirilmedi;
+  gerekçesi [`evaluation/calibration.md`](evaluation/calibration.md) §7'de
 
-- **Retrieval → LLM → guardrail zinciri** — hibrit arama (dense + full-text, RRF),
-  LiteLLM (Groq → Gemini otomatik yedekli), mekanik atıf doğrulaması
-- **Sokratik motorun bağlanması** — kademeli durum makinesi backend'de, arayüzdeki
-  tasarım önizlemesi gerçek veriye geçer
-- **Soru üretimi uçları** — eğitmen çerçevesi (biçim + örnek soru) → taslak üretimi →
-  onay/red akışı
-- **Sınav prova motoru** — süreli oturum, tek deneme, "neden yanlış" analizi, açık uçlu
-  rubrik değerlendirme
-- **Mastery entegrasyonu + eğitmen analitiği** — konu bazlı sınıf özeti tek sayfada
-- **Supabase Auth** — DEV kimlikleri üretimde yapılandırma düzeyinde zaten reddediliyor
-- **Değerlendirme altyapısı** — ≥50 soruluk gold set, Recall@5/@8, atıf hassasiyeti,
-  injection ve sızıntı testleri; sayılar kalibrasyon/holdout ayrımıyla raporlanır
-- **Bulut dağıtımı** — canlı URL + çevrimdışı demo yedeği
+Tasarlanıp uygulanmayanların tam listesi sahipleriyle birlikte:
+[ARCHITECTURE.md §10](ARCHITECTURE.md#10-uygulanmayanlar--tasarlandı-kodda-yok).
 
 Teslim: **24 Ağustos 2026** · Özellik dondurma: 17 Ağustos · Tam görev listesi:
 [`specs/001-course-assistant-mvp/tasks.md`](specs/001-course-assistant-mvp/tasks.md)
@@ -211,7 +216,7 @@ cd apps/api
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 cp ../../.env.example .env        # varsayılanlar yerel için yeterli
-uv run pytest -q                  # 92 test yeşil olmalı
+uv run pytest -q                  # 479 test yeşil olmalı (~50-100 sn)
 ```
 
 **4. Servisleri başlat** (üç ayrı terminal)
@@ -304,7 +309,7 @@ Hepsi düzeltildi ve Playwright ile fiilen tıklanarak doğrulandı.
 | Yükleniyor/hata/tazeleme üçlüsü | her sayfada | `lib/use-resource.ts` |
 
 **Doğrulama:** `tsc` temiz · `build` 9 rota · **26 etkileşim** fiilen tıklanarak sınandı
-(26/26 geçti, konsol hatası yok) · onay durumu polling turlarını atlatıyor · backend 92 test yeşil.
+(26/26 geçti, konsol hatası yok) · onay durumu polling turlarını atlatıyor · backend testleri yeşil.
 
 </details>
 
@@ -378,13 +383,42 @@ Aynı incelemede iki kalem daha: OpenAPI sözleşmesi kodla ayrışmıştı (10 
 
 ## Belgeler
 
+**Jüri buradan başlarsa:** önce bu README, sonra
+[quickstart](specs/001-course-assistant-mvp/quickstart.md) (kurulum),
+sonra [ARCHITECTURE](ARCHITECTURE.md) (kararlar ve **uygulanmayanlar**).
+
+### Kullanım
+
 | Belge | İçerik |
 |---|---|
-| [docs/requirements-analysis.md](docs/requirements-analysis.md) | Gereksinim analizi — danışman taslağı → FR izlenebilirliği, kabul kriterleri |
-| [specs/001-course-assistant-mvp/](specs/001-course-assistant-mvp/) | Spec (35 FR), plan, görev listesi, quickstart, OpenAPI sözleşmesi |
-| [PLAN.md](PLAN.md) | 15 iş günlük takvim, kapılar (10 Ağu demo, 17 Ağu dondurma), riskler |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Teknoloji kararları + gerekçeleri, guardrail zinciri, değerlendirme tasarımı |
+| [docs/instructor-guide.md](docs/instructor-guide.md) | **Eğitmen kılavuzu** — ders açma, materyal yükleme, soru onayı, analitik |
+| [docs/student-guide.md](docs/student-guide.md) | **Öğrenci kılavuzu** — kaynaklı sohbet, Sokratik mod, sınav provası, ilerleme |
+| [docs/kvkk.md](docs/kvkk.md) | **KVKK aydınlatma metni** — hangi veri nerede, LLM'e ne gidiyor, ne uygulanmadı |
+
+### Demo
+
+| Belge | İçerik |
+|---|---|
+| [docs/runbook.md](docs/runbook.md) | **Demo günü runbook'u** — A/B/C planları, geçiş ölçütleri, sabah kontrol listesi, ölçülmüş cold start |
+| [docs/demo-script.md](docs/demo-script.md) | **Sahne sahne anlatım** — altı sahne, replikli ve süreli |
+
+### Tasarım ve karar kaydı
+
+| Belge | İçerik |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Teknoloji kararları + gerekçeleri, guardrail zinciri, **§10 uygulanmayanlar** |
+| [PLAN.md](PLAN.md) | 15 iş günlük takvim, kapsam tablosu (gerçekleşme sütunlu), kabul kriterleri (ölçülen sütunlu) |
 | [DESIGN.md](DESIGN.md) | Tasarım token'ları — arayüzün tek otoritesi |
+| [.specify/memory/constitution.md](.specify/memory/constitution.md) | Anayasa — 11 pazarlıksız ilke |
+| [docs/requirements-analysis.md](docs/requirements-analysis.md) | Gereksinim analizi — danışman taslağı → FR izlenebilirliği |
+| [specs/001-course-assistant-mvp/](specs/001-course-assistant-mvp/) | Spec (35 FR), plan, görev listesi, quickstart, OpenAPI sözleşmesi (24 yol) |
+
+### Ölçüm
+
+| Belge | İçerik |
+|---|---|
+| [evaluation/calibration.md](evaluation/calibration.md) | Kanıt eşiği neden 0.81, holdout'ta neden hedefi tutmadı |
+| [docs/test-report.md](docs/test-report.md) | Başarı raporu — holdout metrikleri |
 | [docs/team/](docs/team/) | Takım koordinasyonu, rol brief'leri, devir teslim |
 
 ## Lisans
