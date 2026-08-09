@@ -103,9 +103,15 @@ rota başlıkları, tek geçici hatanın bütün sayfayı silmesi.
 `--fg-subtle` artık **ölçülüyor, iddia edilmiyor**: `apps/web/scripts/contrast.mjs`
 her token çiftini iki temada raporluyor ve değerle birlikte commit'li.
 
-Betik bize katılmadığı yerde de konuşuyor: `--border-strong / --surface`
-**1.33:1** (açık) ve **1.62:1** (koyu) — girdi/ikincil buton kenarlığı için
-WCAG 1.4.11'in istediği 3:1'in altında. Bu kalem şu an çalışılıyor.
+Betik bize katılmadığı yerde de konuştu: `--border-strong` girdi/ikincil buton
+kenarlığında **1.33:1** (açık) ve **1.62:1** (koyu) çıktı — WCAG 1.4.11'in
+istediği 3:1'in altında. Düzeltildi: şimdi 3.16/3.13 (açık), 3.12/3.15 (koyu).
+
+Betik artık **CI'da kapı**: eşiği geçmeyen bir çift varsa `web` job'u kırılır.
+Kapının gerçekten kırdığı da doğrulandı — `--fg-subtle` bilerek zayıflatıldığında
+çıkış kodu 1 ve iki çifti birden adlandırıyor, geri alınınca 0. Metin dışı bölüm
+bir süre "ölçülür ama kapı değil" diye koştu ve `--border-strong` tam o boşlukta
+kalmıştı; **ölçülüp kapıya bağlanmayan sayı, ölçülmemiş sayıdır.**
 
 ## 6. Frontend'in tamamı liderde
 
@@ -138,10 +144,20 @@ Gelmesi beklenenler: R1'den giriş ekranı çağrı imzası, R5'ten KVKK sayfas�
 - **`0005`'te üç kalem:** eğitmen soru silme politikası, `exam_sessions` kolon
   GRANT'i, opsiyonel yeniden puanlama fonksiyonu. Yamaları
   `KARARLAR_SERIT4.md`'de yazılı.
-- **Belge silme 500'ü** — Şerit 4 teşhis etti, yaması hazır, `documents.py`
-  onun dosyası değildi.
+- ~~**Belge silme 500'ü**~~ — **KAPANDI (9 Ağu).** Havuzda sorusu olan belgeyi
+  silmek artık 409 ve anlaşılır Türkçe mesaj döndürüyor; kısıt (`source_chunk_id
+  ON DELETE RESTRICT`) bilinçli olarak yerinde bırakıldı. Reddedilen silmenin
+  ne satırı ne dosyayı bozmadığı da testli.
 - **`out_of_scope` etiketi hiç üretilmiyor** → SC-005 %0 çıkıyor. **R4'e verildi.**
 - **`EVAL_LLM_API_KEY`** artık `Settings`'te (bugün eklendi).
+- **Analitikte "en çok yanlış yapılan sorular"** hiç yanlış yapılmamış soruları
+  da listeliyordu — **kapandı (9 Ağu)**, artık yalnız gerçekten yanlış yapılmış
+  sorular giriyor ve boş liste anlamlı bir cevap.
+- **AÇIK RİSK: embedding SÜRÜM uyuşmazlığı.** fastembed bu modeli artık mean
+  pooling ile koşuyor (eskiden CLS) ve bunu yalnız bir uyarıyla söylüyor.
+  Vektör uzayı değişikliğidir; farklı sürümle embed edilmiş korpus sessizce
+  yanlış komşu döndürür. Kalıcı çözüm chunk başına sağlayıcı+sürüm kaydı ister
+  (migration) — **R4'e verildi**, R2 ve R3'ün belgelerine de yazıldı.
 
 ## 9. Çalışma kuralları
 
