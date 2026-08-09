@@ -1,9 +1,15 @@
 /**
- * Sayfa durumu bileşenleri: yükleniyor · hata · önizleme şeridi · metrik satırı.
+ * Sayfa durumu bileşenleri: yükleniyor · hata · başlık · metrik satırı.
  *
- * Dördü de birden fazla ekranda birebir tekrarlanıyordu. Tek yerde olmalarının
+ * Hepsi birden fazla ekranda birebir tekrarlanıyordu. Tek yerde olmalarının
  * asıl faydası tutarlılık: "Yükleniyor…" bir ekranda spinner, diğerinde metin
  * olursa ürün derlenmemiş hissi verir.
+ *
+ * `PreviewBanner` 9 Ağustos'ta SİLİNDİ. Motoru bağlanmamış ekranlarda zorunlu
+ * bir dürüstlük şeridiydi ve işini bitirdi: dört ekranın dördü de gerçek uca
+ * bağlandı, bileşenin tek bir çağrı yeri kalmadı. Yeniden gerekirse git
+ * geçmişinde duruyor; kullanılmayan bir bileşeni "belki lazım olur" diye
+ * tutmak, ölü kodun en yaygın gerekçesidir (Anayasa XI).
  */
 
 import type { ReactNode } from "react";
@@ -52,29 +58,6 @@ export function ErrorNote({
       <Button variant="secondary" onClick={onRetry}>
         Tekrar dene
       </Button>
-    </div>
-  );
-}
-
-/**
- * Tasarım önizlemesi şeridi — motoru henüz bağlanmamış ekranlarda ZORUNLU.
- *
- * Bu bileşen bir dürüstlük sözleşmesidir: örnek veriyi gerçek cevap gibi
- * göstermemek için ekranda kalıcı olarak durur. Kapatılabilir yapılmadı;
- * kapatılabilen bir uyarı kapatılır ve sonra unutulur.
- *
- * Renk: bilgi tonu (`--info`), marka kırmızısı DEĞİL. DESIGN.md'nin kırmızı
- * kilidi kırmızıyı üç işe ayırır (birincil eylem, aktif navigasyon, kurumsal
- * işaret); "bu ekran henüz sahte veri gösteriyor" bunların hiçbiri değildir.
- * Ölçüm: `--info` (#1f6c9f) üstünde `--info-bg` (#e1f3fe) 4.98:1 ✓ AA;
- * koyu temada (#6fb4dd / #14232e) 7.06:1 ✓ AAA.
- */
-export function PreviewBanner({ children }: { children: ReactNode }) {
-  return (
-    <div className="mb-6 rounded-lg border border-border bg-info-bg px-4 py-2">
-      <p className="text-sm text-info">
-        <span className="font-medium">Tasarım önizlemesi:</span> {children}
-      </p>
     </div>
   );
 }

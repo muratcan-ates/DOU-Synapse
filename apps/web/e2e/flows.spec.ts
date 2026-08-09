@@ -25,6 +25,12 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
+/*
+ * Varsayılan `playwright.config.ts` ile AYNI olmalı ve öyle kalmalı: config
+ * tarayıcıya gömülecek `NEXT_PUBLIC_API_URL`'i aynı değişkenden alıyor. İkisi
+ * ayrışırsa test verisini bir API'ye kurar, tarayıcı başka bir API'ye sorar ve
+ * paket koştuğu ortama göre bazen geçer bazen kalır.
+ */
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 
 /** Seed'deki sabit demo kimlikleri (supabase/seed_demo.sql). */
@@ -575,7 +581,7 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     // Kusur: butonlar seçim yapılınca etkinleşiyor ama tıklanınca hiçbir şey
     // olmuyordu. Etkin görünüp iş yapmayan buton kusurdur (Anayasa XI).
     const havuz = await soruHavuzuKur("SORU");
-    test.skip(havuz.onaylanan.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    test.skip(havuz.taslaklar.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
 
     await signIn(page, AYSE);
     await page.goto(`/courses/${havuz.course.id}/questions`);
@@ -652,7 +658,8 @@ test.describe("soru havuzu — eğitmen onayı", () => {
 test.describe("sınav provası", () => {
   test("ileri-geri gezinme çalışır ve cevap korunur", async ({ page }) => {
     const havuz = await soruHavuzuKur("SINAV");
-    test.skip(havuz.onaylanan.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    test.skip(havuz.taslaklar.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    await hepsiniOnayla(havuz);
 
     await signIn(page, BURAK);
     await page.goto(`/courses/${havuz.course.id}/exam`);
@@ -667,10 +674,10 @@ test.describe("sınav provası", () => {
 
     await page.locator('input[type="radio"]').first().check();
     await sonraki.click();
-    await expect(page.getByText(`2/${havuz.onaylanan.length}`)).toBeVisible();
+    await expect(page.getByText(`2/${havuz.taslaklar.length}`)).toBeVisible();
 
     await onceki.click();
-    await expect(page.getByText(`1/${havuz.onaylanan.length}`)).toBeVisible();
+    await expect(page.getByText(`1/${havuz.taslaklar.length}`)).toBeVisible();
     // Geri dönünce önceki cevap yerinde durmalı.
     await expect(page.locator('input[type="radio"]').first()).toBeChecked();
   });
@@ -682,7 +689,8 @@ test.describe("sınav provası", () => {
      * düğme bırakılsaydı öğrenci sınav sırasında ona basmayı denerdi.
      */
     const havuz = await soruHavuzuKur("IPUCU");
-    test.skip(havuz.onaylanan.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    test.skip(havuz.taslaklar.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    await hepsiniOnayla(havuz);
 
     const ipucu = page.getByRole("button", { name: /İpucu al|Sonraki ipucu/ });
 
