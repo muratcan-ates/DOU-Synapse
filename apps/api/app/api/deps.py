@@ -43,7 +43,34 @@ async def get_session(principal: PrincipalDep) -> AsyncIterator[AsyncSession]:
         yield session
 
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+#: `scope="function"` — commit'in yanıt gönderilmeden ÖNCE olmasını sağlar.
+#:
+#: Ölçülen kusur (lider şeridi, 9 Ağustos): `POST /documents` `202` dönüyor, hemen
+#: ardındaki `GET` **0 belge** görüyor, bir saniye sonraki `GET` 1 belge görüyor.
+#: Arayüz bunu geçici bir tazeleme penceresiyle maskeliyordu; asıl sebep sunucuda.
+#:
+#: FastAPI 0.141'in istek işleyicisi (`routing.get_request_handler`) şu sırayla
+#: çalışıyor:
+#:
+#:     async with AsyncExitStack() as request_stack:      # varsayılan yield kapsamı
+#:         async with AsyncExitStack() as function_stack:
+#:             response = await endpoint(...)
+#:         await response(scope, receive, send)           # yanıt BURADA gidiyor
+#:     # request_stack burada kapanıyor → rls_session çıkışı → COMMIT
+#:
+#: Yani varsayılan (`scope="request"`) kapsamda commit, istemci yanıtı aldıktan
+#: SONRA gerçekleşiyor; istemcinin hemen yaptığı ikinci istek işlemi henüz
+#: görmüyor. `scope="function"` bağımlılığı `function_stack`'e taşır ve commit
+#: yanıt yazılmadan önce biter — istemcinin gözlemleyebildiği her yanıt, kalıcı
+#: hâle gelmiş bir işlemi temsil eder.
+#:
+#: Düzeltme bilinçli olarak TEK YERDE: uçların her birine `await session.commit()`
+#: eklemek aynı kuralı on üç yerde hatırlamayı gerektirirdi ve biri unutulduğunda
+#: kusur sessizce geri gelirdi (Anayasa XI).
+#:
+#: Not: `BackgroundTasks` yine yanıttan sonra çalışır ve bu doğrudur — worker
+#: tetiği kullanıcıyı bekletmemeli. Yalnız veritabanı işlemi öne alınıyor.
+SessionDep = Annotated[AsyncSession, Depends(get_session, scope="function")]
 
 
 @dataclass(frozen=True, slots=True)

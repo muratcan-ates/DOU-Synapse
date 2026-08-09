@@ -8,6 +8,8 @@ chunk'lar sayfa numarasıyla kaydedilir → öğrenci belgeyi görür ama başka
 from __future__ import annotations
 
 from httpx import AsyncClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from tests.conftest import UserFactory
 from tests.test_ingestion import make_pdf, make_pptx
@@ -46,11 +48,17 @@ class TestUpload:
         assert response.status_code == 202, response.text
         document_id = response.json()["document"]["id"]
 
-        # Worker'ı doğrudan çalıştırırız: arka plan görevinin zamanlamasına bağlı,
-        # kırılgan bir test yazmak yerine kuyruğun kendisini sınarız.
+        # Kuyruk, yanıttan sonra çalışan arka plan tetiği tarafından ZATEN
+        # boşaltılmış olabilir. 9 Ağustos'a kadar olamazdı: belge satırı yanıttan
+        # sonra commit edildiği için tetik hiçbir iş bulamıyor ve sessizce sıfır
+        # dönüyordu — kuyruğu gerçekte bu satır boşaltıyordu. `SessionDep` artık
+        # yanıt yazılmadan önce commit ettiği için tetik iş görüyor.
+        #
+        # Bu yüzden burada kuyruk SAYISI değil SONUÇ sınanır: iş ister tetikle
+        # ister burada işlensin, belge işlenmiş olmalı. `drain()` idempotenttir.
         from app import worker
 
-        assert await worker.drain() == 1
+        await worker.drain()
 
         detail = await client.get(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
         body = detail.json()
@@ -207,13 +215,25 @@ class TestWorkerQueue:
         assert await worker.drain() == 0
 
     async def test_isleme_hatasi_belgeyi_failed_yapar(
-        self, client: AsyncClient, users: UserFactory, admin_engine
+        self, client: AsyncClient, users: UserFactory, admin_engine, monkeypatch
     ) -> None:
-        """Depodaki dosya kaybolursa iş sessizce kaybolmaz; belge 'failed' olur."""
+        """Depodaki dosya kaybolursa iş sessizce kaybolmaz; belge 'failed' olur.
+
+        Arka plan tetiği burada BİLİNÇLİ olarak kapatılıyor: testin kurgusu
+        "dosyayı sil, sonra işlet" sırasına dayanıyor ve tetik açıkken belge daha
+        dosya silinmeden işlenip `completed` oluyor. Tetiğin kendisi başka bir
+        testin konusu; burada sınanan, işlemenin başarısız olduğunda ne yazdığı.
+        """
         from sqlalchemy import text as sql_text
 
         from app import worker
+        from app.api import documents as documents_api
         from app.modules.ingestion.storage import get_storage
+
+        async def tetikleme_yok() -> None:
+            return None
+
+        monkeypatch.setattr(documents_api, "_trigger_worker", tetikleme_yok)
 
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         course_id = await _course(client, ayse, "COME301")
@@ -236,3 +256,96 @@ class TestWorkerQueue:
         ).json()
         assert detail["status"] == "failed"
         assert detail["error_message"]
+
+
+class TestYazmaGorunurlugu:
+    """Yanıt gönderildiği ANDA yazma kalıcı mı?
+
+    Ölçülen kusur (lider şeridi, 9 Ağustos): `POST /documents` `202` dönüyor, hemen
+    ardından yapılan `GET` sıfır belge görüyor, bir saniye sonraki `GET` bir belge
+    görüyor. Arayüz bunu geçici bir tazeleme penceresiyle maskeliyordu.
+
+    Sebep FastAPI'nin `yield` bağımlılıklarını varsayılan olarak yanıt gönderildikten
+    SONRA kapatması; oturumun commit'i o kapanışta gerçekleşiyor. Düzeltme
+    `deps.SessionDep`'in `scope="function"` ile tanımlanması.
+
+    Bu testin ölçme biçimi önemlidir: normal bir test istemcisi ASGI çağrısının
+    TAMAMI bittikten sonra döner, yani yarışı hiç göremez. Burada gövde mesajının
+    gönderildiği anı yakalayıp, o anda AYRI BİR BAĞLANTIDAN satırın görünüp
+    görünmediğine bakıyoruz — yalnız commit edilmiş veri başka bir bağlantıdan
+    görülebildiği için bu, "istemcinin gördüğü yanıt kalıcı bir işlemi temsil
+    ediyor mu" sorusunun doğrudan ölçümü.
+    """
+
+    async def test_yanit_gonderilirken_satir_baska_baglantidan_gorunur(
+        self, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        from httpx import ASGITransport, AsyncClient
+
+        from app.core.db import dispose_engine
+        from app.main import create_app
+
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = UserFactory.auth(ayse_id)
+
+        #: Gövde yazılırken dışarıdan sayılan belge adedi.
+        gorulen: list[int] = []
+
+        async def say() -> int:
+            async with admin_engine.begin() as conn:
+                result = await conn.execute(text("SELECT count(*) FROM documents"))
+                return int(result.scalar_one())
+
+        app = create_app()
+
+        async def probe(scope: dict, receive: object, send: object) -> None:
+            async def probing_send(message: dict) -> None:
+                if message["type"] == "http.response.body" and not message.get("more_body"):
+                    gorulen.append(await say())
+                await send(message)  # type: ignore[operator]
+
+            await app(scope, receive, probing_send)  # type: ignore[arg-type]
+
+        transport = ASGITransport(app=probe)  # type: ignore[arg-type]
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            course_id = await _course(client, ayse, "COME301")
+            gorulen.clear()
+            response = await _upload(
+                client, ayse, course_id, "hafta3.pdf", make_pdf(["Deadlock kosullari."])
+            )
+        await dispose_engine()
+
+        assert response.status_code == 202, response.text
+        assert gorulen == [1], (
+            "202 istemciye yazılırken belge satırı henüz commit edilmemiş: "
+            "istemcinin hemen yapacağı GET boş dönecek"
+        )
+
+    async def test_arka_plan_tetigi_belgeyi_gercekten_isler(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        """Yükleme yanıtından sonraki tetik işi BULUR ve işler.
+
+        9 Ağustos'a kadar bulamıyordu: belge satırı yanıt gönderildikten sonra
+        commit edildiği için tetik boş kuyruk görüp sessizce sıfır dönüyordu.
+        Kusur görünmüyordu çünkü demo sırasında ayrı bir worker döngüsü
+        (`python -m app.worker`) zaten koşuyor ve işi o alıyordu — yalnız API
+        çalıştırıldığında hiçbir belge işlenmezdi.
+
+        Bu test elle `drain()` ÇAĞIRMAZ; çağırsaydı tetiğin çalışıp çalışmadığını
+        gizlerdi.
+        """
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_id = await _course(client, ayse, "COME301")
+
+        upload = await _upload(
+            client, ayse, course_id, "tetik.pdf", make_pdf(["Deadlock kosullari."])
+        )
+        assert upload.status_code == 202, upload.text
+        document_id = upload.json()["document"]["id"]
+
+        detail = (
+            await client.get(f"/courses/{course_id}/documents/{document_id}", headers=ayse)
+        ).json()
+        assert detail["status"] == "completed"
+        assert detail["chunk_count"] >= 1
