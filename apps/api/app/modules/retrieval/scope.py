@@ -80,6 +80,17 @@ Sayılar `Settings`'e DEĞİL bu modüle yazıldı. İki sebep: (1) `config.py` 
 kalibrasyon değerinin ortam değişkeniyle sessizce değişebilmesi, "hangi sayıyla
 ölçüldü" sorusunu cevapsız bırakır. Ayara taşınacaklarsa varsayılanları bu
 sabitler olmalıdır.
+
+**Bu iki eşik sağlayıcıdan çözülmez ve çözülmemelidir.** `evidence_threshold`
+9 Ağustos'ta `EVIDENCE_THRESHOLD_BY_PROVIDER` ile embedding sağlayıcısına
+bağlandı, çünkü kosinüs benzerliği vektör uzayına aittir: `fastembed` için
+kalibre edilen 0.81 `hashing` uzayında her soruyu reddediyordu. Buradaki iki
+sinyalin böyle bir bağı yok — `ts_rank` Postgres FTS'ten, sözlüksel kapsama saf
+metinden gelir; ikisi de embedding sağlayıcısı değişince kıpırdamaz. Sağlayıcıya
+göre eşik tablosu açmak, var olmayan bir bağımlılığı taklit etmek olurdu.
+Sağlayıcı-bağımsızlık ayrıca bu sinyallerin neden dense'ten dayanıklı olduğunun
+ikinci gerekçesidir: dense eşiği iki eksende birden (sağlayıcı ve sürüm) kırılgan,
+bunlar hiçbirinde değil.
 """
 
 from __future__ import annotations

@@ -34,9 +34,7 @@ import re
 import unicodedata
 
 #: Türkçeye özgü büyük→küçük eşlemesi. `lower()`'dan ÖNCE uygulanır.
-_TR_LOWER = str.maketrans(
-    {"İ": "i", "I": "ı", "Ş": "ş", "Ğ": "ğ", "Ü": "ü", "Ö": "ö", "Ç": "ç"}
-)
+_TR_LOWER = str.maketrans({"İ": "i", "I": "ı", "Ş": "ş", "Ğ": "ğ", "Ü": "ü", "Ö": "ö", "Ç": "ç"})
 
 #: Küçük harfli Türkçe karakterlerin ASCII karşılıkları.
 _TR_ASCII = str.maketrans({"ı": "i", "ş": "s", "ğ": "g", "ü": "u", "ö": "o", "ç": "c"})
