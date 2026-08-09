@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TITLE_TEMPLATE } from "@/app/layout";
+import { TITLE_TEMPLATE } from "@/lib/metadata";
 
 /**
  * Ders listesi rotasının başlığı. Sayfa `"use client"` olduğu için `metadata`

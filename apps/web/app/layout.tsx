@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { TITLE_TEMPLATE } from "@/lib/metadata";
 import "./globals.css";
 
 /*
@@ -34,8 +35,6 @@ const geistMono = Geist_Mono({
  * Giriş ekranı (`/`) kök segmentin kendisidir; şablon kendi segmentindeki
  * `page.tsx`'e uygulanmaz, o yüzden orada `default` görünür — doğru davranış.
  */
-export const TITLE_TEMPLATE = "%s · DOU-Synapse";
-
 export const metadata: Metadata = {
   title: {
     template: TITLE_TEMPLATE,
