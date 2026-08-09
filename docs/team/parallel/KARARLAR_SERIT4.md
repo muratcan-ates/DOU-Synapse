@@ -52,15 +52,26 @@ SECURITY DEFINER fonksiyonudur. **Üçü de migration ister, üçü de bugün ya
 
 Bugün yapılan iki şey, açığın **somut sömürüsünü** kapatıyor:
 
-1. **Süre uzatma kapandı.** Kalan süre asla ham `expires_at`'ten okunmuyor:
+1. **Süre uzatma daraltıldı** (kapatılmadı — aşağıdaki sınıra dikkat). Kalan süre
+   asla ham `expires_at`'ten okunmuyor:
 
    ```
    etkin_bitiş = min(expires_at, started_at + EXAM_DURATION_MINUTES)
    ```
 
    Öğrenci satırdaki `expires_at`'i doğrudan SQL ile bir güne çekse bile sunucu
-   `started_at + 20dk`'ya kırpar. `started_at` sınav açılışında sunucu tarafından
-   yazılır ve hiçbir uçtan güncellenmez.
+   `started_at + 20dk`'ya kırpar.
+
+   **Sınır, açıkça:** `started_at` de aynı politikayla yazılabilir. İkisini birden
+   ileri atan biri süreyi yine uzatır; kırpma yalnız tek sütunlu kurcalamayı
+   kapatır. Tam kapanış `0005`'teki kolon bazlı GRANT'tir. Bunu "çözüldü" diye
+   yazmıyorum çünkü çözülmedi (Anayasa III).
+
+   **Bugünkü gerçek risk düzeyi:** API'de `exam_sessions`'ın `started_at` ya da
+   `expires_at` sütununa yazan **hiçbir uç yok** — `/finish` yalnız `finished_at`
+   ve `score` yazar. Yani sömürü HTTP üzerinden ulaşılabilir değil; doğrudan
+   veritabanı bağlantısı ister. Bu bir savunma derinliği açığıdır, canlı bir
+   istismar yolu değil.
 
 2. **Puan uydurma kapandı.** `exam_sessions.score` **hiçbir yanıtta okunmuyor.**
    Gösterilen puan her istekte `answers` satırlarından yeniden hesaplanıyor —
