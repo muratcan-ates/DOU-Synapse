@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import courses, documents, health, questions
+from app.api import analytics, chat, courses, documents, exams, health, questions
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import AppError, app_error_handler, unhandled_error_handler
@@ -77,6 +77,13 @@ def create_app() -> FastAPI:
     app.include_router(courses.router)
     app.include_router(documents.router)
     app.include_router(questions.router)
+    # Paralel geliştirme kirişi: aşağıdaki üç router'ın MODÜLLERİ henüz boş, ama
+    # kaydı önden yapıldı. Beş oturum kendi ucunu eklerken bu dosyaya dokunmaz;
+    # aksi hâlde aynı iki satır beş kez çakışırdı. Boş router hiçbir yol
+    # eklemez, yani sözleşme de bugün değişmez.
+    app.include_router(chat.router)
+    app.include_router(exams.router)
+    app.include_router(analytics.router)
     return app
 
 

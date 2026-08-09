@@ -277,6 +277,105 @@ Başkasının emeği olanlar da açıkça: FastAPI, SQLAlchemy, Pydantic, Next.j
 Tailwind, PostgreSQL + pgvector, fastembed/ONNX üzerinde multilingual-e5-large,
 LiteLLM ve arkasındaki modeller (Groq, Gemini). Gerisi bu depoda yazıldı.
 
+## Bulunan ve düzeltilen sorunlar
+
+<details>
+<summary><b>9 Ağustos 2026 — Arayüz refactor'u: 4 etkileşim kusuru</b> (aç/kapat)</summary>
+
+<br/>
+
+Ortak modüller çıkarılırken kodun kendisi denetlendi ve dört gerçek kusur bulundu.
+Hepsi düzeltildi ve Playwright ile fiilen tıklanarak doğrulandı.
+
+| # | Sorun | Neden önemliydi | Düzeltme |
+|---|---|---|---|
+| 1 | **İki ölü buton** — sınavda "Sonraki soru", soru havuzunda "Onayla/Reddet" seçim yapılınca etkinleşiyor ama tıklanınca hiçbir şey olmuyordu | Etkin görünüp iş yapmayan buton, çalışmayan ürün izlenimi verir; demoda ilk fark edilen şey olurdu | Önizleme içinde yerel olarak çalışır hâle geldi: soru onaylanınca sayaç düşüyor ve sıradaki taslağa geçiliyor. Kararın kaydedilmediği butonun yanında yazılı |
+| 2 | **Sessiz hata yutma** — üyelik çıkarma `try/finally` kullanıyordu, `catch` yoktu | Silme başarısız olduğunda kullanıcı hiçbir şey görmüyor, satır da yerinde duruyordu: sessizce yanlış durum | Ortak `ConfirmAction` bileşeni hata gösterimini zorunlu kılıyor |
+| 3 | **Tam sayfa yenileme** — belge silindikten sonra `window.location.reload()` çağrılıyordu | Sayfa konumu ve açık önizlemeler kayboluyordu; tüm veri yeniden çekiliyordu | Yalnız liste tazeleniyor. Ölçüldü: navigation type `navigate`, scroll korunuyor |
+| 4 | **Bozuk oturumda çökme** — `localStorage`'daki hatalı JSON `JSON.parse`'ı patlatıp tüm uygulamayı düşürüyordu | **Yenilemek kurtarmıyordu**: kayıt hâlâ bozuk olduğu için kullanıcı kalıcı olarak kilitli kalıyordu | Bozuk kayıt temizlenip giriş ekranına düşülüyor; biçim doğrulaması da eklendi |
+
+**Aynı gün giderilen kod tekrarı:**
+
+| Tekrar | Önce | Sonra |
+|---|---|---|
+| `instanceof ApiError` hata çözümlemesi | 7 yer | 0 (`lib/errors.ts`) |
+| `getStoredUser()` rol kontrolü | 6 çağrı | 2 (`lib/session.ts`) |
+| Elle yazılmış önizleme şeridi | 4 kopya | 0 (`PreviewBanner`) |
+| Yükleniyor/hata/tazeleme üçlüsü | her sayfada | `lib/use-resource.ts` |
+
+**Doğrulama:** `tsc` temiz · `build` 9 rota · **26 etkileşim** fiilen tıklanarak sınandı
+(26/26 geçti, konsol hatası yok) · onay durumu polling turlarını atlatıyor · backend 92 test yeşil.
+
+</details>
+
+<details>
+<summary><b>8 Ağustos 2026 — CI ilk kez yeşil: workflow hiç çalışmamış</b> (aç/kapat)</summary>
+
+<br/>
+
+GitHub Actions **ilk commit'ten beri 14 koşuda 14 kez** kırmızıydı. Sebep testler değildi;
+workflow dosyasının kendisi geçersizdi:
+
+```
+Unrecognized function: 'hashFiles'
+Located at position 1 within expression: hashFiles('apps/web/package.json') != ''
+```
+
+`hashFiles()` yalnız **adım** düzeyinde (`steps.*.if`) tanımlıdır, **job** düzeyinde değil.
+Dosya parse edilemeyince GitHub `startup_failure` veriyor ve **hiçbir job başlamıyor**.
+
+Sonucu: ruff, mypy, pytest ve RLS izolasyon kanıtı o güne kadar CI'da **bir kez bile
+koşmamıştı** — belgelerdeki "CI bunu her koşuda yapar" ifadesi karşılıksızdı.
+
+Koşul kaldırıldı (`apps/web` zaten G3'ten beri var), dört adımın da yerelde geçtiği önce
+doğrulandı, sonra gönderildi. **CI #15 ✓ Success, 1dk 14sn** — projenin ilk başarılı koşusu.
+
+</details>
+
+<details>
+<summary><b>8 Ağustos 2026 — Kurulum yönergesi eksik migration uyguluyordu</b> (aç/kapat)</summary>
+
+<br/>
+
+`quickstart.md` ve `HANDOFF.md` yalnız `0001_core_schema.sql` dosyasını uyguluyordu.
+`0004_assessment.sql` aynı gün `main`'e girmişti, yani yönergeyi izleyen herkes **ölçme
+tablolarını hiç almadan** kuruyordu. Testler sıralı glob kullandığı için bu, yeşil
+koşularda hiç görünmüyordu.
+
+İkisi de migration dizininin tamamını sırayla uygulayacak şekilde değiştirildi, böylece
+bir sonraki migration eklendiğinde belge kendiliğinden güncel kalır. Sıfırdan bir
+veritabanında doğrulandı: 11 tablo ve 2 demo kullanıcısı hatasız oluşuyor.
+
+</details>
+
+<details>
+<summary><b>6-7 Ağustos 2026 — PR incelemesi: RLS'te ders izolasyonu açığı</b> (aç/kapat)</summary>
+
+<br/>
+
+Takım arkadaşının üç PR'ı incelenirken `0004_assessment.sql`'de somut bir izolasyon açığı
+bulundu ve temiz bir veritabanında **fiilen sömürülerek** kanıtlandı:
+
+- `mastery_self_insert` politikası yalnız `user_id = app.current_user_id()` şartına
+  bakıyor, satırın `course_id`'sine bakmıyordu.
+- Üye **olmadığı** bir dersin konusuna mastery satırı yazan öğrencinin `INSERT`'ü geçti.
+- O dersin eğitmeni, satırı kendi analitiğinde gördü.
+
+Aynı boşluk `answers_self_insert`'te de vardı (oturumun `course_id`'si ile cevabınki
+karşılaştırılmıyordu) ve `mastery_self_update` mevcut satırın yabancı bir derse
+taşınmasına izin veriyordu.
+
+Üçü de düzeltildi ve aynı saldırı tekrarlanarak kapandığı doğrulandı. Regresyon testi
+**mutasyon testinden** geçti: politikadan `app.is_member(course_id)` geri çıkarıldığında
+test kırmızı yanıyor, yani sahte yeşil değil.
+
+Aynı incelemede iki kalem daha: OpenAPI sözleşmesi kodla ayrışmıştı (10 yol / 9 yol) ve
+`bug_hunt` cevap anahtarında olgusal bir hata vardı — metin "taşma/taşınma" diyordu, ama
+30 koşumun 30'unda yalnız deadlock ölçüldü. Tam rapor:
+[`docs/team/PR_INCELEME_2026-08-06.md`](docs/team/PR_INCELEME_2026-08-06.md)
+
+</details>
+
 ## Belgeler
 
 | Belge | İçerik |

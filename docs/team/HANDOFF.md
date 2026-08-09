@@ -56,18 +56,28 @@ Commit zinciri: `4f3bd55` plan → `5f12b76` API iskeleti → `e143fd2` ingestio
   sekmeler (Materyaller/Asistan/Sınav/Katılımcılar), üye yönetimi, belge silme; sohbet +
   sınav ekranları **"tasarım önizlemesi" etiketli** (motor Faz C/D'de bağlanacak). Koyu tema
   ve mobil 375px doğrulandı
-- **68 test + CI** (ruff, pytest, RLS kanıtı — pgvector/pg16 imajında)
+- **92 test + CI** (ruff, mypy, pytest, RLS kanıtı — pgvector/pg16 imajında).
+  **8 Ağu düzeltmesi:** CI ilk commit'ten beri hiç koşmamıştı (`hashFiles` job
+  düzeyinde geçersiz → `startup_failure`). Düzeltildi; ilk yeşil koşu 8 Ağustos
 
 ## 4. Henüz OLMAYAN şeyler (kimse var sanmasın)
 
-- **Retrieval/RAG hattı yok** — `modules/retrieval|generation|guardrails|assessment|mastery`
-  dizinleri BOŞ. Chat ekranındaki konuşma örnek veridir
-- **LLM entegrasyonu yok** — LiteLLM bağımlılığı bile henüz eklenmedi (T008)
+- **Retrieval/RAG hattı yok** — `modules/retrieval|generation|guardrails` dizinleri
+  BOŞ (9 Ağu itibarıyla beş şeritli paralel geliştirmede; bkz. §10). Sohbet ve sınav
+  ekranlarındaki içerik örnek veridir
+- **LLM entegrasyonu yok** — `litellm` bağımlılığı ve `config.py` ayarları 9 Ağustos'ta
+  önden eklendi, gövde Şerit 2'de yazılıyor
 - **Bulut deploy YAPILMADI** — PLAN G1'de "hello world deploy" yazıyordu ama fiilen
   yapılmadı; ilk gerçek deploy T049-T050. Canlı URL yok, her şey lokal
 - **Supabase Auth yok** — giriş `dev:<uuid>` token'ıyla (yalnız DEV_AUTH_ENABLED iken);
   gerçek auth T023
-- **sample_data/ yok** — İşletim Sistemleri örnek paketi T002 olarak bekliyor
+- **Gold set yok** — `evaluation/` dizini boş; T041 Şerit 5'te. Ölçüm altyapısı
+  olmadan spec'teki hiçbir sayı raporlanamaz (Anayasa III)
+
+> **Not (9 Ağu):** §3 ve §4, 5 Ağustos'ta yazıldı. O tarihten sonra eklenenler:
+> `sample_data/` paketi, ölçme şeması (`0004`), mastery servisi, konu uçları, soru
+> havuzu ve ilerleme ekranları (tasarım önizlemesi), CI düzeltmesi, arayüz refactor'u.
+> Güncel durum için `README.md` "Yapılanlar / Yapılacaklar" bölümüne bak.
 
 ---
 
@@ -155,3 +165,43 @@ cd ../web && bun install && bun run dev      # localhost:3000
 `AI_ASISTAN_BASLANGIC.md`'yi yapıştır, (5) ilk görevinin branch'ini aç.
 
 **30 dakika kuralı:** Bir hatada 30 dakikadan fazla takılırsan gruba yaz.
+
+---
+
+## 10. Paralel geliştirme (9 Ağustos'tan itibaren)
+
+Cevap üretim hattı takvime sığmadığı için iş beş şeride bölündü ve şeritler
+paralel çalışıyor. Sıcak dosyalar (`main.py`, `config.py`, `pyproject.toml`)
+oturumlar başlamadan önce tek seferde hallededildi; modüller arası tipler
+`apps/api/app/contracts.py`'de sabitlendi ve o dosyayı yalnız lider değiştirir.
+
+Başlamadan önce **`docs/team/parallel/00_OKU_ONCE.md`** okunur, sonra kendi
+şerit belgesi:
+
+| Şerit | Alan | Belge |
+|---|---|---|
+| 1 | Retrieval hattı | `parallel/01_RETRIEVAL.md` |
+| 2 | Generation + guardrails | `parallel/02_GENERATION.md` |
+| 3 | Chat ucu + Sokratik | `parallel/03_CHAT_SOKRATIK.md` |
+| 4 | Soru üretimi + sınav | `parallel/04_SORU_SINAV.md` |
+| 5 | Analitik + değerlendirme | `parallel/05_ANALITIK_EVAL.md` |
+| — | Frontend, RLS kanıtı, CI | lider |
+
+Kural: **sahiplendiğin dosya listesinin dışına çıkma.** Listende olmayan bir
+dosyaya ihtiyacın varsa gruba yaz, kendin düzenleme.
+
+## 11. "Bitti" tanımına eklenen kalem (Anayasa XI)
+
+Bir iş, çalışıyor olması yetmez; **modüler ve tekrarsız** da olmalıdır:
+
+- Aynı davranış üçüncü kez yazılıyorsa ortak modüle çıkarılır
+- Kural, ton ve eşik gibi ürün kararları tek sözlükte yaşar
+- Etkin görünüp iş yapmayan buton veya uç kusurdur
+- Ölü kod, ölü export ve ulaşılamayan dal commit'te temizlenir
+- Gereksiz iş (durdurulmayan polling, her etkileşimde tam sayfa yenileme, aynı
+  veriyi iki kez çekme) kusur sayılır
+
+Gerekçe 9 Ağustos denetiminde görüldü: altı arayüz sayfası aynı üç deseni
+tekrarlıyordu ve tekrarlar birbirinden ayrışmıştı — biri hatayı temizlemiyor,
+biri sessizce yutuyor, biri her silmede tam sayfa yeniliyordu. Hiçbiri mevcut on
+ilkeyi ihlal etmiyordu, çünkü kod sağlığı yazılı bir kural değildi. Artık kural.

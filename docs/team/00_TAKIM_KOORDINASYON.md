@@ -136,6 +136,7 @@ yapıp kendi satırını yeniden ekle — asla `--ours`/`--theirs` ile toptan ç
 | `apps/api/pyproject.toml` | Bağımlılık ekleyen | Alfabetik sıraya değil, listenin sonuna ekle; sürümü sabitle. |
 | `specs/.../contracts/openapi.json` | Uç ekleyen herkes | **Elle düzenleme.** Yeniden export et (aşağıdaki komut) ve aynı commit'te gönder. |
 | `apps/web/lib/types.ts` | R4 | Backend tip değişikliğini R4'e bildir, sen düzenleme. |
+| `apps/api/app/contracts.py` | **Yalnız lider** | Modüller arası tipler. Alan eklemek gerekiyorsa gruba yaz; tek taraflı değişiklik ona karşı yazılmış modülleri kırar. |
 | `specs/.../tasks.md` | Herkes | Yalnız kendi görevinin `[ ]` → `[x]` işareti + tarihli DONE notu. |
 | `apps/api/tests/conftest.py` | Yeni tablo ekleyen | Yalnız kendi tablo adını TRUNCATE listesine EKLE; başka satır değiştirme. |
 | `.env.example` | Yeni ayar ekleyen | Yalnız kendi anahtarını BOŞ değerle ekle; gerçek değer asla. |

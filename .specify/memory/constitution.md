@@ -15,6 +15,22 @@ Added principles (I–X, tümü yeni):
   VIII. Doğrulama Bitmeden "Bitti" Yok
   IX.   Git Disiplini
   X.    Demo Hazırlığı
+
+Version change: 1.0.0 → 1.1.0 (2026-08-09)
+Bump rationale: MINOR — yeni ilke eklendi, mevcut ilkelerin anlamı değişmedi.
+
+Added principles:
+  XI.   Modülerlik ve Tekrarsızlık
+
+Tetikleyen olay: 9 Ağustos arayüz denetimi. Altı sayfa aynı üç deseni
+tekrarlıyordu ve tekrarlar birbirinden ayrışmıştı — bir ekran hatayı
+temizlemiyor, bir başkası hatayı sessizce yutuyor, biri her silmede tam sayfa
+yeniliyordu. İki buton etkin görünüp hiçbir şey yapmıyordu. Bunların hiçbiri
+mevcut on ilkeyi ihlal etmiyordu, çünkü kod sağlığı yazılı bir kural değildi.
+
+Etkilenen belgeler (güncellendi):
+  - docs/team/00_TAKIM_KOORDINASYON.md — inceleme ölçütlerine eklendi
+  - docs/team/HANDOFF.md — "bitti" tanımına eklendi
 -->
 
 # DOU-Synapse Anayasası
@@ -93,6 +109,24 @@ repoda yaşar; demo günü planı (A: canlı bulut, B: hotspot, C: çevrimdış�
 cache'li Compose) prova edilmiş olmalıdır. Kullanıcıya asla ham stack trace
 gösterilmez.
 
+### XI. Modülerlik ve Tekrarsızlık
+Aynı davranış üçüncü kez yazılıyorsa ortak bir modüle çıkarılır. Gerekçe satır
+tasarrufu değildir: tekrarlanan kod zamanla birbirinden ayrışır ve ayrışma
+sessizdir — bir ekran hatayı temizlemeyi unutur, bir başkası bir kuralı
+uygulamaz. Kural, ton ve eşik gibi ürün kararları (durum etiketleri, renk
+tonları, seviye sınırları) tek bir sözlükte yaşar; her dosyada yeniden
+hatırlanmak zorunda kalan kural er geç ihlal edilir.
+
+Ölçüler: bir dosya tek bir işi anlatmalı; bir bileşen kendi veri çekmesini,
+biçimlendirmesini ve iş kuralını aynı anda taşıyorsa bölünür. Örnek veri
+üretim kodundan ayrı dosyada durur, böylece sınırı silinerek sınanabilir.
+Etkileşimli her öğe bir şey YAPAR: etkin görünüp iş yapmayan buton kusurdur.
+Ölü kod, ölü export ve ulaşılamayan dal commit'te temizlenir.
+
+Optimizasyon ölçülerek yapılır (Anayasa III): "yavaş olabilir" gerekçesiyle
+karmaşıklık eklenmez, ama gereksiz iş — durdurulmayan polling, her etkileşimde
+tam sayfa yenileme, aynı veriyi iki kez çekme — kusur sayılır ve düzeltilir.
+
 ## Teknoloji Kilidi
 
 Sürümler kök `README.md` ve `apps/*/package.json` / `pyproject.toml`'da sabittir.
@@ -114,4 +148,4 @@ Anayasa değişikliği: SemVer (MAJOR ilke kaldırma/anlam değişimi, MINOR yen
 PATCH metin düzeltmesi) + SYNC IMPACT RAPORU + takım onayı. Bu belge, çelişen tüm
 alışkanlıklardan üstündür.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-05 | **Last Amended**: 2026-08-05
+**Version**: 1.1.0 | **Ratified**: 2026-08-05 | **Last Amended**: 2026-08-09

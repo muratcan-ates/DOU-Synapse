@@ -22,6 +22,10 @@ dependencies = [
     "python-pptx>=1.0",
     "greenlet>=3.1",
     "email-validator>=2.2",
+    # Faz B: sağlayıcı bağımsız LLM erişimi + Groq→Gemini failover.
+    # Paralel geliştirme başlamadan önce eklendi; beş oturum aynı dosyaya
+    # ayrı ayrı bağımlılık yazmasın diye.
+    "litellm>=1.55",
 ]
 
 [project.optional-dependencies]

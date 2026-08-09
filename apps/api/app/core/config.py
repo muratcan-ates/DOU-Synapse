@@ -90,6 +90,38 @@ class Settings(BaseSettings):
     question_generation_batch: int = 5
     mastery_alpha: float = 0.3  # yeni = (1-alpha)*eski + alpha*son
 
+    # --- Retrieval (Faz A) --------------------------------------------------
+    # Bu blok, paralel geliştirme başlamadan ÖNCE tek seferde eklendi: beş oturum
+    # aynı dosyaya ayrı ayrı alan eklemeye kalksaydı her birleştirmede çakışırdı.
+    # Değerler ilk tahmindir; T043 kalibrasyon setiyle ayarlanacak ve seçilen
+    # değerin gerekçesi evaluation/calibration.md'ye yazılacaktır (Anayasa III).
+    retrieval_top_k: int = 8
+    retrieval_dense_candidates: int = 24
+    retrieval_fts_candidates: int = 24
+    #: RRF sabiti: k büyüdükçe sıralama farkları yumuşar (standart başlangıç 60).
+    retrieval_rrf_k: int = 60
+    #: Kanıt eşiği: altında kalan sorgu cevaplanmaz, abstention döner.
+    #: KALİBRE EDİLMEMİŞTİR — T043'e kadar bu sayı hiçbir raporda kullanılamaz.
+    evidence_threshold: float = 0.35
+
+    # --- LLM (Faz B) --------------------------------------------------------
+    #: Sağlayıcı sırası: ilki denenir, hata/kota durumunda sıradakine düşülür.
+    llm_primary_model: str = "groq/llama-3.3-70b-versatile"
+    llm_fallback_model: str = "gemini/gemini-2.0-flash"
+    groq_api_key: str | None = None
+    gemini_api_key: str | None = None
+    llm_timeout_seconds: float = 30.0
+    llm_max_retries: int = 1
+    llm_temperature: float = 0.2
+    #: Anahtar yokken (CI, çevrimdışı demo) deterministik sahte sağlayıcı koşar.
+    #: Üretimde açık kalırsa gerçek kullanıcıya sahte cevap gider — bu yüzden
+    #: aşağıdaki doğrulayıcı üretim ortamında açık bırakılmasını reddeder.
+    llm_fake_provider: bool = False
+
+    # --- Sokratik mod (Faz D) -----------------------------------------------
+    #: İpucu kademesi çarpanları mastery'de kullanılır; kademe sayısı buradan.
+    socratic_max_stage: int = 4
+
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION
@@ -103,6 +135,21 @@ class Settings(BaseSettings):
             )
         if not self.dev_auth_enabled and not self.supabase_jwt_secret:
             raise ValueError("SUPABASE_JWT_SECRET tanımlı olmalı ya da DEV_AUTH_ENABLED açılmalı.")
+        return self
+
+    @model_validator(mode="after")
+    def _check_llm_configuration(self) -> Settings:
+        """Sahte sağlayıcı üretimde açılamaz — DEV_AUTH ile aynı fail-closed kural.
+
+        Sahte sağlayıcı testleri ağsız koşturmak ve çevrimdışı demo yedeği için
+        vardır. Üretimde açık kalırsa gerçek öğrenciye uydurulmuş bir cevap
+        gider ve bunu fark etmenin yolu yoktur; bu yüzden uygulama hiç açılmaz.
+        """
+        if self.llm_fake_provider and self.is_production:
+            raise ValueError(
+                "LLM_FAKE_PROVIDER üretim ortamında açılamaz. "
+                "Bu bayrak yalnız test ve çevrimdışı demo içindir."
+            )
         return self
 
 
