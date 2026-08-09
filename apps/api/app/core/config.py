@@ -127,6 +127,17 @@ class Settings(BaseSettings):
     #: İpucu kademesi çarpanları mastery'de kullanılır; kademe sayısı buradan.
     socratic_max_stage: int = 4
 
+    # --- Sohbet sınırları (FR-035) ------------------------------------------
+    # Bu iki sayı paralel geliştirme süresince `api/chat.py`'de sabit duruyordu:
+    # bu dosya beş oturuma açık olmadığı için oraya yazılamamıştı ve borç olarak
+    # kayda geçmişti (07_SERIT_RAPORLARI §6). Buraya taşınmalarının pratik faydası,
+    # demo makinesinde yeniden derlemeden gevşetilebilmeleri.
+    #
+    #: Kullanıcı başına, pencere başına azami sohbet isteği.
+    chat_rate_limit_requests: int = 20
+    #: Sınırın penceresi (saniye).
+    chat_rate_limit_window_seconds: float = 60.0
+
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION

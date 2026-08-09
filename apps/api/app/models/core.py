@@ -19,12 +19,9 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy import (
-    Enum as SaEnum,
-)
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, created_at, uuid_fk, uuid_pk
+from app.models.base import Base, created_at, pg_enum, uuid_fk, uuid_pk
 
 EMBEDDING_DIM = 1024  # bge-m3
 
@@ -59,16 +56,6 @@ class JobStatus(StrEnum):
     FAILED = "failed"
 
 
-def _pg_enum(enum_cls: type[StrEnum], name: str) -> SaEnum:
-    """Değerleri (isimleri değil) kullanan, mevcut PostgreSQL enum tipine bağlanan sütun."""
-    return SaEnum(
-        enum_cls,
-        name=name,
-        values_callable=lambda e: [member.value for member in e],
-        create_type=False,
-    )
-
-
 class Profile(Base):
     __tablename__ = "profiles"
 
@@ -97,9 +84,9 @@ class CourseMembership(Base):
     user_id: Mapped[uuid_fk] = mapped_column(
         ForeignKey("profiles.id", ondelete="CASCADE"), primary_key=True
     )
-    role: Mapped[MembershipRole] = mapped_column(_pg_enum(MembershipRole, "membership_role"))
+    role: Mapped[MembershipRole] = mapped_column(pg_enum(MembershipRole, "membership_role"))
     status: Mapped[MembershipStatus] = mapped_column(
-        _pg_enum(MembershipStatus, "membership_status"),
+        pg_enum(MembershipStatus, "membership_status"),
         default=MembershipStatus.ACTIVE,
     )
     created_at: Mapped[created_at]
@@ -117,7 +104,7 @@ class Document(Base):
     file_hash: Mapped[str] = mapped_column(Text)
     byte_size: Mapped[int] = mapped_column(BigInteger)
     status: Mapped[DocumentStatus] = mapped_column(
-        _pg_enum(DocumentStatus, "document_status"), default=DocumentStatus.UPLOADED
+        pg_enum(DocumentStatus, "document_status"), default=DocumentStatus.UPLOADED
     )
     page_count: Mapped[int | None] = mapped_column(Integer)
     chunk_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -140,7 +127,7 @@ class Chunk(Base):
     slide_number: Mapped[int | None] = mapped_column(Integer)
     section_title: Mapped[str | None] = mapped_column(Text)
     content_type: Mapped[ChunkContentType] = mapped_column(
-        _pg_enum(ChunkContentType, "chunk_content_type"), default=ChunkContentType.TEXT
+        pg_enum(ChunkContentType, "chunk_content_type"), default=ChunkContentType.TEXT
     )
     language: Mapped[str | None] = mapped_column(Text)
     text: Mapped[str] = mapped_column(Text)
@@ -155,7 +142,7 @@ class IngestionJob(Base):
     id: Mapped[uuid_pk]
     document_id: Mapped[uuid_fk] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"))
     status: Mapped[JobStatus] = mapped_column(
-        _pg_enum(JobStatus, "job_status"), default=JobStatus.PENDING
+        pg_enum(JobStatus, "job_status"), default=JobStatus.PENDING
     )
     attempt_count: Mapped[int] = mapped_column(Integer, default=0)
     last_error: Mapped[str | None] = mapped_column(Text)

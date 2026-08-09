@@ -12,13 +12,12 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import TIMESTAMP, Integer, Numeric, Text, func
-from sqlalchemy import Enum as SaEnum
 from sqlalchemy import ForeignKey as FK
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, created_at, uuid_fk, uuid_pk
+from app.models.base import Base, created_at, pg_enum, uuid_fk, uuid_pk
 
 
 class QuestionType(StrEnum):
@@ -39,20 +38,6 @@ class ExamMode(StrEnum):
     EXAM = "exam"
 
 
-def _pg_enum(enum_cls: type[StrEnum], name: str) -> SaEnum:
-    """Değerleri (isimleri değil) kullanan, mevcut PostgreSQL enum tipine bağlanan sütun.
-
-    `app.models.core._pg_enum` ile birebir aynı desen; burada tekrar tanımlanır çünkü
-    core.py'den import etmek modüller arası gereksiz bir bağımlılık yaratırdı.
-    """
-    return SaEnum(
-        enum_cls,
-        name=name,
-        values_callable=lambda e: [member.value for member in e],
-        create_type=False,
-    )
-
-
 class Topic(Base):
     __tablename__ = "topics"
 
@@ -69,12 +54,12 @@ class Question(Base):
     id: Mapped[uuid_pk]
     course_id: Mapped[uuid_fk] = mapped_column(FK("courses.id", ondelete="CASCADE"))
     topic_id: Mapped[uuid_fk] = mapped_column(FK("topics.id", ondelete="CASCADE"))
-    type: Mapped[QuestionType] = mapped_column(_pg_enum(QuestionType, "question_type"))
+    type: Mapped[QuestionType] = mapped_column(pg_enum(QuestionType, "question_type"))
     # Dört tipin ortak zarfı (biçim R3 brief §2'de sabit): mcq/open/code_trace/bug_hunt.
     payload: Mapped[dict[str, Any]] = mapped_column(JSONB)
     source_chunk_id: Mapped[uuid_fk] = mapped_column(FK("chunks.id", ondelete="RESTRICT"))
     status: Mapped[QuestionStatus] = mapped_column(
-        _pg_enum(QuestionStatus, "question_status"), default=QuestionStatus.DRAFT
+        pg_enum(QuestionStatus, "question_status"), default=QuestionStatus.DRAFT
     )
     created_by: Mapped[UUID | None] = mapped_column(
         PgUUID(as_uuid=True), FK("profiles.id", ondelete="SET NULL")
@@ -92,7 +77,7 @@ class ExamSession(Base):
     id: Mapped[uuid_pk]
     course_id: Mapped[uuid_fk] = mapped_column(FK("courses.id", ondelete="CASCADE"))
     user_id: Mapped[uuid_fk] = mapped_column(FK("profiles.id", ondelete="CASCADE"))
-    mode: Mapped[ExamMode] = mapped_column(_pg_enum(ExamMode, "exam_mode"))
+    mode: Mapped[ExamMode] = mapped_column(pg_enum(ExamMode, "exam_mode"))
     started_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=func.now()
     )

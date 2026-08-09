@@ -21,12 +21,11 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.contracts import AnswerStatus, ChatMode, SocraticStage
-from app.models.base import Base, created_at, uuid_fk, uuid_pk
+from app.models.base import Base, created_at, pg_enum, uuid_fk, uuid_pk
 
 # core.py ve assessment.py'deki yardımcının aynısı; ÜÇÜNCÜ bir kopya yazmak yerine
 # içe aktarılıyor (Anayasa XI, tekrarsızlık). Kalıcı çözüm helper'ı `models/base.py`'ye
 # taşımaktır — o dosya bu şeridin sahipliğinde değil, gruba iletildi.
-from app.models.core import _pg_enum as pg_enum
 
 
 class ChatRole(StrEnum):

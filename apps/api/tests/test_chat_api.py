@@ -18,7 +18,6 @@ from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 
-from app.api import chat as chat_api
 from app.api.chat import (
     MAX_QUESTION_CHARS,
     MESSAGE_BLOCKED,
@@ -35,6 +34,7 @@ from app.contracts import (
     RetrievedChunk,
     SocraticStage,
 )
+from app.core.config import get_settings
 from app.core.db import rls_session
 from tests.conftest import UserFactory
 from tests.test_socratic import (
@@ -481,7 +481,8 @@ class TestSinirlar:
         pipeline.answers()
 
         son_durum = 200
-        for index in range(chat_api.RATE_LIMIT_REQUESTS + 1):
+        limit = get_settings().chat_rate_limit_requests
+        for index in range(limit + 1):
             response = await client.post(
                 f"/courses/{course_id}/chat",
                 json={"question": f"soru {index}"},

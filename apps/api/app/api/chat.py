@@ -90,16 +90,15 @@ RetrieverFactory = Callable[[AsyncSession], Retriever]
 # FR-035 sınırları
 # ---------------------------------------------------------------------------
 
-# Bu iki sayı normalde `core/config.py`'ye aittir; o dosya paralel geliştirme süresince
-# dondurulduğu için (00_OKU_ONCE §1) burada sabit duruyorlar ve gruba iletildi.
+# İki sayının da yeri 9 Ağustos'ta düzeltildi (07_SERIT_RAPORLARI §6 borcu), ama
+# aynı yere değil — çünkü doğaları farklı:
 #
-#: Bir sorunun azami uzunluğu. Aşılırsa 422 — kesilerek işlenmez, çünkü kesilmiş bir
-#: soruya verilen cevap kullanıcının sormadığı bir sorunun cevabıdır. Sayı artık
-#: `schemas/chat.py`'de tek yerde duruyor; burada yalnız eski adıyla yankılanıyor.
+#: Soru uzunluğu `schemas/chat.py`'de kalır, `config.py`'de değil. Sebep teknik:
+#: Pydantic `Field(max_length=...)` sınıf tanımlanırken sabit olmak zorundadır,
+#: çalışma zamanı ayarından okunamaz. Sayı orada durduğu için OpenAPI'ye de
+#: girer, yani istemci sınırı sözleşmeden öğrenir. Burada yalnız eski adıyla
+#: yankılanıyor (dışa aktarılmış bir addı).
 MAX_QUESTION_CHARS = MAX_QUESTION_LENGTH
-#: Kullanıcı başına, pencere başına azami istek.
-RATE_LIMIT_REQUESTS = 20
-RATE_LIMIT_WINDOW_SECONDS = 60.0
 
 
 class RateLimitError(AppError):
@@ -125,19 +124,22 @@ class _SlidingWindowLimiter:
     Dürüst sınır (Anayasa III): sayaç **süreç içidir.** Birden fazla uvicorn worker'ı
     çalıştığında sınır worker başına uygulanır; MVP tek süreçle koşuyor. Dağıtık sınır
     Redis ister ve kapsam dışıdır — raporda bu haliyle anlatılacak.
+
+    Sınır ve pencere kurucuda değil `allow()` çağrısında verilir: değerler artık
+    ayarlardan (`Settings.chat_rate_limit_*`) geliyor ve ayarlar isteğe bağlı bir
+    bağımlılık. Sayaç süreç ömürlü, eşik ise istek başına okunuyor — böylece sayı
+    değişince süreç yeniden başlatılmadan da geçerli olur.
     """
 
-    def __init__(self, limit: int, window_seconds: float) -> None:
-        self._limit = limit
-        self._window = window_seconds
+    def __init__(self) -> None:
         self._hits: defaultdict[str, deque[float]] = defaultdict(deque)
 
-    def allow(self, key: str) -> bool:
+    def allow(self, key: str, *, limit: int, window_seconds: float) -> bool:
         now = time.monotonic()
         hits = self._hits[key]
-        while hits and now - hits[0] > self._window:
+        while hits and now - hits[0] > window_seconds:
             hits.popleft()
-        if len(hits) >= self._limit:
+        if len(hits) >= limit:
             return False
         hits.append(now)
         return True
@@ -146,7 +148,7 @@ class _SlidingWindowLimiter:
         self._hits.clear()
 
 
-_rate_limiter = _SlidingWindowLimiter(RATE_LIMIT_REQUESTS, RATE_LIMIT_WINDOW_SECONDS)
+_rate_limiter = _SlidingWindowLimiter()
 
 
 def reset_rate_limit() -> None:
@@ -562,7 +564,11 @@ async def post_chat(
         raise ValidationError(
             "Sınav modunda asistan ipucu veremez. Sınav soruları sınav ekranından yanıtlanır."
         )
-    if not _rate_limiter.allow(f"{context.user_id}:{context.course_id}"):
+    if not _rate_limiter.allow(
+        f"{context.user_id}:{context.course_id}",
+        limit=settings.chat_rate_limit_requests,
+        window_seconds=settings.chat_rate_limit_window_seconds,
+    ):
         raise RateLimitError("Çok sık soru gönderiyorsun. Bir dakika bekleyip tekrar dener misin?")
 
     chat_session = await _load_or_create_session(session, context, payload)
