@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.errors import AppError
 from app.core.logging import get_logger
+from app.core.vector_space import current_space
 from app.modules.ingestion import parsers
 from app.modules.ingestion.chunking import chunk_blocks
 from app.modules.ingestion.embedding import get_embedding_provider
@@ -67,6 +68,10 @@ async def process_document(
     # Embedding chunk'lar yazılmadan ÖNCE üretilir: sağlayıcı hata verirse belge
     # "completed" görünüp aranamayan chunk'lar bırakmaz.
     provider = get_embedding_provider()
+    # Vektörün hangi uzayda üretildiği chunk'la BİRLİKTE yazılır (0006). Ayrı
+    # yazılsaydı, ikisinin arasında bir hata olduğunda hangisinin doğru olduğunu
+    # söyleyecek bir kayıt kalmazdı.
+    space = current_space()
     batch_size = get_settings().embedding_batch_size
     embeddings: list[list[float]] = []
     for start in range(0, len(chunks), batch_size):
@@ -81,10 +86,11 @@ async def process_document(
     await session.execute(
         text(
             "INSERT INTO chunks (course_id, document_id, chunk_index, page_number, "
-            "slide_number, section_title, content_type, text, token_count, embedding) "
+            "slide_number, section_title, content_type, text, token_count, embedding, "
+            "embedding_space) "
             "VALUES (:course_id, :document_id, :chunk_index, :page_number, :slide_number, "
             ":section_title, CAST(:content_type AS chunk_content_type), :text, :token_count, "
-            "CAST(:embedding AS vector))"
+            "CAST(:embedding AS vector), :embedding_space)"
         ),
         [
             {
@@ -98,6 +104,7 @@ async def process_document(
                 "text": chunk.text,
                 "token_count": chunk.token_count,
                 "embedding": str(embedding),
+                "embedding_space": space,
             }
             for index, (chunk, embedding) in enumerate(zip(chunks, embeddings, strict=True))
         ],

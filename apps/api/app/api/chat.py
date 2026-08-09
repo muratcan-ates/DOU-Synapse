@@ -375,21 +375,40 @@ def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> AnswerOut
     return AnswerOutcome(GeneratedAnswer(status=status_value, mode=mode, text=text, citations=[]))
 
 
-def _has_evidence(chunks: list[RetrievedChunk], threshold: float) -> bool:
-    """Kanıt eşiği. Boş sonuç ya da eşik altı en iyi skor → cevap yok.
+#: Reddin statüsü → kullanıcıya gidecek sabit metin. Sözlük, çağrı yerinde bir
+#: if/else zincirinden iyidir: yeni bir ret statüsü eklendiğinde burada eksik
+#: kalırsa KeyError verir, sessizce yanlış metin göstermez (fail-closed).
+_REFUSAL_TEXT: dict[AnswerStatus, str] = {
+    AnswerStatus.OUT_OF_SCOPE: MESSAGE_OUT_OF_SCOPE,
+    AnswerStatus.INSUFFICIENT_CONTEXT: MESSAGE_INSUFFICIENT_CONTEXT,
+}
 
-    Ölçülen sinyal **dense skorudur, füzyon skoru değil.** RRF skoru 1/(k+sıra)
-    toplamıdır: k=60'ta en iyi sonuç bile ~0.016 çıkar, yani 0.35'lik eşikle
-    karşılaştırıldığında her soru reddedilirdi. Füzyon skoru sıralama içindir,
-    kalibre edilebilir bir güven ölçüsü değildir. Şerit 1'in kapısı (`retrieval
-    service.retrieve`) da aynı sinyale bakar; iki katmanın aynı fikirde olması
-    tesadüf değil, şart.
+
+def _evidence_refusal(
+    chunks: list[RetrievedChunk], query: str, threshold: float
+) -> AnswerStatus | None:
+    """Kanıt kapısı. Cevap üretilebiliyorsa `None`, üretilemiyorsa reddin statüsü.
+
+    Ölçülen birincil sinyal **dense skorudur, füzyon skoru değil.** RRF skoru
+    1/(k+sıra) toplamıdır: k=60'ta en iyi sonuç bile ~0.016 çıkar, dolayısıyla
+    füzyon skoru sıralama içindir, kalibre edilebilir bir güven ölçüsü değildir.
 
     Eşiğe burada ikinci kez bakılması bilinçlidir: iki katman da bağımsız olarak
-    doğru davranmalıdır (Anayasa II deseni). Eşik değeri KALİBRE EDİLMEMİŞTİR
-    (T043); hiçbir raporda kullanılamaz.
+    doğru davranmalıdır (Anayasa II deseni). Eşik `evaluation/calibration.md`'de
+    kalibre edildi (0.81); aynı belge holdout'ta hedefi tutturmadığını da yazıyor
+    ve sebebin eşiğin değeri değil sinyalin darlığı olduğunu gösteriyor.
+
+    Bu yüzden eşiğin ALTINDA kalan sorgu artık tek bir etikete düşmüyor: kapsam
+    dışı sorularla dayanağı zayıf sorular `retrieval.scope` içinde, ölçülmüş
+    ikinci ve üçüncü sinyalle ayrılıyor. **Cevaplanan küme değişmez** —
+    "yeterli kanıt" koşulu eskisiyle birebir aynı.
+
+    İçeriden import, `get_retriever`/`apply_guardrails` ile aynı desen: modül
+    henüz inmemişse uç fail-closed davranır, sessizce cevap üretmez.
     """
-    return bool(chunks) and max(c.dense_score for c in chunks) >= threshold
+    from app.modules.retrieval.scope import assess_evidence
+
+    return assess_evidence(chunks, query=query, threshold=threshold).refusal_status
 
 
 async def _generate(
@@ -452,9 +471,12 @@ async def produce_answer(
     chunks = await retriever.search(
         course_id=course_id, query=question, limit=settings.retrieval_top_k
     )
-    if not _has_evidence(chunks, settings.evidence_threshold):
-        # LLM'e HİÇ gidilmez: kanıt yoksa üretilecek bir şey de yoktur.
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_INSUFFICIENT_CONTEXT)
+    refusal = _evidence_refusal(chunks, question, settings.evidence_threshold)
+    if refusal is not None:
+        # LLM'e HİÇ gidilmez: kanıt yoksa üretilecek bir şey de yoktur. Kapsam dışı
+        # olduğu deterministik olarak saptanmışsa da gidilmez — modele sormak hem
+        # kota harcar hem de materyale gömülü bir talimata kapıyı açık bırakırdı.
+        return _refusal(refusal, mode, _REFUSAL_TEXT[refusal])
 
     stage = decision.stage if decision is not None else None
 
@@ -592,7 +614,19 @@ async def post_chat(
         cached_answer = await _lookup_cache(session, context.course_id, question)
 
     if cached_answer is not None:
-        outcome = AnswerOutcome(cached_answer)
+        # Önbellekten dönen cevap da zincirin metne bakan halkalarından geçer.
+        # Geçmiyordu ve ölçüldü: satıra konmuş bir `<script>` etiketi hem cevap
+        # metninde hem atıf kartında zarfa çıkıyordu. Atıf halkası bilerek
+        # koşmaz — bu istekte retrieval yapılmadığı için karşılaştırılacak küme
+        # yok; gerekçe `guardrails.chain.screen_cached`'de.
+        from app.modules.guardrails.chain import blocked_answer, screen_cached
+
+        screened = screen_cached(cached_answer)
+        outcome = AnswerOutcome(
+            blocked_answer(screened.block_reason, mode=chat_session.mode)
+            if screened.blocked
+            else screened.answer
+        )
     else:
         outcome = await produce_answer(
             question=search_query,
