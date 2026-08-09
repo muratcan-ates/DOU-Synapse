@@ -39,7 +39,9 @@ REFUSAL_BEHAVIORS = frozenset({"insufficient_context", "out_of_scope"})
 # bir sorunun beklenen kaynağı yoktur, Recall'a katılırsa metriği yapay olarak düşürür.
 RETRIEVAL_CATEGORIES = frozenset({"direct", "multi_chunk", "technical_term", "code_review"})
 
-_UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+_UUID_RE = re.compile(
+    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+)
 _WHITESPACE = re.compile(r"\s+")
 
 
@@ -254,7 +256,9 @@ def structural_errors(gold: GoldSet) -> list[str]:
                 "reddedilmesi beklenen bir sorunun beklenen kaynağı olmaz."
             )
         if item.category == "code_review" and item.question_type not in {"code_trace", "bug_hunt"}:
-            errors.append(f"{item.id}: code_review kaydında question_type code_trace|bug_hunt olmalı.")
+            errors.append(
+                f"{item.id}: code_review kaydında question_type code_trace|bug_hunt olmalı."
+            )
         if item.category == "injection" and not item.pattern_family:
             errors.append(f"{item.id}: injection kaydında pattern_family zorunlu (kalıp ailesi).")
         if item.category == "socratic_leak" and not item.leak_vector:
@@ -287,7 +291,5 @@ def overlap_errors(a: GoldSet, b: GoldSet) -> list[str]:
     for item in b.items:
         key = normalize_question(item.question)
         if key in a_questions:
-            errors.append(
-                f"{a.name}/{b.name} ortak soru metni: {a_questions[key]} ↔ {item.id}"
-            )
+            errors.append(f"{a.name}/{b.name} ortak soru metni: {a_questions[key]} ↔ {item.id}")
     return errors
