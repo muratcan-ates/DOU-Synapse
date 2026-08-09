@@ -97,11 +97,23 @@ _SQL = text(
                c.slide_number,
                c.section_title,
                c.text,
+               c.chunk_index,
                ts_rank(c.fts, q.query) AS rank
         FROM chunks c, q
         WHERE c.course_id = :course_id
           AND c.fts @@ q.query
-        ORDER BY rank DESC, c.id
+        -- Eşitlik bozma `c.id` DEĞİL: birincil anahtar `gen_random_uuid()` ile
+        -- üretiliyor, yani aynı korpus yeniden ingest edildiğinde aynı parça
+        -- başka bir kimlik alıyor ve eşit rank'li satırların sırası değişiyor.
+        -- Bir korpus içinde kararlıydı, korpuslar ARASINDA değildi (R2 ölçtü:
+        -- yeniden kurulan indekste Recall@5 0.981 → 0.971 ve T044'ün MRR güven
+        -- aralığı sıfırın bir yanından diğerine geçti — "hibrit dense'ten
+        -- iyidir" hükmü bu yüzden geri çekildi).
+        --
+        -- `(document_id, chunk_index)` belgenin içeriğinden türüyor: aynı
+        -- materyal yeniden işlendiğinde aynı sırayı verir. Ölçüm artık yeniden
+        -- üretilebilir.
+        ORDER BY rank DESC, c.document_id, c.chunk_index
         LIMIT :limit
     )
     SELECT m.id,
@@ -114,7 +126,7 @@ _SQL = text(
            m.rank
     FROM matched m
     JOIN documents d ON d.id = m.document_id
-    ORDER BY m.rank DESC, m.id
+    ORDER BY m.rank DESC, m.document_id, m.chunk_index
     """
 )
 

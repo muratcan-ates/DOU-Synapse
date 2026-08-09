@@ -22,7 +22,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.db import rls_session
-from app.modules.retrieval.fts import fts_search, uses_explicit_operators
+from app.modules.retrieval.fts import _SQL, fts_search, uses_explicit_operators
 from tests import test_retrieval
 from tests.conftest import UserFactory
 from tests.test_retrieval import DEADLOCK_TR, PROCESSES_EN, create_course, seed_document
@@ -236,3 +236,86 @@ class TestFtsSiralamaBilgisi:
             assert parca.fts_score > 0.0
             assert parca.dense_score == 0.0
             assert parca.fused_score == 0.0
+
+
+class TestSiralamaYenidenUretilebilir:
+    """Eşit `ts_rank`'li parçaların sırası korpus yeniden kurulunca DEĞİŞMEMELİ.
+
+    R2'nin ölçtüğü kusur: eşitlik bozma `c.id`'ye bağlıydı ve o sütun
+    `gen_random_uuid()` ile üretiliyor. Aynı materyal yeniden ingest edildiğinde
+    her parça yeni bir kimlik alıyor, eşit rank'li satırların sırası keyfî olarak
+    değişiyordu — tek bir korpus içinde kararlı, korpuslar ARASINDA değil.
+
+    Etkisi kozmetik değildi: yeniden kurulan indekste Recall@5 0.981 → 0.971'e
+    düştü ve T044'ün MRR güven aralığı sıfırın bir yanından diğerine geçti;
+    "hibrit dense'ten iyidir" hükmü bu yüzden geri çekildi. Ölçüm yeniden
+    üretilemiyorsa ölçtüğü şeyin de anlamı kalmaz.
+
+    ## Bu test neden SQL metnine bakıyor
+
+    Davranışsal kurmak istedim ve iki kez başarısız oldum. İlk yazım kendi
+    SQL'ini yazıyordu, yani `fts.py` bilerek bozulduğunda bile yeşil kaldı —
+    kendi kopyasını sınıyordu. İkinci yazım `fts_search`'ü çağırdı ama parça
+    kimliklerini yeniden atayarak "korpus yeniden kuruldu"yu taklit etmeye
+    çalıştı; o da mutasyonu yakalamadı.
+
+    Kimliğe bağlı sıralamayı davranışla yakalamanın dürüst yolu aynı korpusu iki
+    kez ingest edip sıraları karşılaştırmak; ama bozuk kodda bile üç eleman
+    tesadüfen aynı sırada gelebilir (1/6), yani test kırılgan olurdu ve kırılgan
+    bir nöbetçi, nöbetçi değildir.
+
+    O yüzden iddia yapısal: sıra ifadesi kimliğe DEĞİL içeriğe (`document_id`,
+    `chunk_index`) bağlı olmalı. Sınadığı şey davranışın kaynağının ta kendisi ve
+    `fts.py` bozulduğunda kesinlikle kırmızı yanıyor — doğrulandı.
+    """
+
+    def test_esitlik_bozma_icerige_bagli_kimlige_degil(self) -> None:
+        sql = str(_SQL)
+
+        assert "ORDER BY rank DESC, c.document_id, c.chunk_index" in sql, (
+            "iç sorgunun eşitlik bozması içerikten türemeli"
+        )
+        assert "ORDER BY m.rank DESC, m.document_id, m.chunk_index" in sql, (
+            "dış sorgunun eşitlik bozması içerikten türemeli"
+        )
+        assert "ORDER BY rank DESC, c.id" not in sql, (
+            "eşitlik bozma chunk kimliğine geri döndü — kimlik her ingest'te "
+            "yeniden üretiliyor, ölçüm sonuçları korpus kurulduğunda kayar"
+        )
+        assert "ORDER BY m.rank DESC, m.id" not in sql
+
+    async def test_esit_rankli_parcalar_belge_ici_sirayla_doner(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        """Yapısal iddianın davranıştaki karşılığı: eşit rank → chunk_index sırası."""
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = UserFactory.auth(ayse_id)
+        course_id = await create_course(client, ayse, "COME301")
+
+        ayni_metin = "Semafor kritik bolgeyi korur."
+        await seed_document(
+            worker_engine,
+            course_id=course_id,
+            uploaded_by=ayse_id,
+            file_name="a.md",
+            passages=[(1, ayni_metin), (2, ayni_metin), (3, ayni_metin)],
+        )
+
+        async with rls_session(ayse_id) as session:
+            sonuclar = await fts_search(session, course_id=course_id, query="semafor", limit=10)
+
+        assert len(sonuclar) == 3, "üç parça da eşleşmeli, yoksa vaka geçersiz"
+        # Rank'lerin gerçekten eşit olduğunu doğrula: eşit değillerse sıra
+        # eşitlik bozmaya hiç düşmez ve bu test sessizce hiçbir şey ölçmez.
+        assert len({round(c.fts_score, 9) for c in sonuclar}) == 1
+
+        async with rls_session(ayse_id) as session:
+            konum = dict(
+                (
+                    await session.execute(
+                        text("SELECT id, chunk_index FROM chunks WHERE course_id = :c"),
+                        {"c": course_id},
+                    )
+                ).all()
+            )
+        assert [konum[c.chunk_id] for c in sonuclar] == [0, 1, 2]
