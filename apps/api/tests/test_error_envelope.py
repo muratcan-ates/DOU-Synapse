@@ -158,7 +158,8 @@ class TestBosBlueprintRouter:
 
         assert blueprints.router.prefix == "/courses/{course_id}"
         assert blueprints.router.routes == [], "blueprint şeridi başlayana kadar boş kalmalı"
-        assert len(yollar) == 26, f"yol sayısı değişmiş: {len(yollar)}"
+        # Kaynak bağlamı + eğitmen retrieval laboratuvarı iki yeni yol ekler.
+        assert len(yollar) == 28, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:
