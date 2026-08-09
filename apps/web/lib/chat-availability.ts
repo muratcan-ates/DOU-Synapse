@@ -16,11 +16,35 @@
  * sekmesinde çalışıyor.
  */
 
+import { useEffect } from "react";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/use-resource";
 import type { ChatAvailability } from "@/lib/types";
 
 const POLL_INTERVAL_MS = 30_000;
+
+/**
+ * Kilidi okuyan yüzeyler. `examStateChanged()` hepsini yeniden sordurur.
+ *
+ * Neden gerekli: `pollWhile` yalnız KİLİTLİYKEN yokluyor ve bu doğru — kilit
+ * kalkınca polling kendiliğinden dursun diye. Ama o kural, izlenmesi gereken
+ * kenarı ters seçiyor: açık → kilitli geçişini hiçbir şey izlemiyordu. Öğrenci
+ * sınavı başlattığında bulunduğu sekmedeki "Asistan" sekmesi açık kalıyor,
+ * kilit ancak yeni bir mount'ta (yeni sekme, yenileme) görünüyordu. Sunucu her
+ * yolu zaten reddediyordu, yani güvenlik açığı değil; ama etkin görünüp iş
+ * yapmayan bir yüzey kusurdur (Anayasa XI).
+ *
+ * Çözüm sürekli yoklama DEĞİL: kilit yalnız öğrencinin kendi eylemiyle değişir
+ * (sınavı o başlatır, o bitirir), dolayısıyla haber verilebilir bir olaydır.
+ * Herkesi her sayfada sonsuza kadar yoklatmak, bilinen bir olayı tahmin etmeye
+ * çalışmak olurdu.
+ */
+const subscribers = new Set<() => void>();
+
+/** Sınav başladı ya da bitti: kilidi okuyan her yüzey sunucuya yeniden sorsun. */
+export function examStateChanged(): void {
+  for (const notify of [...subscribers]) notify();
+}
 
 export interface ChatLock {
   /** Sunucu "kapalı" demedikçe açık kabul edilir. */
@@ -39,7 +63,7 @@ export interface ChatLock {
  * diye kapı burada. Kancanın kendisi her render'da aynı sırada çalışır.
  */
 export function useChatAvailability(courseId: string | null): ChatLock {
-  const { data, loading } = useResource<ChatAvailability>(
+  const { data, loading, reload } = useResource<ChatAvailability>(
     () =>
       courseId === null
         ? Promise.resolve({ available: true, reason: null, message: null })
@@ -47,6 +71,18 @@ export function useChatAvailability(courseId: string | null): ChatLock {
     [courseId],
     { pollWhile: (state) => !state.available, intervalMs: POLL_INTERVAL_MS },
   );
+
+  /*
+   * Abonelik `courseId === null` iken de kurulur ve kurulmalı: o durumda kanca
+   * kilidi dışarıdan alan bir çağıranın içinde yaşıyor ve `reload` zararsız bir
+   * sabit döndürüyor. Koşullu abonelik, "kim abone" sorusunu iki yere yayardı.
+   */
+  useEffect(() => {
+    subscribers.add(reload);
+    return () => {
+      subscribers.delete(reload);
+    };
+  }, [reload]);
 
   return toChatLock(data, !loading);
 }

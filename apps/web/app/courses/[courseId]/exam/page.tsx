@@ -68,6 +68,7 @@ import type {
 import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { examStateChanged } from "@/lib/chat-availability";
 import { Field } from "@/components/field";
 import { ErrorNote, Loading, MetricRow, PageHeader } from "@/components/page-state";
 import { SourceCard } from "@/components/source-card";
@@ -191,6 +192,9 @@ function StartPanel({
     setFailure(null);
     try {
       const started = await api.post<ExamSession>(`/courses/${courseId}/exams`, { mode });
+      // Asistan sekmesi bu sekmede de anında kilitlensin: kilidi okuyan yüzeyler
+      // yalnız KİLİTLİYKEN yokluyor, yani açık→kilitli geçişini kimse izlemiyor.
+      examStateChanged();
       onStarted(started.id);
     } catch (e) {
       // Boş havuz bir ARIZA değildir: kırmızı kutu yerine nötr boş durum.
@@ -437,6 +441,9 @@ function RunningExam({
                 `/courses/${courseId}/exams/${session.id}/finish`,
               );
               setFinish(result);
+              // Kilit kalkışı da haber verilir: kilitliyken koşan yoklama bunu
+              // 30 saniye içinde görürdü, ama bekletmenin bir sebebi yok.
+              examStateChanged();
               await onReload();
             }}
           />
