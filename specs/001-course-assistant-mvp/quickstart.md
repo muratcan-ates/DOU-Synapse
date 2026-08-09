@@ -5,8 +5,9 @@ kaldırır: PostgreSQL 16 + pgvector, şema + seed, FastAPI backend'i, testler v
 Next.js frontend'i. Tüm komutlar repo kökünden (`~/code/DOU-Synapse`) verilmiştir.
 
 > **Son doğrulama: 9 Ağustos 2026.** Adım 2'deki migration döngüsü boş bir veritabanında
-> baştan koşuldu (**15 tablo**, hatasız), adım 3-4 aynı gün tekrarlandı (**479 test <!-- docs-check: tarihsel 15 · 2026-08-09 --><!-- docs-check: tarihsel 479 · 2026-08-09 -->
-> yeşil**), adım 5-6 tarayıcıda gerçek materyalle sınandı.
+> baştan koşuldu (**15 tablo**<!-- docs-check: tarihsel 15 · 2026-08-09 -->, hatasız),
+> adım 3-4 aynı gün tekrarlandı (**664 test yeşil**<!-- docs-check: tarihsel 664 · 2026-08-09 -->),
+> adım 5-6 tarayıcıda gerçek materyalle sınandı.
 >
 > **Bir adımı atlarsanız bile §6.1'i okuyun:** varsayılan ayarlarla sistem ayağa kalkar
 > ama **asistan işe yarar cevap veremez.** Sebebi ve tek satırlık düzeltmesi orada.
@@ -96,10 +97,11 @@ psql -d dou_synapse -tAc "select count(*) from information_schema.tables
   where table_schema='public' and table_type='BASE TABLE'"     # 15
 ```
 
-Migration numaralarının atlamalı gitmesi (`0001, 0003, 0004, 0005`) normaldir: `0002`,
-`0006` ve `0007` devam eden işlere ayrılmıştır ve henüz depoda değildir. `0005` tablo
-oluşturmaz, yalnız analitiğin ihtiyaç duyduğu okuma politikasını ekler — bu dosya
-atlanırsa **eğitmen analitiği sessizce boş görünür.**
+Yedi migration dosyası var ama **tablo sayısı 15**: hepsi tablo oluşturmuyor. `0005`
+analitiğin okuma politikasını ekler (atlanırsa **eğitmen analitiği sessizce boş
+görünür**), `0006` `chunks`'a `embedding_space` sütununu ekler, `0007` silme/yetki
+politikalarını düzeltir. `0002` Supabase Auth köprüsüdür ve **`auth` şeması yoksa
+kendini atlar** — yerel PostgreSQL'de böyledir, hata vermez.
 
 Notlar:
 
@@ -293,8 +295,9 @@ curl -s -X POST "http://localhost:8000/courses/<COURSE_ID>/chat" \
 
 **LLM anahtarı yoksa** sistem deterministik sahte sağlayıcıya düşer (logda
 `llm anahtarı yok — deterministik sahte sağlayıcıya düşülüyor`). Atıflar yine gerçek
-parçalara bağlıdır ve guardrail zinciri aynen koşar; yalnız cevabın düzyazısını model
-yazmaz. **Soru üretimi bu modda çalışmaz** (0 soru döner) — gerçek anahtar ister.
+parçalara bağlıdır, guardrail zinciri aynen koşar ve **soru üretimi de çalışır**
+(ölçüldü: 3 istendi, 3 üretildi, şemadan geçti). Değişen tek şey cevabın düzyazısını
+modelin yazmaması — bu yüzden "uç 200 döndü" ile "üretim çalışıyor" aynı şey değildir.
 
 ## 7. Sorun giderme
 
@@ -310,7 +313,7 @@ yazmaz. **Soru üretimi bu modda çalışmaz** (0 soru döner) — gerçek anaht
 | **Cevaplar alakasız parçalara atıf yapıyor** | Sağlayıcı değiştirildi ama korpus yeniden işlenmedi. Materyalleri silip yeniden yükleyin (§6.1) |
 | **Eğitmen analitiği boş / ret oranı hep %0** | `0005_analytics.sql` uygulanmamış olabilir: `psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"` — iki politika görmelisiniz. (Oranın %0 görünmesinin ayrı ve bilinen bir sebebi daha var: [ARCHITECTURE §5](../../ARCHITECTURE.md#5-sorgu-pipelineı-ve-guardrail-zinciri)) |
 | **Tarayıcıdan istek CORS'a takılıyor** | Frontend'i 3000/3100 dışında bir portta çalıştırıyorsunuz; portu `CORS_ORIGINS`'e ekleyin |
-| **"0 soru üretildi"** | Soru üretimi gerçek LLM anahtarı ister; sahte sağlayıcının soru şeması yok |
+| **"0 soru üretildi"** | Konuya bağlı materyal yoksa üretilecek soru da yoktur; önce konuyu kapsayan materyalin `Hazır` olduğundan emin olun |
 | İlk soru çok uzun sürüyor / asılı kalıyor | Model indiriliyor olabilir (2,1 GB). `EMBEDDING_CACHE_DIR`'i kontrol edin (§6.1) |
 | `bunx playwright` "two different versions" hatası | `bunx` ayrı bir kopya indirir; `node_modules/.bin/playwright` kullanın |
 
@@ -334,14 +337,14 @@ psql "postgresql://postgres:postgres@localhost:5432/dou_synapse" -f supabase/see
 
 **Bu yığının üç sınırı vardır ve üçü de bilinçli olarak yazılıyor:**
 
-1. **RLS bu yığında DEVREDE DEĞİLDİR.** `api` servisi veritabanına `postgres`
-   (superuser) rolüyle bağlanır; superuser, tablolardaki `FORCE ROW LEVEL SECURITY`
-   işaretine rağmen politikaları atlar. Yerel kurulumda (§2-3) API `dou_app` rolüyle
+1. **RLS bu yığında DEVREDE DEĞİLDİR.** `api` ve `worker` servislerinin ikisi de
+   veritabanına `postgres` (superuser) rolüyle bağlanır; superuser, tablolardaki
+   `FORCE ROW LEVEL SECURITY` işaretine rağmen politikaları atlar. Yerel kurulumda (§2-3) API `dou_app` rolüyle
    bağlanır ve RLS gerçekten uygulanır. **İzolasyon kanıtı Compose yığınında alınamaz;**
    `supabase/tests/rls_isolation.sql` yerel kurulumda ya da CI'da koşturulmalıdır.
 2. **LLM üretimi yapamaz** (dil modeli harici bir API'dedir). Çevrimdışı demoda cevaplar
    `answer_cache` üzerinden servis edilir; önbellek yalnız `qa` modunda ve **birebir
-   metin eşleşmesiyle** çalışır. Soru üretimi bu yığında hiç çalışmaz.
+   metin eşleşmesiyle** çalışır.
 3. **Embedding modeli imaja gömülü değildir.** İlk kullanımda indirilmeye çalışılır;
    gerçekten ağsız bir kurulumda model önceden konteynerde bulunmalıdır.
 

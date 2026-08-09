@@ -154,6 +154,10 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
 - [ ] Sınav sahnesi için **onaylanmış soru var mı** (öğrenci hesabıyla bak, boş olmamalı).
       Yoksa şimdi üret ve onayla — çevrimdışıyken üretilemez.
 - [ ] `answer_cache` demo soruları **dolduruldu** mu (Plan C sigortası)
+- [ ] **Sahne 5'in iki sorusu denendi mi** — `İtalya'nın başkenti neresidir?` "Dersin
+      kapsamı dışında", `Bugünkü dolar kuru ne kadar?` "Materyalde dayanak bulunamadı"
+      dönmeli. Ret türü ölçülmüş bir sinyale bağlı; denenmemiş soruyla sahneye çıkılmaz
+- [ ] Soru havuzu / sınav / ilerleme ekranlarında **önizleme şeridi kalmadığı** görüldü mü
 - [ ] Yedek makine aynı adımlardan geçti mi
 
 ### T-15 dakika — ısıtma
@@ -183,7 +187,7 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
 | 1 | **İlk soru 11,7 sn** (model yükleme) | Uzun bekleme | T-15 warm-up. Olmazsa anlatıcının cümlesi (§2) |
 | 2 | **Model önbelleği silinmiş** | İlk soru dakikalarca sürer, log `embedding modeli yükleniyor`da asılı | Kurtarma yok. T-60'ta kontrol et |
 | 3 | **`answer_cache` birebir eşleşme** | Plan C'de cevap gelmiyor | Soruları kopyala-yapıştır sor |
-| 4 | **Kapsam dışı ret metni "kapsam dışı" demiyor** | Ekranda "Materyalde dayanak bulunamadı" yazıyor | Bu **doğru davranış**. Anlatım buna göre yazıldı (demo-script sahne 5) |
+| 4 | **Her ders dışı soru "kapsam dışı" demiyor** | Bazıları "Materyalde dayanak bulunamadı" döner | İkisi de doğru davranış, ama sahnede **denenmiş** soruyu kullanın; demo-script sahne 5'te ölçülmüş liste var |
 | 5 | **Soru üretimi anahtarsız çalışmıyor** | "0 soru üretildi" | Soruları T-60'ta üret ve onayla |
 | 6 | **Hız sınırı**: kullanıcı+ders başına 20 istek / 60 sn | 429 ve "Çok sık soru gönderiyorsun" | Prova ile demoyu aynı hesapta arka arkaya yapma; ya 1 dk bekle ya diğer hesaba geç |
 | 7 | **Mod ortada değişmiyor** | "Bu oturum farklı bir modda başlatılmış" | Sokratik'e geçerken **yeni sohbet** aç (arayüz bunu kendi yapıyor) |
@@ -257,11 +261,11 @@ yarım bir ekranı gösterirsek onu sorar.
   retler `insufficient_context` olarak kaydediliyor. Sayı yanlış okunmaya açık.
 - **Compose yığınında izolasyon kanıtı.** O yığında RLS devrede değil.
 - **Soru üretimi ekranı**, gerçek LLM anahtarı yoksa (0 soru döner).
-- **Üstünde "Tasarım önizlemesi" şeridi olan hiçbir ekran.** 9 Ağustos itibarıyla üç ekran
-  bu durumda: **soru havuzu, sınav provası, ilerleme/analitik.** Backend uçları çalışıyor ve
-  uçtan uca doğrulandı; bağlanmayı bekleyen yalnız arayüz (liderde). Bağlanmazsa demo
-  **5 sahne** olarak koşulur ve 6. sahne atlanır — örnek veri gösteren bir ekranı çalışan
-  ürün diye göstermek, bu listedeki her maddeden daha pahalıya patlar.
+- **Üstünde "Tasarım önizlemesi" şeridi olan hiçbir ekran.** 9 Ağustos akşamı itibarıyla
+  böyle bir ekran **kalmadı** (soru havuzu, sınav ve ilerleme o gün bağlandı), ama kural
+  duruyor: örnek veri gösteren bir ekranı çalışan ürün diye göstermek, bu listedeki her
+  maddeden daha pahalıya patlar. Sunumdan önce üç ekranı bir kez açıp şerit olmadığını
+  doğrulayın.
 - **Dev veritabanının ham ders listesi** (onlarca test dersi).
 - **Ham stack trace / 500 ekranı.** Görülürse Plan C'ye geçilir (§1 ölçüt 4).
 
