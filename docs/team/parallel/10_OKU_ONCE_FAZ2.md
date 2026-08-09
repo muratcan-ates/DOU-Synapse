@@ -133,6 +133,45 @@ sohbet ekranı 500 veriyordu; lider elle uyguladı. Kendi worktree'nde bir şey
 psql -d dou_synapse -c "\dt"    # 19 tablo görmelisin
 ```
 
+### PAYLAŞILAN DEV VERİTABANI ARTIK **fastembed (E5)** UZAYINDA
+
+9 Ağustos 17:40'ta `dou_synapse`'teki 54 chunk **gerçek E5 modeliyle yeniden
+embed edildi** (chunk'lar silinmedi, yerinde UPDATE — havuzdaki sorular
+`source_chunk_id` ile bağlı ve silme `RESTRICT`'e takılırdı).
+
+Sebep: korpus `hashing` ile işlenmişti ve `hashing` anlamsal değil, karma
+tabanlıdır. Kalibre edilmiş 0.81 eşiği o uzayda **her soruyu** reddediyordu.
+Şimdi doğru ayrışıyor — ölçüldü:
+
+| Soru | Sonuç |
+|---|---|
+| "Thread ile süreç arasındaki fark nedir?" | `answered`, 3 atıf |
+| "Context switch neden maliyetlidir?" | `answered`, 3 atıf |
+| "Producer consumer probleminde tampon nasıl korunur?" | `answered`, 3 atıf |
+| "Bugün dolar kuru ne kadar?" | `insufficient_context` |
+| "Fransız İhtilali kaç yılında oldu?" | `insufficient_context` |
+
+**Bunun senin için anlamı — iki farklı durum, karıştırma:**
+
+1. **Testlerin** (`uv run pytest`) kendi veritabanını kurar ve kendi ingest'ini
+   yapar. Sağlayıcı ne olursa olsun ingest ve sorgu AYNI uzayda olur, yani
+   tutarlıdır. `.env`'i olduğu gibi bırak (`EMBEDDING_PROVIDER=hashing`) —
+   testler hızlı koşsun. **Değiştirme.**
+
+2. **Paylaşılan `dou_synapse`'e karşı bir SUNUCU koşturuyorsan** (uvicorn, demo,
+   elle curl) sağlayıcıyı açıkça vermelisin:
+
+   ```bash
+   EMBEDDING_PROVIDER=fastembed uv run uvicorn app.main:app --port <senin portun>
+   ```
+
+   Vermezsen: sorgu **hashing** vektörüyle, korpus **E5** vektörüyle karşılaşır.
+   Bu çökmez — sessizce alakasız sonuçlar döndürür ve "retrieval kötü" gibi
+   görünür. Bugün aynı sınıftan iki kusur bu yüzden saatlerce görünmedi.
+
+İlk çağrıda model yüklenir (~14 sn, sonra önbellekten). `.env.example`'ın
+varsayılanı bilerek `hashing` bırakıldı: CI ve testler 2 GB model indirmemeli.
+
 ## 5. Pazarlıksız kurallar (Anayasa)
 
 `.specify/memory/constitution.md` on bir ilke tanımlar. Kod yazmadan önce oku.
