@@ -52,15 +52,26 @@ SECURITY DEFINER fonksiyonudur. **Üçü de migration ister, üçü de bugün ya
 
 Bugün yapılan iki şey, açığın **somut sömürüsünü** kapatıyor:
 
-1. **Süre uzatma kapandı.** Kalan süre asla ham `expires_at`'ten okunmuyor:
+1. **Süre uzatma daraltıldı** (kapatılmadı — aşağıdaki sınıra dikkat). Kalan süre
+   asla ham `expires_at`'ten okunmuyor:
 
    ```
    etkin_bitiş = min(expires_at, started_at + EXAM_DURATION_MINUTES)
    ```
 
    Öğrenci satırdaki `expires_at`'i doğrudan SQL ile bir güne çekse bile sunucu
-   `started_at + 20dk`'ya kırpar. `started_at` sınav açılışında sunucu tarafından
-   yazılır ve hiçbir uçtan güncellenmez.
+   `started_at + 20dk`'ya kırpar.
+
+   **Sınır, açıkça:** `started_at` de aynı politikayla yazılabilir. İkisini birden
+   ileri atan biri süreyi yine uzatır; kırpma yalnız tek sütunlu kurcalamayı
+   kapatır. Tam kapanış `0005`'teki kolon bazlı GRANT'tir. Bunu "çözüldü" diye
+   yazmıyorum çünkü çözülmedi (Anayasa III).
+
+   **Bugünkü gerçek risk düzeyi:** API'de `exam_sessions`'ın `started_at` ya da
+   `expires_at` sütununa yazan **hiçbir uç yok** — `/finish` yalnız `finished_at`
+   ve `score` yazar. Yani sömürü HTTP üzerinden ulaşılabilir değil; doğrudan
+   veritabanı bağlantısı ister. Bu bir savunma derinliği açığıdır, canlı bir
+   istismar yolu değil.
 
 2. **Puan uydurma kapandı.** `exam_sessions.score` **hiçbir yanıtta okunmuyor.**
    Gösterilen puan her istekte `answers` satırlarından yeniden hesaplanıyor —
@@ -129,6 +140,44 @@ chunk'tan gelir.
 
 ---
 
+## RLS kanıtı — iki katman ayrı ayrı sınandı
+
+Anayasa II "RLS'in gerçekten tetiklendiği, politika bilerek bozularak kanıtlanır"
+diyor. T033 vaka 2 için bu üç adımda yapıldı. Temiz bir veritabanına migration'lar
+uygulandı, bir ders + bir eğitmen + bir öğrenci + bir **taslak** soru kuruldu.
+
+**1. Politika sağlamken, uygulama katmanı hiç devrede değilken.** Ham SQL:
+`SET ROLE dou_app` + öğrencinin `app.current_user_id`'si + `SELECT count(*) FROM questions`.
+
+```
+1. POLITIKA SAGLAM  · ogrenci kac taslak goruyor -> 0
+```
+
+**2. Politika bozulduğunda.** `questions_read` düşürülüp `AND status = 'approved'`
+olmadan yeniden kuruldu. Aynı sorgu:
+
+```
+2. POLITIKA BOZUK   · ogrenci kac taslak goruyor -> 1
+```
+
+Yani `test_rls_katmani_tek_basina_da_taslagi_gizler` bu durumda **kırmızı yanar**.
+Testin yeşilliği politikadan geliyor, tesadüften değil.
+
+**3. Politika bozuk bırakılıp gerçek uygulama aynı veritabanına bağlandığında.**
+Uygulama katmanının tek başına tuttuğunun kontrolü:
+
+```
+3. RLS BOZUK, UYGULAMA KATMANI ACIK · ogrenci kac soru goruyor -> 0 (HTTP 200)
+3. RLS BOZUK, UYGULAMA KATMANI ACIK · egitmen kac soru goruyor -> 1 (HTTP 200)
+4. RLS BOZUK, ogrenci ?status=draft ile istiyor -> 0
+```
+
+İki katman da tek başına yeterli; ikisi birden "iki katmanlı izolasyon"dur. Kanıt
+veritabanı üretilebilir olduğu için kurulum betiği kalıcı olarak saklanmadı, ama
+adımlar yukarıda birebir yazılı.
+
+---
+
 ## Gruptan istenenler
 
 Aşağıdakiler Şerit 4'ün dışında. Hiçbiri Şerit 4'ü bloke etmiyor — hepsinin
@@ -189,20 +238,132 @@ class StructuredCompletion(Protocol):
     async def complete(self, *, system: str, user: str) -> str: ...
 ```
 
-**Şerit 2'den istenen:** LLM servisiniz bu imzayı karşılayan bir sınıf/fonksiyon
-dışa versin (litellm sarmalayıcınızın üzerine 5 satır). O gelince
-`app/api/questions.py`'deki `get_structured_completion()` ve
-`get_retriever()` sağlayıcıları tek satırla gerçek uygulamaya bağlanır; sahte
-uygulamalar testlerde kalır.
+**Bağlantı yapıldı — bekleyen bir iş kalmadı.** Şerit 2'nin `LlmClient`'ı
+(`complete(LlmRequest) -> LlmCompletion`) bu imzaya `_GenerationCompletion`
+adaptörüyle çevriliyor; Şerit 1'in `HybridRetriever(session)`'ı doğrudan
+kullanılıyor. Adaptör `question_gen.py` içinde, çünkü `app/modules/generation/`
+Şerit 2'nin dosyası.
 
-**Bugünkü davranış:** ikisi de bağlı değilken `POST /questions/generate`
-**503 + Türkçe mesaj** döner (fail-closed; sahte soru üretilmez). Havuz uçları,
-puanlama ve sınav akışının tamamı bu bağımlılıktan **etkilenmez** ve bugün çalışır.
+Çözümleme sırası (`resolve_retriever` / `resolve_completion`): önce testlerin
+bağladığı sahteler, sonra gerçek modüller, ikisi de yoksa `None` → uç **503**.
+
+Geçici olarak `try/except ImportError`'lı bir dikiş kullanıldı (modüller o an
+`main`'de değildi); **lider üç şeridi birleştirince dikiş söküldü**, artık düz
+import var. Söz verilen sadeleştirme yapıldı, borç bırakılmadı.
+
+**Gerçek modüllerle, `main` üzerinde doğrulandı** (411 test yeşil, mypy 58 dosyada
+temiz):
+
+```
+RETRIEVER  -> HybridRetriever
+COMPLETION -> _GenerationCompletion / FakeLlmClient
+RETRIEVAL  -> 2 chunk
+UC         -> HTTP 200
+RAPOR      -> requested=2 returned=0 accepted=0 rejected=0
+SEBEPLER   -> ["yanıtta 'questions' dizisi yok", x2]
+```
+
+Yani hat uçtan uca bağlı. **Soru üretilmemesinin tek sebebi API anahtarının
+olmaması:** anahtar yokken `build_llm_client()` deterministik sahte sağlayıcıya
+düşüyor, o da sohbet cevabı üretmek için yazıldığı için soru şemasını
+karşılamıyor. Bu fail-closed davranıştır — uydurma soru havuza girmiyor — ama
+`07_SERIT_RAPORLARI.md §7`'deki "gerçek LLM çağrısı yapılamadı" kalemi soru
+üretimini de kapsıyor: **anahtar geldiğinde tek gerçek üretim turu koşulmalı.**
+
+O turda ölçülecek tek sayı `accepted / returned`, yani SC-009. Rapor bu oranı
+zaten taşıyor ve paydası dürüst: ayrıştırılamayan bir yanıt `returned`'a
+yazılmıyor (bu bir kez yanlış yazılmıştı, canlı denemede yakalandı ve testle
+sabitlendi).
+
+**Sağlayıcı hatası iki uçta iki farklı şey demektir, karıştırılmadı:**
+
+| | Soru üretimi | Puanlama |
+|---|---|---|
+| Sağlayıcı kurulamazsa | **503** — LLM'siz yapılacak bir şey yok | cevap kaydedilir, o cevap "değerlendirilemedi" (FR-020) |
+| Neden | uydurma soru havuza girmemeli | bir sağlayıcı arızası öğrencinin MCQ cevaplarını da düşürmemeli |
+
+Bu yüzden `grade_answer` sağlayıcıyı **ancak LLM yoluna girdiğinde** çözümler;
+`mcq` ve `short_answer` sağlayıcı hiç kurulamıyorken bile puanlanır.
 
 `contracts.py`'ye bir alan eklenmesi gerekmedi.
 
-### 4. Uç adlandırma sapması — bilinçli
+**Uç değişikliği:** `POST /questions/generate` artık `201` değil **`200`** döner.
+N kaynak yaratan bir toplu iş bu; kaçının yazıldığı gövdedeki raporda. Hiçbiri
+şemadan geçmediğinde `201 Created` dönmek yaratılmamış bir şeyi bildirmek olurdu.
+Sözleşme yeniden export edildi.
+
+### 4. Lider devri §6 — "yazma ucu yanıttan sonra commit ediyor" · ölçüldü, teşhis düzeltildi
+
+`06_LIDER_DEVIR.md` §6 bunu "Şerit 3 ya da 4'e yazılmalı" diye bırakmış. Şerit 4
+olarak ölçtüm; sonuç, belgede yazandan biraz farklı ve fark önemli.
+
+**Ölçüm** (gerçek uvicorn sunucusu, temiz veritabanı, 127.0.0.1):
+
+```
+OLCUM: 40 turda, 201 aldiktan hemen sonraki GET yeni konuyu 0 kez GOREMEDI (0%)
+YUKLEME OLCUMU: 10 turda, 202 sonrasi GET belgeyi 0 kez GOREMEDI (0%)
+```
+
+Yani ne benim yazma uçlarımda ne de yükleme ucunda yarış **bu kurulumda** üremedi.
+Bu, sorunun olmadığı anlamına gelmiyor — pencerenin ne kadar açık kaldığına bağlı.
+
+**Mekanizma, kod düzeyinde doğrulandı** (fastapi 0.141.1 / starlette 1.4.1):
+
+- `fastapi/routing.py:140-145` — `await response(scope, receive, send)` bağımlılık
+  `AsyncExitStack`'lerinin **içinde** çağrılıyor. Yani `get_session`'ın commit'i
+  yanıt baytları gönderildikten sonra koşuyor. Bu her yazma ucu için doğru.
+- `starlette/responses.py:169` — `await self.background()` de `response.__call__`
+  içinde, yani exit stack kapanmadan **önce** koşuyor.
+
+Sıra şu: **gövde gider → BackgroundTasks koşar → oturum commit edilir.**
+
+Buradan çıkan teşhis: pencere normalde milisaniyenin altında (ölçüm 0/40), ama
+`POST /documents` bir `BackgroundTasks` ile `worker.drain()` çağırdığı için o uçta
+pencere **ingestion'ın tamamı kadar** açık kalıyor. Benim ölçümümde küçük bir `.md`
+ve `embedding_provider=hashing` ile drain milisaniyeler sürdü; fastembed + gerçek
+bir PDF ile saniyeler sürer — liderin gözlediği "bir saniye sonra göründü" tam
+olarak bu.
+
+Yani sorun "yazma uçları geç commit ediyor" değil, **"yükleme ucunda commit ile
+yanıt arasına bütün ingestion giriyor"**. Doğru düzeltme de buna göre daralıyor:
+
+- **Dar ve yeterli** (`documents.py`, liderin dosyası): belge satırını yanıt
+  gönderilmeden önce kalıcı kıl — worker tetiğini `BackgroundTasks`'a vermeden önce
+  commit et. 202'nin anlamı korunur, pencere kapanır.
+- **Genel ama daha invaziv** (`deps.py`/`db.py`): oturumu bağımlılık sökümünde değil
+  uç gövdesi biterken commit eden bir sarmalayıcı. Beş şeridin tamamını etkiler;
+  paralel çalışma bitmeden yapılmamalı.
+
+Şerit 4'ün uçlarında `BackgroundTasks` **yok**, dolayısıyla bu kalem soru havuzu ve
+sınav akışını etkilemiyor. Ölçüm betikleri tek kullanımlıktı, repoya konmadı;
+yöntem yukarıda birebir yazılı.
+
+### 5. Uç adlandırma sapması — bilinçli
 
 `tasks.md` T030 `PATCH .../approve|reject` diyor; `04_SORU_SINAV.md` `POST` diyor.
 Handoff daha yeni ve daha ayrıntılı olduğu için **`POST` uygulandı**. Frontend bu
 uçları bağlarken `POST` beklesin.
+
+Ek olarak brief'te olmayan tek uç eklendi: `POST /exams/{id}/hint`. Gerekçe, T033
+vaka 3 ve 8'in ikisi de bir ipucu yüzeyi olmadan sınanamıyor olması — "sınavda
+ipucu reddedilir" iddiasının reddedecek bir kapısı olmalı. İpucu metni LLM'siz,
+sorunun kaynak chunk'ından kademeli olarak türetiliyor.
+
+### 6. Bilerek yapılmayan iki şey — grubun kararı
+
+Bunlar ihmal değil; brief'in çizdiği sınırın dışında kaldıkları için grup karar
+verene kadar yapılmadı.
+
+**a. Oturum listesi ucu yok.** Brief "bağlantı koparsa öğrenci
+`GET .../{session_id}` ile döner" diyor, yani oturum kimliğini istemci saklıyor.
+İstemci kimliği kaybederse (sekme temizliği, cihaz değişimi) devam eden sınavına
+dönemez ve oturum açık kalır. Kapatmanın iki yolu var: `GET /courses/{id}/exams`
+(kullanıcının kendi oturumları) ya da `POST /exams`'in açık oturum varsa onu
+döndürmesi. İkincisi 201/200 semantiğini değiştirdiği için frontend'i ilgilendirir.
+**Karar grubun; uç eklemek 10 dakikalık iş.**
+
+**b. Aynı anda birden çok sınav oturumu açılabiliyor.** Öğrenci zor bir soru
+görüp oturumu bırakıp yenisini açarsa yeni 20 dakika ve yeni sorular alır. Bu bir
+"prova" olduğu ve resmî not üretmediği için kusur saymadım, ama not olarak burada:
+gerçek sınav modu istenirse (a) şıkkındaki "açık oturum varsa onu döndür"
+davranışı bunu da kapatır.
