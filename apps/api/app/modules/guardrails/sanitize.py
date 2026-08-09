@@ -48,10 +48,16 @@ _DANGEROUS_SCHEME = re.compile(r"(?i)\b(?:javascript|vbscript|data)\s*:")
 _MARKDOWN_LINK = re.compile(r"!?\[([^\]]*)\]\(\s*(?i:javascript|vbscript|data)\s*:[^)]*\)")
 
 _STACK_TRACE_PATTERNS = (
+    # Python yığın izi bloğu: girintili çerçeveler bittiğinde durur.
     re.compile(r"(?ms)^[ \t]*Traceback \(most recent call last\):.*?(?=^\S|\Z)"),
     re.compile(r'(?m)^[ \t]*File "[^"\n]+", line \d+.*$'),
+    # Java / Node çerçeve satırı.
     re.compile(r"(?m)^[ \t]*at [\w.$<>]+\s*\([^)\n]*\)[ \t]*$"),
-    re.compile(r"(?m)^[ \t]*\w+(?:\.\w+)+(?:Error|Exception)\b.*$"),
+    # İstisna satırı, iki tanınabilir biçimde. Desenler bilerek dar: "3.2.1: Giriş"
+    # gibi numaralı bölüm başlıkları da noktalı-ad-iki nokta şeklindedir ve
+    # geniş bir desen onları da silerdi.
+    re.compile(r"(?m)^[ \t]*[\w.]*\w(?:Error|Exception|Warning)\b\s*:.*$"),
+    re.compile(r"(?m)^[ \t]*[\w.]*\.(?:errors?|exc|exceptions?)\.[\w.]+\s*:.*$"),
     re.compile(r"(?m)^[ \t]*(?:Exception|Caused by)\b.*$"),
 )
 
