@@ -86,6 +86,87 @@ jobs:
           fi
           echo "RLS testi hem doğru hem kırmızı yanabiliyor"
 
+      # Ölçme/analitik katmanının (0004 + 0005) RLS kanıtı — R3, T052.
+      #
+      # AYRI BİR VERİTABANI kullanır. Yukarıdaki adım `rls_check`'te
+      # `chunks_member_read` politikasını bilerek BOZUK bırakıyor (mutasyon
+      # denemesinin kendisi). Aynı veritabanında koşmak, bu adımın yanlış
+      # sebeple kırmızı ya da yeşil yanmasına yol açardı.
+      #
+      # İki kapı birden: iddialar geçmeli VE politikalar bozulduğunda kırmızı
+      # yanabildikleri gösterilmeli. Yanmayan test hiçbir şey kanıtlamaz.
+      - name: Ölçme katmanı RLS kanıtı (rls_assessment)
+        working-directory: .
+        run: |
+          psql -d postgres -c 'DROP DATABASE IF EXISTS rls_assessment_template'
+          psql -d postgres -c 'CREATE DATABASE rls_assessment_template'
+          for f in supabase/migrations/*.sql; do
+            psql -v ON_ERROR_STOP=1 -q -d rls_assessment_template -f "$f"
+          done
+          psql -d rls_assessment_template -f supabase/tests/rls_assessment.sql 2>&1 | tee /tmp/rls_a.out
+          if grep -q FAIL /tmp/rls_a.out; then echo "assessment RLS bozuk"; exit 1; fi
+          supabase/tests/rls_assessment_mutation_check.sh rls_assessment_template
+
+  image:
+    name: API imajı — build + ağsız embedding kanıtı
+    runs-on: ubuntu-latest
+    # Model indirme + quantizasyon uzun sürer; hızlı geri bildirimi bloklamasın
+    # diye ayrı iş. Push EDİLMEZ: burada sınanan şey imajın kurulabilirliği ve
+    # çalışma zamanında ağa çıkmadığı.
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Runner'da model (~2.1 GB) + quantizasyon için yer açılır. Yerel makinede
+      # 9 Ağustos'ta ölçüldü: quantizasyon tepe diski ~4.5 GB isteyebiliyor.
+      - name: Disk aç
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: İmajı kur
+        run: docker build -t dou-synapse-api:ci apps/api
+
+      - name: İmaj boyutu
+        run: |
+          bytes=$(docker image inspect dou-synapse-api:ci --format '{{.Size}}')
+          awk -v b="$bytes" 'BEGIN { printf "imaj boyutu: %.2f GB\n", b/1e9 }'
+
+      # T048'in asıl iddiası: ağsız bir konteynerde embedding üretilebiliyor.
+      # `--network none` olmadan bu adım hiçbir şey kanıtlamaz — model eksik olsa
+      # bile çalışma zamanında indirilir ve test yeşil yanardı.
+      - name: Ağsız konteynerde embedding üretimi
+        run: |
+          docker run --rm --network none dou-synapse-api:ci python -c "
+          import os
+          from app.modules.ingestion.embedding import FastEmbedProvider
+          provider = FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR'])
+          vector = provider.embed_query('deadlock için dört koşul nedir')
+          assert len(vector) == 1024, len(vector)
+          print('ağsız embedding üretildi, boyut:', len(vector))
+          "
+
+      # Build sırasında ölçülen int8 ↔ fp32 denkliği rapora çıkar. Kapı build'i
+      # zaten düşürür; bu adım sayıyı GÖRÜNÜR kılar, çünkü "geçti" ile "ne kadar
+      # payla geçti" aynı şey değil.
+      - name: int8 ↔ fp32 denklik raporu
+        run: |
+          docker run --rm --network none dou-synapse-api:ci \
+            cat /opt/models/embedding_bake_report.json
+
+      - name: Replika belleği (RSS)
+        run: |
+          docker run --rm --network none --name rss-probe dou-synapse-api:ci python -c "
+          import os, resource
+          from app.modules.ingestion.embedding import FastEmbedProvider
+          provider = FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR'])
+          provider.embed_documents(['ısınma metni'] * 8)
+          peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+          print(f'model yüklü tepe RSS: {peak_kb/1024/1024:.2f} GiB (ACA sınırı 4 GiB)')
+          "
+
   web:
     name: Web — lint, tip
     runs-on: ubuntu-latest
