@@ -1,0 +1,99 @@
+{
+  "kind": "paired_comparison",
+  "set": "holdout",
+  "n_items": 105,
+  "baseline": {
+    "run_id": "2026-08-09T1552-holdout-dense-fastembed-retrieval",
+    "mode": "dense",
+    "embedding_provider": "fastembed",
+    "embedding_model": "intfloat/multilingual-e5-large",
+    "database": "dou_synapse_eval"
+  },
+  "candidate": {
+    "run_id": "2026-08-09T1551-holdout-hybrid-fastembed-retrieval",
+    "mode": "hybrid",
+    "embedding_provider": "fastembed",
+    "embedding_model": "intfloat/multilingual-e5-large",
+    "database": "dou_synapse_eval"
+  },
+  "varied": [
+    "mode"
+  ],
+  "comparisons": {
+    "hit_at_5": {
+      "n": 105,
+      "baseline_mean": 0.9619047619047619,
+      "candidate_mean": 0.9809523809523809,
+      "bootstrap": {
+        "difference": 0.01904761904761905,
+        "ci_lower": 0.0,
+        "ci_upper": 0.047619047619047616,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": false
+      },
+      "mcnemar": {
+        "only_a_correct": 0,
+        "only_b_correct": 2,
+        "discordant": 2,
+        "p_value": 0.5
+      }
+    },
+    "hit_at_8": {
+      "n": 105,
+      "baseline_mean": 0.9809523809523809,
+      "candidate_mean": 0.9809523809523809,
+      "bootstrap": {
+        "difference": 0.0,
+        "ci_lower": -0.02857142857142857,
+        "ci_upper": 0.02857142857142857,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": false
+      },
+      "mcnemar": {
+        "only_a_correct": 1,
+        "only_b_correct": 1,
+        "discordant": 2,
+        "p_value": 1.0
+      }
+    },
+    "reciprocal_rank": {
+      "n": 105,
+      "baseline_mean": 0.8070748299319729,
+      "candidate_mean": 0.8523809523809524,
+      "bootstrap": {
+        "difference": 0.04530612244897955,
+        "ci_lower": 0.0024489795918367346,
+        "ci_upper": 0.09156462585034013,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": true
+      }
+    },
+    "full_coverage_at_8": {
+      "n": 26,
+      "baseline_mean": 0.8846153846153846,
+      "candidate_mean": 0.8846153846153846,
+      "bootstrap": {
+        "difference": 0.0,
+        "ci_lower": -0.15384615384615385,
+        "ci_upper": 0.15384615384615385,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": false
+      },
+      "mcnemar": {
+        "only_a_correct": 2,
+        "only_b_correct": 2,
+        "discordant": 4,
+        "p_value": 1.0
+      }
+    }
+  },
+  "note": "n=105 — yön göstergesi, kesin hüküm değildir. Eşleştirilmiş bootstrap 10.000 yeniden örneklemeli, tohum sabit; McNemar tam (binom) biçimde, yalnız ikili ölçütlerde."
+}
