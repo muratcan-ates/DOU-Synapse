@@ -53,7 +53,12 @@ class Settings(BaseSettings):
     dev_auth_enabled: bool = False
 
     # --- CORS ---------------------------------------------------------------
-    cors_origins: list[str] = ["http://localhost:3000"]
+    # Yerel varsayılan iki portu kapsar: 3000 geliştirme sunucusu, 3100 uçtan uca
+    # test sunucusu. E2E ayrı portta koşar çünkü Next 16 aynı dizinde ikinci bir
+    # dev sunucusuna izin vermiyor; test portu izinli olmazsa tarayıcı istekleri
+    # CORS'a takılır ve testler ürün hatası gibi görünen bir kararsızlık üretir.
+    # Üretimde bu liste ortam değişkeninden gelir ve yalnız gerçek alan adını içerir.
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3100"]
 
     # --- Yükleme ve depolama ------------------------------------------------
     max_upload_bytes: int = 20 * 1024 * 1024
