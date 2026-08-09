@@ -1,7 +1,13 @@
 # Evidence eşiği kalibrasyonu (T043)
 
+> **GÜNCELLEME — 9 Ağustos 2026, v2 korpus.** Aşağıdaki §1-7 v1 kalibrasyonudur
+> (33 chunk'lık korpus, 3 kapsam dışı soru) ve **kaydı olarak durur**. §8, aynı
+> yöntemin büyütülmüş sette tekrarıdır ve §7'deki birinci düzeltme maddesini
+> ("kalibrasyon setini büyüt ve yeniden kalibre et") uygular. **Bugün geçerli olan
+> analiz §8'dir.**
+
 **Durum: KOŞULDU — 9 Ağustos 2026.**
-**Seçilen değer: `evidence_threshold = 0.81`**
+**Seçilen değer (v1): `evidence_threshold = 0.81`**
 
 Koşu dosyaları:
 - `evaluation/results/2026-08-09T1409-calibration-hybrid-retrieval.json`
@@ -185,3 +191,95 @@ Doğru hamleler, öncelik sırasıyla:
 tetiklenmiyor) ve mutlaka değişmeli. Kalibrasyondan çıkan değer **0.81**, ama
 holdout bu değerin hedefi tutturmadığını gösteriyor. Karar Şerit 1'in: 0.81'e geçip
 sınırlılığı raporlamak, ya da kapının tasarımını gözden geçirmek.
+
+---
+
+## 8. Yeniden kalibrasyon — v2 korpus, kapsam dışı n=18
+
+**KOŞULDU — 9 Ağustos 2026.** §7'nin birinci düzeltme maddesi uygulandı.
+
+| | v1 | v2 |
+|---|---|---|
+| Korpus | 33 chunk / 8 belge | **167 chunk / 22 belge** |
+| Kalibrasyon seti | 15 soru (3 kapsam dışı) | **40 soru (18 kapsam dışı)** |
+| Holdout | 76 soru | **161 soru** |
+
+Koşu dosyaları:
+- `results/2026-08-09T1550-calibration-hybrid-fastembed-retrieval.json`
+- `results/2026-08-09T1550-calibration-dense-fastembed-retrieval.json`
+
+### 8.1. v1'deki temiz ayrışma bir yapaylıktı — kalibrasyon setinde de
+
+v1'de kalibrasyon setinin iki sınıfı **ayrıktı** (0.0054 genişliğinde bir aralıkla) ve
+ayrışma yalnız holdout'ta bozuluyordu. §6'da bunun sebebi "kapsam dışı örneklem n=3,
+bir eşik seçmek için küçüktür" diye yazılmıştı. Örneklem 18'e çıkarıldığında:
+
+| Sınıf | n | min | max |
+|---|---:|---:|---:|
+| Kapsam dışı | 18 | 0.7431 | **0.8411** |
+| Cevaplanabilir | 22 | **0.8121** | 0.9261 |
+
+**İki sınıf artık kalibrasyon setinde de ÖRTÜŞÜYOR.** Yani v1'in temiz ayrışması
+gerçek bir olgu değil, üç soruluk bir örneklemin gürültüsüydü. Bu, §6'daki
+sınırlılık uyarısının doğrulanmasıdır: uyarı yazılmasaydı bugün "eşik bozuldu"
+denirdi; yazıldığı için "uyarı tuttu" deniyor.
+
+Dense ve hibrit kollarda dağılım **birebir aynı**: kanıt kapısı yalnız
+`best_dense_score`'a bakıyor ve o sayı iki kolda da aynı chunk'tan geliyor. Tek bir
+eşik iki kolda da geçerli, dolayısıyla T044/T045 karşılaştırmaları aynı config
+altında yapılabiliyor.
+
+### 8.2. Tarama (n=40, hibrit kol, 0.005 adım)
+
+| Eşik | Doğru ret (18'de) | Kaçan | Yanlış ret (22'de) | Dengeli doğruluk |
+|---:|---:|---:|---:|---:|
+| 0.800 | 6 | 12 | 0 | 0.667 |
+| 0.810 (bugünkü) | 11 | 7 | 0 | 0.806 |
+| **0.815** | 15 | 3 | 2 | **0.871** |
+| 0.820 | 15 | 3 | 4 | 0.826 |
+| 0.830 | 16 | 2 | 4 | 0.854 |
+| 0.840 | 17 | 1 | 5 | 0.859 |
+| 0.845 | 18 | 0 | 6 | 0.864 |
+| 0.850 | 18 | 0 | 7 | 0.841 |
+
+Dengeli doğruluk = (doğru ret oranı + doğru cevaplama oranı) / 2.
+
+### 8.3. Bulgu: hedef ile kullanılabilirlik bu kapıda çatışıyor
+
+PLAN §5 hedefi "kapsam dışı doğru ret ≥ %90". Tarama şunu gösteriyor:
+
+- **Bugünkü 0.81 değeri hedefin çok altında:** 11/18 = **%61** doğru ret. v1'de bu
+  değer kalibrasyon setinde %100 görünüyordu; büyütülmüş örneklemde %61.
+- Hedefi tutturan en düşük eşik **0.840** (17/18 = %94) ve bedeli **5/22 = %23 yanlış
+  ret**: cevaplanabilir her dört sorudan biri reddedilir.
+- Dengeli doğruluğu en yüksek eşik **0.815** (%87), ama doğru ret oranı %83 ile
+  hedefin altında.
+
+**Tek bir dense skor eşiğiyle bu iki şeyi aynı anda tutturmak bu materyalde mümkün
+değil.** Bu, §7'deki ikinci düzeltme maddesinin ("tek dense skor eşiğinin
+yeterliliğini sorgula") ölçülmüş hâlidir; artık bir şüphe değil, taramayla gösterilen
+bir sınır.
+
+### 8.4. Öneri — karar Şerit 1'in
+
+Bu şerit ölçer, `config.py`'yi değiştirmez (dosya Şerit 1'in). Öneri:
+
+1. **Kısa vadede `evidence_threshold = 0.815`.** Dengeli doğruluğu en yüksek nokta ve
+   bugünkü 0.81'e göre doğru reddi %61'den %83'e çıkarırken yanlış reddi yalnız 2/22
+   yapıyor. Hedefi tutturmuyor ve rapor bunu böyle yazmalı.
+2. **Hedefi tutturmak isteniyorsa 0.840**, ama %23 yanlış ret oranı ürünün kullanım
+   hissini bozar; bu bir ürün kararıdır, ölçüm kararı değil.
+3. **Asıl çözüm kapının tasarımı.** Kapı yalnız `best_dense_score`'a bakıyor. İlk-k
+   skorlarının dağılımı, füzyonlu skor ya da FTS sinyalinin varlığı daha ayırt edici
+   olabilir. Bu bir Şerit 1 tasarım kararıdır ve ölçüm bunu destekleyecek altyapıyı
+   (kaydedilmiş `best_fused_score`) zaten taşıyor.
+
+### 8.5. Holdout'a yine bakılmadı
+
+Yukarıdaki tablo ve öneri **yalnız kalibrasyon setinden** üretildi. Holdout koşuları
+eşik önerisi belirlendikten sonra yapıldı ve önerinin seçiminde kullanılmadı.
+`evaluate.py` her koşudan önce ayrıklık denetimi koşuyor; iki set 40 ve 161 soruyla
+ayrık.
+
+**Holdout'ta 0.820'nin daha iyi göründüğü gerekçesiyle o değere geçmek hâlâ yasaktır**
+(§7). Bu kural v2'de de aynen geçerli.

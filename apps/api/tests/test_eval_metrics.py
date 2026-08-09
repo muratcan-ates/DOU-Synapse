@@ -269,14 +269,21 @@ class TestGoldSetSelection:
         assert all(
             item.expected_sources or item.category == "out_of_scope" for item in retrieval_items
         )
-        assert len(e2e_items) == len(retrieval_items)  # kalibrasyonda ikisi de 15
+        # Kalibrasyonda injection/sızıntı kaydı yok, dolayısıyla iki katman aynı
+        # soruları alır. Sabit bir sayı YAZILMIYOR: set büyüdüğünde kırılan bir test,
+        # davranışı değil boyutu ölçer.
+        assert len(e2e_items) == len(retrieval_items)
 
         # Holdout'ta fark görünür: injection ve sızıntı senaryoları YALNIZ uçtan uca
         # katmanda sorulur, retrieval katmanında sorulacak bir şeyleri yoktur.
         holdout = goldset.load(EVALUATION_ROOT / "gold_set" / "holdout.json")
         holdout_retrieval = evaluate.select_items(holdout, "retrieval", None)
         holdout_e2e = evaluate.select_items(holdout, "e2e", None)
-        assert len(holdout_e2e) - len(holdout_retrieval) == 21  # 15 injection + 6 sızıntı
+        yalniz_e2e = sum(
+            1 for item in holdout.items if item.category in {"injection", "socratic_leak"}
+        )
+        assert yalniz_e2e > 0
+        assert len(holdout_e2e) - len(holdout_retrieval) == yalniz_e2e
         assert not any(
             item.category in {"injection", "socratic_leak"} for item in holdout_retrieval
         )
@@ -298,8 +305,11 @@ class TestGoldSetSelection:
         ]
         scored = evaluate.score_retrieval(entries, gold)
 
-        assert scored["n_asked"] == 15  # 12 kaynaklı + 3 kapsam dışı soruldu
-        assert scored["n_items"] == 12  # yalnız 12'si puanlandı
+        kapsam_disi = sum(1 for item in gold.items if item.category == "out_of_scope")
+        puanlanan = sum(1 for item in gold.items if item.is_retrieval_scored)
+        assert kapsam_disi > 0  # yoksa test hiçbir şey ölçmezdi
+        assert scored["n_asked"] == puanlanan + kapsam_disi  # ikisi de SORULDU
+        assert scored["n_items"] == puanlanan  # yalnız kaynağı olanlar PUANLANDI
         assert scored["recall_at_5"] == pytest.approx(1.0)
 
     def test_esik_taramasi_her_esikte_iki_hatayi_ayri_sayar(self) -> None:
@@ -317,12 +327,16 @@ class TestGoldSetSelection:
             for item in items
         ]
         sweep = {row["threshold"]: row for row in evaluate.threshold_sweep(entries, gold)}
+        kapsam_disi = sum(1 for item in items if item.category == "out_of_scope")
+        cevaplanabilir = len(items) - kapsam_disi
+        assert kapsam_disi > 0 and cevaplanabilir > 0
 
         assert sweep[0.0]["correct_refusal"] == 0  # kapı hiç kapanmıyor
-        assert sweep[0.0]["missed_out_of_scope"] == 3
-        assert sweep[0.3]["correct_refusal"] == 3  # üçü de doğru reddedildi
+        assert sweep[0.0]["missed_out_of_scope"] == kapsam_disi
+        assert sweep[0.3]["correct_refusal"] == kapsam_disi  # hepsi doğru reddedildi
         assert sweep[0.3]["incorrect_refusal"] == 0
-        assert sweep[0.7]["incorrect_refusal"] == 12  # eşik fazla yüksek: hepsi kapandı
+        # Eşik fazla yüksek: cevaplanabilirlerin hepsi de kapandı.
+        assert sweep[0.7]["incorrect_refusal"] == cevaplanabilir
 
 
 class TestLeakFlags:
