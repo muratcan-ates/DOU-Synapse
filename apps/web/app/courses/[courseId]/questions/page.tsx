@@ -162,7 +162,10 @@ function QuestionPool({ courseId }: { courseId: string }) {
     return { topics, questions };
   }, [courseId]);
 
-  const { data, error, refreshError, reload } = useResource(fetchPool, [courseId]);
+  const { data, error, refreshError, errorKind, errorRequestId, reload } = useResource(
+    fetchPool,
+    [courseId],
+  );
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [topicFilter, setTopicFilter] = useState<string>("all");
@@ -186,7 +189,15 @@ function QuestionPool({ courseId }: { courseId: string }) {
 
   // `error` yalnız elde veri YOKKEN dolar (bkz. use-resource.ts); tazeleme
   // hatası ekranı kapatmaz, aşağıda satır içinde gösterilir.
-  if (error) return <ErrorNote message={error} onRetry={reload} />;
+  if (error)
+    return (
+      <ErrorNote
+        message={error}
+        kind={errorKind}
+        requestId={errorRequestId}
+        onRetry={reload}
+      />
+    );
   if (!data) return <Loading />;
 
   const { topics, questions } = data;
@@ -271,7 +282,14 @@ function QuestionPool({ courseId }: { courseId: string }) {
         }}
       />
 
-      {refreshError && <ErrorNote message={refreshError} onRetry={reload} />}
+      {refreshError && (
+        <ErrorNote
+          message={refreshError}
+          kind={errorKind}
+          requestId={errorRequestId}
+          onRetry={reload}
+        />
+      )}
 
       {questions.length === 0 ? (
         <EmptyState title="Havuzda henüz soru yok. Yukarıdan bir konu seçip soru üretin; üretilen sorular taslak olarak buraya düşer." />

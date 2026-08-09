@@ -93,9 +93,18 @@ function AnalyticsView({
    * değişir, kendiliğinden değil. Durdurulmayan bir tazeleme döngüsü gereksiz iş
    * olurdu (Anayasa XI). Elle tazeleme başlıktaki düğmededir ve gerçekten çalışır.
    */
-  const { data, error, refreshError, loading, reload } = useResource<
-    StudentAnalytics | ClassAnalytics
-  >(fetchAnalytics, [courseId, isInstructor]);
+  const {
+    data,
+    error,
+    refreshError,
+    errorKind,
+    errorRequestId,
+    loading,
+    reload,
+  } = useResource<StudentAnalytics | ClassAnalytics>(fetchAnalytics, [
+    courseId,
+    isInstructor,
+  ]);
 
   return (
     <>
@@ -118,11 +127,23 @@ function AnalyticsView({
       {/* Elde veri varken tazeleme hatası sayfayı SİLMEZ; satır içinde durur. */}
       {refreshError && (
         <div className="mb-6">
-          <ErrorNote message={refreshError} onRetry={() => void reload()} />
+          <ErrorNote
+            message={refreshError}
+            kind={errorKind}
+            requestId={errorRequestId}
+            onRetry={() => void reload()}
+          />
         </div>
       )}
 
-      {error && <ErrorNote message={error} onRetry={() => void reload()} />}
+      {error && (
+        <ErrorNote
+          message={error}
+          kind={errorKind}
+          requestId={errorRequestId}
+          onRetry={() => void reload()}
+        />
+      )}
       {loading && <Loading />}
 
       {data && (

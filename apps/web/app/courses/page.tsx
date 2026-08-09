@@ -34,6 +34,8 @@ function CourseList() {
     data: courses,
     error,
     refreshError,
+    errorKind,
+    errorRequestId,
     loading,
     reload,
   } = useResource(fetchCourses, []);
@@ -56,7 +58,15 @@ function CourseList() {
   }, [creating]);
 
   // Ekranı kapatan hata: tek çıkış tarayıcıyı yenilemek olmamalı.
-  if (error) return <ErrorNote message={error} onRetry={reload} />;
+  if (error)
+    return (
+      <ErrorNote
+        message={error}
+        kind={errorKind}
+        requestId={errorRequestId}
+        onRetry={reload}
+      />
+    );
   if (loading || !courses) return <Loading />;
 
   return (
@@ -87,7 +97,12 @@ function CourseList() {
        */}
       {refreshError && (
         <div className="mb-6">
-          <ErrorNote message={refreshError} onRetry={reload} />
+          <ErrorNote
+            message={refreshError}
+            kind={errorKind}
+            requestId={errorRequestId}
+            onRetry={reload}
+          />
         </div>
       )}
 
