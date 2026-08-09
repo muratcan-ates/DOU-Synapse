@@ -19,6 +19,27 @@ class Environment(StrEnum):
     PRODUCTION = "production"
 
 
+#: Sağlayıcı başına kanıt eşiği. Kosinüs skorları vektör uzayına özgüdür; bir uzayda
+#: kalibre edilmiş sayı diğerinde anlamsızdır (bkz. `Settings.evidence_threshold`).
+#:
+#: `fastembed` (E5)  — **KALİBRE EDİLDİ** (T043, 9 Ağustos). 15 soruluk kalibrasyon
+#:   setinde iki sınıfı ayıran değer; karar holdout'a BAKILMADAN önce donduruldu
+#:   (`evaluation/calibration.md`). Dürüst sınır (Anayasa III): 55 soruluk holdout'ta
+#:   temiz ayrışma TUTMADI — doğru ret %80, hedef %90. Tarama 0.820'nin 10/10
+#:   yakaladığını gösteriyor ama oraya geçmek holdout'u ikinci bir kalibrasyon setine
+#:   çevirirdi, o yüzden geçilmedi.
+#:
+#: `hashing` — **KALİBRE EDİLMEMİŞTİR ve edilemez.** Deterministik yerel sağlayıcı;
+#:   anlamsal değil, karma tabanlı. Testler ve çevrimdışı geliştirme içindir, bu
+#:   uzayda ölçülen hiçbir sayı raporlanamaz. Buradaki değer yalnız "kapsam dışı
+#:   soruyu ele, kapsam içindekini geçir" davranışını yaklaşık tutmak için var.
+#:   **Demo bu sağlayıcıyla koşulmamalıdır** — ayırt etme gücü zayıf.
+EVIDENCE_THRESHOLD_BY_PROVIDER: dict[str, float] = {
+    "fastembed": 0.81,
+    "hashing": 0.10,
+}
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -107,17 +128,20 @@ class Settings(BaseSettings):
     retrieval_rrf_k: int = 60
     #: Kanıt eşiği: altında kalan sorgu cevaplanmaz, abstention döner.
     #:
-    #: KALİBRE EDİLDİ (T043, 9 Ağustos) — 0.35'ten 0.81'e çekildi. Eski değer ölü bir
-    #: kapıydı: ölçülen hiçbir dense skor 0.76'nın altına inmiyordu, yani eşik hiç
-    #: tetiklenmiyordu ve "kanıt yoksa cevap yok" güvencesi pratikte kapalı bir
-    #: anahtardı. 0.81, 15 soruluk kalibrasyon setinde iki sınıfı ayıran değerdir ve
-    #: karar holdout'a BAKILMADAN önce donduruldu (evaluation/calibration.md).
+    #: **EŞİK EMBEDDING SAĞLAYICISINA BAĞLIDIR** ve bu bağ 9 Ağustos'ta canlı koşuda
+    #: pahalıya patladı: 0.81 `fastembed` (E5) vektör uzayında kalibre edildi, dev
+    #: veritabanı ise `hashing` sağlayıcısıyla ingest edilmişti. O uzayda ölçülen en
+    #: iyi skorlar 0.07–0.37 arasında; yani eşik HER SORUYU reddediyordu — kapsam
+    #: içindekiler dahil. Arayüzde her soru "materyalde dayanak bulunamadı" dönüyordu
+    #: ve bu, bozuk bir sistemin doğru çalışıyor gibi görünmesinin ta kendisiydi.
     #:
-    #: Dürüst sınır (Anayasa III): 55 soruluk holdout'ta kalibrasyondaki temiz ayrışma
-    #: TUTMADI — 0.81'de doğru ret oranı %80, hedef %90. Tarama 0.820'nin 10/10
-    #: yakaladığını gösteriyor ama oraya geçmek holdout'u ikinci bir kalibrasyon
-    #: setine çevirirdi, o yüzden geçilmedi. Raporda bu haliyle duruyor.
-    evidence_threshold: float = 0.81
+    #: Bu yüzden değer artık tek bir sayı değil, sağlayıcı başına çözülür. Kosinüs
+    #: benzerliği farklı vektör uzaylarında karşılaştırılabilir bir büyüklük değildir;
+    #: bir uzayda kalibre edilmiş eşiği diğerine taşımak sessiz bir hatadır.
+    #:
+    #: `.env`'de `EVIDENCE_THRESHOLD` açıkça verilirse o kazanır (kalibrasyon
+    #: taramaları bunu kullanır); verilmezse sağlayıcıdan çözülür.
+    evidence_threshold: float = EVIDENCE_THRESHOLD_BY_PROVIDER["fastembed"]
 
     # --- Değerlendirme koşuları (Faz F) -------------------------------------
     #: Ölçüm koşularının kullandığı LLM anahtarı. Üretim anahtarından AYRI tutulur:
@@ -158,6 +182,22 @@ class Settings(BaseSettings):
     chat_rate_limit_requests: int = 20
     #: Sınırın penceresi (saniye).
     chat_rate_limit_window_seconds: float = 60.0
+
+    @model_validator(mode="after")
+    def _resolve_evidence_threshold(self) -> Settings:
+        """Eşiği, açıkça verilmediyse embedding sağlayıcısından çözer.
+
+        `model_fields_set` ayrımı önemli: ortamda `EVIDENCE_THRESHOLD` verilmişse
+        (kalibrasyon taramaları bunu yapar) ona dokunulmaz. Verilmemişse
+        sağlayıcının uzayına ait değer kullanılır — çünkü sınıf üzerindeki
+        varsayılan tek bir uzaya aittir ve başka bir uzayda sessizce yanlıştır.
+        """
+        if "evidence_threshold" not in self.model_fields_set:
+            resolved = EVIDENCE_THRESHOLD_BY_PROVIDER.get(self.embedding_provider)
+            if resolved is not None:
+                # `model_config` frozen değil; doğrudan atama meşru.
+                object.__setattr__(self, "evidence_threshold", resolved)
+        return self
 
     @property
     def is_production(self) -> bool:
