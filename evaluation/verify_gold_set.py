@@ -22,15 +22,17 @@ konum kümesinin birebir aynısıdır. İngest sonrası ayrıca doğrulamak iste
 Kullanım:
 
     cd apps/api && uv run python ../../evaluation/verify_gold_set.py
-    cd apps/api && uv run python ../../evaluation/verify_gold_set.py --db --course-id <uuid>
+    cd apps/api && uv run python ../../evaluation/verify_gold_set.py --corpus corpus.json
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import UUID
 
 import goldset
 from _paths import DEFAULT_MATERIAL_DIR, GOLD_SET_DIR, ensure_api_on_path
@@ -110,24 +112,28 @@ def source_errors(gold: goldset.GoldSet, locations: list[MaterialLocation]) -> l
     return errors
 
 
-async def db_source_errors(gold: goldset.GoldSet, course_id: str) -> list[str]:
+async def db_source_errors(gold: goldset.GoldSet, course_id: str, as_user: str) -> list[str]:
     """İngest sonrası gerçek korpusa karşı aynı kontrol.
 
     Ayrıştırıcı kontrolü ingest'in ne ÜRETECEĞİNİ doğrular; bu kontrol neyin
     gerçekten ÜRETİLDİĞİNİ doğrular. İkisi ayrıdır: dosya yüklenmemişse veya
     işleme yarıda kalmışsa yalnız bu ikincisi yakalar.
+
+    Sorgu `rls_session` ile, yani dersin bir ÜYESİ olarak koşar. Bağlamsız bir
+    `dou_app` bağlantısı hiçbir satır göremez (fail-closed) ve kontrol "korpus boş"
+    diye yanlış alarm verirdi — ilk yazışında tam bunu yaptı. Üye bağlamıyla koşmak
+    ayrıca doğru olanı ölçer: gold set, sistemin öğrenciye gösterebildiği chunk'lara
+    karşı doğrulanmalı, sahibin gördüğü ham tabloya karşı değil.
     """
     ensure_api_on_path()
     from sqlalchemy import text as sql_text
-    from sqlalchemy.ext.asyncio import create_async_engine
 
-    from app.core.config import get_settings
+    from app.core.db import dispose_engine, rls_session
 
-    engine = create_async_engine(str(get_settings().database_url))
     try:
-        async with engine.connect() as connection:
+        async with rls_session(UUID(as_user)) as session:
             rows = (
-                await connection.execute(
+                await session.execute(
                     sql_text(
                         "SELECT d.file_name, c.page_number, c.slide_number, "
                         "       c.section_title, c.text "
@@ -138,7 +144,7 @@ async def db_source_errors(gold: goldset.GoldSet, course_id: str) -> list[str]:
                 )
             ).all()
     finally:
-        await engine.dispose()
+        await dispose_engine()
 
     locations = [
         MaterialLocation(
@@ -151,7 +157,11 @@ async def db_source_errors(gold: goldset.GoldSet, course_id: str) -> list[str]:
         for row in rows
     ]
     if not locations:
-        return [f"Derste ({course_id}) hiç chunk yok — materyal yüklenmemiş olabilir."]
+        return [
+            f"Derste ({course_id}) hiç chunk görünmüyor. İki olasılık var: materyal "
+            f"yüklenmemiş olabilir, ya da --as-user ({as_user}) bu dersin üyesi değildir "
+            "ve RLS satırları gizliyordur."
+        ]
     return source_errors(gold, locations)
 
 
@@ -175,8 +185,20 @@ def main(argv: list[str] | None = None) -> int:
         help="Korpusa .md dosyaları da yüklendiyse aç (varsayılan: yalnız PDF/PPTX/kod).",
     )
     parser.add_argument("--db", action="store_true", help="İngest sonrası gerçek korpusa da sor.")
-    parser.add_argument("--course-id", help="--db ile birlikte zorunlu.")
+    parser.add_argument("--course-id", help="--db ile birlikte zorunlu (ya da --corpus).")
+    parser.add_argument("--as-user", help="Sorgunun koşacağı üye kimliği (--db ile).")
+    parser.add_argument(
+        "--corpus",
+        type=Path,
+        help="build_corpus.py özet JSON'u; course_id ve as_user'ı buradan alır.",
+    )
     args = parser.parse_args(argv)
+
+    if args.corpus:
+        corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
+        args.course_id = args.course_id or corpus["course_id"]
+        args.as_user = args.as_user or corpus["instructor_id"]
+        args.db = True
 
     calibration = goldset.load(args.gold_set_dir / "calibration.json")
     holdout = goldset.load(args.gold_set_dir / "holdout.json")
@@ -198,17 +220,17 @@ def main(argv: list[str] | None = None) -> int:
     ok &= _report("holdout kaynakları (ayrıştırıcı)", source_errors(holdout, locations))
 
     if args.db:
-        if not args.course_id:
-            parser.error("--db için --course-id gerekir.")
+        if not args.course_id or not args.as_user:
+            parser.error("--db için --course-id ve --as-user (ya da --corpus) gerekir.")
         import asyncio
 
         ok &= _report(
             "kalibrasyon kaynakları (korpus)",
-            asyncio.run(db_source_errors(calibration, args.course_id)),
+            asyncio.run(db_source_errors(calibration, args.course_id, args.as_user)),
         )
         ok &= _report(
             "holdout kaynakları (korpus)",
-            asyncio.run(db_source_errors(holdout, args.course_id)),
+            asyncio.run(db_source_errors(holdout, args.course_id, args.as_user)),
         )
 
     print("\nSONUÇ:", "temiz" if ok else "DÜZELTİLMELİ")
