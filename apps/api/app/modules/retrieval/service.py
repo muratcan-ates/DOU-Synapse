@@ -45,13 +45,30 @@ Tek bir sayı iki sağlayıcıda **ters yönlerde** yanılıyor: e5'te 0.35 konu
 sorguların tamamının altında kalır (kapı hep açık), hashing'de ilgili sorguların çoğunun
 üstünde kalır (kapı hep kapalı). Sebebi yapısal — e5 alakasız çiftlerde bile ~0.7 taban
 benzerlik üretir, hashing ise sözcük örtüşmesine dayandığı için uzun pasajlarda
-benzerliği doğal olarak seyreltir. Dolayısıyla eşik sağlayıcıya göre ayrı kalibre
-edilmelidir; ayrım penceresi e5'te dar (+0.051) olduğundan kalibrasyon setiyle
-belirlenmesi zorunludur, göz kararı seçilemez.
+benzerliği doğal olarak seyreltir.
 
-`config.py` ve kalibrasyon bu şeridin dosyaları değil; bulgu gruba ve T043'e bırakıldı.
-Bugün buradan çıkan tek iddia şudur: kapı **belirlenimcidir ve kapalı tarafa düşer** —
-seçilen sayının doğruluğu iddia edilmiyor.
+Ölçüm sonra **gerçek ingest hattından geçmiş chunk'lar** üzerinde tekrarlandı (üretim
+modeli, 8 belge / 33 chunk, 14 ilgili + 10 konu dışı sorgu)::
+
+    en iyi kosinüs        min      medyan    max
+    ilgili   (n=14)      0.7963   0.8351   0.8671
+    konu dışı (n=10)     0.6710   0.7549   0.7966
+
+    varsayılan eşik 0.35 → konu dışı sorguların 10/10'u kapıdan GEÇİYOR
+
+Dağılımlar uçlarda birbirine değiyor, ama sinyalin kendisi sağlam: **en iyi kesim
+0.7963'te doğruluk 0.96** (14 ilgilinin hiçbiri kaçmıyor, 10 konu dışından 1'i geçiyor).
+Yani sorun sinyal seçimi değil, eşiğin değeri — 0.35 olması gereken yerin ~0.45 altında.
+
+Aday bir alternatif sinyal de ölçüldü: en iyi parçanın skoru eksi korpusun medyan skoru
+("marj"). Daha kötü ayırıyor (en iyi kesim 0.0564'te doğruluk 0.88), dolayısıyla mutlak
+kosinüste kalındı.
+
+n=24 bir **yön göstergesidir, kalibrasyon değildir**; kalibrasyon ve holdout setleri
+ayrılmadan bu sayı rapora giremez (ARCHITECTURE.md §7). `config.py` ve kalibrasyon bu
+şeridin dosyaları değil — bulgu gruba ve T043'e bırakıldı, varsayılan değere
+dokunulmadı. Bugün buradan çıkan tek iddia şudur: kapı **belirlenimcidir ve kapalı
+tarafa düşer** — seçilen sayının doğruluğu iddia edilmiyor.
 
 `candidate_count` çağırana bırakılmış bir ayrımdır: sıfırsa ders bu konuyu hiç
 kapsamıyor olabilir (`out_of_scope`), sıfır değilken abstain edildiyse kanıt zayıf
