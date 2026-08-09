@@ -30,6 +30,7 @@ from app.contracts import RetrievedChunk
 from app.core.db import rls_session
 from app.models.assessment import QuestionType
 from app.modules.assessment import question_gen
+from app.modules.generation.llm import LlmUnavailableError
 from app.schemas.assessment import AnswerFormat, McqPayload, OpenPayload
 from tests.conftest import UserFactory
 
@@ -827,16 +828,19 @@ class TestQuestionGeneration:
         assert report.accepted == 0
         assert completion.calls == 0, "kaynak yoksa modele hiç gidilmez"
 
-    async def test_saglayici_cozumlenemezse_uretim_uctan_reddedilir(
+    async def test_saglayici_kurulamazsa_uretim_uctan_reddedilir(
         self, client: AsyncClient, users: UserFactory, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Fail-closed: sahte soru üretmektense 503 dönülür (Anayasa IV).
+        """Fail-closed: hiçbir sağlayıcı kurulamıyorsa 503, uydurma soru değil.
 
-        Çözümleyiciler doğrudan susturuluyor; test "Şerit 2 henüz inmedi"
-        varsayımına değil, sözleşmenin kendisine bakıyor. Böylece modüller
-        `main`'e indiğinde bu test anlamını ve yeşilliğini korur.
+        Soru üretimi puanlamadan farklı: LLM olmadan yapılabilecek bir şey yok,
+        dolayısıyla burada hata yutulmaz, uca kadar çıkar (Anayasa IV).
         """
-        monkeypatch.setattr(question_gen, "resolve_completion", lambda: None)
+
+        def _unavailable(*_args: object, **_kwargs: object) -> object:
+            raise LlmUnavailableError
+
+        monkeypatch.setattr(question_gen, "build_llm_client", _unavailable)
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         course_id = await _create_course(client, ayse, "COME301")
         topic_id = await create_topic(client, ayse, course_id, "Deadlock")
@@ -848,7 +852,7 @@ class TestQuestionGeneration:
         )
 
         assert response.status_code == 503
-        assert response.json()["error"]["code"] == "provider_unavailable"
+        assert response.json()["error"]["code"] == "llm_unavailable"
 
     async def test_uc_uctan_uca_uretir_ve_havuza_draft_yazar(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine

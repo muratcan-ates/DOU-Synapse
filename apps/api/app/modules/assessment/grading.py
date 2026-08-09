@@ -42,6 +42,7 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.models.assessment import Question
 from app.models.core import Chunk, Document
@@ -49,6 +50,7 @@ from app.modules.assessment.question_gen import (
     StructuredCompletion,
     extract_json_object,
     normalize_tr,
+    resolve_completion,
 )
 from app.schemas.assessment import (
     AnswerFormat,
@@ -397,9 +399,14 @@ async def grade_answer(
 ) -> GradingOutcome:
     """Bir cevabı tipine uygun yolla değerlendirir.
 
-    `completion` yalnız LLM gerektiren tipler için aranır; `mcq` ve `short_answer`
-    sağlayıcı olmadan da çalışır — sınav akışının deterministik çekirdeği LLM'in
-    ayakta olmasına bağlı değildir.
+    Sağlayıcı **yalnız LLM gerektiren tipler için** ve ancak o noktaya gelindiğinde
+    çözümlenir. Bu sıralama bilinçli: `mcq` ve `short_answer` deterministiktir ve
+    sağlayıcı hiç kurulamıyorken bile puanlanmalıdır — sınavın çekirdeği LLM'in
+    ayakta olmasına bağlı olmamalı.
+
+    Sağlayıcı kurulamazsa istek 503'e dönmez; o cevap "değerlendirilemedi" olur
+    (FR-020). Sınavın ortasında bir sağlayıcı arızası, öğrencinin diğer cevaplarını
+    da düşürmemelidir.
     """
     try:
         payload = parse_payload(question.type, question.payload)
@@ -415,7 +422,10 @@ async def grade_answer(
         return grade_short_answer(payload, given, source_chunk_id=question.source_chunk_id)
 
     if completion is None:
-        return _ungraded("LLM sağlayıcısı bağlı değil")
+        try:
+            completion = resolve_completion()
+        except AppError:
+            return _ungraded("LLM sağlayıcısı kurulamadı")
 
     chunk = await session.get(Chunk, question.source_chunk_id)
     if chunk is None:

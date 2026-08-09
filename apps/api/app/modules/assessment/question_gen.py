@@ -28,9 +28,9 @@ Bu yüzden aşağıda dar bir `StructuredCompletion` protokolü ve Şerit 2'nin
 `LlmClient`'ını ona çeviren küçük bir adaptör var. Retrieval tarafında sapma yok:
 `contracts.Retriever` doğrudan kullanılıyor.
 
-Sağlayıcılar `resolve_retriever` / `resolve_completion` ile çözümlenir — önce
-testlerin bağladığı sahteler, sonra gerçek modüller. Gerçek modüller ağaçta yoksa
-uç 503 döner; sahte soru üretilmez (bkz. docs/team/parallel/KARARLAR_SERIT4.md §3).
+Sağlayıcılar `resolve_retriever` / `resolve_completion` ile çözümlenir: testlerin
+bağladığı sahteler varsa onlar, yoksa gerçek modüller. Hiçbir sağlayıcı kurulamazsa
+üretim ucu 503 döner — soru uydurulmaz (KARARLAR_SERIT4.md §3).
 """
 
 from __future__ import annotations
@@ -42,14 +42,14 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import UUID
 
-from fastapi import status
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk, Retriever
-from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.modules.generation.llm import LlmRequest, build_llm_client
+from app.modules.retrieval.service import HybridRetriever
 from app.schemas.assessment import (
     AnswerFormat,
     BugHuntAnswerKey,
@@ -82,23 +82,12 @@ class StructuredCompletion(Protocol):
 type RetrieverFactory = Callable[[AsyncSession], Retriever]
 
 
-class ProviderUnavailableError(AppError):
-    """Retrieval ya da LLM sağlayıcısı çözümlenemedi.
-
-    Sahte bir üretici koyup soru uydurmaktansa uç kapanır (Anayasa IV). Havuz
-    uçları, MCQ/kısa cevap puanlaması ve sınav akışı bu hatadan etkilenmez.
-    """
-
-    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    code = "provider_unavailable"
-
-
 class _GenerationCompletion:
-    """Şerit 2'nin `LlmClient`'ını `StructuredCompletion` yüzeyine çevirir.
+    """Üretim servisinin `LlmClient`'ını `StructuredCompletion` yüzeyine çevirir.
 
     İki protokol de "system + user ver, metin al" diyor; aradaki tek fark
     `LlmRequest` zarfı. Adaptör burada duruyor çünkü `app/modules/generation/`
-    Şerit 2'nin dosyası ve oraya Şerit 4 kod yazmaz.
+    başka bir şeridin dosyası ve oraya Şerit 4 kod yazmaz.
     """
 
     def __init__(self, client: Any, request_cls: Any) -> None:
@@ -137,53 +126,24 @@ def reset_providers() -> None:
     _retriever_factory = _completion = None
 
 
-def _optional_module(name: str) -> Any | None:
-    """Ağaçta varsa modülü verir, yoksa None.
-
-    `import_module` kullanılıyor, düz `import` değil — ve bu bilinçli: Şerit 1/2
-    modülleri bu dalda henüz yok, düz import mypy'da "stub yok" hatası verirdi.
-    `warn_unused_ignores` açık olduğu için `# type: ignore` koymak da çözüm değil;
-    modüller `main`'de buluştuğu gün bu kez o ignore'lar hata üretirdi. Dinamik
-    çözümleme iki durumda da temiz kalıyor.
-
-    **Bu geçici bir dikiştir.** Üç şerit `main`'de birleştiğinde burası düz
-    import'a sadeleşmeli ve bu fonksiyon silinmelidir.
-    """
-    from importlib import import_module
-
-    try:
-        return import_module(name)
-    except ModuleNotFoundError:
-        return None
-
-
-def resolve_retriever(session: AsyncSession) -> Retriever | None:
-    """Kayıtlı fabrika varsa ondan, yoksa Şerit 1'in gerçek uygulamasından.
-
-    Modül ağaçta yoksa None döner ve uç 503 verir; geldiği anda hiçbir uç
-    değişmeden çalışmaya başlar.
-    """
+def resolve_retriever(session: AsyncSession) -> Retriever:
+    """Kayıtlı fabrika varsa ondan, yoksa gerçek hibrit retrieval'dan."""
     if _retriever_factory is not None:
         return _retriever_factory(session)
-    module = _optional_module("app.modules.retrieval.service")
-    if module is None:
-        return None
-    retriever: Retriever = module.HybridRetriever(session)
-    return retriever
+    return HybridRetriever(session)
 
 
-def resolve_completion() -> StructuredCompletion | None:
-    """Bağlıysa LLM yüzeyi, değilse Şerit 2'nin istemcisi, o da yoksa None.
+def resolve_completion() -> StructuredCompletion:
+    """Kayıtlı sahte varsa ondan, yoksa üretim LLM istemcisinden.
 
-    Çağıranlar `None`'ı hata saymaz: puanlama LLM'siz tipleri yine değerlendirir,
-    yalnız LLM gerektiren tipler "tamamlanamadı" der (FR-020).
+    Sağlayıcı hiç kurulamıyorsa `build_llm_client()` `LlmUnavailableError` (503)
+    fırlatır — yerelde ve CI'da anahtar yokken deterministik sahteye düşer.
+    Buradan `None` DÖNMEZ; "sağlayıcı yok" durumu bir istisnadır, sessiz bir
+    değer değil.
     """
     if _completion is not None:
         return _completion
-    module = _optional_module("app.modules.generation.llm")
-    if module is None:
-        return None
-    return _GenerationCompletion(module.build_llm_client(), module.LlmRequest)
+    return _GenerationCompletion(build_llm_client(), LlmRequest)
 
 
 # ---------------------------------------------------------------------------

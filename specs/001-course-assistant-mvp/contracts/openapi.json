@@ -946,6 +946,171 @@
         }
       }
     },
+    "/courses/{course_id}/chat": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Post Chat",
+        "description": "Bir soru sorar ve kaynaklı cevabı (ya da gerekçeli reddi) döndürür.\n\nAbstention bir HATA DEĞİLDİR: kanıt yetersizse de kapsam dışıysa da yanıt 200'dür,\n`status` alanı sebebi söyler. Hata zarfına düşürülseydi istemci bunu bir arıza gibi\ngösterirdi; oysa reddetmek ürünün çalıştığının kanıtı.",
+        "operationId": "post_chat_courses__course_id__chat_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat/sessions": {
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "List Sessions",
+        "description": "Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez.",
+        "operationId": "list_sessions_courses__course_id__chat_sessions_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatSessionOut"
+                  },
+                  "title": "Response List Sessions Courses  Course Id  Chat Sessions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat/sessions/{session_id}": {
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "List Messages",
+        "operationId": "list_messages_courses__course_id__chat_sessions__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatMessageOut"
+                  },
+                  "title": "Response List Messages Courses  Course Id  Chat Sessions  Session Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/exams": {
       "post": {
         "tags": [
@@ -1354,6 +1519,16 @@
         "title": "AnswerFormat",
         "description": "`open` tipinin alt türü (FR-036, KARARLAR_SERIT4.md Karar 4).\n\nBeşinci bir `question_type` değeri DEĞİLDİR: hocanın istediği \"klasik / kısa\ncevap\" ayrımı değerlendirme mantığını değiştirir, soru tipini değil.\n`essay` rubrikle LLM'e değerlendirtilir; `short_answer` `accepted_answers`\nlistesiyle deterministik eşleştirilir."
       },
+      "AnswerStatus": {
+        "type": "string",
+        "enum": [
+          "answered",
+          "insufficient_context",
+          "out_of_scope"
+        ],
+        "title": "AnswerStatus",
+        "description": "Cevabın üç meşru sonucu. İkisi 'cevap yok' ama SEBEPLERİ farklı.\n\nKarıştırılmamalı: `insufficient_context` \"materyalde var olabilir ama kanıt\nzayıf\", `out_of_scope` \"bu ders bu konuyu hiç kapsamıyor\". Kullanıcıya\nverilen metin de ölçüm kategorisi de farklıdır (SC-005 yalnız ikincisini ölçer)."
+      },
       "AnswerSubmitRequest": {
         "properties": {
           "question_id": {
@@ -1396,6 +1571,216 @@
           "file"
         ],
         "title": "Body_upload_document_courses__course_id__documents_post"
+      },
+      "ChatMessageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ChatRole"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "content",
+          "created_at"
+        ],
+        "title": "ChatMessageOut"
+      },
+      "ChatMode": {
+        "type": "string",
+        "enum": [
+          "qa",
+          "socratic",
+          "exam"
+        ],
+        "title": "ChatMode"
+      },
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode",
+            "default": "qa"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnswerStatus"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "message_id",
+          "status",
+          "mode",
+          "answer"
+        ],
+        "title": "ChatResponse"
+      },
+      "ChatRole": {
+        "type": "string",
+        "enum": [
+          "user",
+          "assistant"
+        ],
+        "title": "ChatRole",
+        "description": "Mesajın sahibi. `contracts.py`'de yok çünkü modüller arası bir tip değil."
+      },
+      "ChatSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "title": "Created At"
+          },
+          "updated_at": {
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "mode",
+          "title",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ChatSessionOut"
       },
       "ChunkPreview": {
         "properties": {
@@ -1467,6 +1852,36 @@
         ],
         "title": "ChunkPreview",
         "description": "Eğitmenin, sistemin belgeden ne çıkardığını görebilmesi için."
+      },
+      "CitationOut": {
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location",
+            "description": "'Sayfa 7' | 'Slayt 3' | bölüm adı"
+          },
+          "quote": {
+            "type": "string",
+            "title": "Quote"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "file_name",
+          "location",
+          "quote"
+        ],
+        "title": "CitationOut"
       },
       "CourseCreate": {
         "properties": {
@@ -2183,6 +2598,18 @@
           "bug_hunt"
         ],
         "title": "QuestionType"
+      },
+      "SocraticStage": {
+        "type": "string",
+        "enum": [
+          "diagnose",
+          "nudge",
+          "concept_hint",
+          "similar_example",
+          "explain_with_source"
+        ],
+        "title": "SocraticStage",
+        "description": "Sokratik merdiven. Sıra ANLAMLIDIR ve atlanamaz (spec FR-014).\n\nÖğrenci kendi denemesini yapmadan bir sonraki kademeye geçilmez; bu kural\nstate machine'de zorlanır, prompt'a bırakılmaz."
       },
       "SourceRefOut": {
         "properties": {

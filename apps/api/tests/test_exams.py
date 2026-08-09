@@ -512,10 +512,15 @@ class TestPracticeMode:
         assert body["graded"] is True
         assert body["score"] == 100
 
-    async def test_llm_gerektiren_soru_saglayicisiz_uydurma_puan_almaz(
+    async def test_semaya_uymayan_degerlendirme_uydurma_puan_almaz(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        """FR-020: değerlendirilemeyen cevaba uydurma puan verilmez."""
+        """FR-020: değerlendirilemeyen cevaba uydurma puan verilmez.
+
+        Anahtar yokken üretim istemcisi deterministik sahteye düşer ve o sahte
+        sohbet cevabı üretmek için yazılmıştır — değerlendirme şemasını
+        karşılamaz. Cevap kaydedilir, puan verilmez.
+        """
         fixture = await build_course(client, users, admin_engine, approved=0)
         essay_id = await seed_question(
             admin_engine,
