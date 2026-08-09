@@ -23,6 +23,20 @@ export interface Resource<T> {
   loading: boolean;
   /** Elle tazeleme — yazma işleminden sonra çağrılır. */
   reload: () => Promise<void>;
+  /**
+   * Yazma sonrası kısa süreli tazeleme penceresi açar.
+   *
+   * Neden gerekli (ölçülmüş): backend yükleme ucu `202` döndürüyor ama satır
+   * yanıttan SONRA commit ediliyor — FastAPI `yield` bağımlılığını yanıt
+   * üretildikten sonra kapatıyor. Ölçüm: POST'tan hemen sonraki GET 0 belge,
+   * bir saniye sonraki GET 1 belge.
+   *
+   * Tek bir `reload()` bu yarışı kaybediyor. Daha kötüsü, normal polling
+   * yalnız listede işlenen belge varken çalıştığı için BOŞ bir derse yapılan
+   * ilk yükleme hiç görünmüyordu: kullanıcı dosyayı seçiyor, hiçbir şey
+   * olmuyor, elle yenileyene kadar da olmuyor.
+   */
+  pulse: (durationMs?: number) => void;
   /** İyimser güncelleme: sunucuyu beklemeden listeyi düzeltmek için. */
   setData: (next: T | null) => void;
 }
@@ -65,8 +79,24 @@ export function useResource<T>(
     };
   }, [reload]);
 
+  // Yazma sonrası kısa tazeleme penceresi (bkz. `pulse` docstring'i).
+  const [pulsing, setPulsing] = useState(false);
+  const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const pulse = useCallback((durationMs = 6000) => {
+    setPulsing(true);
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+    pulseTimer.current = setTimeout(() => setPulsing(false), durationMs);
+  }, []);
+
+  // Bileşen sökülürken zamanlayıcı kalmasın: sökülmüş bileşende setState uyarı üretir.
+  useEffect(() => () => {
+    if (pulseTimer.current) clearTimeout(pulseTimer.current);
+  }, []);
+
   const { pollWhile, intervalMs = 2000 } = options;
-  const shouldPoll = data !== null && pollWhile ? pollWhile(data) : false;
+  const activeByData = data !== null && pollWhile ? pollWhile(data) : false;
+  const shouldPoll = activeByData || pulsing;
 
   useEffect(() => {
     if (!shouldPoll) return;
@@ -79,6 +109,7 @@ export function useResource<T>(
     error,
     loading: data === null && error === null,
     reload,
+    pulse,
     setData,
   };
 }

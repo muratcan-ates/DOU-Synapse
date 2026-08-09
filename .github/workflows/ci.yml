@@ -99,5 +99,82 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test lib/
       - run: bun run build
-      - run: bunx tsc --noEmit
+
+  e2e:
+    name: Uçtan uca — gerçek API + tarayıcı
+    runs-on: ubuntu-latest
+    needs: [api, web]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      # E2E kendi web sunucusunu 3100'de ayağa kaldırır; API 8000'de koşar.
+      E2E_API_URL: http://localhost:8000
+      E2E_PORT: 3100
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PostgreSQL istemcisini kur
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Veritabanını kur
+        run: |
+          createdb dou_synapse
+          for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -d dou_synapse -f "$f"; done
+          psql -q -d dou_synapse -f supabase/local_dev_setup.sql
+          psql -q -d dou_synapse -f supabase/seed_demo.sql
+
+      - name: API'yi başlat
+        working-directory: apps/api
+        env:
+          ENVIRONMENT: local
+          DEV_AUTH_ENABLED: "true"
+          DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse
+          CORS_ORIGINS: '["http://localhost:3100"]'
+        run: |
+          uv venv --python 3.12
+          uv pip install -e ".[dev]"
+          uv run uvicorn app.main:app --port 8000 &
+          # Hazır olana kadar bekle: uyku yerine yoklama, yavaş makinede de doğru.
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/openapi.json >/dev/null && break
+            sleep 1
+          done
+
+      - name: Tarayıcıyı kur ve testleri koştur
+        working-directory: apps/web
+        run: |
+          bun install --frozen-lockfile
+          bunx playwright install --with-deps chromium
+          bun run test:e2e
+
+      - name: Başarısızlık izlerini yükle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7

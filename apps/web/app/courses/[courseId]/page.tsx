@@ -47,7 +47,7 @@ function CourseDetail() {
     return { course, documents };
   }, [courseId]);
 
-  const { data, error, loading, reload } = useResource(fetchView, [courseId], {
+  const { data, error, loading, reload, pulse } = useResource(fetchView, [courseId], {
     // İşlenmeyi bekleyen belge varken tazele; hepsi bitince dur.
     pollWhile: (v) =>
       v.documents.some((d) => d.status === "uploaded" || d.status === "processing"),
@@ -75,7 +75,7 @@ function CourseDetail() {
 
       <CourseNav courseId={courseId} />
 
-      {isInstructor && <UploadBox courseId={courseId} onUploaded={reload} />}
+      {isInstructor && <UploadBox courseId={courseId} onUploaded={pulse} />}
 
       {documents.length === 0 ? (
         <EmptyState
@@ -95,7 +95,7 @@ function CourseDetail() {
               courseId={courseId}
               doc={doc}
               isInstructor={isInstructor}
-              onDeleted={reload}
+              onDeleted={pulse}
             />
           ))}
         </ul>
@@ -109,6 +109,7 @@ function UploadBox({
   onUploaded,
 }: {
   courseId: string;
+  /** Yazma sonrası kısa tazeleme penceresi açar — tek `reload` yarışı kaybediyor. */
   onUploaded: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
