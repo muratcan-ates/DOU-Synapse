@@ -301,3 +301,27 @@ yöntem yukarıda birebir yazılı.
 `tasks.md` T030 `PATCH .../approve|reject` diyor; `04_SORU_SINAV.md` `POST` diyor.
 Handoff daha yeni ve daha ayrıntılı olduğu için **`POST` uygulandı**. Frontend bu
 uçları bağlarken `POST` beklesin.
+
+Ek olarak brief'te olmayan tek uç eklendi: `POST /exams/{id}/hint`. Gerekçe, T033
+vaka 3 ve 8'in ikisi de bir ipucu yüzeyi olmadan sınanamıyor olması — "sınavda
+ipucu reddedilir" iddiasının reddedecek bir kapısı olmalı. İpucu metni LLM'siz,
+sorunun kaynak chunk'ından kademeli olarak türetiliyor.
+
+### 6. Bilerek yapılmayan iki şey — grubun kararı
+
+Bunlar ihmal değil; brief'in çizdiği sınırın dışında kaldıkları için grup karar
+verene kadar yapılmadı.
+
+**a. Oturum listesi ucu yok.** Brief "bağlantı koparsa öğrenci
+`GET .../{session_id}` ile döner" diyor, yani oturum kimliğini istemci saklıyor.
+İstemci kimliği kaybederse (sekme temizliği, cihaz değişimi) devam eden sınavına
+dönemez ve oturum açık kalır. Kapatmanın iki yolu var: `GET /courses/{id}/exams`
+(kullanıcının kendi oturumları) ya da `POST /exams`'in açık oturum varsa onu
+döndürmesi. İkincisi 201/200 semantiğini değiştirdiği için frontend'i ilgilendirir.
+**Karar grubun; uç eklemek 10 dakikalık iş.**
+
+**b. Aynı anda birden çok sınav oturumu açılabiliyor.** Öğrenci zor bir soru
+görüp oturumu bırakıp yenisini açarsa yeni 20 dakika ve yeni sorular alır. Bu bir
+"prova" olduğu ve resmî not üretmediği için kusur saymadım, ama not olarak burada:
+gerçek sınav modu istenirse (a) şıkkındaki "açık oturum varsa onu döndür"
+davranışı bunu da kapatır.
