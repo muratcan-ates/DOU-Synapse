@@ -141,28 +141,34 @@ class TestRequestId:
         assert response.status_code == 418
 
 
-class TestBosBlueprintRouter:
-    """Lider turu blueprint router'ını önden kaydetti; bugün yol EKLEMEMELİ.
+class TestBlueprintRouter:
+    """Blueprint router'ı `main.py`'ye lider turunda kaydedildi ve orada kaldı.
 
-    Kayıt önden yapıldı ki blueprint şeridi `main.py`'ye hiç dokunmasın —
-    `main.py` üç şeridin birden dokunacağı dosya. Boş router bugün sözleşmeyi
-    büyütürse, dokunmamış olmanın bedeli sözleşme değişikliği olurdu.
+    Testin ilk hâli "router kayıtlı ama boş" diyordu ve yolu 26'da sabitliyordu;
+    o beklenti blueprint şeridi başlayana kadar geçerliydi. Şerit T504'ü kapatınca
+    beklenti **silinmedi, güncellendi**: sabitlenen şey sayının kendisi değil,
+    `main.py`'ye dokunulmamış olmasıdır — prefix hâlâ liderin koyduğu prefix ve
+    yollar yalnız bu router'ın gövdesinden geliyor.
     """
 
-    def test_router_kayitli_ama_yol_eklemiyor(self) -> None:
+    def test_router_liderin_prefixinde_kalir(self) -> None:
         from app.api import blueprints
+
+        assert blueprints.router.prefix == "/courses/{course_id}"
+
+    def test_yol_sayisi_blueprint_uclariyla_buyudu(self) -> None:
         from app.main import create_app
 
         app = create_app()
         yollar = set(app.openapi()["paths"])
+        blueprint_yollari = {
+            yol for yol in yollar if "blueprint" in yol or "learning-outcome" in yol
+        }
 
-        assert blueprints.router.prefix == "/courses/{course_id}"
-        assert blueprints.router.routes == [], "blueprint şeridi başlayana kadar boş kalmalı"
-        # Kaynak bağlamı + eğitmen retrieval laboratuvarı iki yeni yol ekler.
-        # Privacy router beş işlem ekler; ikisi mevcut sohbet yollarına DELETE
-        # metodu eklediği için OpenAPI'de üç yeni path görünür: 28 + 3 = 31.
-        # Ders AI politikası iki yeni yol ekler (`GET/PUT` aynı yolu paylaşır).
-        assert len(yollar) == 33, f"yol sayısı değişmiş: {len(yollar)}"
+        assert len(blueprint_yollari) == 7, f"blueprint yolları: {sorted(blueprint_yollari)}"
+        # Kaynak bağlamı, privacy ve ders AI politikasıyla 33 olan sözleşmeye
+        # blueprint ailesi yedi yeni path ekler.
+        assert len(yollar) == 40, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

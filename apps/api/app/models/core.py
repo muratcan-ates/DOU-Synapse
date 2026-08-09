@@ -19,6 +19,7 @@ from sqlalchemy import (
     Text,
     func,
 )
+from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, created_at, pg_enum, uuid_fk, uuid_pk
@@ -113,6 +114,14 @@ class Document(Base):
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=func.now()
     )
+    # Kaynak sürümü (FR-118, 0008). Bağ AÇIK EYLEMLE kurulur: yükleme ucu opsiyonel
+    # `replaces_document_id` alır. Dosya adına bakarak otomatik eşleme reddedildi —
+    # `file_name` üzerinde tekillik yok ve güvenilmez bir işaret, hiç işaret
+    # olmamasından kötüdür. Bayatlık SAKLANMAZ, bu iki kolondan türetilir.
+    supersedes_document_id: Mapped[UUID | None] = mapped_column(
+        PgUUID(as_uuid=True), ForeignKey("documents.id", ondelete="SET NULL")
+    )
+    superseded_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
 
 
 class Chunk(Base):
