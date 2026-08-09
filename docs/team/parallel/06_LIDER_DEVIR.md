@@ -1,6 +1,6 @@
 # Lider şeridi — devir teslim
 
-> **Güncellendi: 9 Ağustos 2026, ~16:30.** Önce `00_OKU_ONCE.md`, sonra burası.
+> **Güncellendi: 9 Ağustos 2026, ~18:30.** Önce `00_OKU_ONCE.md`, sonra burası.
 > Faz 2'nin beş şeridi için `10_OKU_ONCE_FAZ2.md`.
 > Şerit: **frontend'in tamamı + entegrasyon + CI + sözleşme dikişleri.**
 
@@ -40,24 +40,31 @@ kurulamadı" der — ürün hatası gibi görünen bir kurulum hatası.
 **Test koştururken `bunx playwright` KULLANMA** — ayrı kopya indirip "two
 different versions" hatası veriyor. `node_modules/.bin/playwright`.
 
-## 3. Durum — 9 Ağustos 16:30
+## 3. Durum — 9 Ağustos 18:30
 
-`main` = `c7f93bd`.
+`main` = `932ce6d`.
 
 | Katman | Durum |
 |---|---|
-| Backend testleri | **477 geçiyor** |
+| Backend testleri | **479 geçiyor** |
 | mypy | temiz, 59 dosya |
 | ruff | temiz (check + format) |
-| Frontend birim | **73 geçiyor** (25'ti) |
-| Frontend uçtan uca | 9 (büyütülüyor) |
+| Frontend birim | **184 geçiyor** (sabah 25'ti) |
+| Frontend uçtan uca | **19 vaka** — 16 geçiyor, 3 gerekçeli atlanıyor |
 | `next build` | temiz |
-| OpenAPI | kodla birebir, **24 yol** |
+| Kontrast kapısı | temiz, CI'da koşuyor |
+| OpenAPI | kodla birebir, 24 yol |
 | Şema | `0001` `0003` `0004` `0005` — 19 tablo |
 
-**Beş şeridin tamamı `main`'de ve dalları silindi.** Faz 2'nin beş şeridi
-`10_OKU_ONCE_FAZ2.md` ile başlatıldı: R1 kimlik, R2 ölçüm, R3 dağıtım,
-R4 cevap kalitesi, R5 belgeler.
+**Dört ekranın dördü de gerçek uçlara bağlı** ve tarayıcıda doğrulandı:
+sohbet (T022), sınav provası (T034), soru havuzu (T035), ilerleme (T040).
+Hiçbirinde `PreviewBanner` kalmadı; uydurma veri kalmadı.
+
+Faz 2'nin beş şeridi `10_OKU_ONCE_FAZ2.md` ile başlatıldı.
+
+**Atlanan üç uçtan uca vakası** koşulmadı çünkü soru üretimi API anahtarı
+olmadan sahte sağlayıcıya düşüyor ve hiç soru döndürmüyor. Atlama koşullu ve
+kendi kendini açar: üretim çalıştığı gün üç vaka da kendiliğinden koşar.
 
 ## 4. Bugün kapatılan üç sessiz kusur
 
@@ -111,15 +118,14 @@ Gelmesi beklenenler: R1'den giriş ekranı çağrı imzası, R5'ten KVKK sayfas�
 
 ## 7. Sıradaki iş
 
-1. Sınav / soru havuzu / ilerleme ekranlarının gerçek uçlara bağlanması (çalışılıyor)
-2. Uçtan uca paketin bugünkü ürüne göre büyütülmesi (çalışılıyor)
-3. `--border-strong` kontrastı + `PreviewBanner` kırmızı kilidi (çalışılıyor)
-4. **Dev veritabanını `fastembed` ile yeniden ingest et.** Bugünkü korpus
-   `hashing` ile işlenmiş ve o sağlayıcı anlamsal değil; demo bu uzayda
-   koşulmamalı. Eşik zaten sağlayıcıdan çözülüyor, yani sistem çalışıyor —
-   ama ayırt etme gücü zayıf.
-5. R1'in giriş sözleşmesi gelince gerçek Supabase Auth'a bağlama (T023 frontend ayağı)
-6. R5'in KVKK metni gelince sayfa
+1. **Sınav oturum listesi ucu** — karar senin (bkz. §8). Öğrenci oturum
+   kimliğini kaybederse devam eden sınavına dönemiyor.
+2. R1'in giriş sözleşmesi gelince gerçek Supabase Auth'a bağlama (T023 frontend ayağı)
+3. R5'in KVKK metni gelince sayfa
+4. Şerit 4/5'ten gelen `0005` üç kalemi için migration numarası ata
+5. Dört ekranın erişilebilirlik ikinci turu (odak tuzakları, klavye akışı)
+6. Anahtar geldiğinde: soru üretimini gerçek LLM'le koştur, atlanan üç uçtan
+   uca vakasının açıldığını gör
 
 ## 8. Şeritlerden gelen ve karar bekleyen kalemler
 
