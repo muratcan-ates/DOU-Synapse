@@ -47,7 +47,9 @@ from app.models.assessment import Answer, ExamMode, ExamSession, Question, Quest
 from app.modules.assessment import question_gen
 from app.modules.assessment.grading import (
     GradingOutcome,
+    SourceMaterial,
     grade_answer,
+    load_source_material,
     load_source_refs,
     score_of,
 )
@@ -170,13 +172,17 @@ def _answer_feedback(
     answer: Answer,
     *,
     question: Question | None,
-    refs: dict[UUID, SourceRefOut],
+    sources: dict[UUID, SourceMaterial],
     reveal: bool,
 ) -> AnswerFeedbackOut:
     """Kaydedilmiş cevabı gösterilebilir geri bildirime çevirir.
 
     `reveal=False` iken (sınav sürerken) puan da çözüm de gizlenir; kayıt yerinde
     durur, yalnız gösterilmez.
+
+    Alıntı, cevabın kendi **odağıyla** üretilir: aynı chunk iki öğrenciye farklı
+    çeldiriciler yüzünden gösteriliyorsa her biri kendi seçimiyle çelişen cümleyi
+    görür. Malzeme toplu okunduğu için bu ek sorgu maliyeti getirmez.
     """
     feedback = answer.feedback or {}
     graded = feedback.get("durum") != "tamamlanamadi"
@@ -187,17 +193,23 @@ def _answer_feedback(
             message=None if graded else str(feedback.get("mesaj") or ""),
         )
 
+    focus = str(feedback["odak"]) if feedback.get("odak") else None
     why_wrong = _chunk_id(feedback, "neden_yanlis_chunk_id")
     evidence = _chunk_id(feedback, "dayanak_chunk_id")
     missing = feedback.get("eksik_noktalar")
+
+    def reference(chunk_id: UUID | None) -> SourceRefOut | None:
+        material = sources.get(chunk_id) if chunk_id else None
+        return material.reference(focus=focus) if material else None
+
     return AnswerFeedbackOut(
         question_id=answer.question_id,
         graded=graded,
         is_correct=answer.is_correct,
         score=answer.score,
         missing_points=[str(item) for item in missing] if isinstance(missing, list) else [],
-        why_wrong=refs.get(why_wrong) if why_wrong else None,
-        evidence=refs.get(evidence) if evidence else None,
+        why_wrong=reference(why_wrong),
+        evidence=reference(evidence),
         solution=solution_payload(question.type, question.payload) if question else None,
         message=str(feedback.get("mesaj")) if feedback.get("mesaj") else None,
     )
@@ -397,20 +409,21 @@ async def submit_answer(
         )
 
     reveal = exam.mode is ExamMode.PRACTICE
-    refs = (
-        await load_source_refs(
+    sources = (
+        await load_source_material(
             session,
             [
                 chunk_id
                 for chunk_id in (outcome.why_wrong_chunk_id, outcome.evidence_chunk_id)
                 if chunk_id is not None
             ],
-            focus=outcome.focus,
         )
         if reveal
         else {}
     )
-    return _answer_feedback(answer, question=question if reveal else None, refs=refs, reveal=reveal)
+    return _answer_feedback(
+        answer, question=question if reveal else None, sources=sources, reveal=reveal
+    )
 
 
 @router.post("/exams/{session_id}/hint", response_model=HintOut)
@@ -524,7 +537,7 @@ async def finish_exam(
                 alpha=settings.mastery_alpha,
             )
 
-    refs = await load_source_refs(
+    sources = await load_source_material(
         session,
         [
             chunk_id
@@ -546,7 +559,7 @@ async def finish_exam(
         ),
         results=[
             _answer_feedback(
-                answer, question=questions.get(answer.question_id), refs=refs, reveal=True
+                answer, question=questions.get(answer.question_id), sources=sources, reveal=True
             )
             for answer in answers
         ],
@@ -555,10 +568,12 @@ async def finish_exam(
 
 def _finish_message(*, answered: int, unanswered: int, ungraded: int, score: float | None) -> str:
     if score is None:
-        return (
-            "Hiçbir cevap değerlendirilemediği için puan hesaplanmadı. "
-            "Boş bırakılan sorular yanlış sayılmaz."
+        reason = (
+            "Hiçbir soru cevaplanmadığı için"
+            if answered == 0
+            else "Hiçbir cevap değerlendirilemediği için"
         )
+        return f"{reason} puan hesaplanmadı. Boş bırakılan sorular yanlış sayılmaz."
     parts = [f"{answered} soru cevaplandı."]
     if unanswered:
         parts.append(f"{unanswered} soru boş bırakıldı; boş sorular puana katılmaz.")
