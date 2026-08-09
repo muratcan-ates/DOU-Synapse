@@ -198,9 +198,9 @@ yalnız yarısı: ikinci yarı **sürüm**.
 
 # R4 ŞERİT RAPORU — 9 Ağustos 2026
 
-Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 9 commit
-Doğrulama: **582 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
-Başlangıç 473'tü; 109 test eklendi.
+Dal: `feat/answer-quality` · Worktree: `~/code/.dou-quality` · 10 commit
+Doğrulama: **585 test yeşil**, mypy temiz (62 dosya), ruff check + format temiz.
+Başlangıç 473'tü; 112 test eklendi.
 
 Ölçüm korpusu: `dou_synapse_eval_e5` (8 belge / 33 chunk, `EMBEDDING_PROVIDER=fastembed`,
 `intfloat/multilingual-e5-large`, fastembed 0.8.0). Set: `evaluation/gold_set/calibration.json`.
@@ -410,11 +410,11 @@ havuza girer ve eğitmen onayı olmadan hiçbir öğrenciye görünmez (FR-023).
 
 Her halka süit boyunca etkisizleştirildi (`check` → no-op), 511 testlik süit koşuldu:
 
-| etkisizleştirilen halka | kırmızı yanan test |
-|---|---:|
-| citation | **23** |
-| leakage | **33** |
-| sanitize | **1** |
+| etkisizleştirilen halka | kırmızı yanan test (şerit başında) | (şerit sonunda) |
+|---|---:|---:|
+| citation | **23** | 26 |
+| leakage | **33** | 35 |
+| sanitize | **1** | **7** |
 
 Bir. Diğer bütün sanitize testleri `clean()`'i saf fonksiyon olarak çağırıyor,
 dolayısıyla halkayı ZİNCİR İÇİNDE devre dışı bırakmak onları hiç etkilemiyor.
@@ -507,7 +507,7 @@ görünür ve yalnız bazı belgeler hiç bulunmaz.
 ## 8. LİDERE — uygulanacak üç yama
 
 Üçü de **uygulandı, ölçüldü, sonra geri alındı**; commit'lerde bu iki dosya el
-değmemiş durumda. Üçü de dalın kendisinde 582 test yeşil, mypy temiz, ruff temiz
+değmemiş durumda. Üçü de dalın kendisinde 585 test yeşil, mypy temiz, ruff temiz
 iken doğrulandı.
 
 ### 8.1 `apps/api/app/api/chat.py` — `out_of_scope` üretimi
@@ -1167,3 +1167,40 @@ düzeltmesi gibi anlatılırsa dört şanslı yakalama gibi okunur; oysa tek bir
 varsayımın dört tezahürü ve onu bulan şey mutasyon merceğiydi. Jüriye anlatılacak
 cümle şu: *ekrana çıkan her alanı sayıp her birinin hangi halkadan geçtiğini
 gösterebiliyor muyuz?*
+
+---
+
+## EK D — sınıfı kapatan test: zarf alan sayımı
+
+Dört ayrı düzeltme beşincisini engellemez. Engelleyen şey, **ekrana çıkan metin
+alanlarını sayan** bir testtir.
+
+`TestZarfAlanSayimi` düşmanca bir sahne kuruyor — chunk metni, dosya adı, bölüm
+başlığı, modelin cevabı ve modelin `claim`'i, hepsi aynı anda yüklü — hattı uçtan uca
+koşturuyor (`GenerationService` → `screen` → `to_chat_response`) ve zarfın **her string
+yaprağını** dolaşıp dört işaret arıyor: `<script`, `onerror=`, `javascript:`, bir
+e-posta. Bir alan denetimsizse en az bir işaret zarfa ulaşır.
+
+Üçüncü test asıl olan: zarftaki string alanların listesi **donduruldu.**
+
+| serbest metin (bir halkadan geçmek ZORUNDA) | yapısal (tipi yük taşımayı engelliyor) |
+|---|---|
+| `answer` | `session_id` |
+| `citations[].claim` | `message_id` |
+| `citations[].file_name` | `status` |
+| `citations[].location` | `mode` |
+| `citations[].snippet` | `citations[].chunk_id` |
+| `hints[].text` | `hints[].chunk_id` |
+| `hints[].file_name` | |
+| `hints[].location` | |
+
+Zarfa yeni bir alan eklendiğinde test kırmızı yanıyor ve ekleyen kişiye iki soruyu
+soruyor: serbest metin mi (hangi halkadan geçiyor?), yoksa yapısal mı (tipi yük
+taşımasını engelliyor mu?). İki listeden birine yazmadan geçemiyor.
+
+Bugünkü dört açığın **hiçbiri** yeni bir alan eklenirken doğmadı; hepsi zaten vardı ve
+hiç sayılmamıştı. Sayım olmadan beşincisi de aynı yoldan gelirdi.
+
+Test kendisi de mutasyona duyarlı: sanitize halkası etkisizleştirildiğinde ikisi
+kırmızı yanıyor. Şeridin sonunda mutasyon dedektörleri **citation 26, leakage 35,
+sanitize 7** (başlangıçta 23 / 33 / **1**).
