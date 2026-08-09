@@ -22,6 +22,13 @@ ama puan durur — kaynak uydurmak cevabı geçersiz kılmaz, yalnız kaynağı 
 
 Dosya adı ve sayfa numarası her zaman **chunk metadata'sından** üretilir, model
 metninden değil (Anayasa I).
+
+Sonuç tipi neden `contracts.GradedAnswer` değil: o tip `score: int` taşır ve
+"değerlendirme tamamlanamadı" durumunu ifade edemez — döndürebilmek için bir puan
+uydurmak gerekirdi, ki FR-020 tam olarak bunu yasaklıyor. Bu yüzden buradaki
+`GradingOutcome` bir üst kümedir (`graded`, `why_wrong_chunk_id`, `message`).
+`contracts.py` tek taraflı değiştirilmez; gerekirse gruba yazılır
+(bkz. docs/team/parallel/KARARLAR_SERIT4.md).
 """
 
 from __future__ import annotations
@@ -36,7 +43,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.models.assessment import Question, QuestionType
+from app.models.assessment import Question
 from app.models.core import Chunk, Document
 from app.modules.assessment.question_gen import (
     StructuredCompletion,
@@ -91,10 +98,34 @@ def _best_snippet(text: str, focus: str | None) -> str:
     return best[:SNIPPET_CHARS]
 
 
-async def load_source_refs(
-    session: AsyncSession, chunk_ids: Sequence[UUID], *, focus: str | None = None
-) -> dict[UUID, SourceRefOut]:
-    """Chunk kimliklerini gösterilebilir kaynak referanslarına çevirir.
+@dataclass(frozen=True, slots=True)
+class SourceMaterial:
+    """Alıntı üretmek için gereken ham malzeme.
+
+    Referanstan ayrı durur çünkü aynı chunk, farklı cevaplar için **farklı
+    odaklarla** alıntılanır: bir sınavda iki öğrenci farklı çeldirici seçtiyse
+    ikisine de kendi seçimiyle çelişen cümle gösterilmelidir. Malzeme bir kez
+    toplu okunur, referanslar ondan üretilir — soru başına ayrı sorgu atılmaz.
+    """
+
+    chunk_id: UUID
+    file_name: str
+    location: str
+    text: str
+
+    def reference(self, *, focus: str | None = None) -> SourceRefOut:
+        return SourceRefOut(
+            chunk_id=self.chunk_id,
+            file_name=self.file_name,
+            location=self.location,
+            snippet=_best_snippet(self.text, focus),
+        )
+
+
+async def load_source_material(
+    session: AsyncSession, chunk_ids: Sequence[UUID]
+) -> dict[UUID, SourceMaterial]:
+    """Chunk kimliklerini tek sorguda kaynak malzemesine çevirir.
 
     Görünmeyen (başka dersin) bir chunk RLS yüzünden sonuçta yer almaz; çağıran
     eksik kimliği "kaynak gösterilemedi" olarak karşılar.
@@ -108,14 +139,22 @@ async def load_source_refs(
         .where(Chunk.id.in_(unique))
     )
     return {
-        chunk.id: SourceRefOut(
+        chunk.id: SourceMaterial(
             chunk_id=chunk.id,
             file_name=file_name,
             location=chunk_location(chunk),
-            snippet=_best_snippet(chunk.text, focus),
+            text=chunk.text,
         )
         for chunk, file_name in rows.all()
     }
+
+
+async def load_source_refs(
+    session: AsyncSession, chunk_ids: Sequence[UUID], *, focus: str | None = None
+) -> dict[UUID, SourceRefOut]:
+    """Tek odakla yetinen çağıranlar için kısayol (soru listesi, ipucu)."""
+    material = await load_source_material(session, chunk_ids)
+    return {chunk_id: item.reference(focus=focus) for chunk_id, item in material.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -401,12 +440,3 @@ def score_of(outcomes: Sequence[GradingOutcome]) -> float | None:
     if not scores:
         return None
     return round(sum(scores) / len(scores), 1)
-
-
-def question_type_needs_llm(question_type: QuestionType, payload: dict[str, object]) -> bool:
-    """Bir sorunun değerlendirilmesi sağlayıcı gerektiriyor mu (uç bunu önden bilir)."""
-    if question_type is QuestionType.MCQ:
-        return False
-    if question_type is QuestionType.OPEN:
-        return payload.get("format") != AnswerFormat.SHORT_ANSWER.value
-    return True
