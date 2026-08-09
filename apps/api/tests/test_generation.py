@@ -25,6 +25,7 @@ from app.modules.generation.fake import FAKE_PROVIDER, FakeLlmClient, parse_sour
 from app.modules.generation.llm import (
     LiteLlmClient,
     LlmRequest,
+    LlmTask,
     LlmUnavailableError,
     build_llm_client,
     provider_of,
@@ -602,7 +603,9 @@ class TestSahteSaglayiciGorevDuyarli:
         from app.models.assessment import QuestionType
 
         istek = LlmRequest(
-            system="s", user=_soru_uretim_prompti(QuestionType.MCQ, [chunk(), chunk()])
+            system="s",
+            user=_soru_uretim_prompti(QuestionType.MCQ, [chunk(), chunk()]),
+            task=LlmTask.QUESTION_GEN,
         )
         cevap = await FakeLlmClient().complete(istek)
         govde = json.loads(cevap.text)
@@ -624,7 +627,11 @@ class TestSahteSaglayiciGorevDuyarli:
         gecerli_kimlikler = {str(k.chunk_id) for k in kaynaklar}
 
         for question_type in QuestionType:
-            istek = LlmRequest(system="s", user=_soru_uretim_prompti(question_type, kaynaklar))
+            istek = LlmRequest(
+                system="s",
+                user=_soru_uretim_prompti(question_type, kaynaklar),
+                task=LlmTask.QUESTION_GEN,
+            )
             cevap = await FakeLlmClient().complete(istek)
             sorular = json.loads(cevap.text)["questions"]
 
@@ -644,6 +651,7 @@ class TestSahteSaglayiciGorevDuyarli:
             user=_soru_uretim_prompti(
                 QuestionType.OPEN, [chunk()], answer_format=AnswerFormat.SHORT_ANSWER
             ),
+            task=LlmTask.QUESTION_GEN,
         )
         sorular = json.loads((await FakeLlmClient().complete(istek)).text)["questions"]
         assert all(soru["accepted_answers"] for soru in sorular)
@@ -679,12 +687,14 @@ class TestSahteSaglayiciGorevDuyarli:
             """`FakeLlmClient`'ı `StructuredCompletion` yüzeyine bağlar.
 
             Üretimdeki adaptörün (`question_gen._GenerationCompletion`) yaptığı
-            işin aynısı; `LlmRequest`'i varsayılan `task` ile kurar, yani görev
-            çıkarımı gerçekten sınanır.
+            işin aynısı: görevi isteğe BEYAN eder. Adaptör bunu yapmayı bırakırsa
+            sahte sağlayıcı sohbet zarfı döner ve bu test kırmızı yanar.
             """
 
             async def complete(self, *, system: str, user: str) -> str:
-                cevap = await FakeLlmClient().complete(LlmRequest(system=system, user=user))
+                cevap = await FakeLlmClient().complete(
+                    LlmRequest(system=system, user=user, task=LlmTask.QUESTION_GEN)
+                )
                 return cevap.text
 
         oturum = SahteOturum()
@@ -705,10 +715,13 @@ class TestSahteSaglayiciGorevDuyarli:
         assert rapor.rejection_reasons == []
         assert all(soru.status.value == "draft" for soru in rapor.questions)
 
-    async def test_gorev_acikca_verilebilir(self) -> None:
-        """Çağıran söylediğinde tahmine gerek kalmaz — kalıcı çözüm bu yol."""
-        from app.modules.generation.llm import LlmTask
+    async def test_gorev_prompt_bicimine_degil_beyana_bakar(self) -> None:
+        """İşaretsiz bir metin bile beyan edilmişse soru şeması üretir.
 
+        Eskiden görev prompt metnindeki `{"questions"` / `### KAYNAK`
+        işaretlerinden TAHMİN ediliyordu; bu test o tahminin kaldırıldığını
+        kanıtlar — kullanıcı metninde hiçbir işaret yok.
+        """
         istek = LlmRequest(
             system="s", user="hiçbir işareti olmayan metin", task=LlmTask.QUESTION_GEN
         )
@@ -716,7 +729,7 @@ class TestSahteSaglayiciGorevDuyarli:
         assert "questions" in govde
 
     async def test_sohbet_istegi_hala_sohbet_zarfi_doner(self) -> None:
-        """Görev çıkarımı sohbet yolunu bozmamalı."""
+        """Varsayılan görev sohbettir; beyan yoksa soru şemasına kaçılmaz."""
         from app.modules.generation.prompts import build_request
 
         istek = build_request("Kilitlenme nedir?", [chunk()], mode=ChatMode.QA)
@@ -728,7 +741,11 @@ class TestSahteSaglayiciGorevDuyarli:
         """Testler ve demo provası buna dayanıyor."""
         from app.models.assessment import QuestionType
 
-        istek = LlmRequest(system="s", user=_soru_uretim_prompti(QuestionType.MCQ, [chunk()]))
+        istek = LlmRequest(
+            system="s",
+            user=_soru_uretim_prompti(QuestionType.MCQ, [chunk()]),
+            task=LlmTask.QUESTION_GEN,
+        )
         birinci = (await FakeLlmClient().complete(istek)).text
         ikinci = (await FakeLlmClient().complete(istek)).text
         assert birinci == ikinci

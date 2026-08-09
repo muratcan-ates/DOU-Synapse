@@ -31,7 +31,6 @@ _MAGIC_BYTES: dict[str, tuple[bytes, ...]] = {
     ".cpp": (),
 }
 
-TEXT_EXTENSIONS = frozenset(ext for ext, magic in _MAGIC_BYTES.items() if not magic)
 CODE_EXTENSIONS = frozenset({".py", ".java", ".js", ".ts", ".c", ".h", ".cpp"})
 
 
