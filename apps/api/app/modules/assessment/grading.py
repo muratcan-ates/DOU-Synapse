@@ -58,6 +58,7 @@ from app.schemas.assessment import (
     CodeTracePayload,
     McqPayload,
     OpenPayload,
+    RubricScoreOut,
     SourceRefOut,
     parse_payload,
 )
@@ -176,6 +177,7 @@ class GradingOutcome:
     score: int | None = None
     is_correct: bool | None = None
     missing_points: list[str] = field(default_factory=list)
+    rubric_breakdown: list[RubricScoreOut] | None = None
     #: MCQ'da seçilen çeldiricinin çeliştiği chunk (FR-021).
     why_wrong_chunk_id: UUID | None = None
     #: Açık uçluda değerlendirmenin dayandığı chunk.
@@ -270,10 +272,17 @@ def grade_short_answer(
 # ---------------------------------------------------------------------------
 
 
+class _RubricCriterionVerdict(BaseModel):
+    olcut: str = Field(min_length=1, max_length=500)
+    puan: int = Field(ge=0, le=100)
+
+
 class _LlmVerdict(BaseModel):
     """Modelden beklenen şema. Alan adları Türkçedir (03_ASSESSMENT_BRIEF)."""
 
-    score: int = Field(ge=0, le=100)
+    #: Rubriksiz sorularda kullanılır. Rubrik varsa toplam buradan ASLA okunmaz.
+    score: int | None = Field(default=None, ge=0, le=100)
+    rubrik_kirilimi: list[_RubricCriterionVerdict] = Field(default_factory=list, max_length=12)
     eksik_noktalar: list[str] = Field(default_factory=list, max_length=12)
     dayanak_chunk_id: UUID | None = None
 
@@ -282,7 +291,10 @@ _SYSTEM_PROMPT = (
     "Sen bir üniversite dersinin sınav kâğıdını okuyan asistansın. Öğrencinin "
     "cevabını, verilen cevap anahtarı ve kaynak bölümlere göre değerlendirirsin. "
     "Kaynakta olmayan bir bilgiyi eksiklik saymazsın. Cevabın SADECE JSON olmalı: "
-    '{"score": 0-100, "eksik_noktalar": ["..."], "dayanak_chunk_id": "<chunk_id>"}. '
+    "Rubrik verildiyse her ölçüt için rubrik_kirilimi döndür: "
+    '[{"olcut": "ölçüt adı birebir", "puan": 0-100}]. Toplam score yazma; toplamı '
+    "sunucu hesaplar. Rubrik yoksa score alanını 0-100 arasında döndür. Her iki durumda "
+    '"eksik_noktalar" ve "dayanak_chunk_id" alanlarını da ekle. '
     "Açıklama, markdown ya da ek metin yazma. eksik_noktalar Türkçedir. "
     "KOD ÇALIŞTIRMA; yalnız metin olarak karşılaştır."
 )
@@ -299,7 +311,10 @@ def _reference_block(payload: BaseModel) -> str:
             lines += [f"- {point}" for point in payload.key_points]
         if payload.rubric:
             lines.append("Rubrik (ağırlıklar 100 üzerinden):")
-            lines += [f"- {item.point} ({item.weight})" for item in payload.rubric]
+            weights = _normalized_rubric_weights(payload)
+            lines += [
+                f"- {item.point} ({weights[item.point]:.4g})" for item in payload.rubric
+            ]
     elif isinstance(payload, CodeTracePayload):
         lines.append(f"Soru: {payload.prompt}")
         lines.append(f"Kod:\n{payload.code}")
@@ -313,6 +328,18 @@ def _reference_block(payload: BaseModel) -> str:
             f"düzeltme: {payload.answer_key.fix_summary}"
         )
     return "\n".join(lines)
+
+
+def _normalized_rubric_weights(payload: OpenPayload) -> dict[str, float]:
+    """Eski rubrikleri okurken ağırlıkları toplam 100'e normalize eder.
+
+    Yeni üretim toplamı 100 zorlar. Bu yol, daha önce havuza girmiş toplamı 100
+    olmayan soruları sessizce değerlendirilemez hâle getirmeden taşır.
+    """
+    total = sum(item.weight for item in payload.rubric)
+    if total <= 0:
+        return {}
+    return {item.point: item.weight * 100 / total for item in payload.rubric}
 
 
 def _sources_block(refs: Sequence[tuple[UUID, str]]) -> str:
@@ -367,6 +394,43 @@ async def grade_with_llm(
             logger.info("değerlendirme şeması bozuk", extra={"context": {"attempt": attempt + 1}})
             continue
 
+        rubric_breakdown: list[RubricScoreOut] | None = None
+        score = verdict.score
+        if isinstance(payload, OpenPayload) and payload.rubric:
+            expected = [item.point for item in payload.rubric]
+            returned = [item.olcut for item in verdict.rubrik_kirilimi]
+            if len(returned) != len(set(returned)) or set(returned) != set(expected):
+                logger.info(
+                    "rubrik ölçüt kümesi eşleşmedi",
+                    extra={"context": {"attempt": attempt + 1}},
+                )
+                continue
+
+            score_by_criterion = {item.olcut: item.puan for item in verdict.rubrik_kirilimi}
+            weights = _normalized_rubric_weights(payload)
+            rubric_breakdown = []
+            weighted_total = 0.0
+            for criterion in expected:
+                criterion_score = score_by_criterion[criterion]
+                weight = weights[criterion]
+                contribution = weight * criterion_score / 100
+                weighted_total += contribution
+                rubric_breakdown.append(
+                    RubricScoreOut(
+                        criterion=criterion,
+                        weight=round(weight, 4),
+                        score=criterion_score,
+                        awarded_points=round(contribution, 2),
+                    )
+                )
+            score = round(weighted_total)
+        elif score is None:
+            logger.info(
+                "rubriksiz değerlendirmede toplam puan yok",
+                extra={"context": {"attempt": attempt + 1}},
+            )
+            continue
+
         evidence = verdict.dayanak_chunk_id
         if evidence is not None and evidence not in valid_ids:
             # Uydurulmuş dayanak: puan durur, kaynak düşer (Anayasa I).
@@ -375,11 +439,12 @@ async def grade_with_llm(
 
         return GradingOutcome(
             graded=True,
-            score=verdict.score,
-            is_correct=verdict.score >= 50,
+            score=score,
+            is_correct=score >= 50,
             missing_points=verdict.eksik_noktalar,
             evidence_chunk_id=evidence,
             focus=given,
+            rubric_breakdown=rubric_breakdown,
         )
 
     return _ungraded("şema iki denemede de tutmadı")

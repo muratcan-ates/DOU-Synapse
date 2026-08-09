@@ -21,6 +21,8 @@ class DocumentOut(BaseModel):
     page_count: int | None
     chunk_count: int
     error_message: str | None
+    supersedes_document_id: UUID | None = None
+    superseded_at: datetime | None = None
     created_at: datetime
 
 

@@ -88,7 +88,9 @@ function CourseDetail() {
         }
       />
 
-      {isInstructor && <UploadBox courseId={courseId} onUploaded={pulse} />}
+      {isInstructor && (
+        <UploadBox courseId={courseId} documents={documents} onUploaded={pulse} />
+      )}
 
       {error && <RetryNote message={error} onRetry={reload} />}
 
@@ -133,21 +135,29 @@ function RetryNote({ message, onRetry }: { message: string; onRetry: () => void 
 
 function UploadBox({
   courseId,
+  documents,
   onUploaded,
 }: {
   courseId: string;
+  documents: CourseDocument[];
   /** Yazma sonrası kısa tazeleme penceresi açar — tek `reload` yarışı kaybediyor. */
   onUploaded: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [replacesDocumentId, setReplacesDocumentId] = useState("");
 
   async function handleFile(file: File) {
     setBusy(true);
     setError(null);
     try {
-      await api.upload(`/courses/${courseId}/documents`, file);
+      await api.upload(
+        `/courses/${courseId}/documents`,
+        file,
+        replacesDocumentId || null,
+      );
+      setReplacesDocumentId("");
       onUploaded();
     } catch (e) {
       setError(errorMessage(e, "Yükleme tamamlanamadı."));
@@ -159,13 +169,30 @@ function UploadBox({
 
   return (
     <Card className="mb-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]">
         <div>
           <p className="text-sm font-medium text-fg">Materyal yükle</p>
           <p className="text-xs text-fg-muted">
             PDF, PPTX, Markdown veya kod dosyası · en fazla 20 MB
           </p>
         </div>
+        <label className="text-sm text-fg-muted">
+          <span className="mb-1 block">Yerine geçtiği belge (isteğe bağlı)</span>
+          <select
+            value={replacesDocumentId}
+            onChange={(event) => setReplacesDocumentId(event.target.value)}
+            className="h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
+          >
+            <option value="">Yeni, bağımsız materyal</option>
+            {documents
+              .filter((document) => !document.superseded_at)
+              .map((document) => (
+                <option key={document.id} value={document.id}>
+                  {document.file_name}
+                </option>
+              ))}
+          </select>
+        </label>
         <input
           ref={inputRef}
           type="file"
@@ -244,6 +271,7 @@ function DocumentRow({
         </div>
         <div className="flex items-center gap-2">
           <Badge tone={status.tone}>{status.label}</Badge>
+          {doc.superseded_at && <Badge tone="warning">Eski sürüm</Badge>}
           {isInstructor && doc.status === "completed" && (
             <Button
               variant="ghost"

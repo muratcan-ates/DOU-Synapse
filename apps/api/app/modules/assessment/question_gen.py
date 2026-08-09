@@ -42,12 +42,19 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk, Retriever
 from app.core.logging import get_logger
-from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.models.assessment import (
+    LearningOutcome,
+    Question,
+    QuestionDifficulty,
+    QuestionStatus,
+    QuestionType,
+    Topic,
+)
 from app.modules.generation.llm import LlmRequest, build_llm_client
 from app.modules.retrieval.service import HybridRetriever
 from app.schemas.assessment import (
@@ -226,6 +233,20 @@ class _OpenDraft(_Draft):
     rubric: list[RubricItem] = Field(default_factory=list, max_length=12)
     accepted_answers: list[str] = Field(default_factory=list, max_length=12)
 
+    @model_validator(mode="after")
+    def _new_rubric_weights_total_one_hundred(self) -> _OpenDraft:
+        """Yeni üretilen rubrikler toplam 100 olmalı; eski kayıtlar burada okunmaz.
+
+        `OpenPayload` aynı kısıtı taşımaz: havuzdaki eski, toplamı 100 olmayan
+        rubrikler puanlama sırasında normalize edilerek geriye uyumlu okunur.
+        """
+        if self.rubric and sum(item.weight for item in self.rubric) != 100:
+            raise ValueError("rubric ağırlıkları toplamı 100 olmalı")
+        points = [item.point for item in self.rubric]
+        if len(points) != len(set(points)):
+            raise ValueError("rubric ölçüt adları benzersiz olmalı")
+        return self
+
 
 class _CodeTraceDraft(_Draft):
     language: str = Field(min_length=1, max_length=40)
@@ -333,6 +354,8 @@ def build_prompt(
     answer_format: AnswerFormat | None = None,
     example_questions: Sequence[str] = (),
     retry_hint: str | None = None,
+    learning_outcome: LearningOutcome | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> str:
     """Kullanıcı mesajını kurar. Şema tarifi ve kaynak listesi tek yerden gelir."""
     parts = [
@@ -340,6 +363,19 @@ def build_prompt(
         "",
         _TYPE_INSTRUCTIONS[question_type],
     ]
+    if learning_outcome is not None:
+        parts += [
+            "",
+            f"Öğrenme çıktısı: {learning_outcome.code} — {learning_outcome.description}",
+            "Her soru bu çıktıyı ölçmeli; başka bir kazanıma kaymamalı.",
+        ]
+    if difficulty is not None:
+        labels = {
+            QuestionDifficulty.EASY: "kolay",
+            QuestionDifficulty.MEDIUM: "orta",
+            QuestionDifficulty.HARD: "zor",
+        }
+        parts += ["", f"Zorluk seviyesi: {labels[difficulty]}. Tüm soruları bu seviyede üret."]
     if question_type is QuestionType.OPEN and answer_format is AnswerFormat.SHORT_ANSWER:
         parts.append(_SHORT_ANSWER_INSTRUCTION)
     parts += [
@@ -471,6 +507,8 @@ async def generate_questions(
     answer_format: AnswerFormat | None = None,
     example_questions: Sequence[str] = (),
     retrieval_limit: int = 8,
+    learning_outcome: LearningOutcome | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> GenerationReport:
     """Konu adıyla retrieve edilen chunk'lardan `status=draft` soru üretir.
 
@@ -502,6 +540,8 @@ async def generate_questions(
         chunks=chunks,
         answer_format=answer_format,
         example_questions=example_questions,
+        learning_outcome=learning_outcome,
+        difficulty=difficulty,
     )
     # Payda yalnız modelin gerçekten döndürdüğü sorulardır; ayrıştırılamayan bir
     # yanıt sayıya değil, sebep listesine yazılır.
@@ -538,6 +578,8 @@ async def generate_questions(
             source_chunk_id=draft.source_chunk_id,
             status=QuestionStatus.DRAFT,
             created_by=created_by,
+            learning_outcome_id=learning_outcome.id if learning_outcome else None,
+            difficulty=difficulty,
         )
         session.add(question)
         report.questions.append(question)
@@ -552,6 +594,8 @@ async def generate_questions(
                 "course_id": str(course_id),
                 "topic_id": str(topic.id),
                 "type": question_type.value,
+                "learning_outcome_id": str(learning_outcome.id) if learning_outcome else None,
+                "difficulty": difficulty.value if difficulty else None,
                 "requested": report.requested,
                 "returned": report.returned,
                 "accepted": report.accepted,
@@ -571,6 +615,8 @@ async def _request_drafts(
     chunks: Sequence[RetrievedChunk],
     answer_format: AnswerFormat | None,
     example_questions: Sequence[str],
+    learning_outcome: LearningOutcome | None,
+    difficulty: QuestionDifficulty | None,
 ) -> tuple[_AttemptResult, list[str]]:
     """Modeli çağırır; hiç geçerli taslak çıkmazsa BİR KEZ yeniden dener (FR-020).
 
@@ -589,6 +635,8 @@ async def _request_drafts(
             answer_format=answer_format,
             example_questions=example_questions,
             retry_hint=("Çıktı şemaya uymadı." if attempt else None),
+            learning_outcome=learning_outcome,
+            difficulty=difficulty,
         )
         try:
             raw = await completion.complete(system=_SYSTEM_PROMPT, user=prompt)

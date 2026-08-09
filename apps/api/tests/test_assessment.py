@@ -214,10 +214,12 @@ class FakeCompletion:
     def __init__(self, *responses: str) -> None:
         self._responses = list(responses)
         self.calls = 0
+        self.user_prompts: list[str] = []
 
     async def complete(self, *, system: str, user: str) -> str:
-        del system, user
+        del system
         self.calls += 1
+        self.user_prompts.append(user)
         index = min(self.calls - 1, len(self._responses) - 1)
         return self._responses[index]
 
@@ -1012,6 +1014,111 @@ class TestQuestionGeneration:
         student = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
         assert student.json() == [], "yeni üretilen sorular onaysız görünmemeli"
 
+    async def test_blueprint_hucresi_cikti_ve_zorlugu_soruya_yazar(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """FR-113: hücre bağlamı hem prompt'ta hem kalıcı soru satırındadır."""
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        course_id = await _create_course(client, ayse, "COME301")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        outcome = await client.post(
+            f"/courses/{course_id}/learning-outcomes",
+            json={
+                "code": "C1",
+                "description": "Deadlock koşullarını karşılaştırır.",
+                "topic_id": str(topic_id),
+            },
+            headers=ayse,
+        )
+        assert outcome.status_code == 201, outcome.text
+        outcome_id = outcome.json()["id"]
+        chunk_ids = await seed_chunks(
+            admin_engine, course_id=UUID(course_id), uploaded_by=ayse_id, texts=DEADLOCK_TEXTS
+        )
+        completion = FakeCompletion(_mcq_response(chunk_ids[0]))
+        question_gen.set_providers(
+            retriever_factory=lambda _session: FakeRetriever(retrieved(chunk_ids, DEADLOCK_TEXTS)),
+            completion=completion,
+        )
+        try:
+            response = await client.post(
+                f"/courses/{course_id}/questions/generate",
+                json={
+                    "topic_id": str(topic_id),
+                    "question_type": "mcq",
+                    "count": 1,
+                    "learning_outcome_id": outcome_id,
+                    "difficulty": "hard",
+                },
+                headers=ayse,
+            )
+        finally:
+            question_gen.reset_providers()
+
+        assert response.status_code == 200, response.text
+        question = response.json()["questions"][0]
+        assert question["learning_outcome_id"] == outcome_id
+        assert question["difficulty"] == "hard"
+        assert "C1" in completion.user_prompts[0]
+        assert "Zorluk seviyesi: zor" in completion.user_prompts[0]
+
+    async def test_blueprint_uretimi_ciktinin_konusunu_atlayamaz(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        """Blueprint hücresi istemcinin seçtiği rastgele bir konuyla üretilemez."""
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_id = await _create_course(client, ayse, "COME302")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        outcome = await client.post(
+            f"/courses/{course_id}/learning-outcomes",
+            json={
+                "code": "C2",
+                "description": "Bellek yönetimini açıklar.",
+                "topic_id": None,
+            },
+            headers=ayse,
+        )
+        assert outcome.status_code == 201, outcome.text
+
+        response = await client.post(
+            f"/courses/{course_id}/questions/generate",
+            json={
+                "topic_id": str(topic_id),
+                "question_type": "mcq",
+                "count": 1,
+                "learning_outcome_id": outcome.json()["id"],
+                "difficulty": "medium",
+            },
+            headers=ayse,
+        )
+
+        assert response.status_code == 422
+        assert "doğru konuya bağlayın" in response.json()["error"]["message"]
+
+    def test_yeni_rubrik_agirliklari_yuz_etmiyorsa_taslak_reddedilir(self) -> None:
+        raw = json.dumps(
+            {
+                "questions": [
+                    {
+                        "source_chunk_id": str(uuid4()),
+                        "prompt": "Deadlock koşullarını açıklayınız.",
+                        "answer_key": "Dört koşul birlikte sağlanır.",
+                        "key_points": ["karşılıklı dışlama"],
+                        "rubric": [
+                            {"point": "Kavram", "weight": 70},
+                            {"point": "Gerekçe", "weight": 70},
+                        ],
+                    }
+                ]
+            }
+        )
+
+        result = question_gen._drafts_from_response(raw, QuestionType.OPEN)
+
+        assert result.drafts == []
+        assert result.item_reasons == ["şema: 1 alan hatalı"]
+
 
 async def _load_topic(session: Any, topic_id: UUID) -> Any:
     from app.models.assessment import Topic
@@ -1115,7 +1222,7 @@ ESSAY_PAYLOAD = {
 def _verdict(score: int, chunk_id: UUID | str | None, *, missing: list[str] | None = None) -> str:
     return json.dumps(
         {
-            "score": score,
+            "rubrik_kirilimi": [{"olcut": "Dört koşulu sayar", "puan": score}],
             "eksik_noktalar": missing or [],
             "dayanak_chunk_id": str(chunk_id) if chunk_id else None,
         }
@@ -1142,6 +1249,83 @@ class TestLlmGrading:
         assert outcome.is_correct is True
         assert outcome.missing_points == ["kesilemezlik"]
         assert outcome.evidence_chunk_id == chunk_id
+        assert outcome.rubric_breakdown is not None
+        assert outcome.rubric_breakdown[0].awarded_points == 80
+
+    async def test_eski_rubrik_agirliklari_normalize_edilir_ve_toplam_bizden_gelir(
+        self,
+    ) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        payload = OpenPayload.model_validate(
+            {
+                "prompt": "İki boyutta açıklayın.",
+                "answer_key": "Kavram ve gerekçe.",
+                "key_points": ["kavram", "gerekçe"],
+                # Eski veri: toplam 60. Okuma yolu bunu reddetmemeli.
+                "rubric": [
+                    {"point": "Kavram", "weight": 30},
+                    {"point": "Gerekçe", "weight": 30},
+                ],
+            }
+        )
+        completion = FakeCompletion(
+            json.dumps(
+                {
+                    "score": 1,  # Bilerek yanlış; rubrik varken yok sayılmalı.
+                    "rubrik_kirilimi": [
+                        {"olcut": "Kavram", "puan": 100},
+                        {"olcut": "Gerekçe", "puan": 40},
+                    ],
+                    "eksik_noktalar": ["gerekçe"],
+                    "dayanak_chunk_id": None,
+                }
+            )
+        )
+
+        outcome = await grade_with_llm(
+            completion,
+            payload=payload,
+            given="Kısmi cevap",
+            sources=[(uuid4(), DEADLOCK_TEXTS[0])],
+        )
+
+        assert outcome.score == 70
+        assert outcome.rubric_breakdown is not None
+        assert [item.weight for item in outcome.rubric_breakdown] == [50.0, 50.0]
+        assert [item.awarded_points for item in outcome.rubric_breakdown] == [50.0, 20.0]
+
+    async def test_eksik_rubrik_olcutu_puan_uydurmaz(self) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        payload = OpenPayload.model_validate(
+            {
+                "prompt": "İki boyutta açıklayın.",
+                "answer_key": "Kavram ve gerekçe.",
+                "key_points": ["kavram", "gerekçe"],
+                "rubric": [
+                    {"point": "Kavram", "weight": 50},
+                    {"point": "Gerekçe", "weight": 50},
+                ],
+            }
+        )
+        incomplete = json.dumps(
+            {
+                "rubrik_kirilimi": [{"olcut": "Kavram", "puan": 100}],
+                "eksik_noktalar": [],
+                "dayanak_chunk_id": None,
+            }
+        )
+
+        outcome = await grade_with_llm(
+            FakeCompletion(incomplete),
+            payload=payload,
+            given="Cevap",
+            sources=[(uuid4(), DEADLOCK_TEXTS[0])],
+        )
+
+        assert outcome.graded is False
+        assert outcome.score is None
 
     async def test_kod_citli_yanit_da_ayristirilir(self) -> None:
         from app.modules.assessment.grading import grade_with_llm

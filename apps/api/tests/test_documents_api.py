@@ -24,11 +24,22 @@ async def _course(client: AsyncClient, headers: dict[str, str], code: str) -> st
 
 
 async def _upload(
-    client: AsyncClient, headers: dict[str, str], course_id: str, name: str, data: bytes
+    client: AsyncClient,
+    headers: dict[str, str],
+    course_id: str,
+    name: str,
+    data: bytes,
+    *,
+    replaces_document_id: str | None = None,
 ):
     return await client.post(
         f"/courses/{course_id}/documents",
         files={"file": (name, data, "application/octet-stream")},
+        data=(
+            {"replaces_document_id": replaces_document_id}
+            if replaces_document_id is not None
+            else None
+        ),
         headers=headers,
     )
 
@@ -118,6 +129,93 @@ class TestUpload:
         assert (await _upload(client, ayse, course_id, "a.pdf", pdf)).status_code == 202
         second = await _upload(client, ayse, course_id, "farkli-ad.pdf", pdf)
         assert second.status_code == 409
+
+    async def test_yeni_surum_eski_belgeyi_acikca_isaretler(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_id = await _course(client, ayse, "COME301")
+        old_id = (
+            await _upload(client, ayse, course_id, "hafta3-v1.pdf", make_pdf(["Eski içerik"]))
+        ).json()["document"]["id"]
+
+        replacement = await _upload(
+            client,
+            ayse,
+            course_id,
+            "hafta3-v2.pdf",
+            make_pdf(["Yeni ve düzeltilmiş içerik"]),
+            replaces_document_id=old_id,
+        )
+
+        assert replacement.status_code == 202, replacement.text
+        assert replacement.json()["document"]["supersedes_document_id"] == old_id
+        old = await client.get(f"/courses/{course_id}/documents/{old_id}", headers=ayse)
+        assert old.json()["superseded_at"] is not None
+
+        repeated = await _upload(
+            client,
+            ayse,
+            course_id,
+            "hafta3-v3.pdf",
+            make_pdf(["Üçüncü içerik"]),
+            replaces_document_id=old_id,
+        )
+        assert repeated.status_code == 409
+        assert "en güncel" in repeated.json()["error"]["message"]
+
+    async def test_yenilenen_kaynaga_bagli_soru_bayat_isaretlenir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        course_id = await _course(client, ayse, "COME301")
+        old_id = (
+            await _upload(client, ayse, course_id, "v1.pdf", make_pdf(["Kaynak sürüm bir"]))
+        ).json()["document"]["id"]
+        from app import worker
+
+        await worker.drain()
+        old_chunks = (
+            await client.get(f"/courses/{course_id}/documents/{old_id}/chunks", headers=ayse)
+        ).json()
+        async with admin_engine.begin() as conn:
+            topic_id = await conn.scalar(
+                text(
+                    "INSERT INTO topics (course_id, name, created_by) "
+                    "VALUES (:course, 'Sürüm', :user) RETURNING id"
+                ),
+                {"course": course_id, "user": ayse_id},
+            )
+            await conn.execute(
+                text(
+                    "INSERT INTO questions "
+                    "(course_id, topic_id, source_chunk_id, type, payload, status, created_by) "
+                    "VALUES (:course, :topic, :chunk, 'mcq', '{}'::jsonb, 'draft', :user)"
+                ),
+                {
+                    "course": course_id,
+                    "topic": topic_id,
+                    "chunk": old_chunks[0]["id"],
+                    "user": ayse_id,
+                },
+            )
+
+        before = await client.get(f"/courses/{course_id}/questions", headers=ayse)
+        assert before.json()[0]["source_stale"] is False
+
+        replaced = await _upload(
+            client,
+            ayse,
+            course_id,
+            "v2.pdf",
+            make_pdf(["Kaynak sürüm iki"]),
+            replaces_document_id=old_id,
+        )
+        assert replaced.status_code == 202, replaced.text
+
+        after = await client.get(f"/courses/{course_id}/questions", headers=ayse)
+        assert after.json()[0]["source_stale"] is True
 
     async def test_bozuk_dosya_anlasilir_hata(
         self, client: AsyncClient, users: UserFactory

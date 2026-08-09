@@ -427,9 +427,10 @@ export const api = {
       headers: payload ? { "Content-Type": "application/json" } : undefined,
       body: payload ? JSON.stringify(payload) : undefined,
     }),
-  upload: <T>(path: string, file: File) => {
+  upload: <T>(path: string, file: File, replacesDocumentId?: string | null) => {
     const form = new FormData();
     form.append("file", file);
+    if (replacesDocumentId) form.append("replaces_document_id", replacesDocumentId);
     return request<T>(path, { method: "POST", body: form });
   },
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),

@@ -868,7 +868,9 @@ class TestMasteryIntegration:
             FakeCompletion(
                 json.dumps(
                     {
-                        "score": 75,
+                        "rubrik_kirilimi": [
+                            {"olcut": "Dört koşulu sayar", "puan": 75}
+                        ],
                         "eksik_noktalar": ["kesilemezlik"],
                         "dayanak_chunk_id": str(fixture.chunk_ids[0]),
                     }
@@ -888,6 +890,14 @@ class TestMasteryIntegration:
         assert body["graded"] is True
         assert body["score"] == 75
         assert body["missing_points"] == ["kesilemezlik"]
+        assert body["rubric_breakdown"] == [
+            {
+                "criterion": "Dört koşulu sayar",
+                "weight": 100.0,
+                "score": 75,
+                "awarded_points": 75.0,
+            }
+        ]
         assert body["evidence"]["file_name"] == "isletim-sistemleri.pdf"
         assert await _mastery_rows(fixture.student_id) == [(0.75, 1)]
 

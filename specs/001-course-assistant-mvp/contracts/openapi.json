@@ -1656,7 +1656,7 @@
           "exams"
         ],
         "summary": "Start Exam",
-        "description": "Sınav ya da alıştırma oturumu açar.\n\nOnaylı havuz boşsa oturum açılmaz: \"kaynak yoksa cevap yok\"un sınav ayağıdır.\nSorular burada sabitlenir; sonradan yapılan onay/red başlamış oturumun soru\nlistesini değiştirmez.",
+        "description": "Sınav ya da alıştırma oturumu açar.\n\nİki akış var ve ayrımı `blueprint_id` yapar:\n\n- **Prova (bugünkü akış).** Onaylı havuzdan rastgele soru çekilir ve oturumun\n  `question_ids`'ine sabitlenir. Onaylı havuz boşsa oturum açılmaz: \"kaynak\n  yoksa cevap yok\"un sınav ayağıdır.\n- **Blueprint sınavı (0008).** Kâğıt yayınlanmış sürümün `exam_items`'ından\n  gelir; `question_ids` NULL kalır ve oturum `exam_version_id` ile o sürüme\n  bağlanır. Sonradan yeni sürüm yayınlanması başlamış oturumu değiştirmez.\n\nİki akış aynı satırda karışamaz: `exam_sessions_paper_source` kısıtı kâğıdın\niki kaynağı olmasını ifade edilemez kılıyor.",
         "operationId": "start_exam_courses__course_id__exams_post",
         "parameters": [
           {
@@ -1998,6 +1998,774 @@
         }
       }
     },
+    "/courses/{course_id}/learning-outcomes": {
+      "post": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Create Learning Outcome",
+        "description": "Ders bazlı ölçülebilir kazanım tanımlar.\n\nKod derste büyük/küçük harf duyarsız tekildir; ikinci kez aynı kod 409 döner.",
+        "operationId": "create_learning_outcome_courses__course_id__learning_outcomes_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningOutcomeCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LearningOutcomeOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "List Learning Outcomes",
+        "operationId": "list_learning_outcomes_courses__course_id__learning_outcomes_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LearningOutcomeOut"
+                  },
+                  "title": "Response List Learning Outcomes Courses  Course Id  Learning Outcomes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/blueprints": {
+      "post": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Create Blueprint",
+        "description": "Blueprint'i hücreleriyle birlikte kurar.\n\nSorulardan ÖNCE var olur: çatı önce çizilir, kâğıt sonra doldurulur.",
+        "operationId": "create_blueprint_courses__course_id__blueprints_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlueprintCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "List Blueprints",
+        "operationId": "list_blueprints_courses__course_id__blueprints_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BlueprintOut"
+                  },
+                  "title": "Response List Blueprints Courses  Course Id  Blueprints Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/blueprints/{blueprint_id}": {
+      "get": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Get Blueprint",
+        "operationId": "get_blueprint_courses__course_id__blueprints__blueprint_id__get",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Update Blueprint",
+        "description": "Blueprint meta verisini ve gerekirse hücre kümesini günceller.\n\nYayınlanmış bir sürüm varken hücreleri düzenlemek SERBESTTİR: yayınlanmış\nsürümün dağılım kanıtı kendi `blueprint_snapshot`'ında dondurulmuştur ve bu\ndüzenlemeden etkilenmez (data-model.md §8 madde 1). Kilitleme yolu seçilseydi,\nv1 yayındayken dağılımı düzeltmek isteyen öğretmenin önce sınavı yayından\nkaldırması gerekirdi.",
+        "operationId": "update_blueprint_courses__course_id__blueprints__blueprint_id__patch",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlueprintUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlueprintOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Delete Blueprint",
+        "description": "Blueprint'i siler.\n\nYayınlanmış bir sürüme bağlı oturum varsa veritabanı RESTRICT ile reddeder ve\nbu 409'a çevrilir: kanıtı olan bir sınav silinemez.",
+        "operationId": "delete_blueprint_courses__course_id__blueprints__blueprint_id__delete",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/blueprints/{blueprint_id}/versions": {
+      "post": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Create Version",
+        "description": "Yeni bir TASLAK sürüm açar. Numara mevcut en büyüğün bir fazlasıdır.\n\nSürüm boş doğar; kalemler ayrı bir çağrıyla yazılır. Böylece \"sürüm oluştur\" ve\n\"kâğıdı doldur\" ayrı ayrı geri alınabilir işlemler olur.",
+        "operationId": "create_version_courses__course_id__blueprints__blueprint_id__versions_post",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamVersionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "List Versions",
+        "operationId": "list_versions_courses__course_id__blueprints__blueprint_id__versions_get",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamVersionOut"
+                  },
+                  "title": "Response List Versions Courses  Course Id  Blueprints  Blueprint Id  Versions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/blueprints/{blueprint_id}/versions/{version_id}/items": {
+      "put": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Set Version Items",
+        "description": "Kâğıdı bütün olarak yazar. YALNIZ taslak sürümde çalışır.\n\nYayınlanmış sürümde kalem yazmak yalnız burada değil, RLS politikasında ve\nyetki düzeyinde de kapalıdır (`exam_items`'a UPDATE yetkisi yok, INSERT/DELETE\npolitikaları `status='draft'` istiyor). Üç katman da bağımsız olarak doğru\ndavranmalı (Anayasa II).\n\n`points` blueprint hücresinden **yayın anında değil, kalem yazılırken**\nkopyalanır: puanı kâğıtla birlikte görmek, yayın kapısına gelmeden önce\ntoplamın tutup tutmadığını gösterir.",
+        "operationId": "set_version_items_courses__course_id__blueprints__blueprint_id__versions__version_id__items_put",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ExamItemIn"
+                },
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamItemOut"
+                  },
+                  "title": "Response Set Version Items Courses  Course Id  Blueprints  Blueprint Id  Versions  Version Id  Items Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "List Version Items",
+        "operationId": "list_version_items_courses__course_id__blueprints__blueprint_id__versions__version_id__items_get",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamItemOut"
+                  },
+                  "title": "Response List Version Items Courses  Course Id  Blueprints  Blueprint Id  Versions  Version Id  Items Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/blueprints/{blueprint_id}/versions/{version_id}/readiness": {
+      "get": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Get Readiness",
+        "description": "FR-114'ün raporu: yayınlamadan önce neyin tutmadığını gösterir.\n\nYayın ucu aynı raporu kullanır; ayrı bir uç olmasının sebebi öğretmenin kapıya\nçarpmadan önce eksiği görebilmesidir.",
+        "operationId": "get_readiness_courses__course_id__blueprints__blueprint_id__versions__version_id__readiness_get",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/blueprints/{blueprint_id}/versions/{version_id}/publish": {
+      "post": {
+        "tags": [
+          "blueprints"
+        ],
+        "summary": "Publish Version",
+        "description": "Sürümü yayınlar: kapıyı koşturur, dağılımı dondurur, öncekini superseded yapar.\n\nSıra önemli — önceki sürüm `superseded` yapılmadan yenisi yayınlanamaz:\n`exam_versions_one_published` kısmi tekil indeksi aynı anda iki yayınlanmış\nsürüme izin vermez ve bu kural yapısaldır, uygulama koduna sorulmaz.\n\nYürüyen oturumlar ETKİLENMEZ: eski sürümün satırı ve kalemleri yerinde durur,\n`exam_versions_read`'in üçüncü dalı oturum sahibine okumayı sürdürür.",
+        "operationId": "publish_version_courses__course_id__blueprints__blueprint_id__versions__version_id__publish_post",
+        "parameters": [
+          {
+            "name": "blueprint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Blueprint Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/analytics/me": {
       "get": {
         "tags": [
@@ -2188,6 +2956,20 @@
             "type": "array",
             "title": "Missing Points"
           },
+          "rubric_breakdown": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RubricScoreOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Breakdown"
+          },
           "why_wrong": {
             "anyOf": [
               {
@@ -2287,6 +3069,404 @@
         ],
         "title": "AnswerSubmitRequest"
       },
+      "BlueprintCellIn": {
+        "properties": {
+          "learning_outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/QuestionDifficulty"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "question_count": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Question Count"
+          },
+          "points_per_question": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Points Per Question",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "learning_outcome_id",
+          "difficulty",
+          "question_type",
+          "question_count"
+        ],
+        "title": "BlueprintCellIn"
+      },
+      "BlueprintCellOut": {
+        "properties": {
+          "learning_outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/QuestionDifficulty"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "question_count": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Question Count"
+          },
+          "points_per_question": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Points Per Question",
+            "default": 1
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "learning_outcome_id",
+          "difficulty",
+          "question_type",
+          "question_count",
+          "id",
+          "label"
+        ],
+        "title": "BlueprintCellOut"
+      },
+      "BlueprintCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "maximum": 600.0,
+            "minimum": 1.0,
+            "title": "Duration Minutes"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Attempts",
+            "default": 1
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/BlueprintCellIn"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Cells"
+          },
+          "targets": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DistributionTargets"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "duration_minutes",
+          "cells"
+        ],
+        "title": "BlueprintCreate"
+      },
+      "BlueprintOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "title": "Duration Minutes"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "title": "Max Attempts"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/BlueprintCellOut"
+            },
+            "type": "array",
+            "title": "Cells"
+          },
+          "total_questions": {
+            "type": "integer",
+            "title": "Total Questions"
+          },
+          "total_points": {
+            "type": "integer",
+            "title": "Total Points"
+          },
+          "topic_distribution": {
+            "items": {
+              "$ref": "#/components/schemas/TopicShare"
+            },
+            "type": "array",
+            "title": "Topic Distribution"
+          },
+          "published_version_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published Version No"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "title",
+          "description",
+          "duration_minutes",
+          "max_attempts",
+          "opens_at",
+          "closes_at",
+          "created_at",
+          "updated_at",
+          "cells",
+          "total_questions",
+          "total_points",
+          "topic_distribution"
+        ],
+        "title": "BlueprintOut"
+      },
+      "BlueprintUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 600.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "max_attempts": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Attempts"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
+          "cells": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BlueprintCellIn"
+                },
+                "type": "array",
+                "maxItems": 200,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cells"
+          },
+          "targets": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DistributionTargets"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "BlueprintUpdate",
+        "description": "Hücreler verilirse KÜME OLARAK değişir (sil + yaz).\n\nTek hücrelik güncelleme bilerek yok: FR-112 doğrulaması küme üzerinde yapılır\nve tekil bir UPDATE doğrulamayı atlayıp tutarsız bir dağılım bırakabilirdi.\nVeritabanı da aynı kararı taşıyor — `blueprint_cells`'te UPDATE ne politikası\nne yetkisi var."
+      },
       "Body_upload_document_courses__course_id__documents_post": {
         "properties": {
           "file": {
@@ -2294,6 +3474,19 @@
             "contentMediaType": "application/octet-stream",
             "title": "File",
             "description": "PDF, PPTX, Markdown, metin veya kod dosyası"
+          },
+          "replaces_document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaces Document Id",
+            "description": "Bu yüklemenin açıkça yerine geçtiği eski belge kimliği"
           }
         },
         "type": "object",
@@ -3136,6 +4329,60 @@
         "title": "CourseWithRole",
         "description": "Listelemede kullanıcının o dersteki rolü de döner."
       },
+      "DistributionTargets": {
+        "properties": {
+          "total_questions": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Questions"
+          },
+          "by_difficulty": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/QuestionDifficulty"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By Difficulty"
+          },
+          "by_question_type": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/QuestionType"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "By Question Type"
+          }
+        },
+        "type": "object",
+        "title": "DistributionTargets",
+        "description": "Arayüzün aldığı MARJİNAL dağılım; hücrelerin ona uyup uymadığı sınanır.\n\nYüzdeler saklanmaz: ekran \"%40 kolay\" alır, tam sayıya çevirir ve buraya ADET\ngönderir. Yuvarlamayı istemci yapar, ama yuvarlamanın tuttuğunu sunucu\ndoğrular — SC-003'ün \"birebir uyar\" iddiası ancak böyle karar verilebilir olur.\n\nHepsi opsiyonel: yalnız hücre göndermek de geçerli bir kullanımdır."
+      },
       "DocumentOut": {
         "properties": {
           "id": {
@@ -3183,6 +4430,30 @@
               }
             ],
             "title": "Error Message"
+          },
+          "supersedes_document_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Document Id"
+          },
+          "superseded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Superseded At"
           },
           "created_at": {
             "type": "string",
@@ -3349,6 +4620,96 @@
         ],
         "title": "ExamFinishOut"
       },
+      "ExamItemIn": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id"
+        ],
+        "title": "ExamItemIn"
+      },
+      "ExamItemOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "points": {
+            "type": "integer",
+            "title": "Points"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionDifficulty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "learning_outcome_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Outcome Id"
+          },
+          "stem": {
+            "type": "string",
+            "title": "Stem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position",
+          "question_id",
+          "points",
+          "question_type",
+          "difficulty",
+          "learning_outcome_id",
+          "stem"
+        ],
+        "title": "ExamItemOut"
+      },
       "ExamMode": {
         "type": "string",
         "enum": [
@@ -3470,6 +4831,41 @@
             },
             "type": "array",
             "title": "Questions"
+          },
+          "exam_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Version Id"
+          },
+          "exam_blueprint_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Blueprint Id"
+          },
+          "attempt_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt No"
           }
         },
         "type": "object",
@@ -3505,10 +4901,102 @@
               }
             ],
             "title": "Topic Id"
+          },
+          "blueprint_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blueprint Id"
           }
         },
         "type": "object",
         "title": "ExamStartRequest"
+      },
+      "ExamVersionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "blueprint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Blueprint Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExamVersionStatus"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "superseded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Superseded At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count",
+            "default": 0
+          },
+          "total_points": {
+            "type": "integer",
+            "title": "Total Points",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "blueprint_id",
+          "version_no",
+          "status",
+          "published_at",
+          "superseded_at",
+          "created_at"
+        ],
+        "title": "ExamVersionOut"
+      },
+      "ExamVersionStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "published",
+          "superseded"
+        ],
+        "title": "ExamVersionStatus"
       },
       "ExportAnswerOut": {
         "properties": {
@@ -3933,6 +5421,83 @@
         ],
         "title": "HintRequest"
       },
+      "LearningOutcomeCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Description"
+          },
+          "topic_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "description"
+        ],
+        "title": "LearningOutcomeCreate"
+      },
+      "LearningOutcomeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "topic_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "description",
+          "topic_id",
+          "created_at"
+        ],
+        "title": "LearningOutcomeOut"
+      },
       "MasteryLevel": {
         "type": "string",
         "enum": [
@@ -4050,6 +5615,44 @@
         ],
         "title": "MissedQuestion"
       },
+      "MissingCell": {
+        "properties": {
+          "learning_outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/QuestionDifficulty"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "required": {
+            "type": "integer",
+            "title": "Required"
+          },
+          "filled": {
+            "type": "integer",
+            "title": "Filled"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "learning_outcome_id",
+          "difficulty",
+          "question_type",
+          "required",
+          "filled",
+          "label"
+        ],
+        "title": "MissingCell",
+        "description": "İstenen adet ile dolan adet tutmayan hücre (FR-114)."
+      },
       "OutOfScopeStat": {
         "properties": {
           "source": {
@@ -4097,12 +5700,69 @@
         "title": "OutOfScopeStat",
         "description": "Kapsam dışı ret istatistiği (SC-005).\n\nKaynak `request_logs`, `chat_messages` DEĞİL. Sebep bir gizlilik kararı: sohbet\nmesajları eğitmene bilinçli olarak kapalıdır (0003), çünkü öğrencinin hocasına\nsormaya çekindiği soruyu sisteme sorabilmesi ürünün gerekçelerinden biri.\n`request_logs` ise şema gereği serbest metin taşımaz — eğitmen \"kaç soru kapsam\ndışı diye reddedildi\" sorusunun cevabını alır, kimsenin ne sorduğunu göremez.\n\n`source` alanı zorunlu: sayının nereden geldiği görünmeden sayı raporlanamaz.\nHenüz hiç cevap üretilmemişse `rate` None kalır — 0.0 döndürmek \"bu derste hiçbir\nsoru reddedilmedi\" demek olurdu ve bu, ölçülmemiş bir şeyi ölçülmüş gibi\ngöstermek olurdu (Anayasa III)."
       },
+      "PublishOut": {
+        "properties": {
+          "version": {
+            "$ref": "#/components/schemas/ExamVersionOut"
+          },
+          "blueprint_snapshot": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Blueprint Snapshot"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "blueprint_snapshot",
+          "message"
+        ],
+        "title": "PublishOut"
+      },
+      "QuestionDifficulty": {
+        "type": "string",
+        "enum": [
+          "easy",
+          "medium",
+          "hard"
+        ],
+        "title": "QuestionDifficulty"
+      },
       "QuestionGenerateRequest": {
         "properties": {
           "topic_id": {
             "type": "string",
             "format": "uuid",
             "title": "Topic Id"
+          },
+          "learning_outcome_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionDifficulty"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "question_type": {
             "$ref": "#/components/schemas/QuestionType",
@@ -4207,6 +5867,28 @@
             "format": "uuid",
             "title": "Topic Id"
           },
+          "learning_outcome_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionDifficulty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "type": {
             "$ref": "#/components/schemas/QuestionType"
           },
@@ -4268,6 +5950,11 @@
                 "type": "null"
               }
             ]
+          },
+          "source_stale": {
+            "type": "boolean",
+            "title": "Source Stale",
+            "default": false
           }
         },
         "type": "object",
@@ -4303,6 +5990,41 @@
           "bug_hunt"
         ],
         "title": "QuestionType"
+      },
+      "ReadinessOut": {
+        "properties": {
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          },
+          "missing_cells": {
+            "items": {
+              "$ref": "#/components/schemas/MissingCell"
+            },
+            "type": "array",
+            "title": "Missing Cells"
+          },
+          "unclassified_items": {
+            "items": {
+              "$ref": "#/components/schemas/UnclassifiedItem"
+            },
+            "type": "array",
+            "title": "Unclassified Items"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ready",
+          "missing_cells",
+          "unclassified_items",
+          "message"
+        ],
+        "title": "ReadinessOut",
+        "description": "Yayın kapısının raporu. `ready` ancak İKİ liste de boşsa true olur."
       },
       "RetrievalCandidateOut": {
         "properties": {
@@ -4437,6 +6159,41 @@
           "candidates"
         ],
         "title": "RetrievalInspectionOut"
+      },
+      "RubricScoreOut": {
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "title": "Criterion"
+          },
+          "weight": {
+            "type": "number",
+            "maximum": 100.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Weight"
+          },
+          "score": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "awarded_points": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Awarded Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "criterion",
+          "weight",
+          "score",
+          "awarded_points"
+        ],
+        "title": "RubricScoreOut",
+        "description": "Tek rubrik ölçütünün doğrulanmış puan kırılımı (FR-117)."
       },
       "SocraticStage": {
         "type": "string",
@@ -4730,6 +6487,78 @@
         ],
         "title": "TopicProgress",
         "description": "Öğrencinin tek bir konudaki durumu."
+      },
+      "TopicShare": {
+        "properties": {
+          "topic_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Id"
+          },
+          "topic_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Name"
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id",
+          "topic_name",
+          "question_count"
+        ],
+        "title": "TopicShare",
+        "description": "Konu dağılımı — TÜRETİLMİŞ ve salt okunur (data-model.md §8 madde 2).\n\n`topic_id` NULL olan çıktılar `topic_id=None` satırında toplanır ve ekranda\n\"konusuz çıktıdan geliyor\" diye gösterilir; sessizce yuvarlanmaz (Anayasa III)."
+      },
+      "UnclassifiedItem": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "missing_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Fields"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "position",
+          "missing_fields",
+          "label"
+        ],
+        "title": "UnclassifiedItem",
+        "description": "Kalemde olup hiçbir hücreye sayılamayan soru (data-model.md §8 madde 7).\n\nEksik hücreden AYRI raporlanır: tek listede görünseydi başka bir hücre\neksikmiş gibi okunur, öğretmen o hücreye soru eklemeye çalışır ve gerçek sebep\nhiç söylenmemiş olurdu."
       },
       "UserDataExportOut": {
         "properties": {

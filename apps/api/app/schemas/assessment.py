@@ -24,7 +24,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models.assessment import ExamMode, QuestionStatus, QuestionType
+from app.models.assessment import (
+    ExamMode,
+    QuestionDifficulty,
+    QuestionStatus,
+    QuestionType,
+)
 
 # ---------------------------------------------------------------------------
 # Konular
@@ -210,6 +215,8 @@ class QuestionOut(BaseModel):
     id: UUID
     course_id: UUID
     topic_id: UUID
+    learning_outcome_id: UUID | None = None
+    difficulty: QuestionDifficulty | None = None
     type: QuestionType
     #: Eğitmene tam payload, öğrenciye `public_payload()` süzgecinden geçmiş hâli.
     payload: dict[str, Any]
@@ -221,6 +228,9 @@ class QuestionOut(BaseModel):
     #: Eğitmen soruyu kaynağını görerek onaylar (FR-023). Öğrenciye de gösterilir:
     #: onaylı sorunun hangi materyalden geldiği gizli değildir.
     source: SourceRefOut | None = None
+    #: Sorunun dayandığı belgenin yerine açıkça yeni bir sürüm yüklendiyse true.
+    #: Bayatlık ayrı bir bayrak olarak saklanmaz; belge sürüm zincirinden türetilir.
+    source_stale: bool = False
 
 
 class QuestionGenerateRequest(BaseModel):
@@ -231,6 +241,10 @@ class QuestionGenerateRequest(BaseModel):
     """
 
     topic_id: UUID
+    #: Blueprint hücresinden üretimde ikisi birlikte verilir. Eski konu-bazlı
+    #: üretim akışı için ikisi de opsiyoneldir.
+    learning_outcome_id: UUID | None = None
+    difficulty: QuestionDifficulty | None = None
     question_type: QuestionType = QuestionType.MCQ
     #: Yalnız `open` için anlamlı: klasik mi kısa cevap mı (Karar 4).
     answer_format: AnswerFormat | None = None
@@ -303,6 +317,17 @@ class AnswerSubmitRequest(BaseModel):
     hint_level: int = Field(default=0, ge=0, le=4)
 
 
+class RubricScoreOut(BaseModel):
+    """Tek rubrik ölçütünün doğrulanmış puan kırılımı (FR-117)."""
+
+    criterion: str
+    #: Eski, toplamı 100 olmayan rubriklerde okuma anında normalize edilen ağırlık.
+    weight: float = Field(gt=0, le=100)
+    score: int = Field(ge=0, le=100)
+    #: Bu ölçütün toplam 100 puana katkısı: `weight * score / 100`.
+    awarded_points: float = Field(ge=0, le=100)
+
+
 class AnswerFeedbackOut(BaseModel):
     question_id: UUID
     #: Cevap kaydedildi mi (her zaman True; kaydedilemezse hata döner).
@@ -312,6 +337,9 @@ class AnswerFeedbackOut(BaseModel):
     is_correct: bool | None = None
     score: int | None = None
     missing_points: list[str] = Field(default_factory=list)
+    #: Açık uçlu soruda her rubrik ölçütünün 0-100 başarısı ve toplam puana
+    #: katkısı. Toplam puan bu kırılımdan sunucuda hesaplanır, modelden okunmaz.
+    rubric_breakdown: list[RubricScoreOut] | None = None
     #: MCQ'da seçilen çeldiricinin çeliştiği kaynak bölümü (FR-021).
     why_wrong: SourceRefOut | None = None
     #: Açık uçluda değerlendirmenin dayandığı kaynak.

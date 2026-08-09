@@ -19,6 +19,8 @@ export interface CourseDocument {
   page_count: number | null;
   chunk_count: number;
   error_message: string | null;
+  supersedes_document_id?: string | null;
+  superseded_at?: string | null;
   created_at: string;
 }
 
@@ -141,6 +143,7 @@ export type ExamMode = "practice" | "exam";
 export type QuestionType = "mcq" | "open" | "code_trace" | "bug_hunt";
 export type QuestionStatus = "draft" | "approved" | "rejected";
 export type AnswerFormat = "essay" | "short_answer";
+export type QuestionDifficulty = "easy" | "medium" | "hard";
 
 /**
  * Kaynak referansı. `file_name`/`location`/`snippet` chunk metadata'sından gelir,
@@ -165,6 +168,8 @@ export interface Question {
   id: string;
   course_id: string;
   topic_id: string;
+  learning_outcome_id?: string | null;
+  difficulty?: QuestionDifficulty | null;
   type: QuestionType;
   /** Soru tipine göre şekil değişir; daraltma arayüzün işi. */
   payload: Record<string, unknown>;
@@ -174,10 +179,13 @@ export interface Question {
   reviewed_at: string | null;
   created_at: string;
   source?: SourceRef | null;
+  source_stale?: boolean;
 }
 
 export interface QuestionGenerateRequest {
   topic_id: string;
+  learning_outcome_id?: string | null;
+  difficulty?: QuestionDifficulty | null;
   question_type?: QuestionType;
   answer_format?: AnswerFormat | null;
   count?: number | null;
@@ -219,11 +227,15 @@ export interface ExamSession {
   question_count: number;
   answered_count: number;
   questions?: ExamQuestion[];
+  exam_version_id?: string | null;
+  exam_blueprint_id?: string | null;
+  attempt_no?: number | null;
 }
 
 export interface ExamStartRequest {
   mode?: ExamMode;
   topic_id?: string | null;
+  blueprint_id?: string | null;
 }
 
 export interface AnswerSubmitRequest {
@@ -246,10 +258,104 @@ export interface AnswerFeedback {
   is_correct?: boolean | null;
   score?: number | null;
   missing_points?: string[];
+  rubric_breakdown?: RubricScore[] | null;
   why_wrong?: SourceRef | null;
   evidence?: SourceRef | null;
   solution?: Record<string, unknown> | null;
   message?: string | null;
+}
+
+export interface RubricScore {
+  criterion: string;
+  weight: number;
+  score: number;
+  awarded_points: number;
+}
+
+// --- Sınav blueprint'i (002 US3) -----------------------------------------
+
+export interface LearningOutcome {
+  id: string;
+  code: string;
+  description: string;
+  topic_id: string | null;
+  created_at: string;
+}
+
+export interface BlueprintCell {
+  id: string;
+  learning_outcome_id: string;
+  difficulty: QuestionDifficulty;
+  question_type: QuestionType;
+  question_count: number;
+  points_per_question: number;
+  label: string;
+}
+
+export interface BlueprintTopicShare {
+  topic_id: string | null;
+  topic_name: string | null;
+  question_count: number;
+}
+
+export interface ExamBlueprint {
+  id: string;
+  course_id: string;
+  title: string;
+  description: string | null;
+  duration_minutes: number;
+  max_attempts: number;
+  opens_at: string | null;
+  closes_at: string | null;
+  created_at: string;
+  updated_at: string;
+  cells: BlueprintCell[];
+  total_questions: number;
+  total_points: number;
+  topic_distribution: BlueprintTopicShare[];
+  published_version_no: number | null;
+}
+
+export interface ExamVersion {
+  id: string;
+  blueprint_id: string;
+  version_no: number;
+  status: "draft" | "published" | "superseded";
+  published_at: string | null;
+  superseded_at: string | null;
+  created_at: string;
+  item_count: number;
+  total_points: number;
+}
+
+export interface ExamItem {
+  id: string;
+  position: number;
+  question_id: string;
+  points: number;
+  question_type: QuestionType;
+  difficulty: QuestionDifficulty | null;
+  learning_outcome_id: string | null;
+  stem: string;
+}
+
+export interface BlueprintReadiness {
+  ready: boolean;
+  missing_cells: Array<{
+    learning_outcome_id: string;
+    difficulty: QuestionDifficulty;
+    question_type: QuestionType;
+    required: number;
+    filled: number;
+    label: string;
+  }>;
+  unclassified_items: Array<{
+    question_id: string;
+    position: number;
+    missing_fields: string[];
+    label: string;
+  }>;
+  message: string;
 }
 
 export interface ExamFinish {

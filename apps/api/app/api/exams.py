@@ -36,6 +36,7 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, status
+from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,6 +76,7 @@ from app.schemas.assessment import (
     ExamStartRequest,
     HintOut,
     HintRequest,
+    RubricScoreOut,
     SourceRefOut,
     public_payload,
     solution_payload,
@@ -144,6 +146,11 @@ def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
     return {
         "durum": "degerlendirildi" if outcome.graded else "tamamlanamadi",
         "eksik_noktalar": outcome.missing_points,
+        "rubrik_kirilimi": (
+            [item.model_dump(mode="json") for item in outcome.rubric_breakdown]
+            if outcome.rubric_breakdown is not None
+            else None
+        ),
         "dayanak_chunk_id": str(outcome.evidence_chunk_id) if outcome.evidence_chunk_id else None,
         "neden_yanlis_chunk_id": (
             str(outcome.why_wrong_chunk_id) if outcome.why_wrong_chunk_id else None
@@ -156,6 +163,17 @@ def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
 def _chunk_id(feedback: dict[str, object] | None, key: str) -> UUID | None:
     raw = (feedback or {}).get(key)
     return UUID(str(raw)) if raw else None
+
+
+def _rubric_breakdown(feedback: dict[str, object]) -> list[RubricScoreOut] | None:
+    raw = feedback.get("rubrik_kirilimi")
+    if not isinstance(raw, list):
+        return None
+    try:
+        return [RubricScoreOut.model_validate(item) for item in raw]
+    except ValidationError:
+        # Eski veya bozuk feedback tüm sınav sonucunu 500'e düşürmemeli.
+        return None
 
 
 def _answer_feedback(
@@ -198,6 +216,7 @@ def _answer_feedback(
         is_correct=answer.is_correct,
         score=answer.score,
         missing_points=[str(item) for item in missing] if isinstance(missing, list) else [],
+        rubric_breakdown=_rubric_breakdown(feedback),
         why_wrong=reference(why_wrong),
         evidence=reference(evidence),
         solution=solution_payload(question.type, question.payload) if question else None,

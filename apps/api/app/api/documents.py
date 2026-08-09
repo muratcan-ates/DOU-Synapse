@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, File, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import CourseInstructorDep, CourseMemberDep, SessionDep, SettingsDep
+from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.core import Chunk, Document, DocumentStatus
@@ -39,6 +41,10 @@ async def upload_document(
     settings: SettingsDep,
     background: BackgroundTasks,
     file: UploadFile = File(description="PDF, PPTX, Markdown, metin veya kod dosyası"),
+    replaces_document_id: Annotated[
+        UUID | None,
+        Form(description="Bu yüklemenin açıkça yerine geçtiği eski belge kimliği"),
+    ] = None,
 ) -> DocumentUploadOut:
     """Ders materyali yükler ve işleme kuyruğuna alır.
 
@@ -70,6 +76,17 @@ async def upload_document(
         # Aynı içerik yeniden embed edilmez; boşuna işlem ve maliyet oluşmaz.
         raise ConflictError(f"Bu dosya derse zaten yüklenmiş: {existing.file_name}")
 
+    replaced: Document | None = None
+    if replaces_document_id is not None:
+        replaced = await session.get(Document, replaces_document_id)
+        if replaced is None or replaced.course_id != context.course_id:
+            raise NotFoundError("Yerine geçilecek belge bu derste bulunamadı.")
+        if replaced.superseded_at is not None:
+            raise ConflictError(
+                "Bu belgenin yerine daha önce yeni bir sürüm yüklenmiş. "
+                "Zincirin en güncel belgesini seçin."
+            )
+
     storage = get_storage()
     await storage.save(upload.storage_key, upload.content)
 
@@ -82,8 +99,11 @@ async def upload_document(
         file_hash=upload.sha256,
         byte_size=upload.byte_size,
         status=DocumentStatus.UPLOADED,
+        supersedes_document_id=replaced.id if replaced else None,
     )
     session.add(document)
+    if replaced is not None:
+        replaced.superseded_at = await db_now(session)
     await session.flush()
 
     await session.execute(

@@ -29,7 +29,8 @@ from app.api.deps import CourseContext, CourseInstructorDep, CourseMemberDep, Se
 from app.core.config import get_settings
 from app.core.errors import ConflictError, NotFoundError, RateLimitError, ValidationError
 from app.core.rate_limit import get_concurrency_gate, get_limiter
-from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.models.assessment import LearningOutcome, Question, QuestionStatus, QuestionType, Topic
+from app.models.core import Chunk, Document
 from app.modules.assessment import question_gen
 from app.modules.assessment.grading import load_source_refs
 from app.schemas.assessment import (
@@ -109,11 +110,35 @@ async def _question_out(
 ) -> QuestionOut:
     """Tek soruyu rolüne göre biçimler. Liste ucu toplu sürümü kullanır."""
     refs = await load_source_refs(session, [question.source_chunk_id])
-    return _build_out(question, context=context, source=refs.get(question.source_chunk_id))
+    stale = await _source_stale_map(session, [question.source_chunk_id])
+    return _build_out(
+        question,
+        context=context,
+        source=refs.get(question.source_chunk_id),
+        source_stale=stale.get(question.source_chunk_id, False),
+    )
+
+
+async def _source_stale_map(
+    session: AsyncSession, chunk_ids: list[UUID]
+) -> dict[UUID, bool]:
+    """Kaynak belgesi açıkça yeni sürümle değiştirilmiş chunk'ları toplu bulur."""
+    if not chunk_ids:
+        return {}
+    rows = await session.execute(
+        select(Chunk.id, Document.superseded_at)
+        .join(Document, Document.id == Chunk.document_id)
+        .where(Chunk.id.in_(set(chunk_ids)))
+    )
+    return {chunk_id: superseded_at is not None for chunk_id, superseded_at in rows}
 
 
 def _build_out(
-    question: Question, *, context: CourseContext, source: SourceRefOut | None
+    question: Question,
+    *,
+    context: CourseContext,
+    source: SourceRefOut | None,
+    source_stale: bool,
 ) -> QuestionOut:
     payload = (
         question.payload
@@ -124,6 +149,8 @@ def _build_out(
         id=question.id,
         course_id=question.course_id,
         topic_id=question.topic_id,
+        learning_outcome_id=question.learning_outcome_id,
+        difficulty=question.difficulty,
         type=question.type,
         payload=payload,
         status=question.status,
@@ -132,6 +159,7 @@ def _build_out(
         reviewed_at=question.reviewed_at,
         created_at=question.created_at,
         source=source,
+        source_stale=source_stale,
     )
 
 
@@ -171,8 +199,16 @@ async def list_questions(
         (await session.execute(query.order_by(Question.created_at.desc()))).scalars().all()
     )
     refs = await load_source_refs(session, [question.source_chunk_id for question in questions])
+    stale = await _source_stale_map(
+        session, [question.source_chunk_id for question in questions]
+    )
     return [
-        _build_out(question, context=context, source=refs.get(question.source_chunk_id))
+        _build_out(
+            question,
+            context=context,
+            source=refs.get(question.source_chunk_id),
+            source_stale=stale.get(question.source_chunk_id, False),
+        )
         for question in questions
     ]
 
@@ -237,6 +273,22 @@ async def generate_questions(
         if payload.answer_format is not None and payload.question_type is not QuestionType.OPEN:
             raise ValidationError("answer_format yalnızca 'open' tipi sorular için verilebilir.")
 
+        if (payload.learning_outcome_id is None) != (payload.difficulty is None):
+            raise ValidationError(
+                "Blueprint üretiminde learning_outcome_id ve difficulty birlikte verilmelidir."
+            )
+
+        learning_outcome: LearningOutcome | None = None
+        if payload.learning_outcome_id is not None:
+            learning_outcome = await session.get(LearningOutcome, payload.learning_outcome_id)
+            if learning_outcome is None or learning_outcome.course_id != context.course_id:
+                raise NotFoundError("Öğrenme çıktısı bulunamadı.")
+            if learning_outcome.topic_id != topic.id:
+                raise ValidationError(
+                    "Seçilen öğrenme çıktısı bu konuya bağlı değil. "
+                    "Önce çıktıyı doğru konuya bağlayın."
+                )
+
         report = await question_gen.generate_questions(
             session,
             course_id=context.course_id,
@@ -249,9 +301,14 @@ async def generate_questions(
             answer_format=payload.answer_format,
             example_questions=payload.example_questions,
             retrieval_limit=settings.retrieval_top_k,
+            learning_outcome=learning_outcome,
+            difficulty=payload.difficulty,
         )
 
         refs = await load_source_refs(
+            session, [question.source_chunk_id for question in report.questions]
+        )
+        stale = await _source_stale_map(
             session, [question.source_chunk_id for question in report.questions]
         )
         return QuestionGenerationOut(
@@ -261,7 +318,12 @@ async def generate_questions(
             rejected=report.rejected,
             rejection_reasons=report.rejection_reasons,
             questions=[
-                _build_out(question, context=context, source=refs.get(question.source_chunk_id))
+                _build_out(
+                    question,
+                    context=context,
+                    source=refs.get(question.source_chunk_id),
+                    source_stale=stale.get(question.source_chunk_id, False),
+                )
                 for question in report.questions
             ],
         )

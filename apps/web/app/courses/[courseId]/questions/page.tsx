@@ -443,7 +443,10 @@ function QuestionRow({
       >
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-fg-subtle">{QUESTION_TYPE[question.type]}</span>
-          <Badge tone={status.tone}>{status.label}</Badge>
+          <span className="flex items-center gap-2">
+            {question.source_stale && <Badge tone="warning">Kaynak değişti</Badge>}
+            <Badge tone={status.tone}>{status.label}</Badge>
+          </span>
         </div>
         <p className="prose-tr mt-1.5 line-clamp-2 text-sm text-fg">
           {view.stem ?? "Soru metni bu kayıtta yok."}
@@ -488,6 +491,7 @@ function QuestionDetail({
         {view.answerFormat && (
           <Badge tone="neutral">{ANSWER_FORMAT[view.answerFormat]}</Badge>
         )}
+        {question.source_stale && <Badge tone="warning">Kaynak sürümü değişti</Badge>}
         <span className="text-xs text-fg-subtle">{topic}</span>
       </div>
 
@@ -518,7 +522,15 @@ function QuestionDetail({
           Üretimde kullanılan kaynak
         </h3>
         {view.source ? (
-          <SourceCard source={view.source} />
+          <>
+            {question.source_stale && (
+              <p className="mb-3 rounded-lg border border-border bg-warning-bg px-4 py-3 text-sm text-warning">
+                Bu sorunun dayandığı belgenin yerine yeni bir sürüm yüklendi. Yeniden
+                üretmeden veya kaynağı doğrulamadan yayınlamayın.
+              </p>
+            )}
+            <SourceCard source={view.source} />
+          </>
         ) : (
           /*
             Kaynağı olmayan soru bir hata ekranı değil ama sessiz de geçilmez:
