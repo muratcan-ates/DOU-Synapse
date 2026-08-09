@@ -478,7 +478,7 @@
           "documents"
         ],
         "summary": "Delete Document",
-        "description": "Belgeyi ve ona bağlı tüm chunk'ları siler.\n\nChunk'lar FK cascade ile gider: materyal kaldırıldığında ondan üretilmiş vektörlerin\naramada kalmaması, \"yalnızca yüklenen materyalden cevap\" garantisinin parçasıdır.",
+        "description": "Belgeyi ve ona bağlı tüm chunk'ları siler.\n\nChunk'lar FK cascade ile gider: materyal kaldırıldığında ondan üretilmiş vektörlerin\naramada kalmaması, \"yalnızca yüklenen materyalden cevap\" garantisinin parçasıdır.\n\nAma cascade her yere ulaşmaz: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşır, yani o chunk'tan üretilmiş bir soru havuzdaysa silme veritabanı düzeyinde\nreddedilir. Bu kısıt bilinçlidir — kaynağı silinmiş bir soru, kaynağına karşı\ndoğrulanamayan bir sorudur (Anayasa I). Kısıtı gevşetmek yerine hatayı çeviriyoruz.",
         "operationId": "delete_document_courses__course_id__documents__document_id__delete",
         "parameters": [
           {
