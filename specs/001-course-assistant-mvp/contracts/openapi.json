@@ -591,6 +591,118 @@
         }
       }
     },
+    "/courses/{course_id}/sources/inspect": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Inspect Sources",
+        "description": "Bir sorgunun getirdiği parçaları ve kanıt kararını LLM çağırmadan göster.",
+        "operationId": "inspect_sources_courses__course_id__sources_inspect_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalInspectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalInspectionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/sources/{chunk_id}": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Source Context",
+        "description": "Atıfın seçili parçasını komşu parçalarıyla özgün belge bağlamında göster.\n\nBu bir yardım yüzeyidir; öğrenci için aktif sınav kilidine bağlıdır. Eğitmen\naynı bağımlılığın içinde muaf tutulur. Yalnız snippet değil, önceki/sonraki\nparça da döner; kullanıcı atfın cümle bağlamını gerçekten denetleyebilir.",
+        "operationId": "source_context_courses__course_id__sources__chunk_id__get",
+        "parameters": [
+          {
+            "name": "chunk_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chunk Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceContextOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/topics": {
       "post": {
         "tags": [
@@ -2458,6 +2570,16 @@
         "title": "DocumentUploadOut",
         "description": "Yükleme kabul yanıtı.\n\nBelge arka planda işlendiği için 202 döner; istemci `status` alanını izleyerek\nilerlemeyi gösterir."
       },
+      "EvidenceLevel": {
+        "type": "string",
+        "enum": [
+          "sufficient",
+          "weak",
+          "out_of_scope"
+        ],
+        "title": "EvidenceLevel",
+        "description": "Kanıt kapısının üç çıktısı."
+      },
       "ExamFinishOut": {
         "properties": {
           "session_id": {
@@ -3077,6 +3199,140 @@
         ],
         "title": "QuestionType"
       },
+      "RetrievalCandidateOut": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "dense_score": {
+            "type": "number",
+            "title": "Dense Score"
+          },
+          "fts_score": {
+            "type": "number",
+            "title": "Fts Score"
+          },
+          "fused_score": {
+            "type": "number",
+            "title": "Fused Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "chunk_id",
+          "document_id",
+          "file_name",
+          "location",
+          "text",
+          "dense_score",
+          "fts_score",
+          "fused_score"
+        ],
+        "title": "RetrievalCandidateOut"
+      },
+      "RetrievalInspectRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Query"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 8
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "RetrievalInspectRequest",
+        "description": "LLM çağırmadan çalıştırılan öğretmen retrieval sorgusu."
+      },
+      "RetrievalInspectionOut": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "level": {
+            "$ref": "#/components/schemas/EvidenceLevel"
+          },
+          "answer_allowed": {
+            "type": "boolean",
+            "title": "Answer Allowed"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "best_dense_score": {
+            "type": "number",
+            "title": "Best Dense Score"
+          },
+          "best_fts_score": {
+            "type": "number",
+            "title": "Best Fts Score"
+          },
+          "lexical_coverage": {
+            "type": "number",
+            "title": "Lexical Coverage"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RetrievalCandidateOut"
+            },
+            "type": "array",
+            "title": "Candidates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "level",
+          "answer_allowed",
+          "threshold",
+          "best_dense_score",
+          "best_fts_score",
+          "lexical_coverage",
+          "candidate_count",
+          "candidates"
+        ],
+        "title": "RetrievalInspectionOut"
+      },
       "SocraticStage": {
         "type": "string",
         "enum": [
@@ -3088,6 +3344,114 @@
         ],
         "title": "SocraticStage",
         "description": "Sokratik merdiven. Sıra ANLAMLIDIR ve atlanamaz (spec FR-014).\n\nÖğrenci kendi denemesini yapmadan bir sonraki kademeye geçilmez; bu kural\nstate machine'de zorlanır, prompt'a bırakılmaz."
+      },
+      "SourceContextChunkOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "chunk_index": {
+            "type": "integer",
+            "title": "Chunk Index"
+          },
+          "page_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Number"
+          },
+          "slide_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slide Number"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "token_count": {
+            "type": "integer",
+            "title": "Token Count"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "chunk_index",
+          "page_number",
+          "slide_number",
+          "section_title",
+          "content_type",
+          "token_count",
+          "text",
+          "selected"
+        ],
+        "title": "SourceContextChunkOut"
+      },
+      "SourceContextOut": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "selected_chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Selected Chunk Id"
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/SourceContextChunkOut"
+            },
+            "type": "array",
+            "title": "Chunks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "file_name",
+          "selected_chunk_id",
+          "chunks"
+        ],
+        "title": "SourceContextOut"
       },
       "SourceRefOut": {
         "properties": {

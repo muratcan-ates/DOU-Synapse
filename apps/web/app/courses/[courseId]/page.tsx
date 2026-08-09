@@ -76,6 +76,16 @@ function CourseDetail() {
       <PageHeader
         title={course.title}
         description={`${documents.length} materyal · ${ready} hazır`}
+        action={
+          isInstructor ? (
+            <Link
+              href={`/courses/${courseId}/sources`}
+              className="inline-flex h-11 items-center rounded-lg border border-border-strong bg-surface px-4 text-sm font-medium text-fg hover:border-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              Retrieval testi
+            </Link>
+          ) : undefined
+        }
       />
 
       {isInstructor && <UploadBox courseId={courseId} onUploaded={pulse} />}
