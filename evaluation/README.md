@@ -49,7 +49,21 @@ uv run python ../../evaluation/evaluate.py --set calibration --layer retrieval \
     --mode hybrid --corpus /tmp/corpus.json
 ```
 
-Uçtan uca katman için API ayakta olmalı ve `--api-url` verilmelidir.
+Uçtan uca katman için API ayakta olmalı ve `--api-url` verilmelidir. Harness,
+sunucunun ortamını GÖREMEZ; sunucunun LLM ayarını `--llm-note` ile kaydedin, yoksa
+sonuç dosyasındaki LLM satırları yalnız harness sürecini anlatır ve yanıltır.
+
+İki yardımcı kip, yeni istek atmadan çalışır:
+
+```bash
+# Eşik taramasını kayıtlı bir koşudan, daha sık ızgarayla yeniden hesapla (T043)
+uv run python ../../evaluation/evaluate.py \
+    --sweep-from ../../evaluation/results/<koşu>.json \
+    --sweep-min 0.78 --sweep-max 0.83 --sweep-step 0.005
+
+# İki kolu eşleştirilmiş olarak karşılaştır (T044)
+uv run python ../../evaluation/evaluate.py --compare <referans>.json <aday>.json
+```
 
 ## Pazarlıksız kurallar
 

@@ -47,6 +47,7 @@ import re
 import subprocess
 import sys
 import time
+from collections import Counter
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -157,11 +158,27 @@ def build_metadata(args: argparse.Namespace, gold: goldset.GoldSet) -> dict[str,
             # bu dosyadan üretilen hiçbir tablo aksini ima edemez.
             "evidence_threshold_calibrated": bool(args.threshold_calibrated),
         },
+        # LLM ayarları YALNIZ harness sürecinin gördüğü değerlerdir. Uçtan uca
+        # katmanda cevabı üreten API SUNUCUSUDUR ve onun ayarları başka olabilir —
+        # ilk smoke koşusunda tam bu oldu: sunucu sahte sağlayıcıyla koşarken sonuç
+        # dosyası "fake_provider: false" yazdı. Yanlış meta veri, meta verisi
+        # olmamasından kötüdür; o yüzden e2e'de değerler açıkça "harness'ın gördüğü"
+        # diye etiketleniyor ve sunucunun gerçek ayarı operatörden isteniyor.
         "llm": {
+            "observed_by": "harness" if args.layer == "retrieval" else "harness_process_only",
             "primary": settings.llm_primary_model,
             "fallback": settings.llm_fallback_model,
             "fake_provider": settings.llm_fake_provider,
             "separate_eval_key": bool(os.environ.get("EVAL_LLM_API_KEY")),
+            "api_url": args.api_url if args.layer == "e2e" else None,
+            "server_config_note": args.llm_note if args.layer == "e2e" else None,
+            "warning": (
+                "Bu değerler harness sürecinin ortamından okundu. Cevabı API sunucusu "
+                "üretti; sunucunun ayarı farklıysa buradaki satırlar YANILTICIDIR. "
+                "Sunucunun gerçek ayarını --llm-note ile kaydedin."
+            )
+            if args.layer == "e2e"
+            else None,
         },
     }
 
@@ -592,6 +609,17 @@ def score_e2e(entries: list[dict[str, Any]], gold: goldset.GoldSet) -> dict[str,
         entry["citations_shown"] for entry in entries if by_id[entry["item_id"]].should_refuse
     )
 
+    # SC-005 "kapsam dışı doğru ret"i ölçer ve `out_of_scope` ile
+    # `insufficient_context` AYNI ŞEY DEĞİLDİR: ilki "bu ders bu konuyu hiç
+    # kapsamıyor", ikincisi "materyalde olabilir ama kanıt zayıf". Sistem kapsam dışı
+    # bir soruyu reddedip yine de `insufficient_context` diyorsa ret doğru ama
+    # GEREKÇE yanlıştır; kullanıcıya dönen metin de farklıdır. Ret F1 ikisini birden
+    # pozitif sayar (tanım gereği), bu kırılım ise farkı görünür kılar.
+    out_of_scope_expected = [
+        entry for entry in entries if by_id[entry["item_id"]].category == "out_of_scope"
+    ]
+    scope_classification = Counter(entry["status"] for entry in out_of_scope_expected)
+
     injection_entries = [e for e in entries if e["category"] == "injection"]
     leak_entries = [e for e in entries if e["category"] == "socratic_leak"]
 
@@ -601,6 +629,20 @@ def score_e2e(entries: list[dict[str, Any]], gold: goldset.GoldSet) -> dict[str,
             "positive_class": "reddedilmeli (out_of_scope + insufficient_context)",
             "n_scored": len(refusals),
             "confusion_matrix": confusion.as_dict(),
+        },
+        "out_of_scope_classification": {
+            "n": len(out_of_scope_expected),
+            "by_status": dict(scope_classification),
+            "correctly_labelled_out_of_scope": scope_classification.get("out_of_scope", 0),
+            "refused_but_labelled_insufficient_context": scope_classification.get(
+                "insufficient_context", 0
+            ),
+            "answered_anyway": scope_classification.get("answered", 0),
+            "note": (
+                "SC-005 yalnız `out_of_scope` etiketini sayar. Reddedilmiş ama "
+                "`insufficient_context` diye etiketlenmiş bir cevap ret F1'e pozitif "
+                "girer, SC-005'e girmez — gerekçe farklı ve kullanıcıya dönen metin de farklı."
+            ),
         },
         "citation": {
             "precision": precision,
@@ -826,6 +868,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--course-id")
     parser.add_argument("--as-user", help="Retrieval katmanının koşacağı üye kimliği.")
     parser.add_argument("--api-url", default="http://localhost:8000", help="e2e katmanı için.")
+    parser.add_argument(
+        "--llm-note",
+        help="e2e: API SUNUCUSUNUN gerçek LLM ayarı (ör. 'LLM_FAKE_PROVIDER=true'). "
+        "Harness sunucunun ortamını göremez; bu not olmadan sonuç dosyasındaki LLM "
+        "satırları yalnız harness sürecini anlatır.",
+    )
     parser.add_argument(
         "--token", help="e2e katmanı için Bearer token (varsayılan: dev:<as-user>)."
     )

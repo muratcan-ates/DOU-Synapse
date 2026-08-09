@@ -319,6 +319,42 @@ indiğinde listeler birleştirilecek ve aynı vaka iki yerde ayrı ayrı yaşama
 
 ---
 
+## 8b. Uçtan uca hattın smoke testi — ve bir sözleşme sorunu
+
+**Numaralar rapora girmez; bu bölüm yalnız hattın çalıştığını ve bir tasarım
+sorusunu kayda geçirir.**
+
+Uçtan uca harness, gerçek API sunucusuna karşı koşuldu (kalibrasyon seti, 15 soru).
+Amaç ölçüm değil, gece koşusundan önce hattın ayakta olduğunu görmekti. Sunucu
+`LLM_FAKE_PROVIDER=true` ile koştu, yani **cevap kalitesine dair hiçbir sayı
+geçerli değildir** — citation precision ve faithfulness KOŞULMADI olarak kalır.
+
+Hat çalışıyor: 15 soru soruldu, 12'si cevaplandı, 3 kapsam dışı soru reddedildi,
+harness sonucu meta verisiyle yazdı.
+
+### ⚠️ Bulgu: kapsam dışı ret `out_of_scope` diye ETİKETLENMİYOR
+
+Üç kapsam dışı sorunun üçü de reddedildi — ama üçü de `insufficient_context`
+durumuyla döndü, hiçbiri `out_of_scope` ile değil.
+
+Bu ayrım ölçüm açısından belirleyici. `contracts.AnswerStatus` ikisini bilinçli
+olarak ayırıyor: `insufficient_context` "materyalde olabilir ama kanıt zayıf",
+`out_of_scope` "bu ders bu konuyu hiç kapsamıyor". **SC-005 yalnız ikincisini
+ölçer.** Yani bugünkü davranışla ret F1 = 1.00 çıkarken SC-005 = %0 çıkar; ikisi de
+doğru hesaplanmıştır, çünkü farklı şeyleri ölçüyorlar.
+
+Sebep büyük olasılıkla mimari: kanıt kapısı (retrieval) abstention üretiyor ve
+abstention'ın doğal etiketi `insufficient_context`. Kapsam dışılığa karar verecek
+katman generation/guardrail tarafında.
+
+**Gruba soru (Şerit 1 + Şerit 2):** `out_of_scope` etiketini kim koyacak? Karar
+verilmeden SC-005 ölçülemez — ölçülse bile ölçtüğünü iddia ettiği şeyi ölçmez.
+Not: bu gözlem sahte sağlayıcıyla yapıldı; gerçek generation hattı farklı
+etiketleyebilir ve o hâlde bu bulgu düşer. Doğrulanması gereken bir şüphedir,
+kanıtlanmış bir kusur değil.
+
+---
+
 ## 9. Faithfulness örneklemi (T047)
 
 **KOŞULMADI.** Gerçek cevap üretilmedi.
