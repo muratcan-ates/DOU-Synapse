@@ -21,6 +21,7 @@ import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import {
   buildChatRequest,
+  CACHED_ANSWER_NOTE,
   canSubmitDraft,
   CHAT_MODE_LABEL,
   CHAT_UI_MODES,
@@ -30,6 +31,7 @@ import {
   isSocraticFollowUp,
   openSessionKey,
   QUESTION_MAX_LENGTH,
+  sessionStageLabel,
   toBlocks,
   userMessage,
   type ChatUiMode,
@@ -179,9 +181,19 @@ function ChatScreen({ courseId }: { courseId: string }) {
       setSessionId(answer.session_id);
       localStorage.setItem(openSessionKey(courseId), answer.session_id);
       setPending(null);
-      // Liste yalnız yeni oturum açıldığında tazelenir; her turda çekmek
-      // değişmeyen veriyi tekrar istemek olurdu (Anayasa XI).
-      if (isNewSession) void sessions.reload();
+      /*
+       * Liste yalnız GERÇEKTEN değiştiyse tazelenir (Anayasa XI). İki durum
+       * değiştirir:
+       *  - yeni oturum açılması (listede yeni satır),
+       *  - Sokratik kademenin ilerlemesi — kademe artık listede de yazıyor ve
+       *    tazelenmezse aktif satır merdivenle çelişir: solda "Tanı", sağdaki
+       *    merdivende "Yönlendirme". Ekranda birbirini yalanlayan iki gösterge
+       *    olmasındansa bir GET fazladan atılır.
+       * Kademe değişmediyse (aynı kademede ikinci ipucu) istek atılmaz.
+       */
+      const listedStage =
+        sessions.data?.find((s) => s.id === answer.session_id)?.socratic_stage ?? null;
+      if (isNewSession || answer.socratic_stage !== listedStage) void sessions.reload();
     } catch (e) {
       // Konuşma geçmişi DURUR; yalnız gönderilemeyen tur geri alınır ve metin
       // girdiye iade edilir — yazdığını kaybetmek hatanın cezası olmamalı.
@@ -222,6 +234,16 @@ function ChatScreen({ courseId }: { courseId: string }) {
                   <p className="prose-tr text-base whitespace-pre-line text-fg">
                     {block.text}
                   </p>
+                  {/*
+                    Önbellek dipnotu: rozet değil, satır içi soluk bir not.
+                    Önbellek isabeti bir kusur değil tasarlanmış davranıştır, o
+                    yüzden ne uyarı tonu ne `role="alert"` var; rozet kullanmamak
+                    da bilinçli — kutulanmış bir işaret cevapla dikkat yarışına
+                    girerdi, oysa baş aktör cevabın kendisi.
+                  */}
+                  {block.cached && (
+                    <p className="prose-tr text-xs text-fg-subtle">{CACHED_ANSWER_NOTE}</p>
+                  )}
                   {block.citations.map((citation, index) => (
                     <SourceCard
                       key={`${citation.chunk_id}:${index}`}
@@ -369,6 +391,10 @@ function ChatScreen({ courseId }: { courseId: string }) {
             <ul className="max-h-72 space-y-1 overflow-y-auto">
               {sessions.data.map((summary) => {
                 const active = summary.id === sessionId;
+                // Sokratik oturuma dönen öğrenci nerede kaldığını listeden görür.
+                // QA'da ve kademesi henüz bildirilmemiş oturumda null döner ve
+                // satıra hiçbir şey eklenmez.
+                const stage = sessionStageLabel(summary);
                 return (
                   <li key={summary.id}>
                     <button
@@ -385,7 +411,9 @@ function ChatScreen({ courseId }: { courseId: string }) {
                         {summary.title ?? "Başlıksız sohbet"}
                       </span>
                       <span className="mt-0.5 block text-xs text-fg-subtle">
-                        {CHAT_MODE_LABEL[summary.mode]}
+                        {stage === null
+                          ? CHAT_MODE_LABEL[summary.mode]
+                          : `${CHAT_MODE_LABEL[summary.mode]} · ${stage}`}
                       </span>
                     </button>
                   </li>

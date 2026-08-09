@@ -879,9 +879,21 @@ function GeneratePanel({
  * Üretim muhasebesi — gizlenmez (Anayasa III).
  *
  * `returned: 0` bir çökme DEĞİLDİR: sağlayıcı şemaya uyan soru döndürmediğinde
- * sistem uydurmak yerine boş dönüyor (fail-closed, Anayasa IV). Bu yüzden ton
- * nötr, kırmızı yok, ünlem yok — abstention'ın hata gibi gösterilmemesiyle aynı
- * karar (DESIGN.md).
+ * ya da konuyla eşleşen materyal bulunamadığında sistem uydurmak yerine boş
+ * dönüyor (fail-closed, Anayasa IV). Bu yüzden ton nötr, kırmızı yok, ünlem
+ * yok, `role="alert"` yok — abstention'ın hata gibi gösterilmemesiyle aynı
+ * karar (DESIGN.md). `role="status"` örtük olarak polite'tır: rapor belirince
+ * ekran okuyucu araya girmeden okur.
+ *
+ * Gerekçe listesi neden `accepted`/`rejected`'a değil kendi uzunluğuna bağlı:
+ * sunucu deneme düzeyindeki hataları da bu diziye yazıyor ve o durumda üç sayı
+ * da sıfır kalıyor. Canlı gövde (materyalsiz ders): `{"requested":3,
+ * "returned":0,"accepted":0,"rejected":0,"rejection_reasons":["konuyla eşleşen
+ * ders materyali bulunamadı"]}` — koşul `rejected > 0` olsaydı eğitmen "3
+ * istedim, 0 geldi" görüp sebebi hiç göremezdi.
+ *
+ * Gerekçe metinleri sunucudan Türkçe gelir ve BİREBİR yazılır; arayüz kendi
+ * açıklamasını uydurmaz (Anayasa V: hata metnini backend üretir).
  */
 function GenerationReport({ summary }: { summary: GenerationSummary }) {
   return (
@@ -889,24 +901,36 @@ function GenerationReport({ summary }: { summary: GenerationSummary }) {
       role="status"
       className="mt-4 rounded-lg border border-border bg-bg px-4 py-3"
     >
-      <p className="text-xs font-medium text-fg-muted">Üretim raporu</p>
+      <h3 className="text-xs font-medium text-fg-muted">Üretim raporu</h3>
       <p className="prose-tr mt-1 text-sm text-fg">{summary.sentence}</p>
 
-      {summary.empty && (
+      {summary.accepted === 0 && (
         <p className="prose-tr mt-2 text-sm text-fg-muted">
-          Bu turda havuza soru eklenmedi. Sistem şemaya ve kaynağa uymayan bir
-          çıktıyı yayımlamak yerine hiçbir şey yazmamayı seçti. Konuyu
-          daraltarak ya da örnek soru vererek tekrar deneyebilirsiniz.
+          Bu turda havuza soru eklenmedi. Bu bir arıza değil: sistem
+          doğrulayamadığı bir soruyu yazmaktansa hiçbir şey yazmıyor.
+          {summary.reasons.length > 0
+            ? " Sunucunun bildirdiği gerekçeler aşağıda."
+            : " Sunucu bu tur için ayrıca bir gerekçe bildirmedi."}
         </p>
       )}
 
       {summary.reasons.length > 0 && (
         <div className="mt-3">
-          <p className="text-xs font-medium text-fg-muted">Eleme gerekçeleri</p>
+          <h4 className="text-xs font-medium text-fg-muted">Eleme gerekçeleri</h4>
           <ul className="mt-1 space-y-0.5">
-            {summary.reasons.map((reason, index) => (
-              <li key={`${reason}-${index}`} className="prose-tr text-xs text-fg-muted">
-                · {reason}
+            {summary.reasons.map((reason) => (
+              <li key={reason.text} className="prose-tr text-xs text-fg-muted">
+                · {reason.text}
+                {/*
+                  Tekrar sayısı yalnız birden büyükse yazılır ve gerekçe
+                  metnine karışmasın diye mono/soluk durur. Sayı ölçülmüş bir
+                  değerdir (dizideki tekrar), uydurma değil.
+                */}
+                {reason.count > 1 && (
+                  <span className="ml-1.5 font-mono text-fg-subtle">
+                    {reason.count} kez
+                  </span>
+                )}
               </li>
             ))}
           </ul>

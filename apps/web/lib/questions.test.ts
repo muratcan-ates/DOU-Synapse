@@ -18,6 +18,7 @@ import {
   countByStatus,
   filterQuestions,
   generationSummary,
+  groupReasons,
   nextDraftId,
   parseExampleQuestions,
   toQuestionView,
@@ -285,6 +286,39 @@ describe("nextDraftId", () => {
   });
 });
 
+describe("groupReasons — tekrar yutulmaz, sayıya çevrilir", () => {
+  test("aynı gerekçe tekrarlanınca tek satır + sayı olur", () => {
+    // Canlı gövdedeki gerçek şekil: iki deneme de aynı duvara toslar ve
+    // sunucu ikisini de ayrı ayrı yazar.
+    expect(
+      groupReasons(["yanıtta 'questions' dizisi yok", "yanıtta 'questions' dizisi yok"]),
+    ).toEqual([{ text: "yanıtta 'questions' dizisi yok", count: 2 }]);
+  });
+
+  test("farklı gerekçeler ilk görülme sırasını korur", () => {
+    expect(groupReasons(["b", "a", "b", "c"])).toEqual([
+      { text: "b", count: 2 },
+      { text: "a", count: 1 },
+      { text: "c", count: 1 },
+    ]);
+  });
+
+  test("metin birebir korunur, kısaltılmaz", () => {
+    const reason = "kaynak uydurma: source_chunk_id retrieve edilmedi";
+    expect(groupReasons([reason])).toEqual([{ text: reason, count: 1 }]);
+  });
+
+  test("boş ve boşluktan ibaret gerekçe düşer", () => {
+    expect(groupReasons(["", "   ", "gerçek sebep"])).toEqual([
+      { text: "gerçek sebep", count: 1 },
+    ]);
+  });
+
+  test("boş dizi boş dizi kalır", () => {
+    expect(groupReasons([])).toEqual([]);
+  });
+});
+
 describe("generationSummary — üretim muhasebesi gizlenmez", () => {
   test("kısmi tur: dört sayı da cümlede", () => {
     const report: QuestionGeneration = {
@@ -298,11 +332,13 @@ describe("generationSummary — üretim muhasebesi gizlenmez", () => {
     expect(summary.sentence).toBe(
       "5 soru istendi, 3 soru üretildi, 2 tanesi havuza taslak olarak eklendi, 1 tanesi kaynak doğrulamasından geçemedi.",
     );
-    expect(summary.reasons).toEqual(["kaynak chunk_id retrieve edilmiş kümede yok"]);
-    expect(summary.empty).toBe(false);
+    expect(summary.reasons).toEqual([
+      { text: "kaynak chunk_id retrieve edilmiş kümede yok", count: 1 },
+    ]);
+    expect(summary.accepted).toBe(2);
   });
 
-  test("tam tur: eleme cümlesi eklenmez", () => {
+  test("tam tur: eleme cümlesi eklenmez, gerekçe listesi boş", () => {
     const summary = generationSummary({
       requested: 3,
       returned: 3,
@@ -315,9 +351,9 @@ describe("generationSummary — üretim muhasebesi gizlenmez", () => {
     expect(summary.reasons).toEqual([]);
   });
 
-  test("boş tur: 'üretildi' iddiası yok, empty işaretli", () => {
-    // Anahtarsız ortamda sahte sağlayıcı geçerli soru üretmiyor; canlı yanıt
-    // birebir bu: returned 0, rejected 0, ama gerekçe var.
+  test("boş tur: 'üretildi' iddiası yok, gerekçe tekrarı sayıya iner", () => {
+    // Sağlayıcı şemaya uyan yanıt vermediğinde canlı gövde birebir bu:
+    // returned 0, rejected 0, ama gerekçe iki kez.
     const summary = generationSummary({
       requested: 3,
       returned: 0,
@@ -326,22 +362,43 @@ describe("generationSummary — üretim muhasebesi gizlenmez", () => {
       rejection_reasons: ["yanıtta 'questions' dizisi yok", "yanıtta 'questions' dizisi yok"],
     });
     expect(summary.sentence).toBe("3 soru istendi, 0 soru üretildi.");
-    expect(summary.empty).toBe(true);
     expect(summary.accepted).toBe(0);
+    expect(summary.reasons).toEqual([
+      { text: "yanıtta 'questions' dizisi yok", count: 2 },
+    ]);
   });
 
   test("gerekçeler `rejected` sıfırken de gösterilir", () => {
     // Sunucu soru düzeyindeki redleri (returned - accepted) yanıt düzeyindeki
     // hatalardan ayrı sayıyor; gerekçeyi `rejected > 0` koşuluna bağlamak
-    // bu turda kullanıcıya hiçbir sebep göstermezdi.
+    // bu turda kullanıcıya hiçbir sebep göstermezdi. Gövde canlı alındı
+    // (materyalsiz ders, 9 Ağustos 2026).
     const summary = generationSummary({
-      requested: 2,
+      requested: 3,
       returned: 0,
       accepted: 0,
       rejected: 0,
-      rejection_reasons: ["yanıtta 'questions' dizisi yok"],
+      rejection_reasons: ["konuyla eşleşen ders materyali bulunamadı"],
     });
-    expect(summary.reasons).toHaveLength(1);
+    expect(summary.reasons).toEqual([
+      { text: "konuyla eşleşen ders materyali bulunamadı", count: 1 },
+    ]);
+  });
+
+  test("sorular döndü ama hiçbiri kabul edilmedi: accepted 0 kalır", () => {
+    // Ekrandaki "havuza soru eklenmedi" notu `accepted`'a bağlı; `returned`'a
+    // bağlansaydı bu tur (3 üretildi, 3'ü elendi) sessiz geçerdi.
+    const summary = generationSummary({
+      requested: 3,
+      returned: 3,
+      accepted: 0,
+      rejected: 3,
+      rejection_reasons: ["kaynak uydurma: source_chunk_id retrieve edilmedi"],
+    });
+    expect(summary.accepted).toBe(0);
+    expect(summary.sentence).toBe(
+      "3 soru istendi, 3 soru üretildi, 0 tanesi havuza taslak olarak eklendi, 3 tanesi kaynak doğrulamasından geçemedi.",
+    );
   });
 });
 

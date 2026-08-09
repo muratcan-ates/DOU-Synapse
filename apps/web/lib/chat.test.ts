@@ -12,6 +12,7 @@ import { describe, expect, test } from "bun:test";
 import {
   ABSTENTION_LABEL,
   buildChatRequest,
+  CACHED_ANSWER_NOTE,
   canSubmitDraft,
   CHAT_MODE_LABEL,
   CHAT_UI_MODES,
@@ -23,6 +24,7 @@ import {
   openSessionKey,
   QUESTION_MAX_LENGTH,
   QUESTION_MIN_LENGTH,
+  sessionStageLabel,
   SOCRATIC_STAGES,
   SOCRATIC_STAGE_LABEL,
   stageIndex,
@@ -52,6 +54,7 @@ const assistant = (
   status: "answered",
   citations: [citation()],
   socraticStage: null,
+  cached: false,
   ...overrides,
 });
 
@@ -234,6 +237,17 @@ describe("citationSource — alıntı chunk'tan birebir gelir", () => {
     expect(citationSource(citation({ location: "Slayt 3" })).location).toBe("Slayt 3");
     expect(citationSource(citation()).fileName).toBe("05-deadlock-demo.pdf");
   });
+
+  test("karta model metni sızmaz: dönen nesnede claim'e yer yok", () => {
+    // Kararın gerekçesi `citationSource`'un başında. Bu test kararı sabitler:
+    // biri `claim`'i karta eklemek isterse önce buradaki gerekçeyi okumak
+    // zorunda kalır. Alan adı bile taşınmıyor — kart yalnız chunk'tan üretilir.
+    expect(Object.keys(citationSource(citation())).sort()).toEqual([
+      "fileName",
+      "location",
+      "quote",
+    ]);
+  });
 });
 
 describe("toBlocks — QA dökümü", () => {
@@ -396,6 +410,7 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
       status: "answered",
       citations: [citation()],
       socraticStage: "nudge",
+      cached: false,
     });
   });
 
@@ -425,6 +440,85 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
       mode: "socratic",
     });
     expect(fromLiveTurn).toEqual(fromServerHistory);
+  });
+});
+
+describe("önbellek işareti — zarftaki `cached` ekrana ulaşır", () => {
+  const cachedAnswer: ChatAnswer = {
+    session_id: "s1",
+    message_id: "m1",
+    status: "answered",
+    mode: "qa",
+    answer: "Context switch maliyetlidir çünkü…",
+    citations: [citation()],
+    hints: [],
+    socratic_stage: null,
+    cached: true,
+  };
+
+  test("canlı yanıttaki cached satıra taşınır", () => {
+    expect(fromAnswer(cachedAnswer).cached).toBe(true);
+    expect(fromAnswer({ ...cachedAnswer, cached: false }).cached).toBe(false);
+  });
+
+  test("cevap bloğu işareti taşır — ekran zarfı okumadan çizemez", () => {
+    const blocks = toBlocks([userMessage("u1", "soru"), fromAnswer(cachedAnswer)], {
+      mode: "qa",
+    });
+    const answerBlock = blocks[1];
+    if (answerBlock.kind !== "answer") throw new Error("cevap bloğu bekleniyordu");
+    expect(answerBlock.cached).toBe(true);
+  });
+
+  test("geçmişten yüklenen tur işaretsizdir — sunucu söylemediğini arayüz söylemez", () => {
+    // `GET /chat/sessions/{id}` zarfında `cached` yok. Yokluk "önbellekten
+    // gelmedi" demek değil; işaret pozitif bir bildirimdir (Anayasa III).
+    const history: ChatMessage[] = [
+      {
+        id: "m1",
+        role: "assistant",
+        content: "cevap",
+        citations: [citation()],
+        status: "answered",
+        socratic_stage: null,
+        created_at: "2026-08-09T10:00:00Z",
+      },
+    ];
+    expect(fromHistory(history)[0].cached).toBe(false);
+  });
+
+  test("dipnot metni sakin: ünlem yok, büyük harf dönüşümü yok", () => {
+    // Önbellek isabeti kusur değil tasarlanmış davranıştır (Anayasa VII).
+    expect(CACHED_ANSWER_NOTE.length).toBeGreaterThan(0);
+    expect(CACHED_ANSWER_NOTE).not.toContain("!");
+    expect(CACHED_ANSWER_NOTE).not.toBe(CACHED_ANSWER_NOTE.toUpperCase());
+  });
+});
+
+describe("sessionStageLabel — kademe yalnız Sokratik oturumda görünür", () => {
+  test("Sokratik oturum kaldığı kademeyi gösterir", () => {
+    // Canlı listede gözlenen biçim: mode "socratic", socratic_stage "nudge".
+    expect(sessionStageLabel({ mode: "socratic", socratic_stage: "nudge" })).toBe(
+      "Yönlendirme",
+    );
+    expect(
+      sessionStageLabel({ mode: "socratic", socratic_stage: "explain_with_source" }),
+    ).toBe("Kaynaklı açıklama");
+  });
+
+  test("QA oturumunda kademe yazılmaz", () => {
+    expect(sessionStageLabel({ mode: "qa", socratic_stage: null })).toBeNull();
+    // Sunucu QA'da kademe döndürmüyor; yine de dönerse listeye sızmaz.
+    expect(sessionStageLabel({ mode: "qa", socratic_stage: "nudge" })).toBeNull();
+    expect(sessionStageLabel({ mode: "exam", socratic_stage: "nudge" })).toBeNull();
+  });
+
+  test("kademesi bilinmeyen Sokratik oturum boş kalır, 'İpucu' yazmaz", () => {
+    // `stageLabel(null)` merdivenin içinde "İpucu" der ve orada doğrudur; listede
+    // aynı kelime "nerede kaldın" sorusuna cevap vermez, bilinmeyeni biliniyor
+    // gibi gösterirdi.
+    expect(sessionStageLabel({ mode: "socratic", socratic_stage: null })).toBeNull();
+    expect(stageLabel(null)).toBe("İpucu");
   });
 });
 

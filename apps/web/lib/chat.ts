@@ -65,6 +65,28 @@ export function stageLabel(stage: SocraticStage | null): string {
   return stage === null ? "İpucu" : SOCRATIC_STAGE_LABEL[stage];
 }
 
+/**
+ * Oturum listesinde gösterilecek kademe etiketi; gösterilmeyecekse null.
+ *
+ * Sokratik bir oturuma dönen öğrencinin listeden görebilmesi gereken tek şey
+ * "nerede kalmıştım". Zarf bunu `ChatSessionSummary.socratic_stage` olarak
+ * taşıyor (canlı listede gözlendi: Sokratik oturumda `"nudge"`, QA'da `null`).
+ *
+ * `stageLabel` burada kullanılmıyor: o, kademesiz ipucuna "İpucu" der ve bu
+ * merdivenin İÇİNDE doğrudur (satırın bir başlığı olmalı). Listede aynı kelime
+ * "nerede kaldın" sorusuna hiçbir şey söylemez, üstelik kademe gerçekten
+ * bilinmiyorken biliniyormuş gibi görünür. Bilinmeyen kademe için hiçbir şey
+ * yazılmaz (Anayasa III); boş kalması hata değildir (Anayasa VII).
+ */
+export function sessionStageLabel(summary: {
+  mode: ChatMode;
+  socratic_stage: SocraticStage | null;
+}): string | null {
+  if (summary.mode !== "socratic") return null;
+  if (summary.socratic_stage === null) return null;
+  return SOCRATIC_STAGE_LABEL[summary.socratic_stage];
+}
+
 /** Göstergedeki nokta sırası; kademe yoksa -1 (hiçbir nokta dolmaz). */
 export function stageIndex(stage: SocraticStage | null): number {
   return stage === null ? -1 : SOCRATIC_STAGES.indexOf(stage);
@@ -94,6 +116,27 @@ export const ABSTENTION_LABEL: Record<AbstentionStatus, string> = {
 export function isAbstention(status: AnswerStatus | null): status is AbstentionStatus {
   return status === "insufficient_context" || status === "out_of_scope";
 }
+
+// ---------------------------------------------------------------------------
+// Önbellek işareti
+// ---------------------------------------------------------------------------
+
+/**
+ * Önbellekten dönen cevabın dipnotu (FR-034).
+ *
+ * Neden ekranda bir karşılığı olmalı: `answer_cache` bu ürünün çevrimdışı yedek
+ * planıdır. Ağ ya da sağlayıcı giderse birebir eşleşen soru LLM'e HİÇ gitmeden
+ * cevaplanır. Zarf bunu `cached` ile söylüyor ve arayüz bugüne kadar okumuyordu;
+ * okumayan bir arayüzde "önbellek çalışıyor" iddiasının gözlenebilir hiçbir
+ * karşılığı yok (Anayasa III).
+ *
+ * Ton kasten sessiz: önbellek isabeti bir kusur değil, tasarlanmış davranıştır.
+ * Ne uyarı, ne ünlem, ne kırmızı. Cümle kendi kendini açıklıyor çünkü tek
+ * başına "önbellekten" kelimesi öğrenciye bir şey anlatmaz; okuyan kişi
+ * cevabının eski mi yoksa bozuk mu olduğunu merak eder.
+ */
+export const CACHED_ANSWER_NOTE =
+  "Bu cevap önbellekten geldi: aynı soru daha önce sorulduğu için yeniden üretilmedi.";
 
 // ---------------------------------------------------------------------------
 // İstek gövdesi
@@ -195,6 +238,16 @@ export interface TranscriptMessage {
   status: AnswerStatus | null;
   citations: Citation[];
   socraticStage: SocraticStage | null;
+  /**
+   * Cevap birebir eşleşmeli önbellekten mi geldi (FR-034)?
+   *
+   * Yalnız CANLI turda bilinir: geçmiş ucu (`GET /chat/sessions/{id}`) bu alanı
+   * taşımıyor, dolayısıyla yeniden açılan bir oturumda dipnot çizilmez. Bu bir
+   * eksiklik gibi görünür ama doğru davranıştır: işaret POZİTİF bir bildirimdir,
+   * yokluğu "önbellekten gelmedi" değil "sunucu söylemedi" demektir. Geçmişte
+   * `false` yazmak, sunucunun vermediği bir bilgiyi uydurmak olurdu (Anayasa III).
+   */
+  cached: boolean;
 }
 
 export function fromHistory(messages: ChatMessage[]): TranscriptMessage[] {
@@ -205,6 +258,7 @@ export function fromHistory(messages: ChatMessage[]): TranscriptMessage[] {
     status: message.status,
     citations: message.citations ?? [],
     socraticStage: message.socratic_stage,
+    cached: false,
   }));
 }
 
@@ -225,14 +279,53 @@ export function fromAnswer(answer: ChatAnswer): TranscriptMessage {
     status: answer.status,
     citations: answer.citations ?? [],
     socraticStage: answer.socratic_stage,
+    cached: answer.cached,
   };
 }
 
 export function userMessage(id: string, content: string): TranscriptMessage {
-  return { id, role: "user", content, status: null, citations: [], socraticStage: null };
+  return {
+    id,
+    role: "user",
+    content,
+    status: null,
+    citations: [],
+    socraticStage: null,
+    cached: false,
+  };
 }
 
-/** Kaynak kartının beklediği biçim. Alıntı `snippet`'tir: chunk'tan birebir gelir. */
+/**
+ * Kaynak kartının beklediği biçim. Alıntı `snippet`'tir: chunk'tan birebir gelir.
+ *
+ * ## `claim` neden hâlâ gösterilmiyor (9 Ağustos kararı)
+ *
+ * Buradaki eski gerekçe YANLIŞTI: "alıntı yeniden yazılmaz" deniyordu, oysa
+ * `claim` bir alıntı değil. Alıntı `snippet`'tir ve chunk metninden kesilir;
+ * `claim` ise "bu atıf hangi iddiayı destekliyor" açıklamasıdır. İkisi ayrı
+ * şeyler ve `claim` artık guardrail'in metne bakan halkasından da geçiyor
+ * (R4, `guardrails/citation.py`), yani göstermek GÜVENLİ. Karar yine de
+ * "gösterme", ama sebebi güvenlik değil; canlı hatta ölçülen üç şey:
+ *
+ * 1. **Önbellek yolunda alan her zaman boş.** `api/chat.py::_store_cache`
+ *    atıfları `_citation_to_json(c)` ile, yani `claim` argümanı olmadan yazıyor;
+ *    dönen her önbellek isabetinde `claim: ""` geliyor (aynı soru iki kez
+ *    soruldu, ikinci yanıtta üç atıfın üçü de boştu). Önbellek bu ürünün
+ *    çevrimdışı planı; tam da gösterime en çok ihtiyaç duyulan turda kaybolan
+ *    bir alanın üstüne kart tasarlanmaz.
+ * 2. **Çevrimdışı yığında alan, alıntının kopyası.** LLM anahtarı yokken devreye
+ *    giren sahte üreteç `claim`'i chunk metninin ilk 90 karakteri olarak
+ *    üretiyor (`generation/fake.py::_summarize`). Ölçüldü: dönen üç `claim`'in
+ *    üçü de `snippet`'in birebir ön eki. Göstermek, aynı cümleyi tek kartta iki
+ *    kez, ikincisini de yarıda kesilmiş hâlde yazmak olurdu.
+ * 3. **Kartın otoritesi "içinde model metni yok"tan geliyor.** Dosya adı ve
+ *    konum chunk metadata'sından üretilir (Anayasa I), alıntı chunk'tan kesilir.
+ *    Modelin kendi cümlesi zaten kartın ÜSTÜNDE duruyor: cevabın kendisi. Aynı
+ *    kutuya bir model cümlesi daha koymak, ürünün sattığı sınırı bulanıklaştırır.
+ *
+ * Karar değişirse (gerçek LLM'de `claim` anlamlı bir cümledir) iki şart:
+ * `_store_cache` claim'i yazmalı ve boş `claim` hiçbir şey çizmemeli.
+ */
 export function citationSource(citation: Citation): {
   fileName: string;
   location: string;
@@ -242,7 +335,6 @@ export function citationSource(citation: Citation): {
     fileName: citation.file_name,
     // Konum sunucudan "Sayfa 7" / "Slayt 3" olarak gelir; arayüz biçimlendirmez.
     location: citation.location,
-    // `claim` model metnidir ve gösterilmez (Anayasa I: alıntı yeniden yazılmaz).
     quote: citation.snippet,
   };
 }
@@ -258,7 +350,7 @@ export interface LadderRung {
 
 export type ChatBlock =
   | { kind: "question"; id: string; text: string }
-  | { kind: "answer"; id: string; text: string; citations: Citation[] }
+  | { kind: "answer"; id: string; text: string; citations: Citation[]; cached: boolean }
   | { kind: "abstention"; id: string; text: string; status: AbstentionStatus }
   | { kind: "ladder"; id: string; rungs: LadderRung[] };
 
@@ -324,6 +416,7 @@ export function toBlocks(
         id: message.id,
         text: message.content,
         citations: message.citations,
+        cached: message.cached,
       });
     }
   }

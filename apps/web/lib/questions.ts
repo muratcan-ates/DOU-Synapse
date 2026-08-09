@@ -297,14 +297,50 @@ export function nextDraftId(
  * Üretim muhasebesi
  * ---------------------------------------------------------------------- */
 
+/** Bir eleme gerekçesi ve kaç kez geldiği. `text` sunucudan BİREBİR gelir. */
+export interface ReasonCount {
+  text: string;
+  count: number;
+}
+
+/**
+ * Eleme gerekçelerini tekrarına göre toplar; ilk görülme sırası korunur.
+ *
+ * Neden toplanıyor: sunucu gerekçeyi DENEME başına yazıyor, yani iki deneme de
+ * aynı duvara toslarsa dizide birebir aynı cümle iki kez durur (canlı örnek:
+ * `["yanıtta 'questions' dizisi yok", "yanıtta 'questions' dizisi yok"]`).
+ * Aynı satırı iki kez alt alta çizmek arayüz hatası gibi okunur; tekrarı
+ * silmek ise bilgi kaybıdır — "bir kez denendi" ile "iki kez denendi, ikisi de
+ * aynı yerde düştü" farklı olaylardır. Sayı ekranda ayrıca yazılır, yani
+ * tekrar YUTULMAZ, yalnız okunur hâle gelir.
+ *
+ * Boş/boşluktan ibaret gerekçe düşer: bu dosyanın "boş metin dolu sayılmaz"
+ * kuralı (bkz. `readString`) burada da geçerli, boş bir madde işareti
+ * kullanıcıya hiçbir şey söylemez.
+ */
+export function groupReasons(reasons: readonly string[]): ReasonCount[] {
+  const order: string[] = [];
+  const counts = new Map<string, number>();
+  for (const raw of reasons) {
+    const text = raw.trim();
+    if (text === "") continue;
+    const seen = counts.get(text);
+    if (seen === undefined) {
+      order.push(text);
+      counts.set(text, 1);
+    } else {
+      counts.set(text, seen + 1);
+    }
+  }
+  return order.map((text) => ({ text, count: counts.get(text) ?? 1 }));
+}
+
 export interface GenerationSummary {
   /** Okunur özet cümlesi: istenen / dönen / kabul / elenen. */
   sentence: string;
-  /** Sunucunun verdiği eleme gerekçeleri, olduğu gibi. */
-  reasons: string[];
-  /** Model hiç geçerli soru döndürmedi. Çökme değil, fail-closed sonucu. */
-  empty: boolean;
-  /** Havuza gerçekten eklenen soru sayısı. */
+  /** Sunucunun eleme gerekçeleri; metin birebir, tekrar sayıya indirilmiş. */
+  reasons: ReasonCount[];
+  /** Havuza gerçekten eklenen soru sayısı. Sıfırsa ekran nötr bir not yazar. */
   accepted: number;
 }
 
@@ -317,11 +353,13 @@ export interface GenerationSummary {
  *
  * `rejected` sıfırken de gerekçe gelebilir: sunucu soru düzeyindeki redleri
  * (`returned - accepted`) ile yanıt düzeyindeki hataları ("yanıtta 'questions'
- * dizisi yok") ayrı sayıyor ve ikincisi hiç soru dönmediğinde de yazılıyor.
- * Bu yüzden gerekçe listesi `rejected`'a bağlanmaz, ayrı gösterilir.
+ * dizisi yok", "konuyla eşleşen ders materyali bulunamadı") ayrı sayıyor ve
+ * ikincisi hiç soru dönmediğinde de yazılıyor. Canlı doğrulandı (9 Ağustos
+ * 2026, materyalsiz ders): `returned 0, rejected 0, rejection_reasons` tek
+ * maddeli. Gerekçe listesi bu yüzden `rejected`'a DEĞİL kendi uzunluğuna
+ * bağlanır; `rejected > 0` koşulu bu turu ekranda tümüyle sessizleştirirdi.
  */
 export function generationSummary(report: QuestionGeneration): GenerationSummary {
-  const reasons = report.rejection_reasons ?? [];
   const parts = [
     `${report.requested} soru istendi`,
     `${report.returned} soru üretildi`,
@@ -334,8 +372,7 @@ export function generationSummary(report: QuestionGeneration): GenerationSummary
   }
   return {
     sentence: `${parts.join(", ")}.`,
-    reasons,
-    empty: report.returned === 0,
+    reasons: groupReasons(report.rejection_reasons ?? []),
     accepted: report.accepted,
   };
 }
