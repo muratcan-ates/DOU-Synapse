@@ -105,13 +105,41 @@ uv run pytest -q        # 92 test yeşil olmalı
 92 yeşil görmeden kod yazmaya başlama. Görmüyorsan sorun sende değil, kurulumda;
 `specs/001-course-assistant-mvp/quickstart.md` tam anlatımı içerir.
 
-## 5. Git akışı — tam yetki sende
+## 5. Git akışı — ÖNCE KENDİ ÇALIŞMA AĞACINI AÇ
 
-Kendi branch'inde çalış, kendi commit'lerini at, **kendin push et**. İzin sorma.
+**Bu bölümü atlama.** Beş oturum aynı makinede, aynı klasörde çalışıyor. `git
+checkout -b` çalıştırırsan dalı YALNIZ kendin için değil, o klasörü kullanan
+herkes için değiştirirsin: başka bir oturum farkında olmadan senin dalında
+çalışmaya başlar ve commit'siz işi senin dalının üstünde birikir.
+
+Bu 9 Ağustos'ta fiilen yaşandı — lider, farkında olmadan Şerit 3'ün dalında
+çalışıyordu. İş kaybolmadı ama kurtarmak vakit aldı. Çözüm: **git worktree.**
+Her oturum kendi klasöründe, kendi dalında, aynı depoyu paylaşarak çalışır.
+
+**İlk iş — kendi çalışma ağacını aç:**
 
 ```bash
-git checkout -b feat/<serit-adi>
-# ... çalış, sık sık commit et ...
+cd ~/code/DOU-Synapse
+git fetch origin
+git worktree add ~/code/dou-<serit-adi> -b feat/<serit-adi> origin/main
+cd ~/code/dou-<serit-adi>
+```
+
+Örnek: Şerit 1 için `git worktree add ~/code/dou-retrieval -b feat/retrieval origin/main`
+
+Bundan sonra **hep o klasörde** çalış. `~/code/DOU-Synapse` klasörüne dokunma.
+
+Kurulum o klasörde bir kez tekrarlanır (venv ve node_modules paylaşılmaz):
+
+```bash
+cd apps/api && uv venv --python 3.12 && uv pip install -e ".[dev]" && cp ../../.env.example .env
+```
+
+Veritabanı paylaşılır, yeniden kurmana gerek yok.
+
+Sonra: kendi commit'lerini at, **kendin push et**. İzin sorma.
+
+```bash
 git push origin feat/<serit-adi>
 ```
 
@@ -192,6 +220,23 @@ Kendi numaran dışına çıkma.
 Şerit 3 ve 4, bağımlı oldukları modüller henüz yazılmamışken **sahte
 uygulamalarla** ilerler. Gerçek modül `main`'e inince rebase alıp sahteyi
 testlerde bırakır, üretim yolunda gerçeğe geçer.
+
+## 9.1 Zaten başlamış oturumlar için
+
+Şerit 2 ve 3 çalışmaya `~/code/DOU-Synapse` içinde başladı. İşiniz kaybolmaz,
+ama devam etmeden önce kendi ağacınıza taşıyın:
+
+```bash
+cd ~/code/DOU-Synapse
+git status                      # commit'siz iş var mı?
+git stash push -u -m "gecis"    # varsa sakla
+git worktree add ~/code/dou-<serit-adi> feat/<serit-adi>
+cd ~/code/dou-<serit-adi>
+git stash pop                   # sakladıysan geri al
+```
+
+Dalınız zaten push'landıysa `-b` olmadan yazın (yukarıdaki gibi); dal yeni
+oluşturulacaksa `-b feat/<serit-adi> origin/main` ekleyin.
 
 ## 10. Ne zaman durursun
 
