@@ -1044,3 +1044,139 @@ class TestIddiaMetniTemizligi:
 
         assert "<script>" not in sonuc.claims[kaynak.chunk_id]
         assert "dört koşul" in sonuc.claims[kaynak.chunk_id]
+
+
+# ---------------------------------------------------------------------------
+# Alan sayımı — ekrana çıkan HER metin alanı bir halkadan geçti mi
+#
+# Bugün aynı sınıftan dört açık bulundu (atıf kartı, önbellek isabeti, şablon
+# ipucu, `claim`) ve dördü de tek bir varsayımdan doğdu: "cevap metni zincirden
+# geçti" ile "kullanıcının gördüğü her şey zincirden geçti" aynı sanılıyordu.
+#
+# Dört ayrı düzeltme, beşincisini engellemez. Engelleyen şey, zarfın metin
+# alanlarını SAYAN ve her birinin temiz olduğunu gösteren bir testtir — yeni bir
+# alan eklendiğinde bu test onu görür.
+# ---------------------------------------------------------------------------
+
+#: Her metin kaynağına aynı anda konan yük. Tek bir alan denetimsiz kalırsa
+#: işaretlerden en az biri zarfa ulaşır.
+DUSMANCA_ISARETLER = ("<script", "onerror=", "javascript:", "sizinti@dogus.edu.tr")
+
+#: SERBEST METİN alanları: içeriği modelden ya da materyalden gelir, dolayısıyla
+#: her biri bir halkadan geçmek ZORUNDA.
+SERBEST_METIN_ALANLARI = frozenset(
+    {
+        "answer",
+        "citations[].claim",
+        "citations[].file_name",
+        "citations[].location",
+        "citations[].snippet",
+        "hints[].text",
+        "hints[].file_name",
+        "hints[].location",
+    }
+)
+
+#: YAPISAL alanlar: JSON'da string görünürler ama tipleri UUID ya da enum'dur ve
+#: Pydantic doğrulaması yük taşımalarını imkânsız kılar. Ayrı listelenmelerinin
+#: sebebi, sayımın "unuttum" ile "bilerek muaf" arasında ayrım yapabilmesi.
+YAPISAL_ALANLAR = frozenset(
+    {
+        "session_id",
+        "message_id",
+        "status",
+        "mode",
+        "citations[].chunk_id",
+        "hints[].chunk_id",
+    }
+)
+
+
+def _metin_alanlari(payload: dict[str, Any], prefix: str = "") -> dict[str, str]:
+    """Zarftaki tüm string yaprakları `yol -> değer` olarak toplar."""
+    found: dict[str, str] = {}
+    for key, value in payload.items():
+        path = f"{prefix}{key}"
+        if isinstance(value, str):
+            found[path] = value
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    found.update(_metin_alanlari(item, f"{path}[]."))
+        elif isinstance(value, dict):
+            found.update(_metin_alanlari(value, f"{path}."))
+    return found
+
+
+class TestZarfAlanSayimi:
+    async def _dusmanca_zarf(self, mode: ChatMode) -> dict[str, Any]:
+        from app.modules.generation.service import GenerationService
+        from app.schemas.chat import to_chat_response
+
+        yuk = "<script>alert(1)</script> javascript:void(0) sizinti@dogus.edu.tr"
+        kaynak = chunk(
+            text=f"Ders notu: {yuk}",
+            file_name=f"<img src=x onerror=alert(1)>{yuk}.pdf",
+            section_title=yuk,
+        )
+        payload = json.dumps(
+            {
+                "status": "answered",
+                "answer": f"Materyale göre: {yuk} dört koşul gerekir.",
+                "citations": [{"chunk_id": str(kaynak.chunk_id), "claim": f"{yuk} destekler"}],
+                "hints": [],
+            },
+            ensure_ascii=False,
+        )
+
+        sonuc = await GenerationService(llm=ScriptedLlm(payload)).generate_with_claims(
+            question="Nedir?", chunks=[kaynak], mode=mode
+        )
+        elenmis = screen(sonuc.answer, [kaynak])
+        assert not elenmis.blocked, "sahne kurulamadı: cevap bloklandı"
+
+        kalan = {c.chunk_id for c in elenmis.answer.citations}
+        return dict(
+            to_chat_response(
+                elenmis.answer,
+                session_id=uuid4(),
+                message_id=uuid4(),
+                claims={k: v for k, v in sonuc.claims.items() if k in kalan},
+            ).model_dump(mode="json")
+        )
+
+    async def test_hicbir_metin_alaninda_yuk_kalmaz(self) -> None:
+        zarf = await self._dusmanca_zarf(ChatMode.QA)
+        alanlar = _metin_alanlari(zarf)
+
+        for yol, deger in alanlar.items():
+            for isaret in DUSMANCA_ISARETLER:
+                assert isaret not in deger, f"{yol} denetimsiz: {deger!r}"
+
+    async def test_sokratik_zarfta_da_temiz(self) -> None:
+        """`hints[]` yalnız Sokratik modda dolar; QA zarfı onu hiç sınamaz."""
+        zarf = await self._dusmanca_zarf(ChatMode.SOCRATIC)
+        assert zarf["hints"], "sahne kurulamadı: ipucu üretilmedi"
+
+        for yol, deger in _metin_alanlari(zarf).items():
+            for isaret in DUSMANCA_ISARETLER:
+                assert isaret not in deger, f"{yol} denetimsiz: {deger!r}"
+
+    async def test_alan_listesi_degismedi(self) -> None:
+        """Yeni bir metin alanı eklendiğinde bu test onu görür.
+
+        Bugünkü dört açığın hiçbiri yeni bir alan eklenirken doğmadı — hepsi zaten
+        vardı ve hiç sayılmamıştı. Sayım olmadan beşincisi de aynı yoldan gelir.
+        """
+        zarf = await self._dusmanca_zarf(ChatMode.SOCRATIC)
+        bulunan = set(_metin_alanlari(zarf))
+        beklenen = SERBEST_METIN_ALANLARI | YAPISAL_ALANLAR
+
+        assert bulunan == beklenen, (
+            f"zarfın string alanları değişti.\n"
+            f"  yeni  : {sorted(bulunan - beklenen)}\n"
+            f"  giden : {sorted(beklenen - bulunan)}\n"
+            f"Yeni bir alan eklendiyse iki sorudan birini cevaplayın: serbest metin "
+            f"mi (hangi halkadan geçiyor?) yoksa yapısal mı (tipi yük taşımasını "
+            f"engelliyor mu?). Cevaba göre doğru listeye ekleyin."
+        )
