@@ -1,0 +1,155 @@
+{
+  "set": "calibration",
+  "version": "1.0",
+  "created": "2026-08-09",
+  "material": "sample_data/isletim-sistemleri v1",
+  "purpose": "Eşik ayarı (T043). Metrik RAPORLANMAZ; raporlanan her sayı holdout'tan gelir.",
+  "verification": {
+    "page_numbers": "app.modules.ingestion.parsers.parse() ile üretim ayrıştırıcısından doğrulandı (evaluation/verify_gold_set.py). Sayfa numarası tahmin edilmedi.",
+    "content_review": "BEKLİYOR — soru/kaynak eşlemesinin içerik doğrulaması insan işidir (koordinasyon §8). Metehan doğrulayıp bu alanı tarihiyle günceller.",
+    "instructor_review": "BEKLİYOR — G11'de Yasemin Karagül'e sunulacak."
+  },
+  "items": [
+    {
+      "id": "C-001",
+      "question": "Process Control Block (PCB) içinde hangi bilgiler saklanır?",
+      "category": "direct",
+      "expected_sources": [{ "file_name": "01-processes.pdf", "page_number": 1 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "PID, süreç durumu, program sayacı/yazmaçlar, bellek yönetim bilgisi, açık dosya tablosu, zamanlama bilgisi."
+    },
+    {
+      "id": "C-002",
+      "question": "Round-robin zamanlamada quantum süresi çok büyük seçilirse ne olur?",
+      "category": "direct",
+      "expected_sources": [{ "file_name": "02-cpu-scheduling.pdf", "page_number": 1 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "RR pratikte FCFS'e yaklaşır, yanıt süresi kötüleşir. C-002 bilinçli olarak 'çok küçük' değil 'çok büyük' yönünü sorar; holdout'taki quantum soruları küçük yönü ve pratik kuralı sorar."
+    },
+    {
+      "id": "C-003",
+      "question": "Sayfa hatası (page fault) oluştuğunda işletim sistemi hangi adımları uygular?",
+      "category": "direct",
+      "expected_sources": [{ "file_name": "03-memory-management.pdf", "page_number": 1 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Donanım trap üretir; OS sayfayı diskten yükler, sayfa tablosunu günceller, komutu yeniden çalıştırır."
+    },
+    {
+      "id": "C-004",
+      "question": "Bir kritik bölge çözümünün sağlaması gereken üç özellik nedir?",
+      "category": "direct",
+      "expected_sources": [{ "file_name": "04-synchronization.pdf", "page_number": 1 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Karşılıklı dışlama, ilerleme, sınırlı bekleme."
+    },
+    {
+      "id": "C-005",
+      "question": "Banker's Algorithm hangi bilgiyi her süreç için tutar?",
+      "category": "direct",
+      "expected_sources": [{ "file_name": "05-deadlock-demo.pdf", "page_number": 2 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Max, Allocation, Need = Max - Allocation."
+    },
+    {
+      "id": "C-006",
+      "question": "inode nedir ve içinde hangi bilgiler tutulur?",
+      "category": "direct",
+      "expected_sources": [{ "file_name": "06-file-systems.pptx", "slide_number": 5 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Slayt kaynağı: 'Sayfa' değil 'Slayt N' gösterilmeli — konum biçimi de bu soruyla sınanır."
+    },
+    {
+      "id": "C-007",
+      "question": "Süreçler arası context switch neden aynı süreç içindeki iki thread arasındaki geçişten daha pahalıdır?",
+      "category": "multi_chunk",
+      "expected_sources": [
+        { "file_name": "01-processes.pdf", "page_number": 3 },
+        { "file_name": "03-memory-management.pdf", "page_number": 2 }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "MMU'nun yeni sayfa tablosuna yönlendirilmesi + TLB flush. Tam kapsama için iki dosya da gerekir."
+    },
+    {
+      "id": "C-008",
+      "question": "Aynı sürecin thread'leri belleği paylaştığı için hangi sorun doğar ve bu sorun hangi araçlarla önlenir?",
+      "category": "multi_chunk",
+      "expected_sources": [
+        { "file_name": "01-processes.pdf", "page_number": 2 },
+        { "file_name": "04-synchronization.pdf", "page_number": 1 }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Yarış durumu (race condition); kritik bölge + mutex/semafor."
+    },
+    {
+      "id": "C-009",
+      "question": "Round-robin quantum seçimi ile TLB arasında nasıl bir ilişki vardır?",
+      "category": "multi_chunk",
+      "expected_sources": [
+        { "file_name": "02-cpu-scheduling.pdf", "page_number": 1 },
+        { "file_name": "03-memory-management.pdf", "page_number": 2 }
+      ],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Küçük quantum -> sık context switch -> süreçler arasıysa TLB flush maliyeti."
+    },
+    {
+      "id": "C-010",
+      "question": "fork() çağrısı kaç kez döner ve ebeveyn ile çocukta hangi değeri döndürür?",
+      "category": "technical_term",
+      "expected_sources": [{ "file_name": "01-processes.pdf", "page_number": 2 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "FTS token testi: 'fork()' parantezleriyle birlikte aranabilmeli (simple + unaccent, köklendirme yok)."
+    },
+    {
+      "id": "C-011",
+      "question": "TLB miss durumunda ne olur?",
+      "category": "technical_term",
+      "expected_sources": [{ "file_name": "03-memory-management.pdf", "page_number": 2 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Sayfa tablosuna gidilir (yavaş), bulunan çeviri TLB'ye eklenir. 'TLB' büyük harfli kısaltma token'ı."
+    },
+    {
+      "id": "C-012",
+      "question": "Öncelik kuyruğu (min-heap) tabanlı bir zamanlayıcının karmaşıklığı nedir?",
+      "category": "technical_term",
+      "expected_sources": [{ "file_name": "02-cpu-scheduling.pdf", "page_number": 2 }],
+      "expected_chunk_ids": [],
+      "expected_behavior": "answered",
+      "notes": "Ekleme/çıkarma O(log n); n süreç için O(n log n). Boşluklu matematiksel token — PDF'te 'O(n log n)' satır sarmasıyla bölünmüş olabilir, retrieval bunu yakalamalı."
+    },
+    {
+      "id": "C-013",
+      "question": "Blockchain'de proof-of-work konsensüsü nasıl çalışır?",
+      "category": "out_of_scope",
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope",
+      "notes": "Materyalde hiç geçmiyor; konu olarak da uzak."
+    },
+    {
+      "id": "C-014",
+      "question": "React'te useEffect hook'u ne zaman çalışır?",
+      "category": "out_of_scope",
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope",
+      "notes": "Farklı alan; kolay negatif."
+    },
+    {
+      "id": "C-015",
+      "question": "İlişkisel veritabanlarında üçüncü normal form (3NF) nedir?",
+      "category": "out_of_scope",
+      "expected_chunk_ids": [],
+      "expected_behavior": "out_of_scope",
+      "notes": "Bilgisayar bilimi ama bu dersin materyalinde yok — eşiğin 'yakın ama kapsam dışı' davranışını görmek için."
+    }
+  ]
+}
