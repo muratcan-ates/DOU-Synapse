@@ -69,20 +69,65 @@ def prepare_database(database: str, *, recreate: bool, pg_bin: str) -> None:
     )
 
 
-async def build(material: Path, storage_root: Path, admin_dsn: str) -> dict[str, object]:
+def _embedding_runtime(provider: str) -> dict[str, str]:
+    """Vektörü üreten kütüphanenin sürümü. Gerekçe için `summary` içindeki nota bakın."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    packages = ["fastembed"] if provider == "fastembed" else ["onnxruntime", "tokenizers"]
+    runtime: dict[str, str] = {}
+    for package in packages:
+        try:
+            runtime[package] = version(package)
+        except PackageNotFoundError:  # pragma: no cover
+            runtime[package] = "kurulu değil"
+    return runtime
+
+
+def install_embedding_override(name: str | None) -> tuple[str, str] | None:
+    """Ölçüme özgü bir embedding sağlayıcısını üretim kancasına takar (T045).
+
+    `EMBEDDING_PROVIDER` ayarı yalnız `fastembed` ve `hashing` tanır ve o liste
+    üretimindir; `config.py` bu şeridin dosyası değil. bge-m3 bir ADAY, bir üretim
+    seçeneği değil — o yüzden ayar şemasına eklenmedi, buradan enjekte ediliyor.
+    Dönen çift, sonuç dosyasına yazılacak (sağlayıcı, model) adıdır.
+    """
+    if name is None:
+        return None
+    if name != "bge-m3":
+        raise SystemExit(f"bilinmeyen embedding override: {name!r} (yalnız 'bge-m3')")
+    ensure_api_on_path()
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from embedding_bge_m3 import BgeM3OnnxProvider
+
+    from app.modules.ingestion.embedding import set_embedding_provider
+
+    provider = BgeM3OnnxProvider()
+    set_embedding_provider(provider)
+    return "bge-m3-onnx", provider.name
+
+
+async def build(
+    material: Path,
+    storage_root: Path,
+    admin_dsn: str,
+    embedding_override: str | None = None,
+    extra_material: Path | None = None,
+) -> dict[str, object]:
     """Dersi açar, materyali yükler, worker'ı boşaltır ve korpusu özetler."""
     ensure_api_on_path()
+    from httpx import ASGITransport, AsyncClient
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import create_async_engine
+
     from app import worker
     from app.core.config import get_settings
     from app.core.db import dispose_engine, rls_session
     from app.main import create_app
     from app.modules.ingestion.storage import LocalFileStorage, set_storage
-    from httpx import ASGITransport, AsyncClient
-    from sqlalchemy import text
-    from sqlalchemy.ext.asyncio import create_async_engine
 
     settings = get_settings()
     set_storage(LocalFileStorage(storage_root))
+    override = install_embedding_override(embedding_override)
 
     # Eğitmen profili sahip bağlantısıyla yazılır: profiles'a INSERT politikası yoktur
     # (kayıt üretimde Supabase Auth köprüsünden gelir), yani `dou_app` bu satırı
@@ -107,9 +152,16 @@ async def build(material: Path, storage_root: Path, admin_dsn: str) -> dict[str,
         course_id = UUID(response.json()["id"])
 
         uploaded: list[str] = []
-        # ASYNC240: dosya okuma bloklar ama bu tek seferlik bir kurulum betiği; eşzamanlı
-        # başka bir iş yok ve anyio bağımlılığı eklemek maliyeti karşılamaz.
-        for path in sorted(material.iterdir()):  # noqa: ASYNC240
+        # `extra_material` T046 içindir: zehirli belge ölçüm materyalinin YANINA yüklenir
+        # ama `sample_data/` içine KONMAZ. Konsaydı ölçüm korpusuna da girer ve Recall
+        # ile citation precision sayıları zehirli metinle kirlenirdi.
+        # ASYNC240: dizin listeleme ve dosya okuma bloklar ama bu tek seferlik bir
+        # kurulum betiği; eşzamanlı başka bir iş yok ve anyio bağımlılığı eklemek
+        # maliyeti karşılamaz.
+        sources = sorted(material.iterdir())  # noqa: ASYNC240
+        if extra_material is not None:
+            sources += sorted(extra_material.iterdir())  # noqa: ASYNC240
+        for path in sources:
             if path.suffix.lower() not in CORPUS_SUFFIXES:
                 continue
             with path.open("rb") as handle:
@@ -131,8 +183,22 @@ async def build(material: Path, storage_root: Path, admin_dsn: str) -> dict[str,
         summary = {
             "course_id": str(course_id),
             "instructor_id": str(instructor_id),
-            "embedding_provider": settings.embedding_provider,
-            "embedding_model": settings.embedding_model,
+            # Korpusun HANGİ VERİTABANINDA durduğu özete yazılır. Yazılmadığı sürece
+            # `evaluate.py` .env'deki geliştirme veritabanına bağlanıp bu course_id'ye
+            # ait hiçbir chunk bulamıyor, hata da vermiyordu: her soru 0 sonuç dönüyor,
+            # Recall 0.000 olarak dosyaya yazılıyordu. Sessizce yanlış sayı üreten bir
+            # koşu, hiç koşmayandan kötüdür.
+            "database_url": str(settings.database_url),
+            "embedding_provider": override[0] if override else settings.embedding_provider,
+            "embedding_model": override[1] if override else settings.embedding_model,
+            # Vektörü ÜRETEN kütüphanenin sürümü. Sağlayıcı adı yetmiyor: fastembed
+            # 0.5.1'den sonra e5-large'ı CLS yerine mean pooling ile kuruyor ve bu bir
+            # vektör uzayı değişikliği. Aynı "fastembed" adıyla iki farklı uzay
+            # üretilebiliyor; korpus hangisiyle gömüldüğünü kendi taşımalı, yoksa
+            # üzerinde ölçülen hiçbir sayı yeniden üretilemez (12_R2_OLCUM.md eki).
+            "embedding_runtime": _embedding_runtime(
+                override[0] if override else settings.embedding_provider
+            ),
             "uploaded": uploaded,
             "documents": [
                 {
@@ -199,6 +265,16 @@ def main(argv: list[str] | None = None) -> int:
         help="Sahip/superuser bağlantısı (profiles seed'i için). Varsayılan: yerel superuser.",
     )
     parser.add_argument("--out", type=Path, help="Özeti bu dosyaya JSON olarak yaz.")
+    parser.add_argument(
+        "--extra-material",
+        type=Path,
+        help="Ek materyal dizini (T046 zehirli belgesi). Ölçüm korpusunda kullanılmaz.",
+    )
+    parser.add_argument(
+        "--embedding-override",
+        choices=("bge-m3",),
+        help="Ölçüme özgü embedding sağlayıcısı (T045 adayı). Üretim ayarını değiştirmez.",
+    )
     args = parser.parse_args(argv)
     admin_dsn = args.admin_dsn or f"postgresql+psycopg://localhost/{args.database}"
 
@@ -218,7 +294,15 @@ def main(argv: list[str] | None = None) -> int:
 
     get_settings.cache_clear()
 
-    summary = asyncio.run(build(args.material, args.storage_root, admin_dsn))
+    summary = asyncio.run(
+        build(
+            args.material,
+            args.storage_root,
+            admin_dsn,
+            args.embedding_override,
+            args.extra_material,
+        )
+    )
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     if args.out:

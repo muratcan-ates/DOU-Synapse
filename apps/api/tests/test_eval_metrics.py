@@ -269,14 +269,21 @@ class TestGoldSetSelection:
         assert all(
             item.expected_sources or item.category == "out_of_scope" for item in retrieval_items
         )
-        assert len(e2e_items) == len(retrieval_items)  # kalibrasyonda ikisi de 15
+        # Kalibrasyonda injection/sızıntı kaydı yok, dolayısıyla iki katman aynı
+        # soruları alır. Sabit bir sayı YAZILMIYOR: set büyüdüğünde kırılan bir test,
+        # davranışı değil boyutu ölçer.
+        assert len(e2e_items) == len(retrieval_items)
 
         # Holdout'ta fark görünür: injection ve sızıntı senaryoları YALNIZ uçtan uca
         # katmanda sorulur, retrieval katmanında sorulacak bir şeyleri yoktur.
         holdout = goldset.load(EVALUATION_ROOT / "gold_set" / "holdout.json")
         holdout_retrieval = evaluate.select_items(holdout, "retrieval", None)
         holdout_e2e = evaluate.select_items(holdout, "e2e", None)
-        assert len(holdout_e2e) - len(holdout_retrieval) == 21  # 15 injection + 6 sızıntı
+        yalniz_e2e = sum(
+            1 for item in holdout.items if item.category in {"injection", "socratic_leak"}
+        )
+        assert yalniz_e2e > 0
+        assert len(holdout_e2e) - len(holdout_retrieval) == yalniz_e2e
         assert not any(
             item.category in {"injection", "socratic_leak"} for item in holdout_retrieval
         )
@@ -298,8 +305,11 @@ class TestGoldSetSelection:
         ]
         scored = evaluate.score_retrieval(entries, gold)
 
-        assert scored["n_asked"] == 15  # 12 kaynaklı + 3 kapsam dışı soruldu
-        assert scored["n_items"] == 12  # yalnız 12'si puanlandı
+        kapsam_disi = sum(1 for item in gold.items if item.category == "out_of_scope")
+        puanlanan = sum(1 for item in gold.items if item.is_retrieval_scored)
+        assert kapsam_disi > 0  # yoksa test hiçbir şey ölçmezdi
+        assert scored["n_asked"] == puanlanan + kapsam_disi  # ikisi de SORULDU
+        assert scored["n_items"] == puanlanan  # yalnız kaynağı olanlar PUANLANDI
         assert scored["recall_at_5"] == pytest.approx(1.0)
 
     def test_esik_taramasi_her_esikte_iki_hatayi_ayri_sayar(self) -> None:
@@ -317,12 +327,16 @@ class TestGoldSetSelection:
             for item in items
         ]
         sweep = {row["threshold"]: row for row in evaluate.threshold_sweep(entries, gold)}
+        kapsam_disi = sum(1 for item in items if item.category == "out_of_scope")
+        cevaplanabilir = len(items) - kapsam_disi
+        assert kapsam_disi > 0 and cevaplanabilir > 0
 
         assert sweep[0.0]["correct_refusal"] == 0  # kapı hiç kapanmıyor
-        assert sweep[0.0]["missed_out_of_scope"] == 3
-        assert sweep[0.3]["correct_refusal"] == 3  # üçü de doğru reddedildi
+        assert sweep[0.0]["missed_out_of_scope"] == kapsam_disi
+        assert sweep[0.3]["correct_refusal"] == kapsam_disi  # hepsi doğru reddedildi
         assert sweep[0.3]["incorrect_refusal"] == 0
-        assert sweep[0.7]["incorrect_refusal"] == 12  # eşik fazla yüksek: hepsi kapandı
+        # Eşik fazla yüksek: cevaplanabilirlerin hepsi de kapandı.
+        assert sweep[0.7]["incorrect_refusal"] == cevaplanabilir
 
 
 class TestLeakFlags:
@@ -520,3 +534,82 @@ class TestLabelAgreement:
     def test_esit_olmayan_uzunluk_reddedilir(self) -> None:
         with pytest.raises(ValueError, match="aynı sayıda"):
             metrics.label_agreement(["a"], ["a", "b"])
+
+
+class TestSessizHataKorumalari:
+    """9 Ağustos'ta ölçüm aracında bulunan iki sessiz hatanın nöbetçileri.
+
+    İkisi de üretim kusuru değildi; ölçüm aracının sessizce yanlış sayı üretmesiydi
+    ve bu daha tehlikelidir — ölçülen sistemin hatası raporda görünür, ölçüm aracının
+    hatası raporu kendisi yazar.
+    """
+
+    def test_veritabani_parmak_izine_girer(self) -> None:
+        """Başka bir veritabanında üretilmiş cevap devam dosyasından sızmamalı.
+
+        Harness bir kez `.env`'deki geliştirme veritabanına bağlandı, her soru sıfır
+        sonuç döndü ve `recall_at_5: 0.0` yazan bir dosya üretildi. Veritabanı adı
+        parmak izinde olmasaydı, düzeltmeden sonraki koşu o boş cevapları devam
+        dosyasından okumaya devam ederdi.
+        """
+        base = {
+            "set": "holdout",
+            "set_version": "2.0",
+            "layer": "retrieval",
+            "mode": "hybrid",
+            "database": "dou_synapse_eval",
+            "embedding_provider": "fastembed",
+            "embedding_model": "e5",
+            "embedding_runtime": {"fastembed": "0.8.0"},
+            "retrieval": {"top_k": 8},
+        }
+        other = {**base, "database": "dou_synapse"}
+        assert evaluate.config_fingerprint(base) != evaluate.config_fingerprint(other)
+
+    def test_embedding_surumu_parmak_izine_girer(self) -> None:
+        """Aynı sağlayıcının iki sürümü farklı vektör uzayı üretebilir.
+
+        fastembed 0.5.1'den sonra e5-large'ı CLS yerine mean pooling ile kuruyor.
+        İki uzayın da adı "fastembed"; sağlayıcı adı tek başına ayırt etmiyor.
+        """
+        base = {
+            "set": "holdout",
+            "set_version": "2.0",
+            "layer": "retrieval",
+            "mode": "hybrid",
+            "database": "dou_synapse_eval",
+            "embedding_provider": "fastembed",
+            "embedding_model": "e5",
+            "embedding_runtime": {"fastembed": "0.8.0"},
+            "retrieval": {"top_k": 8},
+        }
+        older = {**base, "embedding_runtime": {"fastembed": "0.5.1"}}
+        assert evaluate.config_fingerprint(base) != evaluate.config_fingerprint(older)
+
+    def test_veritabani_adi_parolayi_tasimaz(self) -> None:
+        """Meta veri rapora giriyor; DSN'in parolası oraya sızmamalı."""
+        dsn = "postgresql+psycopg://dou_app:gizli_parola@localhost:5432/dou_synapse_eval"
+        assert evaluate._database_name(dsn) == "dou_synapse_eval"
+        assert "gizli_parola" not in evaluate._database_name(dsn)
+
+    def test_embedding_runtime_surum_dondurur(self) -> None:
+        """Sürüm okunamıyorsa sessizce boş geçilmez, 'kurulu değil' yazılır."""
+        runtime = evaluate.embedding_runtime("fastembed")
+        assert "fastembed" in runtime
+        assert runtime["fastembed"]
+
+        other = evaluate.embedding_runtime("bge-m3-onnx")
+        assert set(other) == {"onnxruntime", "tokenizers"}
+
+    def test_sohbet_ucu_question_alani_bekler(self) -> None:
+        """`ChatRequest` `question` ister ve `extra="forbid"` taşır.
+
+        Harness bir süre `message` gönderdi; her istek 422 alırdı, yani uçtan uca
+        katman bu sözleşmeye karşı hiç koşamazdı. Sözleşme testle sabitleniyor:
+        alan adı değişirse burası kırılır, koşu sırasında değil.
+        """
+        from app.schemas.chat import ChatRequest
+
+        assert "question" in ChatRequest.model_fields
+        assert "message" not in ChatRequest.model_fields
+        assert ChatRequest.model_config.get("extra") == "forbid"
