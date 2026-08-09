@@ -231,15 +231,16 @@ Yayınlanmış bir sınavın dondurulmuş hâli. Oturumlar buna bağlanır.
 | `published_at` | `timestamptz` | nullable |
 | `published_by` | `uuid` | nullable, FK → `profiles(id)` ON DELETE SET NULL |
 | `superseded_at` | `timestamptz` | nullable |
+| `blueprint_snapshot` | `jsonb` | nullable; yayın anında yazılır (§8 madde 1) |
 | `created_at` | `timestamptz` | NOT NULL, DEFAULT `now()` |
 
 **Kısıtlar:**
 
 ```sql
 CONSTRAINT exam_versions_publish_consistency CHECK (
-     (status = 'draft'      AND published_at IS NULL     AND published_by IS NULL     AND superseded_at IS NULL)
-  OR (status = 'published'  AND published_at IS NOT NULL AND published_by IS NOT NULL AND superseded_at IS NULL)
-  OR (status = 'superseded' AND published_at IS NOT NULL AND superseded_at IS NOT NULL))
+     (status = 'draft'      AND published_at IS NULL     AND published_by IS NULL     AND superseded_at IS NULL     AND blueprint_snapshot IS NULL)
+  OR (status = 'published'  AND published_at IS NOT NULL AND published_by IS NOT NULL AND superseded_at IS NULL     AND blueprint_snapshot IS NOT NULL)
+  OR (status = 'superseded' AND published_at IS NOT NULL AND superseded_at IS NOT NULL AND blueprint_snapshot IS NOT NULL))
 ```
 
 `questions_reviewed_consistency` (`0004_assessment.sql:61-64`) ile birebir aynı kalıp: durum ile damgalar birlikte tutarlı olmak zorundadır.
@@ -406,12 +407,13 @@ Zaman kaynağı her ikisinde de `now()`, yani **işlemin veritabanı saatidir**;
 REVOKE UPDATE ON exam_items, blueprint_cells FROM dou_app;
 
 REVOKE UPDATE ON exam_versions FROM dou_app;
-GRANT  UPDATE (status, published_at, published_by, superseded_at) ON exam_versions TO dou_app;
+GRANT  UPDATE (status, published_at, published_by, superseded_at, blueprint_snapshot)
+    ON exam_versions TO dou_app;
 ```
 
 Bu, `0007_question_delete_and_exam_grants.sql:43`'ün cümlesinin uygulanmasıdır: *"RLS satır düzeyinde çalışır, SÜTUN kısıtı veremez — bu yüzden kolon bazlı GRANT."*
 
-> **Araştırma fazına göre düzeltme:** araştırma yalnız `(status, superseded_at)` yetkisi öneriyordu. Bu **yayınlamayı imkânsız kılardı**: `exam_versions_publish_consistency` `status='published'` için `published_at` ve `published_by`'ın NOT NULL olmasını ister ve sürüm satırı `draft` doğduğu için bu iki alan UPDATE ile yazılmak zorundadır. Dört kolon veriliyor; `blueprint_id`, `version_no`, `course_id` yazılamaz kalır — kâğıdın kimliği değişmez.
+> **Araştırma fazına göre düzeltme:** araştırma yalnız `(status, superseded_at)` yetkisi öneriyordu. Bu **yayınlamayı imkânsız kılardı**: `exam_versions_publish_consistency` `status='published'` için `published_at` ve `published_by`'ın NOT NULL olmasını ister ve sürüm satırı `draft` doğduğu için bu iki alan UPDATE ile yazılmak zorundadır. `blueprint_snapshot` beşinci kolon olarak aynı gerekçeyle katılır (§8 madde 1: kısıt onu da `published` için NOT NULL istiyor ve satır `draft` doğuyor). Beş kolon veriliyor; `blueprint_id`, `version_no`, `course_id` yazılamaz kalır — kâğıdın kimliği değişmez.
 
 `dou_worker` yetkileri **çekilmiyor**: worker bu tabloların hiçbirine dokunmaz, ama 0001'in verdiği varsayılanı burada daraltmak, ilgisiz bir rolü ilgisiz bir gerekçeyle değiştirmek olurdu.
 
@@ -426,7 +428,7 @@ Beş tablo da `ENABLE` **ve** `FORCE ROW LEVEL SECURITY` alır (`0001_core_schem
 | `learning_outcomes` | üye | eğitmen | eğitmen | eğitmen |
 | `exam_blueprints` | eğitmen ∨ (üye ∧ açık) | eğitmen | eğitmen | eğitmen |
 | `blueprint_cells` | eğitmen | eğitmen | **yok** (yetki de çekili) | eğitmen |
-| `exam_versions` | eğitmen ∨ (üye ∧ açık) ∨ kendi oturumu | eğitmen | eğitmen (yalnız 4 kolon) | eğitmen ∧ draft |
+| `exam_versions` | eğitmen ∨ (üye ∧ açık) ∨ kendi oturumu | eğitmen | eğitmen (yalnız 5 kolon) | eğitmen ∧ draft |
 | `exam_items` | eğitmen ∨ kendi oturumu | eğitmen ∧ draft | **yok** (yetki çekili) | eğitmen ∧ draft |
 
 Beş tabloda da `course_id` **denormalize** edilmiştir; izolasyon filtresi JOIN'e bağlı kalmaz (`0004_assessment.sql:3-11`).
@@ -449,6 +451,7 @@ Göç dosyasının başlığında gerekçeleriyle yazılacak (0007'nin (c) madde
 4. **`questions.source_stale` bayrağı** — türetilebilir (§2.9).
 5. **`exam_items.blueprint_cell_id`** — türetilebilir (§2.7).
 6. **Yeni bir `exams` tablosu ve `exam_sessions → attempts` yeniden adlandırması** — 35 sınav testi, dört RLS politikası ve 0007'nin kolon GRANT'i tek seferde kırılırdı; kazanç yalnız isimlendirme.
+7. **`exam_version_cells` tablosu** — yayınlanan dağılımı dondurmanın normalize edilmiş biçimi. Altıncı tablo açmak yerine `exam_versions.blueprint_snapshot` jsonb'si seçildi; gerekçe ve reddedilen alternatifler §8 madde 1'de.
 
 ### 2.15 FR-117 rubrik kırılımı — şema değil, jsonb sözleşmesi
 
@@ -685,16 +688,124 @@ Belge ayağı: bu dosya ve `ARCHITECTURE.md` §3 aynı commit'te güncellenir; U
 
 ---
 
-## 8. Açık sorular
+## 8. Kararlar ve açık sorular
 
-Aşağıdakiler **karar verilmedi**; uydurmak yerine buraya yazıldı.
+Bu bölüm başlangıçta yalnız açık soru listesiydi. **T501 (2026-08-10)** Blok 5'in
+kapısını açmak için dördünü kapattı; kapatılanlar `KARAR` etiketiyle ve gerekçesiyle
+duruyor, kalanlar açık. Bir kararın gerekçesi sonradan çürütülebilir olsun diye
+reddedilen seçenekler de yazılı bırakıldı.
 
-1. **Yayınlanmış sürümün dağılım kanıtı dondurulmuyor.** `exam_items` sürüme aittir ve değişmezdir, ama `blueprint_cells` blueprint'e aittir ve sonradan düzenlenebilir. Bir sürüm yayınlandıktan sonra hücreler değişirse, "bu sınav blueprint'ine birebir uydu" iddiası (SC-003) geriye dönük olarak **yeniden üretilemez**. Üç seçenek var: (a) yayında hücreleri sürüme kopyalayan bir `exam_version_cells` tablosu; (b) yayınlanmış sürümü olan bir blueprint'in hücrelerini kilitlemek; (c) kabul edip belgeye yazmak. Bu belge hiçbirini seçmedi.
-2. **Konu ekseni.** FR-111 "konu dağılımı" der; bu tasarım konuyu `learning_outcomes.topic_id` üzerinden türetir (§2.2). Öğretmen konu dağılımını çıktıdan **bağımsız** belirlemek isterse hücre dörtlüsü beşliye çıkmalıdır. Hocaya sorulmadı.
+Kapatılanlar 1, 2, 7 ve 9; açık kalanlar 3, 4, 5, 6 ve 8. Açık kalanların hiçbiri
+`0008`'i bağlamıyor — 3 ve 4 `0009`'un (US4), 6 `0011`'in (US6), 8 US10'un alanı;
+5 ise 0008'in dokunmadığı ölü bir kolon.
+
+1. **KARAR (T501) — Yayınlanmış dağılım, sürümün üstünde jsonb kanıt olarak donar.**
+   `exam_versions`'a `blueprint_snapshot jsonb` eklenir: yayın anında kapının
+   doğruladığı hücre kümesi (çıktı, zorluk, tip, adet, puan) satır satır oraya
+   kopyalanır. `draft` iken NULL, `published`/`superseded` iken NOT NULL — kısıt
+   `exam_versions_publish_consistency`'nin üç dalına eklenir (§2.6). Kolon,
+   §2.11'deki kolon bazlı UPDATE yetkisine katılır; yayın işlemi zaten o UPDATE'i
+   atıyor, ikinci bir yazma yolu açılmaz.
+
+   **Gerekçe.** Belgenin saydığı üç seçeneğin üçü de kabul edilmedi:
+   (a) `exam_version_cells` tablosu doğru modeldir ama altıncı tablodur ve T502'nin
+   saydığı beş tabloyu bozar; kazancı, yalnız okunup hiç toplulaştırılmayan bir
+   kanıt için normalizasyon. (b) hücreleri kilitlemek doğal akışı kırar: v1
+   yayındayken dağılımı düzeltmek isteyen öğretmenin önce v1'i yayından kaldırması
+   gerekirdi, yani öğrenciler sınavı kaybederdi. (c) kabul etmek SC-003'ün
+   "birebir uydu" iddiasını doğrulanamaz bırakır.
+
+   Seçilen yol deponun **kendi kurduğu deseni** izliyor: `exam_items.points`
+   `blueprint_cells.points_per_question`'dan tam olarak bu sebeple yayın anında
+   kopyalanıyor (§2.7, "blueprint sonradan düzenlense de yayınlanmış kâğıdın
+   puanlaması değişmez"). Dağılım da kâğıdın bir özelliğidir ve aynı anda donar.
+   §2.5'in "hücre JSONB olmasın" gerekçesi burada geçerli değil: o gerekçe
+   **çalışan küme** üzerinde `GROUP BY` yapıldığı içindi; snapshot toplulaştırılmaz,
+   bütün olarak okunur ve bir daha yazılmaz — `answers.feedback`'in sınıfındandır.
+
+   **Bedeli açıkça yazılıyor:** dağılım iki temsile sahip olur (canlı `blueprint_cells`
+   ve donmuş `blueprint_snapshot`) ve ikisi bilerek ayrışır. Ayrışma sessiz olmasın
+   diye arayüz, yayınlanmış bir sürümü gösterirken dağılımı **snapshot'tan** okur,
+   hücrelerden değil; hücreler yalnız taslak düzenleme ekranında görünür.
+2. **KARAR (T501) — Konu, öğrenme çıktısının türevidir; beşinci eksen açılmaz.**
+   Hücre dörtlü kalır: *(çıktı × zorluk × tip)*. FR-111'in istediği "konu dağılımı",
+   `blueprint_cells → learning_outcomes.topic_id` üzerinden **türetilmiş, salt
+   okunur bir rapor** olarak karşılanır; öğretmen onu doğrudan düzenlemez.
+
+   **Gerekçe.** Bağımsız konu ekseni hücre uzayını konu sayısıyla çarpar. COME 331'in
+   bugünkü verisinde bile bu, öğretmenin eline doldurulamayacak bir tablo verir ve
+   Anayasa XI'in "etkin görünüp iş yapmayan öğe kusurdur" ölçüsüne düşer: çoğu hücresi
+   sıfır kalan bir ızgara, doldurulmuş bir dağılım gibi görünür. Kardinalite tarafı da
+   aynı yöne bakıyor — FR-113 soruyu **tek** çıktıya bağlıyor (§2.0), yani bir sorunun
+   konusu zaten çıktısı üzerinden tekil olarak belirli. İki eksen tutmak, aynı olguyu
+   iki yere yazmak olurdu.
+
+   **Bedeli açıkça yazılıyor ve arayüzde görünür kılınıyor:** `topic_id`'si NULL olan
+   bir çıktının konu ekseni yoktur, ve aynı konuya bağlı iki çıktı raporda toplanır.
+   Bu yüzden türetilmiş konu dağılımı ekranda "şu kadar soru konusuz çıktıdan geliyor"
+   satırıyla birlikte gösterilir; sessizce yuvarlanmaz (Anayasa III).
+
+   **Karar hocaya sorulmadan verildi** ve bu, kararın kendisinden ayrı bir gerçektir:
+   geri alınması göç değil, `blueprint_cells`'e bir kolon ve UNIQUE kısıtının
+   genişletilmesi demektir. Ucuz olduğu için şimdi kapatmak, açık bırakıp `0008`'i
+   geciktirmekten iyi.
 3. **FR-137 trigger'ı bir sapmadır.** `public` şemasına ilk iş trigger'ını koyuyoruz (§3.2). Takım "denetim izini uygulama katmanı yazsın" derse tasarım değişir; o zaman iz **kaçırılabilir** hâle gelir ve bu, kararın bedeli olarak yazılmalıdır.
 4. **Günlük token bütçesi bugün yalnız sohbeti kapsar.** `request_logs`'a yalnız sohbet ucu yazıyor (§3.3). İpucu, soru üretimi ve değerlendirme token'larının da bu tabloya yazılması gerekiyor mu, yoksa FR-134'ün kapsamı "sohbet bütçesi" olarak mı daraltılacak — karar verilmedi.
+
+   > **T501 notu (2026-08-10).** `tasks.md`'nin Blok 5 kapısı bu maddeyi Blok 5'ten
+   > önce kapatılması gereken dördüncü karar olarak sayıyor. **Kapatılmadı ve
+   > kapatılması Blok 5'i bağlamıyor:** token bütçesi `0009`'un (`course_ai_policies`,
+   > US4/FR-134) alanıdır, `0008`'in tek satırına dokunmaz. Blok 5'in dördüncü kararı
+   > yerine madde 9 (yürüyen sınavın gördüğü sürüm) kapatıldı — bu şeridin görev
+   > tanımının saydığı dört karar bunlar. Farkın kendisi bir bulgudur ve final
+   > raporunda bildirilmiştir; `tasks.md` bu şeritte değiştirilmez.
 5. **`exam_sessions.score` ölü kolonu.** 0007 UPDATE'ini çekmiş, puan `answers`'tan türetiliyor. 0008 dokunmuyor. Kaldırılsın mı (temiz ama ORM ve testleri etkiler), yoksa `COMMENT ON COLUMN` ile "kullanılmıyor" diye işaretlensin mi?
 6. **Sayfalamada toplam sayı.** spec.md:134'ün bağımsız testi "toplam/devam bilgisi taşır" diyor. Keyset imleci "devam"ı verir ama **toplam**ı vermez; her sayfada `COUNT(*)` koşturmak SC-008'i (200 kayıtlık listede ilk sayfa, 20 kayıtlıkla aynı aralıkta) tehlikeye atar. Toplamın gerçekten gerekli olup olmadığı ürün kararıdır.
-7. **`questions.learning_outcome_id`/`difficulty` veri düzeyinde garanti değil** (§2.3). Yayın kapısı bunu yakalamazsa çıktısı NULL bir soru hiçbir hücreye sayılmaz. Kapının bu senaryoyu kapsayan testi yazılmadan 0008 "bitti" sayılmamalıdır — ama testin tam biçimi (eksik hücre mi, ayrı bir "sınıflandırılmamış soru" uyarısı mı) kararlaştırılmadı.
+7. **KARAR (T501) — Sınıflandırılmamış kalem, eksik hücre değil; kapının ayrı ve
+   adı konmuş ikinci maddesidir.** Yayın kapısı **iki** liste döndürür ve ikisinden
+   biri boş değilse yayın reddedilir:
+
+   - `eksik_hucreler` — §2.5'in diff sorgusu: istenen adet ile dolan adet tutmayan
+     hücreler.
+   - `siniflandirilmamis_kalemler` — sürümün kaleminde olup `learning_outcome_id`'si
+     veya `difficulty`'si NULL olan sorular; her biri soru kimliği ve hangi alanının
+     eksik olduğuyla.
+
+   **Gerekçe.** Sınıflandırılmamış bir kalem hiçbir hücreye sayılmaz, yani tek listeli
+   bir kapıda **başka bir hücre eksikmiş gibi** görünür. Öğretmen o hücreye soru
+   eklemeye çalışır, kâğıt uzar, kapı yine kapalı kalır ve gerçek sebep hiç
+   söylenmemiş olur. Anayasa V "backend tek hata zarfı üretir" derken kastedilen tam
+   olarak bu: sebebi bilen katman cümleyi de kurmalı. §2.3'ün "bedeli açıkça
+   yazılıyor" notu bu kararla kapanır — kural veri düzeyinde garanti değildir, ama
+   kapının **görmezden gelemeyeceği** bir maddesidir.
+
+   Kapı yayınlanmaya çalışılan sürümün kalemlerine bakar, ders havuzunun tamamına
+   değil: havuzda sınıflandırılmamış soru bulunması bir kusur değil, normaldir
+   (§2.3, mevcut satırlar NULL doğar).
+
+9. **KARAR (T501) — Yürüyen sınav, oturumun `exam_version_id`'si neyi gösteriyorsa
+   onu görür; sürüm ne değişir ne değiştirilebilir.** Bağ oturum açılırken **INSERT
+   anında** kurulur ve bir daha yazılmaz (0007 `exam_sessions` tablo düzeyi UPDATE'ini
+   çekmişti, 0008 geri vermiyor — §2.8). Kâğıt her istekte `exam_items ORDER BY
+   position` ile okunur; soru payload'ının kopyası **alınmaz** (§2.6'nın snapshot
+   gerekçesi).
+
+   Bunun üç sonucu yazılı olsun:
+
+   - **v2 yayınlamak v1'deki oturumlara dokunmaz.** v1 `superseded` olur, ama satır
+     durur, `exam_items`'ı durur ve RLS'in üçüncü OR dalı (§2.6) oturum sahibine
+     okumayı sürdürür. Yeni oturumlar v2'ye açılır.
+   - **Pencere kapanması yürüyen oturumu düşürmez.** FR-116 "yeni oturum
+     başlatamaz" der; `app.is_exam_open` yalnız `exam_sessions_self_insert`'i ve
+     üyenin listeleme görüşünü bağlar.
+   - **Yayınlanmış sürümün kâğıdı hiçbir kod yolundan değişmez.** `exam_items`'ta
+     UPDATE yetkisi yok (§2.11), INSERT/DELETE politikaları `status='draft'` istiyor
+     (§2.7). Yani "sınav sürerken soru değişti" durumu ifade edilemez.
+
+   Kalan tek sızıntı yolu, kâğıttaki bir sorunun sonradan **reddedilmesiydi**:
+   `questions_read` reddedilen soruyu öğrenciden gizler ve yürüyen kâğıt sessizce
+   kısalırdı. §2.6'nın öngördüğü uygulama kapısı bu kararın parçasıdır — yayınlanmış
+   ve superseded olmayan bir sürümün kaleminde yer alan soru reddedilemez, ret
+   isteğine Türkçe gerekçeli 409 döner.
 8. **US10 (P3) için şema tanımlanmadı.** Hesap silme talebi bir kuyruk tablosu (`account_deletion_requests`) gerektirebilir; dışa aktarma büyük veri üretirse asenkron iş kaydı gerektirebilir (spec.md:240). İkisi de bu belgenin kapsamı dışında bırakıldı ve 17 Ağustos dondurmasından sonraya kalabilir.
 9. **Ölçüm yok.** Bu belgedeki hiçbir indeks, sorgu maliyeti veya ek SELECT **ölçülmemiştir**. §2.3, §3.3 ve §5.3'teki "ölçülmedi" notları rapora aynen taşınmalıdır; aksi hâlde SC-009 (belge-kod çelişkisi sıfır) düşer.
