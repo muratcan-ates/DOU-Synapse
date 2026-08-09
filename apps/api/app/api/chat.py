@@ -333,28 +333,18 @@ def apply_guardrails(
     retrieved: list[RetrievedChunk],
     guardrails: Sequence[Guardrail],
 ) -> tuple[GeneratedAnswer, bool, list[UUID]]:
-    """Halkaları sırayla koşturur ve kararlarını UYGULAR.
+    """Zinciri koşturur — uygulama `guardrails.chain.screen()`'e devredilir.
 
-    `Guardrail.check()` yalnız karar döner; düşen atıfları silmek ve temizlenmiş metni
-    yazmak çağıranın işidir. Bir halka bloklarsa zincir orada durur — sonraki halkalar
-    bloklanmış bir cevabı "düzeltemez".
+    Bu fonksiyon önce kendi uygulayıcısını taşıyordu: Şerit 2'nin `chain.py`'si
+    henüz yokken yazılmıştı ve aynı işi ikinci kez yapıyordu (Anayasa XI).
+    9 Ağustos birleştirmesinde gövde silindi; sıra ve halka etkilerinin
+    uygulanması artık tek yerde. Burada yalnız çağrı biçimi korunuyor, çünkü
+    bu dosyanın testleri daraltılmış bir zincir enjekte ediyor.
     """
-    dropped: list[UUID] = []
-    for guard in guardrails:
-        verdict = guard.check(answer, retrieved)
-        dropped.extend(verdict.dropped_citations)
-        if verdict.dropped_citations:
-            removed = set(verdict.dropped_citations)
-            answer.citations = [c for c in answer.citations if c.chunk_id not in removed]
-        if verdict.sanitized_text is not None:
-            answer.text = verdict.sanitized_text
-        if verdict.blocked:
-            logger.warning(
-                "guardrail cevabı blokladı",
-                extra={"context": {"reason": verdict.reason, "dropped": len(dropped)}},
-            )
-            return answer, True, dropped
-    return answer, False, dropped
+    from app.modules.guardrails.chain import screen
+
+    outcome = screen(answer, retrieved, guardrails)
+    return outcome.answer, outcome.blocked, outcome.dropped_citations
 
 
 def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> GeneratedAnswer:
@@ -663,16 +653,19 @@ async def _load_or_create_session(
         await session.flush()
         return chat_session
 
-    chat_session = await session.get(ChatSession, payload.session_id)
-    if chat_session is None or chat_session.course_id != context.course_id:
+    # Ayrı ad: yukarıdaki dalda `chat_session` ChatSession, burada `get()`
+    # ChatSession | None döndürüyor. Aynı ada yazmak mypy'ı kırıyordu ve
+    # okuyucuya da iki farklı şeyin aynı değişken olduğunu ima ediyordu.
+    existing = await session.get(ChatSession, payload.session_id)
+    if existing is None or existing.course_id != context.course_id:
         raise NotFoundError("Sohbet oturumu bulunamadı.")
-    if chat_session.mode is not payload.mode:
+    if existing.mode is not payload.mode:
         # Mod ortasında değiştirilemez: Sokratik durum moda aittir, QA'ya geçip geri
         # dönmek merdiveni sıfırlamanın kolay yolu olurdu.
         raise ValidationError(
             "Bu oturum farklı bir modda başlatılmış. Yeni mod için yeni bir sohbet aç."
         )
-    return chat_session
+    return existing
 
 
 async def _opening_question(

@@ -24,6 +24,7 @@ yolu da yoktur; orada ihlal doğrudan bloklanır.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from uuid import UUID
 
@@ -32,6 +33,7 @@ from app.contracts import (
     ChatMode,
     GeneratedAnswer,
     Generator,
+    Guardrail,
     GuardrailVerdict,
     RetrievedChunk,
     SocraticStage,
@@ -93,43 +95,50 @@ class PipelineResult:
         return self.block_reason is not None
 
 
-def screen(answer: GeneratedAnswer, chunks: list[RetrievedChunk]) -> ScreenOutcome:
+#: ARCHITECTURE §5 sırası — TEK KAYNAK. Çağıranlar bu sırayı yeniden dizmez.
+GUARDRAIL_CHAIN: tuple[Guardrail, ...] = (_CITATION, _LEAKAGE, _SANITIZE)
+
+
+def screen(
+    answer: GeneratedAnswer,
+    chunks: list[RetrievedChunk],
+    chain: Sequence[Guardrail] = GUARDRAIL_CHAIN,
+) -> ScreenOutcome:
     """Zinciri bir cevap üzerinde koşturur. LLM ÇAĞIRMAZ — saf fonksiyon.
 
     Girdi nesnesi değiştirilmez; kararlar bir kopyaya uygulanır. Guardrail
     testlerinin çoğu doğrudan bu fonksiyonu çağırır: sınanan şey zincir, model
     değil.
+
+    `chain` parametresi 9 Ağustos birleştirmesinde eklendi. Şerit 3, bu modül
+    henüz yokken kendi uygulayıcısını yazmıştı ve testlerinde tek bir halka
+    enjekte ediyordu; iki uygulayıcı aynı işi yapıyordu (Anayasa XI). Kopya
+    silindi, enjeksiyon buraya taşındı: sıra hâlâ tek yerde, ama bir çağıran
+    daraltılmış bir zincirle sınanabiliyor.
     """
     current = replace(answer, citations=list(answer.citations))
     verdicts: list[GuardrailVerdict] = []
 
-    citation_verdict = _CITATION.check(current, chunks)
-    verdicts.append(citation_verdict)
-    if citation_verdict.dropped_citations:
-        current.citations = drop_invalid(current.citations, citation_verdict.dropped_citations)
-        logger.warning(
-            "doğrulanmamış atıf düştü",
-            extra={
-                "context": {
-                    "dropped": [str(c) for c in citation_verdict.dropped_citations],
-                    "mode": current.mode.value,
-                }
-            },
-        )
-    if citation_verdict.blocked:
-        return ScreenOutcome(current, verdicts, citation_verdict.reason)
+    for guard in chain:
+        verdict = guard.check(current, chunks)
+        verdicts.append(verdict)
 
-    leakage_verdict = _LEAKAGE.check(current, chunks)
-    verdicts.append(leakage_verdict)
-    if leakage_verdict.blocked:
-        return ScreenOutcome(current, verdicts, leakage_verdict.reason)
-
-    sanitize_verdict = _SANITIZE.check(current, chunks)
-    verdicts.append(sanitize_verdict)
-    if sanitize_verdict.sanitized_text is not None:
-        current.text = sanitize_verdict.sanitized_text
-    if sanitize_verdict.blocked:
-        return ScreenOutcome(current, verdicts, sanitize_verdict.reason)
+        if verdict.dropped_citations:
+            current.citations = drop_invalid(current.citations, verdict.dropped_citations)
+            logger.warning(
+                "doğrulanmamış atıf düştü",
+                extra={
+                    "context": {
+                        "dropped": [str(c) for c in verdict.dropped_citations],
+                        "mode": current.mode.value,
+                    }
+                },
+            )
+        if verdict.sanitized_text is not None:
+            current.text = verdict.sanitized_text
+        if verdict.blocked:
+            # Bloklanan cevabı sonraki halkalar "düzeltemez"; zincir burada durur.
+            return ScreenOutcome(current, verdicts, verdict.reason)
 
     return ScreenOutcome(current, verdicts)
 
