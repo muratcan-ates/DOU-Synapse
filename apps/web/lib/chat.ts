@@ -9,6 +9,7 @@
  * devam eder, sadece yanlış şeyi yapar — testin yakaladığı tam bu.
  */
 
+import { toSourceInfo } from "@/lib/source";
 import type {
   AnswerStatus,
   ChatAnswer,
@@ -342,12 +343,7 @@ export function citationSource(citation: Citation): {
   location: string;
   quote: string;
 } {
-  return {
-    fileName: citation.file_name,
-    // Konum sunucudan "Sayfa 7" / "Slayt 3" olarak gelir; arayüz biçimlendirmez.
-    location: citation.location,
-    quote: citation.snippet,
-  };
+  return toSourceInfo(citation);
 }
 
 export interface LadderRung {

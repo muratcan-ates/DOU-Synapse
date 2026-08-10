@@ -33,7 +33,6 @@ uydurmak gerekirdi, ki FR-020 tam olarak bunu yasaklıyor. Bu yüzden buradaki
 
 from __future__ import annotations
 
-import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from uuid import UUID
@@ -42,14 +41,14 @@ from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import text_tr
 from app.core.errors import AppError
+from app.core.llm_json import first_json_object
 from app.core.logging import get_logger
 from app.models.assessment import Question
 from app.models.core import Chunk, Document
 from app.modules.assessment.question_gen import (
     StructuredCompletion,
-    extract_json_object,
-    normalize_tr,
     resolve_completion,
 )
 from app.schemas.assessment import (
@@ -93,12 +92,12 @@ def _best_snippet(text: str, focus: str | None) -> str:
     if not focus:
         return condensed[:SNIPPET_CHARS]
 
-    needle = set(normalize_tr(focus).split())
+    needle = set(text_tr.tokens(focus))
     sentences = [part.strip() for part in condensed.replace("!", ".").split(".") if part.strip()]
     if not sentences:
         return condensed[:SNIPPET_CHARS]
 
-    best = max(sentences, key=lambda part: len(needle & set(normalize_tr(part).split())))
+    best = max(sentences, key=lambda part: len(needle & set(text_tr.tokens(part))))
     return best[:SNIPPET_CHARS]
 
 
@@ -249,14 +248,19 @@ def grade_short_answer(
     birine eşitse ya da onu bir kelime sınırında içeriyorsa doğrudur. Kapsama izni
     "İşletim sistemi çekirdeği" gibi cümle içinde verilen doğru cevapları kurtarır;
     kelime sınırı şartı "ram" ile "program"ı birbirine karıştırmayı önler.
+
+    `text_tr.normalize` AKSAN SÖKER: cevap anahtarı "çözüm" iken "cozum" yazan
+    öğrenci puanını alır. Bu bilinçli bir ürün kararıdır ve bedeliyle birlikte
+    o fonksiyonun docstring'inde yazılıdır — burada tekrarlanmıyor ki iki metin
+    bir gün ayrışmasın.
     """
-    answer = normalize_tr(given)
+    answer = text_tr.normalize(given)
     if not answer:
         return GradingOutcome(graded=True, score=0, is_correct=False, focus=given)
 
     haystack = f" {answer} "
     for accepted in payload.accepted_answers:
-        needle = normalize_tr(accepted)
+        needle = text_tr.normalize(accepted)
         if needle and (answer == needle or f" {needle} " in haystack):
             return GradingOutcome(graded=True, score=100, is_correct=True, focus=given)
 
@@ -343,13 +347,16 @@ def _sources_block(refs: Sequence[tuple[UUID, str]]) -> str:
 def _parse_verdict(raw: str) -> _LlmVerdict | None:
     """Ham yanıtı şemaya çevirir; uymuyorsa None (çağıran yeniden dener).
 
-    Çit temizleme kuralı `question_gen.extract_json_object` ile ortaktır: üretim ve
-    değerlendirme aynı sağlayıcıdan aynı gürültüyü alır, iki farklı temizleme
+    Gürültü temizleme kuralı `core.llm_json` ile ortaktır: üretim, soru üretimi ve
+    değerlendirme aynı sağlayıcıdan aynı gürültüyü alır, üç farklı temizleme
     kuralı sessiz tutarsızlık üretirdi (Anayasa XI).
     """
+    data = first_json_object(raw)
+    if data is None:
+        return None
     try:
-        return _LlmVerdict.model_validate(extract_json_object(raw))
-    except (json.JSONDecodeError, ValidationError, ValueError):
+        return _LlmVerdict.model_validate(data)
+    except ValidationError:
         return None
 
 

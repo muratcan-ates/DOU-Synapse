@@ -62,6 +62,8 @@ class ChatSession(Base):
     state: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
     title: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[created_at]
+    # base.py'deki `ts_now`a taşınmadı: `onupdate` sahibi tek kolon bu, üçüncü bir
+    # takma ad tek kullanıcısı olan bir soyutlama olurdu.
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
     )

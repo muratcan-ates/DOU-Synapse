@@ -309,15 +309,6 @@ async def class_progress(
             )
         ).scalar_one()
     )
-    answered_questions = int(
-        (
-            await session.execute(
-                select(func.coalesce(func.sum(Mastery.answer_count), 0)).where(
-                    Mastery.course_id == context.course_id
-                )
-            )
-        ).scalar_one()
-    )
     total_topics = await _course_topic_count(session, context.course_id)
 
     return ClassAnalytics(
@@ -328,6 +319,10 @@ async def class_progress(
         tracked_topics=len(topics),
         untracked_topics=max(0, total_topics - len(topics)),
         student_count=student_count,
-        answered_questions=answered_questions,
+        # Ayrı bir toplam sorgusu yok: `mastery.topic_id` topics'e CASCADE FK'lidir
+        # (öksüz satır olamaz) ve konu/ders değişmezliği soru ucunda zorlanır, bu
+        # yüzden konu bazlı toplamların toplamı ders toplamına eşittir. `my_progress`
+        # de aynı yoldan türetiyor; iki uç aynı sayıyı iki farklı sorgudan almamalı.
+        answered_questions=sum(t.answer_count for t in topics),
         out_of_scope=await _out_of_scope_stat(session, context.course_id),
     )

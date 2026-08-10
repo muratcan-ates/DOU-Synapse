@@ -1,7 +1,7 @@
 """Sohbet ucu testleri (T020).
 
-Sahte retrieval/generation sınıfları `tests/test_socratic.py`'den içe aktarılır; ikinci
-bir kopya yazmak Anayasa XI'e aykırı olurdu. Oradaki sahteler `app/contracts.py`
+Hat sahteleri ve kurulum fabrikaları `tests/factories.py`'den gelir; ikinci bir
+kopya yazmak Anayasa XI'e aykırı olurdu. Oradaki sahteler `app/contracts.py`
 protokollerini uygular, yani bu testler gerçek modüller indiğinde de anlamını korur.
 
 Buradaki iddiaların çoğu **davranışsaldır ve olumsuzdur**: "şu asla dönmez". Bunlar
@@ -11,7 +11,7 @@ projenin tezini taşıyan testlerdir; kaldırılırlarsa geriye yalnız iyi niye
 from __future__ import annotations
 
 from collections.abc import Iterator
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from httpx import AsyncClient
@@ -37,95 +37,55 @@ from app.contracts import (
 from app.core.config import get_settings
 from app.core.db import rls_session
 from tests.conftest import UserFactory
-from tests.test_socratic import (
-    LEAKED_SOLUTION,
-    CitationGuardrail,
-    FakeGenerator,
+from tests.factories import (
+    Pipeline,
+    create_course,
+    enroll_student,
+    install_pipeline,
     make_chunk,
+    sourced_answer,
 )
 
+#: `tests/test_exam_lock.py` bu adı BURADAN içe aktarıyor ve o dosyaya bu turda
+#: dokunulmuyor. Gövde `factories`'e taşındı, ad burada kalıyor: kilit testleri
+#: aynı hattı takmak zorunda, yoksa uç 503 döner ve testler kilidi değil eksik
+#: kurulumu ölçer.
+_install = install_pipeline
 
-class CourseScopedRetriever:
-    """Ders bazlı sahte arama.
-
-    İzolasyon iddiasının test edilebilmesi için sahte retriever, kendisine hangi
-    `course_id` ile gelindiğine BAKAR. Uç yetkilendirilmiş dersi geçirmezse test
-    kırmızıya döner — sahte "her zaman aynı sonucu döndüren" bir arama olsaydı
-    izolasyon testi hiçbir şey kanıtlamazdı.
-    """
-
-    def __init__(self) -> None:
-        self.by_course: dict[UUID, list[RetrievedChunk]] = {}
-        self.seen_course_ids: list[UUID] = []
-        self.seen_queries: list[str] = []
-
-    async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
-        self.seen_course_ids.append(course_id)
-        self.seen_queries.append(query)
-        return self.by_course.get(course_id, [])[:limit]
-
-
-class Pipeline:
-    """Testin takacağı hat: sahte arama + sahte üretim + gerçek atıf kontrolü."""
-
-    def __init__(self) -> None:
-        self.retriever = CourseScopedRetriever()
-        self.generator = FakeGenerator([])
-
-    def serve(self, course_id: str, chunk: RetrievedChunk) -> RetrievedChunk:
-        self.retriever.by_course.setdefault(UUID(course_id), []).append(chunk)
-        return chunk
-
-    def answers(self, *answers: GeneratedAnswer) -> None:
-        self.generator = FakeGenerator(list(answers))
-        _install(self)
-
-
-def _install(pipeline: Pipeline) -> None:
-    set_pipeline(
-        retriever_factory=lambda _session: pipeline.retriever,
-        generator=pipeline.generator,
-        guardrails=[CitationGuardrail()],
-    )
+#: Sızıntı ihtimali olan bir "cevap": bloklanan metnin kullanıcıya ULAŞMADIĞI
+#: burada da gösterilmeli. `test_socratic` kendi nüshasını taşıyor — sabit iki
+#: dosyada geçiyor ve ortak fabrikanın eşiği üç; kopya bilinçli.
+LEAKED_SOLUTION = "İşte tam çözüm: cevap 42, kod ```while True: pass```"
 
 
 @pytest.fixture(autouse=True)
 def pipeline() -> Iterator[Pipeline]:
     fake = Pipeline()
-    _install(fake)
+    install_pipeline(fake)
     reset_rate_limit()
     yield fake
     set_pipeline()
     reset_rate_limit()
 
 
-async def _create_course(client: AsyncClient, headers: dict[str, str], code: str) -> str:
-    response = await client.post(
-        "/courses", json={"code": code, "title": f"{code} Dersi"}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["id"]
+def socratic_hint(chunk: RetrievedChunk, text_value: str = "Bir ipucu.") -> GeneratedAnswer:
+    """Verilen parçaya atıf yapan bir Sokratik ipucu.
 
+    `factories.sourced_answer`'ın Sokratik eşi: o QA moduna sabitlenmiş ve
+    zarfın `hints[]` alanı yalnız `ChatMode.SOCRATIC` cevaplarında dolduğu için
+    merdiven testleri onu kullanamıyordu. Sekiz test bu bloğu satır içi
+    kuruyordu; ayrışan bir kopya, hangi turun neden ipucu ürettiğini okunamaz
+    kılardı.
 
-async def _add_student(
-    client: AsyncClient, headers: dict[str, str], course_id: str, email: str
-) -> None:
-    response = await client.post(
-        f"/courses/{course_id}/members",
-        json={"email": email, "role": "student"},
-        headers=headers,
-    )
-    assert response.status_code == 201, response.text
-
-
-def sourced_answer(
-    chunk: RetrievedChunk, text_value: str = "Dört koşul aynı anda sağlanır."
-) -> GeneratedAnswer:
+    Alıntı "…": şablon değil ÜRETİM çıktısı taklit ediliyor ve hiçbir Sokratik
+    test alıntı metnine bakmıyor — bakan tek iddia (`snippet` boş dönmemeli) QA
+    tarafında ve `sourced_answer` orada gerçek chunk metnini kesiyor.
+    """
     return GeneratedAnswer(
         status=AnswerStatus.ANSWERED,
-        mode=ChatMode.QA,
+        mode=ChatMode.SOCRATIC,
         text=text_value,
-        citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, chunk.text[:60])],
+        citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
     )
 
 
@@ -141,9 +101,9 @@ class TestYetkilendirme:
         """403 değil 404: erişimi olmayan kullanıcı dersin varlığını bile öğrenemez."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         disari = users.auth(await users.create("disari@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.serve(course_id, make_chunk())
-        pipeline.answers(sourced_answer(pipeline.retriever.by_course[UUID(course_id)][0]))
+        pipeline.answers(sourced_answer(pipeline.retriever.by_course[course_id][0]))
 
         response = await client.post(
             f"/courses/{course_id}/chat", json={"question": "Deadlock nedir?"}, headers=disari
@@ -154,7 +114,7 @@ class TestYetkilendirme:
 
     async def test_kimliksiz_istek_401(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(
             f"/courses/{course_id}/chat", json={"question": "Deadlock nedir?"}
@@ -173,7 +133,7 @@ class TestCevapDurumlari:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk(page_number=7))
         pipeline.answers(sourced_answer(chunk))
 
@@ -193,7 +153,7 @@ class TestCevapDurumlari:
     ) -> None:
         """Ürünün tezi: atıfı doğrulanamayan cevap kullanıcıya gitmez (FR-012)."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.serve(course_id, make_chunk())
         pipeline.answers(
             GeneratedAnswer(
@@ -219,7 +179,7 @@ class TestCevapDurumlari:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.serve(course_id, make_chunk())
         pipeline.answers(
             GeneratedAnswer(
@@ -248,7 +208,7 @@ class TestCevapDurumlari:
     ) -> None:
         """SC-005 yalnız out_of_scope'u ölçer; iki durum ayrı kalmalı (FR-011)."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         # Derste hiç parça yok: retrieval boş → kanıt yetersiz.
         pipeline.answers()
 
@@ -271,7 +231,7 @@ class TestCevapDurumlari:
     ) -> None:
         """Reddetmek arıza değil, ürünün çalıştığının kanıtı."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.answers()
 
         response = await client.post(
@@ -292,8 +252,8 @@ class TestDersIzolasyonu:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_a = await _create_course(client, ayse, "COME301")
-        course_b = await _create_course(client, ayse, "COME302")
+        course_a = await create_course(client, ayse, "COME301")
+        course_b = await create_course(client, ayse, "COME302")
         chunk_a = pipeline.serve(course_a, make_chunk(file_name="a-dersi.pdf"))
         pipeline.serve(course_b, make_chunk(file_name="b-dersi.pdf"))
         pipeline.answers(sourced_answer(chunk_a))
@@ -305,15 +265,15 @@ class TestDersIzolasyonu:
         body = response.json()
         assert [c["file_name"] for c in body["citations"]] == ["a-dersi.pdf"]
         # Aramaya YETKİLENDİRİLMİŞ ders kimliği geçildi; istemcinin gövdesi değil.
-        assert pipeline.retriever.seen_course_ids == [UUID(course_a)]
+        assert pipeline.retriever.seen_course_ids == [course_a]
 
     async def test_onbellek_ders_bazlidir(
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         """A dersinin önbelleği B'ye servis edilirse izolasyon tezinin tamamı çöker."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_a = await _create_course(client, ayse, "COME301")
-        course_b = await _create_course(client, ayse, "COME302")
+        course_a = await create_course(client, ayse, "COME301")
+        course_b = await create_course(client, ayse, "COME302")
         chunk_a = pipeline.serve(course_a, make_chunk(file_name="a-dersi.pdf"))
         pipeline.answers(sourced_answer(chunk_a, "A dersine ait cevap"))
         soru = {"question": "Deadlock nedir?"}
@@ -336,7 +296,7 @@ class TestDersIzolasyonu:
         """İkinci katman: uygulama atlansa bile RLS satırı reddeder (Anayasa II)."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")  # hiçbir derse üye değil
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         with pytest.raises(DBAPIError):
             async with rls_session(burak_id) as session:
@@ -345,7 +305,7 @@ class TestDersIzolasyonu:
                         "INSERT INTO chat_sessions (course_id, user_id, mode) "
                         "VALUES (:cid, :uid, 'qa')"
                     ),
-                    {"cid": UUID(course_id), "uid": burak_id},
+                    {"cid": course_id, "uid": burak_id},
                 )
 
     async def test_uye_kullanici_kendi_oturumunu_acabilir(
@@ -354,15 +314,15 @@ class TestDersIzolasyonu:
         """Düzeltmenin aşırıya kaçıp meşru yazımı engellemediğinin kontrolü."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         async with rls_session(burak_id) as session:
             await session.execute(
                 text(
                     "INSERT INTO chat_sessions (course_id, user_id, mode) VALUES (:cid, :uid, 'qa')"
                 ),
-                {"cid": UUID(course_id), "uid": burak_id},
+                {"cid": course_id, "uid": burak_id},
             )
 
     async def test_ogrenci_baskasinin_oturumunu_goremez(
@@ -370,8 +330,8 @@ class TestDersIzolasyonu:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
         await client.post(
@@ -396,7 +356,7 @@ class TestOnbellek:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
         soru = {"question": "Deadlock nedir?"}
@@ -416,7 +376,7 @@ class TestOnbellek:
     ) -> None:
         """Birebir eşleşme: benzerlik tabanlı eşleşme yoktur (FR-034)."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
 
@@ -434,7 +394,7 @@ class TestOnbellek:
     ) -> None:
         """Önbellek yalnız tam hattan geçmiş cevabı saklar; bir reddi kalıcılaştırmaz."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.answers()
         soru = {"question": "Kanıtsız bir soru"}
 
@@ -452,7 +412,7 @@ class TestOnbellek:
 class TestSinirlar:
     async def test_asiri_uzun_soru_422(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(
             f"/courses/{course_id}/chat",
@@ -465,7 +425,7 @@ class TestSinirlar:
 
     async def test_bos_soru_422(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(
             f"/courses/{course_id}/chat", json={"question": "   "}, headers=ayse
@@ -477,7 +437,7 @@ class TestSinirlar:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.answers()
 
         son_durum = 200
@@ -498,7 +458,7 @@ class TestSinirlar:
     ) -> None:
         """Mod politikaları backend'de: sınavda ipucu tamamen kapalıdır (FR-017)."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(
             f"/courses/{course_id}/chat",
@@ -521,15 +481,9 @@ class TestSokratikUc:
     ) -> None:
         """Aynı oturuma dönen ikinci istek merdiveni kaldığı yerden sürdürür."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
-        hint = GeneratedAnswer(
-            status=AnswerStatus.ANSWERED,
-            mode=ChatMode.SOCRATIC,
-            text="Koşulları karşılaştırmayı dener misin?",
-            citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-        )
-        pipeline.answers(hint)
+        pipeline.answers(socratic_hint(chunk, "Koşulları karşılaştırmayı dener misin?"))
 
         ilk = await client.post(
             f"/courses/{course_id}/chat",
@@ -557,16 +511,9 @@ class TestSokratikUc:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=ChatMode.SOCRATIC,
-                text="Bir ipucu.",
-                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-            )
-        )
+        pipeline.answers(socratic_hint(chunk))
 
         ilk = await client.post(
             f"/courses/{course_id}/chat",
@@ -595,16 +542,9 @@ class TestSokratikUc:
         girer ve merdiven ikinci turda çöker.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=ChatMode.SOCRATIC,
-                text="Bir ipucu.",
-                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-            )
-        )
+        pipeline.answers(socratic_hint(chunk))
         acilis = "Kritik bölge koşulları nelerdir?"
 
         ilk = await client.post(
@@ -634,7 +574,7 @@ class TestSokratikUc:
         soruyla merdiven sessizce tırmanılabilirdi.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         pipeline.answers()  # derste materyal yok → her tur insufficient_context
 
         ilk = await client.post(
@@ -658,14 +598,7 @@ class TestSokratikUc:
 
         # Materyal gelince merdiven en baştan, DIAGNOSE'dan başlamalı.
         chunk = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=ChatMode.SOCRATIC,
-                text="Bir ipucu.",
-                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-            )
-        )
+        pipeline.answers(socratic_hint(chunk))
         sonraki = await client.post(
             f"/courses/{course_id}/chat",
             json={"question": "yeni denemem", "mode": "socratic", "session_id": session_id},
@@ -678,7 +611,7 @@ class TestSokratikUc:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
         ilk = await client.post(
@@ -710,7 +643,7 @@ class TestGecmis:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
         gonderi = await client.post(
@@ -732,7 +665,7 @@ class TestGecmis:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         answer = sourced_answer(chunk)
         pipeline.answers(answer, answer)
@@ -773,7 +706,7 @@ class TestGecmis:
 
     async def test_olmayan_oturum_404(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.get(f"/courses/{course_id}/chat/sessions/{uuid4()}", headers=ayse)
 
@@ -791,7 +724,7 @@ class TestIstekKaydi:
     ) -> None:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
 
@@ -842,7 +775,7 @@ class TestZarfSozlesmesi:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
 
@@ -860,16 +793,9 @@ class TestZarfSozlesmesi:
     ) -> None:
         """`hints[]` zarfta vardır ve Sokratik turda gerçekten dolar."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=ChatMode.SOCRATIC,
-                text="Koşulları karşılaştırmayı dener misin?",
-                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-            )
-        )
+        pipeline.answers(socratic_hint(chunk, "Koşulları karşılaştırmayı dener misin?"))
 
         response = await client.post(
             f"/courses/{course_id}/chat",
@@ -887,7 +813,7 @@ class TestZarfSozlesmesi:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
 
@@ -906,16 +832,9 @@ class TestZarfSozlesmesi:
         şekillenir; yani kişiselleştirme iddiası boşa çıkar.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=ChatMode.SOCRATIC,
-                text="Bir ipucu.",
-                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-            )
-        )
+        pipeline.answers(socratic_hint(chunk))
 
         ilk = await client.post(
             f"/courses/{course_id}/chat",
@@ -940,16 +859,9 @@ class TestZarfSozlesmesi:
     ) -> None:
         """Merdiven denemeye bakar; her turda tekrarlanan soruya değil."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=ChatMode.SOCRATIC,
-                text="Bir ipucu.",
-                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-            )
-        )
+        pipeline.answers(socratic_hint(chunk))
         soru = "Deadlock neden oluşur?"
 
         ilk = await client.post(
@@ -990,16 +902,9 @@ class TestZarfSozlesmesi:
     ) -> None:
         """Döküm, her turda tekrarlanan soruyu değil öğrencinin yazdığını gösterir."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=ChatMode.SOCRATIC,
-                text="Bir ipucu.",
-                citations=[Citation(chunk.chunk_id, chunk.file_name, chunk.location, "…")],
-            )
-        )
+        pipeline.answers(socratic_hint(chunk))
         soru = "Deadlock neden oluşur?"
 
         ilk = await client.post(
@@ -1027,7 +932,7 @@ class TestZarfSozlesmesi:
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
         chunk = pipeline.serve(course_id, make_chunk())
         pipeline.answers(sourced_answer(chunk))
 
@@ -1056,7 +961,7 @@ class TestZarfSozlesmesi:
         arkasına saklardı — kullanıcı neyi düzelteceğini bilemezdi.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(f"/courses/{course_id}/chat", json={}, headers=ayse)
 

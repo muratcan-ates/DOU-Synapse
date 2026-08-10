@@ -16,8 +16,17 @@ from app.api.chat import reset_rate_limit, set_pipeline
 from app.contracts import AnswerStatus, ChatMode, Citation, GeneratedAnswer, RetrievedChunk
 from app.schemas.chat import LlmAnswerPayload
 from tests.conftest import UserFactory
-from tests.test_chat_api import Pipeline, _install, sourced_answer
-from tests.test_socratic import CitationGuardrail, make_chunk
+from tests.factories import (
+    FakeCitationGuardrail as CitationGuardrail,
+)
+from tests.factories import (
+    Pipeline,
+    make_chunk,
+    sourced_answer,
+)
+from tests.factories import (
+    install_pipeline as _install,
+)
 
 
 @pytest.fixture(autouse=True)

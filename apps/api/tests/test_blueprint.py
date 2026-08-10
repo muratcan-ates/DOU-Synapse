@@ -33,15 +33,14 @@ from app.modules.assessment.grading import _LlmVerdict, _rubric_breakdown
 from app.modules.assessment.question_gen import _OpenDraft
 from app.schemas.assessment import OpenPayload, RubricItem, normalized_rubric
 from tests.conftest import UserFactory
-from tests.test_assessment import (
-    DEADLOCK_TEXTS,
-    _create_course,
+from tests.factories import (
+    create_course,
     create_topic,
-    enroll,
-    mcq_payload,
-    seed_chunks,
+    enroll_student,
+    seed_document,
     seed_question,
 )
+from tests.test_assessment import DEADLOCK_TEXTS, mcq_payload
 
 
 class BlueprintFixture:
@@ -78,18 +77,20 @@ async def build(
     student_id = await users.create(f"ogrenci-{slug}@dogus.edu.tr")
     student = UserFactory.auth(student_id)
 
-    course_id = await _create_course(client, instructor, code)
-    await enroll(client, instructor, course_id, f"ogrenci-{slug}@dogus.edu.tr")
+    course_id = await create_course(client, instructor, code)
+    await enroll_student(client, instructor, course_id, f"ogrenci-{slug}@dogus.edu.tr")
     topic_id = await create_topic(client, instructor, course_id, "Kilitlenme")
-    chunk_ids = await seed_chunks(
-        admin_engine,
-        course_id=UUID(course_id),
-        uploaded_by=instructor_id,
-        texts=DEADLOCK_TEXTS,
-    )
+    chunk_ids = (
+        await seed_document(
+            admin_engine,
+            course_id=UUID(str(course_id)),
+            uploaded_by=instructor_id,
+            passages=DEADLOCK_TEXTS,
+        )
+    ).chunk_ids
 
     return BlueprintFixture(
-        course_id=course_id,
+        course_id=str(course_id),
         instructor=instructor,
         instructor_id=instructor_id,
         student=student,

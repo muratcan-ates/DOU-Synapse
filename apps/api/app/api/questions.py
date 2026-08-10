@@ -40,6 +40,7 @@ from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
 from app.models.core import Chunk, Document
 from app.modules.assessment import question_gen
 from app.modules.assessment.grading import load_source_refs
+from app.modules.generation.llm import LlmTask
 from app.schemas.assessment import (
     QuestionGenerateRequest,
     QuestionGenerationOut,
@@ -304,7 +305,7 @@ async def generate_questions(
             count=payload.count or settings.question_generation_batch,
             created_by=context.user_id,
             retriever=question_gen.resolve_retriever(session),
-            completion=question_gen.resolve_completion(),
+            completion=question_gen.resolve_completion(LlmTask.QUESTION_GEN),
             answer_format=payload.answer_format,
             example_questions=payload.example_questions,
             retrieval_limit=settings.retrieval_top_k,

@@ -13,7 +13,8 @@ from app.contracts import RetrievedChunk
 from app.modules.retrieval.inspection import RetrievalInspection
 from app.modules.retrieval.scope import EvidenceLevel, EvidenceVerdict
 from tests.conftest import UserFactory
-from tests.test_chat_api import _add_student, _create_course
+from tests.factories import create_course as _create_course
+from tests.factories import enroll_student as _add_student
 from tests.test_exams import build_course, start
 
 

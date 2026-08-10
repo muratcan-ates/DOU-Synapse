@@ -22,7 +22,6 @@ import {
   nextDraftId,
   parseExampleQuestions,
   toQuestionView,
-  toSourceInfo,
 } from "./questions";
 import type { Question, QuestionGeneration, QuestionType } from "./types";
 
@@ -191,27 +190,35 @@ describe("toQuestionView — eksik payload uydurulmaz", () => {
     expect(view.stem).toBeNull();
     expect(view.code).toBeNull();
   });
-});
 
-describe("toSourceInfo", () => {
-  test("snippet alanı quote'a eşlenir, konum korunur", () => {
-    expect(
-      toSourceInfo({
-        chunk_id: "ch1",
-        file_name: "01-processes.pdf",
-        location: "Sayfa 3",
-        snippet: "Context switch gerçekleşir.",
-      }),
-    ).toEqual({
+  test("kaynak yoksa görünümde de yok (boş kart çizilmez)", () => {
+    // Eşlemenin kendisi `lib/source.test.ts`te; buradaki iddia null korumasının
+    // bu çağrı yerinde durduğu.
+    expect(toQuestionView(question("q10", "mcq", {})).source).toBeNull();
+    expect(toQuestionView(question("q11", "mcq", {}, { source: undefined })).source).toBeNull();
+  });
+
+  test("kaynak varsa karta hazır biçimde taşınır", () => {
+    const view = toQuestionView(
+      question(
+        "q12",
+        "mcq",
+        {},
+        {
+          source: {
+            chunk_id: "ch1",
+            file_name: "01-processes.pdf",
+            location: "Sayfa 3",
+            snippet: "Context switch gerçekleşir.",
+          },
+        },
+      ),
+    );
+    expect(view.source).toEqual({
       fileName: "01-processes.pdf",
       location: "Sayfa 3",
       quote: "Context switch gerçekleşir.",
     });
-  });
-
-  test("kaynak yoksa null döner (boş kart çizilmez)", () => {
-    expect(toSourceInfo(null)).toBeNull();
-    expect(toSourceInfo(undefined)).toBeNull();
   });
 });
 

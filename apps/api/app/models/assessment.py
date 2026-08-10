@@ -6,18 +6,17 @@ o şemayı yansıtır. Migration'lar düz SQL olarak tutulur, ORM'den üretilmez
 
 from __future__ import annotations
 
-from datetime import datetime
 from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import TIMESTAMP, Integer, Numeric, SmallInteger, Text, func
 from sqlalchemy import ForeignKey as FK
+from sqlalchemy import Integer, Numeric, SmallInteger, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, created_at, pg_enum, uuid_fk, uuid_pk
+from app.models.base import Base, created_at, pg_enum, ts_now, ts_optional, uuid_fk, uuid_pk
 
 
 class QuestionType(StrEnum):
@@ -101,7 +100,7 @@ class Question(Base):
     reviewed_by: Mapped[UUID | None] = mapped_column(
         PgUUID(as_uuid=True), FK("profiles.id", ondelete="SET NULL")
     )
-    reviewed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    reviewed_at: Mapped[ts_optional]
     created_at: Mapped[created_at]
     # Hücre ekseni (0008). İkisi de nullable ve VARSAYILANSIZ: havuzdaki bir sorunun
     # hangi kazanımı ölçtüğünü göç bilemez ve 'medium' gibi bir varsayılan, ölçülmemiş
@@ -131,13 +130,11 @@ class ExamBlueprint(Base):
     duration_minutes: Mapped[int] = mapped_column(Integer)
     max_attempts: Mapped[int] = mapped_column(SmallInteger, default=1)
     # NULL = o yönde sınır yok. Ters pencere kısıtla ifade edilemez kılınmıştır.
-    opens_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
-    closes_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    opens_at: Mapped[ts_optional]
+    closes_at: Mapped[ts_optional]
     created_by: Mapped[uuid_fk] = mapped_column(FK("profiles.id"))
     created_at: Mapped[created_at]
-    updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=func.now()
-    )
+    updated_at: Mapped[ts_now]
 
 
 class BlueprintCell(Base):
@@ -183,11 +180,11 @@ class ExamVersion(Base):
     status: Mapped[ExamVersionStatus] = mapped_column(
         pg_enum(ExamVersionStatus, "exam_version_status"), default=ExamVersionStatus.DRAFT
     )
-    published_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    published_at: Mapped[ts_optional]
     published_by: Mapped[UUID | None] = mapped_column(
         PgUUID(as_uuid=True), FK("profiles.id", ondelete="SET NULL")
     )
-    superseded_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    superseded_at: Mapped[ts_optional]
     # Yayın anında kapının doğruladığı hücre kümesi. Toplulaştırılmaz, bütün olarak
     # okunur ve bir daha yazılmaz.
     blueprint_snapshot: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
@@ -219,13 +216,11 @@ class ExamSession(Base):
     course_id: Mapped[uuid_fk] = mapped_column(FK("courses.id", ondelete="CASCADE"))
     user_id: Mapped[uuid_fk] = mapped_column(FK("profiles.id", ondelete="CASCADE"))
     mode: Mapped[ExamMode] = mapped_column(pg_enum(ExamMode, "exam_mode"))
-    started_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=func.now()
-    )
+    started_at: Mapped[ts_now]
     # practice modda NULL (süresiz). exam modda kalan süre buradan hesaplanır, istemci
     # saatine güvenilmez.
-    expires_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
-    finished_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True))
+    expires_at: Mapped[ts_optional]
+    finished_at: Mapped[ts_optional]
     score: Mapped[float | None] = mapped_column(Numeric)
     # Oturum açılırken seçilen sorular sabitlenir; sonradan onay/red bu listeyi değiştirmez.
     #
@@ -260,9 +255,7 @@ class Answer(Base):
     hint_level: Mapped[int] = mapped_column(Integer, default=0)
     # {"score": 0-100, "eksik_noktalar": [...], "dayanak_chunk_id": "..."}
     feedback: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    answered_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=func.now()
-    )
+    answered_at: Mapped[ts_now]
 
 
 class Mastery(Base):
@@ -276,6 +269,4 @@ class Mastery(Base):
     score: Mapped[float]
     # "İlk cevap mı" sorusunu cevaplar (mastery/service.py'deki başlangıç davranışı, T036).
     answer_count: Mapped[int] = mapped_column(Integer, default=0)
-    updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), server_default=func.now()
-    )
+    updated_at: Mapped[ts_now]

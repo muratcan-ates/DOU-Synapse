@@ -21,37 +21,21 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.db import rls_session
+from app.models.assessment import QuestionType
 from app.modules.mastery.service import record_answer
 from tests.conftest import UserFactory
+from tests.factories import (
+    create_course,
+    create_topic,
+    enroll_student,
+    seed_document,
+    seed_question,
+)
 
-
-async def _create_course(client: AsyncClient, headers: dict[str, str], code: str) -> UUID:
-    response = await client.post(
-        "/courses", json={"code": code, "title": f"{code} Dersi"}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return UUID(response.json()["id"])
-
-
-async def _add_student(
-    client: AsyncClient, headers: dict[str, str], course_id: UUID, email: str
-) -> None:
-    response = await client.post(
-        f"/courses/{course_id}/members",
-        json={"email": email, "role": "student"},
-        headers=headers,
-    )
-    assert response.status_code in (200, 201), response.text
-
-
-async def _create_topic(
-    client: AsyncClient, headers: dict[str, str], course_id: UUID, name: str
-) -> UUID:
-    response = await client.post(
-        f"/courses/{course_id}/topics", json={"name": name}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return UUID(response.json()["id"])
+# Ders/üyelik/konu/soru kurulumu `tests.factories`'ten gelir. Aşağıda kalan
+# yardımcılar bu dosyaya ÖZGÜ: `exam_sessions`/`answers`/`request_logs` satırlarını
+# yalnız analitik uçları okuyor, dolayısıyla ortak fabrikaya taşımak kimseye
+# hizmet etmezdi.
 
 
 async def _record(user_id: UUID, topic_id: UUID, course_id: UUID, raw_score: int) -> float:
@@ -63,70 +47,6 @@ async def _record(user_id: UUID, topic_id: UUID, course_id: UUID, raw_score: int
             course_id=course_id,
             raw_score=raw_score,
         )
-
-
-async def _seed_chunk(engine: AsyncEngine, course_id: UUID, uploader_id: UUID) -> UUID:
-    """Soru üretiminin kaynağı: questions.source_chunk_id NOT NULL'dur."""
-    document_id, chunk_id = uuid4(), uuid4()
-    async with engine.begin() as conn:
-        await conn.execute(
-            text(
-                "INSERT INTO documents (id, course_id, uploaded_by, file_name, file_type, "
-                "storage_path, file_hash, byte_size, status) VALUES "
-                "(:id, :course_id, :uploader, '05-deadlock-demo.pdf', 'pdf', "
-                "'courses/x/d.pdf', :hash, 1024, 'completed')"
-            ),
-            {
-                "id": document_id,
-                "course_id": course_id,
-                "uploader": uploader_id,
-                "hash": str(document_id),
-            },
-        )
-        await conn.execute(
-            text(
-                "INSERT INTO chunks (id, course_id, document_id, chunk_index, page_number, "
-                "text, token_count) VALUES (:id, :course_id, :document_id, 0, 1, "
-                "'Deadlock için dört Coffman koşulu birlikte sağlanmalıdır.', 42)"
-            ),
-            {"id": chunk_id, "course_id": course_id, "document_id": document_id},
-        )
-    return chunk_id
-
-
-async def _seed_question(
-    engine: AsyncEngine,
-    *,
-    course_id: UUID,
-    topic_id: UUID,
-    chunk_id: UUID,
-    instructor_id: UUID,
-    stem: str,
-) -> UUID:
-    question_id = uuid4()
-    async with engine.begin() as conn:
-        await conn.execute(
-            text(
-                "INSERT INTO questions (id, course_id, topic_id, type, payload, "
-                "source_chunk_id, status, created_by, reviewed_by, reviewed_at) VALUES "
-                "(:id, :course_id, :topic_id, 'open', "
-                # CAST şart: jsonb_build_object'in argüman tipi "any" olduğu için
-                # sunucu bind parametresinin tipini kendi başına çıkaramaz. `::text`
-                # biçimi kullanılamaz — SQLAlchemy'nin text() ayrıştırıcısı iki üst
-                # üste noktayı parametre sınırı sanıp bağlamayı bozar.
-                "jsonb_build_object('stem', CAST(:stem AS text), 'answer_key', 'dört koşul'), "
-                ":chunk_id, 'approved', :instructor, :instructor, now())"
-            ),
-            {
-                "id": question_id,
-                "course_id": course_id,
-                "topic_id": topic_id,
-                "stem": stem,
-                "chunk_id": chunk_id,
-                "instructor": instructor_id,
-            },
-        )
-    return question_id
 
 
 async def _seed_session(engine: AsyncEngine, *, course_id: UUID, user_id: UUID) -> UUID:
@@ -193,11 +113,11 @@ class TestStudentProgress:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
-        deadlock = await _create_topic(client, ayse, course_id, "Deadlock")
-        scheduling = await _create_topic(client, ayse, course_id, "CPU zamanlama")
+        deadlock = await create_topic(client, ayse, course_id, "Deadlock")
+        scheduling = await create_topic(client, ayse, course_id, "CPU zamanlama")
         await _record(burak_id, deadlock, course_id, 30)
         await _record(burak_id, scheduling, course_id, 90)
 
@@ -226,11 +146,11 @@ class TestStudentProgress:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
-        orta = await _create_topic(client, ayse, course_id, "Tam sınırda orta")
-        iyi = await _create_topic(client, ayse, course_id, "Tam sınırda iyi")
+        orta = await create_topic(client, ayse, course_id, "Tam sınırda orta")
+        iyi = await create_topic(client, ayse, course_id, "Tam sınırda iyi")
         # İlk cevapta EWMA yok: yeni = son, yani skor birebir raw/100 olur.
         assert await _record(burak_id, orta, course_id, 40) == pytest.approx(0.40)
         assert await _record(burak_id, iyi, course_id, 75) == pytest.approx(0.75)
@@ -254,11 +174,11 @@ class TestStudentProgress:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
-        deadlock = await _create_topic(client, ayse, course_id, "Deadlock")
-        await _create_topic(client, ayse, course_id, "Dosya sistemleri")
+        deadlock = await create_topic(client, ayse, course_id, "Deadlock")
+        await create_topic(client, ayse, course_id, "Dosya sistemleri")
         await _record(burak_id, deadlock, course_id, 60)
 
         body = (
@@ -275,8 +195,8 @@ class TestStudentProgress:
         """Ortalama 0.0 dönseydi 'her konuda sıfırsın' demek olurdu."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         body = (
             await client.get(f"/courses/{course_id}/analytics/me", headers=users.auth(burak_id))
@@ -292,11 +212,11 @@ class TestStudentProgress:
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
         ceren_id = await users.create("ceren@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
-        await _add_student(client, ayse, course_id, "ceren@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        await enroll_student(client, ayse, course_id, "ceren@dogus.edu.tr")
 
-        deadlock = await _create_topic(client, ayse, course_id, "Deadlock")
+        deadlock = await create_topic(client, ayse, course_id, "Deadlock")
         await _record(burak_id, deadlock, course_id, 20)
         await _record(ceren_id, deadlock, course_id, 100)
 
@@ -316,7 +236,7 @@ class TestStudentProgress:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         disari = users.auth(await users.create("disari@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.get(f"/courses/{course_id}/analytics/me", headers=disari)
 
@@ -330,8 +250,8 @@ class TestClassAnalytics:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         response = await client.get(
             f"/courses/{course_id}/analytics/class", headers=users.auth(burak_id)
@@ -347,12 +267,12 @@ class TestClassAnalytics:
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
         ceren_id = await users.create("ceren@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
-        await _add_student(client, ayse, course_id, "ceren@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        await enroll_student(client, ayse, course_id, "ceren@dogus.edu.tr")
 
-        deadlock = await _create_topic(client, ayse, course_id, "Deadlock")
-        scheduling = await _create_topic(client, ayse, course_id, "CPU zamanlama")
+        deadlock = await create_topic(client, ayse, course_id, "Deadlock")
+        scheduling = await create_topic(client, ayse, course_id, "CPU zamanlama")
         await _record(burak_id, deadlock, course_id, 20)
         await _record(ceren_id, deadlock, course_id, 40)
         await _record(burak_id, scheduling, course_id, 80)
@@ -380,26 +300,46 @@ class TestClassAnalytics:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
-        topic_id = await _create_topic(client, ayse, course_id, "Deadlock")
-        chunk_id = await _seed_chunk(admin_engine, course_id, ayse_id)
-        zor = await _seed_question(
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        # Soruların kaynağı: `questions.source_chunk_id` NOT NULL'dur.
+        chunk_id = (
+            await seed_document(
+                admin_engine,
+                course_id=course_id,
+                uploaded_by=ayse_id,
+                passages=["Deadlock için dört Coffman koşulu birlikte sağlanmalıdır."],
+            )
+        ).chunk_ids[0]
+        zor = await seed_question(
             admin_engine,
             course_id=course_id,
             topic_id=topic_id,
-            chunk_id=chunk_id,
-            instructor_id=ayse_id,
-            stem="Banker's algoritmasında güvenli durum ne demektir?",
+            source_chunk_id=chunk_id,
+            payload={
+                "stem": "Banker's algoritmasında güvenli durum ne demektir?",
+                "answer_key": "dört koşul",
+            },
+            question_type=QuestionType.OPEN,
+            status="approved",
+            created_by=ayse_id,
+            reviewed_by=ayse_id,
         )
-        kolay = await _seed_question(
+        kolay = await seed_question(
             admin_engine,
             course_id=course_id,
             topic_id=topic_id,
-            chunk_id=chunk_id,
-            instructor_id=ayse_id,
-            stem="Deadlock kaç koşulun birlikte sağlanmasıyla oluşur?",
+            source_chunk_id=chunk_id,
+            payload={
+                "stem": "Deadlock kaç koşulun birlikte sağlanmasıyla oluşur?",
+                "answer_key": "dört koşul",
+            },
+            question_type=QuestionType.OPEN,
+            status="approved",
+            created_by=ayse_id,
+            reviewed_by=ayse_id,
         )
 
         # Zor soru: 2 cevap, 2 yanlış -> 1.00. Kolay soru: 2 cevap, 1 yanlış -> 0.50.
@@ -452,18 +392,31 @@ class TestClassAnalytics:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
-        topic_id = await _create_topic(client, ayse, course_id, "Deadlock")
-        chunk_id = await _seed_chunk(admin_engine, course_id, ayse_id)
-        herkes_dogru = await _seed_question(
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
+        chunk_id = (
+            await seed_document(
+                admin_engine,
+                course_id=course_id,
+                uploaded_by=ayse_id,
+                passages=["Deadlock için dört Coffman koşulu birlikte sağlanmalıdır."],
+            )
+        ).chunk_ids[0]
+        herkes_dogru = await seed_question(
             admin_engine,
             course_id=course_id,
             topic_id=topic_id,
-            chunk_id=chunk_id,
-            instructor_id=ayse_id,
-            stem="Deadlock kaç koşulun birlikte sağlanmasıyla oluşur?",
+            source_chunk_id=chunk_id,
+            payload={
+                "stem": "Deadlock kaç koşulun birlikte sağlanmasıyla oluşur?",
+                "answer_key": "dört koşul",
+            },
+            question_type=QuestionType.OPEN,
+            status="approved",
+            created_by=ayse_id,
+            reviewed_by=ayse_id,
         )
 
         for _ in range(2):
@@ -489,7 +442,7 @@ class TestClassAnalytics:
         bildirilir, oran ancak ölçülecek veri varsa doldurulur.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         body = (await client.get(f"/courses/{course_id}/analytics/class", headers=ayse)).json()
 
@@ -510,8 +463,8 @@ class TestClassAnalytics:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await _add_student(client, ayse, course_id, "burak@dogus.edu.tr")
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         # 4 cevap üretilmiş istek: 1 kapsam dışı, 1 kanıt yetersiz, 2 cevaplanmış.
         # Beşinci satır durumu olmayan bir istek: paydaya GİRMEMELİ.
@@ -537,10 +490,10 @@ class TestClassAnalytics:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        os_course = await _create_course(client, ayse, "COME301")
-        ds_course = await _create_course(client, ayse, "COME302")
-        await _add_student(client, ayse, os_course, "burak@dogus.edu.tr")
-        await _add_student(client, ayse, ds_course, "burak@dogus.edu.tr")
+        os_course = await create_course(client, ayse, "COME301")
+        ds_course = await create_course(client, ayse, "COME302")
+        await enroll_student(client, ayse, os_course, "burak@dogus.edu.tr")
+        await enroll_student(client, ayse, ds_course, "burak@dogus.edu.tr")
 
         await _seed_requests(
             admin_engine, course_id=os_course, user_id=burak_id, statuses=["answered"]
@@ -564,13 +517,13 @@ class TestClassAnalytics:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
         burak_id = await users.create("burak@dogus.edu.tr")
-        os_course = await _create_course(client, ayse, "COME301")
-        ds_course = await _create_course(client, ayse, "COME302")
-        await _add_student(client, ayse, os_course, "burak@dogus.edu.tr")
-        await _add_student(client, ayse, ds_course, "burak@dogus.edu.tr")
+        os_course = await create_course(client, ayse, "COME301")
+        ds_course = await create_course(client, ayse, "COME302")
+        await enroll_student(client, ayse, os_course, "burak@dogus.edu.tr")
+        await enroll_student(client, ayse, ds_course, "burak@dogus.edu.tr")
 
-        os_topic = await _create_topic(client, ayse, os_course, "Deadlock")
-        ds_topic = await _create_topic(client, ayse, ds_course, "Yığın ve kuyruk")
+        os_topic = await create_topic(client, ayse, os_course, "Deadlock")
+        ds_topic = await create_topic(client, ayse, ds_course, "Yığın ve kuyruk")
         await _record(burak_id, os_topic, os_course, 20)
         await _record(burak_id, ds_topic, ds_course, 100)
 
