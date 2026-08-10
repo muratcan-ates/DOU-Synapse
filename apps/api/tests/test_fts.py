@@ -434,4 +434,7 @@ class TestBelgePolitikasi:
 
         assert {chunk.document_id for chunk in only_allowed} == {allowed_doc.document_id}
         assert none_allowed == []
-        assert {chunk.document_id for chunk in unrestricted} == {allowed_doc.document_id, blocked_doc.document_id}
+        assert {chunk.document_id for chunk in unrestricted} == {
+            allowed_doc.document_id,
+            blocked_doc.document_id,
+        }
