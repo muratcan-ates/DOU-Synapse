@@ -126,8 +126,18 @@ class Settings(BaseSettings):
 
     # --- Yükleme ve depolama ------------------------------------------------
     max_upload_bytes: int = 20 * 1024 * 1024
-    # Yerel belge deposu. Bulutta Supabase Storage adaptörüyle değiştirilir.
+    #: Yerel geliştirme için ``local``; kalıcı production nesne deposu için
+    #: ``supabase``. Seçim çağıran kodu değiştirmez: DocumentStorage arayüzü
+    #: aynı kalır.
+    storage_backend: Literal["local", "supabase"] = "local"
+    # Yerel belge deposu. Bulutta yalnız ``storage_backend=local`` iken okunur.
     storage_root: str = "./storage"
+    #: Supabase proje kökü (``https://<ref>.supabase.co``). Storage adaptörü
+    #: yalnız sunucu tarafında çalışır; service-role anahtarı tarayıcıya gitmez.
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
+    supabase_storage_bucket: str = "course-materials"
+    storage_timeout_seconds: float = 30.0
     # Worker'ın tek turda işleyeceği azami iş sayısı; bir belgenin kuyruğu tıkamaması için.
     worker_batch_size: int = 5
 
@@ -170,6 +180,10 @@ class Settings(BaseSettings):
     exam_duration_minutes: int = 20
     question_generation_batch: int = 5
     mastery_alpha: float = 0.3  # yeni = (1-alpha)*eski + alpha*son
+
+    # Büyüyebilen liste uçlarının ortak sayfa sınırı (FR-160...FR-163).
+    page_size_default: int = 25
+    page_size_max: int = 100
 
     # --- Retrieval (Faz A) --------------------------------------------------
     # Bu blok, paralel geliştirme başlamadan ÖNCE tek seferde eklendi: beş oturum
@@ -313,6 +327,27 @@ class Settings(BaseSettings):
             raise ValueError(
                 "LLM_FAKE_PROVIDER üretim ortamında açılamaz. "
                 "Bu bayrak yalnız test ve çevrimdışı demo içindir."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_storage_configuration(self) -> Settings:
+        """Production'ı geçici konteyner diskine sessizce bağlama.
+
+        Supabase seçildiyse iki sır birlikte zorunludur. Production ortamında
+        yerel disk de reddedilir; aksi hâlde yeni pod açıldığında veritabanı
+        belgeyi biliyor görünürken dosyanın kendisi kaybolur.
+        """
+        if self.storage_backend == "supabase":
+            if not self.supabase_url or not self.supabase_service_role_key:
+                raise ValueError(
+                    "STORAGE_BACKEND=supabase için SUPABASE_URL ve "
+                    "SUPABASE_SERVICE_ROLE_KEY tanımlı olmalı."
+                )
+        elif self.is_production:
+            raise ValueError(
+                "ENVIRONMENT=production için STORAGE_BACKEND=supabase olmalı; "
+                "yerel konteyner diski kalıcı belge deposu değildir."
             )
         return self
 
