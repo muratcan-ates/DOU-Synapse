@@ -273,6 +273,9 @@ jobs:
           ENVIRONMENT: local
           DEV_AUTH_ENABLED: "true"
           DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse
+          # Worker DSN'siz drain dou_app'e düşer (app/worker.py) ve temiz DB'de
+          # ingestion yetki hatasıyla kırılır — rol ayrımı RLS'in parçası.
+          WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@localhost/dou_synapse
           CORS_ORIGINS: '["http://localhost:3100"]'
         run: |
           uv venv --python 3.12

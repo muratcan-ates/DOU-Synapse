@@ -30,7 +30,16 @@ import { defineConfig, devices } from "@playwright/test";
 const API_URL = process.env.E2E_API_URL ?? "http://localhost:8000";
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 
+/**
+ * `@ekran` ekran görüntüsü üretimi bir DOĞRULAMA değildir ve gerçek demo dersine
+ * (COME 331) bağımlıdır; temiz bir CI veritabanında o ders yoktur ve testler
+ * kaçınılmaz düşer. Bu yüzden varsayılan koşudan çıkarılır; üretim bilinçli bir
+ * eylemdir: EKRAN=1 ... --grep @ekran
+ */
+const EKRAN_URETIMI = !!process.env.EKRAN;
+
 export default defineConfig({
+  grepInvert: EKRAN_URETIMI ? undefined : /@ekran/,
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
