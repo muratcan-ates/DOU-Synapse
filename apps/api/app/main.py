@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -14,10 +15,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
+    admin,
     analytics,
     blueprints,
     chat,
     courses,
+    dashboard,
     documents,
     exams,
     feedback,
@@ -25,6 +28,7 @@ from app.api import (
     internal,
     policy,
     privacy,
+    profile,
     questions,
     sources,
 )
@@ -40,6 +44,8 @@ from app.core.logging import configure_logging, get_logger
 from app.core.warmup import start_warmup
 
 logger = get_logger("app.request")
+
+_SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 API_SECURITY_HEADERS: dict[str, str] = {
     "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
@@ -102,7 +108,12 @@ def create_app() -> FastAPI:
     async def request_logging(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        supplied_request_id = request.headers.get("X-Request-ID", "")
+        request_id = (
+            supplied_request_id
+            if _SAFE_REQUEST_ID.fullmatch(supplied_request_id)
+            else uuid.uuid4().hex
+        )
         # `call_next`'ten ÖNCE yazılır: hata handler'ları kimliği buradan okuyor
         # ve zarfa koyuyor (`core/errors.py::request_id_of`). Sonra yazılsaydı
         # yanıt başlığı kimliği taşırdı ama gövde taşımazdı — kullanıcıya
@@ -133,6 +144,9 @@ def create_app() -> FastAPI:
     app.add_exception_handler(Exception, unhandled_error_handler)
 
     app.include_router(health.router)
+    app.include_router(profile.router)
+    app.include_router(dashboard.router)
+    app.include_router(admin.router)
     app.include_router(courses.router)
     app.include_router(documents.router)
     app.include_router(sources.router)

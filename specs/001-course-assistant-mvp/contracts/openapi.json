@@ -53,6 +53,385 @@
         }
       }
     },
+    "/me/profile": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Get My Profile",
+        "operationId": "get_my_profile_me_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "profile"
+        ],
+        "summary": "Update My Profile",
+        "description": "Yalnız ad soyadı değiştirir; e-posta kimlik sağlayıcısına aittir.",
+        "operationId": "update_my_profile_me_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Get Dashboard",
+        "operationId": "get_dashboard_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/overview": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Admin Overview",
+        "operationId": "get_admin_overview_admin_overview_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminOverviewOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Users",
+        "description": "Kullanıcı dizinini URL'ye ad/e-posta bırakmadan sorgula.",
+        "operationId": "list_admin_users_admin_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserQueryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/courses": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Courses",
+        "operationId": "list_admin_courses_admin_courses_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCourseListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/requests": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Requests",
+        "operationId": "list_admin_requests_admin_requests_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "route",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Route"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AnswerStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminRequestListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/ingestion": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Admin Ingestion",
+        "operationId": "list_admin_ingestion_admin_ingestion_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/JobStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminIngestionListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses": {
       "get": {
         "tags": [
@@ -3253,6 +3632,491 @@
         ],
         "title": "AccountAnonymizationOut"
       },
+      "AdminCourseItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "creator_name": {
+            "type": "string",
+            "title": "Creator Name"
+          },
+          "active_member_count": {
+            "type": "integer",
+            "title": "Active Member Count"
+          },
+          "documents_total": {
+            "type": "integer",
+            "title": "Documents Total"
+          },
+          "documents_failed": {
+            "type": "integer",
+            "title": "Documents Failed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "created_at",
+          "creator_name",
+          "active_member_count",
+          "documents_total",
+          "documents_failed"
+        ],
+        "title": "AdminCourseItem"
+      },
+      "AdminCourseListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminCourseItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AdminCourseListOut"
+      },
+      "AdminIngestionItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "course_code": {
+            "type": "string",
+            "title": "Course Code"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "attempt_count": {
+            "type": "integer",
+            "title": "Attempt Count"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "document_id",
+          "course_id",
+          "course_code",
+          "status",
+          "attempt_count",
+          "started_at",
+          "completed_at",
+          "created_at"
+        ],
+        "title": "AdminIngestionItem"
+      },
+      "AdminIngestionListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminIngestionItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AdminIngestionListOut"
+      },
+      "AdminOverviewOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "database_status": {
+            "type": "string",
+            "title": "Database Status"
+          },
+          "embedding_status": {
+            "type": "string",
+            "title": "Embedding Status"
+          },
+          "measured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Measured At"
+          },
+          "users_total": {
+            "type": "integer",
+            "title": "Users Total"
+          },
+          "active_memberships_total": {
+            "type": "integer",
+            "title": "Active Memberships Total"
+          },
+          "courses_total": {
+            "type": "integer",
+            "title": "Courses Total"
+          },
+          "documents_total": {
+            "type": "integer",
+            "title": "Documents Total"
+          },
+          "ingestion_processing": {
+            "type": "integer",
+            "title": "Ingestion Processing"
+          },
+          "ingestion_failed": {
+            "type": "integer",
+            "title": "Ingestion Failed"
+          },
+          "chat_turns_24h": {
+            "type": "integer",
+            "title": "Chat Turns 24H"
+          },
+          "p95_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Latency Ms"
+          },
+          "tokens_24h": {
+            "type": "integer",
+            "title": "Tokens 24H"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "database_status",
+          "embedding_status",
+          "measured_at",
+          "users_total",
+          "active_memberships_total",
+          "courses_total",
+          "documents_total",
+          "ingestion_processing",
+          "ingestion_failed",
+          "chat_turns_24h",
+          "p95_latency_ms",
+          "tokens_24h"
+        ],
+        "title": "AdminOverviewOut"
+      },
+      "AdminRequestItem": {
+        "properties": {
+          "log_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Log Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "course_code": {
+            "type": "string",
+            "title": "Course Code"
+          },
+          "route": {
+            "type": "string",
+            "title": "Route"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "http_status": {
+            "type": "integer",
+            "title": "Http Status"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "title": "Latency Ms"
+          },
+          "token_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Count"
+          },
+          "cache_hit": {
+            "type": "boolean",
+            "title": "Cache Hit"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_id",
+          "course_id",
+          "course_code",
+          "route",
+          "mode",
+          "status",
+          "http_status",
+          "latency_ms",
+          "token_count",
+          "cache_hit",
+          "created_at"
+        ],
+        "title": "AdminRequestItem"
+      },
+      "AdminRequestListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminRequestItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AdminRequestListOut"
+      },
+      "AdminUserItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "masked_email": {
+            "type": "string",
+            "title": "Masked Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_platform_admin": {
+            "type": "boolean",
+            "title": "Is Platform Admin"
+          },
+          "active_course_count": {
+            "type": "integer",
+            "title": "Active Course Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "masked_email",
+          "full_name",
+          "created_at",
+          "is_platform_admin",
+          "active_course_count"
+        ],
+        "title": "AdminUserItem"
+      },
+      "AdminUserListOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminUserItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AdminUserListOut"
+      },
+      "AdminUserQueryIn": {
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 25
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset",
+            "default": 0
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AdminUserQueryIn",
+        "description": "PII içerebilecek aramayı URL yerine doğrulanan gövdede taşır."
+      },
       "AnswerFeedbackOut": {
         "properties": {
           "question_id": {
@@ -4836,6 +5700,207 @@
         "title": "CourseWithRole",
         "description": "Listelemede kullanıcının o dersteki rolü de döner."
       },
+      "DashboardCourse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          },
+          "documents_total": {
+            "type": "integer",
+            "title": "Documents Total"
+          },
+          "documents_processing": {
+            "type": "integer",
+            "title": "Documents Processing"
+          },
+          "documents_failed": {
+            "type": "integer",
+            "title": "Documents Failed"
+          },
+          "questions_total": {
+            "type": "integer",
+            "title": "Questions Total"
+          },
+          "draft_questions": {
+            "type": "integer",
+            "title": "Draft Questions"
+          },
+          "published_exams": {
+            "type": "integer",
+            "title": "Published Exams"
+          },
+          "mastery_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mastery Score"
+          },
+          "last_activity_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Activity At"
+          },
+          "assistant_locked": {
+            "type": "boolean",
+            "title": "Assistant Locked"
+          },
+          "assistant_lock_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Lock Reason"
+          },
+          "assistant_lock_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Lock Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "role",
+          "documents_total",
+          "documents_processing",
+          "documents_failed",
+          "questions_total",
+          "draft_questions",
+          "published_exams",
+          "mastery_score",
+          "last_activity_at",
+          "assistant_locked",
+          "assistant_lock_reason",
+          "assistant_lock_message"
+        ],
+        "title": "DashboardCourse"
+      },
+      "DashboardOut": {
+        "properties": {
+          "viewer": {
+            "$ref": "#/components/schemas/DashboardViewer"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/DashboardSummary"
+          },
+          "courses": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardCourse"
+            },
+            "type": "array",
+            "title": "Courses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "viewer",
+          "summary",
+          "courses"
+        ],
+        "title": "DashboardOut"
+      },
+      "DashboardSummary": {
+        "properties": {
+          "total_courses": {
+            "type": "integer",
+            "title": "Total Courses"
+          },
+          "instructor_courses": {
+            "type": "integer",
+            "title": "Instructor Courses"
+          },
+          "student_courses": {
+            "type": "integer",
+            "title": "Student Courses"
+          },
+          "action_items": {
+            "type": "integer",
+            "title": "Action Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_courses",
+          "instructor_courses",
+          "student_courses",
+          "action_items"
+        ],
+        "title": "DashboardSummary"
+      },
+      "DashboardViewer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "is_platform_admin": {
+            "type": "boolean",
+            "title": "Is Platform Admin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "is_platform_admin"
+        ],
+        "title": "DashboardViewer"
+      },
       "DistributionTargets": {
         "properties": {
           "total_questions": {
@@ -5989,6 +7054,16 @@
         ],
         "title": "HintRequest"
       },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "processing",
+          "completed",
+          "failed"
+        ],
+        "title": "JobStatus"
+      },
       "LearningOutcomeCreate": {
         "properties": {
           "code": {
@@ -6402,6 +7477,101 @@
           "items"
         ],
         "title": "PageOut[QuestionOut]"
+      },
+      "ProfileMembershipOut": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "course_code": {
+            "type": "string",
+            "title": "Course Code"
+          },
+          "course_title": {
+            "type": "string",
+            "title": "Course Title"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "course_code",
+          "course_title",
+          "role"
+        ],
+        "title": "ProfileMembershipOut"
+      },
+      "ProfileOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_platform_admin": {
+            "type": "boolean",
+            "title": "Is Platform Admin"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileMembershipOut"
+            },
+            "type": "array",
+            "title": "Memberships"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "created_at",
+          "is_platform_admin",
+          "memberships"
+        ],
+        "title": "ProfileOut"
+      },
+      "ProfileUpdate": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 120,
+            "title": "Full Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "full_name"
+        ],
+        "title": "ProfileUpdate",
+        "description": "Profilde değiştirilebilen tek alan; e-posta kimlik sağlayıcısına aittir."
       },
       "PublishOut": {
         "properties": {

@@ -29,7 +29,7 @@ Dört göç dosyası, bağlayıcı sırayla: `0008` blueprint → `0009` ders po
 
 **Storage**: PostgreSQL 16 + pgvector (HNSW, `vector_cosine_ops`). Şema düz SQL göçleriyle yönetilir, ORM'den üretilmez; `app/models/*.py` şemayı **yansıtır**.
 
-**Testing**: pytest (`apps/api/tests/`, `uv run pytest -q` → 825) · `bun test` (`apps/web/lib/` → 290) · Playwright (`apps/web/e2e/`, 21 vaka) · `supabase/tests/rls_isolation.sql` (98 iddia, mutasyonla doğrulanıyor) <!-- docs-check: backend.tests = 825 --><!-- docs-check: frontend.tests = 290 --><!-- docs-check: e2e.tests = 21 -->
+**Testing**: pytest (`apps/api/tests/`, `uv run pytest -q` → 846) · `bun test` (`apps/web/lib/` → 309) · Playwright (`apps/web/e2e/`, 33 vaka) · `supabase/tests/rls_isolation.sql` (98 iddia, mutasyonla doğrulanıyor) <!-- docs-check: backend.tests = 846 --><!-- docs-check: frontend.tests = 309 --><!-- docs-check: e2e.tests = 33 -->
 
 **Target Platform**: Vercel (web) + Azure Container Apps (API/worker, aynı imaj farklı komut) + Supabase (Postgres/Auth/Storage). **Bulut adımları bugüne kadar KOŞULMADI** — T050 açık.
 

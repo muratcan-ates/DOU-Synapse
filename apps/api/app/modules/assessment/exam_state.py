@@ -26,6 +26,7 @@ dosyanın başlığındaki tablo hâlâ mod politikalarının tek anlatımıdır
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from datetime import datetime, timedelta
 from uuid import UUID
 
@@ -130,23 +131,66 @@ async def active_exam_session(
     başına "kendi oturumu" anlamına gelmiyor (Anayasa II: iki katman birbirinin
     yerine geçmez).
     """
+    active = await active_exam_sessions_by_course(
+        session,
+        user_id=user_id,
+        course_ids={course_id},
+        now=now,
+        settings=settings,
+    )
+    return active.get(course_id)
+
+
+async def active_exam_sessions_by_course(
+    session: AsyncSession,
+    *,
+    user_id: UUID,
+    course_ids: Collection[UUID],
+    now: datetime,
+    settings: Settings,
+) -> dict[UUID, ExamSession]:
+    """Ders kümesindeki yürüyen sınavları tek sorguda döndürür.
+
+    Dashboard, öğrencinin her dersi için availability ucuna ayrı istek atmaz ve
+    sunucu da ders başına ayrı sorgu çalıştırmaz. Blueprint süreleri aynı sorguda
+    alınır; nihai karar yine :func:`effective_expiry` ile Python'da verilir. Bu,
+    tek-ders kilidinin ``min(expires_at, started_at + süre)`` kuralını aynen
+    korurken N+1 sorgusunu önler.
+
+    Bir derste birden fazla bitirilmemiş satır varsa en yeni yürüyen oturum
+    seçilir. En yeni satır etkin süresiyle dolmuşsa daha eski satırlar da
+    değerlendirilir; farklı blueprint süreleri yüzünden eski bir oturum hâlâ
+    yürür durumda olabilir.
+    """
+    requested_courses = set(course_ids)
+    if not requested_courses:
+        return {}
+
     result = await session.execute(
-        select(ExamSession)
+        select(ExamSession, ExamBlueprint.duration_minutes)
+        .outerjoin(ExamBlueprint, ExamBlueprint.id == ExamSession.exam_blueprint_id)
         .where(
             ExamSession.user_id == user_id,
-            ExamSession.course_id == course_id,
+            ExamSession.course_id.in_(requested_courses),
             ExamSession.mode == ExamMode.EXAM,
             ExamSession.finished_at.is_(None),
             ExamSession.expires_at > now,
         )
         .order_by(ExamSession.started_at.desc())
     )
-    for exam in result.scalars():
+    active: dict[UUID, ExamSession] = {}
+    for exam, blueprint_duration in result.tuples():
+        if exam.course_id in active:
+            continue
         # Blueprint sınavının süresi kendi alanındadır; global sınırla kırpmak
         # kilidi ERKEN açardı — 45 dakikalık sınavın 21. dakikasında asistan
         # serbest kalırdı. Fail-open, yani Anayasa IV'ün tam tersi.
-        cap = await session_cap_minutes(session, exam, settings=settings)
+        cap = (
+            int(blueprint_duration)
+            if blueprint_duration is not None
+            else settings.exam_duration_minutes
+        )
         expiry = effective_expiry(exam, settings=settings, cap_minutes=cap)
         if expiry is not None and now < expiry:
-            return exam
-    return None
+            active[exam.course_id] = exam
+    return active

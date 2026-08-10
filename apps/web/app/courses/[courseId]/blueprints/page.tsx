@@ -63,7 +63,7 @@ const DEFAULT_TYPE = "mcq" as const;
 
 export default function BlueprintsPage() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor, ready } = useSession();
+  const { isInstructor, ready } = useSession(courseId);
 
   const outcomes = useResource<LearningOutcome[]>(
     () => api.get(`/courses/${courseId}/learning-outcomes`),

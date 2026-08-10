@@ -12,7 +12,7 @@ Danışman: Yasemin Karagül · Takım: Muratcan Ateş (frontend + lead) · Eren
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-825_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 825 -->
+![Tests](https://img.shields.io/badge/tests-846_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 846 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/muratcan-ates/DOU-Synapse?style=flat-square)
 
@@ -49,7 +49,7 @@ iş taslakları onaylamak. Onaylanmayan hiçbir soru öğrenciye görünmez.
 | **Nedir** | Ders materyaliyle sınırlı, kaynak zorunlu, Sokratik bir RAG ders ve sınav asistanı |
 | **Kimin için** | Soru hazırlama ve sınıf görünürlüğü yükü taşıyan eğitmen; müfredat dahilinde güvenilir kaynakla çalışmak isteyen öğrenci |
 | **Farkı ne** | Cevap üretmek değil, **doğrulanabilir** cevap üretmek: mekanik atıf doğrulaması, kademeli Sokratik yönlendirme, eğitmen onaylı soru havuzu, iki katmanlı ders izolasyonu |
-| **Kanıtı ne** | 825 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak | <!-- docs-check: backend.tests = 825 -->
+| **Kanıtı ne** | 846 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak | <!-- docs-check: backend.tests = 846 -->
 | **Bilerek ne değil** | Üretim sistemi değil; internete açılmaz, kod çalıştırmaz, resmî not vermez — [aşağıda](#yapar--bilerek-yapmaz) |
 
 ## Yapay zekânın üç rolü
@@ -152,7 +152,7 @@ değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
 
 ## Yapılanlar ✅
 
-Hepsi bu depoda çalışır ve testlidir — **825 otomatik test** + CI (ruff, mypy, pytest, <!-- docs-check: backend.tests = 825 -->
+Hepsi bu depoda çalışır ve testlidir — **846 otomatik test** + CI (ruff, mypy, pytest, <!-- docs-check: backend.tests = 846 -->
 RLS izolasyon kanıtı):
 
 - **İki katmanlı ders izolasyonu** — uygulama katmanı (istemciden gelen ders kimliği
@@ -170,7 +170,7 @@ RLS izolasyon kanıtı):
 - **Örnek materyal paketi** — `sample_data/isletim-sistemleri/`, 22 teslim dosyası <!-- docs-check: sampleData.files = 22 -->
   (PDF, PPTX ve kod; bug_hunt için bilinçli hatalı örnek dahil). Kaynak Markdown'lar
   ayrıca depoda; ikili dosyalar `generate_material.py` ile onlardan üretilir
-- **17 ekranlı web arayüzü** — Türkçe, koyu tema, 375px mobil uyumlu <!-- docs-check: screens.count = 17 -->
+- **20 ekranlı web arayüzü** — Türkçe, koyu tema, 375px mobil uyumlu <!-- docs-check: screens.count = 20 -->
 - **Gereksinim analizi** — danışman taslağının 12 maddesi → numaralı FR izlenebilirliği
 
 **9 Ağustos'ta tamamlanan cevap hattı** — hepsi canlı sistemde koşturularak doğrulandı:
@@ -271,7 +271,7 @@ cd apps/api
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 cp ../../.env.example .env        # varsayılanlar yerel için yeterli
-uv run pytest -q                  # 825 test yeşil olmalı (~70-120 sn)   # docs-check: backend.tests = 825
+uv run pytest -q                  # 846 test yeşil olmalı (~70-120 sn)   # docs-check: backend.tests = 846
 ```
 
 **4. Servisleri başlat** (üç ayrı terminal)
@@ -419,7 +419,7 @@ koşularda hiç görünmüyordu.
 
 İkisi de migration dizininin tamamını sırayla uygulayacak şekilde değiştirildi, böylece
 bir sonraki migration eklendiğinde belge kendiliğinden güncel kalır. Sıfırdan bir
-veritabanında doğrulandı: 23 tablo ve 2 demo kullanıcısı hatasız oluşuyor. <!-- docs-check: tables.count = 23 -->
+veritabanında doğrulandı: 25 tablo ve 2 demo kullanıcısı hatasız oluşuyor. <!-- docs-check: tables.count = 25 -->
 
 </details>
 
