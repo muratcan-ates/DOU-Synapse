@@ -275,7 +275,7 @@ düşük veri vakası OBS'den uydurma SIS/GPA alanı gelmediğini kanıtlar.
   hassas istek olmadığını ve konsolun hatasız olduğunu doğrula.
 - [x] T609 `node scripts/docs_check.mjs` kapısını çalıştır; status tablosunu
   yalnız ölçülen kanıtla güncelle.
-- [ ] T610 Değişiklikleri anlamlı commit(ler)e ayır; çalışma ağacı, upstream,
+- [x] T610 Değişiklikleri anlamlı commit(ler)e ayır; çalışma ağacı, upstream,
   push ve PR durumunu ayrı ayrı raporla.
 
 **Faz kapısı**: Hedefli + tam test, RLS mutasyon, gerçek HTTP, build ve tarayıcı
@@ -288,7 +288,10 @@ de teardown çalıştı; son ölçümde run-scoped ders ve audit artığı sıf�
 `COME 331` yerindeydi. OpenAPI uygulamadan 50 yol ve 118 şema ile yeniden üretildi.
 Tarayıcı konsol nöbetçisi eksik site simgesi 404'ünü kırmızıya çevirdi; simge
 eklendikten sonra aynı Bilgi İşlem yolculuğu temiz konsolla geçti. `docs_check`
-canlı sayıları kaynaktan yenileyip 77 belgede fark bırakmadı.
+canlı sayıları kaynaktan yenileyip 77 belgede fark bırakmadı. Dal küçük amaçlı
+commit'lerle `origin/003-product-portal` upstream'ine gönderildi; çalışma ağacı
+temizdir. 002'ye merge ve PR bu feature tesliminin parçası olarak yapılmadı;
+entegrasyon sahibi tarafından ayrıca yürütülecektir.
 
 ---
 
