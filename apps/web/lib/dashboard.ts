@@ -28,6 +28,14 @@ export interface DashboardCourse {
   published_exams: number;
   mastery_score: number | null;
   last_activity_at: string | null;
+  assistant_locked: boolean;
+  assistant_lock_reason: string | null;
+  assistant_lock_message: string | null;
+}
+
+export interface DashboardQuickTool {
+  href: string;
+  label: string;
 }
 
 export interface Dashboard {
@@ -41,9 +49,48 @@ export function getDashboard(): Promise<Dashboard> {
 }
 
 export function coursePrimaryHref(course: DashboardCourse): string {
-  return course.role === "instructor"
-    ? `/courses/${course.id}`
+  if (course.role === "instructor") return `/courses/${course.id}`;
+  return course.assistant_locked
+    ? `/courses/${course.id}/exam`
     : `/courses/${course.id}/chat`;
+}
+
+export function coursePrimaryLabel(course: DashboardCourse): string {
+  if (course.role === "instructor") return "Dersi yönet";
+  return course.assistant_locked ? "Sınava dön" : "Çalışmaya devam et";
+}
+
+export function courseQuickTools(course: DashboardCourse): DashboardQuickTool[] {
+  const base = `/courses/${course.id}`;
+  if (course.role === "instructor") {
+    return [
+      { href: `${base}/sources`, label: "Kaynaklar" },
+      { href: `${base}/questions`, label: "Soru havuzu" },
+      { href: `${base}/blueprints`, label: "Sınav planı" },
+      { href: `${base}/exam`, label: "Sınavlar" },
+      { href: `${base}/settings`, label: "AI politikası" },
+      { href: `${base}/analytics`, label: "Analitik" },
+    ];
+  }
+  return [
+    ...(course.assistant_locked
+      ? []
+      : [{ href: `${base}/chat`, label: "Asistan" }]),
+    { href: `${base}/exam`, label: "Sınavlar" },
+    { href: `${base}/analytics`, label: "İlerleme" },
+  ];
+}
+
+export function instructorAttentionMessages(course: DashboardCourse): string[] {
+  if (course.role !== "instructor") return [];
+  return [
+    ...(course.documents_failed > 0
+      ? [`${course.documents_failed} kaynak işlenemedi.`]
+      : []),
+    ...(course.draft_questions > 0
+      ? [`${course.draft_questions} soru öğretmen onayı bekliyor.`]
+      : []),
+  ];
 }
 
 export function masteryLabel(score: number | null): string {

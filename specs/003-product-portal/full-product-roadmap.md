@@ -154,10 +154,10 @@ action_items = documents_processing + documents_failed + draft_questions
 - Mevcut `/account` indirme, sohbet silme ve anonimleştirme akışlarına giriş.
 - Profil verisi AppShell ve gate'lerle tek context üzerinden paylaşılır.
 
-### 4.5 Platform admin paneli
+### 4.5 Bilgi İşlem / platform yönetimi paneli
 
-Admin paneli akademik superuser veya ham log ekranı değildir. Salt okunur operasyon
-konsoludur:
+Bilgi İşlem paneli öğretmen paneli, akademik superuser veya ham log ekranı değildir.
+DBA tarafından atanan platform yöneticilerine açık, salt okunur operasyon konsoludur:
 
 - uygulama, DB ve embedding hazırlığı,
 - kullanıcı/ders/belge ve son 24 saat başarılı sohbet turu özeti,

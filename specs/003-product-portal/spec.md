@@ -140,7 +140,7 @@ rol, platform adminliği veya başka profil alanı değiştirilemez.
 4. Profil, KVKK/veri hakkı ekranına açık bağlantı taşır.
 5. Profil yüklenemezse eski localStorage adı “gerçek profil” gibi gösterilmez.
 
-### US4 - Platform yöneticisi sistemi akademik mahremiyeti bozmadan işletir (P1)
+### US4 - Bilgi İşlem platformu akademik mahremiyeti bozmadan işletir (P1)
 
 Platform yöneticisi kullanıcı, ders, istek ve belge işleme sağlığını görür; ancak
 bu rol öğretmen rolü değildir. Platform adminliği bir derse üyelik sağlamaz,

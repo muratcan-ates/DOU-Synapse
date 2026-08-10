@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!ready || !user) return null;
 
   return (
-    <PortalProfileProvider>
+    <PortalProfileProvider key={user.id} userId={user.id}>
       <AuthenticatedShell>{children}</AuthenticatedShell>
     </PortalProfileProvider>
   );
@@ -54,7 +54,7 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
     { href: "/courses", label: "Dersler" },
     { href: "/profile", label: "Profil" },
     ...(profile?.is_platform_admin
-      ? [{ href: "/admin", label: "Sistem yönetimi" }]
+      ? [{ href: "/admin", label: "Bilgi İşlem" }]
       : []),
   ];
 

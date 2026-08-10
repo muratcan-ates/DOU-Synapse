@@ -10,7 +10,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.core.config import get_settings
 from app.core.db import rls_session
+from app.modules.assessment import exam_state
 from tests.conftest import UserFactory
 
 
@@ -47,6 +49,33 @@ async def _grant_admin(engine: AsyncEngine, user_id: UUID) -> None:
         await connection.execute(
             text("INSERT INTO platform_admins (user_id) VALUES (:user_id)"),
             {"user_id": user_id},
+        )
+
+
+async def _add_exam_session(
+    engine: AsyncEngine,
+    *,
+    course_id: UUID,
+    user_id: UUID,
+    started_minutes_ago: int,
+    expires_minutes_from_now: int,
+) -> None:
+    async with engine.begin() as connection:
+        await connection.execute(
+            text(
+                "INSERT INTO exam_sessions "
+                "(course_id, user_id, mode, started_at, expires_at, question_ids) "
+                "VALUES (:course_id, :user_id, 'exam', "
+                "now() - (:started_minutes_ago * interval '1 minute'), "
+                "now() + (:expires_minutes_from_now * interval '1 minute'), "
+                "'{}'::uuid[])"
+            ),
+            {
+                "course_id": course_id,
+                "user_id": user_id,
+                "started_minutes_ago": started_minutes_ago,
+                "expires_minutes_from_now": expires_minutes_from_now,
+            },
         )
 
 
@@ -100,6 +129,52 @@ class TestProfile:
         assert rejected.status_code == 422
         assert rejected.json()["error"]["code"] == "validation_error"
 
+    @pytest.mark.parametrize(
+        "forbidden_field, forbidden_value",
+        [
+            ("role", "instructor"),
+            ("is_platform_admin", True),
+        ],
+    )
+    async def test_profil_kullaniciya_kendi_yetkisini_yukseltme_yuzeyi_vermez(
+        self,
+        forbidden_field: str,
+        forbidden_value: object,
+        client: AsyncClient,
+        users: UserFactory,
+    ) -> None:
+        user_id = await users.create("ogrenci@dogus.edu.tr", "Öğrenci")
+        headers = users.auth(user_id)
+
+        response = await client.patch(
+            "/me/profile",
+            json={"full_name": "Yeni Ad", forbidden_field: forbidden_value},
+            headers=headers,
+        )
+        unchanged = await client.get("/me/profile", headers=headers)
+
+        assert response.status_code == 422
+        assert response.json()["error"]["code"] == "validation_error"
+        assert unchanged.status_code == 200
+        assert unchanged.json()["full_name"] == "Öğrenci"
+        assert unchanged.json()["is_platform_admin"] is False
+
+    async def test_profil_adi_null_olamaz(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+    ) -> None:
+        headers = users.auth(await users.create("ayse@dogus.edu.tr", "Ayşe"))
+
+        response = await client.patch(
+            "/me/profile",
+            json={"full_name": None},
+            headers=headers,
+        )
+
+        assert response.status_code == 422
+        assert response.json()["error"]["code"] == "validation_error"
+
     async def test_bos_ad_reddedilir(
         self,
         client: AsyncClient,
@@ -141,6 +216,17 @@ class TestDashboard:
                 ),
                 {"course_id": student_course, "owner_id": owner},
             )
+            await connection.execute(
+                text(
+                    "INSERT INTO documents "
+                    "(course_id, uploaded_by, file_name, file_type, storage_path, file_hash, "
+                    "byte_size, status, error_message) VALUES "
+                    "(:course_id, :owner_id, 'gizli-egitmen-kaynagi.pdf', 'pdf', "
+                    "'/private/instructor.pdf', 'dashboard-instructor-failed-doc', 10, "
+                    "'failed', 'öğretmen gizli hata')"
+                ),
+                {"course_id": instructor_course, "owner_id": mixed},
+            )
 
         response = await client.get("/dashboard", headers=mixed_headers)
 
@@ -150,14 +236,126 @@ class TestDashboard:
             "total_courses": 2,
             "instructor_courses": 1,
             "student_courses": 1,
-            "action_items": 0,
+            "action_items": 1,
         }
         roles = {item["id"]: item["role"] for item in body["courses"]}
         assert roles[str(student_course)] == "student"
         assert roles[str(instructor_course)] == "instructor"
         student_card = next(item for item in body["courses"] if item["id"] == str(student_course))
+        instructor_card = next(
+            item for item in body["courses"] if item["id"] == str(instructor_course)
+        )
         assert student_card["documents_failed"] == 0
         assert student_card["draft_questions"] == 0
+        assert instructor_card["documents_failed"] == 1
+        assert "gizli-egitmen-kaynagi.pdf" not in response.text
+        assert "/private/instructor.pdf" not in response.text
+        assert "öğretmen gizli hata" not in response.text
+
+    async def test_ogrenci_kilidi_ayni_sure_kuraliyla_ders_bazli_doner(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+    ) -> None:
+        owner = await users.create("owner@dogus.edu.tr")
+        mixed = await users.create("mixed@dogus.edu.tr")
+        owner_headers = users.auth(owner)
+        mixed_headers = users.auth(mixed)
+
+        locked_course = await _create_course(client, owner_headers, "LOCK311")
+        capped_course = await _create_course(client, owner_headers, "CAP312")
+        await _add_student(client, owner_headers, locked_course, "mixed@dogus.edu.tr")
+        await _add_student(client, owner_headers, capped_course, "mixed@dogus.edu.tr")
+        instructor_course = await _create_course(client, mixed_headers, "TEACH313")
+
+        duration = get_settings().exam_duration_minutes
+        await _add_exam_session(
+            admin_engine,
+            course_id=locked_course,
+            user_id=mixed,
+            started_minutes_ago=1,
+            expires_minutes_from_now=duration + 10,
+        )
+        # expires_at gelecekte kalsa da etkin süre started_at + global sınırda
+        # biter. Dashboard yalnız expires_at'e bakarsa bu ders yanlış kilitlenir.
+        await _add_exam_session(
+            admin_engine,
+            course_id=capped_course,
+            user_id=mixed,
+            started_minutes_ago=duration + 1,
+            expires_minutes_from_now=duration + 10,
+        )
+        # Eğitmen kendi dersinde sınav satırı taşısa bile dashboard kilidi yalnız
+        # öğrenci üyelikleri için değerlendirmelidir.
+        await _add_exam_session(
+            admin_engine,
+            course_id=instructor_course,
+            user_id=mixed,
+            started_minutes_ago=1,
+            expires_minutes_from_now=duration + 10,
+        )
+
+        response = await client.get("/dashboard", headers=mixed_headers)
+
+        assert response.status_code == 200, response.text
+        cards = {UUID(item["id"]): item for item in response.json()["courses"]}
+        assert cards[locked_course]["assistant_locked"] is True
+        assert cards[locked_course]["assistant_lock_reason"] == exam_state.EXAM_LOCK_REASON
+        assert cards[locked_course]["assistant_lock_message"] == exam_state.EXAM_LOCK_MESSAGE
+        assert cards[capped_course]["assistant_locked"] is False
+        assert cards[capped_course]["assistant_lock_reason"] is None
+        assert cards[capped_course]["assistant_lock_message"] is None
+        assert cards[instructor_course]["role"] == "instructor"
+        assert cards[instructor_course]["assistant_locked"] is False
+        assert cards[instructor_course]["assistant_lock_reason"] is None
+        assert cards[instructor_course]["assistant_lock_message"] is None
+
+    async def test_ogrenci_dersleri_kilit_yardimcisina_tek_partide_verilir(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        owner = await users.create("owner@dogus.edu.tr")
+        mixed = await users.create("mixed@dogus.edu.tr")
+        owner_headers = users.auth(owner)
+        mixed_headers = users.auth(mixed)
+        first_student_course = await _create_course(client, owner_headers, "BATCH311")
+        second_student_course = await _create_course(client, owner_headers, "BATCH312")
+        await _add_student(
+            client,
+            owner_headers,
+            first_student_course,
+            "mixed@dogus.edu.tr",
+        )
+        await _add_student(
+            client,
+            owner_headers,
+            second_student_course,
+            "mixed@dogus.edu.tr",
+        )
+        instructor_course = await _create_course(client, mixed_headers, "BATCH313")
+        calls: list[tuple[UUID, set[UUID]]] = []
+
+        async def _batched(*_args: object, **kwargs: object) -> dict[UUID, object]:
+            user_id = kwargs["user_id"]
+            course_ids = kwargs["course_ids"]
+            assert isinstance(user_id, UUID)
+            assert isinstance(course_ids, set)
+            calls.append((user_id, course_ids))
+            return {first_student_course: object()}
+
+        monkeypatch.setattr(exam_state, "active_exam_sessions_by_course", _batched)
+
+        response = await client.get("/dashboard", headers=mixed_headers)
+
+        assert response.status_code == 200, response.text
+        assert calls == [(mixed, {first_student_course, second_student_course})]
+        cards = {UUID(item["id"]): item for item in response.json()["courses"]}
+        assert cards[first_student_course]["assistant_locked"] is True
+        assert cards[second_student_course]["assistant_locked"] is False
+        assert cards[instructor_course]["assistant_locked"] is False
 
     async def test_dersi_olmayan_kullanici_bos_panel_gorur(
         self,
@@ -289,7 +487,7 @@ class TestPlatformAdmin:
         assert overview_audit.request_id == overview.headers["X-Request-ID"]
         assert overview_audit.request_id != unsafe_request_id
 
-    async def test_admin_sayfalama_ust_siniri_api_tarafindan_zorlanir(
+    async def test_admin_sayfalama_sinirlari_api_tarafindan_zorlanir(
         self,
         client: AsyncClient,
         users: UserFactory,
@@ -297,12 +495,18 @@ class TestPlatformAdmin:
     ) -> None:
         admin_id = await users.create("admin@dogus.edu.tr")
         await _grant_admin(admin_engine, admin_id)
-        response = await client.post(
-            "/admin/users",
-            headers=users.auth(admin_id),
-            json={"limit": 101},
-        )
-        assert response.status_code == 422
+        headers = users.auth(admin_id)
+        for payload in ({"limit": 101}, {"offset": -1}, {"offset": None}):
+            response = await client.post(
+                "/admin/users",
+                headers=headers,
+                json=payload,
+            )
+            assert response.status_code == 422, (payload, response.text)
+
+        for path in ("/admin/courses", "/admin/requests", "/admin/ingestion"):
+            response = await client.get(f"{path}?offset=-1", headers=headers)
+            assert response.status_code == 422, (path, response.text)
 
     async def test_admin_sql_yardimcilari_sayfalama_bosluklarini_reddeder(
         self,
@@ -319,7 +523,7 @@ class TestPlatformAdmin:
             "app.admin_request_logs(CAST(:limit AS integer), CAST(:offset AS integer), NULL, NULL)",
             "app.admin_ingestion_jobs(CAST(:limit AS integer), CAST(:offset AS integer), NULL)",
         )
-        invalid_pages = ((None, 0), (25, None), (0, 0), (101, 0))
+        invalid_pages = ((None, 0), (25, None), (25, -1), (0, 0), (101, 0))
 
         for call in calls:
             for limit, offset in invalid_pages:
