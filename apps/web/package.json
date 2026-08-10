@@ -8,6 +8,7 @@
     "start": "next start",
     "test": "bun test lib/",
     "test:e2e": "playwright test",
+    "e2e:clean": "bun e2e/cleanup.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
