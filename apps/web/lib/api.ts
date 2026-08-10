@@ -476,6 +476,12 @@ function errorEnvelope(
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
+  patch: <T>(path: string, payload: unknown) =>
+    request<T>(path, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
   put: <T>(path: string, payload: unknown) =>
     request<T>(path, {
       method: "PUT",
