@@ -17,7 +17,7 @@
  * doğrudan izole test veritabanından temizler. Ürün API'sine silme yetkisi eklenmez.
  *
  * Koşturma (API :8010, web sunucusunu paket kendi derleyip başlatır):
- *   E2E_API_URL=http://localhost:8010 node_modules/.bin/playwright test
+ *   E2E_API_URL=http://localhost:8000 node_modules/.bin/playwright test
  *
  * `bunx playwright` KULLANMAYIN: ayrı bir kopya indirir ve "two different
  * versions" hatası verir.

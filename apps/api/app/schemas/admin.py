@@ -1,4 +1,12 @@
-"""Kişisel içerik taşımayan platform operasyon ekranı sözleşmeleri."""
+"""Kişisel içerik taşımayan platform operasyon ekranı sözleşmeleri.
+
+KARAR (002 entegrasyonu): buradaki {items, total, limit, offset} zarfı, ürünün
+onaylı sayfa zarfından (schemas/page.py: {items, next_cursor}) BİLİNÇLİ bir
+sapmadır ve /admin SINIRINDA kalır. 002'nin offset+total'ı reddetme gerekçeleri
+(eşzamanlı eklemede kayma, COUNT(*)'ın liste boyuyla doğrusallaşması) öğrenciye
+dönük, büyüyebilen listeler içindi; salt-okunur, limit<=100 bir operasyon paneli
+için toplam sayı işin kendisidir. /admin dışındaki HİÇBİR uç bu zarfı kullanamaz —
+ürün yüzeyine liste eklerken schemas/page.py'ye git."""
 
 from __future__ import annotations
 

@@ -79,6 +79,29 @@ function runPsql(databaseName: string, sql: string, env: NodeJS.ProcessEnv): str
   ).trim();
 }
 
+/**
+ * Koşu-önekli tek bir ders kodunun E2E veritabanında görünüp görünmediği.
+ *
+ * Var oluş sebebi (inceleme bulgusu): test verisi API'nin arkasındaki DB'ye,
+ * temizlik ise E2E_DATABASE_NAME'e ayrı bağlantılardan gider ve ikisinin AYNI
+ * veritabanı olduğunu hiçbir şey kanıtlamıyordu — yanlış ama desene uyan bir ad
+ * "0 ders silindi" ile YEŞİL biter, kalıntı asıl DB'de kalırdı. globalSetup bu
+ * fonksiyonla nöbetçiyi arar; görünmüyorsa kimlikler ayrışmıştır ve koşu tek
+ * veri yazılmadan durur.
+ */
+export function courseVisibleInE2eDatabase(
+  databaseName: string,
+  code: string,
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  const out = runPsql(
+    databaseName,
+    `SELECT count(*) FROM courses WHERE code = ${sqlLiteral(code)}`,
+    env,
+  );
+  return out.trim() === "1";
+}
+
 export function parseCleanupRows(output: string): CleanupCourse[] {
   if (!output.trim()) return [];
   return output.split("\n").map((line) => {
