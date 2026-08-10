@@ -5,6 +5,13 @@ function asRecord(apiUrl = "https://api.example.edu/v1") {
   return Object.fromEntries(webSecurityHeaders(apiUrl).map(({ key, value }) => [key, value]));
 }
 
+/** Dev politikası ayrı okunur; üretim iddiaları yukarıdaki sıkı varsayılanı kullanır. */
+function devHeaderMap(apiUrl?: string): Record<string, string> {
+  return Object.fromEntries(
+    webSecurityHeaders(apiUrl, true).map(({ key, value }) => [key, value]),
+  );
+}
+
 describe("web güvenlik başlıkları", () => {
   test("temel tarayıcı politikalarının tamamı tek sözlükten gelir", () => {
     const headers = asRecord();
@@ -41,4 +48,19 @@ describe("web güvenlik başlıkları", () => {
   test("http dışı API protokolü derlemeyi fail-closed durdurur", () => {
     expect(() => webSecurityHeaders("javascript:alert(1)")).toThrow();
   });
+});
+
+// 10 Ağustos: üretim başlıkları dev sunucusunu kırmıştı (React dev modu eval
+// ister, HMR WebSocket ister). Bu iki test o ayrımı çiviler: biri geri alırsa
+// ya dev yine kırılır ya üretim gevşer — ikisi de kırmızı yanar.
+test("dev politikası eval ve websocket'e izin verir", () => {
+  const csp = devHeaderMap()["Content-Security-Policy"];
+  expect(csp).toContain("'unsafe-eval'");
+  expect(csp).toContain("ws:");
+});
+
+test("üretim politikası eval ve websocket İÇERMEZ", () => {
+  const csp = asRecord()["Content-Security-Policy"];
+  expect(csp).not.toContain("unsafe-eval");
+  expect(csp).not.toContain("ws:");
 });

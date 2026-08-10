@@ -22,14 +22,29 @@ function apiOrigin(apiUrl: string): string {
  */
 export function webSecurityHeaders(
   apiUrl = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL,
+  /**
+   * Yalnız `next dev` gevşek politika alır. React dev modda hata ayıklama için
+   * `eval()` kullanır ve HMR bir WebSocket açar; CSP ikisini de kestiğinde dev
+   * sunucusu her sayfada konsol hatasıyla açılır (10 Ağustos'ta gözlendi —
+   * üretim build'iyle doğrulanmış başlıklar dev'i kırdı). React üretimde
+   * `eval()` kullanmaz; üretim politikası bu bayrakla bayt bayt aynı kalır.
+   * Varsayılan `NODE_ENV === "development"`: `next build/start` 'production',
+   * bun test 'test' gördüğü için ikisi de sıkı politikayı alır ve testler
+   * üretim davranışını sabitlemeye devam eder.
+   */
+  dev = process.env.NODE_ENV === "development",
 ): SecurityHeader[] {
   const contentSecurityPolicy = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    dev
+      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+      : "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    `connect-src 'self' ${apiOrigin(apiUrl)}`,
+    dev
+      ? `connect-src 'self' ${apiOrigin(apiUrl)} ws:`
+      : `connect-src 'self' ${apiOrigin(apiUrl)}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
