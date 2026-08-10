@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -100,6 +101,29 @@ def _download(cache_dir: Path, model_name: str) -> None:
     FastEmbedProvider(model_name=model_name, cache_dir=str(cache_dir)).embed_query("ısınma")
 
 
+def _materialize(path: Path) -> None:
+    """HF snapshot symlink'ini gerçek dosyaya çevirir (öncelik: hardlink).
+
+    onnx 1.22, harici ağırlık dosyası (`model.onnx_data`) symlink olduğunda yüklemeyi
+    reddediyor (PR #4 CI, Docker build). HF önbelleği snapshot'ta symlink, blobs/
+    altında gerçek dosya tutar. Hardlink aynı inode'u paylaştığı için 2 GB'lık ek
+    tepe disk maliyeti YOKTUR — kopya yalnız hardlink'in mümkün olmadığı (EXDEV,
+    ayrı dosya sistemi) durumda kullanılır. Sürüm düşürmek bilinçli olarak
+    reddedildi: kısıt onnx'in güvenlik sertleştirmesi, gizlenecek bir hata değil.
+    """
+    if not path.is_symlink():
+        return
+    target = path.resolve()
+    path.unlink()
+    try:
+        os.link(target, path)
+    except OSError:
+        shutil.copy2(target, path)
+    if path.is_symlink():  # pragma: no cover - os.link/copy2 sonrası imkânsız
+        raise RuntimeError(f"symlink gerçek dosyaya çevrilemedi: {path}")
+    _log(f"symlink gerçek dosyaya çevrildi: {path.name}")
+
+
 def _quantize(snapshot: Path) -> tuple[int, int]:
     """model.onnx'i dinamik int8'e indirir; (fp32_bayt, int8_bayt) döndürür.
 
@@ -113,6 +137,10 @@ def _quantize(snapshot: Path) -> tuple[int, int]:
     source = snapshot / "model.onnx"
     external = snapshot / "model.onnx_data"
     target = snapshot / "model.int8.onnx"
+
+    # onnx 1.22 harici ağırlık symlink'ini reddediyor; quantizasyondan önce çevir.
+    _materialize(source)
+    _materialize(external)
 
     fp32_bytes = source.stat().st_size + (external.stat().st_size if external.exists() else 0)
     _log(f"quantizasyon başlıyor (fp32 {fp32_bytes / 1e9:.2f} GB)")
@@ -250,6 +278,8 @@ def main() -> int:
         # fp32 yolu: ölçülecek sapma yoktur, model indekstekiyle aynı uzaydadır.
         # İmaj büyür; ama "büyük ve doğru", "küçük ve sessizce yanlış"tan iyidir.
         external = snapshot / "model.onnx_data"
+        _materialize(snapshot / "model.onnx")
+        _materialize(external)
         total = (snapshot / "model.onnx").stat().st_size + (
             external.stat().st_size if external.exists() else 0
         )

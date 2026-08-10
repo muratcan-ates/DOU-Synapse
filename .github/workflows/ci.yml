@@ -33,6 +33,10 @@ jobs:
       PGUSER: postgres
       PGPASSWORD: postgres
       PG_BIN: /usr/bin
+      # conftest test DB adını TEST_DB_NAME'den (yoksa worktree slug'ından) türetir.
+      # Bu satır olmadan runner'da ad dou_synapse_test_dou_synapse olur ve aşağıdaki
+      # iki DSN başka bir veritabanını gösterir — PR #4'te 331 test kurulumda düştü.
+      TEST_DB_NAME: dou_synapse_test
       TEST_ADMIN_DSN: postgresql+psycopg://postgres:postgres@localhost/dou_synapse_test
       TEST_APP_DSN: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse_test
 

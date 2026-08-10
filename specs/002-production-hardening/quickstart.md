@@ -14,8 +14,8 @@ testin neyi kanıtladığını bilmesi ve 002'nin her User Story'sini elle doğr
 > çalışan kod/testler esas alınır.
 
 > **Bu belgede ölçülen sayılar (9 Ağustos 2026, bu ağaçta koşuldu):**
-> `cd apps/api && uv run pytest -q` → **846 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 846 -->
-> `cd apps/web && bun test lib/` → **309 pass, 0 fail, 22 dosya.** <!-- docs-check: frontend.tests = 309 --><!-- docs-check: frontend.testFiles = 22 -->
+> `cd apps/api && uv run pytest -q` → **850 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 850 -->
+> `cd apps/web && bun test lib/` → **311 pass, 0 fail, 23 dosya.** <!-- docs-check: frontend.tests = 311 --><!-- docs-check: frontend.testFiles = 23 -->
 > Bunların dışındaki her sayı ya bir dosyadan alıntıdır ya da **KOŞULMADI** yazar
 > (Anayasa III).
 
@@ -125,12 +125,12 @@ gördüğünüz artış budur.
 
 ```bash
 cd apps/api
-uv run pytest -q        # 846 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 846
+uv run pytest -q        # 850 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 850
 uv run mypy app
 uv run ruff check . && uv run ruff format --check .
 
 cd ../web
-bun test lib/           # 309 pass, ~0,2 sn   # docs-check: frontend.tests = 309
+bun test lib/           # 311 pass, ~0,2 sn   # docs-check: frontend.tests = 311
 bun run typecheck
 ```
 
