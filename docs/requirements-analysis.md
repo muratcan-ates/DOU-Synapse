@@ -184,7 +184,7 @@ Tam liste ve nedenleri: `PLAN.md §2`.
 
 ## 8. Mevcut Durum (6 Ağustos)
 
-Altyapı tamam ve 68 otomatik testle doğrulanmış durumda: izolasyon (kanıtlı RLS),
-materyal işleme hattı, embedding/indeksleme, arayüzün 6 ekranı. Cevap üretim hattı
+Altyapı tamam ve 68 otomatik testle doğrulanmış durumda: izolasyon (kanıtlı RLS), <!-- docs-check: tarihsel 68 · 2026-08-06 -->
+materyal işleme hattı, embedding/indeksleme, arayüzün 6 ekranı. Cevap üretim hattı <!-- docs-check: tarihsel 6 · 2026-08-06 -->
 (retrieval→LLM→guardrail) 10 Ağustos dikey demo kapısının işidir; 60 görevlik izlenebilir
 iş listesi `specs/001-course-assistant-mvp/tasks.md`'dedir.
