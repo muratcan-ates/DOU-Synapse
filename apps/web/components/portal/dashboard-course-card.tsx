@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Badge, Card } from "@/components/ui";
 import {
   coursePrimaryHref,
+  coursePrimaryLabel,
+  courseQuickTools,
+  instructorAttentionMessages,
   lastActivityLabel,
   masteryLabel,
   type DashboardCourse,
@@ -10,18 +13,8 @@ import { roleLabel } from "@/lib/profile";
 
 export function DashboardCourseCard({ course }: { course: DashboardCourse }) {
   const instructor = course.role === "instructor";
-  const hasAttention = course.documents_failed > 0 || course.draft_questions > 0;
-  const quickTools = instructor
-    ? [
-        { href: `/courses/${course.id}/questions`, label: "Soru havuzu" },
-        { href: `/courses/${course.id}/blueprints`, label: "Sınav planı" },
-        { href: `/courses/${course.id}/settings`, label: "Ders ayarları" },
-      ]
-    : [
-        { href: `/courses/${course.id}/chat`, label: "Asistan" },
-        { href: `/courses/${course.id}/exam`, label: "Sınavlar" },
-        { href: `/courses/${course.id}/analytics`, label: "İlerleme" },
-      ];
+  const quickTools = courseQuickTools(course);
+  const attentionMessages = instructorAttentionMessages(course);
 
   return (
     <Card className="flex h-full flex-col gap-5">
@@ -37,6 +30,7 @@ export function DashboardCourseCard({ course }: { course: DashboardCourse }) {
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <CourseDatum label="Kaynak" value={course.documents_total} />
           <CourseDatum label="İşleniyor" value={course.documents_processing} />
+          <CourseDatum label="İşlenemedi" value={course.documents_failed} />
           <CourseDatum label="Taslak soru" value={course.draft_questions} />
           <CourseDatum label="Yayındaki sınav" value={course.published_exams} />
         </dl>
@@ -64,6 +58,12 @@ export function DashboardCourseCard({ course }: { course: DashboardCourse }) {
         ))}
       </nav>
 
+      {!instructor && course.assistant_locked && course.assistant_lock_message && (
+        <p role="status" className="text-xs text-warning">
+          {course.assistant_lock_message}
+        </p>
+      )}
+
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
         <p className="text-xs text-fg-subtle">
           Son etkinlik: {lastActivityLabel(course.last_activity_at)}
@@ -72,16 +72,16 @@ export function DashboardCourseCard({ course }: { course: DashboardCourse }) {
           href={coursePrimaryHref(course)}
           className="inline-flex min-h-11 items-center rounded-lg border border-border-strong px-4 text-sm font-medium text-fg hover:border-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          {instructor ? "Dersi yönet" : "Çalışmaya devam et"}
+          {coursePrimaryLabel(course)}
         </Link>
       </div>
 
-      {instructor && hasAttention && (
-        <p role="status" className="text-xs text-warning">
-          {course.documents_failed > 0
-            ? `${course.documents_failed} kaynak işlenemedi.`
-            : `${course.draft_questions} soru öğretmen onayı bekliyor.`}
-        </p>
+      {attentionMessages.length > 0 && (
+        <div role="status" className="space-y-1 text-xs text-warning">
+          {attentionMessages.map((message) => (
+            <p key={message}>{message}</p>
+          ))}
+        </div>
       )}
     </Card>
   );

@@ -37,6 +37,9 @@ class DashboardCourse(BaseModel):
     published_exams: int
     mastery_score: float | None
     last_activity_at: datetime | None
+    assistant_locked: bool
+    assistant_lock_reason: str | None
+    assistant_lock_message: str | None
 
 
 class DashboardOut(BaseModel):

@@ -56,15 +56,15 @@ function AdminGate() {
     );
   }
   if (profile.loading || !profile.data) {
-    return <Loading label="Yönetici yetkiniz doğrulanıyor…" />;
+    return <Loading label="Bilgi İşlem yetkiniz doğrulanıyor…" />;
   }
   if (!profile.data.is_platform_admin) {
     return (
       <Card>
         <h1 className="text-xl font-medium text-fg">Bu alana erişiminiz yok</h1>
         <p className="mt-2 text-sm text-fg-muted">
-          Sistem yönetimi yalnız platform yöneticilerine açıktır. Ders eğitmeni
-          olmak platform yöneticisi yetkisi vermez.
+          Bilgi İşlem paneli yalnız platform yöneticilerine açıktır. Ders eğitmeni
+          olmak Bilgi İşlem yetkisi vermez.
         </p>
       </Card>
     );
@@ -85,8 +85,8 @@ function AdminContent() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Sistem yönetimi"
-        description="Platform sağlığını ve işletim metriklerini salt okunur olarak izleyin."
+        title="Bilgi İşlem"
+        description="Platform sağlığını ve işletim metriklerini akademik içeriğe erişmeden izleyin."
       />
 
       <AdminOverviewSection />
@@ -308,7 +308,7 @@ function AdminUsersPanel() {
       key: "admin",
       header: "Yetki",
       render: (item) =>
-        item.is_platform_admin ? <Badge tone="info">Platform yöneticisi</Badge> : "Kullanıcı",
+        item.is_platform_admin ? <Badge tone="info">Bilgi İşlem yöneticisi</Badge> : "Kullanıcı",
     },
     {
       key: "courses",

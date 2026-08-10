@@ -121,7 +121,7 @@ function ProfileContent({
                 E-posta kimlik sağlayıcınızdan gelir ve burada değiştirilemez.
               </p>
             </div>
-            {profile.is_platform_admin && <Badge tone="info">Platform yöneticisi</Badge>}
+            {profile.is_platform_admin && <Badge tone="info">Bilgi İşlem yöneticisi</Badge>}
           </div>
 
           <form onSubmit={save} className="mt-6 space-y-4">

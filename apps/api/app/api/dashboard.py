@@ -5,9 +5,11 @@ from __future__ import annotations
 from fastapi import APIRouter
 from sqlalchemy import text
 
-from app.api.deps import PrincipalDep, SessionDep
+from app.api.deps import PrincipalDep, SessionDep, SettingsDep
+from app.core.db import db_now
 from app.core.errors import NotFoundError
 from app.models.core import MembershipRole, Profile
+from app.modules.assessment import exam_state
 from app.schemas.dashboard import (
     DashboardCourse,
     DashboardOut,
@@ -60,29 +62,54 @@ _DASHBOARD_QUERY = text(
 
 
 @router.get("", response_model=DashboardOut)
-async def get_dashboard(principal: PrincipalDep, session: SessionDep) -> DashboardOut:
+async def get_dashboard(
+    principal: PrincipalDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> DashboardOut:
     profile = await session.get(Profile, principal.user_id)
     if profile is None:
         raise NotFoundError("Kullanıcı profili bulunamadı.")
 
     rows = (await session.execute(_DASHBOARD_QUERY, {"user_id": principal.user_id})).all()
-    courses = [
-        DashboardCourse(
-            id=row.id,
-            code=row.code,
-            title=row.title,
-            role=MembershipRole(row.role),
-            documents_total=int(row.documents_total),
-            documents_processing=int(row.documents_processing),
-            documents_failed=int(row.documents_failed),
-            questions_total=int(row.questions_total),
-            draft_questions=int(row.draft_questions),
-            published_exams=int(row.published_exams),
-            mastery_score=(float(row.mastery_score) if row.mastery_score is not None else None),
-            last_activity_at=row.last_activity_at,
+    student_course_ids = {
+        row.id for row in rows if MembershipRole(row.role) is MembershipRole.STUDENT
+    }
+    active_exams = (
+        await exam_state.active_exam_sessions_by_course(
+            session,
+            user_id=principal.user_id,
+            course_ids=student_course_ids,
+            now=await db_now(session),
+            settings=settings,
         )
-        for row in rows
-    ]
+        if student_course_ids
+        else {}
+    )
+
+    courses: list[DashboardCourse] = []
+    for row in rows:
+        role = MembershipRole(row.role)
+        assistant_locked = role is MembershipRole.STUDENT and row.id in active_exams
+        courses.append(
+            DashboardCourse(
+                id=row.id,
+                code=row.code,
+                title=row.title,
+                role=role,
+                documents_total=int(row.documents_total),
+                documents_processing=int(row.documents_processing),
+                documents_failed=int(row.documents_failed),
+                questions_total=int(row.questions_total),
+                draft_questions=int(row.draft_questions),
+                published_exams=int(row.published_exams),
+                mastery_score=(float(row.mastery_score) if row.mastery_score is not None else None),
+                last_activity_at=row.last_activity_at,
+                assistant_locked=assistant_locked,
+                assistant_lock_reason=(exam_state.EXAM_LOCK_REASON if assistant_locked else None),
+                assistant_lock_message=(exam_state.EXAM_LOCK_MESSAGE if assistant_locked else None),
+            )
+        )
     instructor_courses = sum(1 for course in courses if course.role is MembershipRole.INSTRUCTOR)
 
     return DashboardOut(
