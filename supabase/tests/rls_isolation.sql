@@ -7,12 +7,12 @@
 -- çünkü izolasyon tezinin taşıyıcı tabloları burada: `courses`, `course_memberships`,
 -- `chat_sessions`, `chat_messages`, `request_logs`.
 --
--- KAPSAM: 0001 + 0003'ün yirmi dört politikasının her biri en az bir OLUMLU ve bir
+-- KAPSAM: çekirdek ve sonraki hardening politikalarının her biri en az bir OLUMLU ve bir
 -- OLUMSUZ iddiayla sınanır. Olumlu kontrol ihmal edilemez: `dou_app` rolünün tablo
 -- düzeyi GRANT'i eksik olsaydı her şey reddedilirdi ve yalnız olumsuz iddia yazan bir
 -- test YANLIŞ SEBEPLE yeşil yanardı. Ayrıca politikası bilinçli olarak OLMAYAN on üç
 -- işlem (courses INSERT/DELETE, profiles INSERT/DELETE, chunks yazma, ingestion_jobs
--- UPDATE/DELETE, chat_sessions DELETE, chat_messages UPDATE/DELETE, answer_cache UPDATE,
+-- UPDATE/DELETE, chat_messages UPDATE/DELETE, answer_cache UPDATE,
 -- request_logs SELECT/UPDATE/DELETE) fail-closed olarak sınanır.
 --
 -- Çalıştırma:
@@ -382,16 +382,28 @@ FROM course_memberships WHERE course_id = 'bbbbbbbb-0000-0000-0000-000000000002'
 -- Yetki yükseltme denemesi: öğrenci kendi rolünü eğitmene çeviremez. Bu iddia
 -- düşerse projedeki her "yalnız eğitmen" kontrolü anlamsızlaşır.
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
-WITH changed AS (
+DO $$
+DECLARE
+    changed integer;
+BEGIN
     UPDATE course_memberships SET role = 'instructor'
     WHERE course_id = 'aaaaaaaa-0000-0000-0000-000000000001'
-      AND user_id = '22222222-2222-2222-2222-222222222222'
-    RETURNING 1
-)
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  memberships_update__ogrenci_kendini_egitmen_yapamaz (beklenen 0 satır, gelen '
-       || count(*) || ')'
-FROM changed;
+      AND user_id = '22222222-2222-2222-2222-222222222222';
+    GET DIAGNOSTICS changed = ROW_COUNT;
+    IF changed = 0 THEN
+        RAISE NOTICE 'PASS  memberships_update__ogrenci_kendini_egitmen_yapamaz (0 satır)';
+    ELSE
+        RAISE NOTICE 'FAIL  memberships_update__ogrenci_kendini_egitmen_yapamaz (rol değişti)';
+    END IF;
+EXCEPTION
+    -- 0012'nin dar `memberships_self_revoke` politikası satırı UPDATE için
+    -- görünür kılar ama yalnız status=revoked son durumuna izin verir. Bu yüzden
+    -- rol yükseltme 0 satır yerine WITH CHECK ihlali verebilir; ikisi de güvenli
+    -- rettir. Politika `USING (true)` ile gevşetilirse UPDATE geçer ve FAIL yanar.
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  memberships_update__ogrenci_kendini_egitmen_yapamaz (RLS reddi)';
+END
+$$;
 
 DO $$
 BEGIN
@@ -409,7 +421,8 @@ $$;
 
 -- Hedef, burak'ın GÖREBİLDİĞİ tek üyelik satırı: kendisininki. Başka birinin satırı
 -- seçilseydi red okuma politikasından gelirdi ve `memberships_instructor_delete`
--- hiç ölçülmemiş olurdu (OKUMA NOTU 2). Dersten çıkmak da eğitmenin işidir.
+-- hiç ölçülmemiş olurdu (OKUMA NOTU 2). Öğrenci üyeliğini DELETE edemez;
+-- 0012 yalnız status=revoked güncellemesini açar.
 WITH removed AS (
     DELETE FROM course_memberships
     WHERE course_id = 'aaaaaaaa-0000-0000-0000-000000000001'
@@ -646,7 +659,7 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
 FROM removed;
 
 -- ===========================================================================
--- jobs_instructor_read / _insert  (+ UPDATE/DELETE politikası YOK)
+-- jobs_instructor_read / _insert  (+ doğrudan UPDATE/DELETE politikası YOK)
 -- ===========================================================================
 
 SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
@@ -701,15 +714,27 @@ EXCEPTION
 END
 $$;
 
--- İş durumunu yalnız worker günceller; uygulama rolü kuyruğu ilerletemez.
-WITH changed AS (
+-- İş durumunu yalnız worker günceller; uygulama rolü kuyruğu ilerletemez. 0010
+-- savunmayı iki katmanlı yapar: tablo UPDATE yetkisi de RLS politikası da yoktur.
+DO $$
+DECLARE
+    v_count integer;
+BEGIN
     UPDATE ingestion_jobs SET status = 'completed'
-    WHERE id = 'eeeeeeee-0000-0000-0000-00000000000a' RETURNING 1
-)
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  jobs_update__politika_yok_uygulama_isi_ilerletemez (beklenen 0 satır, gelen '
-       || count(*) || ')'
-FROM changed;
+    WHERE id = 'eeeeeeee-0000-0000-0000-00000000000a';
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    IF v_count = 0 THEN
+        RAISE NOTICE 'PASS  jobs_update__politika_yok_uygulama_isi_ilerletemez';
+    ELSE
+        RAISE NOTICE 'FAIL  jobs_update__politika_yok_uygulama_isi_ilerletemez (update geçti)';
+    END IF;
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  jobs_update__politika_yok_uygulama_isi_ilerletemez';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  jobs_update__politika_yok_uygulama_isi_ilerletemez (beklenmedik hata: %)', SQLERRM;
+END
+$$;
 
 WITH removed AS (
     DELETE FROM ingestion_jobs WHERE id = 'eeeeeeee-0000-0000-0000-00000000000a' RETURNING 1
@@ -720,7 +745,7 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
 FROM removed;
 
 -- ===========================================================================
--- chat_sessions_self_read / _self_insert / _self_update  (+ DELETE politikası YOK)
+-- chat_sessions_self_read / _self_insert / _self_update / _self_delete
 -- ===========================================================================
 
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
@@ -820,10 +845,10 @@ END
 $$;
 
 WITH removed AS (
-    DELETE FROM chat_sessions WHERE id = '5a5a5a5a-0000-0000-0000-00000000000b' RETURNING 1
+    DELETE FROM chat_sessions WHERE id = '5a5a5a5a-0000-0000-0000-00000000000d' RETURNING 1
 )
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  chat_sessions_delete__politika_yok_oturum_silinemez (beklenen 0 satır, gelen '
+       || '  chat_sessions_delete__baskasinin_oturumu_silinemez (beklenen 0 satır, gelen '
        || count(*) || ')'
 FROM removed;
 
@@ -911,6 +936,16 @@ WITH removed AS (
 )
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
        || '  chat_messages_delete__politika_yok_gecmis_silinemez (beklenen 0 satır, gelen '
+       || count(*) || ')'
+FROM removed;
+
+-- KVKK veri hakkı: kullanıcı kendi sohbet oturumunu silebilir. Bu kontrol mesaj
+-- iddialarından sonra yapılır; ON DELETE CASCADE geçmişi de kaldırır.
+WITH removed AS (
+    DELETE FROM chat_sessions WHERE id = '5a5a5a5a-0000-0000-0000-00000000000b' RETURNING 1
+)
+SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
+       || '  chat_sessions_delete__kendi_oturumunu_silebilir (beklenen 1 satır, gelen '
        || count(*) || ')'
 FROM removed;
 

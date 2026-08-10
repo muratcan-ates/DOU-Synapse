@@ -28,6 +28,10 @@ from app.modules.ingestion.storage import DocumentStorage
 logger = get_logger("app.ingestion")
 
 MAX_ATTEMPTS = 3
+# Kısa ama gerçek geri çekilme: iç HTTP tetik bütçesi 10 saniye. İlk iki hata
+# arasında 1 + 3 saniye beklemek, geçici dosya/depolama yarışlarını söndürürken
+# worker çağrısını orkestratör zaman aşımının içinde tutar.
+RETRY_BACKOFF_SECONDS: tuple[float, ...] = (1.0, 3.0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,8 +174,10 @@ async def claim_next_job(session: AsyncSession) -> tuple[UUID, UUID, int] | None
                 "UPDATE ingestion_jobs SET status = 'processing', "
                 "attempt_count = attempt_count + 1, started_at = now() "
                 "WHERE id = ("
-                "  SELECT id FROM ingestion_jobs WHERE status = 'pending' "
-                "  ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1"
+                "  SELECT id FROM ingestion_jobs "
+                "  WHERE status = 'pending' AND next_attempt_at <= now() "
+                "  ORDER BY next_attempt_at, created_at, id "
+                "  FOR UPDATE SKIP LOCKED LIMIT 1"
                 ") RETURNING id, document_id, attempt_count"
             )
         )
@@ -183,13 +189,16 @@ async def claim_next_job(session: AsyncSession) -> tuple[UUID, UUID, int] | None
 
 async def _fail_job(
     session: AsyncSession, job_id: UUID, document_id: UUID, attempt: int, message: str
-) -> None:
+) -> float | None:
     """Hatayı kaydeder; deneme hakkı kalmışsa işi kuyruğa geri koyar."""
     exhausted = attempt >= MAX_ATTEMPTS
+    delay_seconds = None if exhausted else RETRY_BACKOFF_SECONDS[attempt - 1]
     await session.execute(
         text(
             "UPDATE ingestion_jobs SET status = CAST(:status AS job_status), "
-            "last_error = :error, completed_at = CASE WHEN :exhausted THEN now() END "
+            "last_error = :error, completed_at = CASE WHEN :exhausted THEN now() END, "
+            "next_attempt_at = CASE WHEN :exhausted THEN next_attempt_at "
+            "ELSE now() + make_interval(secs => :delay_seconds) END "
             "WHERE id = :id"
         ),
         {
@@ -197,6 +206,7 @@ async def _fail_job(
             "status": "failed" if exhausted else "pending",
             "error": message[:2000],
             "exhausted": exhausted,
+            "delay_seconds": delay_seconds or 0,
         },
     )
     if exhausted:
@@ -207,6 +217,7 @@ async def _fail_job(
             ),
             {"id": document_id, "error": message[:2000]},
         )
+    return delay_seconds
 
 
 async def run_pending_jobs(
@@ -251,7 +262,11 @@ async def run_pending_jobs(
             )
             message = exc.message if isinstance(exc, AppError) else "Belge işlenemedi."
             async with session_factory() as session, session.begin():
-                await _fail_job(session, job_id, document_id, attempt, message)
+                retry_after = await _fail_job(session, job_id, document_id, attempt, message)
+            # İşlem kapandıktan sonra bekle: açık transaction tutmayız. DB'deki
+            # `next_attempt_at` başka worker'ın aynı işi erken almasını da engeller.
+            if retry_after is not None:
+                await asyncio.sleep(retry_after)
         processed += 1
 
     return processed
