@@ -131,7 +131,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 15 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007`): <!-- docs-check: tables.count = 15 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007 -->
+Kodda gerçekten var olan 23 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013`): <!-- docs-check: tables.count = 23 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -394,7 +394,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. 15 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 15 -->
+  yazar. 23 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 23 -->
   tablo sahibi bile politikalara tabidir.
   **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
   yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`

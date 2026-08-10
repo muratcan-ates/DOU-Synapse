@@ -98,7 +98,7 @@ Kurulumdan sonra şemayı doğrulayın:
 psql -d "$DATABASE" -c "\dt"
 ```
 
-Temiz bir kurulumda **15 tablo** görürsünüz. (Faz 2 brifingi "19 tablo" diyor; <!-- docs-check: tables.count = 15 -->
+Temiz bir kurulumda **23 tablo** görürsünüz. (Faz 2 brifingi "19 tablo" diyor; <!-- docs-check: tables.count = 23 -->
 9 Ağustos'ta hem paylaşılan geliştirme veritabanında hem sıfırdan kurulan bir
 veritabanında ölçülen sayı 15'tir. Brifingdeki sayı yanlış.)
 
