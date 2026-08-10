@@ -84,7 +84,14 @@ from app.core.pagination import (
     encode_time_cursor,
 )
 from app.core.rate_limit import get_limiter, reset_rate_limit
-from app.models.chat import AnswerCache, ChatMessage, ChatRole, ChatSession, RequestLog
+from app.models.chat import (
+    AnswerCache,
+    ChatMessage,
+    ChatMessageFeedback,
+    ChatRole,
+    ChatSession,
+    RequestLog,
+)
 from app.modules.assessment import exam_state, socratic
 from app.modules.policy import service as policy_service
 from app.schemas.chat import (
@@ -94,6 +101,7 @@ from app.schemas.chat import (
     CitationOut,
     to_chat_response,
 )
+from app.schemas.feedback import ChatFeedbackOut
 from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["chat"])
@@ -274,6 +282,7 @@ class ChatMessageOut(BaseModel):
     status: AnswerStatus | None = None
     socratic_stage: SocraticStage | None = None
     created_at: Any
+    feedback: ChatFeedbackOut | None = None
 
 
 class ChatAvailabilityOut(BaseModel):
@@ -889,6 +898,23 @@ async def list_messages(
         if len(rows) > page.limit
         else None
     )
+    feedback_rows = (
+        list(
+            (
+                await session.execute(
+                    select(ChatMessageFeedback).where(
+                        ChatMessageFeedback.message_id.in_(
+                            [message.id for message in visible_desc]
+                        ),
+                        ChatMessageFeedback.user_id == context.user_id,
+                    )
+                )
+            ).scalars()
+        )
+        if visible_desc
+        else []
+    )
+    feedback_by_message = {feedback.message_id: feedback for feedback in feedback_rows}
     items = [
         ChatMessageOut(
             id=message.id,
@@ -898,6 +924,11 @@ async def list_messages(
             status=message.status,
             socratic_stage=message.socratic_stage,
             created_at=message.created_at,
+            feedback=(
+                ChatFeedbackOut.model_validate(feedback_by_message[message.id])
+                if message.id in feedback_by_message
+                else None
+            ),
         )
         for message in reversed(visible_desc)
     ]

@@ -460,6 +460,52 @@ test.describe("sohbet — ürünün tezi", () => {
     await expect(page.locator("blockquote")).toHaveCount(0);
   });
 
+  test("öğrenci sorunlu yanıtı izinle öğretmen incelemesine açar", async ({ page }) => {
+    const course = await createCourse("KALITE");
+    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+    await signIn(page, BURAK);
+    await page.goto(`/courses/${course.id}/chat`);
+
+    await sohbetGonder(page, "Sorun", "Deadlock koşullarını açıklar mısın?");
+    await expect(page.getByText("Materyalde dayanak bulunamadı")).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.getByRole("button", { name: "Sorun var" }).click();
+    await page.getByLabel("Sorun türü").selectOption("citation_problem");
+    await page
+      .getByLabel("Açıklama (isteğe bağlı)")
+      .fill("Kaynak görünmedi; öğretmenim bu örneği inceleyebilir.");
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Geri bildirimi kaydet" }).click();
+    await expect(page.getByText(/öğretmen incelemesine açık/)).toBeVisible();
+
+    // Aynı tarayıcıda gerçek çıkış/giriş: rol önbelleği öğrenci kimliğini taşımamalı.
+    await page.getByRole("button", { name: "Çıkış" }).click();
+    const teacherButton = page.getByRole("button", { name: /Ayşe Hoca/ });
+    await expect(teacherButton).toBeVisible();
+    await teacherButton.click();
+    await expect(page).toHaveURL(/\/courses$/);
+
+    // Keep the role switch inside Next.js client navigation. The test helper's
+    // init script intentionally restores Burak on a full page load.
+    const courseLink = page.getByRole("link", { name: new RegExp(course.code) });
+    await expect(courseLink).toBeVisible();
+    await courseLink.click();
+    await expect(page).toHaveURL(new RegExp(`/courses/${course.id}$`));
+    await page.getByRole("link", { name: "AI kalite", exact: true }).click();
+    await expect(page).toHaveURL(/\/quality$/);
+
+    await expect(page.getByRole("heading", { name: "AI kalite" })).toBeVisible();
+    await expect(page.getByText("Burak Yılmaz")).toBeVisible();
+    await expect(page.getByText("Deadlock koşullarını açıklar mısın?")).toBeVisible();
+    await expect(
+      page.getByText("Öğrenci notu: Kaynak görünmedi; öğretmenim bu örneği inceleyebilir."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Puanlanan yanıt", { exact: true }).locator("xpath=following-sibling::dd[1]"),
+    ).toHaveText("1");
+  });
+
   test("Sokratik mod cevap vermez, kaynaklı ipucu verir", async ({ page }) => {
     const course = await materyalliDers("SOKRAT");
     await signIn(page, BURAK);

@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import TIMESTAMP, Boolean, Integer, SmallInteger, Text, func
+from sqlalchemy import TIMESTAMP, Boolean, Integer, SmallInteger, Text, UniqueConstraint, func
 from sqlalchemy import ForeignKey as FK
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -33,6 +33,21 @@ class ChatRole(StrEnum):
 
     USER = "user"
     ASSISTANT = "assistant"
+
+
+class ChatFeedbackRating(StrEnum):
+    HELPFUL = "helpful"
+    UNHELPFUL = "unhelpful"
+
+
+class ChatFeedbackReason(StrEnum):
+    HELPFUL = "helpful"
+    INACCURATE = "inaccurate"
+    IRRELEVANT = "irrelevant"
+    CITATION_PROBLEM = "citation_problem"
+    TOO_DIRECT = "too_direct"
+    UNSAFE = "unsafe"
+    OTHER = "other"
 
 
 class ChatSession(Base):
@@ -110,9 +125,38 @@ class RequestLog(Base):
     created_at: Mapped[created_at]
 
 
+class ChatMessageFeedback(Base):
+    """Öğrencinin tek bir asistan mesajına verdiği, değiştirilebilir kalite puanı."""
+
+    __tablename__ = "chat_message_feedback"
+    __table_args__ = (UniqueConstraint("message_id", name="chat_feedback_one_per_message"),)
+
+    id: Mapped[uuid_pk]
+    course_id: Mapped[uuid_fk] = mapped_column(FK("courses.id", ondelete="CASCADE"))
+    message_id: Mapped[uuid_fk] = mapped_column(FK("chat_messages.id", ondelete="CASCADE"))
+    user_id: Mapped[uuid_fk] = mapped_column(FK("profiles.id", ondelete="CASCADE"))
+    rating: Mapped[ChatFeedbackRating] = mapped_column(
+        pg_enum(ChatFeedbackRating, "chat_feedback_rating")
+    )
+    reason: Mapped[ChatFeedbackReason] = mapped_column(
+        pg_enum(ChatFeedbackReason, "chat_feedback_reason")
+    )
+    comment: Mapped[str | None] = mapped_column(Text)
+    share_with_instructor: Mapped[bool] = mapped_column(Boolean, default=False)
+    question_excerpt: Mapped[str | None] = mapped_column(Text)
+    answer_excerpt: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
 __all__ = [
     "AnswerCache",
+    "ChatFeedbackRating",
+    "ChatFeedbackReason",
     "ChatMessage",
+    "ChatMessageFeedback",
     "ChatRole",
     "ChatSession",
     "RequestLog",

@@ -108,6 +108,9 @@ MUTATIONS=(
 "chat_messages_self_insert acilirsa|DROP POLICY chat_messages_self_insert ON chat_messages; CREATE POLICY chat_messages_self_insert ON chat_messages FOR INSERT WITH CHECK (true);|chat_messages_insert__baskasinin_oturumuna_yazilamaz"
 "chat_messages: UPDATE politikasi eklenirse|CREATE POLICY chat_messages_update_leak ON chat_messages FOR UPDATE USING (true);|chat_messages_update__politika_yok_gecmis_degistirilemez"
 "chat_messages: DELETE politikasi eklenirse|CREATE POLICY chat_messages_delete_leak ON chat_messages FOR DELETE USING (true);|chat_messages_delete__politika_yok_gecmis_silinemez"
+# --- chat_message_feedback --------------------------------------------------
+"feedback egitmen okumasinda riza sarti duserse|DROP POLICY chat_feedback_instructor_shared_read ON chat_message_feedback; CREATE POLICY chat_feedback_instructor_shared_read ON chat_message_feedback FOR SELECT USING (app.is_instructor(course_id));|feedback_read__egitmen_izinsiz_metni_goremez"
+"feedback ogrenci okuma politikasi acilirsa|DROP POLICY chat_feedback_self_read ON chat_message_feedback; CREATE POLICY chat_feedback_self_read ON chat_message_feedback FOR SELECT USING (true);|feedback_read__baska_ogrenci_puani_goremez"
 # --- answer_cache -----------------------------------------------------------
 "answer_cache_member_read acilirsa|DROP POLICY answer_cache_member_read ON answer_cache; CREATE POLICY answer_cache_member_read ON answer_cache FOR SELECT USING (true);|answer_cache_read__baska_dersin_onbellegi_gorunmez"
 "answer_cache_member_insert acilirsa|DROP POLICY answer_cache_member_insert ON answer_cache; CREATE POLICY answer_cache_member_insert ON answer_cache FOR INSERT WITH CHECK (true);|answer_cache_insert__baska_derse_yazilamaz"
@@ -123,7 +126,7 @@ MUTATIONS=(
 "app.is_member: status sarti duserse|CREATE OR REPLACE FUNCTION app.is_member(p_course_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, app AS \$\$ SELECT EXISTS (SELECT 1 FROM public.course_memberships m WHERE m.course_id = p_course_id AND m.user_id = app.current_user_id()) \$\$;|courses_read__iptal_edilmis_uyelik_ders_gostermez"
 "app.is_instructor: rol sarti duserse|CREATE OR REPLACE FUNCTION app.is_instructor(p_course_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, app AS \$\$ SELECT app.is_member(p_course_id) \$\$;|documents_insert__ogrenci_belge_yukleyemez"
 "app.is_instructor_of acilirsa|CREATE OR REPLACE FUNCTION app.is_instructor_of(p_user_id uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, app AS \$\$ SELECT true \$\$;|profiles_read__egitmen_baska_dersin_ogrencisini_goremez"
-"app.current_user_id: GUC yerine sabit kimlik|CREATE OR REPLACE FUNCTION app.current_user_id() RETURNS uuid LANGUAGE sql STABLE AS \$\$ SELECT '22222222-2222-2222-2222-222222222222'::uuid \$\$;|baglamsiz__chunks_gorunmez"
+"app.current_user_id: GUC yerine sabit kimlik|CREATE OR REPLACE FUNCTION app.current_user_id() RETURNS uuid LANGUAGE sql STABLE AS \$\$ SELECT '22222222-2222-2222-2222-222222222222'::uuid \$\$;|feedback_read__egitmen_izinsiz_metni_goremez"
 )
 
 # Referans koşu: bozulmamış şemada hiçbir iddia kırmızı olmamalı. Bu kontrol olmadan

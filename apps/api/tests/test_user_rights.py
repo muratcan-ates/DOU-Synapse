@@ -18,6 +18,7 @@ from tests.test_exams import ExamFixture, build_course
 class PersonalRows:
     chat_id: UUID
     message_id: UUID
+    assistant_message_id: UUID
     exam_id: UUID
     answer_id: UUID
 
@@ -31,6 +32,7 @@ async def seed_personal_rows(
 ) -> PersonalRows:
     chat_id = uuid4()
     message_id = uuid4()
+    assistant_message_id = uuid4()
     exam_id = uuid4()
     answer_id = uuid4()
     async with admin_engine.begin() as conn:
@@ -44,6 +46,21 @@ async def seed_personal_rows(
                 "course_id": UUID(fixture.course_id),
                 "user_id": user_id,
                 "title": f"{label} sohbeti",
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO chat_messages "
+                "(id, session_id, course_id, role, content, citations, status, seq) "
+                "VALUES (:id, :session_id, :course_id, 'assistant', :content, "
+                "CAST(:citations AS jsonb), 'answered', 1)"
+            ),
+            {
+                "id": assistant_message_id,
+                "session_id": chat_id,
+                "course_id": UUID(fixture.course_id),
+                "content": f"{label} kişisel cevap",
+                "citations": json.dumps([]),
             },
         )
         await conn.execute(
@@ -101,7 +118,7 @@ async def seed_personal_rows(
                 "course_id": UUID(fixture.course_id),
             },
         )
-    return PersonalRows(chat_id, message_id, exam_id, answer_id)
+    return PersonalRows(chat_id, message_id, assistant_message_id, exam_id, answer_id)
 
 
 async def test_export_uygulama_filtresi_egitmenin_ogrenci_verisini_sizdirmaz(
@@ -116,8 +133,19 @@ async def test_export_uygulama_filtresi_egitmenin_ogrenci_verisini_sizdirmaz(
     student_rows = await seed_personal_rows(
         admin_engine, fixture, user_id=fixture.student_id, label="Burak"
     )
+    student_feedback = await client.put(
+        f"/courses/{fixture.course_id}/chat/messages/{student_rows.assistant_message_id}/feedback",
+        json={
+            "rating": "unhelpful",
+            "reason": "citation_problem",
+            "comment": "Kaynak eşleşmedi.",
+            "share_with_instructor": False,
+        },
+        headers=fixture.student,
+    )
+    assert student_feedback.status_code == 200, student_feedback.text
 
-    response = await client.get("/me/export", headers=fixture.instructor)
+    response = await client.get("/me/export", headers=fixture.student)
 
     assert response.status_code == 200, response.text
     assert response.headers["content-disposition"].startswith(
@@ -125,17 +153,19 @@ async def test_export_uygulama_filtresi_egitmenin_ogrenci_verisini_sizdirmaz(
     )
     body = response.json()
     encoded = json.dumps(body)
-    assert body["schema_version"] == "1"
-    assert body["profile"]["id"] == str(fixture.instructor_id)
-    assert [item["role"] for item in body["memberships"]] == ["instructor"]
-    assert [item["id"] for item in body["chat_sessions"]] == [str(teacher_rows.chat_id)]
-    assert body["chat_sessions"][0]["messages"][0]["id"] == str(teacher_rows.message_id)
-    assert [item["id"] for item in body["exam_sessions"]] == [str(teacher_rows.exam_id)]
-    assert body["exam_sessions"][0]["answers"][0]["id"] == str(teacher_rows.answer_id)
+    assert body["schema_version"] == "2"
+    assert body["profile"]["id"] == str(fixture.student_id)
+    assert [item["role"] for item in body["memberships"]] == ["student"]
+    assert [item["id"] for item in body["chat_sessions"]] == [str(student_rows.chat_id)]
+    assert body["chat_sessions"][0]["messages"][0]["id"] == str(student_rows.message_id)
+    assert body["chat_sessions"][0]["messages"][1]["feedback"]["reason"] == "citation_problem"
+    assert body["chat_sessions"][0]["messages"][1]["feedback"]["comment"] == "Kaynak eşleşmedi."
+    assert [item["id"] for item in body["exam_sessions"]] == [str(student_rows.exam_id)]
+    assert body["exam_sessions"][0]["answers"][0]["id"] == str(student_rows.answer_id)
     assert len(body["mastery"]) == 1
-    assert str(fixture.student_id) not in encoded
-    assert str(student_rows.chat_id) not in encoded
-    assert str(student_rows.exam_id) not in encoded
+    assert str(fixture.instructor_id) not in encoded
+    assert str(teacher_rows.chat_id) not in encoded
+    assert str(teacher_rows.exam_id) not in encoded
 
 
 async def test_ders_sohbet_gecmisi_yalniz_sahibin_satirlarini_siler(

@@ -89,6 +89,8 @@ function CourseDetail() {
         }
       />
 
+      <ProductRoles courseId={courseId} />
+
       {isInstructor && (
         <UploadBox
           courseId={courseId}
@@ -129,6 +131,62 @@ function CourseDetail() {
         onLoadMore={() => void documentsResource.loadMore()}
       />
     </div>
+  );
+}
+
+/**
+ * Hocanın istediği üç AI rolünü, yalnız belgede kalan isimler olmaktan çıkarır.
+ * Her rol doğrudan çalışan ürün yüzeyine gider; ayrı model varmış gibi bir iddia
+ * kurulmaz, fark rolün pedagojik görevidir.
+ */
+function ProductRoles({ courseId }: { courseId: string }) {
+  const roles = [
+    {
+      name: "CourseGPT",
+      task: "Kaynaklı ders asistanı",
+      description: "Yalnız yüklenen materyalden cevap verir veya Sokratik ipucuyla yönlendirir.",
+      href: `/courses/${courseId}/chat`,
+    },
+    {
+      name: "Exam Mentor",
+      task: "Sınav provası",
+      description: "Onaylı sorularla prova yaptırır, cevabı puanlar ve neden yanlış olduğunu gösterir.",
+      href: `/courses/${courseId}/exam`,
+    },
+    {
+      name: "Class Assistant",
+      task: "Öğrenme analitiği",
+      description: "Konu ilerlemesini ve sınıfın zorlandığı alanları kişisel veri sınırlarıyla özetler.",
+      href: `/courses/${courseId}/analytics`,
+    },
+  ];
+
+  return (
+    <section className="mb-6" aria-labelledby="ai-roles-title">
+      <div className="mb-3 flex items-end justify-between gap-4">
+        <div>
+          <h2 id="ai-roles-title" className="text-sm font-medium text-fg">
+            Yapay zekâ rolleri
+          </h2>
+          <p className="prose-tr mt-1 text-xs text-fg-muted">
+            Aynı ders kaynağı, üç farklı pedagojik görev.
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-3">
+        {roles.map((role) => (
+          <Link
+            key={role.name}
+            href={role.href}
+            className="rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            <p className="font-mono text-xs text-brand">{role.name}</p>
+            <p className="mt-2 text-sm font-medium text-fg">{role.task}</p>
+            <p className="prose-tr mt-1 text-xs text-fg-muted">{role.description}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

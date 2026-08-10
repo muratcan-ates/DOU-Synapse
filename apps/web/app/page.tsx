@@ -153,6 +153,14 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" aria-disabled={busy}>
                 {busy ? "Oturum açılıyor…" : "Oturum aç"}
               </Button>
+              <p className="text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-brand hover:text-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                >
+                  Parolamı unuttum
+                </Link>
+              </p>
             </form>
           ) : (
             /* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek

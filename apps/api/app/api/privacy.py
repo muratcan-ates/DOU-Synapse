@@ -16,12 +16,13 @@ from app.api.deps import CourseMemberDep, PrincipalDep, SessionDep
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError
 from app.models.assessment import Answer, ExamSession, Mastery
-from app.models.chat import ChatMessage, ChatSession
+from app.models.chat import ChatMessage, ChatMessageFeedback, ChatSession
 from app.models.core import Course, CourseMembership, MembershipStatus, Profile
 from app.schemas.privacy import (
     AccountAnonymizationOut,
     ChatDeletionOut,
     ExportAnswerOut,
+    ExportChatFeedbackOut,
     ExportChatMessageOut,
     ExportChatSessionOut,
     ExportExamSessionOut,
@@ -148,9 +149,33 @@ async def export_my_data(
             .scalars()
             .all()
         )
+    feedback_by_message: dict[UUID, ChatMessageFeedback] = {}
+    if chat_messages:
+        feedback_rows = (
+            (
+                await session.execute(
+                    select(ChatMessageFeedback).where(
+                        ChatMessageFeedback.user_id == user_id,
+                        ChatMessageFeedback.message_id.in_([item.id for item in chat_messages]),
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        feedback_by_message = {item.message_id: item for item in feedback_rows}
+
     messages_by_session: dict[UUID, list[ExportChatMessageOut]] = defaultdict(list)
     for message in chat_messages:
-        messages_by_session[message.session_id].append(ExportChatMessageOut.model_validate(message))
+        feedback = feedback_by_message.get(message.id)
+        messages_by_session[message.session_id].append(
+            ExportChatMessageOut(
+                **ExportChatMessageOut.model_validate(message).model_dump(exclude={"feedback"}),
+                feedback=(
+                    ExportChatFeedbackOut.model_validate(feedback) if feedback is not None else None
+                ),
+            )
+        )
 
     exam_sessions = (
         (

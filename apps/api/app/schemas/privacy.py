@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.contracts import AnswerStatus, ChatMode, SocraticStage
 from app.models.assessment import ExamMode
-from app.models.chat import ChatRole
+from app.models.chat import ChatFeedbackRating, ChatFeedbackReason, ChatRole
 from app.models.core import MembershipRole, MembershipStatus
 
 
@@ -32,6 +32,16 @@ class ExportMembershipOut(_FromRow):
     created_at: datetime
 
 
+class ExportChatFeedbackOut(_FromRow):
+    id: UUID
+    rating: ChatFeedbackRating
+    reason: ChatFeedbackReason
+    comment: str | None
+    share_with_instructor: bool
+    created_at: datetime
+    updated_at: datetime
+
+
 class ExportChatMessageOut(_FromRow):
     id: UUID
     role: ChatRole
@@ -41,6 +51,7 @@ class ExportChatMessageOut(_FromRow):
     socratic_stage: SocraticStage | None
     seq: int
     created_at: datetime
+    feedback: ExportChatFeedbackOut | None = None
 
 
 class ExportChatSessionOut(_FromRow):
@@ -86,7 +97,7 @@ class ExportMasteryOut(_FromRow):
 
 
 class UserDataExportOut(BaseModel):
-    schema_version: Literal["1"] = "1"
+    schema_version: Literal["2"] = "2"
     generated_at: datetime
     profile: ExportProfileOut
     memberships: list[ExportMembershipOut]

@@ -20,6 +20,7 @@ from app.api import (
     courses,
     documents,
     exams,
+    feedback,
     health,
     internal,
     policy,
@@ -139,6 +140,7 @@ def create_app() -> FastAPI:
     app.include_router(policy.router)
     app.include_router(questions.router)
     app.include_router(chat.router)
+    app.include_router(feedback.router)
     app.include_router(exams.router)
     app.include_router(blueprints.router)
     app.include_router(analytics.router)

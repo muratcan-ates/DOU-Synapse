@@ -56,6 +56,7 @@ const assistant = (
   socraticStage: null,
   cached: false,
   ...overrides,
+  feedback: overrides.feedback ?? null,
 });
 
 // ---------------------------------------------------------------------------
@@ -434,6 +435,7 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
       citations: [citation()],
       socraticStage: "nudge",
       cached: false,
+      feedback: null,
     });
   });
 
@@ -447,6 +449,7 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
         status: null,
         socratic_stage: null,
         created_at: "2026-08-09T10:00:00Z",
+        feedback: null,
       },
       {
         id: "m1",
@@ -456,6 +459,7 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
         status: "answered",
         socratic_stage: "nudge",
         created_at: "2026-08-09T10:00:01Z",
+        feedback: null,
       },
     ];
     const fromServerHistory = toBlocks(fromHistory(history), { mode: "socratic" });
@@ -505,6 +509,7 @@ describe("önbellek işareti — zarftaki `cached` ekrana ulaşır", () => {
         status: "answered",
         socratic_stage: null,
         created_at: "2026-08-09T10:00:00Z",
+        feedback: null,
       },
     ];
     expect(fromHistory(history)[0].cached).toBe(false);
