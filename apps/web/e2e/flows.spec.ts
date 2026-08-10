@@ -13,8 +13,8 @@
  * atlanamaz.
  *
  * Test kendi verisini kurar; başka bir testin bıraktığı duruma güvenmez.
- * Temizlik bilinçli olarak yapılmıyor: her vaka kendi dersini açtığı için
- * artıklar birbirine değmiyor ve silme ucu (ders silme) sözleşmede yok.
+ * Ders kodu koşu kimliği taşır ve global teardown yalnız o koşunun derslerini
+ * doğrudan izole test veritabanından temizler. Ürün API'sine silme yetkisi eklenmez.
  *
  * Koşturma (API :8010, web sunucusunu paket kendi derleyip başlatır):
  *   E2E_API_URL=http://localhost:8010 node_modules/.bin/playwright test
@@ -24,6 +24,8 @@
  */
 
 import { expect, test, type Page } from "@playwright/test";
+
+import { createE2eCourseIdentity } from "./fixtures";
 
 /*
  * Varsayılan `playwright.config.ts` ile AYNI olmalı ve öyle kalmalı: config
@@ -91,12 +93,11 @@ async function apiGet<T>(path: string, user: DemoUser): Promise<T> {
  * sonra çakışan test, hiç olmayan testten kötüdür - yeşil bekleyip kırmızı bulan
  * ekip önce teste güvenmeyi bırakır.
  */
-let counter = 0;
 async function createCourse(suffix: string) {
-  const unique = `${suffix}${Date.now().toString(36).slice(-5)}${counter++}`;
+  const identity = createE2eCourseIdentity(suffix);
   return apiPost(
     "/courses",
-    { code: `E2E${unique}`.slice(0, 32), title: `E2E Test Dersi ${suffix}` },
+    identity,
     AYSE,
   );
 }
@@ -338,10 +339,10 @@ async function sohbetGonder(page: Page, etiket: "Sorun" | "Denemen", metin: stri
  * ---------------------------------------------------------------------- */
 
 test.describe("giriş", () => {
-  test("demo kartı oturum açar ve ders listesine götürür", async ({ page }) => {
+  test("demo kartı oturum açar ve ürün paneline götürür", async ({ page }) => {
     await page.goto("/");
     await page.getByText("Ayşe Hoca").click();
-    await expect(page).toHaveURL(/\/courses/);
+    await expect(page).toHaveURL(/\/dashboard$/);
   });
 
   test("bozuk oturum verisi uygulamayı ÇÖKERTMEZ", async ({ page }) => {
@@ -487,10 +488,12 @@ test.describe("sohbet — ürünün tezi", () => {
     const teacherButton = page.getByRole("button", { name: /Ayşe Hoca/ });
     await expect(teacherButton).toBeVisible();
     await teacherButton.click();
-    await expect(page).toHaveURL(/\/courses$/);
+    await expect(page).toHaveURL(/\/dashboard$/);
 
     // Keep the role switch inside Next.js client navigation. The test helper's
     // init script intentionally restores Burak on a full page load.
+    await page.getByRole("link", { name: "Tüm dersler" }).click();
+    await expect(page).toHaveURL(/\/courses$/);
     const courseLink = page.getByRole("link", { name: new RegExp(course.code) });
     await expect(courseLink).toBeVisible();
     await courseLink.click();

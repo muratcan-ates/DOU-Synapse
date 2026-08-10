@@ -6,7 +6,9 @@
  * paralel koşumunda başka bir vakanın bıraktığı veriye güvenmez.
  */
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 
@@ -39,6 +41,10 @@ interface ApiCall {
   body: string | null;
 }
 
+interface ProfileSnapshot {
+  full_name: string | null;
+}
+
 async function signIn(page: Page, user: DemoUser) {
   await page.addInitScript(
     ([token, payload]) => {
@@ -68,15 +74,36 @@ async function apiPost<T>(path: string, body: unknown, user: DemoUser): Promise<
   return response.json() as Promise<T>;
 }
 
-let courseCounter = 0;
+async function apiGet<T>(path: string, user: DemoUser): Promise<T> {
+  const response = await fetch(`${API}${path}`, {
+    headers: { Authorization: authorization(user) },
+  });
+  if (!response.ok) {
+    throw new Error(`${path} → ${response.status} ${await response.text()}`);
+  }
+  return response.json() as Promise<T>;
+}
+
+async function apiPatch<T>(path: string, body: unknown, user: DemoUser): Promise<T> {
+  const response = await fetch(`${API}${path}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: authorization(user),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`${path} → ${response.status} ${await response.text()}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 async function createCourse(owner: DemoUser, suffix: string): Promise<Course> {
-  const unique = `${Date.now().toString(36)}${courseCounter++}`;
+  const identity = createE2eCourseIdentity(suffix);
   return apiPost<Course>(
     "/courses",
-    {
-      code: `P${suffix}${unique}`.slice(0, 32),
-      title: `Portal E2E ${suffix} ${unique}`,
-    },
+    identity,
     owner,
   );
 }
@@ -120,6 +147,47 @@ function recordPortalApiCalls(page: Page): ApiCall[] {
     });
   });
   return calls;
+}
+
+async function expectVisibleFocusRing(target: Locator) {
+  await expect(target).toBeFocused();
+  const focusStyle = await target.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(focusStyle.outlineStyle).not.toBe("none");
+  expect(focusStyle.outlineWidth).toBeGreaterThanOrEqual(2);
+}
+
+async function expectMobileDarkAndFocused(page: Page, surfaceControl: Locator) {
+  await expect(page.getByRole("navigation", { name: "Mobil ana menü" })).toBeVisible();
+
+  await page.keyboard.press("Tab");
+  const skipLink = page.getByRole("link", { name: "Ana içeriğe geç" });
+  await expect(skipLink).toBeVisible();
+  await expectVisibleFocusRing(skipLink);
+
+  await expect(surfaceControl).toBeVisible();
+  for (let tab = 0; tab < 30; tab += 1) {
+    if (await surfaceControl.evaluate((element) => element === document.activeElement)) break;
+    await page.keyboard.press("Tab");
+  }
+  await expectVisibleFocusRing(surfaceControl);
+
+  const surface = await page.evaluate(() => ({
+    viewport: window.innerWidth,
+    document: document.documentElement.scrollWidth,
+    body: document.body.scrollWidth,
+    prefersDark: window.matchMedia("(prefers-color-scheme: dark)").matches,
+    background: getComputedStyle(document.body).backgroundColor,
+  }));
+  expect(surface.document).toBeLessThanOrEqual(surface.viewport);
+  expect(surface.body).toBeLessThanOrEqual(surface.viewport);
+  expect(surface.prefersDark).toBe(true);
+  expect(surface.background).toBe("rgb(25, 23, 21)");
 }
 
 test.describe("rol bazlı ürün portalı", () => {
@@ -181,6 +249,34 @@ test.describe("rol bazlı ürün portalı", () => {
     await expect(card.getByRole("link", { name: "Soru havuzu" })).toHaveCount(0);
   });
 
+  test("az verili ders uydurma akademik bilgi veya skor üretmez", async ({ page }) => {
+    const course = await createCourse(AYSE, "AZVERI");
+    await addStudent(course, BURAK);
+    await signIn(page, BURAK);
+
+    await page.goto("/dashboard");
+
+    const card = courseCard(page, course);
+    await expect(card).toBeVisible();
+    await expect(
+      card
+        .getByText("Çalışma sorusu", { exact: true })
+        .locator("xpath=following-sibling::dd"),
+    ).toHaveText("0");
+    await expect(
+      card
+        .getByText("Yayındaki sınav", { exact: true })
+        .locator("xpath=following-sibling::dd"),
+    ).toHaveText("0");
+    await expect(card.getByText("Kaynak", { exact: true }).locator("xpath=following-sibling::dd"))
+      .toHaveText("0");
+    await expect(card.getByText("Henüz ölçülmedi", { exact: true })).toBeVisible();
+    await expect(card.getByText("Son etkinlik: Henüz etkinlik yok", { exact: true }))
+      .toBeVisible();
+    await expect(page.getByText(/GPA|AGNO|dönem|danışman|program|duyuru/i))
+      .toHaveCount(0);
+  });
+
   test("karma rol tek global role düzleştirilmez", async ({ page }) => {
     const studentCourse = await createCourse(AYSE, "KARMAOGR");
     await addStudent(studentCourse, BURAK);
@@ -232,6 +328,102 @@ test.describe("rol bazlı ürün portalı", () => {
       .toHaveLength(1);
   });
 
+  test("profil PATCH sunucu adını ve paylaşılan üst çubuk değerini yeniler", async ({
+    page,
+  }) => {
+    const originalProfile = await apiGet<ProfileSnapshot>("/me/profile", AYSE);
+    const originalName = originalProfile.full_name ?? AYSE.fullName;
+    const updatedName = `Ayşe E2E ${Date.now().toString(36)}`;
+    await signIn(page, AYSE);
+
+    try {
+      await page.goto("/profile");
+
+      const nameInput = page.getByLabel("Ad soyad");
+      await expect(nameInput).toHaveValue(originalName);
+      await nameInput.fill(`  ${updatedName}  `);
+
+      const patchResponse = page.waitForResponse(
+        (response) =>
+          response.url() === `${API}/me/profile` &&
+          response.request().method() === "PATCH",
+      );
+      await page.getByRole("button", { name: "Profili kaydet" }).click();
+      expect((await patchResponse).status()).toBe(200);
+
+      await expect(page.getByRole("status")).toHaveText("Profil adınız güncellendi.");
+      await expect(nameInput).toHaveValue(updatedName);
+      await expect(page.getByRole("link", { name: updatedName, exact: true })).toBeVisible();
+      await expect.poll(async () => (await apiGet<ProfileSnapshot>("/me/profile", AYSE)).full_name)
+        .toBe(updatedName);
+
+      await page.reload();
+      await expect(page.getByLabel("Ad soyad")).toHaveValue(updatedName);
+      await expect(page.getByRole("link", { name: updatedName, exact: true })).toBeVisible();
+    } finally {
+      await apiPatch<ProfileSnapshot>("/me/profile", { full_name: originalName }, AYSE);
+    }
+  });
+
+  test("çıkış sonrası yeni kullanıcı önceki admin profilini devralmaz", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Ayşe Hoca/ }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("link", { name: "Bilgi İşlem" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Çıkış" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await page.getByRole("button", { name: /Burak Yılmaz/ }).click();
+
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("link", { name: "Bilgi İşlem" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Burak Yılmaz", exact: true }))
+      .toBeVisible();
+  });
+
+  test("global öğrenci ders eğitmeniyse blueprint aracını yalnız o derste kullanır", async ({
+    page,
+  }) => {
+    const studentCourse = await createCourse(AYSE, "BPOGR");
+    await addStudent(studentCourse, BURAK);
+    const instructorCourse = await createCourse(BURAK, "BPEGT");
+    await signIn(page, BURAK);
+
+    await page.goto("/dashboard");
+    const studentCard = courseCard(page, studentCourse);
+    const instructorCard = courseCard(page, instructorCourse);
+    await expect(studentCard.getByRole("link", { name: "Sınav planı" })).toHaveCount(0);
+    const instructorTool = instructorCard.getByRole("link", { name: "Sınav planı" });
+    await expect(instructorTool).toHaveAttribute(
+      "href",
+      `/courses/${instructorCourse.id}/blueprints`,
+    );
+    await instructorTool.click();
+    await expect(page).toHaveURL(new RegExp(`/courses/${instructorCourse.id}/blueprints$`));
+    await expect(page.getByRole("heading", { name: "Sınav blueprint'i", exact: true }))
+      .toBeVisible();
+    await expect(page.getByRole("link", { name: "Sınav blueprint'i", exact: true }))
+      .toBeVisible();
+    await expect(page.getByRole("button", { name: "Yeni sınav kur" })).toBeVisible();
+    const instructorBlueprints = await fetch(
+      `${API}/courses/${instructorCourse.id}/blueprints`,
+      { headers: { Authorization: authorization(BURAK) } },
+    );
+    expect(instructorBlueprints.status).toBe(200);
+
+    await page.goto(`/courses/${studentCourse.id}/blueprints`);
+    await expect(
+      page.getByText("Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı."),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Sınav blueprint'i", exact: true }))
+      .toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Yeni sınav kur" })).toHaveCount(0);
+    const studentBlueprints = await fetch(`${API}/courses/${studentCourse.id}/blueprints`, {
+      headers: { Authorization: authorization(BURAK) },
+    });
+    expect(studentBlueprints.status).toBe(403);
+  });
+
   test("platform yöneticisi profil kapısından sonra gizlilik güvenli konsolu görür", async ({
     page,
   }) => {
@@ -240,7 +432,7 @@ test.describe("rol bazlı ürün portalı", () => {
 
     await page.goto("/admin");
 
-    await expect(page.getByRole("heading", { name: "Sistem yönetimi" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bilgi İşlem" })).toBeVisible();
     await expect(page.getByText(/Uygulama: (Hazır|Kısıtlı|Hata|Ulaşılamıyor)/)).toBeVisible();
     await expect(page.getByText(/Veritabanı: (Hazır|Kısıtlı|Hata|Ulaşılamıyor)/)).toBeVisible();
     await expect(page.getByText(/Embedding: (Hazır|Hazırlanıyor|Kapalı|Hata)/)).toBeVisible();
@@ -273,6 +465,27 @@ test.describe("rol bazlı ürün portalı", () => {
     expect(JSON.parse(userDirectoryRequest?.body ?? "{}"))
       .toMatchObject({ limit: 25, offset: 0 });
 
+    const fullEmailRequest = page.waitForRequest(
+      (request) =>
+        new URL(request.url()).pathname === "/admin/users" &&
+        request.method() === "POST" &&
+        request.postDataJSON()?.search === BURAK.email,
+    );
+    await userSearch.fill(BURAK.email);
+    await page.getByRole("button", { name: "Uygula" }).click();
+    const exactEmailRequest = await fullEmailRequest;
+    const exactEmailUrl = new URL(exactEmailRequest.url());
+    expect(exactEmailUrl.search).toBe("");
+    expect(exactEmailUrl.toString()).not.toContain(BURAK.email);
+    expect(exactEmailRequest.postDataJSON()).toMatchObject({
+      limit: 25,
+      offset: 0,
+      search: BURAK.email,
+    });
+    await expect(page.getByText("Kullanıcı kaydı bulunamadı.", { exact: true }))
+      .toBeVisible();
+    await expect(page.getByText(AYSE.email, { exact: true })).toHaveCount(0);
+
     await page.getByRole("tab", { name: "AI kullanım kayıtları" }).click();
     await expect(page.getByRole("heading", { name: "AI kullanım kayıtları" })).toBeVisible();
     await page.getByRole("tab", { name: "İşleme işleri" }).click();
@@ -286,7 +499,7 @@ test.describe("rol bazlı ürün portalı", () => {
     await page.goto("/admin");
 
     await expect(page.getByRole("heading", { name: "Bu alana erişiminiz yok" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sistem yönetimi" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Bilgi İşlem" })).toHaveCount(0);
     expect(calls.filter((call) => call.phase === "request" && call.path === "/me/profile"))
       .toHaveLength(1);
     expect(calls.filter((call) => call.phase === "request" && call.path.startsWith("/admin/")))
@@ -296,5 +509,38 @@ test.describe("rol bazlı ürün portalı", () => {
       headers: { Authorization: authorization(BURAK) },
     });
     expect(directResponse.status).toBe(403);
+  });
+
+  test("mobil ve koyu temada dashboard ile profil taşmaz, odak görünür kalır", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await signIn(page, BURAK);
+
+    await page.goto("/dashboard");
+    await expect(page.getByRole("heading", { name: /Merhaba|Genel bakış/ })).toBeVisible();
+    await expectMobileDarkAndFocused(
+      page,
+      page
+        .getByRole("navigation", { name: "Mobil ana menü" })
+        .getByRole("link", { name: "Genel bakış", exact: true }),
+    );
+
+    await page.goto("/profile");
+    await expect(page.getByRole("heading", { name: "Profil", exact: true })).toBeVisible();
+    await expectMobileDarkAndFocused(page, page.getByLabel("Ad soyad"));
+  });
+
+  test("mobil ve koyu temada admin taşmaz, odak görünür kalır", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await signIn(page, AYSE);
+
+    await page.goto("/admin");
+    await expect(page.getByRole("heading", { name: "Bilgi İşlem" })).toBeVisible();
+    await expect(page.getByText(/Uygulama: (Hazır|Kısıtlı|Hata|Ulaşılamıyor)/))
+      .toBeVisible();
+    await expectMobileDarkAndFocused(page, page.getByLabel("Kullanıcı ara"));
   });
 });
