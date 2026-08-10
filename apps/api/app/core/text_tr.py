@@ -13,9 +13,13 @@ her zaman biri daha gevşek olur ve i/İ tuzağına ilk düşen o olur.
 O taşımada yalnız `socratic.py` gelmişti; `question_gen.normalize_tr` kendi
 küçültme tablosuyla yerinde kaldı ve `grading.py` metin yardımcısını oradan
 import etmeye başladı — yani bir puanlama modülü, Türkçe metin kuralını bir
-soru üretimi modülünden alıyordu. Taşıma 10 Ağustos'ta `normalize` eklenerek
-tamamlandı: iki agresiflik seviyesi de artık burada ve aralarındaki fark
-aşağıda yazılı bir ölçüte bağlı.
+soru üretimi modülünden alıyordu. Taşıma 10 Ağustos'ta tamamlandı.
+
+Taşınan kopya aksanı KORUYORDU ve bir süre iki seviye yan yana durdu. Aynı gün
+ürün kararı verildi: **tek seviye var, aksan sökülür.** Gerekçe ve kabul edilen
+bedel `normalize`'ın docstring'inde. Buradaki üç fonksiyonun üçü de aynı
+katlamaya dayanır; aralarındaki fark yalnız çıktının biçimidir — dize (`fold`),
+sözcük listesi (`tokens`), karşılaştırılabilir tek satır (`normalize`).
 
 **Neden `str.lower()` yetmez.** Python'un `lower()`'ı Unicode kurallarını uygular,
 Türkçe kurallarını değil:
@@ -48,11 +52,9 @@ _TR_ASCII = str.maketrans({"ı": "i", "ş": "s", "ğ": "g", "ü": "u", "ö": "o"
 
 #: `fold` çıktısı ASCII'dir; sözcük deseni de ASCII olabilir.
 _WORD = re.compile(r"[0-9a-z]+")
-#: `normalize` çıktısı Türkçe harfleri KORUR; deseni Unicode olmak zorunda.
-_WORD_TR = re.compile(r"\w+", re.UNICODE)
 
 
-def lower_tr(text: str) -> str:
+def _lower_tr(text: str) -> str:
     """Türkçe doğru küçültme. Aksanlar KORUNUR.
 
     `str.lower()` tek başına iki harfte yanılır (i/İ ve ı/I); geri kalan Türkçe
@@ -69,27 +71,11 @@ def fold(text: str) -> str:
     KULLANICIYA DÖNEN METİNDE KULLANILMAZ: bu fonksiyon bilgi kaybettirir
     ("çözüm" → "cozum"). Yalnız karşılaştırma tarafında kullanılır.
     """
-    folded = lower_tr(text).translate(_TR_ASCII)
+    folded = _lower_tr(text).translate(_TR_ASCII)
     # Kalan aksanlı karakterler (Almanca ä, Fransızca é…) NFKD ile sökülür; Türkçe
     # harfler yukarıda zaten eşlendiği için bu adım onlara dokunmaz.
     decomposed = unicodedata.normalize("NFKD", folded)
     return "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-
-
-def normalize(text: str) -> str:
-    """Küçült, noktalamayı at, boşlukları tekle. Aksan KORUNUR.
-
-    `fold`'un daha az agresif kardeşi ve ondan ayrı durması bilinçlidir. `fold`
-    aksan söker, yani "çözüm" ile "cozum"u eşitler; bu retrieval'da istenen
-    şeydir (öğrenci aksansız yazar, materyal aksanlı olabilir; Postgres tarafında
-    `chunks.fts` de `unaccent` üzerinden üretilir). PUANLAMA tarafında ise aynı
-    agresiflik zarar verir: "acı" ile "açı" katlandığında aynı dizeye iner ve
-    kısa cevap sınavında yanlış cevap doğru sayılır.
-
-    Bu yüzden iki seviye var ve hangisinin nerede kullanıldığı bir tercih değil,
-    ölçüt: **geri çağırma tarafı `fold`, puanlama tarafı `normalize`.**
-    """
-    return " ".join(_WORD_TR.findall(lower_tr(text)))
 
 
 def tokens(text: str, *, min_length: int = 1) -> list[str]:
@@ -101,4 +87,29 @@ def tokens(text: str, *, min_length: int = 1) -> list[str]:
     return [word for word in _WORD.findall(fold(text)) if len(word) >= min_length]
 
 
-__all__ = ["fold", "lower_tr", "normalize", "tokens"]
+def normalize(text: str) -> str:
+    """Karşılaştırılabilir tek satır: katlanmış, noktalamasız, tek boşluklu.
+
+    `fold` tek başına yetmez — noktalamayı ve fazla boşluğu bırakır, yani
+    "Döngüsel bekleme." ile "döngüsel bekleme" hâlâ eşit olmaz. Bu fonksiyon
+    `tokens`'ın çıktısını birleştirir; **eşitlik** ya da **kelime sınırında
+    kapsama** arayan çağıranlar içindir (sıralama/örtüşme arayanlar doğrudan
+    `tokens` kullanır).
+
+    Aksan SÖKÜLÜR — 10 Ağustos'ta verilmiş bir üründe karar. Kısa cevap
+    puanlaması bir dönem aksanı korudu ve cevap anahtarı "çözüm" iken "cozum"
+    yazan öğrenci 0 aldı. Öğrencinin Türkçe klavye kullanmaması sık, cevabın
+    aksanla ayrılan bir çift olması ("acı"/"açı") ise nadir; ayrıca aynı öğrenci
+    retrieval tarafında zaten eşdeğer sayılıyordu (`chunks.fts` kolonu
+    `0001_core_schema.sql`'de `app.immutable_unaccent` üzerinden üretiliyor).
+    İki tarafın aynı "aynılık" tanımını kullanması, ikisinin ayrı tanımlar
+    taşımasından daha savunulabilir bulundu.
+
+    Kabul edilen bedel yazılı olsun: aksan dışında ayrışmayan bir cevap çifti
+    kısa cevap anahtarı olursa yanlış olan doğru sayılır. Bunu üretim tarafında
+    kapatmanın yolu `accepted_answers`'ı dar tutmak değil, o çiftten kaçınmaktır.
+    """
+    return " ".join(tokens(text))
+
+
+__all__ = ["fold", "normalize", "tokens"]

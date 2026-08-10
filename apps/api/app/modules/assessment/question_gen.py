@@ -161,8 +161,14 @@ def resolve_completion(task: LlmTask = LlmTask.CHAT) -> StructuredCompletion:
 # ---------------------------------------------------------------------------
 
 #: Örtüşme skorunda ayırt ediciliği olmayan sık kelimeler.
+#:
+#: Liste Türkçe yazılır ama KATLANMIŞ hâliyle saklanır. Elle katlamak ("çünkü"
+#: yerine "cunku" yazmak) listeyi okunmaz yapardı; katlamamak ise dokuz kelimeyi
+#: (çünkü, değil, için, çok, hiç, üzere, şu, mı, mü) sessizce etkisiz bırakırdı,
+#: çünkü karşılaştırılan taraf `text_tr.tokens` çıktısı ve o taraf katlanmış.
 _STOPWORDS = frozenset(
-    """
+    text_tr.fold(word)
+    for word in """
     ve veya ile ama fakat çünkü ki de da mi mı mu mü bir bu şu o için gibi kadar
     daha en çok az her hiç ise olan olarak olur oldu değil var yok üzere ancak
     """.split()
@@ -172,11 +178,10 @@ _STOPWORDS = frozenset(
 def _tokens(text: str) -> set[str]:
     """Örtüşme skoru için ayırt edici sözcükler.
 
-    Katlama seviyesi `core.text_tr.normalize`'dır (aksan KORUNUR), `fold` değil:
-    çeldirici→kaynak eşlemesi puanlama tarafındadır ve "acı"/"açı" ayrımını
-    kaybetmemelidir. Gerekçenin tamamı `text_tr.normalize` docstring'inde.
+    Üç harften kısa olanlar ve durak sözcükler elenir: ikisi de metnin uzunluğuyla
+    orantılı olarak her yerde geçer, yani örtüşme skorunu bilgi taşımadan şişirir.
     """
-    return {word for word in text_tr.normalize(text).split() if len(word) > 2} - _STOPWORDS
+    return set(text_tr.tokens(text, min_length=3)) - _STOPWORDS
 
 
 def match_chunk(text: str, chunks: Sequence[RetrievedChunk]) -> UUID:

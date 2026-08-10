@@ -893,6 +893,23 @@ class TestDeterministicGrading:
         # İngilizce karşılık listede.
         assert grade_short_answer(payload, "circular wait", source_chunk_id=source).score == 100
 
+    def test_kisa_cevap_aksansiz_yazilsa_da_puan_alir(self) -> None:
+        """10 Ağustos ürün kararı: Türkçe klavyesi olmayan öğrenci sıfır almaz.
+
+        Bu davranış eskiden YOKTU — "dongusel bekleme" 0 alıyordu, oysa aynı
+        öğrenci retrieval tarafında eşdeğer sayılıyordu (`chunks.fts` unaccent'lı).
+        Bedeliyle birlikte gerekçe `core.text_tr.normalize` docstring'inde.
+        """
+        from app.modules.assessment.grading import grade_short_answer
+
+        payload = OpenPayload.model_validate(short_answer_payload())
+        source = uuid4()
+
+        assert grade_short_answer(payload, "dongusel bekleme", source_chunk_id=source).score == 100
+        assert grade_short_answer(payload, "Dongusel Bekleme.", source_chunk_id=source).score == 100
+        # Kelime sınırı şartı katlamadan SONRA da duruyor: "ram" ile "program".
+        assert grade_short_answer(payload, "dongu", source_chunk_id=source).score == 0
+
     def test_kisa_cevap_yanlissa_kaynak_gosterilir(self) -> None:
         from app.modules.assessment.grading import grade_short_answer
 
@@ -905,15 +922,22 @@ class TestDeterministicGrading:
         assert outcome.is_correct is False
         assert outcome.why_wrong_chunk_id == source
 
-    def test_turkce_normalizasyon_i_harfini_bozmaz(self) -> None:
-        """Anayasa V: `upper()` kullanılmaz; İ/I ayrımı elle eşlenir.
+    def test_durak_sozcukler_katlandiktan_sonra_da_eleniyor(self) -> None:
+        """`_STOPWORDS` katlanmış saklanıyor; katlanmasaydı dokuzu etkisiz kalırdı.
 
-        Kural artık `core.text_tr`'de; kısa cevap puanlaması onu kullanıyor.
-        Bu test o bağın kopmadığını, `test_text_tr.py` ise kuralın kendisini
-        doğrular.
+        Karşılaştırılan taraf `text_tr.tokens` çıktısı ve o taraf aksansız;
+        listede "çünkü" yazsaydı hiçbir zaman eşleşmez, sessizce ölürdü.
         """
-        assert text_tr.normalize("İŞLETİM Sistemi") == "işletim sistemi"
-        assert text_tr.normalize("IŞIK") == "ışık"
+        assert question_gen._tokens("çünkü değil için çok hiç üzere") == set()
+        assert question_gen._tokens("Döngüsel bekleme çünkü") == {"dongusel", "bekleme"}
+
+    def test_puanlama_ortak_katlamayi_kullanir(self) -> None:
+        """Kural `core.text_tr`'de; bu test yalnız bağın kopmadığını doğrular.
+
+        Kuralın kendisi (i/İ, aksan, noktalama) `test_text_tr.py`'de sınanıyor;
+        burada tekrarlamak iki metnin bir gün ayrışmasına davetiye olurdu.
+        """
+        assert text_tr.normalize("İŞLETİM Sistemi") == "isletim sistemi"
 
 
 # ---------------------------------------------------------------------------

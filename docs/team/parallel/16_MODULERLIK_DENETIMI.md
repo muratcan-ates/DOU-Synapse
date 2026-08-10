@@ -35,10 +35,8 @@ Her biri kendi commit'i, hepsi davranış koruyan yeniden düzenleme:
 
 1. **Türkçe katlama tek modülde.** `question_gen`'in kendi küçültme tablosu ve
    tokenleştiricisi vardı; `grading` metin kuralını oradan import ediyordu.
-   İkisi de `core/text_tr`'ye geçti. İki agresiflik seviyesi (`fold` / `normalize`)
-   artık orada ve **aralarındaki ölçüt yazılı**: geri çağırma tarafı katlar,
-   puanlama tarafı katlamaz. `test_text_tr.py` ikisini birbirine bağlamayı
-   kırmızı yakar.
+   İkisi de `core/text_tr`'ye geçti. Modül bir süre iki agresiflik seviyesi
+   taşıdı; §3'teki karardan sonra tek seviye kaldı.
 2. **LLM çıktısından JSON okuma tek kuralda** (`core/llm_json.py`). Sohbet yolu
    metni tarıyordu, soru üretimi ve puanlama çit sıyırıp `json.loads` çağırıyordu;
    ikincisi "İşte sorular: {...}" gibi bir yanıtı şema hatası sayıp FR-020'nin tek
@@ -76,28 +74,40 @@ Ayrıca `tests/test_rate_limit.py` — birleşmeyle gelen yeni dosya — kurulum
 yönlendirildi; dosyanın "testler arası ithal bu depoda kurulu bir desen" diyen
 yorumu da düzeltildi, çünkü artık değil.
 
-## 3. SANA BIRAKILAN KARAR — kısa cevap puanlaması aksan katlamalı mı?
+## 3. VERİLEN KARAR — kısa cevap puanlaması artık aksan katlıyor
 
-Bu bir yeniden düzenleme değil, **pedagojik bir karar**; o yüzden ben vermedim.
+**Murat, 10 Ağustos: öğrenci puanını alsın.** Uygulandı.
 
-Bugün kısa cevap puanlaması aksanı KORUYOR (`text_tr.normalize`). Yani cevap
-anahtarı "çözüm" iken öğrencinin "cozum" yazması **0 puan** alıyor. Oysa aynı
-öğrenci retrieval tarafında eşdeğer sayılıyor: `chunks.fts` kolonu
-`0001_core_schema.sql`'de `app.immutable_unaccent` üzerinden üretiliyor ve
-`retrieval/scope.py` `text_tr.fold` kullanıyor.
+Eski davranış: cevap anahtarı "çözüm" iken "cozum" yazan öğrenci **0** alıyordu.
+Oysa aynı öğrenci retrieval tarafında zaten eşdeğer sayılıyordu — `chunks.fts`
+kolonu `0001_core_schema.sql`'de `app.immutable_unaccent` üzerinden üretiliyor.
+İki tarafın farklı "aynılık" tanımı taşıması savunulamazdı.
 
-* **Katlamak** (grading'i `fold`'a geçirmek): Türkçe klavye kullanmayan öğrenci
-  haksız sıfır almaz. Python tarafı veritabanının davranışıyla hizalanır.
-* **Katlamamak** (bugünkü hâl): "acı" ile "açı" katlanınca aynı dizeye iner. Kısa
-  cevabın anahtarı böyle bir çift olursa yanlış cevap 100 alır.
+Değişiklik tek satır değildi, üç yerde iş çıkardı:
 
-Değiştirmek tek satır: `grading.grade_short_answer` içindeki `text_tr.normalize`
-→ `text_tr.fold`. Karar verirsen `test_text_tr.py::TestSeviyeAyrimi` de birlikte
-güncellenmeli — o test bugünkü ayrımı bilerek çiviliyor.
+1. `fold` tek başına yetmiyor — noktalamayı ve fazla boşluğu bırakıyor, yani
+   "Döngüsel bekleme." hâlâ eşleşmezdi. `text_tr.normalize` artık katlanmış
+   tokenlerden kuruluyor (`" ".join(tokens(text))`).
+2. `normalize`'ın diğer iki çağıranı ("neden yanlış" alıntı seçimi ve
+   çeldirici→kaynak örtüşmesi) doğrudan `tokens`'a bağlandı. Yarısı katlayan bir
+   sistem, aynı cevabı doğru sayıp gerekçesini başka bir "aynılık" tanımıyla
+   seçerdi.
+3. `question_gen._STOPWORDS` **katlanmış saklanıyor.** Katlanmasaydı listedeki
+   dokuz kelime (çünkü, değil, için, çok, hiç, üzere, şu, mı, mü) karşılaştırılan
+   tarafla hiç eşleşmez, sessizce ölürdü. Testle sabitlendi.
 
-Ara yol: eşiği hiç değiştirmeden, soru üretimi prompt'unun `accepted_answers`
-listesine aksansız yazımı da eklemesini istemek. Bu, kararı puanlamadan alıp
-üretime taşır ve iki riskin ikisini de almaz.
+Aksan seviyesi artık tek: `core/text_tr.py`'de üç fonksiyon da aynı katlamaya
+dayanıyor, farkları yalnız çıktı biçimi. Eski iki seviyeli ayrım ve onu koruyan
+`TestSeviyeAyrimi` kaldırıldı.
+
+**Kabul edilen bedel yazılı:** "acı" ile "açı" artık aynı dizeye iniyor; kısa
+cevap anahtarı böyle bir çift olursa yanlış cevap 100 alır.
+`test_text_tr.py::TestPuanlamaKarari` hem kazancı hem bedeli çiviliyor — o
+testler kırmızı yanarsa karar sessizce geri alınmış demektir. Kaçınma yolu
+puanlamada değil soru üretiminde: o çifti anahtar yapmamak.
+
+Frontend'de eşleştirme yok (yalnız eğitmen ekranında `accepted_answers`
+gösteriliyor), yani değişiklik uçtan uca tamam.
 
 ## 4. Devredilen bulgular — sahibi olan şerit alsın
 
@@ -185,12 +195,13 @@ Dördü de **kusur**, yeniden düzenleme değil. Bu dala karıştırılmadı ki
 Rebase sonrası, `002-production-hardening` (a04d2ca) üstünde:
 
 ```
-apps/api : 747 test yeşil · ruff check + format temiz
+apps/api : 751 test yeşil · ruff check + format temiz
 apps/web : 257 test yeşil · tsc --noEmit temiz
 ```
 
 **Suite süresi 224 sn → 28 sn.** Bu dalın kendi test sayısı etkisi: API'de
-+23 (eklenen `test_text_tr.py`, `test_llm_json.py`, kademe bekçisi), web'de
++27 (eklenen `test_text_tr.py`, `test_llm_json.py`, kademe bekçisi, puanlama
+kararının kazanç/bedel testleri), web'de
 −10/+5 (silinen ikiz eşleme testleri, yerine tek blok). Geri kalan artış
 birleşen şeritlerden geliyor. Fixture birleştirmesinde toplanan node kimlikleri
 öncesiyle birebir aynı — kayıp yok.
