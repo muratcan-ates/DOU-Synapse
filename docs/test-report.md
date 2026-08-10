@@ -576,7 +576,7 @@ delinmediği `rls_assessment.sql` içindeki bir iddiayla ve mutasyon testiyle s�
 **Ölçüldü (9 Ağustos, `feat/eval-runs`):**
 
 ```bash
-cd apps/api && uv run pytest -q      # 825 geçti   # docs-check: backend.tests = 825
+cd apps/api && uv run pytest -q      # 841 geçti   # docs-check: backend.tests = 841
 uv run mypy app                      # temiz, 59 dosya
 uv run ruff check . && uv run ruff format --check .   # temiz
 ```
