@@ -184,7 +184,7 @@ kriterli görevlerle; auth, RLS, `course_id` filtreleri, migration'lar insan inc
 | Soru üretiminde şema geçerliliği | ≥ %98 | **ÖLÇÜLEMEDİ** — sahte sağlayıcı soru üretmiyor; gerçek anahtar gerekiyor | — |
 | Uçtan uca cevap p95 | < 10 sn | **KOŞULMADI.** Yerel ölçüm: ilk yükleme 19,1 sn (model yükleme dahil), sonraki yüklemeler 2–7 sn | **Sıcak replika, sorgu yolu** |
 | Demo akışında kritik hata | 0 | **Altı sahnenin altısı da** canlıda koşuldu ve geçti (9 Ağu akşamı, ekranlar bağlandıktan sonra) | `docs/demo-script.md` |
-| Backend testleri | yeşil | **791 geçiyor** (`uv run pytest -q`) | — | <!-- docs-check: backend.tests = 791 -->
+| Backend testleri | yeşil | **794 geçiyor** (`uv run pytest -q`) | — | <!-- docs-check: backend.tests = 794 -->
 
 Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göstergesi, kesin hüküm değil.*
 Çalıştırılmayan deney için sonuç yazılmaz — yukarıdaki **KOŞULMADI** satırları bunun içindir.

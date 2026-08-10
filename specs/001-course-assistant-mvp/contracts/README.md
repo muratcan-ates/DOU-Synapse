@@ -10,7 +10,7 @@ görülürse şema yeniden üretilir (aşağıdaki komut).
 
 ---
 
-## Mevcut sözleşme (41 yol, 56 işlem)
+## Mevcut sözleşme (43 yol, 58 işlem)
 
 Yetki sütunu üç seviyedir:
 
@@ -30,6 +30,7 @@ adlarını ikinci bir yerde 56 satırla kopyalamaz.
 | `/courses`, `/members` | kimlik / eğitmen | Ders ve üyelik yönetimi; ders listesi cursor sayfalıdır |
 | `/documents`, `/chunks`, `/retry` | üye / eğitmen | Yükleme, açık kaynak sürümü, işleme durumu, chunk önizleme ve başarısız işi yeniden kuyruğa alma |
 | `/chat`, `/chat/availability`, `/chat/sessions` | üye | Kaynaklı QA/Sokratik akış, sınav kilidi, cursor sayfalı oturum+mesaj geçmişi |
+| `/chat/messages/*/feedback`, `/chat/quality` | üye / eğitmen | Gerekçeli öğrenci puanı, toplu kalite ölçümü ve yalnız açık izinli inceleme kayıtları |
 | `/questions`, `/questions/generate` | üye / eğitmen | Dört soru tipi, taslak→onay kapısı, üretim kotası ve cursor sayfalama |
 | `/blueprints`, `/learning-outcomes`, `/exam-versions` | üye / eğitmen | Blueprint hücreleri, öğrenme çıktıları, kaynak sürümü, yayın ve değişmez sınav sürümü |
 | `/exams`, `/answers` | üye | Practice/exam oturumu, süre, puan, rubrik kırılımı ve neden-yanlış |

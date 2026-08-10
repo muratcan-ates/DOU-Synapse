@@ -50,7 +50,9 @@ import { useChatAvailability } from "@/lib/chat-availability";
 import { pagedPath, usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { sourceContextHref } from "@/lib/source-quality";
+import { useSession } from "@/lib/session";
 import { AppShell } from "@/components/app-shell";
+import { ChatFeedbackControls } from "@/components/chat-feedback";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore } from "@/components/page-state";
 import { SocraticLadder } from "@/components/socratic-ladder";
@@ -67,6 +69,7 @@ export default function ChatPage() {
    * koşturmamak.
    */
   const lock = useChatAvailability(courseId);
+  const session = useSession(courseId);
 
   /*
    * Yoklama dönene kadar HİÇBİRİ çizilmez. Bu bir estetik tercih değil:
@@ -79,7 +82,7 @@ export default function ChatPage() {
    * sekmesi bir an kilitli görünürdü. Doğru üçüncü hâl "henüz bilinmiyor" ve
    * karşılığı yükleme göstergesi (`lib/session.ts`'in `ready` kuralıyla aynı).
    */
-  if (!lock.ready) {
+  if (!lock.ready || !session.ready) {
     return (
       <AppShell>
         <CourseNav courseId={courseId} lock={lock} />
@@ -94,13 +97,19 @@ export default function ChatPage() {
       {lock.locked ? (
         <EmptyState title={lock.message ?? "Asistan şu anda kullanılamıyor."} />
       ) : (
-        <ChatScreen courseId={courseId} />
+        <ChatScreen courseId={courseId} canGiveFeedback={!session.isInstructor} />
       )}
     </AppShell>
   );
 }
 
-function ChatScreen({ courseId }: { courseId: string }) {
+function ChatScreen({
+  courseId,
+  canGiveFeedback,
+}: {
+  courseId: string;
+  canGiveFeedback: boolean;
+}) {
   const [mode, setMode] = useState<ChatUiMode>("qa");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
@@ -266,6 +275,21 @@ function ChatScreen({ courseId }: { courseId: string }) {
   };
 
   const blocks = toBlocks(messages, { mode, pending });
+  const feedbackByMessage = new Map(
+    messages
+      .filter((message) => message.role === "assistant")
+      .map((message) => [message.id, message.feedback] as const),
+  );
+  const saveFeedback = (
+    messageId: string,
+    feedback: NonNullable<TranscriptMessage["feedback"]>,
+  ) => {
+    setMessages((current) =>
+      current.map((message) =>
+        message.id === messageId ? { ...message, feedback } : message,
+      ),
+    );
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -316,18 +340,51 @@ function ChatScreen({ courseId }: { courseId: string }) {
                       href={sourceContextHref(courseId, citation.chunk_id)}
                     />
                   ))}
+                  {canGiveFeedback && (
+                    <ChatFeedbackControls
+                      courseId={courseId}
+                      messageId={block.id}
+                      initial={feedbackByMessage.get(block.id) ?? null}
+                      onSaved={(feedback) => saveFeedback(block.id, feedback)}
+                    />
+                  )}
                 </div>
               );
             case "abstention":
               return (
-                <AbstentionNotice
-                  key={block.id}
-                  status={block.status}
-                  message={block.text}
-                />
+                <div key={block.id} className="space-y-3">
+                  <AbstentionNotice status={block.status} message={block.text} />
+                  {canGiveFeedback && (
+                    <ChatFeedbackControls
+                      courseId={courseId}
+                      messageId={block.id}
+                      initial={feedbackByMessage.get(block.id) ?? null}
+                      onSaved={(feedback) => saveFeedback(block.id, feedback)}
+                    />
+                  )}
+                </div>
               );
             case "ladder":
-              return <SocraticLadder key={block.id} rungs={block.rungs} />;
+              return (
+                <SocraticLadder
+                  key={block.id}
+                  rungs={block.rungs}
+                  footerForRung={
+                    canGiveFeedback
+                      ? (rung) => (
+                          <div className="mt-3">
+                            <ChatFeedbackControls
+                              courseId={courseId}
+                              messageId={rung.id}
+                              initial={feedbackByMessage.get(rung.id) ?? null}
+                              onSaved={(feedback) => saveFeedback(rung.id, feedback)}
+                            />
+                          </div>
+                        )
+                      : undefined
+                  }
+                />
+              );
           }
         })}
 

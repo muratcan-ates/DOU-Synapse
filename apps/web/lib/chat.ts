@@ -12,6 +12,7 @@
 import type {
   AnswerStatus,
   ChatAnswer,
+  ChatFeedback,
   ChatMessage,
   ChatMode,
   ChatRequest,
@@ -253,6 +254,8 @@ export interface TranscriptMessage {
    * `false` yazmak, sunucunun vermediği bir bilgiyi uydurmak olurdu (Anayasa III).
    */
   cached: boolean;
+  /** Öğrencinin daha önce kaydettiği puan; yalnız kendi geçmişinde döner. */
+  feedback: ChatFeedback | null;
 }
 
 export function fromHistory(messages: ChatMessage[]): TranscriptMessage[] {
@@ -264,6 +267,7 @@ export function fromHistory(messages: ChatMessage[]): TranscriptMessage[] {
     citations: message.citations ?? [],
     socraticStage: message.socratic_stage,
     cached: false,
+    feedback: message.feedback,
   }));
 }
 
@@ -285,6 +289,7 @@ export function fromAnswer(answer: ChatAnswer): TranscriptMessage {
     citations: answer.citations ?? [],
     socraticStage: answer.socratic_stage,
     cached: answer.cached,
+    feedback: null,
   };
 }
 
@@ -297,6 +302,7 @@ export function userMessage(id: string, content: string): TranscriptMessage {
     citations: [],
     socraticStage: null,
     cached: false,
+    feedback: null,
   };
 }
 

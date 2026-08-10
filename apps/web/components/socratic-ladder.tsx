@@ -10,9 +10,16 @@
  * kademesi ekranda hiç görünmüyordu.
  */
 
+import type { ReactNode } from "react";
 import { SOCRATIC_STAGES, stageIndex, stageLabel, type LadderRung } from "@/lib/chat";
 
-export function SocraticLadder({ rungs }: { rungs: LadderRung[] }) {
+export function SocraticLadder({
+  rungs,
+  footerForRung,
+}: {
+  rungs: LadderRung[];
+  footerForRung?: (rung: LadderRung) => ReactNode;
+}) {
   const reached = rungs.reduce((max, rung) => Math.max(max, stageIndex(rung.stage)), -1);
   const current = rungs.length > 0 ? rungs[rungs.length - 1] : null;
 
@@ -54,6 +61,7 @@ export function SocraticLadder({ rungs }: { rungs: LadderRung[] }) {
             <p className="mt-2 font-mono text-xs text-fg-subtle">
               {rung.source.fileName} · {rung.source.location}
             </p>
+            {footerForRung?.(rung)}
           </li>
         ))}
       </ol>

@@ -26,6 +26,7 @@ const TABS = [
   { slug: "/blueprints", label: "Sınav planı", instructorOnly: true },
   { slug: "/settings", label: "AI politikası", instructorOnly: true },
   { slug: "/analytics", label: "İlerleme" },
+  { slug: "/quality", label: "AI kalite", instructorOnly: true },
   { slug: "/members", label: "Katılımcılar", instructorOnly: true },
 ];
 

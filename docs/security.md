@@ -364,7 +364,7 @@ sayfasından okunur.
 ## 10. Doğrulama komutları (tümü)
 
 ```bash
-cd apps/api && uv run pytest -q                 # 791 test   # docs-check: backend.tests = 791
+cd apps/api && uv run pytest -q                 # 794 test   # docs-check: backend.tests = 794
 cd apps/api && uv run mypy app                  # temiz, 81 kaynak dosyası
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```

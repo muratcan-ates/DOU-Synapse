@@ -150,7 +150,7 @@ Ayrım bilinçlidir: birincisi sistemin doğru çalıştığının göstergesi, 
 Ders henüz hiç cevap üretmediyse kart sayı yerine **"Ölçüm yok"** der. Sıfır ile
 ölçülmemiş aynı şey değildir; kart bunları karıştırmaz.
 
-### Öğrencilerin sorularını göremezsiniz — bilerek
+### Öğrencilerin sorularını varsayılan olarak göremezsiniz — bilerek
 
 Analitik, öğrencilerin **ne sorduğunu** göstermez ve gösteremez. Sohbet mesajları
 eğitmene kapalıdır; analitik yalnızca serbest metin taşımayan ölçüm kayıtlarından okur.
@@ -158,6 +158,17 @@ eğitmene kapalıdır; analitik yalnızca serbest metin taşımayan ölçüm kay
 Bu bir eksiklik değil, ürünün gerekçelerinden biridir: **öğrencinin hocasına sormaya
 çekindiği soruyu sisteme sorabilmesi.** Eğitmen bunu satır satır okuyabilseydi o güven
 ortadan kalkardı.
+
+### AI kalite kuyruğu
+
+**AI kalite** sekmesi, her yanıttaki öğrenci puanlarını toplu olarak gösterir: yararlı,
+sorun bildirilen ve gerekçe dağılımı. Paylaşılmayan puanlarda soru veya cevap metni
+göremezsiniz. Öğrenci “bu soru-cevap çiftini öğretmen incelemesine aç” seçeneğini
+özellikle işaretlerse yalnız o kayıt inceleme kuyruğunda görünür. Öğrenci izni geri
+çektiğinde kayıt ve kopyalanmış alıntı sizin görünümünüzden düşer.
+
+Bu kuyruk resmî not verme yüzeyi değildir. Amaç hatalı atıf, gereğinden doğrudan cevap
+ve pedagojik sorunları periyodik olarak inceleyip eval setine taşımaktır.
 
 ---
 

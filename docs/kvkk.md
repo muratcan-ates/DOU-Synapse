@@ -1,7 +1,7 @@
 # KVKK Aydınlatma Metni
 
 **DOU-Synapse — Ders ve Sınav Asistanı**
-Son güncelleme: 9 Ağustos 2026
+Son güncelleme: 10 Ağustos 2026
 
 > **Bu metin, sistemin kodunda gerçekten var olan veri akışını anlatır.** Her iddianın
 > karşılığı depoda bir dosya ve satırdır; kaynaklar parantez içinde verilmiştir. Henüz
@@ -37,6 +37,8 @@ Sistemin veritabanında tutulan **her** kişisel veri aşağıdadır. Liste
 | Ders üyeliği ve rolü | `course_memberships` | Eğitmen ekler |
 | **Sohbet mesajlarınız** (sorularınız ve size verilen cevaplar) | `chat_messages.content` | Siz yazarsınız |
 | Sohbet oturumu ve Sokratik kademe durumu | `chat_sessions` | Sistem üretir |
+| Asistan yanıtı puanı, sorun gerekçesi ve isteğe bağlı açıklama | `chat_message_feedback` | Siz seçer/yazarsınız |
+| Açık izin verdiğiniz soru-cevap inceleme alıntısı | `chat_message_feedback.question_excerpt`, `answer_excerpt` | Sistem, yalnız paylaşım seçiliyken gerçek sohbetten kopyalar |
 | **Sınav cevaplarınız** | `answers.given` | Siz yazarsınız |
 | Değerlendirme geri bildirimi (puan, eksik noktalar) | `answers.feedback` | Sistem üretir |
 | Konu bazlı çalışma puanı | `mastery.score`, `mastery.answer_count` | Sistem hesaplar |
@@ -74,7 +76,7 @@ gibi tanımlayıcılar yazılır.
 
 ---
 
-## 4. Sohbetlerinizi eğitmeniniz okuyamaz
+## 4. Sohbetleriniz varsayılan olarak eğitmeninize kapalıdır
 
 Sohbet mesajlarınıza erişim veritabanı düzeyinde kısıtlıdır: `chat_messages` üzerindeki
 okuma politikası yalnız **oturumun sahibine** açıktır. Eğitmene okuma yetkisi
@@ -86,6 +88,17 @@ okuma politikası yalnız **oturumun sahibine** açıktır. Eğitmene okuma yetk
 Eğitmenin gördüğü analitik ekranı bu tablodan değil, serbest metin taşımayan
 `request_logs` tablosundan okur (`0005_analytics.sql`). Yani eğitmen *"kaç soru
 reddedildi"* sorusunun cevabını alır, *"kim ne sordu"* sorusunun cevabını alamaz.
+
+**Tek istisna sizin açık seçiminizdir.** Bir asistan yanıtında “Sorun var” deyip
+“bu soru-cevap çiftini öğretmen incelemesine aç” seçeneğini işaretlerseniz sistem yalnız
+o soruyu, o cevabı, sorun gerekçesini ve yazdıysanız açıklamanızı `chat_message_feedback`
+tablosuna kopyalar. Eğitmen **AI kalite** ekranında yalnız bu paylaşılan kaydı ve adınızı
+görür. Seçeneği işaretlemezseniz puanınız toplu sayıya girer; sohbet metniniz ve
+açıklamanız eğitmen satır görünümüne açılmaz.
+
+İzni daha sonra kapatırsanız veritabanı tetikleyicisi saklanan soru-cevap alıntısını
+silip kaydı eğitmenin RLS görünümünden düşürür. Eğitmen bütün sohbet geçmişinize bu
+yolla da erişemez (`0013_chat_feedback.sql`).
 
 **İzolasyon iki katmanlıdır:** uygulama sunucusunda her istekte ders üyeliği doğrulanır ve
 PostgreSQL satır düzeyi güvenliği (RLS) aynı oturumda ikinci katman olarak çalışır.
@@ -138,11 +151,12 @@ sağlanması amacıyladır.
 |---|---|
 | Profil, ders üyeliği | Hesap silinene ya da üyelik sonlandırılana kadar |
 | Sohbet mesajları, sınav cevapları, mastery | **Ders silinene kadar** |
+| Yanıt puanı ve açık izinli inceleme alıntısı | İlgili mesaj/ders silinene kadar; paylaşım izni kapanınca alıntı hemen temizlenir |
 | Materyaller ve parçaları | Eğitmen silene ya da ders silinene kadar |
 | İstek ölçüm kayıtları | Ders silinene kadar |
 
 Bir ders silindiğinde o derse bağlı sohbetler, mesajlar, sınav oturumları, cevaplar,
-mastery kayıtları, materyaller ve ölçüm kayıtları **veritabanı düzeyinde birlikte
+mastery kayıtları, yanıt geri bildirimleri, materyaller ve ölçüm kayıtları **veritabanı düzeyinde birlikte
 silinir** (şemadaki `ON DELETE CASCADE` bağları). Bir kullanıcı silindiğinde ona ait
 sohbet ve üyelik kayıtları da aynı şekilde silinir.
 
@@ -170,6 +184,10 @@ göstergedir. Değerlendirme kararı her zaman eğitmeninize aittir (insan denet
 **Başvuru:** derse kayıtlı olduğunuz eğitmene ya da bölüm sekreterliğine yazılı olarak
 başvurabilirsiniz. Başvurunuz en geç 30 gün içinde sonuçlandırılır.
 
+Uygulamadaki **Verilerim** ekranından verilerinizin JSON kopyasını indirebilir, ders
+sohbet geçmişinizi silebilir veya uygulama profilinizi anonimleştirebilirsiniz. Dışa
+aktarma dosyası verdiğiniz yanıt puanlarını, gerekçeleri ve açıklamaları da içerir.
+
 ---
 
 ## 8. Henüz uygulanmayanlar
@@ -179,16 +197,15 @@ kullanım öncesinde tamamlanmalıdır.
 
 | # | Konu | Durum |
 |---|---|---|
-| 1 | **Kullanıcının kendi verisini indirmesi/sildirmesi** için arayüz | Uygulanmadı. Silme bugün ancak ders/hesap silinerek gerçekleşir |
-| 2 | **Zamana bağlı otomatik saklama süresi** (örn. dönem sonunda sohbetlerin silinmesi) | Uygulanmadı (§6) |
-| 3 | **Aydınlatma metninin uygulama içinde bir sayfa olarak gösterilmesi** ve girişte onay alınması | Uygulanmadı — metin hazır, sayfa yapılacak |
-| 4 | **Gerçek kimlik doğrulama.** Bugün geliştirme kimliği (`DEV_AUTH`) kullanılıyor; imzasız kimlik kabul ediliyor | Uygulanmadı. **Bu haliyle gerçek öğrenci verisiyle çalıştırılmamalıdır** |
-| 5 | Denetim izi (kim hangi kişisel veriye ne zaman erişti) | Uygulanmadı |
-| 6 | Veri işleyen sıfatıyla dil modeli sağlayıcılarıyla sözleşmesel çerçeve | Kurumsal konu, proje kapsamı dışında |
+| 1 | **Zamana bağlı otomatik saklama süresi** (örn. dönem sonunda sohbetlerin silinmesi) | Uygulanmadı (§6) |
+| 2 | **Production kimlik ortamının dış doğrulaması.** Supabase Auth, parola kurtarma ve JWT doğrulama kodda var | Gerçek proje, SMTP ve canlı redirect adresiyle henüz kanıtlanmadı |
+| 3 | Denetim izi (kim hangi açık izinli kişisel veriye ne zaman erişti) | Uygulanmadı |
+| 4 | Veri işleyen sıfatıyla dil modeli ve altyapı sağlayıcılarıyla sözleşmesel çerçeve | Kurumsal konu, proje kapsamı dışında |
 
-**4. madde bu metnin en önemli uyarısıdır:** sistem bugün gerçek kimlik doğrulaması
-olmadan koşmaktadır ve **gerçek öğrenci kişisel verisiyle üretimde kullanılmaya hazır
-değildir.** Demo ve değerlendirme, sabit demo hesaplarıyla yapılır.
+**2. madde bu metnin en önemli uyarısıdır:** gerçek kimlik akışı kodda olsa da dış
+Supabase projesi, e-posta teslimi ve production RLS kanıtı olmadan sistem **gerçek öğrenci
+kişisel verisiyle üretimde kullanılmaya hazır değildir.** Yerel demo ve testler sabit
+demo hesaplarıyla yapılır.
 
 ---
 

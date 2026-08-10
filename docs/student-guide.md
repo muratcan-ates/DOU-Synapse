@@ -50,6 +50,15 @@ olmayan bir konuda cevap alamazsınız.
 Sağ alttaki **Sohbetlerin** listesinden eski konuşmalara dönebilirsiniz. **Yeni sohbet**
 düğmesi temiz bir konuşma açar.
 
+### Yanıtı puanlayın
+
+Her asistan yanıtının altında **Yararlı** ve **Sorun var** seçenekleri bulunur. Sorun
+varsa hatalı/eksik bilgi, ilgisiz yanıt, kaynak sorunu, fazla doğrudan cevap, güvensiz
+içerik veya diğer gerekçesini seçebilirsiniz. Puanınızı daha sonra değiştirebilirsiniz.
+
+“Öğretmen incelemesine aç” seçeneği varsayılan olarak kapalıdır. Kapalı bırakırsanız
+puan yalnız toplu kalite sayısına girer; hocanız soru ve cevap metninizi görmez.
+
 ---
 
 ## 3. Sokratik mod — cevabı almazsınız, cevaba yürürsünüz
@@ -190,8 +199,10 @@ son performansınız öne çıkar. Aldığınız ipuçları puanı düşürür.
 - **Sınav sırasında yardım etmez.** Gerçek sınav modunda ipucu kapalıdır.
 - **Not vermez.** İlerleme ekranı bir çalışma göstergesidir.
 - **Bilmediğinde uydurmaz.** "Dayanak bulamadım" demesi sistemin çalıştığının işaretidir.
-- **Hocanız sorularınızı okuyamaz.** Sohbet mesajlarınız eğitmene kapalıdır; hoca yalnız
-  sınıf düzeyinde sayısal özet görür, kimin ne sorduğunu göremez.
+- **Hocanız sorularınızı varsayılan olarak okuyamaz.** Sohbet mesajlarınız eğitmene
+  kapalıdır. Bir yanıtta “Sorun var” deyip “öğretmenimle paylaş” seçeneğini özellikle
+  işaretlerseniz yalnız o soru-cevap çifti incelemeye açılır; izni daha sonra geri
+  çekebilirsiniz.
   Ayrıntı: [KVKK Aydınlatma Metni](kvkk.md).
 
 ---

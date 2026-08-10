@@ -131,7 +131,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 22 tablo; migration'lar `0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012` (iki değer de mekanik belge kapısıyla doğrulanır): <!-- docs-check: tables.count = 22 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012 -->
+Kodda gerçekten var olan 23 tablo; migration'lar `0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013` (iki değer de mekanik belge kapısıyla doğrulanır): <!-- docs-check: tables.count = 23 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -156,6 +156,8 @@ answer_cache        (id, course_id, question_hash, answer jsonb, created_at)
 chat_sessions       (id, course_id, user_id, mode: qa|socratic|exam, state jsonb, title, ...)
 chat_messages       (id, session_id, course_id, role, content, citations jsonb,
                      status, socratic_stage, seq, created_at)
+chat_message_feedback (id, course_id, message_id, user_id, rating, reason,
+                       share_with_instructor, consent-bound excerpts, ...)
 request_logs        (id, course_id, user_id, route, mode, status, http_status,
                      latency_ms, token_count, cache_hit, created_at)
 ```
@@ -177,7 +179,8 @@ Belgenin eski hâlinden düzeltilen dört ad/alan (kod kaynak alındı):
 
 **Migration numaraları:** `0002` Supabase Auth köprüsü, `0006` embedding provenance,
 `0007` deployment, `0008` sınav blueprint'i, `0009` ders AI politikası, `0010`
-ingestion retry, `0011` keyset sayfalama indeksleri ve `0012` KVKK haklarıdır.
+ingestion retry, `0011` keyset sayfalama indeksleri, `0012` KVKK hakları ve `0013`
+gizlilik korumalı sohbet geri bildirimidir.
 
 ---
 
@@ -411,7 +414,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. 22 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 22 -->
+  yazar. 23 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 23 -->
   tablo sahibi bile politikalara tabidir.
   **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
   yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`

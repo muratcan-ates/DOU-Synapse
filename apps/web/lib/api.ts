@@ -89,6 +89,23 @@ export async function signInWithPassword(email: string, password: string): Promi
   return userFromSupabase(data.user);
 }
 
+/** Parola yenileme bağlantısını gerçek Supabase Auth üzerinden gönderir. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const client = getSupabase();
+  if (!client) throw new Error("Supabase oturumu yapılandırılmadı.");
+  const redirectTo = `${window.location.origin}/reset-password`;
+  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+}
+
+/** Kurtarma bağlantısının açtığı geçici oturumda yeni parolayı kaydeder. */
+export async function updateCurrentPassword(password: string): Promise<void> {
+  const client = getSupabase();
+  if (!client) throw new Error("Supabase oturumu yapılandırılmadı.");
+  const { error } = await client.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 /** SDK oturumunu ya da yerel demo oturumunu tek noktadan kapatır. */
 export async function signOutCurrent(): Promise<void> {
   const client = getSupabase();

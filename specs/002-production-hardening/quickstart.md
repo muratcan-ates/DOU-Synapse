@@ -13,8 +13,8 @@ testin neyi kanıtladığını bilmesi ve 002'nin her User Story'sini elle doğr
 > tablosundadır.
 
 > **Bu belgede ölçülen sayılar (9 Ağustos 2026, bu ağaçta koşuldu):**
-> `cd apps/api && uv run pytest -q` → **791 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 791 -->
-> `cd apps/web && bun test lib/` → **285 pass, 0 fail, 17 dosya.** <!-- docs-check: frontend.tests = 285 --><!-- docs-check: frontend.testFiles = 17 -->
+> `cd apps/api && uv run pytest -q` → **794 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 794 -->
+> `cd apps/web && bun test lib/` → **288 pass, 0 fail, 18 dosya.** <!-- docs-check: frontend.tests = 288 --><!-- docs-check: frontend.testFiles = 18 -->
 > Bunların dışındaki her sayı ya bir dosyadan alıntıdır ya da **KOŞULMADI** yazar
 > (Anayasa III).
 
@@ -110,10 +110,9 @@ curl -s http://localhost:8010/openapi.json | python3 -c \
   "import json,sys; d=json.load(sys.stdin); print(len(d['paths']),'yol')"
 ```
 
-Üçüncü komut **25 yol** demiyorsa ya eski bir ağacın sunucusundasınız ya da 002 yeni uç
-eklemiştir (`20_DEVIR_9_AGUSTOS.md:68`: OpenAPI kodla birebir, 25 yol). US1'in
-`GET /courses/{course_id}/chat/availability` ucu eklendiğinde bu sayı **26** olur; ilk
-gördüğünüz artış budur.
+Üçüncü komut **43 yol** demiyorsa eski bir ağacın sunucusunda olabilirsiniz. Sayıyı
+elle tahmin etmeyin; bu depodaki `contracts/openapi.json` FastAPI'den yeniden export
+edilir ve kodla birebir tutulur.
 
 ---
 
@@ -121,12 +120,12 @@ gördüğünüz artış budur.
 
 ```bash
 cd apps/api
-uv run pytest -q        # 791 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 791
+uv run pytest -q        # 794 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 794
 uv run mypy app
 uv run ruff check . && uv run ruff format --check .
 
 cd ../web
-bun test lib/           # 285 pass, ~0,2 sn   # docs-check: frontend.tests = 285
+bun test lib/           # 288 pass, ~0,2 sn   # docs-check: frontend.tests = 288
 bun run typecheck
 ```
 

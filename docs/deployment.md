@@ -91,6 +91,7 @@ done
 | `0010` | Ingestion retry/backoff |
 | `0011` | Cursor sayfalama indeksleri |
 | `0012` | KVKK silme/dışa aktarma talepleri |
+| `0013` | Sohbet geri bildirimi ve açık izinli eğitmen inceleme kuyruğu |
 
 **`main`'e girmiş bir migration yerinde değiştirilmez.** Yeni numara açılır.
 Bir dağıtımda migration'ları uygulamadan önce §6'daki yedeği alın.
@@ -104,9 +105,9 @@ Kurulumdan sonra şemayı doğrulayın:
 psql -d "$DATABASE" -c "\dt"
 ```
 
-Temiz bir kurulumda **22 tablo** görürsünüz. (Faz 2 brifingi "19 tablo" diyor; <!-- docs-check: tables.count = 22 -->
-9 Ağustos'ta hem paylaşılan geliştirme veritabanında hem sıfırdan kurulan bir
-veritabanında ölçülen sayı 15'tir. Brifingdeki sayı yanlış.)
+Temiz bir kurulumda **23 tablo** görürsünüz. <!-- docs-check: tables.count = 23 -->
+Bu sayı migration dosyalarından mekanik olarak doğrulanır; eski brifinglerdeki daha
+düşük sayılar güncel şemayı anlatmaz.
 
 ## 4. İlk kurulum
 

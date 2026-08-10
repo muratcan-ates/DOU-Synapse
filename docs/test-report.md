@@ -16,8 +16,8 @@
 > §14b'dedir; sayılar canlı/bulut ortam iddiası değildir.
 >
 > **10 Ağustos yerel RLS yeniden doğrulaması:** sıfırdan kurulan PostgreSQL 16
-> veritabanında çekirdek **99/0**, ölçme **59/0**, blueprint **37/0**; mutasyon
-> paketleri sırasıyla **53/53**, **24/24**, **23/23**. §4'teki 98/58 sayıları
+> veritabanında çekirdek **109/0**, ölçme **59/0**, blueprint **37/0**; mutasyon
+> paketleri sırasıyla **55/55**, **24/24**, **23/23**. 9 Ağustos v2 kayıtlarındaki 98/58 sayıları
 > 9 Ağustos v2 koşusunun tarihsel kaydıdır ve geriye dönük değiştirilmemiştir.
 
 **Sürüm: 2 · 9 Ağustos 2026** — retrieval katmanı ölçüldü, uçtan uca katman
@@ -146,7 +146,7 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 
 | Metrik | Hedef | Ölçülen | Geçerli mi | Kaynak |
 |---|---:|---|---|---|
-| Dersler arası veri sızıntısı | 0 | **0** (99 iddia / 0 FAIL, 10 Ağustos temiz veritabanı) | evet | `supabase/tests/rls_isolation.sql` |
+| Dersler arası veri sızıntısı | 0 | **0** (109 iddia / 0 FAIL, 10 Ağustos temiz veritabanı) | evet | `supabase/tests/rls_isolation.sql` |
 | Ölçme + analitik izolasyonu | 0 sızıntı | **0** (59/59 iddia, 24/24 mutasyon) | evet | `rls_assessment.sql` + mutasyon betiği |
 | Blueprint izolasyonu | 0 sızıntı | **0** (37/37 iddia, 23/23 mutasyon) | evet | `rls_blueprint.sql` + mutasyon betiği |
 | Holdout Recall@5 | ≥ %80 | **%97,1** (102/105) hibrit · %96,2 dense | evet | `…1657-holdout-hybrid-fastembed-retrieval.json` |
@@ -166,22 +166,26 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 | Faithfulness (20-30 cevap, 2 etiketleyici) | raporlanır | **KOŞULMADI** — örneklem hazır | — | §10 |
 | Uçtan uca cevap p95 | < 10 sn | **KOŞULMADI** (LLM çağrısı yok) | — | §11 |
 | Soru üretiminde şema geçerliliği | ≥ %98 | **KOŞULMADI** | — | R4 alanı |
-| Demo akışında kritik hata | 0 | **KOŞULMADI** | — | demo provası yapılmadı |
+| Yerel ürün akışında kritik hata | 0 | **0** (22/22 E2E; fake LLM) | kısmen | production build + ayrı test DB; canlı URL/gerçek LLM değil |
 
 ---
 
 ## 4. RLS canlılık kanıtı
 
-**KOŞULDU — 9 Ağustos 2026, v2 dalında yeniden.** Sıfırdan kurulan bir veritabanında
-(`rls_check`), bütün migration'lar uygulandıktan sonra. Önceki sürümde bu bölüm
-"devralındı, yeniden koşulmadı" notuyla duruyordu; varsayım yerine ölçüm kondu.
+**KOŞULDU — 10 Ağustos 2026, güncel dalda yeniden.** Sıfırdan kurulan bir
+veritabanında (`rls_check`), bütün migration'lar uygulandıktan sonra. Önceki
+sürümlerin sonuçları yukarıda tarihsel kayıt olarak korunur; bu tablo güncel şemayı
+ve `0013_chat_feedback.sql` gizlilik politikalarını da kapsar.
 
 | Kanıt | Sayı |
 |---|---|
-| Çekirdek şema iddiaları (`rls_isolation.sql`) | 98 iddia / 0 FAIL |
-| Ölçme + analitik iddiaları (`rls_assessment.sql`) | 58 PASS / 0 FAIL |
-| Kapsanan politika | 0004'ün 15 politikası + 0005'in eğitmen okuma politikası |
-| Mutasyon testi | 24 mutasyon, **24'ü yakalandı** |
+| Çekirdek şema iddiaları (`rls_isolation.sql`) | 109 iddia / 0 FAIL |
+| Ölçme + analitik iddiaları (`rls_assessment.sql`) | 59 PASS / 0 FAIL |
+| Blueprint iddiaları (`rls_blueprint.sql`) | 37 PASS / 0 FAIL |
+| Çekirdek mutasyon testi | 55 mutasyon, **55'i yakalandı** |
+| Ölçme mutasyon testi | 24 mutasyon, **24'ü yakalandı** |
+| Blueprint mutasyon testi | 23 mutasyon, **23'ü yakalandı** |
+| Kapsanan politika | `0001`–`0013`; feedback izin verme/geri çekme ve öğretmen gizliliği dahil |
 
 Mutasyon testi "politika var" demekle yetinmez: her politikayı teker teker bozar ve
 **hangi iddianın** kırmızıya döndüğünü doğrular. Yalnız "bir yerde FAIL çıktı" demek
@@ -190,9 +194,12 @@ yetersiz olurdu, çünkü alakasız bir bozulma da FAIL üretir.
 ```bash
 createdb rls_check && for f in supabase/migrations/*.sql; do psql -q -d rls_check -f "$f"; done
 psql -q -d rls_check -f supabase/local_dev_setup.sql
-psql -d rls_check -f supabase/tests/rls_isolation.sql    # 98 iddia, 0 FAIL
-psql -d rls_check -f supabase/tests/rls_assessment.sql   # 58 PASS, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_isolation.sql    # 109 iddia, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_assessment.sql   # 59 PASS, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_blueprint.sql    # 37 PASS, 0 FAIL
+bash supabase/tests/rls_isolation_mutation_check.sh      # 55/55 yakalandı
 bash supabase/tests/rls_assessment_mutation_check.sh     # 24/24 yakalandı
+bash supabase/tests/rls_blueprint_mutation_check.sh      # 23/23 yakalandı
 ```
 
 **Henüz yapılmadı:** T051 — aynı kanıtın üretim kopyası üzerinde koşturulması.
@@ -596,7 +603,7 @@ delinmediği `rls_assessment.sql` içindeki bir iddiayla ve mutasyon testiyle s�
 **Ölçüldü (9 Ağustos, `feat/eval-runs`):**
 
 ```bash
-cd apps/api && uv run pytest -q      # 791 geçti   # docs-check: backend.tests = 791
+cd apps/api && uv run pytest -q      # 794 geçti   # docs-check: backend.tests = 794
 uv run mypy app                      # temiz, 81 kaynak dosyası
 uv run ruff check . && uv run ruff format --check .   # temiz
 ```

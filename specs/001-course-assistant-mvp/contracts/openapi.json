@@ -1868,6 +1868,130 @@
         }
       }
     },
+    "/courses/{course_id}/chat/messages/{message_id}/feedback": {
+      "put": {
+        "tags": [
+          "chat-quality"
+        ],
+        "summary": "Upsert Feedback",
+        "description": "Kendi asistan mesajımın puanını oluşturur veya değiştirir.\n\nMesaj metni istemciden alınmaz. Paylaşım seçilmişse SQL tetikleyicisi gerçek\noturumdaki soru-cevap çiftini kopyalar; böylece sahte bir alıntı yüklenemez.",
+        "operationId": "upsert_feedback_courses__course_id__chat_messages__message_id__feedback_put",
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Message Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatFeedbackUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatFeedbackOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat/quality": {
+      "get": {
+        "tags": [
+          "chat-quality"
+        ],
+        "summary": "Chat Quality",
+        "description": "Toplu kalite dağılımı ve öğrencinin açıkça paylaştığı inceleme kayıtları.",
+        "operationId": "chat_quality_courses__course_id__chat_quality_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatQualityOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/exams": {
       "post": {
         "tags": [
@@ -3775,6 +3899,118 @@
         ],
         "title": "ChatDeletionOut"
       },
+      "ChatFeedbackOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/ChatFeedbackRating"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ChatFeedbackReason"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "share_with_instructor": {
+            "type": "boolean",
+            "title": "Share With Instructor"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "message_id",
+          "rating",
+          "reason",
+          "comment",
+          "share_with_instructor",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ChatFeedbackOut"
+      },
+      "ChatFeedbackRating": {
+        "type": "string",
+        "enum": [
+          "helpful",
+          "unhelpful"
+        ],
+        "title": "ChatFeedbackRating"
+      },
+      "ChatFeedbackReason": {
+        "type": "string",
+        "enum": [
+          "helpful",
+          "inaccurate",
+          "irrelevant",
+          "citation_problem",
+          "too_direct",
+          "unsafe",
+          "other"
+        ],
+        "title": "ChatFeedbackReason"
+      },
+      "ChatFeedbackUpsert": {
+        "properties": {
+          "rating": {
+            "$ref": "#/components/schemas/ChatFeedbackRating"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ChatFeedbackReason"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "share_with_instructor": {
+            "type": "boolean",
+            "title": "Share With Instructor",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rating",
+          "reason"
+        ],
+        "title": "ChatFeedbackUpsert"
+      },
       "ChatMessageOut": {
         "properties": {
           "id": {
@@ -3818,6 +4054,16 @@
           },
           "created_at": {
             "title": "Created At"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChatFeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -3837,6 +4083,56 @@
           "exam"
         ],
         "title": "ChatMode"
+      },
+      "ChatQualityOut": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "rated_count": {
+            "type": "integer",
+            "title": "Rated Count"
+          },
+          "helpful_count": {
+            "type": "integer",
+            "title": "Helpful Count"
+          },
+          "unhelpful_count": {
+            "type": "integer",
+            "title": "Unhelpful Count"
+          },
+          "shared_review_count": {
+            "type": "integer",
+            "title": "Shared Review Count"
+          },
+          "reason_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Reason Counts"
+          },
+          "recent_shared": {
+            "items": {
+              "$ref": "#/components/schemas/SharedFeedbackOut"
+            },
+            "type": "array",
+            "title": "Recent Shared"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "rated_count",
+          "helpful_count",
+          "unhelpful_count",
+          "shared_review_count",
+          "reason_counts",
+          "recent_shared"
+        ],
+        "title": "ChatQualityOut"
       },
       "ChatRequest": {
         "properties": {
@@ -5296,6 +5592,57 @@
         ],
         "title": "ExportAnswerOut"
       },
+      "ExportChatFeedbackOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/ChatFeedbackRating"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ChatFeedbackReason"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "share_with_instructor": {
+            "type": "boolean",
+            "title": "Share With Instructor"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rating",
+          "reason",
+          "comment",
+          "share_with_instructor",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExportChatFeedbackOut"
+      },
       "ExportChatMessageOut": {
         "properties": {
           "id": {
@@ -5346,6 +5693,16 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExportChatFeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -6548,6 +6905,74 @@
         "title": "RubricScoreOut",
         "description": "Tek rubrik ölçütünün doğrulanmış puan kırılımı (FR-117)."
       },
+      "SharedFeedbackOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "student_name": {
+            "type": "string",
+            "title": "Student Name"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/ChatFeedbackRating"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ChatFeedbackReason"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "question_excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Excerpt"
+          },
+          "answer_excerpt": {
+            "type": "string",
+            "title": "Answer Excerpt"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "message_id",
+          "student_name",
+          "rating",
+          "reason",
+          "comment",
+          "question_excerpt",
+          "answer_excerpt",
+          "updated_at"
+        ],
+        "title": "SharedFeedbackOut"
+      },
       "SocraticStage": {
         "type": "string",
         "enum": [
@@ -6917,9 +7342,9 @@
         "properties": {
           "schema_version": {
             "type": "string",
-            "const": "1",
+            "const": "2",
             "title": "Schema Version",
-            "default": "1"
+            "default": "2"
           },
           "generated_at": {
             "type": "string",
