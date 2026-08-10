@@ -24,7 +24,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models.assessment import ExamMode, QuestionStatus, QuestionType
+from app.models.assessment import ExamMode, QuestionDifficulty, QuestionStatus, QuestionType
 
 # ---------------------------------------------------------------------------
 # Konular
@@ -95,6 +95,52 @@ class McqPayload(BaseModel):
 class RubricItem(BaseModel):
     point: str = Field(min_length=1, max_length=500)
     weight: int = Field(ge=1, le=100)
+
+
+class RubricCriterionScore(BaseModel):
+    """Bir ölçütten alınan puan (FR-117).
+
+    `weight` normalize edilmiş ağırlıktır; `earned` = weight × score / 100. Toplam
+    puan bu satırlardan TÜRETİLİR, modelden okunmaz — model hem kırılım hem ayrı bir
+    toplam verseydi ikisi çelişebilirdi ve öğrenciye gösterilen tablonun toplamı
+    tutmazdı (Anayasa III).
+    """
+
+    point: str
+    weight: int
+    score: int = Field(ge=0, le=100)
+    earned: int
+
+
+def normalized_rubric(rubric: list[RubricItem]) -> list[RubricItem]:
+    """Ağırlıkları 100'e tamamlar.
+
+    **Okuma yolunda normalize edilir, kısıt olarak dayatılmaz.** Havuzda bugün
+    ağırlıkları 100 etmeyen onaylı sorular var (`OpenPayload.rubric` toplamı hiç
+    doğrulamadı) ve toplamı şema kısıtına çevirmek onları şema doğrulamasından
+    düşürür, yani sessizce DEĞERLENDİRİLEMEZ hâle getirirdi. Kısıt yalnız yeni
+    üretimde zorlanır (`question_gen`).
+
+    Yuvarlama artığı en büyük ağırlıklı ölçüte eklenir; toplam her zaman tam 100
+    olur, yoksa öğrenciye gösterilen tablonun toplamı tutmaz.
+    """
+    if not rubric:
+        return []
+    total = sum(item.weight for item in rubric)
+    if total == 100:
+        return list(rubric)
+
+    scaled = [
+        RubricItem(point=item.point, weight=max(1, round(item.weight * 100 / total)))
+        for item in rubric
+    ]
+    fark = 100 - sum(item.weight for item in scaled)
+    if fark:
+        en_buyuk = max(range(len(scaled)), key=lambda i: scaled[i].weight)
+        scaled[en_buyuk] = RubricItem(
+            point=scaled[en_buyuk].point, weight=max(1, scaled[en_buyuk].weight + fark)
+        )
+    return scaled
 
 
 class OpenPayload(BaseModel):
@@ -221,6 +267,11 @@ class QuestionOut(BaseModel):
     #: Eğitmen soruyu kaynağını görerek onaylar (FR-023). Öğrenciye de gösterilir:
     #: onaylı sorunun hangi materyalden geldiği gizli değildir.
     source: SourceRefOut | None = None
+    #: Hücre ekseni (0008). NULL ise soru hiçbir blueprint hücresine sayılmaz ve
+    #: yayın kapısı onu "sınıflandırılmamış" diye ayrıca raporlar. Havuz ekranının
+    #: bunu göstermesi gerekir, yoksa öğretmen kapıya çarpana kadar fark etmez.
+    learning_outcome_id: UUID | None = None
+    difficulty: QuestionDifficulty | None = None
 
 
 class QuestionGenerateRequest(BaseModel):
@@ -259,6 +310,9 @@ class ExamStartRequest(BaseModel):
     mode: ExamMode = ExamMode.PRACTICE
     #: Verilirse yalnız o konunun onaylı soruları çekilir.
     topic_id: UUID | None = None
+    #: Verilirse blueprint sınavı açılır: kâğıt yayınlanmış sürümün `exam_items`'ından
+    #: gelir, `topic_id` ve rastgele seçim devre dışı kalır (0008, FR-115/FR-116).
+    blueprint_id: UUID | None = None
 
 
 class ExamQuestionOut(BaseModel):
@@ -284,6 +338,12 @@ class ExamSessionOut(BaseModel):
     question_count: int
     answered_count: int
     questions: list[ExamQuestionOut] = Field(default_factory=list)
+    #: Blueprint sınavında oturumun bağlandığı sürüm. Prova oturumlarında None.
+    #: Yürüyen oturum bu sürümü görmeye devam eder; yeni sürüm yayınlanması
+    #: başlamış bir sınavı değiştirmez (data-model.md §8 madde 9).
+    exam_version_id: UUID | None = None
+    exam_blueprint_id: UUID | None = None
+    attempt_no: int | None = None
 
 
 class AnswerSubmitRequest(BaseModel):
@@ -309,6 +369,10 @@ class AnswerFeedbackOut(BaseModel):
     evidence: SourceRefOut | None = None
     #: Sınav bitince açılan cevap anahtarı + açıklama; öncesinde None.
     solution: dict[str, Any] | None = None
+    #: Rubriğe bağlı sorularda ölçüt kırılımı (FR-117). Yalnız çözüm açıldığında
+    #: dolar: sınav sürerken hangi ölçütten kaç aldığını görmek, cevap anahtarını
+    #: parça parça okumaktır.
+    rubric_breakdown: list[RubricCriterionScore] = Field(default_factory=list)
     message: str | None = None
 
 

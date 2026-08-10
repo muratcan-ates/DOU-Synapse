@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, File, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import CourseInstructorDep, CourseMemberDep, SessionDep, SettingsDep
+from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.core import Chunk, Document, DocumentStatus
@@ -39,12 +40,26 @@ async def upload_document(
     settings: SettingsDep,
     background: BackgroundTasks,
     file: UploadFile = File(description="PDF, PPTX, Markdown, metin veya kod dosyası"),
+    replaces_document_id: UUID | None = Form(
+        default=None,
+        description="Bu dosyanın yerine geçtiği eski belgenin kimliği (FR-118)",
+    ),
 ) -> DocumentUploadOut:
     """Ders materyali yükler ve işleme kuyruğuna alır.
 
     Dosya diske yazılmadan önce uzantı, boyut ve sihirli baytlarıyla doğrulanır; depolama
     anahtarı sunucuda üretilir, kullanıcının verdiği ad hiçbir zaman yol olarak
     kullanılmaz.
+
+    **`replaces_document_id` AÇIK bir eylemdir, tahmin değil (FR-118).** Dosya adına
+    bakarak otomatik eşleme reddedildi: `file_name` üzerinde hiçbir tekillik yok,
+    "hafta3.pdf" her dönem yeniden yüklenir (yanlış pozitif) ve yeniden adlandırılmış
+    bir güncelleme yakalanmaz (yanlış negatif). Yanlış işaretlenen bir soru,
+    öğretmenin işarete olan güvenini bitirir; güvenilmez işaret, hiç işaret
+    olmamasından kötüdür.
+
+    Eski belge SİLİNMEZ, yalnız `superseded_at` damgası alır: ona dayanan soruların
+    kaynağı yerinde kalmalı, yoksa "bayat" işareti de okunamaz hâle gelirdi.
     """
     if not file.filename:
         raise ValidationError("Dosya adı okunamadı.")
@@ -73,6 +88,17 @@ async def upload_document(
     storage = get_storage()
     await storage.save(upload.storage_key, upload.content)
 
+    superseded: Document | None = None
+    if replaces_document_id is not None:
+        superseded = await session.get(Document, replaces_document_id)
+        if superseded is None or superseded.course_id != context.course_id:
+            raise NotFoundError("Yerine geçilecek belge bu derste bulunamadı.")
+        if superseded.superseded_at is not None:
+            raise ConflictError(
+                "Bu belge zaten daha yeni bir sürümle değiştirilmiş. "
+                "Güncel sürümün yerine yükleme yapın."
+            )
+
     document = Document(
         course_id=context.course_id,
         uploaded_by=context.user_id,
@@ -82,9 +108,15 @@ async def upload_document(
         file_hash=upload.sha256,
         byte_size=upload.byte_size,
         status=DocumentStatus.UPLOADED,
+        supersedes_document_id=superseded.id if superseded is not None else None,
     )
     session.add(document)
     await session.flush()
+
+    if superseded is not None:
+        # Damga İŞLEM SAATİYLE atılır; istemci saatine güvenilmez (0004:80-82).
+        superseded.superseded_at = await db_now(session)
+        await session.flush()
 
     await session.execute(
         text("INSERT INTO ingestion_jobs (document_id) VALUES (:document_id)"),

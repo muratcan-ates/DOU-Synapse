@@ -58,7 +58,9 @@ from app.schemas.assessment import (
     CodeTracePayload,
     McqPayload,
     OpenPayload,
+    RubricCriterionScore,
     SourceRefOut,
+    normalized_rubric,
     parse_payload,
 )
 
@@ -183,6 +185,9 @@ class GradingOutcome:
     message: str | None = None
     #: "Neden yanlış" alıntısını odaklamak için: öğrencinin seçtiği/yazdığı metin.
     focus: str | None = None
+    #: Rubriğe bağlı sorularda ölçüt kırılımı (FR-117). Toplam puan bu satırlardan
+    #: türetilir; model ayrı bir toplam verse bile o okunmaz.
+    rubric_breakdown: list[RubricCriterionScore] = field(default_factory=list)
 
 
 _UNGRADABLE_MESSAGE = (
@@ -270,12 +275,21 @@ def grade_short_answer(
 # ---------------------------------------------------------------------------
 
 
+class _RubrikSatiri(BaseModel):
+    """Modelin tek bir ölçüt için verdiği puan. Ağırlığı model DEĞİL biz biliriz."""
+
+    olcut: str = Field(min_length=1, max_length=500)
+    puan: int = Field(ge=0, le=100)
+
+
 class _LlmVerdict(BaseModel):
     """Modelden beklenen şema. Alan adları Türkçedir (03_ASSESSMENT_BRIEF)."""
 
     score: int = Field(ge=0, le=100)
     eksik_noktalar: list[str] = Field(default_factory=list, max_length=12)
     dayanak_chunk_id: UUID | None = None
+    #: Rubrik verilmişse ölçüt başına puan. Toplamı biz hesaplarız (FR-117).
+    rubrik: list[_RubrikSatiri] = Field(default_factory=list, max_length=12)
 
 
 _SYSTEM_PROMPT = (
@@ -284,7 +298,10 @@ _SYSTEM_PROMPT = (
     "Kaynakta olmayan bir bilgiyi eksiklik saymazsın. Cevabın SADECE JSON olmalı: "
     '{"score": 0-100, "eksik_noktalar": ["..."], "dayanak_chunk_id": "<chunk_id>"}. '
     "Açıklama, markdown ya da ek metin yazma. eksik_noktalar Türkçedir. "
-    "KOD ÇALIŞTIRMA; yalnız metin olarak karşılaştır."
+    "KOD ÇALIŞTIRMA; yalnız metin olarak karşılaştır. "
+    "Rubrik verilmişse her ölçüt için ayrıca "
+    '"rubrik": [{"olcut": "<ölçütün metni>", "puan": 0-100} ...] yaz; ölçüt metnini '
+    "verildiği gibi kopyala ve AĞIRLIKLARLA ÇARPMA — ağırlığı biz uygularız."
 )
 
 
@@ -332,6 +349,42 @@ def _parse_verdict(raw: str) -> _LlmVerdict | None:
         return None
 
 
+def _rubric_breakdown(payload: BaseModel, verdict: _LlmVerdict) -> list[RubricCriterionScore]:
+    """Ölçüt puanlarını normalize edilmiş ağırlıklarla birleştirir.
+
+    İki "boş" durumu birbirinden AYRI tutulur ve ayrımı karıştırmak pahalıydı:
+
+    - **Sorunun rubriği yok** → kırılım da yok, çağıran modelin `score`'unu kullanır.
+    - **Model hiç kırılım döndürmedi** (eski sağlayıcı, sahte sağlayıcı, ya da
+      talimatı yok sayan bir yanıt) → yine kırılım yok. Bu dal olmadan bütün
+      ölçütler 0 puanla girer ve gerçekten 75 alan bir cevap SESSİZCE 0'a düşerdi.
+      İlk yazımda bu dal yoktu ve dört değerlendirme testi bunu yakaladı; kusurun
+      sınıfı `data-model.md` §2.15'in uyardığı "sessizce değerlendirilemez hâle
+      gelme" sınıfıdır.
+    - **Model KISMİ kırılım döndürdü** → atlanan ölçüt 0 puanla girer. Burada
+      fail-closed doğrudur: cevaplanmamış bir kriteri karşılanmış saymak, puanı
+      şişirmek olurdu (Anayasa IV).
+    """
+    if not isinstance(payload, OpenPayload) or not payload.rubric:
+        return []
+    if not verdict.rubrik:
+        return []
+
+    puanlar = {row.olcut.strip().casefold(): row.puan for row in verdict.rubrik}
+    satirlar: list[RubricCriterionScore] = []
+    for item in normalized_rubric(payload.rubric):
+        puan = puanlar.get(item.point.strip().casefold(), 0)
+        satirlar.append(
+            RubricCriterionScore(
+                point=item.point,
+                weight=item.weight,
+                score=puan,
+                earned=round(item.weight * puan / 100),
+            )
+        )
+    return satirlar
+
+
 async def grade_with_llm(
     completion: StructuredCompletion,
     *,
@@ -373,13 +426,20 @@ async def grade_with_llm(
             logger.info("değerlendirme dayanağı set-membership'ten geçmedi")
             evidence = None
 
+        breakdown = _rubric_breakdown(payload, verdict)
+        # FR-117: rubrik varsa toplam KIRILIMDAN türetilir. Model kendi `score`'unu
+        # da verir ama okunmaz — ikisi çelişirse öğrenciye gösterilen tablonun
+        # toplamı tutmazdı (Anayasa III).
+        score = sum(row.earned for row in breakdown) if breakdown else verdict.score
+
         return GradingOutcome(
             graded=True,
-            score=verdict.score,
-            is_correct=verdict.score >= 50,
+            score=score,
+            is_correct=score >= 50,
             missing_points=verdict.eksik_noktalar,
             evidence_chunk_id=evidence,
             focus=given,
+            rubric_breakdown=breakdown,
         )
 
     return _ungraded("şema iki denemede de tutmadı")

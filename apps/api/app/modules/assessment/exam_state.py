@@ -35,7 +35,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.errors import AppError
-from app.models.assessment import ExamMode, ExamSession
+from app.models.assessment import ExamBlueprint, ExamMode, ExamSession
 
 #: Kilit gerekçesi. İKİ yüzeyde birden kullanılır: 403 zarfının `error.code`'u ve
 #: `GET /chat/availability`'nin `reason` alanı. Tek sabit olması, arayüzün iki
@@ -57,14 +57,48 @@ class ExamLockedError(AppError):
     code = EXAM_LOCK_REASON
 
 
-def effective_expiry(exam: ExamSession, *, settings: Settings) -> datetime | None:
-    """Kırpılmış bitiş zamanı. practice modda None (süresiz)."""
+def effective_expiry(
+    exam: ExamSession, *, settings: Settings, cap_minutes: int | None = None
+) -> datetime | None:
+    """Kırpılmış bitiş zamanı. practice modda None (süresiz).
+
+    `cap_minutes` verilmezse global `exam_duration_minutes` kullanılır; bu, bugünkü
+    PROVA akışının kuralıdır. Blueprint sınavında süre sınavın kendi alanıdır
+    (FR-111) ve çağıran onu buraya geçirir.
+
+    **Varsayılan neden global kalıyor:** kırpma bir güvenlik kuralıdır, ve argümanı
+    unutulan bir çağrı yeri kırpmayı GEVŞETMEK yerine SIKMALIDIR. 20 dakikalık
+    global sınır 45 dakikalık bir blueprint için yanlıştır ama zararsız yönde
+    yanlıştır; tersi olsaydı unutulan her çağrı süreyi uzatırdı (Anayasa IV).
+
+    0008 turunda TARAYICIDA ölçülen kusur buydu: blueprint 45 dakika derken oturum
+    20'de bitiyordu. Hiçbir test yakalamıyordu çünkü blueprint akışının süresini
+    sınayan bir test yoktu; şimdi var.
+    """
     if exam.mode is ExamMode.PRACTICE:
         return None
-    cap = exam.started_at + timedelta(minutes=settings.exam_duration_minutes)
+    minutes = settings.exam_duration_minutes if cap_minutes is None else cap_minutes
+    cap = exam.started_at + timedelta(minutes=minutes)
     if exam.expires_at is None:  # pragma: no cover - CHECK kısıtı bunu engeller
         return cap
     return min(exam.expires_at, cap)
+
+
+async def session_cap_minutes(
+    session: AsyncSession, exam: ExamSession, *, settings: Settings
+) -> int:
+    """Bu oturumun kırpma sınırı: blueprint sınavında sınavın kendi süresi.
+
+    Prova oturumunda SORGU KOŞMAZ. Blueprint oturumunda `exam_blueprints`'ten tek
+    kolon okunur; satır bulunamazsa (FK RESTRICT sayesinde olamaz) global sınıra
+    düşer — belirsizlikte kural sıkı kalır.
+    """
+    if exam.exam_blueprint_id is None:
+        return settings.exam_duration_minutes
+    minutes = await session.scalar(
+        select(ExamBlueprint.duration_minutes).where(ExamBlueprint.id == exam.exam_blueprint_id)
+    )
+    return int(minutes) if minutes is not None else settings.exam_duration_minutes
 
 
 def remaining_seconds(expiry: datetime | None, now: datetime) -> int | None:
@@ -108,7 +142,11 @@ async def active_exam_session(
         .order_by(ExamSession.started_at.desc())
     )
     for exam in result.scalars():
-        expiry = effective_expiry(exam, settings=settings)
+        # Blueprint sınavının süresi kendi alanındadır; global sınırla kırpmak
+        # kilidi ERKEN açardı — 45 dakikalık sınavın 21. dakikasında asistan
+        # serbest kalırdı. Fail-open, yani Anayasa IV'ün tam tersi.
+        cap = await session_cap_minutes(session, exam, settings=settings)
+        expiry = effective_expiry(exam, settings=settings, cap_minutes=cap)
         if expiry is not None and now < expiry:
             return exam
     return None
