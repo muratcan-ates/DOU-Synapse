@@ -1,7 +1,7 @@
 # Faz 0 Araştırma: Ürün Portalı ve Production Yolculuğu
 
 **Branch**: `003-product-portal`
-**Snapshot**: `b8da84e`, 2026-08-10
+**Snapshot**: `3b707ca`, 2026-08-10
 **Kural**: Bu belge karar kaydıdır. Ürün veya canlı ortam doğrulaması değildir.
 
 ---

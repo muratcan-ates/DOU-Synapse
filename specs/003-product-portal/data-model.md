@@ -2,7 +2,7 @@
 
 **Feature**: 003 Product Portal
 **Migration**: `0014_platform_admin_console.sql`
-**Durum**: Çalışma ağacında kodlandı; migration/RLS doğrulaması ve commit bekliyor
+**Durum**: Yerel migration, RLS referans ve mutasyon kapılarıyla doğrulandı; staging uygulanmadı
 
 ---
 
@@ -216,6 +216,14 @@ Kalıcı tablo değildir. Giriş yapan kişinin aktif üyelikleri üzerinden hes
 | `published_exams` | `exam_versions.status='published'` |
 | `mastery_score` | yalnız giriş yapan kullanıcının ders ortalaması |
 | `last_activity_at` | belge, soru ve kişinin sınav aktivitesinin en yenisi |
+| `assistant_locked` | öğrenci rolünde, aynı derste etkin ve süresi dolmamış gerçek sınav oturumu var mı |
+| `assistant_lock_reason` | kilitliyken server sabiti `exam_in_progress`; aksi durumda `null` |
+| `assistant_lock_message` | kilitliyken server kaynaklı Türkçe açıklama; aksi durumda `null` |
+
+Üç asistan kilidi alanı kalıcı dashboard verisi değildir. API, mevcut sınav durum
+yardımcısının tek sorguda döndürdüğü ders kümesinden türetir. Eğitmen kartında
+`assistant_locked=false` olur; frontend rol veya süre üzerinden ikinci bir kilit
+hesabı yapmaz.
 
 ### 6.3 `DashboardSummary`
 

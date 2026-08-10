@@ -995,7 +995,7 @@ Eksik olan iki şey ve gerekli tek migration (`0008`):
 **Elenen seçenekler**: (a) `attempt_count` için yeni kolon eklemek — elendi: kolon zaten var, ölçmeden "yok" varsaymak Anayasa III ihlali olurdu. (b) `job_status`'a beşinci değer (`dead_letter`/`kusurlu`) — elendi: `failed` aynı anlamı taşıyor, ENUM genişletmek her okuyucuyu değiştirmeyi gerektirir. (c) Backoff'u kolon yerine `created_at + attempt_count * interval` ile hesaplamak — elendi: `created_at` işin kuyruğa GİRİŞ zamanı, son denemenin zamanı değil; `started_at` ise `processing`'e geçerken yazılıyor ve `pending`'e dönerken temizlenmiyor, yani anlamı belirsizleşirdi. (d) Backoff'u worker döngüsünde `asyncio.sleep` ile uygulamak — elendi: uyuyan worker (ACA scale-to-zero, internal.py docstring) hiç uyanmayabilir; gecikme veriye yazılmalı, sürece değil. (e) Ayrı bir `GET /courses/{id}/ingestion-jobs` ucu — elendi: belge listesi zaten aynı bilgiyi taşıyor. (f) Başarısız job satırını UPDATE ile `pending`'e döndürmek — elendi: RLS politikası yok ve deneme izi silinir.
 
 **Dokunulacak dosyalar**:
-- `supabase/migrations/0008_ingestion_backoff_and_course_delete.sql`
+- `supabase/migrations/0010_ingestion_retry.sql`
 - `apps/api/app/modules/ingestion/pipeline.py`
 - `apps/api/app/models/core.py`
 - `apps/api/app/api/documents.py`
@@ -1010,31 +1010,71 @@ Eksik olan iki şey ve gerekli tek migration (`0008`):
 
 ### 5. FR-190..192 — mevcut e2e testleri veriyi nasıl oluşturuyor, teardown nereye eklenecek (globalTeardown mu afterAll mı), test verisi hangi desenle işaretlenecek, temizlik komutu nerede yaşayacak ve hangi dili kullanacak?
 
-**Karar**: Bugünkü durum: `flows.spec.ts:94-102` `createCourse()` her vaka için `POST /courses` ile `code = 'E2E' + suffix + base36(Date.now()) + counter`, `title = 'E2E Test Dersi ' + suffix` üretiyor; `materyalliDers()` (flows.spec.ts:221-227) üstüne üye ve PDF ekliyor. Temizlik **bilinçli olarak yok** ve gerekçesi dosyanın başında yazılı (flows.spec.ts:15-17): "silme ucu (ders silme) sözleşmede yok". Yani teardown'ın önündeki engel test tarafı değil, ürün tarafı.
+**Güncellenmiş karar (2026-08-10)**: E2E hijyeni bir ürün yetkisi değildir.
+`DELETE /courses/{course_id}` veya `app.delete_course()` yalnız test temizlemek için
+eklenmeyecektir. Eğitmenin dersi ve bağlı öğrenci değerlendirme geçmişini kalıcı
+silmesi; saklama süresi, soft-delete, onay ve geri alma kararları olan ayrı bir
+ürün şartnamesi gerektirir.
 
-Karar üç parça:
-1. **Ürün ucu açılacak:** `DELETE /courses/{course_id}` (courses.py'ye, `CourseInstructorDep`). Gövdesi tek satır: `SELECT app.delete_course(:course_id)`. Fonksiyon `0008` migration'ında SECURITY DEFINER olarak yazılacak ve `app.create_course` (0001:113-133) ile birebir aynı deseni izleyecek: ilk adım yetki kontrolü (`app.is_instructor(p_course_id)` değilse `insufficient_privilege`), sonra sıralı silme. Sıra ZORUNLU çünkü cascade her yere ulaşmıyor: `answers.question_id → questions ON DELETE RESTRICT` (0004:103) ve `questions.source_chunk_id → chunks ON DELETE RESTRICT` (0004:55). Doğru sıra: `exam_sessions` sil (→ `answers` CASCADE, 0004:102) → `questions` sil → `courses` sil (→ documents → chunks → chat_sessions → chat_messages → request_logs → mastery hepsi CASCADE). `courses` üzerinde eğitmen DELETE politikası da yok (0001'de yalnız `courses_member_read` ve `courses_instructor_update`), dolayısıyla SECURITY DEFINER fonksiyon zaten şart.
-2. **Teardown `globalTeardown` olacak, `afterAll` değil.** Üç sebep, üçü de `playwright.config.ts`'ten okunuyor: `fullyParallel: true` (satır 41) worker'ları ayrı süreçlere böler ve bir dosyanın `afterAll`'ı başka dosyanın dersini göremez; `retries: 1` CI'da (satır 42) yeniden koşan vaka ikinci bir ders açar ve dosya düzeyi kanca ikisini birden izlemek zorunda kalırdı; FR-190 "test ortada başarısız olsa da temizlik çalışmalı" diyor ve worker çöktüğünde `afterAll` hiç koşmaz, `globalTeardown` koşar.
-3. **İşaret ve komut:** işaret bugünkü `E2E` kod öneki resmîleştirilerek kullanılacak — `apps/web/e2e/fixtures.ts` içinde tek bir `export const E2E_COURSE_CODE_PREFIX = "E2E"` ve `createCourse` oradan okuyacak; temizlik de aynı sabiti import edecek, böylece desen iki yerde yazılmayacak (Anayasa XI). Temizlik mantığı `apps/web/e2e/cleanup.ts`'te tek bir `async function temizle({ onayli }: { onayli: boolean })` olarak yaşayacak ve İKİ çağıranı olacak: `apps/web/e2e/global-teardown.ts` (playwright.config.ts'e `globalTeardown` olarak eklenir, `onayli: true`) ve `package.json`'a eklenecek `"e2e:clean": "bun e2e/cleanup.ts"` komutu (varsayılan `onayli: false` = kuru koşu). Kuru koşu FR-191'in "komut ne sileceğini önce göstermelidir" ve spec.md:219'daki "gerçek dersi test dersi sanarsa" kenar durumunun karşılığıdır: silinecek kod+başlık listesi ve sayısı basılır, `--evet` bayrağı olmadan hiçbir şey silinmez; silme sonunda kaç ders silindiği raporlanır (FR-191). Dil **TypeScript/Bun**, çünkü işaretin tek tanımı `e2e/fixtures.ts`'te ve komutun onu import etmesi gerekiyor; ayrı bir Python betiği öneki ikinci kez yazmak zorunda kalırdı. Kimlik: e2e'nin zaten kullandığı dev-auth başlığı (`Bearer dev:<AYSE.id>`, flows.spec.ts:63-65).
+Karar dört parçadır:
 
-`screenshots.spec.ts` DOKUNULMAYACAK: sabit gerçek dersi (`DERS`, screenshots.spec.ts:39) kullanıyor, `E2E` öneki taşımıyor, dolayısıyla temizlik filtresinin dışında kalıyor. `seed_demo.sql` dersleri de `E2E` öneki taşımamalı; komut ilk koşuşta bunu doğrulayacak bir iddia içerecek.
+1. **Her koşu kendi kimliğini taşır.** `globalSetup` tek bir `E2E_RUN_ID` üretir.
+   Ders kodu yalnız `E2E-<run>-<number>` biçimindedir. Bilgi İşlem endpoint
+   denemeleri de `e2e-<run>-...` request ID taşır; böylece hem akademik test
+   verisi hem kapalı admin audit izi aynı koşuya bağlanır.
+2. **Temizlik yalnız izole/ephemeral test DB'sinde doğrudan DB düzeyindedir.**
+   `E2E_DATABASE_NAME` zorunludur. Yerelde adında `e2e`, `test` veya `preview`
+   bulunmayan DB reddedilir; `dou_synapse` yalnız hem `CI=true` hem
+   `GITHUB_ACTIONS=true` olan job'ın kendisinin kurduğu ephemeral DB'de kabul
+   edilir. `postgres`, template DB'leri ve varsayılan DSN yoktur.
+3. **Teardown `globalTeardown`'dır.** `fullyParallel`, retry ve ortada düşen test
+   durumunda dosya düzeyi `afterAll` bütün kayıtları göremez. Global teardown,
+   yalnız aynı koşunun derslerini ve `platform_admin_access_audit` satırlarını
+   listeler; sonra onaylı modda siler. `courses` satırı silindiğinde mevcut şemanın
+   course FK'leri cascade ile bağlı test verisini toplar. Bu davranış test
+   altyapısına özeldir; ürün API/RLS sözleşmesini genişletmez.
+4. **Elle komut varsayılan kuru koşudur.** `bun run e2e:clean` aday dersleri ve
+   audit kayıtlarını önce gösterir; `--evet` olmadan silmez. Opsiyonel `--run`
+   yalnız tek koşuyu daraltır. Hem liste hem delete aynı run/desen koşulunu yeniden
+   uygular ve silinen sayı listelenen sayıyla eşleşmezse hata verir.
 
-**Gerekçe**: flows.spec.ts:15-17 temizliğin neden yapılmadığını açıkça yazıyor ve tek engel olarak silme ucunun yokluğunu gösteriyor — yani FR-190'ın önündeki iş test değil ürün işi. Silme ucunun açılması aynı anda KVKK'nın §6 satır 140-142'de verdiği "ders silinene kadar" sözünü de tetiklenebilir yapıyor (bkz. KVKK kararı), yani tek uç iki FR ailesini birden kapatıyor. SECURITY DEFINER fonksiyon seçimi uydurma değil: `app.create_course` (0001:113) ve `app.add_member` aynı gerekçeyle (RLS'in tek bir politikayla ifade edemediği çok tablolu işlem) zaten öyle yazılmış; `courses.py:56-58` fonksiyonu `SELECT app.create_course(...)` ile çağırıyor, yeni uç aynı çağrı biçimini kullanacak. RESTRICT zincirinin gerçekliği ölçüldü: 0004:55 ve 0004:103.
+**Koruma sınırı**: Demo dersi hem UUID
+`c3b76077-20de-47e5-9fe1-4e770ffa64d2` hem `COME 331` koduyla açık koruma
+listesindedir. Genel `E2E%` veya başlık benzerliği kullanılmaz. Ekran görüntüsü
+vakaları varsayılan E2E paketinden ayrıdır ve gerçek demo dersini cleanup kapsamına
+sokmaz.
 
-**Elenen seçenekler**: (a) Her `test.describe` için `afterAll` — elendi: `fullyParallel` + `retries` altında eksik ve kararsız temizlik üretir. (b) Temizliği psql/superuser ile yapan bir SQL betiği — elendi: iki katmanlı izolasyonun (Anayasa II) yanından dolanan bir yan kanal açar ve testin sildiği yol, ürünün sildiği yolla aynı olmaz. (c) Test verisini ayrı bir veritabanına almak — elendi: e2e'nin amacı gerçek yığını sürmek; ikinci bir veritabanı CI kurulumunu ikiye katlar. (d) `courses` üzerine düz bir `courses_instructor_delete` RLS politikası koyup ORM ile silmek — elendi: RESTRICT zinciri yüzünden tek DELETE yetmiyor, uygulama katmanında sıralı silme yazmak aynı kuralı Python'da tekrar etmek olurdu. (e) Temizlik komutunu Python'da (`apps/api/scripts/`) yazmak — elendi: `E2E` öneki TypeScript tarafında üretiliyor, sabit ikiye bölünürdü.
+**Gerekçe**: Test hijyeni için ürün yüzeyine geri alınamaz silme yetkisi açmak,
+test ihtiyacını akademik ürün politikasına dönüştürürdü. CI zaten kendi PostgreSQL
+veritabanını kurar; yerel doğrulama da ayrı DB adıyla çalışır. Bu sınırda doğrudan
+DB cleanup, kullanıcı verisine yan kanal değil ephemeral test altyapısının yaşam
+döngüsüdür. Koşu kimliği ve fail-closed DB adı doğrulaması, yanlış hedef riskini
+ürün endpoint'inden daha dar ve ölçülebilir hâle getirir.
 
-**Dokunulacak dosyalar**:
-- `supabase/migrations/0008_ingestion_backoff_and_course_delete.sql`
-- `apps/api/app/api/courses.py`
+**Elenen seçenekler**: (a) Ürün `DELETE course` endpoint'i — ayrı ürün/saklama
+kararı olmadan yıkıcı yetki açar. (b) Her `test.describe` için `afterAll` — parallel,
+retry ve worker çökmesinde eksik kalır. (c) Paylaşılan geliştirme DB'sini önekle
+temizlemek — aynı anda çalışan sohbetleri ve gerçek demo verisini riske atar.
+(d) Yalnız dersleri temizlemek — Bilgi İşlem erişim audit satırlarını kalıcı bırakır
+ve “sıfır kalıcı kayıt” hedefini karşılamaz. (e) Başlık benzerliği — gerçek dersi
+test verisi sanabilir.
+
+**Uygulama dosyaları**:
 - `apps/web/e2e/fixtures.ts`
-- `apps/web/e2e/flows.spec.ts`
+- `apps/web/e2e/global-setup.ts`
 - `apps/web/e2e/cleanup.ts`
 - `apps/web/e2e/global-teardown.ts`
+- `apps/web/e2e/flows.spec.ts`
+- `apps/web/e2e/portal.spec.ts`
 - `apps/web/playwright.config.ts`
 - `apps/web/package.json`
-- `apps/api/tests/test_courses.py`
+- `apps/web/lib/e2e-cleanup.test.ts`
 
-**Risk**: En olası kırılma: `app.delete_course` SECURITY DEFINER olduğu için `app.is_instructor` kontrolü fonksiyonun İLK adımı olmazsa herhangi bir oturum herhangi bir dersi silebilir — bu, ürünün en yıkıcı yetki açığı olurdu ve RLS onu yakalayamaz (tanım gereği atlanıyor). İkincisi: `globalTeardown` başarısız koşudan sonra da çalıştığı için, bir vaka gerçek bir dersi `E2E` önekiyle açarsa temizlik onu siler; bu yüzden önek eşleşmesi tam önek (`code LIKE 'E2E%'`) olmalı ve komut kuru koşuda listeyi göstermelidir.
+**Risk**: En olası kırılma yanlış DB adıdır; bu nedenle DB adı zorunlu ve
+fail-closed doğrulanır. İkinci risk, yeni bir E2E endpoint'inin request ID ile
+etiketlenmemesidir; bu audit satırı kalıntısı üretir. Portal E2E yardımcıları bütün
+Bilgi İşlem isteklerine run-scoped request ID vermeli ve cleanup testi bu deseni
+mutasyonla korumalıdır.
 
 ---
 
@@ -1054,16 +1094,16 @@ Karar üç parça:
 
 **FR-202 — FK kısıtı tam olarak nerede:** `supabase/migrations/0001_core_schema.sql:59` → `courses.created_by uuid NOT NULL REFERENCES profiles(id) ON DELETE RESTRICT`. Yalnız o değil, üç RESTRICT var: `documents.uploaded_by` (0001:212) ve `topics.created_by` (0004:31). Buna karşılık öğrenci tarafındaki her bağ CASCADE: `course_memberships.user_id` (0001:71), `chat_sessions.user_id` (0003:44), `request_logs.user_id` (0003:138), `exam_sessions.user_id` (0004:77), `mastery.user_id` (0004:128); `questions.created_by/reviewed_by` ise SET NULL (0004:57-58). Sonuç: **öğrenci hesabı silinebilir, ders açmış/materyal yüklemiş/konu açmış öğretmen hesabı silinemez.**
 
-**Ne yapılacak — anonimleştirme (tombstone), FK gevşetilmeden:** `DELETE /me` tek bir yol izler ve role bakmaz: (1) kullanıcının `chat_sessions` satırları GERÇEKTEN silinir (mesajlar cascade ile gider) — FR-200'ün ucuyla aynı fonksiyon çağrılır; (2) `profiles` satırı yerinde bırakılır ama kişisel alanlar temizlenir: `full_name = NULL` (nullable, models/core.py:64), `email = 'silinmis+' || id || '@dou-synapse.invalid'` (UNIQUE olduğu için kimlikle benzersizleştirilir); (3) üyelikler `revoked`'a çekilir. Yazma izinleri: `profiles_self_update` (0001:341) kendi satırını güncellemeye yetiyor; üyelik için `memberships_self_revoke` politikası `0008`'e eklenecek (bugün yalnız `memberships_instructor_update` var, 0001:365). Yanıt gövdesi ne yapıldığını sayarak söyler (kaç sohbet silindi, kaç ders sahipliği devredilmedi) — Acceptance 9.3'ün "ne sessizce başarısız olur ne de dersi ve öğrenci verisini düşürür; ne yaptığını açıkça söyler" şartı budur.
+**Ne yapılacak — anonimleştirme (tombstone), FK gevşetilmeden:** `DELETE /me` tek bir yol izler ve role bakmaz: (1) kullanıcının `chat_sessions` satırları GERÇEKTEN silinir (mesajlar cascade ile gider) — FR-200'ün ucuyla aynı fonksiyon çağrılır; (2) `profiles` satırı yerinde bırakılır ama kişisel alanlar temizlenir: `full_name = NULL` (nullable, models/core.py:64), `email = 'silinmis+' || id || '@dou-synapse.invalid'` (UNIQUE olduğu için kimlikle benzersizleştirilir); (3) üyelikler `revoked`'a çekilir. Yazma izinleri: `profiles_self_update` (0001:341) kendi satırını güncellemeye yetiyor; üyelik için `memberships_self_revoke` politikası privacy migration'ında eklenir (bugün yalnız `memberships_instructor_update` var, 0001:365). Yanıt gövdesi ne yapıldığını sayarak söyler (kaç sohbet silindi, kaç ders sahipliği devredilmedi) — Acceptance 9.3'ün "ne sessizce başarısız olur ne de dersi ve öğrenci verisini düşürür; ne yaptığını açıkça söyler" şartı budur.
 
-**FR-203 — metin düzeltmeleri:** kvkk.md:182 (§8/1) "Uygulandı" olacak; kvkk.md:184 (§8/3) BUGÜN YANLIŞ — `apps/web/app/kvkk/page.tsx` var ve `screenshots.spec.ts:121` onu çekiyor; satır ikiye bölünecek (sayfa: uygulandı / girişte onay: uygulanmadı). §6 satır 139-142'deki "Hesap silinene… / Ders silinene kadar" ifadeleri, artık gerçek tetikleri olduğu için (DELETE /me, DELETE /courses) doğru hâle gelir; §7'ye düzeltme hakkının kimlik sağlayıcısına ait olduğu eklenir.
+**FR-203 — metin düzeltmeleri:** kvkk.md:182 (§8/1) "Uygulandı" olacak; kvkk.md:184 (§8/3) BUGÜN YANLIŞ — `apps/web/app/kvkk/page.tsx` var ve `screenshots.spec.ts:121` onu çekiyor; satır ikiye bölünecek (sayfa: uygulandı / girişte onay: uygulanmadı). §6'daki hesap anonimleştirme ifadesi `DELETE /me` ile eşlenir. "Ders silinene kadar" ifadesi ise ürün `DELETE course` akışı varmış gibi yorumlanamaz; ders saklama/silme politikası ayrı şartname ve hukuki onay olmadan uygulanmış hak sayılmaz. §7'ye düzeltme hakkının kimlik sağlayıcısına ait olduğu eklenir.
 
 **Gerekçe**: Haklar listesi kvkk.md §7'den birebir çıkarıldı; §8'in "uygulanmadı" tablosu spec'in FR-203'ünü doğrudan üretiyor. FK gerçeği greple ölçüldü, tahmin edilmedi: `grep -rn "REFERENCES profiles" supabase/migrations/` üç RESTRICT ve altı CASCADE gösterdi. Anonimleştirme seçimi FR-202'nin lafzından çıkıyor: "ne sessizce başarısız olmalı ne de bağlı veriyi düşürmelidir" — FK'yı SET NULL'a çevirmek bağlı veriyi (dersin kim tarafından açıldığı izini) düşürür, reddetmek ise sessiz olmasa da hakkı hiç karşılamaz; tombstone ikisinin arasındaki tek yol. `chat_sessions`'ta DELETE politikasının yokluğu 0003:171-186'dan doğrudan okundu, yani FR-200 kod değil önce şema işi. Sayfa/metin ayrışması (kvkk.md:184 ↔ app/kvkk/page.tsx) bu şartnamenin US7 tezinin canlı bir örneği ve belge kapısıyla (8. karar) otomatik yakalanacak.
 
 **Elenen seçenekler**: (a) `courses.created_by`'ı `ON DELETE SET NULL` yapmak — elendi: kolon NOT NULL (0001:59), NOT NULL'ı kaldırmak "dersi kim açtı" izini yok eder ve `app.create_course`'un sözleşmesini değiştirir. (b) Hesap silme talebini reddedip yalnız açıklama döndürmek — elendi: KVKK m.11 silme hakkını vaat ediyor ve metin (kvkk.md:139) "hesap silinene kadar" diyor; karşılıksız kalırdı. (c) Öğretmen için dersi başka bir eğitmene devretme akışı — elendi: kapsam dondurma (17 Ağustos) ve ikinci bir sahiplik modeli demek; tombstone aynı hakkı bugünkü modelle karşılıyor. (d) Dışa aktarmayı asenkron iş olarak kurmak — elendi: ikinci bir kuyruk tüketicisi, ölçülmemiş bir ölçek için. (e) `chat_messages`'a ayrı DELETE politikası yazmak — gereksiz: cascade RLS'e tabi değil.
 
 **Dokunulacak dosyalar**:
-- `supabase/migrations/0008_ingestion_backoff_and_course_delete.sql`
+- `supabase/migrations/0012_privacy_rights.sql`
 - `apps/api/app/api/chat.py`
 - `apps/api/app/api/me.py`
 - `apps/api/app/main.py`

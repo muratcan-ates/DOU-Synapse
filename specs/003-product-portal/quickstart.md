@@ -8,11 +8,11 @@ verisi için önce
 izlenmelidir. Buradaki amaç yalnız 003 portalının doğru dalda, ayrı test verisiyle
 ve dürüst kanıt statüsüyle doğrulanmasıdır.
 
-> **Başlangıç durumu (2026-08-10)**: Profil, dashboard ve platform admin kodu
-> çalışma ağacında bulunuyor. Hedefli test, RLS mutasyonu, production build ve
-> tarayıcı yolculuklarının tamamı henüz bu belgeye sonuç olarak işlenmedi. Bu nedenle
-> durum **kodlandı**, fakat henüz **yerelde doğrulandı** veya **production'da
-> kanıtlandı** değildir.
+> **Güncel durum (2026-08-10)**: Profil, dashboard ve Bilgi İşlem yüzeyleri
+> hedefli/tam testler, RLS mutasyonu, generated OpenAPI, production build ve
+> koşu kimlikli tarayıcı yolculuklarıyla **yerelde doğrulandı**. Gerçek
+> Auth/Storage/LLM, telemetry, yük, restore ve canlı URL kanıtı olmadığı için
+> **production'da kanıtlandı** değildir.
 
 ---
 
@@ -21,7 +21,7 @@ ve dürüst kanıt statüsüyle doğrulanmasıdır.
 ```bash
 cd /Users/muratates/code/dou-product-portal
 git branch --show-current       # 003-product-portal
-git merge-base HEAD b8da84e     # feature tabanıyla uyumlu olmalı
+git merge-base HEAD 3b707ca     # tam olarak 3b707ca dönmeli
 git status --short
 ```
 
@@ -199,6 +199,11 @@ Kontrol:
   ve `published_exams` alanlarından gelir.
 - `action_items = documents_processing + documents_failed + draft_questions`.
 - Taslak blueprint sayısı yoktur; frontend blueprint aracı için yalnız çalışan link verir.
+- Etkin, süresi dolmamış sınavı olan öğrenci kartında `assistant_locked=true`,
+  `assistant_lock_reason=exam_in_progress` ve sunucu kaynaklı Türkçe
+  `assistant_lock_message` vardır; birincil eylem sınava döner.
+- Süresi dolmuş/practice oturumu öğrenci kartını kilitlemez; eğitmen kartı aynı
+  nedenle hiçbir zaman kilitlenmez.
 - Öğrenci kartına başka öğrencinin mastery/sınav verisi düşmez.
 - Ders yoksa sahte dönem, danışman, GPA veya örnek ders üretilmez.
 
@@ -212,7 +217,6 @@ curl -s -o /dev/null -w '%{http_code}\n' -X POST "$API/admin/users" \
   -H "$USER_TOKEN" -H 'Content-Type: application/json' \
   -d '{"limit":25,"offset":0,"search":null}'
 curl -s -o /dev/null -w '%{http_code}\n' "$API/admin/courses" -H "$USER_TOKEN"
-curl -s -o /dev/null -w '%{http_code}\n' "$API/admin/requests" -H "$USER_TOKEN"
 curl -s -o /dev/null -w '%{http_code}\n' "$API/admin/ingestion" -H "$USER_TOKEN"
 ```
 
@@ -297,9 +301,15 @@ Playwright için ayrı portları açıkça verin:
 ```bash
 cd apps/web
 E2E_API_URL=http://localhost:8014 \
+E2E_DATABASE_NAME=dou_synapse_e2e_product_portal \
 E2E_PORT=3114 \
 node_modules/.bin/playwright test
 ```
+
+Bu DB ayrı ve disposable olmalıdır. Playwright `globalSetup` ile koşu kimliğini
+üretir; `globalTeardown` yalnız o koşunun `E2E-<run>-<number>` dersleriyle
+`e2e-<run>-...` Bilgi İşlem audit kayıtlarını temizler. `COME 331` ve korunan demo
+UUID'si cleanup kapsamı dışındadır. Ürün API'sinde ders silme ucu bu amaçla yoktur.
 
 ---
 
@@ -320,6 +330,8 @@ sayılmaz. Frontend tipleriyle alan/ad karşılaştırması yapılır. Özellikl
   maskelenmiş e-posta ifadesiyle eşleşmeli; URL'de search olmamalı ve tam e-posta
   araması eşleşmemeli,
 - dashboard'da taslak blueprint sayacı olmamalı,
+- dashboard course şemasında `assistant_locked`, `assistant_lock_reason` ve
+  `assistant_lock_message` alanları bulunmalı,
 - migration adı `0014_platform_admin_console.sql` olmalı.
 
 ---
@@ -343,10 +355,11 @@ Aşağıdakiler dış erişim ve gerçek ortam gerektirir; gerçekleştirilmeden
 
 | Kapı | Durum | Kanıt bağlantısı/commit |
 |---|---|---|
-| Kod repo ağacında | Kodlandı | Doldurulacak |
-| Hedefli API/RLS | Bekliyor | — |
-| Frontend test/build | Bekliyor | — |
-| Gerçek HTTP + tarayıcı | Bekliyor | — |
+| Kod repo ağacında | Kodlandı | `fa659d1`, `77cf35e`, `68f8b54`, `9c2fe23` |
+| Hedefli API/RLS | Yerelde doğrulandı | T601/T603 |
+| Frontend test/build | Yerelde doğrulandı | T605 |
+| Generated OpenAPI | Yerelde doğrulandı | T606 |
+| Gerçek HTTP + tarayıcı | Yerelde doğrulandı | T607/T608 |
 | Staging Auth/Storage/LLM | KOŞULMADI | — |
 | Load + backup/restore | KOŞULMADI | — |
 | İnsan eval | KOŞULMADI | — |

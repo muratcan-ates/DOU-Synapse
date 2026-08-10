@@ -1,9 +1,9 @@
 # Özellik Şartnamesi: Rol Bazlı Ürün Portalı
 
 **Feature Branch**: `003-product-portal`
-**Base**: `b8da84e` (`002-production-hardening`)
+**Base**: `3b707ca` (`002-production-hardening`)
 **Created**: 2026-08-10
-**Status**: Draft; portal kodu çalışma ağacında, doğrulama ve entegrasyon bekliyor
+**Status**: Yerelde doğrulanmış release adayı; 002 entegrasyonu ve staging/production kanıtı bekliyor
 
 **Input**: Yasemin Karagül'ün CourseGPT proje taslağı, önceki toplantı kararları,
 002 production-hardening çıktıları, OBS ekranlarından çıkarılan bilgi mimarisi
@@ -33,15 +33,17 @@ Bu şartname boyunca üç ifade bilinçli olarak ayrılır:
 | **Yerelde doğrulandı** | Hedefli test, gerçek API isteği ve gerekiyorsa tarayıcı gözlemi aynı commit'te geçti. |
 | **Production'da kanıtlandı** | Gerçek kimlik, gerçek depolama, gerçek sağlayıcı ve canlı URL üzerinde ölçülmüş kanıt var. |
 
-Bir alt seviyenin varlığı üst seviyeyi ima etmez. Bu feature başlangıcında portal,
-profil ve platform admin yüzeyleri **henüz kodlanmamıştır**. 002'de bulunan
+Bir alt seviyenin varlığı üst seviyeyi ima etmez. Bu feature'ın ilk şartname
+snapshot'ında portal, profil ve platform admin yüzeyleri henüz kodlanmamıştı; bu
+tarihsel başlangıç durumu aşağıdaki güncel dal notunun yerine geçmez. 002'de bulunan
 yetenekler repo gerçeğidir; bu şartname onları yeniden doğruladığını iddia etmez.
 
-**Güncel çalışma ağacı notu**: Portal backend/frontend dosyaları ve `0014`
-migration'ı bu dala taşınmıştır; dolayısıyla **kodlandı** durumundadır. Bu belge
-yazıldığı anda tam test, RLS mutasyonu, production build ve tarayıcı kapılarının
-tamamı sonuçlanmadığı için **yerelde doğrulandı** veya **production'da kanıtlandı**
-olarak işaretlenmez.
+**Güncel dal notu**: Portal backend/frontend dosyaları ve `0014` migration'ı
+feature commit'lerinde bulunmaktadır. Hedefli ve tam backend/frontend paketleri,
+RLS referans ve mutasyon kapıları, generated OpenAPI, production build ve koşu
+kimlikli tarayıcı yolculukları geçtiği için feature **yerelde doğrulandı**
+durumundadır. Gerçek Auth/Storage/LLM, telemetry, yük, restore ve canlı URL
+kanıtları olmadığı için **production'da kanıtlandı** durumu açıkça yoktur.
 
 ---
 
@@ -200,6 +202,10 @@ canlı ama model hazırlığı bitmemişse tek bir yanıltıcı “Her şey sağ
 - **FR-323**: Öğrenci özeti yalnız kendi çalışma/sınav verisinden türemelidir.
 - **FR-324**: `action_items`, işlenen ve başarısız belgeler ile bekleyen taslak soruların toplamından türetilmelidir; ekranda formülü gizleyen sihirli sayı olmamalıdır.
 - **FR-325**: Dashboard sahte dönem, GPA, danışman veya duyuru verisi üretmemelidir.
+- **FR-326**: Öğrenci ders kartı etkin ve süresi dolmamış sınav oturumunda
+  `assistant_locked`, `assistant_lock_reason` ve `assistant_lock_message`
+  alanlarını sunucudan almalı; asistan deep-link'i yerine sınava dönüş eylemi
+  göstermelidir. Practice/süresi dolmuş oturum ve eğitmen kartı kilitlenmemelidir.
 
 ### Platform admin
 

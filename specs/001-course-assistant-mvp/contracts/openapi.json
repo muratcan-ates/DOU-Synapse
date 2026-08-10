@@ -5764,6 +5764,32 @@
               }
             ],
             "title": "Last Activity At"
+          },
+          "assistant_locked": {
+            "type": "boolean",
+            "title": "Assistant Locked"
+          },
+          "assistant_lock_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Lock Reason"
+          },
+          "assistant_lock_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Lock Message"
           }
         },
         "type": "object",
@@ -5779,7 +5805,10 @@
           "draft_questions",
           "published_exams",
           "mastery_score",
-          "last_activity_at"
+          "last_activity_at",
+          "assistant_locked",
+          "assistant_lock_reason",
+          "assistant_lock_message"
         ],
         "title": "DashboardCourse"
       },

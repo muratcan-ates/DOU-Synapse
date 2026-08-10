@@ -1,7 +1,7 @@
 # Implementation Plan: Rol Bazlı Ürün Portalı
 
 **Branch**: `003-product-portal`
-**Base**: `b8da84e`
+**Base**: `3b707ca`
 **Date**: 2026-08-10
 **Spec**: [spec.md](spec.md)
 
@@ -116,16 +116,16 @@ PostgreSQL 16
 | İlke | Kapı | Durum |
 |---|---|---|
 | I. Kaynak Yoksa Cevap Yok | Portal cevap/citation zincirini gevşetiyor mu? | **GEÇTİ.** Portal yalnız mevcut yüzeylere yönlendirir; cevap üretmez. |
-| II. İki Katmanlı İzolasyon | Admin akademik RLS'i atlıyor mu? | **GEÇTİ, tasarım koşuluyla.** Admin projeksiyonu yalnız metadata; course içeriği mevcut üyelik kapılarında kalır. |
+| II. İki Katmanlı İzolasyon | Admin akademik RLS'i atlıyor mu? | **GEÇTİ.** Referans ve mutasyon kapıları admin projeksiyonunun metadata ile sınırlı, akademik içeriğin üyelik kapılarında kaldığını doğruladı. |
 | III. Ölçmeden İddia Etme | Canlı ortam sonucu varmış gibi yazılıyor mu? | **GEÇTİ.** Status matrisi production kanıtını ayrı tutar. |
 | IV. Fail-Closed | Profil/admin durumu belirsizken açılıyor mu? | **GEÇTİ.** Admin gate sonuç gelene kadar liste isteği atmaz. |
 | V. Türkçe Birinci Sınıf | Yeni metinler/hatalar? | **GEÇTİ.** Backend zarfı korunur; UI kendi sunucu hatasını uydurmaz. |
 | VI. Kapsam Kapıları | Portal, LMS/SIS'e dönüşüyor mu? | **GEÇTİ.** Resmi OBS verileri ve SIS entegrasyonu kapsam dışı. |
 | VII. Tasarım Sistemi | Yeni renk/spacing icat ediliyor mu? | **GEÇTİ.** Mevcut token/bileşenler zorunlu. |
-| VIII. Doğrulama | Kod varlığı “bitti” sayılıyor mu? | **AÇIK KAPI.** API, RLS, build ve tarayıcı doğrulaması tamamlanmadan hiçbir görev kapanmaz. |
+| VIII. Doğrulama | Kod varlığı “bitti” sayılıyor mu? | **GEÇTİ (yerel).** API, RLS, build, generated OpenAPI ve koşu kimlikli tarayıcı kapıları tamamlandı; dış ortam kapıları ayrı tutuldu. |
 | IX. Git | İzole worktree ve migration sırası? | **GEÇTİ.** `~/code`, feature branch; `0013` rezerve, portal `0014`. |
-| X. Demo | Seed ve rol yolculukları var mı? | **AÇIK KAPI.** Öğrenci/eğitmen/admin üçlü demo tarayıcıda prova edilmelidir. |
-| XI. Modülerlik | Profil/rol birden çok kez çekiliyor mu? | **GEÇTİ, tasarım koşuluyla.** Ortak provider ve tek dashboard endpoint'i. |
+| X. Demo | Seed ve rol yolculukları var mı? | **GEÇTİ (yerel).** Öğrenci, eğitmen, karma rol ve Bilgi İşlem yolculukları izole E2E verisiyle prova edildi. |
+| XI. Modülerlik | Profil/rol birden çok kez çekiliyor mu? | **GEÇTİ.** Ağ nöbetçisi ortak provider'ın tek profil isteği ve tek dashboard endpoint'i kullandığını doğruladı. |
 
 ---
 
@@ -257,6 +257,10 @@ Faz 6 dış sistem yetkileri olmadan tamamlanmış sayılmaz.
 8. `action_items = documents_processing + documents_failed + draft_questions`.
 9. Admin overview sağlık özeti ayrı frontend çağrılarından uydurulmaz; backend
    ölçüm zamanıyla döndürür. Orkestratör için `/health/live` ve `/health/ready` kalır.
+10. Dashboard sınav kilidi frontend tarafından tahmin edilmez. API
+    `assistant_locked`, `assistant_lock_reason` ve `assistant_lock_message`
+    alanlarını mevcut sınav durum yardımcısından türetir; kilitli öğrenci sınava
+    döner, eğitmen kartı kilitlenmez.
 
 ---
 

@@ -14,10 +14,10 @@
 }
 ```
 
-Bu dosya 003 için onaylanan hedef sözleşmedir. Pydantic, TypeScript ve migration
-aynı anda bu sözleşmeye taşınmaktadır; çalışma ağacında geçici fark bulunabilir.
-OpenAPI export, hedefli test ve gerçek HTTP doğrulaması tamamlanana kadar
-“uygulandı” veya “donduruldu” sayılmaz.
+Bu dosya 003 için onaylanan sözleşmedir. Pydantic, TypeScript ve migration bu
+alanlarla hizalanmış; OpenAPI çalışan `create_app().openapi()` çıktısından yeniden
+üretilerek alan ve yol farkı kapatılmıştır. Bu yerel sözleşme kanıtıdır; canlı
+staging veya production sözleşmesi kanıtı değildir.
 
 ---
 
@@ -113,7 +113,10 @@ Tek istekle kullanıcı, özet ve bütün aktif ders kartlarını döndürür.
       "draft_questions": 2,
       "published_exams": 1,
       "mastery_score": null,
-      "last_activity_at": "2026-08-10T14:12:00Z"
+      "last_activity_at": "2026-08-10T14:12:00Z",
+      "assistant_locked": false,
+      "assistant_lock_reason": null,
+      "assistant_lock_message": null
     },
     {
       "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
@@ -127,7 +130,10 @@ Tek istekle kullanıcı, özet ve bütün aktif ders kartlarını döndürür.
       "draft_questions": 0,
       "published_exams": 1,
       "mastery_score": 0.72,
-      "last_activity_at": "2026-08-09T19:30:00Z"
+      "last_activity_at": "2026-08-09T19:30:00Z",
+      "assistant_locked": true,
+      "assistant_lock_reason": "exam_in_progress",
+      "assistant_lock_message": "Devam eden sınav sırasında asistan kullanılamaz."
     }
   ]
 }
@@ -142,6 +148,14 @@ Tek istekle kullanıcı, özet ve bütün aktif ders kartlarını döndürür.
   `documents_processing + documents_failed + draft_questions`.
 - `mastery_score`: yalnız giriş yapan kişinin ortalaması, `0..1` veya `null`.
 - `published_exams`: yayınlanmış sürüm sayısıdır; taslak blueprint sayısı değildir.
+- `assistant_locked`: yalnız öğrenci kartında, aynı derste etkin ve süresi dolmamış
+  gerçek sınav oturumu varsa `true`; eğitmen kartında her zaman `false`.
+- `assistant_lock_reason`: kilitliyken sunucunun sabit neden kodu
+  `exam_in_progress`, aksi durumda `null`.
+- `assistant_lock_message`: kilitliyken sunucunun Türkçe açıklaması, aksi durumda
+  `null`. Frontend bu açıklamayı yeniden uydurmaz.
+- Kilitli öğrenci kartının birincil eylemi asistan yerine sınava döner; kart asistan
+  deep-link'i üretmez.
 - Sözleşmede taslak blueprint sayacı yoktur. UI yalnız blueprint aracına bağlantı verir.
 
 **Hatalar**: `401 unauthenticated`, `404 not_found`.

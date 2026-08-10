@@ -1,7 +1,7 @@
 # DOU-Synapse: Uçtan Uca Ürün ve Production Yol Haritası
 
 **Plan dalı**: `003-product-portal`
-**Taban**: `b8da84e` (`002-production-hardening`)
+**Taban**: `3b707ca` (`002-production-hardening`)
 **Tarih**: 2026-08-10
 **Ufuk**: 6–8 haftalık ürünleştirme dalgaları
 **Durum kuralı**: Kodlandı ≠ yerelde doğrulandı ≠ staging'de doğrulandı ≠ production'da kanıtlandı
@@ -40,20 +40,20 @@ Bu tablo feature dalındaki gözlemi anlatır; canlı ortam iddiası değildir.
 | Kaynak sınırlı hibrit RAG | 002 tabanında var | Bu feature'da yeniden ölçülmedi | Hayır | Gerçek sağlayıcı faithfulness |
 | Citation ve kaynak bağlamı | 002 tabanında var | Bu feature'da yeniden ölçülmedi | Hayır | Citation precision + deep-link E2E |
 | Sokratik/sınav modları | 002 tabanında var | Bu feature'da yeniden ölçülmedi | Hayır | İnsan pedagojik eval |
-| Sınav kilidi | 002 tabanında var | Önceki dal kanıtı var; entegrasyon commit'i yeniden koşulmalı | Hayır | Production iki sekme E2E |
-| Sınav blueprint'i | 002 tabanında var | Entegrasyon sonrası yeniden koşulmalı | Hayır | Gerçek öğretmen yayın akışı |
-| Ders AI politikası | 002 tabanında var | Entegrasyon sonrası yeniden koşulmalı | Hayır | Gerçek bütçe/provider davranışı |
-| Kaynak kalite laboratuvarı | Entegrasyona gelecek kod var | Bu dalda kanıt yok | Hayır | Retrieval test + öğretmen gözlemi |
-| Profil/dashboard/admin portalı | Bu çalışma ağacında var | Tam kapı sonucu bekliyor | Hayır | API/RLS/build/tarayıcı |
+| Sınav kilidi | 002 tabanında var | Tam backend ve tarayıcı paketinde yeniden geçti | Hayır | Production iki sekme E2E |
+| Sınav blueprint'i | 002 tabanında var | Tam backend ve tarayıcı paketinde yeniden geçti | Hayır | Gerçek öğretmen yayın akışı |
+| Ders AI politikası | 002 tabanında var | Tam backend ve tarayıcı paketinde yeniden geçti | Hayır | Gerçek bütçe/provider davranışı |
+| Kaynak kalite laboratuvarı | 002 tabanında var | Tam backend ve tarayıcı paketinde yeniden geçti | Hayır | Öğretmen insan değerlendirmesi |
+| Profil/dashboard/Bilgi İşlem portalı | Feature commit'lerinde var | Hedefli/tam API, RLS, build, OpenAPI ve tarayıcı kapıları geçti | Hayır | 002 entegrasyonu ve staging üç rol smoke |
 | Gerçek Supabase Auth/Storage | Hedef mimaride var | KOŞULMADI | Hayır | Staging smoke |
 | OpenTelemetry + alarm | Tasarım var | KOŞULMADI | Hayır | Export, dashboard, tetiklenen alarm |
 | Load ve backup/restore | Plan var | KOŞULMADI | Hayır | Ölçüm ve restore tatbikatı |
 | Gerçek LLM + insan eval | Eval altyapısı kısmi | KOŞULMADI | Hayır | Holdout + öğretmen/öğrenci çalışma |
 | Doğrulanmış canlı URL | Yok | Uygulanamaz | Hayır | Deploy SHA + smoke kaydı |
 
-Portal dosyalarının varlığı yalnız **kodlandı** statüsüdür. 003'ün hedefli test,
-RLS mutasyonu, gerçek HTTP, production build ve tarayıcı kapıları tamamlanmadan
-“yerelde doğrulandı” sütunu değiştirilmez.
+Portal satırı yalnız dosya varlığına dayanmaz: hedefli ve tam test, RLS mutasyonu,
+gerçek HTTP, production build, generated OpenAPI ve tarayıcı kapıları birlikte
+geçtiği için **yerelde doğrulandı** olarak işaretlenmiştir.
 
 ---
 
@@ -71,7 +71,7 @@ RLS mutasyonu, gerçek HTTP, production build ve tarayıcı kapıları tamamlanm
 | Müfredat dışı istek reddi | Scope gate + abstention | Kod var | Türkçe paraphrase/adversarial holdout ≥ kabul eşiği |
 | Her yanıtta kaynak | Citation nesneleri + source context | Kod var | Claim support ve yanlış citation testi |
 | Süreli sınav, yardım yok | Exam session + server-side chat lock | Kod var | API, iki sekme ve mutasyon testi |
-| Çalışan web platformu | Rol bazlı portal + ders içi araçlar | Portal kodu çalışma ağacında | Staging ve production üç rol smoke |
+| Çalışan web platformu | Rol bazlı portal + ders içi araçlar | Yerel release adayı doğrulandı; 002 entegrasyonu bekliyor | Staging ve production üç rol smoke |
 | Örnek materyal ve başarı raporu | Demo course + eval raporu | Kısmi | Sürüm sabitli paket ve tekrarlanabilir rapor |
 | Öğrenci/eğitmen kılavuzu | Rol bazlı dokümanlar ve demo | Kısmi | Güncel ekranlar, runbook ve prova videosu |
 

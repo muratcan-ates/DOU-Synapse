@@ -136,8 +136,20 @@ description: "002 Production Sertleştirme — görev listesi"
 
 > **Kesme noktası burada.** 17 Ağustos'a yetişmeyen iş bu bloktan kesilir.
 
-- [ ] T901 [P] [US9] `apps/web/e2e/` — `globalTeardown` + test verisi deseni; koşu sonunda bıraktığı kalıcı kayıt **sıfır** (SC-010). Test ortada düşse de temizlik çalışır.
-- [ ] T902 [P] [US9] YENİ: temizlik komutu — ne sileceğini **önce gösterir**, sonra onay ister.
+- [x] T901 [P] [US9] `apps/web/e2e/` — izole/ephemeral test DB'sinde
+  `globalSetup` koşu kimliği + `globalTeardown`; yalnız
+  `E2E-<run>-<number>` dersleri ve `e2e-<run>-...` Bilgi İşlem audit kayıtları
+  temizlenir. Ürün `DELETE course` API'si eklenmez; test ortada düşse de koşu
+  sonunda bıraktığı kalıcı kayıt **sıfır** olmalıdır (SC-010). `COME 331` ve
+  `c3b76077-20de-47e5-9fe1-4e770ffa64d2` açık koruma listesindedir. **DONE
+  (2026-08-10):** Temiz DB E2E koşusu sonrasında run-scoped ders ve audit kalıntısı
+  sıfır ölçüldü; korunan `COME 331` satırı yerinde kaldı. Başarısız koşuda da
+  global teardown'ın çalıştığı gözlendi.
+- [x] T902 [P] [US9] `bun run e2e:clean` — `E2E_DATABASE_NAME` zorunlu ve
+  fail-closed doğrulanır; komut ders + audit adaylarını **önce gösterir**, yalnız
+  `--evet` ile siler ve isteğe bağlı `--run` ile tek koşuya daralır. **DONE
+  (2026-08-10):** DB adı/desen enjeksiyonu, koruma listesi, kuru koşu ve run-scoped
+  ders + audit parser sınırları birim testleriyle sabitlendi.
 - [ ] T903 [US10] YENİ: `apps/api/app/api/privacy.py` — sohbet geçmişi silme, dışa aktarma, hesap silme talebi. `docs/kvkk.md`'nin vaat ettiği haklarla birebir eşlenir; eşlenemeyen vaat **metinden çıkarılır** (FR-203). Öğretmen hesabı silmedeki FK kısıtı sessizce değil açıkça raporlanır.
 - [ ] T904 [US11] YENİ: `supabase/migrations/0010_ingestion_retry.sql` + `apps/api/app/modules/ingestion/pipeline.py` — geri çekilmeli yeniden deneme. **Yeni sayaç kolonu gerekmiyor**: `ingestion_jobs.attempt_count` zaten var (`0001:275`) ve `claim_next_job` her alışta artırıyor.
 - [ ] T905 [US11] `apps/api/app/api/documents.py` + `apps/web/` — kusurlu işi yeniden çalıştırma; görünürlük ayağı zaten var (`documents.status='failed'` + `error_message`), eklenen tek şey "ne zaman tekrar denenecek".

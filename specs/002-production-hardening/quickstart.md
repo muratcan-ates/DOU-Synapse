@@ -6,28 +6,27 @@ için önce [`specs/001-course-assistant-mvp/quickstart.md`](../001-course-assis
 şey farklı: **002 üzerinde çalışan birinin sistemi doğru portlarla ayağa kaldırması, hangi
 testin neyi kanıtladığını bilmesi ve 002'nin her User Story'sini elle doğrulayabilmesi.**
 
-> **Bu belgedeki doğrulamaların ÇOĞU bugün BAŞARISIZ olmalıdır.** 002 henüz koda inmedi:
-> `002-production-hardening` dalında `specs/002-production-hardening/` dışında hiçbir dosya
-> değişmiş değil (`git status`). Her doğrulama adımının yanında iki sütun var — **bugünkü
-> sonuç** ve **002 bitince beklenen sonuç.** İkisi bugün aynı çıkıyorsa ya iş çoktan
-> yapılmıştır ya da doğrulama yanlış yerden bakıyordur; ikincisi çok daha olasıdır ve
-> 001'in devir belgesinin "sessiz kusur sınıfı" dediği şeyin tam olarak kendisidir
-> (`docs/team/parallel/20_DEVIR_9_AGUSTOS.md:128-147`).
+> **Tarihsel baseline uyarısı:** Bu belgedeki “bugün”, “yok” ve “002 bitince”
+> sütunları 9 Ağustos 2026'da, 002 uygulaması başlamadan önce yazılmış kırmızı-test
+> tasarımıdır; güncel ürün durumu değildir. Korunma nedeni hangi nöbetçinin önce
+> kırmızı yanması gerektiğini göstermesidir. Güncel kapanış gerçeği için
+> [`tasks.md`](tasks.md), canlı sayılar için aşağıdaki `docs-check` işaretleri ve
+> çalışan kod/testler esas alınır.
 
 > **Bu belgede ölçülen sayılar (9 Ağustos 2026, bu ağaçta koşuldu):**
-> `cd apps/api && uv run pytest -q` → **841 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 841 -->
-> `cd apps/web && bun test lib/` → **301 pass, 0 fail, 21 dosya.** <!-- docs-check: frontend.tests = 301 --><!-- docs-check: frontend.testFiles = 21 -->
+> `cd apps/api && uv run pytest -q` → **846 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 846 -->
+> `cd apps/web && bun test lib/` → **309 pass, 0 fail, 22 dosya.** <!-- docs-check: frontend.tests = 309 --><!-- docs-check: frontend.testFiles = 22 -->
 > Bunların dışındaki her sayı ya bir dosyadan alıntıdır ya da **KOŞULMADI** yazar
 > (Anayasa III).
 
 ---
 
-## 0. Bugün nerede duruyoruz — hangi hikâye kodda var, hangisi yok
+## 0. 9 Ağustos başlangıç fotoğrafı — tarihsel kırmızı-test baseline'ı
 
-Bu tablo doğrulamaların çıkış noktasıdır. "Yok" yazan bir satırın doğrulaması bugün
-**kırmızı yanmalıdır**; yanmıyorsa doğrulama yanlış yazılmıştır.
+Bu tablo doğrulamaların çıkış noktasıydı. “Yok” yazan satırlar bugünkü kodu değil,
+uygulama öncesi baseline'ı anlatır.
 
-| # | Hikâye | Bugün kodda | Kanıt | Doğrulama |
+| # | Hikâye | 002 başlangıcında | Tarihsel kanıt | Doğrulama |
 |---|---|---|---|---|
 | US1 | Sınav oturumu → asistan kilidi | **YOK** | `app/api/chat.py:561-567` `CourseMemberDep` alıyor; sınav durumuna bakan tek satır yok | [§4.1](#41-us1--sınav-oturumu-kilidi-002nin-birinci-işi) |
 | US2 | Event loop bloklanması | **YOK** | `asyncio.to_thread` yalnız `app/modules/ingestion/storage.py:50,55,61`'de — ayrıştırma ve embedding hâlâ döngüde | [§4.2](#42-us2--bilinen-üç-production-kusuru) |
@@ -126,12 +125,12 @@ gördüğünüz artış budur.
 
 ```bash
 cd apps/api
-uv run pytest -q        # 841 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 841
+uv run pytest -q        # 846 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 846
 uv run mypy app
 uv run ruff check . && uv run ruff format --check .
 
 cd ../web
-bun test lib/           # 301 pass, ~0,2 sn   # docs-check: frontend.tests = 301
+bun test lib/           # 309 pass, ~0,2 sn   # docs-check: frontend.tests = 309
 bun run typecheck
 ```
 
@@ -538,12 +537,31 @@ uyguluyor, örnek oradadır.
 
 | Kontrol | Komut / adım | Bugün |
 |---|---|---|
-| E2E veri hijyeni (FR-190 · SC-010) | Koşu öncesi/sonrası `select count(*) from courses` | Fark **sıfır olmalı**; bugün değil |
-| Temizlik komutu (FR-191) | Ne sileceğini **önce göstermeli**, sonra onay istemeli | Komut yok |
+| E2E veri hijyeni (FR-190 · SC-010) | İzole DB'de koşu öncesi/sonrası run-scoped ders ve Bilgi İşlem audit sayısı | Doğrulandı: ikisi de **sıfır**; `COME 331` korundu |
+| Temizlik komutu (FR-191) | `E2E_DATABASE_NAME=... bun run e2e:clean` önce ders + audit adaylarını gösterir; yalnız `--evet` siler | Doğrulandı: kuru koşu, onay ve DB/desen sınırları testli |
 | Sohbet geçmişi silme (FR-200) | `DELETE /courses/{id}/chat/sessions/{sid}` | Uç yok |
 | Dışa aktarma (FR-201) | Dosyada **başka kullanıcının verisi olmamalı** | Uç yok |
 | Güvenlik başlıkları (FR-215) | `curl -sI "$API/health/live"` → CSP, `X-Content-Type-Options`, `Referrer-Policy` | Yok (`app/main.py:40-100`) |
 | Kusurlu işleme görünürlüğü (FR-213/214 · SC-013) | Bir işleme işini bilerek boz → panelde görünsün, yeniden çalıştırılabilsin | Yok |
+
+E2E temizliği ürün silme yetkisini kullanmaz. Yalnız test koşusunun oluşturduğu
+izole/ephemeral PostgreSQL veritabanına bağlanır:
+
+```bash
+cd apps/web
+E2E_DATABASE_NAME=dou_synapse_e2e_portal \
+  bun run e2e:clean                 # kuru koşu; yalnız adayları gösterir
+E2E_DATABASE_NAME=dou_synapse_e2e_portal \
+  bun run e2e:clean -- --run <run> --evet
+```
+
+`E2E_DATABASE_NAME` verilmezse veya yerel DB adı `e2e`, `test` ya da `preview`
+işareti taşımıyorsa komut fail-closed durur. İstisna yalnız GitHub Actions'ın
+kendisinin kurduğu ephemeral `dou_synapse` DB'sidir. Aday deseni tam olarak
+`E2E-<run>-<number>` dersleri ve `e2e-<run>-...` request ID'li
+`platform_admin_access_audit` satırlarıdır. `COME 331` kodu ve
+`c3b76077-20de-47e5-9fe1-4e770ffa64d2` UUID'si ayrıca hariç tutulur. Başlık
+benzerliği veya genel `E2E%` filtresi kullanılmaz.
 
 ---
 
