@@ -15,18 +15,10 @@ from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.core.logging import get_logger
-from app.core.warmup import warmup_state
+from app.core.warmup import warmup_is_ready, warmup_state
 
 router = APIRouter(prefix="/health", tags=["health"])
 logger = get_logger("app.health")
-
-#: Hazırlığı DÜŞÜRMEYEN kontrol değerleri.
-#:
-#: `disabled` burada, çünkü "ısıtma bu süreçte çalışmıyor" bir arıza değil bir
-#: yapılandırma: model ilk istekte tembel yüklenir ve sistem çalışır. `warming`
-#: ve `failed` listede YOK — ikisi de 503'e düşer ve gerekçeleri
-#: `core/warmup.py`'nin modül docstring'inde yazılı.
-_HEALTHY_VALUES = frozenset({"ok", "disabled"})
 
 
 @router.get("/live")
@@ -59,9 +51,14 @@ async def ready(response: Response) -> dict[str, Any]:
     # BAĞIMLILIK durumu olarak raporlanır. `/health/live` bundan etkilenmez ve
     # ısınma sürerken de 200 döner — yoksa orkestratör ısınan bir süreci
     # ölü sanıp öldürür.
-    checks["embedding"] = warmup_state()
+    embedding_status = warmup_state()
+    checks["embedding"] = embedding_status
 
-    healthy = all(value in _HEALTHY_VALUES for value in checks.values())
+    healthy = (
+        checks.get("database") == "ok"
+        and checks.get("pgvector") == "ok"
+        and warmup_is_ready(embedding_status)
+    )
     if not healthy:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {"status": "ok" if healthy else "degraded", "checks": checks}

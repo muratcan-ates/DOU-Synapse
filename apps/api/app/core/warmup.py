@@ -46,6 +46,12 @@ logger = get_logger("app.warmup")
 
 WarmupState = Literal["disabled", "warming", "ok", "failed"]
 
+# Isıtma kapalıyken model ilk istekte tembel yüklenebilir; bu nedenle `disabled`
+# hazırlığı düşürmez. `warming` ve `failed` ise trafiğin bu sürece
+# yönlendirilmemesi gereken iki durumdur. Health ve admin konsolu aynı gerçeği
+# göstersin diye karar tek yerde tutulur.
+_READY_STATES = frozenset({"ok", "disabled"})
+
 #: Isıtma sırasında sağlayıcıya verilen metin. İçeriği önemsiz; amaç modelin
 #: yüklenmesini tetiklemek.
 WARMUP_QUERY = "ısınma"
@@ -56,6 +62,11 @@ _state: WarmupState = "disabled"
 def warmup_state() -> WarmupState:
     """Bu süreçteki ısıtma durumu. `/health/ready` bunu raporlar."""
     return _state
+
+
+def warmup_is_ready(state: WarmupState | None = None) -> bool:
+    """Verilen (veya güncel) ısıtma durumunun trafiğe hazır olup olmadığı."""
+    return (warmup_state() if state is None else state) in _READY_STATES
 
 
 def reset_warmup_state() -> None:
@@ -111,5 +122,6 @@ __all__ = [
     "reset_warmup_state",
     "start_warmup",
     "warm_embedding",
+    "warmup_is_ready",
     "warmup_state",
 ]
