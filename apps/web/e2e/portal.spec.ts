@@ -150,6 +150,15 @@ function recordPortalApiCalls(page: Page): ApiCall[] {
   return calls;
 }
 
+function recordBrowserErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  return errors;
+}
+
 async function expectVisibleFocusRing(target: Locator) {
   await expect(target).toBeFocused();
   const focusStyle = await target.evaluate((element) => {
@@ -428,6 +437,7 @@ test.describe("rol bazlı ürün portalı", () => {
   test("platform yöneticisi profil kapısından sonra gizlilik güvenli konsolu görür", async ({
     page,
   }) => {
+    const browserErrors = recordBrowserErrors(page);
     const calls = recordPortalApiCalls(page);
     await signIn(page, AYSE);
 
@@ -491,6 +501,7 @@ test.describe("rol bazlı ürün portalı", () => {
     await expect(page.getByRole("heading", { name: "AI kullanım kayıtları" })).toBeVisible();
     await page.getByRole("tab", { name: "İşleme işleri" }).click();
     await expect(page.getByRole("heading", { name: "Kaynak işleme işleri" })).toBeVisible();
+    expect(browserErrors).toEqual([]);
   });
 
   test("admin olmayan kullanıcı hem arayüzde hem API'de reddedilir", async ({ page }) => {
