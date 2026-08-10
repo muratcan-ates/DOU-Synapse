@@ -14,12 +14,17 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, Path, Query, Request
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.db import db_now, rls_session
-from app.core.errors import AuthenticationError, NotFoundError, PermissionDeniedError
+from app.core.errors import (
+    AuthenticationError,
+    NotFoundError,
+    PermissionDeniedError,
+    request_id_of,
+)
 from app.core.security import Principal, authenticate
 from app.models.core import CourseMembership, MembershipRole, MembershipStatus
 from app.modules.assessment import exam_state
@@ -142,6 +147,34 @@ async def require_course_instructor(context: CourseMemberDep) -> CourseContext:
 
 
 CourseInstructorDep = Annotated[CourseContext, Depends(require_course_instructor)]
+
+
+async def require_platform_admin(
+    principal: PrincipalDep,
+    request: Request,
+) -> Principal:
+    """Ders eğitmenliğinden bağımsız platform işletim yetkisini doğrular.
+
+    İstemci rolü/e-posta listesi kullanılmaz. Yetki, uygulamanın doğrudan
+    okuyamadığı `platform_admins` tablosunu dar bir SECURITY DEFINER yardımcıyla
+    sorgular. Yönetim SQL fonksiyonları da aynı kontrolü yeniden yapar.
+
+    Karar ayrı, tamamlanan bir işlemde audit tablosuna yazılır. Aynı işlem
+    kullanılsaydı `PermissionDeniedError` bağımlılık oturumunu rollback eder ve
+    tam da reddedilen denemelerin izi kaybolurdu.
+    """
+    action = f"{request.method.upper()} {request.url.path}"
+    async with rls_session(principal.user_id) as audit_session:
+        is_admin = await audit_session.scalar(
+            text("SELECT app.audit_platform_admin_access(:action, :request_id)"),
+            {"action": action, "request_id": request_id_of(request)},
+        )
+    if is_admin is not True:
+        raise PermissionDeniedError("Bu işlem yalnızca platform yöneticisine açıktır.")
+    return principal
+
+
+PlatformAdminDep = Annotated[Principal, Depends(require_platform_admin)]
 
 
 async def require_assistant_unlocked(
