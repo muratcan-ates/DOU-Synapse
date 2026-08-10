@@ -80,26 +80,68 @@ function runPsql(databaseName: string, sql: string, env: NodeJS.ProcessEnv): str
 }
 
 /**
- * Koşu-önekli tek bir ders kodunun E2E veritabanında görünüp görünmediği.
+ * Veritabanı kimlik sondası — YÖN TERSİNE ÇEVRİLDİ (inceleme düzeltmesinin düzeltmesi).
  *
- * Var oluş sebebi (inceleme bulgusu): test verisi API'nin arkasındaki DB'ye,
- * temizlik ise E2E_DATABASE_NAME'e ayrı bağlantılardan gider ve ikisinin AYNI
- * veritabanı olduğunu hiçbir şey kanıtlamıyordu — yanlış ama desene uyan bir ad
- * "0 ders silindi" ile YEŞİL biter, kalıntı asıl DB'de kalırdı. globalSetup bu
- * fonksiyonla nöbetçiyi arar; görünmüyorsa kimlikler ayrışmıştır ve koşu tek
- * veri yazılmadan durur.
+ * İlk sürüm nöbetçiyi API üzerinden yazıp psql ile arıyordu; ayrışma durumunda
+ * API'nin gerçek veritabanında tek satırlık kalıntı bırakıyordu ve teardown o
+ * satıra hiç ulaşamazdı. Şimdi sonda SİLEBİLDİĞİMİZ tarafa yazılır: satır psql
+ * ile E2E_DATABASE_NAME'e girer, API'den yalnız OKUNUR ve her iki sonuçta da
+ * psql ile silinir. Kurulum API üzerinden hiçbir yazma yapmaz — bu değişmez,
+ * lib/e2e-identity.test.ts tarafından hem davranış hem kaynak taramasıyla
+ * çivilidir. Ayrışma durumunda İKİ veritabanında da kalıntı sıfırdır.
  */
-export function courseVisibleInE2eDatabase(
+export function writeIdentityProbe(
+  databaseName: string,
+  probe: { code: string; title: string },
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  runPsql(
+    databaseName,
+    `WITH c AS (
+       INSERT INTO courses (code, title, created_by)
+       VALUES (${sqlLiteral(probe.code)}, ${sqlLiteral(probe.title)},
+               '11111111-1111-1111-1111-111111111111')
+       RETURNING id
+     )
+     INSERT INTO course_memberships (course_id, user_id, role, status)
+     SELECT id, '11111111-1111-1111-1111-111111111111', 'instructor', 'active' FROM c`,
+    env,
+  );
+}
+
+export function deleteIdentityProbe(
   databaseName: string,
   code: string,
   env: NodeJS.ProcessEnv = process.env,
-): boolean {
-  const out = runPsql(
-    databaseName,
-    `SELECT count(*) FROM courses WHERE code = ${sqlLiteral(code)}`,
-    env,
-  );
-  return out.trim() === "1";
+): void {
+  runPsql(databaseName, `DELETE FROM courses WHERE code = ${sqlLiteral(code)}`, env);
+}
+
+export async function verifyDatabaseIdentity(options: {
+  databaseName: string;
+  probe: { code: string; title: string };
+  apiHasCourse: (code: string) => Promise<boolean>;
+  writeProbe?: typeof writeIdentityProbe;
+  deleteProbe?: typeof deleteIdentityProbe;
+  env?: NodeJS.ProcessEnv;
+}): Promise<void> {
+  const env = options.env ?? process.env;
+  const write = options.writeProbe ?? writeIdentityProbe;
+  const drop = options.deleteProbe ?? deleteIdentityProbe;
+  write(options.databaseName, options.probe, env);
+  let visible = false;
+  try {
+    visible = await options.apiHasCourse(options.probe.code);
+  } finally {
+    drop(options.databaseName, options.probe.code, env);
+  }
+  if (!visible) {
+    throw new Error(
+      `Veritabanı kimlikleri ayrışmış: sonda ${options.databaseName} içine yazıldı ` +
+        "ama API onu görmüyor — API başka bir veritabanına bağlı. Temizlik bu hâliyle " +
+        "sahte yeşil verirdi. Koşu tek test verisi yazılmadan durduruldu; sonda silindi.",
+    );
+  }
 }
 
 export function parseCleanupRows(output: string): CleanupCourse[] {
