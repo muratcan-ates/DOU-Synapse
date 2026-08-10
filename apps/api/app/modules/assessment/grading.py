@@ -90,12 +90,12 @@ def _best_snippet(text: str, focus: str | None) -> str:
     if not focus:
         return condensed[:SNIPPET_CHARS]
 
-    needle = set(text_tr.normalize(focus).split())
+    needle = set(text_tr.tokens(focus))
     sentences = [part.strip() for part in condensed.replace("!", ".").split(".") if part.strip()]
     if not sentences:
         return condensed[:SNIPPET_CHARS]
 
-    best = max(sentences, key=lambda part: len(needle & set(text_tr.normalize(part).split())))
+    best = max(sentences, key=lambda part: len(needle & set(text_tr.tokens(part))))
     return best[:SNIPPET_CHARS]
 
 
@@ -243,6 +243,11 @@ def grade_short_answer(
     birine eşitse ya da onu bir kelime sınırında içeriyorsa doğrudur. Kapsama izni
     "İşletim sistemi çekirdeği" gibi cümle içinde verilen doğru cevapları kurtarır;
     kelime sınırı şartı "ram" ile "program"ı birbirine karıştırmayı önler.
+
+    `text_tr.normalize` AKSAN SÖKER: cevap anahtarı "çözüm" iken "cozum" yazan
+    öğrenci puanını alır. Bu bilinçli bir ürün kararıdır ve bedeliyle birlikte
+    o fonksiyonun docstring'inde yazılıdır — burada tekrarlanmıyor ki iki metin
+    bir gün ayrışmasın.
     """
     answer = text_tr.normalize(given)
     if not answer:
