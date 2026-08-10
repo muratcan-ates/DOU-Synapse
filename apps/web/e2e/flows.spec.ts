@@ -208,7 +208,10 @@ async function apiUpload(courseId: string, fileName: string, bytes: Buffer, user
  */
 async function belgeHazirOlanaKadarBekle(courseId: string, user: DemoUser) {
   for (let deneme = 0; deneme < 40; deneme++) {
-    const belgeler = await apiGet<BelgeOzeti[]>(`/courses/${courseId}/documents`, user);
+    // 10 Ağu: liste uçları sayfalama zarfına geçti; gövde artık {items, next_cursor}.
+    const belgeler = (
+      await apiGet<{ items: BelgeOzeti[] }>(`/courses/${courseId}/documents`, user)
+    ).items;
     if (belgeler.length > 0 && belgeler.every((b) => b.status === "completed")) return;
     const bozuk = belgeler.find((b) => b.status === "failed");
     if (bozuk) throw new Error(`belge işlenemedi: ${bozuk.file_name}`);
@@ -373,7 +376,7 @@ test.describe("materyal yönetimi", () => {
       mimeType: "application/pdf",
       buffer: KAYNAK_PDF,
     });
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeVisible({ timeout: 15_000 });
 
     const row = page.locator("li", { hasText: KAYNAK_PDF_ADI });
 
@@ -394,12 +397,12 @@ test.describe("materyal yönetimi", () => {
     await expect(page.getByText("Evet, sil")).toBeVisible();
     await page.getByRole("button", { name: "Vazgeç" }).click();
     await expect(page.getByText("Evet, sil")).toBeHidden();
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeVisible();
+    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeVisible();
 
     // Gerçekten silme — ve TAM SAYFA YENİLEME OLMAMALI
     await silButonu.click();
     await row.getByRole("button", { name: "Evet, sil" }).click();
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeHidden({ timeout: 15_000 });
 
     const navType = await page.evaluate(
       () => performance.getEntriesByType("navigation")[0]?.entryType &&
