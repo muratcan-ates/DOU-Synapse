@@ -8,7 +8,7 @@
 
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { createE2eCourseIdentity } from "./fixtures";
+import { createE2eCourseIdentity, createE2eRequestId } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 
@@ -46,6 +46,7 @@ interface ProfileSnapshot {
 }
 
 async function signIn(page: Page, user: DemoUser) {
+  await page.setExtraHTTPHeaders({ "X-Request-ID": createE2eRequestId() });
   await page.addInitScript(
     ([token, payload]) => {
       localStorage.setItem("dou-synapse-token", token as string);
@@ -209,7 +210,7 @@ test.describe("rol bazlı ürün portalı", () => {
       "href",
       `/courses/${course.id}/blueprints`,
     );
-    await expect(card.getByRole("link", { name: "Ders ayarları" })).toHaveAttribute(
+    await expect(card.getByRole("link", { name: "AI politikası" })).toHaveAttribute(
       "href",
       `/courses/${course.id}/settings`,
     );
@@ -289,9 +290,9 @@ test.describe("rol bazlı ürün portalı", () => {
     const instructorCard = courseCard(page, instructorCourse);
     await expect(studentCard.getByText("Öğrenci", { exact: true })).toBeVisible();
     await expect(studentCard.getByRole("link", { name: "Asistan" })).toBeVisible();
-    await expect(studentCard.getByRole("link", { name: "Ders ayarları" })).toHaveCount(0);
+    await expect(studentCard.getByRole("link", { name: "AI politikası" })).toHaveCount(0);
     await expect(instructorCard.getByText("Eğitmen", { exact: true })).toBeVisible();
-    await expect(instructorCard.getByRole("link", { name: "Ders ayarları" })).toBeVisible();
+    await expect(instructorCard.getByRole("link", { name: "AI politikası" })).toBeVisible();
     await expect(instructorCard.getByRole("link", { name: "Asistan" })).toHaveCount(0);
   });
 
@@ -506,7 +507,10 @@ test.describe("rol bazlı ürün portalı", () => {
       .toHaveLength(0);
 
     const directResponse = await fetch(`${API}/admin/overview`, {
-      headers: { Authorization: authorization(BURAK) },
+      headers: {
+        Authorization: authorization(BURAK),
+        "X-Request-ID": createE2eRequestId(),
+      },
     });
     expect(directResponse.status).toBe(403);
   });

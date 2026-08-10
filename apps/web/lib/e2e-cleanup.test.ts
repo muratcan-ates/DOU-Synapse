@@ -1,8 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseCleanupRows, resolveE2eDatabaseName } from "../e2e/cleanup";
+import {
+  parseAuditRows,
+  parseCleanupRows,
+  resolveE2eDatabaseName,
+} from "../e2e/cleanup";
 import {
   createE2eCourseIdentity,
+  createE2eRequestId,
   isRunScopedE2eCourseCode,
   validateE2eRunId,
 } from "../e2e/fixtures";
@@ -61,5 +66,35 @@ describe("E2E test verisi sınırları", () => {
     ]);
     expect(() => parseCleanupRows(["not-a-uuid", "E2E-abc123-1", "Başlık"].join("\t")))
       .toThrow();
+  });
+
+  test("Bilgi İşlem audit izi aynı koşu kimliğine bağlanır", () => {
+    const requestId = createE2eRequestId({ runId: "abc123xy", processId: 42 });
+    const row = [
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      requestId,
+      "GET /admin/overview",
+      "allowed",
+    ].join("\t");
+
+    expect(requestId).toMatch(/^e2e-abc123xy-42-[0-9]+$/);
+    expect(parseAuditRows(row)).toEqual([
+      {
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        requestId,
+        action: "GET /admin/overview",
+        result: "allowed",
+      },
+    ]);
+    expect(() =>
+      parseAuditRows(
+        [
+          "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "production-request",
+          "GET /admin/overview",
+          "allowed",
+        ].join("\t"),
+      ),
+    ).toThrow();
   });
 });

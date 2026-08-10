@@ -8,6 +8,7 @@ const RUN_ID_PATTERN = /^[a-z0-9]{6,20}$/;
 const COURSE_CODE_PATTERN = /^E2E-([a-z0-9]{6,20})-([0-9]+)$/;
 
 let courseCounter = 0;
+let requestCounter = 0;
 
 export function createE2eRunId(): string {
   return `${Date.now().toString(36)}${randomBytes(2).toString("hex")}`;
@@ -57,4 +58,16 @@ export function createE2eCourseIdentity(
 
   const label = suffix.trim().replace(/\s+/g, " ").slice(0, 48) || "AKIS";
   return { code, title: `E2E Test Dersi ${label} (${runId})` };
+}
+
+export function createE2eRequestId(
+  options: { runId?: string; processId?: number } = {},
+): string {
+  const runId = validateE2eRunId(options.runId ?? requireE2eRunId());
+  const processId = options.processId ?? process.pid;
+  if (!Number.isInteger(processId) || processId <= 0) {
+    throw new Error("E2E süreç kimliği pozitif bir tam sayı olmalıdır.");
+  }
+  const sequence = String(requestCounter++).padStart(3, "0");
+  return `e2e-${runId}-${processId}-${sequence}`;
 }

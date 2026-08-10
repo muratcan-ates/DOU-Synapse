@@ -14,6 +14,13 @@ interface CleanupCourse {
   title: string;
 }
 
+interface CleanupAudit {
+  id: string;
+  requestId: string;
+  action: string;
+  result: "allowed" | "denied";
+}
+
 export interface CleanupOptions {
   onayli: boolean;
   runId?: string;
@@ -24,6 +31,8 @@ export interface CleanupOptions {
 export interface CleanupResult {
   listed: CleanupCourse[];
   deleted: CleanupCourse[];
+  listedAudits: CleanupAudit[];
+  deletedAudits: CleanupAudit[];
 }
 
 const SAFE_LOCAL_DATABASE_PATTERN = /(?:^|_)(?:e2e|test|preview)(?:_|$)/;
@@ -81,6 +90,25 @@ export function parseCleanupRows(output: string): CleanupCourse[] {
   });
 }
 
+export function parseAuditRows(output: string): CleanupAudit[] {
+  if (!output.trim()) return [];
+  return output.split("\n").map((line) => {
+    const [id, requestId, action, result, ...extra] = line.split("\t");
+    if (
+      !id ||
+      !requestId ||
+      !action ||
+      (result !== "allowed" && result !== "denied") ||
+      extra.length > 0 ||
+      !UUID_PATTERN.test(id) ||
+      !/^e2e-[a-z0-9]{6,20}-[A-Za-z0-9_-]+$/.test(requestId)
+    ) {
+      throw new Error(`Beklenmeyen admin audit temizlik satırı: ${line}`);
+    }
+    return { id, requestId, action, result };
+  });
+}
+
 function sqlLiteral(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
@@ -126,11 +154,56 @@ ORDER BY code;
 `.trim();
 }
 
-function printCandidates(courses: CleanupCourse[], runId?: string) {
+function auditCandidateSql(runId?: string): string {
+  const pattern = runId
+    ? `^e2e-${validateE2eRunId(runId)}-[A-Za-z0-9_-]+$`
+    : "^e2e-[a-z0-9]{6,20}-[A-Za-z0-9_-]+$";
+  return `request_id ~ ${sqlLiteral(pattern)}`;
+}
+
+function listAuditSql(runId?: string): string {
+  return `
+SELECT id::text,
+       request_id,
+       action,
+       result
+FROM public.platform_admin_access_audit
+WHERE ${auditCandidateSql(runId)}
+ORDER BY created_at, id;
+`.trim();
+}
+
+function deleteAuditSql(audits: CleanupAudit[], runId?: string): string {
+  const ids = audits.map((audit) => `${sqlLiteral(audit.id)}::uuid`).join(", ");
+  return `
+WITH removed AS (
+  DELETE FROM public.platform_admin_access_audit
+  WHERE id IN (${ids})
+    AND ${auditCandidateSql(runId)}
+  RETURNING id, request_id, action, result
+)
+SELECT id::text,
+       request_id,
+       action,
+       result
+FROM removed
+ORDER BY request_id, id;
+`.trim();
+}
+
+function printCandidates(
+  courses: CleanupCourse[],
+  audits: CleanupAudit[],
+  runId?: string,
+) {
   const scope = runId ? `koşu ${runId}` : "tüm koşular";
   console.log(`[e2e:clean] ${scope}: ${courses.length} ders bulundu.`);
   for (const course of courses) {
     console.log(`  ${course.code}\t${course.id}\t${course.title}`);
+  }
+  console.log(`[e2e:clean] ${scope}: ${audits.length} Bilgi İşlem audit kaydı bulundu.`);
+  for (const audit of audits) {
+    console.log(`  ${audit.requestId}\t${audit.action}\t${audit.result}`);
   }
 }
 
@@ -139,28 +212,43 @@ export async function temizle(options: CleanupOptions): Promise<CleanupResult> {
   const runId = options.runId ? validateE2eRunId(options.runId) : undefined;
   const databaseName = resolveE2eDatabaseName(options.databaseName, env);
   const listed = parseCleanupRows(runPsql(databaseName, listSql(runId), env));
+  const listedAudits = parseAuditRows(runPsql(databaseName, listAuditSql(runId), env));
 
   for (const course of listed) {
     if (!isRunScopedE2eCourseCode(course.code, runId)) {
       throw new Error(`Test deseni dışındaki ders reddedildi: ${course.code}`);
     }
   }
-  printCandidates(listed, runId);
+  printCandidates(listed, listedAudits, runId);
 
   if (!options.onayli) {
     console.log("[e2e:clean] Kuru koşu: silme yapılmadı. Silmek için --evet kullanın.");
-    return { listed, deleted: [] };
+    return { listed, deleted: [], listedAudits, deletedAudits: [] };
   }
-  if (listed.length === 0) return { listed, deleted: [] };
-
-  const deleted = parseCleanupRows(runPsql(databaseName, deleteSql(listed, runId), env));
+  const deleted =
+    listed.length === 0
+      ? []
+      : parseCleanupRows(runPsql(databaseName, deleteSql(listed, runId), env));
   if (deleted.length !== listed.length) {
     throw new Error(
       `Temizlik eksik kaldı: ${listed.length} adaydan ${deleted.length} ders silindi.`,
     );
   }
-  console.log(`[e2e:clean] ${deleted.length} ders ve bağlı test verisi silindi.`);
-  return { listed, deleted };
+  const deletedAudits =
+    listedAudits.length === 0
+      ? []
+      : parseAuditRows(runPsql(databaseName, deleteAuditSql(listedAudits, runId), env));
+  if (deletedAudits.length !== listedAudits.length) {
+    throw new Error(
+      `Audit temizliği eksik kaldı: ${listedAudits.length} adaydan ` +
+        `${deletedAudits.length} kayıt silindi.`,
+    );
+  }
+  console.log(
+    `[e2e:clean] ${deleted.length} ders ve ${deletedAudits.length} ` +
+      "Bilgi İşlem audit kaydı silindi.",
+  );
+  return { listed, deleted, listedAudits, deletedAudits };
 }
 
 function readCliOptions(args: string[]) {
