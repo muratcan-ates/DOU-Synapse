@@ -58,7 +58,7 @@ export default function LoginPage() {
       );
       return;
     }
-    router.push("/courses");
+    router.push("/dashboard");
   }
 
   async function enterWithPassword(event: React.FormEvent) {
@@ -68,7 +68,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await signInWithPassword(email.trim(), password);
-      router.push("/courses");
+      router.push("/dashboard");
     } catch (cause) {
       setError(errorMessage(cause, "Oturum açılamadı. E-posta ve parolanızı kontrol edin."));
     } finally {
@@ -77,7 +77,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+    <main className="grid min-h-[100dvh] lg:grid-cols-[1.1fr_1fr]">
       {/* Sol: tez paneli */}
       <section className="flex flex-col justify-between p-8 lg:p-14">
         <p className="rise text-sm font-medium tracking-wide text-brand">
@@ -217,8 +217,8 @@ export default function LoginPage() {
             >
               KVKK aydınlatma metni
             </Link>{" "}
-            — hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
-            paylaşıldığını anlatır.
+            hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
+            paylaşıldığını açıklar.
           </p>
         </div>
       </section>

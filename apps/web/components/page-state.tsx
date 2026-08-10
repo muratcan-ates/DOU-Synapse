@@ -210,9 +210,11 @@ export function PageHeader({
   return (
     <div className="rise mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-fg">{title}</h1>
+        <h1 className="text-balance text-3xl font-semibold tracking-tight text-fg">
+          {title}
+        </h1>
         {description && (
-          <p className="prose-tr mt-1 text-sm text-fg-muted">{description}</p>
+          <p className="prose-tr mt-1 text-pretty text-sm text-fg-muted">{description}</p>
         )}
       </div>
       {action}
