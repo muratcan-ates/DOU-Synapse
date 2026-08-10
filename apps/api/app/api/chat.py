@@ -49,13 +49,14 @@ from uuid import UUID
 from fastapi import APIRouter, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import insert as sa_insert
-from sqlalchemy import select
+from sqlalchemy import select, tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import (
     CourseContext,
     CourseMemberDep,
+    PageDep,
     SessionDep,
     SettingsDep,
     UnlockedCourseMemberDep,
@@ -76,6 +77,12 @@ from app.core.config import Settings
 from app.core.db import db_now
 from app.core.errors import AppError, NotFoundError, RateLimitError, ValidationError
 from app.core.logging import get_logger
+from app.core.pagination import (
+    decode_message_cursor,
+    decode_time_cursor,
+    encode_message_cursor,
+    encode_time_cursor,
+)
 from app.core.rate_limit import get_limiter, reset_rate_limit
 from app.models.chat import AnswerCache, ChatMessage, ChatRole, ChatSession, RequestLog
 from app.modules.assessment import exam_state, socratic
@@ -87,6 +94,7 @@ from app.schemas.chat import (
     CitationOut,
     to_chat_response,
 )
+from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["chat"])
 logger = get_logger("app.chat")
@@ -823,36 +831,65 @@ async def chat_availability(
     )
 
 
-@router.get("/chat/sessions", response_model=list[ChatSessionOut])
+@router.get("/chat/sessions", response_model=PageOut[ChatSessionOut])
 async def list_sessions(
-    context: UnlockedCourseMemberDep, session: SessionDep
-) -> list[ChatSessionOut]:
+    context: UnlockedCourseMemberDep,
+    session: SessionDep,
+    page: PageDep,
+) -> PageOut[ChatSessionOut]:
     """Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez."""
+    query = select(ChatSession).where(ChatSession.course_id == context.course_id)
+    if page.cursor is not None:
+        updated_at, row_id = decode_time_cursor(page.cursor)
+        query = query.where(tuple_(ChatSession.updated_at, ChatSession.id) < (updated_at, row_id))
     result = await session.execute(
-        select(ChatSession)
-        .where(ChatSession.course_id == context.course_id)
-        .order_by(ChatSession.updated_at.desc())
+        query.order_by(ChatSession.updated_at.desc(), ChatSession.id.desc()).limit(page.limit + 1)
     )
-    return [_session_out(row) for row in result.scalars()]
+    rows = list(result.scalars())
+    visible = rows[: page.limit]
+    next_cursor = (
+        encode_time_cursor(visible[-1].updated_at, visible[-1].id)
+        if len(rows) > page.limit
+        else None
+    )
+    return PageOut(items=[_session_out(row) for row in visible], next_cursor=next_cursor)
 
 
-@router.get("/chat/sessions/{session_id}", response_model=list[ChatMessageOut])
+@router.get("/chat/sessions/{session_id}", response_model=PageOut[ChatMessageOut])
 async def list_messages(
-    session_id: UUID, context: UnlockedCourseMemberDep, session: SessionDep
-) -> list[ChatMessageOut]:
+    session_id: UUID,
+    context: UnlockedCourseMemberDep,
+    session: SessionDep,
+    page: PageDep,
+) -> PageOut[ChatMessageOut]:
     chat_session = await session.get(ChatSession, session_id)
     # RLS başka kullanıcının/dersin oturumunu zaten gizler; ders eşleşmesi ayrıca
     # kontrol edilir — iki katman da bağımsız olarak doğru davranmalı.
     if chat_session is None or chat_session.course_id != context.course_id:
         raise NotFoundError("Sohbet oturumu bulunamadı.")
 
+    query = select(ChatMessage).where(ChatMessage.session_id == session_id)
+    if page.cursor is not None:
+        created_at, seq, row_id = decode_message_cursor(page.cursor)
+        query = query.where(
+            tuple_(ChatMessage.created_at, ChatMessage.seq, ChatMessage.id)
+            < (created_at, seq, row_id)
+        )
     result = await session.execute(
-        select(ChatMessage)
-        .where(ChatMessage.session_id == session_id)
-        # created_at turlar arasını, seq tur içini sıralar — bkz. models/chat.py.
-        .order_by(ChatMessage.created_at, ChatMessage.seq)
+        query.order_by(
+            ChatMessage.created_at.desc(), ChatMessage.seq.desc(), ChatMessage.id.desc()
+        ).limit(page.limit + 1)
     )
-    return [
+    rows = list(result.scalars())
+    visible_desc = rows[: page.limit]
+    next_cursor = (
+        encode_message_cursor(
+            visible_desc[-1].created_at, visible_desc[-1].seq, visible_desc[-1].id
+        )
+        if len(rows) > page.limit
+        else None
+    )
+    items = [
         ChatMessageOut(
             id=message.id,
             role=message.role,
@@ -862,8 +899,9 @@ async def list_messages(
             socratic_stage=message.socratic_stage,
             created_at=message.created_at,
         )
-        for message in result.scalars()
+        for message in reversed(visible_desc)
     ]
+    return PageOut(items=items, next_cursor=next_cursor)
 
 
 # ---------------------------------------------------------------------------

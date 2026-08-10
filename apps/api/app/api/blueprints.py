@@ -262,7 +262,8 @@ async def create_learning_outcome(
 
 @router.get("/learning-outcomes", response_model=list[LearningOutcomeOut])
 async def list_learning_outcomes(
-    context: CourseInstructorDep, session: SessionDep
+    context: CourseInstructorDep,
+    session: SessionDep,
 ) -> list[LearningOutcome]:
     rows = await session.execute(
         select(LearningOutcome)
@@ -308,7 +309,10 @@ async def create_blueprint(
 
 
 @router.get("/blueprints", response_model=list[BlueprintOut])
-async def list_blueprints(context: CourseInstructorDep, session: SessionDep) -> list[BlueprintOut]:
+async def list_blueprints(
+    context: CourseInstructorDep,
+    session: SessionDep,
+) -> list[BlueprintOut]:
     rows = await session.execute(
         select(ExamBlueprint)
         .where(ExamBlueprint.course_id == context.course_id)
@@ -451,7 +455,9 @@ async def create_version(
 
 @router.get("/blueprints/{blueprint_id}/versions", response_model=list[ExamVersionOut])
 async def list_versions(
-    blueprint_id: UUID, context: CourseInstructorDep, session: SessionDep
+    blueprint_id: UUID,
+    context: CourseInstructorDep,
+    session: SessionDep,
 ) -> list[ExamVersionOut]:
     blueprint = await _load_blueprint(session, blueprint_id, context)
     rows = await session.execute(
@@ -573,7 +579,10 @@ async def _items_out(session: AsyncSession, version: ExamVersion) -> list[ExamIt
     response_model=list[ExamItemOut],
 )
 async def list_version_items(
-    blueprint_id: UUID, version_id: UUID, context: CourseInstructorDep, session: SessionDep
+    blueprint_id: UUID,
+    version_id: UUID,
+    context: CourseInstructorDep,
+    session: SessionDep,
 ) -> list[ExamItemOut]:
     blueprint = await _load_blueprint(session, blueprint_id, context)
     version = await _load_version(session, version_id, blueprint)

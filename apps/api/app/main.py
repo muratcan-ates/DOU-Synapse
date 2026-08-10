@@ -138,18 +138,12 @@ def create_app() -> FastAPI:
     app.include_router(privacy.router)
     app.include_router(policy.router)
     app.include_router(questions.router)
-    # Paralel geliştirme kirişi: aşağıdaki üç router'ın MODÜLLERİ henüz boş, ama
-    # kaydı önden yapıldı. Beş oturum kendi ucunu eklerken bu dosyaya dokunmaz;
-    # aksi hâlde aynı iki satır beş kez çakışırdı. Boş router hiçbir yol
-    # eklemez, yani sözleşme de bugün değişmez.
     app.include_router(chat.router)
     app.include_router(exams.router)
-    # Bugün yol eklemiyor; blueprint şeridi `main.py`'ye dokunmadan doldursun
-    # diye lider turunda önden kaydedildi (bkz. api/blueprints.py).
     app.include_router(blueprints.router)
     app.include_router(analytics.router)
-    # Faz G'nin dahili tetik ucu. Modül bugün boş ama kaydı önden yapıldı; boş
-    # router hiçbir yol eklemez, yani sözleşme bugün değişmez.
+    # İç worker tetiği OpenAPI'den bilinçli olarak gizlidir; sır yoksa 404,
+    # doğru sırla bir ingestion turu çalıştırır.
     app.include_router(internal.router)
     return app
 

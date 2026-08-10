@@ -41,7 +41,7 @@ const TABS = [
  */
 export function CourseNav({ courseId, lock: providedLock }: { courseId: string; lock?: ChatLock }) {
   const pathname = usePathname();
-  const { isInstructor, ready } = useSession();
+  const { isInstructor, ready } = useSession(courseId);
   /*
    * Kilit kararı sunucudan okunur, burada hesaplanmaz. Sekmeyi gizlemek yerine
    * kilitli çizmek bilinçli: gizlenen sekme "sistem bozuldu" gibi okunur,

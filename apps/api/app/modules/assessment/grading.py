@@ -316,7 +316,9 @@ def _reference_block(payload: BaseModel) -> str:
             lines += [f"- {point}" for point in payload.key_points]
         if payload.rubric:
             lines.append("Rubrik (ağırlıklar 100 üzerinden):")
-            lines += [f"- {item.point} ({item.weight})" for item in payload.rubric]
+            # Ağırlıklar prompt'a normalize edilmiş hâliyle yazılır; kural tek yerde
+            # (schemas.normalized_rubric, T507) — codex'in kopya yardımcısı alınmadı.
+            lines += [f"- {item.point} ({item.weight:.4g})" for item in normalized_rubric(payload.rubric)]
     elif isinstance(payload, CodeTracePayload):
         lines.append(f"Soru: {payload.prompt}")
         lines.append(f"Kod:\n{payload.code}")

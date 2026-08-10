@@ -16,11 +16,11 @@ import {
   type PolicyDraft,
 } from "@/lib/policy";
 import { useSession } from "@/lib/session";
-import type { ChatMode, CourseDocument } from "@/lib/types";
+import type { ChatMode, CourseDocument, Page } from "@/lib/types";
 
 export default function AiPolicyPage() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor, ready } = useSession();
+  const { isInstructor, ready } = useSession(courseId);
 
   return (
     <AppShell>
@@ -55,7 +55,9 @@ function PolicyEditor({ courseId }: { courseId: string }) {
     try {
       const [nextPolicy, nextDocuments] = await Promise.all([
         api.get<CourseAiPolicy>(`/courses/${courseId}/ai-policy`),
-        api.get<CourseDocument[]>(`/courses/${courseId}/documents`),
+        api
+          .get<Page<CourseDocument>>(`/courses/${courseId}/documents?limit=100`)
+          .then((page) => page.items),
       ]);
       setPolicy(nextPolicy);
       setDraft(draftFromPolicy(nextPolicy));

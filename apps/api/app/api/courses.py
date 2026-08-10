@@ -5,16 +5,18 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, status
-from sqlalchemy import select, text
+from sqlalchemy import select, text, tuple_
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import (
     CourseInstructorDep,
     CourseMemberDep,
+    PageDep,
     PrincipalDep,
     SessionDep,
 )
 from app.core.errors import ConflictError, NotFoundError, ValidationError
+from app.core.pagination import decode_time_cursor, encode_time_cursor
 from app.models.core import Course, CourseMembership, MembershipRole, MembershipStatus, Profile
 from app.schemas.course import (
     CourseCreate,
@@ -23,26 +25,43 @@ from app.schemas.course import (
     MembershipCreate,
     MembershipOut,
 )
+from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
 
-@router.get("", response_model=list[CourseWithRole])
-async def list_my_courses(principal: PrincipalDep, session: SessionDep) -> list[CourseWithRole]:
+@router.get("", response_model=PageOut[CourseWithRole])
+async def list_my_courses(
+    principal: PrincipalDep,
+    session: SessionDep,
+    page: PageDep,
+) -> PageOut[CourseWithRole]:
     """Kullanıcının aktif üyeliği olan dersler."""
-    result = await session.execute(
+    query = (
         select(Course, CourseMembership.role)
         .join(CourseMembership, CourseMembership.course_id == Course.id)
         .where(
             CourseMembership.user_id == principal.user_id,
             CourseMembership.status == MembershipStatus.ACTIVE,
         )
-        .order_by(Course.created_at.desc())
     )
-    return [
+    if page.cursor is not None:
+        created_at, row_id = decode_time_cursor(page.cursor)
+        query = query.where(tuple_(Course.created_at, Course.id) < (created_at, row_id))
+    result = await session.execute(
+        query.order_by(Course.created_at.desc(), Course.id.desc()).limit(page.limit + 1)
+    )
+    rows = result.all()
+    visible = rows[: page.limit]
+    items = [
         CourseWithRole(**CourseOut.model_validate(course).model_dump(), role=role)
-        for course, role in result.all()
+        for course, role in visible
     ]
+    next_cursor = None
+    if len(rows) > page.limit:
+        last_course = visible[-1][0]
+        next_cursor = encode_time_cursor(last_course.created_at, last_course.id)
+    return PageOut(items=items, next_cursor=next_cursor)
 
 
 @router.post("", response_model=CourseWithRole, status_code=status.HTTP_201_CREATED)
@@ -80,7 +99,10 @@ async def get_course(context: CourseMemberDep, session: SessionDep) -> CourseWit
 
 
 @router.get("/{course_id}/members", response_model=list[MembershipOut])
-async def list_members(context: CourseInstructorDep, session: SessionDep) -> list[MembershipOut]:
+async def list_members(
+    context: CourseInstructorDep,
+    session: SessionDep,
+) -> list[MembershipOut]:
     result = await session.execute(
         select(CourseMembership, Profile)
         .join(Profile, Profile.id == CourseMembership.user_id)

@@ -131,6 +131,18 @@ class ConcurrencyLimitError(AppError):
     code = "concurrent_request"
 
 
+class StorageUnavailableError(AppError):
+    """Belge deposuna geçici olarak erişilemiyor.
+
+    Sağlayıcının ham yanıtı kullanıcıya taşınmaz: servis anahtarları, bucket adı
+    veya iç ağ ayrıntıları hata metninde bulunabilir. Teknik neden loglanır;
+    istemci yalnız yeniden denenebilir, sabit bir sözleşme görür.
+    """
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "storage_unavailable"
+
+
 async def app_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)
     return error_response(request, status_code=exc.status_code, code=exc.code, message=exc.message)

@@ -166,7 +166,9 @@ class TestBlueprintRouter:
         }
 
         assert len(blueprint_yollari) == 7, f"blueprint yolları: {sorted(blueprint_yollari)}"
-        assert len(yollar) == 40, f"yol sayısı değişmiş: {len(yollar)}"
+        # Kaynak bağlamı, privacy ve ders AI politikasıyla 33 olan sözleşmeye
+        # blueprint ailesi yedi, ingestion yeniden denemesi bir path ekler.
+        assert len(yollar) == 41, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

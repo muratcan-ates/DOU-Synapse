@@ -21,13 +21,20 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, select, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseInstructorDep, CourseMemberDep, SessionDep
+from app.api.deps import (
+    CourseContext,
+    CourseInstructorDep,
+    CourseMemberDep,
+    PageDep,
+    SessionDep,
+)
 from app.core.config import get_settings
 from app.core.errors import ConflictError, NotFoundError, RateLimitError, ValidationError
+from app.core.pagination import decode_time_cursor, encode_time_cursor
 from app.core.rate_limit import get_concurrency_gate, get_limiter
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
 from app.modules.assessment import question_gen
@@ -41,6 +48,7 @@ from app.schemas.assessment import (
     TopicOut,
     public_payload,
 )
+from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["assessment"])
 
@@ -91,7 +99,10 @@ async def create_topic(
 
 
 @router.get("/topics", response_model=list[TopicOut])
-async def list_topics(context: CourseMemberDep, session: SessionDep) -> list[TopicOut]:
+async def list_topics(
+    context: CourseMemberDep,
+    session: SessionDep,
+) -> list[TopicOut]:
     """Konu listesi. Dersin tüm üyeleri (öğrenci + eğitmen) görebilir."""
     result = await session.execute(
         select(Topic).where(Topic.course_id == context.course_id).order_by(Topic.created_at)
@@ -109,7 +120,25 @@ async def _question_out(
 ) -> QuestionOut:
     """Tek soruyu rolüne göre biçimler. Liste ucu toplu sürümü kullanır."""
     refs = await load_source_refs(session, [question.source_chunk_id])
-    return _build_out(question, context=context, source=refs.get(question.source_chunk_id))
+    stale = await _source_stale_map(session, [question.source_chunk_id])
+    return _build_out(
+        question,
+        context=context,
+        source=refs.get(question.source_chunk_id),
+        source_stale=stale.get(question.source_chunk_id, False),
+    )
+
+
+async def _source_stale_map(session: AsyncSession, chunk_ids: list[UUID]) -> dict[UUID, bool]:
+    """Kaynak belgesi açıkça yeni sürümle değiştirilmiş chunk'ları toplu bulur."""
+    if not chunk_ids:
+        return {}
+    rows = await session.execute(
+        select(Chunk.id, Document.superseded_at)
+        .join(Document, Document.id == Chunk.document_id)
+        .where(Chunk.id.in_(set(chunk_ids)))
+    )
+    return {chunk_id: superseded_at is not None for chunk_id, superseded_at in rows}
 
 
 def _build_out(
@@ -143,13 +172,14 @@ async def _load_question(session: AsyncSession, question_id: UUID, course_id: UU
     return question
 
 
-@router.get("/questions", response_model=list[QuestionOut])
+@router.get("/questions", response_model=PageOut[QuestionOut])
 async def list_questions(
     context: CourseMemberDep,
     session: SessionDep,
+    page: PageDep,
     status_filter: Annotated[QuestionStatus | None, Query(alias="status")] = None,
     topic_id: Annotated[UUID | None, Query()] = None,
-) -> list[QuestionOut]:
+) -> PageOut[QuestionOut]:
     """Soru havuzu.
 
     Öğrenci için `status` parametresi **ne gelirse gelsin** `approved`'a sabitlenir;
@@ -167,14 +197,37 @@ async def list_questions(
     if topic_id is not None:
         query = query.where(Question.topic_id == topic_id)
 
+    if page.cursor is not None:
+        created_at, row_id = decode_time_cursor(page.cursor)
+        query = query.where(tuple_(Question.created_at, Question.id) < (created_at, row_id))
+
     questions = list(
-        (await session.execute(query.order_by(Question.created_at.desc()))).scalars().all()
+        (
+            await session.execute(
+                query.order_by(Question.created_at.desc(), Question.id.desc()).limit(page.limit + 1)
+            )
+        )
+        .scalars()
+        .all()
     )
-    refs = await load_source_refs(session, [question.source_chunk_id for question in questions])
-    return [
-        _build_out(question, context=context, source=refs.get(question.source_chunk_id))
-        for question in questions
+    visible = questions[: page.limit]
+    refs = await load_source_refs(session, [question.source_chunk_id for question in visible])
+    stale = await _source_stale_map(session, [question.source_chunk_id for question in visible])
+    items = [
+        _build_out(
+            question,
+            context=context,
+            source=refs.get(question.source_chunk_id),
+            source_stale=stale.get(question.source_chunk_id, False),
+        )
+        for question in visible
     ]
+    next_cursor = (
+        encode_time_cursor(visible[-1].created_at, visible[-1].id)
+        if len(questions) > page.limit
+        else None
+    )
+    return PageOut(items=items, next_cursor=next_cursor)
 
 
 @router.post("/questions/generate", response_model=QuestionGenerationOut)

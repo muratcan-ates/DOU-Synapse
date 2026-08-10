@@ -57,6 +57,31 @@ export function Loading({ label = "Yükleniyor…" }: { label?: string }) {
   );
 }
 
+/** Beş sayfalı listenin ortak devam/hata yüzeyi (FR-160...FR-163). */
+export function LoadMore({
+  hasMore,
+  busy,
+  error,
+  onLoadMore,
+}: {
+  hasMore: boolean;
+  busy: boolean;
+  error?: string | null;
+  onLoadMore: () => void;
+}) {
+  if (!hasMore && !error) return null;
+  return (
+    <div className="mt-4 flex flex-col items-center gap-2">
+      {error && <ErrorNote message={error} onRetry={onLoadMore} />}
+      {hasMore && (
+        <Button variant="secondary" disabled={busy} onClick={onLoadMore}>
+          {busy ? "Yükleniyor…" : "Devamını yükle"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /** Bileşen `ms` milisaniyedir ekranda mı? Zamanlayıcı sökülmede temizlenir. */
 function useElapsedBeyond(ms: number): boolean {
   const [elapsed, setElapsed] = useState(false);

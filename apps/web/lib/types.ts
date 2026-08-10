@@ -1,5 +1,10 @@
 /** Backend şemalarıyla birebir sözleşmeler (apps/api/app/schemas). */
 
+export interface Page<T> {
+  items: T[];
+  next_cursor: string | null;
+}
+
 export interface Course {
   id: string;
   code: string;
@@ -20,6 +25,9 @@ export interface CourseDocument {
   chunk_count: number;
   error_message: string | null;
   created_at: string;
+  /** T508: açıkça yeni sürümle değiştirilmiş belge; arayüz bunu rozetle gösterir. */
+  superseded_at?: string | null;
+  supersedes_document_id?: string | null;
 }
 
 export interface ChunkPreview {

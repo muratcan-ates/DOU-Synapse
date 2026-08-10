@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, Path, Request
+from fastapi import Depends, Path, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +25,25 @@ from app.models.core import CourseMembership, MembershipRole, MembershipStatus
 from app.modules.assessment import exam_state
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+
+@dataclass(frozen=True, slots=True)
+class PageParams:
+    limit: int
+    cursor: str | None
+
+
+def get_page_params(
+    settings: SettingsDep,
+    limit: Annotated[int | None, Query(ge=1)] = None,
+    cursor: Annotated[str | None, Query(min_length=1)] = None,
+) -> PageParams:
+    """İstemcinin boyunu sunucu üst sınırına kırpar; büyük istek 422 olmaz."""
+    requested = settings.page_size_default if limit is None else limit
+    return PageParams(limit=min(requested, settings.page_size_max), cursor=cursor)
+
+
+PageDep = Annotated[PageParams, Depends(get_page_params)]
 
 
 def get_principal(request: Request, settings: SettingsDep) -> Principal:
