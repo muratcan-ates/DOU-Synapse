@@ -228,7 +228,7 @@ function HealthBadge({ label, status }: { label: string; status: string }) {
   const tone =
     normalized === "ok" || normalized === "ready" || normalized === "healthy"
       ? "success"
-      : normalized === "warming" || normalized === "degraded"
+      : normalized === "warming" || normalized === "degraded" || normalized === "disabled"
         ? "warning"
         : "danger";
   return (
@@ -245,6 +245,7 @@ function healthStatusLabel(status: string): string {
     healthy: "Sağlıklı",
     warming: "Hazırlanıyor",
     degraded: "Kısıtlı",
+    disabled: "Kapalı",
     failed: "Hata",
     unavailable: "Ulaşılamıyor",
   };
