@@ -9,7 +9,7 @@ from sqlalchemy import text as sql_text
 
 from app.modules.ingestion.embedding import EMBEDDING_DIM, HashingEmbeddingProvider
 from tests.conftest import UserFactory
-from tests.test_ingestion import make_pdf
+from tests.factories import create_course, make_pdf
 
 
 def cosine(a: list[float], b: list[float]) -> float:
@@ -52,9 +52,7 @@ class TestPipelineEmbedding:
         self, client: AsyncClient, users: UserFactory, admin_engine
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = (
-            await client.post("/courses", json={"code": "COME301", "title": "OS"}, headers=ayse)
-        ).json()["id"]
+        course_id = await create_course(client, ayse, "COME301", title="OS")
         await client.post(
             f"/courses/{course_id}/documents",
             files={"file": ("d.pdf", make_pdf(["Deadlock kosullari"]), "application/pdf")},
@@ -82,9 +80,7 @@ class TestPipelineEmbedding:
     ) -> None:
         """pgvector kosinüs araması, ilgili sayfayı ilgisiz sayfadan öne çıkarmalı."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = (
-            await client.post("/courses", json={"code": "COME301", "title": "OS"}, headers=ayse)
-        ).json()["id"]
+        course_id = await create_course(client, ayse, "COME301", title="OS")
         pdf = make_pdf(
             [
                 "Deadlock icin dort Coffman kosulu birlikte saglanmalidir",

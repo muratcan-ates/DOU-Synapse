@@ -33,6 +33,10 @@ jobs:
       PGUSER: postgres
       PGPASSWORD: postgres
       PG_BIN: /usr/bin
+      # conftest test DB adını TEST_DB_NAME'den (yoksa worktree slug'ından) türetir.
+      # Bu satır olmadan runner'da ad dou_synapse_test_dou_synapse olur ve aşağıdaki
+      # iki DSN başka bir veritabanını gösterir — PR #4'te 331 test kurulumda düştü.
+      TEST_DB_NAME: dou_synapse_test
       TEST_ADMIN_DSN: postgresql+psycopg://postgres:postgres@localhost/dou_synapse_test
       TEST_APP_DSN: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse_test
 
@@ -190,6 +194,38 @@ jobs:
       - run: node scripts/contrast.mjs
       - run: bun run build
 
+  docs:
+    name: Belgeler — canlı sayı kapısı
+    runs-on: ubuntu-latest
+    # Kendi işi, çünkü kapı HER İKİ araç zincirini birden ister: backend sayısı
+    # `pytest --collect-only`den, frontend ve E2E sayıları `bun`dan gelir. `api` ya da
+    # `web` işine iliştirilseydi kapı yalnız yarısını ölçebilir, kalanı için sabit sayıya
+    # düşerdi — kapının varlık sebebi tam olarak o sabit sayıdır.
+    #
+    # Veritabanı YOK: `--collect-only` test toplar, koşturmaz; `playwright --list`
+    # yapılandırmayı okur, sunucu ayağa kaldırmaz. Kapı saniyeler sürer ve `api`
+    # işinin yavaş geri bildirimini beklemez.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: oven-sh/setup-bun@v2
+
+      - name: API bağımlılıkları
+        working-directory: apps/api
+        run: |
+          uv venv --python 3.12
+          uv pip install -e ".[dev]"
+
+      - name: Web bağımlılıkları
+        working-directory: apps/web
+        run: bun install --frozen-lockfile
+
+      - name: Belgelerdeki canlı sayılar ölçümle uyuşuyor mu
+        run: node scripts/docs_check.mjs
+
   e2e:
     name: Uçtan uca — gerçek API + tarayıcı
     runs-on: ubuntu-latest
@@ -215,6 +251,7 @@ jobs:
       # E2E kendi web sunucusunu 3100'de ayağa kaldırır; API 8000'de koşar.
       E2E_API_URL: http://localhost:8000
       E2E_PORT: 3100
+      E2E_DATABASE_NAME: dou_synapse
 
     steps:
       - uses: actions/checkout@v4
@@ -240,6 +277,9 @@ jobs:
           ENVIRONMENT: local
           DEV_AUTH_ENABLED: "true"
           DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse
+          # Worker DSN'siz drain dou_app'e düşer (app/worker.py) ve temiz DB'de
+          # ingestion yetki hatasıyla kırılır — rol ayrımı RLS'in parçası.
+          WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@localhost/dou_synapse
           CORS_ORIGINS: '["http://localhost:3100"]'
         run: |
           uv venv --python 3.12

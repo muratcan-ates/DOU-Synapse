@@ -51,7 +51,7 @@ function MembersView() {
    * localStorage'dan ilk efektte okunur, o ana kadar "eğitmen değil" varsayımı
    * eğitmene bir kare boyunca yanlış ekran gösterirdi.
    */
-  const { user, isInstructor, ready } = useSession();
+  const { user, isInstructor, ready } = useSession(courseId);
 
   return (
     <div>
@@ -111,13 +111,22 @@ function MemberRoster({
     () => api.get<Member[]>(`/courses/${courseId}/members`),
     [courseId],
   );
-  const { data: members, error, loading, reload } = useResource(fetchMembers, [courseId]);
+  const {
+    data: members,
+    error,
+    errorKind,
+    errorRequestId,
+    loading,
+    reload,
+  } = useResource(fetchMembers, [courseId]);
 
   return (
     <>
       <AddMemberForm courseId={courseId} onAdded={reload} />
 
-      {error && <ErrorNote message={error} />}
+      {error && (
+        <ErrorNote message={error} kind={errorKind} requestId={errorRequestId} />
+      )}
       {loading && <Loading />}
 
       {members?.length === 0 && (

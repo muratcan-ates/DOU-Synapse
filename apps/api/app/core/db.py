@@ -9,9 +9,10 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -85,3 +86,21 @@ async def rls_session(user_id: UUID) -> AsyncIterator[AsyncSession]:
     async with factory() as session, session.begin():
         await set_rls_context(session, user_id)
         yield session
+
+
+async def db_now(session: AsyncSession) -> datetime:
+    """İşlemin veritabanı saati.
+
+    İşlem içinde sabittir, dolayısıyla aynı istekte yapılan iki karşılaştırma
+    (süre doldu mu / kalan kaç saniye) tutarlıdır.
+
+    Burada yaşamasının sebebi: saat üç ayrı ürün kuralının girdisi oldu — sınav
+    süresi (`modules/assessment/exam_state.py`), asistan kilidi (`api/deps.py`) ve
+    ileride sınav yayın penceresi. Bunları bir sınav modülünden saat almaya
+    zorlamak, ikinci bir `SELECT now()` sarmalayıcısının yazılmasının en kısa
+    yoluydu (Anayasa XI).
+    """
+    value = await session.scalar(select(func.now()))
+    if value is None:  # pragma: no cover - now() hiçbir zaman NULL dönmez
+        raise RuntimeError("veritabanı saati okunamadı")
+    return value

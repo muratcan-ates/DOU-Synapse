@@ -88,6 +88,8 @@ class LlmTask(StrEnum):
     Gerçek sağlayıcı bu alanı kullanmaz — prompt zaten göreve göre kurulur.
     Alan, deterministik sahte sağlayıcının hangi şemayı üreteceğini bilmesi
     için var; çevrimdışı demo (PLAN plan C) soru üretimini de göstermek zorunda.
+    Sahte sağlayıcı bir dönem bunu prompt metninden tahmin ediyordu; artık
+    etmiyor, çünkü tahmin başka bir modülün cümlelerine bağlı bir kuplajdı.
     """
 
     CHAT = "chat"
@@ -113,9 +115,9 @@ class LlmRequest:
     #: Guardrail ihlali sonrası yeniden üretim. Prompt zaten sıkılaşır; sahte
     #: sağlayıcı da bu bayrakla ihlalsiz cevaba geçer.
     strict_retry: bool = False
-    #: Varsayılan `CHAT`: alanı bilmeyen çağıranlar bugünkü davranışı korur.
-    #: Sahte sağlayıcı, alan verilmemişse prompt'un biçiminden görevi çıkarır —
-    #: gerekçe ve o çıkarımın nasıl kilitlendiği `fake.py`'de.
+    #: Varsayılan `CHAT`. Bu bir tahmin değil beyandır: soru üretimi çağrı
+    #: yerinde `QUESTION_GEN` gönderir (`question_gen.resolve_completion`),
+    #: geri kalan her yol gerçekten sohbettir.
     task: LlmTask = LlmTask.CHAT
 
 

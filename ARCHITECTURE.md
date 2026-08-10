@@ -131,7 +131,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 15 tablo (`supabase/migrations/0001,0003,0004,0005`):
+Kodda gerçekten var olan 25 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014`): <!-- docs-check: tables.count = 25 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -338,6 +338,24 @@ Mod politikaları backend'de:
 | `practice` sınav | **açık** (`POST /exams/{id}/hint`, kademe mastery çarpanına girer) | anında |
 | `exam` sınav | **kapalı** — `hint` ucu reddeder, `hint_level > 0` reddedilir | sınav sonunda |
 | sohbet `exam` modu | **kapalı** — `POST /chat` `exam` modunu hiç kabul etmez (422) | — |
+| **yürüyen `exam` oturumu** | **asistanın tamamı kapalı** — `POST /chat` (her mod), `GET /chat/sessions` ve geçmiş okuma 403 döner (`api/deps.py::require_assistant_unlocked`) | — |
+
+Son satır 002'de eklendi ve yukarıdakilerden farklı bir eksende çalışıyor. İlk üçü
+**mod** politikasıdır: istemcinin ne istediğine bakar. Sonuncusu **durum**
+politikasıdır: öğrencinin o anda sınav verip vermediğine bakar. Ayrım gerekliydi
+çünkü mod ekseni tek başına delinebiliyordu — öğrenci sınavı başlatıp ikinci
+sekmede `mode=qa` ile sınav sorusunun tam, atıflı cevabını alabiliyordu.
+
+Kilidin üç sınırı, üçü de bilinçli:
+
+- **Ders bazlıdır.** A dersinde sınav veren öğrenci B dersinin asistanını
+  kullanabilir. Kilidin amacı o sınavın bütünlüğü, öğrencinin gününü kapatmak
+  değil.
+- **Yürüyen oturuma bağlıdır, bitmemiş oturuma değil.** Süresi dolmuş ama
+  kapatılmamış oturum kilitlemez; aksi hâlde sınav sekmesini kapatıp giden bir
+  öğrenci asistanını kalıcı olarak kaybederdi.
+- **Yalnız değerlendirilene uygulanır.** Kendi dersinde oturum açan eğitmen muaf;
+  muafiyet sunucuda ve sorgudan önce.
 
 ### Açık uçlu cevap değerlendirme (hocanın "eksiği söyle" gereksinimi)
 
@@ -376,7 +394,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. 15 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani
+  yazar. 25 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 25 -->
   tablo sahibi bile politikalara tabidir.
   **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
   yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`
@@ -461,10 +479,10 @@ DOU-Synapse/
 │           ├── models/ schemas/ core/
 │           └── worker.py       # /drain ile tetiklenen job consumer
 ├── evaluation/                 # gold_set/, calibration.md, evaluate.py, results/
-├── sample_data/                # İşletim Sistemleri paketi (8 dosya → 33 chunk)
+├── sample_data/                # İşletim Sistemleri paketi (sayılar README'de)
 ├── docs/                       # runbook, demo-script, instructor-guide, student-guide,
 │                               # kvkk, test-report, security, deployment, images/
-├── supabase/                   # migrations/ (0001,0003,0004,0005), tests/ (RLS kanıtı),
+├── supabase/                   # migrations/ (numaraları §3'te), tests/ (RLS kanıtı),
 │                               # local_dev_setup.sql, seed_demo.sql
 ├── .github/workflows/ci.yml    # api: ruff+format+mypy+pytest+RLS · web: lint+tsc · e2e
 ├── docker-compose.yml          # db (pgvector:pg16) + api — fallback profili, web YOK

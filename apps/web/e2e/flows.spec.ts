@@ -13,17 +13,19 @@
  * atlanamaz.
  *
  * Test kendi verisini kurar; başka bir testin bıraktığı duruma güvenmez.
- * Temizlik bilinçli olarak yapılmıyor: her vaka kendi dersini açtığı için
- * artıklar birbirine değmiyor ve silme ucu (ders silme) sözleşmede yok.
+ * Ders kodu koşu kimliği taşır ve global teardown yalnız o koşunun derslerini
+ * doğrudan izole test veritabanından temizler. Ürün API'sine silme yetkisi eklenmez.
  *
  * Koşturma (API :8010, web sunucusunu paket kendi derleyip başlatır):
- *   E2E_API_URL=http://localhost:8010 node_modules/.bin/playwright test
+ *   E2E_API_URL=http://localhost:8000 node_modules/.bin/playwright test
  *
  * `bunx playwright` KULLANMAYIN: ayrı bir kopya indirir ve "two different
  * versions" hatası verir.
  */
 
 import { expect, test, type Page } from "@playwright/test";
+
+import { createE2eCourseIdentity } from "./fixtures";
 
 /*
  * Varsayılan `playwright.config.ts` ile AYNI olmalı ve öyle kalmalı: config
@@ -91,12 +93,11 @@ async function apiGet<T>(path: string, user: DemoUser): Promise<T> {
  * sonra çakışan test, hiç olmayan testten kötüdür - yeşil bekleyip kırmızı bulan
  * ekip önce teste güvenmeyi bırakır.
  */
-let counter = 0;
 async function createCourse(suffix: string) {
-  const unique = `${suffix}${Date.now().toString(36).slice(-5)}${counter++}`;
+  const identity = createE2eCourseIdentity(suffix);
   return apiPost(
     "/courses",
-    { code: `E2E${unique}`.slice(0, 32), title: `E2E Test Dersi ${suffix}` },
+    identity,
     AYSE,
   );
 }
@@ -208,7 +209,10 @@ async function apiUpload(courseId: string, fileName: string, bytes: Buffer, user
  */
 async function belgeHazirOlanaKadarBekle(courseId: string, user: DemoUser) {
   for (let deneme = 0; deneme < 40; deneme++) {
-    const belgeler = await apiGet<BelgeOzeti[]>(`/courses/${courseId}/documents`, user);
+    // 10 Ağu: liste uçları sayfalama zarfına geçti; gövde artık {items, next_cursor}.
+    const belgeler = (
+      await apiGet<{ items: BelgeOzeti[] }>(`/courses/${courseId}/documents`, user)
+    ).items;
     if (belgeler.length > 0 && belgeler.every((b) => b.status === "completed")) return;
     const bozuk = belgeler.find((b) => b.status === "failed");
     if (bozuk) throw new Error(`belge işlenemedi: ${bozuk.file_name}`);
@@ -335,10 +339,10 @@ async function sohbetGonder(page: Page, etiket: "Sorun" | "Denemen", metin: stri
  * ---------------------------------------------------------------------- */
 
 test.describe("giriş", () => {
-  test("demo kartı oturum açar ve ders listesine götürür", async ({ page }) => {
+  test("demo kartı oturum açar ve ürün paneline götürür", async ({ page }) => {
     await page.goto("/");
     await page.getByText("Ayşe Hoca").click();
-    await expect(page).toHaveURL(/\/courses/);
+    await expect(page).toHaveURL(/\/dashboard$/);
   });
 
   test("bozuk oturum verisi uygulamayı ÇÖKERTMEZ", async ({ page }) => {
@@ -373,7 +377,7 @@ test.describe("materyal yönetimi", () => {
       mimeType: "application/pdf",
       buffer: KAYNAK_PDF,
     });
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeVisible({ timeout: 15_000 });
 
     const row = page.locator("li", { hasText: KAYNAK_PDF_ADI });
 
@@ -394,12 +398,12 @@ test.describe("materyal yönetimi", () => {
     await expect(page.getByText("Evet, sil")).toBeVisible();
     await page.getByRole("button", { name: "Vazgeç" }).click();
     await expect(page.getByText("Evet, sil")).toBeHidden();
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeVisible();
+    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeVisible();
 
     // Gerçekten silme — ve TAM SAYFA YENİLEME OLMAMALI
     await silButonu.click();
     await row.getByRole("button", { name: "Evet, sil" }).click();
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeHidden({ timeout: 15_000 });
 
     const navType = await page.evaluate(
       () => performance.getEntriesByType("navigation")[0]?.entryType &&
@@ -458,6 +462,54 @@ test.describe("sohbet — ürünün tezi", () => {
     await expect(page.locator(".text-danger")).toHaveCount(0);
     // Atıf da yok: dayanaksız cevabın yanına kaynak kartı iliştirilmez.
     await expect(page.locator("blockquote")).toHaveCount(0);
+  });
+
+  test("öğrenci sorunlu yanıtı izinle öğretmen incelemesine açar", async ({ page }) => {
+    const course = await createCourse("KALITE");
+    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+    await signIn(page, BURAK);
+    await page.goto(`/courses/${course.id}/chat`);
+
+    await sohbetGonder(page, "Sorun", "Deadlock koşullarını açıklar mısın?");
+    await expect(page.getByText("Materyalde dayanak bulunamadı")).toBeVisible({
+      timeout: 30_000,
+    });
+    await page.getByRole("button", { name: "Sorun var" }).click();
+    await page.getByLabel("Sorun türü").selectOption("citation_problem");
+    await page
+      .getByLabel("Açıklama (isteğe bağlı)")
+      .fill("Kaynak görünmedi; öğretmenim bu örneği inceleyebilir.");
+    await page.getByRole("checkbox").check();
+    await page.getByRole("button", { name: "Geri bildirimi kaydet" }).click();
+    await expect(page.getByText(/öğretmen incelemesine açık/)).toBeVisible();
+
+    // Aynı tarayıcıda gerçek çıkış/giriş: rol önbelleği öğrenci kimliğini taşımamalı.
+    await page.getByRole("button", { name: "Çıkış" }).click();
+    const teacherButton = page.getByRole("button", { name: /Ayşe Hoca/ });
+    await expect(teacherButton).toBeVisible();
+    await teacherButton.click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+
+    // Keep the role switch inside Next.js client navigation. The test helper's
+    // init script intentionally restores Burak on a full page load.
+    await page.getByRole("link", { name: "Tüm dersler" }).click();
+    await expect(page).toHaveURL(/\/courses$/);
+    const courseLink = page.getByRole("link", { name: new RegExp(course.code) });
+    await expect(courseLink).toBeVisible();
+    await courseLink.click();
+    await expect(page).toHaveURL(new RegExp(`/courses/${course.id}$`));
+    await page.getByRole("link", { name: "AI kalite", exact: true }).click();
+    await expect(page).toHaveURL(/\/quality$/);
+
+    await expect(page.getByRole("heading", { name: "AI kalite" })).toBeVisible();
+    await expect(page.getByText("Burak Yılmaz")).toBeVisible();
+    await expect(page.getByText("Deadlock koşullarını açıklar mısın?")).toBeVisible();
+    await expect(
+      page.getByText("Öğrenci notu: Kaynak görünmedi; öğretmenim bu örneği inceleyebilir."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Puanlanan yanıt", { exact: true }).locator("xpath=following-sibling::dd[1]"),
+    ).toHaveText("1");
   });
 
   test("Sokratik mod cevap vermez, kaynaklı ipucu verir", async ({ page }) => {
@@ -599,13 +651,19 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     // düğmenin kendi etiketi de yeni duruma döner.
     await page.getByRole("button", { name: /Onayla ve öğrenciye aç/ }).click();
     await expect(page.getByText(/Soru onaylandı/)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Onaylandı" })).toBeVisible();
+    /*
+     * `exact: true` şart: havuzda onaylı soru olunca üstteki süzgeç çipi de
+     * "Onaylandı (1)" oluyor ve satırın erişilebilir adı da bu kelimeyi
+     * taşıyor. Gevşek eşleşme üç öğeye birden uyup strict mode ihlali veriyordu
+     * — testin ölçmek istediği tek şey EYLEM düğmesinin yeni etiketi.
+     */
+    await expect(page.getByRole("button", { name: "Onaylandı", exact: true })).toBeVisible();
 
     // Red de öyle.
     await satirlar.nth(1).click();
     await page.getByRole("button", { name: /^Reddet$/ }).click();
     await expect(page.getByText(/Soru reddedildi/)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Reddedildi" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reddedildi", exact: true })).toBeVisible();
   });
 
   test("üretim muhasebesi GİZLENMEZ ama hata gibi de gösterilmez", async ({ page }) => {
@@ -715,6 +773,53 @@ test.describe("sınav provası", () => {
     await page.getByRole("button", { name: "Sınav başlat" }).click();
     await expect(page.getByRole("button", { name: "Cevabı gönder" })).toBeVisible();
     await expect(ipucu).toHaveCount(0);
+  });
+
+  test("sınav başlayınca Asistan AYNI SEKMEDE kilitlenir, bitince açılır", async ({ page }) => {
+    /*
+     * İki ayrı kusurun testi, ikisi de canlı tarayıcıda bulundu.
+     *
+     * Birincisi ve asıl olanı: kilit sunucuda çalışıyordu ama açık→kilitli
+     * geçişi izlenmiyordu. Kilit yoklaması yalnız KİLİTLİYKEN koşuyor (kilit
+     * kalkınca kendiliğinden dursun diye) ve bu, izlenmesi gereken kenarı ters
+     * seçmekti: öğrenci sınavı başlattığı sekmede "Asistan" bağlantısı açık
+     * kalıyordu. Yeni sekmede kilitliydi, backend her yolu 403 ile reddediyordu
+     * — yani güvenlik açığı değil, ama etkin görünüp iş yapmayan bir yüzey
+     * (Anayasa XI). Bu vaka o geçişi sabitler.
+     *
+     * İkincisi: kilidin GERİ AÇILDIĞI. Fazla kapatan bir kilit, kapatmayan bir
+     * kilit kadar kusurludur ve sınavını bitiren öğrenciyi asistandan mahrum
+     * bırakırdı.
+     */
+    const havuz = await soruHavuzuKur("KILIT");
+    test.skip(havuz.taslaklar.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    await hepsiniOnayla(havuz);
+
+    const asistanBaglantisi = page.getByRole("link", { name: "Asistan" });
+    const kilitliSekme = page.getByText("Kilitli");
+
+    await signIn(page, BURAK);
+    await page.goto(`/courses/${havuz.course.id}/exam`);
+    await expect(asistanBaglantisi).toBeVisible();
+
+    await page.getByRole("button", { name: "Sınav başlat" }).click();
+    await expect(page.getByRole("button", { name: "Cevabı gönder" })).toBeVisible();
+
+    // Sayfa YENİLENMEDEN: geçişin izlendiğinin kanıtı burası.
+    await expect(kilitliSekme).toBeVisible();
+    await expect(asistanBaglantisi).toHaveCount(0);
+
+    // Sunucu da aynı kararı veriyor: kilitli sekme bir süs değil.
+    await page.goto(`/courses/${havuz.course.id}/chat`);
+    await expect(page.getByText(/süren bir sınav oturumun var/)).toBeVisible();
+    await expect(page.getByPlaceholder("Ders materyaline soru sorun…")).toHaveCount(0);
+
+    await page.goto(`/courses/${havuz.course.id}/exam`);
+    await page.getByRole("button", { name: "Sınavı bitir" }).click();
+    await page.getByRole("button", { name: "Bitir ve sonucu gör" }).click();
+
+    await expect(asistanBaglantisi).toBeVisible();
+    await expect(kilitliSekme).toHaveCount(0);
   });
 
   test("onaylanmış sorusu olmayan derste sınav bir HATA değil, boş durumdur", async ({ page }) => {

@@ -6,9 +6,59 @@ teknik ayrıntı loglara, anlaşılır Türkçe mesaj kullanıcıya gider.
 
 from __future__ import annotations
 
+import uuid
+
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+
+class ErrorDetail(BaseModel):
+    """Hata zarfının gövdesi. Üç handler da bunu üretir, kimse elle sözlük yazmaz."""
+
+    code: str
+    message: str
+    #: İsteği loglarda bulmaya yarayan kimlik. **Asla boş dönmez** — istek
+    #: middleware'den geçmediyse (doğrudan çağrılan handler, bazı test yolları)
+    #: burada üretilir. "Bazen var" bir alan, istemcide "bazen göster" demektir
+    #: ve kullanıcıya destek kodu vaat edip vermemek en kötüsüdür.
+    request_id: str
+
+
+class ErrorEnvelope(BaseModel):
+    """Projenin TEK hata sözleşmesi: `{"error": {"code", "message", "request_id"}}`.
+
+    Zarf 002'ye kadar `{"code", "message"}` idi ve istek kimliği yalnız
+    `X-Request-ID` yanıt başlığında taşınıyordu. İki sorun vardı: çapraz-origin
+    JavaScript o başlığı `expose_headers` olmadan okuyamıyor, ve başlık
+    sözleşmenin parçası değil taşıyıcının ayrıntısı. Kimliği gövdeye almak,
+    tarayıcının başlık politikasına bağımlılığı tamamen kaldırıyor.
+
+    Zarfı router içinde yeniden tanımlamak yasak (Anayasa XI): bu depoda aynı
+    hata bir kez `chat.py` ile `schemas/chat.py` arasında yaşandı ve iki taraf
+    ayrıştığında her istek 422 dönüyordu.
+    """
+
+    error: ErrorDetail
+
+
+def request_id_of(request: Request) -> str:
+    """İsteğin kimliği; middleware koymadıysa üretir.
+
+    Üretme dalı bir kaçış değil, fail-closed bir varsayılan: kimliksiz bir hata
+    yanıtı, kullanıcıya gösterilecek destek kodunun olmadığı anlamına gelir.
+    """
+    existing = getattr(request.state, "request_id", None)
+    return existing if isinstance(existing, str) and existing else uuid.uuid4().hex
+
+
+def error_response(request: Request, *, status_code: int, code: str, message: str) -> JSONResponse:
+    """Tek çıkış noktası. Hata yanıtı üreten her yol buradan geçer."""
+    envelope = ErrorEnvelope(
+        error=ErrorDetail(code=code, message=message, request_id=request_id_of(request))
+    )
+    return JSONResponse(status_code=status_code, content=envelope.model_dump())
 
 
 class AppError(Exception):
@@ -54,12 +104,48 @@ class PayloadTooLargeError(AppError):
     code = "payload_too_large"
 
 
-async def app_error_handler(_: Request, exc: Exception) -> JSONResponse:
+class RateLimitError(AppError):
+    """Kota aşıldı. `api/chat.py`'den buraya taşındı (002/FR-222).
+
+    İkinci bir modül aynı hata tipine ihtiyaç duyduğu an, hata sözlüğünün tek
+    yeri burasıdır; bir uç dosyasının içinde yaşayan hata tipi, ikinci ucu o uca
+    bağımlı kılardı.
+    """
+
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "rate_limited"
+
+
+class ConcurrencyLimitError(AppError):
+    """Aynı kullanıcının hâlâ süren bir işi var (FR-222).
+
+    409, 429 DEĞİL. İkisi farklı sorular: 429 "çok sık istedin, şu kadar bekle",
+    409 ise "senin başlattığın iş hâlâ sürüyor". Kullanıcının yapması gereken de
+    farklı, dolayısıyla istemcinin ikisini ayırt edebilmesi gerekiyor. Hata
+    zarfı `{code, message, request_id}` olarak sabit (lider sözleşmesi) ve
+    `Retry-After` başlığı çapraz-origin JavaScript'e `expose_headers` olmadan
+    görünmüyor — geriye ayırt edici kanal olarak durum kodu ve `code` kalıyor.
+    """
+
+    status_code = status.HTTP_409_CONFLICT
+    code = "concurrent_request"
+
+
+class StorageUnavailableError(AppError):
+    """Belge deposuna geçici olarak erişilemiyor.
+
+    Sağlayıcının ham yanıtı kullanıcıya taşınmaz: servis anahtarları, bucket adı
+    veya iç ağ ayrıntıları hata metninde bulunabilir. Teknik neden loglanır;
+    istemci yalnız yeniden denenebilir, sabit bir sözleşme görür.
+    """
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "storage_unavailable"
+
+
+async def app_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={"error": {"code": exc.code, "message": exc.message}},
-    )
+    return error_response(request, status_code=exc.status_code, code=exc.code, message=exc.message)
 
 
 #: Pydantic hata türü → kullanıcıya gösterilecek Türkçe cümle şablonu.
@@ -104,7 +190,7 @@ def _field_label(location: tuple[object, ...]) -> str:
     return _FIELD_LABELS.get(parts[-1], parts[-1])
 
 
-async def validation_error_handler(_: Request, exc: Exception) -> JSONResponse:
+async def validation_error_handler(request: Request, exc: Exception) -> JSONResponse:
     """FastAPI'nin doğrulama hatasını projenin tek hata zarfına çevirir.
 
     Yalnız İLK hata anlatılır: kullanıcıya yedi maddelik bir liste sunmak, tek bir
@@ -119,23 +205,22 @@ async def validation_error_handler(_: Request, exc: Exception) -> JSONResponse:
     else:
         message = "Gönderilen veri geçersiz."
 
-    return JSONResponse(
+    return error_response(
+        request,
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-        content={"error": {"code": "validation_error", "message": message}},
+        code="validation_error",
+        message=message,
     )
 
 
-async def unhandled_error_handler(_: Request, exc: Exception) -> JSONResponse:
+async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
     """Beklenmeyen hatalar: ayrıntı loga, kullanıcıya genel mesaj."""
     from app.core.logging import get_logger
 
     get_logger("app.error").exception("beklenmeyen hata", exc_info=exc)
-    return JSONResponse(
+    return error_response(
+        request,
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": {
-                "code": "internal_error",
-                "message": "İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
-            }
-        },
+        code="internal_error",
+        message="İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
     )

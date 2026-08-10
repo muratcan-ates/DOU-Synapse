@@ -15,6 +15,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -109,20 +110,40 @@ async def worker_cleanup() -> AsyncIterator[None]:
     await worker.dispose()
 
 
-@pytest.fixture
-async def admin_engine() -> AsyncIterator[AsyncEngine]:
-    """Seed verisi için RLS'i atlayan bağlantı (tabloların sahibi)."""
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def _admin_engine_pool() -> AsyncIterator[AsyncEngine]:
+    """Oturum boyunca tek admin motoru; testler `admin_engine` üzerinden alır.
+
+    Her testte yeniden kurmanın kazancı yoktu, maliyeti her testte yeni bir bağlantı
+    havuzuydu. `loop_scope` da verilmek zorunda; yalnız `scope="session"` yazmak
+    pytest_asyncio'da her testi AssertionError ile düşürür.
+
+    Bunun bedeli: paylaşılan havuzun bağlantıları, ilk kullanıldıkları event loop'a
+    bağlıdır. Testler seri koştuğu için bu kurulum güvenli. Paralel koşu (pytest-xdist)
+    eklendiği gün ilk kırılacak yer burasıdır; o zaman `poolclass=NullPool` gerekir.
+
+    Ayrı ve gizli olmasının nedeni `clean_tables`: temizlik admin motoruna muhtaç,
+    `admin_engine` de temizliğe. Havuzu araya koymak bu döngüyü açar.
+    """
     engine = create_async_engine(ADMIN_DSN)
     yield engine
     await engine.dispose()
 
 
-@pytest.fixture(autouse=True)
-async def clean_tables(environment: None, admin_engine: AsyncEngine) -> AsyncIterator[None]:
-    async with admin_engine.begin() as conn:
+@pytest.fixture
+async def clean_tables(environment: None, _admin_engine_pool: AsyncEngine) -> AsyncIterator[None]:
+    """Testler arası tabloları boşaltır.
+
+    Artık autouse değil: veritabanına hiç dokunmayan testler de her seferinde 11 tablo
+    TRUNCATE ediyordu. Temizlik garantisi bilinçli olarak daraldı ve bu bilinçli —
+    DB'ye dokunan her fixture zinciri (`admin_engine`, `client`, `worker_engine`) bunu
+    zaten çekiyor, dolayısıyla veri gören her test yine temiz tabloyla başlıyor.
+    """
+    async with _admin_engine_pool.begin() as conn:
         await conn.execute(
             text(
-                "TRUNCATE mastery, answers, exam_sessions, questions, topics, "
+                "TRUNCATE platform_admin_access_audit, platform_admins, mastery, answers, "
+                "exam_sessions, questions, topics, "
                 "chunks, ingestion_jobs, documents, course_memberships, "
                 "courses, profiles RESTART IDENTITY CASCADE"
             )
@@ -131,7 +152,17 @@ async def clean_tables(environment: None, admin_engine: AsyncEngine) -> AsyncIte
 
 
 @pytest.fixture
-async def client() -> AsyncIterator[AsyncClient]:
+def admin_engine(clean_tables: None, _admin_engine_pool: AsyncEngine) -> AsyncEngine:
+    """Seed verisi için RLS'i atlayan bağlantı (tabloların sahibi).
+
+    Motoru istemek temizliği de istemek demek: admin motoruna dokunan bir test
+    tanım gereği veri yazıyor ya da okuyor.
+    """
+    return _admin_engine_pool
+
+
+@pytest.fixture
+async def client(clean_tables: None) -> AsyncIterator[AsyncClient]:
     from app.core.db import dispose_engine
     from app.main import create_app
 

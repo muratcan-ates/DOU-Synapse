@@ -56,6 +56,7 @@ const assistant = (
   socraticStage: null,
   cached: false,
   ...overrides,
+  feedback: overrides.feedback ?? null,
 });
 
 // ---------------------------------------------------------------------------
@@ -99,11 +100,13 @@ describe("Sokratik kademeler — sözleşme beş kademeli", () => {
   });
 });
 
-describe("abstention — iki durum ayrı ayrı adlandırılır", () => {
-  test("iki durumun da başlığı var ve birbirinden farklı", () => {
+describe("abstention — üç durum ayrı ayrı adlandırılır", () => {
+  test("üç durumun da başlığı var ve birbirinden farklı", () => {
     expect(ABSTENTION_LABEL.insufficient_context).not.toBe(ABSTENTION_LABEL.out_of_scope);
+    expect(ABSTENTION_LABEL.budget_exhausted).not.toBe(ABSTENTION_LABEL.out_of_scope);
     expect(ABSTENTION_LABEL.insufficient_context.length).toBeGreaterThan(0);
     expect(ABSTENTION_LABEL.out_of_scope.length).toBeGreaterThan(0);
+    expect(ABSTENTION_LABEL.budget_exhausted.length).toBeGreaterThan(0);
   });
 
   test("başlıklarda ünlem yok — abstention hata gibi görünmez", () => {
@@ -117,6 +120,7 @@ describe("abstention — iki durum ayrı ayrı adlandırılır", () => {
     expect(isAbstention(null)).toBe(false);
     expect(isAbstention("insufficient_context")).toBe(true);
     expect(isAbstention("out_of_scope")).toBe(true);
+    expect(isAbstention("budget_exhausted")).toBe(true);
   });
 });
 
@@ -279,6 +283,26 @@ describe("toBlocks — QA dökümü", () => {
     });
   });
 
+  test("günlük bütçe sınırı hata bloğuna dönüşmez", () => {
+    const blocks = toBlocks(
+      [
+        userMessage("u1", "Deadlock nedir?"),
+        assistant("a1", {
+          status: "budget_exhausted",
+          citations: [],
+          content: "Bu dersin günlük sohbet AI bütçesi doldu.",
+        }),
+      ],
+      { mode: "qa" },
+    );
+    expect(blocks[1]).toEqual({
+      kind: "abstention",
+      id: "a1",
+      text: "Bu dersin günlük sohbet AI bütçesi doldu.",
+      status: "budget_exhausted",
+    });
+  });
+
   test("QA modunda merdiven kurulmaz", () => {
     const blocks = toBlocks(
       [userMessage("u1", "soru"), assistant("a1", { socraticStage: "nudge" })],
@@ -411,6 +435,7 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
       citations: [citation()],
       socraticStage: "nudge",
       cached: false,
+      feedback: null,
     });
   });
 
@@ -424,6 +449,7 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
         status: null,
         socratic_stage: null,
         created_at: "2026-08-09T10:00:00Z",
+        feedback: null,
       },
       {
         id: "m1",
@@ -433,6 +459,7 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
         status: "answered",
         socratic_stage: "nudge",
         created_at: "2026-08-09T10:00:01Z",
+        feedback: null,
       },
     ];
     const fromServerHistory = toBlocks(fromHistory(history), { mode: "socratic" });
@@ -482,6 +509,7 @@ describe("önbellek işareti — zarftaki `cached` ekrana ulaşır", () => {
         status: "answered",
         socratic_stage: null,
         created_at: "2026-08-09T10:00:00Z",
+        feedback: null,
       },
     ];
     expect(fromHistory(history)[0].cached).toBe(false);

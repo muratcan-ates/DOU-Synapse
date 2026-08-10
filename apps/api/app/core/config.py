@@ -9,7 +9,7 @@ from enum import StrEnum
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, PostgresDsn, model_validator
+from pydantic import AliasChoices, Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -94,10 +94,22 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
     jwt_audience: str = "authenticated"
     #: Beklenen `iss` claim'i. Tanımlanmazsa issuer DOĞRULANMAZ ve o zaman başka bir
-    #: Supabase projesinin token'ı da kabul edilir — `security.py` bu alanı
-    #: `getattr` ile arıyordu (R1, alan burada yoktu). Üretimde MUTLAKA verilmeli;
+    #: Supabase projesinin token'ı da kabul edilir. Üretimde MUTLAKA verilmeli;
     #: değeri Supabase proje URL'sinin `/auth/v1` eki.
-    jwt_issuer: str | None = None
+    #:
+    #: Ortam değişkeni adı açıkça `SUPABASE_JWT_ISSUER`'a sabitlendi. Alan adı
+    #: `jwt_issuer` olduğu için pydantic-settings varsayılan olarak `JWT_ISSUER`
+    #: arıyordu; `.env.example` ve `docs/deployment.md` ise komşusu
+    #: `supabase_jwt_secret` ile aynı önekten türeyen `SUPABASE_JWT_ISSUER` adını
+    #: söylüyordu. `extra="ignore"` tanınmayan adı sessizce attığı için, kurulum
+    #: belgesini birebir uygulayan operatör hiçbir hata almadan issuer
+    #: doğrulamasını KAPALI bırakıyordu — tam da belgenin uyardığı durum.
+    #: Alias, adı belgeye uydurur; iki ad da kabul edilir ki mevcut kurulumlar
+    #: bozulmasın. Uyuşmazlığın tekrarını `tests/test_config.py` sabitliyor.
+    jwt_issuer: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SUPABASE_JWT_ISSUER", "JWT_ISSUER"),
+    )
     jwt_algorithms: list[str] = ["HS256"]
 
     # Çevrimdışı demo ve yerel geliştirme için kimlik doğrulama bypass'ı.
@@ -114,8 +126,18 @@ class Settings(BaseSettings):
 
     # --- Yükleme ve depolama ------------------------------------------------
     max_upload_bytes: int = 20 * 1024 * 1024
-    # Yerel belge deposu. Bulutta Supabase Storage adaptörüyle değiştirilir.
+    #: Yerel geliştirme için ``local``; kalıcı production nesne deposu için
+    #: ``supabase``. Seçim çağıran kodu değiştirmez: DocumentStorage arayüzü
+    #: aynı kalır.
+    storage_backend: Literal["local", "supabase"] = "local"
+    # Yerel belge deposu. Bulutta yalnız ``storage_backend=local`` iken okunur.
     storage_root: str = "./storage"
+    #: Supabase proje kökü (``https://<ref>.supabase.co``). Storage adaptörü
+    #: yalnız sunucu tarafında çalışır; service-role anahtarı tarayıcıya gitmez.
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
+    supabase_storage_bucket: str = "course-materials"
+    storage_timeout_seconds: float = 30.0
     # Worker'ın tek turda işleyeceği azami iş sayısı; bir belgenin kuyruğu tıkamaması için.
     worker_batch_size: int = 5
 
@@ -158,6 +180,10 @@ class Settings(BaseSettings):
     exam_duration_minutes: int = 20
     question_generation_batch: int = 5
     mastery_alpha: float = 0.3  # yeni = (1-alpha)*eski + alpha*son
+
+    # Büyüyebilen liste uçlarının ortak sayfa sınırı (FR-160...FR-163).
+    page_size_default: int = 25
+    page_size_max: int = 100
 
     # --- Retrieval (Faz A) --------------------------------------------------
     # Bu blok, paralel geliştirme başlamadan ÖNCE tek seferde eklendi: beş oturum
@@ -231,6 +257,33 @@ class Settings(BaseSettings):
     #: Sınırın penceresi (saniye).
     chat_rate_limit_window_seconds: float = 60.0
 
+    # --- Soru üretimi sınırları (002 / FR-222, FR-223) ----------------------
+    # Adlar lider turunda sabitlendi ki iki şerit aynı ayara iki farklı ad
+    # vermesin. Değerler sohbet sınırının KOPYASI DEĞİL: tek çağrı 20 soruya
+    # kadar üretiyor ve her soru ayrı bir LLM turu demek, yani maliyet profili
+    # sohbetten bir büyüklük mertebesi farklı. Sohbetin 20/dk'sı buraya
+    # uygulansaydı bir öğretmen dakikada 400 soru üretimi tetikleyebilirdi.
+    #
+    #: Kullanıcı+ders başına, pencere başına azami soru üretimi isteği.
+    question_gen_rate_limit_requests: int = 5
+    #: Sınırın penceresi (saniye).
+    question_gen_rate_limit_window_seconds: float = 300.0
+    #: Aynı kullanıcının aynı anda yürütebileceği üretim sayısı. 1 olmasının
+    #: sebebi maliyet değil tutarlılık: eşzamanlı iki üretim aynı konuya iki
+    #: taslak kümesi yazar ve öğretmen hangisinin hangi istekten geldiğini
+    #: ayırt edemez. Kapı LLM çağrısından ÖNCE kapanmalı (FR-222).
+    question_gen_max_concurrent: int = 1
+
+    # --- Embedding ısıtma (002 / FR-221) ------------------------------------
+    #: Açıkken uygulama başlarken embedding modeli arka planda yüklenir ve ilk
+    #: gerçek istek soğuk başlangıç cezasını tek başına ödemez. Isıtma
+    #: `lifespan`'i BLOKLAMAZ; hazır olup olmadığı readiness ucundan bildirilir.
+    #:
+    #: Testte varsayılan olarak kapalı tutulmalıdır: pytest her koşuda 2,1 GB'lık
+    #: ONNX modelini yüklerse paket dakikalarca uzar ve ölçtüğü şey model
+    #: yükleme süresi olur.
+    embedding_warmup_enabled: bool = True
+
     @model_validator(mode="after")
     def _resolve_evidence_threshold(self) -> Settings:
         """Eşiği, açıkça verilmediyse embedding sağlayıcısından çözer.
@@ -274,6 +327,27 @@ class Settings(BaseSettings):
             raise ValueError(
                 "LLM_FAKE_PROVIDER üretim ortamında açılamaz. "
                 "Bu bayrak yalnız test ve çevrimdışı demo içindir."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_storage_configuration(self) -> Settings:
+        """Production'ı geçici konteyner diskine sessizce bağlama.
+
+        Supabase seçildiyse iki sır birlikte zorunludur. Production ortamında
+        yerel disk de reddedilir; aksi hâlde yeni pod açıldığında veritabanı
+        belgeyi biliyor görünürken dosyanın kendisi kaybolur.
+        """
+        if self.storage_backend == "supabase":
+            if not self.supabase_url or not self.supabase_service_role_key:
+                raise ValueError(
+                    "STORAGE_BACKEND=supabase için SUPABASE_URL ve "
+                    "SUPABASE_SERVICE_ROLE_KEY tanımlı olmalı."
+                )
+        elif self.is_production:
+            raise ValueError(
+                "ENVIRONMENT=production için STORAGE_BACKEND=supabase olmalı; "
+                "yerel konteyner diski kalıcı belge deposu değildir."
             )
         return self
 

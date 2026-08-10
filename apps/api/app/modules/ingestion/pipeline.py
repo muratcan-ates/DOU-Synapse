@@ -8,6 +8,7 @@ kuyruktaki işleri işler.
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
@@ -20,13 +21,17 @@ from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.core.vector_space import current_space
 from app.modules.ingestion import parsers
-from app.modules.ingestion.chunking import chunk_blocks
+from app.modules.ingestion.chunking import Chunk, chunk_blocks
 from app.modules.ingestion.embedding import get_embedding_provider
 from app.modules.ingestion.storage import DocumentStorage
 
 logger = get_logger("app.ingestion")
 
 MAX_ATTEMPTS = 3
+# Kısa ama gerçek geri çekilme: iç HTTP tetik bütçesi 10 saniye. İlk iki hata
+# arasında 1 + 3 saniye beklemek, geçici dosya/depolama yarışlarını söndürürken
+# worker çağrısını orkestratör zaman aşımının içinde tutar.
+RETRY_BACKOFF_SECONDS: tuple[float, ...] = (1.0, 3.0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +39,17 @@ class IngestionResult:
     document_id: UUID
     chunk_count: int
     page_count: int | None
+
+
+def _parse_and_chunk(content: bytes, file_type: str) -> tuple[parsers.ParsedDocument, list[Chunk]]:
+    """Ayrıştırma ve chunk'lama — tek senkron blok.
+
+    İkisi tek `to_thread` sıçramasında birlikte koşar çünkü aralarında await
+    edilecek hiçbir şey yok; ayrı ayrı sarmak iki thread sıçraması demek olurdu ve
+    bedeli karşılıksız kalırdı.
+    """
+    parsed = parsers.parse(content, file_type)
+    return parsed, chunk_blocks(parsed.blocks)
 
 
 async def process_document(
@@ -59,8 +75,14 @@ async def process_document(
     )
 
     content = await storage.load(row.storage_path)
-    parsed = parsers.parse(content, row.file_type)
-    chunks = chunk_blocks(parsed.blocks)
+    # Ayrıştırma ve embedding üretimi SENKRON ve CPU'ya bağlı işlerdir; doğrudan
+    # çağrılırsa event loop'u tutarlar (FR-220). Bu zincir bugün API sürecinde
+    # koşuyor: `documents.py` yüklemeden sonra `internal.trigger_drain()` çağırıyor
+    # ve `WORKER_DRAIN_URL` tanımsızken (yerel + Compose + demo yolu) drain aynı
+    # süreçte yapılıyor — yani "arka planda koşuyor" savunması bu satırları
+    # kurtarmıyor. Desen yeni değil: `storage.py` aynı modülde üç yerde
+    # `asyncio.to_thread` kullanıyor, pahalı olan tarafa uygulanmamıştı.
+    parsed, chunks = await asyncio.to_thread(_parse_and_chunk, content, row.file_type)
 
     if not chunks:
         raise AppError("Belgeden aranabilir içerik çıkarılamadı.")
@@ -76,7 +98,11 @@ async def process_document(
     embeddings: list[list[float]] = []
     for start in range(0, len(chunks), batch_size):
         batch = [chunk.text for chunk in chunks[start : start + batch_size]]
-        embeddings.extend(provider.embed_documents(batch))
+        # Sarma DÖNGÜNÜN İÇİNDE, parti başına: N partilik bir belge event loop'a N
+        # geri dönüş noktası verir. Döngünün tamamı tek `to_thread`'e alınsaydı
+        # tek nokta kalırdı ve `worker_batch_size=5` ile arka arkaya beş belge
+        # işlenirken loop yine uzun aralıklarla susardı.
+        embeddings.extend(await asyncio.to_thread(provider.embed_documents, batch))
 
     if len(embeddings) != len(chunks):  # pragma: no cover - sağlayıcı sözleşme ihlali
         raise AppError("Embedding üretimi beklenen sayıda vektör döndürmedi.")
@@ -148,8 +174,10 @@ async def claim_next_job(session: AsyncSession) -> tuple[UUID, UUID, int] | None
                 "UPDATE ingestion_jobs SET status = 'processing', "
                 "attempt_count = attempt_count + 1, started_at = now() "
                 "WHERE id = ("
-                "  SELECT id FROM ingestion_jobs WHERE status = 'pending' "
-                "  ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1"
+                "  SELECT id FROM ingestion_jobs "
+                "  WHERE status = 'pending' AND next_attempt_at <= now() "
+                "  ORDER BY next_attempt_at, created_at, id "
+                "  FOR UPDATE SKIP LOCKED LIMIT 1"
                 ") RETURNING id, document_id, attempt_count"
             )
         )
@@ -161,13 +189,16 @@ async def claim_next_job(session: AsyncSession) -> tuple[UUID, UUID, int] | None
 
 async def _fail_job(
     session: AsyncSession, job_id: UUID, document_id: UUID, attempt: int, message: str
-) -> None:
+) -> float | None:
     """Hatayı kaydeder; deneme hakkı kalmışsa işi kuyruğa geri koyar."""
     exhausted = attempt >= MAX_ATTEMPTS
+    delay_seconds = None if exhausted else RETRY_BACKOFF_SECONDS[attempt - 1]
     await session.execute(
         text(
             "UPDATE ingestion_jobs SET status = CAST(:status AS job_status), "
-            "last_error = :error, completed_at = CASE WHEN :exhausted THEN now() END "
+            "last_error = :error, completed_at = CASE WHEN :exhausted THEN now() END, "
+            "next_attempt_at = CASE WHEN :exhausted THEN next_attempt_at "
+            "ELSE now() + make_interval(secs => :delay_seconds) END "
             "WHERE id = :id"
         ),
         {
@@ -175,6 +206,7 @@ async def _fail_job(
             "status": "failed" if exhausted else "pending",
             "error": message[:2000],
             "exhausted": exhausted,
+            "delay_seconds": delay_seconds or 0,
         },
     )
     if exhausted:
@@ -185,6 +217,7 @@ async def _fail_job(
             ),
             {"id": document_id, "error": message[:2000]},
         )
+    return delay_seconds
 
 
 async def run_pending_jobs(
@@ -229,7 +262,11 @@ async def run_pending_jobs(
             )
             message = exc.message if isinstance(exc, AppError) else "Belge işlenemedi."
             async with session_factory() as session, session.begin():
-                await _fail_job(session, job_id, document_id, attempt, message)
+                retry_after = await _fail_job(session, job_id, document_id, attempt, message)
+            # İşlem kapandıktan sonra bekle: açık transaction tutmayız. DB'deki
+            # `next_attempt_at` başka worker'ın aynı işi erken almasını da engeller.
+            if retry_after is not None:
+                await asyncio.sleep(retry_after)
         processed += 1
 
     return processed

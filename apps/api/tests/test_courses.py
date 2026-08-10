@@ -12,14 +12,12 @@ from uuid import uuid4
 from httpx import AsyncClient
 
 from tests.conftest import UserFactory
+from tests.factories import create_course, enroll_student
 
-
-async def _create_course(client: AsyncClient, headers: dict[str, str], code: str) -> str:
-    response = await client.post(
-        "/courses", json={"code": code, "title": f"{code} Dersi"}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["id"]
+# Üyelik ekleme yalnız KURULUM olduğu yerlerde `enroll_student` ile yapılır. Üyelik
+# ucunun kendisini sınayan testler (401/403/404 ya da yanıt gövdesi) isteği elle
+# kurar: iddiayı fabrikaya taşımak, testin ne kanıtladığını çağrı yerinden okunmaz
+# hale getirirdi.
 
 
 class TestAuthentication:
@@ -57,7 +55,7 @@ class TestCourseCreation:
         self, client: AsyncClient, users: UserFactory
     ) -> None:
         headers = users.auth(await users.create("ayse@dogus.edu.tr"))
-        await _create_course(client, headers, "COME301")
+        await create_course(client, headers, "COME301")
 
         response = await client.post(
             "/courses", json={"code": "come301", "title": "Kopya"}, headers=headers
@@ -70,10 +68,42 @@ class TestCourseCreation:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak = users.auth(await users.create("burak@dogus.edu.tr"))
-        await _create_course(client, ayse, "COME301")
+        await create_course(client, ayse, "COME301")
 
-        assert len((await client.get("/courses", headers=ayse)).json()) == 1
-        assert (await client.get("/courses", headers=burak)).json() == []
+        assert len((await client.get("/courses", headers=ayse)).json()["items"]) == 1
+        assert (await client.get("/courses", headers=burak)).json()["items"] == []
+
+    async def test_liste_keyset_ile_sayfalanir_es_zamanli_ekleme_kaydirmaz(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_ids = {
+            str(await create_course(client, ayse, "PAGE1")),
+            str(await create_course(client, ayse, "PAGE2")),
+            str(await create_course(client, ayse, "PAGE3")),
+        }
+
+        first = (await client.get("/courses", params={"limit": 2}, headers=ayse)).json()
+        assert first["next_cursor"] is not None
+
+        # İlk sayfadan sonra başa yeni kayıt girse bile ikinci sayfa tekrar/atlama yapmaz.
+        inserted_after_cursor = await create_course(client, ayse, "PAGE4")
+        second = (
+            await client.get(
+                "/courses",
+                params={"limit": 2, "cursor": first["next_cursor"]},
+                headers=ayse,
+            )
+        ).json()
+
+        assert len(first["items"]) == 2
+        assert len(second["items"]) == 1
+        assert {row["id"] for row in first["items"] + second["items"]} == course_ids
+        assert inserted_after_cursor not in {row["id"] for row in second["items"]}
+        assert (await client.get("/courses?limit=101", headers=ayse)).status_code == 200
+        invalid = await client.get("/courses?cursor=bozuk", headers=ayse)
+        assert invalid.status_code == 422
+        assert invalid.json()["error"]["code"] == "invalid_cursor"
 
 
 class TestCourseIsolation:
@@ -84,7 +114,7 @@ class TestCourseIsolation:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak = users.auth(await users.create("burak@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.get(f"/courses/{course_id}", headers=burak)
 
@@ -101,12 +131,8 @@ class TestCourseIsolation:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         response = await client.get(f"/courses/{course_id}/members", headers=users.auth(burak_id))
 
@@ -119,12 +145,8 @@ class TestCourseIsolation:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
         await users.create("ceren@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         response = await client.post(
             f"/courses/{course_id}/members",
@@ -141,7 +163,7 @@ class TestMembership:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr", "Burak Öğrenci")
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         added = await client.post(
             f"/courses/{course_id}/members",
@@ -152,13 +174,13 @@ class TestMembership:
         assert added.json()["role"] == "student"
 
         listed = await client.get("/courses", headers=users.auth(burak_id))
-        assert [c["id"] for c in listed.json()] == [course_id]
+        assert [c["id"] for c in listed.json()["items"]] == [str(course_id)]
 
     async def test_kayitli_olmayan_eposta_404(
         self, client: AsyncClient, users: UserFactory
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.post(
             f"/courses/{course_id}/members",
@@ -173,17 +195,13 @@ class TestMembership:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         revoked = await client.delete(f"/courses/{course_id}/members/{burak_id}", headers=ayse)
         assert revoked.status_code == 204
 
-        assert (await client.get("/courses", headers=users.auth(burak_id))).json() == []
+        assert (await client.get("/courses", headers=users.auth(burak_id))).json()["items"] == []
         assert (
             await client.get(f"/courses/{course_id}", headers=users.auth(burak_id))
         ).status_code == 404
@@ -193,7 +211,7 @@ class TestMembership:
     ) -> None:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.delete(f"/courses/{course_id}/members/{ayse_id}", headers=ayse)
 

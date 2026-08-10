@@ -35,20 +35,27 @@ bağladığı sahteler varsa onlar, yoksa gerçek modüller. Hiçbir sağlayıc�
 
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk, Retriever
+from app.core import text_tr
+from app.core.llm_json import first_json_object
 from app.core.logging import get_logger
-from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
-from app.modules.generation.llm import LlmRequest, build_llm_client
+from app.models.assessment import (
+    LearningOutcome,
+    Question,
+    QuestionDifficulty,
+    QuestionStatus,
+    QuestionType,
+    Topic,
+)
+from app.modules.generation.llm import LlmRequest, LlmTask, build_llm_client
 from app.modules.retrieval.service import HybridRetriever
 from app.schemas.assessment import (
     AnswerFormat,
@@ -88,15 +95,20 @@ class _GenerationCompletion:
     İki protokol de "system + user ver, metin al" diyor; aradaki tek fark
     `LlmRequest` zarfı. Adaptör burada duruyor çünkü `app/modules/generation/`
     başka bir şeridin dosyası ve oraya Şerit 4 kod yazmaz.
+
+    `task` yapıcıya alınır, sınıfa sabitlenmez: aynı adaptörü hem soru üretimi
+    hem sınav puanlaması kullanıyor ve ikisi farklı görevler. Sabitlenseydi
+    puanlama da `QUESTION_GEN` etiketiyle giderdi.
     """
 
-    def __init__(self, client: Any, request_cls: Any) -> None:
+    def __init__(self, client: Any, request_cls: Any, *, task: LlmTask = LlmTask.CHAT) -> None:
         self._client = client
         self._request_cls = request_cls
+        self._task = task
 
     async def complete(self, *, system: str, user: str) -> str:
         completion = await self._client.complete(
-            self._request_cls(system=system, user=user, json_output=True)
+            self._request_cls(system=system, user=user, json_output=True, task=self._task)
         )
         return str(completion.text)
 
@@ -133,50 +145,50 @@ def resolve_retriever(session: AsyncSession) -> Retriever:
     return HybridRetriever(session)
 
 
-def resolve_completion() -> StructuredCompletion:
+def resolve_completion(task: LlmTask = LlmTask.CHAT) -> StructuredCompletion:
     """Kayıtlı sahte varsa ondan, yoksa üretim LLM istemcisinden.
 
     Sağlayıcı hiç kurulamıyorsa `build_llm_client()` `LlmUnavailableError` (503)
     fırlatır — yerelde ve CI'da anahtar yokken deterministik sahteye düşer.
     Buradan `None` DÖNMEZ; "sağlayıcı yok" durumu bir istisnadır, sessiz bir
     değer değil.
+
+    `task` çağıranın beyanıdır ve varsayılanı `CHAT`'tir: bu fonksiyonu
+    puanlama da çağırıyor. Beyan, deterministik sahte sağlayıcının hangi şemayı
+    üreteceğini bilmesi için gerekli — eskiden bilmiyordu ve prompt metnindeki
+    işaretlere bakarak tahmin ediyordu.
     """
     if _completion is not None:
         return _completion
-    return _GenerationCompletion(build_llm_client(), LlmRequest)
+    return _GenerationCompletion(build_llm_client(), LlmRequest, task=task)
 
 
 # ---------------------------------------------------------------------------
 # Metin yardımcıları
 # ---------------------------------------------------------------------------
 
-_WORD_RE = re.compile(r"\w+", re.UNICODE)
-
-#: Türkçe küçültme. `str.lower()` "İ" için birleşik nokta üretir, `upper()` ise
-#: "i"yi "I" yapıp anlamı bozar (Anayasa V). Bu yüzden iki harf önce elle eşlenir.
-_TR_LOWER = str.maketrans({"İ": "i", "I": "ı"})
-
 #: Örtüşme skorunda ayırt ediciliği olmayan sık kelimeler.
+#:
+#: Liste Türkçe yazılır ama KATLANMIŞ hâliyle saklanır. Elle katlamak ("çünkü"
+#: yerine "cunku" yazmak) listeyi okunmaz yapardı; katlamamak ise dokuz kelimeyi
+#: (çünkü, değil, için, çok, hiç, üzere, şu, mı, mü) sessizce etkisiz bırakırdı,
+#: çünkü karşılaştırılan taraf `text_tr.tokens` çıktısı ve o taraf katlanmış.
 _STOPWORDS = frozenset(
-    """
+    text_tr.fold(word)
+    for word in """
     ve veya ile ama fakat çünkü ki de da mi mı mu mü bir bu şu o için gibi kadar
     daha en çok az her hiç ise olan olarak olur oldu değil var yok üzere ancak
     """.split()
 )
 
 
-def normalize_tr(text: str) -> str:
-    """Türkçe güvenli sadeleştirme: küçült, noktalamayı at, boşlukları tekle.
-
-    Kısa cevap eşleştirmesi (T031) ve çeldirici→kaynak eşlemesi aynı normalizasyonu
-    kullanır; iki yerde iki farklı kural olması sessiz tutarsızlık üretirdi.
-    """
-    lowered = text.translate(_TR_LOWER).lower()
-    return " ".join(_WORD_RE.findall(lowered))
-
-
 def _tokens(text: str) -> set[str]:
-    return {word for word in normalize_tr(text).split() if len(word) > 2} - _STOPWORDS
+    """Örtüşme skoru için ayırt edici sözcükler.
+
+    Üç harften kısa olanlar ve durak sözcükler elenir: ikisi de metnin uzunluğuyla
+    orantılı olarak her yerde geçer, yani örtüşme skorunu bilgi taşımadan şişirir.
+    """
+    return set(text_tr.tokens(text, min_length=3)) - _STOPWORDS
 
 
 def match_chunk(text: str, chunks: Sequence[RetrievedChunk]) -> UUID:
@@ -191,9 +203,14 @@ def match_chunk(text: str, chunks: Sequence[RetrievedChunk]) -> UUID:
     best = chunks[0]
     best_score = -1.0
     for chunk in chunks:
-        overlap = needle & _tokens(chunk.text)
+        # Chunk metni tur başına BİR kez tokenleştirilir. Eskiden aynı chunk aynı
+        # döngü adımında iki kez (örtüşme ve payda için), üstelik her çeldirici
+        # için baştan tokenleştiriliyordu: 4 şıklı bir soruda 8 chunk, aynı
+        # metinlerde 48 tokenleştirme demekti.
+        chunk_tokens = _tokens(chunk.text)
+        overlap = needle & chunk_tokens
         # Uzun chunk'lar tesadüfen daha çok örtüşür; kök karekökle bastırılır.
-        score = len(overlap) / (len(_tokens(chunk.text)) ** 0.5 + 1)
+        score = len(overlap) / (len(chunk_tokens) ** 0.5 + 1)
         if score > best_score:
             best, best_score = chunk, score
     return best.chunk_id
@@ -225,6 +242,22 @@ class _OpenDraft(_Draft):
     key_points: list[str] = Field(default_factory=list, max_length=12)
     rubric: list[RubricItem] = Field(default_factory=list, max_length=12)
     accepted_answers: list[str] = Field(default_factory=list, max_length=12)
+
+    @model_validator(mode="after")
+    def _rubrik_agirliklari_yuze_tamamlanmali(self) -> _OpenDraft:
+        """Ağırlık toplamı kısıtı YALNIZ ÜRETİMDE zorlanır (FR-117).
+
+        Okuma yolunda normalize ediliyor (`schemas.assessment.normalized_rubric`),
+        çünkü havuzda bugün toplamı 100 etmeyen onaylı sorular var ve kısıtı okuma
+        yoluna koymak onları şema doğrulamasından düşürür, yani sessizce
+        DEĞERLENDİRİLEMEZ hâle getirirdi. Yeni üretilen bir taslak için ise böyle
+        bir bedel yok: kısıtı sağlamayan taslak havuza hiç girmez (fail-closed).
+        """
+        if self.rubric:
+            toplam = sum(item.weight for item in self.rubric)
+            if toplam != 100:
+                raise ValueError(f"rubrik ağırlıkları 100 etmeli, {toplam} geldi")
+        return self
 
 
 class _CodeTraceDraft(_Draft):
@@ -324,6 +357,15 @@ def _format_chunks(chunks: Sequence[RetrievedChunk]) -> str:
     )
 
 
+#: Zorluk seviyesinin prompt karşılığı. Tek sözlük: seviye adlarının ürün anlamı
+#: burada yaşar, her çağrı yerinde yeniden hatırlanmaz (Anayasa XI).
+_DIFFICULTY_INSTRUCTIONS: dict[QuestionDifficulty, str] = {
+    QuestionDifficulty.EASY: "kolay — tanım ya da doğrudan hatırlama düzeyinde",
+    QuestionDifficulty.MEDIUM: "orta — kavramı yeni bir örneğe uygulamayı gerektirsin",
+    QuestionDifficulty.HARD: "zor — birden çok kavramı birlikte kullanmayı gerektirsin",
+}
+
+
 def build_prompt(
     *,
     topic_name: str,
@@ -333,6 +375,8 @@ def build_prompt(
     answer_format: AnswerFormat | None = None,
     example_questions: Sequence[str] = (),
     retry_hint: str | None = None,
+    learning_outcome_text: str | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> str:
     """Kullanıcı mesajını kurar. Şema tarifi ve kaynak listesi tek yerden gelir."""
     parts = [
@@ -340,6 +384,13 @@ def build_prompt(
         "",
         _TYPE_INSTRUCTIONS[question_type],
     ]
+    # FR-113: çıktı ve zorluk prompt'a BİRER SATIR olarak girer. Ayrı bir talimat
+    # bloğu yazılmadı — kalitesi ölçülmemiş bir yönlendirmeyi büyütmek, ölçmeden
+    # iddia etmek olurdu (Anayasa III). Pedagojik kalitenin ölçümü T047'nin işi.
+    if learning_outcome_text:
+        parts.append(f"Bu soru şu öğrenme çıktısını ölçmeli: {learning_outcome_text}")
+    if difficulty is not None:
+        parts.append(f"Zorluk seviyesi: {_DIFFICULTY_INSTRUCTIONS[difficulty]}")
     if question_type is QuestionType.OPEN and answer_format is AnswerFormat.SHORT_ANSWER:
         parts.append(_SHORT_ANSWER_INSTRUCTION)
     parts += [
@@ -368,23 +419,6 @@ def build_prompt(
 # ---------------------------------------------------------------------------
 
 
-def extract_json_object(raw: str) -> dict[str, Any]:
-    """Modelin metnindeki JSON nesnesini çıkarır.
-
-    Sağlayıcılar zaman zaman JSON'u ```json çitiyle sarar. Çitleri temizlemek
-    "şemaya uymayan çıktıyı kabul etmek" değildir: içerik yine tam doğrulamadan
-    geçer, yalnız taşıyıcı gürültü atılır.
-    """
-    text = raw.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
-        text = re.sub(r"\n?```$", "", text).strip()
-    parsed = json.loads(text)
-    if not isinstance(parsed, dict):
-        raise ValueError("Beklenen JSON nesnesi değil.")
-    return parsed
-
-
 @dataclass(slots=True)
 class _AttemptResult:
     """Tek bir model çağrısının sonucu.
@@ -408,9 +442,8 @@ class _AttemptResult:
 def _drafts_from_response(raw: str, question_type: QuestionType) -> _AttemptResult:
     """Ham yanıttan geçerli taslakları çıkarır; her reddin sebebini de döndürür."""
     model = _DRAFT_MODELS[question_type]
-    try:
-        envelope = extract_json_object(raw)
-    except (json.JSONDecodeError, ValueError):
+    envelope = first_json_object(raw)
+    if envelope is None:
         return _AttemptResult(envelope_reason="yanıt JSON olarak ayrıştırılamadı")
 
     items = envelope.get("questions")
@@ -471,6 +504,8 @@ async def generate_questions(
     answer_format: AnswerFormat | None = None,
     example_questions: Sequence[str] = (),
     retrieval_limit: int = 8,
+    learning_outcome: LearningOutcome | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> GenerationReport:
     """Konu adıyla retrieve edilen chunk'lardan `status=draft` soru üretir.
 
@@ -502,6 +537,12 @@ async def generate_questions(
         chunks=chunks,
         answer_format=answer_format,
         example_questions=example_questions,
+        learning_outcome_text=(
+            f"{learning_outcome.code}: {learning_outcome.description}"
+            if learning_outcome is not None
+            else None
+        ),
+        difficulty=difficulty,
     )
     # Payda yalnız modelin gerçekten döndürdüğü sorulardır; ayrıştırılamayan bir
     # yanıt sayıya değil, sebep listesine yazılır.
@@ -538,6 +579,11 @@ async def generate_questions(
             source_chunk_id=draft.source_chunk_id,
             status=QuestionStatus.DRAFT,
             created_by=created_by,
+            # FR-113: üretilen taslak, istendiyse hücre ekseniyle birlikte doğar.
+            # Verilmezse NULL kalır ve yayın kapısı onu "sınıflandırılmamış" diye
+            # ayrıca raporlar — sessizce bir hücreye sayılmaz.
+            learning_outcome_id=learning_outcome.id if learning_outcome is not None else None,
+            difficulty=difficulty,
         )
         session.add(question)
         report.questions.append(question)
@@ -571,6 +617,8 @@ async def _request_drafts(
     chunks: Sequence[RetrievedChunk],
     answer_format: AnswerFormat | None,
     example_questions: Sequence[str],
+    learning_outcome_text: str | None = None,
+    difficulty: QuestionDifficulty | None = None,
 ) -> tuple[_AttemptResult, list[str]]:
     """Modeli çağırır; hiç geçerli taslak çıkmazsa BİR KEZ yeniden dener (FR-020).
 
@@ -589,6 +637,8 @@ async def _request_drafts(
             answer_format=answer_format,
             example_questions=example_questions,
             retry_hint=("Çıktı şemaya uymadı." if attempt else None),
+            learning_outcome_text=learning_outcome_text,
+            difficulty=difficulty,
         )
         try:
             raw = await completion.complete(system=_SYSTEM_PROMPT, user=prompt)

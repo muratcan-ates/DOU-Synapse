@@ -15,6 +15,7 @@ from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.core.logging import get_logger
+from app.core.warmup import warmup_is_ready, warmup_state
 
 router = APIRouter(prefix="/health", tags=["health"])
 logger = get_logger("app.health")
@@ -46,7 +47,18 @@ async def ready(response: Response) -> dict[str, Any]:
         logger.warning("hazırlık kontrolü başarısız", extra={"context": {"error": str(exc)}})
         checks["database"] = "error"
 
-    healthy = all(value == "ok" for value in checks.values())
+    # "Süreç ayakta" ile "embedding hazır" ayrı sorular; ikincisi burada, bir
+    # BAĞIMLILIK durumu olarak raporlanır. `/health/live` bundan etkilenmez ve
+    # ısınma sürerken de 200 döner — yoksa orkestratör ısınan bir süreci
+    # ölü sanıp öldürür.
+    embedding_status = warmup_state()
+    checks["embedding"] = embedding_status
+
+    healthy = (
+        checks.get("database") == "ok"
+        and checks.get("pgvector") == "ok"
+        and warmup_is_ready(embedding_status)
+    )
     if not healthy:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return {"status": "ok" if healthy else "degraded", "checks": checks}

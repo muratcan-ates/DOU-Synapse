@@ -53,11 +53,12 @@ import type {
   QuestionType,
   Topic,
 } from "@/lib/types";
+import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
-import { ErrorNote, Loading, MetricRow, PageHeader } from "@/components/page-state";
+import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
 import { SourceCard } from "@/components/source-card";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 
@@ -77,11 +78,6 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "approved", label: QUESTION_STATUS.approved.label },
   { value: "rejected", label: QUESTION_STATUS.rejected.label },
 ];
-
-interface PoolData {
-  topics: Topic[];
-  questions: Question[];
-}
 
 export default function QuestionsPage() {
   return (
@@ -106,7 +102,7 @@ function QuestionsView() {
    * localStorage'dan ilk efektte okunur, o ana kadar "eğitmen değil" varsayımı
    * eğitmene bir kare boyunca yanlış ekran gösterirdi.
    */
-  const { isInstructor, ready } = useSession();
+  const { isInstructor, ready } = useSession(courseId);
 
   return (
     <div>
@@ -154,15 +150,15 @@ function QuestionsView() {
  * istek atar. Kapı aynı bileşenin içinde olsaydı öğrenci de GET atardı.
  */
 function QuestionPool({ courseId }: { courseId: string }) {
-  const fetchPool = useCallback(async (): Promise<PoolData> => {
-    const [topics, questions] = await Promise.all([
-      api.get<Topic[]>(`/courses/${courseId}/topics`),
-      api.get<Question[]>(`/courses/${courseId}/questions`),
-    ]);
-    return { topics, questions };
-  }, [courseId]);
-
-  const { data, error, refreshError, reload } = useResource(fetchPool, [courseId]);
+  const fetchTopics = useCallback(
+    () => api.get<Topic[]>(`/courses/${courseId}/topics`),
+    [courseId],
+  );
+  const topicsResource = useResource(fetchTopics, [courseId]);
+  const questionsResource = usePagedResource<Question>(
+    `/courses/${courseId}/questions`,
+    [courseId],
+  );
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [topicFilter, setTopicFilter] = useState<string>("all");
@@ -186,10 +182,27 @@ function QuestionPool({ courseId }: { courseId: string }) {
 
   // `error` yalnız elde veri YOKKEN dolar (bkz. use-resource.ts); tazeleme
   // hatası ekranı kapatmaz, aşağıda satır içinde gösterilir.
-  if (error) return <ErrorNote message={error} onRetry={reload} />;
-  if (!data) return <Loading />;
+  const error = topicsResource.error ?? questionsResource.error;
+  const refreshError = topicsResource.refreshError ?? questionsResource.refreshError;
+  const errorKind = topicsResource.errorKind ?? questionsResource.errorKind;
+  const errorRequestId = topicsResource.errorRequestId ?? questionsResource.errorRequestId;
+  const reload = useCallback(async () => {
+    await Promise.all([topicsResource.reload(), questionsResource.reload()]);
+  }, [topicsResource.reload, questionsResource.reload]);
 
-  const { topics, questions } = data;
+  if (error)
+    return (
+      <ErrorNote
+        message={error}
+        kind={errorKind}
+        requestId={errorRequestId}
+        onRetry={reload}
+      />
+    );
+  if (!topicsResource.data || !questionsResource.data) return <Loading />;
+
+  const topics = topicsResource.data;
+  const questions = questionsResource.data;
   const counts = countByStatus(questions);
   const visible = filterQuestions(questions, statusFilter, topicFilter);
 
@@ -271,7 +284,14 @@ function QuestionPool({ courseId }: { courseId: string }) {
         }}
       />
 
-      {refreshError && <ErrorNote message={refreshError} onRetry={reload} />}
+      {refreshError && (
+        <ErrorNote
+          message={refreshError}
+          kind={errorKind}
+          requestId={errorRequestId}
+          onRetry={reload}
+        />
+      )}
 
       {questions.length === 0 ? (
         <EmptyState title="Havuzda henüz soru yok. Yukarıdan bir konu seçip soru üretin; üretilen sorular taslak olarak buraya düşer." />
@@ -345,6 +365,12 @@ function QuestionPool({ courseId }: { courseId: string }) {
           )}
         </div>
       )}
+      <LoadMore
+        hasMore={questionsResource.nextCursor !== null}
+        busy={questionsResource.loadingMore}
+        error={questionsResource.pageError}
+        onLoadMore={() => void questionsResource.loadMore()}
+      />
     </>
   );
 }

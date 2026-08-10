@@ -13,7 +13,7 @@
  *
  *     cd apps/web
  *     E2E_API_URL=http://localhost:8010 \
- *       node_modules/.bin/playwright test screenshots --grep @ekran
+ *       EKRAN=1 node_modules/.bin/playwright test screenshots --grep @ekran
  *
  * `bunx playwright` KULLANMAYIN — ayrı bir kopya indirip "two different versions"
  * hatası verir.

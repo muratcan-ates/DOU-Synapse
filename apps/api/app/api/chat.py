@@ -41,7 +41,6 @@ from __future__ import annotations
 import hashlib
 import time
 import unicodedata
-from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -50,11 +49,18 @@ from uuid import UUID
 from fastapi import APIRouter, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import insert as sa_insert
-from sqlalchemy import select
+from sqlalchemy import select, tuple_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseMemberDep, SessionDep, SettingsDep
+from app.api.deps import (
+    CourseContext,
+    CourseMemberDep,
+    PageDep,
+    SessionDep,
+    SettingsDep,
+    UnlockedCourseMemberDep,
+)
 from app.contracts import (
     AnswerStatus,
     ChatMode,
@@ -68,10 +74,26 @@ from app.contracts import (
     SocraticStage,
 )
 from app.core.config import Settings
-from app.core.errors import AppError, NotFoundError, ValidationError
+from app.core.db import db_now
+from app.core.errors import AppError, NotFoundError, RateLimitError, ValidationError
 from app.core.logging import get_logger
-from app.models.chat import AnswerCache, ChatMessage, ChatRole, ChatSession, RequestLog
-from app.modules.assessment import socratic
+from app.core.pagination import (
+    decode_message_cursor,
+    decode_time_cursor,
+    encode_message_cursor,
+    encode_time_cursor,
+)
+from app.core.rate_limit import get_limiter, reset_rate_limit
+from app.models.chat import (
+    AnswerCache,
+    ChatMessage,
+    ChatMessageFeedback,
+    ChatRole,
+    ChatSession,
+    RequestLog,
+)
+from app.modules.assessment import exam_state, socratic
+from app.modules.policy import service as policy_service
 from app.schemas.chat import (
     MAX_QUESTION_LENGTH,
     ChatRequest,
@@ -79,6 +101,8 @@ from app.schemas.chat import (
     CitationOut,
     to_chat_response,
 )
+from app.schemas.feedback import ChatFeedbackOut
+from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["chat"])
 logger = get_logger("app.chat")
@@ -101,11 +125,6 @@ RetrieverFactory = Callable[[AsyncSession], Retriever]
 MAX_QUESTION_CHARS = MAX_QUESTION_LENGTH
 
 
-class RateLimitError(AppError):
-    status_code = status.HTTP_429_TOO_MANY_REQUESTS
-    code = "rate_limited"
-
-
 class PipelineUnavailableError(AppError):
     """Retrieval/generation modülleri henüz takılı değil.
 
@@ -118,42 +137,10 @@ class PipelineUnavailableError(AppError):
     code = "pipeline_unavailable"
 
 
-class _SlidingWindowLimiter:
-    """Süreç içi kayan pencere sayacı.
-
-    Dürüst sınır (Anayasa III): sayaç **süreç içidir.** Birden fazla uvicorn worker'ı
-    çalıştığında sınır worker başına uygulanır; MVP tek süreçle koşuyor. Dağıtık sınır
-    Redis ister ve kapsam dışıdır — raporda bu haliyle anlatılacak.
-
-    Sınır ve pencere kurucuda değil `allow()` çağrısında verilir: değerler artık
-    ayarlardan (`Settings.chat_rate_limit_*`) geliyor ve ayarlar isteğe bağlı bir
-    bağımlılık. Sayaç süreç ömürlü, eşik ise istek başına okunuyor — böylece sayı
-    değişince süreç yeniden başlatılmadan da geçerli olur.
-    """
-
-    def __init__(self) -> None:
-        self._hits: defaultdict[str, deque[float]] = defaultdict(deque)
-
-    def allow(self, key: str, *, limit: int, window_seconds: float) -> bool:
-        now = time.monotonic()
-        hits = self._hits[key]
-        while hits and now - hits[0] > window_seconds:
-            hits.popleft()
-        if len(hits) >= limit:
-            return False
-        hits.append(now)
-        return True
-
-    def reset(self) -> None:
-        self._hits.clear()
-
-
-_rate_limiter = _SlidingWindowLimiter()
-
-
-def reset_rate_limit() -> None:
-    """Testler için sayaç sıfırlama."""
-    _rate_limiter.reset()
+#: Bu ucun sayaç kapsamı. Kapsam adı zorunlu çünkü sayaç `questions.py` ile
+#: PAYLAŞILIYOR ve iki ucun doğal anahtarı da `kullanıcı:ders` — kapsam olmasaydı
+#: sohbet etmek soru üretim kotasını sessizce tüketirdi.
+RATE_LIMIT_SCOPE = "chat"
 
 
 # ---------------------------------------------------------------------------
@@ -181,16 +168,34 @@ def set_pipeline(
     _guardrails = guardrails
 
 
-def get_retriever(session: AsyncSession) -> Retriever:
+class _DocumentScopedRetriever:
+    """Enjekte edilen test retriever'larında da kaynak politikasını uygular."""
+
+    def __init__(self, inner: Retriever, document_ids: frozenset[UUID]) -> None:
+        self._inner = inner
+        self._document_ids = document_ids
+
+    async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
+        chunks = await self._inner.search(course_id=course_id, query=query, limit=limit)
+        return [chunk for chunk in chunks if chunk.document_id in self._document_ids][:limit]
+
+
+def get_retriever(session: AsyncSession, document_ids: frozenset[UUID] | None = None) -> Retriever:
     if _retriever_factory is not None:
-        return _retriever_factory(session)
+        injected = _retriever_factory(session)
+        return (
+            injected if document_ids is None else _DocumentScopedRetriever(injected, document_ids)
+        )
     try:  # Şerit 1, T006
         from app.modules.retrieval.service import HybridRetriever
     except ImportError as exc:
         raise PipelineUnavailableError(
             "Arama hattı henüz hazır değil. Lütfen daha sonra tekrar deneyin."
         ) from exc
-    return HybridRetriever(session)
+    return HybridRetriever(
+        session,
+        document_ids=None if document_ids is None else tuple(sorted(document_ids, key=str)),
+    )
 
 
 def get_generator() -> Generator:
@@ -277,6 +282,22 @@ class ChatMessageOut(BaseModel):
     status: AnswerStatus | None = None
     socratic_stage: SocraticStage | None = None
     created_at: Any
+    feedback: ChatFeedbackOut | None = None
+
+
+class ChatAvailabilityOut(BaseModel):
+    """Asistanın bu kullanıcı için açık olup olmadığı.
+
+    Arayüzün sekmeyi kilitlemek için ihtiyaç duyduğu tek bilgi. `reason` ve
+    `message` sunucudan gelir; arayüz kendi metnini uydurmaz (Anayasa V) ve
+    muafiyet kuralını tekrarlamaz — eğitmene her zaman `available=True` döner.
+    """
+
+    available: bool
+    reason: str | None = None
+    message: str | None = None
+    allowed_modes: list[ChatMode]
+    hint_limit: int
 
 
 # ---------------------------------------------------------------------------
@@ -371,8 +392,24 @@ class AnswerOutcome:
     claims: dict[UUID, str] = field(default_factory=dict)
 
 
-def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> AnswerOutcome:
-    return AnswerOutcome(GeneratedAnswer(status=status_value, mode=mode, text=text, citations=[]))
+def _refusal(
+    status_value: AnswerStatus,
+    mode: ChatMode,
+    text: str,
+    *,
+    prompt_tokens: int = 0,
+    completion_tokens: int = 0,
+) -> AnswerOutcome:
+    return AnswerOutcome(
+        GeneratedAnswer(
+            status=status_value,
+            mode=mode,
+            text=text,
+            citations=[],
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+        )
+    )
 
 
 #: Reddin statüsü → kullanıcıya gidecek sabit metin. Sözlük, çağrı yerinde bir
@@ -381,6 +418,9 @@ def _refusal(status_value: AnswerStatus, mode: ChatMode, text: str) -> AnswerOut
 _REFUSAL_TEXT: dict[AnswerStatus, str] = {
     AnswerStatus.OUT_OF_SCOPE: MESSAGE_OUT_OF_SCOPE,
     AnswerStatus.INSUFFICIENT_CONTEXT: MESSAGE_INSUFFICIENT_CONTEXT,
+    AnswerStatus.BUDGET_EXHAUSTED: (
+        "Bu dersin günlük sohbet AI bütçesi doldu. Bütçe gece yarısı yenilenir."
+    ),
 }
 
 
@@ -457,6 +497,7 @@ async def produce_answer(
     guardrails: Sequence[Guardrail],
     settings: Settings,
     student_attempt: str | None = None,
+    evidence_threshold: float | None = None,
 ) -> AnswerOutcome:
     """Bir turun cevabını üretir. Veritabanına dokunmaz, oturum durumu yazmaz.
 
@@ -471,7 +512,8 @@ async def produce_answer(
     chunks = await retriever.search(
         course_id=course_id, query=question, limit=settings.retrieval_top_k
     )
-    refusal = _evidence_refusal(chunks, question, settings.evidence_threshold)
+    threshold = settings.evidence_threshold if evidence_threshold is None else evidence_threshold
+    refusal = _evidence_refusal(chunks, question, threshold)
     if refusal is not None:
         # LLM'e HİÇ gidilmez: kanıt yoksa üretilecek bir şey de yoktur. Kapsam dışı
         # olduğu deterministik olarak saptanmışsa da gidilmez — modele sormak hem
@@ -505,9 +547,21 @@ async def produce_answer(
     )
 
     if answer.status is AnswerStatus.OUT_OF_SCOPE:
-        return _refusal(AnswerStatus.OUT_OF_SCOPE, mode, MESSAGE_OUT_OF_SCOPE)
+        return _refusal(
+            AnswerStatus.OUT_OF_SCOPE,
+            mode,
+            MESSAGE_OUT_OF_SCOPE,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
     if answer.status is AnswerStatus.INSUFFICIENT_CONTEXT:
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_INSUFFICIENT_CONTEXT)
+        return _refusal(
+            AnswerStatus.INSUFFICIENT_CONTEXT,
+            mode,
+            MESSAGE_INSUFFICIENT_CONTEXT,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
 
     # Kademe sunucu otoritesindedir.
     answer.socratic_stage = stage
@@ -525,6 +579,8 @@ async def produce_answer(
         )
         regenerated.socratic_stage = stage
         regenerated, blocked, _ = apply_guardrails(regenerated, chunks, guardrails)
+        regenerated.prompt_tokens += answer.prompt_tokens
+        regenerated.completion_tokens += answer.completion_tokens
         answer = regenerated
 
     if blocked:
@@ -537,15 +593,29 @@ async def produce_answer(
                     text=hint_text,
                     citations=[citation],
                     socratic_stage=stage,
+                    prompt_tokens=answer.prompt_tokens,
+                    completion_tokens=answer.completion_tokens,
                 )
             )
         # QA modunda deterministik bir son durak yoktur: gösterilemeyen cevap
         # gösterilmez (FR-012, fail-closed).
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_BLOCKED)
+        return _refusal(
+            AnswerStatus.INSUFFICIENT_CONTEXT,
+            mode,
+            MESSAGE_BLOCKED,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
 
     if not answer.citations:
         # Zincir bloklamasa bile kaynaksız akademik cevap kullanıcıya gitmez (FR-013).
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_BLOCKED)
+        return _refusal(
+            AnswerStatus.INSUFFICIENT_CONTEXT,
+            mode,
+            MESSAGE_BLOCKED,
+            prompt_tokens=answer.prompt_tokens,
+            completion_tokens=answer.completion_tokens,
+        )
 
     # Düşen atıfların iddiaları da düşer: guardrail bir atıfı elediyse onun iddia
     # metnini taşımak, gösterilmeyen bir kaynağa ait cümleyi ekranda bırakırdı.
@@ -561,7 +631,7 @@ async def produce_answer(
 @router.post("/chat", response_model=ChatResponse)
 async def post_chat(
     payload: ChatRequest,
-    context: CourseMemberDep,
+    context: UnlockedCourseMemberDep,
     session: SessionDep,
     settings: SettingsDep,
 ) -> ChatResponse:
@@ -586,12 +656,20 @@ async def post_chat(
         raise ValidationError(
             "Sınav modunda asistan ipucu veremez. Sınav soruları sınav ekranından yanıtlanır."
         )
-    if not _rate_limiter.allow(
+    policy = await policy_service.resolve_policy(
+        session, course_id=context.course_id, settings=settings
+    )
+    policy_service.assert_mode_allowed(policy, payload.mode, is_instructor=context.is_instructor)
+    if not get_limiter().allow(
+        RATE_LIMIT_SCOPE,
         f"{context.user_id}:{context.course_id}",
         limit=settings.chat_rate_limit_requests,
         window_seconds=settings.chat_rate_limit_window_seconds,
     ):
         raise RateLimitError("Çok sık soru gönderiyorsun. Bir dakika bekleyip tekrar dener misin?")
+    budget_exhausted = await policy_service.budget_exhausted(
+        session, course_id=context.course_id, policy=policy
+    )
 
     chat_session = await _load_or_create_session(session, context, payload)
 
@@ -604,16 +682,22 @@ async def post_chat(
     # merdiven, kanıt eşiğine takılıp çöker — canlı koşuda birebir bu gözlendi. Merdiven
     # tek bir sorunun etrafında ilerler, dolayısıyla arama da o soruya bağlı kalır.
     search_query = question
-    if chat_session.mode is ChatMode.SOCRATIC:
+    if not budget_exhausted and chat_session.mode is ChatMode.SOCRATIC:
         state = _stored_state(chat_session) if not _is_first_turn(chat_session) else None
-        decision = socratic.advance(state, attempt)
+        decision = socratic.advance(state, attempt, max_stage_index=policy.max_hints)
         search_query = await _opening_question(session, chat_session, fallback=question)
 
     cached_answer = None
-    if chat_session.mode is ChatMode.QA:
+    if not budget_exhausted and chat_session.mode is ChatMode.QA:
         cached_answer = await _lookup_cache(session, context.course_id, question)
 
-    if cached_answer is not None:
+    if budget_exhausted:
+        outcome = _refusal(
+            AnswerStatus.BUDGET_EXHAUSTED,
+            chat_session.mode,
+            _REFUSAL_TEXT[AnswerStatus.BUDGET_EXHAUSTED],
+        )
+    elif cached_answer is not None:
         # Önbellekten dönen cevap da zincirin metne bakan halkalarından geçer.
         # Geçmiyordu ve ölçüldü: satıra konmuş bir `<script>` etiketi hem cevap
         # metninde hem atıf kartında zarfa çıkıyordu. Atıf halkası bilerek
@@ -633,11 +717,12 @@ async def post_chat(
             course_id=context.course_id,
             mode=chat_session.mode,
             decision=decision,
-            retriever=get_retriever(session),
+            retriever=get_retriever(session, policy.source_document_ids),
             generator=get_generator(),
             guardrails=get_guardrails(),
             settings=settings,
             student_attempt=payload.student_attempt,
+            evidence_threshold=policy.evidence_threshold,
         )
     answer, claims = outcome.answer, outcome.claims
 
@@ -677,9 +762,7 @@ async def post_chat(
             status=answer.status,
             http_status=status.HTTP_200_OK,
             latency_ms=latency_ms,
-            # Token sayısı sözleşmede taşınmıyor; Şerit 2 GeneratedAnswer'a eklerse
-            # burası dolar. Uydurulmuş bir sayı yazmaktansa boş bırakılıyor (Anayasa III).
-            token_count=None,
+            token_count=answer.prompt_tokens + answer.completion_tokens,
             cache_hit=cached_answer is not None,
         )
     )
@@ -698,34 +781,141 @@ async def post_chat(
     )
 
 
-@router.get("/chat/sessions", response_model=list[ChatSessionOut])
-async def list_sessions(context: CourseMemberDep, session: SessionDep) -> list[ChatSessionOut]:
-    """Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez."""
-    result = await session.execute(
-        select(ChatSession)
-        .where(ChatSession.course_id == context.course_id)
-        .order_by(ChatSession.updated_at.desc())
+@router.get("/chat/availability", response_model=ChatAvailabilityOut)
+async def chat_availability(
+    context: CourseMemberDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> ChatAvailabilityOut:
+    """Asistan bu kullanıcı için açık mı?
+
+    Bu uç bilerek `CourseMemberDep` alır, `UnlockedCourseMemberDep` DEĞİL:
+    kilitliyken de cevap verebilmesi gerekiyor, yoksa arayüz kilidin sebebini
+    hiç öğrenemez ve kullanıcıya "bir şeyler ters gitti" demek zorunda kalır.
+
+    Kararı `deps.require_assistant_unlocked` ile AYNI fonksiyondan okur; iki
+    yüzey ayrı ayrı hesaplasaydı biri diğerinden sapardı (Anayasa XI) ve sapma
+    sessiz olurdu — sekme açık görünüp istek 403 dönerdi.
+    """
+    policy = await policy_service.resolve_policy(
+        session, course_id=context.course_id, settings=settings
     )
-    return [_session_out(row) for row in result.scalars()]
+    allowed_modes = [
+        mode for mode in (ChatMode.QA, ChatMode.SOCRATIC) if mode in policy.allowed_modes
+    ]
+    if context.is_instructor:
+        return ChatAvailabilityOut(
+            available=True,
+            allowed_modes=allowed_modes,
+            hint_limit=policy.max_hints,
+        )
+    now = await db_now(session)
+    active = await exam_state.active_exam_session(
+        session,
+        user_id=context.user_id,
+        course_id=context.course_id,
+        now=now,
+        settings=settings,
+    )
+    if active is None:
+        if not allowed_modes:
+            return ChatAvailabilityOut(
+                available=False,
+                reason="policy_all_modes_closed",
+                message="Bu ders için asistan modları eğitmen tarafından kapatıldı.",
+                allowed_modes=allowed_modes,
+                hint_limit=policy.max_hints,
+            )
+        return ChatAvailabilityOut(
+            available=True,
+            allowed_modes=allowed_modes,
+            hint_limit=policy.max_hints,
+        )
+    return ChatAvailabilityOut(
+        available=False,
+        reason=exam_state.EXAM_LOCK_REASON,
+        message=exam_state.EXAM_LOCK_MESSAGE,
+        allowed_modes=allowed_modes,
+        hint_limit=policy.max_hints,
+    )
 
 
-@router.get("/chat/sessions/{session_id}", response_model=list[ChatMessageOut])
+@router.get("/chat/sessions", response_model=PageOut[ChatSessionOut])
+async def list_sessions(
+    context: UnlockedCourseMemberDep,
+    session: SessionDep,
+    page: PageDep,
+) -> PageOut[ChatSessionOut]:
+    """Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez."""
+    query = select(ChatSession).where(ChatSession.course_id == context.course_id)
+    if page.cursor is not None:
+        updated_at, row_id = decode_time_cursor(page.cursor)
+        query = query.where(tuple_(ChatSession.updated_at, ChatSession.id) < (updated_at, row_id))
+    result = await session.execute(
+        query.order_by(ChatSession.updated_at.desc(), ChatSession.id.desc()).limit(page.limit + 1)
+    )
+    rows = list(result.scalars())
+    visible = rows[: page.limit]
+    next_cursor = (
+        encode_time_cursor(visible[-1].updated_at, visible[-1].id)
+        if len(rows) > page.limit
+        else None
+    )
+    return PageOut(items=[_session_out(row) for row in visible], next_cursor=next_cursor)
+
+
+@router.get("/chat/sessions/{session_id}", response_model=PageOut[ChatMessageOut])
 async def list_messages(
-    session_id: UUID, context: CourseMemberDep, session: SessionDep
-) -> list[ChatMessageOut]:
+    session_id: UUID,
+    context: UnlockedCourseMemberDep,
+    session: SessionDep,
+    page: PageDep,
+) -> PageOut[ChatMessageOut]:
     chat_session = await session.get(ChatSession, session_id)
     # RLS başka kullanıcının/dersin oturumunu zaten gizler; ders eşleşmesi ayrıca
     # kontrol edilir — iki katman da bağımsız olarak doğru davranmalı.
     if chat_session is None or chat_session.course_id != context.course_id:
         raise NotFoundError("Sohbet oturumu bulunamadı.")
 
+    query = select(ChatMessage).where(ChatMessage.session_id == session_id)
+    if page.cursor is not None:
+        created_at, seq, row_id = decode_message_cursor(page.cursor)
+        query = query.where(
+            tuple_(ChatMessage.created_at, ChatMessage.seq, ChatMessage.id)
+            < (created_at, seq, row_id)
+        )
     result = await session.execute(
-        select(ChatMessage)
-        .where(ChatMessage.session_id == session_id)
-        # created_at turlar arasını, seq tur içini sıralar — bkz. models/chat.py.
-        .order_by(ChatMessage.created_at, ChatMessage.seq)
+        query.order_by(
+            ChatMessage.created_at.desc(), ChatMessage.seq.desc(), ChatMessage.id.desc()
+        ).limit(page.limit + 1)
     )
-    return [
+    rows = list(result.scalars())
+    visible_desc = rows[: page.limit]
+    next_cursor = (
+        encode_message_cursor(
+            visible_desc[-1].created_at, visible_desc[-1].seq, visible_desc[-1].id
+        )
+        if len(rows) > page.limit
+        else None
+    )
+    feedback_rows = (
+        list(
+            (
+                await session.execute(
+                    select(ChatMessageFeedback).where(
+                        ChatMessageFeedback.message_id.in_(
+                            [message.id for message in visible_desc]
+                        ),
+                        ChatMessageFeedback.user_id == context.user_id,
+                    )
+                )
+            ).scalars()
+        )
+        if visible_desc
+        else []
+    )
+    feedback_by_message = {feedback.message_id: feedback for feedback in feedback_rows}
+    items = [
         ChatMessageOut(
             id=message.id,
             role=message.role,
@@ -734,9 +924,15 @@ async def list_messages(
             status=message.status,
             socratic_stage=message.socratic_stage,
             created_at=message.created_at,
+            feedback=(
+                ChatFeedbackOut.model_validate(feedback_by_message[message.id])
+                if message.id in feedback_by_message
+                else None
+            ),
         )
-        for message in result.scalars()
+        for message in reversed(visible_desc)
     ]
+    return PageOut(items=items, next_cursor=next_cursor)
 
 
 # ---------------------------------------------------------------------------

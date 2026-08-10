@@ -382,18 +382,25 @@ SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
        || count(*) || ')'
 FROM changed;
 
--- questions için DELETE politikası bilinçli olarak YOKTUR: onaylanmış bir soru
--- silinirse ona bağlı cevaplar anlamını kaybeder. Politika yokluğu fail-closed
--- davranmalı — eğitmen için bile.
---
--- Hedef, hiçbir cevabın referans vermediği soru: referanslı bir satır seçilseydi
--- silme, politika izin verse bile ON DELETE RESTRICT'e takılır ve test yanlış
--- sebeple yeşil yanardı (mutasyon testinin yakaladığı ikinci kusur).
+-- Öğrenci, okuyabildiği onaylı bir soruyu bile silemez. Okunabilir bir satır
+-- seçmek önemlidir: aksi hâlde SELECT politikası DELETE politikasını maskeler.
+SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
+WITH removed AS (
+    DELETE FROM questions WHERE id = '99999999-0000-0000-0000-00000000000d' RETURNING 1
+)
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  questions_delete__ogrenci_soru_silemez (beklenen 0 satır, gelen '
+       || count(*) || ')'
+FROM removed;
+
+-- Eğitmen, hiçbir cevabın referans vermediği kendi ders sorusunu silebilir. Bu
+-- çıkış yolu kaynak belgenin daha sonra silinebilmesi için gereklidir.
+SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
 WITH removed AS (
     DELETE FROM questions WHERE id = '99999999-0000-0000-0000-00000000000e' RETURNING 1
 )
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  questions_delete__politika_yok_kimse_silemez (beklenen 0 satır, gelen '
+SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
+       || '  questions_delete__egitmen_kendi_sorusunu_silebilir (beklenen 1 satır, gelen '
        || count(*) || ')'
 FROM removed;
 
@@ -489,7 +496,10 @@ END
 $$;
 
 WITH changed AS (
-    UPDATE exam_sessions SET score = 100
+    -- 0007 tablo UPDATE'ini çekti, yalnız `finished_at` kolonunu verdi. Politika
+    -- katmanını ölçmek için izinli kolonu kullan; `score` seçilirse red RLS'ten
+    -- önce kolon yetkisinden gelir ve test yanlış sebeple yeşil olur.
+    UPDATE exam_sessions SET finished_at = now()
     WHERE id = '55555555-0000-0000-0000-000000000002'
     RETURNING 1
 )
@@ -510,7 +520,7 @@ FROM changed;
 -- kalırdı — mutasyon testinin yakaladığı üçüncü kusur.
 SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
 WITH changed AS (
-    UPDATE exam_sessions SET score = 55
+    UPDATE exam_sessions SET finished_at = now()
     WHERE id = '55555555-0000-0000-0000-000000000002'
     RETURNING 1
 )
@@ -521,7 +531,7 @@ FROM changed;
 
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
 WITH changed AS (
-    UPDATE exam_sessions SET finished_at = now(), score = 90
+    UPDATE exam_sessions SET finished_at = now()
     WHERE id = '55555555-0000-0000-0000-000000000001'
     RETURNING 1
 )

@@ -7,12 +7,12 @@
 -- çünkü izolasyon tezinin taşıyıcı tabloları burada: `courses`, `course_memberships`,
 -- `chat_sessions`, `chat_messages`, `request_logs`.
 --
--- KAPSAM: 0001 + 0003'ün yirmi dört politikasının her biri en az bir OLUMLU ve bir
+-- KAPSAM: çekirdek ve sonraki hardening politikalarının her biri en az bir OLUMLU ve bir
 -- OLUMSUZ iddiayla sınanır. Olumlu kontrol ihmal edilemez: `dou_app` rolünün tablo
 -- düzeyi GRANT'i eksik olsaydı her şey reddedilirdi ve yalnız olumsuz iddia yazan bir
 -- test YANLIŞ SEBEPLE yeşil yanardı. Ayrıca politikası bilinçli olarak OLMAYAN on üç
 -- işlem (courses INSERT/DELETE, profiles INSERT/DELETE, chunks yazma, ingestion_jobs
--- UPDATE/DELETE, chat_sessions DELETE, chat_messages UPDATE/DELETE, answer_cache UPDATE,
+-- UPDATE/DELETE, chat_messages UPDATE/DELETE, answer_cache UPDATE,
 -- request_logs SELECT/UPDATE/DELETE) fail-closed olarak sınanır.
 --
 -- Çalıştırma:
@@ -130,13 +130,27 @@ INSERT INTO chat_sessions (id, course_id, user_id, mode) VALUES
     ('5a5a5a5a-0000-0000-0000-00000000000c', 'bbbbbbbb-0000-0000-0000-000000000002',
      '33333333-3333-3333-3333-333333333333', 'qa');
 
-INSERT INTO chat_messages (id, session_id, course_id, role, content) VALUES
+INSERT INTO chat_messages
+    (id, session_id, course_id, role, content, status, seq, created_at) VALUES
     ('6b6b6b6b-0000-0000-0000-00000000000b', '5a5a5a5a-0000-0000-0000-00000000000b',
-     'aaaaaaaa-0000-0000-0000-000000000001', 'user', 'Deadlock nedir?'),
+     'aaaaaaaa-0000-0000-0000-000000000001', 'user', 'Deadlock nedir?', NULL, 0,
+     now() - interval '1 hour'),
+    ('6b6b6b6b-0000-0000-0000-00000000001b', '5a5a5a5a-0000-0000-0000-00000000000b',
+     'aaaaaaaa-0000-0000-0000-000000000001', 'assistant',
+     'Deadlock dört Coffman koşulunun birlikte oluşmasıdır.', 'answered', 1,
+     now() - interval '59 minutes'),
     ('6b6b6b6b-0000-0000-0000-00000000000d', '5a5a5a5a-0000-0000-0000-00000000000d',
-     'aaaaaaaa-0000-0000-0000-000000000001', 'user', 'Bu soruyu hocam görmemeli.'),
+     'aaaaaaaa-0000-0000-0000-000000000001', 'user', 'Bu soruyu hocam görmemeli.', NULL, 0,
+     now() - interval '1 hour'),
+    ('6b6b6b6b-0000-0000-0000-00000000001d', '5a5a5a5a-0000-0000-0000-00000000000d',
+     'aaaaaaaa-0000-0000-0000-000000000001', 'assistant', 'Bu yanıt Deniz içindir.',
+     'answered', 1, now() - interval '59 minutes'),
     ('6b6b6b6b-0000-0000-0000-00000000000c', '5a5a5a5a-0000-0000-0000-00000000000c',
-     'bbbbbbbb-0000-0000-0000-000000000002', 'user', 'Yığın ile kuyruk farkı?');
+     'bbbbbbbb-0000-0000-0000-000000000002', 'user', 'Yığın ile kuyruk farkı?', NULL, 0,
+     now() - interval '1 hour'),
+    ('6b6b6b6b-0000-0000-0000-00000000001c', '5a5a5a5a-0000-0000-0000-00000000000c',
+     'bbbbbbbb-0000-0000-0000-000000000002', 'assistant', 'Yığın LIFO, kuyruk FIFO çalışır.',
+     'answered', 1, now() - interval '59 minutes');
 
 INSERT INTO answer_cache (id, course_id, question_hash, answer) VALUES
     ('7c7c7c7c-0000-0000-0000-00000000000a', 'aaaaaaaa-0000-0000-0000-000000000001',
@@ -382,16 +396,28 @@ FROM course_memberships WHERE course_id = 'bbbbbbbb-0000-0000-0000-000000000002'
 -- Yetki yükseltme denemesi: öğrenci kendi rolünü eğitmene çeviremez. Bu iddia
 -- düşerse projedeki her "yalnız eğitmen" kontrolü anlamsızlaşır.
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
-WITH changed AS (
+DO $$
+DECLARE
+    changed integer;
+BEGIN
     UPDATE course_memberships SET role = 'instructor'
     WHERE course_id = 'aaaaaaaa-0000-0000-0000-000000000001'
-      AND user_id = '22222222-2222-2222-2222-222222222222'
-    RETURNING 1
-)
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  memberships_update__ogrenci_kendini_egitmen_yapamaz (beklenen 0 satır, gelen '
-       || count(*) || ')'
-FROM changed;
+      AND user_id = '22222222-2222-2222-2222-222222222222';
+    GET DIAGNOSTICS changed = ROW_COUNT;
+    IF changed = 0 THEN
+        RAISE NOTICE 'PASS  memberships_update__ogrenci_kendini_egitmen_yapamaz (0 satır)';
+    ELSE
+        RAISE NOTICE 'FAIL  memberships_update__ogrenci_kendini_egitmen_yapamaz (rol değişti)';
+    END IF;
+EXCEPTION
+    -- 0012'nin dar `memberships_self_revoke` politikası satırı UPDATE için
+    -- görünür kılar ama yalnız status=revoked son durumuna izin verir. Bu yüzden
+    -- rol yükseltme 0 satır yerine WITH CHECK ihlali verebilir; ikisi de güvenli
+    -- rettir. Politika `USING (true)` ile gevşetilirse UPDATE geçer ve FAIL yanar.
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  memberships_update__ogrenci_kendini_egitmen_yapamaz (RLS reddi)';
+END
+$$;
 
 DO $$
 BEGIN
@@ -409,7 +435,8 @@ $$;
 
 -- Hedef, burak'ın GÖREBİLDİĞİ tek üyelik satırı: kendisininki. Başka birinin satırı
 -- seçilseydi red okuma politikasından gelirdi ve `memberships_instructor_delete`
--- hiç ölçülmemiş olurdu (OKUMA NOTU 2). Dersten çıkmak da eğitmenin işidir.
+-- hiç ölçülmemiş olurdu (OKUMA NOTU 2). Öğrenci üyeliğini DELETE edemez;
+-- 0012 yalnız status=revoked güncellemesini açar.
 WITH removed AS (
     DELETE FROM course_memberships
     WHERE course_id = 'aaaaaaaa-0000-0000-0000-000000000001'
@@ -646,7 +673,7 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
 FROM removed;
 
 -- ===========================================================================
--- jobs_instructor_read / _insert  (+ UPDATE/DELETE politikası YOK)
+-- jobs_instructor_read / _insert  (+ doğrudan UPDATE/DELETE politikası YOK)
 -- ===========================================================================
 
 SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
@@ -701,15 +728,27 @@ EXCEPTION
 END
 $$;
 
--- İş durumunu yalnız worker günceller; uygulama rolü kuyruğu ilerletemez.
-WITH changed AS (
+-- İş durumunu yalnız worker günceller; uygulama rolü kuyruğu ilerletemez. 0010
+-- savunmayı iki katmanlı yapar: tablo UPDATE yetkisi de RLS politikası da yoktur.
+DO $$
+DECLARE
+    v_count integer;
+BEGIN
     UPDATE ingestion_jobs SET status = 'completed'
-    WHERE id = 'eeeeeeee-0000-0000-0000-00000000000a' RETURNING 1
-)
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  jobs_update__politika_yok_uygulama_isi_ilerletemez (beklenen 0 satır, gelen '
-       || count(*) || ')'
-FROM changed;
+    WHERE id = 'eeeeeeee-0000-0000-0000-00000000000a';
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+    IF v_count = 0 THEN
+        RAISE NOTICE 'PASS  jobs_update__politika_yok_uygulama_isi_ilerletemez';
+    ELSE
+        RAISE NOTICE 'FAIL  jobs_update__politika_yok_uygulama_isi_ilerletemez (update geçti)';
+    END IF;
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  jobs_update__politika_yok_uygulama_isi_ilerletemez';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  jobs_update__politika_yok_uygulama_isi_ilerletemez (beklenmedik hata: %)', SQLERRM;
+END
+$$;
 
 WITH removed AS (
     DELETE FROM ingestion_jobs WHERE id = 'eeeeeeee-0000-0000-0000-00000000000a' RETURNING 1
@@ -720,7 +759,7 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
 FROM removed;
 
 -- ===========================================================================
--- chat_sessions_self_read / _self_insert / _self_update  (+ DELETE politikası YOK)
+-- chat_sessions_self_read / _self_insert / _self_update / _self_delete
 -- ===========================================================================
 
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
@@ -820,10 +859,10 @@ END
 $$;
 
 WITH removed AS (
-    DELETE FROM chat_sessions WHERE id = '5a5a5a5a-0000-0000-0000-00000000000b' RETURNING 1
+    DELETE FROM chat_sessions WHERE id = '5a5a5a5a-0000-0000-0000-00000000000d' RETURNING 1
 )
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  chat_sessions_delete__politika_yok_oturum_silinemez (beklenen 0 satır, gelen '
+       || '  chat_sessions_delete__baskasinin_oturumu_silinemez (beklenen 0 satır, gelen '
        || count(*) || ')'
 FROM removed;
 
@@ -832,8 +871,8 @@ FROM removed;
 -- ===========================================================================
 
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
-SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
-       || '  chat_messages_read__kendi_mesajlarini_gorur (beklenen 1, gelen ' || count(*) || ')'
+SELECT CASE WHEN count(*) = 2 THEN 'PASS' ELSE 'FAIL' END
+       || '  chat_messages_read__kendi_mesajlarini_gorur (beklenen 2, gelen ' || count(*) || ')'
 FROM chat_messages;
 
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
@@ -911,6 +950,111 @@ WITH removed AS (
 )
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
        || '  chat_messages_delete__politika_yok_gecmis_silinemez (beklenen 0 satır, gelen '
+       || count(*) || ')'
+FROM removed;
+
+-- ===========================================================================
+-- chat_message_feedback: özel varsayılan + açık rızayla öğretmen incelemesi
+-- ===========================================================================
+
+SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
+DO $$
+BEGIN
+    INSERT INTO chat_message_feedback
+        (id, course_id, message_id, user_id, rating, reason, comment,
+         share_with_instructor)
+    VALUES
+        ('fbfbfbfb-0000-0000-0000-000000000001',
+         'aaaaaaaa-0000-0000-0000-000000000001',
+         '6b6b6b6b-0000-0000-0000-00000000001b',
+         '22222222-2222-2222-2222-222222222222',
+         'unhelpful', 'citation_problem', 'Kaynak bağlantısı açılmadı.', false);
+    RAISE NOTICE 'PASS  feedback_insert__ogrenci_kendi_asistan_yanitini_puanlar';
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  feedback_insert__ogrenci_kendi_asistan_yanitini_puanlar (%)', SQLERRM;
+END
+$$;
+
+SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
+       || '  feedback_read__ogrenci_kendi_puanini_gorur (beklenen 1, gelen '
+       || count(*) || ')'
+FROM chat_message_feedback;
+
+SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  feedback_read__egitmen_izinsiz_metni_goremez (beklenen 0, gelen '
+       || count(*) || ')'
+FROM chat_message_feedback;
+
+-- Toplu sayı görünür, sohbet metni görünmez. Böylece insan değerlendirmesi için
+-- sinyal oluşur fakat bütün konuşmaları öğretmene açan bir gözetim ekranı oluşmaz.
+SELECT CASE WHEN rated_count = 1 AND unhelpful_count = 1 AND shared_review_count = 0
+            THEN 'PASS' ELSE 'FAIL' END
+       || '  feedback_summary__egitmen_ozel_puani_yalniz_toplu_gorur'
+FROM app.chat_feedback_summary('aaaaaaaa-0000-0000-0000-000000000001');
+
+SET LOCAL app.current_user_id = '33333333-3333-3333-3333-333333333333';
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  feedback_read__baska_ogrenci_puani_goremez (beklenen 0, gelen '
+       || count(*) || ')'
+FROM chat_message_feedback
+WHERE id = 'fbfbfbfb-0000-0000-0000-000000000001';
+
+SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
+DO $$
+BEGIN
+    INSERT INTO chat_message_feedback
+        (course_id, message_id, user_id, rating, reason)
+    VALUES
+        ('aaaaaaaa-0000-0000-0000-000000000001',
+         '6b6b6b6b-0000-0000-0000-00000000000b',
+         '22222222-2222-2222-2222-222222222222', 'helpful', 'helpful');
+    RAISE NOTICE 'FAIL  feedback_insert__kullanici_mesaji_puanlanamaz (insert geçti)';
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  feedback_insert__kullanici_mesaji_puanlanamaz';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  feedback_insert__kullanici_mesaji_puanlanamaz (beklenmedik hata: %)', SQLERRM;
+END
+$$;
+
+UPDATE chat_message_feedback
+   SET share_with_instructor = true
+ WHERE id = 'fbfbfbfb-0000-0000-0000-000000000001';
+
+SELECT CASE WHEN question_excerpt = 'Deadlock nedir?'
+                  AND answer_excerpt = 'Deadlock dört Coffman koşulunun birlikte oluşmasıdır.'
+            THEN 'PASS' ELSE 'FAIL' END
+       || '  feedback_share__alintilari_istemci_degil_tetikleyici_uretir'
+FROM chat_message_feedback
+WHERE id = 'fbfbfbfb-0000-0000-0000-000000000001';
+
+SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
+SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
+       || '  feedback_read__egitmen_acikca_paylasilan_kaydi_gorur (beklenen 1, gelen '
+       || count(*) || ')'
+FROM chat_message_feedback
+WHERE share_with_instructor;
+
+SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
+UPDATE chat_message_feedback
+   SET share_with_instructor = false
+ WHERE id = 'fbfbfbfb-0000-0000-0000-000000000001';
+
+SELECT CASE WHEN question_excerpt IS NULL AND answer_excerpt IS NULL
+            THEN 'PASS' ELSE 'FAIL' END
+       || '  feedback_share__riza_cekilince_alintilar_silinir'
+FROM chat_message_feedback
+WHERE id = 'fbfbfbfb-0000-0000-0000-000000000001';
+
+-- KVKK veri hakkı: kullanıcı kendi sohbet oturumunu silebilir. Bu kontrol mesaj
+-- iddialarından sonra yapılır; ON DELETE CASCADE geçmişi de kaldırır.
+WITH removed AS (
+    DELETE FROM chat_sessions WHERE id = '5a5a5a5a-0000-0000-0000-00000000000b' RETURNING 1
+)
+SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
+       || '  chat_sessions_delete__kendi_oturumunu_silebilir (beklenen 1 satır, gelen '
        || count(*) || ')'
 FROM removed;
 
@@ -1136,6 +1280,9 @@ FROM chat_sessions;
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
        || '  baglamsiz__chat_messages_gorunmez (beklenen 0, gelen ' || count(*) || ')'
 FROM chat_messages;
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  baglamsiz__chat_feedback_gorunmez (beklenen 0, gelen ' || count(*) || ')'
+FROM chat_message_feedback;
 SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
        || '  baglamsiz__answer_cache_gorunmez (beklenen 0, gelen ' || count(*) || ')'
 FROM answer_cache;

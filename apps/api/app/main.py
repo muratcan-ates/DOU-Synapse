@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -11,7 +14,24 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import analytics, chat, courses, documents, exams, health, internal, questions
+from app.api import (
+    admin,
+    analytics,
+    blueprints,
+    chat,
+    courses,
+    dashboard,
+    documents,
+    exams,
+    feedback,
+    health,
+    internal,
+    policy,
+    privacy,
+    profile,
+    questions,
+    sources,
+)
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import (
@@ -21,8 +41,17 @@ from app.core.errors import (
     validation_error_handler,
 )
 from app.core.logging import configure_logging, get_logger
+from app.core.warmup import start_warmup
 
 logger = get_logger("app.request")
+
+_SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+API_SECURITY_HEADERS: dict[str, str] = {
+    "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
 
 
 @asynccontextmanager
@@ -33,7 +62,16 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         "api başlatıldı",
         extra={"context": {"environment": settings.environment, "version": settings.api_version}},
     )
+    # Isıtma BAŞLATILIR, BEKLENMEZ (FR-221). `await` edilseydi üretim
+    # sağlayıcısında ~19 sn'lik bir startup oluşur ve orkestratörün startup
+    # probe penceresi aşılırdı — çözdüğünden büyük bir arıza. Hazır olup
+    # olmadığı `/health/ready` üzerinden bildiriliyor (bkz. core/warmup.py).
+    warmup_task = start_warmup()
     yield
+    if warmup_task is not None:
+        warmup_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await warmup_task
     await dispose_engine()
 
 
@@ -57,10 +95,30 @@ def create_app() -> FastAPI:
     )
 
     @app.middleware("http")
+    async def security_headers(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        """API JSON yanıtlarına yüzeye uygun, fail-closed tarayıcı politikası ekle."""
+        response = await call_next(request)
+        for key, value in API_SECURITY_HEADERS.items():
+            response.headers[key] = value
+        return response
+
+    @app.middleware("http")
     async def request_logging(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
+        supplied_request_id = request.headers.get("X-Request-ID", "")
+        request_id = (
+            supplied_request_id
+            if _SAFE_REQUEST_ID.fullmatch(supplied_request_id)
+            else uuid.uuid4().hex
+        )
+        # `call_next`'ten ÖNCE yazılır: hata handler'ları kimliği buradan okuyor
+        # ve zarfa koyuyor (`core/errors.py::request_id_of`). Sonra yazılsaydı
+        # yanıt başlığı kimliği taşırdı ama gövde taşımazdı — kullanıcıya
+        # gösterilen destek kodu ile logdaki kayıt ayrı düşerdi.
+        request.state.request_id = request_id
         started = time.perf_counter()
         response = await call_next(request)
         duration_ms = round((time.perf_counter() - started) * 1000, 1)
@@ -86,18 +144,22 @@ def create_app() -> FastAPI:
     app.add_exception_handler(Exception, unhandled_error_handler)
 
     app.include_router(health.router)
+    app.include_router(profile.router)
+    app.include_router(dashboard.router)
+    app.include_router(admin.router)
     app.include_router(courses.router)
     app.include_router(documents.router)
+    app.include_router(sources.router)
+    app.include_router(privacy.router)
+    app.include_router(policy.router)
     app.include_router(questions.router)
-    # Paralel geliştirme kirişi: aşağıdaki üç router'ın MODÜLLERİ henüz boş, ama
-    # kaydı önden yapıldı. Beş oturum kendi ucunu eklerken bu dosyaya dokunmaz;
-    # aksi hâlde aynı iki satır beş kez çakışırdı. Boş router hiçbir yol
-    # eklemez, yani sözleşme de bugün değişmez.
     app.include_router(chat.router)
+    app.include_router(feedback.router)
     app.include_router(exams.router)
+    app.include_router(blueprints.router)
     app.include_router(analytics.router)
-    # Faz G'nin dahili tetik ucu. Modül bugün boş ama kaydı önden yapıldı; boş
-    # router hiçbir yol eklemez, yani sözleşme bugün değişmez.
+    # İç worker tetiği OpenAPI'den bilinçli olarak gizlidir; sır yoksa 404,
+    # doğru sırla bir ingestion turu çalıştırır.
     app.include_router(internal.router)
     return app
 

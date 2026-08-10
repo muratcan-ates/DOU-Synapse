@@ -42,6 +42,7 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 | `DATABASE_URL` | API bağlantısı. **`dou_app` rolüyle**: sahip değildir, `BYPASSRLS` taşımaz, dolayısıyla RLS gerçekten uygulanır |
 | `WORKER_DATABASE_URL` | Worker bağlantısı. `dou_worker` rolü RLS'i atlar; `chunks` tablosuna yalnız o yazabilir |
 | `SUPABASE_JWT_SECRET` | Supabase JWT'lerini doğrular. Yoksa ve dev-auth da kapalıysa uygulama **başlamaz** |
+| `SUPABASE_JWT_ISSUER` | Beklenen `iss` claim'i — Supabase proje URL'sinin `/auth/v1` eki. **Boş bırakılırsa issuer doğrulanmaz** ve başka bir Supabase projesinin token'ı da kabul edilir. İmza doğrulaması etkilenmez; kaybedilen katman issuer sabitlemesidir. Üretimde doldurun |
 | `CORS_ORIGINS` | JSON dizisi. Üretimde yalnız gerçek Vercel alan adı |
 | `GROQ_API_KEY`, `GEMINI_API_KEY` | LLM sağlayıcıları; ilki düşerse ikincisine otomatik geçilir |
 | `WORKER_DRAIN_SECRET` | `POST /internal/drain` ucunu korur. **Boşsa uç 404 döner** (fail-closed) |
@@ -97,7 +98,7 @@ Kurulumdan sonra şemayı doğrulayın:
 psql -d "$DATABASE" -c "\dt"
 ```
 
-Temiz bir kurulumda **15 tablo** görürsünüz. (Faz 2 brifingi "19 tablo" diyor;
+Temiz bir kurulumda **25 tablo** görürsünüz. (Faz 2 brifingi "19 tablo" diyor; <!-- docs-check: tables.count = 25 -->
 9 Ağustos'ta hem paylaşılan geliştirme veritabanında hem sıfırdan kurulan bir
 veritabanında ölçülen sayı 15'tir. Brifingdeki sayı yanlış.)
 

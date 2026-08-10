@@ -44,27 +44,72 @@ import type {
   ChatMessage,
   ChatSessionSummary,
   CourseDocument,
+  Page,
 } from "@/lib/types";
+import { useChatAvailability } from "@/lib/chat-availability";
+import { pagedPath, usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
+import { sourceContextHref } from "@/lib/source-quality";
+import { useSession } from "@/lib/session";
 import { AppShell } from "@/components/app-shell";
+import { ChatFeedbackControls } from "@/components/chat-feedback";
 import { CourseNav } from "@/components/course-nav";
-import { ErrorNote, Loading } from "@/components/page-state";
+import { ErrorNote, Loading, LoadMore } from "@/components/page-state";
 import { SocraticLadder } from "@/components/socratic-ladder";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
 import { Badge, Button, EmptyState, Input } from "@/components/ui";
 
 export default function ChatPage() {
   const { courseId } = useParams<{ courseId: string }>();
+  /*
+   * Sekme kilitliyken bu sayfaya doğrudan URL ile de gelinebilir; ekran o zaman
+   * besteci yerine sebebi gösterir. Bu bir yetki kapısı DEĞİLDİR — sunucu her
+   * isteği zaten 403 ile reddediyor (Anayasa II: istemci yetki vermez).
+   * Buradaki tek amaç kullanıcıyı boş bir ekrana ya da art arda hataya
+   * koşturmamak.
+   */
+  const lock = useChatAvailability(courseId);
+  const session = useSession(courseId);
+
+  /*
+   * Yoklama dönene kadar HİÇBİRİ çizilmez. Bu bir estetik tercih değil:
+   * `ChatScreen` monte olur olmaz oturum listesini çekiyor ve kilitli
+   * öğrencide o istek 403 dönüyordu — tarayıcı konsolunda her yüklemede iki
+   * hata, ekranda ise bir an beliren besteci. Kullanıcı "yazabilirim" sanıp
+   * yazmaya başlıyor, sonra alan kayboluyor.
+   *
+   * Bekleme "kilitli" olarak da çizilemez: sınavı olmayan her öğrencinin
+   * sekmesi bir an kilitli görünürdü. Doğru üçüncü hâl "henüz bilinmiyor" ve
+   * karşılığı yükleme göstergesi (`lib/session.ts`'in `ready` kuralıyla aynı).
+   */
+  if (!lock.ready || !session.ready) {
+    return (
+      <AppShell>
+        <CourseNav courseId={courseId} lock={lock} />
+        <Loading label="Yükleniyor…" />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
-      <CourseNav courseId={courseId} />
-      <ChatScreen courseId={courseId} />
+      <CourseNav courseId={courseId} lock={lock} />
+      {lock.locked ? (
+        <EmptyState title={lock.message ?? "Asistan şu anda kullanılamıyor."} />
+      ) : (
+        <ChatScreen courseId={courseId} canGiveFeedback={!session.isInstructor} />
+      )}
     </AppShell>
   );
 }
 
-function ChatScreen({ courseId }: { courseId: string }) {
+function ChatScreen({
+  courseId,
+  canGiveFeedback,
+}: {
+  courseId: string;
+  canGiveFeedback: boolean;
+}) {
   const [mode, setMode] = useState<ChatUiMode>("qa");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
@@ -75,15 +120,19 @@ function ChatScreen({ courseId }: { courseId: string }) {
   const [sendError, setSendError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null);
+  const [olderLoading, setOlderLoading] = useState(false);
 
-  const fetchSessions = useCallback(
-    () => api.get<ChatSessionSummary[]>(`/courses/${courseId}/chat/sessions`),
+  const sessions = usePagedResource<ChatSessionSummary>(
+    `/courses/${courseId}/chat/sessions`,
     [courseId],
   );
-  const sessions = useResource(fetchSessions, [courseId]);
 
   const fetchDocuments = useCallback(
-    () => api.get<CourseDocument[]>(`/courses/${courseId}/documents`),
+    () =>
+      api
+        .get<Page<CourseDocument>>(`/courses/${courseId}/documents?limit=100`)
+        .then((page) => page.items),
     [courseId],
   );
   const documents = useResource(fetchDocuments, [courseId]);
@@ -108,12 +157,14 @@ function ChatScreen({ courseId }: { courseId: string }) {
       setSendError(null);
       setHistoryError(null);
       setHistoryLoading(true);
+      setHistoryCursor(null);
       try {
-        const history = await api.get<ChatMessage[]>(
+        const history = await api.get<Page<ChatMessage>>(
           `/courses/${courseId}/chat/sessions/${summary.id}`,
         );
         if (historyToken.current !== token) return;
-        setMessages(fromHistory(history));
+        setMessages(fromHistory(history.items));
+        setHistoryCursor(history.next_cursor);
         localStorage.setItem(openSessionKey(courseId), summary.id);
       } catch (e) {
         if (historyToken.current !== token) return;
@@ -151,9 +202,27 @@ function ChatScreen({ courseId }: { courseId: string }) {
     setSendError(null);
     setHistoryError(null);
     setHistoryLoading(false);
+    setHistoryCursor(null);
     localStorage.removeItem(openSessionKey(courseId));
     // Yazılmış metin korunur: mod değiştirmek yazdığını silmek için bir sebep değil.
   };
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!sessionId || !historyCursor || olderLoading) return;
+    setOlderLoading(true);
+    setHistoryError(null);
+    try {
+      const older = await api.get<Page<ChatMessage>>(
+        pagedPath(`/courses/${courseId}/chat/sessions/${sessionId}`, historyCursor),
+      );
+      setMessages((current) => [...fromHistory(older.items), ...current]);
+      setHistoryCursor(older.next_cursor);
+    } catch (error) {
+      setHistoryError(errorMessage(error));
+    } finally {
+      setOlderLoading(false);
+    }
+  }, [courseId, historyCursor, olderLoading, sessionId]);
 
   const openingQuestion =
     messages.find((message) => message.role === "user")?.content ?? null;
@@ -206,11 +275,31 @@ function ChatScreen({ courseId }: { courseId: string }) {
   };
 
   const blocks = toBlocks(messages, { mode, pending });
+  const feedbackByMessage = new Map(
+    messages
+      .filter((message) => message.role === "assistant")
+      .map((message) => [message.id, message.feedback] as const),
+  );
+  const saveFeedback = (
+    messageId: string,
+    feedback: NonNullable<TranscriptMessage["feedback"]>,
+  ) => {
+    setMessages((current) =>
+      current.map((message) =>
+        message.id === messageId ? { ...message, feedback } : message,
+      ),
+    );
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {/* Konuşma sütunu: okuma genişliği bileşenlerin içinde 70ch ile sınırlı */}
       <div className="space-y-6">
+        <LoadMore
+          hasMore={historyCursor !== null}
+          busy={olderLoading}
+          onLoadMore={() => void loadOlderMessages()}
+        />
         {historyError && <ErrorNote message={historyError} />}
         {historyLoading && <Loading label="Sohbet geçmişi yükleniyor…" />}
 
@@ -248,20 +337,54 @@ function ChatScreen({ courseId }: { courseId: string }) {
                     <SourceCard
                       key={`${citation.chunk_id}:${index}`}
                       source={citationSource(citation)}
+                      href={sourceContextHref(courseId, citation.chunk_id)}
                     />
                   ))}
+                  {canGiveFeedback && (
+                    <ChatFeedbackControls
+                      courseId={courseId}
+                      messageId={block.id}
+                      initial={feedbackByMessage.get(block.id) ?? null}
+                      onSaved={(feedback) => saveFeedback(block.id, feedback)}
+                    />
+                  )}
                 </div>
               );
             case "abstention":
               return (
-                <AbstentionNotice
-                  key={block.id}
-                  status={block.status}
-                  message={block.text}
-                />
+                <div key={block.id} className="space-y-3">
+                  <AbstentionNotice status={block.status} message={block.text} />
+                  {canGiveFeedback && (
+                    <ChatFeedbackControls
+                      courseId={courseId}
+                      messageId={block.id}
+                      initial={feedbackByMessage.get(block.id) ?? null}
+                      onSaved={(feedback) => saveFeedback(block.id, feedback)}
+                    />
+                  )}
+                </div>
               );
             case "ladder":
-              return <SocraticLadder key={block.id} rungs={block.rungs} />;
+              return (
+                <SocraticLadder
+                  key={block.id}
+                  rungs={block.rungs}
+                  footerForRung={
+                    canGiveFeedback
+                      ? (rung) => (
+                          <div className="mt-3">
+                            <ChatFeedbackControls
+                              courseId={courseId}
+                              messageId={rung.id}
+                              initial={feedbackByMessage.get(rung.id) ?? null}
+                              onSaved={(feedback) => saveFeedback(rung.id, feedback)}
+                            />
+                          </div>
+                        )
+                      : undefined
+                  }
+                />
+              );
           }
         })}
 
@@ -421,6 +544,12 @@ function ChatScreen({ courseId }: { courseId: string }) {
               })}
             </ul>
           )}
+          <LoadMore
+            hasMore={sessions.nextCursor !== null}
+            busy={sessions.loadingMore}
+            error={sessions.pageError}
+            onLoadMore={() => void sessions.loadMore()}
+          />
         </section>
       </aside>
     </div>

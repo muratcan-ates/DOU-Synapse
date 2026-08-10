@@ -16,20 +16,84 @@ karşılaştırılan şey PostgreSQL'in ham `websearch_to_tsquery` davranışıd
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from app.core.db import rls_session
 from app.modules.retrieval.fts import _SQL, fts_search, uses_explicit_operators
-from tests import test_retrieval
-from tests.conftest import UserFactory
-from tests.test_retrieval import DEADLOCK_TR, PROCESSES_EN, create_course, seed_document
+from tests.conftest import WORKER_DSN, UserFactory
+from tests.factories import create_course, seed_document
 
-#: Fixture'lar modüle özeldir; `conftest.py` bu şeridin dosyası olmadığı için
-#: `worker_engine` kopyalanmak yerine bağlanır.
-worker_engine = test_retrieval.worker_engine
+
+@pytest.fixture
+async def worker_engine(clean_tables: None) -> AsyncIterator[AsyncEngine]:
+    """Chunk yazımı üretimdeki gibi RLS'i atlayan `dou_worker` rolüyle yapılır.
+
+    Bu fixture `test_retrieval`'da da aynı gövdeyle duruyor ve eskiden buraya
+    oradan bağlanıyordu. Bağ koptu: bir test modülünün başka bir test modülünden
+    fixture alması, uzaktaki dosyada yapılan bir düzeltmenin burayı da sessizce
+    değiştirmesi demekti. Kopyanın gerçek adresi `conftest.py`; oraya taşımak
+    fixture'ları tek dosyada toplayan ayrı bir iştir ve bu turun kapsamı dışında.
+    """
+    engine = create_async_engine(WORKER_DSN)
+    yield engine
+    await engine.dispose()
+
+
+# ---------------------------------------------------------------------------
+# Materyal
+#
+# Korpus `test_retrieval`'dan içe aktarılmıyor, burada duruyor. Metin sabitleri
+# yalnız iki dosyada geçtiği için `tests.factories`'e de girmedi (Anayasa XI:
+# eşik üç yerdir); bir test modülünü diğerinin materyaline bağlamak ise ödediği
+# tekrarsızlıktan fazlasını geri alırdı — orada bir pasaj değiştiğinde burada
+# `ts_rank` sıralaması üzerine kurulu iddialar sebepsiz kırılırdı.
+#
+# Bu şeridin bağımlılıkları da farklı: aşağıdaki testler yalnız `fts` kolonunu
+# okur, o yüzden tohumlama gömüsüz yapılır (`embeddings` varsayılan `False`).
+# ---------------------------------------------------------------------------
+
+DEADLOCK_TR: list[tuple[int, str]] = [
+    (
+        1,
+        "Deadlock, iki ya da daha fazla sürecin birbirinin tuttuğu kaynağı beklemesi "
+        "yüzünden hiçbirinin ilerleyememesi durumudur.",
+    ),
+    (
+        2,
+        "Deadlock oluşması için dört koşulun aynı anda sağlanması gerekir: karşılıklı "
+        "dışlama, tut ve bekle, kesintiye uğratılamama, döngüsel bekleme. Bu dört koşula "
+        "Coffman koşulları denir.",
+    ),
+    (
+        3,
+        "Banker's Algorithm, kaynak taleplerini güvenli durum kontrolünden geçirerek "
+        "deadlock oluşmasını önler; talebi vermek sistemi güvensiz duruma sokacaksa süreç "
+        "bekletilir.",
+    ),
+]
+
+PROCESSES_EN: list[tuple[int, str]] = [
+    (
+        1,
+        "The fork() system call creates a new process by duplicating the calling process. "
+        "It returns 0 in the child and the child PID in the parent.",
+    ),
+    (
+        2,
+        "A context switch saves the state of the running process and restores the state of "
+        "the next one. Its cost is what makes a very small round robin quantum wasteful.",
+    ),
+    (
+        3,
+        "Comparing scheduling algorithms is done in terms of asymptotic cost; a naive "
+        "priority scan is O(n log n) once the ready queue is kept sorted.",
+    ),
+]
 
 # `fts.py`'nin gevşetme öncesi hâli: websearch'ün örtük VE'si, olduğu gibi.
 _KATI_SONDA = text(
@@ -319,3 +383,58 @@ class TestSiralamaYenidenUretilebilir:
                 ).all()
             )
         assert [konum[c.chunk_id] for c in sonuclar] == [0, 1, 2]
+
+
+class TestBelgePolitikasi:
+    """Ders politikası adayları LIMIT uygulanmadan önce SQL'de daraltır."""
+
+    async def test_izinli_belgeler_fts_aday_kumesini_daraltir(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        ayse_id = await users.create("policy-filter@dogus.edu.tr")
+        ayse = UserFactory.auth(ayse_id)
+        course_id = await create_course(client, ayse, "POL-FTS")
+        allowed_doc = await seed_document(
+            worker_engine,
+            course_id=course_id,
+            uploaded_by=ayse_id,
+            file_name="izinli.md",
+            passages=[(1, "Deadlock Coffman koşulları kaynak bekleme döngüsüdür.")],
+        )
+        blocked_doc = await seed_document(
+            worker_engine,
+            course_id=course_id,
+            uploaded_by=ayse_id,
+            file_name="kapali.md",
+            passages=[(1, "Deadlock Coffman koşulları kaynak bekleme döngüsüdür.")],
+        )
+
+        async with rls_session(ayse_id) as session:
+            only_allowed = await fts_search(
+                session,
+                course_id=course_id,
+                query="deadlock",
+                limit=10,
+                document_ids=(allowed_doc.document_id,),
+            )
+            none_allowed = await fts_search(
+                session,
+                course_id=course_id,
+                query="deadlock",
+                limit=10,
+                document_ids=(),
+            )
+            unrestricted = await fts_search(
+                session,
+                course_id=course_id,
+                query="deadlock",
+                limit=10,
+                document_ids=None,
+            )
+
+        assert {chunk.document_id for chunk in only_allowed} == {allowed_doc.document_id}
+        assert none_allowed == []
+        assert {chunk.document_id for chunk in unrestricted} == {
+            allowed_doc.document_id,
+            blocked_doc.document_id,
+        }

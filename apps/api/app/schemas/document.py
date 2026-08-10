@@ -22,6 +22,8 @@ class DocumentOut(BaseModel):
     chunk_count: int
     error_message: str | None
     created_at: datetime
+    supersedes_document_id: UUID | None = None
+    superseded_at: datetime | None = None
 
 
 class DocumentUploadOut(BaseModel):

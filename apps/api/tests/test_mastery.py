@@ -9,8 +9,6 @@ entegrasyon testi eklenmiştir (Anayasa VIII: davranış gerçek ortamda gözlen
 
 from __future__ import annotations
 
-from uuid import UUID
-
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
@@ -24,6 +22,7 @@ from app.modules.mastery.service import (
     record_answer,
 )
 from tests.conftest import UserFactory
+from tests.factories import create_course, create_topic
 
 
 class TestEwmaCalculation:
@@ -105,14 +104,8 @@ class TestRecordAnswerIntegration:
     ) -> None:
         ayse_id = await users.create("ayse@dogus.edu.tr")
         ayse = users.auth(ayse_id)
-        course_response = await client.post(
-            "/courses", json={"code": "COME301", "title": "İşletim Sistemleri"}, headers=ayse
-        )
-        course_id = UUID(course_response.json()["id"])
-        topic_response = await client.post(
-            f"/courses/{course_id}/topics", json={"name": "Deadlock"}, headers=ayse
-        )
-        topic_id = UUID(topic_response.json()["id"])
+        course_id = await create_course(client, ayse, "COME301", title="İşletim Sistemleri")
+        topic_id = await create_topic(client, ayse, course_id, "Deadlock")
 
         async with rls_session(ayse_id) as session:
             first_score = await record_answer(

@@ -30,17 +30,18 @@ girmiyor), ama çevrimdışı demoda soru üretimi hiç çalışmıyordu.
 
 Sebep yapısaldı: `LlmRequest.mode` bir SOHBET kipidir ve soru üretiminin karşılığı
 yoktur; `question_gen` isteği varsayılan `ChatMode.QA` ile gönderiyordu. Çözüm
-`LlmRequest.task` (bkz. `llm.py`). Görev iki yoldan belirlenir:
+`LlmRequest.task` (bkz. `llm.py`).
 
-1. **Çağıran söylerse** — `task=LlmTask.QUESTION_GEN`. Doğru yol budur.
-2. **Söylemezse** — prompt'un biçiminden çıkarılır. `question_gen._GenerationCompletion`
-   bu şeridin dosyası değil ve alanı bugün göndermiyor; çıkarım o düzeltme
-   inene kadar çevrimdışı demoyu ayakta tutuyor.
+O gün alan eklendi ama kimse GÖNDERMİYORDU, çünkü göndermesi gereken adaptör
+(`question_gen._GenerationCompletion`) başka bir şeridin dosyasıydı. Boşluğu
+kapatmak için buraya bir çıkarım katmanı yazıldı: prompt metninde `{"questions"`
+ve `### KAYNAK` işaretlerini arayıp görevi TAHMİN ediyordu. Yani sahte
+sağlayıcının davranışı, başka bir modülün prompt cümlelerinin harfine bağlıydı.
 
-İkinci yol bir kuplaj borcudur ve **sessiz kalmasına izin verilmiyor**:
-`tests/test_generation.py` gerçek `question_gen.build_prompt` çıktısını her soru
-tipi için bu ayrıştırıcıya verir. Prompt biçimi değişirse test kırmızı yanar —
-sahte sağlayıcı sessizce sohbet cevabına dönmez.
+10 Ağustos'ta borç kapandı: `resolve_completion(LlmTask.QUESTION_GEN)` görevi
+çağrı yerinde beyan ediyor ve buradaki çıkarım silindi. Artık tek yol var —
+**çağıran söyler.** Söylemezse görev `CHAT`'tir ve bu bir tahmin değil,
+`LlmRequest.task`'ın açık varsayılanıdır.
 
 Üretilen soru bir ŞEMA İSKELETİDİR, bilgi değildir. Metni materyalden birebir
 kopyalanır ve kaynağı prompt'taki gerçek bir `chunk_id`'dir; yani `question_gen`'in
@@ -67,7 +68,6 @@ _SOURCE_PATTERN = re.compile(
     r'(?:\s+section="(?P<section>[^"]*)")?\s*>(?P<text>.*?)</source>',
     re.DOTALL,
 )
-_QUESTION_PATTERN = re.compile(r"<question>(?P<q>.*?)</question>", re.DOTALL)
 _ATTEMPT_PATTERN = re.compile(r"<student_attempt>(?P<a>.*?)</student_attempt>", re.DOTALL)
 
 #: Atıf yapılacak azami kaynak sayısı. Cevabın tamamı ilk parçalara dayanır;
@@ -108,11 +108,6 @@ def parse_sources(user_prompt: str) -> list[ParsedSource]:
     return sources
 
 
-def parse_question(user_prompt: str) -> str:
-    match = _QUESTION_PATTERN.search(user_prompt)
-    return html.unescape(match.group("q")).strip() if match else ""
-
-
 def parse_attempt(user_prompt: str) -> str:
     """Öğrencinin bu turdaki denemesi; yoksa boş."""
     match = _ATTEMPT_PATTERN.search(user_prompt)
@@ -120,14 +115,8 @@ def parse_attempt(user_prompt: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Görev çıkarımı — `LlmRequest.task` verilmediğinde
+# Taslak kurma girdileri
 # ---------------------------------------------------------------------------
-
-#: `question_gen.build_prompt`'un ürettiği metinde bulunan, sohbet prompt'unda
-#: BULUNMAYAN işaretler. İkisi birden aranıyor: tek işaret, materyalin içinde
-#: tesadüfen geçebilir; ikisi birden geçemez (biri kaynak blok başlığı, diğeri
-#: çıktı şeması satırı).
-_QUESTION_GEN_MARKERS = ('{"questions"', "### KAYNAK")
 
 #: Soru tipini ayırt eden işaretler — `question_gen._TYPE_INSTRUCTIONS`'ın
 #: metninden. Sıra ÖNEMLİ: `bug_hunt` de `code` içerir, o yüzden daha ayırt
@@ -142,22 +131,6 @@ _TYPE_MARKERS: tuple[tuple[str, str], ...] = (
 _CHUNK_ID_PATTERN = re.compile(r"^chunk_id:\s*(?P<id>[0-9a-fA-F-]{36})\s*$", re.MULTILINE)
 _COUNT_PATTERN = re.compile(r"kaynaklardan\s+(?P<n>\d+)\s+adet soru")
 _SHORT_ANSWER_MARKER = "accepted_answers"
-
-
-def infer_task(request: LlmRequest) -> LlmTask:
-    """İsteğin görevi. Çağıran söylediyse o, söylemediyse prompt biçiminden.
-
-    Çıkarım yalnız `CHAT` varsayılanıyla gelen istekler için çalışır: çağıran
-    açıkça `QUESTION_GEN` dediyse tahmin yürütmenin anlamı yok, dediyse `CHAT`
-    diye ısrar edemeyiz — ama varsayılanı ayırt edemediğimiz için `CHAT` gelen
-    isteğe bakmak zorundayız. Ayrım netleştiğinde (bkz. modül docstring'i, madde 2)
-    bu fonksiyonun gövdesi tek satıra iner.
-    """
-    if request.task is not LlmTask.CHAT:
-        return request.task
-    if all(marker in request.user for marker in _QUESTION_GEN_MARKERS):
-        return LlmTask.QUESTION_GEN
-    return LlmTask.CHAT
 
 
 def _question_type_of(user_prompt: str) -> str:
@@ -244,7 +217,7 @@ def _stage_question(stage: SocraticStage | None, source: ParsedSource) -> str:
             )
 
 
-def _qa_text(question: str, sources: list[ParsedSource]) -> str:
+def _qa_text(sources: list[ParsedSource]) -> str:
     lead = sources[0]
     body = _summarize(lead.text)
     if len(sources) > 1:
@@ -400,7 +373,7 @@ class FakeLlmClient:
         if self._malformed_first and self.calls == 1:
             return "Tabii, işte cevabınız: bu bir JSON değil."
 
-        if infer_task(request) is LlmTask.QUESTION_GEN:
+        if request.task is LlmTask.QUESTION_GEN:
             # Soru üretimi sohbet zarfını KULLANMAZ. Ayrım burada, tek yerde:
             # aşağıdaki gövde `<source>` etiketlerine göre kurulmuş ve soru
             # üretimi prompt'unda öyle bir etiket yok — ayrım yapılmasaydı
@@ -435,7 +408,7 @@ class FakeLlmClient:
         elif request.mode is ChatMode.EXAM:
             answer = _exam_text()
         else:
-            answer = _qa_text(parse_question(request.user), cited)
+            answer = _qa_text(cited)
 
         hints = []
         if request.mode is ChatMode.SOCRATIC:

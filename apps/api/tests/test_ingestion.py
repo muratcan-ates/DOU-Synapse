@@ -7,8 +7,9 @@ dayanıyor.
 
 from __future__ import annotations
 
-import io
 import itertools
+from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 
@@ -18,36 +19,10 @@ from app.modules.ingestion import parsers
 from app.modules.ingestion.chunking import chunk_blocks, estimate_tokens
 from app.modules.ingestion.parsers import ParsedBlock
 from app.modules.ingestion.validation import validate_upload
+from tests.factories import make_pdf, make_pptx
 
 ALLOWED = {".pdf", ".pptx", ".md", ".txt", ".py"}
 MAX_BYTES = 1024 * 1024
-
-
-def make_pdf(pages: list[str]) -> bytes:
-    import pymupdf
-
-    document = pymupdf.open()
-    for body in pages:
-        page = document.new_page()
-        page.insert_text((72, 72), body, fontsize=11)
-    data: bytes = document.tobytes()
-    document.close()
-    return data
-
-
-def make_pptx(slides: list[tuple[str, str]]) -> bytes:
-    from pptx import Presentation
-    from pptx.util import Inches
-
-    presentation = Presentation()
-    for title, body in slides:
-        slide = presentation.slides.add_slide(presentation.slide_layouts[5])
-        slide.shapes.title.text = title
-        box = slide.shapes.add_textbox(Inches(1), Inches(2), Inches(6), Inches(3))
-        box.text_frame.text = body
-    buffer = io.BytesIO()
-    presentation.save(buffer)
-    return buffer.getvalue()
 
 
 class TestValidation:
@@ -184,3 +159,24 @@ class TestChunking:
     def test_token_tahmini_makul(self) -> None:
         assert 1 <= estimate_tokens("kisa") <= 3
         assert estimate_tokens("a" * 370) == pytest.approx(100, abs=5)
+
+
+class TestRetryBackoff:
+    async def test_ilk_hata_veritabanina_gelecek_deneme_zamanini_yazar(self) -> None:
+        """Geri çekilme yalnız süreç içi sleep değil, ortak DB kuralıdır."""
+        from app.modules.ingestion import pipeline
+
+        session = AsyncMock()
+        delay = await pipeline._fail_job(
+            session,
+            uuid4(),
+            uuid4(),
+            attempt=1,
+            message="geçici hata",
+        )
+
+        assert delay == pipeline.RETRY_BACKOFF_SECONDS[0]
+        params = session.execute.await_args.args[1]
+        assert params["status"] == "pending"
+        assert params["delay_seconds"] == pipeline.RETRY_BACKOFF_SECONDS[0]
+        assert params["exhausted"] is False

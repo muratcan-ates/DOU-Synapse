@@ -16,20 +16,31 @@ Yetkilendirme daima `CourseMemberDep` / `CourseInstructorDep` ile yapılır; ken
 
 from __future__ import annotations
 
+import math
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, select, tuple_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseInstructorDep, CourseMemberDep, SessionDep
+from app.api.deps import (
+    CourseContext,
+    CourseInstructorDep,
+    CourseMemberDep,
+    PageDep,
+    SessionDep,
+)
 from app.core.config import get_settings
-from app.core.errors import ConflictError, NotFoundError, ValidationError
+from app.core.errors import ConflictError, NotFoundError, RateLimitError, ValidationError
+from app.core.pagination import decode_time_cursor, encode_time_cursor
+from app.core.rate_limit import get_concurrency_gate, get_limiter
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.models.core import Chunk, Document
 from app.modules.assessment import question_gen
 from app.modules.assessment.grading import load_source_refs
+from app.modules.generation.llm import LlmTask
 from app.schemas.assessment import (
     QuestionGenerateRequest,
     QuestionGenerationOut,
@@ -39,8 +50,33 @@ from app.schemas.assessment import (
     TopicOut,
     public_payload,
 )
+from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["assessment"])
+
+#: Sayaç kapsamı. Sınırlayıcı `api/chat.py` ile PAYLAŞILIYOR ve iki ucun doğal
+#: anahtarı da `kullanıcı:ders`; kapsam olmasaydı sohbet etmek soru üretim
+#: kotasını sessizce tüketirdi (`core/rate_limit.py`).
+QUESTION_GEN_SCOPE = "qgen"
+
+
+def _bekleme_metni(saniye: float) -> str:
+    """Kalan süreyi kullanıcıya okunur biçimde yazar.
+
+    YUKARI yuvarlanıyor: 4,2 saniye kaldığında "4 saniye" demek, kullanıcıyı
+    hâlâ reddedilecek bir denemeye yollamak olurdu.
+
+    Sayı hata METNİNE giriyor, ayrı bir alana değil: hata zarfı
+    `{code, message, request_id}` olarak sabittir (lider sözleşmesi) ve
+    `Retry-After` başlığı `expose_headers` olmadan çapraz-origin JavaScript'e
+    görünmüyor — `core/errors.py` aynı gerekçeyi istek kimliği için zaten
+    yazmış. Arayüz backend'in mesajını olduğu gibi gösteriyor (`lib/api.ts`),
+    yani bilgi kullanıcıya ulaşıyor.
+    """
+    kalan = max(1, math.ceil(saniye))
+    if kalan < 60:
+        return f"{kalan} saniye"
+    return f"{math.ceil(kalan / 60)} dakika"
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +101,10 @@ async def create_topic(
 
 
 @router.get("/topics", response_model=list[TopicOut])
-async def list_topics(context: CourseMemberDep, session: SessionDep) -> list[TopicOut]:
+async def list_topics(
+    context: CourseMemberDep,
+    session: SessionDep,
+) -> list[TopicOut]:
     """Konu listesi. Dersin tüm üyeleri (öğrenci + eğitmen) görebilir."""
     result = await session.execute(
         select(Topic).where(Topic.course_id == context.course_id).order_by(Topic.created_at)
@@ -83,11 +122,33 @@ async def _question_out(
 ) -> QuestionOut:
     """Tek soruyu rolüne göre biçimler. Liste ucu toplu sürümü kullanır."""
     refs = await load_source_refs(session, [question.source_chunk_id])
-    return _build_out(question, context=context, source=refs.get(question.source_chunk_id))
+    stale = await _source_stale_map(session, [question.source_chunk_id])
+    return _build_out(
+        question,
+        context=context,
+        source=refs.get(question.source_chunk_id),
+        source_stale=stale.get(question.source_chunk_id, False),
+    )
+
+
+async def _source_stale_map(session: AsyncSession, chunk_ids: list[UUID]) -> dict[UUID, bool]:
+    """Kaynak belgesi açıkça yeni sürümle değiştirilmiş chunk'ları toplu bulur."""
+    if not chunk_ids:
+        return {}
+    rows = await session.execute(
+        select(Chunk.id, Document.superseded_at)
+        .join(Document, Document.id == Chunk.document_id)
+        .where(Chunk.id.in_(set(chunk_ids)))
+    )
+    return {chunk_id: superseded_at is not None for chunk_id, superseded_at in rows}
 
 
 def _build_out(
-    question: Question, *, context: CourseContext, source: SourceRefOut | None
+    question: Question,
+    *,
+    context: CourseContext,
+    source: SourceRefOut | None,
+    source_stale: bool,
 ) -> QuestionOut:
     payload = (
         question.payload
@@ -106,6 +167,7 @@ def _build_out(
         reviewed_at=question.reviewed_at,
         created_at=question.created_at,
         source=source,
+        source_stale=source_stale,
     )
 
 
@@ -117,13 +179,14 @@ async def _load_question(session: AsyncSession, question_id: UUID, course_id: UU
     return question
 
 
-@router.get("/questions", response_model=list[QuestionOut])
+@router.get("/questions", response_model=PageOut[QuestionOut])
 async def list_questions(
     context: CourseMemberDep,
     session: SessionDep,
+    page: PageDep,
     status_filter: Annotated[QuestionStatus | None, Query(alias="status")] = None,
     topic_id: Annotated[UUID | None, Query()] = None,
-) -> list[QuestionOut]:
+) -> PageOut[QuestionOut]:
     """Soru havuzu.
 
     Öğrenci için `status` parametresi **ne gelirse gelsin** `approved`'a sabitlenir;
@@ -141,14 +204,37 @@ async def list_questions(
     if topic_id is not None:
         query = query.where(Question.topic_id == topic_id)
 
+    if page.cursor is not None:
+        created_at, row_id = decode_time_cursor(page.cursor)
+        query = query.where(tuple_(Question.created_at, Question.id) < (created_at, row_id))
+
     questions = list(
-        (await session.execute(query.order_by(Question.created_at.desc()))).scalars().all()
+        (
+            await session.execute(
+                query.order_by(Question.created_at.desc(), Question.id.desc()).limit(page.limit + 1)
+            )
+        )
+        .scalars()
+        .all()
     )
-    refs = await load_source_refs(session, [question.source_chunk_id for question in questions])
-    return [
-        _build_out(question, context=context, source=refs.get(question.source_chunk_id))
-        for question in questions
+    visible = questions[: page.limit]
+    refs = await load_source_refs(session, [question.source_chunk_id for question in visible])
+    stale = await _source_stale_map(session, [question.source_chunk_id for question in visible])
+    items = [
+        _build_out(
+            question,
+            context=context,
+            source=refs.get(question.source_chunk_id),
+            source_stale=stale.get(question.source_chunk_id, False),
+        )
+        for question in visible
     ]
+    next_cursor = (
+        encode_time_cursor(visible[-1].created_at, visible[-1].id)
+        if len(questions) > page.limit
+        else None
+    )
+    return PageOut(items=items, next_cursor=next_cursor)
 
 
 @router.post("/questions/generate", response_model=QuestionGenerationOut)
@@ -166,41 +252,87 @@ async def generate_questions(
     """
     settings = get_settings()
 
-    topic = await session.get(Topic, payload.topic_id)
-    if topic is None or topic.course_id != context.course_id:
-        raise NotFoundError("Konu bulunamadı.")
+    # İki kapı da gövdenin İLK işi (FR-222): sınıra takılan bir istek hiçbir iş
+    # yapmamalı — ne konu doğrulaması, ne retrieval, ne LLM turu. Kapı üretim
+    # başladıktan sonra kapansaydı maliyet zaten ödenmiş olurdu.
+    #
+    # Sıra bilinçli: önce eşzamanlılık, sonra kota. Tersi olsaydı eşzamanlılığa
+    # takılan istek hiç iş yapmadığı hâlde bir kota hakkı yakardı.
+    #
+    # İki kapının ANAHTARLARI farklı ve bu bir tutarsızlık değil. Kota
+    # `kullanıcı:ders` — bir öğretmenin iki dersteki kullanımı ayrı ölçülür.
+    # Eşzamanlılık yalnız `kullanıcı`: sınırın gerekçesi maliyet değil
+    # tutarlılık, ve karışan şey öğretmenin kendi dikkati (`config.py`).
+    gate = get_concurrency_gate()
+    limiter = get_limiter()
+    kota_anahtari = f"{context.user_id}:{context.course_id}"
 
-    if payload.answer_format is not None and payload.question_type is not QuestionType.OPEN:
-        raise ValidationError("answer_format yalnızca 'open' tipi sorular için verilebilir.")
+    with gate.hold(
+        QUESTION_GEN_SCOPE,
+        str(context.user_id),
+        limit=settings.question_gen_max_concurrent,
+        message=(
+            "Başlattığın bir soru üretimi hâlâ sürüyor. O tamamlandığında yenisini başlatabilirsin."
+        ),
+    ):
+        if not limiter.allow(
+            QUESTION_GEN_SCOPE,
+            kota_anahtari,
+            limit=settings.question_gen_rate_limit_requests,
+            window_seconds=settings.question_gen_rate_limit_window_seconds,
+        ):
+            bekleme = limiter.retry_after(
+                QUESTION_GEN_SCOPE,
+                kota_anahtari,
+                window_seconds=settings.question_gen_rate_limit_window_seconds,
+            )
+            raise RateLimitError(
+                f"Soru üretimi kotan doldu. {_bekleme_metni(bekleme)} sonra tekrar deneyebilirsin."
+            )
 
-    report = await question_gen.generate_questions(
-        session,
-        course_id=context.course_id,
-        topic=topic,
-        question_type=payload.question_type,
-        count=payload.count or settings.question_generation_batch,
-        created_by=context.user_id,
-        retriever=question_gen.resolve_retriever(session),
-        completion=question_gen.resolve_completion(),
-        answer_format=payload.answer_format,
-        example_questions=payload.example_questions,
-        retrieval_limit=settings.retrieval_top_k,
-    )
+        topic = await session.get(Topic, payload.topic_id)
+        if topic is None or topic.course_id != context.course_id:
+            raise NotFoundError("Konu bulunamadı.")
 
-    refs = await load_source_refs(
-        session, [question.source_chunk_id for question in report.questions]
-    )
-    return QuestionGenerationOut(
-        requested=report.requested,
-        returned=report.returned,
-        accepted=report.accepted,
-        rejected=report.rejected,
-        rejection_reasons=report.rejection_reasons,
-        questions=[
-            _build_out(question, context=context, source=refs.get(question.source_chunk_id))
-            for question in report.questions
-        ],
-    )
+        if payload.answer_format is not None and payload.question_type is not QuestionType.OPEN:
+            raise ValidationError("answer_format yalnızca 'open' tipi sorular için verilebilir.")
+
+        report = await question_gen.generate_questions(
+            session,
+            course_id=context.course_id,
+            topic=topic,
+            question_type=payload.question_type,
+            count=payload.count or settings.question_generation_batch,
+            created_by=context.user_id,
+            retriever=question_gen.resolve_retriever(session),
+            completion=question_gen.resolve_completion(LlmTask.QUESTION_GEN),
+            answer_format=payload.answer_format,
+            example_questions=payload.example_questions,
+            retrieval_limit=settings.retrieval_top_k,
+        )
+
+        refs = await load_source_refs(
+            session, [question.source_chunk_id for question in report.questions]
+        )
+        stale = await _source_stale_map(
+            session, [question.source_chunk_id for question in report.questions]
+        )
+        return QuestionGenerationOut(
+            requested=report.requested,
+            returned=report.returned,
+            accepted=report.accepted,
+            rejected=report.rejected,
+            rejection_reasons=report.rejection_reasons,
+            questions=[
+                _build_out(
+                    question,
+                    context=context,
+                    source=refs.get(question.source_chunk_id),
+                    source_stale=stale.get(question.source_chunk_id, False),
+                )
+                for question in report.questions
+            ],
+        )
 
 
 async def _review(

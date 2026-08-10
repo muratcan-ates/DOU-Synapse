@@ -1,5 +1,10 @@
 /** Backend şemalarıyla birebir sözleşmeler (apps/api/app/schemas). */
 
+export interface Page<T> {
+  items: T[];
+  next_cursor: string | null;
+}
+
 export interface Course {
   id: string;
   code: string;
@@ -20,6 +25,9 @@ export interface CourseDocument {
   chunk_count: number;
   error_message: string | null;
   created_at: string;
+  /** T508: açıkça yeni sürümle değiştirilmiş belge; arayüz bunu rozetle gösterir. */
+  superseded_at?: string | null;
+  supersedes_document_id?: string | null;
 }
 
 export interface ChunkPreview {
@@ -43,7 +51,11 @@ export interface Member {
 
 // --- Sohbet (T021) — backend `app/schemas/chat.py` ile birebir ---------------
 
-export type AnswerStatus = "answered" | "insufficient_context" | "out_of_scope";
+export type AnswerStatus =
+  | "answered"
+  | "insufficient_context"
+  | "out_of_scope"
+  | "budget_exhausted";
 export type ChatMode = "qa" | "socratic" | "exam";
 export type SocraticStage =
   | "diagnose"
@@ -104,6 +116,26 @@ export interface ChatRequest {
 }
 
 export type ChatRole = "user" | "assistant";
+export type ChatFeedbackRating = "helpful" | "unhelpful";
+export type ChatFeedbackReason =
+  | "helpful"
+  | "inaccurate"
+  | "irrelevant"
+  | "citation_problem"
+  | "too_direct"
+  | "unsafe"
+  | "other";
+
+export interface ChatFeedback {
+  id: string;
+  message_id: string;
+  rating: ChatFeedbackRating;
+  reason: ChatFeedbackReason;
+  comment: string | null;
+  share_with_instructor: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 /** Oturum geçmişindeki tek mesaj (`GET /chat/sessions/{id}`). */
 export interface ChatMessage {
@@ -114,6 +146,29 @@ export interface ChatMessage {
   status: AnswerStatus | null;
   socratic_stage: SocraticStage | null;
   created_at: string;
+  feedback: ChatFeedback | null;
+}
+
+export interface SharedChatFeedback {
+  id: string;
+  message_id: string;
+  student_name: string;
+  rating: ChatFeedbackRating;
+  reason: ChatFeedbackReason;
+  comment: string | null;
+  question_excerpt: string | null;
+  answer_excerpt: string;
+  updated_at: string;
+}
+
+export interface ChatQuality {
+  course_id: string;
+  rated_count: number;
+  helpful_count: number;
+  unhelpful_count: number;
+  shared_review_count: number;
+  reason_counts: Partial<Record<ChatFeedbackReason, number>>;
+  recent_shared: SharedChatFeedback[];
 }
 
 export interface ChatSessionSummary {
@@ -341,4 +396,19 @@ export interface ClassAnalytics {
   student_count: number;
   answered_questions: number;
   out_of_scope: OutOfScopeStat;
+}
+
+/**
+ * Asistanın bu kullanıcı için açık olup olmadığı.
+ *
+ * `reason` ve `message` sunucudan gelir; arayüz kilit metnini uydurmaz.
+ * Kararın sahibi `GET /courses/{id}/chat/availability` ve aynı kararı
+ * `POST /chat` de 403 ile uygular — iki yüzey tek fonksiyonu okur.
+ */
+export interface ChatAvailability {
+  available: boolean;
+  reason: string | null;
+  message: string | null;
+  allowed_modes: ChatMode[];
+  hint_limit: number;
 }

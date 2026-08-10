@@ -40,10 +40,32 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseMemberDep, SessionDep
+from app.api.deps import (
+    CourseContext,
+    CourseMemberDep,
+    SessionDep,
+    SettingsDep,
+)
 from app.core.config import Settings, get_settings
+from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
-from app.models.assessment import Answer, ExamMode, ExamSession, Question, QuestionStatus, Topic
+from app.models.assessment import (
+    Answer,
+    ExamBlueprint,
+    ExamMode,
+    ExamSession,
+    ExamVersion,
+    ExamVersionStatus,
+    Question,
+    QuestionStatus,
+    Topic,
+)
+from app.modules.assessment.exam_paper import paper_question_ids
+from app.modules.assessment.exam_state import (
+    effective_expiry,
+    remaining_seconds,
+    session_cap_minutes,
+)
 from app.modules.assessment.grading import (
     GradingOutcome,
     SourceMaterial,
@@ -62,6 +84,7 @@ from app.schemas.assessment import (
     ExamStartRequest,
     HintOut,
     HintRequest,
+    RubricCriterionScore,
     SourceRefOut,
     public_payload,
     solution_payload,
@@ -75,32 +98,10 @@ router = APIRouter(prefix="/courses/{course_id}", tags=["exams"])
 # ---------------------------------------------------------------------------
 
 
-async def db_now(session: AsyncSession) -> datetime:
-    """İşlemin veritabanı saati.
-
-    İşlem içinde sabittir, dolayısıyla aynı istekte yapılan iki karşılaştırma
-    (süre doldu mu / kalan kaç saniye) tutarlıdır.
-    """
-    value = await session.scalar(select(func.now()))
-    if value is None:  # pragma: no cover - now() hiçbir zaman NULL dönmez
-        raise RuntimeError("veritabanı saati okunamadı")
-    return value
-
-
-def effective_expiry(exam: ExamSession, *, settings: Settings) -> datetime | None:
-    """Kırpılmış bitiş zamanı. practice modda None (süresiz)."""
-    if exam.mode is ExamMode.PRACTICE:
-        return None
-    cap = exam.started_at + timedelta(minutes=settings.exam_duration_minutes)
-    if exam.expires_at is None:  # pragma: no cover - CHECK kısıtı bunu engeller
-        return cap
-    return min(exam.expires_at, cap)
-
-
-def _remaining_seconds(expiry: datetime | None, now: datetime) -> int | None:
-    if expiry is None:
-        return None
-    return max(0, int((expiry - now).total_seconds()))
+# Zaman yardımcıları `app/modules/assessment/exam_state.py`'ye taşındı: aynı süre
+# kuralına asistan kilidi de (`api/deps.py`) ihtiyaç duyuyor ve `deps.py`'nin bu
+# dosyayı içe aktarması döngü olurdu. Yukarıdaki üç zaman kuralından ikincisinin
+# (kırpma) gerekçesi artık orada yaşıyor.
 
 
 # ---------------------------------------------------------------------------
@@ -159,6 +160,9 @@ def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
         ),
         "mesaj": outcome.message,
         "odak": outcome.focus,
+        # FR-117: ölçüt kırılımı. Yeni tablo açılmadı — `answers.feedback` tam bu iş
+        # için var (0004:110-112) ve içeriği tek bir yerden üretiliyor.
+        "rubrik_kirilimi": [row.model_dump() for row in outcome.rubric_breakdown],
     }
 
 
@@ -210,8 +214,21 @@ def _answer_feedback(
         why_wrong=reference(why_wrong),
         evidence=reference(evidence),
         solution=solution_payload(question.type, question.payload) if question else None,
+        rubric_breakdown=_rubric_breakdown(feedback),
         message=str(feedback.get("mesaj")) if feedback.get("mesaj") else None,
     )
+
+
+def _rubric_breakdown(feedback: dict[str, object]) -> list[RubricCriterionScore]:
+    """Kaydedilmiş kırılımı okur.
+
+    Kayıt anında yazılmayan (0008 öncesi) cevaplarda anahtar yoktur ve boş liste
+    döner; eski cevaplar geriye dönük olarak yeniden puanlanmaz.
+    """
+    raw = feedback.get("rubrik_kirilimi")
+    if not isinstance(raw, list):
+        return []
+    return [RubricCriterionScore.model_validate(row) for row in raw]
 
 
 async def _session_out(
@@ -227,10 +244,15 @@ async def _session_out(
     `with_questions=False` yalnız liste ucunda kullanılır: orada soru metinleri
     gerekmiyor ve N oturum için N soru sorgusu koşturmanın da anlamı yok.
     """
-    questions = await _load_questions(session, list(exam.question_ids)) if with_questions else {}
+    paper = await paper_question_ids(session, exam)
+    questions = await _load_questions(session, paper) if with_questions else {}
     answers = await _answers_of(session, exam.id)
     answered = {answer.question_id for answer in answers}
-    expiry = effective_expiry(exam, settings=settings)
+    expiry = effective_expiry(
+        exam,
+        settings=settings,
+        cap_minutes=await session_cap_minutes(session, exam, settings=settings),
+    )
 
     outcomes = [
         GradingOutcome(
@@ -246,12 +268,15 @@ async def _session_out(
         mode=exam.mode,
         started_at=exam.started_at,
         expires_at=expiry,
-        remaining_seconds=_remaining_seconds(expiry, now),
+        remaining_seconds=remaining_seconds(expiry, now),
         expired=expiry is not None and now >= expiry,
         finished_at=exam.finished_at,
         score=score_of(outcomes) if exam.finished_at else None,
-        question_count=len(exam.question_ids),
+        question_count=len(paper),
         answered_count=len(answered),
+        exam_version_id=exam.exam_version_id,
+        exam_blueprint_id=exam.exam_blueprint_id,
+        attempt_no=exam.attempt_no,
         questions=[
             ExamQuestionOut(
                 id=question_id,
@@ -259,7 +284,7 @@ async def _session_out(
                 payload=public_payload(questions[question_id].type, questions[question_id].payload),
                 answered=question_id in answered,
             )
-            for question_id in exam.question_ids
+            for question_id in paper
             if question_id in questions
         ],
     )
@@ -270,17 +295,105 @@ async def _session_out(
 # ---------------------------------------------------------------------------
 
 
+async def _start_blueprint_exam(
+    blueprint_id: UUID,
+    context: CourseContext,
+    session: AsyncSession,
+    settings: Settings,
+) -> ExamSessionOut:
+    """Yayınlanmış bir sınava oturum açar (FR-115, FR-116).
+
+    Üç kapı da burada Türkçe konuşur; hepsinin veritabanı tarafında ikinci bir
+    katmanı var ve iki katman bağımsız olarak doğru davranmalı (Anayasa II):
+
+    - **Görünürlük.** Öğrenci yayınlanmamış bir blueprint'i `exam_blueprints_read`
+      politikası yüzünden zaten göremez; burada 404 döner ve varlığı sızmaz.
+    - **Yayın penceresi.** `exam_sessions_self_insert` politikası
+      `app.is_exam_open(...)` çağırıyor, yani pencere kapalıyken INSERT'i
+      veritabanı da reddeder. Buradaki kontrol yalnız anlaşılır bir cümle
+      kurabilmek için var — politika ihlali kısıt adıyla döner (Anayasa V).
+    - **Deneme hakkı.** Sayım burada yapılır, yarış `exam_sessions_attempt_key`
+      tekil indeksiyle kapanır ve ikinci eşzamanlı istek 409'a çevrilir.
+
+    Süre blueprint'in kendi `duration_minutes`'ıdır; global `exam_duration_minutes`
+    bundan sonra yalnız prova akışının varsayılanıdır.
+    """
+    blueprint = await session.get(ExamBlueprint, blueprint_id)
+    if blueprint is None or blueprint.course_id != context.course_id:
+        raise NotFoundError("Sınav bulunamadı.")
+
+    version = await session.scalar(
+        select(ExamVersion).where(
+            ExamVersion.blueprint_id == blueprint.id,
+            ExamVersion.status == ExamVersionStatus.PUBLISHED,
+        )
+    )
+    if version is None:
+        raise ConflictError("Bu sınav henüz yayınlanmadı.")
+
+    now = await db_now(session)
+    if blueprint.opens_at is not None and now < blueprint.opens_at:
+        raise ConflictError("Bu sınav henüz açılmadı; yayın penceresi başlamadan girilemez.")
+    if blueprint.closes_at is not None and now >= blueprint.closes_at:
+        raise ConflictError("Bu sınavın süresi doldu; yeni oturum başlatılamaz.")
+
+    used = await session.scalar(
+        select(func.count(ExamSession.id)).where(
+            ExamSession.exam_blueprint_id == blueprint.id,
+            ExamSession.user_id == context.user_id,
+        )
+    )
+    used = int(used or 0)
+    if used >= blueprint.max_attempts:
+        raise ConflictError(
+            f"Bu sınav için {blueprint.max_attempts} deneme hakkınız vardı ve hepsini kullandınız."
+        )
+
+    exam = ExamSession(
+        course_id=context.course_id,
+        user_id=context.user_id,
+        mode=ExamMode.EXAM,
+        started_at=now,
+        expires_at=now + timedelta(minutes=blueprint.duration_minutes),
+        # Kâğıt `exam_items`'tan okunur; iki kaynak birden yazılamaz.
+        question_ids=None,
+        exam_version_id=version.id,
+        exam_blueprint_id=blueprint.id,
+        attempt_no=used + 1,
+    )
+    session.add(exam)
+    try:
+        await session.flush()
+    except IntegrityError as exc:
+        raise ConflictError(
+            "Bu sınav için başka bir oturum aynı anda başlatıldı; sayfayı yenileyin."
+        ) from exc
+
+    return await _session_out(session, exam, settings=settings, now=now)
+
+
 @router.post("/exams", response_model=ExamSessionOut, status_code=status.HTTP_201_CREATED)
 async def start_exam(
     payload: ExamStartRequest, context: CourseMemberDep, session: SessionDep
 ) -> ExamSessionOut:
     """Sınav ya da alıştırma oturumu açar.
 
-    Onaylı havuz boşsa oturum açılmaz: "kaynak yoksa cevap yok"un sınav ayağıdır.
-    Sorular burada sabitlenir; sonradan yapılan onay/red başlamış oturumun soru
-    listesini değiştirmez.
+    İki akış var ve ayrımı `blueprint_id` yapar:
+
+    - **Prova (bugünkü akış).** Onaylı havuzdan rastgele soru çekilir ve oturumun
+      `question_ids`'ine sabitlenir. Onaylı havuz boşsa oturum açılmaz: "kaynak
+      yoksa cevap yok"un sınav ayağıdır.
+    - **Blueprint sınavı (0008).** Kâğıt yayınlanmış sürümün `exam_items`'ından
+      gelir; `question_ids` NULL kalır ve oturum `exam_version_id` ile o sürüme
+      bağlanır. Sonradan yeni sürüm yayınlanması başlamış oturumu değiştirmez.
+
+    İki akış aynı satırda karışamaz: `exam_sessions_paper_source` kısıtı kâğıdın
+    iki kaynağı olmasını ifade edilemez kılıyor.
     """
     settings = get_settings()
+
+    if payload.blueprint_id is not None:
+        return await _start_blueprint_exam(payload.blueprint_id, context, session, settings)
 
     if payload.topic_id is not None:
         topic = await session.get(Topic, payload.topic_id)
@@ -325,7 +438,10 @@ async def start_exam(
 
 
 @router.get("/exams", response_model=list[ExamSessionOut])
-async def list_exams(context: CourseMemberDep, session: SessionDep) -> list[ExamSessionOut]:
+async def list_exams(
+    context: CourseMemberDep,
+    session: SessionDep,
+) -> list[ExamSessionOut]:
     """Kullanıcının bu dersteki sınav oturumları, en yenisi başta.
 
     Neden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —
@@ -398,11 +514,15 @@ async def submit_answer(
     if exam.finished_at is not None:
         raise ConflictError("Bu oturum tamamlandı; yeni cevap kabul edilmiyor.")
 
-    expiry = effective_expiry(exam, settings=settings)
+    expiry = effective_expiry(
+        exam,
+        settings=settings,
+        cap_minutes=await session_cap_minutes(session, exam, settings=settings),
+    )
     if expiry is not None and now >= expiry:
         raise ConflictError("Sınav süresi doldu; cevap kabul edilmiyor.")
 
-    if payload.question_id not in exam.question_ids:
+    if payload.question_id not in await paper_question_ids(session, exam):
         raise NotFoundError("Bu soru bu sınav oturumunda yok.")
 
     if exam.mode is ExamMode.EXAM and payload.hint_level > 0:
@@ -477,6 +597,7 @@ async def request_hint(
     payload: HintRequest,
     context: CourseMemberDep,
     session: SessionDep,
+    settings: SettingsDep,
 ) -> HintOut:
     """Kademeli ipucu — yalnız `practice` modunda.
 
@@ -484,7 +605,6 @@ async def request_hint(
     dayandığı chunk'tan daha çoğu açılır. Böylece ipucu her zaman gerçek bir
     materyal parçasına dayanır (Anayasa I) ve LLM ayakta olmasa da çalışır.
     """
-    settings = get_settings()
     exam = await _load_exam(session, session_id, context)
 
     if exam.mode is ExamMode.EXAM:
@@ -495,7 +615,7 @@ async def request_hint(
     if exam.finished_at is not None:
         raise ConflictError("Bu oturum tamamlandı.")
 
-    if payload.question_id not in exam.question_ids:
+    if payload.question_id not in await paper_question_ids(session, exam):
         raise NotFoundError("Bu soru bu sınav oturumunda yok.")
 
     question = await session.get(Question, payload.question_id)
@@ -507,7 +627,10 @@ async def request_hint(
     if source is None:
         raise NotFoundError("Bu sorunun kaynağı okunamadı; ipucu üretilemiyor.")
 
-    level = min(payload.hint_level, settings.socratic_max_stage)
+    from app.modules.policy.service import resolve_policy
+
+    policy = await resolve_policy(session, course_id=context.course_id, settings=settings)
+    level = min(payload.hint_level, policy.max_hints)
     return HintOut(
         question_id=question.id,
         hint_level=level,
@@ -597,7 +720,7 @@ async def finish_exam(
         ],
     )
 
-    unanswered = len(exam.question_ids) - len(answers)
+    unanswered = len(await paper_question_ids(session, exam)) - len(answers)
     return ExamFinishOut(
         session_id=exam.id,
         score=total,

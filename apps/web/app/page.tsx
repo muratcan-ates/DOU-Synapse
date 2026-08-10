@@ -10,9 +10,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { signIn, type DemoUser } from "@/lib/api";
+import { signIn, signInWithPassword, type DemoUser } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import { ErrorNote } from "@/components/page-state";
+import { Button, Input } from "@/components/ui";
+import { Field } from "@/components/field";
+import { supabaseConfigured } from "@/lib/supabase";
 
 const DEMO_USERS: DemoUser[] = [
   {
@@ -32,6 +35,9 @@ const DEMO_USERS: DemoUser[] = [
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
 
   function enter(user: DemoUser) {
     /*
@@ -52,11 +58,26 @@ export default function LoginPage() {
       );
       return;
     }
-    router.push("/courses");
+    router.push("/dashboard");
+  }
+
+  async function enterWithPassword(event: React.FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await signInWithPassword(email.trim(), password);
+      router.push("/dashboard");
+    } catch (cause) {
+      setError(errorMessage(cause, "Oturum açılamadı. E-posta ve parolanızı kontrol edin."));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+    <main className="grid min-h-[100dvh] lg:grid-cols-[1.1fr_1fr]">
       {/* Sol: tez paneli */}
       <section className="flex flex-col justify-between p-8 lg:p-14">
         <p className="rise text-sm font-medium tracking-wide text-brand">
@@ -98,43 +119,85 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <h2 className="rise text-sm font-medium text-fg">Oturum aç</h2>
           <p className="rise rise-1 mt-1 text-xs text-fg-subtle">
-            Geliştirme ortamı girişi; canlıda üniversite hesabı kullanılır
+            {supabaseConfigured
+              ? "Üniversite hesabınızla devam edin"
+              : "Geliştirme ortamı girişi; canlıda üniversite hesabı kullanılır"}
           </p>
 
-          {/* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek
-              olduğunu peşinen söyler. */}
-          <ul className="mt-6 space-y-3">
-            {DEMO_USERS.map((user, index) => (
-              <li key={user.id}>
-                <button
-                  onClick={() => enter(user)}
-                  className={`rise rise-${index + 2} group flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-[border,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_2px_8px_rgba(28,25,23,0.04)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`}
+          {supabaseConfigured ? (
+            <form onSubmit={enterWithPassword} className="mt-6 space-y-4">
+              <Field label="E-posta">
+                {(control) => (
+                  <Input
+                    {...control}
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                )}
+              </Field>
+              <Field label="Parola">
+                {(control) => (
+                  <Input
+                    {...control}
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                  />
+                )}
+              </Field>
+              <Button type="submit" className="w-full" aria-disabled={busy}>
+                {busy ? "Oturum açılıyor…" : "Oturum aç"}
+              </Button>
+              <p className="text-right">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-brand hover:text-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
-                  <span
-                    aria-hidden
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-subtle font-mono text-sm font-semibold text-brand"
+                  Parolamı unuttum
+                </Link>
+              </p>
+            </form>
+          ) : (
+            /* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek
+               olduğunu peşinen söyler. */
+            <ul className="mt-6 space-y-3">
+              {DEMO_USERS.map((user, index) => (
+                <li key={user.id}>
+                  <button
+                    onClick={() => enter(user)}
+                    className={`rise rise-${index + 2} group flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-[border,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_2px_8px_rgba(28,25,23,0.04)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`}
                   >
-                    {user.fullName.charAt(0)}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-fg">
-                      {user.fullName}
+                    <span
+                      aria-hidden
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-subtle font-mono text-sm font-semibold text-brand"
+                    >
+                      {user.fullName.charAt(0)}
                     </span>
-                    <span className="mt-0.5 block text-xs text-fg-muted">
-                      {user.role === "instructor" ? "Eğitmen" : "Öğrenci"} ·{" "}
-                      {user.email}
+                    <span className="min-w-0">
+                      <span className="block text-sm font-medium text-fg">
+                        {user.fullName}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-fg-muted">
+                        {user.role === "instructor" ? "Eğitmen" : "Öğrenci"} ·{" "}
+                        {user.email}
+                      </span>
                     </span>
-                  </span>
-                  <span
-                    aria-hidden
-                    className="ml-auto text-fg-subtle transition-transform duration-200 group-hover:translate-x-0.5"
-                  >
-                    →
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                    <span
+                      aria-hidden
+                      className="ml-auto text-fg-subtle transition-transform duration-200 group-hover:translate-x-0.5"
+                    >
+                      →
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
           {error && (
             <div className="mt-4">
@@ -154,8 +217,8 @@ export default function LoginPage() {
             >
               KVKK aydınlatma metni
             </Link>{" "}
-            — hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
-            paylaşıldığını anlatır.
+            hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
+            paylaşıldığını açıklar.
           </p>
         </div>
       </section>

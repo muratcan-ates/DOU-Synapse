@@ -9,9 +9,11 @@
  * devam eder, sadece yanlış şeyi yapar — testin yakaladığı tam bu.
  */
 
+import { toSourceInfo } from "@/lib/source";
 import type {
   AnswerStatus,
   ChatAnswer,
+  ChatFeedback,
   ChatMessage,
   ChatMode,
   ChatRequest,
@@ -111,10 +113,15 @@ export type AbstentionStatus = Exclude<AnswerStatus, "answered">;
 export const ABSTENTION_LABEL: Record<AbstentionStatus, string> = {
   insufficient_context: "Materyalde dayanak bulunamadı",
   out_of_scope: "Dersin kapsamı dışında",
+  budget_exhausted: "Dersin günlük AI sınırına ulaşıldı",
 };
 
 export function isAbstention(status: AnswerStatus | null): status is AbstentionStatus {
-  return status === "insufficient_context" || status === "out_of_scope";
+  return (
+    status === "insufficient_context" ||
+    status === "out_of_scope" ||
+    status === "budget_exhausted"
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -248,6 +255,8 @@ export interface TranscriptMessage {
    * `false` yazmak, sunucunun vermediği bir bilgiyi uydurmak olurdu (Anayasa III).
    */
   cached: boolean;
+  /** Öğrencinin daha önce kaydettiği puan; yalnız kendi geçmişinde döner. */
+  feedback: ChatFeedback | null;
 }
 
 export function fromHistory(messages: ChatMessage[]): TranscriptMessage[] {
@@ -259,6 +268,7 @@ export function fromHistory(messages: ChatMessage[]): TranscriptMessage[] {
     citations: message.citations ?? [],
     socraticStage: message.socratic_stage,
     cached: false,
+    feedback: message.feedback,
   }));
 }
 
@@ -280,6 +290,7 @@ export function fromAnswer(answer: ChatAnswer): TranscriptMessage {
     citations: answer.citations ?? [],
     socraticStage: answer.socratic_stage,
     cached: answer.cached,
+    feedback: null,
   };
 }
 
@@ -292,6 +303,7 @@ export function userMessage(id: string, content: string): TranscriptMessage {
     citations: [],
     socraticStage: null,
     cached: false,
+    feedback: null,
   };
 }
 
@@ -331,12 +343,7 @@ export function citationSource(citation: Citation): {
   location: string;
   quote: string;
 } {
-  return {
-    fileName: citation.file_name,
-    // Konum sunucudan "Sayfa 7" / "Slayt 3" olarak gelir; arayüz biçimlendirmez.
-    location: citation.location,
-    quote: citation.snippet,
-  };
+  return toSourceInfo(citation);
 }
 
 export interface LadderRung {

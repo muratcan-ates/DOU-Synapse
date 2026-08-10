@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -100,6 +101,50 @@ def _download(cache_dir: Path, model_name: str) -> None:
     FastEmbedProvider(model_name=model_name, cache_dir=str(cache_dir)).embed_query("ısınma")
 
 
+def _copy_to_fresh_inode(source: Path, dest: Path) -> None:
+    """Gerçek byte kopyasıyla YENİ, tek bağlantılı bir inode üretir; atomik takar."""
+    tmp = dest.with_name(dest.name + ".materialize.tmp")
+    shutil.copyfile(source, tmp)
+    os.replace(tmp, dest)
+
+
+def _materialize(path: Path) -> None:
+    """Model dosyasını TEK bağlantılı gerçek bir inode hâline getirir.
+
+    onnx 1.22 harici ağırlık dosyasında iki şeyi birden reddediyor: symlink'i VE
+    birden çok hardlink taşıyan dosyayı ("multiple hard links, indicating a
+    potential hardlink attack" — PR #4 CI, iki ayrı koşuda ölçüldü; ikincisi bu
+    fonksiyonun hardlink kullanan ilk sürümünü yakaladı). Sözleşme bu yüzden
+    mekanizma değil sonuçtur: `not islink` ve `st_nlink == 1`.
+
+    Öncelik blob'u YERİNE TAŞIMAK (`os.replace`): aynı dosya sisteminde sıfır
+    kopya, sıfır ek tepe disk ve tek bağlantılı inode. Kopya yalnız yedek yoldur
+    (blob başka bağlantı taşıyorsa ya da taşıma yapılamazsa). Sürüm düşürmek
+    bilinçli olarak reddedildi: kısıt onnx'in güvenlik sertleştirmesi.
+    """
+    if path.is_symlink():
+        target = path.resolve()
+        path.unlink()
+        try:
+            if target.stat().st_nlink == 1:
+                os.replace(target, path)
+            else:
+                _copy_to_fresh_inode(target, path)
+        except OSError:
+            _copy_to_fresh_inode(target, path)
+    elif path.exists() and path.stat().st_nlink > 1:
+        # Gerçek dosya ama fazladan hardlink taşıyor (ilk sürümün bıraktığı durum
+        # dahil): kendi içeriğinden taze bir inode'a kopyalanır, bağ kopar.
+        _copy_to_fresh_inode(path, path)
+    else:
+        return
+
+    st = path.lstat()
+    if path.is_symlink() or st.st_nlink != 1:  # pragma: no cover - yukarısı imkânsız kılar
+        raise RuntimeError(f"tek bağlantılı gerçek dosyaya çevrilemedi: {path}")
+    _log(f"gerçek dosyaya çevrildi (nlink=1): {path.name}")
+
+
 def _quantize(snapshot: Path) -> tuple[int, int]:
     """model.onnx'i dinamik int8'e indirir; (fp32_bayt, int8_bayt) döndürür.
 
@@ -113,6 +158,10 @@ def _quantize(snapshot: Path) -> tuple[int, int]:
     source = snapshot / "model.onnx"
     external = snapshot / "model.onnx_data"
     target = snapshot / "model.int8.onnx"
+
+    # onnx 1.22 harici ağırlık symlink'ini reddediyor; quantizasyondan önce çevir.
+    _materialize(source)
+    _materialize(external)
 
     fp32_bytes = source.stat().st_size + (external.stat().st_size if external.exists() else 0)
     _log(f"quantizasyon başlıyor (fp32 {fp32_bytes / 1e9:.2f} GB)")
@@ -250,6 +299,8 @@ def main() -> int:
         # fp32 yolu: ölçülecek sapma yoktur, model indekstekiyle aynı uzaydadır.
         # İmaj büyür; ama "büyük ve doğru", "küçük ve sessizce yanlış"tan iyidir.
         external = snapshot / "model.onnx_data"
+        _materialize(snapshot / "model.onnx")
+        _materialize(external)
         total = (snapshot / "model.onnx").stat().st_size + (
             external.stat().st_size if external.exists() else 0
         )

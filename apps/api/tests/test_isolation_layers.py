@@ -25,6 +25,7 @@ from httpx import AsyncClient
 from sqlalchemy import text
 
 from tests.conftest import WORKER_DSN, UserFactory
+from tests.factories import create_course, enroll_student
 
 
 @pytest.fixture
@@ -45,14 +46,6 @@ async def rls_kapali() -> AsyncIterator[None]:
         await dispose_engine()
 
 
-async def _create_course(client: AsyncClient, headers: dict[str, str], code: str) -> str:
-    response = await client.post(
-        "/courses", json={"code": code, "title": f"{code} Dersi"}, headers=headers
-    )
-    assert response.status_code == 201, response.text
-    return response.json()["id"]
-
-
 async def _gorunen_ders_sayisi(user_id: UUID) -> int:
     """Uygulamanın kullandığı oturumla, HAM SQL ile kaç ders görünüyor."""
     from app.core.db import rls_session
@@ -71,7 +64,7 @@ class TestKatmanAyrimi:
         doğrulanmamış kalırdı.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        await _create_course(client, ayse, "COME301")
+        await create_course(client, ayse, "COME301")
         yabanci = await users.create("emre@dogus.edu.tr")
 
         assert await _gorunen_ders_sayisi(yabanci) == 0
@@ -85,7 +78,7 @@ class TestKatmanAyrimi:
         — RLS hâlâ açıksa "uygulama katmanı tuttu" sonucu çıkarılamaz.
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        await _create_course(client, ayse, "COME301")
+        await create_course(client, ayse, "COME301")
         yabanci = await users.create("emre@dogus.edu.tr")
 
         assert await _gorunen_ders_sayisi(yabanci) == 1
@@ -100,7 +93,7 @@ class TestKatmanAyrimi:
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak = users.auth(await users.create("burak@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.get(f"/courses/{course_id}", headers=burak)
 
@@ -111,7 +104,7 @@ class TestKatmanAyrimi:
     ) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak = users.auth(await users.create("burak@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.get(f"/courses/{course_id}/documents", headers=burak)
 
@@ -127,12 +120,8 @@ class TestKatmanAyrimi:
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         burak_id = await users.create("burak@dogus.edu.tr")
-        course_id = await _create_course(client, ayse, "COME301")
-        await client.post(
-            f"/courses/{course_id}/members",
-            json={"email": "burak@dogus.edu.tr", "role": "student"},
-            headers=ayse,
-        )
+        course_id = await create_course(client, ayse, "COME301")
+        await enroll_student(client, ayse, course_id, "burak@dogus.edu.tr")
 
         response = await client.get(f"/courses/{course_id}/members", headers=users.auth(burak_id))
 
@@ -148,24 +137,24 @@ class TestKatmanAyrimi:
         """
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
         yabanci = users.auth(await users.create("emre@dogus.edu.tr"))
-        await _create_course(client, ayse, "COME301")
+        await create_course(client, ayse, "COME301")
 
         response = await client.get("/courses", headers=yabanci)
 
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["items"] == []
 
     async def test_rls_kapaliyken_uye_dersini_gorebiliyor(
         self, client: AsyncClient, users: UserFactory, rls_kapali: None
     ) -> None:
         """Olumlu kontrol: yukarıdaki retler "her şey kapalı"dan gelmiyor."""
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
-        course_id = await _create_course(client, ayse, "COME301")
+        course_id = await create_course(client, ayse, "COME301")
 
         response = await client.get(f"/courses/{course_id}", headers=ayse)
 
         assert response.status_code == 200
-        assert response.json()["id"] == course_id
+        assert response.json()["id"] == str(course_id)
 
     async def test_rls_kapaliyken_var_olmayan_ders_de_404(
         self, client: AsyncClient, users: UserFactory, rls_kapali: None

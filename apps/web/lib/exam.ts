@@ -29,15 +29,8 @@
  */
 
 import { ApiError } from "@/lib/api";
-import type { SourceInfo } from "@/components/source-card";
 import type { Tone } from "@/lib/labels";
-import type {
-  AnswerFeedback,
-  ExamMode,
-  ExamQuestion,
-  ExamSession,
-  SourceRef,
-} from "@/lib/types";
+import type { AnswerFeedback, ExamMode, ExamQuestion, ExamSession } from "@/lib/types";
 
 /* -------------------------------------------------------------------------
  * Sabitler ve sözlükler
@@ -327,8 +320,8 @@ export function answerVerdict(feedback: AnswerFeedback): AnswerVerdict {
  * Sonuç etiketleri.
  *
  * `incorrect` WARNING tonundadır, danger değil: yanlış cevap bir arıza değil
- * çalışma yönüdür — `masteryLevel`'ın "Geliştirilmeli"si de aynı tonda
- * (`lib/labels.ts`). Kırmızı bu üründe hata rengi değildir (DESIGN.md).
+ * çalışma yönüdür — `MASTERY_LEVEL.needs_work`'ün "Geliştirilmeli"si de aynı
+ * tonda (`lib/analytics.ts`). Kırmızı bu üründe hata rengi değildir (DESIGN.md).
  * `ungraded` nötrdür: sistemin uydurmak yerine susması bir başarıdır.
  */
 export const VERDICT_LABEL: Record<AnswerVerdict, { label: string; tone: Tone }> = {
@@ -410,12 +403,11 @@ export function describeSolution(solution: Record<string, unknown> | null | unde
  * ---------------------------------------------------------------------- */
 
 /**
- * `SourceRef` → kaynak kartı girdisi. Dosya adı ve konum chunk metadata'sından
- * gelir; arayüz hiçbirini üretmez, yalnız taşır (Anayasa I).
+ * Eşleme `lib/source.ts`'te; burada yalnız sınav ekranının bildiği ad var.
+ * İsim korunuyor çünkü değiştirmek dönüşümle ilgisi olmayan bir çağrı yerini
+ * daha kirletirdi.
  */
-export function sourceInfo(ref: SourceRef): SourceInfo {
-  return { fileName: ref.file_name, location: ref.location, quote: ref.snippet };
-}
+export { toSourceInfo as sourceInfo } from "@/lib/source";
 
 /* -------------------------------------------------------------------------
  * Başlatma hatası

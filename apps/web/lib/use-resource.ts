@@ -20,7 +20,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { errorMessage } from "@/lib/errors";
+import { describeError, type ErrorInfo, type ErrorKind } from "@/lib/errors";
 
 /* -------------------------------------------------------------------------
  * Saf çekirdek 1: istek sıra kapısı
@@ -73,7 +73,15 @@ export interface ResourceState<T> {
 export type ResourceAction<T> =
   | { type: "reset" }
   | { type: "loaded"; data: T }
-  | { type: "failed"; message: string };
+  /**
+   * Başarısızlık artık düz metin değil, `ErrorInfo` taşıyor (T403).
+   *
+   * Reducer yalnız mesajı kullanıyor; sınıf ve destek kodu kancanın diğer
+   * çıktılarını besliyor. Yine de aynı eylemin içinde yolculuk ediyorlar,
+   * çünkü ayrı bir `setErrorKind(...)` çağrısı ilk unutulduğu dalda mesajla
+   * sınıfın birbirini tutmadığı bir ekran üretirdi.
+   */
+  | { type: "failed"; error: ErrorInfo };
 
 export const EMPTY_RESOURCE_STATE: ResourceState<never> = {
   data: null,
@@ -106,8 +114,8 @@ export function resourceReducer<T>(
       return settle(state, action.data, null, null);
     case "failed":
       return state.data === null
-        ? settle(state, null, action.message, null)
-        : settle(state, state.data, null, action.message);
+        ? settle(state, null, action.error.message, null)
+        : settle(state, state.data, null, action.error.message);
   }
 }
 
@@ -132,6 +140,40 @@ export function resourceReducer<T>(
  */
 export function isFirstLoadSettled(action: ResourceAction<unknown>): boolean {
   return action.type !== "reset";
+}
+
+/* -------------------------------------------------------------------------
+ * Saf çekirdek 4: yoklama aralığı (T404)
+ * ---------------------------------------------------------------------- */
+
+/** Yoklama en fazla bu kadar seyrekleşir; büsbütün durmaz. */
+export const POLL_BACKOFF_CAP_MS = 60_000;
+
+/**
+ * Ardışık başarısızlıkta yoklama aralığı ikişer katlanır (FR-156).
+ *
+ * Bugünkü davranış: sabit 2000 ms. API ölüyken ekran saniyede yarım istekle
+ * sunucuyu sonsuza kadar dövüyor ve her turda aynı hatayı yeniden yazıyor.
+ * Ölü bir sunucuya dakikada otuz istek göndermek onu geri getirmez; yeni
+ * ayağa kalkmış bir sunucuyu ise bütün açık sekmelerle birlikte tekrar
+ * düşürebilir.
+ *
+ * Neden büsbütün durmuyor: yoklamanın işi zaten "durum değişecek, ne zaman
+ * bilmiyorum" demek. Durdurmak, sunucu geri geldiğinde ekranın bunu hiç
+ * fark etmemesi olurdu; kullanıcı da fark etmez, çünkü ekranda eski veri
+ * duruyor ve doğru görünüyor.
+ *
+ * Tavan tabandan küçük olamaz: US1 kilidi 30 saniyelik tabanla yokluyor
+ * (`chat-availability.ts`), ve bir gün taban tavanı aşarsa aralığın SESSİZCE
+ * kısalması beklenmedik olurdu.
+ */
+export function pollDelayMs(
+  baseMs: number,
+  failureStreak: number,
+  capMs = POLL_BACKOFF_CAP_MS,
+): number {
+  if (failureStreak <= 0) return baseMs;
+  return Math.min(baseMs * 2 ** failureStreak, Math.max(baseMs, capMs));
 }
 
 /**
@@ -176,6 +218,20 @@ export interface Resource<T> {
    * "Yükleniyor…" hâlinde kilitlemez.
    */
   loading: boolean;
+  /**
+   * Ekranda duran hatanın sınıfı; hata yoksa `null` (T403).
+   *
+   * `ErrorNote`'a geçirildiğinde "Tekrar dene" düğmesinin çıkıp çıkmayacağına
+   * bu karar verir. Geçirilmezse bileşen eskisi gibi davranır; sınıfı taşımak
+   * çağrı yerinin işi, çünkü hatayı ÇİZEN o.
+   */
+  errorKind: ErrorKind | null;
+  /**
+   * Destek kodu (T406). Sunucuya varılamamış bir hatada `null` olur ve
+   * gösterilmez: olmayan bir kodu vaat etmek, kullanıcıyı destek kaydında
+   * arayacak bir şey olduğuna inandırırdı.
+   */
+  errorRequestId: string | null;
   /** Elle tazeleme — yazma işleminden sonra çağrılır. */
   reload: () => Promise<void>;
   /**
@@ -201,13 +257,27 @@ export function useResource<T>(
 ): Resource<T> {
   const [state, setState] = useState<ResourceState<T>>(EMPTY_RESOURCE_STATE);
   const [settled, setSettled] = useState(false);
+  const [failure, setFailure] = useState<ErrorInfo | null>(null);
+
+  /**
+   * Ardışık başarısızlık sayacı — yoklama aralığını bu belirler (T404).
+   *
+   * `state` değil `ref`: değeri değişince render gerekmiyor, ve daha önemlisi
+   * yoklama etkisinin bağımlılıklarına girmemeli. Girseydi her başarısızlık
+   * etkiyi söküp yeniden kurar, kurulum da yeni bir zamanlayıcı başlatırdı;
+   * yani "yavaşlat" isteği "hemen tekrar dene"ye dönüşürdü.
+   */
+  const failureStreak = useRef(0);
 
   // Her eylem tek kapıdan geçer; bayrak ile durum böylece ayrışamaz. İkisini
   // ayrı ayrı güncelleyen bir çağrı yeri olsaydı, birini güncelleyip diğerini
-  // unutan bir dal er geç yazılırdı (Anayasa XI).
+  // unutan bir dal er geç yazılırdı (Anayasa XI). Aynı gerekçe sonradan eklenen
+  // üç türev için de geçerli: sınıf, destek kodu ve başarısızlık sayacı.
   const dispatch = useCallback((action: ResourceAction<T>) => {
     setState((current) => resourceReducer(current, action));
     setSettled(isFirstLoadSettled(action));
+    setFailure(action.type === "failed" ? action.error : null);
+    failureStreak.current = action.type === "failed" ? failureStreak.current + 1 : 0;
   }, []);
 
   // Kapı kancanın ömrü boyunca tek: her render'da yenisi kurulursa geçmiş
@@ -230,7 +300,7 @@ export function useResource<T>(
       dispatch({ type: "loaded", data: next });
     } catch (e) {
       if (!gate.isCurrent(token)) return;
-      dispatch({ type: "failed", message: errorMessage(e) });
+      dispatch({ type: "failed", error: describeError(e) });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
@@ -264,10 +334,42 @@ export function useResource<T>(
   const activeByData = data !== null && pollWhile ? pollWhile(data) : false;
   const shouldPoll = activeByData || pulsing;
 
+  /*
+   * Yoklama: sabit `setInterval` değil, kendini yeniden zamanlayan zincir (T404).
+   *
+   * İki şey birden düzeliyor. Birincisi aralık artık başarısızlıkta uzuyor
+   * (`pollDelayMs`). İkincisi — `setInterval`ın sessiz kusuru — turlar artık
+   * ÜST ÜSTE BİNEMİYOR: 12 saniyelik bütçesini dolduran bir istek varken
+   * `setInterval` iki saniyede bir yenisini başlatıyordu, yani sunucu
+   * yavaşladıkça istek sayısı artıyordu. Zincir bir turu bitirmeden bir
+   * sonrakini zamanlamıyor.
+   *
+   * `reload`un `useCallback` kimliği DEĞİŞMEDİ ve değişmemeli: US1 kilidi
+   * (`chat-availability.ts`) `reload`u modül düzeyinde bir `Set`e abone
+   * ediyor. Kimlik her render'da yenilenseydi `Set` sızar, abonelik kopar ve
+   * sınav başladığında Asistan sekmesi kilitlenmezdi. Kırılma sessiz olurdu:
+   * testler yeşil kalır, yalnız geçiş kaybolurdu.
+   */
   useEffect(() => {
     if (!shouldPoll) return;
-    const timer = setInterval(reload, intervalMs);
-    return () => clearInterval(timer);
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const schedule = () => {
+      timer = setTimeout(() => {
+        void reload().then(() => {
+          // Sökülme ya da deps değişimi bu tur sürerken olduysa zincir biter.
+          if (!cancelled) schedule();
+        });
+      }, pollDelayMs(intervalMs, failureStreak.current));
+    };
+
+    schedule();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [shouldPoll, intervalMs, reload]);
 
   return {
@@ -275,6 +377,8 @@ export function useResource<T>(
     error,
     refreshError,
     loading: !settled,
+    errorKind: failure?.kind ?? null,
+    errorRequestId: failure?.requestId ?? null,
     reload,
     pulse,
   };

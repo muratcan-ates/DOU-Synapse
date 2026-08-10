@@ -49,7 +49,17 @@ uuid_pk = Annotated[
 
 uuid_fk = Annotated[UUID, mapped_column(PgUUID(as_uuid=True))]
 
-created_at = Annotated[
+# Zaman damgası sütunlarının tek tanımı. `TIMESTAMP(timezone=True)` üçlüsü beş
+# modelde elle tekrar yazılıyordu; tek yerde durunca "hangi kolon yanlışlıkla
+# saat dilimsiz kalmış" sorusu okuyarak değil bakarak cevaplanır (Anayasa XI).
+ts_now = Annotated[
     datetime,
     mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False),
 ]
+
+ts_optional = Annotated[datetime | None, mapped_column(TIMESTAMP(timezone=True))]
+
+# `ts_now` ile aynı sütun; ad korunuyor çünkü çağrı yerinde `Mapped[created_at]`
+# kolonun ne olduğunu söylüyor, `Mapped[ts_now]` söylemiyor. Aynı gerekçeyle
+# `ts_now`a `updated_at` adı VERİLMEDİ: `started_at: Mapped[updated_at]` okunmaz.
+created_at = ts_now

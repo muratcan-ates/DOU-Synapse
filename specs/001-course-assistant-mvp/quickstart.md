@@ -5,7 +5,7 @@ kaldırır: PostgreSQL 16 + pgvector, şema + seed, FastAPI backend'i, testler v
 Next.js frontend'i. Tüm komutlar repo kökünden (`~/code/DOU-Synapse`) verilmiştir.
 
 > **Son doğrulama: 9 Ağustos 2026.** Adım 2'deki migration döngüsü boş bir veritabanında
-> baştan koşuldu (**15 tablo**, hatasız), adım 3-4 aynı gün tekrarlandı (**479 test
+> baştan koşuldu (**15 tablo**, hatasız), adım 3-4 aynı gün tekrarlandı (**479 test <!-- docs-check: tarihsel 15 · 2026-08-09 --><!-- docs-check: tarihsel 479 · 2026-08-09 -->
 > yeşil**), adım 5-6 tarayıcıda gerçek materyalle sınandı.
 >
 > **Bir adımı atlarsanız bile §6.1'i okuyun:** varsayılan ayarlarla sistem ayağa kalkar
@@ -89,7 +89,7 @@ psql -d dou_synapse -f supabase/tests/rls_isolation.sql
 psql -d dou_synapse -f supabase/seed_demo.sql
 ```
 
-**Doğrulama — 15 tablo görmelisiniz:**
+**Doğrulama — 25 tablo görmelisiniz:** <!-- docs-check: tables.count = 25 -->
 
 ```bash
 psql -d dou_synapse -tAc "select count(*) from information_schema.tables
@@ -192,7 +192,7 @@ uv run python -m app.worker
 
 ```bash
 cd apps/api
-uv run pytest          # 479 test yeşil olmalı (~50-100 sn)
+uv run pytest          # 851 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 851
 uv run mypy app        # temiz
 uv run ruff check .
 uv run ruff format --check .

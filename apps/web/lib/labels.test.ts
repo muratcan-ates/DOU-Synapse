@@ -1,9 +1,9 @@
 /**
  * Ortak sözlüğün testleri — `bun test` ile koşar, ek bağımlılık yok.
  *
- * Neden bu dosya var: `lib/labels.ts` ürün kararlarını taşıyor (seviye eşikleri,
- * durum tonları). Bu kararlar spec'te yazılı sayılardır ve sessizce değişirlerse
- * kimse fark etmez — arayüz yine çalışır, sadece yanlış şeyi gösterir.
+ * Neden bu dosya var: `lib/labels.ts` ürün kararlarını taşıyor (durum tonları,
+ * konum metni, boyut eşikleri). Bu kararlar sessizce değişirse kimse fark
+ * etmez — arayüz yine çalışır, sadece yanlış şeyi gösterir.
  *
  * Tonlar da test ediliyor çünkü DESIGN.md'nin en kolay ihlal edilen kuralı
  * "kırmızı asla hata rengi değildir". Bir gün biri "Reddedildi"yi danger yapar
@@ -15,48 +15,9 @@ import {
   chunkLocation,
   DOCUMENT_STATUS,
   formatBytes,
-  MASTERY_THRESHOLDS,
-  masteryLevel,
   QUESTION_STATUS,
   QUESTION_TYPE,
 } from "./labels";
-
-describe("masteryLevel — eşikler spec FR-027 ile birebir", () => {
-  test("tam 0.40 Orta'ya girer (sınır dahil)", () => {
-    expect(masteryLevel(0.4).label).toBe("Orta");
-  });
-
-  test("0.40'ın hemen altı Geliştirilmeli", () => {
-    expect(masteryLevel(0.399).label).toBe("Geliştirilmeli");
-  });
-
-  test("tam 0.75 İyi'ye girer (sınır dahil)", () => {
-    expect(masteryLevel(0.75).label).toBe("İyi");
-  });
-
-  test("0.75'in hemen altı Orta", () => {
-    expect(masteryLevel(0.749).label).toBe("Orta");
-  });
-
-  test("uç değerler", () => {
-    expect(masteryLevel(0).label).toBe("Geliştirilmeli");
-    expect(masteryLevel(1).label).toBe("İyi");
-  });
-
-  test("eşik sabitleri spec'teki değerlerde", () => {
-    // Bu sayılar backend'deki EWMA servisiyle aynı olmak zorunda.
-    // Değiştirmek isteyen önce spec FR-027'yi değiştirsin.
-    expect(MASTERY_THRESHOLDS.medium).toBe(0.4);
-    expect(MASTERY_THRESHOLDS.good).toBe(0.75);
-  });
-
-  test("düşük skor WARNING tonunda, DANGER değil", () => {
-    // DESIGN.md: kırmızı asla hata rengi değildir. Düşük skor bir hata değil,
-    // çalışma yönüdür.
-    expect(masteryLevel(0.1).tone).toBe("warning");
-    expect(masteryLevel(0.1).tone).not.toBe("danger");
-  });
-});
 
 describe("durum sözlükleri — renk tek başına bilgi taşımaz", () => {
   test("her belge durumunun boş olmayan bir etiketi var", () => {
