@@ -267,6 +267,9 @@ class QuestionOut(BaseModel):
     #: Eğitmen soruyu kaynağını görerek onaylar (FR-023). Öğrenciye de gösterilir:
     #: onaylı sorunun hangi materyalden geldiği gizli değildir.
     source: SourceRefOut | None = None
+    #: Sorunun dayandığı belgenin yerine açıkça yeni bir sürüm yüklendiyse true.
+    #: Bayatlık ayrı bir bayrak olarak saklanmaz; belge sürüm zincirinden türetilir.
+    source_stale: bool = False
     #: Hücre ekseni (0008). NULL ise soru hiçbir blueprint hücresine sayılmaz ve
     #: yayın kapısı onu "sınıflandırılmamış" diye ayrıca raporlar. Havuz ekranının
     #: bunu göstermesi gerekir, yoksa öğretmen kapıya çarpana kadar fark etmez.

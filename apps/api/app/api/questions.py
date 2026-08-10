@@ -37,6 +37,7 @@ from app.core.errors import ConflictError, NotFoundError, RateLimitError, Valida
 from app.core.pagination import decode_time_cursor, encode_time_cursor
 from app.core.rate_limit import get_concurrency_gate, get_limiter
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.models.core import Chunk, Document
 from app.modules.assessment import question_gen
 from app.modules.assessment.grading import load_source_refs
 from app.schemas.assessment import (
@@ -142,7 +143,11 @@ async def _source_stale_map(session: AsyncSession, chunk_ids: list[UUID]) -> dic
 
 
 def _build_out(
-    question: Question, *, context: CourseContext, source: SourceRefOut | None
+    question: Question,
+    *,
+    context: CourseContext,
+    source: SourceRefOut | None,
+    source_stale: bool,
 ) -> QuestionOut:
     payload = (
         question.payload
@@ -161,6 +166,7 @@ def _build_out(
         reviewed_at=question.reviewed_at,
         created_at=question.created_at,
         source=source,
+        source_stale=source_stale,
     )
 
 
@@ -307,6 +313,9 @@ async def generate_questions(
         refs = await load_source_refs(
             session, [question.source_chunk_id for question in report.questions]
         )
+        stale = await _source_stale_map(
+            session, [question.source_chunk_id for question in report.questions]
+        )
         return QuestionGenerationOut(
             requested=report.requested,
             returned=report.returned,
@@ -314,7 +323,12 @@ async def generate_questions(
             rejected=report.rejected,
             rejection_reasons=report.rejection_reasons,
             questions=[
-                _build_out(question, context=context, source=refs.get(question.source_chunk_id))
+                _build_out(
+                    question,
+                    context=context,
+                    source=refs.get(question.source_chunk_id),
+                    source_stale=stale.get(question.source_chunk_id, False),
+                )
                 for question in report.questions
             ],
         )

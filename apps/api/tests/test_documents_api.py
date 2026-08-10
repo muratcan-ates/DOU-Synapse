@@ -24,11 +24,22 @@ async def _course(client: AsyncClient, headers: dict[str, str], code: str) -> st
 
 
 async def _upload(
-    client: AsyncClient, headers: dict[str, str], course_id: str, name: str, data: bytes
+    client: AsyncClient,
+    headers: dict[str, str],
+    course_id: str,
+    name: str,
+    data: bytes,
+    *,
+    replaces_document_id: str | None = None,
 ):
     return await client.post(
         f"/courses/{course_id}/documents",
         files={"file": (name, data, "application/octet-stream")},
+        data=(
+            {"replaces_document_id": replaces_document_id}
+            if replaces_document_id is not None
+            else None
+        ),
         headers=headers,
     )
 
@@ -151,7 +162,7 @@ class TestUpload:
             replaces_document_id=old_id,
         )
         assert repeated.status_code == 409
-        assert "en güncel" in repeated.json()["error"]["message"]
+        assert "Güncel sürümün" in repeated.json()["error"]["message"]
 
     async def test_yenilenen_kaynaga_bagli_soru_bayat_isaretlenir(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
