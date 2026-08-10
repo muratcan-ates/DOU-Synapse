@@ -122,7 +122,8 @@ async def clean_tables(environment: None, admin_engine: AsyncEngine) -> AsyncIte
     async with admin_engine.begin() as conn:
         await conn.execute(
             text(
-                "TRUNCATE mastery, answers, exam_sessions, questions, topics, "
+                "TRUNCATE platform_admin_access_audit, platform_admins, mastery, answers, "
+                "exam_sessions, questions, topics, "
                 "chunks, ingestion_jobs, documents, course_memberships, "
                 "courses, profiles RESTART IDENTITY CASCADE"
             )
