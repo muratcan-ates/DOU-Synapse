@@ -404,8 +404,11 @@ class TestDraftInvisibility:
         instructor = await client.get(f"/courses/{course_id}/questions", headers=ayse)
 
         assert student.status_code == 200, student.text
-        assert {item["id"] for item in student.json()} == {str(approved_id)}
-        assert {item["id"] for item in instructor.json()} == {str(draft_id), str(approved_id)}
+        assert {item["id"] for item in student.json()["items"]} == {str(approved_id)}
+        assert {item["id"] for item in instructor.json()["items"]} == {
+            str(draft_id),
+            str(approved_id),
+        }
 
     async def test_ogrenci_status_parametresiyle_taslak_isteyemez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
@@ -433,7 +436,7 @@ class TestDraftInvisibility:
         )
 
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["items"] == []
 
     async def test_rls_katmani_tek_basina_da_taslagi_gizler(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
@@ -495,8 +498,10 @@ class TestDraftInvisibility:
 
         student = (
             await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
-        ).json()[0]
-        instructor = (await client.get(f"/courses/{course_id}/questions", headers=ayse)).json()[0]
+        ).json()["items"][0]
+        instructor = (await client.get(f"/courses/{course_id}/questions", headers=ayse)).json()[
+            "items"
+        ][0]
 
         assert set(student["payload"]) == {"stem", "options"}
         assert "answer_key" in instructor["payload"]
@@ -538,14 +543,14 @@ class TestQuestionReview:
         )
         after = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
 
-        assert before.json() == []
+        assert before.json()["items"] == []
         assert approve.status_code == 200, approve.text
         body = approve.json()
         assert body["status"] == "approved"
         # questions_reviewed_consistency CHECK'i ikisini birden ister.
         assert body["reviewed_by"] == str(ayse_id)
         assert body["reviewed_at"] is not None
-        assert [item["id"] for item in after.json()] == [str(question_id)]
+        assert [item["id"] for item in after.json()["items"]] == [str(question_id)]
 
     async def test_reddedilen_soru_ogrenciye_gorunmez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
@@ -576,7 +581,7 @@ class TestQuestionReview:
 
         assert reject.status_code == 200, reject.text
         assert reject.json()["status"] == "rejected"
-        assert student.json() == []
+        assert student.json()["items"] == []
 
     async def test_ogrenci_onaylayamaz(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
@@ -1012,7 +1017,7 @@ class TestQuestionGeneration:
         assert {question["status"] for question in body["questions"]} == {"draft"}
 
         student = await client.get(f"/courses/{course_id}/questions", headers=users.auth(burak_id))
-        assert student.json() == [], "yeni üretilen sorular onaysız görünmemeli"
+        assert student.json()["items"] == [], "yeni üretilen sorular onaysız görünmemeli"
 
     async def test_blueprint_hucresi_cikti_ve_zorlugu_soruya_yazar(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine

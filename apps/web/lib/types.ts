@@ -1,5 +1,10 @@
 /** Backend şemalarıyla birebir sözleşmeler (apps/api/app/schemas). */
 
+export interface Page<T> {
+  items: T[];
+  next_cursor: string | null;
+}
+
 export interface Course {
   id: string;
   code: string;

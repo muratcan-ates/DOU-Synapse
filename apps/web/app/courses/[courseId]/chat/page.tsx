@@ -44,13 +44,15 @@ import type {
   ChatMessage,
   ChatSessionSummary,
   CourseDocument,
+  Page,
 } from "@/lib/types";
 import { useChatAvailability } from "@/lib/chat-availability";
+import { pagedPath, usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { sourceContextHref } from "@/lib/source-quality";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
-import { ErrorNote, Loading } from "@/components/page-state";
+import { ErrorNote, Loading, LoadMore } from "@/components/page-state";
 import { SocraticLadder } from "@/components/socratic-ladder";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
 import { Badge, Button, EmptyState, Input } from "@/components/ui";
@@ -109,15 +111,19 @@ function ChatScreen({ courseId }: { courseId: string }) {
   const [sendError, setSendError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null);
+  const [olderLoading, setOlderLoading] = useState(false);
 
-  const fetchSessions = useCallback(
-    () => api.get<ChatSessionSummary[]>(`/courses/${courseId}/chat/sessions`),
+  const sessions = usePagedResource<ChatSessionSummary>(
+    `/courses/${courseId}/chat/sessions`,
     [courseId],
   );
-  const sessions = useResource(fetchSessions, [courseId]);
 
   const fetchDocuments = useCallback(
-    () => api.get<CourseDocument[]>(`/courses/${courseId}/documents`),
+    () =>
+      api
+        .get<Page<CourseDocument>>(`/courses/${courseId}/documents?limit=100`)
+        .then((page) => page.items),
     [courseId],
   );
   const documents = useResource(fetchDocuments, [courseId]);
@@ -142,12 +148,14 @@ function ChatScreen({ courseId }: { courseId: string }) {
       setSendError(null);
       setHistoryError(null);
       setHistoryLoading(true);
+      setHistoryCursor(null);
       try {
-        const history = await api.get<ChatMessage[]>(
+        const history = await api.get<Page<ChatMessage>>(
           `/courses/${courseId}/chat/sessions/${summary.id}`,
         );
         if (historyToken.current !== token) return;
-        setMessages(fromHistory(history));
+        setMessages(fromHistory(history.items));
+        setHistoryCursor(history.next_cursor);
         localStorage.setItem(openSessionKey(courseId), summary.id);
       } catch (e) {
         if (historyToken.current !== token) return;
@@ -185,9 +193,27 @@ function ChatScreen({ courseId }: { courseId: string }) {
     setSendError(null);
     setHistoryError(null);
     setHistoryLoading(false);
+    setHistoryCursor(null);
     localStorage.removeItem(openSessionKey(courseId));
     // Yazılmış metin korunur: mod değiştirmek yazdığını silmek için bir sebep değil.
   };
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!sessionId || !historyCursor || olderLoading) return;
+    setOlderLoading(true);
+    setHistoryError(null);
+    try {
+      const older = await api.get<Page<ChatMessage>>(
+        pagedPath(`/courses/${courseId}/chat/sessions/${sessionId}`, historyCursor),
+      );
+      setMessages((current) => [...fromHistory(older.items), ...current]);
+      setHistoryCursor(older.next_cursor);
+    } catch (error) {
+      setHistoryError(errorMessage(error));
+    } finally {
+      setOlderLoading(false);
+    }
+  }, [courseId, historyCursor, olderLoading, sessionId]);
 
   const openingQuestion =
     messages.find((message) => message.role === "user")?.content ?? null;
@@ -245,6 +271,11 @@ function ChatScreen({ courseId }: { courseId: string }) {
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {/* Konuşma sütunu: okuma genişliği bileşenlerin içinde 70ch ile sınırlı */}
       <div className="space-y-6">
+        <LoadMore
+          hasMore={historyCursor !== null}
+          busy={olderLoading}
+          onLoadMore={() => void loadOlderMessages()}
+        />
         {historyError && <ErrorNote message={historyError} />}
         {historyLoading && <Loading label="Sohbet geçmişi yükleniyor…" />}
 
@@ -456,6 +487,12 @@ function ChatScreen({ courseId }: { courseId: string }) {
               })}
             </ul>
           )}
+          <LoadMore
+            hasMore={sessions.nextCursor !== null}
+            busy={sessions.loadingMore}
+            error={sessions.pageError}
+            onLoadMore={() => void sessions.loadMore()}
+          />
         </section>
       </aside>
     </div>

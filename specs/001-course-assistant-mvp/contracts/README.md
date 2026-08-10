@@ -10,7 +10,7 @@ görülürse şema yeniden üretilir (aşağıdaki komut).
 
 ---
 
-## Mevcut uçlar (9 yol, 13 işlem)
+## Mevcut sözleşme (41 yol, 56 işlem)
 
 Yetki sütunu üç seviyedir:
 
@@ -21,21 +21,22 @@ Yetki sütunu üç seviyedir:
 - **eğitmen** — dersin eğitmeni olmak gerekir (`require_course_instructor`; üyeyse ama
   eğitmen değilse **403**)
 
-| Metot | Yol | Yetki | Amaç |
-|---|---|---|---|
-| GET | `/health/live` | yok | Süreç ayakta mı (bağımlılıksız); `{status, environment, version}` |
-| GET | `/health/ready` | yok | DB + pgvector erişimi; sorun varsa 503 `degraded`. Deploy duman testi ve demo günü ısıtma isteği bu ucu kullanır |
-| GET | `/courses` | kimlik | Kullanıcının aktif üyeliği olan dersler (dersteki rolüyle birlikte) |
-| POST | `/courses` | kimlik | Ders oluşturur; oluşturana aynı işlemde eğitmen üyeliği verir (`app.create_course`). 201; kod çakışmasında 409 |
-| GET | `/courses/{course_id}` | üye | Tek ders + kullanıcının rolü |
-| GET | `/courses/{course_id}/members` | eğitmen | Ders üye listesi (e-posta, ad, rol, durum) |
-| POST | `/courses/{course_id}/members` | eğitmen | E-postayla üye ekler (`app.add_course_member`). Kullanıcı kayıtlı değilse 404, zaten üyeyse 409 |
-| DELETE | `/courses/{course_id}/members/{user_id}` | eğitmen | Üyeliği iptal eder (soft: `status=revoked`, kayıt silinmez). Eğitmen kendini çıkaramaz (422). 204 |
-| POST | `/courses/{course_id}/documents` | eğitmen | Materyal yükler (multipart `file`): uzantı + boyut + magic byte doğrulaması, `file_hash` ile mükerrer engeli (409), ingestion job + worker tetiği. **202** döner; istemci `status` alanını izler |
-| GET | `/courses/{course_id}/documents` | üye | Dersin belgeleri (durum: `uploaded / processing / completed / failed`) |
-| GET | `/courses/{course_id}/documents/{document_id}` | üye | Tek belge durumu (ilerleme takibi için poll edilir) |
-| DELETE | `/courses/{course_id}/documents/{document_id}` | eğitmen | Belgeyi ve FK cascade ile tüm chunk'larını siler. 204 |
-| GET | `/courses/{course_id}/documents/{document_id}/chunks` | eğitmen | İlk chunk'ların önizlemesi (`limit`, varsayılan 20, tavan 100) — eğitmen sistemin belgeden ne çıkardığını görür |
+Tam ayrıntı `openapi.json` içindedir. Aşağıdaki tablo yüzeyleri özetler; endpoint
+adlarını ikinci bir yerde 56 satırla kopyalamaz.
+
+| Aile | Yetki | Sözleşme |
+|---|---|---|
+| `/health/*` | yok | Liveness, DB/pgvector ve embedding warmup readiness |
+| `/courses`, `/members` | kimlik / eğitmen | Ders ve üyelik yönetimi; ders listesi cursor sayfalıdır |
+| `/documents`, `/chunks`, `/retry` | üye / eğitmen | Yükleme, açık kaynak sürümü, işleme durumu, chunk önizleme ve başarısız işi yeniden kuyruğa alma |
+| `/chat`, `/chat/availability`, `/chat/sessions` | üye | Kaynaklı QA/Sokratik akış, sınav kilidi, cursor sayfalı oturum+mesaj geçmişi |
+| `/questions`, `/questions/generate` | üye / eğitmen | Dört soru tipi, taslak→onay kapısı, üretim kotası ve cursor sayfalama |
+| `/blueprints`, `/learning-outcomes`, `/exam-versions` | üye / eğitmen | Blueprint hücreleri, öğrenme çıktıları, kaynak sürümü, yayın ve değişmez sınav sürümü |
+| `/exams`, `/answers` | üye | Practice/exam oturumu, süre, puan, rubrik kırılımı ve neden-yanlış |
+| `/policy` | eğitmen | Ders bazlı mod, kaynak, kanıt eşiği, ipucu ve token bütçesi |
+| `/analytics` | öğrenci / eğitmen | Kişisel mastery ve anonimleştirilmiş sınıf özeti |
+| `/me/export`, `/me/chat-history`, `/me/anonymize` | kimlik | KVKK dışa aktarma, silme ve güvenli anonimleştirme |
+| `/internal/drain` | paylaşılan sır | Ayrı worker kuyruğu; sır yoksa/yansa 404 fail-closed |
 
 **İzolasyon kuralı (tüm `{course_id}` yolları):** yol parametresindeki `course_id` bir
 yetki belgesi değildir; her istekte sunucu tarafında üyelik tablosundan doğrulanır
@@ -49,7 +50,7 @@ Uygulama hataları tek biçimde döner (`apps/api/app/core/errors.py`,
 `app_error_handler`):
 
 ```json
-{ "error": { "code": "...", "message": "Anlaşılır Türkçe mesaj." } }
+{ "error": { "code": "...", "message": "Anlaşılır Türkçe mesaj.", "request_id": "..." } }
 ```
 
 `message` her zaman kullanıcıya gösterilebilir Türkçedir; frontend kendi hata metnini
@@ -63,14 +64,14 @@ uydurmaz (Anayasa İlke V). Ham stack trace veya sağlayıcı hatası asla sızm
 | 404 | `not_found` | Kayıt yok **veya** kullanıcı o derse üye değil (varlık sızdırılmaz) |
 | 409 | `conflict` | Mükerrer ders kodu, mükerrer üyelik, aynı dosyanın tekrar yüklenmesi |
 | 413 | `payload_too_large` | Yükleme boyut sınırı aşıldı (varsayılan 20 MB) |
+| 429 | `rate_limited` | Sohbet veya soru üretimi kotası aşıldı |
 | 422 | `validation_error` | Uygulama seviyesi doğrulama (ör. "kendi eğitmen üyeliğinizi kaldıramazsınız") |
+| 503 | `storage_unavailable` | Kalıcı belge deposuna geçici olarak erişilemiyor |
 | 500 | `internal_error` | Beklenmeyen hata; ayrıntı loga, kullanıcıya genel mesaj |
 
-**Bilinen istisna:** FastAPI/Pydantic'in kendi istek doğrulama hatası (bozuk UUID, eksik
-gövde alanı vb.) hâlâ FastAPI'nin standart `{"detail": [...]}` biçiminde döner —
-`openapi.json`'daki `HTTPValidationError` şeması budur ve zarfın dışındadır.
-[NEEDS CLARIFICATION: RequestValidationError handler'ı da zarfa çekilecek mi, yoksa
-frontend iki biçimi de mi tanıyacak?]
+FastAPI/Pydantic doğrulama hataları da aynı zarfı ve Türkçe mesajı kullanır.
+`request_id` destek ekranında kopyalanabilir; sağlayıcı hata metni veya stack trace
+zarfın içine girmez.
 
 ---
 
@@ -89,25 +90,6 @@ Tüm korumalı uçlar `Authorization: Bearer <token>` bekler
 Yetkilendirme (kim hangi derse erişir) token katmanında değil, ders bağımlılıklarında
 (`deps.py`) ve RLS'te yapılır. API veritabanına tablo sahibi olmayan, BYPASSRLS
 taşımayan `dou_app` rolüyle bağlanır.
-
----
-
-## Planlanan uçlar — HENÜZ YOK
-
-Aşağıdakiler ARCHITECTURE.md §5 (sorgu pipeline'ı + cevap şeması) ve PLAN.md
-takviminden gelir; **bu sözleşmede henüz yer almazlar, kodda da yokturlar.** İsimler
-göstergedir; yol adları implementasyonla birlikte dondurulacak ve `openapi.json`
-yeniden export edilecektir.
-
-| Alan | Beklenen uç(lar) | Kaynak | Durum |
-|---|---|---|---|
-| Kaynaklı sohbet + Sokratik mod | `chat` (soru sor; `mode: qa \| socratic`; cevap şeması: `status / answer / citations[] / hints[]`) | ARCHITECTURE §5, PLAN G5-G7 | **henüz yok** |
-| Sınav prova modu | `exam` oturumları (başlat, cevapla, bitir; `mode: practice \| exam`; "neden yanlış?" geri bildirimi) | ARCHITECTURE §5, PLAN G9 | **henüz yok** |
-| Soru havuzu | `questions` (üretim + eğitmen onay akışı; `mcq / open / code_trace / bug_hunt`) | PLAN G8, veri modeli §3 | **henüz yok** |
-| Analitik / mastery | eğitmen özet ekranı verisi | PLAN G10, ARCHITECTURE §5 (Mastery-Lite) | **henüz yok** |
-
-Frontend bu uçlar için mock'la ilerler; gerçek sözleşme çıktığında mock'lar şemaya
-karşı doğrulanır.
 
 ---
 
@@ -130,6 +112,4 @@ Notlar:
 
 - `ensure_ascii=False` zorunludur: docstring'lerdeki Türkçe metin (ör. "Ders kimliği")
   escape edilmeden kalmalı.
-- Uç ekleyip export'u unutmamak için PR kontrol listesine "sözleşme güncel mi?"
-  maddesi eklenir. [NEEDS CLARIFICATION: bu export CI'da otomatik diff kontrolüne
-  bağlanacak mı?]
+- CI aynı export'u yeniden üretip diff alır; kodla sözleşme ayrışırsa yapı düşer.

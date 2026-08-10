@@ -868,9 +868,7 @@ class TestMasteryIntegration:
             FakeCompletion(
                 json.dumps(
                     {
-                        "rubrik_kirilimi": [
-                            {"olcut": "Dört koşulu sayar", "puan": 75}
-                        ],
+                        "rubrik_kirilimi": [{"olcut": "Dört koşulu sayar", "puan": 75}],
                         "eksik_noktalar": ["kesilemezlik"],
                         "dayanak_chunk_id": str(fixture.chunk_ids[0]),
                     }

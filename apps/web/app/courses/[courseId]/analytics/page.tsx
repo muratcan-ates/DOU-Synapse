@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
    * Rol yalnız ARAYÜZÜ şekillendirir; yetki sunucuda doğrulanır (Anayasa II):
    * `/analytics/class` zaten `CourseInstructorDep`'ten geçer.
    */
-  const { isInstructor, ready } = useSession();
+  const { isInstructor, ready } = useSession(courseId);
 
   return (
     <AppShell>

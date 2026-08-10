@@ -16,16 +16,12 @@ import { errorMessage } from "@/lib/errors";
 import { chunkLocation, DOCUMENT_STATUS, formatBytes } from "@/lib/labels";
 import { useSession } from "@/lib/session";
 import type { ChunkPreview, Course, CourseDocument } from "@/lib/types";
+import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
-import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
+import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, ConfirmAction, EmptyState } from "@/components/ui";
-
-interface CourseView {
-  course: Course;
-  documents: CourseDocument[];
-}
 
 export default function CourseDetailPage() {
   return (
@@ -37,28 +33,33 @@ export default function CourseDetailPage() {
 
 function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor } = useSession();
+  const { isInstructor } = useSession(courseId);
 
-  const fetchView = useCallback(async (): Promise<CourseView> => {
-    const [course, documents] = await Promise.all([
-      api.get<Course>(`/courses/${courseId}`),
-      api.get<CourseDocument[]>(`/courses/${courseId}/documents`),
-    ]);
-    return { course, documents };
-  }, [courseId]);
-
-  const { data, error, reload, pulse } = useResource(fetchView, [courseId], {
+  const fetchCourse = useCallback(() => api.get<Course>(`/courses/${courseId}`), [courseId]);
+  const courseResource = useResource(fetchCourse, [courseId]);
+  const documentsResource = usePagedResource<CourseDocument>(
+    `/courses/${courseId}/documents`,
+    [courseId],
+    {
     // İşlenmeyi bekleyen belge varken tazele; hepsi bitince dur.
-    pollWhile: (v) =>
-      v.documents.some((d) => d.status === "uploaded" || d.status === "processing"),
-  });
+      pollWhile: (documents) =>
+        documents.some((d) => d.status === "uploaded" || d.status === "processing"),
+    },
+  );
 
   // Sayfa 2 sn'de bir tazelendiği için başarısız tek istek sıradan: elde sağlam
   // liste varken başlık, sekmeler ve satırlar kalır, hata listenin üstüne iner.
-  if (error && !data) return <RetryNote message={error} onRetry={reload} />;
-  if (!data) return <Loading />;
+  const blockingError = courseResource.error ?? documentsResource.error;
+  const reload = async () => {
+    await Promise.all([courseResource.reload(), documentsResource.reload()]);
+  };
+  if (blockingError && (!courseResource.data || !documentsResource.data))
+    return <RetryNote message={blockingError} onRetry={() => void reload()} />;
+  if (!courseResource.data || !documentsResource.data) return <Loading />;
 
-  const { course, documents } = data;
+  const course = courseResource.data;
+  const documents = documentsResource.data;
+  const refreshError = courseResource.refreshError ?? documentsResource.refreshError;
   const ready = documents.filter((d) => d.status === "completed").length;
 
   return (
@@ -89,10 +90,14 @@ function CourseDetail() {
       />
 
       {isInstructor && (
-        <UploadBox courseId={courseId} documents={documents} onUploaded={pulse} />
+        <UploadBox
+          courseId={courseId}
+          documents={documents}
+          onUploaded={documentsResource.pulse}
+        />
       )}
 
-      {error && <RetryNote message={error} onRetry={reload} />}
+      {refreshError && <RetryNote message={refreshError} onRetry={() => void reload()} />}
 
       {documents.length === 0 ? (
         <EmptyState
@@ -112,11 +117,17 @@ function CourseDetail() {
               courseId={courseId}
               doc={doc}
               isInstructor={isInstructor}
-              onDeleted={pulse}
+              onDeleted={documentsResource.pulse}
             />
           ))}
         </ul>
       )}
+      <LoadMore
+        hasMore={documentsResource.nextCursor !== null}
+        busy={documentsResource.loadingMore}
+        error={documentsResource.pageError}
+        onLoadMore={() => void documentsResource.loadMore()}
+      />
     </div>
   );
 }
@@ -230,6 +241,8 @@ function DocumentRow({
   const [chunks, setChunks] = useState<ChunkPreview[] | null>(null);
   const [open, setOpen] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
   const status = DOCUMENT_STATUS[doc.status];
   const panelId = `chunks-${doc.id}`;
 
@@ -282,6 +295,26 @@ function DocumentRow({
               {open ? "Gizle" : "İçerik önizle"}
             </Button>
           )}
+          {isInstructor && doc.status === "failed" && (
+            <Button
+              variant="secondary"
+              aria-disabled={retrying}
+              onClick={async () => {
+                setRetrying(true);
+                setRetryError(null);
+                try {
+                  await api.post(`/courses/${courseId}/documents/${doc.id}/retry`);
+                  onDeleted();
+                } catch (error) {
+                  setRetryError(errorMessage(error, "Belge yeniden kuyruğa alınamadı."));
+                } finally {
+                  setRetrying(false);
+                }
+              }}
+            >
+              {retrying ? "Kuyruğa alınıyor…" : "Yeniden işle"}
+            </Button>
+          )}
           {isInstructor && (
             <ConfirmAction
               label="Sil"
@@ -304,6 +337,12 @@ function DocumentRow({
         <p className="border-t border-border px-6 py-2 text-sm text-danger">
           {doc.error_message}
         </p>
+      )}
+
+      {retryError && (
+        <div className="border-t border-border px-6 py-2">
+          <ErrorNote message={retryError} />
+        </div>
       )}
 
       {previewError && (

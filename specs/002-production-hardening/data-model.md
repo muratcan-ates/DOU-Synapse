@@ -2,8 +2,9 @@
 
 **Kaynaklar ve doğruluk sırası:**
 
-1. **UYGULANMIŞ şema** — tek gerçek: `supabase/migrations/0001…0007`. Bu belgedeki her "bugün şöyle" cümlesi o dosyalara dosya:satır ile bağlıdır.
-2. **Bu belgenin tanımladığı PLANLANAN şema** — `0008`, `0009`, `0010`, `0011`. Hiçbiri henüz yazılmamıştır.
+1. **UYGULANMIŞ şema** — tek gerçek: `supabase/migrations/0001…0012`.
+2. Bu belge `0008…0011` göçlerinin tasarım gerekçesidir; dördü de uygulanmıştır.
+   `0012_privacy_rights.sql` kullanıcı haklarının sonradan eklenen veri kapısıdır.
 3. `specs/002-production-hardening/spec.md` (FR numaraları) ve `.specify/memory/constitution.md` (İlke II, III, IV, V, XI).
 
 001'in veri modeli belgesi "uygulanmış / planlanan" ayrımını başlıklarla tutuyordu; bu belge aynı ayrımı **migration numarası** ekseninde tutar: her bölüm tek bir göç dosyasını anlatır ve o dosya yazıldığında bu belge değil kod birincil kaynak olur.
@@ -14,7 +15,7 @@
 
 ## 0. Kapsam, göç numaralandırması ve neden dört dosya
 
-Dizindeki en yüksek numara **0007**'dir (`0007_question_delete_and_exam_grants.sql`). 002 dört yeni göç açar:
+002'nin tasarladığı dört göç uygulanmıştır:
 
 | Dosya | Kapsam | FR | Bölüm |
 |---|---|---|---|
@@ -675,10 +676,11 @@ profiles          1───n ingestion_jobs       (requeued_by, ON DELETE SET N
 | Numara | Dosya | Durum | Ön koşul |
 |---|---|---|---|
 | 0001–0007 | — | **uygulanmış** | — |
-| 0008 | `0008_exam_blueprint.sql` | planlanan | yok |
-| 0009 | `0009_course_ai_policy.sql` | planlanan | yok (0008'den bağımsız, numara sırası korunur) |
-| 0010 | `0010_ingestion_retry.sql` | planlanan | yok |
-| 0011 | `0011_pagination_indexes.sql` | planlanan | 0008 (soru indeksleri birlikte değerlendirilir) |
+| 0008 | `0008_exam_blueprint.sql` | **uygulanmış** | yok |
+| 0009 | `0009_course_ai_policy.sql` | **uygulanmış** | yok (0008'den bağımsız, numara sırası korunur) |
+| 0010 | `0010_ingestion_retry.sql` | **uygulanmış** | yok |
+| 0011 | `0011_pagination_indexes.sql` | **uygulanmış** | 0008 (soru indeksleri birlikte değerlendirilir) |
+| 0012 | `0012_privacy_rights.sql` | **uygulanmış** | 0003 sohbet sahipliği |
 
 Her göç, deponun âdetine uyan **uzun bir gerekçe başlığıyla** açılır: ne yaptığını değil **niçin o biçimde** yaptığını anlatır ve **bilerek yapılmayanları** gerekçesiyle yazar (`0004:1-11`, `0006:1-58`, `0007:1-9` ve `:53-68`).
 
@@ -749,18 +751,19 @@ Kapatılanlar 1, 2, 7 ve 9; açık kalanlar 3, 4, 5, 6 ve 8. Açık kalanların 
    geri alınması göç değil, `blueprint_cells`'e bir kolon ve UNIQUE kısıtının
    genişletilmesi demektir. Ucuz olduğu için şimdi kapatmak, açık bırakıp `0008`'i
    geciktirmekten iyi.
-3. **FR-137 trigger'ı bir sapmadır.** `public` şemasına ilk iş trigger'ını koyuyoruz (§3.2). Takım "denetim izini uygulama katmanı yazsın" derse tasarım değişir; o zaman iz **kaçırılabilir** hâle gelir ve bu, kararın bedeli olarak yazılmalıdır.
-4. **Günlük token bütçesi bugün yalnız sohbeti kapsar.** `request_logs`'a yalnız sohbet ucu yazıyor (§3.3). İpucu, soru üretimi ve değerlendirme token'larının da bu tabloya yazılması gerekiyor mu, yoksa FR-134'ün kapsamı "sohbet bütçesi" olarak mı daraltılacak — karar verilmedi.
-
-   > **T501 notu (2026-08-10).** `tasks.md`'nin Blok 5 kapısı bu maddeyi Blok 5'ten
-   > önce kapatılması gereken dördüncü karar olarak sayıyor. **Kapatılmadı ve
-   > kapatılması Blok 5'i bağlamıyor:** token bütçesi `0009`'un (`course_ai_policies`,
-   > US4/FR-134) alanıdır, `0008`'in tek satırına dokunmaz. Blok 5'in dördüncü kararı
-   > yerine madde 9 (yürüyen sınavın gördüğü sürüm) kapatıldı — bu şeridin görev
-   > tanımının saydığı dört karar bunlar. Farkın kendisi bir bulgudur ve final
-   > raporunda bildirilmiştir; `tasks.md` bu şeritte değiştirilmez.
-5. **`exam_sessions.score` ölü kolonu.** 0007 UPDATE'ini çekmiş, puan `answers`'tan türetiliyor. 0008 dokunmuyor. Kaldırılsın mı (temiz ama ORM ve testleri etkiler), yoksa `COMMENT ON COLUMN` ile "kullanılmıyor" diye işaretlensin mi?
-6. **Sayfalamada toplam sayı.** spec.md:134'ün bağımsız testi "toplam/devam bilgisi taşır" diyor. Keyset imleci "devam"ı verir ama **toplam**ı vermez; her sayfada `COUNT(*)` koşturmak SC-008'i (200 kayıtlık listede ilk sayfa, 20 kayıtlıkla aynı aralıkta) tehlikeye atar. Toplamın gerçekten gerekli olup olmadığı ürün kararıdır.
+3. **KARAR — denetim izi trigger'dır.** Politika değişikliği uygulama yolundan
+   bağımsız olarak aynı işlemde audit satırı üretir; uygulama katmanına bırakılıp
+   kaçırılabilir hâle getirilmez.
+4. **KARAR — günlük token bütçesi sohbet üretimini kapsar.** `request_logs` gerçek
+   sohbet sağlayıcı kullanımını toplar. Soru üretimi ayrı, daha sıkı istek ve
+   eşzamanlılık kotasıyla sınırlıdır; sahte sağlayıcıya tahmini token maliyeti
+   yazılmaz. UI bu alanı "günlük sohbet token bütçesi" diye adlandırır.
+5. **KARAR — `exam_sessions.score` geriye uyumluluk için korunur.** Yeni puan
+   `answers` üzerinden türetilir; eski oturumları ve istemcileri tek teslim
+   haftasında migration ile kırmanın ölçülmüş bir faydası yoktur.
+6. **KARAR — keyset sayfası toplam sayı taşımaz.** `next_cursor` devam bilgisidir;
+   her sayfada `COUNT(*)` çalıştırmak ilk sayfanın sabit maliyet hedefiyle
+   çelişir. Toplam gereken ekran kendi analitik sayım ucunu kullanır.
 7. **KARAR (T501) — Sınıflandırılmamış kalem, eksik hücre değil; kapının ayrı ve
    adı konmuş ikinci maddesidir.** Yayın kapısı **iki** liste döndürür ve ikisinden
    biri boş değilse yayın reddedilir:
@@ -807,5 +810,8 @@ Kapatılanlar 1, 2, 7 ve 9; açık kalanlar 3, 4, 5, 6 ve 8. Açık kalanların 
    kısalırdı. §2.6'nın öngördüğü uygulama kapısı bu kararın parçasıdır — yayınlanmış
    ve superseded olmayan bir sürümün kaleminde yer alan soru reddedilemez, ret
    isteğine Türkçe gerekçeli 409 döner.
-8. **US10 (P3) için şema tanımlanmadı.** Hesap silme talebi bir kuyruk tablosu (`account_deletion_requests`) gerektirebilir; dışa aktarma büyük veri üretirse asenkron iş kaydı gerektirebilir (spec.md:240). İkisi de bu belgenin kapsamı dışında bırakıldı ve 17 Ağustos dondurmasından sonraya kalabilir.
+8. **KARAR — US10 senkron, kullanıcı kapsamlıdır.** `0012` sohbet sahibinin
+   silme yetkisini açar; export ve öğrenci anonimleştirme API işleminde tamamlanır.
+   Eğitmen sahipliği varken anonimleştirme 409 ile reddedilir. Veri hacmi asenkron
+   export gerektirecek düzeye çıkarsa ayrı iş tablosu v2 kararıdır.
 9. **Ölçüm yok.** Bu belgedeki hiçbir indeks, sorgu maliyeti veya ek SELECT **ölçülmemiştir**. §2.3, §3.3 ve §5.3'teki "ölçülmedi" notları rapora aynen taşınmalıdır; aksi hâlde SC-009 (belge-kod çelişkisi sıfır) düşer.

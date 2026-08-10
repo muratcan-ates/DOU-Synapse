@@ -188,7 +188,7 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
 | 2 | **Model önbelleği silinmiş** | İlk soru dakikalarca sürer, log `embedding modeli yükleniyor`da asılı | Kurtarma yok. T-60'ta kontrol et |
 | 3 | **`answer_cache` birebir eşleşme** | Plan C'de cevap gelmiyor | Soruları kopyala-yapıştır sor |
 | 4 | **Her ders dışı soru "kapsam dışı" demiyor** | Bazıları "Materyalde dayanak bulunamadı" döner | İkisi de doğru davranış, ama sahnede **denenmiş** soruyu kullanın; demo-script sahne 5'te ölçülmüş liste var |
-| 5 | **Soru üretimi anahtarsız çalışmıyor** | "0 soru üretildi" | Soruları T-60'ta üret ve onayla |
+| 5 | **Gerçek sağlayıcı anahtarı yok** | Sahte sağlayıcı etiketi görünür | Akış provasını sahte taslakla yap; jüri demosu için gerçek sağlayıcı taslaklarını T-60'ta incele ve onayla |
 | 6 | **Hız sınırı**: kullanıcı+ders başına 20 istek / 60 sn | 429 ve "Çok sık soru gönderiyorsun" | Prova ile demoyu aynı hesapta arka arkaya yapma; ya 1 dk bekle ya diğer hesaba geç |
 | 7 | **Mod ortada değişmiyor** | "Bu oturum farklı bir modda başlatılmış" | Sokratik'e geçerken **yeni sohbet** aç (arayüz bunu kendi yapıyor) |
 | 8 | **Dev veritabanı test dersleriyle dolu** | Ders listesinde onlarca `E2E Test Dersi` | Demo öncesi temiz bir ders listesi hazırla; jüri çöp listeyi görmemeli |
@@ -260,7 +260,8 @@ yarım bir ekranı gösterirsek onu sorar.
 - **Eğitmen analitiğindeki "kapsam dışı ret oranı" kartı.** Bugün %0 gösteriyor çünkü
   retler `insufficient_context` olarak kaydediliyor. Sayı yanlış okunmaya açık.
 - **Compose yığınında izolasyon kanıtı.** O yığında RLS devrede değil.
-- **Soru üretimi ekranı**, gerçek LLM anahtarı yoksa (0 soru döner).
+- **Soru üretimi ekranı**, gerçek LLM anahtarı yoksa şemalı sahte taslak üretir;
+  bunu pedagojik kalite kanıtı olarak sunmayın.
 - **Üstünde "Tasarım önizlemesi" şeridi olan hiçbir ekran.** 9 Ağustos akşamı itibarıyla
   böyle bir ekran **kalmadı** (soru havuzu, sınav ve ilerleme o gün bağlandı), ama kural
   duruyor: örnek veri gösteren bir ekranı çalışan ürün diye göstermek, bu listedeki her

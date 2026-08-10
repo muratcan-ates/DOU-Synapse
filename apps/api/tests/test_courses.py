@@ -72,8 +72,40 @@ class TestCourseCreation:
         burak = users.auth(await users.create("burak@dogus.edu.tr"))
         await _create_course(client, ayse, "COME301")
 
-        assert len((await client.get("/courses", headers=ayse)).json()) == 1
-        assert (await client.get("/courses", headers=burak)).json() == []
+        assert len((await client.get("/courses", headers=ayse)).json()["items"]) == 1
+        assert (await client.get("/courses", headers=burak)).json()["items"] == []
+
+    async def test_liste_keyset_ile_sayfalanir_es_zamanli_ekleme_kaydirmaz(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_ids = {
+            await _create_course(client, ayse, "PAGE1"),
+            await _create_course(client, ayse, "PAGE2"),
+            await _create_course(client, ayse, "PAGE3"),
+        }
+
+        first = (await client.get("/courses", params={"limit": 2}, headers=ayse)).json()
+        assert first["next_cursor"] is not None
+
+        # İlk sayfadan sonra başa yeni kayıt girse bile ikinci sayfa tekrar/atlama yapmaz.
+        inserted_after_cursor = await _create_course(client, ayse, "PAGE4")
+        second = (
+            await client.get(
+                "/courses",
+                params={"limit": 2, "cursor": first["next_cursor"]},
+                headers=ayse,
+            )
+        ).json()
+
+        assert len(first["items"]) == 2
+        assert len(second["items"]) == 1
+        assert {row["id"] for row in first["items"] + second["items"]} == course_ids
+        assert inserted_after_cursor not in {row["id"] for row in second["items"]}
+        assert (await client.get("/courses?limit=101", headers=ayse)).status_code == 200
+        invalid = await client.get("/courses?cursor=bozuk", headers=ayse)
+        assert invalid.status_code == 422
+        assert invalid.json()["error"]["code"] == "invalid_cursor"
 
 
 class TestCourseIsolation:
@@ -152,7 +184,7 @@ class TestMembership:
         assert added.json()["role"] == "student"
 
         listed = await client.get("/courses", headers=users.auth(burak_id))
-        assert [c["id"] for c in listed.json()] == [course_id]
+        assert [c["id"] for c in listed.json()["items"]] == [course_id]
 
     async def test_kayitli_olmayan_eposta_404(
         self, client: AsyncClient, users: UserFactory
@@ -183,7 +215,7 @@ class TestMembership:
         revoked = await client.delete(f"/courses/{course_id}/members/{burak_id}", headers=ayse)
         assert revoked.status_code == 204
 
-        assert (await client.get("/courses", headers=users.auth(burak_id))).json() == []
+        assert (await client.get("/courses", headers=users.auth(burak_id))).json()["items"] == []
         assert (
             await client.get(f"/courses/{course_id}", headers=users.auth(burak_id))
         ).status_code == 404

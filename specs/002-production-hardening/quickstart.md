@@ -6,41 +6,36 @@ için önce [`specs/001-course-assistant-mvp/quickstart.md`](../001-course-assis
 şey farklı: **002 üzerinde çalışan birinin sistemi doğru portlarla ayağa kaldırması, hangi
 testin neyi kanıtladığını bilmesi ve 002'nin her User Story'sini elle doğrulayabilmesi.**
 
-> **Bu belgedeki doğrulamaların ÇOĞU bugün BAŞARISIZ olmalıdır.** 002 henüz koda inmedi:
-> `002-production-hardening` dalında `specs/002-production-hardening/` dışında hiçbir dosya
-> değişmiş değil (`git status`). Her doğrulama adımının yanında iki sütun var — **bugünkü
-> sonuç** ve **002 bitince beklenen sonuç.** İkisi bugün aynı çıkıyorsa ya iş çoktan
-> yapılmıştır ya da doğrulama yanlış yerden bakıyordur; ikincisi çok daha olasıdır ve
-> 001'in devir belgesinin "sessiz kusur sınıfı" dediği şeyin tam olarak kendisidir
-> (`docs/team/parallel/20_DEVIR_9_AGUSTOS.md:128-147`).
+> **10 Ağustos güncellemesi:** 002'nin ana kod blokları uygulanmıştır. Aşağıdaki
+> doğrulamalar artık yeşil olmalıdır; kırmızı sonuç release blocker'dır. Yalnız
+> gerçek LLM/Supabase/bulut anahtarı isteyen adımlar §5'te açıkça `KOŞULMADI`
+> kalır. Tarihsel "bugün yok" açıklamaları git geçmişinde, güncel durum bu bölümün
+> tablosundadır.
 
 > **Bu belgede ölçülen sayılar (9 Ağustos 2026, bu ağaçta koşuldu):**
-> `cd apps/api && uv run pytest -q` → **779 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 779 -->
-> `cd apps/web && bun test lib/` → **280 pass, 0 fail, 15 dosya.** <!-- docs-check: frontend.tests = 280 --><!-- docs-check: frontend.testFiles = 15 -->
+> `cd apps/api && uv run pytest -q` → **791 passed** (9 Ağu, US1 sonrası). Sayı 002 boyunca artacak; tek doğrusu komutun kendisidir. <!-- docs-check: backend.tests = 791 -->
+> `cd apps/web && bun test lib/` → **285 pass, 0 fail, 17 dosya.** <!-- docs-check: frontend.tests = 285 --><!-- docs-check: frontend.testFiles = 17 -->
 > Bunların dışındaki her sayı ya bir dosyadan alıntıdır ya da **KOŞULMADI** yazar
 > (Anayasa III).
 
 ---
 
-## 0. Bugün nerede duruyoruz — hangi hikâye kodda var, hangisi yok
+## 0. Bugün nerede duruyoruz
 
 Bu tablo doğrulamaların çıkış noktasıdır. "Yok" yazan bir satırın doğrulaması bugün
 **kırmızı yanmalıdır**; yanmıyorsa doğrulama yanlış yazılmıştır.
 
 | # | Hikâye | Bugün kodda | Kanıt | Doğrulama |
 |---|---|---|---|---|
-| US1 | Sınav oturumu → asistan kilidi | **YOK** | `app/api/chat.py:561-567` `CourseMemberDep` alıyor; sınav durumuna bakan tek satır yok | [§4.1](#41-us1--sınav-oturumu-kilidi-002nin-birinci-işi) |
-| US2 | Event loop bloklanması | **YOK** | `asyncio.to_thread` yalnız `app/modules/ingestion/storage.py:50,55,61`'de — ayrıştırma ve embedding hâlâ döngüde | [§4.2](#42-us2--bilinen-üç-production-kusuru) |
-| US2 | Isıtma (warmup) | **YOK** | `app/main.py` `lifespan`'inde model dokunuşu yok | [§4.2](#42-us2--bilinen-üç-production-kusuru) |
-| US2 | Soru üretimi kotası | **YOK** | `app/api/questions.py:154-200` — `_rate_limiter` çağrısı yok (karşılaştırın: `app/api/chat.py:589-594`) | [§4.2](#42-us2--bilinen-üç-production-kusuru) |
-| US2 | Issuer ortam değişkeni adı | **UYUŞMUYOR** | `.env.example:25` `SUPABASE_JWT_ISSUER` yazıyor; `app/core/config.py:100` alanı `jwt_issuer`, yani `JWT_ISSUER` okuyor; `config.py:73` `extra="ignore"` fazlalığı sessizce yutuyor | [§4.2](#42-us2--bilinen-üç-production-kusuru) |
-| US3 | Sınav blueprint'i | **YOK** | `supabase/migrations/` `0007`'de bitiyor; `exam_blueprints` diye bir tablo yok | [§4.3](#43-us3--sınav-blueprinti) |
-| US4 | Ders bazlı AI politikası | **YOK** | Eşik global: `app/core/config.py` `evidence_threshold`; mod seçimi istemcide (`ChatRequest.mode`) | [§4.4](#44-us4--ders-bazlı-ai-politikası) |
-| US5 | Timeout / retry / istek kimliği | **KISMİ** | `X-Request-ID` **başlıkta** var (`app/main.py:63,66`), hata **gövdesinde** yok (`app/core/errors.py:57-62`); `apps/web/lib/api.ts` içinde `AbortSignal` yok | [§4.5](#45-us5--güvenilirlik-ux) |
-| US6 | Sayfalama | **YOK** | `app/api/courses.py:30`, `chat.py:701` — `limit`/`cursor` parametresi yok | [§4.6](#46-us6--sayfalama) |
-| US7 | Gerçek kimlik (frontend ayağı) | **KISMİ** | Backend hazır (`0002`, `app/core/security.py`); arayüz hâlâ `Bearer dev:<uuid>` kartı | [§4.7](#47-us7--gerçek-kimlik) |
-| US8 | Belge doğruluğu | **AÇIK** | Bu belgenin kendisi bir örnek buldu: 001 quickstart:195 "479 test" diyor, bugün ölçülen **664** | [§4.8](#48-us8--belge-doğruluğu) |
-| US9–11 | Veri hijyeni, KVKK hakları, güvenlik başlıkları | **YOK** | `app/main.py:40-100` içinde güvenlik başlığı middleware'i yok | [§4.9](#49-us9-us10-us11) |
+| US1 | Sınav oturumu → asistan kilidi | **VAR** | API bağımlılığı + availability; exam yürürken chat yüzeyleri kapanır, practice/eğitmen açık kalır | [§4.1](#41-us1--sınav-oturumu-kilidi-002nin-birinci-işi) |
+| US2 | Runtime safety | **VAR** | Parse/embedding `to_thread`, bloklamayan warmup, ortak tahliyeli limiter, soru üretimi kota+eşzamanlılık kapısı | [§4.2](#42-us2--bilinen-üç-production-kusuru) |
+| US3 | Sınav blueprint'i | **VAR** | `0008`, blueprint/öğrenme çıktısı/version API'leri ve eğitmen ekranı | [§4.3](#43-us3--sınav-blueprinti) |
+| US4 | Ders bazlı AI politikası | **VAR** | `0009`, audit, çözülmüş politika servisi, kaynak/mod/ipucu/eşik/bütçe ekranı | [§4.4](#44-us4--ders-bazlı-ai-politikası) |
+| US5 | Timeout / retry / istek kimliği | **VAR** | Süre bütçeleri, güvenli GET retry, backoff polling ve gövdede `request_id` | [§4.5](#45-us5--güvenilirlik-ux) |
+| US6 | Sayfalama | **VAR** | Beş büyüyen liste keyset cursor + tek `Devamını yükle` deseni | [§4.6](#46-us6--sayfalama) |
+| US7 | Gerçek kimlik | **KOD HAZIR** | Supabase web oturumu + backend JWT köprüsü; gerçek projeyle koşu dış bağımlılık | [§4.7](#47-us7--gerçek-kimlik) |
+| US8 | Belge doğruluğu | **VAR** | `scripts/docs_check.mjs` ve CI kapısı | [§4.8](#48-us8--belge-doğruluğu) |
+| US9–11 | Hijyen, KVKK, arıza görünürlüğü | **VAR** | E2E teardown/temizlik, export-sil-anonimleştir, retry/backoff, web+API güvenlik başlıkları | [§4.9](#49-us9-us10-us11) |
 
 ---
 
@@ -126,12 +121,12 @@ gördüğünüz artış budur.
 
 ```bash
 cd apps/api
-uv run pytest -q        # 779 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 779
+uv run pytest -q        # 791 passed, ~77 sn (9 Ağustos, US1 sonrası bu ağaçta ölçüldü)   # docs-check: backend.tests = 791
 uv run mypy app
 uv run ruff check . && uv run ruff format --check .
 
 cd ../web
-bun test lib/           # 280 pass, ~0,2 sn   # docs-check: frontend.tests = 280
+bun test lib/           # 285 pass, ~0,2 sn   # docs-check: frontend.tests = 285
 bun run typecheck
 ```
 
@@ -188,7 +183,7 @@ Kolaylık için:
 API=http://localhost:8010
 OGR="Authorization: Bearer dev:22222222-2222-2222-2222-222222222222"
 HOC="Authorization: Bearer dev:11111111-1111-1111-1111-111111111111"
-CID=$(curl -s "$API/courses" -H "$OGR" | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['id'])")
+CID=$(curl -s "$API/courses" -H "$OGR" | python3 -c "import json,sys; print(json.load(sys.stdin)['items'][0]['id'])")
 echo "$CID"
 ```
 
@@ -196,10 +191,9 @@ echo "$CID"
 
 `POST /courses/{id}/exams` onaylı havuz boşsa oturum **açmaz** ve 409 döner:
 "Bu derste henüz onaylanmış soru yok…" (`app/api/exams.py:298-302`). Gerçek LLM anahtarı
-yokken soru üretimi bu ortamda sıfır soru döndürür
-(`20_DEVIR_9_AGUSTOS.md:101-106`), yani **US1'i doğrulamadan önce havuzu elle
-tohumlamanız gerekir.** Eğitmen token'ıyla soru üretip onaylayın ya da doğrudan
-veritabanına yazın; hangisini yaptığınızı doğrulama notuna yazın.
+yokken deterministik sahte sağlayıcı geçerli taslak üretir. Akışı bununla
+doğrulayabilirsiniz; pedagojik kaliteyi kanıtlamaz. Eğitmen token'ıyla üretip
+taslağı onaylayın; öğrenci onaydan önce soruyu görmemelidir.
 
 ---
 
@@ -288,7 +282,7 @@ atlamayın.
 
 #### E) FR-106 — kilit kaldırıldığında kırmızı yanma
 
-`apps/api/tests/test_exam_lock.py` (002 yazacak) sekiz iddia taşır ve sekizincisi bir
+`apps/api/tests/test_exam_lock.py` dokuz iddia taşır ve sonuncusu bir
 **karşı kontroldür**: kilit fonksiyonu monkeypatch ile devre dışı bırakılıp aynı kurulumun
 **200 + kaynaklı cevap** ürettiği gösterilir. Bu olmadan 403'ün sebebi "kilit" değil "bozuk
 fikstür" de olabilir; deponun kurulu yöntemi budur
@@ -320,14 +314,11 @@ JWT_ISSUER=https://ornek.supabase.co/auth/v1 \
 
 | | Bugünkü sonuç | 002 bitince beklenen |
 |---|---|---|
-| `SUPABASE_JWT_ISSUER` | **`None`** — sessizce yutuldu | Değer okunur |
+| `SUPABASE_JWT_ISSUER` | Değer okunur | Değer okunur |
 | `JWT_ISSUER` | Değer okunur | Değer okunur (ya da tek ada indirgenir) |
 
-Sessizliğin sebebi `app/core/config.py:73` `extra="ignore"`. Sonuç: kurulum belgesini
-**birebir** uygulayan operatörde issuer doğrulaması kapalı kalır — imza doğrulaması
-etkilenmez, kaybedilen katman issuer sabitlemesidir (`app/core/security.py:74-99`).
-SC-015 bunun bir testle sabitlenmesini istiyor: `.env.example` ve `docs/deployment.md`'de
-geçen her değişken adının `Settings` alanlarıyla karşılaştırıldığı bir test.
+`AliasChoices` iki adı da kabul eder; `.env.example`'daki her adın gerçek bir
+`Settings` alanına bağlandığı sınıfsal test SC-015'i sabitler.
 
 #### FR-220 · event loop bloklanması
 
@@ -343,10 +334,10 @@ curl -s -X POST "$API/courses/$CID/documents" -H "$HOC" \
   -F "file=@sample_data/isletim-sistemleri/<buyuk>.pdf" -o /dev/null -w "%{http_code}\n"
 ```
 
-Bugün beklenen: yükleme tetiği (`app/api/documents.py:94` → `_trigger_worker` → drain)
-ayrıştırma ve embedding'i **döngü içinde** koşturur, `health/live` gecikmesi görünür
-şekilde sıçrar. Tek `asyncio.to_thread` kullanımı depolamadadır
-(`app/modules/ingestion/storage.py:50,55,61`), hesap tarafında yoktur.
+Beklenen: ayrıştırma ve embedding parti başına `asyncio.to_thread` ile event loop
+dışındadır; yükleme sürerken `health/live` yanıt vermeye devam eder. 10 Ağustos
+yerel gerçek-model ölçümü `docs/test-report.md` §14b'dedir; başka ortam için sayı
+kopyalanmaz, aynı script yeniden koşulur.
 
 **Sayı yazmadan geçmeyin:** SC-014 bloke süresinin **ölçülüp rapora yazılmasını** istiyor.
 Ölçmediyseniz `docs/test-report.md`'ye **KOŞULMADI** yazın (FR-182).
@@ -359,9 +350,10 @@ time curl -s -X POST "$API/courses/$CID/chat" -H "$OGR" \
   -H "Content-Type: application/json" -d '{"question":"Semafor nedir?","mode":"qa"}' > /dev/null
 ```
 
-001'in ölçtüğü değerler (fastembed, yerel): ilk soru **11,7 sn**, ikinci soru **0,08 sn**
-(001 quickstart §6.1). 002 sonrası ilk isteğin bu cezayı tek başına ödememesi beklenir ve
-**yeni sayı ölçülüp yazılır** — eski sayıyı kopyalamak SC-009'u düşürür.
+001'in tarihsel değerleri (fastembed, yerel): ilk soru **11,7 sn**, ikinci soru
+**0,08 sn** (001 quickstart §6.1). 002 için 10 Ağustos'ta yeni ölçüm alındı:
+warmup açık ilk soru **123,2 ms**, kapalı süreç-soğuk karşı kontrol **1603,4 ms**;
+ayrıntı ve koşullar `docs/test-report.md` §14b'dedir.
 
 #### FR-222 / FR-223 · soru üretimi kotası
 
@@ -486,8 +478,8 @@ durdurulmayan polling kusurdur).
 curl -s "$API/courses/$CID/questions?limit=5" -H "$HOC" | python3 -c "import json,sys; d=json.load(sys.stdin); print(type(d), len(d))"
 ```
 
-Bugün: `limit` yok sayılır, düz liste döner (`app/api/questions.py:120`). 002 sonrası:
-zarf içinde sayfa + imleç, sunucu kendi üst sınırını uygular (FR-161), sıralama
+Bugün: zarf içinde `items` + `next_cursor` döner; sunucu kendi üst sınırını uygular
+(FR-161), sıralama
 belirlenimcidir (FR-163). Doğrulama için 200 kayıt tohumlayın ve **eşzamanlı ekleme
 sırasında** ikinci sayfayı isteyin (FR-162).
 
@@ -538,11 +530,11 @@ uyguluyor, örnek oradadır.
 
 | Kontrol | Komut / adım | Bugün |
 |---|---|---|
-| E2E veri hijyeni (FR-190 · SC-010) | Koşu öncesi/sonrası `select count(*) from courses` | Fark **sıfır olmalı**; bugün değil |
-| Temizlik komutu (FR-191) | Ne sileceğini **önce göstermeli**, sonra onay istemeli | Komut yok |
-| Sohbet geçmişi silme (FR-200) | `DELETE /courses/{id}/chat/sessions/{sid}` | Uç yok |
-| Dışa aktarma (FR-201) | Dosyada **başka kullanıcının verisi olmamalı** | Uç yok |
-| Güvenlik başlıkları (FR-215) | `curl -sI "$API/health/live"` → CSP, `X-Content-Type-Options`, `Referrer-Policy` | Yok (`app/main.py:40-100`) |
+| E2E veri hijyeni (FR-190 · SC-010) | Koşu öncesi/sonrası desenli ders sayısı | Global teardown sonunda fark **sıfır** |
+| Temizlik komutu (FR-191) | `node scripts/cleanup_e2e.mjs` | Önce dry-run, sonra tam `E2E` onayı |
+| Sohbet geçmişi silme (FR-200) | `DELETE /courses/{id}/chat/sessions/{sid}` | Uç var, yalnız sahibi silebilir |
+| Dışa aktarma (FR-201) | `GET /me/export` | Kullanıcının kendi JSON verisi |
+| Güvenlik başlıkları (FR-215) | API header + Next header testleri | İki katmanda uygulanır |
 | Kusurlu işleme görünürlüğü (FR-213/214 · SC-013) | Bir işleme işini bilerek boz → panelde görünsün, yeniden çalıştırılabilsin | Yok |
 
 ---
@@ -556,7 +548,7 @@ düzyazısını model yazmaz.
 
 | Doğrulama | Neden anahtar ister | Anahtarsız ne yapılır |
 |---|---|---|
-| Soru üretiminin **gerçekten soru döndürmesi** | Sahte sağlayıcı soru şemasını üretmiyor; `rejection_reasons: ["yanıtta 'questions' dizisi yok"]` (`20_DEVIR_9_AGUSTOS.md:101-106`) | Havuzu elle tohumla; US1/US3 doğrulamaları buna bağlı |
+| Soru üretiminin **pedagojik kalitesi** | Sahte sağlayıcı şema akışını kanıtlar, kaliteyi kanıtlamaz | Blueprint→taslak→onay akışını sahteyle doğrula |
 | US3 blueprint'inden **kaliteli** taslak üretimi (FR-113) | Şema akışı sahteyle kanıtlanır, **pedagojik kalite kanıtlanmaz** (spec.md:412) | Şema akışını doğrula, kaliteyi T047'ye bırak |
 | US4 günlük LLM bütçesi (FR-134) | Bütçe gerçek çağrı maliyetiyle anlamlı | Sayaç mantığını birim testle sabitle |
 | Kanıt eşiğinin yeniden ölçümü | `retrieval/scope.py` indikten sonra **hiç ölçülmedi**; üç şerit üç farklı sayı önerdi ve eşik bilerek değiştirilmedi (`app/core/config.py:39-60`) | Rapora **KOŞULMADI** yaz |
@@ -575,7 +567,7 @@ issuer adı, event loop ölçümü, ısıtma. Bunları "anahtar gelince" diye er
 | Her sohbet isteği **422** | Yanlış sunucu: `:8000`'de başka bir ağacın API'si var. `NEXT_PUBLIC_API_URL=http://localhost:8010` verin (§1.2) |
 | Tarayıcıdan istek **CORS'a takılıyor** | 3010 (ya da başka bir port) `CORS_ORIGINS`'te yok. Kod varsayılanı yalnız 3000 + 3100 (`app/core/config.py:113`) |
 | Cevaplar **alakasız parçalara** atıf yapıyor | `EMBEDDING_PROVIDER` verilmedi → `hashing` ile E5 korpusunu sorguluyorsunuz. Çökmez, sessizce yanılır (§1.2) |
-| `POST /exams` → **409 "onaylanmış soru yok"** | Havuz boş; anahtarsız üretim sıfır döner. Havuzu elle tohumlayın (§3) |
+| `POST /exams` → **409 "onaylanmış soru yok"** | Taslak onaylanmadı. Eğitmen hesabıyla üretip onaylayın (§3) |
 | **US1 doğrulaması bugün 403 dönüyor** | Kilit inmiş olabilir — ya da yanlış şeyi ölçüyorsunuz. Kontrol: `practice` modu da 403 mü? Öyleyse fazla kapatılmış. Öğretmen de 403 mü? Öyleyse FR-103 ihlal |
 | **US1 testi kilit silinince de yeşil** | Karşı kontrol (test 8) yanlış modüle patch uyguluyor olabilir. `deps.py` çağrıyı `exam_state.active_exam_session(...)` biçiminde modül üzerinden yapmalı; `from … import` bağlanmış kopya bırakır ve patch etkisiz kalır |
 | RLS testi `duplicate key … profiles_pkey` | Seed'den sonra koşuldu. Temiz veritabanında koşturun (§2) |

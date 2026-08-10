@@ -7,7 +7,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ErrorNote, PageHeader } from "@/components/page-state";
 import { Button, Card, ConfirmAction } from "@/components/ui";
-import { api, signOut } from "@/lib/api";
+import { api, signOutCurrent } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import {
   chatDeletionMessage,
@@ -118,7 +118,7 @@ export default function AccountPage() {
             onConfirm={async () => {
               const result = await api.delete<AccountAnonymization>("/me");
               window.alert(result.message);
-              signOut();
+              void signOutCurrent();
               router.replace("/");
             }}
           />

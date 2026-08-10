@@ -1,5 +1,25 @@
 # Başarı testi raporu (T056)
 
+> **10 Ağustos 2026 production-hardening eki.** Aşağıdaki v1/v2 koşu sonuçları
+> tarihsel kanıt olarak korunur; fakat `retrieval/scope.py` bu koşulardan sonra
+> devreye girdi. Bu nedenle bugünkü hattın kapsam dışı doğru ret oranı
+> **KOŞULMADI**. Eski `%80` (v1 retrieval, 8/10), `%61` (v2 kalibrasyon,
+> 11/18) ve `%50` (v2 holdout retrieval, 11/22) farklı set/katmanlardır ve
+> bugünkü ürün metriği gibi birbirinin yerine kullanılamaz. Production-hardening
+> ile sınav kilidi, blueprint/politika, gerçek auth istemcisi, cursor sayfalama,
+> retry, KVKK uçları, güvenlik başlıkları ve Storage adaptörü eklendi; bunların
+> otomatik test sonucu §13'te mekanik belge kapısıyla güncellenir.
+>
+> **10 Ağustos yerel runtime ölçümü:** sınav kilidinin ek SELECT planı ve p50/p95'i
+> (T114), gerçek 2,1 GB `multilingual-e5-large` modeliyle event-loop sağlık
+> yoklaması ve warmup karşı-kontrolü (T207) koşuldu. Ayrıntı, koşul ve sınırlar
+> §14b'dedir; sayılar canlı/bulut ortam iddiası değildir.
+>
+> **10 Ağustos yerel RLS yeniden doğrulaması:** sıfırdan kurulan PostgreSQL 16
+> veritabanında çekirdek **99/0**, ölçme **59/0**, blueprint **37/0**; mutasyon
+> paketleri sırasıyla **53/53**, **24/24**, **23/23**. §4'teki 98/58 sayıları
+> 9 Ağustos v2 koşusunun tarihsel kaydıdır ve geriye dönük değiştirilmemiştir.
+
 **Sürüm: 2 · 9 Ağustos 2026** — retrieval katmanı ölçüldü, uçtan uca katman
 **sahte LLM sağlayıcısıyla** ölçüldü (cevap kalitesi sayıları geçersiz).
 **Ölçüm dalı:** `feat/eval-runs` · Bu belgedeki her sayı bir koşu dosyasına ya da
@@ -126,15 +146,16 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 
 | Metrik | Hedef | Ölçülen | Geçerli mi | Kaynak |
 |---|---:|---|---|---|
-| Dersler arası veri sızıntısı | 0 | **0** (8/8 iddia, v2'de yeniden koşuldu) | evet | `supabase/tests/rls_isolation.sql` |
-| Ölçme + analitik izolasyonu | 0 sızıntı | **0** (58/58 iddia, 24/24 mutasyon, v2'de yeniden) | evet | `rls_assessment.sql` + mutasyon betiği |
+| Dersler arası veri sızıntısı | 0 | **0** (99 iddia / 0 FAIL, 10 Ağustos temiz veritabanı) | evet | `supabase/tests/rls_isolation.sql` |
+| Ölçme + analitik izolasyonu | 0 sızıntı | **0** (59/59 iddia, 24/24 mutasyon) | evet | `rls_assessment.sql` + mutasyon betiği |
+| Blueprint izolasyonu | 0 sızıntı | **0** (37/37 iddia, 23/23 mutasyon) | evet | `rls_blueprint.sql` + mutasyon betiği |
 | Holdout Recall@5 | ≥ %80 | **%97,1** (102/105) hibrit · %96,2 dense | evet | `…1657-holdout-hybrid-fastembed-retrieval.json` |
 | Holdout Recall@8 | ≥ %80 | **%98,1** (103/105) her iki kol | evet | aynı dosya |
 | Holdout MRR | — | **0,854** hibrit · 0,807 dense | evet | aynı + dense koşusu |
 | Tam kapsama@8 (n=26) | — | **0,885** | evet | aynı dosya |
 | Embedding A/B (T045) | raporlanır | **bge-m3 üstün DEĞİL** | evet | `evaluation/embedding_ab.md` |
-| Kapsam dışı doğru ret (retrieval kapısı, holdout) | ≥ %90 | **%50** (11/22) — hedefin ALTINDA | evet | `…1705-holdout-hybrid-fastembed-e2e.json` |
-| Kapsam dışı doğru ret (uçtan uca, SC-005) | ≥ %90 | **%0** (0/22) — etiket hiç üretilmiyor | kısmen (§8b) | aynı dosya |
+| Kapsam dışı doğru ret (tarihsel v2 retrieval) | ≥ %90 | **%50** (11/22) — `scope.py` öncesi | tarihsel | `…1705-holdout-hybrid-fastembed-e2e.json` |
+| Kapsam dışı doğru ret (bugünkü uçtan uca, SC-005) | ≥ %90 | **KOŞULMADI** — `scope.py` sonrası yeni holdout yok | — | production-hardening eki |
 | Ret F1 | — | **0,537** (P 0,579 / R 0,500) | kısmen (§8) | aynı dosya |
 | Injection testleri (≥15 vaka) | geçer | **35 vakanın 3'ü ihlal** (deterministik) | evet | `…1616-injection.json` |
 | Sokratik kademe otoritesi | atlanamaz | **13 vakanın 13'ünde ilerlemedi** | evet | aynı dosya |
@@ -157,7 +178,7 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 
 | Kanıt | Sayı |
 |---|---|
-| Çekirdek şema iddiaları (`rls_isolation.sql`) | 8 PASS / 0 FAIL |
+| Çekirdek şema iddiaları (`rls_isolation.sql`) | 98 iddia / 0 FAIL |
 | Ölçme + analitik iddiaları (`rls_assessment.sql`) | 58 PASS / 0 FAIL |
 | Kapsanan politika | 0004'ün 15 politikası + 0005'in eğitmen okuma politikası |
 | Mutasyon testi | 24 mutasyon, **24'ü yakalandı** |
@@ -169,7 +190,7 @@ yetersiz olurdu, çünkü alakasız bir bozulma da FAIL üretir.
 ```bash
 createdb rls_check && for f in supabase/migrations/*.sql; do psql -q -d rls_check -f "$f"; done
 psql -q -d rls_check -f supabase/local_dev_setup.sql
-psql -d rls_check -f supabase/tests/rls_isolation.sql    # 8 PASS, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_isolation.sql    # 98 iddia, 0 FAIL
 psql -d rls_check -f supabase/tests/rls_assessment.sql   # 58 PASS, 0 FAIL
 bash supabase/tests/rls_assessment_mutation_check.sh     # 24/24 yakalandı
 ```
@@ -261,7 +282,7 @@ diğer tarafına geçti.
 kenarda durması, sonucun korpusun yeniden kurulması gibi küçük bir değişikliğe
 duyarlı olduğunu gösteriyor — sebebi §6.4'te.
 
-### 6.4. AÇIK KUSUR — hibrit sonuçlar korpus yeniden kurulunca değişiyor
+### 6.4. Tarihsel kusur — kalıcı FTS eşitlik bozucuyla kapatıldı
 
 Bu bulgu, ölçümün **yeniden koşturulmasıyla** ortaya çıktı. Korpus aynı materyalden,
 aynı sağlayıcıyla, aynı kütüphane sürümüyle yeniden kuruldu ve holdout yeniden
@@ -295,12 +316,11 @@ etkilenmiyor çünkü kosinüs mesafesinde birebir eşitlik pratikte oluşmuyor.
 bağlı çıktı. Yani bir kabul kriterinin sonucu, ölçümle ilgisi olmayan bir uygulama
 ayrıntısına duyarlı.
 
-**Şerit 1'e öneri:** eşitlik bozma kuralı **kalıcı** bir alana bağlanmalı — örneğin
-`(document_id, page_number, slide_number, section_title)` ya da chunk'ın belge
-içindeki sıra numarası. `c.id` yerine kalıcı bir anahtar kullanmak sonucu ingest'ten
-bağımsız hale getirir ve bu satırın raporda dipnot olmasına gerek kalmaz. Aynı
-kırılganlık `dense.py`'nin `LIMIT`'li alt sorgusunda da var (orada eşitlik bozma
-alanı hiç yok), bugün tetiklenmiyor ama aynı sınıftan.
+**10 Ağustos durumu:** `fts.py` artık UUID'yi değil kalıcı belge+konum anahtarını
+eşitlik bozucu olarak kullanır; regresyon testi aynı içerik yeniden ingest edildiğinde
+sıralamanın değişmediğini doğrular. Aşağıdaki sayılar kusur bulunurken alınan tarihsel
+koşulardır; düzeltme sonrası hibrit metrikler yeniden ölçülmediği için yeni sayı
+**KOŞULMADI**.
 
 **Bu raporda ne yapıldı:** tüm sayılar **son** korpus kurulumundan alındı ve o
 kurulumun koşu dosyaları depoda. Önceki kurulumun dosyaları silindi; iki farklı
@@ -576,8 +596,8 @@ delinmediği `rls_assessment.sql` içindeki bir iddiayla ve mutasyon testiyle s�
 **Ölçüldü (9 Ağustos, `feat/eval-runs`):**
 
 ```bash
-cd apps/api && uv run pytest -q      # 779 geçti   # docs-check: backend.tests = 779
-uv run mypy app                      # temiz, 59 dosya
+cd apps/api && uv run pytest -q      # 791 geçti   # docs-check: backend.tests = 791
+uv run mypy app                      # temiz, 81 kaynak dosyası
 uv run ruff check . && uv run ruff format --check .   # temiz
 ```
 
@@ -611,6 +631,66 @@ sessizce yanlış sayı üretmesi, ölçülen sistemin hatasından daha tehlikel
 seti aynı modda iki farklı embedding ile koşuyor; sağlayıcı adı olmasaydı iki koşu
 aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 
+### 14b. Production-hardening runtime ölçümleri (T114, T207)
+
+**Ortam:** 10 Ağustos 2026, yerel macOS, PostgreSQL 16.14, Python 3.12,
+`fastembed 0.8.0`, `intfloat/multilingual-e5-large` (2,1 GB yerel önbellek).
+Bu sayılar aynı makinede tekrar edilebilir geliştirme kanıtıdır; canlı Supabase,
+container veya çok kullanıcılı yük testi değildir.
+
+#### T114 — sınav kilidinin ek SELECT maliyeti
+
+Geçici ve sıfırdan migrate edilmiş veritabanında toplam yaklaşık 200 bin sınav
+oturumu kullanıldı. Gerçekçi dağılımda ölçülen öğrencinin 10 geçmiş oturumu vardı;
+1000 tekrarın sonucu:
+
+| Sorgu | p50 | p95 | En yüksek |
+|---|---:|---:|---:|
+| Bağlantı tabanı (`SELECT 1`) | 0,013 ms | 0,022 ms | 0,040 ms |
+| Kilit SELECT'i, aktif sınav yok | 0,054 ms | 0,058 ms | 0,104 ms |
+| Kilit SELECT'i, aktif sınav var | 0,055 ms | 0,061 ms | 0,090 ms |
+
+`EXPLAIN (ANALYZE, BUFFERS)` mevcut `exam_sessions_user_idx` indeksini kullandı:
+10 satırı filtreledi, 13 shared buffer hit gördü ve **0,052 ms** execution time
+verdi. Taban sorgusuna göre ek p95 **0,036–0,039 ms**. Bu sonuç yeni bir kısmi
+indeksi gerekçelendirmiyor; 0011'e sınav indeksi eklenmedi.
+
+Karşı sınır olarak, 100 bin geçmiş oturumun tek öğrenciye yapay biçimde yığıldığı
+patolojik dağılım da ölçüldü: planner sequential scan seçti ve kilit SELECT'i p95
+**5,016–5,030 ms** oldu. Bu gerçekçi kullanıcı dağılımının yerine geçmez; mevcut
+indeksin hangi veri biçiminde zayıflayacağını görünür kılar.
+
+T114 taslağı p50/p95'i `request_logs.latency_ms` alanından okumayı öneriyordu;
+bugünkü `chat.py::post_chat` kronometresi FastAPI bağımlılıkları tamamlandıktan
+sonra başladığı için kilit SELECT'ini o alana **dahil etmiyor**. Yanlış bir
+"önce/sonra" sayısı üretmek yerine sorgu doğrudan aynı RLS rolü ve aynı GUC
+bağlamında ölçüldü.
+
+#### T207 — event-loop ve embedding warmup
+
+`apps/api/scripts/measure_blocking.py` kendi API sürecini başlatıp 60 sayfalık
+sentetik PDF'yi işlerken `/health/live` ucunu boşluksuz yokladı. Warmup açık koşu:
+
+| Ölçüm | Sonuç |
+|---|---:|
+| API'nin canlı yanıt vermesi | 0,589 sn |
+| Arka plan model ısıtmasının `ready=ok` olması | 15,184 sn |
+| Isıtma sonrası ilk soru | 123,2 ms |
+| İkinci soru | 60,3 ms |
+| Boşta sağlık yoklaması | n=2125 · p95 1,2 ms · max 39,8 ms |
+| Belge işlenirken sağlık yoklaması | n=1899 · p95 4,1 ms · max 150,2 ms |
+
+Belge işlenirken **1899/1899 yoklama HTTP 200** döndü; bir yoklama 100 ms'yi
+aştı, fakat event loop saniyeler boyunca donmadı. Aynı script warmup kapalı karşı
+kontrolünde ilk soruyu **1603,4 ms**, ikinci soruyu **59,9 ms** ölçtü. Warmup açık
+ilk soru bu süreç-soğuk karşı kontrole göre yaklaşık **%92,3 daha kısa**. İkinci
+koşu işletim sistemi dosya önbelleği ısındıktan sonra yapıldığı için 1603,4 ms tam
+makine-soğuk ceza değil, muhafazakâr karşılaştırmadır.
+
+Bu ölçüm model kalitesini kanıtlamaz: sohbet yanıtları anahtar olmadığı için sahte
+LLM sağlayıcısından geldi. Kanıtlanan şey gerçek ONNX embedding yükünün API sağlık
+yanıtını kesmediği ve warmup'ın ilk sorgudan model yükleme cezasını aldığıdır.
+
 ---
 
 ## 15. Sınırlılıklar
@@ -630,10 +710,8 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
   olmadığını kanıtlamaz; insan incelemesi dosyası boş.
 - **Materyal tek ders, tek dil karışımı.** T045'in "bge-m3 üstün değil" sonucu bu
   materyal içindir, genel bir hüküm değildir.
-- **Hibrit kolun ondalık basamakları yeniden üretilebilir değil** (§6.4): korpus
-  yeniden kurulduğunda FTS eşitlik bozma kuralı değişiyor ve sıralama kayıyor.
-  Dense kol etkilenmiyor. Bu, T044'ün MRR aralığını sıfırın bir yanından diğerine
-  geçirecek kadar büyük bir etki.
+- **Hibrit metrik düzeltme sonrası yeniden ölçülmedi.** FTS eşitlik bozma kusuru
+  kapatıldı; bu rapordaki v2 ondalıkları eski koşunun tarihsel sonucudur.
 - **Analitik bölümü (§12) v2'de yeniden koşulmadı;** RLS bölümü (§4) koşuldu.
 
 ---
@@ -645,10 +723,7 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 | Gerçek LLM anahtarıyla uçtan uca koşu (citation precision, sızıntı, p95) | anahtar | R2 |
 | T047 etiketleme, iki bağımsız etiketleyici | anahtar + ikinci kişi | R2 + R4 |
 | T046 `review.md` doldurma | uçtan uca koşu | R2 + R4 |
-| `out_of_scope` etiketini kim üretecek — SC-005 ölçülebilir hâle gelsin | tasarım kararı | R4 / Şerit 1 |
-| `evidence_threshold` kararı (öneri 0,815) | tasarım kararı | Şerit 1 |
-| Kapsam kayması kusurunun düzeltilmesi (§8.2) | tasarım kararı | R4 / Şerit 1 |
-| FTS eşitlik bozmasının kalıcı alana bağlanması (§6.4) | tasarım kararı | Şerit 1 |
+| `scope.py` sonrası kapsam/eşik holdout'unu yeniden koşmak | gerçek korpus + dondurulmuş set | R2 |
 | RLS kanıtının üretim kopyasında koşturulması (T051) | dağıtım | R3 |
 | Eğitmen gözden geçirmesi | gold set dondurulmuş | lider |
 

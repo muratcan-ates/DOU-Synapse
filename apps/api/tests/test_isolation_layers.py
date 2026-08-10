@@ -153,7 +153,7 @@ class TestKatmanAyrimi:
         response = await client.get("/courses", headers=yabanci)
 
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["items"] == []
 
     async def test_rls_kapaliyken_uye_dersini_gorebiliyor(
         self, client: AsyncClient, users: UserFactory, rls_kapali: None

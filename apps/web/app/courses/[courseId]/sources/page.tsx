@@ -27,7 +27,7 @@ export default function SourcesPage() {
 
 function SourcesView() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor, ready } = useSession();
+  const { isInstructor, ready } = useSession(courseId);
 
   return (
     <div>

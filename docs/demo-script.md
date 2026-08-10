@@ -225,10 +225,11 @@ Bu soru **"Materyalde dayanak bulunamadı"** döner, "kapsam dışı" değil.
 
 **Sayıyla destekleyin (dürüst hâliyle):**
 
-> "Bu kapının eşiğini 15 soruluk bir kalibrasyon setiyle ayarladık ve kararı dondurduktan
-> sonra 55 soruluk ayrı bir sette ölçtük. Hedefimiz %90 doğru retti; **%80 ölçtük.**
-> Eşiği yükseltirsek %100'e çıkıyor ama o zaman test setimizi ikinci bir ayar setine
-> çevirmiş olurduk. Yapmadık ve sayıyı olduğu gibi raporladık."
+> "İlk retrieval ölçümümüzde %80, büyütülmüş v2 holdout'ta %50 gördük; v2
+> kalibrasyon setindeki %61 ise ayrı bir payda. Daha sonra kapsam ayrımı kodu
+> değişti. O yeni hatla nihai holdout'u henüz koşmadık, bu yüzden bugünkü oran
+> için **KOŞULMADI** diyoruz. Hedefimiz hâlâ %90; eski sayıları yeni ürün sonucu
+> diye kullanmıyoruz."
 
 **Neden bu cümle:** ölçümün altında kalan bir sonucu kendiniz söylemek, jürinin onu
 bulmasından her zaman iyidir — ve metodolojiyi anladığınızı kanıtlar.
@@ -249,8 +250,10 @@ Sahnede yukarıdaki ilk soruyu kullanın; **denenmemiş bir soruyla sahneye çı
 
 ## Sahne 6 — Sınav provası ve "neden yanlış" (120 sn)
 
-**Ön koşul:** derste **onaylanmış soru** olmalı. Soru üretimi gerçek LLM anahtarı ister;
-anahtar yoksa sorular T-60'ta üretilip onaylanmış olmalıdır ([runbook §3](runbook.md#3-sabah-kontrol-listesi)).
+**Ön koşul:** derste **onaylanmış soru** olmalı. Anahtarsız sahte taslaklar yalnız
+akış provası içindir; jüriye gösterilecek sorular gerçek sağlayıcıyla T-60'ta
+üretilip eğitmen tarafından incelenmiş ve onaylanmış olmalıdır
+([runbook §3](runbook.md#3-sabah-kontrol-listesi)).
 
 ### 6a. Eğitmen onayı (40 sn)
 
@@ -305,7 +308,7 @@ anahtarı ve açıklama.
 | "Model uydurmuyor mu?" | Atıflar getirilen parça kümesine karşı **set üyeliğiyle** sınanıyor; kümede olmayan atıf düşürülüyor, geçerli atıf kalmazsa cevap gösterilmiyor. Bu deterministik. Ama **iddia-kaynak tutarlılığını** garanti etmez, onu ayrıca örneklemle ölçüyoruz |
 | "Öğrenci ödevi yaptırabilir mi?" | Sokratik modda merdiven denemeye bağlı; ısrarda dil modeline hiç gidilmiyor. Kod/çözüm sızıntısı için ayrı bir kural tabanlı filtre var, ihlalde bir kez yeniden üretiyor, ısrar ederse sabit şablona düşüyor |
 | "Başka dersin materyaline erişebilir mi?" | İki katman: sunucuda üyelik doğrulaması + PostgreSQL satır düzeyi güvenlik. API tabloların sahibi olmayan ayrı bir rolle bağlanıyor, testler de aynı rolle koşuyor — yoksa test hiçbir şey kanıtlamaz |
-| "Sayılarınız ne kadar güvenilir?" | n=50, alt kümeler n≈10 — yön göstergesi. Kalibrasyon ve test setleri ayrı; hedefin altında kalan metriği (%80) olduğu gibi raporluyoruz |
+| "Sayılarınız ne kadar güvenilir?" | Her sayıyı seti ve katmanıyla veriyoruz. Eski kapsam koşuları %80/%61/%50 verdi; yeni scope hattı sonrası nihai değer KOŞULMADI. Kalibrasyon ve holdout ayrıdır; hedef %90 |
 | "Neden LangChain kullanmadınız?" | Hat ince; düz Python daha şeffaf ve durum makinesi çatı istemiyor. Karar PLAN.md'de gerekçesiyle yazılı |
 
 ---

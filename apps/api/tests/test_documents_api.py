@@ -202,7 +202,7 @@ class TestUpload:
             )
 
         before = await client.get(f"/courses/{course_id}/questions", headers=ayse)
-        assert before.json()[0]["source_stale"] is False
+        assert before.json()["items"][0]["source_stale"] is False
 
         replaced = await _upload(
             client,
@@ -215,7 +215,7 @@ class TestUpload:
         assert replaced.status_code == 202, replaced.text
 
         after = await client.get(f"/courses/{course_id}/questions", headers=ayse)
-        assert after.json()[0]["source_stale"] is True
+        assert after.json()["items"][0]["source_stale"] is True
 
     async def test_bozuk_dosya_anlasilir_hata(
         self, client: AsyncClient, users: UserFactory
@@ -345,12 +345,18 @@ class TestDocumentAccess:
         burak = users.auth(burak_id)
         listed = await client.get(f"/courses/{course_id}/documents", headers=burak)
         assert listed.status_code == 200
-        assert len(listed.json()) == 1
+        assert len(listed.json()["items"]) == 1
 
         preview = await client.get(
             f"/courses/{course_id}/documents/{document_id}/chunks", headers=burak
         )
         assert preview.status_code == 403
+
+        retry = await client.post(
+            f"/courses/{course_id}/documents/{document_id}/retry", headers=burak
+        )
+        assert retry.status_code == 403
+        assert retry.json()["error"]["code"] == "permission_denied"
 
     async def test_baska_dersin_ogrencisi_belgeleri_goremez(
         self, client: AsyncClient, users: UserFactory
@@ -414,6 +420,26 @@ class TestWorkerQueue:
         ).json()
         assert detail["status"] == "failed"
         assert detail["error_message"]
+
+        retry = await client.post(
+            f"/courses/{course_id}/documents/{document_id}/retry", headers=ayse
+        )
+        assert retry.status_code == 200, retry.text
+        assert retry.json()["status"] == "uploaded"
+        assert retry.json()["error_message"] is None
+        async with admin_engine.begin() as conn:
+            job = (
+                await conn.execute(
+                    sql_text(
+                        "SELECT status::text, attempt_count, last_error "
+                        "FROM ingestion_jobs WHERE document_id = :id"
+                    ),
+                    {"id": document_id},
+                )
+            ).one()
+        assert job.status == "pending"
+        assert job.attempt_count == 0
+        assert job.last_error is None
 
 
 class TestYazmaGorunurlugu:

@@ -43,6 +43,10 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 | `WORKER_DATABASE_URL` | Worker bağlantısı. `dou_worker` rolü RLS'i atlar; `chunks` tablosuna yalnız o yazabilir |
 | `SUPABASE_JWT_SECRET` | Supabase JWT'lerini doğrular. Yoksa ve dev-auth da kapalıysa uygulama **başlamaz** |
 | `SUPABASE_JWT_ISSUER` | Beklenen `iss` claim'i — Supabase proje URL'sinin `/auth/v1` eki. **Boş bırakılırsa issuer doğrulanmaz** ve başka bir Supabase projesinin token'ı da kabul edilir. İmza doğrulaması etkilenmez; kaybedilen katman issuer sabitlemesidir. Üretimde doldurun |
+| `STORAGE_BACKEND` | Production'da `supabase` olmalıdır; `local` production başlangıcında reddedilir |
+| `SUPABASE_URL` | Storage REST kökü (`https://<ref>.supabase.co`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yalnız API/worker secret kasasında. Tarayıcıya ve `NEXT_PUBLIC_*` alanına **asla** verilmez |
+| `SUPABASE_STORAGE_BUCKET` | Özel materyal bucket'ı; varsayılan `course-materials`. Bucket ilk deploy'dan önce oluşturulmalıdır |
 | `CORS_ORIGINS` | JSON dizisi. Üretimde yalnız gerçek Vercel alan adı |
 | `GROQ_API_KEY`, `GEMINI_API_KEY` | LLM sağlayıcıları; ilki düşerse ikincisine otomatik geçilir |
 | `WORKER_DRAIN_SECRET` | `POST /internal/drain` ucunu korur. **Boşsa uç 404 döner** (fail-closed) |
@@ -56,15 +60,11 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 | `WORKER_DRAIN_URL` | Worker'ın drain ucunun tam adresi. **Tanımlıysa** tetik HTTP'ye döner; tanımsızsa süreç içinde `drain()` koşar |
 | `CHAT_RATE_LIMIT_REQUESTS`, `CHAT_RATE_LIMIT_WINDOW_SECONDS` | Kullanıcı başına sohbet sınırı. Sayaç **süreç içidir**: birden fazla replikada sınır replika başına uygulanır |
 
-> **Lidere:** `WORKER_DRAIN_URL` şu an `Settings` alanı DEĞİL, doğrudan ortamdan
-> okunuyor (`app/api/internal.py`). Sebebi `core/config.py`'nin bu fazda şeritlere
-> kapalı olmasıydı. Faz kapanınca `Settings.worker_drain_url` olarak taşınmalı ve
-> `.env.example`'a eklenmeli.
-
 ### Web (Vercel)
 
-`NEXT_PUBLIC_API_URL` ve Supabase anahtarları — bunlar liderin alanı
-(`apps/web/**` hiçbir şeride açık değil).
+`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL` ve
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`. Anon key tarayıcı içindir; service-role key
+değildir. Bu değişkenler yoksa arayüz çevrimdışı `dev:` demo kartlarını gösterir.
 
 ## 3. Migration sırası
 
@@ -84,7 +84,13 @@ done
 | `0003` | Sohbet: `chat_sessions`, `chat_messages`, `answer_cache`, `request_logs` |
 | `0004` | Ölçme ve analitik |
 | `0005` | Ek politikalar |
-| `0006` / `0007` | R4 / R3'e ayrıldı, gerekirse |
+| `0006` | Embedding sağlayıcı+sürüm provenance damgası |
+| `0007` | Soru silme ve sınav kolon yetkileri |
+| `0008` | Sınav blueprint'i, öğrenme çıktıları, sürümlü yayın |
+| `0009` | Ders bazlı AI politikası ve audit |
+| `0010` | Ingestion retry/backoff |
+| `0011` | Cursor sayfalama indeksleri |
+| `0012` | KVKK silme/dışa aktarma talepleri |
 
 **`main`'e girmiş bir migration yerinde değiştirilmez.** Yeni numara açılır.
 Bir dağıtımda migration'ları uygulamadan önce §6'daki yedeği alın.
@@ -106,6 +112,8 @@ veritabanında ölçülen sayı 15'tir. Brifingdeki sayı yanlış.)
 
 1. **Supabase**: proje aç, `vector` eklentisini etkinleştir, migration'ları
    sırayla uygula, `dou_app` ve `dou_worker` rollerini oluştur ve yetkilerini ver.
+   Storage altında özel `course-materials` bucket'ını oluştur. Uygulama nesneleri
+   yalnız backend service-role kimliğiyle yazar; service-role sırrını web ortamına koyma.
 2. **İmaj**: `docker build -t <registry>/dou-synapse-api:<sürüm> apps/api`
    Build, modeli indirir ve int8'e quantize eder; **denklik kapısı düşerse build
    de düşer** (§5).
@@ -113,7 +121,7 @@ veritabanında ölçülen sayı 15'tir. Brifingdeki sayı yanlış.)
    - `api`: varsayılan `CMD`, 8000 portu, `minReplicas=0`
    - `worker`: `command: ["python", "-m", "app.worker"]`, giriş portu yok
    - `WORKER_DRAIN_URL` API'ye worker'ın iç adresini gösterir
-4. **Vercel**: `apps/web`, `NEXT_PUBLIC_API_URL` API'nin genel adresi.
+4. **Vercel**: `apps/web`; API URL'si ile Supabase URL+anon key'i tanımla.
 5. **Duman testi**:
    ```bash
    curl -sf "$API_URL/health/ready"     # {"status":"ok", ...}
@@ -159,7 +167,7 @@ print(len(FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR']).embed_q
 ## 6. Yedek ve geri yükleme
 
 ```bash
-# Yedek
+# Yerel/Compose yedeği
 pg_dump -Fc -d "$DATABASE" -f backup/dou_synapse.dump
 tar -czf backup/storage.tar.gz -C "$STORAGE_PARENT" storage
 
@@ -169,6 +177,11 @@ pg_restore -d "$TARGET" --no-owner backup/dou_synapse.dump
 psql -d "$TARGET" -c "GRANT CONNECT ON DATABASE \"$TARGET\" TO dou_app, dou_worker"
 tar -xzf backup/storage.tar.gz -C "$STORAGE_PARENT"
 ```
+
+Production Supabase Storage için SQL dökümü nesne baytlarını içermez. Bucket
+metadata'sı ile nesneleri birlikte yedekleyin; silmeyi doğrudan SQL ile değil
+Storage API üzerinden yapın. Canlıya çıkış kapısı bir örnek belgenin yüklenmesi,
+worker tarafından okunması, indirilmesi ve silinmesidir.
 
 Geri yükleme sonrası **politika sayısını doğrulayın** — sessizce yetki kaybı,
 sessizce açılmış bir veritabanı demektir:
@@ -182,8 +195,9 @@ psql -d "$TARGET" -tAc "select count(*) from pg_policies where schemaname='publi
 
 Sunumdan **önce**, ağ hâlâ varken:
 
-1. Sınav havuzunu üret ve onayla. **Soru üretimi gerçek LLM anahtarı ister**;
-   sahte sağlayıcı üretim şemasını uygulamıyor ve sıfır soru döndürüyor.
+1. Sınav havuzunu üret ve onayla. Sahte sağlayıcı ağsız ortamda deterministik
+   taslak üretir; jüriye gösterilecek pedagojik kaliteyi gerçek sağlayıcıyla
+   ayrıca doğrulayın.
 2. Önbelleği doldur:
    ```bash
    uv run python scripts/fill_answer_cache.py --base-url "$API_URL"

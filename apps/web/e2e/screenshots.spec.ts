@@ -13,6 +13,7 @@
  *
  *     cd apps/web
  *     E2E_API_URL=http://localhost:8010 \
+ *       E2E_CAPTURE_SCREENSHOTS=true \
  *       node_modules/.bin/playwright test screenshots --grep @ekran
  *
  * `bunx playwright` KULLANMAYIN — ayrı bir kopya indirip "two different versions"

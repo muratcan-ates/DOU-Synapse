@@ -1,5 +1,11 @@
 # Devir teslim — 9 Ağustos 2026, gün sonu
 
+> **10 Ağustos düzeltme notu:** Bu belge tarihsel bir anı kaydeder. Aşağıdaki
+> "sahte sağlayıcı sıfır soru döndürüyor" iddiası `67ee442` ile bayatladı;
+> `test_uretilen_taslak_havuza_kadar_gider` deterministik sağlayıcının geçerli
+> taslak üretip havuza yazdığını kanıtlıyor. Gerçek anahtarın beklediği şey akış
+> değil, pedagojik kalite ve faithfulness değerlendirmesidir.
+
 > **Bu belge yeni bir oturumun tek başlangıç noktasıdır.** Önce bunu bitir, sonra
 > gerekirse `00_OKU_ONCE.md` ve `10_OKU_ONCE_FAZ2.md`'ye bak (ikisi de artık
 > tarihsel kayıt — şeritleri anlatıyorlar, hepsi kapandı).

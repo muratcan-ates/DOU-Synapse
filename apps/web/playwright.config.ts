@@ -32,6 +32,11 @@ const PORT = Number(process.env.E2E_PORT ?? 3100);
 
 export default defineConfig({
   testDir: "./e2e",
+  globalTeardown: "./e2e/global-teardown.ts",
+  // `screenshots.spec.ts` doğrulama değil, var olan COME 331 demo verisinden
+  // belge görselleri üreten opt-in bir araçtır. Temiz E2E veritabanında o sabit
+  // ders bilerek yoktur; normal kapıya karışırsa test değil ortam bağımlılığı olur.
+  grepInvert: process.env.E2E_CAPTURE_SCREENSHOTS === "true" ? undefined : /@ekran/,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

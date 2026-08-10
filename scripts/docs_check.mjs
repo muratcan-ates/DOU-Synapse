@@ -492,7 +492,7 @@ const KAPSAM_DISI = [
   "Eşik ifadeleri (`≥15 vaka` gibi) — hedef, ölçüm değil",
   "Dosya başına test sayıları (`test_exams.py (35 test)`) — kaynağı ayrı, sapması gözlenmedi",
   "Gecikme/token/chunk ölçümleri — koşum gerektirir, statik türetilemez",
-  "RLS iddia sayıları (98 / 58) — psql koşumundan gelir, CI'nın RLS adımları kanıtlar",
+  "RLS iddia/mutasyon sayıları — psql koşumundan gelir, CI'nın RLS adımları kanıtlar",
 ];
 
 // --- Kapı ------------------------------------------------------------------

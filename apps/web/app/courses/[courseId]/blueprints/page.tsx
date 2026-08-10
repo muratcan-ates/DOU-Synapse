@@ -26,6 +26,7 @@ import type {
   ExamItem,
   ExamVersion,
   LearningOutcome,
+  Page,
   Question,
   QuestionDifficulty,
   QuestionGeneration,
@@ -46,7 +47,7 @@ interface BlueprintWorkspaceData {
 
 export default function BlueprintsPage() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor, ready } = useSession();
+  const { isInstructor, ready } = useSession(courseId);
 
   return (
     <AppShell>
@@ -72,7 +73,9 @@ function BlueprintWorkspace({ courseId }: { courseId: string }) {
       api.get<LearningOutcome[]>(`/courses/${courseId}/learning-outcomes`),
       api.get<ExamBlueprint[]>(`/courses/${courseId}/blueprints`),
       api.get<Topic[]>(`/courses/${courseId}/topics`),
-      api.get<Question[]>(`/courses/${courseId}/questions`),
+      api
+        .get<Page<Question>>(`/courses/${courseId}/questions?limit=100`)
+        .then((page) => page.items),
     ]);
     return { outcomes, blueprints, topics, questions };
   }, [courseId]);

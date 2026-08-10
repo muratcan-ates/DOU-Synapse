@@ -138,8 +138,9 @@ döndürür. Bu yüzden ikisi ayrı ayrı ölçülüyor (§3).
 
 | Kapsam | İddia | Mutasyon |
 |---|---|---|
-| Çekirdek şema (`0001` + `0003`) | **98** | **52/52 yakalandı** |
-| Ölçme + analitik (`0004` + `0005`) | 58 | 24/24 yakalandı |
+| Çekirdek + gizlilik + ingestion (`0001`, `0003`, `0010`, `0012`) | **99** | **53/53 yakalandı** |
+| Ölçme + analitik (`0004` + `0005` + `0007`) | **59** | **24/24 yakalandı** |
+| Sınav blueprint'i (`0008`) | **37** | **23/23 yakalandı** |
 
 ```bash
 psql -d dou_synapse -f supabase/tests/rls_isolation.sql
@@ -151,22 +152,29 @@ psql -d dou_synapse -f supabase/tests/rls_assessment.sql
 supabase/tests/rls_assessment_mutation_check.sh
 ```
 
+```bash
+psql -d dou_synapse -f supabase/tests/rls_blueprint.sql
+supabase/tests/rls_blueprint_mutation_check.sh
+```
+
 "Mutasyon" şu demek: betik politikayı teker teker bozar (ör. `USING (true)`
 yapar), testi yeniden koşar ve **hangi iddianın** kırmızıya döndüğünü
 doğrular. Yalnız "bir yerde FAIL çıktı" aramak yetersizdir; alakasız bir
 bozulma da FAIL üretir.
 
-Çekirdek şemanın 52 mutasyonunun dördü politika değil **yardımcı fonksiyon**
+Çekirdek paketin 53 mutasyonunun dördü politika değil **yardımcı fonksiyon**
 bozar (`app.is_member`, `app.is_instructor`, `app.is_instructor_of`,
 `app.current_user_id`). Politikalar bu fonksiyonlara delege ettiği için tek bir
 fonksiyon gevşemesi, hiçbir politika metni değişmeden izolasyonun tamamını
 kaldırabilir.
 
-Politikası **bilinçli olarak olmayan** on üç işlem de fail-closed olarak
+Politikası **bilinçli olarak olmayan** on beş işlem de fail-closed olarak
 sınanır: `courses` INSERT/DELETE, `profiles` INSERT/DELETE, `chunks`
-INSERT/UPDATE/DELETE, `ingestion_jobs` UPDATE/DELETE, `chat_sessions` DELETE,
+INSERT/UPDATE/DELETE, `ingestion_jobs` doğrudan UPDATE/DELETE,
 `chat_messages` UPDATE/DELETE, `answer_cache` UPDATE, `request_logs`
-UPDATE/DELETE. Biri "eksik" sanıp politika eklerse ilgili iddia kırmızı yanar.
+SELECT/UPDATE/DELETE. `chat_sessions` için yalnız sahibin DELETE politikası vardır;
+başka kullanıcı satırı hem okuma hem silme katmanında kapalıdır. Biri fail-closed
+yüzeylerden birini "eksik" sanıp açarsa ilgili iddia kırmızı yanar.
 
 ### Uygulama katmanı (katman 1)
 
@@ -268,12 +276,17 @@ kullanır — `.inline()` bunu zorlar
 - **Yükleme tekilliği**: `(course_id, file_hash)` üzerinde UNIQUE; aynı dosya
   ikinci kez embed edilmez.
 - **Sohbet istek sınırı**: kullanıcı+ders başına kayan pencere, varsayılan 20
-  istek / 60 saniye ([`chat.py:567`](../apps/api/app/api/chat.py#L567)).
+  istek / 60 saniye (`core/rate_limit.py`). Soru üretimi daha sıkı, ayrı kota
+  ve eşzamanlılık kapısı kullanır; tek çağrı çok sayıda LLM turu açabildiği için
+  sohbet kotasının kopyası değildir.
 - **CORS**: izinli kaynaklar `CORS_ORIGINS`'ten gelir; üretimde yalnız gerçek
   alan adını içerir ([`main.py:48`](../apps/api/app/main.py#L48)).
 - **`POST /internal/drain`**: `WORKER_DRAIN_SECRET` tanımlı değilse uç
-  **kapalıdır** (fail-closed). Gövde Faz G şeridinde yazılır; bugün router boş
-  ([`api/internal.py`](../apps/api/app/api/internal.py)).
+  **kapalıdır** (fail-closed); doğru sırla çağrıldığında kuyruğu gerçekten
+  boşaltır (`api/internal.py::drain_jobs`).
+- **Belge deposu**: production yalnız `SupabaseStorage` ile başlar. Service-role
+  anahtarı backend'dedir; hata yanıtında sağlayıcı ayrıntısı sızmaz. Local
+  Compose'ta API ve worker aynı volume'u paylaşır.
 
 ---
 
@@ -281,14 +294,10 @@ kullanır — `.inline()` bunu zorlar
 
 Bu bölüm eksiksiz tutulur; burada yazmayan bir eksik, gizlenmiş bir eksiktir.
 
-**1. `iss` değeri sabitlenmiyor.** `iss` claim'inin varlığı zorunlu ama değeri
-karşılaştırılmıyor, çünkü `Settings`'te `jwt_issuer` alanı yok ve `config.py`
-bu şeridin sahipliği dışında. Kod alanı `getattr` ile okur
-([`security.py:74`](../apps/api/app/core/security.py#L74)); alan eklendiği an
-sabitleme ek bir değişiklik olmadan devreye girer ve testi bugünden yazılı
-(`TestIssuerSabitleme`). **Gerçek koruma imza anahtarıdır**: başka bir Supabase
-projesinin token'ı bizim secret'ımızla doğrulanamaz. Eksik olan derinlik
-savunmasıdır.
+**1. `iss` değeri production ortamında yapılandırılmalıdır.** `Settings.jwt_issuer`
+hem `SUPABASE_JWT_ISSUER` hem geriye uyumlu `JWT_ISSUER` adını okur ve güvenlik
+katmanı değeri doğrular. Alan boş bırakılırsa yalnız claim varlığı doğrulanır;
+bu yüzden canlıya çıkış kontrolü değişkeni zorunlu sayar.
 
 **2. Köprü gerçek Supabase üstünde KOŞULMADI.** Gerçek proje ve anahtar
 olmadığı için `0002` yalnız sahte bir `auth.users` üstünde sınandı. Sınanan
@@ -298,18 +307,18 @@ Supabase'in `auth.users` şeması, izinleri ve `supabase_auth_admin` rolü bireb
 taklit edilmiştir, gerçek değildir.
 
 **3. İstek sınırı süreç içidir.** Sayaç bellekte tutulur
-([`chat.py:121`](../apps/api/app/api/chat.py#L121)); birden fazla uvicorn
+(`core/rate_limit.py`); birden fazla uvicorn
 worker'ı çalıştığında sınır **worker başına** uygulanır. Dağıtık sınır Redis
 ister ve kapsam dışıdır. MVP tek süreçle koşuyor.
 
-**4. Güvenlik başlıkları ve TLS uygulama katmanında YOK.** HSTS, CSP,
-`X-Content-Type-Options` gibi başlıklar eklenmiyor; TLS sonlandırma dağıtım
-katmanının işi (R3 şeridi). Bugün yalnız CORS var.
+**4. TLS dağıtım katmanındadır.** Web katmanı CSP ve tarayıcı güvenlik
+başlıklarını, API kendi anlamlı JSON başlık kümesini ekler. HSTS yalnız HTTPS
+sonlandıran production katmanında anlamlıdır; gerçek alan adında ayrıca
+doğrulanmalıdır.
 
-**5. CORS `allow_credentials=True`.** Sistem kimliği `Authorization`
-başlığıyla taşıyor, çerezle değil; bu bayrağa ihtiyaç yok. Kaynak listesi
-sabitlendiği için bir açık değil, gereksiz bir genişlik. `main.py` lider
-dosyası olduğu için değiştirilmedi, rapora yazıldı.
+**5. CORS credential taşımaz.** Sistem kimliği `Authorization` başlığındadır ve
+`allow_credentials=False`; kaynak listesi production'da yalnız gerçek web alan
+adını içermelidir (`main.py::create_app`).
 
 **6. Cevap önbelleğine yazma, uygulama katmanının garantisidir.** RLS
 düzeyinde dersin bir üyesi kendi dersinin `answer_cache`'ine satır yazabilir;
@@ -317,11 +326,11 @@ düzeyinde dersin bir üyesi kendi dersinin `answer_cache`'ine satır yazabilir;
 uygulama uygular. Kabul edilebilir çünkü kullanıcıların doğrudan veritabanı
 kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapalı.
 
-**7. Profil silme akışı yok.** `auth.users`'tan silinen kullanıcının profili
-kalır (§1). Aynı e-postayla yeniden kayıt, köprü tarafından reddedilir ve
-çözüm operatörün bilinçli kararıdır (eski profili silmek ya da e-postasını
-arşiv değerine çevirmek). Otomatik bir onarım yolu bilinçli olarak yazılmadı:
-akademik kaydı yeni bir kimliğe sessizce bağlamak daha kötü bir sonuçtur.
+**7. Hesap anonimleştirme uygulama verisini kapsar, Supabase Auth kimliğini değil.**
+Kullanıcı sohbetini silebilir, verisini JSON dışa aktarabilir ve öğrenci hesabını
+anonimleştirebilir. Eğitmen hesabı ders sahipliği devredilmeden reddedilir.
+Supabase `auth.users` kaydının tamamen silinmesi hâlâ yetkili operatör işidir;
+akademik sahipliği sessizce başka kimliğe bağlanmaz.
 
 ---
 
@@ -339,30 +348,32 @@ akademik kaydı yeni bir kimliğe sessizce bağlamak daha kötü bir sonuçtur.
 **Serbest metin taşıyan tek kişisel alan `chat_messages.content`'tir** ve
 yalnız oturum sahibine açıktır — eğitmene bile değil.
 
-**Saklama süresi:** Tanımlı bir saklama/imha süresi **YOK**. Bugün veriler
-silinene kadar durur. Ders silindiğinde belgeler, chunk'lar, oturumlar ve
-mesajlar `ON DELETE CASCADE` ile gider; kullanıcı silindiğinde profil ve
-akademik kayıt bilinçli olarak KALIR (§8.7). Kurumsal bir saklama politikası
-gerekiyorsa bu bir ürün kararıdır ve yazılmamıştır.
+**Saklama süresi:** Otomatik kurumsal imha takvimi henüz yoktur. Kullanıcı kendi
+sohbetini silebilir, dışa aktarabilir ve öğrenci hesabını anonimleştirebilir;
+ders silindiğinde bağlı kayıtlar `ON DELETE CASCADE` ile gider. Kurumsal süre
+ve yedeklerden silinme politikası canlıya çıkışta ayrıca belirlenmelidir.
 
 **Yurt dışına aktarım:** LLM sağlayıcılarına (Groq, Gemini) giden istek,
 öğrencinin sorusunu ve ilgili chunk metinlerini içerir. Sağlayıcılar yurt
 dışındadır. Bu, sistemin çalışması için zorunlu bir aktarımdır ve
-aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
+aydınlatma metninde belirtilir (`docs/kvkk.md`) ve giriş öncesi `/kvkk`
+sayfasından okunur.
 
 ---
 
 ## 10. Doğrulama komutları (tümü)
 
 ```bash
-cd apps/api && uv run pytest -q                 # 779 test   # docs-check: backend.tests = 779
-cd apps/api && uv run mypy app                  # temiz, 59 dosya
+cd apps/api && uv run pytest -q                 # 791 test   # docs-check: backend.tests = 791
+cd apps/api && uv run mypy app                  # temiz, 81 kaynak dosyası
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 
 ```bash
-psql -d dou_synapse -f supabase/tests/rls_isolation.sql     # 98 iddia
-supabase/tests/rls_isolation_mutation_check.sh              # 52/52
-psql -d dou_synapse -f supabase/tests/rls_assessment.sql    # 58 iddia
+psql -d dou_synapse -f supabase/tests/rls_isolation.sql     # 99 iddia
+supabase/tests/rls_isolation_mutation_check.sh              # 53/53
+psql -d dou_synapse -f supabase/tests/rls_assessment.sql    # 59 iddia
 supabase/tests/rls_assessment_mutation_check.sh             # 24/24
+psql -d dou_synapse -f supabase/tests/rls_blueprint.sql     # 37 iddia
+supabase/tests/rls_blueprint_mutation_check.sh              # 23/23
 ```

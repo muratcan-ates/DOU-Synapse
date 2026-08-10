@@ -312,9 +312,7 @@ def _reference_block(payload: BaseModel) -> str:
         if payload.rubric:
             lines.append("Rubrik (ağırlıklar 100 üzerinden):")
             weights = _normalized_rubric_weights(payload)
-            lines += [
-                f"- {item.point} ({weights[item.point]:.4g})" for item in payload.rubric
-            ]
+            lines += [f"- {item.point} ({weights[item.point]:.4g})" for item in payload.rubric]
     elif isinstance(payload, CodeTracePayload):
         lines.append(f"Soru: {payload.prompt}")
         lines.append(f"Kod:\n{payload.code}")

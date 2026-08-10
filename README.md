@@ -12,7 +12,7 @@ Danışman: Yasemin Karagül · Takım: Muratcan Ateş (frontend + lead) · Eren
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-779_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 779 -->
+![Tests](https://img.shields.io/badge/tests-791_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 791 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/muratcan-ates/DOU-Synapse?style=flat-square)
 
@@ -38,19 +38,19 @@ denemesini yapmadan bir sonraki ipucu kademesine geçilmez.
 soruya sistem cevap uydurmaz, bulamadığını söyler — bu bir hata değil,
 tasarlanmış davranıştır.
 
-**Soru hazırlama yükü eğitmende değil, sistemde.** Eğitmen yalnız çerçeveyi
-kurar — konuyu ve biçimi seçer (test / klasik / kısa cevap), isterse bir-iki
-örnek soru verir. Sistem, materyalden o biçimde ve o üslupta soruları **cevap
-anahtarı ve kaynak referansıyla birlikte** kendisi üretir; eğitmene kalan tek
-iş taslakları onaylamak. Onaylanmayan hiçbir soru öğrenciye görünmez.
+**Soru hazırlama yükü eğitmende değil, sistemde.** Eğitmen önce sınavın
+blueprint'ini kurar: öğrenme çıktıları, konu/zorluk/Bloom dağılımı, soru tipleri,
+puan, süre, yayın penceresi, kaynak sürümleri ve yeniden deneme politikası.
+Sistem bu çerçeveye bağlı taslakları **cevap anahtarı ve kaynak referansıyla**
+üretir; eğitmen düzenleyip onaylamadan hiçbir soru öğrenciye görünmez.
 
 | | |
 |---|---|
 | **Nedir** | Ders materyaliyle sınırlı, kaynak zorunlu, Sokratik bir RAG ders ve sınav asistanı |
 | **Kimin için** | Soru hazırlama ve sınıf görünürlüğü yükü taşıyan eğitmen; müfredat dahilinde güvenilir kaynakla çalışmak isteyen öğrenci |
 | **Farkı ne** | Cevap üretmek değil, **doğrulanabilir** cevap üretmek: mekanik atıf doğrulaması, kademeli Sokratik yönlendirme, eğitmen onaylı soru havuzu, iki katmanlı ders izolasyonu |
-| **Kanıtı ne** | 779 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak | <!-- docs-check: backend.tests = 779 -->
-| **Bilerek ne değil** | Üretim sistemi değil; internete açılmaz, kod çalıştırmaz, resmî not vermez — [aşağıda](#yapar--bilerek-yapmaz) |
+| **Kanıtı ne** | 791 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak | <!-- docs-check: backend.tests = 791 -->
+| **Bilerek ne değil** | Doğrulanmış canlı dağıtım değildir; kod çalıştırmaz, resmî not vermez ve gerçek LLM kalitesini anahtarsız ortamdan türetmez — [aşağıda](#yapar--bilerek-yapmaz) |
 
 ## Yapay zekânın üç rolü
 
@@ -120,11 +120,11 @@ Diğer gerçek ekranlar: [giriş](docs/images/01-giris.png) ·
 [Sokratik ilk kademe](docs/images/11-sokratik-kademe-1.png) ·
 [Sokratik ikinci kademe](docs/images/12-sokratik-kademe-2.png)
 
-**Soru havuzu — üretimin dürüst muhasebesi.** Eğitmen çerçeveyi kurar (konu, biçim,
-isterse örnek soru); sistem materyalden üretir ve **her taslak eğitmen onayından
-geçmeden öğrenciye görünmez**. Ekran istenen/dönen/kabul edilen sayılarını ve
-**elenme gerekçelerini** gizlemez — bugün bu ortamda üretim sıfır soru döndürüyor
-(gerçek LLM anahtarı yok) ve sebebi ekranda yazılı:
+**Soru havuzu — üretimin dürüst muhasebesi.** Eğitmen blueprint'i kurar; sistem
+materyalden taslak üretir ve **her taslak eğitmen onayından geçmeden öğrenciye
+görünmez**. Ekran istenen/dönen/kabul edilen sayılarını ve elenme gerekçelerini
+gizlemez. Anahtarsız sahte sağlayıcı şemalı, deterministik taslak üretir; bu
+akış kanıtıdır, gerçek modelin pedagojik kalite kanıtı değildir:
 
 ![Soru havuzu](docs/images/05-egitmen-soru-havuzu.png)
 
@@ -152,7 +152,7 @@ değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
 
 ## Yapılanlar ✅
 
-Hepsi bu depoda çalışır ve testlidir — **779 otomatik test** + CI (ruff, mypy, pytest, <!-- docs-check: backend.tests = 779 -->
+Hepsi bu depoda çalışır ve testlidir — **791 otomatik test** + CI (ruff, mypy, pytest, <!-- docs-check: backend.tests = 791 -->
 RLS izolasyon kanıtı):
 
 - **İki katmanlı ders izolasyonu** — uygulama katmanı (istemciden gelen ders kimliği
@@ -167,6 +167,13 @@ RLS izolasyon kanıtı):
 - **Embedding + pgvector indeksleme** — multilingual-e5-large, ayrı vektör deposu yok
 - **Assessment şeması** — konular, 4 tipli soru havuzu (draft → onay akışıyla), sınav
   oturumları, konu bazlı mastery (EWMA servisi yazıldı ve testli)
+- **Tam sınav blueprint'i** — öğrenme çıktısı, konu/zorluk/Bloom hücreleri,
+  puan+süre, kaynak sürümü, yayın penceresi, değişmez sınav sürümü ve eğitmen onayı
+- **Ders bazlı AI politikası** — izinli modlar, kaynak kapsamı, ipucu tavanı,
+  kanıt eşiği ve günlük token bütçesi; her değişiklik denetim kaydına girer
+- **Production dayanıklılığı** — event loop dışına alınmış embedding, arka plan
+  ısıtması, soru üretimi kotası, cursor sayfalama, yükleme retry/backoff,
+  timeout/retry UX ve istek kimlikli tek hata zarfı
 - **Örnek materyal paketi** — `sample_data/isletim-sistemleri/`, 22 teslim dosyası <!-- docs-check: sampleData.files = 22 -->
   (PDF, PPTX ve kod; bug_hunt için bilinçli hatalı örnek dahil). Kaynak Markdown'lar
   ayrıca depoda; ikili dosyalar `generate_material.py` ile onlardan üretilir
@@ -204,34 +211,22 @@ RLS izolasyon kanıtı):
 - **Teslim belgeleri** — runbook (üç planlı), demo senaryosu, eğitmen ve öğrenci
   kılavuzları, KVKK aydınlatma metni + sayfası, güvenlik belgesi
 
-## Yapılacaklar ⏳
+## Canlıya çıkmadan kalan doğrulamalar ⏳
 
-Görev listesinin **%93'ü kapandı** (56/60). Açık kalan dördünün **tamamı dış
-erişim bekliyor** — kod tarafında yapılabilecek iş kalmadı:
+Depoda anahtarsız yapılabilen production-hardening işleri tamamlandı. Kalanlar
+kod yazmak değil, dış sistemde **gerçek kanıt** üretmek:
 
-| Görev | Neyi bekliyor |
+| Doğrulama | Neyi bekliyor |
 |---|---|
-| **T023** Supabase Auth'un canlı koşusu | Gerçek Supabase projesi + anahtarları. Köprü (`0002`) ve doğrulama yazıldı, sahte `auth.users` üstünde sınandı |
-| **T047** Faithfulness örneklemi | Gerçek LLM anahtarı. Şablon, örnekleyici ve süreç hazır |
-| **T050** Prod ortam doğrulaması | Bulut erişimi (ACA/Vercel/Supabase) |
-| **T051** RLS kanıtının prod'da koşması | Aynı erişim. Yerelde 98 iddia / 52 mutasyon geçiyor |
+| Supabase Auth + Storage canlı koşusu | Proje URL'si, anon/JWT ve service-role sırları; özel `course-materials` bucket'ı |
+| Gerçek LLM kalite/faithfulness örneklemi | Groq veya Gemini anahtarı; insan tarafından iki turlu değerlendirme |
+| Kapsam/eşik yeniden ölçümü | Gerçek korpus + yeni `scope.py` hattıyla temiz bir ölçüm koşusu; eski `%80/%61/%50` sayıları birbirinin yerine kullanılmaz |
+| Canlı deploy ve prod RLS | Vercel/ACA/Supabase erişimi; load test, backup/PITR ve RLS mutasyon kapısının production kopyasında çalıştırılması |
+| Compose runtime provası | Bu makinede Docker bulunmadığı için yapılandırma doğrulandı fakat yığın fiilen başlatılmadı |
 
-**Bilinen ve kayda geçmiş üç açık:**
-
-- **Soru üretimi bu ortamda sıfır soru döndürüyor.** Gerçek LLM anahtarı yokken
-  sahte sağlayıcı devreye giriyor ve soru şemasını üretemiyor. Sistem fail-closed
-  davranıyor (uydurma soru havuza girmiyor) ama sınav demosu elle tohumlanmış
-  havuza bağlı ve üç uçtan uca vakası bu yüzden atlanıyor
-- **Kanıt eşiği** kalibre edildi (0.81) ama holdout'ta hedefi tutturmadı: doğru ret
-  **%80**, hedef %90. Üç şerit üç farklı sayı önerdi; **değiştirilmedi**, çünkü
-  üçü de kapsam ayrımı (`retrieval/scope.py`) inmeden önce ölçüldü ve o modül
-  eşiğin işini değiştirdi. Doğru sıra: yeniden ölç, sonra karar ver
-- **Embedding sürüm uyuşmazlığı** — `fastembed` 0.8.0 bu modeli mean pooling'e
-  geçirdiğini yalnız bir uyarıyla söylüyor. Sürüm `0.8.x`'e sabitlendi ve her
-  parça damgalanıyor, ama farklı sürümle gömülmüş eski bir korpus hâlâ sessizce
-  yanlış komşu döndürebilir
-
-Tasarlanıp uygulanmayanların tam listesi sahipleriyle birlikte:
+Yerel sahte sağlayıcı akış/şema kanıtıdır; gerçek model kalitesi değildir. Eski
+korpusta farklı embedding sürümü varsa provenance kapısı onu reddeder ve yeniden
+işleme gerekir. Güncel teknik sınırlar:
 [ARCHITECTURE.md §10](ARCHITECTURE.md#10-uygulanmayanlar--tasarlandı-kodda-yok).
 
 Teslim: **24 Ağustos 2026** · Özellik dondurma: 17 Ağustos · Tam görev listesi:
@@ -271,7 +266,7 @@ cd apps/api
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 cp ../../.env.example .env        # varsayılanlar yerel için yeterli
-uv run pytest -q                  # 779 test yeşil olmalı (~70-120 sn)   # docs-check: backend.tests = 779
+uv run pytest -q                  # 791 test yeşil olmalı (~70-120 sn)   # docs-check: backend.tests = 791
 ```
 
 **4. Servisleri başlat** (üç ayrı terminal)

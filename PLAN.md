@@ -10,7 +10,7 @@
 > geçirilerek revize edilmiştir. Raporların çeliştiği her noktada tek karar verildi;
 > gerekçeler ARCHITECTURE.md'dedir.
 
-> **Gerçekle hizalama — 9 Ağustos 2026 (R5).** Takvim tablosu planlandığı gibi bırakıldı
+> **Gerçekle hizalama — 10 Ağustos 2026.** Takvim tablosu planlandığı gibi bırakıldı
 > (plan bir tarih kaydıdır, sonradan yazılmaz), ama **§2 kapsam tablosuna gerçekleşme
 > sütunu** ve **§5 kabul kriterlerine ölçülen değer sütunu** eklendi. Ölçülmemiş bir satıra
 > sonuç yazılmadı; "KOŞULMADI" yazmak tahmin yazmaktan iyidir (Anayasa III).
@@ -61,23 +61,23 @@ Son sütun **9 Ağustos 2026'da kod okunarak ve sistem çalıştırılarak** dol
 
 | # | Özellik | 3 haftalık biçimi | Durum (9 Ağu) |
 |---|---|---|---|
-| 1 | Eğitmen/öğrenci girişi ve rolleri | Supabase Auth; RBAC backend'de | ⚠️ RBAC ders bazlı ve çalışıyor; kimlik hâlâ `DEV_AUTH` (`Bearer dev:<uuid>`). Supabase Auth köprüsü R1'de |
+| 1 | Eğitmen/öğrenci girişi ve rolleri | Supabase Auth; RBAC backend'de | ⚠️ Backend JWT/RLS köprüsü ve frontend Supabase oturumu hazır; gerçek proje anahtarlarıyla canlı koşu henüz yapılmadı. Anahtar yokken `dev:` demo yolu korunur |
 | 2 | Ders oluşturma + öğrenci kaydı | `courses`, `course_memberships` | ✅ |
 | 3 | PDF / PPTX / Markdown / kod yükleme | Tür+boyut+magic byte kontrolü; asenkron ingestion + n/m ilerleme göstergesi | ✅ 8 dosya → 33 chunk, hepsi `completed` |
-| 4 | Ders bazlı mutlak izolasyon | Server-side `course_id` + RLS (gerçekten tetiklendiği kanıtlanarak) | ⚠️ Yerel/CI'da ✅ (`dou_app` rolü + FORCE RLS + CI'da izolasyon kanıtı); **Compose yığınında RLS devre dışı** (superuser) |
+| 4 | Ders bazlı mutlak izolasyon | Server-side `course_id` + RLS (gerçekten tetiklendiği kanıtlanarak) | ✅ Yerel/CI/Compose yapılandırması `dou_app` rolü + FORCE RLS kullanır; izolasyon ve mutasyon kanıtları CI kapısıdır. Compose bu makinede Docker olmadığı için çalıştırılmadı |
 | 5 | Kaynaklı sohbet | Cevap + dosya adı + sayfa/slayt; kaynak chunk metadata'sından üretilir | ✅ |
 | 6 | Kapsam dışı ret (abstention) | Kanıt eşiği (kalibrasyon setiyle ayarlanır) + kaynaksız cevabı bloklama | ⚠️ ✅ İki ret türü artık ayrışıyor (`scope.assess_evidence`, 9 Ağu akşamı); ölçüldü: 3 soru `out_of_scope`, 3 soru `insufficient_context`. **Ayrım eksik sayıyor** — bazı kapsam dışı sorular ikinci gruba düşüyor. Holdout'ta %80 |
 | 7 | Sokratik mod | Backend state machine; **ipuçları da retrieve edilmiş kaynaklardan türetilir ve kaynak taşır** | ✅ Israrcı öğrenci yolu dahil canlıda doğrulandı |
-| 8 | Sınav prova modu | Süreli MCQ + açık uçlu; ipucu kapalı, tek deneme | ✅ `exam` modunda ipucu kapalı; `practice` modunda açık ve mastery çarpanına giriyor |
+| 8 | Sınav prova modu | Süreli MCQ + açık uçlu; ipucu kapalı, tek deneme | ✅ Blueprint → sürümlü yayın → süreli oturum akışı var. Yürüyen sınavda sohbet ve oturum uçları API seviyesinde kilitlenir; `practice` kilitlemez |
 | 9 | "Neden yanlış?" analizi | MCQ'da distractor→kaynak eşlemesi (birincil); açık uçlu için rubrik geri bildirimi | ✅ MCQ yolu deterministik, dosya+sayfa ile doğrulandı |
-| 10 | Soru havuzu üretici | JSON şemalı; `mcq / open / code_trace / bug_hunt` tipleri; **eğitmen onayı olmadan yayınlanmaz** | ✅ Onay kapısı canlıda doğrulandı (öğrenci taslak göremiyor, `answer_key` beyaz listeyle eleniyor). Üretim anahtarsız da çalışıyor: 3 istendi, 3 üretildi ve şemadan geçti |
+| 10 | Soru havuzu üretici | JSON şemalı; `mcq / open / code_trace / bug_hunt` tipleri; **eğitmen onayı olmadan yayınlanmaz** | ✅ Onay kapısı ve blueprint hücreleriyle üretim var. Sahte sağlayıcı deterministik taslak üretip havuza yazar; pedagojik kalite yalnız gerçek model örneklemiyle doğrulanabilir |
 | 11 | Kod/senaryo inceleme | `code_trace` (çıktı tahmini) + `bug_hunt` (hata buldurma) soru tipleri; kod ÇALIŞTIRMADAN | ⚠️ Şema ve puanlama var; gerçek LLM ile kalite ölçülmedi |
 | 12 | Açık uçlu değerlendirme | Rubrik + şemalı LLM değerlendirmesi (skor, eksik_noktalar[], dayanak_chunk_id) | ⚠️ Kod yolu var; anahtarsız ortamda ölçülemedi |
 | 13 | Guardrail zinciri | Citation validator + kod sızıntı filtresi + evidence gate (fail-closed) | ✅ Sıra tek yerde sabit; **iki orkestratör var, üretimde biri koşuyor** (ARCHITECTURE §5) |
 | 14 | Mastery-Lite | Konu bazlı EWMA puanı + eğitmen özet ekranı (tek sayfa) | ✅ Öğrenci ve sınıf görünümü canlıda doğrulandı |
 | 15 | Demo cevap cache'i | Exact-match cache; demo senaryosu soruları önceden doldurulur (offline sigortası) | ⚠️ Cache mekanizması ✅ (yalnız `qa` modu, birebir eşleşme); **doldurma betiği R3'te, soru listesi `docs/demo-script.md`'de** |
 | 16 | Gold test seti + başarı raporu | ≥50 soru (kalibrasyon/holdout ayrık); metrikler + faithfulness örneklemi (20-30 cevap, elle) | ⚠️ Set ve harness var; uçtan uca metrikler R2'de, anahtar bekliyor |
-| 17 | Canlı URL (1. günden) + Docker Compose | Sürekli deploy; Compose lokal/fallback | ❌ Canlı URL yok; Compose var ama RLS'siz. R3'ün işi |
+| 17 | Canlı URL (1. günden) + Docker Compose | Sürekli deploy; Compose lokal/fallback | ⚠️ Compose API ve worker'ı ayrı, RLS'li rollerle tanımlar; production belge deposu Supabase Storage'a geçer. Doğrulanmış canlı URL ve bu makinede Docker runtime koşusu yok |
 | 18 | Kullanım kılavuzları + örnek ders paketi | Eğitmen + öğrenci kılavuzu; İşletim Sistemleri materyal seti | ✅ Bu şerit (R5): iki kılavuz + runbook + demo script + KVKK metni; ekran görüntüleri birleşme sonrası tazelendi |
 
 ### P1 — Zaman kalırsa (dondurmadan sonra yalnızca bayrak arkasında)
@@ -99,6 +99,15 @@ Son sütun **9 Ağustos 2026'da kod okunarak ve sistem çalıştırılarak** dol
 | K8s, mikroservis, Kafka, Redis+Celery | Tüm raporlar hemfikir | Postgres job tablosu + HTTP-tetiklemeli worker yeter |
 | Fine-tuning, GraphRAG, multi-agent, OCR, mobil, sesli, kod sandbox | Tüm raporlar hemfikir | Kapsam şişirir, ana değeri doğrulamaz |
 | OpenAI File Search | Rapor-15 | Yalnızca 5. gün kapısı geçilemezse acil durum yedeği |
+
+### Teknoloji kilidi — frontend kimliği ve belge deposu
+
+- Frontend Supabase oturumu için resmi `@supabase/supabase-js` kullanılır. JWT'yi
+  elle saklayan ikinci bir kimlik istemcisi yazılmaz; anahtarlar yokken aynı paket
+  çevrimdışı `dev:` demo akışına dokunmaz.
+- Belge deposu `DocumentStorage` arayüzünün arkasındadır. Yerelde dosya sistemi,
+  production'da özel Supabase Storage bucket'ı seçilir. Production'ın geçici
+  konteyner diskiyle başlaması ayar doğrulamasında reddedilir.
 
 ---
 
@@ -175,7 +184,7 @@ kriterli görevlerle; auth, RLS, `course_id` filtreleri, migration'lar insan inc
 | Soru üretiminde şema geçerliliği | ≥ %98 | **ÖLÇÜLEMEDİ** — sahte sağlayıcı soru üretmiyor; gerçek anahtar gerekiyor | — |
 | Uçtan uca cevap p95 | < 10 sn | **KOŞULMADI.** Yerel ölçüm: ilk yükleme 19,1 sn (model yükleme dahil), sonraki yüklemeler 2–7 sn | **Sıcak replika, sorgu yolu** |
 | Demo akışında kritik hata | 0 | **Altı sahnenin altısı da** canlıda koşuldu ve geçti (9 Ağu akşamı, ekranlar bağlandıktan sonra) | `docs/demo-script.md` |
-| Backend testleri | yeşil | **779 geçiyor** (`uv run pytest -q`) | — | <!-- docs-check: backend.tests = 779 -->
+| Backend testleri | yeşil | **791 geçiyor** (`uv run pytest -q`) | — | <!-- docs-check: backend.tests = 791 -->
 
 Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göstergesi, kesin hüküm değil.*
 Çalıştırılmayan deney için sonuç yazılmaz — yukarıdaki **KOŞULMADI** satırları bunun içindir.
@@ -222,6 +231,6 @@ Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göste
 | [`docs/student-guide.md`](docs/student-guide.md) | Öğrenci ne yapar | ✅ |
 | [`docs/kvkk.md`](docs/kvkk.md) | Hangi kişisel veri nasıl işleniyor | ✅ metin + **sayfa yayında** (`apps/web/app/kvkk`) |
 | [`docs/test-report.md`](docs/test-report.md) | Ölçülen kalite | R2 |
-| `docs/security.md` | Güvenlik testleri | R1 — **dosya henüz yok** |
-| `docs/deployment.md` | Dağıtım | R3 — **dosya henüz yok** |
+| [`docs/security.md`](docs/security.md) | Güvenlik testleri ve bilinen sınırlar | ✅ |
+| [`docs/deployment.md`](docs/deployment.md) | Dağıtım, Storage ve geri dönüş | ✅; bulut adımları gerçek hesapta henüz koşulmadı |
 | [`evaluation/calibration.md`](evaluation/calibration.md) | Eşik neden 0.81, neden hedefi tutmadı | ✅ |

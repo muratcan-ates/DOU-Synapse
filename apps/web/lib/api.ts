@@ -15,6 +15,8 @@
  * bir POST iki kez gider, bir sohbet isteği 20 saniyede kesilir.
  */
 
+import { getSupabase } from "@/lib/supabase";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const TOKEN_KEY = "dou-synapse-token";
@@ -68,9 +70,68 @@ export function signIn(user: DemoUser): void {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-export function signOut(): void {
+function clearDemoSession(): void {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+}
+
+export function signOut(): void {
+  clearDemoSession();
+}
+
+/** Gerçek sağlayıcı yapılandırıldıysa parola oturumu açar; token'ı SDK saklar. */
+export async function signInWithPassword(email: string, password: string): Promise<DemoUser> {
+  const client = getSupabase();
+  if (!client) throw new Error("Supabase oturumu yapılandırılmadı.");
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  if (!data.user) throw new Error("Oturum açıldı ancak kullanıcı bilgisi alınamadı.");
+  return userFromSupabase(data.user);
+}
+
+/** SDK oturumunu ya da yerel demo oturumunu tek noktadan kapatır. */
+export async function signOutCurrent(): Promise<void> {
+  const client = getSupabase();
+  if (client) await client.auth.signOut();
+  clearDemoSession();
+}
+
+/** Sayfa yenilemesinde gerçek SDK oturumunu geri yükler; demo yolu senkron kalır. */
+export async function getCurrentUser(): Promise<DemoUser | null> {
+  const client = getSupabase();
+  if (!client) return getStoredUser();
+  const { data, error } = await client.auth.getSession();
+  if (error || !data.session?.user) return null;
+  return userFromSupabase(data.session.user);
+}
+
+function userFromSupabase(user: {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+}): DemoUser {
+  const metadataName = user.user_metadata?.full_name;
+  const email = user.email ?? "";
+  return {
+    id: user.id,
+    email,
+    fullName:
+      typeof metadataName === "string" && metadataName.trim()
+        ? metadataName.trim()
+        : email.split("@")[0] || "Kullanıcı",
+    // Rol bir auth claim'i değildir; ders sayfasında `/courses/{id}` yanıtından
+    // yeniden çözülür. Bu değer yalnız ders dışı başlıkların geriye uyumlu alanıdır.
+    role: "student",
+  };
+}
+
+async function accessToken(): Promise<string | null> {
+  const client = getSupabase();
+  if (client) {
+    const { data } = await client.auth.getSession();
+    return data.session?.access_token ?? null;
+  }
+  return typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY);
 }
 
 export class ApiError extends Error {
@@ -300,7 +361,7 @@ const TIMEOUT_MESSAGE = "Sunucu zamanında yanıt vermedi. Lütfen tekrar deneyi
  * asılı kalan bir sunucu da bütçeyi aşmış sayılır.
  */
 async function attempt<T>(path: string, init: RequestInit | undefined, budgetMs: number): Promise<T> {
-  const token = typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY);
+  const token = await accessToken();
   const headers = new Headers(init?.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
 

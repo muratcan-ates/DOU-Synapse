@@ -111,9 +111,10 @@ Reddettiğiniz sorular havuzda kalır (kayıt için) ama hiçbir sınavda çıkm
 
 ### Soru üretimi çalışmıyorsa
 
-Üretim gerçek bir dil modeli anahtarı ister. Anahtar tanımlı değilse sistem
-`0 soru üretildi` döndürür. Bu bir arıza değil, yapılandırma eksikliğidir — çevrimdışı
-kurulumda soru üretimi çalışmaz.
+Anahtar tanımlı değilse sistem deterministik sahte sağlayıcıyla geçerli taslaklar
+üretir; blueprint→taslak→onay akışını çevrimdışı doğrulayabilirsiniz. Bu taslaklar
+pedagojik kalite kanıtı değildir. Gerçek ders için Groq/Gemini sağlayıcısını açın,
+taslakların kaynaklarını ve rubriğini inceleyin ve yalnız uygun olanları onaylayın.
 
 ---
 

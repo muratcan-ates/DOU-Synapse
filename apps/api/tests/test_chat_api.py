@@ -383,7 +383,7 @@ class TestDersIzolasyonu:
         )
 
         assert response.status_code == 200
-        assert response.json() == []
+        assert response.json()["items"] == []
 
 
 # ---------------------------------------------------------------------------
@@ -551,7 +551,7 @@ class TestSokratikUc:
         assert ikinci.json()["socratic_stage"] == SocraticStage.NUDGE.value
 
         oturumlar = await client.get(f"/courses/{course_id}/chat/sessions", headers=ayse)
-        assert oturumlar.json()[0]["socratic_stage"] == SocraticStage.NUDGE.value
+        assert oturumlar.json()["items"][0]["socratic_stage"] == SocraticStage.NUDGE.value
 
     async def test_israrci_ogrenci_kademe_atlayamaz(
         self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
@@ -722,11 +722,54 @@ class TestGecmis:
             f"/courses/{course_id}/chat/sessions/{session_id}", headers=ayse
         )
 
-        mesajlar = response.json()
+        mesajlar = response.json()["items"]
         assert [m["role"] for m in mesajlar] == ["user", "assistant"]
         assert mesajlar[0]["status"] is None
         assert mesajlar[1]["status"] == "answered"
         assert mesajlar[1]["citations"][0]["location"] == "Sayfa 7"
+
+    async def test_gecmis_son_mesajlardan_baslar_ve_imlecle_geriye_yurur(
+        self, client: AsyncClient, users: UserFactory, pipeline: Pipeline
+    ) -> None:
+        ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
+        course_id = await _create_course(client, ayse, "COME301")
+        chunk = pipeline.serve(course_id, make_chunk())
+        answer = sourced_answer(chunk)
+        pipeline.answers(answer, answer)
+        first = await client.post(
+            f"/courses/{course_id}/chat", json={"question": "İlk soru"}, headers=ayse
+        )
+        session_id = first.json()["session_id"]
+        await client.post(
+            f"/courses/{course_id}/chat",
+            json={"question": "İkinci soru", "session_id": session_id},
+            headers=ayse,
+        )
+
+        latest = (
+            await client.get(
+                f"/courses/{course_id}/chat/sessions/{session_id}",
+                params={"limit": 2},
+                headers=ayse,
+            )
+        ).json()
+        older = (
+            await client.get(
+                f"/courses/{course_id}/chat/sessions/{session_id}",
+                params={"limit": 2, "cursor": latest["next_cursor"]},
+                headers=ayse,
+            )
+        ).json()
+
+        assert [message["content"] for message in latest["items"]] == [
+            "İkinci soru",
+            answer.text,
+        ]
+        assert [message["content"] for message in older["items"]] == [
+            "İlk soru",
+            answer.text,
+        ]
+        assert older["next_cursor"] is None
 
     async def test_olmayan_oturum_404(self, client: AsyncClient, users: UserFactory) -> None:
         ayse = users.auth(await users.create("ayse@dogus.edu.tr"))
@@ -977,7 +1020,7 @@ class TestZarfSozlesmesi:
         )
 
         gecmis = await client.get(f"/courses/{course_id}/chat/sessions/{session_id}", headers=ayse)
-        ogrenci_mesajlari = [m["content"] for m in gecmis.json() if m["role"] == "user"]
+        ogrenci_mesajlari = [m["content"] for m in gecmis.json()["items"] if m["role"] == "user"]
         assert ogrenci_mesajlari == [soru, "bence karşılıklı dışlama yeter"]
 
     async def test_gecmis_atiflari_da_arayuz_adlariyla_doner(
@@ -994,7 +1037,7 @@ class TestZarfSozlesmesi:
         session_id = gonderim.json()["session_id"]
 
         gecmis = await client.get(f"/courses/{course_id}/chat/sessions/{session_id}", headers=ayse)
-        asistan = next(m for m in gecmis.json() if m["role"] == "assistant")
+        asistan = next(m for m in gecmis.json()["items"] if m["role"] == "assistant")
         assert set(asistan["citations"][0]) == {
             "chunk_id",
             "claim",

@@ -13,8 +13,9 @@
  * atlanamaz.
  *
  * Test kendi verisini kurar; başka bir testin bıraktığı duruma güvenmez.
- * Temizlik bilinçli olarak yapılmıyor: her vaka kendi dersini açtığı için
- * artıklar birbirine değmiyor ve silme ucu (ders silme) sözleşmede yok.
+ * Paket bittiğinde global teardown yalnız `E2E` kodlu ve `E2E Test Dersi`
+ * başlıklı dersleri doğrudan test veritabanından siler. Böylece paralel vakalar
+ * birbirine değmez, fakat her koşu yüzlerce kalıcı ders de bırakmaz.
  *
  * Koşturma (API :8010, web sunucusunu paket kendi derleyip başlatır):
  *   E2E_API_URL=http://localhost:8010 node_modules/.bin/playwright test
@@ -187,6 +188,11 @@ interface BelgeOzeti {
   status: string;
 }
 
+interface Sayfa<T> {
+  items: T[];
+  next_cursor: string | null;
+}
+
 async function apiUpload(courseId: string, fileName: string, bytes: Buffer, user: DemoUser) {
   const form = new FormData();
   form.append("file", new Blob([new Uint8Array(bytes)], { type: "application/pdf" }), fileName);
@@ -208,7 +214,8 @@ async function apiUpload(courseId: string, fileName: string, bytes: Buffer, user
  */
 async function belgeHazirOlanaKadarBekle(courseId: string, user: DemoUser) {
   for (let deneme = 0; deneme < 40; deneme++) {
-    const belgeler = await apiGet<BelgeOzeti[]>(`/courses/${courseId}/documents`, user);
+    const sayfa = await apiGet<Sayfa<BelgeOzeti>>(`/courses/${courseId}/documents`, user);
+    const belgeler = sayfa.items;
     if (belgeler.length > 0 && belgeler.every((b) => b.status === "completed")) return;
     const bozuk = belgeler.find((b) => b.status === "failed");
     if (bozuk) throw new Error(`belge işlenemedi: ${bozuk.file_name}`);
@@ -373,9 +380,8 @@ test.describe("materyal yönetimi", () => {
       mimeType: "application/pdf",
       buffer: KAYNAK_PDF,
     });
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeVisible({ timeout: 15_000 });
-
     const row = page.locator("li", { hasText: KAYNAK_PDF_ADI });
+    await expect(row.getByText(KAYNAK_PDF_ADI)).toBeVisible({ timeout: 15_000 });
 
     // Önizleme aç/kapa. Düğme yalnız işlenme bitince çıkar; liste 2 sn'de bir
     // kendiliğinden tazeleniyor, elle yenileme gerekmiyor.
@@ -394,12 +400,12 @@ test.describe("materyal yönetimi", () => {
     await expect(page.getByText("Evet, sil")).toBeVisible();
     await page.getByRole("button", { name: "Vazgeç" }).click();
     await expect(page.getByText("Evet, sil")).toBeHidden();
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeVisible();
+    await expect(row.getByText(KAYNAK_PDF_ADI)).toBeVisible();
 
     // Gerçekten silme — ve TAM SAYFA YENİLEME OLMAMALI
     await silButonu.click();
     await row.getByRole("button", { name: "Evet, sil" }).click();
-    await expect(page.getByText(KAYNAK_PDF_ADI)).toBeHidden({ timeout: 15_000 });
+    await expect(row.getByText(KAYNAK_PDF_ADI)).toBeHidden({ timeout: 15_000 });
 
     const navType = await page.evaluate(
       () => performance.getEntriesByType("navigation")[0]?.entryType &&
@@ -787,6 +793,29 @@ test.describe("sınav provası", () => {
 });
 
 test.describe("rol ayrımı", () => {
+  test("aynı tarayıcıda kullanıcı değişince eğitmen rolü öğrenciye taşınmaz", async ({ page }) => {
+    const course = await createCourse("ROLDEGISIM");
+    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+
+    await signIn(page, AYSE);
+    await page.goto(`/courses/${course.id}`);
+    await expect(page.getByText("Materyal yükle", { exact: true })).toBeVisible();
+
+    // Gerçek tarayıcıda bulunan regresyon: rol önbelleği yalnız courseId ile
+    // anahtarlanıyordu. Çıkış yapıp aynı derse öğrenci girince eski eğitmen
+    // kontrolleri görünüyordu; backend 403 verse de rol ayrımı bozuluyordu.
+    await page.getByRole("button", { name: "Çıkış" }).click();
+    await page.getByRole("button", { name: /Burak Yılmaz/ }).click();
+    await page.getByRole("link", { name: new RegExp(course.code) }).click();
+
+    await expect(page.getByText("Materyal yükle", { exact: true })).toBeHidden();
+    const navigation = page.getByRole("navigation");
+    await expect(navigation.getByText("Soru havuzu")).toHaveCount(0);
+    await expect(navigation.getByText("Sınav planı")).toHaveCount(0);
+    await expect(navigation.getByText("AI politikası")).toHaveCount(0);
+    await expect(navigation.getByText("Katılımcılar")).toHaveCount(0);
+  });
+
   test("öğrenci eğitmen kontrollerini görmez", async ({ page }) => {
     const course = await createCourse("ROL");
     await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);

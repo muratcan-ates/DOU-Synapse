@@ -61,17 +61,59 @@
         "summary": "List My Courses",
         "description": "Kullanıcının aktif üyeliği olan dersler.",
         "operationId": "list_my_courses_courses_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/CourseWithRole"
-                  },
-                  "type": "array",
-                  "title": "Response List My Courses Courses Get"
+                  "$ref": "#/components/schemas/PageOut_CourseWithRole_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -86,14 +128,14 @@
         "description": "Ders oluşturur ve oluşturana aynı işlemde eğitmen üyeliği verir.\n\nİki kayıt tek işlemde yazılır; aksi halde sahipsiz (kimsenin göremediği) bir ders\nkalabilirdi.",
         "operationId": "create_course_courses_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CourseCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -389,6 +431,40 @@
               "title": "Course Id"
             },
             "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
           }
         ],
         "responses": {
@@ -397,11 +473,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/DocumentOut"
-                  },
-                  "title": "Response List Documents Courses  Course Id  Documents Get"
+                  "$ref": "#/components/schemas/PageOut_DocumentOut_"
                 }
               }
             }
@@ -507,6 +579,62 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/documents/{document_id}/retry": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Retry Document",
+        "description": "Kalıcı hataya düşen ingestion işini eğitmen açıkça yeniden kuyruğa alır.",
+        "operationId": "retry_document_courses__course_id__documents__document_id__retry_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -785,6 +913,40 @@
               "title": "Course Id"
             },
             "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
           }
         ],
         "responses": {
@@ -793,11 +955,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatMessageOut"
-                  },
-                  "title": "Response List Messages Courses  Course Id  Chat Sessions  Session Id  Get"
+                  "$ref": "#/components/schemas/PageOut_ChatMessageOut_"
                 }
               }
             }
@@ -878,6 +1036,40 @@
               "title": "Course Id"
             },
             "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
           }
         ],
         "responses": {
@@ -886,11 +1078,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatSessionOut"
-                  },
-                  "title": "Response List Sessions Courses  Course Id  Chat Sessions Get"
+                  "$ref": "#/components/schemas/PageOut_ChatSessionOut_"
                 }
               }
             }
@@ -1301,6 +1489,40 @@
               ],
               "title": "Topic Id"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
           }
         ],
         "responses": {
@@ -1309,11 +1531,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/QuestionOut"
-                  },
-                  "title": "Response List Questions Courses  Course Id  Questions Get"
+                  "$ref": "#/components/schemas/PageOut_QuestionOut_"
                 }
               }
             }
@@ -5699,6 +5917,141 @@
         ],
         "title": "OutOfScopeStat",
         "description": "Kapsam dışı ret istatistiği (SC-005).\n\nKaynak `request_logs`, `chat_messages` DEĞİL. Sebep bir gizlilik kararı: sohbet\nmesajları eğitmene bilinçli olarak kapalıdır (0003), çünkü öğrencinin hocasına\nsormaya çekindiği soruyu sisteme sorabilmesi ürünün gerekçelerinden biri.\n`request_logs` ise şema gereği serbest metin taşımaz — eğitmen \"kaç soru kapsam\ndışı diye reddedildi\" sorusunun cevabını alır, kimsenin ne sorduğunu göremez.\n\n`source` alanı zorunlu: sayının nereden geldiği görünmeden sayı raporlanamaz.\nHenüz hiç cevap üretilmemişse `rate` None kalır — 0.0 döndürmek \"bu derste hiçbir\nsoru reddedilmedi\" demek olurdu ve bu, ölçülmemiş bir şeyi ölçülmüş gibi\ngöstermek olurdu (Anayasa III)."
+      },
+      "PageOut_ChatMessageOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[ChatMessageOut]"
+      },
+      "PageOut_ChatSessionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChatSessionOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[ChatSessionOut]"
+      },
+      "PageOut_CourseWithRole_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CourseWithRole"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[CourseWithRole]"
+      },
+      "PageOut_DocumentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[DocumentOut]"
+      },
+      "PageOut_QuestionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[QuestionOut]"
       },
       "PublishOut": {
         "properties": {

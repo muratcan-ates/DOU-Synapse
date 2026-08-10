@@ -51,7 +51,7 @@ function MembersView() {
    * localStorage'dan ilk efektte okunur, o ana kadar "eğitmen değil" varsayımı
    * eğitmene bir kare boyunca yanlış ekran gösterirdi.
    */
-  const { user, isInstructor, ready } = useSession();
+  const { user, isInstructor, ready } = useSession(courseId);
 
   return (
     <div>

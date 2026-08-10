@@ -3,15 +3,14 @@
 /** Ders listesi + ders açma (eğitmen). */
 
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
-import { useSession } from "@/lib/session";
 import type { Course } from "@/lib/types";
-import { useResource } from "@/lib/use-resource";
+import { usePagedResource } from "@/lib/use-paged-resource";
 import { AppShell } from "@/components/app-shell";
 import { Field } from "@/components/field";
-import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
+import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 
 export default function CoursesPage() {
@@ -24,12 +23,10 @@ export default function CoursesPage() {
 
 function CourseList() {
   const [creating, setCreating] = useState(false);
-  const { isInstructor } = useSession();
   const formId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const opened = useRef(false);
 
-  const fetchCourses = useCallback(() => api.get<Course[]>("/courses"), []);
   const {
     data: courses,
     error,
@@ -37,8 +34,12 @@ function CourseList() {
     errorKind,
     errorRequestId,
     loading,
+    loadingMore,
+    loadMore,
+    nextCursor,
+    pageError,
     reload,
-  } = useResource(fetchCourses, []);
+  } = usePagedResource<Course>("/courses", []);
 
   /*
    * Form kapanırken odak tetikleyiciye geri döner. Form DOM'dan kalktığında
@@ -74,7 +75,7 @@ function CourseList() {
       <PageHeader
         title="Derslerim"
         action={
-          isInstructor && (
+          (
             <Button
               ref={toggleRef}
               variant="secondary"
@@ -119,9 +120,7 @@ function CourseList() {
       {courses.length === 0 && !creating ? (
         <EmptyState
           title={
-            isInstructor
-              ? "Henüz dersiniz yok. Yeni ders açarak materyal yüklemeye başlayın."
-              : "Henüz bir derse kayıtlı değilsiniz. Eğitmeninizin sizi eklemesini bekleyin."
+            "Henüz dersiniz yok. Yeni ders açabilir veya eğitmeninizin sizi eklemesini bekleyebilirsiniz."
           }
         />
       ) : (
@@ -152,6 +151,12 @@ function CourseList() {
           ))}
         </ul>
       )}
+      <LoadMore
+        hasMore={nextCursor !== null}
+        busy={loadingMore}
+        error={pageError}
+        onLoadMore={() => void loadMore()}
+      />
     </div>
   );
 }

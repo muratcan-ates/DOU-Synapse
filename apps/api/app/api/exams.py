@@ -41,7 +41,12 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseMemberDep, SessionDep, SettingsDep
+from app.api.deps import (
+    CourseContext,
+    CourseMemberDep,
+    SessionDep,
+    SettingsDep,
+)
 from app.core.config import Settings, get_settings
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
@@ -427,7 +432,10 @@ async def start_exam(
 
 
 @router.get("/exams", response_model=list[ExamSessionOut])
-async def list_exams(context: CourseMemberDep, session: SessionDep) -> list[ExamSessionOut]:
+async def list_exams(
+    context: CourseMemberDep,
+    session: SessionDep,
+) -> list[ExamSessionOut]:
     """Kullanıcının bu dersteki sınav oturumları, en yenisi başta.
 
     Neden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —

@@ -14,7 +14,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { Button } from "@/components/ui";
-import { signOut } from "@/lib/api";
+import { signOutCurrent } from "@/lib/api";
 import { useSession } from "@/lib/session";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -49,8 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               Verilerim
             </Link>
             <span className="hidden text-xs text-fg-muted sm:block">
-              {user.fullName} ·{" "}
-              {user.role === "instructor" ? "Eğitmen" : "Öğrenci"}
+              {user.fullName}
             </span>
             {/*
              * Elde çizilmiş buton kaldırıldı: 28px yüksekliğindeydi (DESIGN.md
@@ -61,7 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Button
               variant="ghost"
               onClick={() => {
-                signOut();
+                void signOutCurrent();
                 router.replace("/");
               }}
             >
