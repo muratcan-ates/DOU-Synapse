@@ -5,17 +5,25 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
-from sqlalchemy import select, text
+from sqlalchemy import select, text, tuple_
 from sqlalchemy.exc import IntegrityError
 
-from app.api.deps import CourseInstructorDep, CourseMemberDep, SessionDep, SettingsDep
+from app.api.deps import (
+    CourseInstructorDep,
+    CourseMemberDep,
+    PageDep,
+    SessionDep,
+    SettingsDep,
+)
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.core.logging import get_logger
+from app.core.pagination import decode_time_cursor, encode_time_cursor
 from app.models.core import Chunk, Document, DocumentStatus
 from app.modules.ingestion.storage import get_storage
 from app.modules.ingestion.validation import validate_upload
 from app.schemas.document import ChunkPreview, DocumentOut, DocumentUploadOut
+from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}/documents", tags=["documents"])
 logger = get_logger("app.documents")
@@ -128,14 +136,29 @@ async def upload_document(
     return DocumentUploadOut(document=DocumentOut.model_validate(document))
 
 
-@router.get("", response_model=list[DocumentOut])
-async def list_documents(context: CourseMemberDep, session: SessionDep) -> list[DocumentOut]:
+@router.get("", response_model=PageOut[DocumentOut])
+async def list_documents(
+    context: CourseMemberDep,
+    session: SessionDep,
+    page: PageDep,
+) -> PageOut[DocumentOut]:
+    query = select(Document).where(Document.course_id == context.course_id)
+    if page.cursor is not None:
+        created_at, row_id = decode_time_cursor(page.cursor)
+        query = query.where(tuple_(Document.created_at, Document.id) < (created_at, row_id))
     result = await session.execute(
-        select(Document)
-        .where(Document.course_id == context.course_id)
-        .order_by(Document.created_at.desc())
+        query.order_by(Document.created_at.desc(), Document.id.desc()).limit(page.limit + 1)
     )
-    return [DocumentOut.model_validate(doc) for doc in result.scalars()]
+    rows = list(result.scalars())
+    visible = rows[: page.limit]
+    next_cursor = (
+        encode_time_cursor(visible[-1].created_at, visible[-1].id)
+        if len(rows) > page.limit
+        else None
+    )
+    return PageOut(
+        items=[DocumentOut.model_validate(doc) for doc in visible], next_cursor=next_cursor
+    )
 
 
 @router.get("/{document_id}", response_model=DocumentOut)
@@ -147,6 +170,34 @@ async def get_document(
     # edilir — iki katman da bağımsız olarak doğru davranmalı.
     if document is None or document.course_id != context.course_id:
         raise NotFoundError("Belge bulunamadı.")
+    return DocumentOut.model_validate(document)
+
+
+@router.post("/{document_id}/retry", response_model=DocumentOut)
+async def retry_document(
+    document_id: UUID,
+    context: CourseInstructorDep,
+    session: SessionDep,
+    background: BackgroundTasks,
+) -> DocumentOut:
+    """Kalıcı hataya düşen ingestion işini eğitmen açıkça yeniden kuyruğa alır."""
+    document = await session.get(Document, document_id)
+    if document is None or document.course_id != context.course_id:
+        raise NotFoundError("Belge bulunamadı.")
+    if document.status != DocumentStatus.FAILED:
+        raise ConflictError("Yalnız başarısız bir belge yeniden işlenebilir.")
+
+    result = await session.execute(
+        text("SELECT app.retry_ingestion_job(:document_id)"),
+        {"document_id": document.id},
+    )
+    if result.scalar_one_or_none() is None:
+        raise NotFoundError("Belgenin işleme kaydı bulunamadı.")
+
+    document.status = DocumentStatus.UPLOADED
+    document.error_message = None
+    await session.flush()
+    background.add_task(_trigger_worker)
     return DocumentOut.model_validate(document)
 
 
@@ -166,7 +217,7 @@ async def preview_chunks(
         select(Chunk)
         .where(Chunk.document_id == document_id)
         .order_by(Chunk.chunk_index)
-        .limit(min(limit, 100))
+        .limit(min(max(limit, 1), 100))
     )
     return [
         ChunkPreview(

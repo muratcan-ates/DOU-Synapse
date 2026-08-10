@@ -83,7 +83,7 @@ MUTATIONS=(
 # --- ingestion_jobs ---------------------------------------------------------
 "jobs_instructor_read acilirsa|DROP POLICY jobs_instructor_read ON ingestion_jobs; CREATE POLICY jobs_instructor_read ON ingestion_jobs FOR SELECT USING (true);|jobs_read__ogrenci_is_kuyrugunu_goremez"
 "jobs_instructor_insert acilirsa|DROP POLICY jobs_instructor_insert ON ingestion_jobs; CREATE POLICY jobs_instructor_insert ON ingestion_jobs FOR INSERT WITH CHECK (true);|jobs_insert__ogrenci_is_kuyruguna_yazamaz"
-"ingestion_jobs: UPDATE politikasi eklenirse|CREATE POLICY jobs_update_leak ON ingestion_jobs FOR UPDATE USING (true);|jobs_update__politika_yok_uygulama_isi_ilerletemez"
+"ingestion_jobs: UPDATE yetkisi ve politikasi eklenirse|GRANT UPDATE ON ingestion_jobs TO dou_app; CREATE POLICY jobs_update_leak ON ingestion_jobs FOR UPDATE USING (true);|jobs_update__politika_yok_uygulama_isi_ilerletemez"
 "ingestion_jobs: DELETE politikasi eklenirse|CREATE POLICY jobs_delete_leak ON ingestion_jobs FOR DELETE USING (true);|jobs_delete__politika_yok_is_silinemez"
 # --- chat_sessions ----------------------------------------------------------
 "chat_sessions_self_read acilirsa|DROP POLICY chat_sessions_self_read ON chat_sessions; CREATE POLICY chat_sessions_self_read ON chat_sessions FOR SELECT USING (true);|chat_sessions_read__baska_ogrencinin_oturumu_gorunmez"
@@ -99,7 +99,8 @@ MUTATIONS=(
 # politikayı bozan bir mutasyon bu iddiayı kırmızıya çeviremez ve testi "ölçmüyor"
 # sanmaya yol açar. Mutasyon bu yüzden ikisini birlikte gevşetiyor.
 "chat_sessions ders sarti hem okumada hem guncellemede duserse|DROP POLICY chat_sessions_self_update ON chat_sessions; CREATE POLICY chat_sessions_self_update ON chat_sessions FOR UPDATE USING (user_id = app.current_user_id()); DROP POLICY chat_sessions_self_read ON chat_sessions; CREATE POLICY chat_sessions_self_read ON chat_sessions FOR SELECT USING (user_id = app.current_user_id());|chat_sessions_update__oturum_yabanci_derse_tasinamaz"
-"chat_sessions: DELETE politikasi eklenirse|CREATE POLICY chat_sessions_delete_leak ON chat_sessions FOR DELETE USING (true);|chat_sessions_delete__politika_yok_oturum_silinemez"
+"chat_sessions_self_delete kaldirilirsa|DROP POLICY chat_sessions_self_delete ON chat_sessions;|chat_sessions_delete__kendi_oturumunu_silebilir"
+"chat_sessions okuma ve silme birlikte acilirsa|DROP POLICY chat_sessions_self_delete ON chat_sessions; CREATE POLICY chat_sessions_self_delete ON chat_sessions FOR DELETE USING (true); DROP POLICY chat_sessions_self_read ON chat_sessions; CREATE POLICY chat_sessions_self_read ON chat_sessions FOR SELECT USING (true);|chat_sessions_delete__baskasinin_oturumu_silinemez"
 # --- chat_messages ----------------------------------------------------------
 "chat_messages_self_read acilirsa|DROP POLICY chat_messages_self_read ON chat_messages; CREATE POLICY chat_messages_self_read ON chat_messages FOR SELECT USING (true);|chat_messages_read__baska_ogrencinin_mesaji_gorunmez"
 "chat_messages egitmene acilirsa|CREATE POLICY chat_messages_instructor_leak ON chat_messages FOR SELECT USING (app.is_instructor(course_id));|chat_messages_read__egitmen_ogrenci_sohbetini_okuyamaz"

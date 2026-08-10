@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import io
 import itertools
+from unittest.mock import AsyncMock
+from uuid import uuid4
 
 import pytest
 
@@ -184,3 +186,24 @@ class TestChunking:
     def test_token_tahmini_makul(self) -> None:
         assert 1 <= estimate_tokens("kisa") <= 3
         assert estimate_tokens("a" * 370) == pytest.approx(100, abs=5)
+
+
+class TestRetryBackoff:
+    async def test_ilk_hata_veritabanina_gelecek_deneme_zamanini_yazar(self) -> None:
+        """Geri çekilme yalnız süreç içi sleep değil, ortak DB kuralıdır."""
+        from app.modules.ingestion import pipeline
+
+        session = AsyncMock()
+        delay = await pipeline._fail_job(
+            session,
+            uuid4(),
+            uuid4(),
+            attempt=1,
+            message="geçici hata",
+        )
+
+        assert delay == pipeline.RETRY_BACKOFF_SECONDS[0]
+        params = session.execute.await_args.args[1]
+        assert params["status"] == "pending"
+        assert params["delay_seconds"] == pipeline.RETRY_BACKOFF_SECONDS[0]
+        assert params["exhausted"] is False
