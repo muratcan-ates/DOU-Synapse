@@ -38,8 +38,9 @@ export function Button({
       "bg-brand text-white hover:bg-brand-strong active:scale-[0.98] dark:text-[#191715]",
     secondary:
       "border border-border-strong bg-surface text-fg hover:border-fg-subtle active:scale-[0.98]",
-    ghost: "text-fg-muted hover:bg-brand-subtle/40 hover:text-fg",
-    danger: "border border-border-strong text-danger hover:bg-danger-bg",
+    ghost: "text-fg-muted hover:bg-brand-subtle/40 hover:text-fg active:scale-[0.98]",
+    danger:
+      "border border-border-strong text-danger hover:bg-danger-bg active:scale-[0.98]",
   }[variant];
   return (
     <button
