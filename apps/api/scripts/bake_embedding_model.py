@@ -101,27 +101,48 @@ def _download(cache_dir: Path, model_name: str) -> None:
     FastEmbedProvider(model_name=model_name, cache_dir=str(cache_dir)).embed_query("ısınma")
 
 
-def _materialize(path: Path) -> None:
-    """HF snapshot symlink'ini gerçek dosyaya çevirir (öncelik: hardlink).
+def _copy_to_fresh_inode(source: Path, dest: Path) -> None:
+    """Gerçek byte kopyasıyla YENİ, tek bağlantılı bir inode üretir; atomik takar."""
+    tmp = dest.with_name(dest.name + ".materialize.tmp")
+    shutil.copyfile(source, tmp)
+    os.replace(tmp, dest)
 
-    onnx 1.22, harici ağırlık dosyası (`model.onnx_data`) symlink olduğunda yüklemeyi
-    reddediyor (PR #4 CI, Docker build). HF önbelleği snapshot'ta symlink, blobs/
-    altında gerçek dosya tutar. Hardlink aynı inode'u paylaştığı için 2 GB'lık ek
-    tepe disk maliyeti YOKTUR — kopya yalnız hardlink'in mümkün olmadığı (EXDEV,
-    ayrı dosya sistemi) durumda kullanılır. Sürüm düşürmek bilinçli olarak
-    reddedildi: kısıt onnx'in güvenlik sertleştirmesi, gizlenecek bir hata değil.
+
+def _materialize(path: Path) -> None:
+    """Model dosyasını TEK bağlantılı gerçek bir inode hâline getirir.
+
+    onnx 1.22 harici ağırlık dosyasında iki şeyi birden reddediyor: symlink'i VE
+    birden çok hardlink taşıyan dosyayı ("multiple hard links, indicating a
+    potential hardlink attack" — PR #4 CI, iki ayrı koşuda ölçüldü; ikincisi bu
+    fonksiyonun hardlink kullanan ilk sürümünü yakaladı). Sözleşme bu yüzden
+    mekanizma değil sonuçtur: `not islink` ve `st_nlink == 1`.
+
+    Öncelik blob'u YERİNE TAŞIMAK (`os.replace`): aynı dosya sisteminde sıfır
+    kopya, sıfır ek tepe disk ve tek bağlantılı inode. Kopya yalnız yedek yoldur
+    (blob başka bağlantı taşıyorsa ya da taşıma yapılamazsa). Sürüm düşürmek
+    bilinçli olarak reddedildi: kısıt onnx'in güvenlik sertleştirmesi.
     """
-    if not path.is_symlink():
+    if path.is_symlink():
+        target = path.resolve()
+        path.unlink()
+        try:
+            if target.stat().st_nlink == 1:
+                os.replace(target, path)
+            else:
+                _copy_to_fresh_inode(target, path)
+        except OSError:
+            _copy_to_fresh_inode(target, path)
+    elif path.exists() and path.stat().st_nlink > 1:
+        # Gerçek dosya ama fazladan hardlink taşıyor (ilk sürümün bıraktığı durum
+        # dahil): kendi içeriğinden taze bir inode'a kopyalanır, bağ kopar.
+        _copy_to_fresh_inode(path, path)
+    else:
         return
-    target = path.resolve()
-    path.unlink()
-    try:
-        os.link(target, path)
-    except OSError:
-        shutil.copy2(target, path)
-    if path.is_symlink():  # pragma: no cover - os.link/copy2 sonrası imkânsız
-        raise RuntimeError(f"symlink gerçek dosyaya çevrilemedi: {path}")
-    _log(f"symlink gerçek dosyaya çevrildi: {path.name}")
+
+    st = path.lstat()
+    if path.is_symlink() or st.st_nlink != 1:  # pragma: no cover - yukarısı imkânsız kılar
+        raise RuntimeError(f"tek bağlantılı gerçek dosyaya çevrilemedi: {path}")
+    _log(f"gerçek dosyaya çevrildi (nlink=1): {path.name}")
 
 
 def _quantize(snapshot: Path) -> tuple[int, int]:

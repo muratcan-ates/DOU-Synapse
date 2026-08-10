@@ -1,16 +1,17 @@
-"""`bake_embedding_model._materialize` — symlink'in gerçek dosyaya çevrilmesi.
+"""`bake_embedding_model._materialize` — tek bağlantılı gerçek inode sözleşmesi.
 
-Var oluş sebebi (PR #4, CI Docker build): onnx 1.22 harici ağırlık dosyası
-(`model.onnx_data`) symlink olduğunda yüklemeyi reddediyor ve HF önbelleği
-snapshot'ta tam olarak symlink tutuyor. Kusurun kendisi yalnız Docker build'de
-görünür; bu test onun altındaki dönüşümü Docker'sız çiviler — biri
-`_materialize` çağrılarını kaldırır ya da davranışını bozarsa burada kırmızı
-yanar, imaj build'ini beklemeye gerek kalmaz.
+onnx 1.22 harici ağırlık dosyasında symlink'i VE birden çok hardlink taşıyan
+dosyayı reddediyor (PR #4 CI: ilk koşu symlink'i, ikincisi bu yardımcının
+hardlink kullanan ilk sürümünü yakaladı — "potential hardlink attack"). Bu
+testler mekanizmayı değil SÖZLEŞMEYİ çiviler: çıktıda `islink == False` ve
+`st_nlink == 1`. Kusur yalnız Docker build'de görünür; bu dosya onu Docker'sız
+kırmızıya çevirebilen tek yerdir.
 """
 
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
 
 import pytest
@@ -24,8 +25,12 @@ _bake = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_bake)
 
 
+def _tek_baglantili_gercek(path: Path) -> bool:
+    return not path.is_symlink() and path.lstat().st_nlink == 1
+
+
 class TestMaterialize:
-    def test_symlink_gercek_dosyaya_doner_icerik_korunur(self, tmp_path: Path) -> None:
+    def test_symlink_tek_baglantili_gercek_dosyaya_doner(self, tmp_path: Path) -> None:
         blob = tmp_path / "blobs" / "abc123"
         blob.parent.mkdir()
         blob.write_bytes(b"onnx-agirliklari")
@@ -34,53 +39,52 @@ class TestMaterialize:
 
         _bake._materialize(link)
 
-        assert not link.is_symlink(), "onnx 1.22'nin reddettiği şey tam olarak bu"
+        assert _tek_baglantili_gercek(link), "onnx'in kabul ettiği tek biçim bu"
         assert link.read_bytes() == b"onnx-agirliklari"
-        # Hardlink beklenir: aynı inode, ek disk maliyeti yok. Kopyaya düşen
-        # EXDEV yolu ayrı dosya sistemi ister ve tmp_path'te üretilemez.
-        assert link.stat().st_ino == blob.stat().st_ino
 
-    def test_gercek_dosya_dokunulmadan_gecilir(self, tmp_path: Path) -> None:
+    def test_hardlinkli_dosya_bagi_koparilir(self, tmp_path: Path) -> None:
+        """İlk sürümün ürettiği durumun regresyonu: nlink>1 → 'hardlink attack'."""
+        dosya = tmp_path / "model.onnx_data"
+        dosya.write_bytes(b"agirliklar")
+        os.link(dosya, tmp_path / "ikinci-bag")
+        assert dosya.stat().st_nlink == 2
+
+        _bake._materialize(dosya)
+
+        assert _tek_baglantili_gercek(dosya)
+        assert dosya.read_bytes() == b"agirliklar"
+
+    def test_zaten_tek_baglantili_dosya_dokunulmaz(self, tmp_path: Path) -> None:
         gercek = tmp_path / "model.onnx"
         gercek.write_bytes(b"zaten-gercek")
-        ino_once = gercek.stat().st_ino
+        ino = gercek.stat().st_ino
 
         _bake._materialize(gercek)
 
+        assert gercek.stat().st_ino == ino, "gereksiz kopya, gereksiz disk"
         assert gercek.read_bytes() == b"zaten-gercek"
-        assert gercek.stat().st_ino == ino_once
 
-    def test_quantize_yolu_materialize_cagiriyor(self) -> None:
-        """Kaynak çivisi: `_quantize` ve `--no-quantize` yolu dönüşümü atlayamaz.
-
-        Davranış testi yalnız yardımcıyı sınar; bu tarama, birinin çağrıları
-        silmesini yakalar. Docker build'i koşturmadan verilebilecek en doğrudan
-        güvence bu ikilidir.
-        """
+    def test_quantize_ve_no_quantize_yollari_cagiriyor(self) -> None:
         source = (
             Path(__file__).resolve().parents[1] / "scripts" / "bake_embedding_model.py"
         ).read_text()
         assert source.count("_materialize(") >= 4, (
-            "quantize + no-quantize yollarının ikisi de model.onnx ve "
-            "model.onnx_data'yı gerçek dosyaya çevirmeli"
+            "iki yol da model.onnx ve model.onnx_data'yı çevirmeli"
         )
 
-    def test_cevrilemeyen_symlink_sessizce_gecilmez(
+    def test_sozlesme_saglanamazsa_sessizce_gecilmez(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         blob = tmp_path / "blob"
         blob.write_bytes(b"x")
+        os.link(blob, tmp_path / "bag2")  # nlink=2 → taşıma yolu kopyaya düşmeli
         link = tmp_path / "model.onnx_data"
         link.symlink_to(blob)
 
-        def bozuk_link(*args: object, **kwargs: object) -> None:
-            raise OSError("EXDEV benzeri")
+        def bozuk_copyfile(src: object, dst: object) -> None:
+            os.link(blob, str(dst))  # kopya yerine yine hardlink bırakan sabotaj
 
-        def bozuk_copy(src: object, dst: object) -> None:
-            Path(str(dst)).symlink_to(blob)  # kopya da symlink bırakırsa
-
-        monkeypatch.setattr(_bake.os, "link", bozuk_link)
-        monkeypatch.setattr(_bake.shutil, "copy2", bozuk_copy)
+        monkeypatch.setattr(_bake.shutil, "copyfile", bozuk_copyfile)
 
         with pytest.raises(RuntimeError, match="çevrilemedi"):
             _bake._materialize(link)
