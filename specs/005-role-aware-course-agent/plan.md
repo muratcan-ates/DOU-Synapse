@@ -112,7 +112,7 @@ orkestrasyon değildir; tek, eylemsiz ve kaynak-bounded yardımcıdır.
 
 ```text
 supabase/migrations/0015_role_aware_course_agent.sql
-supabase/tests/rls_role_aware_agent_mutation_check.sh # 0001..0015 + referans + 8 DB/RLS mutasyonu
+supabase/tests/rls_role_aware_agent_mutation_check.sh # 0001..0015 + referans + 11 ayrı DB/RLS mutasyonu
 
 apps/api/app/contracts.py                    # ortak AssistantAudience
 apps/api/app/api/chat.py                     # tek chat uçları

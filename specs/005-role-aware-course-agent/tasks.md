@@ -98,14 +98,14 @@ paralel şeritler aynı hot file'a yazmaz.
   wins, lease sonunda yalnız concurrency'nin boşaldığı, günlük charge'ın kaldığı
   ve actual'ın reservation'ı aşamadığı testler. — T101–T111 taze hedefli
   backend paketiyle 157/157, 2026-08-11
-- [x] **T112** RLS/mutation script: audience immutability, forged-session RLS,
-  answer-cache audience SELECT/INSERT, function-only table grant, PUBLIC helper
-  execute ve privacy read sınırları ayrı; kota ile eşzamanlılık tavanları aynı
-  bypass fonksiyonunda birlikte gevşetilince kırmızı. Cross-audience direct SQL
-  SELECT ayrıca reddedilir.
+- [x] **T112** RLS/mutation script: membership, audience immutability,
+  forged-session RLS, answer-cache audience SELECT/INSERT, function-only table
+  grant, PUBLIC helper execute, advisory lock, günlük kota, eşzamanlılık ve
+  privacy sınırları **ayrı ayrı** gevşetildiğinde kırmızı. Cross-audience direct
+  SQL SELECT ayrıca reddedilir.
   `rls_role_aware_agent_mutation_check.sh`, 0001..0015'i PID ile adlandırılmış
-  izole DB'lere uyguladı; referans koşuda 7 kapalı sınır + 3 kalıcı kota iddiası
-  geçti, 8/8 mutasyon beklenen kesin sızıntıyı yakaladı ve koşu sonunda geçici
+  izole DB'lere uyguladı; referans koşuda 8 kapalı sınır + 3 kalıcı kota iddiası
+  geçti, 11/11 mutasyon beklenen kesin sızıntıyı yakaladı ve koşu sonunda geçici
   DB kalıntısı 0 ölçüldü. — DONE 2026-08-11
 - [x] **T113** Course/profile delete CASCADE ve KVKK export `not_included`
   davranışını doğrula; retention job yoksa açık risk olarak bırak. `/me/export`,
@@ -196,7 +196,7 @@ mypy 92 dosya temiz. Uygulanmış mutasyon matrisi hâlâ açık kapıdır.
   browser/a11y gözlemi yapılmadığı için PARTIAL.
 - [x] **T308** Vitest: student/instructor/mixed-role, course switch, no audience
   payload, 200/403/409/422/429/503, session continuation ve disabled composer.
-  — frontend `bun test lib/` 325/325, 2026-08-11 <!-- docs-check: frontend.tests = 325 -->
+  — frontend `bun test lib/` 325/325, 2026-08-11 <!-- docs-check: tarihsel 325 · 2026-08-11 -->
 - [ ] **T309** Browser network: exam lock/direct API, kill switch, no prefetch,
   no duplicate request, console ve horizontal overflow.
 
@@ -213,7 +213,7 @@ elle student/instructor/mobile/dark turu yeşil.
   Backend kapsamı DONE 2026-08-11.
 - [x] **T402** Taze DB tam migration + agent SQL/RLS/mutation paketi.
   `rls_role_aware_agent_mutation_check.sh`, izole PID DB'lerinde 0001..0015'i
-  uyguladı; 7 kapalı sınır + 3 kota referansı geçti, 8/8 DB/RLS mutasyonu beklenen
+  uyguladı; 8 kapalı sınır + 3 kota referansı geçti, 11/11 DB/RLS mutasyonu beklenen
   sızıntıyı yakaladı ve kalıntı DB 0 ölçüldü. Bu kanıt T217/T410'daki uygulama
   katmanı tam mutasyon matrisinin yerine geçmez. — DONE 2026-08-11
 - [x] **T403** Frontend tam unit/typecheck/build. — 325/325 + typecheck +
@@ -237,8 +237,9 @@ elle student/instructor/mobile/dark turu yeşil.
   p95 latency/pool pressure ve cache-hit burst residual raporu.
 - [x] **T409** 005 R3 dossier exact base/head, prompt/model/provider/retrieval/
   quota/output/flag revisions ve evidence hash'leriyle PASS.
-  Append-only revizyon 2; 882 backend, 325 frontend, 35 seri gerçek-API tarayıcı,
-  8/8 DB mutasyonu ve privacy/cascade kanıtını yeni rapor hash'ine bağlar.
+  Append-only `main` entegrasyon kaydı; 882 backend, 325 frontend, 35 seri
+  gerçek-API tarayıcı, 11/11 DB mutasyonu ve privacy/cascade kanıtını yeni rapor
+  hash'ine bağlar.
   Fake-provider mekanik kanıtı PASS; real-provider/staging iddiaları açıkça
   `not_run`. — DONE 2026-08-11
 - [ ] **T410** Mutasyon matrisi uygulanmış kırmızı ve restore edilmiş yeşil kanıtlarıyla raporlanır.

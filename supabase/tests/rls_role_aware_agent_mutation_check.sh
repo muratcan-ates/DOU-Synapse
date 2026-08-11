@@ -7,14 +7,18 @@
 # ayri bir klonda dogrular ve her gevsetmeyi sablonun yeni bir klonunda sinar. Basari,
 # hata veya sinyal durumunda olusturdugu tum DB'leri EXIT trap'i ile temizler.
 #
-# Mutasyon kapsami:
-#   1. chat_sessions.audience hem degistirilemez trigger'i hem RLS persona eslesmesi,
-#   2. answer_cache icin ayni ders icinde cross-audience SELECT ve INSERT,
-#   3. function-only kota tablolarinin dogrudan GRANT siniri,
-#   4. SECURITY DEFINER kota yardimcisinin PUBLIC/dou_worker EXECUTE siniri,
-#   5. kalici token on-odemesinin birlikte gevsetilen kota/eszamanlilik tavanlarini
-#      asamamasi,
-#   6. KVKK sohbet gecmisinin yalniz satir sahibine gorunmesi.
+# Mutasyon kapsami (her satir ayri bir gevsetme ve ayri bir sizinti sondasidir):
+#   1. rezervasyon yardimcisinin aktif ders uyeligi,
+#   2. chat_sessions.audience degistirilemez trigger'i,
+#   3. chat_sessions INSERT persona eslesmesi,
+#   4. answer_cache cross-audience SELECT,
+#   5. answer_cache cross-audience INSERT,
+#   6. function-only kota tablosunun dogrudan GRANT siniri,
+#   7. SECURITY DEFINER kota yardimcisinin PUBLIC/dou_worker EXECUTE siniri,
+#   8. atomik rezervasyonun platform/course transaction advisory lock'lari,
+#   9. gunluk token kotasi,
+#  10. aktif reservation eszamanlilik tavani,
+#  11. KVKK sohbet gecmisinin yalniz satir sahibine gorunmesi.
 #
 # Bilincli dislama: `/me/export` aktif-sinav kilidi, kullanici-bazli advisory lock ve
 # HTTP 423 zarfi FastAPI katmaninda tanimlidir; 0015 migrasyonunda cagrilabilir bir SQL
@@ -38,6 +42,7 @@ TEMPLATE_DB="${1:-rls_role_agent_template_$$}"
 INSTRUCTOR="11111111-1111-1111-1111-111111111111"
 STUDENT="22222222-2222-2222-2222-222222222222"
 OTHER_STUDENT="33333333-3333-3333-3333-333333333333"
+NON_MEMBER="44444444-4444-4444-4444-444444444444"
 COURSE="aaaaaaaa-0000-0000-0000-000000000005"
 STUDENT_SESSION="51515151-0000-0000-0000-000000000001"
 OTHER_SESSION="51515151-0000-0000-0000-000000000002"
@@ -53,12 +58,17 @@ if "$PSQL" -lqtA -d postgres 2>/dev/null | cut -d'|' -f1 | grep -qx "$TEMPLATE_D
 fi
 
 created_databases=()
+created_temp_files=()
 cleanup() {
     local db
     local db_index
+    local temp_file
     for ((db_index=${#created_databases[@]} - 1; db_index >= 0; db_index--)); do
         db="${created_databases[$db_index]}"
         "$DROPDB" --if-exists "$db" >/dev/null 2>&1 || true
+    done
+    for temp_file in "${created_temp_files[@]}"; do
+        rm -f "$temp_file"
     done
 }
 trap cleanup EXIT INT TERM
@@ -83,7 +93,8 @@ seed_fixture() {
 INSERT INTO public.profiles (id, email, full_name) VALUES
     ('$INSTRUCTOR', 'agent.teacher.005@dogus.edu.tr', '005 Egitmen'),
     ('$STUDENT', 'agent.student.005@dogus.edu.tr', '005 Ogrenci'),
-    ('$OTHER_STUDENT', 'agent.other.005@dogus.edu.tr', '005 Diger Ogrenci');
+    ('$OTHER_STUDENT', 'agent.other.005@dogus.edu.tr', '005 Diger Ogrenci'),
+    ('$NON_MEMBER', 'agent.outsider.005@dogus.edu.tr', '005 Uye Olmayan');
 
 INSERT INTO public.courses (id, code, title, created_by)
 VALUES ('$COURSE', 'RLS-AGENT-005', 'Role-aware agent mutation fixture', '$INSTRUCTOR');
@@ -111,6 +122,32 @@ INSERT INTO public.answer_cache (
      'p1', 'r1', 'c1', 'student-only', '{"text":"student"}'::jsonb),
     ('acacacac-0000-0000-0000-000000000002', '$COURSE', 'instructor',
      'p1', 'r1', 'c1', 'instructor-only', '{"text":"instructor"}'::jsonb);
+
+-- Yalniz gecici klonlarda kullanilan test yardimcisi. Gercek migrasyona veya ortak
+-- DB'ye yazilmaz. pg_get_functiondef uzerinden tam bir kontrol blogunu degistirir;
+-- eslesen kaynak yoksa mutasyonu sessizce "uygulanmis" saymak yerine kirmizi olur.
+CREATE OR REPLACE FUNCTION app.__test_replace_reservation_definition(
+    p_needle text,
+    p_replacement text
+) RETURNS void
+LANGUAGE plpgsql
+SET search_path = pg_catalog, public, app
+AS \$test_mutator\$
+DECLARE
+    v_before text;
+    v_after text;
+BEGIN
+    SELECT pg_get_functiondef(
+        'app.reserve_course_agent_tokens(uuid,uuid,integer,integer,integer,integer,integer)'
+            ::regprocedure
+    ) INTO v_before;
+    v_after := replace(v_before, p_needle, p_replacement);
+    IF v_after = v_before THEN
+        RAISE EXCEPTION 'requested reservation mutation did not match function source';
+    END IF;
+    EXECUTE v_after;
+END
+\$test_mutator\$;
 SQL
 }
 
@@ -172,6 +209,56 @@ run_mutation() {
     drop_database_now "$scratch"
 }
 
+run_lock_race_mutation() {
+    local sequence="$1"
+    local name="$2"
+    local scratch="rls_role_agent_mut_$$_${sequence}"
+    local output_a
+    local output_b
+    local pid_a
+    local pid_b
+    local status_a=0
+    local status_b=0
+    local summary
+    local call_a
+    local call_b
+
+    output_a="$(mktemp "${TMPDIR:-/tmp}/rls-role-agent-lock-a.XXXXXX")"
+    output_b="$(mktemp "${TMPDIR:-/tmp}/rls-role-agent-lock-b.XXXXXX")"
+    created_temp_files+=("$output_a" "$output_b")
+    create_database "$scratch" -T "$TEMPLATE_DB"
+    "$PSQL" -X -v ON_ERROR_STOP=1 -q -d "$scratch" -c "$LOCK_BYPASS_SQL"
+
+    call_a="SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT allowed FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000050',60,60,50000,500000,5000000);"
+    call_b="SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT allowed FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000051',60,60,50000,500000,5000000);"
+
+    "$PSQL" -X -v ON_ERROR_STOP=1 -qAt -d "$scratch" -c "$call_a" >"$output_a" 2>&1 &
+    pid_a=$!
+    "$PSQL" -X -v ON_ERROR_STOP=1 -qAt -d "$scratch" -c "$call_b" >"$output_b" 2>&1 &
+    pid_b=$!
+
+    wait "$pid_a" || status_a=$?
+    wait "$pid_b" || status_b=$?
+    if ((status_a != 0 || status_b != 0)); then
+        printf 'KACIRILDI  %-48s -> paralel sonda SQL hatasi\n' "$name" >&2
+        cat "$output_a" "$output_b" >&2
+        rm -f "$output_a" "$output_b"
+        return 1
+    fi
+
+    summary=$("$PSQL" -X -v ON_ERROR_STOP=1 -qAt -d "$scratch" -c \
+        "SELECT CASE WHEN count(*)=2 AND sum(charged_tokens)=120 THEN 'LEAK__UNLOCKED_ATOMIC_OVERSHOOT' ELSE 'SAFE' END FROM public.ai_token_reservations WHERE id IN ('50505050-0000-0000-0000-000000000050','50505050-0000-0000-0000-000000000051');")
+    rm -f "$output_a" "$output_b"
+
+    if [[ "$summary" != "LEAK__UNLOCKED_ATOMIC_OVERSHOOT" ]]; then
+        printf 'KACIRILDI  %-48s -> LEAK__UNLOCKED_ATOMIC_OVERSHOOT gelmedi\n' "$name" >&2
+        echo "$summary" >&2
+        return 1
+    fi
+    printf 'YAKALANDI  %-48s -> %s\n' "$name" "$summary"
+    drop_database_now "$scratch"
+}
+
 echo "gecici sablon kuruluyor: $TEMPLATE_DB"
 create_database "$TEMPLATE_DB"
 for migration in "$REPO_ROOT"/supabase/migrations/*.sql; do
@@ -193,6 +280,11 @@ expect_denied "$REFERENCE_DB" \
     "ogrenci instructor oturumu ekleyemez" \
     "row-level security policy" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; INSERT INTO public.chat_sessions (course_id,user_id,mode,audience) VALUES ('$COURSE','$STUDENT','qa','instructor');"
+
+expect_denied "$REFERENCE_DB" \
+    "uye olmayan token rezervasyonu acamaz" \
+    "course membership required" \
+    "SET ROLE dou_app; SET app.current_user_id='$NON_MEMBER'; SELECT * FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000002',10,60,50000,500000,5000000);"
 
 expect_marker "$REFERENCE_DB" \
     "ogrenci instructor cache okuyamaz" \
@@ -259,96 +351,180 @@ expect_marker "$REFERENCE_DB" \
     "REFERENCE__EXPIRED_PRECHARGE_BLOCKED" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN NOT allowed AND reason='quota_exhausted' THEN 'REFERENCE__EXPIRED_PRECHARGE_BLOCKED' ELSE 'WRONG' END FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000012',60,60,50000,500000,5000000);"
 
-echo "referans kosu temiz (7 kapali sinir + 3 kalici kota iddiasi)"
+echo "referans kosu temiz (8 kapali sinir + 3 kalici kota iddiasi)"
 drop_database_now "$REFERENCE_DB"
 echo
 
-QUOTA_BYPASS_SQL=$(cat <<'SQL'
-CREATE OR REPLACE FUNCTION app.reserve_course_agent_tokens(
-    p_course_id uuid,
-    p_reservation_id uuid,
-    p_requested_tokens integer,
-    p_lease_seconds integer,
-    p_user_hard_limit integer,
-    p_course_hard_limit integer,
-    p_platform_hard_limit integer
-)
-RETURNS TABLE (
-    allowed boolean,
-    reason text,
-    audience assistant_audience,
-    retry_after_seconds integer,
-    reservation_id uuid
-)
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER
-SET search_path = pg_catalog, public, app
-AS $function$
-DECLARE
-    v_user_id uuid := app.current_user_id();
-    v_audience assistant_audience;
-BEGIN
-    SELECT CASE m.role WHEN 'instructor' THEN 'instructor'::assistant_audience
-                      ELSE 'student'::assistant_audience END
-    INTO v_audience
+MEMBERSHIP_BYPASS_SQL=$(cat <<'SQL'
+SELECT app.__test_replace_reservation_definition(
+$needle$
+    SELECT m.role INTO v_role
     FROM public.course_memberships AS m
-    WHERE m.course_id=p_course_id AND m.user_id=v_user_id AND m.status='active';
+    WHERE m.course_id = p_course_id AND m.user_id = v_user_id
+      AND m.status = 'active'::membership_status;
+    IF v_role IS NULL THEN
+        RAISE EXCEPTION 'course membership required' USING ERRCODE = '42501';
+    END IF;
+$needle$,
+$replacement$
+    v_role := 'student'::membership_role;
+$replacement$
+);
+SQL
+)
+
+LOCK_BYPASS_SQL=$(cat <<'SQL'
+SELECT app.__test_replace_reservation_definition(
+$needle$
+    PERFORM pg_advisory_xact_lock(hashtextextended('course-agent-platform-daily', 15015));
+    PERFORM pg_advisory_xact_lock(hashtextextended(p_course_id::text, 15016));
+$needle$,
+$replacement$
+    NULL; -- MUTATION: platform/course reservation locks removed.
+$replacement$
+);
+SELECT app.__test_replace_reservation_definition(
+$needle$
+    IF v_user_used + p_requested_tokens > v_user_budget
+$needle$,
+$replacement$
+    -- Deterministic race window only: this adds no permission or bypass. Both
+    -- unlocked transactions pause after reading the same aggregate snapshot.
+    PERFORM pg_sleep(0.5);
+    IF v_user_used + p_requested_tokens > v_user_budget
+$replacement$
+);
+SQL
+)
+
+QUOTA_BYPASS_SQL=$(cat <<'SQL'
+DO $quota_seed$
+DECLARE
+    v_day_start timestamptz := date_trunc(
+        'day', clock_timestamp() AT TIME ZONE 'Europe/Istanbul'
+    ) AT TIME ZONE 'Europe/Istanbul';
+    v_ready_at timestamptz;
+BEGIN
+    -- Expired fakat bugunun kotasinda kalan tam 100 tokenlik on-odeme. Gece
+    -- yarisinin ilk saniyesinde onceki gun penceresine kaymamak icin en fazla
+    -- bir saniye bekler; ayni flake korumasi referans kosusunda da kullanilir.
+    v_ready_at := v_day_start + interval '1 second';
+    IF clock_timestamp() <= v_ready_at THEN
+        PERFORM pg_sleep(
+            GREATEST(EXTRACT(EPOCH FROM (v_ready_at - clock_timestamp())), 0) + 0.01
+        );
+    END IF;
     INSERT INTO public.ai_token_reservations(
-        id, course_id, user_id, audience, reserved_tokens, charged_tokens, expires_at
+        id, course_id, user_id, audience, reserved_tokens, charged_tokens,
+        created_at, expires_at
     ) VALUES (
-        p_reservation_id, p_course_id, v_user_id, v_audience,
-        p_requested_tokens, p_requested_tokens, now()+make_interval(secs=>p_lease_seconds)
+        '50505050-0000-0000-0000-000000000040',
+        'aaaaaaaa-0000-0000-0000-000000000005',
+        '22222222-2222-2222-2222-222222222222',
+        'student', 100, 100, v_day_start, v_day_start + interval '500 milliseconds'
     );
-    RETURN QUERY SELECT true, NULL::text, v_audience, 0, p_reservation_id;
 END
-$function$;
+$quota_seed$;
+
+SELECT app.__test_replace_reservation_definition(
+$needle$
+    IF v_user_used + p_requested_tokens > v_user_budget
+       OR v_global_user_used + p_requested_tokens > p_user_hard_limit
+       OR v_course_used + p_requested_tokens > v_course_budget
+       OR v_platform_used + p_requested_tokens > p_platform_hard_limit THEN
+        INSERT INTO public.ai_guard_events(course_id, user_id, audience, event_type)
+        VALUES (p_course_id, v_user_id, v_audience, 'quota_exhausted')
+        ON CONFLICT (course_id, user_id, event_type, bucket_start) DO NOTHING;
+        v_retry := GREATEST(1, EXTRACT(EPOCH FROM v_day_end - now())::integer);
+        RETURN QUERY SELECT false, 'quota_exhausted', v_audience, v_retry, NULL::uuid;
+        RETURN;
+    END IF;
+$needle$,
+$replacement$
+    NULL; -- MUTATION: daily user/course/platform quota decision removed.
+$replacement$
+);
+SQL
+)
+
+CONCURRENCY_BYPASS_SQL=$(cat <<'SQL'
+SELECT app.__test_replace_reservation_definition(
+$needle$
+    IF v_active >= v_max_concurrent THEN
+        INSERT INTO public.ai_guard_events(course_id, user_id, audience, event_type)
+        VALUES (p_course_id, v_user_id, v_audience, 'concurrency_limited')
+        ON CONFLICT (course_id, user_id, event_type, bucket_start) DO NOTHING;
+        RETURN QUERY SELECT false, 'concurrency_limited', v_audience, GREATEST(v_retry, 1), NULL::uuid;
+        RETURN;
+    END IF;
+$needle$,
+$replacement$
+    NULL; -- MUTATION: active reservation concurrency decision removed.
+$replacement$
+);
 SQL
 )
 
 failures=0
 
 run_mutation 1 \
+    "aktif ders uyeligi kontrolu kaldirilirsa" \
+    "$MEMBERSHIP_BYPASS_SQL" \
+    "SET ROLE dou_app; SET app.current_user_id='$NON_MEMBER'; SELECT CASE WHEN allowed THEN 'LEAK__NON_MEMBER_RESERVATION' ELSE 'SAFE' END FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000060',10,60,50000,500000,5000000);" \
+    "LEAK__NON_MEMBER_RESERVATION" || failures=$((failures + 1))
+
+run_mutation 2 \
     "audience immutability trigger dusurulurse" \
     "DROP TRIGGER chat_session_audience_immutable ON public.chat_sessions;" \
     "UPDATE public.chat_sessions SET audience='instructor' WHERE id='$STUDENT_SESSION'; SELECT CASE WHEN audience='instructor' THEN 'LEAK__AUDIENCE_MUTATED' ELSE 'SAFE' END FROM public.chat_sessions WHERE id='$STUDENT_SESSION';" \
     "LEAK__AUDIENCE_MUTATED" || failures=$((failures + 1))
 
-run_mutation 2 \
+run_mutation 3 \
     "session audience RLS eslesmesi dusurulurse" \
     "DROP POLICY chat_sessions_self_insert ON public.chat_sessions; CREATE POLICY chat_sessions_self_insert ON public.chat_sessions FOR INSERT WITH CHECK (user_id=app.current_user_id() AND app.is_member(course_id));" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; INSERT INTO public.chat_sessions (course_id,user_id,mode,audience) VALUES ('$COURSE','$STUDENT','qa','instructor'); RESET ROLE; SELECT CASE WHEN count(*)=1 THEN 'LEAK__FORGED_INSTRUCTOR_SESSION' ELSE 'SAFE' END FROM public.chat_sessions WHERE user_id='$STUDENT' AND audience='instructor';" \
     "LEAK__FORGED_INSTRUCTOR_SESSION" || failures=$((failures + 1))
 
-run_mutation 3 \
+run_mutation 4 \
     "cache SELECT audience sarti dusurulurse" \
     "DROP POLICY answer_cache_member_read ON public.answer_cache; CREATE POLICY answer_cache_member_read ON public.answer_cache FOR SELECT USING (app.is_member(course_id));" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=1 THEN 'LEAK__CROSS_AUDIENCE_CACHE_READ' ELSE 'SAFE' END FROM public.answer_cache WHERE audience='instructor';" \
     "LEAK__CROSS_AUDIENCE_CACHE_READ" || failures=$((failures + 1))
 
-run_mutation 4 \
+run_mutation 5 \
     "cache INSERT audience sarti dusurulurse" \
     "DROP POLICY answer_cache_member_insert ON public.answer_cache; CREATE POLICY answer_cache_member_insert ON public.answer_cache FOR INSERT WITH CHECK (app.is_member(course_id));" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; INSERT INTO public.answer_cache (course_id,audience,policy_revision,prompt_revision,corpus_revision,question_hash,answer) VALUES ('$COURSE','instructor','p2','r2','c2','forged-instructor','{}'::jsonb); RESET ROLE; SELECT CASE WHEN count(*)=1 THEN 'LEAK__CROSS_AUDIENCE_CACHE_INSERT' ELSE 'SAFE' END FROM public.answer_cache WHERE question_hash='forged-instructor';" \
     "LEAK__CROSS_AUDIENCE_CACHE_INSERT" || failures=$((failures + 1))
 
-run_mutation 5 \
+run_mutation 6 \
     "function-only tablo worker'a GRANT edilirse" \
     "INSERT INTO public.ai_token_reservations(id,course_id,user_id,audience,reserved_tokens,charged_tokens,expires_at) VALUES ('50505050-0000-0000-0000-000000000020','$COURSE','$STUDENT','student',10,10,now()+interval '1 minute'); GRANT SELECT ON public.ai_token_reservations TO dou_worker;" \
     "SET ROLE dou_worker; SELECT CASE WHEN count(*)=1 THEN 'LEAK__DIRECT_QUOTA_TABLE_GRANT' ELSE 'SAFE' END FROM public.ai_token_reservations;" \
     "LEAK__DIRECT_QUOTA_TABLE_GRANT" || failures=$((failures + 1))
 
-run_mutation 6 \
+run_mutation 7 \
     "SECURITY DEFINER PUBLIC EXECUTE geri verilirse" \
     "GRANT EXECUTE ON FUNCTION app.reserve_course_agent_tokens(uuid,uuid,integer,integer,integer,integer,integer) TO PUBLIC;" \
     "SET ROLE dou_worker; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN allowed THEN 'LEAK__PUBLIC_EXECUTE_RESERVATION' ELSE 'SAFE' END FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000021',10,60,50000,500000,5000000);" \
     "LEAK__PUBLIC_EXECUTE_RESERVATION" || failures=$((failures + 1))
 
-run_mutation 7 \
-    "kota ve eszamanlilik kontrolleri kaldirilirsa" \
-    "$QUOTA_BYPASS_SQL" \
-    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT allowed FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000030',60,60,50000,500000,5000000); SELECT allowed FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000031',60,60,50000,500000,5000000); RESET ROLE; SELECT CASE WHEN count(*)=2 AND sum(charged_tokens)=120 THEN 'LEAK__QUOTA_AND_CONCURRENCY_OVERSHOOT' ELSE 'SAFE' END FROM public.ai_token_reservations;" \
-    "LEAK__QUOTA_AND_CONCURRENCY_OVERSHOOT" || failures=$((failures + 1))
+run_lock_race_mutation 8 \
+    "atomik rezervasyon advisory lock'lari kaldirilirsa" || failures=$((failures + 1))
 
-run_mutation 8 \
+run_mutation 9 \
+    "yalniz gunluk token kota karari kaldirilirsa" \
+    "$QUOTA_BYPASS_SQL" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN allowed THEN 'LEAK__DAILY_QUOTA_OVERSHOOT' ELSE 'SAFE' END FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000041',1,60,50000,500000,5000000);" \
+    "LEAK__DAILY_QUOTA_OVERSHOOT" || failures=$((failures + 1))
+
+run_mutation 10 \
+    "yalniz aktif reservation tavani kaldirilirsa" \
+    "$CONCURRENCY_BYPASS_SQL" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT allowed FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000070',10,60,50000,500000,5000000); SELECT allowed FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000071',10,60,50000,500000,5000000); RESET ROLE; SELECT CASE WHEN count(*)=2 AND sum(charged_tokens)=20 THEN 'LEAK__CONCURRENCY_OVERSHOOT' ELSE 'SAFE' END FROM public.ai_token_reservations WHERE id IN ('50505050-0000-0000-0000-000000000070','50505050-0000-0000-0000-000000000071');" \
+    "LEAK__CONCURRENCY_OVERSHOOT" || failures=$((failures + 1))
+
+run_mutation 11 \
     "KVKK privacy okuma politikalari acilirsa" \
     "DROP POLICY chat_sessions_self_read ON public.chat_sessions; DROP POLICY chat_sessions_privacy_self_read ON public.chat_sessions; CREATE POLICY chat_sessions_privacy_read_leak ON public.chat_sessions FOR SELECT USING (true);" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=1 THEN 'LEAK__PRIVACY_OTHER_SESSION_READ' ELSE 'SAFE' END FROM public.chat_sessions WHERE id='$OTHER_SESSION';" \
@@ -361,5 +537,5 @@ if ((failures > 0)); then
     exit 1
 fi
 
-echo "8 mutasyon denendi, 8 kesin sizinti yakalandi."
+echo "11 mutasyon denendi, 11 kesin sizinti yakalandi."
 echo "Gecici mutasyon DB'leri temizlendi; sablon cikista temizlenecek."

@@ -1,0 +1,20 @@
+{
+  "candidate_sha": "SELF",
+  "change_id": "005-role-aware-course-agent-r3",
+  "captured_at": "2026-08-11T17:19:30+03:00",
+  "command": "PYTHONDONTWRITEBYTECODE=1 TMPDIR=/private/tmp python3 -m unittest scripts.test_ai_sdlc_check.AiSdlcValidatorTests.test_superseded_child_cannot_retroactively_validate_future_artifact scripts.test_ai_sdlc_check.AiSdlcValidatorTests.test_rewritten_dossier_without_quarantine_fails_closed scripts.test_ai_sdlc_check.AiSdlcValidatorTests.test_justified_quarantine_with_full_exact_root_passes scripts.test_ai_sdlc_check.AiSdlcValidatorTests.test_valid_dossier_cannot_be_quarantined_without_cause scripts.test_ai_sdlc_check.AiSdlcValidatorTests.test_quarantined_dossier_cannot_supply_artifact_coverage scripts.test_ai_sdlc_check.AiSdlcValidatorTests.test_quarantine_only_evidence_is_unreferenced scripts.test_ai_sdlc_check.AiSdlcValidatorTests.test_quarantine_replacement_must_bind_exact_base_and_head",
+  "environment": "local deterministic stdlib fixture repositories in the iCloud-free integration worktree",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic repository paths and identities only; no prompts, answers, student content, emails, secrets or provider payloads retained",
+  "results": {
+    "targeted_validator_tests_passed": 7,
+    "targeted_validator_tests_failed": 0,
+    "elapsed_seconds": 5.612,
+    "retroactive_candidate_binding_rejected": "pass",
+    "rewritten_history_requires_quarantine": "pass",
+    "quarantine_cannot_authorize_coverage_or_evidence": "pass",
+    "replacement_root_requires_exact_base_head_and_full_coverage": "pass"
+  },
+  "limitations": "This report proves the seven fail-closed history and quarantine mechanics only. The complete 57-test deterministic validator suite is recorded separately. The exact main-to-real-candidate repository invocation must still pass after the integration commit exists."
+}

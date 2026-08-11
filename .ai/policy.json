@@ -81,6 +81,10 @@
       "minimum_risk": "R3"
     },
     {
+      "pattern": ".ai/quarantine/**",
+      "minimum_risk": "R3"
+    },
+    {
       "pattern": ".ai/policy.json",
       "minimum_risk": "R3"
     },

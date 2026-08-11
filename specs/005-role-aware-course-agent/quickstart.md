@@ -100,8 +100,8 @@ supabase/tests/rls_role_aware_agent_mutation_check.sh \
   rls_role_agent_005_<lane>_<run>
 ```
 
-2026-08-11 gerçek koşu kanıtı: referans koşuda 7 kapalı sınır + 3 kalıcı kota
-iddiası geçti; 8/8 mutasyon beklenen kesin sızıntıyı yakaladı; koşu sonrasında
+2026-08-11 gerçek koşu kanıtı: referans koşuda 8 kapalı sınır + 3 kalıcı kota
+iddiası geçti; 11/11 ayrı mutasyon beklenen kesin sızıntıyı yakaladı; koşu sonrasında
 geçici DB kalıntısı 0 ölçüldü. Bu paket veritabanı/RLS sınırlarını kanıtlar;
 5. bölümdeki uygulama katmanı mutasyonlarının tamamlandığı anlamına gelmez.
 

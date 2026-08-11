@@ -1,0 +1,367 @@
+{
+  "schema_version": 1,
+  "change_id": "005-role-aware-course-agent-r3",
+  "lineage_id": "main-role-agent-integration",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Bind the AI governance and role-aware agent stack to main",
+  "summary": "Preserve the immutable bootstrap and feature lineages while binding the complete governance, role-agent runtime, privacy, exam and interface surface to the exact main pull-request base and current candidate.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-11T14:59:00+03:00",
+  "review_by": "2026-09-11T14:59:00+03:00",
+  "base_sha": "2c178861a3e484af8643f999f210db040eb84e68",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "litellm-role-aware-single-attempt-v1; real provider not verified",
+    "model_revision": "not-pinned:not-deployed; exact model required before staging",
+    "prompt_revision": "005-role-aware-course-agent-v1",
+    "tool_schema_revision": "ai-dossier-schema-v1 plus none-v1:no-agent-tools-no-writes",
+    "guardrail_revision": "005-role-quota-exam-privacy-v2-main-integration",
+    "retrieval_revision": "base-2c178861-hybrid-retrieval plus source-policy and corpus-revision cache binding",
+    "embedding_revision": "unchanged-from-base-2c178861",
+    "evaluator_revision": "validator-mutation-suite-57 plus fail-closed-history-quarantine-targeted-suite-7 plus 005-local-contract-browser-rls-suite-v2"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "18d69516619b58119b9afb50e7cc42d9229994372f0ddf2dd824dd1b1b3c284b",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".ai/policy.json",
+      "state": "present",
+      "sha256": "b583aba4bacea9804a300bc9f266932db48396ecf7054a92e6bc415fd98cc7f2"
+    },
+    {
+      "path": ".ai/schema.json",
+      "state": "present",
+      "sha256": "90f5f2e516a51ab4d148ffacb6a322311a3dad9cf6c47a25d20a4d0c8f373606"
+    },
+    {
+      "path": ".ai/README.md",
+      "state": "present",
+      "sha256": "3be993a93233a28f3ebe2b7fd7e9b4e16f7f13701581152e9904017c38d45256"
+    },
+    {
+      "path": "scripts/ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "3662e6d849c05a45feba0ecd606171171e59a8957ef5ffec1c157730a93afb4e"
+    },
+    {
+      "path": "scripts/test_ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "7d0b37c24ba664c2bacbf5d019042c500b757d251ec09147f4f9afb27e67b1f5"
+    },
+    {
+      "path": ".ai/quarantine/005-role-aware-course-agent-legacy.json",
+      "state": "present",
+      "sha256": "aa444d0ccebbb6b3eec8d242efe83bf72a10e21824773509304d0ac90d794dfd"
+    },
+    {
+      "path": ".github/workflows/ai-quality.yml",
+      "state": "present",
+      "sha256": "cb7e4dff09276f53b4bb1d12d185bdbc942d20007bf82f5821ac35bcadab30bd"
+    },
+    {
+      "path": ".env.example",
+      "state": "present",
+      "sha256": "3c58f3dbf9a6925ad932a674b1f6c064650cc9ea36875f2b4ad60851a5854997"
+    },
+    {
+      "path": "apps/api/app/api/chat.py",
+      "state": "present",
+      "sha256": "ee534c0638485be7a86929c4ba05abb8252cd1ddada103525544b2281d79862e"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "9975d49aa2783b4f7bbcfff1af83b634153fca37cd8d9de2d16b74cd986e92cc"
+    },
+    {
+      "path": "apps/api/app/api/policy.py",
+      "state": "present",
+      "sha256": "d01e8a2c0a542d6957dfde33d1463306f5989ef862359adac137e032d5cb22c6"
+    },
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "19ef43cfcba0e759402dd7fb12c05c6ce167dcd0ae816243984fc36c8eac3d6d"
+    },
+    {
+      "path": "apps/api/app/contracts.py",
+      "state": "present",
+      "sha256": "1f3b79b85da0d15e25e8ef5faec7fec07d89048305de2052468df9e339ead574"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "d383551ad3e2e83191c1c21fbc5e1d87e49c41e7a10ca548e931db07ecea792e"
+    },
+    {
+      "path": "apps/api/app/models/chat.py",
+      "state": "present",
+      "sha256": "ec1b198f2eb5282ba3334447ed259e357e0863997f58aa0c1bd760704e71a6d2"
+    },
+    {
+      "path": "apps/api/app/models/policy.py",
+      "state": "present",
+      "sha256": "e89a99510c3a95e75801ae085df48420a8a287c3de0a3c0954657b14ada24f0f"
+    },
+    {
+      "path": "apps/api/app/modules/agent/__init__.py",
+      "state": "present",
+      "sha256": "1d6adaac5c597cc7dd3c02a7ae8e53056c671e23d142e0c0b48dc15bdfb51828"
+    },
+    {
+      "path": "apps/api/app/modules/agent/quota.py",
+      "state": "present",
+      "sha256": "1092441dd65b62893c90876b03642efae7e989c90670a7c68556966e1112a7b2"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/exam_state.py",
+      "state": "present",
+      "sha256": "03ae6eba3ce7980ff41d50154f2719d45d8fb4e3570cbfa702ae44d2d0ee2c28"
+    },
+    {
+      "path": "apps/api/app/modules/generation/llm.py",
+      "state": "present",
+      "sha256": "fa2ff30299d2da8a062f07e2cb3b150d90944f6c0caf313ab87daa27e20abcee"
+    },
+    {
+      "path": "apps/api/app/modules/generation/prompts.py",
+      "state": "present",
+      "sha256": "a74ca20447ac7105e3a4dc651642a771088fe835212f89f615f992166a00f712"
+    },
+    {
+      "path": "apps/api/app/modules/generation/service.py",
+      "state": "present",
+      "sha256": "02c1446d58ccb56d0b888db109c45ca6f6f862a413c976d91810bf8b672aed68"
+    },
+    {
+      "path": "apps/api/app/modules/policy/service.py",
+      "state": "present",
+      "sha256": "167ec5292d96b1e396b450742011cc9fa6d9a3c3e541f9767a7a593851023700"
+    },
+    {
+      "path": "apps/api/app/schemas/chat.py",
+      "state": "present",
+      "sha256": "ffcfca44d9b646b67239c5b925c36035717d5d1ada7d99a0df0cc41ca30f6fd6"
+    },
+    {
+      "path": "apps/api/app/schemas/policy.py",
+      "state": "present",
+      "sha256": "48bcef5ec31f6613062d48cdeb9f7f44f187d95a4166ba13ad91c0f39093df7e"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "324e3e3e32e77007c6573301da52592fe8e72fb4b1a58db1dd8e43723057c966"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "fabb6303a940453b531c60e695ad13443422aafb6f1336a4e62db135c5238fc7"
+    },
+    {
+      "path": "apps/web/lib/chat-availability.ts",
+      "state": "present",
+      "sha256": "d0a0f74f7e710fb29db9a5c930dc8ac7dcaedc433941f676e666acee0b3f9cd6"
+    },
+    {
+      "path": "apps/web/lib/course-assistant.ts",
+      "state": "present",
+      "sha256": "1bfbe2986517db2ab6c2e7141a3ec0ac5651fb2b398f3aba7008c42edebadc95"
+    },
+    {
+      "path": "supabase/migrations/0015_role_aware_course_agent.sql",
+      "state": "present",
+      "sha256": "e017c961112e8395bd154cce6359f73c229245b86aad45c2406e5e4f7bc32cd0"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/main-integration-rls-mutations.json",
+      "report_sha256": "e3af88a8e64201654bc8fe34b496ec31eb10a62368c095471322744e9a95b525",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/main-integration-validator-full-suite.json",
+      "report_sha256": "a40022c2650ad65a30a7fae3c1fd3dc8ace5ee1f8ec92ddfbad04cf4e4fcbf88",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/main-integration-validator-tests.json",
+      "report_sha256": "7e46a4efc7fe03583ba92fbb28596176e6ae70625094bb244f5454c353cf311b",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/004-validator-tests-v2.json",
+      "report_sha256": "949b821641e25e1d14c9a228f8cf1fd334e752b2e2f0b09731e040f2615ae673",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/005-role-aware-course-agent-local.json",
+      "report_sha256": "131916311c1518efd73a4b85d707278071c979201f92c2e90917154111b7cd02",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/005-role-aware-course-agent-local-r2.json",
+      "report_sha256": "5e7a4e0333e27398899de56e39326de1cdef811c0a40fa125a95a2c92fc20f5f",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "blocked",
+      "report_path": ".ai/evidence/005-role-aware-course-agent-main-integration.json",
+      "report_sha256": "b25e2db293f1bf8bf39a3561c0d6add3c77f84a0d77ecb0a3382b2d6789aea33",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "specs/005-role-aware-course-agent/spec.md mechanical acceptance gates",
+    "holdout_ref": "not-run: role-separated real-provider holdout remains T407/external validation",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: pedagogy and privacy human anchor plus named approvals remain pending",
+    "metrics": [
+      {
+        "name": "validator_tests_passed",
+        "baseline": 47,
+        "candidate": 57,
+        "operator": ">=",
+        "threshold": 57,
+        "sample_size": 57
+      },
+      {
+        "name": "backend_tests_passed",
+        "baseline": 879,
+        "candidate": 882,
+        "operator": ">=",
+        "threshold": 879,
+        "sample_size": 882
+      },
+      {
+        "name": "frontend_library_tests_passed",
+        "baseline": 322,
+        "candidate": 325,
+        "operator": ">=",
+        "threshold": 322,
+        "sample_size": 325
+      },
+      {
+        "name": "serial_real_api_playwright_passed",
+        "baseline": 0,
+        "candidate": 35,
+        "operator": ">=",
+        "threshold": 35,
+        "sample_size": 35
+      },
+      {
+        "name": "database_mutations_caught",
+        "baseline": 8,
+        "candidate": 11,
+        "operator": "==",
+        "threshold": 11,
+        "sample_size": 11
+      },
+      {
+        "name": "e2e_database_residue",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 2
+      }
+    ],
+    "exact_command": "TEST_DB_NAME=<unique> apps/api/.venv/bin/pytest -q apps/api/tests; cd apps/web && bun test lib/ && bunx tsc --noEmit --incremental false && bun run build; PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_role_aware_agent_mutation_check.sh <unique>; E2E_DATABASE_NAME=<unique> bunx playwright test --workers=1; node scripts/docs_check.mjs"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Yasemin Karagül",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending Bilgi İşlem security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:005-role-aware-course-agent-r3",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal and instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope or kill-switch fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and a frozen real-provider holdout passes.",
+      "Staging auth, RLS, multi-worker load and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under a shared user-level assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2c178861a3e484af8643f999f210db040eb84e68",
+    "procedure": "Set COURSE_AGENT_ENABLED=false, verify chat returns 503 without provider or artifact creation, and revert this candidate to the base SHA; additive migration 0015 remains compatible.",
+    "max_minutes": 15,
+    "verification": "Confirm availability is disabled, chat creates no provider call, session, cache or quota artifact, and core chat, exam and privacy routes still pass.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

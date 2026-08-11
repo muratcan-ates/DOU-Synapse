@@ -109,6 +109,7 @@ class RepositoryFixture:
             "sensitive_paths": [
                 {"pattern": ".ai/changes/**", "minimum_risk": "R3"},
                 {"pattern": ".ai/evidence/**", "minimum_risk": "R3"},
+                {"pattern": ".ai/quarantine/**", "minimum_risk": "R3"},
                 {
                     "pattern": "apps/api/app/modules/generation/**",
                     "minimum_risk": "R2",
@@ -466,22 +467,22 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.commit_ai_change(self._valid_change())
         self.assertEqual([], self.repo.validate())
 
-    def test_hash_mutation_fails(self) -> None:
+    def test_hash_mutation_is_rejected_as_rewritten_history(self) -> None:
         self.repo.commit_ai_change(self._valid_change())
         self._mutate_committed_dossier(
             lambda dossier: dossier["artifacts"][0].update({"sha256": "0" * 64})
         )
-        self.assertTrue(
-            any(error.startswith("HASH_MISMATCH:") for error in self.repo.validate())
+        self.assertIn(
+            "AUDIT_HISTORY_REWRITE:.ai/changes/change.json", self.repo.validate()
         )
 
-    def test_evidence_hash_mutation_fails(self) -> None:
+    def test_evidence_hash_mutation_is_rejected_as_rewritten_history(self) -> None:
         self.repo.commit_ai_change(self._valid_change())
         self._mutate_committed_dossier(
             lambda dossier: dossier["evidence"][0].update({"report_sha256": "0" * 64})
         )
-        self.assertTrue(
-            any(error.startswith("EVIDENCE_HASH:") for error in self.repo.validate())
+        self.assertIn(
+            "AUDIT_HISTORY_REWRITE:.ai/changes/change.json", self.repo.validate()
         )
 
     def test_risk_downgrade_fails(self) -> None:
@@ -532,7 +533,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
             )
         )
         errors = self.repo.validate()
-        self.assertTrue(any(error.startswith("ARTIFACT_PATH:") for error in errors))
+        self.assertIn("AUDIT_HISTORY_REWRITE:.ai/changes/change.json", errors)
         self.assertNotIn("AI_SDLC_CHECK=PASS", "\n".join(errors))
 
     def test_control_character_git_path_fails_closed_without_log_forgery(self) -> None:
@@ -830,12 +831,340 @@ class AiSdlcValidatorTests(unittest.TestCase):
         )
         return dossier
 
+    def _prepare_rewritten_lineage(
+        self, *, quarantine_only_evidence: bool = False
+    ) -> dict[str, str]:
+        """Create one rewritten dossier and one descendant that trusts it."""
+
+        target = "apps/api/app/modules/generation/prompts.py"
+        parent_path = ".ai/changes/quarantine-parent.json"
+        child_path = ".ai/changes/quarantine-child.json"
+        self.repo.write(target, "PROMPT = 'quarantine-candidate'\n")
+        parent = self.repo.dossier(path=target, risk="R3")
+        parent.update(
+            {"change_id": "quarantine-parent", "lineage_id": "quarantine-lineage"}
+        )
+        if quarantine_only_evidence:
+            parent["evidence"] = [
+                self.repo.evidence(path=".ai/evidence/quarantine-only.json")
+            ]
+        self.repo.write_json(parent_path, parent)
+        self.repo.commit("introduce immutable parent")
+        parent_introduction = self.repo.head
+
+        parent["summary"] = "This forbidden rewrite must never gain authority"
+        self.repo.write_json(parent_path, parent)
+        self.repo.commit("rewrite parent history")
+        rewritten_head = self.repo.head
+        parent_digest = hashlib.sha256(
+            (self.repo.root / parent_path).read_bytes()
+        ).hexdigest()
+
+        child = self.repo.dossier(path=target, risk="R3")
+        child.update(
+            {
+                "change_id": "quarantine-child",
+                "lineage_id": "quarantine-lineage",
+                "revision": 2,
+                "supersedes": {"path": parent_path, "sha256": parent_digest},
+                "previous_status": "evidence-ready",
+                "base_sha": rewritten_head,
+            }
+        )
+        self.repo.write_json(child_path, child)
+        self.repo.commit("introduce descendant of rewritten parent")
+        return {
+            "target": target,
+            "parent_path": parent_path,
+            "parent_introduction": parent_introduction,
+            "parent_digest": parent_digest,
+            "child_path": child_path,
+            "child_introduction": self.repo.head,
+        }
+
+    def _commit_quarantine_replacement(
+        self,
+        lineage: dict[str, str],
+        *,
+        include_target: bool = True,
+        replacement_base: str | None = None,
+    ) -> tuple[str, str]:
+        quarantine_path = ".ai/quarantine/quarantine-lineage-legacy.json"
+        replacement_path = ".ai/changes/quarantine-replacement.json"
+        quarantine = {
+            "schema_version": 1,
+            "quarantine_id": "quarantine-lineage-legacy",
+            "title": "Quarantine rewritten synthetic lineage",
+            "owner": "AI SDLC Test",
+            "created_at": "2026-08-11T02:00:00+03:00",
+            "base_sha": self.repo.base,
+            "candidate_sha": "SELF",
+            "replacement_dossier": replacement_path,
+            "records": [
+                {
+                    "path": lineage["parent_path"],
+                    "introduced_sha": lineage["parent_introduction"],
+                    "final_blob_sha256": hashlib.sha256(
+                        (self.repo.root / lineage["parent_path"]).read_bytes()
+                    ).hexdigest(),
+                    "reason": "history-rewritten",
+                    "contaminated_by": None,
+                },
+                {
+                    "path": lineage["child_path"],
+                    "introduced_sha": lineage["child_introduction"],
+                    "final_blob_sha256": hashlib.sha256(
+                        (self.repo.root / lineage["child_path"]).read_bytes()
+                    ).hexdigest(),
+                    "reason": "descends-from-quarantined",
+                    "contaminated_by": lineage["parent_path"],
+                },
+            ],
+        }
+        self.repo.write_json(quarantine_path, quarantine)
+        replacement = self.repo.dossier(path=lineage["target"], risk="R3")
+        replacement.update(
+            {
+                "change_id": "quarantine-replacement",
+                "lineage_id": "quarantine-replacement",
+                "base_sha": replacement_base or self.repo.base,
+            }
+        )
+        replacement["artifacts"] = [self.repo.artifact(quarantine_path)]
+        if include_target:
+            replacement["artifacts"].append(self.repo.artifact(lineage["target"]))
+        self.repo.write_json(replacement_path, replacement)
+        self.repo.commit("quarantine rewritten lineage with exact replacement")
+        return quarantine_path, replacement_path
+
     def test_valid_hash_bound_revision_chain_passes(self) -> None:
         self._commit_audited_evidence()
         dossier = self._prepare_second_revision()
         self.repo.write_json(".ai/changes/change-r2.json", dossier)
         self.repo.commit("valid second revision")
         self.assertEqual([], self.repo.validate())
+
+    def test_stacked_dossiers_are_bound_to_their_introduction_commits(self) -> None:
+        original_base = self.repo.base
+        target = "apps/api/app/modules/generation/prompts.py"
+
+        self.repo.write(target, "PROMPT = 'stack-one'\n")
+        first = self.repo.dossier(path=target)
+        first.update({"change_id": "stack-one", "lineage_id": "stacked"})
+        first["evidence"] = [self.repo.evidence(path=".ai/evidence/stack-one.json")]
+        self.repo.write_json(".ai/changes/stack-one.json", first)
+        self.repo.commit("first reviewed stack slice")
+        first_head = self.repo.head
+        first_digest = hashlib.sha256(
+            (self.repo.root / ".ai/changes/stack-one.json").read_bytes()
+        ).hexdigest()
+
+        self.repo.write(target, "PROMPT = 'stack-two'\n")
+        second = self.repo.dossier(path=target)
+        second.update(
+            {
+                "change_id": "stack-two",
+                "lineage_id": "stacked",
+                "revision": 2,
+                "supersedes": {
+                    "path": ".ai/changes/stack-one.json",
+                    "sha256": first_digest,
+                },
+                "previous_status": "evidence-ready",
+                "base_sha": first_head,
+            }
+        )
+        second["evidence"] = [self.repo.evidence(path=".ai/evidence/stack-two.json")]
+        self.repo.write_json(".ai/changes/stack-two.json", second)
+        self.repo.commit("second reviewed stack slice")
+
+        self.repo.write(target, "PROMPT = 'integrated'\n")
+        integration = self.repo.dossier(path=target)
+        integration.update(
+            {
+                "change_id": "stack-integration",
+                "lineage_id": "stack-integration",
+                "base_sha": original_base,
+            }
+        )
+        integration["evidence"] = [
+            self.repo.evidence(path=".ai/evidence/stack-integration.json")
+        ]
+        self.repo.write_json(".ai/changes/stack-integration.json", integration)
+        self.repo.commit("bind the whole reviewed stack")
+
+        self.assertEqual([], self.repo.validate())
+
+    def test_superseded_child_cannot_retroactively_validate_future_artifact(
+        self,
+    ) -> None:
+        target = "apps/api/app/modules/generation/prompts.py"
+        settled_content = "PROMPT = 'settled-before-child-review'\n"
+
+        self.repo.write(target, "PROMPT = 'working-tree-not-yet-settled'\n")
+        first = self.repo.dossier(path=target)
+        first.update({"change_id": "stack-parent", "lineage_id": "stacked"})
+        first["artifacts"][0]["sha256"] = hashlib.sha256(
+            settled_content.encode("utf-8")
+        ).hexdigest()
+        first["evidence"] = [self.repo.evidence(path=".ai/evidence/stack-parent.json")]
+        self.repo.write_json(".ai/changes/stack-parent.json", first)
+        self.repo.commit("introduce parent before its branch snapshot settles")
+
+        self.repo.write(target, settled_content)
+        self.repo.commit("settle the parent branch snapshot")
+        settled_base = self.repo.head
+        parent_digest = hashlib.sha256(
+            (self.repo.root / ".ai/changes/stack-parent.json").read_bytes()
+        ).hexdigest()
+
+        second = self.repo.dossier(path=target)
+        second.update(
+            {
+                "change_id": "stack-child",
+                "lineage_id": "stacked",
+                "revision": 2,
+                "supersedes": {
+                    "path": ".ai/changes/stack-parent.json",
+                    "sha256": parent_digest,
+                },
+                "previous_status": "evidence-ready",
+                "base_sha": settled_base,
+            }
+        )
+        second["evidence"] = [self.repo.evidence(path=".ai/evidence/stack-child.json")]
+        self.repo.write_json(".ai/changes/stack-child.json", second)
+        self.repo.commit("review child against the settled parent snapshot")
+
+        errors = self.repo.validate()
+        self.assertTrue(
+            any(error.startswith("HASH_MISMATCH:stack-parent:") for error in errors)
+        )
+
+    def test_rewritten_dossier_without_quarantine_fails_closed(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        errors = self.repo.validate()
+        self.assertIn(f"AUDIT_HISTORY_REWRITE:{lineage['parent_path']}", errors)
+        self.assertIn(f"AUDIT_APPEND_ONLY:{lineage['parent_path']}", errors)
+        self.assertIn(f"UNCOVERED:{lineage['target']}", errors)
+
+    def test_justified_quarantine_with_full_exact_root_passes(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_replacement(lineage)
+        self.assertEqual([], self.repo.validate())
+
+    def test_valid_dossier_cannot_be_quarantined_without_cause(self) -> None:
+        target = "apps/api/app/modules/generation/prompts.py"
+        dossier_path = ".ai/changes/valid-parent.json"
+        self.repo.write(target, "PROMPT = 'valid-parent'\n")
+        dossier = self.repo.dossier(path=target, risk="R3")
+        dossier.update({"change_id": "valid-parent", "lineage_id": "valid-parent"})
+        self.repo.write_json(dossier_path, dossier)
+        self.repo.commit("introduce valid immutable parent")
+        introduction = self.repo.head
+
+        quarantine_path = ".ai/quarantine/valid-parent-legacy.json"
+        replacement_path = ".ai/changes/valid-parent-replacement.json"
+        self.repo.write_json(
+            quarantine_path,
+            {
+                "schema_version": 1,
+                "quarantine_id": "valid-parent-legacy",
+                "title": "Invalid attempt to hide a valid record",
+                "owner": "AI SDLC Test",
+                "created_at": "2026-08-11T02:00:00+03:00",
+                "base_sha": self.repo.base,
+                "candidate_sha": "SELF",
+                "replacement_dossier": replacement_path,
+                "records": [
+                    {
+                        "path": dossier_path,
+                        "introduced_sha": introduction,
+                        "final_blob_sha256": hashlib.sha256(
+                            (self.repo.root / dossier_path).read_bytes()
+                        ).hexdigest(),
+                        "reason": "history-rewritten",
+                        "contaminated_by": None,
+                    }
+                ],
+            },
+        )
+        replacement = self.repo.dossier(path=target, risk="R3")
+        replacement.update(
+            {
+                "change_id": "valid-parent-replacement",
+                "lineage_id": "valid-parent-replacement",
+            }
+        )
+        replacement["artifacts"] = [
+            self.repo.artifact(target),
+            self.repo.artifact(quarantine_path),
+        ]
+        self.repo.write_json(replacement_path, replacement)
+        self.repo.commit("attempt unjustified quarantine")
+
+        self.assertIn(f"QUARANTINE_UNJUSTIFIED:{dossier_path}", self.repo.validate())
+
+    def test_quarantined_dossier_cannot_supply_artifact_coverage(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_replacement(lineage, include_target=False)
+        errors = self.repo.validate()
+        self.assertIn(f"UNCOVERED:{lineage['target']}", errors)
+        self.assertTrue(
+            any(
+                error.startswith("QUARANTINE_REPLACEMENT_COVERAGE:")
+                and error.endswith(lineage["target"])
+                for error in errors
+            )
+        )
+
+    def test_quarantine_only_evidence_is_unreferenced(self) -> None:
+        lineage = self._prepare_rewritten_lineage(quarantine_only_evidence=True)
+        self._commit_quarantine_replacement(lineage)
+        self.assertIn(
+            "UNREFERENCED_EVIDENCE:.ai/evidence/quarantine-only.json",
+            self.repo.validate(),
+        )
+
+    def test_quarantine_replacement_must_bind_exact_base_and_head(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_replacement(
+            lineage, replacement_base=lineage["parent_introduction"]
+        )
+        errors = self.repo.validate()
+        self.assertIn(
+            "QUARANTINE_REPLACEMENT_CONTEXT:quarantine-replacement:base-head",
+            errors,
+        )
+
+    def test_historical_stack_does_not_authorize_the_final_diff(self) -> None:
+        target = "apps/api/app/modules/generation/prompts.py"
+        self.repo.write(target, "PROMPT = 'reviewed-slice'\n")
+        historical = self.repo.dossier(path=target)
+        historical.update({"change_id": "historical", "lineage_id": "historical"})
+        historical["evidence"] = [
+            self.repo.evidence(path=".ai/evidence/historical.json")
+        ]
+        self.repo.write_json(".ai/changes/historical.json", historical)
+        self.repo.commit("reviewed historical slice")
+
+        self.repo.write(target, "PROMPT = 'unreviewed-tip'\n")
+        self.repo.commit("unreviewed final change")
+
+        self.assertIn(f"UNCOVERED:{target}", self.repo.validate())
+
+    def test_stacked_dossier_base_must_be_in_the_reviewed_ancestry(self) -> None:
+        target = "apps/api/app/modules/generation/prompts.py"
+        self.repo.write(target, "PROMPT = 'candidate'\n")
+        dossier = self.repo.dossier(path=target)
+        dossier.update({"change_id": "bad-stack", "lineage_id": "bad-stack"})
+        dossier["base_sha"] = "f" * 40
+        dossier["evidence"] = [self.repo.evidence(path=".ai/evidence/bad-stack.json")]
+        self.repo.write_json(".ai/changes/bad-stack.json", dossier)
+        self.repo.commit("invalid stacked base")
+
+        errors = self.repo.validate()
+        self.assertIn("BASE_SHA:bad-stack:base_sha", errors)
 
     def test_revision_cannot_fork_a_superseded_parent(self) -> None:
         self._commit_audited_evidence()

@@ -188,6 +188,29 @@ NESTED_FIELDS = {
 }
 AUDIT_DOSSIER_PREFIX = ".ai/changes/"
 AUDIT_EVIDENCE_PREFIX = ".ai/evidence/"
+AUDIT_QUARANTINE_PREFIX = ".ai/quarantine/"
+QUARANTINE_FIELDS = frozenset(
+    {
+        "schema_version",
+        "quarantine_id",
+        "title",
+        "owner",
+        "created_at",
+        "base_sha",
+        "candidate_sha",
+        "replacement_dossier",
+        "records",
+    }
+)
+QUARANTINE_RECORD_FIELDS = frozenset(
+    {
+        "path",
+        "introduced_sha",
+        "final_blob_sha256",
+        "reason",
+        "contaminated_by",
+    }
+)
 EXTERNAL_EVIDENCE_LABELS = frozenset(
     {"real-provider", "staging", "canary", "production"}
 )
@@ -237,6 +260,66 @@ def _git(repo: Path, *args: str, text: bool = True) -> str | bytes:
 def _resolve_commit(repo: Path, reference: str) -> str:
     value = str(_git(repo, "rev-parse", "--verify", f"{reference}^{{commit}}"))
     return value.strip()
+
+
+def _is_ancestor(repo: Path, ancestor: str, descendant: str) -> bool:
+    """Return whether both immutable commits belong to the same reviewed chain."""
+
+    completed = subprocess.run(
+        ["git", "-C", str(repo), "merge-base", "--is-ancestor", ancestor, descendant],
+        check=False,
+        capture_output=True,
+    )
+    if completed.returncode not in {0, 1}:
+        raise ValidationFailure("GIT_COMMAND_FAILED:merge-base")
+    return completed.returncode == 0
+
+
+def _introduction_commit(
+    repo: Path, merge_base: str, head: str, path: str
+) -> str | None:
+    """Find the sole commit that introduced an append-only audit record.
+
+    A stacked feature branch may contain immutable dossiers for earlier review
+    slices.  ``SELF`` in such a record is bound to the commit that first added
+    the record, never to a later branch tip.  Re-additions or ambiguous history
+    fail closed because there must be exactly one introduction commit in the
+    reviewed ancestry.
+    """
+
+    raw = str(
+        _git(
+            repo,
+            "log",
+            "--format=%H",
+            "--diff-filter=A",
+            "--reverse",
+            f"{merge_base}..{head}",
+            "--",
+            path,
+        )
+    )
+    commits = [line.strip() for line in raw.splitlines() if line.strip()]
+    if len(commits) != 1:
+        return None
+    return commits[0]
+
+
+def _path_touch_commits(repo: Path, merge_base: str, head: str, path: str) -> list[str]:
+    """Return commits that changed an audit path inside the reviewed history."""
+
+    raw = str(
+        _git(
+            repo,
+            "log",
+            "--format=%H",
+            "--reverse",
+            f"{merge_base}..{head}",
+            "--",
+            path,
+        )
+    )
+    return [line.strip() for line in raw.splitlines() if line.strip()]
 
 
 def _is_sha(value: Any, length: int) -> bool:
@@ -528,6 +611,10 @@ def _is_dossier_path(path: str) -> bool:
 
 def _is_evidence_path(path: str) -> bool:
     return path.startswith(AUDIT_EVIDENCE_PREFIX) and path.endswith(".json")
+
+
+def _is_quarantine_path(path: str) -> bool:
+    return path.startswith(AUDIT_QUARANTINE_PREFIX) and path.endswith(".json")
 
 
 def _risk_for_path(
@@ -1214,6 +1301,154 @@ def _validate_dossier(
     return errors
 
 
+def _quarantine_errors(
+    *,
+    repo: Path,
+    merge_base: str,
+    head: str,
+    changed_dossier_paths: set[str],
+    changed_quarantine_paths: set[str],
+    parsed_dossiers: dict[str, dict[str, Any]],
+) -> tuple[list[str], set[str], set[str]]:
+    """Validate explicit quarantine for rewritten, therefore untrusted, history.
+
+    A quarantined dossier is never made valid retroactively.  The record only
+    names exact contaminated blobs so a new main-to-HEAD root can replace them.
+    Rewritten records and every descendant that trusts one must be quarantined;
+    a valid record cannot be hidden this way.
+    """
+
+    errors: list[str] = []
+    rewritten = {
+        path
+        for path in changed_dossier_paths
+        if len(_path_touch_commits(repo, merge_base, head, path)) > 1
+    }
+    contaminated = set(rewritten)
+    contaminated_by: dict[str, str] = {}
+    changed = True
+    while changed:
+        changed = False
+        for dossier_path in changed_dossier_paths - contaminated:
+            dossier = parsed_dossiers.get(dossier_path, {})
+            supersedes = dossier.get("supersedes")
+            if not isinstance(supersedes, dict):
+                continue
+            parent_path = _safe_relative_path(supersedes.get("path"))
+            if parent_path in contaminated:
+                contaminated.add(dossier_path)
+                contaminated_by[dossier_path] = parent_path
+                changed = True
+
+    declared: set[str] = set()
+    replacement_dossiers: set[str] = set()
+    for quarantine_path in sorted(changed_quarantine_paths):
+        quarantine = _json_from_commit(repo, head, quarantine_path)
+        fallback_id = Path(quarantine_path).stem
+        quarantine_id = quarantine.get("quarantine_id")
+        safe_id = _safe_dossier_id(quarantine_id, fallback_id)
+        prefix = f"{safe_id}:"
+        errors.extend(_shape_errors(quarantine, QUARANTINE_FIELDS, prefix))
+        if quarantine.get("schema_version") != 1:
+            errors.append(f"QUARANTINE_VERSION:{prefix}schema_version")
+        if (
+            not isinstance(quarantine_id, str)
+            or not CHANGE_ID_PATTERN.fullmatch(quarantine_id)
+            or quarantine_id != fallback_id
+        ):
+            errors.append(f"QUARANTINE_ID:{prefix}quarantine_id")
+        for field in ("title", "owner"):
+            if not _is_nonempty_string(quarantine.get(field)):
+                errors.append(f"QUARANTINE_FIELD:{prefix}{field}")
+        if not _parse_datetime(quarantine.get("created_at")):
+            errors.append(f"QUARANTINE_DATE:{prefix}created_at")
+        if quarantine.get("base_sha") != merge_base:
+            errors.append(f"QUARANTINE_BASE:{prefix}base_sha")
+        if not _identity_matches(quarantine.get("candidate_sha"), head):
+            errors.append(f"QUARANTINE_CANDIDATE:{prefix}candidate_sha")
+        if len(_path_touch_commits(repo, merge_base, head, quarantine_path)) != 1:
+            errors.append(f"AUDIT_APPEND_ONLY:{quarantine_path}")
+
+        replacement = _safe_relative_path(quarantine.get("replacement_dossier"))
+        if replacement is None or not _is_dossier_path(replacement):
+            errors.append(f"QUARANTINE_REPLACEMENT:{prefix}replacement_dossier")
+        else:
+            replacement_dossiers.add(replacement)
+
+        records = quarantine.get("records")
+        if not isinstance(records, list) or not records:
+            errors.append(f"QUARANTINE_RECORDS:{prefix}records")
+            records = []
+        for index, record in enumerate(records):
+            record_prefix = f"{prefix}{index}:"
+            if not isinstance(record, dict):
+                errors.append(f"QUARANTINE_RECORD:{record_prefix}record")
+                continue
+            errors.extend(
+                _shape_errors(record, QUARANTINE_RECORD_FIELDS, record_prefix)
+            )
+            dossier_path = _safe_relative_path(record.get("path"))
+            if dossier_path is None or not _is_dossier_path(dossier_path):
+                errors.append(f"QUARANTINE_PATH:{record_prefix}path")
+                continue
+            if dossier_path in declared:
+                errors.append(f"QUARANTINE_DUPLICATE:{dossier_path}")
+            declared.add(dossier_path)
+            if dossier_path not in changed_dossier_paths:
+                errors.append(f"QUARANTINE_SCOPE:{dossier_path}")
+                continue
+
+            introduction = _introduction_commit(repo, merge_base, head, dossier_path)
+            if introduction is None or record.get("introduced_sha") != introduction:
+                errors.append(f"QUARANTINE_INTRODUCTION:{dossier_path}")
+            final_blob = _blob(repo, head, dossier_path)
+            final_digest = (
+                hashlib.sha256(final_blob).hexdigest()
+                if final_blob is not None
+                else None
+            )
+            if (
+                not _is_sha(record.get("final_blob_sha256"), 64)
+                or record.get("final_blob_sha256") != final_digest
+            ):
+                errors.append(f"QUARANTINE_HASH:{dossier_path}")
+
+            reason = record.get("reason")
+            parent = _safe_relative_path(record.get("contaminated_by"))
+            if dossier_path in rewritten:
+                if (
+                    reason != "history-rewritten"
+                    or record.get("contaminated_by") is not None
+                ):
+                    errors.append(f"QUARANTINE_REASON:{dossier_path}")
+            elif dossier_path in contaminated:
+                if (
+                    reason != "descends-from-quarantined"
+                    or parent != contaminated_by.get(dossier_path)
+                ):
+                    errors.append(f"QUARANTINE_REASON:{dossier_path}")
+            else:
+                errors.append(f"QUARANTINE_UNJUSTIFIED:{dossier_path}")
+
+    for dossier_path in sorted(contaminated - declared):
+        error_class = (
+            "AUDIT_HISTORY_REWRITE"
+            if dossier_path in rewritten
+            else "AUDIT_LINEAGE_CONTAMINATED"
+        )
+        errors.append(f"{error_class}:{dossier_path}")
+        if dossier_path in rewritten:
+            errors.append(f"AUDIT_APPEND_ONLY:{dossier_path}")
+    for dossier_path in sorted(declared - contaminated):
+        errors.append(f"QUARANTINE_UNJUSTIFIED:{dossier_path}")
+    # Every rewritten record and every descendant that trusted it is untrusted,
+    # even when the quarantine declaration is missing or malformed.  Returning
+    # the complete contaminated set prevents a failing candidate from also
+    # using the bad record for artifact coverage, evidence references or
+    # lifecycle authority.
+    return errors, contaminated, replacement_dossiers
+
+
 def _lifecycle_errors(
     *,
     repo: Path,
@@ -1222,15 +1457,22 @@ def _lifecycle_errors(
     dossier_glob: str,
     parsed_dossiers: dict[str, dict[str, Any]],
     changed_dossier_paths: set[str],
+    dossier_contexts: dict[str, tuple[str, str]],
     policy: dict[str, Any],
 ) -> list[str]:
     """Validate immutable revision chains without trusting the new revision."""
 
     errors: list[str] = []
-    base_paths = _tree_paths(repo, merge_base, dossier_glob)
-    base_dossiers = {
-        path: _json_from_commit(repo, merge_base, path) for path in base_paths
-    }
+    base_dossier_cache: dict[str, dict[str, dict[str, Any]]] = {}
+
+    def dossiers_at(commit: str) -> dict[str, dict[str, Any]]:
+        cached = base_dossier_cache.get(commit)
+        if cached is not None:
+            return cached
+        paths = _tree_paths(repo, commit, dossier_glob)
+        parsed = {path: _json_from_commit(repo, commit, path) for path in paths}
+        base_dossier_cache[commit] = parsed
+        return parsed
 
     children: dict[str, list[str]] = {}
     revisions: dict[tuple[str, int], list[str]] = {}
@@ -1260,6 +1502,8 @@ def _lifecycle_errors(
         revision = dossier.get("revision")
         supersedes = dossier.get("supersedes")
         previous_status = dossier.get("previous_status")
+        context_base, _ = dossier_contexts.get(dossier_path, (merge_base, head))
+        base_dossiers = dossiers_at(context_base)
         if supersedes is None:
             if revision != 1 or previous_status is not None:
                 errors.append(f"LINEAGE_ROOT:{prefix}revision")
@@ -1274,7 +1518,7 @@ def _lifecycle_errors(
         previous_path = _safe_relative_path(supersedes.get("path"))
         if previous_path is None:
             continue
-        previous_blob = _blob(repo, merge_base, previous_path)
+        previous_blob = _blob(repo, context_base, previous_path)
         previous = base_dossiers.get(previous_path)
         if previous_blob is None or previous is None:
             errors.append(f"LINEAGE_BASE:{prefix}supersedes")
@@ -1358,7 +1602,12 @@ def validate_repository(
         added_evidence_paths: set[str] = set()
         for change in changes:
             if _is_dossier_path(change.path) or _is_evidence_path(change.path):
-                if change.kind != "added":
+                # A modified dossier can only be acknowledged through the
+                # explicit, fail-closed quarantine flow below. Deletions,
+                # renames and evidence rewrites remain unconditionally barred.
+                if change.kind != "added" and not (
+                    _is_dossier_path(change.path) and change.kind == "modified"
+                ):
                     errors.append(f"AUDIT_APPEND_ONLY:{change.path}")
                 elif _is_evidence_path(change.path):
                     added_evidence_paths.add(change.path)
@@ -1366,6 +1615,8 @@ def validate_repository(
                 # hash-bound from such a dossier. Treating either as a normal
                 # artifact would require an impossible self-hash for dossiers.
                 continue
+            if _is_quarantine_path(change.path) and change.kind != "added":
+                errors.append(f"AUDIT_APPEND_ONLY:{change.path}")
             risk, requirements, escaped_rename = _risk_for_change(change, policy)
             if escaped_rename:
                 errors.append(f"SENSITIVE_RENAME_ESCAPE:{change.path}")
@@ -1407,15 +1658,119 @@ def validate_repository(
             if fnmatch.fnmatchcase(change.path, dossier_glob)
             and change.state == "present"
         }
+        changed_quarantine_paths = {
+            change.path
+            for change in changes
+            if _is_quarantine_path(change.path) and change.state == "present"
+        }
         parsed_dossiers: dict[str, dict[str, Any]] = {}
         eligible_dossiers: dict[str, dict[str, Any]] = {}
+        dossier_contexts: dict[str, tuple[str, str]] = {}
         for dossier_path in dossier_paths:
             dossier = _json_from_commit(repo, head, dossier_path)
             parsed_dossiers[dossier_path] = dossier
-            if dossier.get("base_sha") == merge_base and _identity_matches(
-                dossier.get("candidate_sha"), head
+
+        quarantine_errors, untrusted_dossiers, replacement_dossiers = (
+            _quarantine_errors(
+                repo=repo,
+                merge_base=merge_base,
+                head=head,
+                changed_dossier_paths=changed_dossier_paths,
+                changed_quarantine_paths=changed_quarantine_paths,
+                parsed_dossiers=parsed_dossiers,
+            )
+        )
+        errors.extend(quarantine_errors)
+        trusted_changed_dossiers = changed_dossier_paths - untrusted_dossiers
+        trusted_parsed_dossiers = {
+            path: dossier
+            for path, dossier in parsed_dossiers.items()
+            if path not in untrusted_dossiers
+        }
+
+        # SELF is permanently bound to the commit that introduced an immutable
+        # dossier.  A later child, integration commit or branch tip can never
+        # move that snapshot forward.  Rewritten paths were removed from the
+        # trusted sets above and can only be replaced by a fresh exact root.
+        for dossier_path in trusted_changed_dossiers:
+            dossier = parsed_dossiers.get(dossier_path, {})
+            dossier_id = _safe_dossier_id(
+                dossier.get("change_id"), Path(dossier_path).stem
+            )
+            introduction = _introduction_commit(repo, merge_base, head, dossier_path)
+            context_head = introduction
+            context_is_valid = introduction is not None
+            declared_base = dossier.get("base_sha")
+            candidate = dossier.get("candidate_sha")
+            base_is_valid = _is_sha(declared_base, 40)
+            if base_is_valid:
+                try:
+                    base_is_valid = (
+                        _resolve_commit(repo, declared_base) == declared_base
+                    )
+                except ValidationFailure:
+                    base_is_valid = False
+            if base_is_valid and context_is_valid and context_head is not None:
+                base_is_valid = (
+                    declared_base != context_head
+                    and _is_ancestor(repo, merge_base, declared_base)
+                    and introduction is not None
+                    and _is_ancestor(repo, declared_base, introduction)
+                    and _is_ancestor(repo, introduction, context_head)
+                )
+            candidate_is_valid = context_is_valid and _identity_matches(
+                candidate, context_head
+            )
+            if context_is_valid and base_is_valid and candidate_is_valid:
+                dossier_contexts[dossier_path] = (declared_base, context_head)
+            else:
+                if not context_is_valid:
+                    errors.append(f"STACK_CONTEXT:{dossier_id}:history")
+                if not base_is_valid:
+                    errors.append(f"BASE_SHA:{dossier_id}:base_sha")
+                if context_is_valid and not candidate_is_valid:
+                    errors.append(f"CANDIDATE_SHA:{dossier_id}:candidate_sha")
+
+        eligible_dossiers = {
+            dossier_path: parsed_dossiers[dossier_path]
+            for dossier_path, context in dossier_contexts.items()
+            if context == (merge_base, head)
+        }
+
+        # A quarantine does not repair history.  It must point to a new exact
+        # main-to-HEAD root that, by itself, hash-binds the quarantine record and
+        # every sensitive artifact in the reviewed diff.
+        for replacement_path in sorted(replacement_dossiers):
+            replacement = eligible_dossiers.get(replacement_path)
+            replacement_id = Path(replacement_path).stem
+            if not isinstance(replacement, dict):
+                errors.append(
+                    f"QUARANTINE_REPLACEMENT_CONTEXT:{replacement_id}:base-head"
+                )
+                continue
+            if (
+                replacement.get("revision") != 1
+                or replacement.get("supersedes") is not None
+                or replacement.get("previous_status") is not None
             ):
-                eligible_dossiers[dossier_path] = dossier
+                errors.append(f"QUARANTINE_REPLACEMENT_ROOT:{replacement_id}:lineage")
+            replacement_artifacts = replacement.get("artifacts")
+            replacement_artifact_paths = (
+                {
+                    artifact.get("path")
+                    for artifact in replacement_artifacts
+                    if isinstance(artifact, dict)
+                    and isinstance(artifact.get("path"), str)
+                }
+                if isinstance(replacement_artifacts, list)
+                else set()
+            )
+            for sensitive_path in sorted(sensitive):
+                if sensitive_path not in replacement_artifact_paths:
+                    errors.append(
+                        "QUARANTINE_REPLACEMENT_COVERAGE:"
+                        f"{replacement_id}:{sensitive_path}"
+                    )
 
         errors.extend(
             _lifecycle_errors(
@@ -1423,26 +1778,16 @@ def validate_repository(
                 merge_base=merge_base,
                 head=head,
                 dossier_glob=dossier_glob,
-                parsed_dossiers=parsed_dossiers,
-                changed_dossier_paths=changed_dossier_paths,
+                parsed_dossiers=trusted_parsed_dossiers,
+                changed_dossier_paths=trusted_changed_dossiers,
+                dossier_contexts=dossier_contexts,
                 policy=policy,
             )
         )
 
-        for changed_dossier_path in changed_dossier_paths:
-            if changed_dossier_path not in eligible_dossiers:
-                dossier = parsed_dossiers.get(changed_dossier_path, {})
-                dossier_id = _safe_dossier_id(
-                    dossier.get("change_id"), Path(changed_dossier_path).stem
-                )
-                if dossier.get("base_sha") != merge_base:
-                    errors.append(f"BASE_SHA:{dossier_id}:base_sha")
-                if not _identity_matches(dossier.get("candidate_sha"), head):
-                    errors.append(f"CANDIDATE_SHA:{dossier_id}:candidate_sha")
-
         evidence_referenced_by_changed_dossiers: set[str] = set()
-        for dossier_path in changed_dossier_paths & eligible_dossiers.keys():
-            dossier_evidence = eligible_dossiers[dossier_path].get("evidence")
+        for dossier_path in trusted_changed_dossiers:
+            dossier_evidence = parsed_dossiers.get(dossier_path, {}).get("evidence")
             if not isinstance(dossier_evidence, list):
                 continue
             for item in dossier_evidence:
@@ -1455,6 +1800,54 @@ def validate_repository(
             added_evidence_paths - evidence_referenced_by_changed_dossiers
         ):
             errors.append(f"UNREFERENCED_EVIDENCE:{evidence_path}")
+
+        # Historical stacked records still validate their own immutable
+        # artifact/evidence snapshot.  They never authorize the aggregate
+        # current diff; only eligible_dossiers below can do that.
+        for dossier_path in sorted(trusted_changed_dossiers - eligible_dossiers.keys()):
+            context = dossier_contexts.get(dossier_path)
+            dossier = parsed_dossiers.get(dossier_path)
+            if context is None or not isinstance(dossier, dict):
+                continue
+            required_risk = "R1"
+            requirements = {
+                "requires_evaluation_split": False,
+                "requires_human_anchor": False,
+            }
+            artifacts = dossier.get("artifacts")
+            if isinstance(artifacts, list):
+                for artifact in artifacts:
+                    if not isinstance(artifact, dict):
+                        continue
+                    artifact_path = _safe_relative_path(artifact.get("path"))
+                    if artifact_path is None:
+                        continue
+                    artifact_risk, artifact_requirements = _risk_for_path(
+                        artifact_path, policy
+                    )
+                    if (
+                        artifact_risk is not None
+                        and policy["risk_order"][artifact_risk]
+                        > policy["risk_order"][required_risk]
+                    ):
+                        required_risk = artifact_risk
+                    for key in requirements:
+                        requirements[key] = requirements[key] or bool(
+                            artifact_requirements.get(key)
+                        )
+            context_base, context_head = context
+            errors.extend(
+                _validate_dossier(
+                    repo=repo,
+                    path=dossier_path,
+                    dossier=dossier,
+                    policy=policy,
+                    merge_base=context_base,
+                    head=context_head,
+                    required_risk=required_risk,
+                    requirements=requirements,
+                )
+            )
 
         coverage: dict[str, list[tuple[str, dict[str, Any]]]] = {
             path: [] for path in sensitive
@@ -1522,7 +1915,7 @@ def validate_repository(
                         combined,
                     )
 
-        for dossier_path in changed_dossier_paths & eligible_dossiers.keys():
+        for dossier_path in trusted_changed_dossiers & eligible_dossiers.keys():
             if dossier_path not in dossiers_to_validate:
                 dossier = eligible_dossiers[dossier_path]
                 dossier_risk = dossier.get("risk_tier")

@@ -473,17 +473,17 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
-005 yerel kanıtı ayrıca şunları kaydeder:
+005'in 11 Ağustos 2026 tarihli yerel kanıt koşusu ayrıca şunları kaydeder:
 
-- 92 backend dosyasında mypy sonucu;
+- 92 backend dosyasında mypy sonucu; <!-- docs-check: tarihsel 92 · 2026-08-11 -->
 - frontend typecheck, açık/koyu tema kontrast kapısı ve production build;
 - Ruff;
-- 50 OpenAPI yolu ve 119 şema;
+- 50 OpenAPI yolu ve 119 şema; <!-- docs-check: tarihsel 50 · 2026-08-11 --><!-- docs-check: tarihsel 119 · 2026-08-11 -->
 - persona alanlarının istemciden gönderilmesinin reddi;
 - cross-course quota yarışları, cache izolasyonu ve exam/export yarış korumaları;
-- gerçek API’ye karşı 35/35 seri tarayıcı akışı, teardown sonrası ders/audit kalıntısı
-  <code>0/0</code> ve sabit UUID’li <code>COME 331</code> koruma kanıtı;
-- 7 kapalı sınır, 3 kalıcı kota iddiası ve 8/8 kasıtlı DB/RLS mutasyonunun
+- gerçek API’ye karşı 35/35 seri tarayıcı akışı, teardown sonrası ders/audit kalıntısı <!-- docs-check: tarihsel 35 · 2026-08-11 -->
+  <code>0/0</code> ve sabit UUID’li <code>COME 331</code> koruma kanıtı; <!-- docs-check: tarihsel 0 · 2026-08-11 -->
+- 8 kapalı sınır, 3 kalıcı kota iddiası ve 11/11 kasıtlı DB/RLS mutasyonunun <!-- docs-check: tarihsel 8 · 2026-08-11 --><!-- docs-check: tarihsel 3 · 2026-08-11 --><!-- docs-check: tarihsel 11 · 2026-08-11 -->
   beklenen sızıntıyı görünür kılması.
 
 Bu kanıt **yerel PostgreSQL + deterministik fake provider** ortamındadır. Gerçek provider,
@@ -619,9 +619,9 @@ ders ana sayfası, profil ve admin yüzeylerini daha editoryal bir akademik stü
 dönüştürüyor. Tek kırmızı aksan, daha net tipografik hiyerarşi, düz veri rayları,
 responsive/dark-mode davranışı ve dürüst durum dili kullanılıyor.
 
-Güncel adayda 325 frontend testi, typecheck, açık/koyu tema kontrast kontrolü ve
+11 Ağustos adayında 325 frontend testi, typecheck, açık/koyu tema kontrast kontrolü ve <!-- docs-check: tarihsel 325 · 2026-08-11 -->
 production build geçti. Benzersiz PostgreSQL ile gerçek API’ye karşı seri Playwright
-paketi 35/35 geçti; ders/audit kalıntısı 0/0 ölçüldü. Manuel ekran okuyucu ve
+paketi 35/35 geçti; ders/audit kalıntısı 0/0 ölçüldü. <!-- docs-check: tarihsel 35 · 2026-08-11 --><!-- docs-check: tarihsel 0 · 2026-08-11 --> Manuel ekran okuyucu ve
 <code>prefers-reduced-motion</code> gözlemi ile bütün uygulama-katmanı mutasyon matrisi
 ayrı kapılar olarak açık tutulur. Dal main’e henüz birleşmedi.
 

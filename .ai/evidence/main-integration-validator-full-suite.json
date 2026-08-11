@@ -1,0 +1,17 @@
+{
+  "candidate_sha": "SELF",
+  "change_id": "005-role-aware-course-agent-r3",
+  "captured_at": "2026-08-11T17:19:30+03:00",
+  "command": "PYTHONDONTWRITEBYTECODE=1 /Users/muratates/code/dou-ai-sdlc-excellence/apps/api/.venv/bin/python -m unittest scripts.test_ai_sdlc_check",
+  "environment": "local deterministic stdlib fixture repositories in the iCloud-free integration worktree",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic repository paths and identities only; no prompts, answers, student content, emails, secrets or provider payloads retained",
+  "results": {
+    "validator_tests_passed": 57,
+    "validator_tests_failed": 0,
+    "elapsed_seconds": 28.133,
+    "history_quarantine_regressions_included": 7
+  },
+  "limitations": "This proves the deterministic AI-SDLC validator suite only. It is not real-provider, staging, canary, deployment or production evidence; the exact main-to-candidate repository invocation is a separate required gate."
+}
