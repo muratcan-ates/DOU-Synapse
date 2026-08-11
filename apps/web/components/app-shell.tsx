@@ -49,6 +49,7 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: profile } = usePortalProfile();
   const displayName = profile?.full_name || "Hesap";
+  const displayInitial = displayName.trim().charAt(0).toLocaleUpperCase("tr-TR") || "H";
   const navigation = [
     { href: "/dashboard", label: "Genel bakış" },
     { href: "/courses", label: "Dersler" },
@@ -66,14 +67,27 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
       >
         Ana içeriğe geç
       </a>
-      <header className="sticky top-0 z-10 border-b border-border bg-bg/95 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-4 px-4">
           <Link
             href="/dashboard"
-            className="flex shrink-0 items-center gap-2 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+            aria-label="DOU Synapse"
+            className="flex min-h-11 shrink-0 items-center gap-3 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
-            <span className="text-sm font-semibold text-brand">DOU</span>
-            <span className="text-sm font-semibold text-fg">Synapse</span>
+            <span
+              aria-hidden="true"
+              className="grid h-9 w-9 place-items-center rounded-md bg-brand font-mono text-sm font-semibold text-bg"
+            >
+              D
+            </span>
+            <span aria-hidden="true" className="leading-none">
+              <span className="block font-mono text-xs font-medium tracking-wide text-brand">
+                DOU
+              </span>
+              <span className="mt-1 block text-sm font-semibold tracking-tight text-fg">
+                Synapse
+              </span>
+            </span>
           </Link>
 
           <PortalNavigation items={navigation} pathname={pathname} />
@@ -81,9 +95,16 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
           <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-3">
             <Link
               href="/profile"
-              className="max-w-36 truncate rounded-lg px-2 py-2 text-xs font-medium text-fg-muted hover:bg-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              aria-label={`Profil: ${displayName}`}
+              className="flex min-h-11 max-w-44 items-center gap-2 rounded-lg px-2 text-xs font-medium text-fg-muted hover:bg-bg hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              {displayName}
+              <span
+                aria-hidden="true"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-subtle font-mono text-xs font-semibold text-brand"
+              >
+                {displayInitial}
+              </span>
+              <span className="hidden truncate sm:block">{displayName}</span>
             </Link>
             <Button
               variant="ghost"
@@ -124,8 +145,8 @@ function PortalNavigation({
       aria-label={mobile ? "Mobil ana menü" : "Ana menü"}
       className={
         mobile
-          ? "mx-auto flex max-w-[1200px] gap-1 overflow-x-auto border-t border-border px-4 py-2 md:hidden"
-          : "hidden items-center gap-1 md:flex"
+          ? "mx-auto flex max-w-[1200px] gap-4 overflow-x-auto border-t border-border px-4 md:hidden"
+          : "hidden h-full items-stretch gap-5 md:flex"
       }
     >
       {items.map((item) => {
@@ -133,8 +154,8 @@ function PortalNavigation({
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
         const className = current
-          ? "min-h-11 shrink-0 whitespace-nowrap rounded-lg bg-brand-subtle px-3 py-2 text-xs font-medium text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          : "min-h-11 shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-xs font-medium text-fg-muted hover:bg-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+          ? "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 border-brand px-1 text-xs font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          : "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-1 text-xs font-medium text-fg-muted hover:border-border-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
         return (
           <Link
             key={item.href}

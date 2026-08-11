@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   allowedChatUiModes,
   answerMatchesAssistant,
+  courseAssistantWorkPath,
   firstAllowedChatMode,
   resolveCourseAssistantIdentity,
   sessionMatchesAssistant,
@@ -69,6 +70,48 @@ describe("availability politikası", () => {
   test("sunucu mod açmadıysa varsayılan mod uydurulmaz", () => {
     expect(firstAllowedChatMode([])).toBeNull();
     expect(firstAllowedChatMode(["socratic", "qa"])).toBe("socratic");
+  });
+});
+
+describe("ders girişindeki rol-duyarlı çalışma yolu", () => {
+  test("öğrenci ve eğitmen için yalnız sunucunun iki gerçek profilini kullanır", () => {
+    const student = resolveCourseAssistantIdentity("student", "student_coach");
+    const instructor = resolveCourseAssistantIdentity(
+      "instructor",
+      "instructor_assistant",
+    );
+    if (!student || !instructor) throw new Error("iki sunucu profili bekleniyordu");
+
+    expect(courseAssistantWorkPath("course-1", student, false, null)).toMatchObject({
+      name: "Ders Koçu",
+      href: "/courses/course-1/chat",
+      action: "Asistanı aç",
+    });
+    expect(courseAssistantWorkPath("course-1", instructor, false, null)).toMatchObject({
+      name: "Eğitmen Asistanı",
+      href: "/courses/course-1/chat",
+      action: "Asistanı aç",
+    });
+  });
+
+  test("aktif sınav kilidinde sohbet bağlantısı üretmez", () => {
+    const student = resolveCourseAssistantIdentity("student", "student_coach");
+    if (!student) throw new Error("öğrenci profili bekleniyordu");
+
+    expect(
+      courseAssistantWorkPath(
+        "course-1",
+        student,
+        true,
+        "Sınavınız sürerken asistan kapalıdır.",
+      ),
+    ).toEqual({
+      name: "Ders Koçu",
+      task: "Ders kaynaklarıyla çalış",
+      description: "Sınavınız sürerken asistan kapalıdır.",
+      href: null,
+      action: "Sınav sırasında kilitli",
+    });
   });
 });
 

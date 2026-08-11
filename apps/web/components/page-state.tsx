@@ -202,19 +202,30 @@ export function PageHeader({
   title,
   description,
   action,
+  eyebrow,
+  compact = false,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  eyebrow?: string;
+  compact?: boolean;
 }) {
   return (
-    <div className="rise mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-fg">
+    <div className="rise mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
+      <div className="min-w-0">
+        {eyebrow && (
+          <p className="mb-2 font-mono text-xs font-medium text-brand">{eyebrow}</p>
+        )}
+        <h1
+          className={`text-balance font-semibold tracking-tight text-fg ${
+            compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+          }`}
+        >
           {title}
         </h1>
         {description && (
-          <p className="prose-tr mt-1 text-pretty text-sm text-fg-muted">{description}</p>
+          <p className="prose-tr mt-2 text-pretty text-sm text-fg-muted">{description}</p>
         )}
       </div>
       {action}

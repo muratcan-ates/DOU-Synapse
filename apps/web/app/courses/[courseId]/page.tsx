@@ -22,6 +22,12 @@ import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, ConfirmAction, EmptyState } from "@/components/ui";
+import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
+import {
+  courseAssistantWorkPath,
+  resolveCourseAssistantIdentity,
+  type CourseAssistantIdentity,
+} from "@/lib/course-assistant";
 
 export default function CourseDetailPage() {
   return (
@@ -33,7 +39,8 @@ export default function CourseDetailPage() {
 
 function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor } = useSession(courseId);
+  const { isInstructor, ready: sessionReady } = useSession(courseId);
+  const chatAccess = useChatAvailability(sessionReady ? courseId : null);
 
   const fetchCourse = useCallback(() => api.get<Course>(`/courses/${courseId}`), [courseId]);
   const courseResource = useResource(fetchCourse, [courseId]);
@@ -61,6 +68,10 @@ function CourseDetail() {
   const documents = documentsResource.data;
   const refreshError = courseResource.refreshError ?? documentsResource.refreshError;
   const ready = documents.filter((d) => d.status === "completed").length;
+  const assistantIdentity = resolveCourseAssistantIdentity(
+    chatAccess.audience,
+    chatAccess.agentProfile,
+  );
 
   return (
     <div>
@@ -72,7 +83,7 @@ function CourseDetail() {
       </nav>
 
       {/* Sekme şeridi diğer beş ders ekranında da başlığın üstünde. */}
-      <CourseNav courseId={courseId} />
+      <CourseNav courseId={courseId} lock={chatAccess} />
 
       <PageHeader
         title={course.title}
@@ -89,7 +100,13 @@ function CourseDetail() {
         }
       />
 
-      <ProductRoles courseId={courseId} />
+      {sessionReady && chatAccess.ready && assistantIdentity && (
+        <ProductRoles
+          courseId={courseId}
+          identity={assistantIdentity}
+          access={chatAccess}
+        />
+      )}
 
       {isInstructor && (
         <UploadBox
@@ -134,57 +151,118 @@ function CourseDetail() {
   );
 }
 
-/**
- * Hocanın istediği üç AI rolünü, yalnız belgede kalan isimler olmaktan çıkarır.
- * Her rol doğrudan çalışan ürün yüzeyine gider; ayrı model varmış gibi bir iddia
- * kurulmaz, fark rolün pedagojik görevidir.
- */
-function ProductRoles({ courseId }: { courseId: string }) {
-  const roles = [
-    {
-      name: "CourseGPT",
-      task: "Kaynaklı ders asistanı",
-      description: "Yalnız yüklenen materyalden cevap verir veya Sokratik ipucuyla yönlendirir.",
-      href: `/courses/${courseId}/chat`,
-    },
-    {
-      name: "Exam Mentor",
-      task: "Sınav provası",
-      description: "Onaylı sorularla prova yaptırır, cevabı puanlar ve neden yanlış olduğunu gösterir.",
-      href: `/courses/${courseId}/exam`,
-    },
-    {
-      name: "Class Assistant",
-      task: "Öğrenme analitiği",
-      description: "Konu ilerlemesini ve sınıfın zorlandığı alanları kişisel veri sınırlarıyla özetler.",
-      href: `/courses/${courseId}/analytics`,
-    },
-  ];
+function ProductRoles({
+  courseId,
+  identity,
+  access,
+}: {
+  courseId: string;
+  identity: CourseAssistantIdentity;
+  access: ChatLock;
+}) {
+  const isInstructor = identity.audience === "instructor";
+  const primary = courseAssistantWorkPath(
+    courseId,
+    identity,
+    access.locked,
+    access.message,
+  );
+  const secondary = isInstructor
+    ? [
+        {
+          name: "Sınav tasarımı",
+          task: "Blueprint ve onaylı soru havuzunu yönet",
+          description: "Sınav kapsamını sürümleyin; soruları öğrenciye açmadan önce inceleyin.",
+          href: `/courses/${courseId}/blueprints`,
+        },
+        {
+          name: "Sınıf analitiği",
+          task: "Öğrenme durumunu toplu görünümde incele",
+          description: "Kişisel sohbet içeriğini açmadan zorlanılan alanları izleyin.",
+          href: `/courses/${courseId}/analytics`,
+        },
+      ]
+    : [
+        {
+          name: "Sınav provası",
+          task: "Onaylı sorularla kendini dene",
+          description: "Süreli prova yapın; puanı ve neden yanlış analizini görün.",
+          href: `/courses/${courseId}/exam`,
+        },
+        {
+          name: "İlerleme",
+          task: "Konu durumunu gözden geçir",
+          description: "Hangi konularda ilerlediğinizi ve nerede yeniden çalışmanız gerektiğini görün.",
+          href: `/courses/${courseId}/analytics`,
+        },
+      ];
 
   return (
-    <section className="mb-6" aria-labelledby="ai-roles-title">
-      <div className="mb-3 flex items-end justify-between gap-4">
+    <section
+      className="mb-8 overflow-hidden rounded-xl border border-border bg-surface"
+      aria-labelledby="ai-roles-title"
+    >
+      <div className="border-b border-border px-5 py-4 md:px-6">
         <div>
-          <h2 id="ai-roles-title" className="text-sm font-medium text-fg">
-            Yapay zekâ rolleri
+          <p className="font-mono text-xs text-brand">
+            {identity.eyebrow}
+          </p>
+          <h2 id="ai-roles-title" className="mt-1 text-lg font-medium text-fg">
+            Bu derste çalışma yolları
           </h2>
           <p className="prose-tr mt-1 text-xs text-fg-muted">
-            Aynı ders kaynağı, üç farklı pedagojik görev.
+            Asistan kimliği ve erişim durumu ders üyeliğinizden sunucu tarafından belirlenir.
           </p>
         </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {roles.map((role) => (
-          <Link
-            key={role.name}
-            href={role.href}
-            className="rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            <p className="font-mono text-xs text-brand">{role.name}</p>
-            <p className="mt-2 text-sm font-medium text-fg">{role.task}</p>
-            <p className="prose-tr mt-1 text-xs text-fg-muted">{role.description}</p>
-          </Link>
-        ))}
+
+      <div className="grid md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+        <div className="bg-brand-subtle p-5 md:p-6">
+          <p className="font-mono text-xs text-brand">{primary.name}</p>
+          <h3 className="mt-3 text-xl font-semibold tracking-tight text-fg">
+            {primary.task}
+          </h3>
+          <p className="prose-tr mt-2 text-sm text-fg-muted">{primary.description}</p>
+          {primary.href ? (
+            <Link
+              href={primary.href}
+              className="mt-5 inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-medium text-white hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-bg"
+            >
+              {primary.action}
+            </Link>
+          ) : (
+            <p
+              role="status"
+              className="mt-5 inline-flex min-h-11 items-center rounded-lg border border-border-strong bg-surface px-4 text-sm font-medium text-fg-muted"
+            >
+              {primary.action}
+            </p>
+          )}
+        </div>
+
+        <div className="divide-y divide-border md:border-l md:border-border">
+          {secondary.map((role) => (
+            <Link
+              key={role.name}
+              href={role.href}
+              className="group flex min-h-28 items-center gap-4 px-5 py-4 transition-colors hover:bg-bg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand md:px-6"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="font-mono text-xs text-brand">{role.name}</span>
+                <span className="mt-1 block text-sm font-medium text-fg">{role.task}</span>
+                <span className="prose-tr mt-1 block text-xs text-fg-muted">
+                  {role.description}
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="text-fg-subtle transition-transform duration-200 group-hover:translate-x-0.5"
+              >
+                →
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   );

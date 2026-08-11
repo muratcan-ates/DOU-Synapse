@@ -640,7 +640,9 @@ test.describe("soru havuzu — eğitmen onayı", () => {
 
     // Liste satırı seçimi gerçekten taşınıyor mu: `aria-current` iki satır
     // arasında yer değiştirmeli, yoksa panel hep ilk soruyu gösterir.
-    const satirlar = page.locator("li > button");
+    const satirlar = page
+      .getByRole("list", { name: "Soru havuzu" })
+      .getByRole("button");
     await satirlar.nth(1).click();
     await expect(satirlar.nth(1)).toHaveAttribute("aria-current", "true");
     await satirlar.nth(0).click();

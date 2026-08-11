@@ -363,13 +363,15 @@ test.describe("rol bazlı ürün portalı", () => {
 
       await expect(page.getByRole("status")).toHaveText("Profil adınız güncellendi.");
       await expect(nameInput).toHaveValue(updatedName);
-      await expect(page.getByRole("link", { name: updatedName, exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: `Profil: ${updatedName}`, exact: true }))
+        .toBeVisible();
       await expect.poll(async () => (await apiGet<ProfileSnapshot>("/me/profile", AYSE)).full_name)
         .toBe(updatedName);
 
       await page.reload();
       await expect(page.getByLabel("Ad soyad")).toHaveValue(updatedName);
-      await expect(page.getByRole("link", { name: updatedName, exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: `Profil: ${updatedName}`, exact: true }))
+        .toBeVisible();
     } finally {
       await apiPatch<ProfileSnapshot>("/me/profile", { full_name: originalName }, AYSE);
     }
@@ -387,7 +389,7 @@ test.describe("rol bazlı ürün portalı", () => {
 
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByRole("link", { name: "Bilgi İşlem" })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Burak Yılmaz", exact: true }))
+    await expect(page.getByRole("link", { name: "Profil: Burak Yılmaz", exact: true }))
       .toBeVisible();
   });
 

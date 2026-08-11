@@ -31,6 +31,14 @@ export interface CourseAssistantIdentity {
   suggestions: readonly AssistantSuggestion[];
 }
 
+export interface CourseAssistantWorkPath {
+  name: CourseAssistantIdentity["name"];
+  task: string;
+  description: string;
+  href: string | null;
+  action: string;
+}
+
 const STUDENT_IDENTITY: CourseAssistantIdentity = {
   audience: "student",
   agentProfile: "student_coach",
@@ -104,6 +112,41 @@ export function resolveCourseAssistantIdentity(
     return INSTRUCTOR_IDENTITY;
   }
   return null;
+}
+
+/**
+ * Ders girişindeki birincil çalışma yolunu aynı server-derived persona ve
+ * availability kararıyla kurar. Sınav kilidinde sohbet linki üretmez; API
+ * güvenli olsa bile kullanıcıyı bilerek reddedilecek bir yüzeye göndermez.
+ */
+export function courseAssistantWorkPath(
+  courseId: string,
+  identity: CourseAssistantIdentity,
+  locked: boolean,
+  lockMessage: string | null,
+): CourseAssistantWorkPath {
+  const task =
+    identity.audience === "instructor"
+      ? "Ders hazırlığını kaynaklarla denetle"
+      : "Ders kaynaklarıyla çalış";
+
+  if (locked) {
+    return {
+      name: identity.name,
+      task,
+      description: lockMessage ?? "Asistan şu anda kullanılamıyor.",
+      href: null,
+      action: "Sınav sırasında kilitli",
+    };
+  }
+
+  return {
+    name: identity.name,
+    task,
+    description: identity.description,
+    href: `/courses/${courseId}/chat`,
+    action: "Asistanı aç",
+  };
 }
 
 /** Sohbet bestecisi sınav modunu hiçbir zaman sunmaz; sıra sunucudan gelir. */

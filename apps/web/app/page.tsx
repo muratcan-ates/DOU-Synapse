@@ -77,15 +77,21 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-[100dvh] lg:grid-cols-[1.1fr_1fr]">
-      {/* Sol: tez paneli */}
-      <section className="flex flex-col justify-between p-8 lg:p-14">
-        <p className="rise text-sm font-medium tracking-wide text-brand">
-          Doğuş Üniversitesi · COME 492
-        </p>
+    <main className="grid min-h-[100dvh] lg:grid-cols-[minmax(0,1.18fr)_minmax(28rem,0.82fr)]">
+      {/* Sol: ürün tezi ve tek kanıt zinciri. */}
+      <section className="flex flex-col justify-between border-b border-border p-8 lg:border-r lg:border-b-0 lg:p-14">
+        <div className="rise border-l-2 border-brand pl-4">
+          <div>
+            <p className="text-sm font-medium text-fg">Doğuş Üniversitesi</p>
+            <p className="text-xs text-fg-subtle">COME 492 · Bitirme projesi</p>
+          </div>
+        </div>
 
-        <div className="py-16 lg:py-0">
-          <h1 className="rise rise-1 text-5xl font-semibold tracking-tighter text-fg md:text-6xl">
+        <div className="py-16 lg:py-12">
+          <p className="rise rise-1 mb-4 max-w-md text-sm font-medium text-brand">
+            Kaynağı görünen ders çalışma alanı
+          </p>
+          <h1 className="rise rise-1 max-w-2xl text-5xl font-semibold tracking-tighter text-fg md:text-6xl">
             DOU-Synapse
           </h1>
           <p className="rise rise-2 prose-tr mt-6 text-lg leading-relaxed text-fg-muted">
@@ -93,32 +99,48 @@ export default function LoginPage() {
             sayfayla birlikte gelir; kaynak yoksa cevap da yoktur.
           </p>
 
-          <dl className="rise rise-3 mt-12 grid max-w-md grid-cols-3 gap-x-6 border-t border-border pt-6">
-            <div>
-              <dt className="text-xs text-fg-subtle">Kaynak</dt>
-              <dd className="mt-1 text-sm font-medium text-fg">Sayfa bazlı</dd>
+          <section
+            aria-labelledby="evidence-rail-title"
+            className="rise rise-3 mt-12 max-w-2xl border-y border-border py-5"
+          >
+            <div className="grid gap-5 md:grid-cols-[11rem_1fr] md:items-start">
+              <div>
+                <p className="font-mono text-xs text-brand">Kaynak zinciri</p>
+                <h2 id="evidence-rail-title" className="mt-1 text-sm font-medium text-fg">
+                  Bir yanıtın izlediği yol
+                </h2>
+              </div>
+              <ol className="grid gap-3 text-sm text-fg-muted sm:grid-cols-3 sm:gap-0">
+                <li className="border-border sm:border-l sm:pl-4">
+                  <span className="block font-mono text-xs text-fg-subtle">01</span>
+                  <span className="mt-1 block text-fg">Ders kaynağını bulur</span>
+                </li>
+                <li className="border-border sm:border-l sm:pl-4">
+                  <span className="block font-mono text-xs text-fg-subtle">02</span>
+                  <span className="mt-1 block text-fg">İlgili sayfayı gösterir</span>
+                </li>
+                <li className="border-border sm:border-l sm:pl-4">
+                  <span className="block font-mono text-xs text-fg-subtle">03</span>
+                  <span className="mt-1 block text-fg">Adım adım çalıştırır</span>
+                </li>
+              </ol>
             </div>
-            <div>
-              <dt className="text-xs text-fg-subtle">Kapsam</dt>
-              <dd className="mt-1 text-sm font-medium text-fg">Yalnız ders</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-fg-subtle">Yöntem</dt>
-              <dd className="mt-1 text-sm font-medium text-fg">Sokratik</dd>
-            </div>
-          </dl>
+          </section>
         </div>
 
         <p className="rise rise-3 hidden text-xs text-fg-subtle lg:block">
-          Bitirme projesi · Bilgisayar Mühendisliği · 2026
+          Bilgisayar Mühendisliği · 2026
         </p>
       </section>
 
       {/* Sağ: giriş paneli. Panel ayrımı kenarlık + hafif yüzey tonuyla kurulur. */}
-      <section className="flex items-center border-t border-border bg-surface/60 p-8 lg:border-t-0 lg:border-l lg:p-14">
+      <section className="flex items-center bg-surface p-8 lg:p-14">
         <div className="w-full max-w-sm">
-          <h2 className="rise text-sm font-medium text-fg">Oturum aç</h2>
-          <p className="rise rise-1 mt-1 text-xs text-fg-subtle">
+          <p className="rise font-mono text-xs text-brand">Ders alanına giriş</p>
+          <h2 className="rise rise-1 mt-2 text-2xl font-semibold tracking-tight text-fg">
+            Oturum aç
+          </h2>
+          <p className="rise rise-1 mt-2 text-sm text-fg-muted">
             {supabaseConfigured
               ? "Üniversite hesabınızla devam edin"
               : "Geliştirme ortamı girişi; canlıda üniversite hesabı kullanılır"}
@@ -165,16 +187,16 @@ export default function LoginPage() {
           ) : (
             /* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek
                olduğunu peşinen söyler. */
-            <ul className="mt-6 space-y-3">
+            <ul className="mt-6 divide-y divide-border overflow-hidden rounded-lg border border-border bg-bg">
               {DEMO_USERS.map((user, index) => (
                 <li key={user.id}>
                   <button
                     onClick={() => enter(user)}
-                    className={`rise rise-${index + 2} group flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-[border,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_2px_8px_rgba(28,25,23,0.04)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand`}
+                    className={`rise rise-${index + 2} group flex min-h-16 w-full items-center gap-4 bg-surface px-4 py-3 text-left transition-colors duration-200 hover:bg-bg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand`}
                   >
                     <span
                       aria-hidden
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-subtle font-mono text-sm font-semibold text-brand"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-subtle font-mono text-sm font-semibold text-brand"
                     >
                       {user.fullName.charAt(0)}
                     </span>
