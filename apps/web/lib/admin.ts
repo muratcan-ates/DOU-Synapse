@@ -146,3 +146,17 @@ export function adminDate(value: string | null): string {
     timeStyle: "short",
   }).format(date);
 }
+
+/** WAI-ARIA tabs klavye düzeni; desteklenmeyen tuşta odağı değiştirme. */
+export function adminTabIndexAfterKey(
+  current: number,
+  key: string,
+  count: number,
+): number | null {
+  if (count <= 0) return null;
+  if (key === "Home") return 0;
+  if (key === "End") return count - 1;
+  if (key === "ArrowRight") return (current + 1) % count;
+  if (key === "ArrowLeft") return (current - 1 + count) % count;
+  return null;
+}

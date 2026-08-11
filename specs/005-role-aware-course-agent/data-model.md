@@ -2,7 +2,8 @@
 
 **Migration**: `0015_role_aware_course_agent.sql`
 **Durum**: `0015` ve backend feature dalında kodlandı; taze hedefli paket 157/157,
-tam API paketi son adayda 878/878. Canlı retention, provider ve staging kanıtı yok.
+tam API paketi son adayda 882/882. T113 export/cascade sözleşmesi benzersiz gerçek
+PostgreSQL DB'sinde 13/13 doğrulandı. Canlı retention, provider ve staging kanıtı yok.
 
 ## 1. Modelleme ilkeleri
 
@@ -249,9 +250,12 @@ owner/BYPASSRLS yetkisi almaz.
 
 ## 8. Privacy, silme ve saklama
 
-- Course/profile silme FK cascade ile 005 satırlarını kaldırır.
-- Kullanıcı export'u ham reservations/guard events taşımaz; bunlar prompt içermeyen
-  iç güvenlik/maliyet mekanizması olarak `not_included` açıklamasında yer alır.
+- Course/profile silme FK cascade ile 005 satırlarını kaldırır. 2026-08-11
+  benzersiz gerçek PostgreSQL DB koşusunda iki DELETE yolu ayrı ayrı sınandı ve
+  reservation/guard kalıntısı 0 ölçüldü.
+- Kullanıcı export'u ham reservations/guard events satırı veya kimliği taşımaz;
+  bunlar prompt içermeyen iç güvenlik/maliyet mekanizmaları olarak additive
+  `not_included` alanında iki içeriksiz Türkçe açıklamayla yer alır.
 - Export önceki kaynaklı chat cevaplarını içerdiği için sınav başlatma/chat
   finalizasyonuyla aynı user-wide `seed=15018` transaction kilidini alır. Herhangi
   bir derste aktif student EXAM varsa 423 `exam_export_locked`; practice/expired
@@ -259,6 +263,10 @@ owner/BYPASSRLS yetkisi almaz.
 - Eğitmen/platform admin için bireysel usage/guard liste endpoint'i yoktur.
 - Request/guard satırları soru/cevap/source içeriği taşımaz.
 - Canlı retention ve operator cleanup repo kodu + ortam kanıtı olmadan tamamlanmış sayılmaz.
+
+T113 yerel kanıtı: `test_user_rights.py` 13/13, Ruff, mypy 92 dosya ve
+`git diff --check` yeşil; aktif sınav 423 ve user-lock yarış sözleşmesi korundu.
+Bu, canlı retention/operator cleanup kanıtı değildir.
 
 ## 9. Rollback/forward-fix
 

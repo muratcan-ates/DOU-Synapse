@@ -77,12 +77,18 @@ export function Input({
 export function Card({
   children,
   className = "",
+  variant = "default",
 }: {
   children: ReactNode;
   className?: string;
+  variant?: "default" | "soft";
 }) {
+  const variantClass = {
+    default: "rounded-lg border border-border bg-surface",
+    soft: "rounded-lg border border-border bg-bg",
+  }[variant];
   return (
-    <div className={`rounded-lg border border-border bg-surface p-6 ${className}`}>
+    <div className={`${variantClass} p-6 ${className}`}>
       {children}
     </div>
   );

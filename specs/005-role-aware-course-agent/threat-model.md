@@ -3,9 +3,9 @@
 **Scope**: authenticated student/instructor drawer, mevcut course chat/RAG,
 session/cache, `0015` token reservation/guard ledger ve provider sınırı
 **Risk**: R3
-**Durum**: Backend/migration tam API 878/878, frontend unit/typecheck/build yeşil;
-penetration, gerçek-provider, gerçek tarayıcı, çok-worker yükü ve canlı hosting
-ayrıca kanıtlanmalıdır
+**Durum**: Backend/migration tam API 882/882, frontend 325/325 unit/typecheck/build ve
+seri gerçek-API Playwright 35/35 yeşil; manuel penetration/a11y, gerçek-provider,
+çok-worker yükü ve canlı hosting ayrıca kanıtlanmalıdır
 
 ## 1. Korunan varlıklar
 

@@ -12,7 +12,8 @@
 #   2. answer_cache icin ayni ders icinde cross-audience SELECT ve INSERT,
 #   3. function-only kota tablolarinin dogrudan GRANT siniri,
 #   4. SECURITY DEFINER kota yardimcisinin PUBLIC/dou_worker EXECUTE siniri,
-#   5. kalici token on-odemesinin kota ve eszamanlilik tavanlarini asamamasi,
+#   5. kalici token on-odemesinin birlikte gevsetilen kota/eszamanlilik tavanlarini
+#      asamamasi,
 #   6. KVKK sohbet gecmisinin yalniz satir sahibine gorunmesi.
 #
 # Bilincli dislama: `/me/export` aktif-sinav kilidi, kullanici-bazli advisory lock ve
@@ -228,8 +229,30 @@ expect_marker "$REFERENCE_DB" \
     "REFERENCE__CONCURRENCY_BLOCKED" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN NOT allowed AND reason='concurrency_limited' THEN 'REFERENCE__CONCURRENCY_BLOCKED' ELSE 'WRONG' END FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000011',60,60,50000,500000,5000000);"
 
-"$PSQL" -X -v ON_ERROR_STOP=1 -q -d "$REFERENCE_DB" -c \
-    "UPDATE public.ai_token_reservations SET expires_at=now()-interval '1 second' WHERE id='50505050-0000-0000-0000-000000000010';"
+"$PSQL" -X -v ON_ERROR_STOP=1 -q -d "$REFERENCE_DB" <<'SQL'
+DO $$
+DECLARE
+    v_day_start timestamptz := date_trunc(
+        'day', clock_timestamp() AT TIME ZONE 'Europe/Istanbul'
+    ) AT TIME ZONE 'Europe/Istanbul';
+    v_ready_at timestamptz;
+BEGIN
+    -- Kaydi her zaman bugunun Istanbul kota penceresinde tut. Gece yarisinin
+    -- ilk saniyesinde kosulursa gecerli created_at < expires_at < simdi araligi
+    -- olusana kadar en fazla bir saniye bekle; onceki gune kayan flake uretme.
+    v_ready_at := v_day_start + interval '1 second';
+    IF clock_timestamp() <= v_ready_at THEN
+        PERFORM pg_sleep(
+            GREATEST(EXTRACT(EPOCH FROM (v_ready_at - clock_timestamp())), 0) + 0.01
+        );
+    END IF;
+    UPDATE public.ai_token_reservations
+    SET created_at = v_day_start,
+        expires_at = v_day_start + interval '500 milliseconds'
+    WHERE id = '50505050-0000-0000-0000-000000000010';
+END
+$$;
+SQL
 
 expect_marker "$REFERENCE_DB" \
     "suresi dolan on-odeme gunluk kotada kalir" \

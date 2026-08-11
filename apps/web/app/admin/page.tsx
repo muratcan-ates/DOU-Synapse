@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import {
   AdminDataTable,
@@ -13,6 +13,7 @@ import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import {
   adminDate,
+  adminTabIndexAfterKey,
   getAdminCourses,
   getAdminIngestionJobs,
   getAdminOverview,
@@ -60,7 +61,7 @@ function AdminGate() {
   }
   if (!profile.data.is_platform_admin) {
     return (
-      <Card>
+      <Card variant="soft">
         <h1 className="text-xl font-medium text-fg">Bu alana erişiminiz yok</h1>
         <p className="mt-2 text-sm text-fg-muted">
           Bilgi İşlem paneli yalnız platform yöneticilerine açıktır. Ders eğitmeni
@@ -75,6 +76,7 @@ function AdminGate() {
 
 function AdminContent() {
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const tabs: Array<{ id: AdminTab; label: string }> = [
     { id: "users", label: "Kullanıcılar" },
     { id: "courses", label: "Dersler" },
@@ -83,8 +85,10 @@ function AdminContent() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <PageHeader
+        eyebrow="Salt okunur operasyon alanı"
+        compact
         title="Bilgi İşlem"
         description="Platform sağlığını ve işletim metriklerini akademik içeriğe erişmeden izleyin."
       />
@@ -105,21 +109,32 @@ function AdminContent() {
         <div
           role="tablist"
           aria-label="Yönetim veri kümeleri"
-          className="mb-4 flex flex-wrap gap-2 border-b border-border pb-3"
+          className="mb-5 flex gap-5 overflow-x-auto border-b border-border"
         >
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <button
               key={tab.id}
+              ref={(element) => {
+                tabRefs.current[index] = element;
+              }}
               id={`admin-tab-${tab.id}`}
               type="button"
               role="tab"
               aria-selected={activeTab === tab.id}
               aria-controls="admin-tab-panel"
+              tabIndex={activeTab === tab.id ? 0 : -1}
               onClick={() => setActiveTab(tab.id)}
+              onKeyDown={(event) => {
+                const next = adminTabIndexAfterKey(index, event.key, tabs.length);
+                if (next === null) return;
+                event.preventDefault();
+                setActiveTab(tabs[next]!.id);
+                tabRefs.current[next]?.focus();
+              }}
               className={
                 activeTab === tab.id
-                  ? "min-h-11 rounded-lg bg-brand-subtle px-4 text-sm font-medium text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  : "min-h-11 rounded-lg px-4 text-sm font-medium text-fg-muted hover:bg-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  ? "min-h-11 shrink-0 border-b-2 border-brand px-1 text-sm font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  : "min-h-11 shrink-0 border-b-2 border-transparent px-1 text-sm font-medium text-fg-muted hover:border-border-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               }
             >
               {tab.label}
@@ -164,8 +179,8 @@ function AdminOverviewSection() {
 
   const data = resource.data;
   return (
-    <section aria-labelledby="system-overview-title" className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <section aria-labelledby="system-overview-title" className="space-y-5">
+      <div>
         <div>
           <h2 id="system-overview-title" className="text-xl font-medium text-fg">
             Platform durumu
@@ -174,9 +189,6 @@ function AdminOverviewSection() {
             Son 24 saatlik kullanım ve anlık servis görünümü
           </p>
         </div>
-        <p className="text-xs text-fg-subtle">
-          Ölçüm: {adminDate(data.measured_at)}
-        </p>
       </div>
 
       {resource.refreshError && (
@@ -188,10 +200,15 @@ function AdminOverviewSection() {
         />
       )}
 
-      <div className="flex flex-wrap gap-2" aria-label="Servis sağlık durumları">
-        <HealthBadge label="Uygulama" status={data.status} />
-        <HealthBadge label="Veritabanı" status={data.database_status} />
-        <HealthBadge label="Embedding" status={data.embedding_status} />
+      <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border bg-surface px-4 py-4 sm:px-5">
+        <div className="flex flex-wrap gap-2" aria-label="Servis sağlık durumları">
+          <HealthBadge label="Uygulama" status={data.status} />
+          <HealthBadge label="Veritabanı" status={data.database_status} />
+          <HealthBadge label="Embedding" status={data.embedding_status} />
+        </div>
+        <p className="font-mono text-xs text-fg-subtle">
+          Ölçüm: {adminDate(data.measured_at)}
+        </p>
       </div>
 
       <PortalMetrics
@@ -203,8 +220,9 @@ function AdminOverviewSection() {
         ]}
       />
 
-      <Card>
-        <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
+      <div>
+        <p className="mb-2 text-xs font-medium text-fg-muted">Son 24 saat</p>
+        <dl className="grid gap-px border-y border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
           <OverviewDatum
             label="Sohbet turu"
             value={data.chat_turns_24h}
@@ -218,7 +236,7 @@ function AdminOverviewSection() {
           <OverviewDatum label="İşleniyor" value={data.ingestion_processing} />
           <OverviewDatum label="İşleme hatası" value={data.ingestion_failed} />
         </dl>
-      </Card>
+      </div>
     </section>
   );
 }
@@ -262,7 +280,7 @@ function OverviewDatum({
   detail?: string;
 }) {
   return (
-    <div className="flex flex-col-reverse gap-1">
+    <div className="flex min-h-20 flex-col-reverse gap-1 bg-bg px-4 py-4">
       <dt className="text-xs text-fg-muted">
         {label}
         {detail ? ` (${detail})` : ""}

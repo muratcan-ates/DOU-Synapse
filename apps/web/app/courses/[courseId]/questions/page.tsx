@@ -331,7 +331,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
                 Bu süzgeçte soru yok.
               </p>
             ) : (
-              <ul>
+              <ul aria-label="Soru havuzu">
                 {visible.map((question) => (
                   <QuestionRow
                     key={question.id}

@@ -130,12 +130,28 @@
   --text-3xl--line-height: 2.75rem; /* 44 */
 }
 
+html {
+  color-scheme: light;
+}
+
 body {
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
   line-height: 1.625; /* uzun okuma için bilinçli yüksek */
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--brand-subtle);
+  color: var(--fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
 }
 
 .prose-tr {
@@ -176,7 +192,6 @@ body {
  * "Gradyan (zemin, metin, buton — hiçbiri)" diyor ve gradyanlar marka kırmızısının
  * saydam tonuydu — kırmızının üç meşru kullanımı (birincil eylem, aktif navigasyon,
  * marka işareti) arasında dekoratif zemin lekesi yok. Giriş ekranındaki panel ayrımı
- * zaten `border-l` + `bg-surface/60` ile kuruluyor; sınıf silinince ekran düz --bg
- * üstünde kalır. app/page.tsx hâlâ atıl `ambient` sınıf adını taşıyor, o dosyanın
- * sahibi temizlemeli.
+ * zaten `border-l` + `bg-surface` ile kuruluyor; ekran düz token yüzeyleri üstünde
+ * kalır ve atıl `ambient` sınıfı artık kullanılmaz.
  */

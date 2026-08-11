@@ -117,7 +117,7 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: "Ders Koçu" })).toBeVisible();
-    await expect(dialog.getByText("Öğrenci çalışma alanı", { exact: true })).toBeVisible();
+    await expect(dialog.getByText(/^Öğrenci çalışma alanı · /)).toBeVisible();
     await expect(dialog.getByRole("button", { name: "Konuyu adım adım çalış" }))
       .toBeVisible();
     await expect(dialog.getByRole("combobox", { name: /rol|persona/i })).toHaveCount(0);
@@ -147,7 +147,7 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByRole("heading", { name: "Eğitmen Asistanı" })).toBeVisible();
-    await expect(dialog.getByText("Eğitmen çalışma alanı", { exact: true })).toBeVisible();
+    await expect(dialog.getByText(/^Eğitmen çalışma alanı · /)).toBeVisible();
 
     await dialog.getByLabel("Sorun").fill(
       "Yüklenen ders kaynaklarındaki temel kavramları kaynaklarıyla özetle.",

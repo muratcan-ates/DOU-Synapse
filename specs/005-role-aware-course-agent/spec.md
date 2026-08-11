@@ -3,8 +3,8 @@
 **Feature Branch**: `005-role-aware-course-agent`
 **Base**: `7c1c219` (`004-ai-sdlc-excellence`; yerel governance teslim commit'i)
 **Created**: 2026-08-11
-**Status**: Backend, `0015` ve frontend kodlandı; tam API 878/878, mypy 92 dosya,
-frontend 322/322, typecheck ve production build geçti. Gerçek tarayıcı,
+**Status**: Backend, `0015` ve frontend kodlandı; tam API 882/882, mypy 92 dosya,
+frontend 325/325, typecheck ve production build geçti. Seri gerçek-API tarayıcı 35/35;
 real-provider, staging, isimli onay ve canlı rollout kanıtı henüz yok.
 **Risk**: R3 — öğrenci/eğitmen davranışı, kota, kötüye kullanım ve sınav kilidi değişiyor
 

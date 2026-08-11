@@ -20,6 +20,7 @@ from app.models.chat import ChatMessage, ChatMessageFeedback, ChatSession
 from app.models.core import Course, CourseMembership, MembershipStatus, Profile
 from app.modules.assessment import exam_state
 from app.schemas.privacy import (
+    USER_DATA_EXPORT_NOT_INCLUDED,
     AccountAnonymizationOut,
     ChatDeletionOut,
     ExportAnswerOut,
@@ -258,6 +259,7 @@ async def export_my_data(
             for item in exam_sessions
         ],
         mastery=[ExportMasteryOut.model_validate(item) for item in mastery],
+        not_included=list(USER_DATA_EXPORT_NOT_INCLUDED),
     )
     filename = f"dou-synapse-verilerim-{generated_at.date().isoformat()}.json"
     return JSONResponse(

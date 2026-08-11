@@ -88,12 +88,22 @@ Taze izole DB'ye 0001..0015 uygulanır. SQL testleri en az şunları kanıtlar:
   aynı günün user/course quota toplamında kalır;
 - quota/concurrency/rate/scope event'lerinde serbest metin kolonu yoktur.
 
-Örnek hedefli komut, test dosyası uygulama şeridinde oluşturulduktan sonra:
+Repo kökünden çalıştırılan executable paket, her koşuda PID ile adlandırılmış
+izole DB'leri kurar, 0001..0015'i uygular, referans davranışı ve DB/RLS
+mutasyonlarını sınar; `EXIT` trap'iyle oluşturduğu DB'leri temizler:
 
 ```bash
-psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 \
-  -f supabase/tests/rls_role_aware_agent.sql
+supabase/tests/rls_role_aware_agent_mutation_check.sh
+
+# İsteğe bağlı, benzersiz ve mevcut olmayan güvenli şablon DB adı:
+supabase/tests/rls_role_aware_agent_mutation_check.sh \
+  rls_role_agent_005_<lane>_<run>
 ```
+
+2026-08-11 gerçek koşu kanıtı: referans koşuda 7 kapalı sınır + 3 kalıcı kota
+iddiası geçti; 8/8 mutasyon beklenen kesin sızıntıyı yakaladı; koşu sonrasında
+geçici DB kalıntısı 0 ölçüldü. Bu paket veritabanı/RLS sınırlarını kanıtlar;
+5. bölümdeki uygulama katmanı mutasyonlarının tamamlandığı anlamına gelmez.
 
 Request replay/idempotency, DB minute/request bucket, HMAC/fingerprint ve adaptive
 strike/backoff bu SQL paketinin must-pass şartı değildir; ayrı gelecek backlog'udur.
@@ -117,17 +127,17 @@ Ardından statik ve tam paket:
 RUFF_CACHE_DIR=/private/tmp/dou-agent-ruff uv run ruff check .
 RUFF_CACHE_DIR=/private/tmp/dou-agent-ruff uv run ruff format --check .
 uv run mypy app
-PYTHONDONTWRITEBYTECODE=1 uv run pytest -q  # 879 passed  # docs-check: backend.tests = 879
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -q  # 882 passed  # docs-check: backend.tests = 882
 ```
 
 2026-08-11 backend handoff kanıtı:
 
 ```text
 taze hedefli backend paketi: 157/157
-pytest -q apps/api/tests:     878/878
+pytest -q apps/api/tests:     882/882
 backend mypy:                92 dosya temiz
 ledger-counter son düzeltme:   27/27 + ruff + diff temiz
-frontend lib testleri:        322/322
+frontend lib testleri:        325/325
 frontend typecheck/build:     temiz
 ```
 
@@ -145,6 +155,27 @@ provider request max_tokens <= effective_output
 
 Fake provider; rol/kota/zarf mekaniğini kanıtlayabilir, gerçek pedagojik kaliteyi,
 faithfulness'i veya maliyeti kanıtlamaz.
+
+### 4.1 T113 privacy, export ve cascade kanıtı
+
+Benzersiz `TEST_DB_NAME` ile hedefli privacy paketi:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -q tests/test_user_rights.py  # 13 passed  # docs-check: tarihsel 13 · 2026-08-11
+```
+
+2026-08-11 gerçek PostgreSQL koşusu 13/13 geçti ve şunları kanıtladı:
+
+- `/me/export`, ham `ai_token_reservations` / `ai_guard_events` satırı veya
+  kimliği taşımaz; iki içeriksiz operasyon kategorisini additive
+  `not_included` açıklamalarıyla bildirir;
+- course DELETE ve profile DELETE ayrı ayrı 005 reservation/guard satırlarını
+  FK cascade ile sıfıra indirir;
+- aktif öğrenci sınavı export'u 423 `exam_export_locked` ile durdurmaya ve sınav
+  başlatma/export yarışını aynı kullanıcı kilidinde sıralamaya devam eder.
+
+Ruff, mypy 92 dosya ve `git diff --check` de yeşildi. Bu kanıt retention süresi
+ve operator cleanup job'ını kapatmaz; onlar canlı işletim riski olarak açık kalır.
 
 ## 5. Zorunlu mutasyon kanıtları
 
@@ -204,11 +235,20 @@ curl -fsS "http://localhost:${API_PORT}/health/ready"
 Embedding `warming` ise beklenir. Seri E2E:
 
 ```bash
-cd apps/web
-API_BASE_URL="http://localhost:${API_PORT}" \
-WEB_BASE_URL="http://localhost:${WEB_PORT}" \
-bunx playwright test e2e/agent-chatbox.spec.ts --workers=1
+(
+  cd apps/web
+  E2E_API_URL="http://localhost:${API_PORT}" \
+  E2E_PORT="${WEB_PORT}" \
+  E2E_DATABASE_NAME="${TEST_DB_NAME}" \
+  bunx playwright test --workers=1
+)
 ```
+
+2026-08-11 aday kanıtında bu paket benzersiz PostgreSQL veritabanı ve tek worker
+ile 35/35 geçti; global teardown sonrası koşu ders/audit kalıntısı 0/0 ölçüldü.
+Koruma karşı-kontrolünde run desenine uyan
+`c3b76077-20de-47e5-9fe1-4e770ffa64d2` UUID'li demo ders kaldı, yalnız hedef ders
+ve audit silindi; ardından kodu `COME 331` olarak geri doğrulandı.
 
 Tarayıcı/ağ kanıtı:
 

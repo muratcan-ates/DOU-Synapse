@@ -1,0 +1,81 @@
+{
+  "candidate_sha": "SELF",
+  "change_id": "005-role-aware-course-agent-r2",
+  "captured_at": "2026-08-11T13:57:52+03:00",
+  "command": "TEST_DB_NAME=<unique> apps/api/.venv/bin/pytest -q apps/api/tests; bun test lib/; bunx tsc --noEmit --incremental false; bun run build; node apps/web/scripts/contrast.mjs; PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_role_aware_agent_mutation_check.sh <unique>; bunx playwright test --workers=1; node scripts/docs_check.mjs",
+  "environment": "local real FastAPI, PostgreSQL 16 and Chromium against isolated disposable databases; deterministic fake provider; iCloud-free Git worktree",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic fixture identities and aggregate counts only; no prompts, answers, document text, email addresses, secrets, raw reservation rows or provider payloads retained",
+  "results": {
+    "backend_tests": {
+      "passed": 882,
+      "failed": 0
+    },
+    "frontend_library_tests": {
+      "passed": 325,
+      "failed": 0,
+      "files": 24
+    },
+    "backend_types": {
+      "files": 92,
+      "result": "pass"
+    },
+    "frontend_types": {
+      "result": "pass"
+    },
+    "frontend_build": {
+      "routes": 20,
+      "result": "pass"
+    },
+    "frontend_contrast": {
+      "light_and_dark_aa": true,
+      "result": "pass"
+    },
+    "ruff": {
+      "files": 137,
+      "result": "pass"
+    },
+    "playwright_runtime": {
+      "passed": 35,
+      "failed": 0,
+      "workers": 1,
+      "course_residue": 0,
+      "admin_audit_residue": 0,
+      "protected_demo_course_preserved": true,
+      "result": "pass"
+    },
+    "database_mutation": {
+      "closed_boundaries": 7,
+      "durable_quota_claims": 3,
+      "mutations_caught": 8,
+      "mutations_attempted": 8,
+      "temporary_database_residue": 0,
+      "result": "pass"
+    },
+    "privacy_export": {
+      "targeted_tests_passed": 13,
+      "raw_agent_operation_rows_exported": false,
+      "course_delete_residue": 0,
+      "profile_delete_residue": 0,
+      "active_exam_export_status": 423,
+      "result": "pass"
+    },
+    "documentation_gate": {
+      "live_metrics": 34,
+      "historical_metrics": 11,
+      "documents": 102,
+      "result": "pass"
+    }
+  },
+  "not_run": [
+    "real-provider frozen holdout and pedagogical human review",
+    "full application-layer 12-mutation matrix T217/T410",
+    "manual screen-reader and reduced-motion assistive-technology audit T307/T309",
+    "candidate-specific offline RAG quality evaluation T407",
+    "multi-worker HTTP load, pool-pressure and distributed edge or WAF controls T408",
+    "staging deployment, named approvals, canary telemetry and live rollback rehearsal",
+    "production promotion, backup restore and external retention or residency review"
+  ],
+  "limitations": "This append-only record proves deterministic repository mechanics plus a real local API, PostgreSQL and browser path using the fake provider. It is not real-model, staging, canary or production evidence."
+}
