@@ -141,11 +141,19 @@
       "minimum_risk": "R3"
     },
     {
+      "pattern": "apps/api/app/modules/agent/**",
+      "minimum_risk": "R3"
+    },
+    {
       "pattern": "apps/api/app/modules/mastery/**",
       "minimum_risk": "R3"
     },
     {
       "pattern": "apps/api/app/api/exams.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/api/privacy.py",
       "minimum_risk": "R3"
     },
     {
@@ -231,6 +239,22 @@
     {
       "pattern": "apps/api/uv.lock",
       "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/web/app/courses/**/chat/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/web/components/course-assistant/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/web/lib/course-assistant.ts",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/web/lib/chat-availability.ts",
+      "minimum_risk": "R3"
     },
     {
       "pattern": "docker-compose.yml",
