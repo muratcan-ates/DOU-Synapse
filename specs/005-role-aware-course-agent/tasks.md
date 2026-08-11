@@ -265,7 +265,9 @@ Her biri ayrı threat/privacy/R3 değişikliği ve acceptance/mutation kanıtı 
 - [x] **T701** Feature değişikliklerini küçük amaçlı commit'lerde topla; attribution
   ve branch sahipliğini koru. Backend, frontend, Speckit/docs ve R3 kanıtı ayrı
   amaçlı commit'lere ayrıldı. — DONE 2026-08-11
-- [ ] **T702** Branch'i push et; local HEAD = origin branch ölç.
+- [x] **T702** Branch'i push et; local HEAD = origin branch ölç.
+  `005-role-aware-course-agent` origin'e gönderildi; local/origin eşitliği
+  push sonrası ölçüldü. — DONE 2026-08-11
 - [ ] **T703** Draft PR aç; required CI ve AI/security gates sonucunu gözle.
 - [ ] **T704** CI, R3 approvals ve release verification yeşil olmadan main'e merge etme.
 - [ ] **T705** Merge sonrası main SHA, migration, OpenAPI/docs ve deploy durumunu
