@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID, uuid4
 
+import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.modules.assessment import exam_state
 from tests.conftest import UserFactory
-from tests.test_exams import ExamFixture, build_course
+from tests.test_exams import ExamFixture, build_course, start
 
 
 @dataclass(frozen=True)
@@ -166,6 +170,131 @@ async def test_export_uygulama_filtresi_egitmenin_ogrenci_verisini_sizdirmaz(
     assert str(fixture.instructor_id) not in encoded
     assert str(teacher_rows.chat_id) not in encoded
     assert str(teacher_rows.exam_id) not in encoded
+
+
+async def _seed_export_exam(
+    admin_engine: AsyncEngine,
+    fixture: ExamFixture,
+    *,
+    mode: str,
+    expires_minutes: int | None,
+    user_id: UUID | None = None,
+) -> None:
+    exam_user_id = user_id or fixture.student_id
+    if expires_minutes is None:
+        statement = text(
+            "INSERT INTO exam_sessions "
+            "(course_id,user_id,mode,started_at,expires_at,question_ids) VALUES "
+            "(:course_id,:user_id,CAST(:mode AS exam_mode),"
+            "now()-interval '2 minutes',NULL,:question_ids)"
+        )
+        parameters = {
+            "course_id": UUID(fixture.course_id),
+            "user_id": exam_user_id,
+            "mode": mode,
+            "question_ids": fixture.question_ids,
+        }
+    else:
+        statement = text(
+            "INSERT INTO exam_sessions "
+            "(course_id,user_id,mode,started_at,expires_at,question_ids) VALUES "
+            "(:course_id,:user_id,CAST(:mode AS exam_mode),"
+            "now()-interval '2 minutes',"
+            "now()+(:expires_minutes * interval '1 minute'),:question_ids)"
+        )
+        parameters = {
+            "course_id": UUID(fixture.course_id),
+            "user_id": exam_user_id,
+            "mode": mode,
+            "expires_minutes": expires_minutes,
+            "question_ids": fixture.question_ids,
+        }
+    async with admin_engine.begin() as connection:
+        await connection.execute(statement, parameters)
+
+
+@pytest.mark.parametrize(
+    ("mode", "expires_minutes", "expected_status"),
+    [
+        ("exam", 10, 423),
+        ("exam", -1, 200),
+        ("practice", None, 200),
+    ],
+)
+async def test_export_active_exam_haricinde_kvkk_hakkini_geciktirmez(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    mode: str,
+    expires_minutes: int | None,
+    expected_status: int,
+) -> None:
+    fixture = await build_course(client, users, admin_engine)
+    await _seed_export_exam(
+        admin_engine,
+        fixture,
+        mode=mode,
+        expires_minutes=expires_minutes,
+    )
+
+    response = await client.get("/me/export", headers=fixture.student)
+
+    assert response.status_code == expected_status, response.text
+    if expected_status == 423:
+        assert response.json()["error"]["code"] == "exam_export_locked"
+
+
+async def test_export_ve_sinav_baslatma_ayni_kullanici_kilidinde_siralanir(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Export commits first or sees the exam; it cannot cross an exam start."""
+
+    fixture = await build_course(client, users, admin_engine)
+    export_holds_lock = asyncio.Event()
+    release_export = asyncio.Event()
+    original = exam_state.any_active_student_exam_session
+
+    async def paused_check(*args: Any, **kwargs: Any) -> Any:
+        export_holds_lock.set()
+        await release_export.wait()
+        return await original(*args, **kwargs)
+
+    monkeypatch.setattr(exam_state, "any_active_student_exam_session", paused_check)
+    export_task = asyncio.create_task(client.get("/me/export", headers=fixture.student))
+    await asyncio.wait_for(export_holds_lock.wait(), timeout=2)
+    exam_task = asyncio.create_task(start(client, fixture, "exam"))
+
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(asyncio.shield(exam_task), timeout=0.05)
+
+    release_export.set()
+    export = await export_task
+    exam = await exam_task
+
+    assert export.status_code == 200, export.text
+    assert exam["mode"] == "exam"
+
+
+async def test_egitmen_sinav_onizlemesinde_kendi_verisini_indirebilir(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+) -> None:
+    fixture = await build_course(client, users, admin_engine)
+    await _seed_export_exam(
+        admin_engine,
+        fixture,
+        mode="exam",
+        expires_minutes=10,
+        user_id=fixture.instructor_id,
+    )
+
+    response = await client.get("/me/export", headers=fixture.instructor)
+
+    assert response.status_code == 200, response.text
 
 
 async def test_ders_sohbet_gecmisi_yalniz_sahibin_satirlarini_siler(

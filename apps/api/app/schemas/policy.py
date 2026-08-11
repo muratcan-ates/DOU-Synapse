@@ -19,6 +19,10 @@ class CourseAiPolicyIn(BaseModel):
     evidence_threshold: float | None = Field(default=None, ge=0.0, le=1.0)
     daily_llm_budget: int | None = Field(default=None, ge=1)
     source_document_ids: list[UUID] | None = None
+    student_daily_token_budget: int = Field(default=12000, ge=256, le=1_000_000)
+    instructor_daily_token_budget: int = Field(default=40000, ge=256, le=1_000_000)
+    max_output_tokens: int = Field(default=700, ge=64, le=4096)
+    max_concurrent_requests: int = Field(default=1, ge=1, le=4)
 
     @model_validator(mode="after")
     def _exam_is_not_an_assistant_mode(self) -> CourseAiPolicyIn:
@@ -41,6 +45,10 @@ class EffectivePolicyOut(BaseModel):
     evidence_threshold: float
     daily_llm_budget: int | None
     source_document_ids: list[UUID] | None
+    student_daily_token_budget: int
+    instructor_daily_token_budget: int
+    max_output_tokens: int
+    max_concurrent_requests: int
 
 
 class CourseAiPolicyOut(CourseAiPolicyIn):

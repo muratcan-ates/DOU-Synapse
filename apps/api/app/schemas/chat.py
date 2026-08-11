@@ -29,6 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.contracts import (
     AnswerStatus,
+    AssistantAudience,
     ChatMode,
     GeneratedAnswer,
     RetrievedChunk,
@@ -184,6 +185,9 @@ class ChatResponse(BaseModel):
     socratic_stage: SocraticStage | None = None
     #: Cevap birebir eşleşmeli önbellekten geldi mi (FR-034). Ölçüm için taşınır.
     cached: bool = False
+    #: Server-derived; the request schema deliberately has no matching field.
+    audience: AssistantAudience
+    agent_profile: str
 
 
 def snippet_of(chunk: RetrievedChunk, limit: int = SNIPPET_LENGTH) -> str:
@@ -206,6 +210,7 @@ def to_chat_response(
     message_id: UUID,
     claims: Mapping[UUID, str] | None = None,
     cached: bool = False,
+    audience: AssistantAudience = AssistantAudience.STUDENT,
 ) -> ChatResponse:
     """`GuardrailVerdict`'lerden GEÇMİŞ bir cevabı istemci zarfına çevirir.
 
@@ -254,4 +259,6 @@ def to_chat_response(
         hints=hints,
         socratic_stage=answer.socratic_stage,
         cached=cached,
+        audience=audience,
+        agent_profile=audience.agent_profile,
     )

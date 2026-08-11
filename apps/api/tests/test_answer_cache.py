@@ -261,18 +261,24 @@ class TestBozukOnbellekSatiri:
         ayse = users.auth(ayse_id)
         course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(sourced_answer(parca, "yeniden üretilmiş cevap"))
+        pipeline.answers(
+            sourced_answer(parca, "ilk geçerli cevap"),
+            sourced_answer(parca, "yeniden üretilmiş cevap"),
+        )
         soru = "Deadlock nedir?"
+
+        # Önce API'nin güncel audience/policy/prompt/corpus bağlamıyla gerçek bir
+        # cache satırı üretmesini sağla. Legacy hash ile elle eklenen satırın artık
+        # okunmaması güvenlik özelliğidir; bozuk-satır testi o yolda vacuous kalırdı.
+        await _ask(client, course_id, ayse, soru)
 
         async with worker_engine.begin() as conn:
             await conn.execute(
                 text(
-                    "INSERT INTO answer_cache (course_id, question_hash, answer) "
-                    "VALUES (:cid, :hash, CAST(:answer AS jsonb))"
+                    "UPDATE answer_cache SET answer = CAST(:answer AS jsonb) WHERE course_id = :cid"
                 ),
                 {
                     "cid": course_id,
-                    "hash": question_hash(ChatMode.QA, soru),
                     "answer": json.dumps(bozuk),
                 },
             )
@@ -301,15 +307,17 @@ class TestBozukOnbellekSatiri:
         pipeline.answers(sourced_answer(parca, "üretimden gelen"))
         soru = "Deadlock nedir?"
 
+        ilk = await _ask(client, course_id, ayse, soru)
+        assert ilk["cached"] is False
+        calls_before = pipeline.generator.calls
+
         async with worker_engine.begin() as conn:
             await conn.execute(
                 text(
-                    "INSERT INTO answer_cache (course_id, question_hash, answer) "
-                    "VALUES (:cid, :hash, CAST(:answer AS jsonb))"
+                    "UPDATE answer_cache SET answer = CAST(:answer AS jsonb) WHERE course_id = :cid"
                 ),
                 {
                     "cid": course_id,
-                    "hash": question_hash(ChatMode.QA, soru),
                     "answer": json.dumps(
                         {
                             "status": "answered",
@@ -331,7 +339,7 @@ class TestBozukOnbellekSatiri:
 
         assert body["cached"] is True
         assert body["answer"] == "önbellekten gelen"
-        assert pipeline.generator.calls == 0, "önbellek isabetinde LLM çağrılmamalı"
+        assert pipeline.generator.calls == calls_before, "önbellek isabetinde LLM çağrılmamalı"
 
 
 class TestDersIzolasyonuVeritabaninda:
@@ -370,10 +378,11 @@ class TestDersIzolasyonuVeritabaninda:
             satirlar = (
                 await conn.execute(
                     text(
-                        "SELECT course_id, answer->>'text' AS metin FROM answer_cache "
-                        "WHERE question_hash = :hash ORDER BY answer->>'text'"
+                        "SELECT course_id, question_hash, answer->>'text' AS metin "
+                        "FROM answer_cache WHERE course_id IN (:ders_a, :ders_b) "
+                        "ORDER BY answer->>'text'"
                     ),
-                    {"hash": question_hash(ChatMode.QA, soru)},
+                    {"ders_a": ders_a, "ders_b": ders_b},
                 )
             ).all()
 
@@ -381,6 +390,7 @@ class TestDersIzolasyonuVeritabaninda:
             (ders_a, "A cevabı"),
             (ders_b, "B cevabı"),
         ]
+        assert len({r.question_hash for r in satirlar}) == 1
 
 
 class TestNeyinSaklandigi:

@@ -12,12 +12,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.engine import Result
 
-from app.api.deps import CourseMemberDep, PrincipalDep, SessionDep
+from app.api.deps import CourseMemberDep, PrincipalDep, SessionDep, SettingsDep
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError
 from app.models.assessment import Answer, ExamSession, Mastery
 from app.models.chat import ChatMessage, ChatMessageFeedback, ChatSession
 from app.models.core import Course, CourseMembership, MembershipStatus, Profile
+from app.modules.assessment import exam_state
 from app.schemas.privacy import (
     AccountAnonymizationOut,
     ChatDeletionOut,
@@ -106,9 +107,29 @@ async def delete_all_chat_history(
 async def export_my_data(
     principal: PrincipalDep,
     session: SessionDep,
+    settings: SettingsDep,
 ) -> JSONResponse:
     """Kullanıcının verisini açık uygulama filtreleriyle tek JSON dosyası olarak ver."""
     user_id = principal.user_id
+    # Export contains prior sourced assistant answers. Serialize this check
+    # with exam start so a second tab cannot download those answers while an
+    # exam is active. The right is delayed, never deleted; practice and expired
+    # sessions do not block it.
+    await exam_state.acquire_user_assessment_lock(session, user_id=user_id)
+    now = await db_now(session)
+    if (
+        await exam_state.any_active_student_exam_session(
+            session,
+            user_id=user_id,
+            now=now,
+            settings=settings,
+        )
+        is not None
+    ):
+        raise exam_state.AssessmentExportLockedError(
+            "Aktif sınavın sürerken sohbet cevaplarını içeren veri dışa aktarımı "
+            "geçici olarak kullanılamaz. Sınav bitince tekrar deneyebilirsin."
+        )
     profile = await session.get(Profile, user_id)
     if profile is None:
         raise NotFoundError("Kullanıcı profili bulunamadı.")
@@ -217,7 +238,7 @@ async def export_my_data(
         .scalars()
         .all()
     )
-    generated_at = await db_now(session)
+    generated_at = now
     payload = UserDataExportOut(
         generated_at=generated_at,
         profile=ExportProfileOut.model_validate(profile),

@@ -234,13 +234,33 @@ class Settings(BaseSettings):
     llm_fallback_model: str = "gemini/gemini-2.0-flash"
     groq_api_key: str | None = None
     gemini_api_key: str | None = None
-    llm_timeout_seconds: float = 30.0
-    llm_max_retries: int = 1
+    # Two configured providers share a single role-aware request deadline. The
+    # upper bound keeps the database reservation lease (max 600 s) strictly
+    # longer than the worst-case provider route.
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, le=285.0)
+    llm_max_retries: int = Field(default=1, ge=0, le=3)
     llm_temperature: float = 0.2
+    #: Provider-side hard output ceiling; the same request survives failover.
+    llm_chat_max_tokens: int = Field(default=700, ge=64, le=4096)
+    #: Hard UTF-8 byte ceiling for system + user prompt content. The role-aware
+    #: course agent trims retrieved context to this bound before it reserves
+    #: quota or calls a provider. Since one tokenizer token cannot represent
+    #: less than one input byte, the byte count is also a conservative token
+    #: ceiling independent from the selected provider tokenizer.
+    llm_chat_max_input_bytes: int = Field(default=8000, ge=4096, le=64_000)
     #: Anahtar yokken (CI, çevrimdışı demo) deterministik sahte sağlayıcı koşar.
     #: Üretimde açık kalırsa gerçek kullanıcıya sahte cevap gider — bu yüzden
     #: aşağıdaki doğrulayıcı üretim ortamında açık bırakılmasını reddeder.
     llm_fake_provider: bool = False
+
+    #: Operational kill switch independent from every course policy.
+    course_agent_enabled: bool = True
+    #: Operator-owned ceilings. Course instructors can choose lower per-course
+    #: budgets, never raise a user above these deployment-wide abuse limits.
+    course_agent_student_daily_hard_limit: int = Field(default=50_000, gt=0, le=50_000)
+    course_agent_instructor_daily_hard_limit: int = Field(default=200_000, gt=0, le=200_000)
+    course_agent_course_daily_hard_limit: int = Field(default=500_000, gt=0, le=500_000)
+    course_agent_platform_daily_hard_limit: int = Field(default=5_000_000, gt=0, le=5_000_000)
 
     # --- Sokratik mod (Faz D) -----------------------------------------------
     #: İpucu kademesi çarpanları mastery'de kullanılır; kademe sayısı buradan.
@@ -253,9 +273,9 @@ class Settings(BaseSettings):
     # demo makinesinde yeniden derlemeden gevşetilebilmeleri.
     #
     #: Kullanıcı başına, pencere başına azami sohbet isteği.
-    chat_rate_limit_requests: int = 20
+    chat_rate_limit_requests: int = Field(default=20, ge=1, le=100)
     #: Sınırın penceresi (saniye).
-    chat_rate_limit_window_seconds: float = 60.0
+    chat_rate_limit_window_seconds: float = Field(default=60.0, gt=0, le=3600)
 
     # --- Soru üretimi sınırları (002 / FR-222, FR-223) ----------------------
     # Adlar lider turunda sabitlendi ki iki şerit aynı ayara iki farklı ad

@@ -18,7 +18,13 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from app.contracts import AnswerStatus, ChatMode, RetrievedChunk, SocraticStage
+from app.contracts import (
+    AnswerStatus,
+    AssistantAudience,
+    ChatMode,
+    RetrievedChunk,
+    SocraticStage,
+)
 from app.core.config import Settings
 from app.modules.generation import prompts
 from app.modules.generation.fake import FAKE_PROVIDER, FakeLlmClient, parse_sources
@@ -186,6 +192,42 @@ class TestFailover:
     def test_saglayici_adi_model_adindan_turer(self) -> None:
         assert provider_of("groq/llama-3.3-70b-versatile") == "groq"
         assert provider_of("gemini/gemini-2.0-flash") == "gemini"
+
+    async def test_rol_duyarli_istek_retry_ve_fallbacki_tek_denemede_keser(self) -> None:
+        completion = RecordingCompletion(failing_prefixes=("groq/", "gemini/"), status_code=503)
+        service = GenerationService(
+            llm=LiteLlmClient(settings_for(llm_max_retries=3), completion_fn=completion)
+        )
+
+        with pytest.raises(LlmUnavailableError):
+            await service.generate_role_aware_with_claims(
+                question="Deadlock nedir?",
+                chunks=[chunk()],
+                mode=ChatMode.QA,
+                audience=AssistantAudience.STUDENT,
+                max_output_tokens=321,
+            )
+
+        assert completion.models == ["groq/llama-3.3-70b-versatile"]
+
+    async def test_rol_duyarli_output_siniri_providera_aynen_gider(self) -> None:
+        calls: list[dict[str, Any]] = []
+
+        async def completion(**kwargs: Any) -> dict[str, Any]:
+            calls.append(kwargs)
+            return ok_response()
+
+        service = GenerationService(llm=LiteLlmClient(settings_for(), completion_fn=completion))
+        await service.generate_role_aware_with_claims(
+            question="Deadlock nedir?",
+            chunks=[chunk()],
+            mode=ChatMode.QA,
+            audience=AssistantAudience.INSTRUCTOR,
+            max_output_tokens=321,
+        )
+
+        assert len(calls) == 1
+        assert calls[0]["max_tokens"] == 321
 
 
 async def _no_sleep(_seconds: float) -> None:

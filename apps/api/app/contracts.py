@@ -101,6 +101,17 @@ class ChatMode(StrEnum):
     EXAM = "exam"
 
 
+class AssistantAudience(StrEnum):
+    """Server-derived course role used by the assistant; never client-selected."""
+
+    STUDENT = "student"
+    INSTRUCTOR = "instructor"
+
+    @property
+    def agent_profile(self) -> str:
+        return "instructor_assistant" if self is self.INSTRUCTOR else "student_coach"
+
+
 class SocraticStage(StrEnum):
     """Sokratik merdiven. Sıra ANLAMLIDIR ve atlanamaz (spec FR-014).
 
@@ -205,6 +216,23 @@ class ClaimingGenerator(Protocol):
         question: str,
         chunks: list[RetrievedChunk],
         mode: ChatMode,
+        socratic_stage: SocraticStage | None = None,
+        student_attempt: str | None = None,
+    ) -> ClaimedAnswer: ...
+
+
+@runtime_checkable
+class RoleAwareClaimingGenerator(Protocol):
+    """Optional role-aware extension without breaking existing test generators."""
+
+    async def generate_role_aware_with_claims(
+        self,
+        *,
+        question: str,
+        chunks: list[RetrievedChunk],
+        mode: ChatMode,
+        audience: AssistantAudience,
+        max_output_tokens: int,
         socratic_stage: SocraticStage | None = None,
         student_attempt: str | None = None,
     ) -> ClaimedAnswer: ...
