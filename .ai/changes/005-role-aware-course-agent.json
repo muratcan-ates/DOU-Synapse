@@ -42,6 +42,11 @@
       "sha256": "3c58f3dbf9a6925ad932a674b1f6c064650cc9ea36875f2b4ad60851a5854997"
     },
     {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "dad49305c49a3d49b1ec759bcda09ae5cef5f953affc59c71544e492e3b9bbda"
+    },
+    {
       "path": "apps/api/app/api/chat.py",
       "state": "present",
       "sha256": "ee534c0638485be7a86929c4ba05abb8252cd1ddada103525544b2281d79862e"

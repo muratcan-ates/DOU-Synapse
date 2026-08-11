@@ -117,6 +117,10 @@ jobs:
           if grep -q FAIL /tmp/rls_a.out; then echo "assessment RLS bozuk"; exit 1; fi
           supabase/tests/rls_assessment_mutation_check.sh rls_assessment_template
 
+      - name: Rol farkındalıklı ajan RLS ve kota mutasyonları
+        working-directory: .
+        run: supabase/tests/rls_role_aware_agent_mutation_check.sh
+
   image:
     name: API imajı — build + ağsız embedding kanıtı
     runs-on: ubuntu-latest
