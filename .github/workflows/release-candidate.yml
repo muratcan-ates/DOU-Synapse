@@ -1,0 +1,445 @@
+name: Release candidate
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify_required_checks:
+    name: Aday SHA ve zorunlu workflow kimliklerini doğrula
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      source_sha: ${{ steps.source.outputs.source_sha }}
+      short_sha: ${{ steps.identity.outputs.short_sha }}
+      image_name: ${{ steps.identity.outputs.image_name }}
+      checks_json: ${{ steps.checks.outputs.checks_json }}
+
+    steps:
+      - name: v* tag push event'inden değişmez SHA üret
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "push"
+          test "$GITHUB_REF_TYPE" = "tag"
+          [[ "$GITHUB_REF" == refs/tags/v* ]]
+          source_sha="$GITHUB_SHA"
+          if [[ ! "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Tag event SHA'sı 40 karakterli küçük-harf commit SHA olmalı" >&2
+            exit 1
+          fi
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Doğrulanmış SHA'yı al
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ steps.source.outputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Aday kimliğini origin/main'in güncel ucuna bağla
+        id: identity
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          main_head="$(git rev-parse origin/main)"
+          if [[ "$SOURCE_SHA" != "$main_head" ]]; then
+            echo "Tag SHA (${SOURCE_SHA}) güncel origin/main ucu (${main_head}) değil" >&2
+            exit 1
+          fi
+          image_name="ghcr.io/$(printf '%s/api' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          echo "short_sha=${SOURCE_SHA:0:12}" >> "$GITHUB_OUTPUT"
+          echo "image_name=$image_name" >> "$GITHUB_OUTPUT"
+
+      - name: Tam SHA'daki workflow run ve job kimliklerini doğrula
+        id: checks
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          jq -n --arg source_sha "$SOURCE_SHA" \
+            '{source_sha: $source_sha, workflows: []}' \
+            > /tmp/workflow-evidence.json
+
+          for workflow_path in \
+            .github/workflows/ci.yml \
+            .github/workflows/ai-quality.yml \
+            .github/workflows/security.yml
+          do
+            workflow_file="${workflow_path##*/}"
+            gh api \
+              --paginate \
+              --slurp \
+              --method GET \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_file}/runs?event=push&branch=main&per_page=100" \
+              > /tmp/run-pages.json
+            jq '{
+              runs_total_count: (.[0].total_count // 0),
+              workflow_runs: [.[].workflow_runs[]]
+            }' /tmp/run-pages.json > /tmp/runs.json
+            run_id="$(
+              jq -er \
+                --arg path "$workflow_path" \
+                --arg sha "$SOURCE_SHA" \
+                '[.workflow_runs[] | select(
+                    .path == $path and
+                    .event == "push" and
+                    .head_sha == $sha and
+                    .head_branch == "main"
+                  )] |
+                 if length == 1 and
+                    .[0].status == "completed" and
+                    .[0].conclusion == "success"
+                 then .[0].id
+                 else error("trusted workflow run is missing, ambiguous or unsuccessful")
+                 end' \
+                /tmp/runs.json
+            )"
+            gh api \
+              --paginate \
+              --slurp \
+              --method GET \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs?filter=latest&per_page=100" \
+              > /tmp/job-pages.json
+            jq '{
+              jobs_total_count: (.[0].total_count // 0),
+              jobs: [.[].jobs[]]
+            }' /tmp/job-pages.json > /tmp/jobs.json
+            jq \
+              --arg workflow_path "$workflow_path" \
+              --slurpfile runs /tmp/runs.json \
+              --slurpfile jobs /tmp/jobs.json \
+              '.workflows += [{
+                workflow_path: $workflow_path,
+                runs_total_count: $runs[0].runs_total_count,
+                workflow_runs: $runs[0].workflow_runs,
+                jobs_total_count: $jobs[0].jobs_total_count,
+                jobs: $jobs[0].jobs
+              }]' \
+              /tmp/workflow-evidence.json > /tmp/workflow-evidence.next.json
+            mv /tmp/workflow-evidence.next.json /tmp/workflow-evidence.json
+          done
+
+          python3 .release/verify_checks.py \
+            --input /tmp/workflow-evidence.json \
+            --output /tmp/verified-checks.json
+          checks_json="$(jq -c . /tmp/verified-checks.json)"
+          echo "checks_json=$checks_json" >> "$GITHUB_OUTPUT"
+
+  candidate:
+    name: Karantinada tek imajı kur, doğrula ve kayda al
+    needs: verify_required_checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # Repository dosyası environment'ı adlandırır; GitHub ayarlarında zorunlu
+    # reviewer/branch koruması ayrıca yapılandırılmadan bu bir onay kapısı değildir.
+    environment: release-candidate
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+
+    steps:
+      - name: Kaynağı al
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ needs.verify_required_checks.outputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Aday kimliğini yeniden doğrula
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.verify_required_checks.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "push"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+
+      - name: Buildx kur
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: GHCR oturumu aç
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: İmajı bir kez kur ve yalnız karantina etiketiyle yayınla
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ needs.verify_required_checks.outputs.image_name }}:quarantine-${{ needs.verify_required_checks.outputs.source_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.verify_required_checks.outputs.source_sha }}
+          sbom: true
+          provenance: mode=max
+
+      - name: Yayınlanan exact digest'i ürün kapılarından geçir
+        id: artifact
+        shell: bash
+        env:
+          IMAGE_NAME: ${{ needs.verify_required_checks.outputs.image_name }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          SOURCE_SHA: ${{ needs.verify_required_checks.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          immutable_reference="${IMAGE_NAME}@${IMAGE_DIGEST}"
+          quarantine_reference="${IMAGE_NAME}:quarantine-${SOURCE_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker pull "$immutable_reference"
+          docker run --rm --network none "$immutable_reference" python -c "
+          import os
+          from app.modules.ingestion.embedding import FastEmbedProvider
+          provider = FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR'])
+          vector = provider.embed_query('deadlock için dört koşul nedir')
+          assert len(vector) == 1024, len(vector)
+          print('yayınlanan digest ağsız embedding üretti, boyut:', len(vector))
+          "
+          docker run --rm --network none "$immutable_reference" \
+            cat /opt/models/embedding_bake_report.json \
+            > /tmp/embedding_bake_report.json
+          jq -e . /tmp/embedding_bake_report.json >/dev/null
+          bake_report_digest="sha256:$(sha256sum /tmp/embedding_bake_report.json | awk '{print $1}')"
+          peak_bytes="$(
+            docker run --rm --network none "$immutable_reference" python -c "
+          import os, resource
+          from app.modules.ingestion.embedding import FastEmbedProvider
+          provider = FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR'])
+          provider.embed_documents(['ısınma metni'] * 8)
+          print(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024)
+          " | tail -n 1
+          )"
+          [[ "$peak_bytes" =~ ^[0-9]+$ ]]
+          limit_bytes=$((4 * 1024 * 1024 * 1024))
+          if (( peak_bytes >= limit_bytes )); then
+            echo "RSS sınırı aşıldı: ${peak_bytes} >= ${limit_bytes} byte" >&2
+            exit 1
+          fi
+          echo "immutable_reference=$immutable_reference" >> "$GITHUB_OUTPUT"
+          echo "quarantine_reference=$quarantine_reference" >> "$GITHUB_OUTPUT"
+          echo "bake_report_digest=$bake_report_digest" >> "$GITHUB_OUTPUT"
+          echo "peak_bytes=$peak_bytes" >> "$GITHUB_OUTPUT"
+
+      - name: Registry SBOM ve provenance descriptor'larını doğrula
+        id: registry_attestations
+        shell: bash
+        env:
+          IMAGE_NAME: ${{ needs.verify_required_checks.outputs.image_name }}
+          IMMUTABLE_REFERENCE: ${{ steps.artifact.outputs.immutable_reference }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect --raw "$IMMUTABLE_REFERENCE" > /tmp/image-index.json
+          mapfile -t attestation_digests < <(
+            jq -r '.manifests[]? |
+              select(.annotations["vnd.docker.reference.type"] == "attestation-manifest") |
+              .digest' /tmp/image-index.json
+          )
+          if (( ${#attestation_digests[@]} == 0 )); then
+            echo "Registry index'inde attestation manifest yok" >&2
+            exit 1
+          fi
+          sbom_digests=()
+          provenance_digests=()
+          for digest in "${attestation_digests[@]}"; do
+            docker buildx imagetools inspect --raw "${IMAGE_NAME}@${digest}" \
+              > /tmp/attestation-manifest.json
+            if jq -e '.layers[]?.annotations["in-toto.io/predicate-type"] == "https://spdx.dev/Document"' \
+              /tmp/attestation-manifest.json >/dev/null
+            then
+              sbom_digests+=("$digest")
+            fi
+            if jq -e '.layers[]?.annotations["in-toto.io/predicate-type"] == "https://slsa.dev/provenance/v0.2"' \
+              /tmp/attestation-manifest.json >/dev/null
+            then
+              provenance_digests+=("$digest")
+            fi
+          done
+          if (( ${#sbom_digests[@]} != 1 || ${#provenance_digests[@]} != 1 )); then
+            echo "Tekil SBOM/provenance descriptor kanıtlanamadı" >&2
+            exit 1
+          fi
+          echo "sbom_digest=${sbom_digests[0]}" >> "$GITHUB_OUTPUT"
+          echo "provenance_digest=${provenance_digests[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Doğrulanan digest için GitHub provenance attestasyonu üret
+        id: github_attestation
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
+        with:
+          subject-name: ${{ needs.verify_required_checks.outputs.image_name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: GitHub attestation referansını ve bundle digest'ini doğrula
+        id: github_bundle
+        shell: bash
+        env:
+          ATTESTATION_URL: ${{ steps.github_attestation.outputs.attestation-url }}
+          BUNDLE_PATH: ${{ steps.github_attestation.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          [[ "$ATTESTATION_URL" == https://github.com/* ]]
+          test -s "$BUNDLE_PATH"
+          bundle_digest="sha256:$(sha256sum "$BUNDLE_PATH" | awk '{print $1}')"
+          echo "attestation_url=$ATTESTATION_URL" >> "$GITHUB_OUTPUT"
+          echo "bundle_digest=$bundle_digest" >> "$GITHUB_OUTPUT"
+
+      - name: Aday kabul kanıt paketini oluştur ve fail-closed doğrula
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.verify_required_checks.outputs.source_sha }}
+          IMAGE_NAME: ${{ needs.verify_required_checks.outputs.image_name }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMMUTABLE_REFERENCE: ${{ steps.artifact.outputs.immutable_reference }}
+          QUARANTINE_REFERENCE: ${{ steps.artifact.outputs.quarantine_reference }}
+          BAKE_REPORT_DIGEST: ${{ steps.artifact.outputs.bake_report_digest }}
+          PEAK_BYTES: ${{ steps.artifact.outputs.peak_bytes }}
+          SBOM_DIGEST: ${{ steps.registry_attestations.outputs.sbom_digest }}
+          PROVENANCE_DIGEST: ${{ steps.registry_attestations.outputs.provenance_digest }}
+          GITHUB_ATTESTATION_URL: ${{ steps.github_bundle.outputs.attestation_url }}
+          GITHUB_BUNDLE_DIGEST: ${{ steps.github_bundle.outputs.bundle_digest }}
+          CHECKS_JSON: ${{ needs.verify_required_checks.outputs.checks_json }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-evidence
+          artifact_name="release-evidence-${SOURCE_SHA:0:12}"
+          created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          jq -n \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg source_sha "$SOURCE_SHA" \
+            --arg tag_ref "$GITHUB_REF" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --arg run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg run_url "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            --arg image_name "$IMAGE_NAME" \
+            --arg image_digest "$IMAGE_DIGEST" \
+            --arg immutable_reference "$IMMUTABLE_REFERENCE" \
+            --arg quarantine_reference "$QUARANTINE_REFERENCE" \
+            --arg sbom_digest "$SBOM_DIGEST" \
+            --arg provenance_digest "$PROVENANCE_DIGEST" \
+            --arg github_attestation_url "$GITHUB_ATTESTATION_URL" \
+            --arg github_bundle_digest "$GITHUB_BUNDLE_DIGEST" \
+            --arg bake_report_digest "$BAKE_REPORT_DIGEST" \
+            --arg peak_bytes "$PEAK_BYTES" \
+            --arg artifact_name "$artifact_name" \
+            --arg created_at "$created_at" \
+            --argjson checks "$CHECKS_JSON" \
+            '{
+              schema_version: 2,
+              record_type: "candidate",
+              source: {
+                repository: $repository,
+                sha: $source_sha,
+                tag_ref: $tag_ref,
+                workflow: {
+                  path: ".github/workflows/release-candidate.yml",
+                  event: "push",
+                  run_id: ($run_id | tonumber),
+                  run_attempt: ($run_attempt | tonumber),
+                  run_url: $run_url
+                }
+              },
+              image: {
+                name: $image_name,
+                digest: $image_digest,
+                immutable_reference: $immutable_reference,
+                quarantine_reference: $quarantine_reference
+              },
+              supply_chain: {
+                sbom: {
+                  predicate_type: "https://spdx.dev/Document",
+                  reference: ("oci://" + $image_name + "@" + $sbom_digest),
+                  digest: $sbom_digest
+                },
+                provenance: {
+                  predicate_type: "https://slsa.dev/provenance/v0.2",
+                  reference: ("oci://" + $image_name + "@" + $provenance_digest),
+                  digest: $provenance_digest
+                },
+                github_attestation: {
+                  reference: $github_attestation_url,
+                  bundle_digest: $github_bundle_digest
+                }
+              },
+              artifact_verification: {
+                image_reference: $immutable_reference,
+                offline_embedding: "passed",
+                bake_report: {status: "passed", digest: $bake_report_digest},
+                rss: {
+                  status: "passed",
+                  peak_bytes: ($peak_bytes | tonumber),
+                  limit_bytes: 4294967296
+                }
+              },
+              admission: {
+                status: "admitted",
+                mechanism: "immutable-evidence-record",
+                evidence_artifact: $artifact_name,
+                admitted_at: $created_at
+              },
+              environments: {
+                staging: "not-configured",
+                production: "not-configured"
+              },
+              checks: $checks,
+              created_at: $created_at
+            }' > release-evidence/candidate.json
+          python3 .release/validate_evidence.py \
+            --schema .release/evidence.schema.json \
+            --input release-evidence/candidate.json
+
+      - name: Kabul kaydını değişmez kanıt olarak sakla
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-evidence-${{ needs.verify_required_checks.outputs.short_sha }}
+          path: release-evidence/candidate.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Özeti yaz
+        shell: bash
+        env:
+          IMMUTABLE_REFERENCE: ${{ steps.artifact.outputs.immutable_reference }}
+          QUARANTINE_REFERENCE: ${{ steps.artifact.outputs.quarantine_reference }}
+        run: |
+          {
+            echo "## Release candidate kabul kaydı"
+            echo
+            echo "- Karantina etiketi: \`${QUARANTINE_REFERENCE}\`"
+            echo "- Kabul edilen değişmez imaj: \`${IMMUTABLE_REFERENCE}\`"
+            echo "- Güvenilir workflow/job: **10/10**, exact main SHA + push event"
+            echo "- Staging: **yapılandırılmadı**"
+            echo "- Production: **yapılandırılmadı**"
+            echo
+            echo "Başarısız kapı yalnız karantina etiketi bırakır; kabul kaydı oluşturmaz."
+            echo "Bu workflow dağıtım iddiası değildir. Promotion, aynı digest için ayrı kanıt ister."
+            echo "release-candidate environment reviewer/branch koruması GitHub ayarlarında ayrıca zorunlu kılınmalıdır."
+          } >> "$GITHUB_STEP_SUMMARY"

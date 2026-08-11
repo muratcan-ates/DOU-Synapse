@@ -204,6 +204,51 @@ RLS izolasyon kanıtı):
 - **Teslim belgeleri** — runbook (üç planlı), demo senaryosu, eğitmen ve öğrenci
   kılavuzları, KVKK aydınlatma metni + sayfası, güvenlik belgesi
 
+## Mühendislik ve AI teslim sistemi
+
+Ürün kodu ile onu güvenle değiştirme süreci aynı depoda tutulur:
+
+- **Çekirdek CI** API lint/format/tip/test, RLS mutasyonları, web tip/test/build,
+  canlı belge sayıları, gerçek API + tarayıcı E2E ve ağsız embedding imajı
+  kontrollerini ayrı işler olarak tanımlar. Tip işinin workflow'daki
+  `continue-on-error` istisnası kaldırılmıştır ve bağımlılıklar kilit
+  dosyalarından kurulur; bu işin birleştirmeyi gerçekten durdurması için
+  `main` ruleset'inde required check olarak ayrıca doğrulanması gerekir.
+- **AI SDLC kapısı** prompt, model/sağlayıcı, retrieval, embedding, guardrail,
+  değerlendirme ve sınav davranışı değişikliklerini reviewed diff'ten bulur. Her
+  değişiklik için dosya hash'i, R1–R3 riski, dürüst kanıt ortamı, gerekli
+  bağımsız onaylar, rollout/kill switch ve rollback kaydını fail-closed
+  doğrular. Dossier düzeltmeleri eski kaydı değiştirmez: sabit lineage, artan
+  revision ve önceki base kaydının path+SHA-256'sına bağlı yeni immutable kayıt
+  eklenir. Canary, rollback ve kapanış durumları kendi provider/approval/
+  deployment/rollback kanıtları olmadan ilerlemez. Bu kontrol repo içinde
+  yapılandırılmıştır; required-check
+  enforcement'ı canlı ruleset kanıtı bekler. Sahte sağlayıcı kanıtı hiçbir
+  zaman gerçek-model veya production kanıtı sayılmaz; offline validator da
+  provider çağrısını, canary trafiğini veya production telemetry'sini kendi
+  başına gözleyemez.
+- **Tedarik zinciri** için CODEOWNERS, PR kanıt şablonu, Dependabot (Actions,
+  uv, Bun), dependency review, CodeQL ve değişmez action SHA politikası repo
+  kontrolleri olarak tanımlanır; canlı run/ruleset kanıtı ayrıdır.
+- **Sürüm adayı hattı** tag event'inin tam SHA'sını, güvenilen workflow
+  kimliklerini ve `main` ucunu bağlayan admission kontrolünü tanımlar. İmaj
+  önce karantina kimliğiyle tek kez yayınlanır; exact digest ürün kapılarından
+  geçmeden admitted candidate kanıtı olamaz. Staging ve production dağıtımı
+  henüz yapılandırılmadığı için candidate kanıtı bunları iddia edemez;
+  aday üretmek canlıya çıkmak değildir.
+- **Mühendislik işletim sistemi** ADR, planlı/ölçülmemiş SLO, hata bütçesi,
+  incident öğrenimi, aynı-digest promotion ve rollback sözleşmelerini içerir.
+
+Başlangıç noktaları: [AI SDLC](docs/engineering/AI_SDLC.md) ·
+[Engineering Excellence](docs/engineering/ENGINEERING_EXCELLENCE.md) ·
+[Sürüm süreci](docs/engineering/RELEASE_PROCESS.md) ·
+[SLO](docs/engineering/SLO.md) · [Incident response](docs/engineering/INCIDENT_RESPONSE.md) ·
+[ADR kayıtları](docs/adr/README.md).
+
+Yeni kapılar depoda **configured** durumdadır; canlı GitHub koşusu, branch
+ruleset'i ve protected environment gözlenmeden **enforced/observed** ya da
+production-ready olarak raporlanmaz.
+
 ## Yapılacaklar ⏳
 
 Görev listesinin **%93'ü kapandı** (56/60). Açık kalan dördünün **tamamı dış

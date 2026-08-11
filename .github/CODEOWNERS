@@ -1,0 +1,27 @@
+# Repository ownership baseline.
+# GitHub only enforces these reviewers when branch protection or a ruleset
+# requires Code Owner approval; that external setting must be verified separately.
+
+# Every path has an accountable fallback owner.
+* @muratcan-ates
+
+# Delivery, governance, and release controls.
+/.github/ @muratcan-ates
+/.ai/ @muratcan-ates
+/.release/ @muratcan-ates
+/.specify/ @muratcan-ates
+/specs/ @muratcan-ates
+/docs/adr/ @muratcan-ates
+/docs/engineering/ @muratcan-ates
+
+# Database, identity, authorization, and operational boundaries.
+/supabase/ @muratcan-ates
+/apps/api/app/api/deps.py @muratcan-ates
+/apps/api/app/core/ @muratcan-ates
+/apps/api/app/worker.py @muratcan-ates
+/apps/web/e2e/ @muratcan-ates
+
+# AI behavior, evaluation, and source-bounded generation.
+/apps/api/app/modules/ @muratcan-ates
+/evaluation/ @muratcan-ates
+/scripts/ @muratcan-ates

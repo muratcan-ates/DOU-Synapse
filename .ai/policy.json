@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "dossier_schema": ".ai/schema.json",
+  "dossier_glob": ".ai/changes/*.json",
+  "risk_order": {
+    "R1": 1,
+    "R2": 2,
+    "R3": 3
+  },
+  "allowed_evidence_labels": [
+    "fake-provider",
+    "offline-replay",
+    "real-provider",
+    "staging",
+    "canary",
+    "production",
+    "rollback"
+  ],
+  "allowed_statuses": [
+    "draft",
+    "evidence-ready",
+    "awaiting-approval",
+    "canary",
+    "expanded",
+    "rolled-back",
+    "closed"
+  ],
+  "risk_requirements": {
+    "R1": {
+      "required_approval_roles": [
+        "peer"
+      ],
+      "require_independent_approval": true,
+      "require_feature_flag": false,
+      "require_kill_switch": true,
+      "require_sticky_assignment": false
+    },
+    "R2": {
+      "required_approval_roles": [
+        "engineering",
+        "course_or_product"
+      ],
+      "require_independent_approval": true,
+      "require_feature_flag": true,
+      "require_kill_switch": true,
+      "require_sticky_assignment": true
+    },
+    "R3": {
+      "required_approval_roles": [
+        "engineering",
+        "domain",
+        "security_or_privacy"
+      ],
+      "require_independent_approval": true,
+      "require_feature_flag": true,
+      "require_kill_switch": true,
+      "require_sticky_assignment": true
+    }
+  },
+  "privacy": {
+    "allow_identifiable_student_content": false
+  },
+  "production_claim": {
+    "required_passing_labels": [
+      "real-provider"
+    ],
+    "required_environment_labels_any_of": [
+      "staging",
+      "canary",
+      "production"
+    ],
+    "minimum_named_human_approval_refs": 2
+  },
+  "sensitive_paths": [
+    {
+      "pattern": ".ai/changes/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": ".ai/evidence/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": ".ai/policy.json",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": ".ai/schema.json",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": ".ai/README.md",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "scripts/ai_sdlc_check.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "scripts/test_ai_sdlc_check.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": ".github/workflows/ai-quality.yml",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/modules/generation/**",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/app/api/chat.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/api/policy.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/api/blueprints.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/modules/policy/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/modules/retrieval/**",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/app/modules/guardrails/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/modules/ingestion/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/modules/assessment/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/modules/mastery/**",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/api/exams.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/api/questions.py",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/app/contracts.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/main.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/worker.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/models/chat.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/models/assessment.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/models/policy.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/schemas/chat.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/schemas/assessment.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/schemas/blueprint.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/schemas/policy.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/core/config.py",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/app/core/llm_json.py",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/app/core/text_tr.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/core/rate_limit.py",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/app/core/vector_space.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/app/core/warmup.py",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/Dockerfile",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/scripts/bake_embedding_model.py",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "apps/api/pyproject.toml",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "apps/api/uv.lock",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "docker-compose.yml",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": ".env.example",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "evaluation/**",
+      "minimum_risk": "R3",
+      "requires_evaluation_split": true,
+      "requires_human_anchor": true
+    },
+    {
+      "pattern": "supabase/migrations/0003_chat.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/0004_assessment.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/0006_embedding_provenance.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/0007_question_delete_and_exam_grants.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/0008_exam_blueprint.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/0009_course_ai_policy.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/0010_ingestion_retry.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/0013_chat_feedback.sql",
+      "minimum_risk": "R3"
+    },
+    {
+      "pattern": "supabase/migrations/**",
+      "minimum_risk": "R3"
+    }
+  ]
+}
