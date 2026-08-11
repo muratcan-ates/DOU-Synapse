@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CourseAssistant } from "@/components/course-assistant/course-assistant";
 import { Badge, Card } from "@/components/ui";
 import {
   coursePrimaryHref,
@@ -43,20 +44,27 @@ export function DashboardCourseCard({ course }: { course: DashboardCourse }) {
         </dl>
       )}
 
-      <nav
-        aria-label={course.code + " hızlı araçları"}
-        className="flex flex-wrap gap-x-4 gap-y-2"
-      >
-        {quickTools.map((tool) => (
-          <Link
-            key={tool.href}
-            href={tool.href}
-            className="inline-flex min-h-11 items-center text-xs font-medium text-brand underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            {tool.label}
-          </Link>
-        ))}
-      </nav>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <CourseAssistant
+          courseId={course.id}
+          courseLabel={course.code}
+          placement="inline"
+        />
+        <nav
+          aria-label={course.code + " hızlı araçları"}
+          className="flex flex-wrap gap-x-4 gap-y-2"
+        >
+          {quickTools.map((tool) => (
+            <Link
+              key={tool.href}
+              href={tool.href}
+              className="inline-flex min-h-11 items-center text-xs font-medium text-brand underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              {tool.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
 
       {!instructor && course.assistant_locked && course.assistant_lock_message && (
         <p role="status" className="text-xs text-warning">

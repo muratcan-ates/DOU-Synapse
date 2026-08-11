@@ -424,6 +424,8 @@ describe("canlı yanıt ile geçmiş aynı biçime iner", () => {
     ],
     socratic_stage: "nudge",
     cached: false,
+    audience: "student",
+    agent_profile: "student_coach",
   };
 
   test("fromAnswer asistan satırını kurar", () => {
@@ -481,6 +483,8 @@ describe("önbellek işareti — zarftaki `cached` ekrana ulaşır", () => {
     hints: [],
     socratic_stage: null,
     cached: true,
+    audience: "student",
+    agent_profile: "student_coach",
   };
 
   test("canlı yanıttaki cached satıra taşınır", () => {

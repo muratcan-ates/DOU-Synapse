@@ -809,6 +809,17 @@ test.describe("sınav provası", () => {
     await expect(kilitliSekme).toBeVisible();
     await expect(asistanBaglantisi).toHaveCount(0);
 
+    // Aynı availability kararı yeni kompakt asistan yüzeyini de kilitler.
+    // Tetikleyici görünür kalır ki kullanıcı neden kapalı olduğunu okuyabilsin;
+    // besteci ve token harcatan gönderim yüzeyi hiç çizilmez.
+    await page.getByRole("button", { name: "Ders Koçu" }).click();
+    const asistanPaneli = page.getByRole("dialog");
+    await expect(
+      asistanPaneli.getByText("Asistan sınav sırasında kapalı", { exact: true }),
+    ).toBeVisible();
+    await expect(asistanPaneli.getByRole("button", { name: "Gönder" })).toHaveCount(0);
+    await asistanPaneli.getByRole("button", { name: "Ders asistanını kapat" }).click();
+
     // Sunucu da aynı kararı veriyor: kilitli sekme bir süs değil.
     await page.goto(`/courses/${havuz.course.id}/chat`);
     await expect(page.getByText(/süren bir sınav oturumun var/)).toBeVisible();

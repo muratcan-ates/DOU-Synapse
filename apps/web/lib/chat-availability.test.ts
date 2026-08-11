@@ -14,6 +14,8 @@ describe("toChatLock", () => {
         message: "Şu anda süren bir sınav oturumun var.",
         allowed_modes: ["qa", "socratic"],
         hint_limit: 4,
+        audience: "student",
+        agent_profile: "student_coach",
       },
       true,
     );
@@ -21,6 +23,10 @@ describe("toChatLock", () => {
     expect(lock.locked).toBe(true);
     expect(lock.message).toBe("Şu anda süren bir sınav oturumun var.");
     expect(lock.ready).toBe(true);
+    expect(lock.audience).toBe("student");
+    expect(lock.agentProfile).toBe("student_coach");
+    expect(lock.allowedModes).toEqual(["qa", "socratic"]);
+    expect(lock.hintLimit).toBe(4);
   });
 
   test("sunucu açık derse kilit yok ve mesaj taşınmaz", () => {
@@ -31,12 +37,16 @@ describe("toChatLock", () => {
         message: null,
         allowed_modes: ["qa", "socratic"],
         hint_limit: 4,
+        audience: "instructor",
+        agent_profile: "instructor_assistant",
       },
       true,
     );
 
     expect(lock.locked).toBe(false);
     expect(lock.message).toBeNull();
+    expect(lock.audience).toBe("instructor");
+    expect(lock.agentProfile).toBe("instructor_assistant");
   });
 
   test("açıkken gelen bir mesaj yine de gösterilmez", () => {
@@ -49,11 +59,31 @@ describe("toChatLock", () => {
         message: "artık",
         allowed_modes: ["qa", "socratic"],
         hint_limit: 4,
+        audience: "student",
+        agent_profile: "student_coach",
       },
       true,
     );
 
     expect(lock.message).toBeNull();
+  });
+
+  test("sınav modu sohbet bestecisine taşınmaz, sunucu sırası korunur", () => {
+    const lock = toChatLock(
+      {
+        available: true,
+        reason: null,
+        message: null,
+        allowed_modes: ["socratic", "exam", "qa", "socratic"],
+        hint_limit: 2,
+        audience: "student",
+        agent_profile: "student_coach",
+      },
+      true,
+    );
+
+    expect(lock.allowedModes).toEqual(["socratic", "qa"]);
+    expect(lock.hintLimit).toBe(2);
   });
 
   test("yoklama daha dönmediyse sekme kilitlenmez", () => {
@@ -63,6 +93,9 @@ describe("toChatLock", () => {
 
     expect(lock.locked).toBe(false);
     expect(lock.ready).toBe(false);
+    expect(lock.audience).toBeNull();
+    expect(lock.agentProfile).toBeNull();
+    expect(lock.allowedModes).toEqual([]);
   });
 
   test("yoklama başarısız olduysa sekme kilitlenmez", () => {
@@ -72,5 +105,7 @@ describe("toChatLock", () => {
 
     expect(lock.locked).toBe(false);
     expect(lock.ready).toBe(true);
+    expect(lock.audience).toBeNull();
+    expect(lock.agentProfile).toBeNull();
   });
 });

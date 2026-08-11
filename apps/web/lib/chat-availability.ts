@@ -16,10 +16,12 @@
  * sekmesinde çalışıyor.
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { api } from "@/lib/api";
+import { allowedChatUiModes } from "@/lib/course-assistant";
 import { useResource } from "@/lib/use-resource";
-import type { ChatAvailability } from "@/lib/types";
+import type { ChatAgentProfile, ChatAudience, ChatAvailability } from "@/lib/types";
+import type { ChatUiMode } from "@/lib/chat";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -53,29 +55,37 @@ export interface ChatLock {
   message: string | null;
   /** İlk yanıt gelene kadar false — "kilitli değil" ile karıştırılmamalı. */
   ready: boolean;
+  /** Üyelikten sunucunun türettiği hedef kitle; null iken persona çizilmez. */
+  audience: ChatAudience | null;
+  /** Kullanıcının seçebileceği bir alan değildir. */
+  agentProfile: ChatAgentProfile | null;
+  /** `exam` filtrelenir; sohbet bestecisi yalnız bu iki modu tanır. */
+  allowedModes: ChatUiMode[];
+  /** Sokratik yönlendirmenin sunucu politikasındaki üst sınırı. */
+  hintLimit: number;
 }
 
 /**
- * `courseId` null verilirse yoklama YAPILMAZ ve kilit yokmuş gibi dönülür.
+ * `courseId` null verilirse yoklama YAPILMAZ ve persona bilinmiyor döner.
  *
  * Kancalar koşullu çağrılamaz, ama iş koşullu yapılabilir: kilidi zaten
  * dışarıdan alan bir çağıran (bkz. `CourseNav`) aynı ucu ikinci kez çağırmasın
  * diye kapı burada. Kancanın kendisi her render'da aynı sırada çalışır.
  */
 export function useChatAvailability(courseId: string | null): ChatLock {
-  const { data, loading, reload } = useResource<ChatAvailability>(
-    () =>
-      courseId === null
-        ? Promise.resolve({
-            available: true,
-            reason: null,
-            message: null,
-            allowed_modes: ["qa", "socratic"],
-            hint_limit: 4,
-          } satisfies ChatAvailability)
-        : api.get<ChatAvailability>(`/courses/${courseId}/chat/availability`),
+  const requestedCourse = useRef<string | null>(null);
+  const { data, loading, reload } = useResource<ChatAvailability | null>(
+    () => {
+      requestedCourse.current = courseId;
+      return courseId === null
+        ? Promise.resolve(null)
+        : api.get<ChatAvailability>(`/courses/${courseId}/chat/availability`);
+    },
     [courseId],
-    { pollWhile: (state) => !state.available, intervalMs: POLL_INTERVAL_MS },
+    {
+      pollWhile: (state) => state !== null && !state.available,
+      intervalMs: POLL_INTERVAL_MS,
+    },
   );
 
   /*
@@ -90,6 +100,15 @@ export function useChatAvailability(courseId: string | null): ChatLock {
     };
   }, [reload]);
 
+  /*
+   * `useResource` bağımlılık değişimini effect içinde sıfırlar. Açma tıklaması
+   * ile o effect arasındaki tek render'da önceki `null` sonucu hâlâ elde olur;
+   * onu "istek bitti" diye okumak paneli bir an doğrulanmamış persona ile
+   * çizerdi. İstenen ders gerçekten fetcher'a ulaşmadan sonuç kullanılmaz.
+   */
+  if (courseId === null || requestedCourse.current !== courseId) {
+    return toChatLock(null, false);
+  }
   return toChatLock(data, !loading);
 }
 
@@ -102,10 +121,24 @@ export function useChatAvailability(courseId: string | null): ChatLock {
  * olmadığı hâlde kapatırdı — yani yoklamanın arızası ürünün arızasına dönerdi.
  */
 export function toChatLock(data: ChatAvailability | null, settled: boolean): ChatLock {
-  if (data === null) return { locked: false, message: null, ready: settled };
+  if (data === null) {
+    return {
+      locked: false,
+      message: null,
+      ready: settled,
+      audience: null,
+      agentProfile: null,
+      allowedModes: [],
+      hintLimit: 0,
+    };
+  }
   return {
     locked: !data.available,
     message: data.available ? null : (data.message ?? null),
     ready: true,
+    audience: data.audience,
+    agentProfile: data.agent_profile,
+    allowedModes: allowedChatUiModes(data.allowed_modes),
+    hintLimit: data.hint_limit,
   };
 }

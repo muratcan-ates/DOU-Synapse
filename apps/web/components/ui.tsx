@@ -10,7 +10,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { ComponentPropsWithRef, InputHTMLAttributes, ReactNode } from "react";
+import type { ComponentPropsWithRef, ReactNode } from "react";
 import { errorMessage } from "@/lib/errors";
 import type { Tone } from "@/lib/labels";
 
@@ -62,10 +62,12 @@ export function Button({
 
 export function Input({
   className = "",
+  ref,
   ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
+}: ComponentPropsWithRef<"input">) {
   return (
     <input
+      ref={ref}
       {...props}
       className={`h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand ${className}`}
     />
