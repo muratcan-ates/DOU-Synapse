@@ -89,7 +89,7 @@ psql -d dou_synapse -f supabase/tests/rls_isolation.sql
 psql -d dou_synapse -f supabase/seed_demo.sql
 ```
 
-**Doğrulama — 25 tablo görmelisiniz:** <!-- docs-check: tables.count = 25 -->
+**Doğrulama — 27 tablo görmelisiniz:** <!-- docs-check: tables.count = 27 -->
 
 ```bash
 psql -d dou_synapse -tAc "select count(*) from information_schema.tables
@@ -192,7 +192,7 @@ uv run python -m app.worker
 
 ```bash
 cd apps/api
-uv run pytest          # 851 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 851
+uv run pytest          # 879 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 879
 uv run mypy app        # temiz
 uv run ruff check .
 uv run ruff format --check .

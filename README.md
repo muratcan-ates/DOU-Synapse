@@ -12,7 +12,7 @@ Danışman: Yasemin Karagül · Takım: Muratcan Ateş (frontend + lead) · Eren
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-851_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 851 -->
+![Tests](https://img.shields.io/badge/tests-879_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 879 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/muratcan-ates/DOU-Synapse?style=flat-square)
 
@@ -49,7 +49,7 @@ iş taslakları onaylamak. Onaylanmayan hiçbir soru öğrenciye görünmez.
 | **Nedir** | Ders materyaliyle sınırlı, kaynak zorunlu, Sokratik bir RAG ders ve sınav asistanı |
 | **Kimin için** | Soru hazırlama ve sınıf görünürlüğü yükü taşıyan eğitmen; müfredat dahilinde güvenilir kaynakla çalışmak isteyen öğrenci |
 | **Farkı ne** | Cevap üretmek değil, **doğrulanabilir** cevap üretmek: mekanik atıf doğrulaması, kademeli Sokratik yönlendirme, eğitmen onaylı soru havuzu, iki katmanlı ders izolasyonu |
-| **Kanıtı ne** | 851 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak | <!-- docs-check: backend.tests = 851 -->
+| **Kanıtı ne** | 879 otomatik test · CI her koşuda RLS politikasını **bilerek bozup** izolasyon testinin kırmızı yandığını da doğrular · OpenAPI sözleşmesi kodla aynı commit'te güncellenir · ölçüm sayıları kalibrasyon/holdout ayrımıyla raporlanacak | <!-- docs-check: backend.tests = 879 -->
 | **Bilerek ne değil** | Üretim sistemi değil; internete açılmaz, kod çalıştırmaz, resmî not vermez — [aşağıda](#yapar--bilerek-yapmaz) |
 
 ## Yapay zekânın üç rolü
@@ -59,6 +59,24 @@ iş taslakları onaylamak. Onaylanmayan hiçbir soru öğrenciye görünmez.
 | **Class Assistant** | Öğrencinin materyal içi sorularını kaynak göstererek yanıtlar | Materyalde karşılığı yoksa cevap vermez |
 | **Exam Mentor** | Öğrencinin denemesini bekler; kademeli, kaynaklı Sokratik ipucu verir; yanlış şıkta çelişen kaynak bölümünü gösterir | Cevabı asla doğrudan vermez; sınav modunda ipucu kapalı |
 | **CourseGPT** | Eğitmenin kurduğu çerçevede soruları ve cevap anahtarlarını üretir — eğitmen soru yazmakla uğraşmaz | Yayın kararı veremez: eğitmen onaylamadan hiçbir soru öğrenciye açılmaz |
+
+### Rol farkındalıklı ders asistanı
+
+Aynı kaynaklı sohbet hattı, kullanıcının **seçili dersteki üyelik rolüne** göre
+iki görünür çalışma profili sunar. Rol istemciden gönderilmez ve kullanıcı bir
+persona seçemez; sunucu her ders için üyelikten türetir:
+
+| Profil | Ne için kullanılır | Değişmez sınır |
+|---|---|---|
+| **Ders Koçu** | Öğrencinin kaynaklı soru sorması, konuyu adım adım çalışması ve Sokratik ipucu alması | Aktif sınavda kapanır; kaynak dışına çıkmaz ve çözümü doğrudan sızdırmaz |
+| **Eğitmen Asistanı** | Eğitmenin zor kavramları, kaynak boşluklarını ve kaynaklı yönlendirme taslaklarını incelemesi | Soru yayınlayamaz, veri değiştiremez ve öğrencilerin özel sohbet/cevaplarına erişemez |
+
+Asistan yeni bir genel amaçlı veya otonom ajan değildir: araç çağırmaz, ders
+dışında işlem yapmaz ve yalnız mevcut `/courses/{id}/chat` RAG hattını kullanır.
+Token bütçesi; kullanıcı, ders ve platform düzeyinde atomik olarak sınırlandırılır.
+Çıktı uzunluğu, eşzamanlı istek, hız ve günlük kullanım ayrıca kısıtlanır; kapsam
+dışı veya yetersiz kanıtlı istekler sağlayıcıya gitmeden reddedilebilir. Acil
+durum anahtarı arayüzü değil doğrudan API'yi de kapatır.
 
 ## Benzer araçların yanında
 
@@ -152,7 +170,7 @@ değil **"Ders bulunamadı"** görür; dersin varlığı bile sızdırılmaz:
 
 ## Yapılanlar ✅
 
-Hepsi bu depoda çalışır ve testlidir — **851 otomatik test** + CI (ruff, mypy, pytest, <!-- docs-check: backend.tests = 851 -->
+Hepsi bu depoda çalışır ve testlidir — **879 otomatik test** + CI (ruff, mypy, pytest, <!-- docs-check: backend.tests = 879 -->
 RLS izolasyon kanıtı):
 
 - **İki katmanlı ders izolasyonu** — uygulama katmanı (istemciden gelen ders kimliği
@@ -181,6 +199,10 @@ RLS izolasyon kanıtı):
   sınanır; kümede olmayan atıf düşer, geçerli atıf kalmazsa cevap gösterilmez
 - **Sokratik durum makinesi** — beş kademe, denemesiz ilerlemez, ısrarda dil modeline
   hiç gidilmez
+- **Rol farkındalıklı Ders Koçu / Eğitmen Asistanı** — kimlik ders üyeliğinden
+  sunucuda türetilir; oturum ve önbellek rol zarfına bağlıdır; aktif sınav,
+  günlük token bütçesi, çıktı sınırı, hız ve eşzamanlılık korumaları API
+  seviyesinde uygulanır
 - **Soru üretimi + onay akışı**, **sınav prova motoru**, **"neden yanlış"**,
   **mastery + analitik** — uçlar çalışıyor ve test kapsamında
 
@@ -316,7 +338,7 @@ cd apps/api
 uv venv --python 3.12
 uv pip install -e ".[dev]"
 cp ../../.env.example .env        # varsayılanlar yerel için yeterli
-uv run pytest -q                  # 851 test yeşil olmalı (~70-120 sn)   # docs-check: backend.tests = 851
+uv run pytest -q                  # 879 test yeşil olmalı (~70-120 sn)   # docs-check: backend.tests = 879
 ```
 
 **4. Servisleri başlat** (üç ayrı terminal)
@@ -464,7 +486,7 @@ koşularda hiç görünmüyordu.
 
 İkisi de migration dizininin tamamını sırayla uygulayacak şekilde değiştirildi, böylece
 bir sonraki migration eklendiğinde belge kendiliğinden güncel kalır. Sıfırdan bir
-veritabanında doğrulandı: 25 tablo ve 2 demo kullanıcısı hatasız oluşuyor. <!-- docs-check: tables.count = 25 -->
+veritabanında doğrulandı: 27 tablo ve 2 demo kullanıcısı hatasız oluşuyor. <!-- docs-check: tables.count = 27 -->
 
 </details>
 
