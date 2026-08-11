@@ -13,6 +13,13 @@ from app.models.assessment import ExamMode
 from app.models.chat import ChatFeedbackRating, ChatFeedbackReason, ChatRole
 from app.models.core import MembershipRole, MembershipStatus
 
+USER_DATA_EXPORT_NOT_INCLUDED: tuple[str, ...] = (
+    "ai_token_reservations: Soru, cevap veya kaynak metni içermeyen token bütçesi, "
+    "maliyet ve eşzamanlılık operasyon kaydıdır; bu dışa aktarıma dahil edilmez.",
+    "ai_guard_events: Soru, cevap veya kaynak metni içermeyen hız, kota, "
+    "eşzamanlılık ve kapsam reddi güvenlik kaydıdır; bu dışa aktarıma dahil edilmez.",
+)
+
 
 class _FromRow(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -104,6 +111,7 @@ class UserDataExportOut(BaseModel):
     chat_sessions: list[ExportChatSessionOut]
     exam_sessions: list[ExportExamSessionOut]
     mastery: list[ExportMasteryOut]
+    not_included: list[str] = Field(default_factory=lambda: list(USER_DATA_EXPORT_NOT_INCLUDED))
 
 
 class ChatDeletionOut(BaseModel):

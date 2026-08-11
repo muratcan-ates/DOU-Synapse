@@ -27,6 +27,46 @@ class PersonalRows:
     answer_id: UUID
 
 
+@dataclass(frozen=True)
+class AgentOperationalRows:
+    reservation_id: UUID
+    guard_event_id: UUID
+
+
+async def seed_agent_operational_rows(
+    admin_engine: AsyncEngine,
+    fixture: ExamFixture,
+) -> AgentOperationalRows:
+    reservation_id = uuid4()
+    guard_event_id = uuid4()
+    async with admin_engine.begin() as conn:
+        await conn.execute(
+            text(
+                "INSERT INTO ai_token_reservations "
+                "(id,course_id,user_id,audience,reserved_tokens,charged_tokens,expires_at) "
+                "VALUES (:id,:course_id,:user_id,'student',100,100,now()+interval '1 minute')"
+            ),
+            {
+                "id": reservation_id,
+                "course_id": UUID(fixture.course_id),
+                "user_id": fixture.student_id,
+            },
+        )
+        await conn.execute(
+            text(
+                "INSERT INTO ai_guard_events "
+                "(id,course_id,user_id,audience,event_type) "
+                "VALUES (:id,:course_id,:user_id,'student','scope_refused')"
+            ),
+            {
+                "id": guard_event_id,
+                "course_id": UUID(fixture.course_id),
+                "user_id": fixture.student_id,
+            },
+        )
+    return AgentOperationalRows(reservation_id, guard_event_id)
+
+
 async def seed_personal_rows(
     admin_engine: AsyncEngine,
     fixture: ExamFixture,
@@ -170,6 +210,76 @@ async def test_export_uygulama_filtresi_egitmenin_ogrenci_verisini_sizdirmaz(
     assert str(fixture.instructor_id) not in encoded
     assert str(teacher_rows.chat_id) not in encoded
     assert str(teacher_rows.exam_id) not in encoded
+
+
+async def test_export_agent_operasyon_kayitlarini_aciklayarak_disarida_birakir(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+) -> None:
+    fixture = await build_course(client, users, admin_engine)
+    rows = await seed_agent_operational_rows(admin_engine, fixture)
+
+    response = await client.get("/me/export", headers=fixture.student)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["schema_version"] == "2"
+    assert body["not_included"] == [
+        "ai_token_reservations: Soru, cevap veya kaynak metni içermeyen token bütçesi, "
+        "maliyet ve eşzamanlılık operasyon kaydıdır; bu dışa aktarıma dahil edilmez.",
+        "ai_guard_events: Soru, cevap veya kaynak metni içermeyen hız, kota, "
+        "eşzamanlılık ve kapsam reddi güvenlik kaydıdır; bu dışa aktarıma dahil edilmez.",
+    ]
+    encoded = json.dumps(body)
+    assert str(rows.reservation_id) not in encoded
+    assert str(rows.guard_event_id) not in encoded
+
+
+@pytest.mark.parametrize("delete_target", ["course", "profile"])
+async def test_agent_operasyon_kayitlari_course_ve_profile_delete_ile_cascade_silinir(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    delete_target: str,
+) -> None:
+    fixture = await build_course(client, users, admin_engine)
+    rows = await seed_agent_operational_rows(admin_engine, fixture)
+
+    async with admin_engine.begin() as conn:
+        if delete_target == "course":
+            await conn.execute(
+                text("DELETE FROM courses WHERE id = :id"),
+                {"id": UUID(fixture.course_id)},
+            )
+        else:
+            await conn.execute(
+                text("DELETE FROM profiles WHERE id = :id"),
+                {"id": fixture.student_id},
+            )
+
+    async with admin_engine.connect() as conn:
+        counts = (
+            await conn.execute(
+                text(
+                    "SELECT "
+                    "(SELECT count(*) FROM ai_token_reservations WHERE id = :reservation_id), "
+                    "(SELECT count(*) FROM ai_guard_events WHERE id = :guard_event_id), "
+                    "(SELECT count(*) FROM courses WHERE id = :course_id), "
+                    "(SELECT count(*) FROM profiles WHERE id = :student_id)"
+                ),
+                {
+                    "reservation_id": rows.reservation_id,
+                    "guard_event_id": rows.guard_event_id,
+                    "course_id": UUID(fixture.course_id),
+                    "student_id": fixture.student_id,
+                },
+            )
+        ).one()
+
+    assert tuple(counts[:2]) == (0, 0)
+    assert counts[2] == (0 if delete_target == "course" else 1)
+    assert counts[3] == (1 if delete_target == "course" else 0)
 
 
 async def _seed_export_exam(
