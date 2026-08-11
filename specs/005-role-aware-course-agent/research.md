@@ -278,9 +278,9 @@ Production kalite iddiası için ayrıca:
 ## 14. Yerel backend kanıtı ve açık doğrulamalar
 
 Backend handoff'unda taze hedefli paket 157/157; son adayda
-`pytest -q apps/api/tests` 878/878 ve mypy 92 dosya geçti. Ledger-counter
+`pytest -q apps/api/tests` 882/882 ve mypy 92 dosya geçti. Ledger-counter
 düzeltmesi ayrıca temiz DB'de 27/27 hedefli, ruff ve diff kontrolünden geçti.
-Frontend `bun test lib/` 322/322, typecheck ve production build yeşildir. <!-- docs-check: frontend.tests = 322 --> Repo
+Frontend `bun test lib/` 325/325, typecheck ve production build yeşildir. <!-- docs-check: frontend.tests = 325 --> Repo
 kökünden çıplak pytest ise 005 dışı kardeş `scripts.*` import
 collection sorunu buldu; bu yüzden “repo-root full suite yeşil” iddiası yoktur.
 Fake/deterministik kanıt gerçek model pedagojisini veya production davranışını

@@ -85,6 +85,10 @@ orkestrasyon değildir; tek, eylemsiz ve kaynak-bounded yardımcıdır.
 5. Cache hit, abstention, provider error ve cancellation accounting yollarını kapat.
 6. Sınav başlatma/chat finalizasyonu/privacy export'u kullanıcı düzeyi kilitte
    sırala; aktif öğrenci EXAM sırasında export'u 423 ile geçici durdur.
+7. KVKK export'una ham reservation/guard satırı veya kimliği ekleme; yalnız iki
+   içeriksiz operasyon kategorisini additive `not_included` açıklamasıyla bildir.
+   Course/profile silmede 005 satırlarının FK cascade'ini gerçek PostgreSQL'de
+   doğrula; retention/operator cleanup işini ayrı açık operasyon riski olarak koru.
 
 ### Dilim 4 — Frontend AgentChatbox
 
@@ -108,8 +112,7 @@ orkestrasyon değildir; tek, eylemsiz ve kaynak-bounded yardımcıdır.
 
 ```text
 supabase/migrations/0015_role_aware_course_agent.sql
-supabase/tests/rls_agent.sql
-supabase/tests/rls_agent_mutation_check.sh
+supabase/tests/rls_role_aware_agent_mutation_check.sh # 0001..0015 + referans + 8 DB/RLS mutasyonu
 
 apps/api/app/contracts.py                    # ortak AssistantAudience
 apps/api/app/api/chat.py                     # tek chat uçları
@@ -162,8 +165,16 @@ Her şerit güncel base SHA'dan ayrı worktree ve benzersiz `TEST_DB_NAME` ile
    course-user/global-user/course/platform yarış testleri.
 5. **Output gate**: provider request cap + response hard ceiling.
 6. **Abuse gate**: content-free ledger, ordinary out-of-scope cezalandırılmaz.
-7. **Privacy gate**: instructor/admin öğrenci prompt/answer/ledger satırı göremez.
+7. **Privacy gate**: instructor/admin öğrenci prompt/answer/ledger satırı göremez;
+   `/me/export` yalnız additive `not_included` açıklamalarını taşır, ham
+   reservation/guard satırı veya kimliği taşımaz. Course/profile cascade gerçek
+   PostgreSQL'de doğrulanır; retention job ayrıca açık tutulur.
 8. **AI-SDLC gate**: R3 dossier exact hashes + two named approvals + rollback flag.
+
+2026-08-11 T113 yerel kanıtı: benzersiz test DB'sinde course ve profile DELETE
+sonrası reservation/guard kalıntısı 0; aktif sınav export'u 423 ve user-lock yarış
+sözleşmesi korunmuş; `test_user_rights.py` 13/13, Ruff, mypy 92 dosya ve
+`git diff --check` yeşil. Bu kanıt canlı retention/operator cleanup değildir.
 
 ## Rollout
 

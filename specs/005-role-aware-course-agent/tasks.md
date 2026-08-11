@@ -2,10 +2,11 @@
 
 **Branch**: `005-role-aware-course-agent`
 **Base**: `7c1c219`
-**Durum**: Speckit + backend/migration + frontend kodlandı; API 879/879, mypy 92
-dosya, frontend 322/322, typecheck/build yeşil. R3 dossier ve statik mutasyon
-betiği yazıldı. Gerçek tarayıcı, uygulanmış mutasyon matrisi, GitHub CI,
-provider/staging/rollout açık.
+**Durum**: Speckit + backend/migration + frontend kodlandı; API 882/882, mypy 92
+dosya, frontend 325/325, typecheck/build yeşil. R3 dossier yazıldı; DB/RLS
+mutasyon betiği izole veritabanlarında uygulandı. Gerçek tarayıcı, uygulama
+paketi 35/35 geçti; uygulama katmanındaki tam mutasyon matrisi, manuel a11y/ağ
+turu, GitHub CI, provider/staging/rollout açık.
 **Migration**: `0015_role_aware_course_agent.sql`
 
 ## İşaret sözlüğü
@@ -97,13 +98,24 @@ paralel şeritler aynı hot file'a yazmaz.
   wins, lease sonunda yalnız concurrency'nin boşaldığı, günlük charge'ın kaldığı
   ve actual'ın reservation'ı aşamadığı testler. — T101–T111 taze hedefli
   backend paketiyle 157/157, 2026-08-11
-- [ ] **T112** RLS/mutation script: membership, session audience, answer-cache
-  audience SELECT/INSERT, grant, lock, quota, concurrency ve privacy constraint
-  ayrı ayrı kaldırılınca kırmızı; cross-audience direct SQL SELECT ayrıca reddedilir.
-  Sekiz mutasyonlu betik yazıldı ve `bash -n` temiz; disk yetersizliği nedeniyle
-  geçici DB üzerinde gerçek kırmızı/restore koşusu KOŞULMADI.
-- [ ] **T113** Course/profile delete CASCADE ve KVKK export `not_included`
-  davranışını doğrula; retention job yoksa açık risk olarak bırak.
+- [x] **T112** RLS/mutation script: audience immutability, forged-session RLS,
+  answer-cache audience SELECT/INSERT, function-only table grant, PUBLIC helper
+  execute ve privacy read sınırları ayrı; kota ile eşzamanlılık tavanları aynı
+  bypass fonksiyonunda birlikte gevşetilince kırmızı. Cross-audience direct SQL
+  SELECT ayrıca reddedilir.
+  `rls_role_aware_agent_mutation_check.sh`, 0001..0015'i PID ile adlandırılmış
+  izole DB'lere uyguladı; referans koşuda 7 kapalı sınır + 3 kalıcı kota iddiası
+  geçti, 8/8 mutasyon beklenen kesin sızıntıyı yakaladı ve koşu sonunda geçici
+  DB kalıntısı 0 ölçüldü. — DONE 2026-08-11
+- [x] **T113** Course/profile delete CASCADE ve KVKK export `not_included`
+  davranışını doğrula; retention job yoksa açık risk olarak bırak. `/me/export`,
+  ham reservation/guard satırı veya kimliği taşımadan iki içeriksiz operasyon
+  kategorisini additive `not_included` açıklamalarıyla bildiriyor. Benzersiz test
+  DB'sindeki gerçek PostgreSQL koşusunda hem course hem profile DELETE sonrasında
+  reservation/guard satırı 0 kaldı; aktif sınav 423 ve kullanıcı düzeyi yarış
+  kilidi korundu. `test_user_rights.py` 13/13, Ruff, mypy 92 dosya ve
+  `git diff --check` yeşil. Canlı retention/operator cleanup işi açık risktir.
+  — DONE 2026-08-11
 
 **P1 kapısı**: Taze DB, SQL 0 FAIL, race overshoot 0, adlandırılmış mutasyonlar
 kırmızı/geri dönüşte yeşil; ortak/demo DB kullanılmadı.
@@ -158,7 +170,7 @@ kırmızı/geri dönüşte yeşil; ortak/demo DB kullanılmadı.
 
 **P2 kapısı**: Hedefli pytest + ruff/format/mypy yeşil; kontroller kaldırılınca
 ilgili test kırmızı; fake-provider kanıtının kalite olmadığı raporda açık.
-Mevcut kanıt: taze hedefli 157/157, `apps/api/tests` 879/879, ruff/format ve
+Mevcut kanıt: taze hedefli 157/157, `apps/api/tests` 882/882, ruff/format ve
 mypy 92 dosya temiz. Uygulanmış mutasyon matrisi hâlâ açık kapıdır.
 
 ---
@@ -184,7 +196,7 @@ mypy 92 dosya temiz. Uygulanmış mutasyon matrisi hâlâ açık kapıdır.
   browser/a11y gözlemi yapılmadığı için PARTIAL.
 - [x] **T308** Vitest: student/instructor/mixed-role, course switch, no audience
   payload, 200/403/409/422/429/503, session continuation ve disabled composer.
-  — frontend `bun test lib/` 322/322, 2026-08-11 <!-- docs-check: frontend.tests = 322 -->
+  — frontend `bun test lib/` 325/325, 2026-08-11 <!-- docs-check: frontend.tests = 325 -->
 - [ ] **T309** Browser network: exam lock/direct API, kill switch, no prefetch,
   no duplicate request, console ve horizontal overflow.
 
@@ -196,14 +208,23 @@ elle student/instructor/mobile/dark turu yeşil.
 ## P4 — Bütünleşik repo kanıtı ve AI-SDLC
 
 - [x] **T401** Backend tam pytest, ruff/format/mypy; sayaçları docs_check kaynağına bırak.
-  `pytest -q apps/api/tests` 879/879, ruff/format ve mypy 92 dosya temiz;
+  `pytest -q apps/api/tests` 882/882, ruff/format ve mypy 92 dosya temiz;
   repo-root çıplak pytest 005 dışı `scripts.*` import collection sorunu buldu.
   Backend kapsamı DONE 2026-08-11.
-- [ ] **T402** Taze DB tam migration + agent SQL/RLS/mutation paketi.
-- [x] **T403** Frontend tam unit/typecheck/build. — 322/322 + typecheck +
+- [x] **T402** Taze DB tam migration + agent SQL/RLS/mutation paketi.
+  `rls_role_aware_agent_mutation_check.sh`, izole PID DB'lerinde 0001..0015'i
+  uyguladı; 7 kapalı sınır + 3 kota referansı geçti, 8/8 DB/RLS mutasyonu beklenen
+  sızıntıyı yakaladı ve kalıntı DB 0 ölçüldü. Bu kanıt T217/T410'daki uygulama
+  katmanı tam mutasyon matrisinin yerine geçmez. — DONE 2026-08-11
+- [x] **T403** Frontend tam unit/typecheck/build. — 325/325 + typecheck +
   production build temiz, 2026-08-11
-- [ ] **T404** Seri gerçek-API Playwright; koşu-önekli setup/teardown, kalıntı 0,
-  protected `COME 331` yerinde.
+- [x] **T404** Seri gerçek-API Playwright; koşu-önekli setup/teardown, kalıntı 0,
+  protected `COME 331` yerinde. — DONE 2026-08-11: benzersiz PostgreSQL
+  veritabanında 35/35 gerçek-API vaka tek worker ile geçti; teardown sonrası E2E
+  ders/audit kalıntısı 0/0. Ayrı fail-closed temizlik kanıtında yalnız
+  hedef ders/audit silindi; run desenine sokulan
+  `c3b76077-20de-47e5-9fe1-4e770ffa64d2` UUID'li ders kaldı, kodu `COME 331`e
+  geri getirildi ve geçici veritabanı trap ile kaldırıldı.
 - [x] **T405** OpenAPI çalışan app'ten üret; request'te audience/agent_profile/
   max_tokens/user_id olmadığını ve response/policy exact alanlarını doğrula.
   — 50 path, 119 schema; ChatRequest dört onaylı alan, 2026-08-11
@@ -216,6 +237,8 @@ elle student/instructor/mobile/dark turu yeşil.
   p95 latency/pool pressure ve cache-hit burst residual raporu.
 - [x] **T409** 005 R3 dossier exact base/head, prompt/model/provider/retrieval/
   quota/output/flag revisions ve evidence hash'leriyle PASS.
+  Append-only revizyon 2; 882 backend, 325 frontend, 35 seri gerçek-API tarayıcı,
+  8/8 DB mutasyonu ve privacy/cascade kanıtını yeni rapor hash'ine bağlar.
   Fake-provider mekanik kanıtı PASS; real-provider/staging iddiaları açıkça
   `not_run`. — DONE 2026-08-11
 - [ ] **T410** Mutasyon matrisi uygulanmış kırmızı ve restore edilmiş yeşil kanıtlarıyla raporlanır.

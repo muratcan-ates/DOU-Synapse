@@ -355,7 +355,7 @@ aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
 ## 10. Doğrulama komutları (tümü)
 
 ```bash
-cd apps/api && uv run pytest -q                 # 879 test   # docs-check: backend.tests = 879
+cd apps/api && uv run pytest -q                 # 882 test   # docs-check: backend.tests = 882
 cd apps/api && uv run mypy app                  # temiz, 59 dosya
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
