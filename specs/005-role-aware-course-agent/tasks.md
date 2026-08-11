@@ -52,9 +52,10 @@ paralel şeritler aynı hot file'a yazmaz.
   aşan doğrulanmış server hesabıdır.
   Bunlar production onayı değildir; retention, gerçek
   maliyet kalibrasyonu ve isimli dış approvals P5'te açık kalır. — DONE 2026-08-11
-- [ ] **T008** `.ai/changes/` altında 005 R3 dossier root revision oluştur;
+- [x] **T008** `.ai/changes/` altında 005 R3 dossier root revision oluştur;
   prompt/retrieval/cache/quota/output/kill-switch artefaktlarını exact SHA'ya bağla.
-  Dosya yazıldı; final commit SHA'sında validator PASS bekleniyor.
+  Dossier/evidence yazıldı ve immutable feature commit'inde
+  `AI_SDLC_CHECK=PASS` alındı. — DONE 2026-08-11
 - [x] **T009** Lider ortak sözleşmeyi sabitledi:
   `AssistantAudience(student|instructor)` ve türetilen
   `student_coach|instructor_assistant`; `COURSE_AGENT_ENABLED`. — DONE 2026-08-11
@@ -213,8 +214,10 @@ elle student/instructor/mobile/dark turu yeşil.
   scope abstention, citation faithfulness, poisoned source/leakage attack set.
 - [ ] **T408** Multi-worker load: quota overshoot 0, concurrency/lease recovery,
   p95 latency/pool pressure ve cache-hit burst residual raporu.
-- [ ] **T409** 005 R3 dossier exact base/head, prompt/model/provider/retrieval/
+- [x] **T409** 005 R3 dossier exact base/head, prompt/model/provider/retrieval/
   quota/output/flag revisions ve evidence hash'leriyle PASS.
+  Fake-provider mekanik kanıtı PASS; real-provider/staging iddiaları açıkça
+  `not_run`. — DONE 2026-08-11
 - [ ] **T410** Mutasyon matrisi uygulanmış kırmızı ve restore edilmiş yeşil kanıtlarıyla raporlanır.
 
 **P4 kapısı**: Repo adayı yerelde doğrulanmıştır. Gerçek provider/staging/deploy
@@ -259,8 +262,9 @@ Her biri ayrı threat/privacy/R3 değişikliği ve acceptance/mutation kanıtı 
 
 ## P7 — Git/PR teslimi
 
-- [ ] **T701** Feature değişikliklerini küçük amaçlı commit'lerde topla; attribution
-  ve branch sahipliğini koru.
+- [x] **T701** Feature değişikliklerini küçük amaçlı commit'lerde topla; attribution
+  ve branch sahipliğini koru. Backend, frontend, Speckit/docs ve R3 kanıtı ayrı
+  amaçlı commit'lere ayrıldı. — DONE 2026-08-11
 - [ ] **T702** Branch'i push et; local HEAD = origin branch ölç.
 - [ ] **T703** Draft PR aç; required CI ve AI/security gates sonucunu gözle.
 - [ ] **T704** CI, R3 approvals ve release verification yeşil olmadan main'e merge etme.
