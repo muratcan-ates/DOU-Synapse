@@ -937,6 +937,56 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.commit("quarantine rewritten lineage with exact replacement")
         return quarantine_path, replacement_path
 
+    def _commit_quarantine_successors(
+        self,
+        lineage: dict[str, str],
+        *,
+        count: int = 1,
+        include_replacement: bool = True,
+        include_target: bool = True,
+        non_root: bool = False,
+        wrong_replacement_hash: bool = False,
+    ) -> tuple[str, str, list[str]]:
+        quarantine_path, replacement_path = self._commit_quarantine_replacement(lineage)
+        successor_paths: list[str] = []
+        for index in range(count):
+            suffix = "" if index == 0 else f"-{index + 1}"
+            successor_path = f".ai/changes/quarantine-successor{suffix}.json"
+            successor_id = f"quarantine-successor{suffix}"
+            successor = self.repo.dossier(path=lineage["target"], risk="R3")
+            successor.update(
+                {
+                    "change_id": successor_id,
+                    "lineage_id": successor_id,
+                }
+            )
+            artifacts = [self.repo.artifact(quarantine_path)]
+            if include_replacement:
+                replacement_artifact = self.repo.artifact(replacement_path)
+                if wrong_replacement_hash:
+                    replacement_artifact["sha256"] = "0" * 64
+                artifacts.append(replacement_artifact)
+            if include_target:
+                artifacts.append(self.repo.artifact(lineage["target"]))
+            successor["artifacts"] = artifacts
+            if non_root:
+                successor.update(
+                    {
+                        "revision": 2,
+                        "supersedes": {
+                            "path": replacement_path,
+                            "sha256": hashlib.sha256(
+                                (self.repo.root / replacement_path).read_bytes()
+                            ).hexdigest(),
+                        },
+                        "previous_status": "evidence-ready",
+                    }
+                )
+            self.repo.write_json(successor_path, successor)
+            successor_paths.append(successor_path)
+        self.repo.commit("bind historical quarantine replacement from final root")
+        return quarantine_path, replacement_path, successor_paths
+
     def test_valid_hash_bound_revision_chain_passes(self) -> None:
         self._commit_audited_evidence()
         dossier = self._prepare_second_revision()
@@ -1135,6 +1185,55 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.assertIn(
             "QUARANTINE_REPLACEMENT_CONTEXT:quarantine-replacement:base-head",
             errors,
+        )
+
+    def test_historical_quarantine_replacement_has_one_exact_successor(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_successors(lineage)
+        self.assertEqual([], self.repo.validate())
+
+    def test_quarantine_successor_must_bind_historical_replacement(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_successors(lineage, include_replacement=False)
+        self.assertIn(
+            "QUARANTINE_REPLACEMENT_CONTEXT:quarantine-replacement:base-head",
+            self.repo.validate(),
+        )
+
+    def test_quarantine_successor_must_be_unique(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_successors(lineage, count=2)
+        self.assertIn(
+            "QUARANTINE_REPLACEMENT_SUCCESSOR_AMBIGUOUS:quarantine-replacement",
+            self.repo.validate(),
+        )
+
+    def test_quarantine_successor_must_be_a_root(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_successors(lineage, non_root=True)
+        self.assertIn(
+            "QUARANTINE_REPLACEMENT_ROOT:quarantine-successor:lineage",
+            self.repo.validate(),
+        )
+
+    def test_quarantine_successor_must_cover_every_sensitive_path(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        self._commit_quarantine_successors(lineage, include_target=False)
+        errors = self.repo.validate()
+        self.assertIn(f"UNCOVERED:{lineage['target']}", errors)
+        self.assertIn(
+            f"QUARANTINE_REPLACEMENT_COVERAGE:quarantine-successor:{lineage['target']}",
+            errors,
+        )
+
+    def test_quarantine_successor_must_hash_bind_historical_replacement(self) -> None:
+        lineage = self._prepare_rewritten_lineage()
+        _, replacement_path, _ = self._commit_quarantine_successors(
+            lineage, wrong_replacement_hash=True
+        )
+        self.assertIn(
+            f"HASH_MISMATCH:quarantine-successor:{replacement_path}",
+            self.repo.validate(),
         )
 
     def test_historical_stack_does_not_authorize_the_final_diff(self) -> None:

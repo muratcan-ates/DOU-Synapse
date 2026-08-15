@@ -2,7 +2,7 @@
 
 **Migration**: `0015_role_aware_course_agent.sql`
 **Durum**: `0015` ve backend feature dalında kodlandı; taze hedefli paket 157/157,
-tam API paketi son adayda 882/882. T113 export/cascade sözleşmesi benzersiz gerçek
+tam API paketi son adayda 894/894. T113 export/cascade sözleşmesi benzersiz gerçek
 PostgreSQL DB'sinde 13/13 doğrulandı. Canlı retention, provider ve staging kanıtı yok.
 
 ## 1. Modelleme ilkeleri

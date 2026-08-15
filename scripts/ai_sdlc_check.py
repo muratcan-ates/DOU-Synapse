@@ -1737,17 +1737,41 @@ def validate_repository(
             if context == (merge_base, head)
         }
 
-        # A quarantine does not repair history.  It must point to a new exact
-        # main-to-HEAD root that, by itself, hash-binds the quarantine record and
-        # every sensitive artifact in the reviewed diff.
+        # A quarantine does not repair history.  Its direct replacement must be
+        # an exact main-to-HEAD root.  Once that immutable replacement becomes a
+        # historical snapshot, exactly one new exact root may succeed it by
+        # hash-binding the old replacement.  The successor still has to cover
+        # the quarantine record and every sensitive artifact in the reviewed
+        # diff; zero or multiple successors fail closed.
         for replacement_path in sorted(replacement_dossiers):
             replacement = eligible_dossiers.get(replacement_path)
             replacement_id = Path(replacement_path).stem
             if not isinstance(replacement, dict):
-                errors.append(
-                    f"QUARANTINE_REPLACEMENT_CONTEXT:{replacement_id}:base-head"
+                successors: list[tuple[str, dict[str, Any]]] = []
+                for dossier_path, dossier in eligible_dossiers.items():
+                    artifacts = dossier.get("artifacts")
+                    if not isinstance(artifacts, list):
+                        continue
+                    if any(
+                        isinstance(artifact, dict)
+                        and artifact.get("path") == replacement_path
+                        for artifact in artifacts
+                    ):
+                        successors.append((dossier_path, dossier))
+                if not successors:
+                    errors.append(
+                        f"QUARANTINE_REPLACEMENT_CONTEXT:{replacement_id}:base-head"
+                    )
+                    continue
+                if len(successors) > 1:
+                    errors.append(
+                        f"QUARANTINE_REPLACEMENT_SUCCESSOR_AMBIGUOUS:{replacement_id}"
+                    )
+                    continue
+                replacement_path, replacement = successors[0]
+                replacement_id = _safe_dossier_id(
+                    replacement.get("change_id"), Path(replacement_path).stem
                 )
-                continue
             if (
                 replacement.get("revision") != 1
                 or replacement.get("supersedes") is not None

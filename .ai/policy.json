@@ -205,6 +205,10 @@
       "minimum_risk": "R3"
     },
     {
+      "pattern": "apps/api/app/core/db.py",
+      "minimum_risk": "R3"
+    },
+    {
       "pattern": "apps/api/app/core/config.py",
       "minimum_risk": "R2"
     },
