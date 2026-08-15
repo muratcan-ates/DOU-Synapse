@@ -33,13 +33,30 @@ import {
 } from "@/lib/course-assistant";
 import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
 import { api } from "@/lib/api";
-import { errorMessage } from "@/lib/errors";
+import { describeError, type ErrorInfo } from "@/lib/errors";
 import { sourceContextHref } from "@/lib/source-quality";
 import type { ChatAnswer } from "@/lib/types";
 import { ErrorNote, Loading } from "@/components/page-state";
 import { SocraticLadder } from "@/components/socratic-ladder";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
 import { Button, Input } from "@/components/ui";
+
+const DIALOG_FOCUSABLE = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  'summary',
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+function visibleDialogControls(dialog: HTMLDialogElement) {
+  return Array.from(dialog.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE)).filter(
+    (element) =>
+      element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length > 0,
+  );
+}
 
 export function CourseAssistant({
   courseId,
@@ -96,7 +113,43 @@ export function CourseAssistant({
         id={`${titleId}-dialog`}
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        onCancel={() => setOpen(false)}
+        onCancel={(event) => {
+          // State ile native dialog durumu tek yönden kapansın. Aksi hâlde
+          // tarayıcı dialogu kapatıp React state'ini bir render geride bırakır.
+          event.preventDefault();
+          setOpen(false);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Tab") {
+            const controls = visibleDialogControls(event.currentTarget);
+            const first = controls[0];
+            const last = controls.at(-1);
+            const active = document.activeElement;
+
+            if (!first || !last) {
+              event.preventDefault();
+              return;
+            }
+            if (event.shiftKey && (active === first || !event.currentTarget.contains(active))) {
+              event.preventDefault();
+              last.focus();
+              return;
+            }
+            if (!event.shiftKey && (active === last || !event.currentTarget.contains(active))) {
+              event.preventDefault();
+              first.focus();
+              return;
+            }
+          }
+          /*
+           * Bazı WebKit sürümleri ve otomasyon katmanları native `cancel`
+           * olayını üretmiyor. Escape'i açıkça ele almak T307'nin klavye
+           * sözleşmesini tarayıcının örtük davranışına bırakmaz.
+           */
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          setOpen(false);
+        }}
         onClose={() => {
           setOpen(false);
           triggerRef.current?.focus();
@@ -133,6 +186,10 @@ export function CourseAssistant({
           <div className="p-6">
             <Loading label="Asistan profili yükleniyor…" />
           </div>
+        ) : access.error ? (
+          <div className="flex flex-1 items-center p-6">
+            <AssistantAvailabilityError access={access} message={access.error} />
+          </div>
         ) : access.locked ? (
           <div className="flex flex-1 items-center p-6">
             <AssistantUnavailable
@@ -155,13 +212,24 @@ export function CourseAssistant({
             />
           </div>
         ) : (
-          <AssistantConversation
-            key={`${courseId}:${identity.audience}:${identity.agentProfile}:${access.allowedModes.join(",")}:${access.hintLimit}`}
-            courseId={courseId}
-            identity={identity}
-            allowedModes={access.allowedModes}
-            hintLimit={access.hintLimit}
-          />
+          <>
+            {access.refreshError && (
+              <div className="shrink-0 border-b border-border px-5 py-4">
+                <AssistantAvailabilityError
+                  access={access}
+                  message={access.refreshError}
+                  compact
+                />
+              </div>
+            )}
+            <AssistantConversation
+              key={`${courseId}:${identity.audience}:${identity.agentProfile}:${access.allowedModes.join(",")}:${access.hintLimit}`}
+              courseId={courseId}
+              identity={identity}
+              allowedModes={access.allowedModes}
+              hintLimit={access.hintLimit}
+            />
+          </>
         )}
       </dialog>
     </>
@@ -214,7 +282,7 @@ function AssistantConversation({
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<ErrorInfo | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const conversationEpoch = useRef(0);
@@ -279,7 +347,7 @@ function AssistantConversation({
       setPending(null);
     } catch (error) {
       if (conversationEpoch.current !== epoch) return;
-      setSendError(errorMessage(error));
+      setSendError(describeError(error));
       setPending(null);
       setDraft(text);
     } finally {
@@ -297,8 +365,11 @@ function AssistantConversation({
           type="button"
           variant="ghost"
           className="h-9 px-3 text-xs"
-          disabled={sending}
-          onClick={() => resetConversation(mode)}
+          aria-disabled={sending}
+          onClick={() => {
+            if (sending) return;
+            resetConversation(mode);
+          }}
         >
           Yeni konuşma
         </Button>
@@ -385,7 +456,14 @@ function AssistantConversation({
         })}
 
         {sending && <Loading label="Yanıt hazırlanıyor…" />}
-        {sendError && <ErrorNote message={sendError} />}
+        {sendError && (
+          <ErrorNote
+            message={sendError.message}
+            kind={sendError.kind}
+            requestId={sendError.requestId}
+            onRetry={() => void send()}
+          />
+        )}
         <div ref={endRef} aria-hidden="true" />
       </div>
 
@@ -471,6 +549,30 @@ function AssistantUnavailable({ title, message }: { title: string; message: stri
       <p role="status" className="prose-tr mt-2 text-sm text-fg-muted">
         {message}
       </p>
+    </div>
+  );
+}
+
+function AssistantAvailabilityError({
+  access,
+  message,
+  compact = false,
+}: {
+  access: ChatLock;
+  message: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className={compact ? "w-full" : "w-full rounded-lg border border-border bg-bg p-5"}>
+      {!compact && (
+        <p className="mb-2 text-sm font-medium text-fg">Asistan durumuna ulaşılamadı</p>
+      )}
+      <ErrorNote
+        message={message}
+        kind={access.errorKind}
+        requestId={access.errorRequestId}
+        onRetry={access.reload}
+      />
     </div>
   );
 }

@@ -16,10 +16,11 @@
  * sekmesinde çalışıyor.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { allowedChatUiModes } from "@/lib/course-assistant";
 import { useResource } from "@/lib/use-resource";
+import type { ErrorKind } from "@/lib/errors";
 import type { ChatAgentProfile, ChatAudience, ChatAvailability } from "@/lib/types";
 import type { ChatUiMode } from "@/lib/chat";
 
@@ -63,7 +64,27 @@ export interface ChatLock {
   allowedModes: ChatUiMode[];
   /** Sokratik yönlendirmenin sunucu politikasındaki üst sınırı. */
   hintLimit: number;
+  /** İlk availability isteği başarısızsa ekranı kapatan, sunucudan gelen hata. */
+  error: string | null;
+  /** Sağlam availability ekrandayken sonraki yoklamanın geçici hatası. */
+  refreshError: string | null;
+  /** Hatanın yeniden denenebilir olup olmadığını belirleyen sınıf. */
+  errorKind: ErrorKind | null;
+  /** Sunucunun destek kaydını bulmak için verdiği istek kimliği. */
+  errorRequestId: string | null;
+  /** Availability kararını aynı ders için yeniden ister. */
+  reload: () => Promise<void>;
 }
+
+interface ChatAvailabilityFailure {
+  error?: string | null;
+  refreshError?: string | null;
+  errorKind?: ErrorKind | null;
+  errorRequestId?: string | null;
+  reload?: () => Promise<void>;
+}
+
+const NOOP_RELOAD = async (): Promise<void> => {};
 
 /**
  * `courseId` null verilirse yoklama YAPILMAZ ve persona bilinmiyor döner.
@@ -74,14 +95,17 @@ export interface ChatLock {
  */
 export function useChatAvailability(courseId: string | null): ChatLock {
   const requestedCourse = useRef<string | null>(null);
-  const { data, loading, reload } = useResource<ChatAvailability | null>(
+  const requestedExamEpoch = useRef<number | null>(null);
+  const [examEpoch, setExamEpoch] = useState(0);
+  const resource = useResource<ChatAvailability | null>(
     () => {
       requestedCourse.current = courseId;
+      requestedExamEpoch.current = examEpoch;
       return courseId === null
         ? Promise.resolve(null)
         : api.get<ChatAvailability>(`/courses/${courseId}/chat/availability`);
     },
-    [courseId],
+    [courseId, examEpoch],
     {
       pollWhile: (state) => state !== null && !state.available,
       intervalMs: POLL_INTERVAL_MS,
@@ -89,16 +113,18 @@ export function useChatAvailability(courseId: string | null): ChatLock {
   );
 
   /*
-   * Abonelik `courseId === null` iken de kurulur ve kurulmalı: o durumda kanca
-   * kilidi dışarıdan alan bir çağıranın içinde yaşıyor ve `reload` zararsız bir
-   * sabit döndürüyor. Koşullu abonelik, "kim abone" sorusunu iki yere yayardı.
+   * Sınav olayı yalnız yeniden istek açmaz; önce epoch'u değiştirir. Böylece
+   * olay ile ağ cevabı arasındaki render'da eski `available=true` kararı
+   * kullanılamaz. Sunucuya ulaşılamazsa besteci eski kararla açık kalmak yerine
+   * gerçek hata ve yeniden deneme yolunu gösterir.
    */
   useEffect(() => {
-    subscribers.add(reload);
+    const invalidateForExamTransition = () => setExamEpoch((current) => current + 1);
+    subscribers.add(invalidateForExamTransition);
     return () => {
-      subscribers.delete(reload);
+      subscribers.delete(invalidateForExamTransition);
     };
-  }, [reload]);
+  }, []);
 
   /*
    * `useResource` bağımlılık değişimini effect içinde sıfırlar. Açma tıklaması
@@ -106,21 +132,57 @@ export function useChatAvailability(courseId: string | null): ChatLock {
    * onu "istek bitti" diye okumak paneli bir an doğrulanmamış persona ile
    * çizerdi. İstenen ders gerçekten fetcher'a ulaşmadan sonuç kullanılmaz.
    */
-  if (courseId === null || requestedCourse.current !== courseId) {
+  if (
+    courseId === null ||
+    !isAvailabilitySnapshotCurrent(
+      requestedCourse.current,
+      courseId,
+      requestedExamEpoch.current,
+      examEpoch,
+    )
+  ) {
     return toChatLock(null, false);
   }
-  return toChatLock(data, !loading);
+  return toChatLock(resource.data, !resource.loading, {
+    error: resource.error,
+    refreshError: resource.refreshError,
+    errorKind: resource.errorKind,
+    errorRequestId: resource.errorRequestId,
+    reload: resource.reload,
+  });
+}
+
+/** Eski ders ya da sınav epoch'una ait cevap persona/kilit kararı veremez. */
+export function isAvailabilitySnapshotCurrent(
+  requestedCourse: string | null,
+  courseId: string,
+  requestedExamEpoch: number | null,
+  examEpoch: number,
+): boolean {
+  return requestedCourse === courseId && requestedExamEpoch === examEpoch;
 }
 
 /**
  * Saf karar — testin ölçtüğü yer.
  *
- * Yoklama başarısız olursa (`data === null`) sekme KİLİTLENMEZ. Bu bilinçli ve
- * fail-closed kuralının istisnası değil: asıl kapı sunucudadır ve 403 döner.
- * Ağ hatasında kilitlemek, çevrimdışı kalan bir öğrencinin asistanını sınavı
- * olmadığı hâlde kapatırdı — yani yoklamanın arızası ürünün arızasına dönerdi.
+ * Yoklama başarısız olursa (`data === null`) sekme KİLİTLENMEZ; bunun yerine
+ * hata sınıfı, destek kodu ve yeniden yükleme eylemi aynen çağırana taşınır.
+ * Böylece ağ arızası "profil doğrulanamadı" diye yanlış anlatılmaz ve kullanıcı
+ * sayfayı bütünüyle yenilemeden tekrar deneyebilir. Asıl yetki kapısı yine
+ * sunucudadır; istemci hata anında rol ya da sınav durumu tahmin etmez.
  */
-export function toChatLock(data: ChatAvailability | null, settled: boolean): ChatLock {
+export function toChatLock(
+  data: ChatAvailability | null,
+  settled: boolean,
+  failure: ChatAvailabilityFailure = {},
+): ChatLock {
+  const recovery = {
+    error: failure.error ?? null,
+    refreshError: failure.refreshError ?? null,
+    errorKind: failure.errorKind ?? null,
+    errorRequestId: failure.errorRequestId ?? null,
+    reload: failure.reload ?? NOOP_RELOAD,
+  };
   if (data === null) {
     return {
       locked: false,
@@ -130,6 +192,7 @@ export function toChatLock(data: ChatAvailability | null, settled: boolean): Cha
       agentProfile: null,
       allowedModes: [],
       hintLimit: 0,
+      ...recovery,
     };
   }
   return {
@@ -140,5 +203,6 @@ export function toChatLock(data: ChatAvailability | null, settled: boolean): Cha
     agentProfile: data.agent_profile,
     allowedModes: allowedChatUiModes(data.allowed_modes),
     hintLimit: data.hint_limit,
+    ...recovery,
   };
 }

@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "change_id": "005-role-aware-course-agent-validator-final",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-08-16T00:19:46+03:00",
+  "command": "PYTHONDONTWRITEBYTECODE=1 apps/api/.venv/bin/python -m unittest scripts.test_ai_sdlc_check",
+  "environment": "local deterministic stdlib fixture repositories in the iCloud-free integration worktree",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic repository paths and identities only; no prompts, answers, student content, emails, secrets or provider payloads retained",
+  "source_sha256": {
+    "scripts/ai_sdlc_check.py": "1a6f339cc0522baccd2b413680f69c1eca91ee7dec3e8fc4ab423ee6da55d9ab",
+    "scripts/test_ai_sdlc_check.py": "109eaea1bcec32a03f596f537996da461d3be6af6300236b5faf0ec234f32f2b"
+  },
+  "results": {
+    "validator_tests_passed": 63,
+    "validator_tests_failed": 0,
+    "elapsed_seconds": 60.287,
+    "append_only_successor_regressions_included": 6
+  },
+  "not_run": [
+    "real provider",
+    "manual VoiceOver with Safari",
+    "staging",
+    "canary",
+    "production"
+  ],
+  "limitations": "This proves the deterministic AI-SDLC validator unit suite, including six fail-closed append-only successor adversarial cases. The exact main-to-candidate repository invocation is a separate final gate. This is not real-provider, accessibility-assistive-technology, staging, canary, deployment or production evidence."
+}

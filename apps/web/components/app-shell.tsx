@@ -12,13 +12,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   PortalProfileProvider,
   usePortalProfile,
 } from "@/components/portal/portal-profile-context";
+import { ErrorNote } from "@/components/page-state";
 import { Button } from "@/components/ui";
 import { signOutCurrent } from "@/lib/api";
+import { describeError, type ErrorInfo } from "@/lib/errors";
 import { useSession } from "@/lib/session";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -48,6 +50,8 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { data: profile } = usePortalProfile();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<ErrorInfo | null>(null);
   const displayName = profile?.full_name || "Hesap";
   const displayInitial = displayName.trim().charAt(0).toLocaleUpperCase("tr-TR") || "H";
   const navigation = [
@@ -58,6 +62,25 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
       ? [{ href: "/admin", label: "Bilgi İşlem" }]
       : []),
   ];
+
+  async function handleSignOut(): Promise<void> {
+    if (signingOut) return;
+    setSigningOut(true);
+    setSignOutError(null);
+    try {
+      await signOutCurrent();
+      router.replace("/");
+    } catch (cause) {
+      setSignOutError(
+        describeError(
+          cause,
+          "Oturum kapatılamadı. Bağlantınızı kontrol edip tekrar deneyin.",
+        ),
+      );
+    } finally {
+      setSigningOut(false);
+    }
+  }
 
   return (
     <div className="min-h-[100dvh]">
@@ -108,17 +131,27 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
             </Link>
             <Button
               variant="ghost"
-              onClick={() => {
-                void signOutCurrent();
-                router.replace("/");
-              }}
+              aria-disabled={signingOut}
+              onClick={() => void handleSignOut()}
             >
-              Çıkış
+              {signingOut ? "Çıkılıyor…" : "Çıkış"}
             </Button>
           </div>
         </div>
         <PortalNavigation items={navigation} pathname={pathname} mobile />
       </header>
+      {signOutError && (
+        <div className="border-b border-danger/30 bg-danger-bg">
+          <div className="mx-auto max-w-[1200px] px-4 py-3">
+            <ErrorNote
+              message={signOutError.message}
+              kind={signOutError.kind}
+              requestId={signOutError.requestId}
+              onRetry={() => void handleSignOut()}
+            />
+          </div>
+        </div>
+      )}
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-[1200px] px-4 py-8">
         {children}
       </main>

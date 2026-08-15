@@ -73,7 +73,7 @@ const SELECT_CLASS =
   "h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "Tümü" },
+  { value: "all", label: "Yüklenenlerin tümü" },
   { value: "draft", label: QUESTION_STATUS.draft.label },
   { value: "approved", label: QUESTION_STATUS.approved.label },
   { value: "rejected", label: QUESTION_STATUS.rejected.label },
@@ -264,12 +264,16 @@ function QuestionPool({ courseId }: { courseId: string }) {
     <>
       <MetricRow
         items={[
-          { value: counts.draft, label: "Onay bekleyen" },
-          { value: counts.approved, label: "Öğrenciye açık" },
-          { value: counts.rejected, label: "Reddedilen" },
-          { value: counts.total, label: "Toplam soru" },
+          { value: counts.draft, label: "Yüklenen onay bekleyen" },
+          { value: counts.approved, label: "Yüklenen öğrenciye açık" },
+          { value: counts.rejected, label: "Yüklenen reddedilen" },
+          { value: counts.total, label: "Yüklenen soru" },
         ]}
       />
+      <p className="prose-tr -mt-4 mb-6 text-xs text-fg-subtle">
+        Sayılar ve süzgeçler yalnız bu ekranda yüklenen soruları kapsar. Daha fazla
+        soru yüklendikçe güncellenir.
+      </p>
 
       <GeneratePanel
         courseId={courseId}
@@ -399,7 +403,7 @@ function StatusTabs({
    * üçüncüsü yazılırken ortak bileşene çıkmalı (Anayasa XI, raporda).
    */
   return (
-    <div role="group" aria-label="Durum süzgeci" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border p-1">
+    <div role="group" aria-label="Yüklenen soruların durum süzgeci" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border p-1">
       {STATUS_FILTERS.map((filter) => {
         const active = filter.value === value;
         return (
