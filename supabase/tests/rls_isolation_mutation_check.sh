@@ -114,7 +114,9 @@ MUTATIONS=(
 # --- answer_cache -----------------------------------------------------------
 "answer_cache_member_read acilirsa|DROP POLICY answer_cache_member_read ON answer_cache; CREATE POLICY answer_cache_member_read ON answer_cache FOR SELECT USING (true);|answer_cache_read__baska_dersin_onbellegi_gorunmez"
 "answer_cache_member_insert acilirsa|DROP POLICY answer_cache_member_insert ON answer_cache; CREATE POLICY answer_cache_member_insert ON answer_cache FOR INSERT WITH CHECK (true);|answer_cache_insert__baska_derse_yazilamaz"
-"answer_cache_instructor_delete acilirsa|DROP POLICY answer_cache_instructor_delete ON answer_cache; CREATE POLICY answer_cache_instructor_delete ON answer_cache FOR DELETE USING (true);|answer_cache_delete__ogrenci_onbellek_temizleyemez"
+"answer_cache: dou_app DELETE granti acilirsa|GRANT DELETE ON answer_cache TO dou_app;|answer_cache_delete__ogrenci_dogrudan_silemez"
+"answer_cache: worker tablo granti acilirsa|GRANT DELETE ON answer_cache TO dou_worker;|answer_cache_worker__dogrudan_tablo_yetkisi_yok"
+"app.invalidate_course_agent_cache: egitmen sarti duserse|CREATE OR REPLACE FUNCTION app.invalidate_course_agent_cache(p_course_id uuid) RETURNS void LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = pg_catalog, public, app AS \$\$ BEGIN DELETE FROM public.answer_cache WHERE course_id = p_course_id; END \$\$;|answer_cache_invalidate__ogrenci_fonksiyonu_cagiramaz"
 "answer_cache: UPDATE politikasi eklenirse|CREATE POLICY answer_cache_update_leak ON answer_cache FOR UPDATE USING (true);|answer_cache_update__politika_yok_onbellek_degistirilemez"
 # --- request_logs -----------------------------------------------------------
 "request_logs_self_insert acilirsa|DROP POLICY request_logs_self_insert ON request_logs; CREATE POLICY request_logs_self_insert ON request_logs FOR INSERT WITH CHECK (true);|request_logs_insert__baskasi_adina_yazilamaz"

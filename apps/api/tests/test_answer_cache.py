@@ -17,17 +17,17 @@ from __future__ import annotations
 
 import json
 import unicodedata
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import Iterator
 from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.api.chat import question_hash, reset_rate_limit, set_pipeline
 from app.contracts import ChatMode
-from tests.conftest import WORKER_DSN, UserFactory
+from tests.conftest import UserFactory
 from tests.factories import (
     Pipeline,
     create_course,
@@ -45,21 +45,6 @@ def pipeline() -> Iterator[Pipeline]:
     yield fake
     set_pipeline()
     reset_rate_limit()
-
-
-@pytest.fixture
-async def worker_engine() -> AsyncIterator[AsyncEngine]:
-    """Bozuk satır yazmak için RLS'i atlayan rol.
-
-    `answer_cache` üzerinde `dou_app` için UPDATE politikası bilerek YOKTUR
-    (0003_chat.sql): uygulama önbelleği yazar ve okur, düzenlemez. Bozuk satır
-    senaryosunu kurmak bu yüzden ayrı bir rol istiyor — ve bu, testin kurduğu
-    senaryonun uygulamanın kendi eliyle üretemeyeceği bir bozulma olduğunu da
-    gösteriyor (dış müdahale, elle veri düzeltme, şema göçü).
-    """
-    engine = create_async_engine(WORKER_DSN)
-    yield engine
-    await engine.dispose()
 
 
 # ---------------------------------------------------------------------------
@@ -246,7 +231,7 @@ class TestBozukOnbellekSatiri:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
         ad: str,
         bozuk: dict[str, object],
     ) -> None:
@@ -272,7 +257,7 @@ class TestBozukOnbellekSatiri:
         # okunmaması güvenlik özelliğidir; bozuk-satır testi o yolda vacuous kalırdı.
         await _ask(client, course_id, ayse, soru)
 
-        async with worker_engine.begin() as conn:
+        async with admin_engine.begin() as conn:
             await conn.execute(
                 text(
                     "UPDATE answer_cache SET answer = CAST(:answer AS jsonb) WHERE course_id = :cid"
@@ -293,7 +278,7 @@ class TestBozukOnbellekSatiri:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
     ) -> None:
         """Pozitif kontrol: yukarıdaki testler ancak okuma yolu çalışıyorsa anlamlı.
 
@@ -311,7 +296,7 @@ class TestBozukOnbellekSatiri:
         assert ilk["cached"] is False
         calls_before = pipeline.generator.calls
 
-        async with worker_engine.begin() as conn:
+        async with admin_engine.begin() as conn:
             await conn.execute(
                 text(
                     "UPDATE answer_cache SET answer = CAST(:answer AS jsonb) WHERE course_id = :cid"
@@ -348,7 +333,7 @@ class TestDersIzolasyonuVeritabaninda:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
     ) -> None:
         """`test_chat_api` bunu uç davranışıyla sınıyor; burada satır düzeyinde.
 
@@ -374,7 +359,7 @@ class TestDersIzolasyonuVeritabaninda:
         assert b_yaniti["answer"] == "B cevabı"
         assert b_yaniti["cached"] is False
 
-        async with worker_engine.connect() as conn:
+        async with admin_engine.connect() as conn:
             satirlar = (
                 await conn.execute(
                     text(
@@ -399,7 +384,7 @@ class TestNeyinSaklandigi:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
     ) -> None:
         """`answered` olması yetmez; kaynaksız bir cevap kalıcılaştırılmaz.
 
@@ -423,7 +408,7 @@ class TestNeyinSaklandigi:
 
         await _ask(client, course_id, ayse, "Deadlock nedir?")
 
-        async with worker_engine.connect() as conn:
+        async with admin_engine.connect() as conn:
             sayi = (await conn.execute(text("SELECT count(*) FROM answer_cache"))).scalar_one()
 
         assert sayi == 0

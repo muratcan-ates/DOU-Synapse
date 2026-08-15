@@ -10,9 +10,9 @@
 -- KAPSAM: çekirdek ve sonraki hardening politikalarının her biri en az bir OLUMLU ve bir
 -- OLUMSUZ iddiayla sınanır. Olumlu kontrol ihmal edilemez: `dou_app` rolünün tablo
 -- düzeyi GRANT'i eksik olsaydı her şey reddedilirdi ve yalnız olumsuz iddia yazan bir
--- test YANLIŞ SEBEPLE yeşil yanardı. Ayrıca politikası bilinçli olarak OLMAYAN on üç
+-- test YANLIŞ SEBEPLE yeşil yanardı. Ayrıca politikası bilinçli olarak OLMAYAN on altı
 -- işlem (courses INSERT/DELETE, profiles INSERT/DELETE, chunks yazma, ingestion_jobs
--- UPDATE/DELETE, chat_messages UPDATE/DELETE, answer_cache UPDATE,
+-- UPDATE/DELETE, chat_messages UPDATE/DELETE, answer_cache UPDATE/DELETE,
 -- request_logs SELECT/UPDATE/DELETE) fail-closed olarak sınanır.
 --
 -- Çalıştırma:
@@ -152,11 +152,13 @@ INSERT INTO chat_messages
      'bbbbbbbb-0000-0000-0000-000000000002', 'assistant', 'Yığın LIFO, kuyruk FIFO çalışır.',
      'answered', 1, now() - interval '59 minutes');
 
-INSERT INTO answer_cache (id, course_id, question_hash, answer) VALUES
+INSERT INTO answer_cache (id, course_id, audience, question_hash, answer) VALUES
     ('7c7c7c7c-0000-0000-0000-00000000000a', 'aaaaaaaa-0000-0000-0000-000000000001',
-     'hash-soru-a', '{"status": "answered", "text": "A dersinin cevabı"}'),
+     'student', 'hash-soru-a', '{"status": "answered", "text": "A dersinin öğrenci cevabı"}'),
+    ('7c7c7c7c-0000-0000-0000-00000000000e', 'aaaaaaaa-0000-0000-0000-000000000001',
+     'instructor', 'hash-soru-a', '{"status": "answered", "text": "A dersinin eğitmen cevabı"}'),
     ('7c7c7c7c-0000-0000-0000-00000000000c', 'bbbbbbbb-0000-0000-0000-000000000002',
-     'hash-soru-b', '{"status": "answered", "text": "B dersinin cevabı"}');
+     'student', 'hash-soru-b', '{"status": "answered", "text": "B dersinin cevabı"}');
 
 INSERT INTO request_logs (course_id, user_id, route, mode, http_status, latency_ms) VALUES
     ('aaaaaaaa-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222',
@@ -1059,7 +1061,8 @@ SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
 FROM removed;
 
 -- ===========================================================================
--- answer_cache_member_read / _member_insert / _instructor_delete  (+ UPDATE YOK)
+-- answer_cache_member_read / _member_insert; doğrudan UPDATE/DELETE YOK.
+-- Ders-geneli cache temizliği yalnız app.invalidate_course_agent_cache() üzerinden.
 -- ===========================================================================
 
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
@@ -1118,22 +1121,103 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
        || count(*) || ')'
 FROM changed;
 
-WITH removed AS (
-    DELETE FROM answer_cache WHERE id = '7c7c7c7c-0000-0000-0000-00000000000a' RETURNING 1
-)
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  answer_cache_delete__ogrenci_onbellek_temizleyemez (beklenen 0 satır, gelen '
-       || count(*) || ')'
-FROM removed;
+DO $$
+BEGIN
+    DELETE FROM answer_cache
+    WHERE id = '7c7c7c7c-0000-0000-0000-00000000000a';
+    RAISE NOTICE 'FAIL  answer_cache_delete__ogrenci_dogrudan_silemez (DELETE çalıştı)';
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  answer_cache_delete__ogrenci_dogrudan_silemez';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  answer_cache_delete__ogrenci_dogrudan_silemez (beklenmedik hata: %)', SQLERRM;
+END
+$$;
 
-SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
-WITH removed AS (
-    DELETE FROM answer_cache WHERE id = '7c7c7c7c-0000-0000-0000-00000000000a' RETURNING 1
-)
-SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
-       || '  answer_cache_delete__egitmen_onbellek_temizleyebilir (beklenen 1 satır, gelen '
+DO $$
+BEGIN
+    PERFORM app.invalidate_course_agent_cache(
+        'aaaaaaaa-0000-0000-0000-000000000001'
+    );
+    RAISE NOTICE 'FAIL  answer_cache_invalidate__ogrenci_fonksiyonu_cagiramaz (çağrı geçti)';
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  answer_cache_invalidate__ogrenci_fonksiyonu_cagiramaz';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  answer_cache_invalidate__ogrenci_fonksiyonu_cagiramaz (beklenmedik hata: %)', SQLERRM;
+END
+$$;
+
+RESET ROLE;
+SELECT CASE WHEN count(*) = 2 THEN 'PASS' ELSE 'FAIL' END
+       || '  answer_cache_invalidate__reddedilen_cagri_tum_audience_kayitlarini_korur (beklenen 2, gelen '
        || count(*) || ')'
-FROM removed;
+FROM answer_cache
+WHERE id IN (
+    '7c7c7c7c-0000-0000-0000-00000000000a',
+    '7c7c7c7c-0000-0000-0000-00000000000e'
+);
+
+SET LOCAL ROLE dou_worker;
+SELECT CASE
+           WHEN NOT has_table_privilege(
+               current_user,
+               'answer_cache',
+               'SELECT,INSERT,UPDATE,DELETE'
+           ) THEN 'PASS'
+           ELSE 'FAIL'
+       END
+       || '  answer_cache_worker__dogrudan_tablo_yetkisi_yok';
+
+DO $$
+BEGIN
+    DELETE FROM answer_cache
+    WHERE id = '7c7c7c7c-0000-0000-0000-00000000000a';
+    RAISE NOTICE 'FAIL  answer_cache_delete__worker_dogrudan_silemez (DELETE çalıştı)';
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  answer_cache_delete__worker_dogrudan_silemez';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  answer_cache_delete__worker_dogrudan_silemez (beklenmedik hata: %)', SQLERRM;
+END
+$$;
+
+RESET ROLE;
+SET LOCAL ROLE dou_app;
+SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
+DO $$
+BEGIN
+    DELETE FROM answer_cache
+    WHERE id = '7c7c7c7c-0000-0000-0000-00000000000e';
+    RAISE NOTICE 'FAIL  answer_cache_delete__egitmen_dogrudan_silemez (DELETE çalıştı)';
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'PASS  answer_cache_delete__egitmen_dogrudan_silemez';
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  answer_cache_delete__egitmen_dogrudan_silemez (beklenmedik hata: %)', SQLERRM;
+END
+$$;
+
+DO $$
+BEGIN
+    PERFORM app.invalidate_course_agent_cache(
+        'aaaaaaaa-0000-0000-0000-000000000001'
+    );
+    RAISE NOTICE 'PASS  answer_cache_invalidate__egitmen_fonksiyonu_cagirabilir';
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  answer_cache_invalidate__egitmen_fonksiyonu_cagirabilir (%)', SQLERRM;
+END
+$$;
+
+RESET ROLE;
+SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
+       || '  answer_cache_invalidate__egitmen_tum_audience_kayitlarini_temizler (beklenen 0, gelen '
+       || count(*) || ')'
+FROM answer_cache
+WHERE course_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+
+SET LOCAL ROLE dou_app;
 
 -- ===========================================================================
 -- request_logs_self_insert  (+ SELECT/UPDATE/DELETE politikası YOK)

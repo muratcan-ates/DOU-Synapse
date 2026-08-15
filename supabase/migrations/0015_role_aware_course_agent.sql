@@ -66,6 +66,15 @@ CREATE UNIQUE INDEX answer_cache_context_question_key ON answer_cache (
 
 DROP POLICY answer_cache_member_insert ON answer_cache;
 DROP POLICY answer_cache_member_read ON answer_cache;
+-- 0003'teki doğrudan eğitmen DELETE yüzeyi, audience ayrımından sonra güvenli
+-- değildir: DELETE satır görünürlüğüne de bağlıdır ve tek bir audience satırını
+-- hedefler. Temizlik aşağıdaki SECURITY DEFINER fonksiyonundan, dersin bütün
+-- audience/revision kayıtlarını atomik silerek yapılır. BYPASSRLS sahibi worker'ın
+-- bütün doğrudan tablo grant'leri de ayrıca kapatılmalıdır; yalnız policy kaldırmak
+-- onu durdurmaz.
+DROP POLICY answer_cache_instructor_delete ON answer_cache;
+REVOKE DELETE ON TABLE answer_cache FROM PUBLIC, dou_app;
+REVOKE ALL ON TABLE answer_cache FROM dou_worker;
 CREATE POLICY answer_cache_member_read ON answer_cache
     FOR SELECT USING (
         app.is_member(course_id)
