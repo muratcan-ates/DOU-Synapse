@@ -601,6 +601,13 @@ test.describe("gezinme", () => {
      * geçişte de güncellendiği ancak böyle görülür.
      */
     const course = await createCourse("BASLIK");
+
+    await page.goto("/forgot-password");
+    await expect(page).toHaveTitle("Parola yenileme · DOU-Synapse");
+
+    await page.goto("/reset-password");
+    await expect(page).toHaveTitle("Yeni parola · DOU-Synapse");
+
     await signIn(page, AYSE);
 
     await page.goto("/");
@@ -617,7 +624,9 @@ test.describe("gezinme", () => {
       "Asistan",
       "Sınav provası",
       "Soru havuzu",
+      "Sınav blueprint'i",
       "İlerleme",
+      "AI kalite",
       "Katılımcılar",
       "Materyaller",
     ]) {

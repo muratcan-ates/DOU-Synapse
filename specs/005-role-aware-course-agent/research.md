@@ -278,9 +278,9 @@ Production kalite iddiası için ayrıca:
 ## 14. Yerel backend kanıtı ve açık doğrulamalar
 
 Backend handoff'unda taze hedefli paket 157/157; son adayda
-`pytest -q apps/api/tests` 882/882 ve mypy 92 dosya geçti. Ledger-counter
+`pytest -q apps/api/tests` 894/894 ve mypy 92 dosya geçti. Ledger-counter
 düzeltmesi ayrıca temiz DB'de 27/27 hedefli, ruff ve diff kontrolünden geçti.
-Frontend `bun test lib/` 325/325, typecheck ve production build yeşildir. <!-- docs-check: frontend.tests = 325 --> Repo
+Frontend `bun test lib/` 349/349, typecheck ve production build yeşildir. <!-- docs-check: frontend.tests = 349 --> Repo
 kökünden çıplak pytest ise 005 dışı kardeş `scripts.*` import
 collection sorunu buldu; bu yüzden “repo-root full suite yeşil” iddiası yoktur.
 Fake/deterministik kanıt gerçek model pedagojisini veya production davranışını
@@ -289,7 +289,9 @@ kanıtlamaz.
 - Gerçek provider başına `max_tokens` parametresinin LiteLLM adapter'ında nasıl
   eşlendiği entegrasyon testinde ölçülmelidir.
 - Quota başlangıç sayıları staging token/tur ve kullanıcı davranışıyla kalibre edilmelidir.
-- PostgreSQL bucket/reclaim yükü çoklu worker load testinde ölçülmelidir.
+- PostgreSQL bucket/reclaim davranışı yerel iki-worker fake-provider yükünde
+  overshoot 0 ve reservation tepesi 1 olarak ölçüldü; gerçek provider/staging
+  kapasitesi ayrıca ölçülmelidir.
 - Edge/IP rate limit, WAF ve bot koruması canlı hosting sağlayıcısında ayrıca yapılandırılmalıdır.
 - Guard/reservation retention süresi ve cleanup job'ı dış privacy/operations
   kararı olarak açıktır.

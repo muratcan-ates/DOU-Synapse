@@ -19,8 +19,65 @@ import {
   budgetFor,
   classifyApiError,
   retriesFor,
+  signOutWithLocalCleanup,
   withRetry,
 } from "./api";
+
+/* -------------------------------------------------------------------------
+ * Gerçek sağlayıcı + yerel oturum çıkışı
+ * ---------------------------------------------------------------------- */
+
+describe("çıkış sağlayıcı sonucunu denetler ve yerel oturumu her durumda kapatır", () => {
+  test("demo yolunda sağlayıcı olmadan yerel oturum temizlenir", async () => {
+    let cleared = 0;
+
+    await signOutWithLocalCleanup(null, () => {
+      cleared += 1;
+    });
+
+    expect(cleared).toBe(1);
+  });
+
+  test("başarılı Supabase çıkışından sonra yerel oturum temizlenir", async () => {
+    let cleared = 0;
+
+    await signOutWithLocalCleanup(async () => ({ error: null }), () => {
+      cleared += 1;
+    });
+
+    expect(cleared).toBe(1);
+  });
+
+  test("Supabase sonuç nesnesindeki hata yok sayılmaz ve temizlik yine çalışır", async () => {
+    let cleared = 0;
+    const providerError = new Error("Supabase çıkışı reddetti");
+    const promise = signOutWithLocalCleanup(
+      async () => ({ error: providerError }),
+      () => {
+        cleared += 1;
+      },
+    );
+
+    await expect(promise).rejects.toBe(providerError);
+    expect(cleared).toBe(1);
+  });
+
+  test("SDK söz vermeden hata fırlatsa da yerel temizlik atlanmaz", async () => {
+    let cleared = 0;
+    const providerError = new Error("ağ koptu");
+    const promise = signOutWithLocalCleanup(
+      async () => {
+        throw providerError;
+      },
+      () => {
+        cleared += 1;
+      },
+    );
+
+    await expect(promise).rejects.toBe(providerError);
+    expect(cleared).toBe(1);
+  });
+});
 
 /* -------------------------------------------------------------------------
  * T401 · Bütçe seçimi

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
@@ -177,6 +177,43 @@ class TestOperationalKillSwitch:
 
 
 class TestDatabaseRoleBoundary:
+    async def test_quota_reservation_does_not_wait_for_saturated_request_pool(
+        self, client: AsyncClient, users: UserFactory
+    ) -> None:
+        fixture = await _role_fixture(client, users, suffix="quota-pool")
+        settings = get_settings()
+        request_pool_capacity = settings.db_pool_size + settings.db_max_overflow
+
+        async with AsyncExitStack() as held_request_sessions:
+            for _ in range(request_pool_capacity):
+                await held_request_sessions.enter_async_context(rls_session(fixture.student_id))
+
+            reservation = await asyncio.wait_for(
+                agent_quota.reserve(
+                    user_id=fixture.student_id,
+                    course_id=fixture.course_id,
+                    requested_tokens=100,
+                    lease_seconds=60,
+                    user_hard_limit=50_000,
+                    course_hard_limit=500_000,
+                    platform_hard_limit=5_000_000,
+                ),
+                timeout=2,
+            )
+
+            assert reservation.allowed is True
+            assert reservation.reservation_id is not None
+            await asyncio.wait_for(
+                agent_quota.reconcile(
+                    user_id=fixture.student_id,
+                    reservation_id=reservation.reservation_id,
+                    actual_tokens=100,
+                ),
+                timeout=2,
+            )
+
+        assert reservation.allowed is True
+
     async def test_student_cannot_forge_instructor_session_cache_or_log(
         self, client: AsyncClient, users: UserFactory
     ) -> None:
