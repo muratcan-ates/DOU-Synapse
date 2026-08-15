@@ -350,7 +350,13 @@ function UploadBox({
             if (file) handleFile(file);
           }}
         />
-        <Button disabled={busy} onClick={() => inputRef.current?.click()}>
+        <Button
+          aria-disabled={busy}
+          onClick={() => {
+            if (busy) return;
+            inputRef.current?.click();
+          }}
+        >
           {busy ? "Yükleniyor…" : "Dosya seç"}
         </Button>
       </div>

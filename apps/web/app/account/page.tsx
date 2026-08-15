@@ -117,9 +117,19 @@ export default function AccountPage() {
             question="Bu işlem sohbetleri siler ve tüm ders üyeliklerini kapatır. Devam edilsin mi?"
             onConfirm={async () => {
               const result = await api.delete<AccountAnonymization>("/me");
-              window.alert(result.message);
-              void signOutCurrent();
-              router.replace("/");
+              setNotice(result.message);
+              setError(null);
+              try {
+                await signOutCurrent();
+                router.replace("/");
+              } catch (cause) {
+                setError(
+                  errorMessage(
+                    cause,
+                    "Hesabınız anonimleştirildi ancak oturum kapatılamadı. Üst menüdeki çıkış düğmesini tekrar deneyin.",
+                  ),
+                );
+              }
             }}
           />
         </Card>

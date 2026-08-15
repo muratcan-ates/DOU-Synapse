@@ -125,7 +125,12 @@ function MemberRoster({
       <AddMemberForm courseId={courseId} onAdded={reload} />
 
       {error && (
-        <ErrorNote message={error} kind={errorKind} requestId={errorRequestId} />
+        <ErrorNote
+          message={error}
+          kind={errorKind}
+          requestId={errorRequestId}
+          onRetry={reload}
+        />
       )}
       {loading && <Loading />}
 

@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 
 from app.contracts import AssistantAudience
-from app.core.db import rls_session
+from app.core.db import control_rls_session as rls_session
 from app.core.logging import get_logger
 
 logger = get_logger("app.agent.quota")

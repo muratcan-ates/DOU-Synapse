@@ -166,6 +166,18 @@ describe("çekmece yetki sınırı — kaynak değişmezleri", () => {
     expect(source).not.toContain("api.delete");
     expect(source.match(/api\.post/g)).toHaveLength(1);
     expect(source).toContain("`/courses/${courseId}/chat`");
-    expect(source).toContain("disabled={sending}");
+    expect(source).not.toMatch(/\sdisabled=\{sending\}/);
+    expect(source).toContain("aria-disabled={sending}");
+    expect(source).toContain("if (sending) return;");
+  });
+
+  test("transient busy eylemleri odağı düşürmeden ikinci işlemi engeller", async () => {
+    const courseSource = await Bun.file(
+      new URL("../app/courses/[courseId]/page.tsx", import.meta.url),
+    ).text();
+
+    expect(courseSource).not.toContain("<Button disabled={busy}");
+    expect(courseSource).toContain("aria-disabled={busy}");
+    expect(courseSource).toContain("if (busy) return;");
   });
 });

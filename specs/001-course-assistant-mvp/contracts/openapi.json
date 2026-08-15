@@ -8630,6 +8630,13 @@
             },
             "type": "array",
             "title": "Mastery"
+          },
+          "not_included": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Not Included"
           }
         },
         "type": "object",
