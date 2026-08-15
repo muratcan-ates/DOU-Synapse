@@ -24,6 +24,10 @@ class CoursePolicy:
     source_document_ids: frozenset[UUID] | None
     evidence_threshold: float
     daily_token_budget: int | None
+    student_daily_token_budget: int
+    instructor_daily_token_budget: int
+    max_output_tokens: int
+    max_concurrent_requests: int
 
 
 async def resolve_policy(
@@ -55,9 +59,27 @@ async def resolve_policy(
             if row is None or row.evidence_threshold is None
             else float(row.evidence_threshold)
         ),
-        daily_token_budget=(
-            None if row is None or row.daily_token_budget is None else row.daily_token_budget
+        daily_token_budget=min(
+            settings.course_agent_course_daily_hard_limit,
+            (
+                settings.course_agent_course_daily_hard_limit
+                if row is None or row.daily_token_budget is None
+                else row.daily_token_budget
+            ),
         ),
+        student_daily_token_budget=min(
+            12000 if row is None else row.student_daily_token_budget,
+            settings.course_agent_student_daily_hard_limit,
+        ),
+        instructor_daily_token_budget=min(
+            40000 if row is None else row.instructor_daily_token_budget,
+            settings.course_agent_instructor_daily_hard_limit,
+        ),
+        max_output_tokens=min(
+            settings.llm_chat_max_tokens if row is None else row.max_output_tokens,
+            settings.llm_chat_max_tokens,
+        ),
+        max_concurrent_requests=(1 if row is None else row.max_concurrent_requests),
     )
 
 

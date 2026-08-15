@@ -53,12 +53,19 @@ def request_id_of(request: Request) -> str:
     return existing if isinstance(existing, str) and existing else uuid.uuid4().hex
 
 
-def error_response(request: Request, *, status_code: int, code: str, message: str) -> JSONResponse:
+def error_response(
+    request: Request,
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+    headers: dict[str, str] | None = None,
+) -> JSONResponse:
     """Tek çıkış noktası. Hata yanıtı üreten her yol buradan geçer."""
     envelope = ErrorEnvelope(
         error=ErrorDetail(code=code, message=message, request_id=request_id_of(request))
     )
-    return JSONResponse(status_code=status_code, content=envelope.model_dump())
+    return JSONResponse(status_code=status_code, content=envelope.model_dump(), headers=headers)
 
 
 class AppError(Exception):
@@ -67,11 +74,18 @@ class AppError(Exception):
     status_code: int = status.HTTP_400_BAD_REQUEST
     code: str = "app_error"
 
-    def __init__(self, message: str, *, code: str | None = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
         super().__init__(message)
         self.message = message
         if code is not None:
             self.code = code
+        self.headers = headers
 
 
 class AuthenticationError(AppError):
@@ -115,6 +129,18 @@ class RateLimitError(AppError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     code = "rate_limited"
 
+    def __init__(self, message: str, *, retry_after: int = 60, code: str | None = None) -> None:
+        super().__init__(
+            message,
+            code=code,
+            headers={"Retry-After": str(max(1, int(retry_after)))},
+        )
+
+
+class CourseAgentDisabledError(AppError):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "course_agent_disabled"
+
 
 class ConcurrencyLimitError(AppError):
     """Aynı kullanıcının hâlâ süren bir işi var (FR-222).
@@ -145,7 +171,13 @@ class StorageUnavailableError(AppError):
 
 async def app_error_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)
-    return error_response(request, status_code=exc.status_code, code=exc.code, message=exc.message)
+    return error_response(
+        request,
+        status_code=exc.status_code,
+        code=exc.code,
+        message=exc.message,
+        headers=exc.headers,
+    )
 
 
 #: Pydantic hata türü → kullanıcıya gösterilecek Türkçe cümle şablonu.

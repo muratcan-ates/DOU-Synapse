@@ -62,6 +62,7 @@ from app.models.assessment import (
 )
 from app.modules.assessment.exam_paper import paper_question_ids
 from app.modules.assessment.exam_state import (
+    acquire_user_assessment_lock,
     effective_expiry,
     remaining_seconds,
     session_cap_minutes,
@@ -393,6 +394,7 @@ async def start_exam(
     settings = get_settings()
 
     if payload.blueprint_id is not None:
+        await acquire_user_assessment_lock(session, user_id=context.user_id)
         return await _start_blueprint_exam(payload.blueprint_id, context, session, settings)
 
     if payload.topic_id is not None:
@@ -417,6 +419,9 @@ async def start_exam(
             "Bu derste henüz onaylanmış soru yok. Eğitmeniniz soruları onayladıktan "
             "sonra sınav provası başlatabilirsiniz."
         )
+
+    if payload.mode is ExamMode.EXAM:
+        await acquire_user_assessment_lock(session, user_id=context.user_id)
 
     now = await db_now(session)
     exam = ExamSession(

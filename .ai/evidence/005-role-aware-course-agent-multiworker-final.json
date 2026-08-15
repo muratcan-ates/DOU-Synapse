@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "change_id": "005-role-aware-course-agent-multiworker-final",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-08-15T18:59:54.111556+00:00",
+  "normalized_at": "2026-08-15T22:40:00+03:00",
+  "environment": "local disposable PostgreSQL; two uvicorn workers; deterministic delayed fake provider; hashing retrieval",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic UUIDs and aggregate metrics only; no prompt, answer, source text, email, auth header, secret or raw reservation row retained",
+  "source_report": {
+    "path": "specs/005-role-aware-course-agent/evidence/t408-multiworker-local-v2.json",
+    "sha256": "c35922505ebe5a636ea3f3879d32b51c82daa6a5131d9a221d1155cc61a1846e"
+  },
+  "measured_file_sha256": {
+    "apps/api/app/core/db.py": "05193221cd5ed2dadfed9d0f4d40eec94b1d0ddedd601e42e15b2fc9a9fc5a94",
+    "apps/api/app/modules/agent/quota.py": "d593d0ab1aab5cfcd4e0b4eaf4ada1d5439d1577c36728f8986a8f37875d7b43",
+    "apps/api/scripts/role_agent_multiworker_load.py": "71e7e1b39d06a02efe824d8617c259f25e3a993af2a48da5848ac7bf14b52463",
+    "apps/api/tests/test_role_aware_agent.py": "a073070443697bc90ac6948060518023d2174404d86b3cc5ab897029b8396bd7"
+  },
+  "final_tree_source_hashes_match": true,
+  "results": {
+    "worker_count_observed": 2,
+    "quota_overshoot_tokens": 0,
+    "max_active_reservations": 1,
+    "provider_failure_recovered": true,
+    "abandoned_lease_recovered": true,
+    "miss_load_p95_ms": 1659.16,
+    "cache_hit_p95_ms": 493.73,
+    "peak_connections": 18,
+    "configured_pool_capacity": 22,
+    "pool_error_matches": 0,
+    "cleanup_passed": true
+  },
+  "not_run": [
+    "real provider",
+    "Supabase Auth/Storage",
+    "staging",
+    "canary",
+    "production",
+    "production capacity or SLO certification"
+  ],
+  "limitations": "This is a candidate-hash-normalized carry-forward of the cited local report. The four measured source hashes still match the final tree. It proves deterministic two-worker mechanics only; it does not upgrade the original run to staging, real-provider, canary, production, or capacity evidence."
+}

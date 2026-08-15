@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { adminDate, adminListPath, adminUserQueryBody } from "./admin";
+import {
+  adminDate,
+  adminListPath,
+  adminTabIndexAfterKey,
+  adminUserQueryBody,
+} from "./admin";
 import type { AdminOverview, AdminRequestLog } from "./admin";
 
 const overviewFixture = {
@@ -72,5 +77,14 @@ describe("admin gösterim yardımcıları", () => {
   test("bozuk tarihte teknik metin sızdırmaz", () => {
     expect(adminDate(null)).toBe("-");
     expect(adminDate("bozuk")).toBe("-");
+  });
+
+  test("teknik kayıt sekmeleri ok tuşlarıyla döngüsel gezilir", () => {
+    expect(adminTabIndexAfterKey(0, "ArrowRight", 4)).toBe(1);
+    expect(adminTabIndexAfterKey(3, "ArrowRight", 4)).toBe(0);
+    expect(adminTabIndexAfterKey(0, "ArrowLeft", 4)).toBe(3);
+    expect(adminTabIndexAfterKey(2, "Home", 4)).toBe(0);
+    expect(adminTabIndexAfterKey(1, "End", 4)).toBe(3);
+    expect(adminTabIndexAfterKey(1, "Enter", 4)).toBeNull();
   });
 });

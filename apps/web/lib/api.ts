@@ -107,10 +107,28 @@ export async function updateCurrentPassword(password: string): Promise<void> {
 }
 
 /** SDK oturumunu ya da yerel demo oturumunu tek noktadan kapatır. */
+export async function signOutWithLocalCleanup(
+  providerSignOut: (() => Promise<{ error: unknown }>) | null,
+  clearLocalSession: () => void,
+): Promise<void> {
+  try {
+    if (!providerSignOut) return;
+    const { error } = await providerSignOut();
+    if (error) throw error;
+  } finally {
+    // Gerçek sağlayıcı hata verse de demo anahtarları bu tarayıcıda açık
+    // bırakılmaz. Sağlayıcı hatası yukarı taşınır ki arayüz yönlendirmeden
+    // önce kullanıcıya tekrar deneme yolu gösterebilsin.
+    clearLocalSession();
+  }
+}
+
 export async function signOutCurrent(): Promise<void> {
   const client = getSupabase();
-  if (client) await client.auth.signOut();
-  clearDemoSession();
+  await signOutWithLocalCleanup(
+    client ? () => client.auth.signOut() : null,
+    clearDemoSession,
+  );
 }
 
 /** Sayfa yenilemesinde gerçek SDK oturumunu geri yükler; demo yolu senkron kalır. */

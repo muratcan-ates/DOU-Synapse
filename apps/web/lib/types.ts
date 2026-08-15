@@ -57,6 +57,9 @@ export type AnswerStatus =
   | "out_of_scope"
   | "budget_exhausted";
 export type ChatMode = "qa" | "socratic" | "exam";
+/** Asistan kimliği istemcide seçilmez; üyelikten sunucu tarafından türetilir. */
+export type ChatAudience = "student" | "instructor";
+export type ChatAgentProfile = "student_coach" | "instructor_assistant";
 export type SocraticStage =
   | "diagnose"
   | "nudge"
@@ -98,6 +101,10 @@ export interface ChatAnswer {
   socratic_stage: SocraticStage | null;
   /** Cevap birebir eşleşmeli önbellekten geldi mi (FR-034). */
   cached: boolean;
+  /** İstek gövdesinden değil, sunucunun ders üyeliğinden türetilir. */
+  audience: ChatAudience;
+  /** Kullanıcının seçebileceği bir rol değildir; audience ile eşleşmelidir. */
+  agent_profile: ChatAgentProfile;
 }
 
 export interface ChatRequest {
@@ -175,6 +182,8 @@ export interface ChatSessionSummary {
   id: string;
   course_id: string;
   mode: ChatMode;
+  audience: ChatAudience;
+  agent_profile: ChatAgentProfile;
   title: string | null;
   socratic_stage: SocraticStage | null;
   created_at: string;
@@ -411,4 +420,8 @@ export interface ChatAvailability {
   message: string | null;
   allowed_modes: ChatMode[];
   hint_limit: number;
+  /** İstemci bu alan yokken dashboard rolünden persona tahmin etmez. */
+  audience: ChatAudience;
+  /** Sunucunun üyelikten türettiği, değiştirilemez asistan profili. */
+  agent_profile: ChatAgentProfile;
 }

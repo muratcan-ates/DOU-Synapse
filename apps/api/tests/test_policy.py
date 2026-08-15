@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.api.chat import reset_rate_limit, set_pipeline
 from app.contracts import AnswerStatus, ChatMode, Citation, GeneratedAnswer, RetrievedChunk
+from app.modules.agent import quota as agent_quota
 from app.schemas.chat import LlmAnswerPayload
 from tests.conftest import UserFactory
 from tests.factories import (
@@ -105,7 +106,7 @@ class TestPolicyApi:
         assert body["allowed_modes"] is None
         assert body["effective"]["allowed_modes"] == ["qa", "socratic"]
         assert body["effective"]["hint_limit"] == 4
-        assert body["effective"]["daily_llm_budget"] is None
+        assert body["effective"]["daily_llm_budget"] == 500_000
         assert denied.status_code == 403
 
     async def test_put_denetime_yazilir_ve_cache_temizlenir(
@@ -230,6 +231,49 @@ class TestPolicyRuntime:
         assert response.json()["error"]["code"] == "mode_not_allowed"
         assert count == 0
 
+    async def test_tum_ogrenci_modlari_kapaliyken_egitmen_test_edebilir(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        pipeline: Pipeline,
+    ) -> None:
+        course_id, instructor, student, _ = await setup_course(client, users)
+        saved = await client.put(
+            f"/courses/{course_id}/ai-policy",
+            json={"allowed_modes": []},
+            headers=instructor,
+        )
+        assert saved.status_code == 200, saved.text
+
+        instructor_availability = await client.get(
+            f"/courses/{course_id}/chat/availability", headers=instructor
+        )
+        student_availability = await client.get(
+            f"/courses/{course_id}/chat/availability", headers=student
+        )
+        instructor_chat = await client.post(
+            f"/courses/{course_id}/chat",
+            json={"question": "Deadlock nedir?", "mode": "qa"},
+            headers=instructor,
+        )
+        student_chat = await client.post(
+            f"/courses/{course_id}/chat",
+            json={"question": "Deadlock nedir?", "mode": "qa"},
+            headers=student,
+        )
+
+        assert instructor_availability.status_code == 200
+        assert instructor_availability.json()["available"] is True
+        assert instructor_availability.json()["allowed_modes"] == ["qa", "socratic"]
+        assert student_availability.status_code == 200
+        assert student_availability.json()["available"] is False
+        assert student_availability.json()["reason"] == "policy_all_modes_closed"
+        assert instructor_chat.status_code == 200, instructor_chat.text
+        assert instructor_chat.json()["status"] == "insufficient_context"
+        assert student_chat.status_code == 403, student_chat.text
+        assert student_chat.json()["error"]["code"] == "mode_not_allowed"
+        assert pipeline.generator.calls == 0
+
     async def test_kaynak_seti_enjekte_edilen_hatta_da_daralir(
         self,
         client: AsyncClient,
@@ -323,22 +367,33 @@ class TestPolicyRuntime:
             headers=instructor,
         )
         assert saved.status_code == 200, saved.text
-        async with admin_engine.begin() as conn:
-            await conn.execute(
-                text(
-                    "INSERT INTO request_logs "
-                    "(course_id,user_id,route,mode,status,http_status,latency_ms,"
-                    "token_count,cache_hit) "
-                    "VALUES (:course_id,:user_id,'seed','qa','answered',200,1,10,false)"
-                ),
-                {"course_id": course_id, "user_id": student_id},
-            )
+        # Ders bütçesi tek bir kullanıcının değil, dersteki bütün AI
+        # tüketiminin toplamıdır. İkinci öğrencinin harcaması ilk öğrenciyi de
+        # course cap'te durdurmalı; aksi halde panel ve ön kontrol eksik sayar.
+        second_student_id = await users.create("policy.second.student@dogus.edu.tr")
+        added = await client.post(
+            f"/courses/{course_id}/members",
+            json={"email": "policy.second.student@dogus.edu.tr", "role": "student"},
+            headers=instructor,
+        )
+        assert added.status_code == 201, added.text
+        reservation = await agent_quota.reserve(
+            user_id=second_student_id,
+            course_id=UUID(course_id),
+            requested_tokens=10,
+            lease_seconds=60,
+            user_hard_limit=50_000,
+            course_hard_limit=500_000,
+            platform_hard_limit=5_000_000,
+        )
+        assert reservation.allowed is True
 
         response = await client.post(
             f"/courses/{course_id}/chat",
             json={"question": "Deadlock nedir?"},
             headers=student,
         )
+        policy_response = await client.get(f"/courses/{course_id}/ai-policy", headers=instructor)
         async with admin_engine.connect() as conn:
             count = await conn.scalar(
                 text("SELECT count(*) FROM chat_sessions WHERE user_id=:user_id"),
@@ -350,6 +405,8 @@ class TestPolicyRuntime:
         assert response.json()["citations"] == []
         assert pipeline.generator.calls == 0
         assert count == 1
+        assert policy_response.status_code == 200, policy_response.text
+        assert policy_response.json()["budget_used_today"] == 10
 
     async def test_saglayici_tokenlari_request_loga_yazilir(
         self,

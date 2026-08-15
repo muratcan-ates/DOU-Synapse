@@ -302,8 +302,8 @@ class TestDersIzolasyonu:
             async with rls_session(burak_id) as session:
                 await session.execute(
                     text(
-                        "INSERT INTO chat_sessions (course_id, user_id, mode) "
-                        "VALUES (:cid, :uid, 'qa')"
+                        "INSERT INTO chat_sessions (course_id, user_id, mode, audience) "
+                        "VALUES (:cid, :uid, 'qa', 'student')"
                     ),
                     {"cid": course_id, "uid": burak_id},
                 )
@@ -320,7 +320,8 @@ class TestDersIzolasyonu:
         async with rls_session(burak_id) as session:
             await session.execute(
                 text(
-                    "INSERT INTO chat_sessions (course_id, user_id, mode) VALUES (:cid, :uid, 'qa')"
+                    "INSERT INTO chat_sessions (course_id, user_id, mode, audience) "
+                    "VALUES (:cid, :uid, 'qa', 'student')"
                 ),
                 {"cid": course_id, "uid": burak_id},
             )

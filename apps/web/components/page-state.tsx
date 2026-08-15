@@ -16,7 +16,11 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Button, Card } from "@/components/ui";
-import { shouldOfferRetry, type ErrorKind } from "@/lib/errors";
+import {
+  shouldOfferRetry,
+  type ErrorInfo,
+  type ErrorKind,
+} from "@/lib/errors";
 
 /** Bu süreyi aşan bekleyiş açıklanır (FR-154). */
 export const SLOW_LOAD_MS = 4000;
@@ -66,15 +70,24 @@ export function LoadMore({
 }: {
   hasMore: boolean;
   busy: boolean;
-  error?: string | null;
+  error?: ErrorInfo | null;
   onLoadMore: () => void;
 }) {
   if (!hasMore && !error) return null;
   return (
     <div className="mt-4 flex flex-col items-center gap-2">
-      {error && <ErrorNote message={error} onRetry={onLoadMore} />}
-      {hasMore && (
-        <Button variant="secondary" disabled={busy} onClick={onLoadMore}>
+      {error && (
+        <ErrorNote
+          message={error.message}
+          kind={error.kind}
+          requestId={error.requestId}
+          onRetry={onLoadMore}
+        />
+      )}
+      {/* Hata varken tek çıkış ErrorNote'taki sınıflandırılmış eylemdir.
+          Böylece kalıcı hatada altta ikinci, çalışmayacak bir düğme kalmaz. */}
+      {hasMore && !error && (
+        <Button variant="secondary" aria-disabled={busy} onClick={onLoadMore}>
           {busy ? "Yükleniyor…" : "Devamını yükle"}
         </Button>
       )}
@@ -202,19 +215,30 @@ export function PageHeader({
   title,
   description,
   action,
+  eyebrow,
+  compact = false,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
+  eyebrow?: string;
+  compact?: boolean;
 }) {
   return (
-    <div className="rise mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-balance text-3xl font-semibold tracking-tight text-fg">
+    <div className="rise mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
+      <div className="min-w-0">
+        {eyebrow && (
+          <p className="mb-2 font-mono text-xs font-medium text-brand">{eyebrow}</p>
+        )}
+        <h1
+          className={`text-balance font-semibold tracking-tight text-fg ${
+            compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+          }`}
+        >
           {title}
         </h1>
         {description && (
-          <p className="prose-tr mt-1 text-pretty text-sm text-fg-muted">{description}</p>
+          <p className="prose-tr mt-2 text-pretty text-sm text-fg-muted">{description}</p>
         )}
       </div>
       {action}

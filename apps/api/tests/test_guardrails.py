@@ -1086,6 +1086,8 @@ YAPISAL_ALANLAR = frozenset(
         "message_id",
         "status",
         "mode",
+        "audience",
+        "agent_profile",
         "citations[].chunk_id",
         "hints[].chunk_id",
     }

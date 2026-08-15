@@ -4268,6 +4268,15 @@
         ],
         "title": "AnswerSubmitRequest"
       },
+      "AssistantAudience": {
+        "type": "string",
+        "enum": [
+          "student",
+          "instructor"
+        ],
+        "title": "AssistantAudience",
+        "description": "Server-derived course role used by the assistant; never client-selected."
+      },
       "BlueprintCellIn": {
         "properties": {
           "learning_outcome_id": {
@@ -4732,13 +4741,22 @@
           "hint_limit": {
             "type": "integer",
             "title": "Hint Limit"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/AssistantAudience"
+          },
+          "agent_profile": {
+            "type": "string",
+            "title": "Agent Profile"
           }
         },
         "type": "object",
         "required": [
           "available",
           "allowed_modes",
-          "hint_limit"
+          "hint_limit",
+          "audience",
+          "agent_profile"
         ],
         "title": "ChatAvailabilityOut",
         "description": "Asistanın bu kullanıcı için açık olup olmadığı.\n\nArayüzün sekmeyi kilitlemek için ihtiyaç duyduğu tek bilgi. `reason` ve\n`message` sunucudan gelir; arayüz kendi metnini uydurmaz (Anayasa V) ve\nmuafiyet kuralını tekrarlamaz — eğitmene her zaman `available=True` döner."
@@ -5086,6 +5104,13 @@
             "type": "boolean",
             "title": "Cached",
             "default": false
+          },
+          "audience": {
+            "$ref": "#/components/schemas/AssistantAudience"
+          },
+          "agent_profile": {
+            "type": "string",
+            "title": "Agent Profile"
           }
         },
         "type": "object",
@@ -5094,7 +5119,9 @@
           "message_id",
           "status",
           "mode",
-          "answer"
+          "answer",
+          "audience",
+          "agent_profile"
         ],
         "title": "ChatResponse",
         "description": "ARCHITECTURE §5 cevap zarfı.\n\nAbstention bir HATA DEĞİLDİR: `insufficient_context`, `out_of_scope` ve\n`budget_exhausted` normal 200 gövdesiyle döner (Anayasa VII — abstention\nhata gibi gösterilmez).\nSağlayıcı/model adı bilinçli olarak dışarı verilmez; altyapı ayrıntısı\nkullanıcıya gitmez, ölçüm için `GeneratedAnswer` üzerinde loglanır.\n\n`session_id`/`message_id` zarfın parçasıdır ve opsiyonel DEĞİLDİR: istemci bir\nsonraki turu aynı oturuma bağlamak zorundadır ve oturum kimliğini kendisi\nuyduramaz. 9 Ağustos'a kadar bu iki alan yalnız `api/chat.py`'nin geçici\nkopyasında vardı; zarfın iki ayrı tanımı olması istemciyi hiçbir zaman\nkoşmamış bir sözleşmeye karşı yazdırdı (bkz. modül docstring'i)."
@@ -5122,6 +5149,13 @@
           },
           "mode": {
             "$ref": "#/components/schemas/ChatMode"
+          },
+          "audience": {
+            "$ref": "#/components/schemas/AssistantAudience"
+          },
+          "agent_profile": {
+            "type": "string",
+            "title": "Agent Profile"
           },
           "title": {
             "anyOf": [
@@ -5156,6 +5190,8 @@
           "id",
           "course_id",
           "mode",
+          "audience",
+          "agent_profile",
           "title",
           "created_at",
           "updated_at"
@@ -5505,6 +5541,34 @@
               }
             ],
             "title": "Source Document Ids"
+          },
+          "student_daily_token_budget": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 256.0,
+            "title": "Student Daily Token Budget",
+            "default": 12000
+          },
+          "instructor_daily_token_budget": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 256.0,
+            "title": "Instructor Daily Token Budget",
+            "default": 40000
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "maximum": 4096.0,
+            "minimum": 64.0,
+            "title": "Max Output Tokens",
+            "default": 700
+          },
+          "max_concurrent_requests": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Max Concurrent Requests",
+            "default": 1
           }
         },
         "additionalProperties": false,
@@ -5579,6 +5643,34 @@
               }
             ],
             "title": "Source Document Ids"
+          },
+          "student_daily_token_budget": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 256.0,
+            "title": "Student Daily Token Budget",
+            "default": 12000
+          },
+          "instructor_daily_token_budget": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 256.0,
+            "title": "Instructor Daily Token Budget",
+            "default": 40000
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "maximum": 4096.0,
+            "minimum": 64.0,
+            "title": "Max Output Tokens",
+            "default": 700
+          },
+          "max_concurrent_requests": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Max Concurrent Requests",
+            "default": 1
           },
           "course_id": {
             "type": "string",
@@ -6117,6 +6209,22 @@
               }
             ],
             "title": "Source Document Ids"
+          },
+          "student_daily_token_budget": {
+            "type": "integer",
+            "title": "Student Daily Token Budget"
+          },
+          "instructor_daily_token_budget": {
+            "type": "integer",
+            "title": "Instructor Daily Token Budget"
+          },
+          "max_output_tokens": {
+            "type": "integer",
+            "title": "Max Output Tokens"
+          },
+          "max_concurrent_requests": {
+            "type": "integer",
+            "title": "Max Concurrent Requests"
           }
         },
         "type": "object",
@@ -6125,7 +6233,11 @@
           "hint_limit",
           "evidence_threshold",
           "daily_llm_budget",
-          "source_document_ids"
+          "source_document_ids",
+          "student_daily_token_budget",
+          "instructor_daily_token_budget",
+          "max_output_tokens",
+          "max_concurrent_requests"
         ],
         "title": "EffectivePolicyOut"
       },
@@ -8518,6 +8630,13 @@
             },
             "type": "array",
             "title": "Mastery"
+          },
+          "not_included": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Not Included"
           }
         },
         "type": "object",

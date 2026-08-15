@@ -29,6 +29,10 @@ class CourseAiPolicy(Base):
     source_document_ids: Mapped[list[UUID] | None] = mapped_column(ARRAY(PgUUID(as_uuid=True)))
     evidence_threshold: Mapped[Decimal | None] = mapped_column(Numeric(4, 3))
     daily_token_budget: Mapped[int | None] = mapped_column(Integer)
+    student_daily_token_budget: Mapped[int] = mapped_column(Integer, default=12000)
+    instructor_daily_token_budget: Mapped[int] = mapped_column(Integer, default=40000)
+    max_output_tokens: Mapped[int] = mapped_column(Integer, default=700)
+    max_concurrent_requests: Mapped[int] = mapped_column(SmallInteger, default=1)
     updated_by: Mapped[UUID | None] = mapped_column(
         PgUUID(as_uuid=True), ForeignKey("profiles.id", ondelete="SET NULL")
     )
