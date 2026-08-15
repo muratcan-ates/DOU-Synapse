@@ -122,6 +122,17 @@ export function Badge({ tone, children }: { tone: Tone; children: ReactNode }) {
 }
 
 /**
+ * Yıkıcı işlem sürerken onay satırı kapatılamaz.
+ *
+ * `aria-disabled` odağı korur fakat tek başına davranışı engellemez. Karar saf
+ * fonksiyonda tutulur ki "onay başladı -> kullanıcı Vazgeç'e bastı -> istek
+ * sonra tamamlandı" yarışı DOM olmadan da kırmızıya çevrilebilsin.
+ */
+export function canDismissConfirmAction(busy: boolean): boolean {
+  return !busy;
+}
+
+/**
  * Onayla-sonra-uygula: yıkıcı eylemler tek tıkla gerçekleşmez.
  *
  * Yıkıcı eylemin tek onay bileşeni budur ve hata gösterimi burada zorunludur:
@@ -227,7 +238,14 @@ export function ConfirmAction({
       >
         {busy ? busyLabel : confirmLabel}
       </Button>
-      <Button variant="ghost" onClick={() => setConfirming(false)}>
+      <Button
+        variant="ghost"
+        aria-disabled={busy}
+        onClick={() => {
+          if (!canDismissConfirmAction(busy)) return;
+          setConfirming(false);
+        }}
+      >
         Vazgeç
       </Button>
     </span>

@@ -52,11 +52,12 @@ import {
 import { errorMessage } from "@/lib/errors";
 import { QUESTION_TYPE } from "@/lib/labels";
 import { useSession } from "@/lib/session";
+import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
-import { ErrorNote, Loading, MetricRow, PageHeader } from "@/components/page-state";
+import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 
 const DEFAULT_TYPE = "mcq" as const;
@@ -845,8 +846,8 @@ function PaperEditor({
   outcomes: LearningOutcome[];
   onSaved: () => void;
 }) {
-  const pool = useResource<PoolQuestion[]>(
-    () => api.get(`/courses/${courseId}/questions?status=approved`),
+  const pool = usePagedResource<PoolQuestion>(
+    `/courses/${courseId}/questions?status=approved`,
     [courseId],
   );
   const items = useResource<ExamItem[]>(() => api.get(`${base}/items`), [base]);
@@ -886,6 +887,14 @@ function PaperEditor({
       {pool.error && (
         <ErrorNote
           message={pool.error}
+          kind={pool.errorKind}
+          requestId={pool.errorRequestId}
+          onRetry={pool.reload}
+        />
+      )}
+      {pool.refreshError && (
+        <ErrorNote
+          message={pool.refreshError}
           kind={pool.errorKind}
           requestId={pool.errorRequestId}
           onRetry={pool.reload}
@@ -934,6 +943,13 @@ function PaperEditor({
           );
         })}
       </ul>
+
+      <LoadMore
+        hasMore={pool.nextCursor !== null}
+        busy={pool.loadingMore}
+        error={pool.pageError}
+        onLoadMore={() => void pool.loadMore()}
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={save} aria-disabled={busy}>
