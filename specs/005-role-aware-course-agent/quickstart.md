@@ -127,7 +127,7 @@ Ardından statik ve tam paket:
 RUFF_CACHE_DIR=/private/tmp/dou-agent-ruff uv run ruff check .
 RUFF_CACHE_DIR=/private/tmp/dou-agent-ruff uv run ruff format --check .
 uv run mypy app
-PYTHONDONTWRITEBYTECODE=1 uv run pytest -q  # 882 passed  # docs-check: backend.tests = 882
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -q  # 894 passed  # docs-check: backend.tests = 894
 ```
 
 2026-08-11 backend handoff kanıtı:
@@ -140,6 +140,11 @@ ledger-counter son düzeltme:   27/27 + ruff + diff temiz
 frontend lib testleri:        325/325
 frontend typecheck/build:     temiz
 ```
+
+2026-08-15 entegrasyon adayında tam backend koleksiyonu 894/894, frontend
+kütüphane paketi 349/349 (30 test dosyası), mypy 92 dosya ve seri gerçek-API
+Playwright paketi 36/36 ölçüldü. Bu güncel sayılar, üstteki 11 Ağustos tarihli
+handoff kaydını yeniden yazmaz.
 
 Repo kökünden çıplak pytest, 005 dışı kardeş `scripts.*` import collection
 sorununa takıldı; bu nedenle repo-root full suite yeşil diye raporlanmaz. Son
@@ -177,10 +182,59 @@ PYTHONDONTWRITEBYTECODE=1 uv run pytest -q tests/test_user_rights.py  # 13 passe
 Ruff, mypy 92 dosya ve `git diff --check` de yeşildi. Bu kanıt retention süresi
 ve operator cleanup job'ını kapatmaz; onlar canlı işletim riski olarak açık kalır.
 
+### 4.2 T407 offline/fake rol ve RAG mekanik kanıtı
+
+Dondurulmuş sentetik holdout ve ağ kapalı harness şu exact komutla koşar:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 apps/api/.venv/bin/python \
+  evaluation/role_agent_005/offline_fake_eval.py \
+  --cases evaluation/role_agent_005/holdout_v1.json \
+  --output .ai/evidence/005-role-aware-course-agent-offline-fake-v1.json \
+  --base-sha 4d94bc6d72c85e85e6cfc6451d6f48a010a6789f
+```
+
+2026-08-15 koşusu 7/7 geçti. Ölçülen alt kapılar:
+
+- student Sokratik ve instructor grounded fake yanıtları ayrı server-owned rol
+  prompt'larıyla üretildi; 4/4 rol prompt sözleşmesi geçti;
+- cevaplanan 3/3 turdaki atıflar yalnız retrieve edilen chunk kümesinden geldi;
+- normal kapsam dışı 1/1 ve student/instructor cross-role probe 2/2, provider
+  çağrısı toplam 0 iken `out_of_scope` döndü;
+- iki Sokratik fake çıktıda kalıp tabanlı çözüm sızıntısı bulgusu 0;
+- uydurma citation 1/1 düşürüldü ve cevap fail-closed kapandı;
+- kaynak içine gömülü sahte `</source><source ...>` sınır saldırısı 1/1 escaped
+  veri olarak kaldı, ikinci kaynak oluşturmadı ve çıktıdaki emri çalıştırmadı.
+
+Koşu anında repo çok şeritli, commit edilmemiş bir overlay taşıdığı için geçici kayıt
+candidate base SHA ve exact fixture/evaluator/source hash'lerine bağlıdır; final
+immutable candidate SHA oluşunca final R4 evidence kaydıyla yeniden bağlanmalıdır.
+
+Bu koşu gerçek-model ya da pedagojik kalite kanıtı **değildir**. Fake provider
+yalnız kontrol akışı ve sözleşme mekaniğini doğrular. Semantic citation
+faithfulness/claim entailment, gerçek modelin Sokratik yararı, eğitmen kabulü,
+fairness, gerçek embedding retrieval, staging ve canary bu kapıda **KOŞULMADI**;
+P5/T502'de ayrı frozen real-provider holdout ve insan rubric'i ister.
+
 ## 5. Zorunlu mutasyon kanıtları
 
 Kontrol gerçekten kaldırılıp testin kırmızı olduğu görülür; sonra üretim kodu geri
 alınıp aynı test tekrar yeşil koşar:
+
+```bash
+PG_BIN=/opt/homebrew/opt/postgresql@16/bin \
+  apps/api/.venv/bin/python scripts/role_agent_application_mutation_check.py \
+  --evidence /private/tmp/005-role-aware-course-agent-application-mutations.json
+```
+
+Koşucu aday ağacı değiştirmez: API kaynaklarını, hedef testleri ve migration'ları
+geçici bir dizine kopyalar; mevcut `.venv`'i yeniden kullanır ve PID-scope benzersiz
+PostgreSQL veritabanını sonunda silip kalıntıyı ayrıca ölçer. 2026-08-15 koşusunda
+14 test node'undaki 18-test baseline yeşil, aşağıdaki 12/12 mutasyon kırmızı ve her
+birebir restore koşusu yeşildi; geçici DB kalıntısı 0 ölçüldü. Aggregate sonuç,
+final R4 evidence kaydında exact kaynak/koşucu hash'lerine bağlanmalıdır. Bu
+fake-provider/local mekanik kanıtıdır; gerçek model kalitesi, multi-worker yük,
+staging veya production kanıtı değildir.
 
 1. `ChatRequest` audience kabul etsin → payload-injection testi kırmızı.
 2. Membership-to-audience projection değişsin → student/instructor testleri kırmızı.
@@ -244,8 +298,8 @@ Embedding `warming` ise beklenir. Seri E2E:
 )
 ```
 
-2026-08-11 aday kanıtında bu paket benzersiz PostgreSQL veritabanı ve tek worker
-ile 35/35 geçti; global teardown sonrası koşu ders/audit kalıntısı 0/0 ölçüldü.
+2026-08-15 aday kanıtında bu paket benzersiz PostgreSQL veritabanı ve tek worker
+ile 36/36 geçti; global teardown sonrası koşu ders/audit kalıntısı 0/0 ölçüldü.
 Koruma karşı-kontrolünde run desenine uyan
 `c3b76077-20de-47e5-9fe1-4e770ffa64d2` UUID'li demo ders kaldı, yalnız hedef ders
 ve audit silindi; ardından kodu `COME 331` olarak geri doğrulandı.
@@ -262,6 +316,25 @@ Tarayıcı/ağ kanıtı:
 - aynı görünümde duplicate availability/dashboard fetch yoktur;
 - 375 px yatay taşma ve console hatası yoktur;
 - global kill switch kapalıyken composer/provider çağrısı yoktur.
+
+Bu adayda 375 px + dark + reduced-motion bağlamı, dialog adı/açıklaması,
+Tab/Shift+Tab focus trap'i, Escape sonrası odak dönüşü, yatay taşmasız görünüm,
+console/page-error yokluğu, prefetch yokluğu, tek availability ve tek chat POST
+otomatik tarayıcıda geçti. Manuel VoiceOver+Safari ile doğrudan exam POST ve
+kill-switch tarayıcı yolları **KOŞULMADI**; T307/T309 bu nedenle PARTIAL kalır.
+
+### 7.1 T408 yerel iki-worker yük kanıtı
+
+Taze 15-migration PostgreSQL veritabanında iki uvicorn worker, hashing embedding
+ve gecikmeli fake provider ile gerçek HTTP yükü çalıştırıldı. Son kota diliminde
+overshoot 0, eşzamanlı reservation tepesi 1, provider/lease recovery başarılı ve
+cleanup kalıntısı 0 ölçüldü. 16/16 cache-miss turu p95 1659.16 ms ve 18/22 tepe
+bağlantıyla; 64/64 cache-hit patlaması p95 493.73 ms ve 0 yeni
+reservation/charge ile geçti. Kayıt:
+`evidence/t408-multiworker-local-v2.json`.
+
+Bu ölçüm yerel fake/hash mekanik kanıtıdır; gerçek provider, staging/production
+kapasitesi veya SLO sertifikası değildir.
 
 ## 8. Sözleşme ve belge kapısı
 

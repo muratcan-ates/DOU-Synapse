@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "evidence_id": "005-t408-multiworker-local-v1",
+  "created_at": "2026-08-15T17:38:49.221654+00:00",
+  "label": "fake-provider-local-multiworker-http",
+  "status": "pass",
+  "privacy": "synthetic UUIDs and aggregate metrics only; no prompt, answer, source text, email, auth header, secret or raw reservation row retained",
+  "source": {
+    "head": "4d94bc6d72c85e85e6cfc6451d6f48a010a6789f",
+    "working_tree_dirty": true,
+    "changed_path_count": 25,
+    "measured_file_sha256": {
+      "apps/api/app/core/db.py": "05193221cd5ed2dadfed9d0f4d40eec94b1d0ddedd601e42e15b2fc9a9fc5a94",
+      "apps/api/app/modules/agent/quota.py": "d593d0ab1aab5cfcd4e0b4eaf4ada1d5439d1577c36728f8986a8f37875d7b43",
+      "apps/api/scripts/role_agent_multiworker_load.py": "71e7e1b39d06a02efe824d8617c259f25e3a993af2a48da5848ac7bf14b52463",
+      "apps/api/tests/test_role_aware_agent.py": "a073070443697bc90ac6948060518023d2174404d86b3cc5ab897029b8396bd7"
+    }
+  },
+  "environment": {
+    "database": "dou_synapse_t408_45826_1786815501",
+    "database_disposable": true,
+    "migration_first": "0001_core_schema.sql",
+    "migration_last": "0015_role_aware_course_agent.sql",
+    "migration_count": 15,
+    "uvicorn_workers": 2,
+    "port": 8068,
+    "embedding_provider": "hashing/hashing-v1@builtin-1",
+    "llm_provider": "fake/deterministic-v1 with test-only delay",
+    "db_pool_size_per_worker": 5,
+    "db_max_overflow_per_worker": 5,
+    "db_control_pool_size_per_worker": 1,
+    "db_control_max_overflow_per_worker": 0,
+    "real_provider": "not_run",
+    "staging": "not_run",
+    "production": "not_run"
+  },
+  "pass_conditions": {
+    "at_least_two_workers_observed": true,
+    "quota_overshoot_zero": true,
+    "durable_concurrency_rejected_every_challenger": true,
+    "provider_failure_reconciled_and_recovered": true,
+    "abandoned_lease_blocked_then_recovered": true,
+    "cache_burst_opened_no_reservation": true,
+    "no_http_or_pool_errors_in_load_phases": true,
+    "exact_cleanup_has_zero_residue": true
+  },
+  "results": {
+    "probe": {
+      "reserved_tokens": 3201,
+      "http_status": 200,
+      "worker_pid": 45875
+    },
+    "quota_race": {
+      "requests": 4,
+      "accepted": 1,
+      "safe_refusals": 3,
+      "http_429": 1,
+      "budget_exhausted_200": 2,
+      "budget_tokens": 3201,
+      "max_observed_charged_tokens": 3201,
+      "quota_overshoot_tokens": 0,
+      "final_charged_tokens": 758,
+      "worker_pids": [
+        45874,
+        45875
+      ]
+    },
+    "durable_concurrency": {
+      "first_status": 200,
+      "challengers": 4,
+      "durable_429": 1,
+      "process_local_409": 3,
+      "unexpected_responses": 0,
+      "max_active_reservations": 1,
+      "active_after": 0,
+      "worker_pids": [
+        45874,
+        45875
+      ]
+    },
+    "provider_failure_recovery": {
+      "failure_http_status": 503,
+      "failure_code": "llm_unavailable",
+      "failure_unreconciled_after": 0,
+      "failure_charge_preserved": true,
+      "recovery_http_status": 200,
+      "active_after_recovery": 0,
+      "worker_pids": [
+        45875
+      ]
+    },
+    "abandoned_lease_recovery": {
+      "seeded_reservation_id_sha256": "4463624159b39cf37c245c326bcfcb69371efae4e20ceb7c05b9a980d0afd632",
+      "seeded_lease_seconds": 4,
+      "unreconciled_while_active": 1,
+      "conservative_charge_preserved": true,
+      "blocked_during_lease_http_status": 429,
+      "blocked_during_lease_code": "agent_concurrency_limited",
+      "lease_wait_seconds": 4.49,
+      "recovered_after_lease_http_status": 200,
+      "unreconciled_old_rows_after_recovery": 1,
+      "active_after_recovery": 0,
+      "worker_pids": [
+        45875
+      ]
+    },
+    "multi_course_miss_load": {
+      "requests": 16,
+      "http_2xx": 16,
+      "cache_misses": 16,
+      "transport_errors": 0,
+      "http_5xx": 0,
+      "latency": {
+        "n": 16,
+        "min_ms": 1617.19,
+        "median_ms": 1684.13,
+        "p95_ms": 3186.1,
+        "p99_ms": 3195.23,
+        "max_ms": 3197.51
+      },
+      "peak_dou_app_connections": 15,
+      "configured_pool_capacity": 22,
+      "worker_pids": [
+        45874,
+        45875
+      ]
+    },
+    "cache_hit_burst": {
+      "warmup_cached": false,
+      "requests": 64,
+      "cache_hits": 64,
+      "http_2xx": 64,
+      "transport_errors": 0,
+      "new_reservations": 0,
+      "new_charged_tokens": 0,
+      "latency": {
+        "n": 64,
+        "min_ms": 207.37,
+        "median_ms": 412.25,
+        "p95_ms": 540.51,
+        "p99_ms": 559.94,
+        "max_ms": 567.39
+      },
+      "worker_pids": [
+        45874,
+        45875
+      ]
+    },
+    "all_observed_worker_pids": [
+      45874,
+      45875
+    ]
+  },
+  "pool_pressure": {
+    "peak_dou_app_connections": 15,
+    "configured_total_pool_capacity": 22,
+    "pool_error_matches": 0,
+    "pool_error_classes": []
+  },
+  "residue_before_database_drop": {
+    "ai_token_reservations": 21,
+    "ai_guard_events": 3,
+    "answer_cache": 20,
+    "chat_sessions": 86,
+    "chat_messages": 172,
+    "request_logs": 86
+  },
+  "limitations": [
+    "Local laptop timing is not production capacity or an SLO certification.",
+    "Hashing retrieval is mechanical and not semantic-quality evidence.",
+    "The delayed fake provider proves race/lease behavior, not real-provider latency.",
+    "No Supabase Auth/Storage, staging network, WAF or distributed request bucket ran.",
+    "The test-admin-seeded abandoned reservation remains conservatively charged and unreconciled; lease expiry releases concurrency but does not erase daily charge by design.",
+    "No worker was crashed: abandonment was modeled by inserting one synthetic, precharged active lease into the disposable database.",
+    "The regression test saturates the main request pool and proves quota reserve still completes through the bounded 1+0 control pool; this load run uses the application's normal 5+5 request-pool profile and does not certify smaller deployment capacity."
+  ],
+  "cleanup": {
+    "exact_database_absent_after_drop": true,
+    "exact_storage_path_absent": true,
+    "exact_log_path_absent": true,
+    "cleanup_errors": []
+  }
+}

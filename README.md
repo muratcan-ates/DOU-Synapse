@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-882_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 882 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-325_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 325 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-894_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 894 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-349_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 349 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -465,9 +465,9 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **882** <!-- docs-check: backend.tests = 882 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **325** <!-- docs-check: frontend.tests = 325 --> | UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil |
-| Playwright gerçek-API vakaları | **35** <!-- docs-check: e2e.tests = 35 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 35/35; gerçek provider/staging kanıtı değil |
+| Backend testleri | **894** <!-- docs-check: backend.tests = 894 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **349** <!-- docs-check: frontend.tests = 349 --> | 30 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 30 --> |
+| Playwright gerçek-API vakaları | **36** <!-- docs-check: e2e.tests = 36 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 36/36; gerçek provider/staging kanıtı değil |
 | Migration | **15** <!-- docs-check: migrations.count = 15 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
@@ -488,6 +488,13 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 Bu kanıt **yerel PostgreSQL + deterministik fake provider** ortamındadır. Gerçek provider,
 staging, canary veya production kanıtı değildir.
+
+15 Ağustos entegrasyon adayı ayrıca 894/894 backend, 349/349 frontend (30 test
+dosyası), 36/36 seri gerçek-API Playwright, 12/12 uygulama mutasyonu ve 7/7
+offline/fake RAG mekanik vakasını geçti. İki-worker yerel yükte kota overshoot 0,
+aktif reservation tepesi 1, cache-miss p95 1659.16 ms ve cache-hit p95 493.73 ms
+ölçüldü. Bunlar final R4 evidence kaydına bağlanmadan ve gerçek provider/staging
+kapıları koşulmadan production kanıtı değildir.
 
 ### Migration yolculuğu
 
@@ -703,10 +710,10 @@ etiketine taşınmaz.
 
 - 004 ve 005 dalları için PR, temiz CI ve main birleşmesi.
 - Güncel ürün adayının review edilmesi, CI’da gözlenmesi ve onaydan sonra main’e birleşmesi.
-- T217/T410 uygulama katmanı tam mutasyon matrisi: kasıtlı kırmızı, restore ve yeniden yeşil.
-- Manuel 375px/dark/keyboard/screen-reader/reduced-motion ve ayrıntılı ağ/console turu.
-- 005’e özel offline RAG kalite/değerlendirme paketi ve multi-worker yük raporu.
-- OpenAPI ve docs-check’in birleşme commit’i üzerinde yeniden üretilmesi.
+- Manuel VoiceOver+Safari turu; doğrudan exam POST ve kill-switch tarayıcı yolları.
+- Yerel fake/mutasyon/yük sonuçlarının exact candidate hash'leriyle final R4
+  evidence kaydına bağlanması.
+- OpenAPI ve docs-check’in final aday commit’i üzerinde yeniden üretilmesi.
 
 ### Gerçek model ve ürün kalitesi
 
@@ -776,7 +783,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 882 testtir. <!-- docs-check: backend.tests = 882 -->
+Güncel feature kanıtında backend koleksiyonu 894 testtir. <!-- docs-check: backend.tests = 894 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -790,7 +797,7 @@ Güncel feature kanıtında backend koleksiyonu 882 testtir. <!-- docs-check: ba
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 325 testtir. <!-- docs-check: frontend.tests = 325 -->
+Güncel feature kanıtında frontend kütüphane paketi 349 testtir. <!-- docs-check: frontend.tests = 349 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 

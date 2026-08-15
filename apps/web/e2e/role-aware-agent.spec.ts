@@ -33,6 +33,12 @@ interface Course {
   title: string;
 }
 
+interface BrowserApiCall {
+  method: string;
+  path: string;
+  phase: "request" | "response";
+}
+
 function authorization(user: DemoUser) {
   return `Bearer dev:${user.id}`;
 }
@@ -83,6 +89,38 @@ function courseCard(page: Page, course: Course) {
 
 function isCourseRequest(url: string, course: Course, suffix: string) {
   return new URL(url).pathname === `/courses/${course.id}${suffix}`;
+}
+
+function recordBrowserSignals(page: Page) {
+  const calls: BrowserApiCall[] = [];
+  const errors: string[] = [];
+  page.on("request", (request) => {
+    if (!request.url().startsWith(API)) return;
+    calls.push({
+      phase: "request",
+      method: request.method(),
+      path: new URL(request.url()).pathname,
+    });
+  });
+  page.on("response", (response) => {
+    if (!response.url().startsWith(API)) return;
+    calls.push({
+      phase: "response",
+      method: response.request().method(),
+      path: new URL(response.url()).pathname,
+    });
+  });
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  return { calls, errors };
+}
+
+function requestsFor(calls: BrowserApiCall[], method: string, path: string) {
+  return calls.filter(
+    (call) => call.phase === "request" && call.method === method && call.path === path,
+  );
 }
 
 test.describe("rolü sunucudan gelen ders asistanı", () => {
@@ -177,5 +215,101 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
     });
     expect(["insufficient_context", "out_of_scope"]).toContain(answer.status);
     await expect(dialog.getByText(answer.answer, { exact: true })).toBeVisible();
+  });
+
+  test("mobil koyu dialog erişilebilir kalır ve aynı açılışta tek istek üretir", async ({
+    page,
+  }) => {
+    const course = await createCourse("AGENTMOB");
+    await addStudent(course);
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+    const { calls, errors } = recordBrowserSignals(page);
+
+    await signIn(page, BURAK);
+    await page.goto("/dashboard");
+
+    const card = courseCard(page, course);
+    await expect(card).toBeVisible();
+    const availabilityPath = `/courses/${course.id}/chat/availability`;
+    const chatPath = `/courses/${course.id}/chat`;
+
+    // Dashboard kartı yalnızca nötr tetikleyiciyi çizer; availability açılmadan
+    // okunmamalı ve bu nedenle ilk sayfa yükünde hiç çağrı olmamalı.
+    expect(requestsFor(calls, "GET", availabilityPath)).toHaveLength(0);
+    const trigger = card.getByRole("button", { name: "Ders asistanı" });
+    const availabilityPromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        isCourseRequest(response.url(), course, "/chat/availability"),
+    );
+    await trigger.click();
+    await availabilityPromise;
+
+    const dialog = page.getByRole("dialog");
+    const heading = dialog.getByRole("heading", { name: "Ders Koçu" });
+    const description = dialog.getByText(
+      "Ders kaynaklarına bağlı kalır; gerektiğinde cevabı vermek yerine adım adım düşündürür.",
+      { exact: true },
+    );
+    await expect(dialog).toBeVisible();
+    await expect(heading).toBeVisible();
+    await expect(description).toBeVisible();
+    await expect(dialog).toHaveAccessibleName("Ders Koçu");
+    await expect(dialog).toHaveAccessibleDescription(
+      "Ders kaynaklarına bağlı kalır; gerektiğinde cevabı vermek yerine adım adım düşündürür.",
+    );
+    expect(requestsFor(calls, "GET", availabilityPath)).toHaveLength(1);
+
+    const surface = await page.evaluate(() => ({
+      viewport: window.innerWidth,
+      documentWidth: document.documentElement.scrollWidth,
+      bodyWidth: document.body.scrollWidth,
+      dark: window.matchMedia("(prefers-color-scheme: dark)").matches,
+      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    }));
+    expect(surface.viewport).toBe(375);
+    expect(surface.documentWidth).toBeLessThanOrEqual(surface.viewport);
+    expect(surface.bodyWidth).toBeLessThanOrEqual(surface.viewport);
+    expect(surface.dark).toBe(true);
+    expect(surface.reducedMotion).toBe(true);
+
+    // Native modal focus scope: both directions must remain inside the dialog.
+    await expect(dialog.getByRole("button", { name: "Ders asistanını kapat" })).toBeFocused();
+    for (let index = 0; index < 16; index += 1) {
+      await page.keyboard.press("Tab");
+      await expect
+        .poll(() =>
+          dialog.evaluate((element) => element.contains(document.activeElement)),
+        )
+        .toBe(true);
+    }
+    for (let index = 0; index < 16; index += 1) {
+      await page.keyboard.press("Shift+Tab");
+      await expect
+        .poll(() =>
+          dialog.evaluate((element) => element.contains(document.activeElement)),
+        )
+        .toBe(true);
+    }
+
+    const input = dialog.getByLabel("Sorun");
+    await input.fill("Bu dersin temel konusu nedir?");
+    const answerPromise = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        isCourseRequest(response.url(), course, "/chat"),
+    );
+    await dialog.getByRole("button", { name: "Gönder" }).click();
+    const answerResponse = await answerPromise;
+    expect(answerResponse.status()).toBe(200);
+    await expect(dialog.getByText(/Yanıt hazırlanıyor…/)).toHaveCount(0);
+    expect(requestsFor(calls, "POST", chatPath)).toHaveLength(1);
+    expect(requestsFor(calls, "GET", availabilityPath)).toHaveLength(1);
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    expect(errors).toEqual([]);
   });
 });

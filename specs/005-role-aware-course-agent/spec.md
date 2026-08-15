@@ -3,9 +3,10 @@
 **Feature Branch**: `005-role-aware-course-agent`
 **Base**: `7c1c219` (`004-ai-sdlc-excellence`; yerel governance teslim commit'i)
 **Created**: 2026-08-11
-**Status**: Backend, `0015` ve frontend kodlandı; tam API 882/882, mypy 92 dosya, <!-- docs-check: tarihsel 882 · 2026-08-11 --><!-- docs-check: tarihsel 92 · 2026-08-11 -->
-frontend 325/325, typecheck ve production build geçti. Seri gerçek-API tarayıcı 35/35; <!-- docs-check: tarihsel 325 · 2026-08-11 --><!-- docs-check: tarihsel 35 · 2026-08-11 -->
-real-provider, staging, isimli onay ve canlı rollout kanıtı henüz yok.
+**Status**: Backend, `0015` ve frontend kodlandı; tam API 894/894, mypy 92 dosya, <!-- docs-check: backend.tests = 894 --><!-- docs-check: backend.mypyFiles = 92 -->
+frontend 349/349, typecheck ve production build geçti. Seri gerçek-API tarayıcı
+36/36; manuel VoiceOver+Safari, doğrudan exam/kill-switch browser yolları,
+real-provider, staging, isimli onay ve canlı rollout kanıtı henüz yok. <!-- docs-check: frontend.tests = 349 --><!-- docs-check: e2e.tests = 36 -->
 **Risk**: R3 — öğrenci/eğitmen davranışı, kota, kötüye kullanım ve sınav kilidi değişiyor
 
 **Input**: Kullanıcının öğrenci ve eğitmen için uygun cevap veren bir AI chatbox,

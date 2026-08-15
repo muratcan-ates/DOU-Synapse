@@ -359,7 +359,7 @@ aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 882 test   # docs-check: backend.tests = 882
+cd apps/api && uv run pytest -q                 # 894 test   # docs-check: backend.tests = 894
 cd apps/api && uv run mypy app                  # temiz, 92 dosya   # docs-check: backend.mypyFiles = 92
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```

@@ -2,11 +2,14 @@
 
 **Branch**: `005-role-aware-course-agent`
 **Base**: `7c1c219`
-**Durum**: Speckit + backend/migration + frontend kodlandı; API 882/882, mypy 92
-dosya, frontend 325/325, typecheck/build yeşil. R3 dossier yazıldı; DB/RLS
-mutasyon betiği izole veritabanlarında uygulandı. Gerçek tarayıcı, uygulama
-paketi 35/35 geçti; uygulama katmanındaki tam mutasyon matrisi, manuel a11y/ağ
-turu, GitHub CI, provider/staging/rollout açık.
+**Durum**: Speckit + backend/migration + frontend kodlandı. Önceki adayda API,
+mypy, frontend, typecheck/build kapıları yeşildi; güncel entegrasyon ağacında yeni
+testler ve davranış değişiklikleri bulunduğu için canlı sayılar final kapıda yeniden
+ölçülecek. R3 dossier yazıldı; DB/RLS mutasyon betiği izole veritabanlarında
+uygulandı. Gerçek tarayıcı paketi 36/36 ve uygulama katmanı
+kırmızı/restore/yeşil matrisi 12/12 geçti. Otomatik mobile/dark/keyboard/focus/ağ
+turu tamamlandı; manuel VoiceOver+Safari, doğrudan exam/kill-switch tarayıcı
+yolları, GitHub CI, provider/staging/rollout açık.
 **Migration**: `0015_role_aware_course_agent.sql`
 
 ## İşaret sözlüğü
@@ -161,17 +164,23 @@ kırmızı/geri dönüşte yeşil; ortak/demo DB kullanılmadı.
   concurrency event reserve fonksiyonunda; HTTP exception sonrası satır kalır.
 - [x] **T216** Privacy tests: instructor student chat/not okuyamaz, admin-no-membership,
   cross-course/user; reservation/guard logs prompt/answer/source/IP/hash taşımaz.
-- [ ] **T217** Backend unit/integration/mutation: audience, session, cache,
-  policy, race, expiry, output cap, kill switch ve exam lock. Unit/integration
-  yeşil; uygulanmış kırmızı/restore mutasyon matrisi açık.
+- [x] **T217** Backend unit/integration/mutation: audience, session, cache,
+  provider reservation, concurrency, output cap, exam dependency yolları,
+  guard-event privacy, kill switch, chat-finalize/exam ve export/exam user lock.
+  14 hedef test node'undaki 18 test önce yeşil; 12/12 mutasyon uygulandığında
+  kırmızı, birebir restore sonrasında 12/12 hedef koşu yeşil ve geçici DB kalıntısı
+  0. Fake-provider/local mekanik kanıtı final R4 evidence kaydına bağlanacaktır;
+  gerçek model kalitesini kanıtlamaz. — DONE 2026-08-15
 - [x] **T218** `/me/export` exam start ile aynı user lock'u: active student EXAM
   423 `exam_export_locked`; forced interleaving, expired/practice ve instructor
   preview istisnaları. — DONE 2026-08-11
 
 **P2 kapısı**: Hedefli pytest + ruff/format/mypy yeşil; kontroller kaldırılınca
 ilgili test kırmızı; fake-provider kanıtının kalite olmadığı raporda açık.
-Mevcut kanıt: taze hedefli 157/157, `apps/api/tests` 882/882, ruff/format ve
-mypy 92 dosya temiz. Uygulanmış mutasyon matrisi hâlâ açık kapıdır.
+Mevcut yerel tam paket kanıtı: taze hedefli 157/157, `apps/api/tests` 894/894,
+ruff/format ve mypy 92 dosya temiz. Yeni uygulama guard dosyası ayrıca 11/11;
+mutasyon baseline'ı 18/18 ve 12/12 uygulanan kırmızı/restore/yeşil turu temizdir.
+Fake-provider kanıtı gerçek model kalitesi değildir.
 
 ---
 
@@ -192,13 +201,19 @@ mypy 92 dosya temiz. Uygulanmış mutasyon matrisi hâlâ açık kapıdır.
 - [x] **T306** Availability gelmeden composer/session fetch yok; aynı course/
   dashboard verisi duplicate fetch edilmez. — DONE 2026-08-11
 - [ ] **T307** 375px, dark, keyboard, dialog label, focus trap+return, screen reader
-  ve reduced motion. Native dialog/keyboard/mobile/dark kodu var; manuel
-  browser/a11y gözlemi yapılmadığı için PARTIAL.
+  ve reduced motion. Playwright 375 px + dark + reduced-motion bağlamında dialog
+  adı/açıklaması, Tab/Shift+Tab focus trap'i, Escape sonrası tetikleyiciye odak
+  dönüşü ve yatay taşmasız görünümü gerçek tarayıcıda doğruladı. Manuel
+  VoiceOver+Safari gözlemi yapılmadığı için **PARTIAL**.
 - [x] **T308** Vitest: student/instructor/mixed-role, course switch, no audience
   payload, 200/403/409/422/429/503, session continuation ve disabled composer.
   — frontend `bun test lib/` 325/325, 2026-08-11 <!-- docs-check: tarihsel 325 · 2026-08-11 -->
 - [ ] **T309** Browser network: exam lock/direct API, kill switch, no prefetch,
-  no duplicate request, console ve horizontal overflow.
+  no duplicate request, console ve horizontal overflow. Playwright, drawer
+  açılmadan availability isteği olmadığını; ilk açılışta tam 1 availability ve
+  gönderimde tam 1 chat POST olduğunu, console/page error ve yatay taşma
+  bulunmadığını doğruladı. Direct exam POST ve kill-switch tarayıcı yolları henüz
+  otomatik koşulmadığı için **PARTIAL**.
 
 **P3 kapısı**: `bun test`, typecheck, production build, hedefli seri Playwright ve
 elle student/instructor/mobile/dark turu yeşil.
@@ -208,7 +223,7 @@ elle student/instructor/mobile/dark turu yeşil.
 ## P4 — Bütünleşik repo kanıtı ve AI-SDLC
 
 - [x] **T401** Backend tam pytest, ruff/format/mypy; sayaçları docs_check kaynağına bırak.
-  `pytest -q apps/api/tests` 882/882, ruff/format ve mypy 92 dosya temiz;
+  `pytest -q apps/api/tests` 894/894, ruff/format ve mypy 92 dosya temiz;
   repo-root çıplak pytest 005 dışı `scripts.*` import collection sorunu buldu.
   Backend kapsamı DONE 2026-08-11.
 - [x] **T402** Taze DB tam migration + agent SQL/RLS/mutation paketi.
@@ -216,11 +231,11 @@ elle student/instructor/mobile/dark turu yeşil.
   uyguladı; 8 kapalı sınır + 3 kota referansı geçti, 11/11 DB/RLS mutasyonu beklenen
   sızıntıyı yakaladı ve kalıntı DB 0 ölçüldü. Bu kanıt T217/T410'daki uygulama
   katmanı tam mutasyon matrisinin yerine geçmez. — DONE 2026-08-11
-- [x] **T403** Frontend tam unit/typecheck/build. — 325/325 + typecheck +
-  production build temiz, 2026-08-11
+- [x] **T403** Frontend tam unit/typecheck/build. — 349/349 test, 30 test dosyası,
+  typecheck ve production build temiz, 2026-08-15
 - [x] **T404** Seri gerçek-API Playwright; koşu-önekli setup/teardown, kalıntı 0,
-  protected `COME 331` yerinde. — DONE 2026-08-11: benzersiz PostgreSQL
-  veritabanında 35/35 gerçek-API vaka tek worker ile geçti; teardown sonrası E2E
+  protected `COME 331` yerinde. — DONE 2026-08-15: benzersiz PostgreSQL
+  veritabanında 36/36 gerçek-API vaka tek worker ile geçti; teardown sonrası E2E
   ders/audit kalıntısı 0/0. Ayrı fail-closed temizlik kanıtında yalnız
   hedef ders/audit silindi; run desenine sokulan
   `c3b76077-20de-47e5-9fe1-4e770ffa64d2` UUID'li ders kaldı, kodu `COME 331`e
@@ -232,17 +247,48 @@ elle student/instructor/mobile/dark turu yeşil.
   Tablo/migration/test sayaçları kaynağından doğrulandı; whitespace ve sözleşme
   taraması temiz. — DONE 2026-08-11
 - [ ] **T407** Offline/fake RAG eval: student Socratic, instructor grounded yardım,
-  scope abstention, citation faithfulness, poisoned source/leakage attack set.
-- [ ] **T408** Multi-worker load: quota overshoot 0, concurrency/lease recovery,
-  p95 latency/pool pressure ve cache-hit burst residual raporu.
-- [x] **T409** 005 R3 dossier exact base/head, prompt/model/provider/retrieval/
+  scope abstention, citation set-membership, poisoned source/leakage attack set.
+  Dondurulmuş 7 sentetik vaka ağ kapalı ve DB'siz gerçek `produce_answer` hattında
+  7/7 geçti: 3/3 cevaplı tur retrieved citation kümesinde kaldı, 1/1 normal kapsam
+  dışı ve 2/2 cross-role probe provider çağrılmadan reddedildi, iki Sokratik turda
+  kalıp sızıntısı 0, forged citation 1/1 fail-closed, poisoned source sınırı 1/1
+  kaçırılmadı ve 4/4 role prompt sözleşmesi geçti. Bu yalnız fake-provider mekanik
+  kanıtıdır; semantic claim entailment/citation faithfulness,
+  gerçek model pedagojisi ve insan kabulü **KOŞULMADI**. Koşu, dirty working-tree
+  overlay'inin `4d94bc6d72c85e85e6cfc6451d6f48a010a6789f` tabanını ve exact artefakt
+  hash'lerini kaydetti; release öncesi final R4 evidence kaydı üretim davranış
+  bağımlılıklarını exact hashlerle bağlamalıdır. — GEÇİCİ KANIT 2026-08-15;
+  final aday bağı açık
+- [x] **T408** Multi-worker load: quota overshoot 0, concurrency/lease recovery,
+  p95 latency/pool pressure ve cache-hit burst residual raporu. — DONE 2026-08-15:
+  taze 15-migration PostgreSQL DB, hashing embedding, gecikmeli fake provider ve
+  iki uvicorn worker ile gercek HTTP kosusu gecti. Son kota dilimindeki 4 istekten
+  1'i kabul/3'u guvenli ret, max charge=budget=3201 ve overshoot=0; ayni kullanici
+  concurrency yarisi diger worker'da 1 kalici 429 + ayni worker'da 3 process-local
+  409 verdi; tum rakip istekler 409/429 ile reddedildi ve olculen aktif
+  reservation tepesi 1'de kaldi. Provider 503 sonrasi 200 toparlandi; sentetik
+  terk edilmis 4 s lease boyunca 429, expiry sonrasi 200 oldu. Iki derste 16/16
+  cache-miss isteği geçti
+  (p95 1659.16 ms, peak 18/22 bağlantı, 0 pool/transport/5xx); 64/64 cache-hit
+  patlaması geçti (p95 493.73 ms, yeni reservation/charge=0). Koşu sırasında
+  bulunan ana-havuz starvation'ı bounded 1+0 kontrol havuzu ve ana istek havuzunu
+  tamamen doyuran regresyon testiyle kapandı; exact DB/storage/log cleanup kalıntısı 0.
+  Kanıt: `evidence/t408-multiworker-local-v2.json`. Bu yerel fake/hash mekanik
+  kanıtıdır; gerçek-provider kalitesi, staging/production kapasitesi ve SLO
+  sertifikası **KOŞULMADI**.
+- [ ] **T409** 005 R3 dossier exact base/head, prompt/model/provider/retrieval/
   quota/output/flag revisions ve evidence hash'leriyle PASS.
-  Append-only `main` entegrasyon kaydı; 882 backend, 325 frontend, 35 seri
+  Append-only `main` entegrasyon kaydı; 894 backend, 349 frontend, 36 seri
   gerçek-API tarayıcı, 11/11 DB mutasyonu ve privacy/cascade kanıtını yeni rapor
   hash'ine bağlar.
   Fake-provider mekanik kanıtı PASS; real-provider/staging iddiaları açıkça
-  `not_run`. — DONE 2026-08-11
-- [ ] **T410** Mutasyon matrisi uygulanmış kırmızı ve restore edilmiş yeşil kanıtlarıyla raporlanır.
+  `not_run`. Güncel kontrol-havuzu, UI hata/oturum düzeltmeleri ve yeni kanıtlar
+  append-only yeni revision'a henüz bağlanmadı. — FINAL REVISION AÇIK
+- [x] **T410** Uygulama mutasyon matrisi geçici kaynak kopyasında 12/12 kırmızı,
+  restore sonrası 12/12 hedef koşu yeşil ve DB kalıntısı 0 olarak raporlandı.
+  Kayıt yalnız sentetik fixture + fake provider kullanır, ham içerik tutmaz;
+  kaynak/koşucu hash'leri final R4 evidence kaydına bağlanacaktır.
+  — DONE 2026-08-15
 
 **P4 kapısı**: Repo adayı yerelde doğrulanmıştır. Gerçek provider/staging/deploy
 olmadan “production” değildir.
