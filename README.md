@@ -14,7 +14,7 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
 ![Backend tests](https://img.shields.io/badge/backend_tests-909_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 909 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-361_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 361 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-394_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 394 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -466,7 +466,7 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
 | Backend testleri | **909** <!-- docs-check: backend.tests = 909 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **361** <!-- docs-check: frontend.tests = 361 --> | 32 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 32 --> |
+| Frontend birim testleri | **394** <!-- docs-check: frontend.tests = 394 --> | 36 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 36 --> |
 | Playwright gerçek-API vakaları | **36** <!-- docs-check: e2e.tests = 36 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 36/36; gerçek provider/staging kanıtı değil |
 | Migration | **15** <!-- docs-check: migrations.count = 15 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
@@ -798,7 +798,7 @@ Güncel feature kanıtında backend koleksiyonu 909 testtir. <!-- docs-check: ba
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 361 testtir. <!-- docs-check: frontend.tests = 361 -->
+Güncel feature kanıtında frontend kütüphane paketi 394 testtir. <!-- docs-check: frontend.tests = 394 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 
