@@ -29,6 +29,7 @@ from dataclasses import dataclass, field, replace
 from uuid import UUID
 
 from app.contracts import (
+    USER_TEXT,
     AnswerStatus,
     ChatMode,
     GeneratedAnswer,
@@ -39,7 +40,6 @@ from app.contracts import (
     SocraticStage,
 )
 from app.core.logging import get_logger
-from app.modules.generation.service import USER_TEXT
 from app.modules.guardrails import leakage, sanitize
 from app.modules.guardrails.citation import (
     BLOCK_REASON_NO_VALID_CITATION,

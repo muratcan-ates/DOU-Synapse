@@ -28,6 +28,9 @@ from uuid import UUID
 from pydantic import ValidationError
 
 from app.contracts import (
+    USER_TEXT as USER_TEXT,
+)
+from app.contracts import (
     AnswerStatus,
     AssistantAudience,
     ChatMode,
@@ -45,31 +48,9 @@ from app.schemas.chat import LlmAnswerPayload, LlmCitation
 
 logger = get_logger("app.generation")
 
-#: Kullanıcıya dönen sabit metinler tek sözlükte yaşar. Her modülün kendi
-#: "üzgünüm, cevap veremiyorum" cümlesini yazması, aynı ürünün üç farklı ses
-#: tonuyla konuşması demektir (Anayasa V + XI).
-USER_TEXT: dict[str, str] = {
-    "insufficient_context": (
-        "Bu soruyu ders materyalinde bulabildiğim kaynaklarla güvenle cevaplayamıyorum. "
-        "Soruyu biraz daha somutlaştırırsan tekrar deneyebilirim."
-    ),
-    "out_of_scope": (
-        "Bu konu dersin kapsamı dışında görünüyor. "
-        "Ders materyalindeki bir konuyu sorarsan yardımcı olabilirim."
-    ),
-    "blocked_no_citation": (
-        "Bu soruya ders materyalinden doğrulanmış bir kaynak gösteremediğim için "
-        "cevabı paylaşmıyorum. Kaynağı olmayan bir cevap vermemeyi tercih ederim."
-    ),
-    "blocked_exam_hint": (
-        "Sınav sürerken ipucu veya çözüm paylaşılmaz. Geri bildirimi sınav bittiğinde görebilirsin."
-    ),
-    "blocked_generic": (
-        "Bu cevabı güvenlik kontrollerinden geçiremedim, bu yüzden paylaşmıyorum. "
-        "Soruyu farklı biçimde sorarsan tekrar deneyebilirim."
-    ),
-}
-
+#: Geriye uyum: `USER_TEXT` burada doğdu ve testler dahil tüketiciler onu bu
+#: modülden import eder. Tanım artık `contracts.py`'de (guardrails da tüketiyor;
+#: paket döngüsünün kenarı buydu), buradan re-export edilir.
 _REPAIR_NOTE = """
 
 ÖNCEKİ DENEMEN GEÇERSİZDİ. Yanıtın tek bir JSON nesnesi olmalıydı ve olmadı.

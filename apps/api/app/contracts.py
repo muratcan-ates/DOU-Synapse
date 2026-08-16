@@ -95,6 +95,48 @@ class AnswerStatus(StrEnum):
     BUDGET_EXHAUSTED = "budget_exhausted"
 
 
+#: Kullanıcıya dönen sabit metinler tek sözlükte yaşar. Her modülün kendi
+#: "üzgünüm, cevap veremiyorum" cümlesini yazması, aynı ürünün üç farklı ses
+#: tonuyla konuşması demektir (Anayasa V + XI). Sözlük `generation/service.py`'de
+#: doğdu; guardrails/chain.py da tükettiği için modülerizasyon v2'de sözleşme
+#: dosyasına taşındı — generation↔guardrails paket döngüsünün tek üst-düzey
+#: kenarı buydu.
+USER_TEXT: dict[str, str] = {
+    "insufficient_context": (
+        "Bu soruyu ders materyalinde bulabildiğim kaynaklarla güvenle cevaplayamıyorum. "
+        "Soruyu biraz daha somutlaştırırsan tekrar deneyebilirim."
+    ),
+    "out_of_scope": (
+        "Bu konu dersin kapsamı dışında görünüyor. "
+        "Ders materyalindeki bir konuyu sorarsan yardımcı olabilirim."
+    ),
+    "blocked_no_citation": (
+        "Bu soruya ders materyalinden doğrulanmış bir kaynak gösteremediğim için "
+        "cevabı paylaşmıyorum. Kaynağı olmayan bir cevap vermemeyi tercih ederim."
+    ),
+    "blocked_exam_hint": (
+        "Sınav sürerken ipucu veya çözüm paylaşılmaz. Geri bildirimi sınav bittiğinde görebilirsin."
+    ),
+    "blocked_generic": (
+        "Bu cevabı güvenlik kontrollerinden geçiremedim, bu yüzden paylaşmıyorum. "
+        "Soruyu farklı biçimde sorarsan tekrar deneyebilirim."
+    ),
+}
+
+
+class EvidenceLevel(StrEnum):
+    """Kanıt kapısının üç çıktısı.
+
+    `retrieval/scope.py`'de doğdu; `schemas/source.py` da tükettiği için
+    modülerizasyon v2'de sözleşme dosyasına taşındı — schemas→modules yönündeki
+    tek import buydu. Karar mantığı scope'ta kalır; burada yalnız sözlük var.
+    """
+
+    SUFFICIENT = "sufficient"
+    WEAK = "weak"
+    OUT_OF_SCOPE = "out_of_scope"
+
+
 class ChatMode(StrEnum):
     QA = "qa"
     SOCRATIC = "socratic"
