@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "005-role-aware-course-agent-r9",
+  "captured_at": "2026-08-16T07:38:26+00:00",
+  "candidate_sha": "SELF",
+  "measured_at_sha": "f41fb8053edf87959a1e27523bcb9a1d229a6a02",
+  "measurement_note": "Kapılar kod-final f41fb80'de koşuldu; final commit yalnız .ai kayıtları ekler, kod baytı değiştirmez.",
+  "command": "pytest -q apps/api/tests (TEST_DB_NAME=dou_synapse_test_claude_p2_final); bun test lib/; tsc --noEmit; bun run build; rls_role_aware_agent_mutation_check.sh rls_role_agent_claude_p2_final2; role_agent_application_mutation_check.py; playwright --workers=1 (dou_synapse_test_claude_p2_e2e2); docs_check.mjs; unittest scripts/test_ai_sdlc_check.py",
+  "environment": "local macOS · PostgreSQL 16 · fake provider · yalnız tek-kullanımlık veritabanları · paylaşılan dou_synapse'a dokunulmadı",
+  "results": {
+    "backend_tests_passed": 904,
+    "frontend_tests_passed": 352,
+    "frontend_test_files": 30,
+    "typecheck_errors": 0,
+    "build_errors": 0,
+    "rls_mutations_attempted": 16,
+    "rls_mutations_caught": 16,
+    "application_mutations_attempted": 12,
+    "application_mutations_passed": 12,
+    "e2e_serial_passed": 36,
+    "e2e_residue_courses": 0,
+    "e2e_residue_audit": 0,
+    "validator_tests_passed": 69,
+    "docs_check_exit": 0,
+    "token_ceiling_measured_max": 1021,
+    "token_ceiling_constant": 1024,
+    "transition_audit": "güçlendirilmiş validator, bu dalın gerçek ekle-sil-ekle geçmişini karantinasız hâlde KIRMIZI yakaladı (AUDIT_HISTORY_REWRITE×4, AUDIT_LINEAGE_CONTAMINATED:r8); 6 düşman regresyon testi eklendi, tespit köreltilince 5'i kırmızı"
+  },
+  "limitations": "Yerel, sahte sağlayıcı; gerçek provider/staging/canary/production iddiası yok. GitHub Actions bu makineden izlenemiyor (gh yetkisiz).",
+  "privacy": "içerik yok; yalnız sayılar, komutlar ve kaynak özetleri"
+}

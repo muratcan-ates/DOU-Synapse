@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "quarantine_id": "005-role-aware-course-agent-p2-rewrite",
+  "title": "Quarantine the in-range add-delete-re-add governance records",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-16T07:32:40+00:00",
+  "base_sha": "2c178861a3e484af8643f999f210db040eb84e68",
+  "candidate_sha": "SELF",
+  "replacement_dossier": ".ai/changes/005-role-aware-course-agent-r9.json",
+  "records": [
+    {
+      "path": ".ai/changes/005-role-aware-course-agent-r6.json",
+      "introduced_sha": "9f06f298b11ef97ed9bc927c7de6007cc3de12f7",
+      "final_blob_sha256": "b864625c87dc8a74b9cb3d8df3360dc71f6a235716a6c9a34e0e1463b66d755c",
+      "reason": "history-rewritten",
+      "contaminated_by": null
+    },
+    {
+      "path": ".ai/changes/005-role-aware-course-agent-r7.json",
+      "introduced_sha": "6058e8fd6b30ff9c7d87244eca5e1fe9476e577b",
+      "final_blob_sha256": "bceb359b12fdcf870d3b798af039ebecd9bd37aab8896e249ae46c9e1bb2f8bc",
+      "reason": "history-rewritten",
+      "contaminated_by": null
+    },
+    {
+      "path": ".ai/evidence/005-role-aware-course-agent-p2-takeover.json",
+      "introduced_sha": "6933e94a1262bdf8ada719938cdbba62398f194f",
+      "final_blob_sha256": "08007439f56eb0bb0ab7b5989e182e8ddfe763053611f8cfcee8a120be42d71a",
+      "reason": "history-rewritten",
+      "contaminated_by": null
+    },
+    {
+      "path": ".ai/evidence/005-role-aware-course-agent-p2-takeover-r2.json",
+      "introduced_sha": "6058e8fd6b30ff9c7d87244eca5e1fe9476e577b",
+      "final_blob_sha256": "e6d132909bf17ec0d1a28675d9ffdb763fac7d0f2f89cb440444ad8c8fa9e575",
+      "reason": "history-rewritten",
+      "contaminated_by": null
+    },
+    {
+      "path": ".ai/changes/005-role-aware-course-agent-r8.json",
+      "introduced_sha": "01eb3428fdce7613f066707ddaa5b6628f825ea8",
+      "final_blob_sha256": "c3166e44fb57a057052eb12f8fe528099b492ac8614a23b18b9384c738014338",
+      "reason": "descends-from-quarantined",
+      "contaminated_by": ".ai/changes/005-role-aware-course-agent-r6.json"
+    }
+  ]
+}
