@@ -18,7 +18,12 @@
 #   8. atomik rezervasyonun platform/course transaction advisory lock'lari,
 #   9. gunluk token kotasi,
 #  10. aktif reservation eszamanlilik tavani,
-#  11. KVKK sohbet gecmisinin yalniz satir sahibine gorunmesi.
+#  11. KVKK sohbet gecmisinin yalniz satir sahibine gorunmesi,
+#  12. uyelik sonlandiktan sonra sahibin kendi mesajlarini disa aktarabilmesi,
+#  13. uyelik sonlandiktan sonra sahibin kendi geri bildirimini disa aktarabilmesi,
+#  14. KVKK mesaj politikasinin baska kullaniciya acilmamasi,
+#  15. KVKK geri bildirim politikasinin baska kullaniciya acilmamasi,
+#  16. audience backfill'in revoked/inactive uyelik rolunu kullanmamasi.
 #
 # Bilincli dislama: `/me/export` aktif-sinav kilidi, kullanici-bazli advisory lock ve
 # HTTP 423 zarfi FastAPI katmaninda tanimlidir; 0015 migrasyonunda cagrilabilir bir SQL
@@ -46,6 +51,10 @@ NON_MEMBER="44444444-4444-4444-4444-444444444444"
 COURSE="aaaaaaaa-0000-0000-0000-000000000005"
 STUDENT_SESSION="51515151-0000-0000-0000-000000000001"
 OTHER_SESSION="51515151-0000-0000-0000-000000000002"
+STUDENT_MESSAGE="52525252-0000-0000-0000-000000000001"
+OTHER_MESSAGE="52525252-0000-0000-0000-000000000002"
+STUDENT_FEEDBACK="53535353-0000-0000-0000-000000000001"
+OTHER_FEEDBACK="53535353-0000-0000-0000-000000000002"
 
 if [[ ! "$TEMPLATE_DB" =~ ^rls_role_agent_[A-Za-z0-9_]+$ ]]; then
     echo "HATA: sablon DB adi rls_role_agent_ ile baslayan guvenli bir ad olmali." >&2
@@ -113,6 +122,30 @@ INSERT INTO public.course_ai_policies (
 INSERT INTO public.chat_sessions (id, course_id, user_id, mode, audience) VALUES
     ('$STUDENT_SESSION', '$COURSE', '$STUDENT', 'qa', 'student'),
     ('$OTHER_SESSION', '$COURSE', '$OTHER_STUDENT', 'qa', 'student');
+
+INSERT INTO public.chat_messages (
+    id, session_id, course_id, role, content, citations, status, seq
+) VALUES
+    ('$STUDENT_MESSAGE', '$STUDENT_SESSION', '$COURSE', 'assistant',
+     'student answer', '[]'::jsonb, 'answered', 1),
+    ('$OTHER_MESSAGE', '$OTHER_SESSION', '$COURSE', 'assistant',
+     'other answer', '[]'::jsonb, 'answered', 1);
+
+SET app.current_user_id='$STUDENT';
+INSERT INTO public.chat_message_feedback (
+    id, course_id, message_id, user_id, rating, reason, comment
+) VALUES (
+    '$STUDENT_FEEDBACK', '$COURSE', '$STUDENT_MESSAGE', '$STUDENT',
+    'unhelpful', 'citation_problem', 'private export fixture'
+);
+SET app.current_user_id='$OTHER_STUDENT';
+INSERT INTO public.chat_message_feedback (
+    id, course_id, message_id, user_id, rating, reason, comment
+) VALUES (
+    '$OTHER_FEEDBACK', '$COURSE', '$OTHER_MESSAGE', '$OTHER_STUDENT',
+    'unhelpful', 'citation_problem', 'other private export fixture'
+);
+RESET app.current_user_id;
 
 INSERT INTO public.answer_cache (
     id, course_id, audience, policy_revision, prompt_revision, corpus_revision,
@@ -259,6 +292,74 @@ run_lock_race_mutation() {
     drop_database_now "$scratch"
 }
 
+run_inactive_backfill_mutation() {
+    local base="rls_role_agent_backfill_base_$$"
+    local reference="rls_role_agent_backfill_ref_$$"
+    local mutant="rls_role_agent_backfill_mut_$$"
+    local mutated_migration
+    local migration
+    local summary
+
+    mutated_migration="$(mktemp "${TMPDIR:-/tmp}/role-agent-0015-mutated.XXXXXX.sql")"
+    created_temp_files+=("$mutated_migration")
+    create_database "$base"
+    for migration in "$REPO_ROOT"/supabase/migrations/*.sql; do
+        if [[ "$(basename "$migration")" == "0015_role_aware_course_agent.sql" ]]; then
+            break
+        fi
+        "$PSQL" -X -v ON_ERROR_STOP=1 -q -d "$base" -f "$migration"
+    done
+    "$PSQL" -X -v ON_ERROR_STOP=1 -q -d "$base" <<SQL
+INSERT INTO public.profiles (id, email, full_name)
+VALUES ('$INSTRUCTOR', 'revoked.backfill@dogus.edu.tr', 'Revoked Instructor');
+INSERT INTO public.courses (id, code, title, created_by)
+VALUES ('$COURSE', 'RLS-BACKFILL-005', 'Inactive backfill fixture', '$INSTRUCTOR');
+INSERT INTO public.course_memberships (course_id, user_id, role, status)
+VALUES ('$COURSE', '$INSTRUCTOR', 'instructor', 'revoked');
+INSERT INTO public.chat_sessions (id, course_id, user_id, mode)
+VALUES ('$STUDENT_SESSION', '$COURSE', '$INSTRUCTOR', 'qa');
+INSERT INTO public.request_logs (
+    id, course_id, user_id, route, mode, http_status, latency_ms
+) VALUES (
+    '54545454-0000-0000-0000-000000000001', '$COURSE', '$INSTRUCTOR',
+    '/courses/backfill/chat', 'qa', 200, 1
+);
+SQL
+
+    create_database "$reference" -T "$base"
+    "$PSQL" -X -v ON_ERROR_STOP=1 -q -d "$reference" \
+        -f "$REPO_ROOT/supabase/migrations/0015_role_aware_course_agent.sql"
+    summary=$("$PSQL" -X -v ON_ERROR_STOP=1 -qAt -d "$reference" -c \
+        "SELECT CASE WHEN (SELECT audience='student' FROM public.chat_sessions WHERE id='$STUDENT_SESSION') AND (SELECT audience='student' FROM public.request_logs WHERE id='54545454-0000-0000-0000-000000000001') THEN 'REFERENCE__INACTIVE_BACKFILL_STUDENT' ELSE 'WRONG' END;")
+    if [[ "$summary" != "REFERENCE__INACTIVE_BACKFILL_STUDENT" ]]; then
+        echo "HATA: inactive membership backfill referans kosusu guvenli degil." >&2
+        echo "$summary" >&2
+        return 1
+    fi
+    printf 'REFERANS   %-48s -> %s\n' \
+        "inactive uyelik audience backfill'e katilmaz" "$summary"
+    drop_database_now "$reference"
+
+    sed \
+        -e '/UPDATE chat_sessions AS s/,/UPDATE chat_sessions SET audience/ { s/AND m.status = '\''active'\''::membership_status;/AND TRUE;/; }' \
+        -e '/UPDATE request_logs AS l/,/DROP POLICY request_logs_self_insert/ { s/AND m.status = '\''active'\''::membership_status;/AND TRUE;/; }' \
+        "$REPO_ROOT/supabase/migrations/0015_role_aware_course_agent.sql" \
+        >"$mutated_migration"
+    create_database "$mutant" -T "$base"
+    "$PSQL" -X -v ON_ERROR_STOP=1 -q -d "$mutant" -f "$mutated_migration"
+    summary=$("$PSQL" -X -v ON_ERROR_STOP=1 -qAt -d "$mutant" -c \
+        "SELECT CASE WHEN (SELECT audience='instructor' FROM public.chat_sessions WHERE id='$STUDENT_SESSION') AND (SELECT audience='instructor' FROM public.request_logs WHERE id='54545454-0000-0000-0000-000000000001') THEN 'LEAK__INACTIVE_ROLE_STAMPED' ELSE 'SAFE' END;")
+    if [[ "$summary" != "LEAK__INACTIVE_ROLE_STAMPED" ]]; then
+        echo "KACIRILDI  inactive uyelik backfill filtresi -> LEAK__INACTIVE_ROLE_STAMPED gelmedi" >&2
+        echo "$summary" >&2
+        return 1
+    fi
+    printf 'YAKALANDI  %-48s -> %s\n' \
+        "inactive uyelik backfill filtresi kaldirilirsa" "$summary"
+    drop_database_now "$mutant"
+    drop_database_now "$base"
+}
+
 echo "gecici sablon kuruluyor: $TEMPLATE_DB"
 create_database "$TEMPLATE_DB"
 for migration in "$REPO_ROOT"/supabase/migrations/*.sql; do
@@ -312,6 +413,16 @@ expect_marker "$REFERENCE_DB" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=0 THEN 'SAFE__PRIVACY_OTHER_SESSION_HIDDEN' ELSE 'LEAK' END FROM public.chat_sessions WHERE id='$OTHER_SESSION';"
 
 expect_marker "$REFERENCE_DB" \
+    "KVKK mesajlari baska ogrenciye kapali" \
+    "SAFE__PRIVACY_OTHER_MESSAGE_HIDDEN" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=0 THEN 'SAFE__PRIVACY_OTHER_MESSAGE_HIDDEN' ELSE 'LEAK' END FROM public.chat_messages WHERE id='$OTHER_MESSAGE';"
+
+expect_marker "$REFERENCE_DB" \
+    "KVKK geri bildirimi baska ogrenciye kapali" \
+    "SAFE__PRIVACY_OTHER_FEEDBACK_HIDDEN" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=0 THEN 'SAFE__PRIVACY_OTHER_FEEDBACK_HIDDEN' ELSE 'LEAK' END FROM public.chat_message_feedback WHERE id='$OTHER_FEEDBACK';"
+
+expect_marker "$REFERENCE_DB" \
     "ilk kota on-odemesi kalici yazilir" \
     "REFERENCE__FIRST_RESERVATION_ALLOWED" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN allowed THEN 'REFERENCE__FIRST_RESERVATION_ALLOWED' ELSE 'WRONG' END FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000010',60,60,50000,500000,5000000);"
@@ -351,7 +462,12 @@ expect_marker "$REFERENCE_DB" \
     "REFERENCE__EXPIRED_PRECHARGE_BLOCKED" \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN NOT allowed AND reason='quota_exhausted' THEN 'REFERENCE__EXPIRED_PRECHARGE_BLOCKED' ELSE 'WRONG' END FROM app.reserve_course_agent_tokens('$COURSE','50505050-0000-0000-0000-000000000012',60,60,50000,500000,5000000);"
 
-echo "referans kosu temiz (8 kapali sinir + 3 kalici kota iddiasi)"
+expect_marker "$REFERENCE_DB" \
+    "revoked kullanici kendi mesaj ve feedback'ini export eder" \
+    "REFERENCE__REVOKED_EXPORT_COMPLETE" \
+    "UPDATE public.course_memberships SET status='revoked' WHERE course_id='$COURSE' AND user_id='$STUDENT'; SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN (SELECT count(*) FROM public.chat_sessions WHERE id='$STUDENT_SESSION')=1 AND (SELECT count(*) FROM public.chat_messages WHERE id='$STUDENT_MESSAGE')=1 AND (SELECT count(*) FROM public.chat_message_feedback WHERE id='$STUDENT_FEEDBACK')=1 THEN 'REFERENCE__REVOKED_EXPORT_COMPLETE' ELSE 'WRONG' END;"
+
+echo "referans kosu temiz (10 kapali sinir + 4 kalici gizlilik/kota iddiasi)"
 drop_database_now "$REFERENCE_DB"
 echo
 
@@ -530,6 +646,32 @@ run_mutation 11 \
     "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=1 THEN 'LEAK__PRIVACY_OTHER_SESSION_READ' ELSE 'SAFE' END FROM public.chat_sessions WHERE id='$OTHER_SESSION';" \
     "LEAK__PRIVACY_OTHER_SESSION_READ" || failures=$((failures + 1))
 
+run_mutation 12 \
+    "KVKK message self-read kaldirilirsa" \
+    "DROP POLICY chat_messages_privacy_self_read ON public.chat_messages; UPDATE public.course_memberships SET status='revoked' WHERE course_id='$COURSE' AND user_id='$STUDENT';" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=0 THEN 'LEAK__REVOKED_MESSAGES_TRUNCATED' ELSE 'SAFE' END FROM public.chat_messages WHERE id='$STUDENT_MESSAGE';" \
+    "LEAK__REVOKED_MESSAGES_TRUNCATED" || failures=$((failures + 1))
+
+run_mutation 13 \
+    "KVKK feedback self-read kaldirilirsa" \
+    "DROP POLICY chat_feedback_privacy_self_read ON public.chat_message_feedback; UPDATE public.course_memberships SET status='revoked' WHERE course_id='$COURSE' AND user_id='$STUDENT';" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=0 THEN 'LEAK__REVOKED_FEEDBACK_TRUNCATED' ELSE 'SAFE' END FROM public.chat_message_feedback WHERE id='$STUDENT_FEEDBACK';" \
+    "LEAK__REVOKED_FEEDBACK_TRUNCATED" || failures=$((failures + 1))
+
+run_mutation 14 \
+    "KVKK message self-read baska kullaniciya acilirsa" \
+    "DROP POLICY chat_messages_privacy_self_read ON public.chat_messages; CREATE POLICY chat_messages_privacy_self_read ON public.chat_messages FOR SELECT USING (true);" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=1 THEN 'LEAK__PRIVACY_OTHER_MESSAGE_READ' ELSE 'SAFE' END FROM public.chat_messages WHERE id='$OTHER_MESSAGE';" \
+    "LEAK__PRIVACY_OTHER_MESSAGE_READ" || failures=$((failures + 1))
+
+run_mutation 15 \
+    "KVKK feedback self-read baska kullaniciya acilirsa" \
+    "DROP POLICY chat_feedback_privacy_self_read ON public.chat_message_feedback; CREATE POLICY chat_feedback_privacy_self_read ON public.chat_message_feedback FOR SELECT USING (true);" \
+    "SET ROLE dou_app; SET app.current_user_id='$STUDENT'; SELECT CASE WHEN count(*)=1 THEN 'LEAK__PRIVACY_OTHER_FEEDBACK_READ' ELSE 'SAFE' END FROM public.chat_message_feedback WHERE id='$OTHER_FEEDBACK';" \
+    "LEAK__PRIVACY_OTHER_FEEDBACK_READ" || failures=$((failures + 1))
+
+run_inactive_backfill_mutation || failures=$((failures + 1))
+
 echo
 echo "HARIC: /me/export aktif-sinav 423 + advisory lock HTTP/uygulama katmanidir; SQL mutasyonu uydurulmadi."
 if ((failures > 0)); then
@@ -537,5 +679,5 @@ if ((failures > 0)); then
     exit 1
 fi
 
-echo "11 mutasyon denendi, 11 kesin sizinti yakalandi."
+echo "16 mutasyon denendi, 16 kesin sizinti yakalandi."
 echo "Gecici mutasyon DB'leri temizlendi; sablon cikista temizlenecek."

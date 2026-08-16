@@ -236,6 +236,56 @@ async def test_export_agent_operasyon_kayitlarini_aciklayarak_disarida_birakir(
     assert str(rows.guard_event_id) not in encoded
 
 
+async def test_export_uyelik_sonlandiktan_sonra_sohbet_ve_geri_bildirimi_korur(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+) -> None:
+    fixture = await build_course(client, users, admin_engine)
+    rows = await seed_personal_rows(
+        admin_engine, fixture, user_id=fixture.student_id, label="Burak"
+    )
+    feedback = await client.put(
+        f"/courses/{fixture.course_id}/chat/messages/{rows.assistant_message_id}/feedback",
+        json={
+            "rating": "unhelpful",
+            "reason": "citation_problem",
+            "comment": "Üyelik sonrasında da bana ait kalmalı.",
+            "share_with_instructor": False,
+        },
+        headers=fixture.student,
+    )
+    assert feedback.status_code == 200, feedback.text
+
+    async with admin_engine.begin() as conn:
+        await conn.execute(
+            text(
+                "UPDATE course_memberships SET status = 'revoked' "
+                "WHERE course_id = :course_id AND user_id = :user_id"
+            ),
+            {"course_id": UUID(fixture.course_id), "user_id": fixture.student_id},
+        )
+
+    course_history = await client.get(
+        f"/courses/{fixture.course_id}/chat/sessions",
+        headers=fixture.student,
+    )
+    response = await client.get("/me/export", headers=fixture.student)
+
+    # KVKK için açılan self-read politikaları normal ders erişimini geri açmaz.
+    assert course_history.status_code == 404, course_history.text
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert [item["id"] for item in body["chat_sessions"]] == [str(rows.chat_id)]
+    messages = body["chat_sessions"][0]["messages"]
+    assert [item["id"] for item in messages] == [
+        str(rows.message_id),
+        str(rows.assistant_message_id),
+    ]
+    assert messages[1]["feedback"]["reason"] == "citation_problem"
+    assert messages[1]["feedback"]["comment"] == "Üyelik sonrasında da bana ait kalmalı."
+
+
 @pytest.mark.parametrize("delete_target", ["course", "profile"])
 async def test_agent_operasyon_kayitlari_course_ve_profile_delete_ile_cascade_silinir(
     client: AsyncClient,
@@ -352,6 +402,46 @@ async def test_export_active_exam_haricinde_kvkk_hakkini_geciktirmez(
     assert response.status_code == expected_status, response.text
     if expected_status == 423:
         assert response.json()["error"]["code"] == "exam_export_locked"
+
+
+@pytest.mark.parametrize("membership_change", ["revoke", "delete"])
+async def test_export_active_exam_uyelik_sonlandiginda_da_kilitli_kalir(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    membership_change: str,
+) -> None:
+    fixture = await build_course(client, users, admin_engine)
+    await seed_personal_rows(admin_engine, fixture, user_id=fixture.student_id, label="Burak")
+    await _seed_export_exam(
+        admin_engine,
+        fixture,
+        mode="exam",
+        expires_minutes=10,
+    )
+    async with admin_engine.begin() as connection:
+        statement = (
+            text(
+                "DELETE FROM course_memberships WHERE course_id = :course_id AND user_id = :user_id"
+            )
+            if membership_change == "delete"
+            else text(
+                "UPDATE course_memberships SET status = 'revoked' "
+                "WHERE course_id = :course_id AND user_id = :user_id"
+            )
+        )
+        await connection.execute(
+            statement,
+            {
+                "course_id": UUID(fixture.course_id),
+                "user_id": fixture.student_id,
+            },
+        )
+
+    response = await client.get("/me/export", headers=fixture.student)
+
+    assert response.status_code == 423, response.text
+    assert response.json()["error"]["code"] == "exam_export_locked"
 
 
 async def test_export_ve_sinav_baslatma_ayni_kullanici_kilidinde_siralanir(

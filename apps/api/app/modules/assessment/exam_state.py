@@ -37,7 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.errors import AppError
 from app.models.assessment import ExamBlueprint, ExamMode, ExamSession
-from app.models.core import CourseMembership, MembershipRole, MembershipStatus
+from app.models.core import CourseMembership, MembershipRole
 
 #: Kilit gerekçesi. İKİ yüzeyde birden kullanılır: 403 zarfının `error.code`'u ve
 #: `GET /chat/availability`'nin `reason` alanı. Tek sabit olması, arayüzün iki
@@ -173,19 +173,22 @@ async def any_active_student_exam_session(
     now: datetime,
     settings: Settings,
 ) -> ExamSession | None:
-    """Return an active exam only where the user is currently a student.
+    """Return an active exam unless the stored course role is instructor.
 
     Instructors are deliberately exempt from the assistant exam lock and must
-    remain able to export their own data while previewing an exam. Joining the
-    live membership here keeps that role exception server-derived instead of
-    trusting any request field.
+    remain able to export their own data while previewing an exam. A student's
+    lock, however, must survive a membership status change: otherwise revoking
+    the membership during an exam would expose prior answer-bearing chat data
+    through ``/me/export``. The outer join is fail-closed for legacy or damaged
+    rows with no membership: only a known instructor role receives the
+    exception.
     """
 
     course_ids = set(
         (
             await session.scalars(
                 select(ExamSession.course_id)
-                .join(
+                .outerjoin(
                     CourseMembership,
                     (CourseMembership.course_id == ExamSession.course_id)
                     & (CourseMembership.user_id == ExamSession.user_id),
@@ -195,8 +198,7 @@ async def any_active_student_exam_session(
                     ExamSession.mode == ExamMode.EXAM,
                     ExamSession.finished_at.is_(None),
                     ExamSession.expires_at > now,
-                    CourseMembership.role == MembershipRole.STUDENT,
-                    CourseMembership.status == MembershipStatus.ACTIVE,
+                    CourseMembership.role.is_distinct_from(MembershipRole.INSTRUCTOR),
                 )
             )
         ).all()

@@ -13,7 +13,9 @@ SET audience = CASE m.role
     ELSE 'student'::assistant_audience
 END
 FROM course_memberships AS m
-WHERE m.course_id = s.course_id AND m.user_id = s.user_id;
+WHERE m.course_id = s.course_id
+  AND m.user_id = s.user_id
+  AND m.status = 'active'::membership_status;
 
 UPDATE chat_sessions SET audience = 'student' WHERE audience IS NULL;
 ALTER TABLE chat_sessions ALTER COLUMN audience SET NOT NULL;
@@ -52,6 +54,25 @@ $$;
 CREATE TRIGGER chat_session_audience_immutable
 BEFORE UPDATE OF audience ON chat_sessions
 FOR EACH ROW EXECUTE FUNCTION app.chat_session_audience_immutable();
+
+-- 0012, aktif ders üyeliği sona erse bile kullanıcının kendi sohbet oturumunu KVKK
+-- uçlarından okuyabilmesini sağladı. Mesaj ve geri bildirim politikaları ise hâlâ
+-- app.is_member(course_id) istediği için `/me/export` oturum başlığını döndürüp içeriği
+-- sessizce boşaltıyordu. Bu iki dar politika yalnız satır sahibinin kendi geçmişini
+-- tamamlar. Normal ders/sohbet uçları CourseMemberDep ile aktif üyelik istemeye devam
+-- eder; başka kullanıcının oturumuna veya geri bildirimine erişim açılmaz.
+CREATE POLICY chat_messages_privacy_self_read ON chat_messages
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1
+            FROM chat_sessions AS s
+            WHERE s.id = chat_messages.session_id
+              AND s.user_id = app.current_user_id()
+        )
+    );
+
+CREATE POLICY chat_feedback_privacy_self_read ON chat_message_feedback
+    FOR SELECT USING (user_id = app.current_user_id());
 
 ALTER TABLE answer_cache
     ADD COLUMN audience assistant_audience NOT NULL DEFAULT 'student',
@@ -99,7 +120,9 @@ SET audience = CASE m.role
     ELSE 'student'::assistant_audience
 END
 FROM course_memberships AS m
-WHERE m.course_id = l.course_id AND m.user_id = l.user_id;
+WHERE m.course_id = l.course_id
+  AND m.user_id = l.user_id
+  AND m.status = 'active'::membership_status;
 
 DROP POLICY request_logs_self_insert ON request_logs;
 CREATE POLICY request_logs_self_insert ON request_logs
