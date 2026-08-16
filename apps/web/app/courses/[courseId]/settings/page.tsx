@@ -9,6 +9,7 @@ import { Button, Card, EmptyState, Input } from "@/components/ui";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import {
+  courseHardCapLabel,
   draftFromPolicy,
   payloadFromDraft,
   toggleMode,
@@ -143,14 +144,33 @@ function PolicyEditor({ courseId }: { courseId: string }) {
       </div>
 
       <Card>
-        <SectionTitle title="Günlük sohbet token bütçesi" description={`Bugün ${policy.budget_used_today.toLocaleString("tr-TR")} token kullanıldı. Bu v1 bütçesi yalnız sohbet yanıtlarını kapsar.`} />
-        <DefaultToggle checked={draft.unlimitedBudget} label="Sınırsız" onChange={(checked) => setDraft({ ...draft, unlimitedBudget: checked })} />
-        {!draft.unlimitedBudget && (
+        <SectionTitle title="Günlük sohbet token bütçesi" description={`Bugün ${policy.budget_used_today.toLocaleString("tr-TR")} token kullanıldı. Boş politika sınırsız değildir; platformun etkin ders üst sınırı uygulanır. Bu v1 bütçesi yalnız sohbet yanıtlarını kapsar.`} />
+        <DefaultToggle checked={draft.useCourseHardCap} label={courseHardCapLabel(policy.daily_llm_budget, policy.effective.daily_llm_budget)} onChange={(checked) => setDraft({ ...draft, useCourseHardCap: checked })} />
+        {!draft.useCourseHardCap && (
           <div className="mt-4 max-w-xs">
             <Input aria-label="Günlük token bütçesi" type="number" min={1} value={draft.dailyBudget} onChange={(event) => setDraft({ ...draft, dailyBudget: Number(event.target.value) })} />
           </div>
         )}
       </Card>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card>
+          <SectionTitle title="Öğrenci günlük token sınırı" description={`Öğrenci başına sohbet tüketimini sınırlar. Sunucuda uygulanan etkin tavan: ${policy.effective.student_daily_token_budget.toLocaleString("tr-TR")} token/gün.`} />
+          <Input aria-label="Öğrenci günlük token sınırı" type="number" min={256} max={1_000_000} value={draft.studentDailyTokenBudget} onChange={(event) => setDraft({ ...draft, studentDailyTokenBudget: Number(event.target.value) })} />
+        </Card>
+        <Card>
+          <SectionTitle title="Öğretim elemanı günlük token sınırı" description={`Öğretim elemanı başına sohbet tüketimini sınırlar. Sunucuda uygulanan etkin tavan: ${policy.effective.instructor_daily_token_budget.toLocaleString("tr-TR")} token/gün.`} />
+          <Input aria-label="Öğretim elemanı günlük token sınırı" type="number" min={256} max={1_000_000} value={draft.instructorDailyTokenBudget} onChange={(event) => setDraft({ ...draft, instructorDailyTokenBudget: Number(event.target.value) })} />
+        </Card>
+        <Card>
+          <SectionTitle title="Yanıt başına token tavanı" description={`Her model yanıtının üst sınırıdır. Sunucuda uygulanan etkin tavan: ${policy.effective.max_output_tokens.toLocaleString("tr-TR")} token.`} />
+          <Input aria-label="Yanıt başına token tavanı" type="number" min={64} max={4096} value={draft.maxOutputTokens} onChange={(event) => setDraft({ ...draft, maxOutputTokens: Number(event.target.value) })} />
+        </Card>
+        <Card>
+          <SectionTitle title="Eşzamanlı istek tavanı" description={`Aynı kullanıcı için aynı anda çalışabilecek en fazla sohbet isteğidir. Sunucuda uygulanan değer: ${policy.effective.max_concurrent_requests}.`} />
+          <Input aria-label="Eşzamanlı istek tavanı" type="number" min={1} max={4} value={draft.maxConcurrentRequests} onChange={(event) => setDraft({ ...draft, maxConcurrentRequests: Number(event.target.value) })} />
+        </Card>
+      </div>
 
       <Card>
         <SectionTitle title="İzin verilen kaynaklar" description="Seçilmeyen belgeler öğrencinin yanıt retrieval hattına hiç girmez. Boş seçim bütün kaynakları bilerek kapatır." />
