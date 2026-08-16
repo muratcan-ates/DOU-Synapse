@@ -300,7 +300,7 @@ requires-dist = [
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.6" },
-    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.9" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.13.0" },
     { name = "pymupdf", specifier = ">=1.24" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },

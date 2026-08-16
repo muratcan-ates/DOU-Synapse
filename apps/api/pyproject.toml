@@ -14,7 +14,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
     "psycopg[binary,pool]>=3.2",
     "pgvector>=0.3.6",
-    "pyjwt[crypto]>=2.9",
+    "pyjwt[crypto]>=2.13.0",
     "python-multipart>=0.0.12",
     "httpx>=0.27",
     # Sürüm ARALIĞI değil ÜST SINIR da var: 0.8.0, e5-large'ı mean pooling ile
