@@ -19,9 +19,9 @@ bozup sızıntının gerçekleştiğini gösteriyor, `rls_isolation_mutation_che
 aynı şeyi 52 mutasyonla yapıyor. Geçen bir test, ancak kırılabildiği
 gösterildiğinde bir şey söyler.
 
-Kurulum `test_exams.py`'den (`build_course`, `start`, `rewind`) ve hat sahtesi
-`test_chat_api.py`'den (`Pipeline`, `sourced_answer`) devşirilir; üçüncü bir
-kopya kurulum yazılmaz (Anayasa XI).
+Kurulum (`build_course`, `start`, `rewind`) ve hat sahtesi (`Pipeline`,
+`sourced_answer`) `tests/factories.py`'den gelir; üçüncü bir kopya kurulum
+yazılmaz (Anayasa XI).
 """
 
 from __future__ import annotations
@@ -37,13 +37,22 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.api.chat import set_pipeline
-from app.contracts import ChatMode, GeneratedAnswer, RetrievedChunk, SocraticStage
+from app.contracts import RetrievedChunk
 from app.modules.assessment import exam_state
 from tests.conftest import UserFactory
-from tests.factories import FakeCitationGuardrail
-from tests.test_chat_api import Pipeline, _install, sourced_answer
-from tests.test_exams import EXAM_DURATION_SECONDS, ExamFixture, build_course, rewind, start
-from tests.test_socratic import make_chunk
+from tests.factories import (
+    EXAM_DURATION_SECONDS,
+    BlockingGenerator,
+    ExamFixture,
+    FakeCitationGuardrail,
+    Pipeline,
+    build_course,
+    install_pipeline,
+    make_chunk,
+    rewind,
+    sourced_answer,
+    start,
+)
 
 CHAT_QUESTION = "Deadlock'un dört koşulu nedir?"
 
@@ -59,7 +68,7 @@ def pipeline() -> Iterator[Pipeline]:
     from app.api.chat import reset_rate_limit, set_pipeline
 
     fake = Pipeline()
-    _install(fake)
+    install_pipeline(fake)
     reset_rate_limit()
     yield fake
     set_pipeline()
@@ -193,24 +202,9 @@ class TestKilitYururken:
         entered_provider = asyncio.Event()
         release_provider = asyncio.Event()
 
-        class BlockingGenerator:
-            async def generate(
-                self,
-                *,
-                question: str,
-                chunks: list[RetrievedChunk],
-                mode: ChatMode,
-                socratic_stage: SocraticStage | None = None,
-                student_attempt: str | None = None,
-            ) -> GeneratedAnswer:
-                del question, chunks, mode, socratic_stage, student_attempt
-                entered_provider.set()
-                await release_provider.wait()
-                return sourced_answer(chunk)
-
         set_pipeline(
             retriever_factory=lambda _session: pipeline.retriever,
-            generator=BlockingGenerator(),
+            generator=BlockingGenerator(chunk, entered=entered_provider, release=release_provider),
             guardrails=[FakeCitationGuardrail()],
         )
         chat_task = asyncio.create_task(_ask(client, fixture))
