@@ -45,11 +45,11 @@ from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version
 
-from app.modules.ingestion.embedding import (
-    FastEmbedProvider,
-    HashingEmbeddingProvider,
-    get_embedding_provider,
-)
+# `app.modules.ingestion.embedding` importları fonksiyon-yerelidir (modülerizasyon
+# v2): core saf alt katmandır ve üst-düzey modules importu katman yönünü tersine
+# çeviriyordu — paket-düzeyi core↔modules döngüsünün iki kenarından biri buydu
+# (öbürü warmup.py). Çağrı anına ertelemek davranışı değiştirmez: iki fonksiyon da
+# uygulama ayağa kalktıktan sonra çağrılır.
 
 #: Karma sağlayıcının "sürümü" bir paket sürümü değil, ALGORİTMANIN sürümüdür.
 #: `HashingEmbeddingProvider._embed` değişirse (hash fonksiyonu, işaret kuralı,
@@ -82,6 +82,8 @@ def space_of(provider: object) -> str:
     üretmektense tanınabilir ama farklı bir kimlik üretmek — o sağlayıcıyla
     yazılmış chunk'lar, başka hiçbir uzayla eşleşmez.
     """
+    from app.modules.ingestion.embedding import FastEmbedProvider, HashingEmbeddingProvider
+
     if isinstance(provider, FastEmbedProvider):
         return f"fastembed/{provider.name}@{_library_version('fastembed')}"
     if isinstance(provider, HashingEmbeddingProvider):
@@ -97,6 +99,8 @@ def current_space() -> str:
     fonksiyonu çağırır. İki taraf ayrı hesaplasaydı, ayrışmaları an meselesiydi —
     ve ayrışma tam olarak bu modülün önlemek için var olduğu hata sınıfı.
     """
+    from app.modules.ingestion.embedding import get_embedding_provider
+
     return space_of(get_embedding_provider())
 
 
