@@ -57,9 +57,7 @@ MINIMUM_RISK_REQUIREMENTS = {
         "require_sticky_assignment": True,
     },
     "R3": {
-        "required_approval_roles": frozenset(
-            {"engineering", "domain", "security_or_privacy"}
-        ),
+        "required_approval_roles": frozenset({"engineering", "domain", "security_or_privacy"}),
         "require_independent_approval": True,
         "require_feature_flag": True,
         "require_kill_switch": True,
@@ -77,9 +75,7 @@ BOOTSTRAP_R3_PATHS = frozenset(
     }
 )
 CHANGE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
-EXPECTED_SCHEMA_SHA256 = (
-    "90f5f2e516a51ab4d148ffacb6a322311a3dad9cf6c47a25d20a4d0c8f373606"
-)
+EXPECTED_SCHEMA_SHA256 = "90f5f2e516a51ab4d148ffacb6a322311a3dad9cf6c47a25d20a4d0c8f373606"
 DOSSIER_FIELDS = frozenset(
     {
         "schema_version",
@@ -127,9 +123,7 @@ NESTED_FIELDS = {
     ),
     "data": frozenset({"corpus_digest", "eval_set_digest", "privacy_classification"}),
     "artifact": frozenset({"path", "state", "sha256"}),
-    "evidence": frozenset(
-        {"label", "result", "report_path", "report_sha256", "candidate_sha"}
-    ),
+    "evidence": frozenset({"label", "result", "report_path", "report_sha256", "candidate_sha"}),
     "evaluation": frozenset(
         {
             "calibration_ref",
@@ -140,9 +134,7 @@ NESTED_FIELDS = {
             "exact_command",
         }
     ),
-    "metric": frozenset(
-        {"name", "baseline", "candidate", "operator", "threshold", "sample_size"}
-    ),
+    "metric": frozenset({"name", "baseline", "candidate", "operator", "threshold", "sample_size"}),
     "approval": frozenset(
         {
             "role",
@@ -181,9 +173,7 @@ NESTED_FIELDS = {
             "evidence_deployment_id",
         }
     ),
-    "privacy": frozenset(
-        {"contains_identifiable_student_content", "handling", "retention"}
-    ),
+    "privacy": frozenset({"contains_identifiable_student_content", "handling", "retention"}),
     "promotion": frozenset({"claim", "target", "human_approval_refs"}),
 }
 AUDIT_DOSSIER_PREFIX = ".ai/changes/"
@@ -211,9 +201,7 @@ QUARANTINE_RECORD_FIELDS = frozenset(
         "contaminated_by",
     }
 )
-EXTERNAL_EVIDENCE_LABELS = frozenset(
-    {"real-provider", "staging", "canary", "production"}
-)
+EXTERNAL_EVIDENCE_LABELS = frozenset({"real-provider", "staging", "canary", "production"})
 ALLOWED_TRANSITIONS = {
     "draft": frozenset({"draft", "evidence-ready", "rolled-back"}),
     "evidence-ready": frozenset({"evidence-ready", "awaiting-approval", "rolled-back"}),
@@ -275,9 +263,7 @@ def _is_ancestor(repo: Path, ancestor: str, descendant: str) -> bool:
     return completed.returncode == 0
 
 
-def _introduction_commit(
-    repo: Path, merge_base: str, head: str, path: str
-) -> str | None:
+def _introduction_commit(repo: Path, merge_base: str, head: str, path: str) -> str | None:
     """Find the sole commit that introduced an append-only audit record.
 
     A stacked feature branch may contain immutable dossiers for earlier review
@@ -415,9 +401,7 @@ def _is_sha(value: Any, length: int) -> bool:
 def _safe_relative_path(value: Any) -> str | None:
     if not isinstance(value, str) or not value:
         return None
-    if "\\" in value or any(
-        ord(character) < 32 or ord(character) == 127 for character in value
-    ):
+    if "\\" in value or any(ord(character) < 32 or ord(character) == 127 for character in value):
         return None
     candidate = PurePosixPath(value)
     if candidate.is_absolute() or ".." in candidate.parts or value.startswith("./"):
@@ -495,10 +479,7 @@ def _reviewed_changes(repo: Path, merge_base: str, head: str) -> list[ChangedPat
                 raise ValidationFailure("INVALID_GIT_DIFF")
             old_path, new_path = tokens[index], tokens[index + 1]
             index += 2
-            if (
-                _safe_relative_path(old_path) is None
-                or _safe_relative_path(new_path) is None
-            ):
+            if _safe_relative_path(old_path) is None or _safe_relative_path(new_path) is None:
                 raise ValidationFailure("INVALID_GIT_PATH")
             if status.startswith("R"):
                 changes.extend(
@@ -668,17 +649,12 @@ def _schema_errors(schema: dict[str, Any], raw_schema: bytes) -> list[str]:
             if set(definition.get("required", [])) != expected:
                 errors.append(f"SCHEMA_REQUIRED:{name}")
             nested_properties = definition.get("properties")
-            if (
-                not isinstance(nested_properties, dict)
-                or set(nested_properties) != expected
-            ):
+            if not isinstance(nested_properties, dict) or set(nested_properties) != expected:
                 errors.append(f"SCHEMA_PROPERTIES:{name}")
     return errors
 
 
-def _shape_errors(
-    value: dict[str, Any], expected: frozenset[str], prefix: str
-) -> list[str]:
+def _shape_errors(value: dict[str, Any], expected: frozenset[str], prefix: str) -> list[str]:
     errors: list[str] = []
     for field in sorted(expected - value.keys()):
         errors.append(f"SHAPE_REQUIRED:{prefix}{field}")
@@ -699,14 +675,10 @@ def _is_quarantine_path(path: str) -> bool:
     return path.startswith(AUDIT_QUARANTINE_PREFIX) and path.endswith(".json")
 
 
-def _risk_for_path(
-    path: str, policy: dict[str, Any]
-) -> tuple[str | None, dict[str, Any]]:
+def _risk_for_path(path: str, policy: dict[str, Any]) -> tuple[str | None, dict[str, Any]]:
     order = policy["risk_order"]
     matched: list[dict[str, Any]] = [
-        rule
-        for rule in policy["sensitive_paths"]
-        if fnmatch.fnmatchcase(path, rule["pattern"])
+        rule for rule in policy["sensitive_paths"] if fnmatch.fnmatchcase(path, rule["pattern"])
     ]
     if path in BOOTSTRAP_R3_PATHS:
         matched.append({"minimum_risk": "R3"})
@@ -717,9 +689,7 @@ def _risk_for_path(
         "requires_evaluation_split": any(
             bool(rule.get("requires_evaluation_split")) for rule in matched
         ),
-        "requires_human_anchor": any(
-            bool(rule.get("requires_human_anchor")) for rule in matched
-        ),
+        "requires_human_anchor": any(bool(rule.get("requires_human_anchor")) for rule in matched),
     }
     return highest["minimum_risk"], combined
 
@@ -764,11 +734,7 @@ def _is_nonempty_string(value: Any) -> bool:
 
 
 def _is_finite_number(value: Any) -> bool:
-    return (
-        isinstance(value, (int, float))
-        and not isinstance(value, bool)
-        and math.isfinite(value)
-    )
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
 def _parse_datetime(value: Any) -> bool:
@@ -784,9 +750,7 @@ def _parse_datetime(value: Any) -> bool:
 def _safe_dossier_id(value: Any, fallback: str) -> str:
     if isinstance(value, str) and CHANGE_ID_PATTERN.fullmatch(value):
         return value
-    digest = hashlib.sha256(str(value).encode("utf-8", errors="replace")).hexdigest()[
-        :12
-    ]
+    digest = hashlib.sha256(str(value).encode("utf-8", errors="replace")).hexdigest()[:12]
     return f"invalid-{digest}-{fallback}"
 
 
@@ -804,6 +768,8 @@ def _validate_dossier(
     head: str,
     required_risk: str,
     requirements: dict[str, bool],
+    authorizing: bool = False,
+    final_head: str | None = None,
 ) -> list[str]:
     errors: list[str] = []
     dossier_id = dossier.get("change_id")
@@ -828,9 +794,7 @@ def _validate_dossier(
             errors.append(f"LINEAGE_SUPERSEDES:{prefix}supersedes")
         else:
             errors.extend(
-                _shape_errors(
-                    supersedes, NESTED_FIELDS["supersedes"], f"{prefix}supersedes:"
-                )
+                _shape_errors(supersedes, NESTED_FIELDS["supersedes"], f"{prefix}supersedes:")
             )
             if _safe_relative_path(supersedes.get("path")) is None or not _is_sha(
                 supersedes.get("sha256"), 64
@@ -895,9 +859,7 @@ def _validate_dossier(
         if not isinstance(artifact, dict):
             errors.append(f"ARTIFACT:{prefix}{index}")
             continue
-        errors.extend(
-            _shape_errors(artifact, NESTED_FIELDS["artifact"], f"{prefix}{index}:")
-        )
+        errors.extend(_shape_errors(artifact, NESTED_FIELDS["artifact"], f"{prefix}{index}:"))
         artifact_path = _safe_relative_path(artifact.get("path"))
         state = artifact.get("state")
         digest = artifact.get("sha256")
@@ -909,9 +871,7 @@ def _validate_dossier(
         if state == "present":
             if content is None:
                 errors.append(f"ARTIFACT_MISSING:{prefix}{artifact_path}")
-            elif (
-                not _is_sha(digest, 64) or hashlib.sha256(content).hexdigest() != digest
-            ):
+            elif not _is_sha(digest, 64) or hashlib.sha256(content).hexdigest() != digest:
                 errors.append(f"HASH_MISMATCH:{prefix}{artifact_path}")
         elif state == "deleted":
             if digest is not None or content is not None:
@@ -919,6 +879,7 @@ def _validate_dossier(
         else:
             errors.append(f"ARTIFACT_STATE:{prefix}{artifact_path}")
 
+    authorized_report_results: dict[str, int] = {}
     evidence = dossier.get("evidence")
     if not isinstance(evidence, list) or not evidence:
         errors.append(f"EVIDENCE:{prefix}evidence")
@@ -929,9 +890,7 @@ def _validate_dossier(
         if not isinstance(item, dict):
             errors.append(f"EVIDENCE:{prefix}{index}")
             continue
-        errors.extend(
-            _shape_errors(item, NESTED_FIELDS["evidence"], f"{prefix}{index}:")
-        )
+        errors.extend(_shape_errors(item, NESTED_FIELDS["evidence"], f"{prefix}{index}:"))
         item_valid = True
         label = item.get("label")
         if label not in policy["allowed_evidence_labels"]:
@@ -947,6 +906,22 @@ def _validate_dossier(
             errors.append(f"EVIDENCE_RESULT:{prefix}{index}")
             item_valid = False
         report_path = _safe_relative_path(item.get("report_path"))
+        if authorizing and report_path is not None:
+            # SELF her HEAD'le eşleştiği için eski bir adayın raporu yeni bir
+            # kökten süresiz yeniden kullanılabiliyordu (bu dalda gerçekten
+            # yapıldı ve dış inceleme yakaladı). Sözleşme SON-DOKUNUŞ eşitliği:
+            # raporun aralıktaki son yazımı, kökün son yazımıyla aynı commit'te
+            # olmalı. "Giriş" yerine "son dokunuş" bilinçli — taban-mevcut bir
+            # rapor aralıkta yeniden ölçülüp yazıldıysa girişi yoktur ama ölçümü
+            # tazedir; hiç dokunulmamış eski bir rapor (boş liste) ise tam da
+            # yasaklanan yeniden kullanımdır. Tarihsel kökler yetki vermez.
+            report_touches = _path_touch_commits(repo, merge_base, final_head or head, report_path)
+            dossier_touches = _path_touch_commits(repo, merge_base, final_head or head, path)
+            report_last = report_touches[-1] if report_touches else None
+            dossier_last = dossier_touches[-1] if dossier_touches else None
+            if report_last is None or report_last != dossier_last:
+                errors.append(f"EVIDENCE_CANDIDATE_STALE:{prefix}{index}")
+                item_valid = False
         report_content = None if report_path is None else _blob(repo, head, report_path)
         if report_path is None or report_content is None:
             errors.append(f"EVIDENCE_REF:{prefix}{index}")
@@ -967,6 +942,14 @@ def _validate_dossier(
                 parsed_report = None
             if isinstance(parsed_report, dict):
                 report = parsed_report
+                if authorizing and isinstance(report.get("results"), dict):
+                    authorized_report_results.update(
+                        {
+                            key: value
+                            for key, value in report["results"].items()
+                            if isinstance(value, int)
+                        }
+                    )
             else:
                 errors.append(f"EVIDENCE_REPORT:{prefix}{index}")
                 item_valid = False
@@ -982,27 +965,18 @@ def _validate_dossier(
                 item_valid = False
             if result == "pass" and label in EXTERNAL_EVIDENCE_LABELS:
                 verification_url = report.get("verification_url")
-                if not isinstance(
-                    verification_url, str
-                ) or not EXTERNAL_RUN_URL_PATTERN.fullmatch(verification_url):
+                if not isinstance(verification_url, str) or not EXTERNAL_RUN_URL_PATTERN.fullmatch(
+                    verification_url
+                ):
                     errors.append(f"EVIDENCE_EXTERNAL_VERIFICATION:{prefix}{index}")
                     item_valid = False
         if not _identity_matches(item.get("candidate_sha"), head):
             errors.append(f"EVIDENCE_SHA:{prefix}{index}")
             item_valid = False
-        if (
-            item_valid
-            and result == "pass"
-            and isinstance(label, str)
-            and report is not None
-        ):
+        if item_valid and result == "pass" and isinstance(label, str) and report is not None:
             passing_labels.add(label)
             passing_evidence[label] = (item, report)
-    if (
-        status_is_valid
-        and status in {"evidence-ready", "awaiting-approval"}
-        and not passing_labels
-    ):
+    if status_is_valid and status in {"evidence-ready", "awaiting-approval"} and not passing_labels:
         errors.append(f"STATUS_EVIDENCE:{prefix}{status}")
     if (
         status_is_valid
@@ -1039,9 +1013,7 @@ def _validate_dossier(
         if not isinstance(metric, dict):
             errors.append(f"EVALUATION_METRIC:{prefix}{index}")
             continue
-        errors.extend(
-            _shape_errors(metric, NESTED_FIELDS["metric"], f"{prefix}{index}:")
-        )
+        errors.extend(_shape_errors(metric, NESTED_FIELDS["metric"], f"{prefix}{index}:"))
         name = metric.get("name")
         if not _is_nonempty_string(name) or name in seen_metrics:
             errors.append(f"EVALUATION_METRIC_NAME:{prefix}{index}")
@@ -1053,16 +1025,10 @@ def _validate_dossier(
         if metric.get("operator") not in {">=", "<=", ">", "<", "=="}:
             errors.append(f"EVALUATION_METRIC_OPERATOR:{prefix}{index}")
         sample_size = metric.get("sample_size")
-        if (
-            not isinstance(sample_size, int)
-            or isinstance(sample_size, bool)
-            or sample_size < 1
-        ):
+        if not isinstance(sample_size, int) or isinstance(sample_size, bool) or sample_size < 1:
             errors.append(f"EVALUATION_SAMPLE_SIZE:{prefix}{index}")
     if evaluation.get("thresholds_declared_before_scoring") is not True:
-        errors.append(
-            f"EVALUATION_THRESHOLD:{prefix}thresholds_declared_before_scoring"
-        )
+        errors.append(f"EVALUATION_THRESHOLD:{prefix}thresholds_declared_before_scoring")
     if requirements.get("requires_evaluation_split"):
         if evaluation.get("calibration_ref") == evaluation.get("holdout_ref"):
             errors.append(f"EVALUATION_SPLIT:{prefix}calibration_holdout")
@@ -1082,14 +1048,10 @@ def _validate_dossier(
     approvals_by_role: dict[str, dict[str, Any]] = {}
     approved_refs: set[str] = set()
     for index, approval in enumerate(approvals):
-        if not isinstance(approval, dict) or not _is_nonempty_string(
-            approval.get("role")
-        ):
+        if not isinstance(approval, dict) or not _is_nonempty_string(approval.get("role")):
             errors.append(f"APPROVAL:{prefix}{index}")
             continue
-        errors.extend(
-            _shape_errors(approval, NESTED_FIELDS["approval"], f"{prefix}{index}:")
-        )
+        errors.extend(_shape_errors(approval, NESTED_FIELDS["approval"], f"{prefix}{index}:"))
         approvals_by_role[approval["role"]] = approval
         actor = approval.get("actor")
         if not _is_nonempty_string(actor):
@@ -1103,9 +1065,9 @@ def _validate_dossier(
             if approval_ref is not None or approved_at is not None:
                 errors.append(f"APPROVAL_PENDING:{prefix}{index}")
         elif decision in {"approved", "rejected"}:
-            if not isinstance(
-                approval_ref, str
-            ) or not EXTERNAL_APPROVAL_REF_PATTERN.fullmatch(approval_ref):
+            if not isinstance(approval_ref, str) or not EXTERNAL_APPROVAL_REF_PATTERN.fullmatch(
+                approval_ref
+            ):
                 errors.append(f"APPROVAL_REF:{prefix}{index}")
             elif decision == "approved":
                 approved_refs.add(approval_ref)
@@ -1202,11 +1164,7 @@ def _validate_dossier(
         if not _is_nonempty_string(rollback.get(field)):
             errors.append(f"ROLLBACK:{prefix}{field}")
     max_minutes = rollback.get("max_minutes")
-    if (
-        not isinstance(max_minutes, int)
-        or isinstance(max_minutes, bool)
-        or max_minutes < 1
-    ):
+    if not isinstance(max_minutes, int) or isinstance(max_minutes, bool) or max_minutes < 1:
         errors.append(f"ROLLBACK:{prefix}max_minutes")
     rollback_state = rollback.get("state")
     rollback_ref_fields = (
@@ -1229,14 +1187,11 @@ def _validate_dossier(
             rollback_item, rollback_report = rollback_evidence
             if (
                 rollback.get("evidence_report_path") != rollback_item.get("report_path")
-                or rollback.get("evidence_report_sha256")
-                != rollback_item.get("report_sha256")
+                or rollback.get("evidence_report_sha256") != rollback_item.get("report_sha256")
                 or not _identity_matches(rollback.get("evidence_candidate_sha"), head)
                 or rollback_report.get("rollback_verified") is not True
-                or rollback_report.get("deployment_id")
-                != rollback.get("evidence_deployment_id")
-                or rollback.get("evidence_deployment_id")
-                != deployment.get("deployment_id")
+                or rollback_report.get("deployment_id") != rollback.get("evidence_deployment_id")
+                or rollback.get("evidence_deployment_id") != deployment.get("deployment_id")
             ):
                 errors.append(f"ROLLBACK_BINDING:{prefix}evidence")
     else:
@@ -1319,10 +1274,7 @@ def _validate_dossier(
             errors.append(f"PRODUCTION_EVIDENCE:{prefix}evidence")
         if len(set(human_refs)) < production["minimum_named_human_approval_refs"]:
             errors.append(f"PRODUCTION_APPROVAL:{prefix}human_approval_refs")
-        if any(
-            not EXTERNAL_APPROVAL_REF_PATTERN.fullmatch(reference)
-            for reference in human_refs
-        ):
+        if any(not EXTERNAL_APPROVAL_REF_PATTERN.fullmatch(reference) for reference in human_refs):
             errors.append(f"PRODUCTION_APPROVAL_REF:{prefix}human_approval_refs")
         if any(
             approval.get("decision") != "approved"
@@ -1342,20 +1294,14 @@ def _validate_dossier(
         "expanded": {("production-ready", "production")},
         "rolled-back": {("none", "none")},
     }
-    if (
-        status_is_valid
-        and status in compatible
-        and (claim, target) not in compatible[status]
-    ):
+    if status_is_valid and status in compatible and (claim, target) not in compatible[status]:
         errors.append(f"STATUS_PROMOTION:{prefix}{status}")
     if status == "canary" and (
-        deployment.get("environment") != "canary"
-        or deployment.get("flag_state") != "canary"
+        deployment.get("environment") != "canary" or deployment.get("flag_state") != "canary"
     ):
         errors.append(f"STATUS_DEPLOYMENT:{prefix}canary")
     if status == "expanded" and (
-        deployment.get("environment") != "production"
-        or deployment.get("flag_state") != "enabled"
+        deployment.get("environment") != "production" or deployment.get("flag_state") != "enabled"
     ):
         errors.append(f"STATUS_DEPLOYMENT:{prefix}expanded")
     if status == "rolled-back" and deployment.get("flag_state") != "disabled":
@@ -1379,6 +1325,23 @@ def _validate_dossier(
         )
         if not (production_closed or rollback_closed):
             errors.append(f"STATUS_CLOSED_PATH:{prefix}closed")
+
+    if authorizing and authorized_report_results:
+        # Kök, kendi bağladığı raporla AYNI adı taşıyan bir metrikte farklı bir
+        # sayı iddia edemez: R10 tam bunu yaptı (şablondan miras 63/894/349,
+        # bağlı kanıt 69/904/352 derken) ve dış inceleme yakaladı. Eşleşme
+        # yapısal olur; elle senkron tutulan sayı, er geç yalan söyler.
+        evaluation = dossier.get("evaluation")
+        metrics = evaluation.get("metrics") if isinstance(evaluation, dict) else None
+        if isinstance(metrics, list):
+            for metric in metrics:
+                if not isinstance(metric, dict):
+                    continue
+                name = metric.get("name")
+                candidate = metric.get("candidate")
+                expected = authorized_report_results.get(name)
+                if isinstance(name, str) and expected is not None and candidate != expected:
+                    errors.append(f"EVIDENCE_METRIC_MISMATCH:{prefix}{name}")
 
     return errors
 
@@ -1420,11 +1383,7 @@ def _quarantine_errors(
     }
     # Geçiş-düzeyi ihlaller net diff'te görünmeseler bile yeniden-yazımdır;
     # add-delete-re-add ve rename bu depoda bir kez gerçekten kaçtı.
-    rewritten |= {
-        path
-        for path in transition_rewritten
-        if not path.startswith(".ai/quarantine/")
-    }
+    rewritten |= {path for path in transition_rewritten if not path.startswith(".ai/quarantine/")}
     contaminated = set(rewritten)
     contaminated_by: dict[str, str] = {}
     for child, parent in rename_children.items():
@@ -1489,13 +1448,10 @@ def _quarantine_errors(
             if not isinstance(record, dict):
                 errors.append(f"QUARANTINE_RECORD:{record_prefix}record")
                 continue
-            errors.extend(
-                _shape_errors(record, QUARANTINE_RECORD_FIELDS, record_prefix)
-            )
+            errors.extend(_shape_errors(record, QUARANTINE_RECORD_FIELDS, record_prefix))
             dossier_path = _safe_relative_path(record.get("path"))
             if dossier_path is None or not (
-                _is_dossier_path(dossier_path)
-                or dossier_path.startswith(".ai/evidence/")
+                _is_dossier_path(dossier_path) or dossier_path.startswith(".ai/evidence/")
             ):
                 errors.append(f"QUARANTINE_PATH:{record_prefix}path")
                 continue
@@ -1505,10 +1461,7 @@ def _quarantine_errors(
             # Geçiş taramasında görülen bir yol, net diff'ten düşmüş olsa bile
             # kapsamdadır: aralık içinde eklenip silinen kayıt tam olarak
             # karantinanın var oluş sebebidir.
-            if (
-                dossier_path not in changed_dossier_paths
-                and dossier_path not in transition_events
-            ):
+            if dossier_path not in changed_dossier_paths and dossier_path not in transition_events:
                 errors.append(f"QUARANTINE_SCOPE:{dossier_path}")
                 continue
 
@@ -1527,9 +1480,7 @@ def _quarantine_errors(
                 if last_commit is not None:
                     final_blob = _blob(repo, last_commit, dossier_path)
             final_digest = (
-                hashlib.sha256(final_blob).hexdigest()
-                if final_blob is not None
-                else None
+                hashlib.sha256(final_blob).hexdigest() if final_blob is not None else None
             )
             if (
                 not _is_sha(record.get("final_blob_sha256"), 64)
@@ -1540,15 +1491,11 @@ def _quarantine_errors(
             reason = record.get("reason")
             parent = _safe_relative_path(record.get("contaminated_by"))
             if dossier_path in rewritten:
-                if (
-                    reason != "history-rewritten"
-                    or record.get("contaminated_by") is not None
-                ):
+                if reason != "history-rewritten" or record.get("contaminated_by") is not None:
                     errors.append(f"QUARANTINE_REASON:{dossier_path}")
             elif dossier_path in contaminated:
-                if (
-                    reason != "descends-from-quarantined"
-                    or parent != contaminated_by.get(dossier_path)
+                if reason != "descends-from-quarantined" or parent != contaminated_by.get(
+                    dossier_path
                 ):
                     errors.append(f"QUARANTINE_REASON:{dossier_path}")
             else:
@@ -1556,9 +1503,7 @@ def _quarantine_errors(
 
     for dossier_path in sorted(contaminated - declared):
         error_class = (
-            "AUDIT_HISTORY_REWRITE"
-            if dossier_path in rewritten
-            else "AUDIT_LINEAGE_CONTAMINATED"
+            "AUDIT_HISTORY_REWRITE" if dossier_path in rewritten else "AUDIT_LINEAGE_CONTAMINATED"
         )
         errors.append(f"{error_class}:{dossier_path}")
         if dossier_path in rewritten:
@@ -1747,9 +1692,7 @@ def validate_repository(
             if risk is not None:
                 sensitive[change.path] = (change, risk, requirements)
 
-        deleted_sensitive = [
-            item for item in sensitive.values() if item[0].state == "deleted"
-        ]
+        deleted_sensitive = [item for item in sensitive.values() if item[0].state == "deleted"]
         if deleted_sensitive:
             highest_deleted_risk = max(
                 (item[1] for item in deleted_sensitive),
@@ -1779,8 +1722,7 @@ def validate_repository(
         changed_dossier_paths = {
             change.path
             for change in changes
-            if fnmatch.fnmatchcase(change.path, dossier_glob)
-            and change.state == "present"
+            if fnmatch.fnmatchcase(change.path, dossier_glob) and change.state == "present"
         }
         changed_quarantine_paths = {
             change.path
@@ -1794,15 +1736,13 @@ def validate_repository(
             dossier = _json_from_commit(repo, head, dossier_path)
             parsed_dossiers[dossier_path] = dossier
 
-        quarantine_errors, untrusted_dossiers, replacement_dossiers = (
-            _quarantine_errors(
-                repo=repo,
-                merge_base=merge_base,
-                head=head,
-                changed_dossier_paths=changed_dossier_paths,
-                changed_quarantine_paths=changed_quarantine_paths,
-                parsed_dossiers=parsed_dossiers,
-            )
+        quarantine_errors, untrusted_dossiers, replacement_dossiers = _quarantine_errors(
+            repo=repo,
+            merge_base=merge_base,
+            head=head,
+            changed_dossier_paths=changed_dossier_paths,
+            changed_quarantine_paths=changed_quarantine_paths,
+            parsed_dossiers=parsed_dossiers,
         )
         errors.extend(quarantine_errors)
         trusted_changed_dossiers = changed_dossier_paths - untrusted_dossiers
@@ -1818,9 +1758,7 @@ def validate_repository(
         # trusted sets above and can only be replaced by a fresh exact root.
         for dossier_path in trusted_changed_dossiers:
             dossier = parsed_dossiers.get(dossier_path, {})
-            dossier_id = _safe_dossier_id(
-                dossier.get("change_id"), Path(dossier_path).stem
-            )
+            dossier_id = _safe_dossier_id(dossier.get("change_id"), Path(dossier_path).stem)
             introduction = _introduction_commit(repo, merge_base, head, dossier_path)
             context_head = introduction
             context_is_valid = introduction is not None
@@ -1829,9 +1767,7 @@ def validate_repository(
             base_is_valid = _is_sha(declared_base, 40)
             if base_is_valid:
                 try:
-                    base_is_valid = (
-                        _resolve_commit(repo, declared_base) == declared_base
-                    )
+                    base_is_valid = _resolve_commit(repo, declared_base) == declared_base
                 except ValidationFailure:
                     base_is_valid = False
             if base_is_valid and context_is_valid and context_head is not None:
@@ -1842,9 +1778,7 @@ def validate_repository(
                     and _is_ancestor(repo, declared_base, introduction)
                     and _is_ancestor(repo, introduction, context_head)
                 )
-            candidate_is_valid = context_is_valid and _identity_matches(
-                candidate, context_head
-            )
+            candidate_is_valid = context_is_valid and _identity_matches(candidate, context_head)
             if context_is_valid and base_is_valid and candidate_is_valid:
                 dossier_contexts[dossier_path] = (declared_base, context_head)
             else:
@@ -1877,20 +1811,15 @@ def validate_repository(
                     if not isinstance(artifacts, list):
                         continue
                     if any(
-                        isinstance(artifact, dict)
-                        and artifact.get("path") == replacement_path
+                        isinstance(artifact, dict) and artifact.get("path") == replacement_path
                         for artifact in artifacts
                     ):
                         successors.append((dossier_path, dossier))
                 if not successors:
-                    errors.append(
-                        f"QUARANTINE_REPLACEMENT_CONTEXT:{replacement_id}:base-head"
-                    )
+                    errors.append(f"QUARANTINE_REPLACEMENT_CONTEXT:{replacement_id}:base-head")
                     continue
                 if len(successors) > 1:
-                    errors.append(
-                        f"QUARANTINE_REPLACEMENT_SUCCESSOR_AMBIGUOUS:{replacement_id}"
-                    )
+                    errors.append(f"QUARANTINE_REPLACEMENT_SUCCESSOR_AMBIGUOUS:{replacement_id}")
                     continue
                 replacement_path, replacement = successors[0]
                 replacement_id = _safe_dossier_id(
@@ -1907,8 +1836,7 @@ def validate_repository(
                 {
                     artifact.get("path")
                     for artifact in replacement_artifacts
-                    if isinstance(artifact, dict)
-                    and isinstance(artifact.get("path"), str)
+                    if isinstance(artifact, dict) and isinstance(artifact.get("path"), str)
                 }
                 if isinstance(replacement_artifacts, list)
                 else set()
@@ -1916,8 +1844,7 @@ def validate_repository(
             for sensitive_path in sorted(sensitive):
                 if sensitive_path not in replacement_artifact_paths:
                     errors.append(
-                        "QUARANTINE_REPLACEMENT_COVERAGE:"
-                        f"{replacement_id}:{sensitive_path}"
+                        f"QUARANTINE_REPLACEMENT_COVERAGE:{replacement_id}:{sensitive_path}"
                     )
 
         errors.extend(
@@ -1944,10 +1871,21 @@ def validate_repository(
                 report_path = _safe_relative_path(item.get("report_path"))
                 if report_path is not None:
                     evidence_referenced_by_changed_dossiers.add(report_path)
-        for evidence_path in sorted(
-            added_evidence_paths - evidence_referenced_by_changed_dossiers
-        ):
-            errors.append(f"UNREFERENCED_EVIDENCE:{evidence_path}")
+        for evidence_path in sorted(added_evidence_paths - evidence_referenced_by_changed_dossiers):
+            # Yetkilendiren kökün artefakt listesinde güncel özetiyle bağlı bir
+            # rapor, canlı kanıt değil TARİHSEL ANLIK GÖRÜNTÜdür ve hesaba
+            # katılmıştır; yetki vermez ama kaybolmuş da sayılmaz. Bağsız
+            # rapor ise eskisi gibi kırmızıdır.
+            snapshot_bound = any(
+                isinstance(artifact, dict)
+                and artifact.get("path") == evidence_path
+                and artifact.get("state") == "present"
+                and _is_sha(artifact.get("sha256"), 64)
+                for dossier in eligible_dossiers.values()
+                for artifact in (dossier.get("artifacts") or [])
+            )
+            if not snapshot_bound:
+                errors.append(f"UNREFERENCED_EVIDENCE:{evidence_path}")
 
         # Historical stacked records still validate their own immutable
         # artifact/evidence snapshot.  They never authorize the aggregate
@@ -1970,9 +1908,7 @@ def validate_repository(
                     artifact_path = _safe_relative_path(artifact.get("path"))
                     if artifact_path is None:
                         continue
-                    artifact_risk, artifact_requirements = _risk_for_path(
-                        artifact_path, policy
-                    )
+                    artifact_risk, artifact_requirements = _risk_for_path(artifact_path, policy)
                     if (
                         artifact_risk is not None
                         and policy["risk_order"][artifact_risk]
@@ -1994,12 +1930,12 @@ def validate_repository(
                     head=context_head,
                     required_risk=required_risk,
                     requirements=requirements,
+                    authorizing=(context_base, context_head) == (merge_base, head),
+                    final_head=head,
                 )
             )
 
-        coverage: dict[str, list[tuple[str, dict[str, Any]]]] = {
-            path: [] for path in sensitive
-        }
+        coverage: dict[str, list[tuple[str, dict[str, Any]]]] = {path: [] for path in sensitive}
         for dossier_path, dossier in eligible_dossiers.items():
             artifacts = dossier.get("artifacts")
             if not isinstance(artifacts, list):
@@ -2013,9 +1949,7 @@ def validate_repository(
                 if changed_path in artifact_paths:
                     covering_dossiers.append((dossier_path, dossier))
 
-        dossiers_to_validate: dict[
-            str, tuple[dict[str, Any], str, dict[str, bool]]
-        ] = {}
+        dossiers_to_validate: dict[str, tuple[dict[str, Any], str, dict[str, bool]]] = {}
         for changed_path, covering in coverage.items():
             if not covering:
                 errors.append(f"UNCOVERED:{changed_path}")
@@ -2033,8 +1967,7 @@ def validate_repository(
                 existing = dossiers_to_validate.get(dossier_path)
                 if (
                     existing is None
-                    or policy["risk_order"][required_risk]
-                    > policy["risk_order"][existing[1]]
+                    or policy["risk_order"][required_risk] > policy["risk_order"][existing[1]]
                 ):
                     combined = {
                         key: bool(requirements.get(key))
@@ -2085,6 +2018,8 @@ def validate_repository(
                     head=head,
                     required_risk=required_risk,
                     requirements=requirements,
+                    authorizing=True,
+                    final_head=head,
                 )
             )
     except ValidationFailure as exc:

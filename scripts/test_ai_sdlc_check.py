@@ -169,10 +169,15 @@ class RepositoryFixture:
         verification_url: str | None = None,
         report_extra: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        self._evidence_serial = getattr(self, "_evidence_serial", 0) + 1
         report: dict[str, Any] = {
             "candidate_sha": "SELF",
             "evidence_label": label,
             "result": result,
+            # Gerçek raporlar her koşuda farklıdır (zaman damgası, sayılar);
+            # bit-özdeş yeniden yazım aralıkta dokunuş üretmez ve son-dokunuş
+            # sözleşmesini yapay olarak bozar. Sayaç o gerçekliği taklit eder.
+            "measurement_serial": self._evidence_serial,
         }
         if verification_url is not None:
             report["verification_url"] = verification_url
@@ -183,9 +188,7 @@ class RepositoryFixture:
             "label": label,
             "result": result,
             "report_path": path,
-            "report_sha256": hashlib.sha256(
-                (self.root / path).read_bytes()
-            ).hexdigest(),
+            "report_sha256": hashlib.sha256((self.root / path).read_bytes()).hexdigest(),
             "candidate_sha": "SELF",
         }
 
@@ -268,9 +271,7 @@ class RepositoryFixture:
             "rollout": {
                 "feature_flag": "AI_TEST_FLAG" if risk != "R1" else "NOT_APPLICABLE",
                 "kill_switch": "Disable AI_TEST_FLAG",
-                "assignment": "Sticky assignment by user id"
-                if risk != "R1"
-                else "Not applicable",
+                "assignment": "Sticky assignment by user id" if risk != "R1" else "Not applicable",
                 "initial_exposure": "Internal only",
                 "stop_conditions": ["Any safety regression"],
                 "expand_conditions": ["All declared thresholds pass"],
@@ -344,14 +345,10 @@ class RepositoryFixture:
         )
 
     def commit_ai_change(self, dossier: dict[str, Any] | None = None) -> None:
-        self.write(
-            "apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate'\n"
-        )
+        self.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate'\n")
         if dossier is not None:
             dossier = copy.deepcopy(dossier)
-            dossier["artifacts"] = [
-                self.artifact("apps/api/app/modules/generation/prompts.py")
-            ]
+            dossier["artifacts"] = [self.artifact("apps/api/app/modules/generation/prompts.py")]
             self.write_json(".ai/changes/change.json", dossier)
         self.commit("candidate")
 
@@ -372,9 +369,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.close()
 
     def _valid_change(self) -> dict[str, Any]:
-        self.repo.write(
-            "apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate'\n"
-        )
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate'\n")
         return self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
 
     def _mutate_committed_dossier(self, mutation: Any) -> None:
@@ -412,9 +407,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         )
 
     def test_chat_orchestration_is_r3_and_needs_a_dossier(self) -> None:
-        self.repo.write(
-            "apps/api/app/api/chat.py", "SYSTEM_PROMPT = 'answer anything'\n"
-        )
+        self.repo.write("apps/api/app/api/chat.py", "SYSTEM_PROMPT = 'answer anything'\n")
         self.repo.commit("change chat orchestration")
         self.assertIn("UNCOVERED:apps/api/app/api/chat.py", self.repo.validate())
 
@@ -455,8 +448,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         old_path.unlink()
         self.repo.write(
             new_relative,
-            "def runtime_policy(value: object) -> bool:\n"
-            "    return value is not None\n",
+            "def runtime_policy(value: object) -> bool:\n    return value is not None\n",
         )
         self.repo.commit("move and rewrite governed behavior")
         errors = self.repo.validate()
@@ -472,18 +464,14 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self._mutate_committed_dossier(
             lambda dossier: dossier["artifacts"][0].update({"sha256": "0" * 64})
         )
-        self.assertIn(
-            "AUDIT_HISTORY_REWRITE:.ai/changes/change.json", self.repo.validate()
-        )
+        self.assertIn("AUDIT_HISTORY_REWRITE:.ai/changes/change.json", self.repo.validate())
 
     def test_evidence_hash_mutation_is_rejected_as_rewritten_history(self) -> None:
         self.repo.commit_ai_change(self._valid_change())
         self._mutate_committed_dossier(
             lambda dossier: dossier["evidence"][0].update({"report_sha256": "0" * 64})
         )
-        self.assertIn(
-            "AUDIT_HISTORY_REWRITE:.ai/changes/change.json", self.repo.validate()
-        )
+        self.assertIn("AUDIT_HISTORY_REWRITE:.ai/changes/change.json", self.repo.validate())
 
     def test_risk_downgrade_fails(self) -> None:
         dossier = self._valid_change()
@@ -492,9 +480,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
             {"role": "peer", "owner": "peer-reviewer", "independent_of_author": True}
         ]
         self.repo.commit_ai_change(dossier)
-        self.assertTrue(
-            any(error.startswith("RISK:") for error in self.repo.validate())
-        )
+        self.assertTrue(any(error.startswith("RISK:") for error in self.repo.validate()))
 
     def test_unknown_evidence_label_fails_without_echoing_payload(self) -> None:
         dossier = self._valid_change()
@@ -558,17 +544,13 @@ class AiSdlcValidatorTests(unittest.TestCase):
         dossier = self._valid_change()
         dossier["rollout"]["kill_switch"] = ""
         self.repo.commit_ai_change(dossier)
-        self.assertTrue(
-            any(error.endswith(":kill_switch") for error in self.repo.validate())
-        )
+        self.assertTrue(any(error.endswith(":kill_switch") for error in self.repo.validate()))
 
     def test_missing_rollback_procedure_fails(self) -> None:
         dossier = self._valid_change()
         dossier["rollback"]["procedure"] = ""
         self.repo.commit_ai_change(dossier)
-        self.assertTrue(
-            any(error.endswith(":procedure") for error in self.repo.validate())
-        )
+        self.assertTrue(any(error.endswith(":procedure") for error in self.repo.validate()))
 
     def test_machine_contract_rejects_missing_behavior_data_metrics_and_deployment(
         self,
@@ -582,18 +564,14 @@ class AiSdlcValidatorTests(unittest.TestCase):
         errors = self.repo.validate()
         self.assertTrue(any(error.startswith("BEHAVIOR:") for error in errors))
         self.assertTrue(any(error.startswith("DATA_DIGEST:") for error in errors))
-        self.assertTrue(
-            any(error.startswith("EVALUATION_METRICS:") for error in errors)
-        )
+        self.assertTrue(any(error.startswith("EVALUATION_METRICS:") for error in errors))
         self.assertTrue(any(error.startswith("DEPLOYMENT_SHA:") for error in errors))
 
     def test_governance_record_risk_is_always_r3(self) -> None:
         dossier = self._valid_change()
         dossier["governance_record_risk"] = "R2"
         self.repo.commit_ai_change(dossier)
-        self.assertTrue(
-            any(error.startswith("AUDIT_RISK:") for error in self.repo.validate())
-        )
+        self.assertTrue(any(error.startswith("AUDIT_RISK:") for error in self.repo.validate()))
 
     def test_required_approval_must_be_independent(self) -> None:
         dossier = self._valid_change()
@@ -601,10 +579,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         dossier["approval_requirements"][0]["independent_of_author"] = False
         self.repo.commit_ai_change(dossier)
         self.assertTrue(
-            any(
-                error.startswith("APPROVAL_INDEPENDENCE:")
-                for error in self.repo.validate()
-            )
+            any(error.startswith("APPROVAL_INDEPENDENCE:") for error in self.repo.validate())
         )
 
     def test_fake_only_cannot_support_production_ready_claim(self) -> None:
@@ -616,10 +591,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         }
         self.repo.commit_ai_change(dossier)
         self.assertTrue(
-            any(
-                error.startswith("PRODUCTION_EVIDENCE:")
-                for error in self.repo.validate()
-            )
+            any(error.startswith("PRODUCTION_EVIDENCE:") for error in self.repo.validate())
         )
 
     def test_production_ready_rejects_self_asserted_reports_and_approval_names(
@@ -641,9 +613,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.assertTrue(
             any(error.startswith("EVIDENCE_EXTERNAL_VERIFICATION:") for error in errors)
         )
-        self.assertTrue(
-            any(error.startswith("PRODUCTION_APPROVAL_REF:") for error in errors)
-        )
+        self.assertTrue(any(error.startswith("PRODUCTION_APPROVAL_REF:") for error in errors))
 
     def test_production_ready_accepts_hash_bound_external_run_and_review_refs(
         self,
@@ -704,9 +674,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.commit_ai_change(dossier)
         errors = self.repo.validate()
         self.assertTrue(any(error.startswith("APPROVAL_REQUIRED:") for error in errors))
-        self.assertTrue(
-            any(error.startswith("APPROVAL_PROMOTION:") for error in errors)
-        )
+        self.assertTrue(any(error.startswith("APPROVAL_PROMOTION:") for error in errors))
 
     def test_canary_accepts_candidate_bound_named_approvals(self) -> None:
         dossier = self._valid_change()
@@ -763,9 +731,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         dossier = self._valid_change()
         dossier["status"] = "expanded"
         self.repo.commit_ai_change(dossier)
-        self.assertTrue(
-            any(error.startswith("STATUS_EVIDENCE:") for error in self.repo.validate())
-        )
+        self.assertTrue(any(error.startswith("STATUS_EVIDENCE:") for error in self.repo.validate()))
 
     def test_wrong_candidate_sha_is_not_eligible(self) -> None:
         dossier = self._valid_change()
@@ -795,9 +761,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.assertEqual([], self.repo.validate())
 
     def _commit_audited_evidence(self) -> str:
-        self.repo.write(
-            "apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate'\n"
-        )
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate'\n")
         dossier = self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
         dossier["evidence"] = [
             self.repo.evidence(path=".ai/evidence/run.json", label="fake-provider")
@@ -810,12 +774,8 @@ class AiSdlcValidatorTests(unittest.TestCase):
 
     def _prepare_second_revision(self) -> dict[str, Any]:
         previous_path = ".ai/changes/change.json"
-        previous_digest = hashlib.sha256(
-            (self.repo.root / previous_path).read_bytes()
-        ).hexdigest()
-        self.repo.write(
-            "apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate-2'\n"
-        )
+        previous_digest = hashlib.sha256((self.repo.root / previous_path).read_bytes()).hexdigest()
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate-2'\n")
         dossier = self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
         dossier.update(
             {
@@ -841,13 +801,9 @@ class AiSdlcValidatorTests(unittest.TestCase):
         child_path = ".ai/changes/quarantine-child.json"
         self.repo.write(target, "PROMPT = 'quarantine-candidate'\n")
         parent = self.repo.dossier(path=target, risk="R3")
-        parent.update(
-            {"change_id": "quarantine-parent", "lineage_id": "quarantine-lineage"}
-        )
+        parent.update({"change_id": "quarantine-parent", "lineage_id": "quarantine-lineage"})
         if quarantine_only_evidence:
-            parent["evidence"] = [
-                self.repo.evidence(path=".ai/evidence/quarantine-only.json")
-            ]
+            parent["evidence"] = [self.repo.evidence(path=".ai/evidence/quarantine-only.json")]
         self.repo.write_json(parent_path, parent)
         self.repo.commit("introduce immutable parent")
         parent_introduction = self.repo.head
@@ -856,9 +812,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.write_json(parent_path, parent)
         self.repo.commit("rewrite parent history")
         rewritten_head = self.repo.head
-        parent_digest = hashlib.sha256(
-            (self.repo.root / parent_path).read_bytes()
-        ).hexdigest()
+        parent_digest = hashlib.sha256((self.repo.root / parent_path).read_bytes()).hexdigest()
 
         child = self.repo.dossier(path=target, risk="R3")
         child.update(
@@ -1037,9 +991,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
                 "base_sha": original_base,
             }
         )
-        integration["evidence"] = [
-            self.repo.evidence(path=".ai/evidence/stack-integration.json")
-        ]
+        integration["evidence"] = [self.repo.evidence(path=".ai/evidence/stack-integration.json")]
         self.repo.write_json(".ai/changes/stack-integration.json", integration)
         self.repo.commit("bind the whole reviewed stack")
 
@@ -1087,9 +1039,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.commit("review child against the settled parent snapshot")
 
         errors = self.repo.validate()
-        self.assertTrue(
-            any(error.startswith("HASH_MISMATCH:stack-parent:") for error in errors)
-        )
+        self.assertTrue(any(error.startswith("HASH_MISMATCH:stack-parent:") for error in errors))
 
     def test_rewritten_dossier_without_quarantine_fails_closed(self) -> None:
         lineage = self._prepare_rewritten_lineage()
@@ -1241,9 +1191,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.write(target, "PROMPT = 'reviewed-slice'\n")
         historical = self.repo.dossier(path=target)
         historical.update({"change_id": "historical", "lineage_id": "historical"})
-        historical["evidence"] = [
-            self.repo.evidence(path=".ai/evidence/historical.json")
-        ]
+        historical["evidence"] = [self.repo.evidence(path=".ai/evidence/historical.json")]
         self.repo.write_json(".ai/changes/historical.json", historical)
         self.repo.commit("reviewed historical slice")
 
@@ -1273,9 +1221,7 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.write_json(".ai/changes/change-r2.json", first)
         self.repo.write_json(".ai/changes/change-r2-fork.json", second)
         self.repo.commit("fork immutable lineage")
-        self.assertTrue(
-            any(error.startswith("LINEAGE_FORK:") for error in self.repo.validate())
-        )
+        self.assertTrue(any(error.startswith("LINEAGE_FORK:") for error in self.repo.validate()))
 
     def test_revision_cannot_rewrite_parent_hash_or_lineage(self) -> None:
         self._commit_audited_evidence()
@@ -1296,12 +1242,8 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.repo.write_json(".ai/changes/change-r2.json", dossier)
         self.repo.commit("downgrade and skip lifecycle")
         errors = self.repo.validate()
-        self.assertTrue(
-            any(error.startswith("LINEAGE_RISK_DOWNGRADE:") for error in errors)
-        )
-        self.assertTrue(
-            any(error.startswith("LINEAGE_TRANSITION:") for error in errors)
-        )
+        self.assertTrue(any(error.startswith("LINEAGE_RISK_DOWNGRADE:") for error in errors))
+        self.assertTrue(any(error.startswith("LINEAGE_TRANSITION:") for error in errors))
 
     def test_existing_evidence_is_append_only(self) -> None:
         report = self._commit_audited_evidence()
@@ -1457,11 +1399,110 @@ class AppendOnlyTransitionTests(unittest.TestCase):
         self.assertNotIn(f"QUARANTINE_HASH:{path}", errors)
 
 
+class EvidenceBindingTests(unittest.TestCase):
+    """Yetkilendiren kökün kanıt bağlama kuralları.
+
+    İki gerçek olayın anıtı: (1) SELF her HEAD'le eşleştiği için eski bir
+    adayın raporu yeni bir kökten yeniden ölçülmeden referanslandı; (2) kök,
+    şablondan miras sayılarla kendi bağladığı rapordan farklı metrik iddia
+    etti. İkisi de dış incelemede yakalandı; bu testler kuralları söken
+    kişiyi kırmızıya çevirir.
+    """
+
+    def setUp(self) -> None:
+        self.repo = RepositoryFixture()
+
+    def tearDown(self) -> None:
+        self.repo.close()
+
+    def test_eski_adayin_raporu_yeni_kokten_kullanilamaz(self) -> None:
+        self.repo.write_json(
+            ".ai/evidence/eski-rapor.json",
+            {"candidate_sha": "SELF", "evidence_label": "fake-provider", "result": "pass"},
+        )
+        self.repo.commit("introduce old-candidate report")
+
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'y'\n")
+        dossier = self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
+        dossier["evidence"] = [
+            {
+                "label": "fake-provider",
+                "result": "pass",
+                "report_path": ".ai/evidence/eski-rapor.json",
+                "report_sha256": hashlib.sha256(
+                    (self.repo.root / ".ai/evidence/eski-rapor.json").read_bytes()
+                ).hexdigest(),
+                "candidate_sha": "SELF",
+            }
+        ]
+        self.repo.write_json(".ai/changes/change.json", dossier)
+        self.repo.commit("root reuses an earlier candidate's report")
+
+        errors = self.repo.validate()
+        self.assertIn("EVIDENCE_CANDIDATE_STALE:change:0", errors)
+
+    def test_kok_kendi_raporuyla_celisen_metrik_iddia_edemez(self) -> None:
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'z'\n")
+        dossier = self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
+        dossier["evidence"] = [
+            self.repo.evidence(
+                path=".ai/evidence/metrikli.json",
+                report_extra={"results": {"backend_tests_passed": 904}},
+            )
+        ]
+        evaluation = dossier.get("evaluation")
+        if not isinstance(evaluation, dict):
+            evaluation = {}
+        evaluation["metrics"] = [
+            {
+                "name": "backend_tests_passed",
+                "baseline": 879,
+                "candidate": 894,
+                "operator": ">=",
+                "threshold": 879,
+                "sample_size": 894,
+            }
+        ]
+        dossier["evaluation"] = evaluation
+        self.repo.write_json(".ai/changes/change.json", dossier)
+        self.repo.commit("root claims a number its own report refutes")
+
+        errors = self.repo.validate()
+        self.assertIn("EVIDENCE_METRIC_MISMATCH:change:backend_tests_passed", errors)
+
+    def test_artefakt_bagli_tarihsel_rapor_kayip_sayilmaz(self) -> None:
+        orphan = ".ai/evidence/tarihsel-rapor.json"
+        self.repo.write_json(
+            orphan,
+            {"candidate_sha": "SELF", "evidence_label": "fake-provider", "result": "pass"},
+        )
+        self.repo.commit("introduce historical report")
+
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'w'\n")
+        dossier = self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
+        dossier["evidence"] = [self.repo.evidence(path=".ai/evidence/taze.json")]
+        dossier["artifacts"] = dossier.get("artifacts", []) + [self.repo.artifact(orphan)]
+        self.repo.write_json(".ai/changes/change.json", dossier)
+        self.repo.commit("root snapshot-binds the historical report")
+
+        errors = self.repo.validate()
+        self.assertNotIn(f"UNREFERENCED_EVIDENCE:{orphan}", errors)
+
+    def test_bagsiz_rapor_hala_kirmizi(self) -> None:
+        orphan = ".ai/evidence/bagsiz-rapor.json"
+        self.repo.write_json(orphan, {"candidate_sha": "SELF"})
+        self.repo.commit("introduce unbound report")
+        self.repo.commit_ai_change(
+            self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
+        )
+
+        errors = self.repo.validate()
+        self.assertIn(f"UNREFERENCED_EVIDENCE:{orphan}", errors)
+
+
 class ProductionPolicyCoverageTests(unittest.TestCase):
     def test_runtime_ai_control_planes_are_classified(self) -> None:
-        policy = json.loads(
-            (SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8")
-        )
+        policy = json.loads((SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8"))
         expected = {
             "apps/api/app/api/chat.py": "R3",
             "apps/api/app/modules/policy/service.py": "R3",
@@ -1499,9 +1540,7 @@ class ProductionPolicyCoverageTests(unittest.TestCase):
 class WorkflowBindingTests(unittest.TestCase):
     def test_workflow_binds_self_to_exact_pull_request_head(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        workflow = (root / ".github/workflows/ai-quality.yml").read_text(
-            encoding="utf-8"
-        )
+        workflow = (root / ".github/workflows/ai-quality.yml").read_text(encoding="utf-8")
         self.assertIn("github.event.pull_request.head.sha", workflow)
         self.assertIn("ref: ${{ env.HEAD_SHA }}", workflow)
         self.assertEqual(
@@ -1512,9 +1551,7 @@ class WorkflowBindingTests(unittest.TestCase):
 
     def test_workflow_binds_main_push_to_exact_before_and_after_shas(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        workflow = (root / ".github/workflows/ai-quality.yml").read_text(
-            encoding="utf-8"
-        )
+        workflow = (root / ".github/workflows/ai-quality.yml").read_text(encoding="utf-8")
         self.assertRegex(workflow, r"(?m)^\s+push:\s*$")
         self.assertRegex(workflow, r"(?m)^\s+- main\s*$")
         self.assertIn("|| github.event.before", workflow)
@@ -1524,15 +1561,11 @@ class WorkflowBindingTests(unittest.TestCase):
 
     def test_all_actions_are_immutable_and_checkout_drops_credentials(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        workflow = (root / ".github/workflows/ai-quality.yml").read_text(
-            encoding="utf-8"
-        )
+        workflow = (root / ".github/workflows/ai-quality.yml").read_text(encoding="utf-8")
         action_refs = re.findall(r"^\s*-?\s*uses:\s*([^\s#]+)", workflow, re.MULTILINE)
         self.assertEqual(3, len(action_refs))
         for action_ref in action_refs:
-            self.assertRegex(
-                action_ref, r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}$"
-            )
+            self.assertRegex(action_ref, r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}$")
         self.assertEqual(2, workflow.count("persist-credentials: false"))
         self.assertIn(
             "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
