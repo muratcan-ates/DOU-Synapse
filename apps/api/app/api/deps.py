@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Protocol
 from uuid import UUID
 
 from fastapi import Depends, Path, Query, Request
@@ -147,6 +147,34 @@ async def require_course_instructor(context: CourseMemberDep) -> CourseContext:
 
 
 CourseInstructorDep = Annotated[CourseContext, Depends(require_course_instructor)]
+
+
+class CourseOwnedRow(Protocol):
+    """`course_id` kolonu taşıyan bir ORM satırının yapısal tipi."""
+
+    course_id: UUID
+
+
+async def load_owned[ModelT: CourseOwnedRow](
+    session: AsyncSession,
+    model: type[ModelT],
+    row_id: UUID,
+    context: CourseContext,
+    *,
+    message: str,
+) -> ModelT:
+    """Ders sahipliği doğrulanmış tek kayıt yükler.
+
+    'X is None or X.course_id != context.course_id → 404' kalıbının tek yeri.
+    RLS başka dersin kaydını zaten gizler; yine de ders eşleşmesi açıkça kontrol
+    edilir — iki katman da bağımsız olarak doğru davranmalı. Kayıt hiç yokken
+    de başka derse aitken de AYNI 404 döner: yabancı kaydın varlığı sızdırılmaz.
+    Mesaj çağıran uca aittir; kullanıcıya dönen metin uca özgü kalır.
+    """
+    row = await session.get(model, row_id)
+    if row is None or row.course_id != context.course_id:
+        raise NotFoundError(message)
+    return row
 
 
 async def require_platform_admin(
