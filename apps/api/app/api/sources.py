@@ -12,8 +12,8 @@ from app.api.deps import (
     SessionDep,
     SettingsDep,
     UnlockedCourseMemberDep,
+    load_owned,
 )
-from app.core.errors import NotFoundError
 from app.models.core import Chunk, Document
 from app.modules.retrieval.inspection import inspect_retrieval
 from app.modules.retrieval.scope import EvidenceLevel
@@ -83,13 +83,12 @@ async def source_context(
     aynı bağımlılığın içinde muaf tutulur. Yalnız snippet değil, önceki/sonraki
     parça da döner; kullanıcı atfın cümle bağlamını gerçekten denetleyebilir.
     """
-    selected = await session.get(Chunk, chunk_id)
-    if selected is None or selected.course_id != context.course_id:
-        raise NotFoundError("Kaynak parça bulunamadı.")
-
-    document = await session.get(Document, selected.document_id)
-    if document is None or document.course_id != context.course_id:
-        raise NotFoundError("Kaynak belge bulunamadı.")
+    selected = await load_owned(
+        session, Chunk, chunk_id, context, message="Kaynak parça bulunamadı."
+    )
+    document = await load_owned(
+        session, Document, selected.document_id, context, message="Kaynak belge bulunamadı."
+    )
 
     lower = max(0, selected.chunk_index - 1)
     upper = selected.chunk_index + 1

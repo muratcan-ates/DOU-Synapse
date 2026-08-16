@@ -5,7 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, status
-from sqlalchemy import select, text, tuple_
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import (
@@ -16,7 +16,7 @@ from app.api.deps import (
     SessionDep,
 )
 from app.core.errors import ConflictError, NotFoundError, ValidationError
-from app.core.pagination import decode_time_cursor, encode_time_cursor
+from app.core.pagination import paginate
 from app.models.core import Course, CourseMembership, MembershipRole, MembershipStatus, Profile
 from app.schemas.course import (
     CourseCreate,
@@ -45,23 +45,14 @@ async def list_my_courses(
             CourseMembership.status == MembershipStatus.ACTIVE,
         )
     )
-    if page.cursor is not None:
-        created_at, row_id = decode_time_cursor(page.cursor)
-        query = query.where(tuple_(Course.created_at, Course.id) < (created_at, row_id))
-    result = await session.execute(
-        query.order_by(Course.created_at.desc(), Course.id.desc()).limit(page.limit + 1)
-    )
-    rows = result.all()
-    visible = rows[: page.limit]
+    # SELECT (Course, rol) döndüğü için satırlar Row'dur; imleç ilk kolondaki
+    # Course'tan türetilir (`scalars=False`).
+    result = await paginate(session, query, model=Course, page=page, scalars=False)
     items = [
         CourseWithRole(**CourseOut.model_validate(course).model_dump(), role=role)
-        for course, role in visible
+        for course, role in result.rows
     ]
-    next_cursor = None
-    if len(rows) > page.limit:
-        last_course = visible[-1][0]
-        next_cursor = encode_time_cursor(last_course.created_at, last_course.id)
-    return PageOut(items=items, next_cursor=next_cursor)
+    return PageOut(items=items, next_cursor=result.next_cursor)
 
 
 @router.post("", response_model=CourseWithRole, status_code=status.HTTP_201_CREATED)
