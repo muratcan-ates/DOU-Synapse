@@ -18,6 +18,7 @@ import { useSession } from "@/lib/session";
 import type { ChunkPreview, Course, CourseDocument } from "@/lib/types";
 import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
+import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
@@ -291,13 +292,9 @@ function UploadBox({
   onUploaded: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [replacesDocumentId, setReplacesDocumentId] = useState("");
 
-  async function handleFile(file: File) {
-    setBusy(true);
-    setError(null);
+  const { busy, error, submit: handleFile } = useSubmit(async (file: File) => {
     try {
       await api.upload(
         `/courses/${courseId}/documents`,
@@ -306,13 +303,11 @@ function UploadBox({
       );
       setReplacesDocumentId("");
       onUploaded();
-    } catch (e) {
-      setError(errorMessage(e, "Yükleme tamamlanamadı."));
     } finally {
-      setBusy(false);
+      // Hata yolunda da temizlenir: aynı dosya yeniden seçilebilmeli.
       if (inputRef.current) inputRef.current.value = "";
     }
-  }
+  }, "Yükleme tamamlanamadı.");
 
   return (
     <Card className="mb-6">
@@ -347,7 +342,7 @@ function UploadBox({
           accept=".pdf,.pptx,.md,.txt,.py,.java,.js,.ts,.c,.h,.cpp"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            if (file) handleFile(file);
+            if (file) void handleFile(file);
           }}
         />
         <Button
@@ -383,8 +378,10 @@ function DocumentRow({
   const [chunks, setChunks] = useState<ChunkPreview[] | null>(null);
   const [open, setOpen] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [retrying, setRetrying] = useState(false);
-  const [retryError, setRetryError] = useState<string | null>(null);
+  const retry = useSubmit(async () => {
+    await api.post(`/courses/${courseId}/documents/${doc.id}/retry`);
+    onDeleted();
+  }, "Belge yeniden kuyruğa alınamadı.");
   const status = DOCUMENT_STATUS[doc.status];
   const panelId = `chunks-${doc.id}`;
 
@@ -440,21 +437,10 @@ function DocumentRow({
           {isInstructor && doc.status === "failed" && (
             <Button
               variant="secondary"
-              aria-disabled={retrying}
-              onClick={async () => {
-                setRetrying(true);
-                setRetryError(null);
-                try {
-                  await api.post(`/courses/${courseId}/documents/${doc.id}/retry`);
-                  onDeleted();
-                } catch (error) {
-                  setRetryError(errorMessage(error, "Belge yeniden kuyruğa alınamadı."));
-                } finally {
-                  setRetrying(false);
-                }
-              }}
+              aria-disabled={retry.busy}
+              onClick={() => void retry.submit()}
             >
-              {retrying ? "Kuyruğa alınıyor…" : "Yeniden işle"}
+              {retry.busy ? "Kuyruğa alınıyor…" : "Yeniden işle"}
             </Button>
           )}
           {isInstructor && (
@@ -481,9 +467,9 @@ function DocumentRow({
         </p>
       )}
 
-      {retryError && (
+      {retry.error && (
         <div className="border-t border-border px-6 py-2">
-          <ErrorNote message={retryError} />
+          <ErrorNote message={retry.error} />
         </div>
       )}
 

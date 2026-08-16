@@ -213,6 +213,20 @@ export interface SourceRef {
   snippet: string;
 }
 
+/**
+ * Kaynak kartının girdisi — bu dosyadaki tek arayüz-tarafı tip; backend şeması
+ * değildir. Burada durmasının sebebi bağımlılık yönü: tip eskiden
+ * `components/source-card`'da yaşıyordu ve `lib/source` ile `lib/questions`
+ * onu oradan import ediyordu — lib→components yönünde, deponun tek tersinmesi.
+ * Tip alt katmana (buraya) indi; `source-card` geriye uyum için re-export eder.
+ */
+export interface SourceInfo {
+  fileName: string;
+  /** "Sayfa 12" | "Slayt 7" | bölüm adı — konum HER ZAMAN görünür */
+  location: string;
+  quote: string;
+}
+
 export interface Topic {
   id: string;
   course_id: string;

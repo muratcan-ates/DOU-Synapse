@@ -8,7 +8,7 @@
  * gösterir — hiçbir şey patlamaz, kart yalnız yanlış şeyi yazar (Anayasa XI).
  */
 
-import type { SourceInfo } from "@/components/source-card";
+import type { SourceInfo } from "@/lib/types";
 
 /**
  * Girdi tipi yapısal: çağıranlar kendi sözleşme tipleriyle geçer (`Citation`

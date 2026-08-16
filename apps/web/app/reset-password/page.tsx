@@ -7,39 +7,29 @@ import { Field } from "@/components/field";
 import { Button, Card, Input } from "@/components/ui";
 import { updateCurrentPassword } from "@/lib/api";
 import { PASSWORD_MIN_LENGTH, passwordValidationError } from "@/lib/auth";
-import { errorMessage } from "@/lib/errors";
 import { supabaseConfigured } from "@/lib/supabase";
+import { useSubmit } from "@/lib/use-submit";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const [busy, setBusy] = useState(false);
   const [updated, setUpdated] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function submit(event: React.FormEvent) {
+  const { busy, error, setError, submit: update } = useSubmit(async () => {
+    await updateCurrentPassword(password);
+    setUpdated(true);
+  }, "Parola güncellenemedi. Bağlantının süresi dolmuş olabilir; yeniden bağlantı isteyin.");
+
+  function submit(event: React.FormEvent) {
     event.preventDefault();
     if (busy) return;
+    // Doğrulama gönderim ÖNCESİ konuşur; kancanın hata satırını kullanır.
     const validation = passwordValidationError(password, confirmation);
     if (validation) {
       setError(validation);
       return;
     }
-    setBusy(true);
-    setError(null);
-    try {
-      await updateCurrentPassword(password);
-      setUpdated(true);
-    } catch (cause) {
-      setError(
-        errorMessage(
-          cause,
-          "Parola güncellenemedi. Bağlantının süresi dolmuş olabilir; yeniden bağlantı isteyin.",
-        ),
-      );
-    } finally {
-      setBusy(false);
-    }
+    void update();
   }
 
   return (

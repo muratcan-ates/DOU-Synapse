@@ -49,14 +49,15 @@ import {
   type PoolQuestion,
   type Readiness,
 } from "@/lib/blueprint";
-import { errorMessage } from "@/lib/errors";
 import { QUESTION_TYPE } from "@/lib/labels";
 import { useSession } from "@/lib/session";
 import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
+import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 
@@ -78,18 +79,23 @@ export default function BlueprintsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = blueprints.data?.find((item) => item.id === selectedId) ?? null;
 
-  if (ready && !isInstructor) {
-    return (
-      <AppShell>
-        <CourseNav courseId={courseId} />
-        <EmptyState title="Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı." />
-      </AppShell>
-    );
-  }
-
+  /*
+   * Kapının iyimser varyantı: rol çözülene kadar `Loading` yerine sayfa
+   * iskeleti çizilir (bu sayfanın eskiden beri davranışı — veri kancaları
+   * zaten yukarıda, rolden bağımsız koşuyor). Rol netleşip "öğrenci" çıkarsa
+   * kapak iner.
+   */
   return (
     <AppShell>
       <CourseNav courseId={courseId} />
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        optimistic
+        fallback={
+          <EmptyState title="Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı." />
+        }
+      >
       <PageHeader
         title="Sınav blueprint'i"
         description="Sınavın çatısını sorulardan önce çiz: hangi öğrenme çıktısından, hangi zorlukta, kaç soru."
@@ -130,6 +136,7 @@ export default function BlueprintsPage() {
           onChanged={blueprints.reload}
         />
       )}
+      </InstructorGate>
     </AppShell>
   );
 }
@@ -147,26 +154,16 @@ function OutcomesCard({
 }) {
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  const submit = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post(`/courses/${courseId}/learning-outcomes`, {
-        code: code.trim(),
-        description: description.trim(),
-      });
-      setCode("");
-      setDescription("");
-      outcomes.reload();
-    } catch (exc) {
-      setError(errorMessage(exc));
-    } finally {
-      setBusy(false);
-    }
-  }, [code, courseId, description, outcomes]);
+  const { busy, error, submit } = useSubmit(async () => {
+    await api.post(`/courses/${courseId}/learning-outcomes`, {
+      code: code.trim(),
+      description: description.trim(),
+    });
+    setCode("");
+    setDescription("");
+    outcomes.reload();
+  });
 
   return (
     <Card className="mb-6">
@@ -351,29 +348,19 @@ function CreateBlueprintForm({
   const [duration, setDuration] = useState("60");
   const [attempts, setAttempts] = useState("1");
   const [cells, setCells] = useState<BlueprintCellInput[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
-  const submit = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const created = await api.post<Blueprint>(`/courses/${courseId}/blueprints`, {
-        title: title.trim(),
-        duration_minutes: Number(duration),
-        max_attempts: Number(attempts),
-        cells,
-        // Sunucu ayrıca doğrulasın diye toplamı da gönderiyoruz: yuvarlamayı ekran
-        // yaptı, ama tuttuğunu ekranın kendisi ilan etmemeli (Anayasa III).
-        targets: { total_questions: totalQuestions(cells) },
-      });
-      onCreated(created.id);
-    } catch (exc) {
-      setError(errorMessage(exc));
-    } finally {
-      setBusy(false);
-    }
-  }, [attempts, cells, courseId, duration, onCreated, title]);
+  const { busy, error, submit } = useSubmit(async () => {
+    const created = await api.post<Blueprint>(`/courses/${courseId}/blueprints`, {
+      title: title.trim(),
+      duration_minutes: Number(duration),
+      max_attempts: Number(attempts),
+      cells,
+      // Sunucu ayrıca doğrulasın diye toplamı da gönderiyoruz: yuvarlamayı ekran
+      // yaptı, ama tuttuğunu ekranın kendisi ilan etmemeli (Anayasa III).
+      targets: { total_questions: totalQuestions(cells) },
+    });
+    onCreated(created.id);
+  });
 
   return (
     <div className="mb-6 rounded-lg border border-border-strong p-4">
@@ -582,22 +569,12 @@ function BlueprintDetail({
     () => api.get(`/courses/${courseId}/blueprints/${blueprint.id}/versions`),
     [courseId, blueprint.id],
   );
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const notice = editingNoticeFor(blueprint);
 
-  const createVersion = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post(`/courses/${courseId}/blueprints/${blueprint.id}/versions`);
-      versions.reload();
-    } catch (exc) {
-      setError(errorMessage(exc));
-    } finally {
-      setBusy(false);
-    }
-  }, [blueprint.id, courseId, versions]);
+  const { busy, error, submit: createVersion } = useSubmit(async () => {
+    await api.post(`/courses/${courseId}/blueprints/${blueprint.id}/versions`);
+    versions.reload();
+  });
 
   return (
     <>
@@ -693,36 +670,25 @@ function VersionRow({
 }) {
   const base = `/courses/${courseId}/blueprints/${blueprint.id}/versions/${version.id}`;
   const [readiness, setReadiness] = useState<Readiness | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
 
   const counts = readinessCounts(readiness);
 
-  const check = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
+  /*
+   * İki eylem tek kancada: `busy` ve hata satırı zaten ortaktı (iki düğme de
+   * `aria-disabled={busy}` okur). Kancanın kapısı artık ikisini birden
+   * kapsıyor: denetim sürerken yayın da başlatılamaz.
+   */
+  const { busy, error, submit } = useSubmit(async (task: "check" | "publish") => {
+    if (task === "check") {
       setReadiness(await api.get<Readiness>(`${base}/readiness`));
-    } catch (exc) {
-      setError(errorMessage(exc));
-    } finally {
-      setBusy(false);
+      return;
     }
-  }, [base]);
-
-  const publish = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post(`${base}/publish`);
-      onChanged();
-    } catch (exc) {
-      setError(errorMessage(exc));
-    } finally {
-      setBusy(false);
-    }
-  }, [base, onChanged]);
+    await api.post(`${base}/publish`);
+    onChanged();
+  });
+  const check = () => submit("check");
+  const publish = () => submit("publish");
 
   return (
     <li className="rounded-lg border border-border p-4">
@@ -852,28 +818,18 @@ function PaperEditor({
   );
   const items = useResource<ExamItem[]>(() => api.get(`${base}/items`), [base]);
   const [picked, setPicked] = useState<string[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   const current = picked ?? (items.data ?? []).map((item) => item.question_id);
 
-  const save = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post(
-        `${base}/items`,
-        current.map((questionId) => ({ question_id: questionId })),
-      );
-      setPicked(null);
-      items.reload();
-      onSaved();
-    } catch (exc) {
-      setError(errorMessage(exc));
-    } finally {
-      setBusy(false);
-    }
-  }, [base, current, items, onSaved]);
+  const { busy, error, submit: save } = useSubmit(async () => {
+    await api.post(
+      `${base}/items`,
+      current.map((questionId) => ({ question_id: questionId })),
+    );
+    setPicked(null);
+    items.reload();
+    onSaved();
+  });
 
   return (
     <div className="mt-4 rounded-lg border border-border-strong p-4">

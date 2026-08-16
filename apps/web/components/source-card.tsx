@@ -8,13 +8,15 @@
 
 import Link from "next/link";
 import { ABSTENTION_LABEL, type AbstentionStatus } from "@/lib/chat";
+import type { SourceInfo } from "@/lib/types";
 
-export interface SourceInfo {
-  fileName: string;
-  /** "Sayfa 12" | "Slayt 7" | bölüm adı — konum HER ZAMAN görünür */
-  location: string;
-  quote: string;
-}
+/**
+ * `SourceInfo` artık `lib/types.ts`'te yaşıyor: tip burada tanımlıyken
+ * `lib/source` ve `lib/questions` onu buradan import ediyordu ve bu, deponun
+ * tek lib→components tersinmesiydi. Re-export geriye uyum içindir; yeni kod
+ * tipi doğrudan `@/lib/types`'tan almalı.
+ */
+export type { SourceInfo } from "@/lib/types";
 
 export function SourceCard({ source, href }: { source: SourceInfo; href?: string }) {
   const card = (
