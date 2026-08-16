@@ -12,6 +12,7 @@ import type { Member } from "@/lib/types";
 import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, ConfirmAction, EmptyState, Input } from "@/components/ui";
 
@@ -66,29 +67,31 @@ function MembersView() {
         }
       />
 
-      {!ready ? (
-        <Loading />
-      ) : isInstructor ? (
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        fallback={
+          /*
+           * Sekme öğrenciye gösterilmiyor (course-nav.tsx `instructorOnly`) ama
+           * adres çubuğuna yazılarak girilebiliyor. Burada kırmızı/uyarı yok:
+           * yetkisi olmayan sayfaya girmek bir arıza değil, sakin bir yönlendirme
+           * konusudur (DESIGN.md: hata dışı durumlar hata gibi gösterilmez).
+           */
+          <EmptyState
+            title="Katılımcı listesi yalnızca dersin eğitmenine gösterilir."
+            action={
+              <Link
+                href={`/courses/${courseId}`}
+                className="text-sm text-brand hover:text-brand-strong"
+              >
+                Ders sayfasına dön
+              </Link>
+            }
+          />
+        }
+      >
         <MemberRoster courseId={courseId} currentUserId={user?.id} />
-      ) : (
-        /*
-         * Sekme öğrenciye gösterilmiyor (course-nav.tsx `instructorOnly`) ama
-         * adres çubuğuna yazılarak girilebiliyor. Burada kırmızı/uyarı yok:
-         * yetkisi olmayan sayfaya girmek bir arıza değil, sakin bir yönlendirme
-         * konusudur (DESIGN.md: hata dışı durumlar hata gibi gösterilmez).
-         */
-        <EmptyState
-          title="Katılımcı listesi yalnızca dersin eğitmenine gösterilir."
-          action={
-            <Link
-              href={`/courses/${courseId}`}
-              className="text-sm text-brand hover:text-brand-strong"
-            >
-              Ders sayfasına dön
-            </Link>
-          }
-        />
-      )}
+      </InstructorGate>
     </div>
   );
 }

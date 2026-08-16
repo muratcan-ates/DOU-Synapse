@@ -58,6 +58,7 @@ import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
 import { SourceCard } from "@/components/source-card";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
@@ -117,28 +118,30 @@ function QuestionsView() {
         }
       />
 
-      {!ready ? (
-        <Loading />
-      ) : isInstructor ? (
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        fallback={
+          /*
+           * Sekme öğrenciye gösterilmiyor (course-nav.tsx `instructorOnly`) ama
+           * adres çubuğuna yazılarak girilebiliyor. Kırmızı/uyarı yok: yetkisi
+           * olmayan sayfaya girmek arıza değil, sakin bir yönlendirme konusudur.
+           */
+          <EmptyState
+            title="Soru havuzu yalnızca dersin eğitmenine gösterilir. Onaylanan sorular sınav provasında karşınıza çıkar."
+            action={
+              <Link
+                href={`/courses/${courseId}/exam`}
+                className="text-sm text-brand hover:text-brand-strong"
+              >
+                Sınav provasına git
+              </Link>
+            }
+          />
+        }
+      >
         <QuestionPool courseId={courseId} />
-      ) : (
-        /*
-         * Sekme öğrenciye gösterilmiyor (course-nav.tsx `instructorOnly`) ama
-         * adres çubuğuna yazılarak girilebiliyor. Kırmızı/uyarı yok: yetkisi
-         * olmayan sayfaya girmek arıza değil, sakin bir yönlendirme konusudur.
-         */
-        <EmptyState
-          title="Soru havuzu yalnızca dersin eğitmenine gösterilir. Onaylanan sorular sınav provasında karşınıza çıkar."
-          action={
-            <Link
-              href={`/courses/${courseId}/exam`}
-              className="text-sm text-brand hover:text-brand-strong"
-            >
-              Sınav provasına git
-            </Link>
-          }
-        />
-      )}
+      </InstructorGate>
     </div>
   );
 }

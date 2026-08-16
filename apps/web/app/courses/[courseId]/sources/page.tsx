@@ -14,7 +14,8 @@ import {
 } from "@/lib/source-quality";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
-import { ErrorNote, Loading, MetricRow, PageHeader } from "@/components/page-state";
+import { InstructorGate } from "@/components/instructor-gate";
+import { ErrorNote, MetricRow, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 
 export default function SourcesPage() {
@@ -36,20 +37,22 @@ function SourcesView() {
         title="Retrieval laboratuvarı"
         description="Bir öğrenci sorusunun hangi kaynak parçalarını getirdiğini, kanıt eşiğini ve ret gerekçesini LLM çağırmadan inceleyin."
       />
-      {!ready ? (
-        <Loading />
-      ) : isInstructor ? (
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        fallback={
+          <EmptyState
+            title="Retrieval laboratuvarı yalnızca dersin eğitmenine gösterilir."
+            action={
+              <Link href={`/courses/${courseId}`} className="text-sm text-brand">
+                Ders sayfasına dön
+              </Link>
+            }
+          />
+        }
+      >
         <RetrievalLab courseId={courseId} />
-      ) : (
-        <EmptyState
-          title="Retrieval laboratuvarı yalnızca dersin eğitmenine gösterilir."
-          action={
-            <Link href={`/courses/${courseId}`} className="text-sm text-brand">
-              Ders sayfasına dön
-            </Link>
-          }
-        />
-      )}
+      </InstructorGate>
     </div>
   );
 }

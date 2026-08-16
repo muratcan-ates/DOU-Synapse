@@ -57,6 +57,7 @@ import { useResource } from "@/lib/use-resource";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 
@@ -78,18 +79,23 @@ export default function BlueprintsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = blueprints.data?.find((item) => item.id === selectedId) ?? null;
 
-  if (ready && !isInstructor) {
-    return (
-      <AppShell>
-        <CourseNav courseId={courseId} />
-        <EmptyState title="Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı." />
-      </AppShell>
-    );
-  }
-
+  /*
+   * Kapının iyimser varyantı: rol çözülene kadar `Loading` yerine sayfa
+   * iskeleti çizilir (bu sayfanın eskiden beri davranışı — veri kancaları
+   * zaten yukarıda, rolden bağımsız koşuyor). Rol netleşip "öğrenci" çıkarsa
+   * kapak iner.
+   */
   return (
     <AppShell>
       <CourseNav courseId={courseId} />
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        optimistic
+        fallback={
+          <EmptyState title="Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı." />
+        }
+      >
       <PageHeader
         title="Sınav blueprint'i"
         description="Sınavın çatısını sorulardan önce çiz: hangi öğrenme çıktısından, hangi zorlukta, kaç soru."
@@ -130,6 +136,7 @@ export default function BlueprintsPage() {
           onChanged={blueprints.reload}
         />
       )}
+      </InstructorGate>
     </AppShell>
   );
 }

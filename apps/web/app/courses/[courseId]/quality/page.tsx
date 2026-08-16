@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { FEEDBACK_REASON_LABEL } from "@/components/chat-feedback";
 import { CourseNav } from "@/components/course-nav";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, MetricRow, PageHeader } from "@/components/page-state";
 import { Button, Card, EmptyState } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -19,13 +20,13 @@ export default function QualityPage() {
   return (
     <AppShell>
       <CourseNav courseId={courseId} />
-      {!ready ? (
-        <Loading />
-      ) : isInstructor ? (
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        fallback={<EmptyState title="Bu kalite görünümü yalnız dersin eğitmenine açıktır." />}
+      >
         <QualityView courseId={courseId} />
-      ) : (
-        <EmptyState title="Bu kalite görünümü yalnız dersin eğitmenine açıktır." />
-      )}
+      </InstructorGate>
     </AppShell>
   );
 }

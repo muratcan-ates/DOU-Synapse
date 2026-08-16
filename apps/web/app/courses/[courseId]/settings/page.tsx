@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -30,13 +31,13 @@ export default function AiPolicyPage() {
         title="Ders AI politikası"
         description="Asistanın modlarını, kaynak sınırını, kanıt eşiğini, ipucu tavanını ve günlük sohbet bütçesini sunucu tarafında yönetin."
       />
-      {!ready ? (
-        <Loading />
-      ) : isInstructor ? (
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        fallback={<EmptyState title="AI politikası yalnızca dersin eğitmenine gösterilir." />}
+      >
         <PolicyEditor courseId={courseId} />
-      ) : (
-        <EmptyState title="AI politikası yalnızca dersin eğitmenine gösterilir." />
-      )}
+      </InstructorGate>
     </AppShell>
   );
 }
