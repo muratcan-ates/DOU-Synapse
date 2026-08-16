@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "006-governance-merge-head-r1",
+  "captured_at": "2026-08-16T17:23:26+00:00",
+  "candidate_sha": "SELF",
+  "command": "PYTHONDONTWRITEBYTECODE=1 apps/api/.venv/bin/python -m unittest scripts.test_ai_sdlc_check; scripts/ai_sdlc_check.py --base-sha 2c178861... --head-sha 2426485eb2cf... (main tarihsel aralığı); node scripts/docs_check.mjs",
+  "environment": "local macOS · yalnız yönetişim betikleri değişti · ürün kodu, testleri ve veritabanlarına dokunulmadı",
+  "results": {
+    "validator_tests_passed": 76,
+    "main_historical_range_regovern_exit": 0,
+    "docs_check_exit": 0
+  },
+  "governance_note": "PR #5 merge commit yöntemiyle main'e inince kökün giriş commit'i HEAD olmaktan çıktı ve 'Govern reviewed AI diff' main'de kırmızıya döndü (2c178861..2426485, ağaçlar bit-özdeşken: 0a22a696a564c97f585762e829bab80001b51a9e). Bu aday, yetkiyi yalnız 'giriş == merge ebeveyni VE head ağacı == giriş ağacı' koşuluyla koruyan kuralı ekler; merge'e sokuşturulan tek bayt ya da kökten sonra dala binen commit yetkiyi fail-closed düşürür (3 yeni düşmanca test).",
+  "limitations": "Yerel ölçüm; GitHub Actions bu makineden izlenemiyor. Ürün kapıları bu adayda yeniden koşulmadı çünkü ürün kodu diff'te yok; onların kanıtı 876b4ec'teki R12'dir.",
+  "privacy": "içerik yok; yalnız sayılar, komutlar ve özetler"
+}

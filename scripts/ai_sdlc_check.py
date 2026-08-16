@@ -308,6 +308,25 @@ def _path_touch_commits(repo: Path, merge_base: str, head: str, path: str) -> li
     return [line.strip() for line in raw.splitlines() if line.strip()]
 
 
+def _merge_equivalent_head(repo: Path, head: str, introduction: str) -> bool:
+    """Merge-head, adayın kendisiyle içerik-özdeş mi?
+
+    PR "merge commit" yöntemiyle birleşince main'in ucu, adayın kendisi değil
+    onu saran merge commit'i olur; kökün giriş commit'i artık HEAD değildir ve
+    yetki sebepsizce düşer — PR #5 main'e indiğinde tam bu oldu. Kural ağaç
+    eşitliğiyle korunur: giriş, head'in ebeveyniyse VE iki ağacın özeti aynıysa
+    merge hiçbir bayt eklememiştir ve aday yetkisini korur. Merge'e içerik
+    sokulursa ağaçlar ayrışır ve yetki fail-closed düşer.
+    """
+
+    parents = str(_git(repo, "rev-list", "--parents", "-n", "1", head)).split()
+    if len(parents) < 3 or introduction not in parents[1:]:
+        return False
+    head_tree = str(_git(repo, "rev-parse", f"{head}^{{tree}}")).strip()
+    intro_tree = str(_git(repo, "rev-parse", f"{introduction}^{{tree}}")).strip()
+    return head_tree == intro_tree and len(head_tree) == 40
+
+
 def _governance_transitions(
     repo: Path, merge_base: str, head: str
 ) -> dict[str, list[tuple[str, str, str | None]]]:
@@ -1779,6 +1798,15 @@ def validate_repository(
                     and _is_ancestor(repo, introduction, context_head)
                 )
             candidate_is_valid = context_is_valid and _identity_matches(candidate, context_head)
+            if (
+                context_is_valid
+                and candidate_is_valid
+                and context_head is not None
+                and context_head != head
+                and _merge_equivalent_head(repo, head, context_head)
+            ):
+                # İçerik-özdeş merge sarmalayıcısı: aday yetkisini korur.
+                context_head = head
             if context_is_valid and base_is_valid and candidate_is_valid:
                 dossier_contexts[dossier_path] = (declared_base, context_head)
             else:
