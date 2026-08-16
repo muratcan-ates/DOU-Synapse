@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol
@@ -112,18 +113,48 @@ async def paginate(
     satırlar `Row` döner ve imlecin türetildiği varlık SELECT'in İLK kolonundaki
     `model` kabul edilir (ör. `select(Course, CourseMembership.role)`).
     """
+    return await paginate_keyset(
+        session,
+        query,
+        key_columns=(model.created_at, model.id),
+        page=page,
+        decode=decode_time_cursor,
+        encode=lambda last: encode_time_cursor(last.created_at, last.id),
+        scalars=scalars,
+    )
+
+
+async def paginate_keyset(
+    session: AsyncSession,
+    query: Select[Any],
+    *,
+    key_columns: tuple[Any, ...],
+    page: SupportsPageParams,
+    decode: Callable[[str], tuple[Any, ...]],
+    encode: Callable[[Any], str],
+    scalars: bool = True,
+) -> KeysetPage[Any]:
+    """Dansın anahtar-sütunlardan bağımsız çekirdeği.
+
+    `paginate()` yaygın `(created_at, id)` biçimini sabitler; sohbet uçları ise
+    `(updated_at, id)` ve üç parçalı `(created_at, seq, id)` anahtarlarıyla
+    aynı dansı yapıyordu — kopyaları buraya bağlamak için anahtar sütunlar,
+    imleç çözücü ve üretici parametreleşti. Sıralama her zaman anahtarların
+    tamamında DESC'tir; `decode` bozuk imleçte `InvalidCursorError` fırlatır ve
+    sorgu hiç koşmaz (birebir korunan sözleşme).
+    """
     if page.cursor is not None:
-        created_at, row_id = decode_time_cursor(page.cursor)
-        query = query.where(tuple_(model.created_at, model.id) < (created_at, row_id))
+        values = decode(page.cursor)
+        query = query.where(tuple_(*key_columns) < values)
     result = await session.execute(
-        query.order_by(model.created_at.desc(), model.id.desc()).limit(page.limit + 1)
+        query.order_by(*(column.desc() for column in key_columns)).limit(page.limit + 1)
     )
     rows: list[Any] = list(result.scalars()) if scalars else list(result.all())
     visible = rows[: page.limit]
     next_cursor = None
     if len(rows) > page.limit:
         last = visible[-1] if scalars else visible[-1][0]
-        next_cursor = encode_time_cursor(last.created_at, last.id)
+        next_cursor = encode(last)
     return KeysetPage(rows=visible, next_cursor=next_cursor)
 
 
@@ -136,4 +167,5 @@ __all__ = [
     "encode_message_cursor",
     "encode_time_cursor",
     "paginate",
+    "paginate_keyset",
 ]

@@ -21,7 +21,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +34,7 @@ from app.api.deps import (
 )
 from app.core.config import get_settings
 from app.core.errors import ConflictError, NotFoundError, RateLimitError, ValidationError
-from app.core.pagination import decode_time_cursor, encode_time_cursor
+from app.core.pagination import paginate
 from app.core.rate_limit import get_concurrency_gate, get_limiter
 from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
 from app.models.core import Chunk, Document
@@ -204,20 +204,8 @@ async def list_questions(
     if topic_id is not None:
         query = query.where(Question.topic_id == topic_id)
 
-    if page.cursor is not None:
-        created_at, row_id = decode_time_cursor(page.cursor)
-        query = query.where(tuple_(Question.created_at, Question.id) < (created_at, row_id))
-
-    questions = list(
-        (
-            await session.execute(
-                query.order_by(Question.created_at.desc(), Question.id.desc()).limit(page.limit + 1)
-            )
-        )
-        .scalars()
-        .all()
-    )
-    visible = questions[: page.limit]
+    result = await paginate(session, query, model=Question, page=page)
+    visible = result.rows
     refs = await load_source_refs(session, [question.source_chunk_id for question in visible])
     stale = await _source_stale_map(session, [question.source_chunk_id for question in visible])
     items = [
@@ -229,12 +217,7 @@ async def list_questions(
         )
         for question in visible
     ]
-    next_cursor = (
-        encode_time_cursor(visible[-1].created_at, visible[-1].id)
-        if len(questions) > page.limit
-        else None
-    )
-    return PageOut(items=items, next_cursor=next_cursor)
+    return PageOut(items=items, next_cursor=result.next_cursor)
 
 
 @router.post("/questions/generate", response_model=QuestionGenerationOut)

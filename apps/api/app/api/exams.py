@@ -32,6 +32,7 @@ geri bildirim yazım anında değil, **gösterim anında** tutulur.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from uuid import UUID
 
@@ -45,6 +46,7 @@ from app.api.deps import (
     CourseMemberDep,
     SessionDep,
     SettingsDep,
+    load_owned,
 )
 from app.core.config import Settings, get_settings
 from app.core.db import db_now
@@ -232,6 +234,22 @@ def _rubric_breakdown(feedback: dict[str, object]) -> list[RubricCriterionScore]
     return [RubricCriterionScore.model_validate(row) for row in raw]
 
 
+def _outcomes_of(answers: Sequence[Answer]) -> list[GradingOutcome]:
+    """Cevap satırlarını puanlama sonuçlarına çevirir — iki uçtaki kopya tekilleşti.
+
+    "tamamlanamadi" sihirli dizesi de artık tek yerde: değerlendirici bir cevabı
+    tamamlayamadığında feedback.durum alanına bu değeri yazar ve o cevap
+    "puanlanmamış" sayılır.
+    """
+    return [
+        GradingOutcome(
+            graded=(answer.feedback or {}).get("durum") != "tamamlanamadi",
+            score=answer.score,
+        )
+        for answer in answers
+    ]
+
+
 async def _session_out(
     session: AsyncSession,
     exam: ExamSession,
@@ -255,13 +273,7 @@ async def _session_out(
         cap_minutes=await session_cap_minutes(session, exam, settings=settings),
     )
 
-    outcomes = [
-        GradingOutcome(
-            graded=(answer.feedback or {}).get("durum") != "tamamlanamadi",
-            score=answer.score,
-        )
-        for answer in answers
-    ]
+    outcomes = _outcomes_of(answers)
 
     return ExamSessionOut(
         id=exam.id,
@@ -319,9 +331,9 @@ async def _start_blueprint_exam(
     Süre blueprint'in kendi `duration_minutes`'ıdır; global `exam_duration_minutes`
     bundan sonra yalnız prova akışının varsayılanıdır.
     """
-    blueprint = await session.get(ExamBlueprint, blueprint_id)
-    if blueprint is None or blueprint.course_id != context.course_id:
-        raise NotFoundError("Sınav bulunamadı.")
+    blueprint = await load_owned(
+        session, ExamBlueprint, blueprint_id, context, message="Sınav bulunamadı."
+    )
 
     version = await session.scalar(
         select(ExamVersion).where(
@@ -398,9 +410,7 @@ async def start_exam(
         return await _start_blueprint_exam(payload.blueprint_id, context, session, settings)
 
     if payload.topic_id is not None:
-        topic = await session.get(Topic, payload.topic_id)
-        if topic is None or topic.course_id != context.course_id:
-            raise NotFoundError("Konu bulunamadı.")
+        await load_owned(session, Topic, payload.topic_id, context, message="Konu bulunamadı.")
 
     query = select(Question.id).where(
         Question.course_id == context.course_id,
@@ -680,13 +690,7 @@ async def finish_exam(
     answers = await _answers_of(session, exam.id)
     questions = await _load_questions(session, [answer.question_id for answer in answers])
 
-    outcomes = [
-        GradingOutcome(
-            graded=(answer.feedback or {}).get("durum") != "tamamlanamadi",
-            score=answer.score,
-        )
-        for answer in answers
-    ]
+    outcomes = _outcomes_of(answers)
     total = score_of(outcomes)
     ungraded = sum(1 for outcome in outcomes if not outcome.graded)
 

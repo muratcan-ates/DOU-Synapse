@@ -51,7 +51,7 @@ from uuid import UUID
 from fastapi import APIRouter, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import insert as sa_insert
-from sqlalchemy import select, tuple_
+from sqlalchemy import select
 
 from app.api.chat_cache import (
     PROMPT_REVISION as PROMPT_REVISION,
@@ -102,6 +102,7 @@ from app.core.pagination import (
     decode_time_cursor,
     encode_message_cursor,
     encode_time_cursor,
+    paginate_keyset,
 )
 from app.core.rate_limit import get_concurrency_gate, get_limiter, reset_rate_limit
 from app.models.chat import (
@@ -656,20 +657,15 @@ async def list_sessions(
 ) -> PageOut[ChatSessionOut]:
     """Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez."""
     query = select(ChatSession).where(ChatSession.course_id == context.course_id)
-    if page.cursor is not None:
-        updated_at, row_id = decode_time_cursor(page.cursor)
-        query = query.where(tuple_(ChatSession.updated_at, ChatSession.id) < (updated_at, row_id))
-    result = await session.execute(
-        query.order_by(ChatSession.updated_at.desc(), ChatSession.id.desc()).limit(page.limit + 1)
+    result = await paginate_keyset(
+        session,
+        query,
+        key_columns=(ChatSession.updated_at, ChatSession.id),
+        page=page,
+        decode=decode_time_cursor,
+        encode=lambda last: encode_time_cursor(last.updated_at, last.id),
     )
-    rows = list(result.scalars())
-    visible = rows[: page.limit]
-    next_cursor = (
-        encode_time_cursor(visible[-1].updated_at, visible[-1].id)
-        if len(rows) > page.limit
-        else None
-    )
-    return PageOut(items=[_session_out(row) for row in visible], next_cursor=next_cursor)
+    return PageOut(items=[_session_out(row) for row in result.rows], next_cursor=result.next_cursor)
 
 
 @router.get("/chat/sessions/{session_id}", response_model=PageOut[ChatMessageOut])
@@ -686,26 +682,16 @@ async def list_messages(
         raise NotFoundError("Sohbet oturumu bulunamadı.")
 
     query = select(ChatMessage).where(ChatMessage.session_id == session_id)
-    if page.cursor is not None:
-        created_at, seq, row_id = decode_message_cursor(page.cursor)
-        query = query.where(
-            tuple_(ChatMessage.created_at, ChatMessage.seq, ChatMessage.id)
-            < (created_at, seq, row_id)
-        )
-    result = await session.execute(
-        query.order_by(
-            ChatMessage.created_at.desc(), ChatMessage.seq.desc(), ChatMessage.id.desc()
-        ).limit(page.limit + 1)
+    result = await paginate_keyset(
+        session,
+        query,
+        key_columns=(ChatMessage.created_at, ChatMessage.seq, ChatMessage.id),
+        page=page,
+        decode=decode_message_cursor,
+        encode=lambda last: encode_message_cursor(last.created_at, last.seq, last.id),
     )
-    rows = list(result.scalars())
-    visible_desc = rows[: page.limit]
-    next_cursor = (
-        encode_message_cursor(
-            visible_desc[-1].created_at, visible_desc[-1].seq, visible_desc[-1].id
-        )
-        if len(rows) > page.limit
-        else None
-    )
+    visible_desc = result.rows
+    next_cursor = result.next_cursor
     feedback_rows = (
         list(
             (

@@ -31,7 +31,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CourseContext, CourseInstructorDep, SessionDep
+from app.api.deps import CourseContext, CourseInstructorDep, SessionDep, load_owned
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.models.assessment import (
@@ -85,10 +85,9 @@ async def _load_blueprint(
     session: AsyncSession, blueprint_id: UUID, context: CourseContext
 ) -> ExamBlueprint:
     """Blueprint'i yükler. Başka dersin blueprint'i, varlığı sızdırılmadan 404 döner."""
-    blueprint = await session.get(ExamBlueprint, blueprint_id)
-    if blueprint is None or blueprint.course_id != context.course_id:
-        raise NotFoundError("Sınav blueprint'i bulunamadı.")
-    return blueprint
+    return await load_owned(
+        session, ExamBlueprint, blueprint_id, context, message="Sınav blueprint'i bulunamadı."
+    )
 
 
 async def _load_version(
@@ -239,9 +238,7 @@ async def create_learning_outcome(
     Kod derste büyük/küçük harf duyarsız tekildir; ikinci kez aynı kod 409 döner.
     """
     if payload.topic_id is not None:
-        topic = await session.get(Topic, payload.topic_id)
-        if topic is None or topic.course_id != context.course_id:
-            raise NotFoundError("Konu bulunamadı.")
+        await load_owned(session, Topic, payload.topic_id, context, message="Konu bulunamadı.")
 
     outcome = LearningOutcome(
         course_id=context.course_id,
