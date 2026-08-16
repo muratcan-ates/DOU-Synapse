@@ -13,9 +13,9 @@ from app.contracts import RetrievedChunk
 from app.modules.retrieval.inspection import RetrievalInspection
 from app.modules.retrieval.scope import EvidenceLevel, EvidenceVerdict
 from tests.conftest import UserFactory
+from tests.factories import build_course, start
 from tests.factories import create_course as _create_course
 from tests.factories import enroll_student as _add_student
-from tests.test_exams import build_course, start
 
 
 def _candidate(*, dense: float = 0.92) -> RetrievedChunk:

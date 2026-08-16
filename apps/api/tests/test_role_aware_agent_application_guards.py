@@ -41,7 +41,6 @@ from app.contracts import (
     AssistantAudience,
     ChatMode,
     GeneratedAnswer,
-    RetrievedChunk,
     SocraticStage,
 )
 from app.core.config import Settings
@@ -52,14 +51,16 @@ from app.modules.generation.llm import LlmCompletion, LlmRequest
 from app.modules.generation.service import GenerationService
 from tests.conftest import UserFactory
 from tests.factories import (
+    BlockingGenerator,
     FakeCitationGuardrail,
     FakeGenerator,
     FakeRetriever,
+    build_course,
     create_course,
     make_chunk,
     sourced_answer,
+    start,
 )
-from tests.test_exams import build_course, start
 
 COURSE_ID = UUID("11111111-1111-1111-1111-111111111111")
 
@@ -284,27 +285,7 @@ async def test_process_concurrency_gate_rejects_second_same_user_request(
     first_entered = asyncio.Event()
     release_first = asyncio.Event()
 
-    class BlockingGenerator:
-        def __init__(self) -> None:
-            self.calls = 0
-
-        async def generate(
-            self,
-            *,
-            question: str,
-            chunks: list[RetrievedChunk],
-            mode: ChatMode,
-            socratic_stage: Any = None,
-            student_attempt: str | None = None,
-        ) -> GeneratedAnswer:
-            del question, chunks, mode, socratic_stage, student_attempt
-            self.calls += 1
-            if self.calls == 1:
-                first_entered.set()
-                await release_first.wait()
-            return sourced_answer(chunk)
-
-    generator = BlockingGenerator()
+    generator = BlockingGenerator(chunk, entered=first_entered, release=release_first)
     set_pipeline(
         retriever_factory=lambda _session: FakeRetriever([chunk]),
         generator=generator,

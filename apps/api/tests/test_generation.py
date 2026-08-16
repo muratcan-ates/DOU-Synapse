@@ -39,6 +39,7 @@ from app.modules.generation.llm import (
 from app.modules.generation.service import USER_TEXT, GenerationService
 from app.modules.guardrails.chain import AnswerPipeline
 from app.schemas.chat import ChatRequest, to_chat_response
+from tests.factories import ScriptedLlm
 
 
 def chunk(
@@ -324,20 +325,8 @@ class TestSahteSaglayici:
 
 # ---------------------------------------------------------------------------
 # T012 — şema kapısı ve fail-closed davranış
+# (`ScriptedLlm` `tests/factories.py`'de)
 # ---------------------------------------------------------------------------
-
-
-class ScriptedLlm:
-    def __init__(self, *payloads: str) -> None:
-        self._payloads = payloads or ("",)
-        self.calls = 0
-
-    async def complete(self, request: LlmRequest) -> Any:
-        from app.modules.generation.llm import LlmCompletion
-
-        index = min(self.calls, len(self._payloads) - 1)
-        self.calls += 1
-        return LlmCompletion(text=self._payloads[index], provider="scripted", model="scripted/test")
 
 
 class TestUretimServisi:

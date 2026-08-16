@@ -10,9 +10,10 @@ kuralını kapsar:
 2. **Cevap anahtarı öğrenciye sızmaz.** Onaylı bir soru bile öğrenciye
    `public_payload()` beyaz listesinden geçerek gider.
 
-Ders/üyelik/konu/belge/soru satırlarını `tests/factories.py` yazar. Burada kalan
-korpus sabitleri ve sahte LLM `test_exams.py` tarafından da kullanılır; ortak
-fabrikanın eşiği üç dosyadır ve bunlar ikide kalıyor (Anayasa XI).
+Ders/üyelik/konu/belge/soru satırlarını `tests/factories.py` yazar. Korpus
+sabitleri (`DEADLOCK_TEXTS`, payload üreteçleri) ve sahte LLM de oradadır:
+`test_exams`, `test_blueprint` ve `test_rate_limit` aynılarını kullanıyor ve
+ortak fabrikanın üç-dosya eşiği aşılmış durumda (Anayasa XI).
 """
 
 from __future__ import annotations
@@ -34,29 +35,27 @@ from app.core.db import rls_session
 from app.models.assessment import QuestionType
 from app.modules.assessment import question_gen
 from app.modules.generation.llm import LlmUnavailableError
-from app.schemas.assessment import AnswerFormat, McqPayload, OpenPayload
+from app.schemas.assessment import McqPayload, OpenPayload
 from tests.conftest import UserFactory
 from tests.factories import (
+    DEADLOCK_TEXTS,
+    ESSAY_PAYLOAD,
+    FakeCompletion,
     FakeRetriever,
+    _mcq_response,
     create_course,
     create_topic,
     enroll_student,
-    make_chunk,
+    mcq_payload,
+    retrieved,
     seed_document,
     seed_question,
+    short_answer_payload,
 )
 
 # ---------------------------------------------------------------------------
 # Kurulum yardımcıları
 # ---------------------------------------------------------------------------
-
-
-DEADLOCK_TEXTS = [
-    "Deadlock için dört koşulun aynı anda sağlanması gerekir: karşılıklı dışlama, "
-    "tut ve bekle, kesilemezlik ve döngüsel bekleme.",
-    "Kesme (preemption) zorunluluğu bir deadlock koşulu değildir; tam tersine "
-    "kaynağın zorla geri alınabilmesi deadlock'u kırar.",
-]
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,73 +144,6 @@ async def generate(
             retriever=FakeRetriever(chunks),
             completion=completion,
         )
-
-
-def mcq_payload(chunk_ids: list[UUID]) -> dict[str, Any]:
-    """Dört şıklı örnek MCQ. Çeldirici kaynakları gerçek chunk'lara bağlıdır."""
-    return {
-        "stem": "Deadlock'un oluşması için aşağıdakilerden hangisi gerekli DEĞİLDİR?",
-        "options": [
-            {"key": "A", "text": "Karşılıklı dışlama"},
-            {"key": "B", "text": "Döngüsel bekleme"},
-            {"key": "C", "text": "Kesme zorunluluğu"},
-            {"key": "D", "text": "Tut ve bekle"},
-        ],
-        "answer_key": "C",
-        "distractor_sources": {
-            "A": str(chunk_ids[0]),
-            "B": str(chunk_ids[0]),
-            "D": str(chunk_ids[1 % len(chunk_ids)]),
-        },
-        "explanation": "Dört koşul arasında kesme zorunluluğu yoktur.",
-    }
-
-
-def short_answer_payload() -> dict[str, Any]:
-    return {
-        "prompt": "Deadlock'un dört koşulundan döngüsel beklemenin adı nedir?",
-        "answer_key": "döngüsel bekleme",
-        "format": AnswerFormat.SHORT_ANSWER.value,
-        "accepted_answers": ["döngüsel bekleme", "circular wait"],
-    }
-
-
-class FakeCompletion:
-    """Sırayla hazır yanıt döndüren sahte LLM. Çağrı sayısı sayılır."""
-
-    def __init__(self, *responses: str) -> None:
-        self._responses = list(responses)
-        self.calls = 0
-
-    async def complete(self, *, system: str, user: str) -> str:
-        del system, user
-        self.calls += 1
-        index = min(self.calls - 1, len(self._responses) - 1)
-        return self._responses[index]
-
-
-def retrieved(chunk_ids: list[UUID], texts: list[str]) -> list[RetrievedChunk]:
-    """Soru üretimine verilecek arama sonucu.
-
-    `dense_score`/`fts_score` AÇIKÇA sıfırlanıyor. `make_chunk`'ın varsayılanları
-    sohbet tarafının gerçekçi değerleridir (dense 0.82) ve kanıt eşiği oraya
-    bakar; soru üretimi ise eşiğe hiç bakmaz, sıralamayı yalnız `fused_score`
-    belirler. Varsayılanlar devralınsaydı bu testler ölçmedikleri bir eşiğe
-    bağlanır ve eşik bir gün değiştiğinde sebepsiz kırılırlardı.
-    """
-    return [
-        make_chunk(
-            chunk_id=chunk_id,
-            text=body,
-            file_name="isletim-sistemleri.pdf",
-            page_number=index + 1,
-            section_title=None,
-            dense_score=0.0,
-            fts_score=0.0,
-            fused_score=1.0 - index * 0.1,
-        )
-        for index, (chunk_id, body) in enumerate(zip(chunk_ids, texts, strict=True))
-    ]
 
 
 # ---------------------------------------------------------------------------
@@ -542,28 +474,6 @@ class TestQuestionReview:
 # ---------------------------------------------------------------------------
 # T033 vaka 1 — soru üretimi şema geçerliliği
 # ---------------------------------------------------------------------------
-
-
-def _mcq_response(source_chunk_id: UUID | str, *, count: int = 1) -> str:
-    return json.dumps(
-        {
-            "questions": [
-                {
-                    "stem": f"Deadlock koşullarından hangisi yanlıştır? ({index})",
-                    "options": [
-                        {"key": "A", "text": "Karşılıklı dışlama"},
-                        {"key": "B", "text": "Döngüsel bekleme"},
-                        {"key": "C", "text": "Kesme zorunluluğu"},
-                        {"key": "D", "text": "Tut ve bekle"},
-                    ],
-                    "answer_key": "C",
-                    "explanation": "Dört koşul arasında kesme zorunluluğu yoktur.",
-                    "source_chunk_id": str(source_chunk_id),
-                }
-                for index in range(count)
-            ]
-        }
-    )
 
 
 class TestQuestionDelete:
@@ -946,14 +856,6 @@ class TestDeterministicGrading:
 # ---------------------------------------------------------------------------
 # Açık uçlu değerlendirme — şemalı LLM yolu (FR-019, FR-020)
 # ---------------------------------------------------------------------------
-
-
-ESSAY_PAYLOAD = {
-    "prompt": "Deadlock'un dört koşulunu açıklayın.",
-    "answer_key": "Karşılıklı dışlama, tut ve bekle, kesilemezlik, döngüsel bekleme.",
-    "key_points": ["karşılıklı dışlama", "tut ve bekle", "döngüsel bekleme"],
-    "rubric": [{"point": "Dört koşulu sayar", "weight": 100}],
-}
 
 
 def _verdict(score: int, chunk_id: UUID | str | None, *, missing: list[str] | None = None) -> str:

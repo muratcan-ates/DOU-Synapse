@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.modules.assessment import exam_state
 from tests.conftest import UserFactory
-from tests.test_exams import ExamFixture, build_course, start
+from tests.factories import ExamFixture, build_course, start
 
 
 @dataclass(frozen=True)

@@ -46,12 +46,6 @@ from tests.factories import (
     sourced_answer,
 )
 
-#: `tests/test_exam_lock.py` bu adı BURADAN içe aktarıyor ve o dosyaya bu turda
-#: dokunulmuyor. Gövde `factories`'e taşındı, ad burada kalıyor: kilit testleri
-#: aynı hattı takmak zorunda, yoksa uç 503 döner ve testler kilidi değil eksik
-#: kurulumu ölçer.
-_install = install_pipeline
-
 #: Sızıntı ihtimali olan bir "cevap": bloklanan metnin kullanıcıya ULAŞMADIĞI
 #: burada da gösterilmeli. `test_socratic` kendi nüshasını taşıyor — sabit iki
 #: dosyada geçiyor ve ortak fabrikanın eşiği üç; kopya bilinçli.
