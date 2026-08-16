@@ -32,6 +32,7 @@ def _build_engine(settings: Settings) -> AsyncEngine:
     return create_async_engine(
         str(settings.database_url),
         echo=settings.db_echo,
+        hide_parameters=True,
         pool_size=settings.db_pool_size,
         max_overflow=settings.db_max_overflow,
         pool_pre_ping=True,
@@ -50,6 +51,7 @@ def _build_control_engine(settings: Settings) -> AsyncEngine:
     return create_async_engine(
         str(settings.database_url),
         echo=settings.db_echo,
+        hide_parameters=True,
         pool_size=1,
         max_overflow=0,
         pool_pre_ping=True,

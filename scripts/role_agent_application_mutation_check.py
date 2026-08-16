@@ -126,11 +126,11 @@ MUTATIONS: Final[tuple[Mutation, ...]] = (
         "apps/api/app/api/chat.py",
         (
             "    if before_generation is not None:\n"
-            "        await before_generation(input_token_ceiling)\n"
+            "        quota_request = generation_prompts.build_request(\n"
         ),
         (
             "    if False and before_generation is not None:\n"
-            "        await before_generation(input_token_ceiling)\n"
+            "        quota_request = generation_prompts.build_request(\n"
         ),
         1,
         (

@@ -13,6 +13,10 @@ evidence by the mutation runner.
 from __future__ import annotations
 
 import asyncio
+import hashlib
+from pathlib import Path
+import json
+import socket
 from collections.abc import Iterator
 from typing import Any
 from uuid import UUID, uuid4
@@ -24,6 +28,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.api import exams as exams_api
 from app.api.chat import (
+    _KNOWN_SYSTEM_PROMPT_SHA256S,
+    _KNOWN_SYSTEM_PROMPT_TOKEN_CEILING,
+    _quota_input_token_ceiling,
     produce_answer,
     question_hash,
     reset_rate_limit,
@@ -35,10 +42,12 @@ from app.contracts import (
     ChatMode,
     GeneratedAnswer,
     RetrievedChunk,
+    SocraticStage,
 )
 from app.core.config import Settings
 from app.modules.agent import quota as agent_quota
 from app.modules.assessment import exam_state
+from app.modules.generation import prompts as generation_prompts
 from app.modules.generation.llm import LlmCompletion, LlmRequest
 from app.modules.generation.service import GenerationService
 from tests.conftest import UserFactory
@@ -108,8 +117,29 @@ async def test_provider_budget_is_reserved_before_generation() -> None:
             events.append("provider")
             return await super().generate(**kwargs)
 
+    settings = Settings(dev_auth_enabled=True, evidence_threshold=0.35)
+    selected_chunks, byte_safe_ceiling = generation_prompts.fit_chunks_to_input_budget(
+        "Deadlock nedir?",
+        [chunk],
+        max_input_bytes=settings.llm_chat_max_input_bytes,
+        mode=ChatMode.QA,
+        audience=AssistantAudience.STUDENT,
+    )
+    quota_request = generation_prompts.build_request(
+        "Deadlock nedir?",
+        selected_chunks,
+        mode=ChatMode.QA,
+        audience=AssistantAudience.STUDENT,
+    )
+    expected_ceiling = _quota_input_token_ceiling(
+        quota_request,
+        model=settings.llm_primary_model,
+        byte_safe_ceiling=byte_safe_ceiling,
+    )
+
     async def reserve(input_token_ceiling: int) -> None:
-        assert input_token_ceiling > 0
+        assert input_token_ceiling == expected_ceiling
+        assert input_token_ceiling < byte_safe_ceiling
         events.append("reserve")
 
     outcome = await produce_answer(
@@ -120,7 +150,7 @@ async def test_provider_budget_is_reserved_before_generation() -> None:
         retriever=FakeRetriever([chunk]),
         generator=OrderedGenerator([sourced_answer(chunk)]),
         guardrails=[FakeCitationGuardrail()],
-        settings=Settings(dev_auth_enabled=True, evidence_threshold=0.35),
+        settings=settings,
         audience=AssistantAudience.STUDENT,
         max_output_tokens=321,
         before_generation=reserve,
@@ -129,6 +159,115 @@ async def test_provider_budget_is_reserved_before_generation() -> None:
 
     assert outcome.answer.status is AnswerStatus.ANSWERED
     assert events == ["reserve", "provider"]
+
+
+def test_quota_token_ceiling_uses_offline_prompt_ceiling_and_hard_cap() -> None:
+    system_prompt = generation_prompts.build_system_prompt(
+        ChatMode.QA,
+        audience=AssistantAudience.STUDENT,
+        has_student_attempt=False,
+    )
+    request = LlmRequest(system=system_prompt, user="ü" * 2_000)
+    user_bytes = len(request.user.encode())
+    expected = (
+        _KNOWN_SYSTEM_PROMPT_TOKEN_CEILING
+        + user_bytes
+        + generation_prompts.MESSAGE_FRAMING_TOKEN_CEILING
+    )
+
+    ceiling = _quota_input_token_ceiling(
+        request,
+        model="groq/llama-3.3-70b-versatile",
+        byte_safe_ceiling=8_256,
+    )
+    capped = _quota_input_token_ceiling(
+        request,
+        model="groq/llama-3.3-70b-versatile",
+        byte_safe_ceiling=1_300,
+    )
+
+    assert ceiling == expected
+    assert capped == 1_300
+
+
+@pytest.mark.parametrize(
+    ("model", "system_prompt"),
+    [
+        (
+            "gemini/gemini-2.0-flash",
+            generation_prompts.build_system_prompt(ChatMode.QA),
+        ),
+        ("groq/llama-3.3-70b-versatile", "değişmiş sistem promptu"),
+    ],
+)
+def test_quota_token_ceiling_fails_closed_to_bytes(
+    model: str,
+    system_prompt: str,
+) -> None:
+    assert (
+        _quota_input_token_ceiling(
+            LlmRequest(system=system_prompt, user="u"),
+            model=model,
+            byte_safe_ceiling=8_256,
+        )
+        == 8_256
+    )
+
+
+def test_known_prompt_hashes_cover_all_role_aware_variants() -> None:
+    """A server-prompt change must explicitly refresh the offline token proof."""
+
+    prompt_hashes: set[str] = set()
+    for audience in AssistantAudience:
+        for mode in (ChatMode.QA, ChatMode.SOCRATIC):
+            stages: tuple[SocraticStage | None, ...] = (
+                tuple(SocraticStage) if mode is ChatMode.SOCRATIC else (None,)
+            )
+            for stage in stages:
+                for has_attempt in (False, True):
+                    prompt = generation_prompts.build_system_prompt(
+                        mode,
+                        audience=audience,
+                        socratic_stage=stage,
+                        has_student_attempt=has_attempt,
+                    )
+                    prompt_hashes.add(hashlib.sha256(prompt.encode()).hexdigest())
+
+    assert prompt_hashes == _KNOWN_SYSTEM_PROMPT_SHA256S
+
+    # Ölçüm manifesti hash kümesine KİLİTLİ: prompt değişince buradaki eşitlik
+    # kırılır ve tek doğal düzeltme scripts/measure_role_agent_prompt_tokens.py'yi
+    # yeniden koşmaktır — hash tazelemek, tavanı yeniden ölçmeden mümkün değildir.
+    # (P2 devir incelemesi: 1024'ün tek kanıtı yorum satırıydı, pay 3 token.)
+    manifest = json.loads(
+        (Path(__file__).parent / "data" / "role_agent_prompt_token_manifest.json").read_text()
+    )
+    assert set(manifest["measurements"]) == _KNOWN_SYSTEM_PROMPT_SHA256S
+    assert manifest["tokenizer_revision"] == "72bff9ee09897a16b3b4b2b9995fecb0bfa7dbe6"
+    assert max(manifest["measurements"].values()) <= _KNOWN_SYSTEM_PROMPT_TOKEN_CEILING, (
+        "ölçülen max, tavanı aşıyor: tavan sabitini ölçümle birlikte güncelle"
+    )
+
+
+def test_quota_token_ceiling_has_no_cold_start_network_dependency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Quota math stays local even when all DNS resolution is unavailable."""
+
+    def deny_network(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("quota hesabı ağ erişimi denedi")
+
+    monkeypatch.setattr(socket, "getaddrinfo", deny_network)
+    system_prompt = generation_prompts.build_system_prompt(ChatMode.QA)
+
+    assert (
+        _quota_input_token_ceiling(
+            LlmRequest(system=system_prompt, user="Deadlock nedir?"),
+            model="groq/llama-3.3-70b-versatile",
+            byte_safe_ceiling=8_256,
+        )
+        < 8_256
+    )
 
 
 async def test_process_concurrency_gate_rejects_second_same_user_request(
