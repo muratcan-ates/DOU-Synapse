@@ -4,7 +4,8 @@ Bu belge, sistemin güvenlik iddialarının tek toplandığı yerdir. Kural: **b
 yazılan her iddianın kodda karşılığı vardır ve satır numarasıyla gösterilir.**
 Karşılığı olmayan şey "uygulanmadı" başlığı altında yazılıdır (Anayasa III).
 
-Son güncelleme: 9 Ağustos 2026 · Kapsam: `main` + `feat/auth`
+Tarihsel güvenlik baseline'ı: 9 Ağustos 2026 · Kanıt komutları son
+doğrulama: 11 Ağustos 2026 · Kapsam: güncel repository candidate
 
 ---
 
@@ -136,10 +137,13 @@ döndürür. Bu yüzden ikisi ayrı ayrı ölçülüyor (§3).
 
 ### RLS (katman 2)
 
+Aşağıdaki iddia ve mutasyon toplamları 9 Ağustos 2026 tarihli RLS
+baseline koşusudur; güncel backend test koleksiyonu değildir.
+
 | Kapsam | İddia | Mutasyon |
 |---|---|---|
-| Çekirdek şema (`0001` + `0003`) | **98** | **52/52 yakalandı** |
-| Ölçme + analitik (`0004` + `0005`) | 58 | 24/24 yakalandı |
+| Çekirdek şema (`0001` + `0003`) | **98** <!-- docs-check: tarihsel 98 · 2026-08-09 --> | **52/52 yakalandı** <!-- docs-check: tarihsel 52 · 2026-08-09 --> |
+| Ölçme + analitik (`0004` + `0005`) | 58 <!-- docs-check: tarihsel 58 · 2026-08-09 --> | 24/24 yakalandı <!-- docs-check: tarihsel 24 · 2026-08-09 --> |
 
 ```bash
 psql -d dou_synapse -f supabase/tests/rls_isolation.sql
@@ -352,17 +356,17 @@ aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
 
 ---
 
-## 10. Doğrulama komutları (tümü)
+## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 851 test   # docs-check: backend.tests = 851
-cd apps/api && uv run mypy app                  # temiz, 59 dosya
+cd apps/api && uv run pytest -q                 # 904 test   # docs-check: backend.tests = 904
+cd apps/api && uv run mypy app                  # temiz, 92 dosya   # docs-check: backend.mypyFiles = 92
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 
 ```bash
-psql -d dou_synapse -f supabase/tests/rls_isolation.sql     # 98 iddia
-supabase/tests/rls_isolation_mutation_check.sh              # 52/52
-psql -d dou_synapse -f supabase/tests/rls_assessment.sql    # 58 iddia
-supabase/tests/rls_assessment_mutation_check.sh             # 24/24
+psql -d dou_synapse -f supabase/tests/rls_isolation.sql     # 98 iddia   # docs-check: tarihsel 98 · 2026-08-09
+supabase/tests/rls_isolation_mutation_check.sh              # 52/52   # docs-check: tarihsel 52 · 2026-08-09
+psql -d dou_synapse -f supabase/tests/rls_assessment.sql    # 58 iddia   # docs-check: tarihsel 58 · 2026-08-09
+supabase/tests/rls_assessment_mutation_check.sh             # 24/24   # docs-check: tarihsel 24 · 2026-08-09
 ```

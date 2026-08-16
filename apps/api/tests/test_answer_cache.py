@@ -17,17 +17,17 @@ from __future__ import annotations
 
 import json
 import unicodedata
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import Iterator
 from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.api.chat import question_hash, reset_rate_limit, set_pipeline
 from app.contracts import ChatMode
-from tests.conftest import WORKER_DSN, UserFactory
+from tests.conftest import UserFactory
 from tests.factories import (
     Pipeline,
     create_course,
@@ -45,21 +45,6 @@ def pipeline() -> Iterator[Pipeline]:
     yield fake
     set_pipeline()
     reset_rate_limit()
-
-
-@pytest.fixture
-async def worker_engine() -> AsyncIterator[AsyncEngine]:
-    """Bozuk satır yazmak için RLS'i atlayan rol.
-
-    `answer_cache` üzerinde `dou_app` için UPDATE politikası bilerek YOKTUR
-    (0003_chat.sql): uygulama önbelleği yazar ve okur, düzenlemez. Bozuk satır
-    senaryosunu kurmak bu yüzden ayrı bir rol istiyor — ve bu, testin kurduğu
-    senaryonun uygulamanın kendi eliyle üretemeyeceği bir bozulma olduğunu da
-    gösteriyor (dış müdahale, elle veri düzeltme, şema göçü).
-    """
-    engine = create_async_engine(WORKER_DSN)
-    yield engine
-    await engine.dispose()
 
 
 # ---------------------------------------------------------------------------
@@ -246,7 +231,7 @@ class TestBozukOnbellekSatiri:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
         ad: str,
         bozuk: dict[str, object],
     ) -> None:
@@ -261,18 +246,24 @@ class TestBozukOnbellekSatiri:
         ayse = users.auth(ayse_id)
         course_id = await create_course(client, ayse, "COME301")
         parca = pipeline.serve(course_id, make_chunk())
-        pipeline.answers(sourced_answer(parca, "yeniden üretilmiş cevap"))
+        pipeline.answers(
+            sourced_answer(parca, "ilk geçerli cevap"),
+            sourced_answer(parca, "yeniden üretilmiş cevap"),
+        )
         soru = "Deadlock nedir?"
 
-        async with worker_engine.begin() as conn:
+        # Önce API'nin güncel audience/policy/prompt/corpus bağlamıyla gerçek bir
+        # cache satırı üretmesini sağla. Legacy hash ile elle eklenen satırın artık
+        # okunmaması güvenlik özelliğidir; bozuk-satır testi o yolda vacuous kalırdı.
+        await _ask(client, course_id, ayse, soru)
+
+        async with admin_engine.begin() as conn:
             await conn.execute(
                 text(
-                    "INSERT INTO answer_cache (course_id, question_hash, answer) "
-                    "VALUES (:cid, :hash, CAST(:answer AS jsonb))"
+                    "UPDATE answer_cache SET answer = CAST(:answer AS jsonb) WHERE course_id = :cid"
                 ),
                 {
                     "cid": course_id,
-                    "hash": question_hash(ChatMode.QA, soru),
                     "answer": json.dumps(bozuk),
                 },
             )
@@ -287,7 +278,7 @@ class TestBozukOnbellekSatiri:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
     ) -> None:
         """Pozitif kontrol: yukarıdaki testler ancak okuma yolu çalışıyorsa anlamlı.
 
@@ -301,15 +292,17 @@ class TestBozukOnbellekSatiri:
         pipeline.answers(sourced_answer(parca, "üretimden gelen"))
         soru = "Deadlock nedir?"
 
-        async with worker_engine.begin() as conn:
+        ilk = await _ask(client, course_id, ayse, soru)
+        assert ilk["cached"] is False
+        calls_before = pipeline.generator.calls
+
+        async with admin_engine.begin() as conn:
             await conn.execute(
                 text(
-                    "INSERT INTO answer_cache (course_id, question_hash, answer) "
-                    "VALUES (:cid, :hash, CAST(:answer AS jsonb))"
+                    "UPDATE answer_cache SET answer = CAST(:answer AS jsonb) WHERE course_id = :cid"
                 ),
                 {
                     "cid": course_id,
-                    "hash": question_hash(ChatMode.QA, soru),
                     "answer": json.dumps(
                         {
                             "status": "answered",
@@ -331,7 +324,7 @@ class TestBozukOnbellekSatiri:
 
         assert body["cached"] is True
         assert body["answer"] == "önbellekten gelen"
-        assert pipeline.generator.calls == 0, "önbellek isabetinde LLM çağrılmamalı"
+        assert pipeline.generator.calls == calls_before, "önbellek isabetinde LLM çağrılmamalı"
 
 
 class TestDersIzolasyonuVeritabaninda:
@@ -340,7 +333,7 @@ class TestDersIzolasyonuVeritabaninda:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
     ) -> None:
         """`test_chat_api` bunu uç davranışıyla sınıyor; burada satır düzeyinde.
 
@@ -366,14 +359,15 @@ class TestDersIzolasyonuVeritabaninda:
         assert b_yaniti["answer"] == "B cevabı"
         assert b_yaniti["cached"] is False
 
-        async with worker_engine.connect() as conn:
+        async with admin_engine.connect() as conn:
             satirlar = (
                 await conn.execute(
                     text(
-                        "SELECT course_id, answer->>'text' AS metin FROM answer_cache "
-                        "WHERE question_hash = :hash ORDER BY answer->>'text'"
+                        "SELECT course_id, question_hash, answer->>'text' AS metin "
+                        "FROM answer_cache WHERE course_id IN (:ders_a, :ders_b) "
+                        "ORDER BY answer->>'text'"
                     ),
-                    {"hash": question_hash(ChatMode.QA, soru)},
+                    {"ders_a": ders_a, "ders_b": ders_b},
                 )
             ).all()
 
@@ -381,6 +375,7 @@ class TestDersIzolasyonuVeritabaninda:
             (ders_a, "A cevabı"),
             (ders_b, "B cevabı"),
         ]
+        assert len({r.question_hash for r in satirlar}) == 1
 
 
 class TestNeyinSaklandigi:
@@ -389,7 +384,7 @@ class TestNeyinSaklandigi:
         client: AsyncClient,
         users: UserFactory,
         pipeline: Pipeline,
-        worker_engine: AsyncEngine,
+        admin_engine: AsyncEngine,
     ) -> None:
         """`answered` olması yetmez; kaynaksız bir cevap kalıcılaştırılmaz.
 
@@ -413,7 +408,7 @@ class TestNeyinSaklandigi:
 
         await _ask(client, course_id, ayse, "Deadlock nedir?")
 
-        async with worker_engine.connect() as conn:
+        async with admin_engine.connect() as conn:
             sayi = (await conn.execute(text("SELECT count(*) FROM answer_cache"))).scalar_one()
 
         assert sayi == 0

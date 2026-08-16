@@ -1,0 +1,24 @@
+{
+  "candidate_sha": "SELF",
+  "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts/test_ai_sdlc_check.py",
+  "environment": "local deterministic stdlib fixture repositories",
+  "evidence_label": "fake-provider",
+  "failed": 0,
+  "passed": 36,
+  "privacy": "synthetic repository paths and identities only",
+  "result": "pass",
+  "verified_action_refs": [
+    {
+      "commit_sha": "11d5960a326750d5838078e36cf38b85af677262",
+      "repository": "https://github.com/actions/checkout",
+      "tag": "v4.4.0",
+      "verification": "official repository tag ref"
+    },
+    {
+      "commit_sha": "d0cc045d04ccac9d8b7881df0226f9e82c39688e",
+      "repository": "https://github.com/astral-sh/setup-uv",
+      "tag": "v6.8.0 peeled commit",
+      "verification": "official repository annotated tag ref"
+    }
+  ]
+}

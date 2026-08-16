@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
 import { useSession } from "@/lib/session";
+import { CourseAssistant } from "@/components/course-assistant/course-assistant";
 
 const TABS = [
   { slug: "", label: "Materyaller" },
@@ -54,23 +55,24 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
   const base = `/courses/${courseId}`;
 
   return (
-    /*
-     * `ready` false iken rol bilinmiyor. Üç seçenekten ikisi kötü:
-     *   - eğitmen sekmelerini eksik çizip sonradan ARAYA eklemek, halihazırda
-     *     görünen sekmeleri yana kaydırır (tıklamak üzere olan hedef kayar);
-     *   - hepsini çizip öğrenciden geri almak rolü sızdırır ve belirsizlikte
-     *     kapanma kuralını çiğner (Anayasa IV).
-     * Bu yüzden şerit `visibility: hidden` ile çizilir: yükseklik ve alt çizgi
-     * yerinde kalır, altındaki içerik zıplamaz, sekmeler tek seferde belirir ve
-     * görünürken hiçbir öğe yer değiştirmez. `display: none` bunu yapamaz —
-     * şerit tamamen kalkar, sayfa dikey olarak zıplar.
-     */
-    <nav
-      className={`mb-8 flex gap-1 overflow-x-auto border-b border-border ${
-        ready ? "" : "invisible"
-      }`}
-      aria-label={lock.locked ? lock.message ?? undefined : undefined}
-    >
+    <>
+      {/*
+       * `ready` false iken rol bilinmiyor. Üç seçenekten ikisi kötü:
+       *   - eğitmen sekmelerini eksik çizip sonradan ARAYA eklemek, halihazırda
+       *     görünen sekmeleri yana kaydırır (tıklamak üzere olan hedef kayar);
+       *   - hepsini çizip öğrenciden geri almak rolü sızdırır ve belirsizlikte
+       *     kapanma kuralını çiğner (Anayasa IV).
+       * Bu yüzden şerit `visibility: hidden` ile çizilir: yükseklik ve alt çizgi
+       * yerinde kalır, altındaki içerik zıplamaz, sekmeler tek seferde belirir ve
+       * görünürken hiçbir öğe yer değiştirmez. `display: none` bunu yapamaz —
+       * şerit tamamen kalkar, sayfa dikey olarak zıplar.
+       */}
+      <nav
+        className={`mb-8 flex gap-1 overflow-x-auto border-b border-border ${
+          ready ? "" : "invisible"
+        }`}
+        aria-label={lock.locked ? lock.message ?? undefined : undefined}
+      >
       {TABS.filter((tab) => !tab.instructorOnly || isInstructor).map((tab) => {
         const href = `${base}${tab.slug}`;
         const active = pathname === href;
@@ -116,7 +118,11 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
             {tab.label}
           </Link>
         );
-      })}
-    </nav>
+        })}
+      </nav>
+      {ready && pathname !== `${base}/chat` && (
+        <CourseAssistant courseId={courseId} availability={lock} />
+      )}
+    </>
   );
 }

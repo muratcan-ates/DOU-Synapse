@@ -29,6 +29,7 @@ from pydantic import ValidationError
 
 from app.contracts import (
     AnswerStatus,
+    AssistantAudience,
     ChatMode,
     GeneratedAnswer,
     RetrievedChunk,
@@ -127,6 +128,10 @@ class GenerationService:
         socratic_stage: SocraticStage | None = None,
         student_attempt: str | None = None,
         strict_retry: bool = False,
+        audience: AssistantAudience = AssistantAudience.STUDENT,
+        max_output_tokens: int | None = None,
+        schema_retry_limit: int | None = None,
+        provider_attempt_limit: int | None = None,
     ) -> GenerationResult:
         if not chunks:
             # Kanıt yokken modeli çağırmak, boşluğu doldurmasını istemektir.
@@ -138,9 +143,18 @@ class GenerationService:
             question,
             chunks,
             mode=mode,
+            audience=audience,
             socratic_stage=socratic_stage,
             student_attempt=student_attempt,
             strict_retry=strict_retry,
+        )
+        request = replace(
+            request,
+            max_tokens=min(
+                max_output_tokens or self._settings.llm_chat_max_tokens,
+                self._settings.llm_chat_max_tokens,
+            ),
+            max_provider_attempts=provider_attempt_limit,
         )
 
         payload: LlmAnswerPayload | None = None
@@ -149,7 +163,12 @@ class GenerationService:
         prompt_tokens = 0
         completion_tokens = 0
 
-        for attempt in range(self._settings.llm_max_retries + 1):
+        retries = (
+            self._settings.llm_max_retries
+            if schema_retry_limit is None
+            else max(0, schema_retry_limit)
+        )
+        for attempt in range(retries + 1):
             current = (
                 request if attempt == 0 else replace(request, system=request.system + _REPAIR_NOTE)
             )
@@ -188,6 +207,33 @@ class GenerationService:
             model=model,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
+        )
+
+    async def generate_role_aware_with_claims(
+        self,
+        *,
+        question: str,
+        chunks: list[RetrievedChunk],
+        mode: ChatMode,
+        audience: AssistantAudience,
+        max_output_tokens: int,
+        socratic_stage: SocraticStage | None = None,
+        student_attempt: str | None = None,
+    ) -> GenerationResult:
+        return await self.generate_with_claims(
+            question=question,
+            chunks=chunks,
+            mode=mode,
+            audience=audience,
+            max_output_tokens=max_output_tokens,
+            socratic_stage=socratic_stage,
+            student_attempt=student_attempt,
+            # The role-aware HTTP path makes one semantic generation attempt.
+            # This keeps actual usage inside the atomic reservation. Transport
+            # retries and provider failover are both disabled for this route;
+            # malformed JSON fails closed instead of spending another budget.
+            schema_retry_limit=0,
+            provider_attempt_limit=1,
         )
 
 

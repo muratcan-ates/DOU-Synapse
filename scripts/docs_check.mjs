@@ -41,6 +41,11 @@
  * kapı kırmızı yanar. Tarih işaretin içindedir, çünkü "92" tek başına hangi güne ait
  * olduğunu söylemez.
  *
+ * Canlı işaret tarih taşıyan bir paragrafta kullanılamaz. Aksi hâlde `--duzelt`,
+ * 9 Ağustos'ta koşulduğu yazan bir kaydı 11 Ağustos koleksiyon sayısıyla yeniden
+ * yazar ve tarihsel cümleyi doğruymuş gibi bırakır. Tarihli koşu her zaman
+ * `docs-check: tarihsel ...` biçimini kullanır.
+ *
  * ## Kapının kapsamı — ve kapsamadıkları
  *
  * Tarama, sapmanın fiilen gözlendiği sınıflara odaklanır (§DEDEKTORLER). Belgedeki
@@ -100,6 +105,17 @@ const METRIKLER = {
         calistir("uv", ["run", "pytest", "--collect-only", "-q"], "apps/api"),
         /^(\d+) tests? collected/m,
         "backend test sayısı",
+      ),
+  },
+
+  "backend.mypyFiles": {
+    aciklama: "Mypy tarafından denetlenen backend kaynak dosyası sayısı",
+    komut: "cd apps/api && uv run mypy app",
+    olc: () =>
+      tekSayi(
+        calistir("uv", ["run", "mypy", "app"], "apps/api"),
+        /Success: no issues found in (\d+) source files?/,
+        "mypy kaynak dosyası sayısı",
       ),
   },
 
@@ -400,7 +416,18 @@ function iddialariTopla() {
       ISARET.lastIndex = 0;
       let m;
       while ((m = ISARET.exec(satir)) !== null) {
-        iddialar.push({ dosya, satirNo: i + 1, satir, isaret: m[1], indeks: m.index });
+        let baslangic = i;
+        let bitis = i;
+        while (baslangic > 0 && satirlar[baslangic - 1].trim() !== "") baslangic--;
+        while (bitis + 1 < satirlar.length && satirlar[bitis + 1].trim() !== "") bitis++;
+        iddialar.push({
+          dosya,
+          satirNo: i + 1,
+          satir,
+          paragraf: satirlar.slice(baslangic, bitis + 1).join("\n"),
+          isaret: m[1],
+          indeks: m.index,
+        });
         if (m.index === ISARET.lastIndex) ISARET.lastIndex++;
       }
     });
@@ -428,6 +455,12 @@ const DEDEKTORLER = [
     ad: '"N otomatik test"',
     metrik: "backend.tests",
     kalip: /(?<![§\d])\d[\d.,]*\s*(\*\*)?\s*otomatik test/i,
+  },
+  {
+    ad: "mypy komutunun yanındaki dosya sayısı",
+    metrik: "backend.mypyFiles",
+    kalip:
+      /uv run mypy[^\n]*?(?<![§\d])\d[\d.,]*\s*(?:source\s+)?dosya|(?<![§\d])\d[\d.,]*\s*(?:source\s+)?dosya[^\n]{0,40}uv run mypy/i,
   },
   {
     ad: "README test rozeti",
@@ -490,6 +523,15 @@ const KAPSAM_DISI = [
   "Gecikme/token/chunk ölçümleri — koşum gerektirir, statik türetilemez",
   "RLS iddia sayıları (98 / 58) — psql koşumundan gelir, CI'nın RLS adımları kanıtlar",
 ];
+
+/**
+ * Canlı metrik ile sabit tarih aynı paragrafta yaşayamaz. Yıl-ay-gün ve
+ * Türkçe tarih biçimleri birlikte tanınır; tarih aralığı da (9–10 Ağustos)
+ * sabit bir tarihsel bağlamdır. İşaretlerin kendi içindeki tarih bu taramadan
+ * önce maskelenir, dolayısıyla yalnız belgenin iddiası kararı etkiler.
+ */
+const TARIHLI_PARAGRAF =
+  /\b20\d{2}-\d{2}-\d{2}\b|\b(?:[1-9]|[12]\d|3[01])(?:\s*[–—-]\s*(?:[1-9]|[12]\d|3[01]))?\s+(?:Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağu(?:stos)?|Eylül|Ekim|Kasım|Aralık)(?:\s+20\d{2})?\b/iu;
 
 // --- Kapı ------------------------------------------------------------------
 
@@ -557,6 +599,18 @@ function main() {
           mesaj: `${yer} — tarihsel kayıt oynamış: işaret ${beklenen} diyor (${tarih}) ama satırda o değer yok. Tarihsel ölçüm değiştirilmez.`,
         });
       }
+      continue;
+    }
+
+    const tarihDisiParagraf = iddia.paragraf.split("\n").map(isaretsizMetin).join("\n");
+    if (TARIHLI_PARAGRAF.test(tarihDisiParagraf)) {
+      sorunlar.push({
+        tur: "tarih-canlı",
+        mesaj:
+          `${yer} — tarih taşıyan paragrafta canlı metrik kullanılamaz. ` +
+          "Bu bir koşu kaydıysa `docs-check: tarihsel <değer> · <YYYY-AA-GG>` kullanın; " +
+          "güncel iddiaysa tarihi ayrı tarihsel kayda taşıyın.",
+      });
       continue;
     }
 

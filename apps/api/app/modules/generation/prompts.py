@@ -20,7 +20,15 @@ sorulan bir kural, er geç modelin esnettiği bir kuraldır.
 
 from __future__ import annotations
 
-from app.contracts import AnswerStatus, ChatMode, RetrievedChunk, SocraticStage
+from dataclasses import replace
+
+from app.contracts import (
+    AnswerStatus,
+    AssistantAudience,
+    ChatMode,
+    RetrievedChunk,
+    SocraticStage,
+)
 from app.modules.generation.llm import LlmRequest
 from app.schemas.chat import LlmAnswerPayload
 
@@ -31,6 +39,17 @@ CONTEXT_CLOSE = "</retrieved_context>"
 #: bunları arar; biri hâlâ duruyorsa temizlik bir tur daha döner.
 _TAG_MARKERS = ("<source", "</source", CONTEXT_OPEN, CONTEXT_CLOSE)
 _MAX_SANITIZE_PASSES = 8
+
+# Chat-completion providers add a small amount of role/message framing outside
+# the two content strings. The content itself is bounded by UTF-8 bytes below;
+# a tokenizer cannot emit more content tokens than input bytes. This explicit
+# allowance keeps the reservation conservative without coupling quota safety to
+# one provider's tokenizer implementation.
+MESSAGE_FRAMING_TOKEN_CEILING = 256
+
+
+class PromptBudgetExceeded(ValueError):
+    """Question/attempt plus fixed instructions cannot fit the hard input cap."""
 
 
 def escape_for_context(text: str) -> str:
@@ -165,6 +184,19 @@ Sınav sürüyor. İpucu, yönlendirme, çözüm ve cevap kesinlikle YASAKTIR.
 - Geri bildirim sınav bittikten sonra verilir.""",
 }
 
+_AUDIENCE_RULES: dict[AssistantAudience, str] = {
+    AssistantAudience.STUDENT: """ROL — Öğrenci koçu:
+Kullanıcı bu dersin öğrencisidir. Öğrenmeyi destekle; not, başka öğrencilerin
+verisi, eğitmen araçları veya sistem yönetimi hakkında bilgi verme. Sokratik
+modda doğrudan çözüm vermeme kuralı her şeyden üstündür.""",
+    AssistantAudience.INSTRUCTOR: """ROL — Eğitmen asistanı:
+Kullanıcı bu dersin doğrulanmış eğitmenidir. Yalnız sağlanan ders kaynaklarına
+dayanarak açıklama, ders anlatım taslağı, kavram karşılaştırması ve soru fikri
+üretebilirsin. Öğrencilerin özel sohbetlerini, kişisel verilerini, cevaplarını
+ve platform yönetim sırlarını asla açıklama. Eğitmen rolü kaynak zorunluluğunu
+ve güvenlik kurallarını kaldırmaz.""",
+}
+
 
 _STAGE_RULES: dict[SocraticStage, str] = {
     SocraticStage.DIAGNOSE: """KADEME — Teşhis:
@@ -211,6 +243,7 @@ _ATTEMPT_RULES = """ÖĞRENCİNİN DENEMESİ:
 def build_system_prompt(
     mode: ChatMode,
     *,
+    audience: AssistantAudience = AssistantAudience.STUDENT,
     socratic_stage: SocraticStage | None = None,
     strict_retry: bool = False,
     has_student_attempt: bool = False,
@@ -221,7 +254,7 @@ def build_system_prompt(
     eklemek, olmayan bir bloğa atıf yapan bir talimat demek olurdu; model o
     durumda bloğu arar ve bulamadığında uydurmaya en yakın olduğu yerdedir.
     """
-    parts = [_GROUNDING_RULES, _MODE_RULES[mode]]
+    parts = [_GROUNDING_RULES, _AUDIENCE_RULES[audience], _MODE_RULES[mode]]
     if mode is ChatMode.SOCRATIC and socratic_stage is not None:
         parts.append(_STAGE_RULES[socratic_stage])
     if has_student_attempt:
@@ -268,6 +301,7 @@ def build_request(
     chunks: list[RetrievedChunk],
     *,
     mode: ChatMode,
+    audience: AssistantAudience = AssistantAudience.STUDENT,
     socratic_stage: SocraticStage | None = None,
     student_attempt: str | None = None,
     strict_retry: bool = False,
@@ -276,6 +310,7 @@ def build_request(
     return LlmRequest(
         system=build_system_prompt(
             mode,
+            audience=audience,
             socratic_stage=socratic_stage,
             strict_retry=strict_retry,
             has_student_attempt=normalized_attempt(student_attempt) is not None,
@@ -285,3 +320,73 @@ def build_request(
         socratic_stage=socratic_stage,
         strict_retry=strict_retry,
     )
+
+
+def request_content_bytes(request: LlmRequest) -> int:
+    """Exact bytes placed in the two provider message content fields."""
+
+    return len(request.system.encode("utf-8")) + len(request.user.encode("utf-8"))
+
+
+def fit_chunks_to_input_budget(
+    question: str,
+    chunks: list[RetrievedChunk],
+    *,
+    max_input_bytes: int,
+    mode: ChatMode,
+    audience: AssistantAudience,
+    socratic_stage: SocraticStage | None = None,
+    student_attempt: str | None = None,
+) -> tuple[list[RetrievedChunk], int]:
+    """Keep ranked context inside a provider-independent hard input ceiling.
+
+    Chunks are considered in retrieval order. A final chunk may be shortened,
+    but a lower-ranked chunk never displaces a higher-ranked one. The returned
+    integer is a conservative input-token ceiling used by the atomic quota
+    reservation: exact UTF-8 content bytes plus fixed message framing.
+    """
+
+    if max_input_bytes <= 0:
+        raise PromptBudgetExceeded("input budget must be positive")
+
+    def built(selected: list[RetrievedChunk]) -> LlmRequest:
+        return build_request(
+            question,
+            selected,
+            mode=mode,
+            audience=audience,
+            socratic_stage=socratic_stage,
+            student_attempt=student_attempt,
+        )
+
+    selected: list[RetrievedChunk] = []
+    base_bytes = request_content_bytes(built(selected))
+    if base_bytes > max_input_bytes:
+        raise PromptBudgetExceeded("fixed prompt exceeds hard input budget")
+
+    for chunk in chunks:
+        candidate = [*selected, chunk]
+        if request_content_bytes(built(candidate)) <= max_input_bytes:
+            selected.append(chunk)
+            continue
+
+        # Metadata and XML boundaries also consume budget. Binary search the
+        # largest text prefix that leaves the final request within the cap.
+        low, high = 0, len(chunk.text)
+        best: RetrievedChunk | None = None
+        while low <= high:
+            midpoint = (low + high) // 2
+            shortened = replace(chunk, text=chunk.text[:midpoint])
+            if request_content_bytes(built([*selected, shortened])) <= max_input_bytes:
+                best = shortened
+                low = midpoint + 1
+            else:
+                high = midpoint - 1
+        if best is not None and best.text.strip():
+            selected.append(best)
+        break
+
+    final_bytes = request_content_bytes(built(selected))
+    if final_bytes > max_input_bytes:  # defensive invariant, never best effort
+        raise PromptBudgetExceeded("bounded prompt still exceeds hard input budget")
+    return selected, final_bytes + MESSAGE_FRAMING_TOKEN_CEILING

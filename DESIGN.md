@@ -17,17 +17,35 @@ landing page için ayarlıdır ve buraya doğrudan uygulanırsa yanlış registe
 dizüstünde, uzun oturumlar boyunca yoğun teknik metin okuyor. Eğitmen ise haftada birkaç
 kez materyal yüklüyor ve sınıfın durumuna bakıyor.
 
-**Tasarım brief'i tek cümlede:** Sakin, okunur, kurumsal. Etkileyici değil **güvenilir**
-görünmeli — çünkü ürünün iddiası "bu cevabın kaynağı şu sayfa" ve güven, görsel
-gösterişten değil tutarlılıktan gelir.
+**Tasarım brief'i tek cümlede:** Sakin, okunur ve kurumsal; aynı zamanda yaşayan bir
+akademik çalışma alanı. Ürün **güvenilir** görünür, fakat bu güven her ekranı aynı beyaz
+karta çevirmekten değil; açık hiyerarşi, rol odaklı kompozisyon ve tutarlı kaynak
+kanıtından gelir.
 
 **Üç dial** (taste-skill terminolojisi):
 
 | Dial | Ayar | Neden |
 |---|---|---|
-| VARIANCE | Düşük | Her ekran aynı gramerle konuşmalı; öğrenci arayüzü öğrenmekle uğraşmamalı |
-| MOTION | Çok düşük | Sınav ekranında animasyon kaygı üretir; hareket yalnız durum değişimini bildirir |
-| DENSITY | Orta | Uzun okuma seansları sıkışık arayüzü kaldırmaz; ama eğitmen tabloları da kompakt olmalı |
+| VARIANCE | Orta (6/10) | Gramer ortak kalır; öğrenci, eğitmen ve Bilgi İşlem yüzeyleri işlerine göre farklı kompozisyon kurar |
+| MOTION | Düşük (3/10) | Sınav ekranında animasyon kaygı üretir; hareket yalnız durum değişimini bildirir |
+| DENSITY | Orta yüksek (6/10) | Öğrenci okuma alanları ferah, eğitmen ve Bilgi İşlem veri şeritleri kompakt olmalı |
+
+### Modern akademik stüdyo grameri
+
+Canlılık yeni bir renk paleti değildir. Tek aksan yine Doğuş kırmızısıdır; enerji şu
+araçlarla kurulur:
+
+- Bir sayfada tek baskın odak alanı ve onun altında daha sakin çalışma satırları
+- Büyük başlık ile küçük mono ders kodu, zaman ve ölçüm bilgisinin bilinçli karşıtlığı
+- Her şeyi karta kapatmak yerine kenarlıksız bölümler, yatay kurallar ve bağlı veri şeritleri
+- Öğrencide sunucunun bildirdiği çalışma durumu, eğitmende karar bekleyen işler,
+  Bilgi İşlem'de servis durumu ve ölçüm zamanı ile başlayan rol bazlı hiyerarşi
+- Kurumsal işaret, aktif gezinme çizgisi ve birincil eylem dışında kırmızı yüzey yığmama
+
+Üç veya daha fazla ilgisiz bölüm aynı `rounded + border + white card` kalıbını
+kullanıyorsa kompozisyon yeniden kurulmalıdır. Dört eşit metrik sayfayı açmaz; metrikler
+odak alanından sonra kompakt bir şerit olarak gelir. Bu kural sınav ve soru çözme
+yüzeylerini hareketlendirmez: o ekranlar bilinçli olarak daha sakindir.
 
 ---
 
@@ -205,12 +223,9 @@ kalır:
 | `text-2xl` | 31 / 38 | Metrik rakamı, boş durum başlığı |
 | `text-3xl` | 39 / 44 | Sayfa başlığının bugünkü boyu |
 
-**Sayfa başlığı açık kalan tek nokta:** `PageHeader` bugün `text-3xl` (39px) kullanıyor;
-belgenin önceki hâli sayfa başlığını `text-xl` (25px) diye tarif ediyordu. Artık iki boy
-da ölçekten geliyor, yani hangisi seçilirse seçilsin ölçek dışına çıkılmıyor — ama seçim
-yapılmadı. `components/page-state.tsx` bu değişiklikte başka bir sahiplikte olduğu için
-dokunulmadı. **Uygulanmadı:** sayfa başlığının `text-xl`'e çekilmesi. Karara kadar yeni
-ekran kendi başlık boyunu seçmez, `PageHeader` kullanır.
+**Sayfa başlığı kararı:** `PageHeader` ana sayfalarda küçük ekranda `text-2xl`, geniş
+ekranda `text-3xl`; yoğun Bilgi İşlem başlıklarında `compact` seçeneğiyle `text-xl` /
+`text-2xl` kullanır. Yeni ekran kendi başlık boyunu seçmez, bu bileşeni kullanır.
 
 **Ölçek dışı tek istisna:** giriş ekranı başlığı `text-5xl md:text-6xl` (48 / 60px)
 kullanır ve bu iki adım bilerek token'lanmadı. Gerekçe: ölçeğin beşinci ve altıncı

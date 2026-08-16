@@ -31,12 +31,13 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from fastapi import status
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.errors import AppError
 from app.models.assessment import ExamBlueprint, ExamMode, ExamSession
+from app.models.core import CourseMembership, MembershipRole
 
 #: Kilit gerekçesi. İKİ yüzeyde birden kullanılır: 403 zarfının `error.code`'u ve
 #: `GET /chat/availability`'nin `reason` alanı. Tek sabit olması, arayüzün iki
@@ -56,6 +57,30 @@ class ExamLockedError(AppError):
 
     status_code = status.HTTP_403_FORBIDDEN
     code = EXAM_LOCK_REASON
+
+
+async def acquire_user_assessment_lock(session: AsyncSession, *, user_id: UUID) -> None:
+    """Serialize exam start with chat finalization and privacy export.
+
+    The lock is transaction scoped. Chat acquires it immediately before its
+    final active-exam check and keeps it while persisting the answer. Exam
+    start and the data export acquire the same user key before inspecting or
+    writing exam-sensitive data. PostgreSQL then permits exactly one order:
+    either chat/export commits first and the exam starts afterwards, or the
+    exam commits first and the competing operation observes it.
+    """
+
+    await session.execute(
+        text("SELECT pg_advisory_xact_lock(hashtextextended(:identity, 15018))"),
+        {"identity": str(user_id)},
+    )
+
+
+class AssessmentExportLockedError(AppError):
+    """An active exam temporarily withholds answer-bearing export data."""
+
+    status_code = status.HTTP_423_LOCKED
+    code = "exam_export_locked"
 
 
 def effective_expiry(
@@ -139,6 +164,53 @@ async def active_exam_session(
         settings=settings,
     )
     return active.get(course_id)
+
+
+async def any_active_student_exam_session(
+    session: AsyncSession,
+    *,
+    user_id: UUID,
+    now: datetime,
+    settings: Settings,
+) -> ExamSession | None:
+    """Return an active exam unless the stored course role is instructor.
+
+    Instructors are deliberately exempt from the assistant exam lock and must
+    remain able to export their own data while previewing an exam. A student's
+    lock, however, must survive a membership status change: otherwise revoking
+    the membership during an exam would expose prior answer-bearing chat data
+    through ``/me/export``. The outer join is fail-closed for legacy or damaged
+    rows with no membership: only a known instructor role receives the
+    exception.
+    """
+
+    course_ids = set(
+        (
+            await session.scalars(
+                select(ExamSession.course_id)
+                .outerjoin(
+                    CourseMembership,
+                    (CourseMembership.course_id == ExamSession.course_id)
+                    & (CourseMembership.user_id == ExamSession.user_id),
+                )
+                .where(
+                    ExamSession.user_id == user_id,
+                    ExamSession.mode == ExamMode.EXAM,
+                    ExamSession.finished_at.is_(None),
+                    ExamSession.expires_at > now,
+                    CourseMembership.role.is_distinct_from(MembershipRole.INSTRUCTOR),
+                )
+            )
+        ).all()
+    )
+    active = await active_exam_sessions_by_course(
+        session,
+        user_id=user_id,
+        course_ids=course_ids,
+        now=now,
+        settings=settings,
+    )
+    return next(iter(active.values()), None)
 
 
 async def active_exam_sessions_by_course(

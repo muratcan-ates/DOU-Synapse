@@ -119,6 +119,12 @@ class LlmRequest:
     #: yerinde `QUESTION_GEN` gönderir (`question_gen.resolve_completion`),
     #: geri kalan her yol gerçekten sohbettir.
     task: LlmTask = LlmTask.CHAT
+    #: Hard provider-side output limit; carried unchanged through failover.
+    max_tokens: int | None = None
+    #: Total transport attempts across primary and fallback. ``None`` keeps the
+    #: legacy failover policy; the quota-backed role-aware course agent sets 1
+    #: so its atomic reservation is a true per-turn upper bound.
+    max_provider_attempts: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -201,9 +207,15 @@ class LiteLlmClient:
         # büyümez. Tek katmanlı bir zaman aşımı bu iki şeyden birini kaybettirirdi.
         deadline = time.monotonic() + per_attempt * len(targets)
         last_error: Exception | None = None
+        attempts_used = 0
 
         for model in targets:
             for attempt in range(settings.llm_max_retries + 1):
+                if (
+                    request.max_provider_attempts is not None
+                    and attempts_used >= request.max_provider_attempts
+                ):
+                    break
                 budget = min(per_attempt, deadline - time.monotonic())
                 if budget <= 0:
                     logger.warning(
@@ -213,6 +225,7 @@ class LiteLlmClient:
                     raise LlmUnavailableError
 
                 try:
+                    attempts_used += 1
                     return await self._attempt(model, request, budget=budget, attempt=attempt)
                 except Exception as exc:  # sınıflandırma _is_retryable'da yapılır
                     last_error = exc
@@ -232,6 +245,11 @@ class LiteLlmClient:
                     if not retryable or attempt >= settings.llm_max_retries:
                         break  # sıradaki sağlayıcıya düş
                     await asyncio.sleep(_backoff_for(attempt))
+            if (
+                request.max_provider_attempts is not None
+                and attempts_used >= request.max_provider_attempts
+            ):
+                break
 
         logger.error(
             "tüm llm sağlayıcıları başarısız",
@@ -252,6 +270,8 @@ class LiteLlmClient:
             "temperature": self._settings.llm_temperature,
             "timeout": budget,
         }
+        if request.max_tokens is not None:
+            kwargs["max_tokens"] = request.max_tokens
         api_key = self._api_key_for(model)
         if api_key:
             kwargs["api_key"] = api_key

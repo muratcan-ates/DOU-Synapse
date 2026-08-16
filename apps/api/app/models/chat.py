@@ -20,7 +20,7 @@ from sqlalchemy import ForeignKey as FK
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.contracts import AnswerStatus, ChatMode, SocraticStage
+from app.contracts import AnswerStatus, AssistantAudience, ChatMode, SocraticStage
 from app.models.base import Base, created_at, pg_enum, uuid_fk, uuid_pk
 
 # core.py ve assessment.py'deki yardımcının aynısı; ÜÇÜNCÜ bir kopya yazmak yerine
@@ -57,6 +57,9 @@ class ChatSession(Base):
     course_id: Mapped[uuid_fk] = mapped_column(FK("courses.id", ondelete="CASCADE"))
     user_id: Mapped[uuid_fk] = mapped_column(FK("profiles.id", ondelete="CASCADE"))
     mode: Mapped[ChatMode] = mapped_column(pg_enum(ChatMode, "chat_mode"), default=ChatMode.QA)
+    audience: Mapped[AssistantAudience] = mapped_column(
+        pg_enum(AssistantAudience, "assistant_audience")
+    )
     # Sokratik merdivenin kalıcı hâli; biçimi `modules/assessment/socratic.py` belirler.
     # Oturum yeniden yüklense de kademe korunur (FR-014).
     state: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
@@ -100,6 +103,12 @@ class AnswerCache(Base):
     course_id: Mapped[uuid_fk] = mapped_column(FK("courses.id", ondelete="CASCADE"))
     # sha256(mode + '\n' + normalize edilmiş soru) — bkz. app/api/chat.py:question_hash.
     question_hash: Mapped[str] = mapped_column(Text)
+    audience: Mapped[AssistantAudience] = mapped_column(
+        pg_enum(AssistantAudience, "assistant_audience")
+    )
+    policy_revision: Mapped[str] = mapped_column(Text)
+    prompt_revision: Mapped[str] = mapped_column(Text)
+    corpus_revision: Mapped[str] = mapped_column(Text)
     # Guardrail zincirinden geçmiş cevap zarfı.
     answer: Mapped[dict[str, Any]] = mapped_column(JSONB)
     created_at: Mapped[created_at]
@@ -119,6 +128,9 @@ class RequestLog(Base):
     user_id: Mapped[uuid_fk] = mapped_column(FK("profiles.id", ondelete="CASCADE"))
     route: Mapped[str] = mapped_column(Text)
     mode: Mapped[ChatMode] = mapped_column(pg_enum(ChatMode, "chat_mode"))
+    audience: Mapped[AssistantAudience] = mapped_column(
+        pg_enum(AssistantAudience, "assistant_audience")
+    )
     status: Mapped[AnswerStatus | None] = mapped_column(pg_enum(AnswerStatus, "answer_status"))
     http_status: Mapped[int] = mapped_column(Integer)
     latency_ms: Mapped[int] = mapped_column(Integer)

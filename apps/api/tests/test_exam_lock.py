@@ -26,17 +26,21 @@ kopya kurulum yazılmaz (Anayasa XI).
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Iterator
 from typing import Any
 from uuid import UUID
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.contracts import RetrievedChunk
+from app.api.chat import set_pipeline
+from app.contracts import ChatMode, GeneratedAnswer, RetrievedChunk, SocraticStage
 from app.modules.assessment import exam_state
 from tests.conftest import UserFactory
+from tests.factories import FakeCitationGuardrail
 from tests.test_chat_api import Pipeline, _install, sourced_answer
 from tests.test_exams import EXAM_DURATION_SECONDS, ExamFixture, build_course, rewind, start
 from tests.test_socratic import make_chunk
@@ -174,6 +178,68 @@ class TestKilitYururken:
         assert body["available"] is False
         assert body["reason"] == exam_state.EXAM_LOCK_REASON
         assert body["message"] == exam_state.EXAM_LOCK_MESSAGE
+
+    async def test_sohbet_sururken_baslayan_sinav_cevabi_geri_dondurmez(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+        pipeline: Pipeline,
+    ) -> None:
+        """Forced interleaving: chat starts, exam commits, chat must reject."""
+
+        fixture = await build_course(client, users, admin_engine)
+        chunk = pipeline.serve(fixture.course_id, make_chunk())
+        entered_provider = asyncio.Event()
+        release_provider = asyncio.Event()
+
+        class BlockingGenerator:
+            async def generate(
+                self,
+                *,
+                question: str,
+                chunks: list[RetrievedChunk],
+                mode: ChatMode,
+                socratic_stage: SocraticStage | None = None,
+                student_attempt: str | None = None,
+            ) -> GeneratedAnswer:
+                del question, chunks, mode, socratic_stage, student_attempt
+                entered_provider.set()
+                await release_provider.wait()
+                return sourced_answer(chunk)
+
+        set_pipeline(
+            retriever_factory=lambda _session: pipeline.retriever,
+            generator=BlockingGenerator(),
+            guardrails=[FakeCitationGuardrail()],
+        )
+        chat_task = asyncio.create_task(_ask(client, fixture))
+        await asyncio.wait_for(entered_provider.wait(), timeout=2)
+
+        exam = await start(client, fixture, "exam")
+        release_provider.set()
+        chat = await chat_task
+
+        assert exam["mode"] == "exam"
+        assert chat.status_code == 403, chat.text
+        assert chat.json()["error"]["code"] == exam_state.EXAM_LOCK_REASON
+        async with admin_engine.connect() as connection:
+            artifact_counts = (
+                await connection.execute(
+                    text(
+                        "SELECT "
+                        "(SELECT count(*) FROM chat_sessions "
+                        " WHERE course_id=:course_id AND user_id=:user_id), "
+                        "(SELECT count(*) FROM request_logs "
+                        " WHERE course_id=:course_id AND user_id=:user_id)"
+                    ),
+                    {
+                        "course_id": UUID(fixture.course_id),
+                        "user_id": fixture.student_id,
+                    },
+                )
+            ).one()
+        assert tuple(artifact_counts) == (0, 0)
 
 
 class TestKilidinKapsami:

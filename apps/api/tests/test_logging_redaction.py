@@ -8,7 +8,14 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 
+import pytest
+from sqlalchemy.exc import DBAPIError
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+from app.core.config import Settings
+from app.core.db import _build_control_engine, _build_engine
 from app.core.logging import JsonFormatter, RedactionFilter, redact
 
 
@@ -84,3 +91,29 @@ class TestJsonFormatter:
         record = self._record("giriş: sk-abcdefghijklmnopqrstuvwxyz123456")
         RedactionFilter().filter(record)
         assert "sk-" not in json.loads(JsonFormatter().format(record))["message"]
+
+
+@pytest.mark.parametrize("builder", [_build_engine, _build_control_engine])
+def test_database_engines_hide_bound_values_from_errors(
+    builder: Callable[[Settings], AsyncEngine],
+) -> None:
+    """A failed content INSERT must not render its bound value in logs/errors."""
+
+    settings = Settings(
+        _env_file=None,
+        dev_auth_enabled=True,
+        database_url="postgresql+psycopg://dou_app:local@localhost/dou_synapse_test_logs",
+    )
+    engine = builder(settings)
+    secret = "öğrencinin gizli sohbet metni"
+    error = DBAPIError.instance(
+        "INSERT INTO chat_messages(content) VALUES (%(content)s)",
+        {"content": secret},
+        ValueError("sentetik veritabanı hatası"),
+        ValueError,
+        hide_parameters=engine.sync_engine.hide_parameters,
+    )
+
+    assert engine.sync_engine.hide_parameters is True
+    assert secret not in str(error)
+    assert "SQL parameters hidden due to hide_parameters=True" in str(error)

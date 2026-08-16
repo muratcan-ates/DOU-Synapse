@@ -10,7 +10,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import type { ComponentPropsWithRef, InputHTMLAttributes, ReactNode } from "react";
+import type { ComponentPropsWithRef, ReactNode } from "react";
 import { errorMessage } from "@/lib/errors";
 import type { Tone } from "@/lib/labels";
 
@@ -62,10 +62,12 @@ export function Button({
 
 export function Input({
   className = "",
+  ref,
   ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
+}: ComponentPropsWithRef<"input">) {
   return (
     <input
+      ref={ref}
       {...props}
       className={`h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand ${className}`}
     />
@@ -75,12 +77,18 @@ export function Input({
 export function Card({
   children,
   className = "",
+  variant = "default",
 }: {
   children: ReactNode;
   className?: string;
+  variant?: "default" | "soft";
 }) {
+  const variantClass = {
+    default: "rounded-lg border border-border bg-surface",
+    soft: "rounded-lg border border-border bg-bg",
+  }[variant];
   return (
-    <div className={`rounded-lg border border-border bg-surface p-6 ${className}`}>
+    <div className={`${variantClass} p-6 ${className}`}>
       {children}
     </div>
   );
@@ -111,6 +119,17 @@ export function Badge({ tone, children }: { tone: Tone; children: ReactNode }) {
       {children}
     </span>
   );
+}
+
+/**
+ * Yıkıcı işlem sürerken onay satırı kapatılamaz.
+ *
+ * `aria-disabled` odağı korur fakat tek başına davranışı engellemez. Karar saf
+ * fonksiyonda tutulur ki "onay başladı -> kullanıcı Vazgeç'e bastı -> istek
+ * sonra tamamlandı" yarışı DOM olmadan da kırmızıya çevrilebilsin.
+ */
+export function canDismissConfirmAction(busy: boolean): boolean {
+  return !busy;
 }
 
 /**
@@ -219,7 +238,14 @@ export function ConfirmAction({
       >
         {busy ? busyLabel : confirmLabel}
       </Button>
-      <Button variant="ghost" onClick={() => setConfirming(false)}>
+      <Button
+        variant="ghost"
+        aria-disabled={busy}
+        onClick={() => {
+          if (!canDismissConfirmAction(busy)) return;
+          setConfirming(false);
+        }}
+      >
         Vazgeç
       </Button>
     </span>

@@ -601,6 +601,13 @@ test.describe("gezinme", () => {
      * geçişte de güncellendiği ancak böyle görülür.
      */
     const course = await createCourse("BASLIK");
+
+    await page.goto("/forgot-password");
+    await expect(page).toHaveTitle("Parola yenileme · DOU-Synapse");
+
+    await page.goto("/reset-password");
+    await expect(page).toHaveTitle("Yeni parola · DOU-Synapse");
+
     await signIn(page, AYSE);
 
     await page.goto("/");
@@ -617,7 +624,9 @@ test.describe("gezinme", () => {
       "Asistan",
       "Sınav provası",
       "Soru havuzu",
+      "Sınav blueprint'i",
       "İlerleme",
+      "AI kalite",
       "Katılımcılar",
       "Materyaller",
     ]) {
@@ -640,7 +649,9 @@ test.describe("soru havuzu — eğitmen onayı", () => {
 
     // Liste satırı seçimi gerçekten taşınıyor mu: `aria-current` iki satır
     // arasında yer değiştirmeli, yoksa panel hep ilk soruyu gösterir.
-    const satirlar = page.locator("li > button");
+    const satirlar = page
+      .getByRole("list", { name: "Soru havuzu" })
+      .getByRole("button");
     await satirlar.nth(1).click();
     await expect(satirlar.nth(1)).toHaveAttribute("aria-current", "true");
     await satirlar.nth(0).click();
@@ -808,6 +819,17 @@ test.describe("sınav provası", () => {
     // Sayfa YENİLENMEDEN: geçişin izlendiğinin kanıtı burası.
     await expect(kilitliSekme).toBeVisible();
     await expect(asistanBaglantisi).toHaveCount(0);
+
+    // Aynı availability kararı yeni kompakt asistan yüzeyini de kilitler.
+    // Tetikleyici görünür kalır ki kullanıcı neden kapalı olduğunu okuyabilsin;
+    // besteci ve token harcatan gönderim yüzeyi hiç çizilmez.
+    await page.getByRole("button", { name: "Ders Koçu" }).click();
+    const asistanPaneli = page.getByRole("dialog");
+    await expect(
+      asistanPaneli.getByText("Asistan sınav sırasında kapalı", { exact: true }),
+    ).toBeVisible();
+    await expect(asistanPaneli.getByRole("button", { name: "Gönder" })).toHaveCount(0);
+    await asistanPaneli.getByRole("button", { name: "Ders asistanını kapat" }).click();
 
     // Sunucu da aynı kararı veriyor: kilitli sekme bir süs değil.
     await page.goto(`/courses/${havuz.course.id}/chat`);

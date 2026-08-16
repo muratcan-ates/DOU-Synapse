@@ -19,6 +19,7 @@ import re
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from app.core.config import Settings
 
@@ -103,3 +104,43 @@ def test_issuer_verilmezse_none_kalir(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("JWT_ISSUER", raising=False)
     settings = Settings(_env_file=None)  # type: ignore[call-arg]
     assert settings.jwt_issuer is None
+
+
+def test_course_agent_operasyon_ayarlari_belgedeki_adlarla_okunur(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("COURSE_AGENT_ENABLED", "false")
+    monkeypatch.setenv("LLM_CHAT_MAX_TOKENS", "512")
+    monkeypatch.setenv("LLM_CHAT_MAX_INPUT_BYTES", "7000")
+    monkeypatch.setenv("COURSE_AGENT_STUDENT_DAILY_HARD_LIMIT", "30000")
+    monkeypatch.setenv("COURSE_AGENT_INSTRUCTOR_DAILY_HARD_LIMIT", "90000")
+    monkeypatch.setenv("COURSE_AGENT_COURSE_DAILY_HARD_LIMIT", "250000")
+    monkeypatch.setenv("COURSE_AGENT_PLATFORM_DAILY_HARD_LIMIT", "2000000")
+
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+
+    assert settings.course_agent_enabled is False
+    assert settings.llm_chat_max_tokens == 512
+    assert settings.llm_chat_max_input_bytes == 7000
+    assert settings.course_agent_student_daily_hard_limit == 30000
+    assert settings.course_agent_instructor_daily_hard_limit == 90000
+    assert settings.course_agent_course_daily_hard_limit == 250000
+    assert settings.course_agent_platform_daily_hard_limit == 2000000
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("COURSE_AGENT_STUDENT_DAILY_HARD_LIMIT", "50001"),
+        ("COURSE_AGENT_INSTRUCTOR_DAILY_HARD_LIMIT", "200001"),
+    ],
+)
+def test_course_agent_role_hard_limit_db_tavanini_asamaz(
+    monkeypatch: pytest.MonkeyPatch,
+    name: str,
+    value: str,
+) -> None:
+    monkeypatch.setenv(name, value)
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)  # type: ignore[call-arg]

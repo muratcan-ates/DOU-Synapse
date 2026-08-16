@@ -24,7 +24,6 @@ import {
   CACHED_ANSWER_NOTE,
   canSubmitDraft,
   CHAT_MODE_LABEL,
-  CHAT_UI_MODES,
   citationSource,
   fromAnswer,
   fromHistory,
@@ -37,7 +36,14 @@ import {
   type ChatUiMode,
   type TranscriptMessage,
 } from "@/lib/chat";
-import { errorMessage } from "@/lib/errors";
+import {
+  answerMatchesAssistant,
+  firstAllowedChatMode,
+  resolveCourseAssistantIdentity,
+  sessionMatchesAssistant,
+  type CourseAssistantIdentity,
+} from "@/lib/course-assistant";
+import { describeError, type ErrorInfo } from "@/lib/errors";
 import { DOCUMENT_STATUS } from "@/lib/labels";
 import type {
   ChatAnswer,
@@ -50,9 +56,9 @@ import { useChatAvailability } from "@/lib/chat-availability";
 import { pagedPath, usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { sourceContextHref } from "@/lib/source-quality";
-import { useSession } from "@/lib/session";
 import { AppShell } from "@/components/app-shell";
 import { ChatFeedbackControls } from "@/components/chat-feedback";
+import { AssistantIdentitySummary } from "@/components/course-assistant/course-assistant";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore } from "@/components/page-state";
 import { SocraticLadder } from "@/components/socratic-ladder";
@@ -69,7 +75,7 @@ export default function ChatPage() {
    * koşturmamak.
    */
   const lock = useChatAvailability(courseId);
-  const session = useSession(courseId);
+  const identity = resolveCourseAssistantIdentity(lock.audience, lock.agentProfile);
 
   /*
    * Yoklama dönene kadar HİÇBİRİ çizilmez. Bu bir estetik tercih değil:
@@ -82,7 +88,7 @@ export default function ChatPage() {
    * sekmesi bir an kilitli görünürdü. Doğru üçüncü hâl "henüz bilinmiyor" ve
    * karşılığı yükleme göstergesi (`lib/session.ts`'in `ready` kuralıyla aynı).
    */
-  if (!lock.ready || !session.ready) {
+  if (!lock.ready) {
     return (
       <AppShell>
         <CourseNav courseId={courseId} lock={lock} />
@@ -94,10 +100,42 @@ export default function ChatPage() {
   return (
     <AppShell>
       <CourseNav courseId={courseId} lock={lock} />
-      {lock.locked ? (
+      {lock.error ? (
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <ErrorNote
+            message={lock.error}
+            kind={lock.errorKind}
+            requestId={lock.errorRequestId}
+            onRetry={lock.reload}
+          />
+        </div>
+      ) : lock.locked ? (
         <EmptyState title={lock.message ?? "Asistan şu anda kullanılamıyor."} />
+      ) : identity === null ? (
+        <EmptyState title="Asistan profili sunucudan doğrulanamadı." />
+      ) : lock.allowedModes.length === 0 ? (
+        <EmptyState title="Bu dersin AI politikası kullanılabilir bir sohbet modu açmıyor." />
       ) : (
-        <ChatScreen courseId={courseId} canGiveFeedback={!session.isInstructor} />
+        <>
+          {lock.refreshError && (
+            <div className="mb-5 rounded-lg border border-border bg-surface p-4">
+              <ErrorNote
+                message={lock.refreshError}
+                kind={lock.errorKind}
+                requestId={lock.errorRequestId}
+                onRetry={lock.reload}
+              />
+            </div>
+          )}
+          <ChatScreen
+            key={`${courseId}:${identity.audience}:${identity.agentProfile}:${lock.allowedModes.join(",")}:${lock.hintLimit}`}
+            courseId={courseId}
+            canGiveFeedback={identity.audience === "student"}
+            identity={identity}
+            allowedModes={lock.allowedModes}
+            hintLimit={lock.hintLimit}
+          />
+        </>
       )}
     </AppShell>
   );
@@ -106,22 +144,39 @@ export default function ChatPage() {
 function ChatScreen({
   courseId,
   canGiveFeedback,
+  identity,
+  allowedModes,
+  hintLimit,
 }: {
   courseId: string;
   canGiveFeedback: boolean;
+  identity: CourseAssistantIdentity;
+  allowedModes: ChatUiMode[];
+  hintLimit: number;
 }) {
-  const [mode, setMode] = useState<ChatUiMode>("qa");
+  const [mode, setMode] = useState<ChatUiMode>(() =>
+    firstAllowedChatMode(allowedModes) ?? "qa",
+  );
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
   const [draft, setDraft] = useState("");
   /** Uçuştaki soru — sunucu onaylamadan dökümde yer tutar. */
   const [pending, setPending] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<ErrorInfo | null>(null);
+  const [historyError, setHistoryError] = useState<ErrorInfo | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyCursor, setHistoryCursor] = useState<string | null>(null);
   const [olderLoading, setOlderLoading] = useState(false);
+
+  /*
+   * Uçuştaki geçmiş isteğini geçersizleştiren sayaç.
+   *
+   * Hızlı iki tıklamada birinci oturumun geç gelen yanıtı ikincinin dökümünü
+   * eziyordu: ekranda A oturumu seçili, içerik B'nin. Sayaç, gecikmiş yanıtı
+   * sessizce düşürür.
+   */
+  const historyToken = useRef(0);
 
   const sessions = usePagedResource<ChatSessionSummary>(
     `/courses/${courseId}/chat/sessions`,
@@ -137,23 +192,58 @@ function ChatScreen({
   );
   const documents = useResource(fetchDocuments, [courseId]);
 
-  /*
-   * Uçuştaki geçmiş isteğini geçersizleştiren sayaç.
-   *
-   * Hızlı iki tıklamada birinci oturumun geç gelen yanıtı ikincinin dökümünü
-   * eziyordu: ekranda A oturumu seçili, içerik B'nin. Sayaç, gecikmiş yanıtı
-   * sessizce düşürür.
-   */
-  const historyToken = useRef(0);
+  /** Yeni oturum: mod değişimi de buradan geçer — mod ortada değiştirilemez. */
+  const startNewSession = useCallback(
+    (nextMode: ChatUiMode) => {
+      historyToken.current++;
+      setMode(nextMode);
+      setSessionId(null);
+      setMessages([]);
+      setPending(null);
+      setSending(false);
+      setSendError(null);
+      setHistoryError(null);
+      setHistoryLoading(false);
+      setHistoryCursor(null);
+      localStorage.removeItem(openSessionKey(courseId));
+      // Kullanıcının bilinçli mod değişiminde yazılmış metin korunur.
+    },
+    [courseId],
+  );
+
+  const policyKey = `${identity.audience}:${identity.agentProfile}:${allowedModes.join(",")}:${hintLimit}`;
+  const previousPolicyKey = useRef(policyKey);
+  useEffect(() => {
+    const nextMode = allowedModes.includes(mode)
+      ? mode
+      : firstAllowedChatMode(allowedModes);
+    const policyChanged = previousPolicyKey.current !== policyKey;
+    previousPolicyKey.current = policyKey;
+    if (nextMode === null || (!policyChanged && nextMode === mode)) return;
+
+    // Persona/politika değişince eski rolün oturumu ve taslağı taşınmaz.
+    startNewSession(nextMode);
+    setDraft("");
+  }, [allowedModes, mode, policyKey, startNewSession]);
 
   const openSession = useCallback(
     async (summary: ChatSessionSummary) => {
+      const summaryMode: ChatUiMode | null =
+        summary.mode === "exam" ? null : summary.mode;
+      if (
+        summaryMode === null ||
+        !allowedModes.includes(summaryMode) ||
+        !sessionMatchesAssistant(summary, identity)
+      ) {
+        return;
+      }
       const token = ++historyToken.current;
       setSessionId(summary.id);
       // Sohbet ucu `exam` kabul etmiyor; yine de tip daraltması burada yapılır.
-      setMode(summary.mode === "socratic" ? "socratic" : "qa");
+      setMode(summaryMode);
       setMessages([]);
       setPending(null);
+      setSending(false);
       setSendError(null);
       setHistoryError(null);
       setHistoryLoading(true);
@@ -168,12 +258,12 @@ function ChatScreen({
         localStorage.setItem(openSessionKey(courseId), summary.id);
       } catch (e) {
         if (historyToken.current !== token) return;
-        setHistoryError(errorMessage(e));
+        setHistoryError(describeError(e));
       } finally {
         if (historyToken.current === token) setHistoryLoading(false);
       }
     },
-    [courseId],
+    [allowedModes, courseId, identity],
   );
 
   /*
@@ -192,21 +282,6 @@ function ChatScreen({
     if (target) void openSession(target);
   }, [courseId, sessions.data, openSession]);
 
-  /** Yeni oturum: mod değişimi de buradan geçer — mod ortada değiştirilemez. */
-  const startNewSession = (nextMode: ChatUiMode) => {
-    historyToken.current++;
-    setMode(nextMode);
-    setSessionId(null);
-    setMessages([]);
-    setPending(null);
-    setSendError(null);
-    setHistoryError(null);
-    setHistoryLoading(false);
-    setHistoryCursor(null);
-    localStorage.removeItem(openSessionKey(courseId));
-    // Yazılmış metin korunur: mod değiştirmek yazdığını silmek için bir sebep değil.
-  };
-
   const loadOlderMessages = useCallback(async () => {
     if (!sessionId || !historyCursor || olderLoading) return;
     setOlderLoading(true);
@@ -218,7 +293,7 @@ function ChatScreen({
       setMessages((current) => [...fromHistory(older.items), ...current]);
       setHistoryCursor(older.next_cursor);
     } catch (error) {
-      setHistoryError(errorMessage(error));
+      setHistoryError(describeError(error));
     } finally {
       setOlderLoading(false);
     }
@@ -234,6 +309,7 @@ function ChatScreen({
     const text = draft.trim();
     const body = buildChatRequest({ mode, draft: text, sessionId, openingQuestion });
     const isNewSession = sessionId === null;
+    const token = historyToken.current;
 
     setSending(true);
     setSendError(null);
@@ -241,6 +317,10 @@ function ChatScreen({
     setDraft("");
     try {
       const answer = await api.post<ChatAnswer>(`/courses/${courseId}/chat`, body);
+      if (historyToken.current !== token) return;
+      if (!answerMatchesAssistant(answer, identity)) {
+        throw new Error("Asistan yanıtının rol bilgisi doğrulanamadı.");
+      }
       setMessages((prev) => [
         ...prev,
         // Kullanıcı mesajının kimliği zarfta yok; asistan kimliğinden türetiliyor.
@@ -264,13 +344,14 @@ function ChatScreen({
         sessions.data?.find((s) => s.id === answer.session_id)?.socratic_stage ?? null;
       if (isNewSession || answer.socratic_stage !== listedStage) void sessions.reload();
     } catch (e) {
+      if (historyToken.current !== token) return;
       // Konuşma geçmişi DURUR; yalnız gönderilemeyen tur geri alınır ve metin
       // girdiye iade edilir — yazdığını kaybetmek hatanın cezası olmamalı.
-      setSendError(errorMessage(e));
+      setSendError(describeError(e));
       setPending(null);
       setDraft(text);
     } finally {
-      setSending(false);
+      if (historyToken.current === token) setSending(false);
     }
   };
 
@@ -290,17 +371,38 @@ function ChatScreen({
       ),
     );
   };
+  const failedHistorySummary =
+    historyCursor === null && sessionId !== null
+      ? sessions.data?.find((item) => item.id === sessionId)
+      : undefined;
+  const retryInitialHistory = failedHistorySummary
+    ? () => void openSession(failedHistorySummary)
+    : undefined;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <>
+      <AssistantIdentitySummary
+        identity={identity}
+        allowedModes={allowedModes}
+        hintLimit={hintLimit}
+      />
+      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       {/* Konuşma sütunu: okuma genişliği bileşenlerin içinde 70ch ile sınırlı */}
       <div className="space-y-6">
         <LoadMore
           hasMore={historyCursor !== null}
           busy={olderLoading}
+          error={historyCursor !== null ? historyError : null}
           onLoadMore={() => void loadOlderMessages()}
         />
-        {historyError && <ErrorNote message={historyError} />}
+        {historyError && historyCursor === null && (
+          <ErrorNote
+            message={historyError.message}
+            kind={historyError.kind}
+            requestId={historyError.requestId}
+            onRetry={retryInitialHistory}
+          />
+        )}
         {historyLoading && <Loading label="Sohbet geçmişi yükleniyor…" />}
 
         {blocks.length === 0 && !historyLoading && (
@@ -389,7 +491,14 @@ function ChatScreen({
         })}
 
         {sending && <Loading label="Cevap hazırlanıyor…" />}
-        {sendError && <ErrorNote message={sendError} />}
+        {sendError && (
+          <ErrorNote
+            message={sendError.message}
+            kind={sendError.kind}
+            requestId={sendError.requestId}
+            onRetry={() => void send()}
+          />
+        )}
 
         <form
           className="space-y-3"
@@ -403,20 +512,20 @@ function ChatScreen({
             aria-label="Sohbet modu"
             className="flex w-fit gap-1 rounded-lg border border-border p-1"
           >
-            {CHAT_UI_MODES.map((value) => {
+            {allowedModes.map((value) => {
               const active = mode === value;
               return (
                 <button
                   key={value}
                   type="button"
                   aria-pressed={active}
-                  disabled={sending}
+                  aria-disabled={sending}
                   onClick={() => {
                     // Mod oturum ortasında değişemez (sunucu 422 döner): değişim
                     // yeni oturum açar, hata göstermez.
-                    if (!active) startNewSession(value);
+                    if (!sending && !active) startNewSession(value);
                   }}
-                  className={`h-8 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:opacity-40 ${
+                  className={`h-8 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${
                     active
                       ? "border-border-strong bg-surface font-medium text-fg"
                       : "border-transparent text-fg-muted hover:text-fg"
@@ -437,7 +546,8 @@ function ChatScreen({
               id="chat-draft"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              disabled={sending}
+              readOnly={sending}
+              aria-disabled={sending}
               maxLength={QUESTION_MAX_LENGTH}
               autoComplete="off"
               placeholder={
@@ -446,7 +556,7 @@ function ChatScreen({
                   : "Ders materyaline soru sorun…"
               }
             />
-            <Button type="submit" disabled={sending || !submittable}>
+            <Button type="submit" aria-disabled={sending || !submittable}>
               {sending ? "Gönderiliyor…" : "Gönder"}
             </Button>
           </div>
@@ -461,7 +571,22 @@ function ChatScreen({
             Asistan yalnızca eğitmenin yüklediği bu materyallerden cevap verir;
             her cevap sayfa numarasıyla gelir.
           </p>
-          {documents.error && <ErrorNote message={documents.error} />}
+          {documents.error && (
+            <ErrorNote
+              message={documents.error}
+              kind={documents.errorKind}
+              requestId={documents.errorRequestId}
+              onRetry={() => void documents.reload()}
+            />
+          )}
+          {documents.refreshError && (
+            <ErrorNote
+              message={documents.refreshError}
+              kind={documents.errorKind}
+              requestId={documents.errorRequestId}
+              onRetry={() => void documents.reload()}
+            />
+          )}
           {documents.loading && <Loading label="Materyaller yükleniyor…" />}
           {documents.data?.length === 0 && (
             <p className="prose-tr text-xs text-fg-muted">
@@ -499,13 +624,30 @@ function ChatScreen({
             <Button
               type="button"
               variant="secondary"
-              disabled={sending}
-              onClick={() => startNewSession(mode)}
+              aria-disabled={sending}
+              onClick={() => {
+                if (!sending) startNewSession(mode);
+              }}
             >
               Yeni sohbet
             </Button>
           </div>
-          {sessions.error && <ErrorNote message={sessions.error} />}
+          {sessions.error && (
+            <ErrorNote
+              message={sessions.error}
+              kind={sessions.errorKind}
+              requestId={sessions.errorRequestId}
+              onRetry={() => void sessions.reload()}
+            />
+          )}
+          {sessions.refreshError && (
+            <ErrorNote
+              message={sessions.refreshError}
+              kind={sessions.errorKind}
+              requestId={sessions.errorRequestId}
+              onRetry={() => void sessions.reload()}
+            />
+          )}
           {sessions.loading && <Loading label="Sohbetler yükleniyor…" />}
           {sessions.data?.length === 0 && (
             <p className="text-xs text-fg-muted">Henüz bir sohbet açmadın.</p>
@@ -514,6 +656,12 @@ function ChatScreen({
             <ul className="max-h-72 space-y-1 overflow-y-auto">
               {sessions.data.map((summary) => {
                 const active = summary.id === sessionId;
+                const summaryMode: ChatUiMode | null =
+                  summary.mode === "exam" ? null : summary.mode;
+                const modeAllowed =
+                  summaryMode !== null && allowedModes.includes(summaryMode);
+                const identityAllowed = sessionMatchesAssistant(summary, identity);
+                const sessionAllowed = modeAllowed && identityAllowed;
                 // Sokratik oturuma dönen öğrenci nerede kaldığını listeden görür.
                 // QA'da ve kademesi henüz bildirilmemiş oturumda null döner ve
                 // satıra hiçbir şey eklenmez.
@@ -523,12 +671,22 @@ function ChatScreen({
                     <button
                       type="button"
                       aria-current={active ? "true" : undefined}
-                      onClick={() => void openSession(summary)}
+                      aria-disabled={!sessionAllowed}
+                      title={
+                        sessionAllowed
+                          ? undefined
+                          : identityAllowed
+                            ? "Bu sohbet modu ders politikasında artık kapalı."
+                            : "Bu sohbet farklı bir üyelik profiliyle oluşturulmuş."
+                      }
+                      onClick={() => {
+                        if (sessionAllowed) void openSession(summary);
+                      }}
                       className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
                         active
                           ? "border-border-strong bg-surface"
                           : "border-transparent hover:bg-surface"
-                      }`}
+                      } ${sessionAllowed ? "" : "cursor-not-allowed opacity-50"}`}
                     >
                       <span className="block truncate text-xs text-fg">
                         {summary.title ?? "Başlıksız sohbet"}
@@ -537,6 +695,11 @@ function ChatScreen({
                         {stage === null
                           ? CHAT_MODE_LABEL[summary.mode]
                           : `${CHAT_MODE_LABEL[summary.mode]} · ${stage}`}
+                        {!identityAllowed
+                          ? " · Farklı profil"
+                          : !modeAllowed
+                            ? " · Politika ile kapalı"
+                            : ""}
                       </span>
                     </button>
                   </li>
@@ -552,6 +715,7 @@ function ChatScreen({
           />
         </section>
       </aside>
-    </div>
+      </div>
+    </>
   );
 }
