@@ -322,6 +322,88 @@ def _path_touch_commits(repo: Path, merge_base: str, head: str, path: str) -> li
     return [line.strip() for line in raw.splitlines() if line.strip()]
 
 
+def _governance_transitions(
+    repo: Path, merge_base: str, head: str
+) -> dict[str, list[tuple[str, str, str | None]]]:
+    """Per-commit A/D/R event walk over the governance directories.
+
+    The net base-to-head diff hides records that were added and deleted inside
+    the same reviewed range, and rename detection collapses a moved record into
+    a plain addition at its new path.  Append-only auditing has to see every
+    transition, not just the surviving endpoints: this is exactly how an
+    add-delete-re-add of a root dossier escaped the validator once, on this
+    very repository.  Returns path -> ordered [(commit, status, rename_dest)].
+    """
+
+    raw = str(
+        _git(
+            repo,
+            "log",
+            "--format=%H",
+            "--name-status",
+            "--reverse",
+            "--find-renames",
+            f"{merge_base}..{head}",
+            "--",
+            ".ai/changes",
+            ".ai/evidence",
+            ".ai/quarantine",
+        )
+    )
+    events: dict[str, list[tuple[str, str, str | None]]] = {}
+    commit = ""
+    for line in raw.splitlines():
+        line = line.rstrip()
+        if not line:
+            continue
+        if "\t" not in line:
+            commit = line.strip()
+            continue
+        parts = line.split("\t")
+        status = parts[0][0]
+        if status == "R" and len(parts) == 3:
+            source, dest = parts[1], parts[2]
+            events.setdefault(source, []).append((commit, "R", dest))
+            events.setdefault(dest, []).append((commit, "A", None))
+        else:
+            events.setdefault(parts[-1], []).append((commit, status, None))
+    return events
+
+
+def _transition_violations(
+    events: dict[str, list[tuple[str, str, str | None]]],
+) -> tuple[set[str], dict[str, str], dict[str, str], dict[str, str]]:
+    """Classify transition histories into append-only violations.
+
+    Returns (rewritten_paths, rename_children, first_added, last_content_commit).
+    A deletion, a re-addition after deletion, or a rename makes a governance
+    record untrusted; the rename destination inherits contamination from its
+    source so a tainted root cannot launder itself by moving to a fresh path.
+    """
+
+    rewritten: set[str] = set()
+    rename_children: dict[str, str] = {}
+    first_added: dict[str, str] = {}
+    last_content: dict[str, str] = {}
+    for path, sequence in events.items():
+        seen_delete = False
+        for commit, status, dest in sequence:
+            if status == "A" and path not in first_added:
+                first_added[path] = commit
+            if status in ("A", "M"):
+                last_content[path] = commit
+            if status == "D":
+                seen_delete = True
+                rewritten.add(path)
+            elif status == "R":
+                rewritten.add(path)
+                if dest is not None:
+                    rename_children[dest] = path
+            elif status == "A" and seen_delete:
+                rewritten.add(path)
+    return rewritten, rename_children, first_added, last_content
+
+
 def _is_sha(value: Any, length: int) -> bool:
     return (
         isinstance(value, str)
@@ -1319,13 +1401,36 @@ def _quarantine_errors(
     """
 
     errors: list[str] = []
+    transition_events = _governance_transitions(repo, merge_base, head)
+    (
+        transition_rewritten,
+        rename_children,
+        transition_first_added,
+        transition_last_content,
+    ) = _transition_violations(transition_events)
+    # Bir karantina kaydının kendisinin silinmesi ya da taşınması hiçbir
+    # beyanla aklanamaz: denetim zincirinin zemini odur.
+    for quarantine_path in sorted(transition_rewritten):
+        if quarantine_path.startswith(".ai/quarantine/"):
+            errors.append(f"AUDIT_QUARANTINE_REWRITE:{quarantine_path}")
     rewritten = {
         path
         for path in changed_dossier_paths
         if len(_path_touch_commits(repo, merge_base, head, path)) > 1
     }
+    # Geçiş-düzeyi ihlaller net diff'te görünmeseler bile yeniden-yazımdır;
+    # add-delete-re-add ve rename bu depoda bir kez gerçekten kaçtı.
+    rewritten |= {
+        path
+        for path in transition_rewritten
+        if not path.startswith(".ai/quarantine/")
+    }
     contaminated = set(rewritten)
     contaminated_by: dict[str, str] = {}
+    for child, parent in rename_children.items():
+        if parent in contaminated and child not in contaminated:
+            contaminated.add(child)
+            contaminated_by[child] = parent
     changed = True
     while changed:
         changed = False
@@ -1388,20 +1493,39 @@ def _quarantine_errors(
                 _shape_errors(record, QUARANTINE_RECORD_FIELDS, record_prefix)
             )
             dossier_path = _safe_relative_path(record.get("path"))
-            if dossier_path is None or not _is_dossier_path(dossier_path):
+            if dossier_path is None or not (
+                _is_dossier_path(dossier_path)
+                or dossier_path.startswith(".ai/evidence/")
+            ):
                 errors.append(f"QUARANTINE_PATH:{record_prefix}path")
                 continue
             if dossier_path in declared:
                 errors.append(f"QUARANTINE_DUPLICATE:{dossier_path}")
             declared.add(dossier_path)
-            if dossier_path not in changed_dossier_paths:
+            # Geçiş taramasında görülen bir yol, net diff'ten düşmüş olsa bile
+            # kapsamdadır: aralık içinde eklenip silinen kayıt tam olarak
+            # karantinanın var oluş sebebidir.
+            if (
+                dossier_path not in changed_dossier_paths
+                and dossier_path not in transition_events
+            ):
                 errors.append(f"QUARANTINE_SCOPE:{dossier_path}")
                 continue
 
             introduction = _introduction_commit(repo, merge_base, head, dossier_path)
+            if introduction is None:
+                # Çok-hayatlı yol: giriş, geçiş taramasındaki İLK eklemedir.
+                introduction = transition_first_added.get(dossier_path)
             if introduction is None or record.get("introduced_sha") != introduction:
                 errors.append(f"QUARANTINE_INTRODUCTION:{dossier_path}")
             final_blob = _blob(repo, head, dossier_path)
+            if final_blob is None:
+                # HEAD'de yok: son içerik, silinmeden/taşınmadan önceki hâlidir.
+                # Karantina tam o blob'u bağlamak zorundadır — "yok olmuş, hash
+                # istemeyiz" demek, kaybolan kaydın içeriğini denetimsiz bırakırdı.
+                last_commit = transition_last_content.get(dossier_path)
+                if last_commit is not None:
+                    final_blob = _blob(repo, last_commit, dossier_path)
             final_digest = (
                 hashlib.sha256(final_blob).hexdigest()
                 if final_blob is not None

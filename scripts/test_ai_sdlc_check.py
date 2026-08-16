@@ -1346,6 +1346,117 @@ class AiSdlcValidatorTests(unittest.TestCase):
         self.assertIn("SCHEMA_DIGEST:.ai/schema.json", self.repo.validate())
 
 
+class AppendOnlyTransitionTests(unittest.TestCase):
+    """Aralık içi ekle-sil, sil-yeniden-ekle ve rename ihlallerinin regresyonu.
+
+    Bu sınıf gerçek bir olayın anıtıdır: bir kök dossier bu depoda ekle-sil-ekle
+    dizisiyle net diff'ten düşüp doğrulamadan kaçtı ve taşındığı taze yolda
+    yeniden yetki kazandı. Geçiş-düzeyi tarama o deliği kapatır; buradaki
+    testler birinin taramayı geri sökmesini kırmızıya çevirir.
+    """
+
+    def setUp(self) -> None:
+        self.repo = RepositoryFixture()
+
+    def tearDown(self) -> None:
+        self.repo.close()
+
+    def _ghost(self, path: str = ".ai/changes/ghost.json") -> str:
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'x'\n")
+        dossier = self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
+        dossier.update({"change_id": "ghost", "lineage_id": "ghost-lineage"})
+        self.repo.write_json(path, dossier)
+        self.repo.commit("introduce ghost dossier")
+        return path
+
+    def test_dossier_added_then_deleted_goes_red(self) -> None:
+        path = self._ghost()
+        (self.repo.root / path).unlink()
+        self.repo.commit("delete ghost dossier")
+
+        errors = self.repo.validate()
+        self.assertIn(f"AUDIT_HISTORY_REWRITE:{path}", errors)
+        self.assertIn(f"AUDIT_APPEND_ONLY:{path}", errors)
+
+    def test_delete_then_readd_goes_red(self) -> None:
+        path = self._ghost()
+        content = (self.repo.root / path).read_text(encoding="utf-8")
+        (self.repo.root / path).unlink()
+        self.repo.commit("delete ghost dossier")
+        self.repo.write(path, content)
+        self.repo.commit("re-add ghost dossier")
+
+        errors = self.repo.validate()
+        self.assertIn(f"AUDIT_HISTORY_REWRITE:{path}", errors)
+
+    def test_rename_contaminates_destination(self) -> None:
+        source = self._ghost(".ai/changes/moved-source.json")
+        dest = ".ai/changes/moved-dest.json"
+        (self.repo.root / source).rename(self.repo.root / dest)
+        self.repo.commit("launder the root to a fresh path")
+
+        errors = self.repo.validate()
+        self.assertIn(f"AUDIT_HISTORY_REWRITE:{source}", errors)
+        self.assertIn(f"AUDIT_LINEAGE_CONTAMINATED:{dest}", errors)
+
+    def test_evidence_added_then_deleted_goes_red(self) -> None:
+        evidence_path = ".ai/evidence/ghost-report.json"
+        self.repo.write_json(evidence_path, {"candidate_sha": "SELF"})
+        self.repo.commit("introduce ghost evidence")
+        (self.repo.root / evidence_path).unlink()
+        self.repo.commit("delete ghost evidence")
+
+        errors = self.repo.validate()
+        self.assertIn(f"AUDIT_HISTORY_REWRITE:{evidence_path}", errors)
+
+    def test_quarantine_record_deletion_is_unforgivable(self) -> None:
+        quarantine_path = ".ai/quarantine/ghost-quarantine.json"
+        self.repo.write_json(quarantine_path, {"quarantine_id": "ghost-quarantine"})
+        self.repo.commit("introduce quarantine record")
+        (self.repo.root / quarantine_path).unlink()
+        self.repo.commit("delete quarantine record")
+
+        errors = self.repo.validate()
+        self.assertIn(f"AUDIT_QUARANTINE_REWRITE:{quarantine_path}", errors)
+
+    def test_declared_ghost_clears_the_audit_errors(self) -> None:
+        path = self._ghost()
+        introduction = self.repo.head
+        final_digest = hashlib.sha256((self.repo.root / path).read_bytes()).hexdigest()
+        (self.repo.root / path).unlink()
+        self.repo.commit("delete ghost dossier")
+
+        self.repo.write_json(
+            ".ai/quarantine/ghost.json",
+            {
+                "schema_version": 1,
+                "quarantine_id": "ghost",
+                "title": "Quarantine the in-range deleted ghost dossier",
+                "owner": "Test Owner",
+                "created_at": "2026-08-16T00:00:00+03:00",
+                "base_sha": self.repo.base,
+                "candidate_sha": "SELF",
+                "replacement_dossier": ".ai/changes/replacement.json",
+                "records": [
+                    {
+                        "path": path,
+                        "introduced_sha": introduction,
+                        "final_blob_sha256": final_digest,
+                        "reason": "history-rewritten",
+                        "contaminated_by": None,
+                    }
+                ],
+            },
+        )
+        self.repo.commit("declare ghost quarantine")
+
+        errors = self.repo.validate()
+        self.assertNotIn(f"AUDIT_HISTORY_REWRITE:{path}", errors)
+        self.assertNotIn(f"QUARANTINE_SCOPE:{path}", errors)
+        self.assertNotIn(f"QUARANTINE_INTRODUCTION:{path}", errors)
+        self.assertNotIn(f"QUARANTINE_HASH:{path}", errors)
+
+
 class ProductionPolicyCoverageTests(unittest.TestCase):
     def test_runtime_ai_control_planes_are_classified(self) -> None:
         policy = json.loads(
