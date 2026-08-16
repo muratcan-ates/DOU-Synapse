@@ -25,14 +25,15 @@ açtığı soruyu kapatır:
 | 3 | Ödev sorusu sorulur | Cevap yerine **Sokratik merdiven** | 90 sn |
 | 4 | "Sadece söyle" denir | Merdiven **ilerlemez** | 60 sn |
 | 5 | Ders dışı soru sorulur | **Nazik ret — bu bir özellik** | 60 sn |
-| 6 | Sınav provası + "neden yanlış" | Öğrenme döngüsü kapanır | 120 sn ⚠️ |
+| 6 | Sınav provası + "neden yanlış" | Öğrenme döngüsü kapanır | 120 sn |
 
 En özgün an **5. sahnedir**: bilmediğini söyleyebilen asistan. Bunu bir eksiklik gibi değil,
 **tasarım kararı** olarak anlatın.
 
-⚠️ **6. sahne bugün arayüzde gösterilemez** — backend'i çalışıyor, ekranı hâlâ tasarım
-önizlemesi. Ayrıntı ve yedek anlatım [Sahne 6](#sahne-6--sınav-provası-ve-neden-yanlış-120-sn)
-başlığında. Ekranlar sunuma kadar bağlanmazsa demo **5 sahne / ~7 dakika** olur.
+> **Altı sahnenin altısı da 9 Ağustos akşamı, beş şerit birleştikten sonra canlı sistemde
+> koşuldu.** Buradaki ekran metinleri o koşumdan alındı. Daha önceki sürümde 6. sahne
+> "arayüzde gösterilemez" diye işaretliydi; soru havuzu, sınav ve ilerleme ekranları o
+> tarihte bağlandı ve bu not geçersizleşti.
 
 ---
 
@@ -186,7 +187,7 @@ Ardından **aynı kademenin** ipucu tekrar gösterilir, yine kaynağıyla.
 **Sorulacak soru:**
 
 ```
-Bugünkü dolar kuru ne kadar?
+İtalya'nın başkenti neresidir?
 ```
 
 **Ne söylenecek (göndermeden önce):**
@@ -195,12 +196,11 @@ Bugünkü dolar kuru ne kadar?
 
 **Ekranda görünen:** nötr bir bildirim kartı — **hata rengi ya da hata ikonu yok**:
 
-> **Materyalde dayanak bulunamadı**
-> "Bu soruya ders materyalinde yeterli dayanak bulamadım, bu yüzden cevap vermiyorum.
-> Soruyu biraz daha somutlaştırıp tekrar denemek ister misin? Konunun geçtiği hafta ya da
-> kavram adını eklemen genelde yeterli oluyor."
+> **Dersin kapsamı dışında**
+> "Bu soru dersin kapsamı dışında görünüyor. Yalnızca bu derse yüklenmiş materyallerden
+> cevap verebiliyorum; ders dışı konularda bilerek sessiz kalıyorum."
 
-![Nazik ret](images/10-sohbet-nazik-ret.png)
+![Kapsam dışı ret](images/10-sohbet-kapsam-disi-ret.png)
 
 **Ne söylenecek:**
 
@@ -208,6 +208,20 @@ Bugünkü dolar kuru ne kadar?
 > soruya kendinden emin bir cevap üretirdi ve öğrenci onu ders bilgisi sanırdı. Biz
 > materyalde yeterince güçlü bir dayanak bulamadığımız anda dil modeline **hiç
 > gitmiyoruz** — cevap üretilmiyor ki uydurulabilsin."
+
+**İkinci ret türünü de gösterin (15 sn).** Sistem iki farklı ret veriyor ve ayrım
+kasıtlı:
+
+```
+Bugünkü dolar kuru ne kadar?
+```
+
+Bu soru **"Materyalde dayanak bulunamadı"** döner, "kapsam dışı" değil.
+
+> "İki farklı ret var. Birincisi 'bu ders bu konuyu kapsamıyor', ikincisi 'konu ilgili
+> olabilir ama materyalde yeterli dayanak yok'. Öğrenci için ikisi farklı iş demek:
+> birinde başka yere sorarsın, ötekinde soruyu düzeltirsin. Eğitmen için de farklı —
+> ikinci tür birikiyorsa o hafta materyal eksik demektir."
 
 **Sayıyla destekleyin (dürüst hâliyle):**
 
@@ -219,40 +233,21 @@ Bugünkü dolar kuru ne kadar?
 **Neden bu cümle:** ölçümün altında kalan bir sonucu kendiniz söylemek, jürinin onu
 bulmasından her zaman iyidir — ve metodolojiyi anladığınızı kanıtlar.
 
-**Dikkat:** ekrandaki başlık "Materyalde dayanak bulunamadı" der, "kapsam dışı" demez.
-Sebebi mimaride yazılı ([ARCHITECTURE §5](../ARCHITECTURE.md#5-sorgu-pipelineı-ve-guardrail-zinciri)):
-kanıt kapısı dil modelinden önce kapanıyor. Anlatırken "kapsam dışı olduğunu söylüyor"
-**demeyin** — ekranda yazan bu değil.
+**Dikkat — soru seçimi önemli.** Ret türü ölçülmüş bir sinyalle belirleniyor ve her ders
+dışı soru "kapsam dışı" etiketini almıyor. 9 Ağustos'ta ölçülen:
 
----
+| Soru | Dönen |
+|---|---|
+| İtalya'nın başkenti neresidir? | **kapsam dışı** |
+| Bugün hava nasıl? | **kapsam dışı** |
+| Fenerbahçe dün kaç attı? | **kapsam dışı** |
+| Bugünkü dolar kuru ne kadar? | dayanak yok |
+| En iyi pizza tarifi nedir? | dayanak yok |
+| Osmanlı Devleti ne zaman kuruldu? | dayanak yok |
+
+Sahnede yukarıdaki ilk soruyu kullanın; **denenmemiş bir soruyla sahneye çıkmayın.**
 
 ## Sahne 6 — Sınav provası ve "neden yanlış" (120 sn)
-
-> ### ⚠️ Bu sahne bugün ARAYÜZDE GÖSTERİLEMEZ
->
-> 9 Ağustos itibarıyla **soru havuzu, sınav provası ve ilerleme ekranları hâlâ tasarım
-> önizlemesidir**: örnek veri gösteriyorlar ve üstlerinde "Tasarım önizlemesi: … onay
-> kararı kaydedilmez" şeridi var. Backend uçları **çalışıyor ve bugün uçtan uca
-> doğrulandı** (aşağıdaki ölçüm), yalnız ekranlar henüz bağlanmadı. Bağlama işi liderde.
->
-> **Sunumdan önce ekranlar bağlanmazsa bu sahne atlanır.** Önizleme şeridi taşıyan bir
-> ekranı jüriye çalışan ürün gibi göstermek, runbook'un [§6 Ne gösterilmeyecek](runbook.md#6-ne-gösterilmeyecek)
-> maddesinin tam olarak yasakladığı şeydir.
->
-> **Backend'in bugün ölçülen davranışı** (`curl`, COME 331, 4 onaylı MCQ):
->
-> | Kontrol | Sonuç |
-> |---|---|
-> | Öğrenci taslak soruları görüyor mu | **Hayır** — havuz boş döndü |
-> | Onaysızken sınav başlatılabiliyor mu | **Hayır** — "Bu derste henüz onaylanmış soru yok" |
-> | Öğrenciye `answer_key` gidiyor mu | **Hayır** — beyaz liste eliyor |
-> | Yanlış cevapta "neden yanlış" | **Evet** — `04-synchronization.pdf · Sayfa 3` + alıntı |
-> | `exam` modunda ipucu | **Reddediliyor**; `practice` modunda veriliyor |
-> | Sınav sonucu | skor 50.0 · 4 cevap · 0 boş · 0 değerlendirilemeyen |
-> | Konu bazlı mastery | 0.51 · seviye `medium` · 4 cevap |
->
-> Yani anlatılacak şey **var ve doğru**; gösterilecek ekran yok. Ekranlar bağlanırsa
-> aşağıdaki adımlar olduğu gibi geçerlidir.
 
 **Ön koşul:** derste **onaylanmış soru** olmalı. Soru üretimi gerçek LLM anahtarı ister;
 anahtar yoksa sorular T-60'ta üretilip onaylanmış olmalıdır ([runbook §3](runbook.md#3-sabah-kontrol-listesi)).
@@ -280,9 +275,12 @@ Bir soruyu **Onayla**, birini **Reddet** ile işaretleyin.
 1. Sınavı başlatın. Sorular şıklarıyla gelir — **cevap anahtarı gelmez.**
 2. **Bilerek yanlış** bir şık işaretleyin.
 
-**Ekranda görünen:** cevap yanlış işaretlenir ve altında **"neden yanlış"** kartı çıkar —
-seçilen çeldiricinin çeliştiği kaynak, dosya adı ve sayfasıyla:
-`04-synchronization.pdf · Sayfa 3` + materyalden alıntı.
+**Ekranda görünen:** `Yanlış · 0 / 100` rozeti, altında **"Neden yanlış?"** kartı —
+seçilen çeldiricinin çeliştiği kaynak, dosya adı ve sayfasıyla
+(`04-synchronization.pdf · Sayfa 3`) ve materyalden birebir alıntıyla. Altında cevap
+anahtarı ve açıklama.
+
+![Sınav provası, neden yanlış](images/14-ogrenci-sinav-provasi.png)
 
 **Ne söylenecek:**
 
@@ -322,6 +320,7 @@ harfi harfine aşağıdaki gibi olmalı. Yalnız `qa` modu önbelleğe girer; So
 
 ```text
 Süreç ile iş parçacığı arasındaki fark nedir?
+İtalya'nın başkenti neresidir?
 Bugünkü dolar kuru ne kadar?
 Semafor nedir ve ne işe yarar?
 Deadlock oluşması için gereken dört koşul nedir?
@@ -334,8 +333,9 @@ derse kullanılacak yedeklerdir.
 
 Notlar:
 
-- 5. sahnenin sorusu (`Bugünkü dolar kuru ne kadar?`) önbelleğe **abstention** olarak
-  girmez — `answer_cache` yalnız `answered` + atıflı cevapları saklar. Yani çevrimdışında
-  bu sahne zaten doğru davranır (kanıt kapısı kapanır) ve önbelleğe ihtiyaç duymaz.
-  Listede durmasının sebebi R3'ün doldurma koşusunda **isabetsizliği doğrulaması**.
+- 5. sahnenin iki sorusu (`İtalya'nın başkenti…`, `Bugünkü dolar kuru…`) önbelleğe
+  **girmez** — `answer_cache` yalnız `answered` + atıflı cevapları saklar. Yani
+  çevrimdışında bu sahne zaten doğru davranır (kanıt kapısı kapanır) ve önbelleğe ihtiyaç
+  duymaz. Listede durmalarının sebebi R3'ün doldurma koşusunda **isabetsizliği
+  doğrulaması**.
 - Sürücü soruları **kopyala-yapıştır** ile sormalı. Bir harf farkı isabeti kaçırır.

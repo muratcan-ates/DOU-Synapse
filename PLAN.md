@@ -66,19 +66,19 @@ Son sütun **9 Ağustos 2026'da kod okunarak ve sistem çalıştırılarak** dol
 | 3 | PDF / PPTX / Markdown / kod yükleme | Tür+boyut+magic byte kontrolü; asenkron ingestion + n/m ilerleme göstergesi | ✅ 8 dosya → 33 chunk, hepsi `completed` |
 | 4 | Ders bazlı mutlak izolasyon | Server-side `course_id` + RLS (gerçekten tetiklendiği kanıtlanarak) | ⚠️ Yerel/CI'da ✅ (`dou_app` rolü + FORCE RLS + CI'da izolasyon kanıtı); **Compose yığınında RLS devre dışı** (superuser) |
 | 5 | Kaynaklı sohbet | Cevap + dosya adı + sayfa/slayt; kaynak chunk metadata'sından üretilir | ✅ |
-| 6 | Kapsam dışı ret (abstention) | Kanıt eşiği (kalibrasyon setiyle ayarlanır) + kaynaksız cevabı bloklama | ⚠️ Çalışıyor ama statü `insufficient_context` dönüyor, `out_of_scope` değil (ARCHITECTURE §5); holdout'ta %80 |
+| 6 | Kapsam dışı ret (abstention) | Kanıt eşiği (kalibrasyon setiyle ayarlanır) + kaynaksız cevabı bloklama | ⚠️ ✅ İki ret türü artık ayrışıyor (`scope.assess_evidence`, 9 Ağu akşamı); ölçüldü: 3 soru `out_of_scope`, 3 soru `insufficient_context`. **Ayrım eksik sayıyor** — bazı kapsam dışı sorular ikinci gruba düşüyor. Holdout'ta %80 |
 | 7 | Sokratik mod | Backend state machine; **ipuçları da retrieve edilmiş kaynaklardan türetilir ve kaynak taşır** | ✅ Israrcı öğrenci yolu dahil canlıda doğrulandı |
 | 8 | Sınav prova modu | Süreli MCQ + açık uçlu; ipucu kapalı, tek deneme | ✅ `exam` modunda ipucu kapalı; `practice` modunda açık ve mastery çarpanına giriyor |
 | 9 | "Neden yanlış?" analizi | MCQ'da distractor→kaynak eşlemesi (birincil); açık uçlu için rubrik geri bildirimi | ✅ MCQ yolu deterministik, dosya+sayfa ile doğrulandı |
-| 10 | Soru havuzu üretici | JSON şemalı; `mcq / open / code_trace / bug_hunt` tipleri; **eğitmen onayı olmadan yayınlanmaz** | ⚠️ Onay kapısı ✅ (öğrenci taslak göremiyor, `answer_key` beyaz listeyle eleniyor); **üretim gerçek LLM anahtarı ister** — sahte sağlayıcı 0 soru döndürüyor |
-| 11 | Kod/senaryo inceleme | `code_trace` (çıktı tahmini) + `bug_hunt` (hata buldurma) soru tipleri; kod ÇALIŞTIRMADAN | ⚠️ Şema ve puanlama var; üretim #10'un kısıtına tabi |
+| 10 | Soru havuzu üretici | JSON şemalı; `mcq / open / code_trace / bug_hunt` tipleri; **eğitmen onayı olmadan yayınlanmaz** | ✅ Onay kapısı canlıda doğrulandı (öğrenci taslak göremiyor, `answer_key` beyaz listeyle eleniyor). Üretim anahtarsız da çalışıyor: 3 istendi, 3 üretildi ve şemadan geçti |
+| 11 | Kod/senaryo inceleme | `code_trace` (çıktı tahmini) + `bug_hunt` (hata buldurma) soru tipleri; kod ÇALIŞTIRMADAN | ⚠️ Şema ve puanlama var; gerçek LLM ile kalite ölçülmedi |
 | 12 | Açık uçlu değerlendirme | Rubrik + şemalı LLM değerlendirmesi (skor, eksik_noktalar[], dayanak_chunk_id) | ⚠️ Kod yolu var; anahtarsız ortamda ölçülemedi |
 | 13 | Guardrail zinciri | Citation validator + kod sızıntı filtresi + evidence gate (fail-closed) | ✅ Sıra tek yerde sabit; **iki orkestratör var, üretimde biri koşuyor** (ARCHITECTURE §5) |
 | 14 | Mastery-Lite | Konu bazlı EWMA puanı + eğitmen özet ekranı (tek sayfa) | ✅ Öğrenci ve sınıf görünümü canlıda doğrulandı |
 | 15 | Demo cevap cache'i | Exact-match cache; demo senaryosu soruları önceden doldurulur (offline sigortası) | ⚠️ Cache mekanizması ✅ (yalnız `qa` modu, birebir eşleşme); **doldurma betiği R3'te, soru listesi `docs/demo-script.md`'de** |
 | 16 | Gold test seti + başarı raporu | ≥50 soru (kalibrasyon/holdout ayrık); metrikler + faithfulness örneklemi (20-30 cevap, elle) | ⚠️ Set ve harness var; uçtan uca metrikler R2'de, anahtar bekliyor |
 | 17 | Canlı URL (1. günden) + Docker Compose | Sürekli deploy; Compose lokal/fallback | ❌ Canlı URL yok; Compose var ama RLS'siz. R3'ün işi |
-| 18 | Kullanım kılavuzları + örnek ders paketi | Eğitmen + öğrenci kılavuzu; İşletim Sistemleri materyal seti | ✅ Bu şerit (R5): iki kılavuz + runbook + demo script + KVKK metni |
+| 18 | Kullanım kılavuzları + örnek ders paketi | Eğitmen + öğrenci kılavuzu; İşletim Sistemleri materyal seti | ✅ Bu şerit (R5): iki kılavuz + runbook + demo script + KVKK metni; ekran görüntüleri birleşme sonrası tazelendi |
 
 ### P1 — Zaman kalırsa (dondurmadan sonra yalnızca bayrak arkasında)
 
@@ -174,7 +174,7 @@ kriterli görevlerle; auth, RLS, `course_id` filtreleri, migration'lar insan inc
 | Injection testleri (≥15 vaka, kalıp aileleri) | Geçer | **KOŞULMADI** (R4) | "Smoke-test edildi" olarak raporlanır, "dayanıklı" denmez |
 | Soru üretiminde şema geçerliliği | ≥ %98 | **ÖLÇÜLEMEDİ** — sahte sağlayıcı soru üretmiyor; gerçek anahtar gerekiyor | — |
 | Uçtan uca cevap p95 | < 10 sn | **KOŞULMADI.** Yerel ölçüm: ilk yükleme 19,1 sn (model yükleme dahil), sonraki yüklemeler 2–7 sn | **Sıcak replika, sorgu yolu** |
-| Demo akışında kritik hata | 0 | Altı sahnenin **beşi** canlıda koşuldu ve geçti; 6. sahne (sınav) önceden onaylanmış soru gerektirdi | `docs/demo-script.md` |
+| Demo akışında kritik hata | 0 | **Altı sahnenin altısı da** canlıda koşuldu ve geçti (9 Ağu akşamı, ekranlar bağlandıktan sonra) | `docs/demo-script.md` |
 | Backend testleri | yeşil | **479 geçiyordu** (`uv run pytest -q`) | 9 Ağustos tarihsel ölçümü | <!-- docs-check: tarihsel 479 · 2026-08-09 -->
 
 Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göstergesi, kesin hüküm değil.*
@@ -220,7 +220,7 @@ Sonuçlar sunulurken not düşülür: *n=50, alt kümeler n≈10 — yön göste
 | [`docs/demo-script.md`](docs/demo-script.md) | Sahne sahne ne anlatılır | ✅ |
 | [`docs/instructor-guide.md`](docs/instructor-guide.md) | Eğitmen ne yapar | ✅ |
 | [`docs/student-guide.md`](docs/student-guide.md) | Öğrenci ne yapar | ✅ |
-| [`docs/kvkk.md`](docs/kvkk.md) | Hangi kişisel veri nasıl işleniyor | ✅ metin hazır, **sayfa lider'de** |
+| [`docs/kvkk.md`](docs/kvkk.md) | Hangi kişisel veri nasıl işleniyor | ✅ metin + **sayfa yayında** (`apps/web/app/kvkk`) |
 | [`docs/test-report.md`](docs/test-report.md) | Ölçülen kalite | R2 |
 | `docs/security.md` | Güvenlik testleri | R1 — **dosya henüz yok** |
 | `docs/deployment.md` | Dağıtım | R3 — **dosya henüz yok** |

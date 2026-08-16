@@ -92,6 +92,21 @@ test.describe("belge ekran görüntüleri @ekran", () => {
     await cek(page, "10-sohbet-nazik-ret");
   });
 
+  test("sohbet — kapsam dışı soruda nötr ret kartı", async ({ page }) => {
+    // İki ret türünün İKİNCİSİ: yukarıdaki test kanıt-yetersizliği retini çekiyor,
+    // bu test kapsam-dışı retini. Soru bilerek dersle hiç ilgisi olmayan bir genel
+    // kültür sorusu — kapı (assess_evidence) bunu out_of_scope'a düşürür ve kullanıcı
+    // MESSAGE_OUT_OF_SCOPE metnini görür (apps/api/app/api/chat.py).
+    await girisYap(page, BURAK);
+    await page.goto(`/courses/${DERS}/chat`);
+    await sor(page, "İtalya'nın başkenti neresidir?");
+
+    await expect(page.getByText("dersin kapsamı dışında", { exact: false })).toBeVisible();
+    // Bu ret de hata gibi görünmemeli — nötr bilgi kartı olmalı.
+    await expect(page.getByRole("main").locator('[role="alert"]')).toHaveCount(0);
+    await cek(page, "10-sohbet-kapsam-disi-ret");
+  });
+
   test("soru havuzu — üretim raporu ve elenme gerekçeleri", async ({ page }) => {
     await girisYap(page, AYSE);
     await page.goto(`/courses/${DERS}/questions`);

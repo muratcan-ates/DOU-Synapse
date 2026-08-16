@@ -324,3 +324,59 @@ kaynaklı cevap alınamıyordu. Liderin verisine dokunulmadı; bütün ekran gö
 >
 > **§3 madde 8 hâlâ açık:** `10_OKU_ONCE_FAZ2.md` satır 20 ve 133'teki "19 tablo"
 > ifadesi bu commit'te düzeltilmedi. Doğrusu **15**.
+
+---
+
+## 8. TAZELEME — 9 Ağustos akşamı, beş şerit birleştikten sonra
+
+Şeritler `main`'e girince bu şeridin belgelerindeki **uyarıların bir kısmı yanlış hâle
+geldi.** Bayat bir uyarı, olmayan bir uyarıdan kötüdür: demo senaryosu operatöre çalışan
+bir sahneyi atlatıyordu. Belgeler yeniden ölçülüp güncellendi.
+
+**Bildirdiğim maddelerden kapananlar:**
+
+| # | Bildirim | Durum |
+|---|---|---|
+| 1 | Üç ekran tasarım önizlemesi | ✅ Üçü de bağlandı; `PreviewBanner` kullanan sayfa kalmadı |
+| 2 | `out_of_scope` canlı yolda ulaşılamaz, analitik %0 gösteriyor | ✅ `retrieval/scope.assess_evidence` ile ayrım kapının içine alındı. Analitik kartı artık "Ölçüm yok" ile sıfırı da ayırıyor |
+| 3 | Sahte sağlayıcı soru üretemiyor | ✅ Ölçüldü: 3 istendi, **3 üretildi ve şemadan geçti** |
+| 4 | Chunk'ta sağlayıcı+sürüm damgası yok | ✅ `0006` indi; ölçülen değer `fastembed/intfloat/multilingual-e5-large@0.8.0` |
+| 5 | "19 tablo" yanlış | ✅ Brief'te **15** olarak düzeltildi |
+| 6 | KVKK sayfası gerekiyor | ✅ `apps/web/app/kvkk` — `docs/kvkk.md`'yi kopyalamadan okuyor |
+| 7 | İki bayat kod yorumu (eşik kalibre edilmemiş) | ✅ İkisi de düzeltildi |
+
+**Açık kalanlar:**
+
+| # | Bildirim | Durum |
+|---|---|---|
+| a | `rls_isolation.sql` seed'den sonra `duplicate key` ile düşüyor | Açık — quickstart sırayı düzeltiyor, kalıcı çözüm (`ON CONFLICT DO NOTHING`) yapılmadı |
+| b | `AnswerPipeline` yalnız testlerde; canlı uç kendi kopyasını koşuyor | Açık |
+| c | Compose'da RLS devre dışı (`api` **ve** `worker` `postgres` superuser'ı ile bağlanıyor) | Açık |
+| d | `POST /internal/drain` boş | Açık — Compose'a `worker` servisi eklendi ama HTTP tetiği yok |
+| e | `chat.py::_opening_question` yorumu hâlâ "`student_attempt` imzada yok" diyor | Açık |
+| f | Model imaja gömülü değil; `$TMPDIR` önbelleği demo riski | Açık (R3) |
+
+**Yeni ölçüm — iki ret türünün ayrımı eksik sayıyor.** Sınıflandırma sözlüksel örtüşmeye
+bakıyor ve her ders dışı soruyu yakalamıyor:
+
+| Soru | Statü |
+|---|---|
+| İtalya'nın başkenti neresidir? · Bugün hava nasıl? · Fenerbahçe dün kaç attı? | `out_of_scope` |
+| Bugünkü dolar kuru… · En iyi pizza tarifi… · Osmanlı Devleti ne zaman kuruldu? | `insufficient_context` |
+
+Alt sıradaki üçü de insan gözüyle kapsam dışıdır. Yani **kapsam dışı ret oranı artık
+ölçülebiliyor ama olduğundan düşük çıkıyor**; SC-005 raporlanırken bu kayıt düşülmeli
+(R2). Demo senaryosu bu yüzden sahnede **denenmiş** soruyu kullandırıyor.
+
+**Yapılanlar:** 15 ekran görüntüsünün tamamı yeniden çekildi (yeni: kapsam dışı ret
+ekranı, gerçek soru havuzu, gerçek sınav + "neden yanlış", gerçek analitik/ilerleme);
+iki kılavuzdan, demo senaryosundan ve runbook'tan önizleme uyarıları kaldırıldı;
+ARCHITECTURE §5 iki-ret mekanizmasıyla, §10 kapanan maddelerle güncellendi; PLAN §2/§5
+ve quickstart yeniden ölçülen değerlerle tazelendi.
+
+**Doğrulama:** 664 test yeşil · mypy temiz (62 dosya) · ruff temiz · tüm göreli
+bağlantılar çözülüyor.
+
+**Hâlâ geçerli dürüstlük notu:** bu koşuların hiçbirinde gerçek LLM anahtarı yoktu.
+Sahte sağlayıcı retrieval, atıf, guardrail ve merdiven yollarını gerçekten koşturuyor;
+yazmadığı tek şey cevabın düzyazısı. Uçtan uca kalite metrikleri hâlâ **KOŞULMADI**.

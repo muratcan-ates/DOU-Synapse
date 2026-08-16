@@ -3,8 +3,8 @@
 DOU-Synapse, hocanın derse yüklediği materyallerden — **ve yalnız onlardan** — cevap veren
 bir çalışma asistanıdır. Her cevabın altında hangi dosyanın hangi sayfasından geldiği yazar.
 
-> Bu kılavuzdaki ekran görüntüleri gerçek sistemden alınmıştır (9 Ağustos 2026). Birkaç
-> ekran henüz tasarım önizlemesidir ve o bölümlerde belirtilmiştir.
+> Bu kılavuzdaki ekran görüntüleri gerçek sistemden alınmıştır ve beş şerit birleştikten
+> sonra yeniden çekilmiştir; **hiçbiri örnek veri değildir.**
 
 ---
 
@@ -100,20 +100,30 @@ neyi yanlış anladığınızı görmeden verilen ipucu yönlendirme değil, tah
 
 ## 4. Asistan "bilmiyorum" derse
 
-![Nazik ret](images/10-sohbet-nazik-ret.png)
+Asistanın **iki farklı reddi** vardır ve ikisi farklı şey söyler.
 
-> **Materyalde dayanak bulunamadı**
+**1. "Dersin kapsamı dışında"** — soru bu dersin konusu değil:
+
+![Kapsam dışı ret](images/10-sohbet-kapsam-disi-ret.png)
+
+> "Bu soru dersin kapsamı dışında görünüyor. Yalnızca bu derse yüklenmiş materyallerden
+> cevap verebiliyorum; ders dışı konularda bilerek sessiz kalıyorum."
+
+**2. "Materyalde dayanak bulunamadı"** — konu dersle ilgili olabilir ama materyalde
+yeterli dayanak yok:
+
+![Dayanak yok](images/10-sohbet-nazik-ret.png)
+
 > "Bu soruya ders materyalinde yeterli dayanak bulamadım, bu yüzden cevap vermiyorum..."
 
-**Bu bir hata değildir.** Asistan, materyalde yeterince güçlü bir dayanak bulamadığında
-cevap üretmeyi reddeder — çünkü üretseydi uydurma riski olurdu ve siz onu ders bilgisi
-sanardınız.
-
-Bu mesajı aldığınızda:
+**İkisi de hata değildir.** Asistan yeterince güçlü bir dayanak bulamadığında cevap
+üretmeyi reddeder — çünkü üretseydi uydurma riski olurdu ve siz onu ders bilgisi
+sanardınız. Ayrım işinize yarar: birincisinde soruyu başka yere sorun, ikincisinde
+soruyu düzeltmeyi deneyin.
 
 | Sebep | Ne yapmalı |
 |---|---|
-| Soru ders dışı | Doğru davranış. Genel bir arama motoruna sorun |
+| "Dersin kapsamı dışında" | Doğru davranış. Genel bir arama motoruna sorun |
 | Soru çok genel ("her şeyi anlat") | Somutlaştırın: kavram adı ya da haftanın konusunu ekleyin |
 | Konu materyalde yok | Hocanıza söyleyin — ilgili materyal yüklenmemiş olabilir |
 | Yazım hatası / çok kısa soru | Soruyu tam cümleyle yeniden yazın |
@@ -125,10 +135,7 @@ Bu mesajı aldığınızda:
 
 ## 5. Sınav provası
 
-> ⚠️ **Bu ekran şu an tasarım önizlemesidir** (üstünde bir bilgi şeridi görürsünüz).
-> Arka uç çalışıyor; aşağıdaki davranışlar bağlandığında geçerli olacak.
-
-![Sınav provası (önizleme)](images/14-ogrenci-sinav-provasi.png)
+![Sınav provası](images/14-ogrenci-sinav-provasi.png)
 
 - Sınav yalnız **hocanın onayladığı** sorulardan oluşur. Onaylanmış soru yoksa sistem
   *"Bu derste henüz onaylanmış soru yok"* der.
@@ -154,9 +161,7 @@ provasının en değerli tarafı budur.
 
 ## 6. İlerlemem
 
-> ⚠️ Bu ekran da şu an tasarım önizlemesidir; arka uç çalışıyor.
-
-![İlerleme (önizleme)](images/15-ogrenci-ilerleme.png)
+![İlerleme](images/15-ogrenci-ilerleme.png)
 
 Konu bazlı bir puan ve seviye görürsünüz:
 
