@@ -6,10 +6,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useId, useState } from "react";
 import { api } from "@/lib/api";
-import { errorMessage } from "@/lib/errors";
 import { useSession } from "@/lib/session";
 import type { Member } from "@/lib/types";
 import { useResource } from "@/lib/use-resource";
+import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { InstructorGate } from "@/components/instructor-gate";
@@ -210,31 +210,24 @@ function AddMemberForm({
 }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"student" | "instructor">("student");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const emailId = useId();
   const roleId = useId();
   const hintId = useId();
   const errorId = useId();
 
-  async function submit(e: React.FormEvent) {
+  // Buton `aria-disabled` ile beklemeye alınıyor (odağı kaybetmemek için,
+  // bkz. ui.tsx `Button`). `aria-disabled` gönderimi kendiliğinden
+  // engellemediğinden çift gönderim kapısı `useSubmit`'te duruyor.
+  const { busy, error, submit: add } = useSubmit(async () => {
+    await api.post(`/courses/${courseId}/members`, { email, role });
+    setEmail("");
+    onAdded();
+  }, "İşlem tamamlanamadı.");
+
+  function submit(e: React.FormEvent) {
     e.preventDefault();
-    // Buton `aria-disabled` ile beklemeye alınıyor (odağı kaybetmemek için,
-    // bkz. ui.tsx `Button`). `aria-disabled` gönderimi kendiliğinden
-    // engellemediğinden çift gönderim kapısı burada duruyor.
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post(`/courses/${courseId}/members`, { email, role });
-      setEmail("");
-      onAdded();
-    } catch (err) {
-      setError(errorMessage(err, "İşlem tamamlanamadı."));
-    } finally {
-      setBusy(false);
-    }
+    void add();
   }
 
   return (

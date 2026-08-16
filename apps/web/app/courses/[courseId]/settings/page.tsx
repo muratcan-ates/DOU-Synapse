@@ -19,6 +19,7 @@ import {
 } from "@/lib/policy";
 import { useSession } from "@/lib/session";
 import type { ChatMode, CourseDocument, Page } from "@/lib/types";
+import { useSubmit } from "@/lib/use-submit";
 
 export default function AiPolicyPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -47,7 +48,6 @@ function PolicyEditor({ courseId }: { courseId: string }) {
   const [draft, setDraft] = useState<PolicyDraft | null>(null);
   const [documents, setDocuments] = useState<CourseDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -75,12 +75,16 @@ function PolicyEditor({ courseId }: { courseId: string }) {
     void load();
   }, [courseId]);
 
-  async function save() {
-    if (!draft || saving) return;
-    setSaving(true);
-    setError(null);
-    setNotice(null);
-    try {
+  /*
+   * Kayıt hatası yükleme hatasıyla AYNI satırı paylaşır (tek `error` durumu);
+   * kanca bu yüzden kendi `error`'ı yerine `onError` ile buraya yazar.
+   * Çift-gönderim kapısı kancada.
+   */
+  const { busy: saving, submit: save } = useSubmit(
+    async () => {
+      if (!draft) return;
+      setError(null);
+      setNotice(null);
       const saved = await api.put<CourseAiPolicy>(
         `/courses/${courseId}/ai-policy`,
         payloadFromDraft(draft),
@@ -88,12 +92,9 @@ function PolicyEditor({ courseId }: { courseId: string }) {
       setPolicy(saved);
       setDraft(draftFromPolicy(saved));
       setNotice("AI politikası kaydedildi ve ilk yeni istekten itibaren uygulanacak.");
-    } catch (cause) {
-      setError(errorMessage(cause, "AI politikası kaydedilemedi."));
-    } finally {
-      setSaving(false);
-    }
-  }
+    },
+    { onError: (cause) => setError(errorMessage(cause, "AI politikası kaydedilemedi.")) },
+  );
 
   if (loading) return <Loading label="AI politikası yükleniyor…" />;
   if (error && (!policy || !draft)) return <ErrorNote message={error} onRetry={() => void load()} />;

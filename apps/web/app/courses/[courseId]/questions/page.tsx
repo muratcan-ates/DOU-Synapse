@@ -55,6 +55,7 @@ import type {
 } from "@/lib/types";
 import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
+import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
@@ -736,8 +737,6 @@ function GeneratePanel({
   const [answerFormat, setAnswerFormat] = useState<AnswerFormat>("essay");
   const [count, setCount] = useState<number>(5);
   const [examplesText, setExamplesText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<GenerationSummary | null>(null);
 
   // Seçili konu listeden düşmüş olabilir (başka sekmede silinen ders içeriği);
@@ -745,30 +744,27 @@ function GeneratePanel({
   const activeTopicId =
     topicId && topics.some((topic) => topic.id === topicId) ? topicId : (topics[0]?.id ?? "");
 
-  async function generate() {
-    if (busy || activeTopicId === "") return;
-    setBusy(true);
-    setError(null);
+  const { busy, error, submit } = useSubmit(async () => {
     setSummary(null);
-    try {
-      const report = await api.post<QuestionGeneration>(
-        `/courses/${courseId}/questions/generate`,
-        buildGenerateRequest({
-          topicId: activeTopicId,
-          questionType,
-          answerFormat,
-          count,
-          examplesText,
-        }),
-      );
-      setSummary(generationSummary(report));
-      onGenerated(report);
-      await onChanged();
-    } catch (e) {
-      setError(errorMessage(e, "Soru üretilemedi."));
-    } finally {
-      setBusy(false);
-    }
+    const report = await api.post<QuestionGeneration>(
+      `/courses/${courseId}/questions/generate`,
+      buildGenerateRequest({
+        topicId: activeTopicId,
+        questionType,
+        answerFormat,
+        count,
+        examplesText,
+      }),
+    );
+    setSummary(generationSummary(report));
+    onGenerated(report);
+    await onChanged();
+  }, "Soru üretilemedi.");
+
+  function generate() {
+    // Konu doğrulaması gönderim ÖNCESİ; çift-gönderim kapısı kancada.
+    if (activeTopicId === "") return;
+    return submit();
   }
 
   return (
@@ -982,26 +978,19 @@ function NewTopicForm({
   onCreated: () => Promise<void>;
 }) {
   const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function submit(event: React.FormEvent) {
+  // Buton `aria-disabled` ile beklemeye alınıyor (odağı kaybetmemek için);
+  // `aria-disabled` gönderimi kendiliğinden engellemediğinden çift gönderim
+  // kapısı `useSubmit`'te duruyor.
+  const { busy, error, submit: create } = useSubmit(async () => {
+    await api.post<Topic>(`/courses/${courseId}/topics`, { name });
+    setName("");
+    await onCreated();
+  }, "Konu eklenemedi.");
+
+  function submit(event: React.FormEvent) {
     event.preventDefault();
-    // Buton `aria-disabled` ile beklemeye alınıyor (odağı kaybetmemek için);
-    // `aria-disabled` gönderimi kendiliğinden engellemediğinden çift gönderim
-    // kapısı burada duruyor.
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post<Topic>(`/courses/${courseId}/topics`, { name });
-      setName("");
-      await onCreated();
-    } catch (e) {
-      setError(errorMessage(e, "Konu eklenemedi."));
-    } finally {
-      setBusy(false);
-    }
+    void create();
   }
 
   return (

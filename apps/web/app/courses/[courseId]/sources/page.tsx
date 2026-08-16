@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { errorMessage } from "@/lib/errors";
 import { useSession } from "@/lib/session";
+import { useSubmit } from "@/lib/use-submit";
 import {
   EVIDENCE_LEVEL,
   formatRetrievalScore,
@@ -60,26 +60,21 @@ function SourcesView() {
 function RetrievalLab({ courseId }: { courseId: string }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<RetrievalInspection | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const trimmed = query.trim();
 
-  async function inspect() {
-    if (trimmed.length < 3 || busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      setResult(
-        await api.post<RetrievalInspection>(`/courses/${courseId}/sources/inspect`, {
-          query: trimmed,
-          limit: 8,
-        }),
-      );
-    } catch (caught) {
-      setError(errorMessage(caught, "Retrieval testi tamamlanamadı."));
-    } finally {
-      setBusy(false);
-    }
+  const { busy, error, submit } = useSubmit(async () => {
+    setResult(
+      await api.post<RetrievalInspection>(`/courses/${courseId}/sources/inspect`, {
+        query: trimmed,
+        limit: 8,
+      }),
+    );
+  }, "Retrieval testi tamamlanamadı.");
+
+  function inspect() {
+    // Uzunluk doğrulaması gönderim ÖNCESİ; çift-gönderim kapısı kancada.
+    if (trimmed.length < 3) return;
+    return submit();
   }
 
   return (
