@@ -1500,6 +1500,63 @@ class EvidenceBindingTests(unittest.TestCase):
         self.assertIn(f"UNREFERENCED_EVIDENCE:{orphan}", errors)
 
 
+class MergeHeadEquivalenceTests(unittest.TestCase):
+    """PR #5 main'e "merge commit" yöntemiyle inince yaşananın anıtı.
+
+    Merge commit'in ağacı adayla bit-özdeşti (0a22a69... == 0a22a69...) ama
+    kökün giriş commit'i artık HEAD olmadığı için yetki düştü ve main'deki
+    "Govern reviewed AI diff" kırmızıya döndü. Kural: giriş, head'in ebeveyni
+    VE ağaçlar özdeş ise yetki korunur; merge'e tek bayt sokulursa ya da
+    kökten sonra dala commit binerse yetki fail-closed düşer.
+    """
+
+    def setUp(self) -> None:
+        self.repo = RepositoryFixture()
+
+    def tearDown(self) -> None:
+        self.repo.close()
+
+    def _candidate_branch(self) -> dict[str, Any]:
+        self.repo.write("apps/api/app/modules/generation/prompts.py", "PROMPT = 'candidate'\n")
+        dossier = self.repo.dossier(path="apps/api/app/modules/generation/prompts.py")
+        self.repo._git("checkout", "-q", "-b", "candidate")
+        self.repo.commit_ai_change(dossier)
+        self.repo._git("checkout", "-q", "-")
+        return dossier
+
+    def test_icerik_ozdes_merge_head_yetkiyi_korur(self) -> None:
+        self._candidate_branch()
+
+        self.repo._git("merge", "-q", "--no-ff", "-m", "Merge pull request", "candidate")
+
+        self.assertEqual([], self.repo.validate())
+
+    def test_merge_icine_sokusturulan_icerik_yetkiyi_dusurur(self) -> None:
+        """Zararsız görünen bir README satırı bile: ağaç saptı, aday o değil."""
+        self._candidate_branch()
+
+        self.repo._git("merge", "-q", "--no-ff", "--no-commit", "candidate")
+        self.repo.write("README.md", "merge sirasinda sokusturulan satir\n")
+        self.repo._git("add", ".")
+        self.repo._git("commit", "-q", "-m", "merge with smuggled content")
+
+        errors = self.repo.validate()
+        self.assertTrue(any(error.startswith("UNCOVERED:") for error in errors), errors)
+
+    def test_kokten_sonra_dala_binen_commit_merge_ile_aklanamaz(self) -> None:
+        """Giriş, merge'in ebeveyni değilse ağaç ne olursa olsun yetki yoktur."""
+        self._candidate_branch()
+        self.repo._git("checkout", "-q", "candidate")
+        self.repo.write("docs/notes.md", "kokten sonra gelen is\n")
+        self.repo.commit("post-root commit on branch")
+        self.repo._git("checkout", "-q", "-")
+
+        self.repo._git("merge", "-q", "--no-ff", "-m", "Merge pull request", "candidate")
+
+        errors = self.repo.validate()
+        self.assertTrue(any(error.startswith("UNCOVERED:") for error in errors), errors)
+
+
 class ProductionPolicyCoverageTests(unittest.TestCase):
     def test_runtime_ai_control_planes_are_classified(self) -> None:
         policy = json.loads((SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8"))

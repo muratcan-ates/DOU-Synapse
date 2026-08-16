@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "change_id": "006-governance-merge-head-r1",
+  "lineage_id": "governance-merge-head-authorization",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Merge-eşdeğer HEAD yetkilendirmesi (fail-closed)",
+  "summary": "ai_sdlc_check: yetkilendiren kökün bağlamı, HEAD içerik-özdeş bir merge sarmalayıcısıyken de geçerli sayılır — yalnız giriş commit'i merge'in ebeveyniyse VE iki ağaç özeti aynıysa. PR #5'in main'e inişinin ürettiği gerçek kırmızının yapısal düzeltmesi; ağaç sapması ve kök-sonrası commit kırmızı kalır.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-16T20:23:26+03:00",
+  "review_by": "2026-09-15T20:23:26+03:00",
+  "base_sha": "2426485eb2cf4359d8cc6edfeba6c1b76971b5c6",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "not-applicable:governance-validator-only",
+    "model_revision": "not-applicable:no-model-change",
+    "prompt_revision": "unchanged-from-base-2426485e",
+    "tool_schema_revision": "unchanged-from-base-2426485e",
+    "guardrail_revision": "ai-sdlc-merge-equivalent-head-v1: parent+tree-equality yoksa yetki düşer",
+    "retrieval_revision": "unchanged-from-base-2426485e",
+    "embedding_revision": "unchanged-from-base-2426485e",
+    "evaluator_revision": "validator-76-merge-head-equivalence; main-historical-range-regovern-pass"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "8b2d10cf3b668ba15fb4c74c829449c7103fdfe4e77dfcf4ef3c0c77e1ab6296",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "scripts/ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "400c01ad7ab0d31ad0e30bab9347632900ed4a7f232f567e1ae2f2efd4e9d17c"
+    },
+    {
+      "path": "scripts/test_ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "8b2d10cf3b668ba15fb4c74c829449c7103fdfe4e77dfcf4ef3c0c77e1ab6296"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/006-governance-merge-head-r1.json",
+      "report_sha256": "676f0f9271b969f9741e0d0f5e198170ac8c550b1e05e90772a1d0a11a2b3188",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "scripts/test_ai_sdlc_check.py",
+    "holdout_ref": "main tarihsel aralığı 2c178861..2426485e (canlı yeniden yargılama, exit 0)",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: yalnız yönetişim betiği değişti; insan çapası ürün kanıtı R12'de",
+    "metrics": [
+      {
+        "name": "validator_tests_passed",
+        "baseline": 73,
+        "candidate": 76,
+        "operator": ">=",
+        "threshold": 76,
+        "sample_size": 76
+      },
+      {
+        "name": "main_historical_range_regovern_exit",
+        "baseline": 1,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "set -euo pipefail; test -z \"$(git status --porcelain=v1 --untracked-files=all)\"; PYTHONDONTWRITEBYTECODE=1 apps/api/.venv/bin/python -m unittest scripts.test_ai_sdlc_check; PYTHONDONTWRITEBYTECODE=1 apps/api/.venv/bin/python scripts/ai_sdlc_check.py --base-sha 2c178861a3e484af8643f999f210db040eb84e68 --head-sha 2426485eb2cf4359d8cc6edfeba6c1b76971b5c6; node scripts/docs_check.mjs; PYTHONDONTWRITEBYTECODE=1 apps/api/.venv/bin/python scripts/ai_sdlc_check.py --base-sha 2426485eb2cf4359d8cc6edfeba6c1b76971b5c6 --head-sha \"$(git rev-parse HEAD)\""
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Yasemin Karagül",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending Bilgi İşlem security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:006-governance-merge-head-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope, kill-switch or rollback fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and the frozen real-provider holdout passes.",
+      "Staging auth, storage, RLS and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under the shared user assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2426485eb2cf4359d8cc6edfeba6c1b76971b5c6",
+    "procedure": "Bu adayı revert eden ileri-yönlü bir commit at; main'in bir sonraki push koşusu eski davranışa döner.",
+    "max_minutes": 15,
+    "verification": "unittest scripts.test_ai_sdlc_check yeşil ve ai_sdlc_check main aralığında beklenen sonucu verir.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
