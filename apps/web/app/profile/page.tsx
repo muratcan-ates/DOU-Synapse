@@ -7,13 +7,13 @@ import { Field } from "@/components/field";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { usePortalProfile } from "@/components/portal/portal-profile-context";
 import { Badge, Button, Input } from "@/components/ui";
-import { errorMessage } from "@/lib/errors";
 import {
   normalizedProfileName,
   roleLabel,
   updateProfile,
   type Profile,
 } from "@/lib/profile";
+import { useSubmit } from "@/lib/use-submit";
 
 export default function ProfilePage() {
   return (
@@ -63,8 +63,6 @@ function ProfileContent({
   reload: () => Promise<void>;
 }) {
   const [fullName, setFullName] = useState(profile.full_name ?? "");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const instructorCount = profile.memberships.filter(
     (membership) => membership.role === "instructor",
@@ -73,27 +71,24 @@ function ProfileContent({
   const profileInitial =
     (profile.full_name ?? "").trim().charAt(0).toLocaleUpperCase("tr-TR") || "H";
 
-  async function save(event: React.FormEvent) {
+  const { busy, error, setError, submit } = useSubmit(async (normalized: string) => {
+    setNotice(null);
+    await updateProfile({ full_name: normalized });
+    setFullName(normalized);
+    await reload();
+    setNotice("Profil adınız güncellendi.");
+  }, "Profil güncellenemedi.");
+
+  function save(event: React.FormEvent) {
     event.preventDefault();
     if (busy) return;
+    // Doğrulama gönderim ÖNCESİ konuşur; kancanın hata satırını kullanır.
     const normalized = normalizedProfileName(fullName);
     if (normalized.length < 2) {
       setError("Ad soyad en az 2 karakter olmalıdır.");
       return;
     }
-    setBusy(true);
-    setError(null);
-    setNotice(null);
-    try {
-      await updateProfile({ full_name: normalized });
-      setFullName(normalized);
-      await reload();
-      setNotice("Profil adınız güncellendi.");
-    } catch (cause) {
-      setError(errorMessage(cause, "Profil güncellenemedi."));
-    } finally {
-      setBusy(false);
-    }
+    void submit(normalized);
   }
 
   return (

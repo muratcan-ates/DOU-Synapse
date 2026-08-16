@@ -11,8 +11,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { ComponentPropsWithRef, ReactNode } from "react";
-import { errorMessage } from "@/lib/errors";
 import type { Tone } from "@/lib/labels";
+import { useSubmit } from "@/lib/use-submit";
 
 /**
  * `disabled` bekleme süresince odağı çalar: tarayıcı devre dışı bırakılan
@@ -159,8 +159,18 @@ export function ConfirmAction({
   onConfirm: () => Promise<void>;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /*
+   * Onay satırı sonuç NE OLURSA OLSUN kapanır: başarıda iş bitti, hatada da
+   * hata metni tetikleyicinin yanında gösterilir (aşağıdaki `error` satırı).
+   * Çift-onay kapısı `useSubmit`'te.
+   */
+  const { busy, error, submit: confirm } = useSubmit(async () => {
+    try {
+      await onConfirm();
+    } finally {
+      setConfirming(false);
+    }
+  }, "İşlem tamamlanamadı.");
   const triggerRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
   const opened = useRef(false);
@@ -222,19 +232,7 @@ export function ConfirmAction({
         variant="danger"
         aria-disabled={busy}
         aria-describedby={questionId}
-        onClick={async () => {
-          setBusy(true);
-          setError(null);
-          try {
-            await onConfirm();
-            setConfirming(false);
-          } catch (e) {
-            setError(errorMessage(e, "İşlem tamamlanamadı."));
-            setConfirming(false);
-          } finally {
-            setBusy(false);
-          }
-        }}
+        onClick={() => void confirm()}
       >
         {busy ? busyLabel : confirmLabel}
       </Button>

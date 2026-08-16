@@ -8,6 +8,7 @@ import { api, ApiError } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import type { Course } from "@/lib/types";
 import { usePagedResource } from "@/lib/use-paged-resource";
+import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { Field } from "@/components/field";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
@@ -176,34 +177,37 @@ function CreateCourseForm({ id, onCreated }: { id: string; onCreated: () => void
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [rejection, setRejection] = useState<Rejection | null>(null);
-  const [busy, setBusy] = useState(false);
   const errorId = useId();
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    /*
-     * Buton `aria-disabled` ile beklemeye alınıyor, `disabled` ile değil:
-     * `disabled` odağı `<body>`'ye atar (bkz. ui.tsx `Button`). `aria-disabled`
-     * gönderimi kendiliğinden engellemediği için — ve Enter tuşu butona hiç
-     * uğramadan formu gönderebildiği için — çift gönderim kapısı burada durur.
-     */
-    if (busy) return;
-    setBusy(true);
-    setRejection(null);
-    try {
+  /*
+   * Buton `aria-disabled` ile beklemeye alınıyor, `disabled` ile değil:
+   * `disabled` odağı `<body>`'ye atar (bkz. ui.tsx `Button`). `aria-disabled`
+   * gönderimi kendiliğinden engellemediği için — ve Enter tuşu butona hiç
+   * uğramadan formu gönderebildiği için — çift gönderim kapısı `useSubmit`'te
+   * durur. Hata düz metin değil `Rejection` (mesaj + alan-geçersizliği), bu
+   * yüzden kancanın kendi `error`'ı değil `onError` eşlemesi kullanılıyor.
+   */
+  const { busy, submit: create } = useSubmit(
+    async () => {
+      setRejection(null);
       await api.post("/courses", { code, title });
       onCreated();
-    } catch (err) {
-      setRejection({
-        message: errorMessage(err, "İşlem tamamlanamadı."),
-        /* 4xx: sunucu girilen değerleri reddetti, alanlar gerçekten geçersiz.
-           5xx ve ağ hatası girdinin suçu değil; alanı geçersiz işaretlemek
-           kullanıcıya olmayan bir yazım hatası arattırır. */
-        fromInput: err instanceof ApiError && err.status >= 400 && err.status < 500,
-      });
-    } finally {
-      setBusy(false);
-    }
+    },
+    {
+      onError: (err) =>
+        setRejection({
+          message: errorMessage(err, "İşlem tamamlanamadı."),
+          /* 4xx: sunucu girilen değerleri reddetti, alanlar gerçekten geçersiz.
+             5xx ve ağ hatası girdinin suçu değil; alanı geçersiz işaretlemek
+             kullanıcıya olmayan bir yazım hatası arattırır. */
+          fromInput: err instanceof ApiError && err.status >= 400 && err.status < 500,
+        }),
+    },
+  );
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    void create();
   }
 
   const describedBy = rejection ? errorId : undefined;
