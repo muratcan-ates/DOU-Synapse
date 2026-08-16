@@ -1,0 +1,254 @@
+{
+  "schema_version": 1,
+  "change_id": "007-modularization-v2-r1",
+  "lineage_id": "modularization-v2",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Modülerizasyon v2: chat.py/ChatScreen bölünmesi, döngü kırma, tekilleştirme",
+  "summary": "Davranış koruyucu modülerizasyon: backend god-file chat.py beş katmana, web god-component ChatScreen kancalara bölündü; paket döngüleri ve katman tersinmesi kapandı; keyset sayfalama, sahiplik-404, GradingOutcome, InstructorGate ve submit-scaffold kopyaları tekilleşti. OpenAPI sözleşmesi ve tüm mevcut testler değişmeden yeşil; tek bilinçli sertleştirme çift-gönderim kapısı.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-16T23:18:57+03:00",
+  "review_by": "2026-09-15T23:18:57+03:00",
+  "base_sha": "dbb8988a0f9bfefa0a9bcf43e3d62668ca594a80",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-dbb8988a (sahte sağlayıcı, gerçek çağrı yok)",
+    "model_revision": "unchanged-from-base-dbb8988a",
+    "prompt_revision": "unchanged-from-base-dbb8988a (24 prompt hash'i bit-özdeş taşındı: token_precharge.py)",
+    "tool_schema_revision": "unchanged-from-base-dbb8988a",
+    "guardrail_revision": "unchanged-from-base-dbb8988a (USER_TEXT contracts.py'ye taşındı, metinler bit-özdeş)",
+    "retrieval_revision": "unchanged-from-base-dbb8988a (EvidenceLevel contracts.py'ye taşındı, karar mantığı scope'ta)",
+    "embedding_revision": "unchanged-from-base-dbb8988a",
+    "evaluator_revision": "backend-909 frontend-394 e2e-serial-36 app-mutations-12; openapi-byte-identical; ast-cycle-edges-zero"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "29f2dd6245118e4feb8620ee8aa8a0da35c5c9f1e99d5cd8d98da8f88c6c93d1",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/api/blueprints.py",
+      "state": "present",
+      "sha256": "2a363b065a58584edbe9cb07e25282d1afa47cc0e8d773432c6f4bbc0c567bec"
+    },
+    {
+      "path": "apps/api/app/api/chat.py",
+      "state": "present",
+      "sha256": "5359040be0c2436c95ed2e45501482bb7852a5585465702a441b20489e8dd29f"
+    },
+    {
+      "path": "apps/api/app/api/chat_cache.py",
+      "state": "present",
+      "sha256": "652a4dab900f93ffb3fd51c227f3b3622ba388b7a46bbc1afd164a5bd2742d95"
+    },
+    {
+      "path": "apps/api/app/api/chat_history.py",
+      "state": "present",
+      "sha256": "6f951254aee94954a48f29e3319bccca08854e75798e5fc13f320de260ea031c"
+    },
+    {
+      "path": "apps/api/app/api/deps.py",
+      "state": "present",
+      "sha256": "929468ed86263f7a0e8b577887f7545d6cd1272ed478d625f2f3a0d99616d3a0"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "75915eadcd29c3904015386d7e9ddb857006bde993089206782913984a230377"
+    },
+    {
+      "path": "apps/api/app/api/questions.py",
+      "state": "present",
+      "sha256": "277d9b51d60421b7b044ddeb5bc5ee0400bfe5892c4a0dbdf55db3edd2d08836"
+    },
+    {
+      "path": "apps/api/app/contracts.py",
+      "state": "present",
+      "sha256": "53200bfd7bb4db7acfd57a09d7f02d25633ce77d00b43759325705bdbc40ac50"
+    },
+    {
+      "path": "apps/api/app/core/pagination.py",
+      "state": "present",
+      "sha256": "5a8bdb0ed508da3dc5e26076681c88508c655e3a5d72b6607f4951d8f4e8575d"
+    },
+    {
+      "path": "apps/api/app/core/vector_space.py",
+      "state": "present",
+      "sha256": "9ab48babe00bdabe95a3f7ae5e724e180eae72e010119e68b82fe5a04cb9d838"
+    },
+    {
+      "path": "apps/api/app/core/warmup.py",
+      "state": "present",
+      "sha256": "d5c81d07be8feeb66aa910b0db4f43ec156f71a6265be24d971cc0a4d1961379"
+    },
+    {
+      "path": "apps/api/app/modules/agent/answers.py",
+      "state": "present",
+      "sha256": "089c18913e105b2d39f3ed6cc1a7037ae91b00ec149b8f3d5f5690898b99dff3"
+    },
+    {
+      "path": "apps/api/app/modules/agent/pipeline.py",
+      "state": "present",
+      "sha256": "8c5e8129d3ee20f803683d3b664b8dde079fd2a7658209e77d6f9bd18d5f6916"
+    },
+    {
+      "path": "apps/api/app/modules/agent/token_precharge.py",
+      "state": "present",
+      "sha256": "c5126a8addfab061b1ef0fa0a63d93a570d1c3e3fb307631d1600df1c85ca126"
+    },
+    {
+      "path": "apps/api/app/modules/generation/service.py",
+      "state": "present",
+      "sha256": "66951f646dbf6db4ba9e2580c054789f495a8030a56dd077b64c02a429119752"
+    },
+    {
+      "path": "apps/api/app/modules/guardrails/chain.py",
+      "state": "present",
+      "sha256": "3099258e237fe8de676bb3eb2b5e691095dbcf8a2d8cb34aaf9a28af34f4c380"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/scope.py",
+      "state": "present",
+      "sha256": "e86b840a3109fc93e2b2d8a41eda70fc83710e1ed45e7b8b2432b764032c0d49"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "6ce42de2292b4efb50e34c5036801972b908f47ad02e7679b67b0890f0adedd0"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "66ced7ea1d2804b091bf0a5f68c005b250f8c1b5fafece56b9bd0618c0e42107"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/007-modularization-v2-r1.json",
+      "report_sha256": "bae7715fc8bfdcd49cbf48106814f77cbabf2937c4b0a7b36af3cca865739b33",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "docs/team/modularization-v2-audit.md",
+    "holdout_ref": "36 seri E2E, gerçek API + tarayıcı, tek-seferlik DB (artık 0/0)",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: davranış koruyucu refactor; ürün davranışı kanıtı mevcut test+E2E ağı",
+    "metrics": [
+      {
+        "name": "backend_tests_passed",
+        "baseline": 904,
+        "candidate": 909,
+        "operator": ">=",
+        "threshold": 909,
+        "sample_size": 909
+      },
+      {
+        "name": "frontend_library_tests_passed",
+        "baseline": 352,
+        "candidate": 394,
+        "operator": ">=",
+        "threshold": 394,
+        "sample_size": 394
+      },
+      {
+        "name": "serial_real_api_playwright_passed",
+        "baseline": 36,
+        "candidate": 36,
+        "operator": ">=",
+        "threshold": 36,
+        "sample_size": 36
+      },
+      {
+        "name": "application_mutations_passed",
+        "baseline": 12,
+        "candidate": 12,
+        "operator": ">=",
+        "threshold": 12,
+        "sample_size": 12
+      }
+    ],
+    "exact_command": "set -euo pipefail; test -z \"$(git status --porcelain=v1 --untracked-files=all)\"; TEST_DB_NAME=dou_synapse_test_regovern apps/api/.venv/bin/python -m pytest -q apps/api/tests; (cd apps/web && bun test lib/ && bunx tsc --noEmit --incremental false && bun run build); PG_BIN=/opt/homebrew/opt/postgresql@16/bin apps/api/.venv/bin/python scripts/role_agent_application_mutation_check.py --evidence /tmp/mut.json --candidate-sha SELF; node scripts/docs_check.mjs; apps/api/.venv/bin/python scripts/ai_sdlc_check.py --base-sha dbb8988a0f9bfefa0a9bcf43e3d62668ca594a80 --head-sha \"$(git rev-parse HEAD)\""
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Yasemin Karagül",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending Bilgi İşlem security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:007-modularization-v2-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope, kill-switch or rollback fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and the frozen real-provider holdout passes.",
+      "Staging auth, storage, RLS and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under the shared user assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:dbb8988a0f9bfefa0a9bcf43e3d62668ca594a80",
+    "procedure": "Dalı merge etme ya da merge edildiyse revert commit'i at; şema/migration değişikliği yok, veri uyumluluğu sorunu doğmaz.",
+    "max_minutes": 15,
+    "verification": "Tam pytest + bun test + 36 seri E2E eski ağaçta yeşil kalır.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
