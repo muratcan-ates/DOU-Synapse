@@ -43,7 +43,7 @@ jobs:
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
 
       - name: Doğrulanmış SHA'yı al
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.source.outputs.source_sha }}
           fetch-depth: 0
@@ -164,7 +164,7 @@ jobs:
 
     steps:
       - name: Kaynağı al
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.verify_required_checks.outputs.source_sha }}
           fetch-depth: 0
@@ -180,10 +180,10 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
 
       - name: Buildx kur
-        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
       - name: GHCR oturumu aç
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -191,7 +191,7 @@ jobs:
 
       - name: İmajı bir kez kur ve yalnız karantina etiketiyle yayınla
         id: build
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: apps/api
           file: apps/api/Dockerfile
@@ -292,7 +292,7 @@ jobs:
 
       - name: Doğrulanan digest için GitHub provenance attestasyonu üret
         id: github_attestation
-        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
         with:
           subject-name: ${{ needs.verify_required_checks.outputs.image_name }}
           subject-digest: ${{ steps.build.outputs.digest }}
@@ -417,7 +417,7 @@ jobs:
             --input release-evidence/candidate.json
 
       - name: Kabul kaydını değişmez kanıt olarak sakla
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-evidence-${{ needs.verify_required_checks.outputs.short_sha }}
           path: release-evidence/candidate.json
