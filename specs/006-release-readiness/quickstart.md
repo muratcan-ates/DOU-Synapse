@@ -3,7 +3,7 @@
 ## Ağsız birim kanıtı
 
 ```bash
-python3 -m unittest .release/test_staging_preflight.py
+python3 -m unittest discover -s .release -p 'test_staging_preflight.py'
 ```
 
 ## Gerçek staging preflight
@@ -25,4 +25,3 @@ python3 .release/staging_preflight.py \
 ```
 
 İlk koşu candidate artifact, migration ledger veya dış kanıt yoksa `blocked` dönebilir. Bu beklenen fail-closed davranıştır; deploy başarısı değildir.
-
