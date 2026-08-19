@@ -49,3 +49,28 @@ async def paper_question_ids(session: AsyncSession, exam: ExamSession) -> list[U
         .order_by(ExamItem.position)
     )
     return list(rows.scalars().all())
+
+
+async def paper_question_weights(
+    session: AsyncSession, exam: ExamSession
+) -> dict[UUID, int] | None:
+    """Kâğıttaki soru kimliklerini dondurulmuş puanlarına eşle.
+
+    ``None`` legacy/self-servis kâğıdını bilinçli olarak ifade eder; bu
+    akışta eşit ortalama kullanılır ve sorgu koşmaz. Blueprint oturumunda
+    ise boş sözlük dahi ayrı bir sinyaldir: sürümün kalemi yoktur ve puanlama,
+    cevaplanmış bir soru için ağırlık bulamazsa fail-closed davranabilir.
+
+    Sıralama puanlama sözleşmesinin parçası değildir. Eşleme doğrudan
+    ``question_id`` ile kurulur; cevapların geliş sırası bir sorunun puanını
+    başka soruya taşıyamaz.
+    """
+    if exam.exam_version_id is None:
+        return None
+
+    rows = await session.execute(
+        select(ExamItem.question_id, ExamItem.points).where(
+            ExamItem.exam_version_id == exam.exam_version_id
+        )
+    )
+    return {question_id: points for question_id, points in rows.all()}
