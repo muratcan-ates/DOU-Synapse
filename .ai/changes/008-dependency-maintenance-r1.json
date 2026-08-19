@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "change_id": "008-dependency-maintenance-r1",
+  "lineage_id": "dependency-maintenance",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R2",
+  "title": "Bağımlılık bakımı: Dependabot #9-#13 kontrollü toplama",
+  "summary": "apps/api bağımlılık alt-sınırları dependabot önerileriyle yükseltilip kilit yeniden çözüldü; kod değişikliği yok, tüm kapılar değişmeden yeşil. pyjwt 2.13.0 tabanı GHSA-xgmm-8j9v-c9wx'i kalıcılaştırır.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-20T00:05:00+03:00",
+  "review_by": "2026-09-19T00:05:00+03:00",
+  "base_sha": "2f40ac193114b896d33ef73e72ea51cc51f34d26",
+  "candidate_sha": "SELF",
+  "risk_tier": "R2",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-2f40ac19 (yalnız bağımlılık kilidi)",
+    "model_revision": "unchanged-from-base-2f40ac19 (yalnız bağımlılık kilidi)",
+    "prompt_revision": "unchanged-from-base-2f40ac19 (yalnız bağımlılık kilidi)",
+    "tool_schema_revision": "unchanged-from-base-2f40ac19 (yalnız bağımlılık kilidi)",
+    "guardrail_revision": "unchanged-from-base-2f40ac19 (yalnız bağımlılık kilidi)",
+    "retrieval_revision": "unchanged-from-base-2f40ac19 (yalnız bağımlılık kilidi)",
+    "embedding_revision": "unchanged-from-base-2f40ac19 (yalnız bağımlılık kilidi)",
+    "evaluator_revision": "backend-909-with-updated-lock; ruff-0.16.3-self-gates"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "e8b13909db38c9fb1e0f814d748956717b65d879211f5b3715aa7b312a156691",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/pyproject.toml",
+      "state": "present",
+      "sha256": "765324d6ecd818fefb69470da75f3a04af3901a278e219e21684ec2ac00af409"
+    },
+    {
+      "path": "apps/api/uv.lock",
+      "state": "present",
+      "sha256": "e8b13909db38c9fb1e0f814d748956717b65d879211f5b3715aa7b312a156691"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/008-dependency-maintenance-r1.json",
+      "report_sha256": "a89ab05dbacb95f23af60ae3602079fa7a4449d354bc137b5323ef2eea513106",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/pyproject.toml",
+    "holdout_ref": "tam backend paketi (909) yeni kilitle",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: yalnız bağımlılık kilidi; davranış ağı mevcut 909 test",
+    "metrics": [
+      {
+        "name": "backend_tests_passed",
+        "baseline": 909,
+        "candidate": 909,
+        "operator": ">=",
+        "threshold": 909,
+        "sample_size": 909
+      }
+    ],
+    "exact_command": "set -euo pipefail; cd apps/api && uv sync --extra dev --frozen && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app && TEST_DB_NAME=dou_synapse_test_deps .venv/bin/python -m pytest -q; cd ../.. && apps/api/.venv/bin/python scripts/ai_sdlc_check.py --base-sha 2f40ac193114b896d33ef73e72ea51cc51f34d26 --head-sha \"$(git rev-parse HEAD)\""
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "course_or_product",
+      "actor": "Pending course/product reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:008-dependency-maintenance-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope, kill-switch or rollback fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and the frozen real-provider holdout passes.",
+      "Staging auth, storage, RLS and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under the shared user assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2f40ac193114b896d33ef73e72ea51cc51f34d26",
+    "procedure": "Dalı revert et; kilit dosyası eski çözüme döner, kod değişikliği olmadığı için başka etki yok.",
+    "max_minutes": 15,
+    "verification": "uv sync --frozen + tam pytest eski kilitle yeşil.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

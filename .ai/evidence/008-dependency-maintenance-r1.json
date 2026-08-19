@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "008-dependency-maintenance-r1",
+  "captured_at": "2026-08-19T21:05:00+00:00",
+  "candidate_sha": "SELF",
+  "command": "uv lock; uv sync --extra dev; ruff check .; ruff format --check . (yeni ruff 0.16.3, apps/api kapsamı); mypy app; TEST_DB_NAME=dou_synapse_test_deps pytest -q",
+  "environment": "local macOS · PostgreSQL 16 · tek-seferlik test DB · paylaşılan dou_synapse'a dokunulmadı",
+  "results": {
+    "backend_tests_passed": 909,
+    "typecheck_errors": 0,
+    "ruff_check_errors": 0,
+    "ruff_format_diffs": 0
+  },
+  "governance_note": "Dependabot PR #9-#13'ün kontrollü toplaması: 9 pyproject alt-sınırı yükseltildi (pydantic-settings 2.15.0, pymupdf 1.28.2, greenlet 3.5.5, litellm ≥1.96.2, ruff 0.16.3, psycopg 3.3.4, pyjwt 2.13.0 — GHSA-xgmm-8j9v-c9wx güvenlik tabanı, uvicorn ≥0.52.3, sqlalchemy 2.0.52) ve kilit yeniden çözüldü (çözülen: sqlalchemy 2.0.52, uvicorn 0.52.4, litellm 1.97.0; kalanlar zaten taban üstündeydi). Kod değişikliği SIFIR; 909 test, mypy 97 dosya ve yeni ruff'ın kendi kapıları değişmeden yeşil. OSV/GH Advisory taramasında hiçbir pakette açık CVE yok (dependabot inceleme turu, 16 Ağu).",
+  "limitations": "Sahte sağlayıcı; litellm 1.97.0 gerçek sağlayıcı çağrısıyla denenmedi (gerçek-provider kapısı zaten ayrı onay konusu). Dependabot'un web-major PR'ları (#7 TS7, #8 types/node) ve actions grubu (#14) bilinçli dışarıda.",
+  "privacy": "içerik yok; yalnız paket adları ve sayılar"
+}
