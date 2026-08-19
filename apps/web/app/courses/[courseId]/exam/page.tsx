@@ -764,6 +764,32 @@ function FeedbackPanel({ feedback }: { feedback: AnswerFeedback }) {
         </div>
       )}
 
+      {feedback.rubric_breakdown && feedback.rubric_breakdown.length > 0 && (
+        <div className="mt-4 overflow-x-auto">
+          <h3 className="mb-2 text-xs font-medium text-fg-muted">Rubrik ölçütleri</h3>
+          <table className="w-full min-w-[480px] text-left text-sm">
+            <thead className="border-b border-border text-xs text-fg-muted">
+              <tr>
+                <th className="py-2 pr-4 font-medium">Ölçüt</th>
+                <th className="py-2 pr-4 font-medium">Ağırlık</th>
+                <th className="py-2 pr-4 font-medium">Başarı</th>
+                <th className="py-2 font-medium">Katkı</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {feedback.rubric_breakdown.map((item) => (
+                <tr key={item.point}>
+                  <td className="prose-tr py-2 pr-4 text-fg">{item.point}</td>
+                  <td className="py-2 pr-4 font-mono text-fg-muted">%{item.weight}</td>
+                  <td className="py-2 pr-4 font-mono text-fg-muted">%{item.score}</td>
+                  <td className="py-2 font-mono text-fg">{item.earned}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* Açıklama kaynaklıdır: "neden yanlış" gerçek bir chunk'a dayanır. */}
       {feedback.why_wrong && (
         <div className="mt-4">
