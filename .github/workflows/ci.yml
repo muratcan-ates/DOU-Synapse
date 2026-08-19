@@ -107,15 +107,33 @@ jobs:
       # yanabildikleri gösterilmeli. Yanmayan test hiçbir şey kanıtlamaz.
       - name: Ölçme katmanı RLS kanıtı (rls_assessment)
         working-directory: .
+        env:
+          ASSESSMENT_RLS_DB: rls_assessment_ci_${{ github.run_id }}_${{ github.run_attempt }}
         run: |
-          psql -d postgres -c 'DROP DATABASE IF EXISTS rls_assessment_template'
-          psql -d postgres -c 'CREATE DATABASE rls_assessment_template'
+          if psql -X -lqtA -d postgres | cut -d'|' -f1 | grep -Fxq "$ASSESSMENT_RLS_DB"; then
+            echo "Mevcut veritabanına dokunulmayacak: $ASSESSMENT_RLS_DB"
+            exit 1
+          fi
+          cleanup_assessment_db() {
+            dropdb --if-exists "$ASSESSMENT_RLS_DB" >/dev/null 2>&1 || true
+          }
+          trap cleanup_assessment_db EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          createdb "$ASSESSMENT_RLS_DB"
           for f in supabase/migrations/*.sql; do
-            psql -v ON_ERROR_STOP=1 -q -d rls_assessment_template -f "$f"
+            psql -X -v ON_ERROR_STOP=1 -q -d "$ASSESSMENT_RLS_DB" -f "$f"
           done
-          psql -d rls_assessment_template -f supabase/tests/rls_assessment.sql 2>&1 | tee /tmp/rls_a.out
+          psql -X -v ON_ERROR_STOP=1 -d "$ASSESSMENT_RLS_DB" \
+            -f supabase/tests/rls_assessment.sql 2>&1 | tee /tmp/rls_a.out
           if grep -q FAIL /tmp/rls_a.out; then echo "assessment RLS bozuk"; exit 1; fi
-          supabase/tests/rls_assessment_mutation_check.sh rls_assessment_template
+          supabase/tests/rls_assessment_mutation_check.sh "$ASSESSMENT_RLS_DB"
+
+      - name: Assessment integrity RLS ve hedefli mutasyon kanıtı
+        working-directory: .
+        env:
+          ASSESSMENT_INTEGRITY_DB: rls_assessment_integrity_ci_${{ github.run_id }}_${{ github.run_attempt }}
+        run: supabase/tests/rls_assessment_integrity_mutation_check.sh "$ASSESSMENT_INTEGRITY_DB"
 
       - name: Rol farkındalıklı ajan RLS ve kota mutasyonları
         working-directory: .

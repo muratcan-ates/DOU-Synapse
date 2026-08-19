@@ -31,9 +31,23 @@ PSQL="${PG_BIN:+${PG_BIN}/}psql"
 CREATEDB="${PG_BIN:+${PG_BIN}/}createdb"
 DROPDB="${PG_BIN:+${PG_BIN}/}dropdb"
 
+created_databases=()
+cleanup() {
+    local db_index
+    local cleanup_db
+    for ((db_index=${#created_databases[@]} - 1; db_index >= 0; db_index--)); do
+        cleanup_db="${created_databases[$db_index]}"
+        "$DROPDB" --if-exists "$cleanup_db" >/dev/null 2>&1 || true
+    done
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 if ! "$PSQL" -lqtA -d postgres 2>/dev/null | cut -d'|' -f1 | grep -qx "$TEMPLATE_DB"; then
     echo "şablon veritabanı kuruluyor: $TEMPLATE_DB"
     "$CREATEDB" "$TEMPLATE_DB"
+    created_databases+=("$TEMPLATE_DB")
     for migration in "${REPO_ROOT}"/supabase/migrations/*.sql; do
         "$PSQL" -v ON_ERROR_STOP=1 -q -d "$TEMPLATE_DB" -f "$migration"
     done
@@ -59,7 +73,7 @@ MUTATIONS=(
 "exam_sessions_self_update: WITH CHECK duserse|GRANT UPDATE (course_id) ON exam_sessions TO dou_app; DROP POLICY exam_sessions_self_update ON exam_sessions; CREATE POLICY exam_sessions_self_update ON exam_sessions FOR UPDATE USING (user_id = app.current_user_id());|exam_sessions_update__oturum_yabanci_derse_tasinamaz"
 "exam_sessions_self_update acilirsa|DROP POLICY exam_sessions_self_update ON exam_sessions; CREATE POLICY exam_sessions_self_update ON exam_sessions FOR UPDATE USING (true) WITH CHECK (true);|exam_sessions_update__egitmen_ogrenci_oturumunu_guncelleyemez"
 "answers_self_read acilirsa|DROP POLICY answers_self_read ON answers; CREATE POLICY answers_self_read ON answers FOR SELECT USING (true);|answers_read__baska_ogrencinin_cevabi_gorunmez"
-"answers_self_insert: course_id eslesmesi duserse|DROP POLICY answers_self_insert ON answers; CREATE POLICY answers_self_insert ON answers FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM exam_sessions s WHERE s.id = answers.session_id AND s.user_id = app.current_user_id()));|answers_insert__sahte_course_id_ile_yazilamaz"
+"answers_self_insert: RLS ve trigger course_id eslesmesi birlikte duserse|DROP TRIGGER answers_assessment_integrity_guard ON answers; DROP POLICY answers_self_insert ON answers; CREATE POLICY answers_self_insert ON answers FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM exam_sessions s WHERE s.id = answers.session_id AND s.user_id = app.current_user_id()));|answers_insert__sahte_course_id_ile_yazilamaz"
 "answers_self_insert acilirsa|DROP POLICY answers_self_insert ON answers; CREATE POLICY answers_self_insert ON answers FOR INSERT WITH CHECK (true);|answers_insert__baskasinin_oturumuna_yazilamaz"
 "answers: UPDATE politikasi eklenirse|CREATE POLICY answers_update_leak ON answers FOR UPDATE USING (true);|answers_update__politika_yok_cevap_degistirilemez"
 "mastery_self_read acilirsa|DROP POLICY mastery_self_read ON mastery; CREATE POLICY mastery_self_read ON mastery FOR SELECT USING (true);|mastery_read__baska_ogrencinin_skoru_gorunmez"
@@ -73,7 +87,11 @@ MUTATIONS=(
 
 # Referans koşu: bozulmamış şemada hiçbir iddia kırmızı olmamalı. Bu kontrol olmadan
 # "mutasyonda FAIL çıktı" bulgusu anlamsızdır — belki test zaten kırmızıydı.
-baseline=$("$PSQL" -d "$TEMPLATE_DB" -f "$TEST_SQL" 2>&1 || true)
+if ! baseline=$("$PSQL" -X -v ON_ERROR_STOP=1 -d "$TEMPLATE_DB" -f "$TEST_SQL" 2>&1); then
+    echo "HATA: bozulmamış şemadaki referans koşu tamamlanamadı." >&2
+    echo "$baseline" >&2
+    exit 1
+fi
 if grep -q FAIL <<<"$baseline"; then
     echo "HATA: bozulmamış şemada FAIL var — mutasyon testi anlamsız."
     grep FAIL <<<"$baseline"
@@ -89,8 +107,15 @@ for entry in "${MUTATIONS[@]}"; do
     total=$((total + 1))
     scratch="rls_mut_$$_${total}"
     "$CREATEDB" -T "$TEMPLATE_DB" "$scratch"
+    created_databases+=("$scratch")
     "$PSQL" -v ON_ERROR_STOP=1 -q -d "$scratch" -c "$mutation"
-    output=$("$PSQL" -d "$scratch" -f "$TEST_SQL" 2>&1 || true)
+    if ! output=$("$PSQL" -X -v ON_ERROR_STOP=1 -d "$scratch" -f "$TEST_SQL" 2>&1); then
+        "$DROPDB" "$scratch"
+        printf 'KAÇIRILDI  %-52s -> SQL kanıtı tamamlanamadı\n' "$name"
+        echo "$output" >&2
+        failures=$((failures + 1))
+        continue
+    fi
     "$DROPDB" "$scratch"
 
     if grep -q "FAIL  ${expected}" <<<"$output"; then

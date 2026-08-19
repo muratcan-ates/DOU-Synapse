@@ -133,7 +133,10 @@ INSERT INTO questions (id, course_id, topic_id, type, payload, source_chunk_id, 
 INSERT INTO exam_sessions (id, course_id, user_id, mode, question_ids) VALUES
     ('55555555-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
      '22222222-2222-2222-2222-222222222222', 'practice',
-     ARRAY['99999999-0000-0000-0000-00000000000a']::uuid[]),
+     ARRAY[
+         '99999999-0000-0000-0000-00000000000a',
+         '99999999-0000-0000-0000-00000000000b'
+     ]::uuid[]),
     ('55555555-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001',
      '44444444-4444-4444-4444-444444444444', 'practice',
      ARRAY['99999999-0000-0000-0000-00000000000a']::uuid[]),
@@ -337,20 +340,34 @@ SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
 FROM changed;
 
 -- UPDATE politikasının yalıtılmış sınavı: hedef satır öğrenciye GÖRÜNÜR (onaylı
--- soru), yani reddin tek kaynağı `questions_instructor_update` olabilir. Bu ayrım
--- mutasyon testiyle ortaya çıktı: yalnız taslak üzerinden yazılan iddia, UPDATE
--- politikası tamamen açıldığında bile yeşil kalıyordu — çünkü onu okuma politikası
--- kurtarıyordu ve test aslında UPDATE'i hiç ölçmüyordu.
-WITH changed AS (
-    UPDATE questions
-    SET payload = '{"stem": "öğrenci değiştirdi", "answer_key": "x"}'
-    WHERE id = '99999999-0000-0000-0000-00000000000a'
-    RETURNING 1
-)
-SELECT CASE WHEN count(*) = 0 THEN 'PASS' ELSE 'FAIL' END
-       || '  questions_update__ogrenci_onayli_soruyu_degistiremez (beklenen 0 satır, gelen '
-       || count(*) || ')'
-FROM changed;
+-- soru), yani satır reddi `questions_instructor_update` tarafından gelmelidir.
+-- 0016 payload UPDATE yetkisini ayrıca geri çekti. Önce bu daha güçlü kolon sınırını
+-- kabul eder, sonra politika mutasyonunun hâlâ kırmızı yanabilmesi için dou_app'in
+-- yazabildiği reviewed_at kolonu üzerinden aynı onaylı satırı deneriz.
+DO $$
+DECLARE
+    etkilenen integer;
+BEGIN
+    BEGIN
+        UPDATE questions
+        SET payload = '{"stem": "öğrenci değiştirdi", "answer_key": "x"}'
+        WHERE id = '99999999-0000-0000-0000-00000000000a';
+        GET DIAGNOSTICS etkilenen = ROW_COUNT;
+    EXCEPTION
+        WHEN insufficient_privilege THEN
+            UPDATE questions
+            SET reviewed_at = reviewed_at
+            WHERE id = '99999999-0000-0000-0000-00000000000a';
+            GET DIAGNOSTICS etkilenen = ROW_COUNT;
+    END;
+
+    IF etkilenen = 0 THEN
+        RAISE NOTICE 'PASS  questions_update__ogrenci_onayli_soruyu_degistiremez (beklenen 0 satır, gelen 0)';
+    ELSE
+        RAISE NOTICE 'FAIL  questions_update__ogrenci_onayli_soruyu_degistiremez (beklenen 0 satır, gelen %)', etkilenen;
+    END IF;
+END
+$$;
 
 SET LOCAL app.current_user_id = '11111111-1111-1111-1111-111111111111';
 DO $$
@@ -467,7 +484,8 @@ BEGIN
     INSERT INTO exam_sessions (id, course_id, user_id, mode, question_ids)
     VALUES ('55555555-0000-0000-0000-00000000000f',
             'aaaaaaaa-0000-0000-0000-000000000001',
-            '22222222-2222-2222-2222-222222222222', 'practice', '{}'::uuid[]);
+            '22222222-2222-2222-2222-222222222222', 'practice',
+            ARRAY['99999999-0000-0000-0000-00000000000a']::uuid[]);
     RAISE NOTICE 'PASS  exam_sessions_insert__ogrenci_kendi_oturumunu_acabilir';
 EXCEPTION
     WHEN insufficient_privilege THEN
@@ -532,13 +550,31 @@ FROM changed;
 SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
 WITH changed AS (
     UPDATE exam_sessions SET finished_at = now()
-    WHERE id = '55555555-0000-0000-0000-000000000001'
+    WHERE id = '55555555-0000-0000-0000-00000000000f'
     RETURNING 1
 )
 SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
        || '  exam_sessions_update__kendi_oturumu_guncellenebilir (beklenen 1 satır, gelen '
        || count(*) || ')'
 FROM changed;
+
+-- Cevap INSERT iddiaları, yukarıdaki session UPDATE mutasyonlarının değiştirdiği
+-- satırlara bağlanmaz. Her kullanıcı için ayrı, aktif ve gerçekçi bir kâğıt kurmak
+-- sonraki testlerin önceki mutasyonun yan etkisiyle abort etmesini engeller.
+INSERT INTO exam_sessions (id, course_id, user_id, mode, question_ids)
+VALUES ('55555555-0000-0000-0000-00000000000e',
+        'aaaaaaaa-0000-0000-0000-000000000001',
+        '22222222-2222-2222-2222-222222222222', 'practice',
+        ARRAY['99999999-0000-0000-0000-00000000000a']::uuid[]);
+
+SET LOCAL app.current_user_id = '44444444-4444-4444-4444-444444444444';
+INSERT INTO exam_sessions (id, course_id, user_id, mode, question_ids)
+VALUES ('55555555-0000-0000-0000-00000000000d',
+        'aaaaaaaa-0000-0000-0000-000000000001',
+        '44444444-4444-4444-4444-444444444444', 'practice',
+        ARRAY['99999999-0000-0000-0000-00000000000a']::uuid[]);
+
+SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
 
 -- ===========================================================================
 -- answers_self_read
@@ -570,6 +606,8 @@ SET LOCAL app.current_user_id = '22222222-2222-2222-2222-222222222222';
 -- yazılmaya çalışılıyor. Geçseydi başka dersin eğitmen analitiğine satır enjekte
 -- edilebilirdi (PR incelemesi kalem 2).
 DO $$
+DECLARE
+    v_constraint text;
 BEGIN
     INSERT INTO answers (session_id, question_id, course_id, given, is_correct, score)
     VALUES ('55555555-0000-0000-0000-000000000001',
@@ -579,13 +617,22 @@ BEGIN
 EXCEPTION
     WHEN insufficient_privilege THEN
         RAISE NOTICE 'PASS  answers_insert__sahte_course_id_ile_yazilamaz';
+    WHEN check_violation THEN
+        GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+        IF v_constraint = 'answers_session_course' THEN
+            RAISE NOTICE 'PASS  answers_insert__sahte_course_id_ile_yazilamaz';
+        ELSE
+            RAISE NOTICE 'FAIL  answers_insert__sahte_course_id_ile_yazilamaz (yanlis constraint: %)', v_constraint;
+        END IF;
+    WHEN others THEN
+        RAISE NOTICE 'FAIL  answers_insert__sahte_course_id_ile_yazilamaz (beklenmedik hata: %)', SQLERRM;
 END
 $$;
 
 DO $$
 BEGIN
     INSERT INTO answers (session_id, question_id, course_id, given, is_correct, score)
-    VALUES ('55555555-0000-0000-0000-000000000002',
+    VALUES ('55555555-0000-0000-0000-00000000000d',
             '99999999-0000-0000-0000-00000000000a',
             'aaaaaaaa-0000-0000-0000-000000000001', 'başkasının oturumu', true, 100);
     RAISE NOTICE 'FAIL  answers_insert__baskasinin_oturumuna_yazilamaz (insert geçti)';
@@ -598,7 +645,7 @@ $$;
 DO $$
 BEGIN
     INSERT INTO answers (session_id, question_id, course_id, given, is_correct, score)
-    VALUES ('55555555-0000-0000-0000-00000000000f',
+    VALUES ('55555555-0000-0000-0000-00000000000e',
             '99999999-0000-0000-0000-00000000000a',
             'aaaaaaaa-0000-0000-0000-000000000001', 'kendi oturumum', true, 100);
     RAISE NOTICE 'PASS  answers_insert__kendi_oturumuna_yazabilir';

@@ -25,9 +25,23 @@ PSQL="${PG_BIN:+${PG_BIN}/}psql"
 CREATEDB="${PG_BIN:+${PG_BIN}/}createdb"
 DROPDB="${PG_BIN:+${PG_BIN}/}dropdb"
 
+created_databases=()
+cleanup() {
+    local db_index
+    local cleanup_db
+    for ((db_index=${#created_databases[@]} - 1; db_index >= 0; db_index--)); do
+        cleanup_db="${created_databases[$db_index]}"
+        "$DROPDB" --if-exists "$cleanup_db" >/dev/null 2>&1 || true
+    done
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
 if ! "$PSQL" -lqtA -d postgres 2>/dev/null | cut -d'|' -f1 | grep -qx "$TEMPLATE_DB"; then
     echo "şablon veritabanı kuruluyor: $TEMPLATE_DB"
     "$CREATEDB" "$TEMPLATE_DB"
+    created_databases+=("$TEMPLATE_DB")
     for migration in "${REPO_ROOT}"/supabase/migrations/*.sql; do
         "$PSQL" -v ON_ERROR_STOP=1 -q -d "$TEMPLATE_DB" -f "$migration"
     done
@@ -57,13 +71,17 @@ MUTATIONS=(
 "exam_items_read acilirsa|DROP POLICY exam_items_read ON exam_items; CREATE POLICY exam_items_read ON exam_items FOR SELECT USING (app.is_member(course_id));|exam_items_read__oturumsuz_uye_kagidi_GOREMEZ"
 "YETKI: exam_items UPDATE geri verilirse|GRANT UPDATE ON exam_items TO dou_app; CREATE POLICY ei_upd_leak ON exam_items FOR UPDATE USING (true) WITH CHECK (true);|exam_items_update__YETKI_CEKILI_puan_degistirilemez"
 "exam_items_insert: draft sarti duserse|DROP POLICY exam_items_instructor_insert ON exam_items; CREATE POLICY exam_items_instructor_insert ON exam_items FOR INSERT WITH CHECK (app.is_instructor(course_id));|exam_items_insert__yayinlanmis_kagida_soru_eklenemez"
-"exam_sessions_self_insert: pencere sarti duserse|DROP POLICY exam_sessions_self_insert ON exam_sessions; CREATE POLICY exam_sessions_self_insert ON exam_sessions FOR INSERT WITH CHECK (user_id = app.current_user_id() AND app.is_member(course_id));|exam_sessions_insert__PENCERE_KAPALI_oturum_acilamaz"
+"exam_sessions_self_insert: RLS ve trigger pencere sarti birlikte duserse|DROP TRIGGER exam_sessions_feedback_schedule_guard ON exam_sessions; DROP POLICY exam_sessions_self_insert ON exam_sessions; CREATE POLICY exam_sessions_self_insert ON exam_sessions FOR INSERT WITH CHECK (user_id = app.current_user_id() AND app.is_member(course_id));|exam_sessions_insert__PENCERE_KAPALI_oturum_acilamaz"
 "exam_sessions_self_insert: user_id sarti duserse|DROP POLICY exam_sessions_self_insert ON exam_sessions; CREATE POLICY exam_sessions_self_insert ON exam_sessions FOR INSERT WITH CHECK (app.is_member(course_id) AND (exam_version_id IS NULL OR app.is_exam_open(exam_version_id, course_id)));|exam_sessions_insert__baskasi_adina_oturum_acilamaz"
 )
 
 # Referans koşu: bozulmamış şemada hiçbir iddia kırmızı olmamalı. Bu kontrol olmadan
 # "mutasyonda FAIL çıktı" bulgusu anlamsızdır — belki test zaten kırmızıydı.
-baseline=$("$PSQL" -d "$TEMPLATE_DB" -f "$TEST_SQL" 2>&1 || true)
+if ! baseline=$("$PSQL" -X -v ON_ERROR_STOP=1 -d "$TEMPLATE_DB" -f "$TEST_SQL" 2>&1); then
+    echo "HATA: bozulmamış şemadaki referans koşu tamamlanamadı." >&2
+    echo "$baseline" >&2
+    exit 1
+fi
 if grep -q FAIL <<<"$baseline"; then
     echo "HATA: bozulmamış şemada FAIL var — mutasyon testi anlamsız."
     grep FAIL <<<"$baseline"
@@ -79,8 +97,15 @@ for entry in "${MUTATIONS[@]}"; do
     total=$((total + 1))
     scratch="rls_bp_mut_$$_${total}"
     "$CREATEDB" -T "$TEMPLATE_DB" "$scratch"
+    created_databases+=("$scratch")
     "$PSQL" -v ON_ERROR_STOP=1 -q -d "$scratch" -c "$mutation"
-    output=$("$PSQL" -d "$scratch" -f "$TEST_SQL" 2>&1 || true)
+    if ! output=$("$PSQL" -X -v ON_ERROR_STOP=1 -d "$scratch" -f "$TEST_SQL" 2>&1); then
+        "$DROPDB" "$scratch"
+        printf 'KAÇIRILDI  %-52s -> SQL kanıtı tamamlanamadı\n' "$name"
+        echo "$output" >&2
+        failures=$((failures + 1))
+        continue
+    fi
     "$DROPDB" "$scratch"
 
     if grep -q "FAIL  ${expected}" <<<"$output"; then

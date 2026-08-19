@@ -86,15 +86,15 @@ INSERT INTO learning_outcomes (id, course_id, code, description, topic_id, creat
      '11111111-1111-1111-1111-111111111111');
 
 INSERT INTO questions (id, course_id, topic_id, type, payload, source_chunk_id, status,
-                       learning_outcome_id, difficulty, reviewed_by, reviewed_at) VALUES
+                       purpose, learning_outcome_id, difficulty, reviewed_by, reviewed_at) VALUES
     ('99990000-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
      '77777777-0000-0000-0000-000000000001', 'mcq', '{"stem":"S1"}',
-     'cccccccc-0000-0000-0000-000000000001', 'approved',
+     'cccccccc-0000-0000-0000-000000000001', 'approved', 'assessment',
      '11110000-0000-0000-0000-00000000000a', 'easy',
      '11111111-1111-1111-1111-111111111111', now()),
     ('99990000-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001',
      '77777777-0000-0000-0000-000000000001', 'mcq', '{"stem":"S2"}',
-     'cccccccc-0000-0000-0000-000000000001', 'approved',
+     'cccccccc-0000-0000-0000-000000000001', 'approved', 'assessment',
      '11110000-0000-0000-0000-00000000000a', 'easy',
      '11111111-1111-1111-1111-111111111111', now());
 
@@ -140,10 +140,12 @@ INSERT INTO exam_items (id, course_id, exam_version_id, position, question_id, p
 -- Burak'ın YÜRÜYEN oturumu, kapanmış sınavın sürümüne bağlı: üçüncü OR dalının
 -- pencereden bağımsız çalıştığını göstermenin tek yolu bu.
 INSERT INTO exam_sessions (id, course_id, user_id, mode, expires_at, question_ids,
-                           exam_version_id, exam_blueprint_id, attempt_no) VALUES
+                           exam_version_id, exam_blueprint_id, attempt_no,
+                           feedback_available_at) VALUES
     ('a5e50000-0000-0000-0000-00000000000c', 'aaaaaaaa-0000-0000-0000-000000000001',
      '22222222-2222-2222-2222-222222222222', 'exam', now() + interval '30 min', NULL,
-     'eeee0000-0000-0000-0000-00000000000c', 'bbbb0000-0000-0000-0000-00000000000c', 1);
+     'eeee0000-0000-0000-0000-00000000000c', 'bbbb0000-0000-0000-0000-00000000000c', 1,
+     now() - interval '22 hours');
 
 -- ---------------------------------------------------------------------------
 -- Testler: uygulama rolüyle. Superuser'la koşulsa RLS sessizce atlanır ve bu
@@ -532,17 +534,28 @@ $$;
 
 SET LOCAL app.current_user_id = '44444444-4444-4444-4444-444444444444';
 DO $$
+DECLARE
+    v_constraint text;
 BEGIN
     INSERT INTO exam_sessions (course_id, user_id, mode, expires_at, question_ids,
-                               exam_version_id, exam_blueprint_id, attempt_no)
+                               exam_version_id, exam_blueprint_id, attempt_no,
+                               feedback_available_at)
     VALUES ('aaaaaaaa-0000-0000-0000-000000000001',
             '44444444-4444-4444-4444-444444444444', 'exam', now() + interval '30 min',
             NULL, 'eeee0000-0000-0000-0000-00000000000c',
-            'bbbb0000-0000-0000-0000-00000000000c', 1);
+            'bbbb0000-0000-0000-0000-00000000000c', 1,
+            now() - interval '22 hours');
     RAISE NOTICE 'FAIL  exam_sessions_insert__PENCERE_KAPALI_oturum_acilamaz (insert geçti)';
 EXCEPTION
     WHEN insufficient_privilege THEN
         RAISE NOTICE 'PASS  exam_sessions_insert__PENCERE_KAPALI_oturum_acilamaz';
+    WHEN check_violation THEN
+        GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+        IF v_constraint = 'exam_sessions_blueprint_window' THEN
+            RAISE NOTICE 'PASS  exam_sessions_insert__PENCERE_KAPALI_oturum_acilamaz';
+        ELSE
+            RAISE NOTICE 'FAIL  exam_sessions_insert__PENCERE_KAPALI_oturum_acilamaz (yanlis constraint: %)', v_constraint;
+        END IF;
     WHEN others THEN
         RAISE NOTICE 'FAIL  exam_sessions_insert__PENCERE_KAPALI_oturum_acilamaz (beklenmedik hata: %)', SQLERRM;
 END
@@ -551,11 +564,13 @@ $$;
 DO $$
 BEGIN
     INSERT INTO exam_sessions (course_id, user_id, mode, expires_at, question_ids,
-                               exam_version_id, exam_blueprint_id, attempt_no)
+                               exam_version_id, exam_blueprint_id, attempt_no,
+                               feedback_available_at)
     VALUES ('aaaaaaaa-0000-0000-0000-000000000001',
             '44444444-4444-4444-4444-444444444444', 'exam', now() + interval '30 min',
             NULL, 'eeee0000-0000-0000-0000-00000000000a',
-            'bbbb0000-0000-0000-0000-00000000000a', 1);
+            'bbbb0000-0000-0000-0000-00000000000a', 1,
+            now() + interval '25 hours');
     RAISE NOTICE 'PASS  exam_sessions_insert__PENCERE_ACIK_oturum_acilir';
 EXCEPTION WHEN others THEN
     RAISE NOTICE 'FAIL  exam_sessions_insert__PENCERE_ACIK_oturum_acilir (%)', SQLERRM;
@@ -566,11 +581,13 @@ $$;
 DO $$
 BEGIN
     INSERT INTO exam_sessions (course_id, user_id, mode, expires_at, question_ids,
-                               exam_version_id, exam_blueprint_id, attempt_no)
+                               exam_version_id, exam_blueprint_id, attempt_no,
+                               feedback_available_at)
     VALUES ('aaaaaaaa-0000-0000-0000-000000000001',
             '22222222-2222-2222-2222-222222222222', 'exam', now() + interval '30 min',
             NULL, 'eeee0000-0000-0000-0000-00000000000a',
-            'bbbb0000-0000-0000-0000-00000000000a', 2);
+            'bbbb0000-0000-0000-0000-00000000000a', 2,
+            now() + interval '25 hours');
     RAISE NOTICE 'FAIL  exam_sessions_insert__baskasi_adina_oturum_acilamaz (insert geçti)';
 EXCEPTION
     WHEN insufficient_privilege THEN
