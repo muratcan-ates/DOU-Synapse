@@ -4,9 +4,11 @@ DOU-Synapse'ın kurulumunun tek doğru anlatımı. Değerler burada YOKTUR — y
 değişken adları ve ne işe yaradıkları. Gerçek değerler sağlayıcıların gizli
 değer kasalarında durur ve depoya asla girmez.
 
-> **Durum, 9 Ağustos 2026.** Bu belgedeki bulut adımları **KOŞULMADI**: gerçek
+> **Durum, 20 Ağustos 2026.** Bu belgedeki bulut adımları **KOŞULMADI**: gerçek
 > Azure/Vercel/Supabase erişimi olmadan yazıldılar (T050 hâlâ açık). Yerelde
-> ölçülmüş ve koşulmuş olanlar §7'de ayrıca işaretli. Bir adımı ilk kez koşan
+> ölçülmüş ve koşulmuş olanlar §7'de ayrıca işaretli. Fail-closed staging
+> preflight aracı yerelde testlidir fakat canlı staging'e karşı koşulmamıştır.
+> Bir adımı ilk kez koşan
 > kişi, buradaki anlatımla gerçek arasında fark görürse belgeyi düzeltsin —
 > "belgede öyle yazıyordu" bir mazeret değil, bir kusur kaydıdır.
 
@@ -84,7 +86,16 @@ done
 | `0003` | Sohbet: `chat_sessions`, `chat_messages`, `answer_cache`, `request_logs` |
 | `0004` | Ölçme ve analitik |
 | `0005` | Ek politikalar |
-| `0006` / `0007` | R4 / R3'e ayrıldı, gerekirse |
+| `0006` | Embedding provenance |
+| `0007` | Dar soru silme ve sınav grant'leri |
+| `0008` | Sürümlü sınav blueprint'i |
+| `0009` | Ders bazlı AI politikası |
+| `0010` | Ingestion retry zamanlaması |
+| `0011` | Pagination indeksleri |
+| `0012` | KVKK/veri hakları |
+| `0013` | AI sohbet geri bildirimi ve paylaşım onayı |
+| `0014` | Platform-admin konsolu ve audit |
+| `0015` | Rol farkındalıklı ajan, audience izolasyonu ve atomik AI kotaları |
 
 **`main`'e girmiş bir migration yerinde değiştirilmez.** Yeni numara açılır.
 Bir dağıtımda migration'ları uygulamadan önce §6'daki yedeği alın.
@@ -122,7 +133,9 @@ Faz 2 brifingindeki daha yüksek tablo tahmini o gün için de yanlıştı.
    curl -si "$API_URL/internal/drain"   # 404 beklenir: sırsız istek uç yokmuş gibi davranır
    ```
 6. **GitHub Secrets** (keepalive için): `KEEPALIVE_DATABASE_URL`,
-   `KEEPALIVE_API_URL`. Tanımlanmazsa keepalive işi sessizce atlar.
+   `KEEPALIVE_API_URL`. Eksikse iş `KEEPALIVE_NOT_CONFIGURED` ile kırmızı olur;
+   yeşil sonuç yalnız o koşu anındaki DB/API yanıtını kanıtlar, uptime veya
+   production readiness'i değil.
 
 ## 5. Embedding modeli ve int8 kararı
 

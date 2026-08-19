@@ -72,6 +72,27 @@ relationships. In particular, every check head SHA must equal `source.sha`,
 every job must map to its trusted workflow, every promotion record must reuse
 the candidate digest, and candidate evidence cannot self-claim deployment.
 
+## Fail-closed staging preflight
+
+`staging_preflight.py` consumes a schema-valid candidate and checks the live
+web/API endpoints, anonymous/dev/staging authentication, private Supabase
+storage, the exact remote migration ledger, assistant availability, a
+cache-free cited real-provider response, and immutable backup/rollback
+references. Secrets are read only from the environment and are redacted from
+both outputs; database credentials are passed to `psql` through PostgreSQL
+environment variables rather than command arguments.
+
+Run it with the inputs documented in
+[`specs/006-release-readiness/quickstart.md`](../specs/006-release-readiness/quickstart.md).
+It always writes JSON and Markdown evidence when argument parsing succeeds:
+
+- exit `0`: every preflight check passed;
+- exit `1`: at least one configured live check failed;
+- exit `2`: evidence, credentials, or another prerequisite is missing/blocked.
+
+Even exit `0` is only `kind: staging_preflight`. It is not a deployment record,
+environment approval, promotion record, or `staging-verified` claim.
+
 Offline verification:
 
 ```bash

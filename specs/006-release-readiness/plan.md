@@ -2,7 +2,7 @@
 
 **Branch**: `006-release-readiness` | **Date**: 2026-08-19 | **Spec**: `spec.md`
 
-**Base SHA**: `6c35a7f0bdb44b88205f408ca18e6a4e50cb153e`
+**Base SHA**: `2f40ac193114b896d33ef73e72ea51cc51f34d26` (PR #17'nin web bağımlılık güncellemesi sonrası yeniden tabanlandı; ilk kapsam tabanı `6c35a7f0bdb44b88205f408ca18e6a4e50cb153e`)
 
 ## Summary
 
@@ -70,4 +70,3 @@ specs/006-release-readiness/
 ## Complexity Tracking
 
 Anayasa ihlali veya yeni framework yoktur.
-
