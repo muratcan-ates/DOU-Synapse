@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  assistantUnavailableTitle,
   isAvailabilitySnapshotCurrent,
   toChatLock,
 } from "@/lib/chat-availability";
@@ -24,12 +25,32 @@ describe("toChatLock", () => {
     );
 
     expect(lock.locked).toBe(true);
+    expect(lock.reason).toBe("exam_in_progress");
     expect(lock.message).toBe("Şu anda süren bir sınav oturumun var.");
     expect(lock.ready).toBe(true);
     expect(lock.audience).toBe("student");
     expect(lock.agentProfile).toBe("student_coach");
     expect(lock.allowedModes).toEqual(["qa", "socratic"]);
     expect(lock.hintLimit).toBe(4);
+  });
+
+  test("global kapatma sınav diye etiketlenmez", () => {
+    const lock = toChatLock(
+      {
+        available: false,
+        reason: "globally_disabled",
+        message: "Ders asistanı geçici olarak kullanılamıyor.",
+        allowed_modes: [],
+        hint_limit: 0,
+        audience: "student",
+        agent_profile: "student_coach",
+      },
+      true,
+    );
+
+    expect(lock.locked).toBe(true);
+    expect(lock.reason).toBe("globally_disabled");
+    expect(assistantUnavailableTitle(lock.reason)).toBe("Asistan bakım nedeniyle kapalı");
   });
 
   test("sunucu açık derse kilit yok ve mesaj taşınmaz", () => {

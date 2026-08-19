@@ -17,11 +17,11 @@
 
 ## Phase 3: Browser Integrity Gates
 
-- [ ] T008 [P] `apps/api/tests/test_role_aware_agent_application_guards.py` içine kill switch'in provider çağrısından önce kapandığını doğrudan ölçen testi ekle.
-- [ ] T009 [P] `apps/web/e2e/release-readiness.spec.ts` içinde aktif sınav ve yasak `mode: exam` ham POST senaryolarını ekle.
-- [ ] T010 `.github/workflows/ci.yml` içinde yalnız E2E job'a flag kapalı ikinci API sürecini ve zorunlu `E2E_DISABLED_API_URL` değişkenini ekle.
-- [ ] T011 `apps/web/components/course-assistant/course-assistant.tsx` içinde `globally_disabled` reason'ını koru ve bakım metni göster.
-- [ ] T012 `apps/web/e2e/release-readiness.spec.ts` içinde gerçek disabled API availability/POST ve UI bakım durumunu doğrula.
+- [x] T008 [P] `apps/api/tests/test_role_aware_agent_application_guards.py` içine kill switch'in provider çağrısından önce kapandığını doğrudan ölçen testi ekle.
+- [x] T009 [P] `apps/web/e2e/release-readiness.spec.ts` içinde aktif sınav ve yasak `mode: exam` ham POST senaryolarını ekle.
+- [x] T010 `.github/workflows/ci.yml` içinde yalnız E2E job'a flag kapalı ikinci API sürecini ve zorunlu `E2E_DISABLED_API_URL` değişkenini ekle.
+- [x] T011 `apps/web/components/course-assistant/course-assistant.tsx` içinde `globally_disabled` reason'ını koru ve bakım metni göster.
+- [x] T012 `apps/web/e2e/release-readiness.spec.ts` içinde gerçek disabled API availability/POST ve UI bakım durumunu doğrula.
 
 ## Phase 4: Documentation and Evidence
 
