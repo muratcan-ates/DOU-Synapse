@@ -5,7 +5,7 @@
   "revision": 1,
   "supersedes": null,
   "previous_status": null,
-  "governance_record_risk": "R2",
+  "governance_record_risk": "R3",
   "title": "Bağımlılık bakımı: Dependabot #9-#13 kontrollü toplama",
   "summary": "apps/api bağımlılık alt-sınırları dependabot önerileriyle yükseltilip kilit yeniden çözüldü; kod değişikliği yok, tüm kapılar değişmeden yeşil. pyjwt 2.13.0 tabanı GHSA-xgmm-8j9v-c9wx'i kalıcılaştırır.",
   "owner": "Muratcan Ateş",
