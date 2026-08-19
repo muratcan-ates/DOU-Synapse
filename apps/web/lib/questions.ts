@@ -14,7 +14,6 @@
  * karşılığı budur: arayüz sunucunun vermediği bir metni ekrana yazamaz.
  */
 
-import type { SourceInfo } from "@/components/source-card";
 import { toSourceInfo } from "@/lib/source";
 import type {
   AnswerFormat,
@@ -23,6 +22,7 @@ import type {
   QuestionGenerateRequest,
   QuestionStatus,
   QuestionType,
+  SourceInfo,
 } from "@/lib/types";
 
 /* -------------------------------------------------------------------------

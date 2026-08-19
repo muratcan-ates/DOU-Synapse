@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.modules.retrieval.scope import EvidenceLevel
+from app.contracts import EvidenceLevel
 
 
 class RetrievalInspectRequest(BaseModel):

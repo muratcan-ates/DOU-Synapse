@@ -8,52 +8,59 @@ görülürse şema yeniden üretilir (aşağıdaki komut).
 - API başlığı / sürümü: `DOU-Synapse API` / `0.1.0` (`apps/api/app/core/config.py`)
 - Plan bağlamı: [PLAN.md](../../../PLAN.md) · Mimari: [ARCHITECTURE.md](../../../ARCHITECTURE.md)
 
+> Bu dosyanın önceki sürümü iki teslim geride kalmıştı ("9 yol / 13 işlem" diyor,
+> bugün canlı olan uçları "henüz yok" sayıyordu). 16 Ağustos'ta canlı spec'ten
+> ölçülerek yeniden yazıldı; uç listesi elle değil aşağıdaki export komutunun
+> çıktısından türetilir.
+
 ---
 
-## Mevcut uçlar (9 yol, 13 işlem)
+## Mevcut uçlar (50 yol, 66 işlem — canlı spec'ten ölçüldü)
 
-Yetki sütunu üç seviyedir:
+Tek tek uçların şeması, parametreleri ve yanıt tipleri `openapi.json`'dadır; burada
+yalnız aile haritası tutulur (etiketler spec'teki `tags` alanından):
 
-- **yok** — kimlik doğrulama gerekmez
-- **kimlik** — geçerli Bearer token yeter (`get_principal`)
-- **üye** — dersin aktif üyesi olmak gerekir (`require_course_member`; üye olmayan
-  kullanıcıya dersin varlığını sızdırmamak için **404** döner)
-- **eğitmen** — dersin eğitmeni olmak gerekir (`require_course_instructor`; üyeyse ama
-  eğitmen değilse **403**)
-
-| Metot | Yol | Yetki | Amaç |
-|---|---|---|---|
-| GET | `/health/live` | yok | Süreç ayakta mı (bağımlılıksız); `{status, environment, version}` |
-| GET | `/health/ready` | yok | DB + pgvector erişimi; sorun varsa 503 `degraded`. Deploy duman testi ve demo günü ısıtma isteği bu ucu kullanır |
-| GET | `/courses` | kimlik | Kullanıcının aktif üyeliği olan dersler (dersteki rolüyle birlikte) |
-| POST | `/courses` | kimlik | Ders oluşturur; oluşturana aynı işlemde eğitmen üyeliği verir (`app.create_course`). 201; kod çakışmasında 409 |
-| GET | `/courses/{course_id}` | üye | Tek ders + kullanıcının rolü |
-| GET | `/courses/{course_id}/members` | eğitmen | Ders üye listesi (e-posta, ad, rol, durum) |
-| POST | `/courses/{course_id}/members` | eğitmen | E-postayla üye ekler (`app.add_course_member`). Kullanıcı kayıtlı değilse 404, zaten üyeyse 409 |
-| DELETE | `/courses/{course_id}/members/{user_id}` | eğitmen | Üyeliği iptal eder (soft: `status=revoked`, kayıt silinmez). Eğitmen kendini çıkaramaz (422). 204 |
-| POST | `/courses/{course_id}/documents` | eğitmen | Materyal yükler (multipart `file`): uzantı + boyut + magic byte doğrulaması, `file_hash` ile mükerrer engeli (409), ingestion job + worker tetiği. **202** döner; istemci `status` alanını izler |
-| GET | `/courses/{course_id}/documents` | üye | Dersin belgeleri (durum: `uploaded / processing / completed / failed`) |
-| GET | `/courses/{course_id}/documents/{document_id}` | üye | Tek belge durumu (ilerleme takibi için poll edilir) |
-| DELETE | `/courses/{course_id}/documents/{document_id}` | eğitmen | Belgeyi ve FK cascade ile tüm chunk'larını siler. 204 |
-| GET | `/courses/{course_id}/documents/{document_id}/chunks` | eğitmen | İlk chunk'ların önizlemesi (`limit`, varsayılan 20, tavan 100) — eğitmen sistemin belgeden ne çıkardığını görür |
+| Aile | İşlem | Kapsam |
+|---|---|---|
+| health | 2 | `live` (bağımlılıksız) + `ready` (DB/pgvector; ısınma durumunu da taşır) |
+| courses | 4+ | ders CRUD'u, üyelik ekleme/iptal (soft revoke) |
+| documents | 5 | yükleme (202 + durum izleme), listeleme, silme, chunk önizleme, ingestion retry |
+| sources | 2 | kaynak bağlamı: chunk görüntüleme + inspect |
+| chat | 2 | soru sorma (`mode: qa \| socratic`) + kullanılabilirlik |
+| chat/privacy | 4 | oturum listeleme/silme, mesaj geçmişi (keyset sayfalama) |
+| chat-quality | 2 | mesaj geri bildirimi + eğitmen kalite panosu |
+| exams | 6 | oturum başlat/cevapla/bitir/ipucu; blueprint'e bağlı sınav dahil |
+| assessment | 6 | soru üretimi + eğitmen onay akışı + konu yönetimi |
+| blueprints | 7 | sınav planı ailesi: sürümleme, madde, yayınlama, hazırlık kontrolü |
+| policy | 2 | ders AI politikası (GET/PUT) + politika geçmişi |
+| analytics | 2 | sınıf ve kişisel analitik |
+| privacy | 3 | KVKK: veri dışa aktarımı, sohbet geçmişi silme, hesap silme |
+| profile / dashboard / admin | 8 | profil, kullanıcı panosu, Bilgi İşlem salt-okunur admin (5 uç, `total/offset` sayfalama istisnası — bilinçli ve belgeli sınır) |
 
 **İzolasyon kuralı (tüm `{course_id}` yolları):** yol parametresindeki `course_id` bir
 yetki belgesi değildir; her istekte sunucu tarafında üyelik tablosundan doğrulanır
-(`apps/api/app/api/deps.py`). İkinci katman olarak aynı oturumda Postgres RLS devrededir.
+(`apps/api/app/api/deps.py`). Üye olmayana ders varlığı sızdırılmaz (**404**), üye ama
+yetkisiz olana **403** döner. İkinci katman olarak aynı oturumda Postgres RLS devrededir.
+
+**Sayfalama:** liste uçları `{items, next_cursor}` zarfı ve opak keyset imleci kullanır
+(`apps/api/app/core/pagination.py` — `paginate` / `paginate_keyset` tek uygulama).
+Tek istisna, ayrı tüketicisi olan `/admin` uçlarının `total/offset` biçimidir.
 
 ---
 
 ## Hata zarfı sözleşmesi
 
-Uygulama hataları tek biçimde döner (`apps/api/app/core/errors.py`,
-`app_error_handler`):
+Uygulama hataları tek biçimde döner (`apps/api/app/core/errors.py`; üç handler —
+`AppError`, `RequestValidationError`, beklenmeyen istisna — `main.py`'de kayıtlıdır):
 
 ```json
-{ "error": { "code": "...", "message": "Anlaşılır Türkçe mesaj." } }
+{ "error": { "code": "...", "message": "Anlaşılır Türkçe mesaj.", "request_id": "..." } }
 ```
 
-`message` her zaman kullanıcıya gösterilebilir Türkçedir; frontend kendi hata metnini
-uydurmaz (Anayasa İlke V). Ham stack trace veya sağlayıcı hatası asla sızmaz.
+- `message` her zaman kullanıcıya gösterilebilir Türkçedir; frontend kendi hata metnini
+  uydurmaz (Anayasa İlke V). Ham stack trace veya sağlayıcı hatası asla sızmaz.
+- `request_id` zorunludur ve destek kodu olarak kullanıcıya gösterilir; middleware
+  atlansa bile handler üretir (`X-Request-ID` başlığıyla aynı değer).
 
 | HTTP | `code` | Ne zaman |
 |---|---|---|
@@ -63,14 +70,17 @@ uydurmaz (Anayasa İlke V). Ham stack trace veya sağlayıcı hatası asla sızm
 | 404 | `not_found` | Kayıt yok **veya** kullanıcı o derse üye değil (varlık sızdırılmaz) |
 | 409 | `conflict` | Mükerrer ders kodu, mükerrer üyelik, aynı dosyanın tekrar yüklenmesi |
 | 413 | `payload_too_large` | Yükleme boyut sınırı aşıldı (varsayılan 20 MB) |
-| 422 | `validation_error` | Uygulama seviyesi doğrulama (ör. "kendi eğitmen üyeliğinizi kaldıramazsınız") |
+| 422 | `validation_error` | Doğrulama — uygulama seviyesi VE FastAPI/Pydantic istek doğrulaması. Eski "detail biçimi zarfın dışında" istisnası kapandı: `RequestValidationError` handler'ı da zarfı üretir (`tests/test_error_envelope.py` kanıtı) |
+| 429 | `rate_limited` / `agent_*` | İstek sıklığı veya AI kota sınırları (`retry_after` taşır) |
+| 503 | `pipeline_unavailable` / `course_agent_disabled` | Cevap hattı takılı değil ya da asistan kapalı (fail-closed) |
 | 500 | `internal_error` | Beklenmeyen hata; ayrıntı loga, kullanıcıya genel mesaj |
 
-**Bilinen istisna:** FastAPI/Pydantic'in kendi istek doğrulama hatası (bozuk UUID, eksik
-gövde alanı vb.) hâlâ FastAPI'nin standart `{"detail": [...]}` biçiminde döner —
-`openapi.json`'daki `HTTPValidationError` şeması budur ve zarfın dışındadır.
-[NEEDS CLARIFICATION: RequestValidationError handler'ı da zarfa çekilecek mi, yoksa
-frontend iki biçimi de mi tanıyacak?]
+**Bilinen spec boşluğu:** üretilen `openapi.json`, hata yanıtlarında yalnız FastAPI'nin
+`HTTPValidationError` şemasını belgeliyor; zarf şeması (`error.code/message/request_id`)
+spec'te henüz yok. Çalışma zamanı davranışı yukarıdaki gibidir ve testle çivilidir;
+zarfın spec'e eklenmesi (router `responses` ya da openapi post-processing) modülerizasyon
+PR dizisinin 10. adımıdır — spec'ten istemci üretecek biri o adıma kadar hata tiplerini
+bu tablodan almalıdır.
 
 ---
 
@@ -89,25 +99,6 @@ Tüm korumalı uçlar `Authorization: Bearer <token>` bekler
 Yetkilendirme (kim hangi derse erişir) token katmanında değil, ders bağımlılıklarında
 (`deps.py`) ve RLS'te yapılır. API veritabanına tablo sahibi olmayan, BYPASSRLS
 taşımayan `dou_app` rolüyle bağlanır.
-
----
-
-## Planlanan uçlar — HENÜZ YOK
-
-Aşağıdakiler ARCHITECTURE.md §5 (sorgu pipeline'ı + cevap şeması) ve PLAN.md
-takviminden gelir; **bu sözleşmede henüz yer almazlar, kodda da yokturlar.** İsimler
-göstergedir; yol adları implementasyonla birlikte dondurulacak ve `openapi.json`
-yeniden export edilecektir.
-
-| Alan | Beklenen uç(lar) | Kaynak | Durum |
-|---|---|---|---|
-| Kaynaklı sohbet + Sokratik mod | `chat` (soru sor; `mode: qa \| socratic`; cevap şeması: `status / answer / citations[] / hints[]`) | ARCHITECTURE §5, PLAN G5-G7 | **henüz yok** |
-| Sınav prova modu | `exam` oturumları (başlat, cevapla, bitir; `mode: practice \| exam`; "neden yanlış?" geri bildirimi) | ARCHITECTURE §5, PLAN G9 | **henüz yok** |
-| Soru havuzu | `questions` (üretim + eğitmen onay akışı; `mcq / open / code_trace / bug_hunt`) | PLAN G8, veri modeli §3 | **henüz yok** |
-| Analitik / mastery | eğitmen özet ekranı verisi | PLAN G10, ARCHITECTURE §5 (Mastery-Lite) | **henüz yok** |
-
-Frontend bu uçlar için mock'la ilerler; gerçek sözleşme çıktığında mock'lar şemaya
-karşı doğrulanır.
 
 ---
 
@@ -130,6 +121,9 @@ Notlar:
 
 - `ensure_ascii=False` zorunludur: docstring'lerdeki Türkçe metin (ör. "Ders kimliği")
   escape edilmeden kalmalı.
-- Uç ekleyip export'u unutmamak için PR kontrol listesine "sözleşme güncel mi?"
-  maddesi eklenir. [NEEDS CLARIFICATION: bu export CI'da otomatik diff kontrolüne
-  bağlanacak mı?]
+- Export'un unutulmasına karşı öneri (modülerizasyon PR dizisi, 3. adım): CI'a
+  "yeniden export et, `git diff --exit-code` boşsa geç" kapısı. Bu kapı henüz ekli
+  değil; o güne kadar PR kontrol listesindeki "sözleşme güncel mi?" maddesi geçerli.
+- Frontend tipleri (`apps/web/lib/types.ts` + `lib/*.ts`) spec'in elle yazılmış
+  aynasıdır; codegen yoktur. Ölçülmüş drift listesi ve kapatma planı için
+  [docs/team/modularization-v2-audit.md](../../../docs/team/modularization-v2-audit.md) §5-7.

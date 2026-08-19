@@ -11,7 +11,6 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
-  buildChatRequest,
   CACHED_ANSWER_NOTE,
   canSubmitDraft,
   CHAT_MODE_LABEL,
@@ -33,7 +32,8 @@ import {
 } from "@/lib/course-assistant";
 import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
 import { api } from "@/lib/api";
-import { describeError, type ErrorInfo } from "@/lib/errors";
+import { useAssistantPolicyReset } from "@/lib/use-assistant-policy";
+import { useChatTurn } from "@/lib/use-chat-turn";
 import { sourceContextHref } from "@/lib/source-quality";
 import type { ChatAnswer } from "@/lib/types";
 import { ErrorNote, Loading } from "@/components/page-state";
@@ -279,39 +279,49 @@ function AssistantConversation({
   );
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
-  const [draft, setDraft] = useState("");
-  const [pending, setPending] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<ErrorInfo | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
-  const conversationEpoch = useRef(0);
 
-  const resetConversation = useCallback((nextMode: ChatUiMode | null) => {
-    conversationEpoch.current++;
-    setMode(nextMode);
-    setSessionId(null);
-    setMessages([]);
-    setPending(null);
-    setSending(false);
-    setSendError(null);
-  }, []);
+  /*
+   * Gönderim turu ortak çekirdekten (`createSubmitGate` üstünde epoch'lu tur):
+   * iyimser `pending`, hatada taslağın iadesi ve zarf doğrulaması orada.
+   * Çekmeceye özgü olan yalnız cevabın dökümü ve oturum kimliği.
+   */
+  const { draft, setDraft, pending, sending, sendError, submit, invalidate } =
+    useChatTurn({
+      post: (body) => api.post<ChatAnswer>(`/courses/${courseId}/chat`, body),
+      matchesIdentity: (answer) => answerMatchesAssistant(answer, identity),
+      onAnswer: (answer, text) => {
+        setMessages((current) => [
+          ...current,
+          userMessage(`user:${answer.message_id}`, text),
+          fromAnswer(answer),
+        ]);
+        setSessionId(answer.session_id);
+      },
+    });
 
-  const policyKey = `${identity.audience}:${identity.agentProfile}:${allowedModes.join(",")}:${hintLimit}`;
-  const previousPolicyKey = useRef(policyKey);
-  useEffect(() => {
-    const nextMode =
-      mode !== null && allowedModes.includes(mode)
-        ? mode
-        : firstAllowedChatMode(allowedModes);
-    const policyChanged = previousPolicyKey.current !== policyKey;
-    previousPolicyKey.current = policyKey;
-    if (!policyChanged && nextMode === mode) return;
+  const resetConversation = useCallback(
+    (nextMode: ChatUiMode | null) => {
+      invalidate();
+      setMode(nextMode);
+      setSessionId(null);
+      setMessages([]);
+    },
+    [invalidate],
+  );
 
-    resetConversation(nextMode);
-    // Eski persona için yazılmış, henüz gönderilmemiş metin de taşınmaz.
-    setDraft("");
-  }, [allowedModes, mode, policyKey, resetConversation]);
+  useAssistantPolicyReset({
+    identity,
+    allowedModes,
+    hintLimit,
+    mode,
+    onReset: (nextMode) => {
+      resetConversation(nextMode);
+      // Eski persona için yazılmış, henüz gönderilmemiş metin de taşınmaz.
+      setDraft("");
+    },
+  });
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -323,36 +333,9 @@ function AssistantConversation({
     mode !== null && isSocraticFollowUp({ mode, sessionId, openingQuestion });
   const submittable = mode !== null && canSubmitDraft(draft, followUp);
 
-  const send = async () => {
-    if (sending || !submittable || mode === null) return;
-    const text = draft.trim();
-    const body = buildChatRequest({ mode, draft: text, sessionId, openingQuestion });
-    const epoch = conversationEpoch.current;
-    setSending(true);
-    setSendError(null);
-    setPending(text);
-    setDraft("");
-    try {
-      const answer = await api.post<ChatAnswer>(`/courses/${courseId}/chat`, body);
-      if (conversationEpoch.current !== epoch) return;
-      if (!answerMatchesAssistant(answer, identity)) {
-        throw new Error("Asistan yanıtının rol bilgisi doğrulanamadı.");
-      }
-      setMessages((current) => [
-        ...current,
-        userMessage(`user:${answer.message_id}`, text),
-        fromAnswer(answer),
-      ]);
-      setSessionId(answer.session_id);
-      setPending(null);
-    } catch (error) {
-      if (conversationEpoch.current !== epoch) return;
-      setSendError(describeError(error));
-      setPending(null);
-      setDraft(text);
-    } finally {
-      if (conversationEpoch.current === epoch) setSending(false);
-    }
+  const send = () => {
+    if (mode === null) return Promise.resolve();
+    return submit({ mode, sessionId, openingQuestion });
   };
 
   const blocks = mode === null ? [] : toBlocks(messages, { mode, pending });

@@ -66,6 +66,7 @@ import type {
   ExamSession,
 } from "@/lib/types";
 import { useResource } from "@/lib/use-resource";
+import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { examStateChanged } from "@/lib/chat-availability";
@@ -270,9 +271,43 @@ function RunningExam({
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [feedbacks, setFeedbacks] = useState<Record<string, AnswerFeedback>>({});
   const [hints, setHints] = useState<Record<string, ExamHint[]>>({});
-  const [busy, setBusy] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
   const [finish, setFinish] = useState<ExamFinish | null>(null);
+
+  /*
+   * Cevap gönderme ve ipucu isteme aynı kancada: `busy` ve hata satırı zaten
+   * ortaktı. Kanca erken dönüşlerden ÖNCE kurulmak zorunda (hook kuralı), o
+   * yüzden soruya bağlı değerler kapanıştan değil argümandan gelir.
+   */
+  const {
+    busy,
+    error: actionError,
+    setError: setActionError,
+    submit: act,
+  } = useSubmit(
+    async (
+      task:
+        | { kind: "answer"; questionId: string; given: string; hintLevel: number }
+        | { kind: "hint"; questionId: string; level: number },
+    ) => {
+      if (task.kind === "answer") {
+        const result = await api.post<AnswerFeedback>(
+          `/courses/${courseId}/exams/${session.id}/answers`,
+          { question_id: task.questionId, given: task.given, hint_level: task.hintLevel },
+        );
+        setFeedbacks((prev) => ({ ...prev, [task.questionId]: result }));
+        return;
+      }
+      const hint = await api.post<ExamHint>(`/courses/${courseId}/exams/${session.id}/hint`, {
+        question_id: task.questionId,
+        hint_level: task.level,
+      });
+      // Merdiven silinmez, birikir: öğrenci nereden geldiğini görür (DESIGN.md).
+      setHints((prev) => ({
+        ...prev,
+        [task.questionId]: [...(prev[task.questionId] ?? []), hint],
+      }));
+    },
+  );
 
   /*
    * Kalan süre: sunucunun değeriyle kurulur, saniyede bir yumuşatılır, her
@@ -369,39 +404,18 @@ function RunningExam({
     setIndex(next);
   };
 
-  const submit = async () => {
+  const submit = () => {
     if (!submittable) return;
-    setBusy(true);
-    setActionError(null);
-    try {
-      const result = await api.post<AnswerFeedback>(
-        `/courses/${courseId}/exams/${session.id}/answers`,
-        { question_id: question.id, given: draft.trim(), hint_level: lastRung },
-      );
-      setFeedbacks((prev) => ({ ...prev, [question.id]: result }));
-    } catch (e) {
-      setActionError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
+    return act({
+      kind: "answer",
+      questionId: question.id,
+      given: draft.trim(),
+      hintLevel: lastRung,
+    });
   };
 
-  const askHint = async (level: number) => {
-    setBusy(true);
-    setActionError(null);
-    try {
-      const hint = await api.post<ExamHint>(`/courses/${courseId}/exams/${session.id}/hint`, {
-        question_id: question.id,
-        hint_level: level,
-      });
-      // Merdiven silinmez, birikir: öğrenci nereden geldiğini görür (DESIGN.md).
-      setHints((prev) => ({ ...prev, [question.id]: [...(prev[question.id] ?? []), hint] }));
-    } catch (e) {
-      setActionError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const askHint = (level: number) =>
+    act({ kind: "hint", questionId: question.id, level });
 
   return (
     <div className="mx-auto max-w-2xl">

@@ -52,11 +52,13 @@ görünür ve kimi etkilediği içe aktarım listesinden okunabilir.
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from httpx import AsyncClient
@@ -77,6 +79,11 @@ from app.contracts import (
     SocraticStage,
 )
 from app.models.assessment import QuestionType
+from app.modules.ingestion.embedding import HashingEmbeddingProvider
+from app.schemas.assessment import AnswerFormat
+
+if TYPE_CHECKING:
+    from tests.conftest import UserFactory
 
 # ---------------------------------------------------------------------------
 # Uç üzerinden kurulum
@@ -619,3 +626,345 @@ def install_pipeline(pipeline: Pipeline) -> None:
         generator=pipeline.generator,
         guardrails=[FakeCitationGuardrail()],
     )
+
+
+# ---------------------------------------------------------------------------
+# Soru havuzu korpusu ve payload üreteçleri
+#
+# Havuz (`test_assessment`), sınav (`test_exams`), blueprint (`test_blueprint`)
+# ve hız sınırı (`test_rate_limit`) testleri aynı korpusu görmek zorunda: sınav
+# testleri havuzun ürettiği soruların aynısını okur, ayrı bir korpus iki
+# dosyanın sessizce ayrışmasına açık kapı bırakırdı. Eşik (üç dosya) aşıldı.
+# ---------------------------------------------------------------------------
+
+
+DEADLOCK_TEXTS = [
+    "Deadlock için dört koşulun aynı anda sağlanması gerekir: karşılıklı dışlama, "
+    "tut ve bekle, kesilemezlik ve döngüsel bekleme.",
+    "Kesme (preemption) zorunluluğu bir deadlock koşulu değildir; tam tersine "
+    "kaynağın zorla geri alınabilmesi deadlock'u kırar.",
+]
+
+
+def mcq_payload(chunk_ids: list[UUID]) -> dict[str, Any]:
+    """Dört şıklı örnek MCQ. Çeldirici kaynakları gerçek chunk'lara bağlıdır."""
+    return {
+        "stem": "Deadlock'un oluşması için aşağıdakilerden hangisi gerekli DEĞİLDİR?",
+        "options": [
+            {"key": "A", "text": "Karşılıklı dışlama"},
+            {"key": "B", "text": "Döngüsel bekleme"},
+            {"key": "C", "text": "Kesme zorunluluğu"},
+            {"key": "D", "text": "Tut ve bekle"},
+        ],
+        "answer_key": "C",
+        "distractor_sources": {
+            "A": str(chunk_ids[0]),
+            "B": str(chunk_ids[0]),
+            "D": str(chunk_ids[1 % len(chunk_ids)]),
+        },
+        "explanation": "Dört koşul arasında kesme zorunluluğu yoktur.",
+    }
+
+
+def short_answer_payload() -> dict[str, Any]:
+    return {
+        "prompt": "Deadlock'un dört koşulundan döngüsel beklemenin adı nedir?",
+        "answer_key": "döngüsel bekleme",
+        "format": AnswerFormat.SHORT_ANSWER.value,
+        "accepted_answers": ["döngüsel bekleme", "circular wait"],
+    }
+
+
+ESSAY_PAYLOAD = {
+    "prompt": "Deadlock'un dört koşulunu açıklayın.",
+    "answer_key": "Karşılıklı dışlama, tut ve bekle, kesilemezlik, döngüsel bekleme.",
+    "key_points": ["karşılıklı dışlama", "tut ve bekle", "döngüsel bekleme"],
+    "rubric": [{"point": "Dört koşulu sayar", "weight": 100}],
+}
+
+
+def _mcq_response(source_chunk_id: UUID | str, *, count: int = 1) -> str:
+    return json.dumps(
+        {
+            "questions": [
+                {
+                    "stem": f"Deadlock koşullarından hangisi yanlıştır? ({index})",
+                    "options": [
+                        {"key": "A", "text": "Karşılıklı dışlama"},
+                        {"key": "B", "text": "Döngüsel bekleme"},
+                        {"key": "C", "text": "Kesme zorunluluğu"},
+                        {"key": "D", "text": "Tut ve bekle"},
+                    ],
+                    "answer_key": "C",
+                    "explanation": "Dört koşul arasında kesme zorunluluğu yoktur.",
+                    "source_chunk_id": str(source_chunk_id),
+                }
+                for index in range(count)
+            ]
+        }
+    )
+
+
+def retrieved(chunk_ids: list[UUID], texts: list[str]) -> list[RetrievedChunk]:
+    """Soru üretimine verilecek arama sonucu.
+
+    `dense_score`/`fts_score` AÇIKÇA sıfırlanıyor. `make_chunk`'ın varsayılanları
+    sohbet tarafının gerçekçi değerleridir (dense 0.82) ve kanıt eşiği oraya
+    bakar; soru üretimi ise eşiğe hiç bakmaz, sıralamayı yalnız `fused_score`
+    belirler. Varsayılanlar devralınsaydı bu testler ölçmedikleri bir eşiğe
+    bağlanır ve eşik bir gün değiştiğinde sebepsiz kırılırlardı.
+    """
+    return [
+        make_chunk(
+            chunk_id=chunk_id,
+            text=body,
+            file_name="isletim-sistemleri.pdf",
+            page_number=index + 1,
+            section_title=None,
+            dense_score=0.0,
+            fts_score=0.0,
+            fused_score=1.0 - index * 0.1,
+        )
+        for index, (chunk_id, body) in enumerate(zip(chunk_ids, texts, strict=True))
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Sahte LLM sağlayıcıları
+# ---------------------------------------------------------------------------
+
+
+class FakeCompletion:
+    """Sırayla hazır yanıt döndüren sahte LLM. Çağrı sayısı sayılır."""
+
+    def __init__(self, *responses: str) -> None:
+        self._responses = list(responses)
+        self.calls = 0
+
+    async def complete(self, *, system: str, user: str) -> str:
+        del system, user
+        self.calls += 1
+        index = min(self.calls - 1, len(self._responses) - 1)
+        return self._responses[index]
+
+
+class ScriptedLlm:
+    """Sırayla verilen ham metinleri döndüren sahte sağlayıcı.
+
+    `app.modules.generation.fake.FakeLlmClient` gerçekçi cevap üretir; bu ise
+    BELİRLİ bir bozuk/kötü çıktıyı zincire sokmak için var. İkisi ayrı çünkü
+    "model şunu döndürürse ne olur" sorusu, gerçekçi bir sağlayıcıyla sorulamaz.
+
+    İki dosyada kopyaydı (`test_guardrails`, `test_generation`) ve kopyalar
+    ayrışmıştı: biri istekleri kaydediyordu, diğeri kaydetmiyordu. En genel
+    biçim alındı (Anayasa XI istisna b): `requests` kaydı kalan kullanıcı için
+    yalnızca boş bir liste taşır.
+    """
+
+    def __init__(self, *payloads: str) -> None:
+        self._payloads = payloads or ("",)
+        self.calls = 0
+        self.requests: list[object] = []
+
+    async def complete(self, request: object) -> object:
+        from app.modules.generation.llm import LlmCompletion
+
+        index = min(self.calls, len(self._payloads) - 1)
+        self.calls += 1
+        self.requests.append(request)
+        return LlmCompletion(text=self._payloads[index], provider="scripted", model="scripted/test")
+
+
+class BlockingGenerator:
+    """`contracts.Generator` — ilk çağrıda `entered`'ı işaretler, `release`'e dek bekler.
+
+    Yarış pencerelerini ZORLA açmak için var: üretim sürerken ikinci bir isteğin
+    araya girebildiği anı kurar; sınav kilidi (`test_exam_lock`) ve eşzamanlılık
+    kapısı (`test_role_aware_agent_application_guards`) bunun üstünde iddia kurar.
+
+    İki dosyada gömülü kopyaydı ve kopyalar ayrışmıştı: biri çağrı sayıp yalnız
+    ilkinde bekliyordu, diğeri saymıyordu ama tek çağrı aldığı için fark
+    gözlemlenemezdi. En genel biçim alındı (Anayasa XI istisna b): sayaç var,
+    yalnız ilk çağrı bekler.
+    """
+
+    def __init__(
+        self, chunk: RetrievedChunk, *, entered: asyncio.Event, release: asyncio.Event
+    ) -> None:
+        self._chunk = chunk
+        self._entered = entered
+        self._release = release
+        self.calls = 0
+
+    async def generate(
+        self,
+        *,
+        question: str,
+        chunks: list[RetrievedChunk],
+        mode: ChatMode,
+        socratic_stage: SocraticStage | None = None,
+        student_attempt: str | None = None,
+    ) -> GeneratedAnswer:
+        del question, chunks, mode, socratic_stage, student_attempt
+        self.calls += 1
+        if self.calls == 1:
+            self._entered.set()
+            await self._release.wait()
+        return sourced_answer(self._chunk)
+
+
+# ---------------------------------------------------------------------------
+# Sınav kurulumu — ders + roller + onaylı havuz + oturum yardımcıları
+#
+# Uç sarmalayıcılarından yalnız `start` burada: oturum açmayı dört dosya
+# kullanıyor. `answer`/`finish`/`hint` ise yalnız `test_exams`'e ait ve orada
+# kaldılar — o üç uç durum kodu iddia etmeden ham `Response` döndürmek zorunda.
+# ---------------------------------------------------------------------------
+
+
+EXAM_DURATION_SECONDS = 20 * 60  # Settings.exam_duration_minutes varsayılanı
+
+
+class ExamFixture:
+    """Bir ders, bir eğitmen, bir öğrenci ve onaylı bir soru havuzu.
+
+    `course_id` `str` KALIYOR, `UUID` değil: `tests/test_exam_lock.py` bu sınıfı
+    içe aktarıyor ve kendi yardımcılarını `str` olarak imzalıyor. Fabrika artık
+    `UUID` döndürdüğü için dönüşüm `build_course`'un içinde yapılıyor — tipi
+    burada değiştirmek, bu turda dokunulmayan imzaları yalancı çıkarırdı.
+    """
+
+    def __init__(
+        self,
+        *,
+        course_id: str,
+        instructor: dict[str, str],
+        instructor_id: UUID,
+        student: dict[str, str],
+        student_id: UUID,
+        topic_id: UUID,
+        chunk_ids: list[UUID],
+        question_ids: list[UUID],
+    ) -> None:
+        self.course_id = course_id
+        self.instructor = instructor
+        self.instructor_id = instructor_id
+        self.student = student
+        self.student_id = student_id
+        self.topic_id = topic_id
+        self.chunk_ids = chunk_ids
+        self.question_ids = question_ids
+
+
+async def build_course(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    *,
+    approved: int = 2,
+    drafts: int = 0,
+    short_answer: bool = False,
+) -> ExamFixture:
+    instructor_id = await users.create("ayse@dogus.edu.tr")
+    instructor = users.auth(instructor_id)
+    student_id = await users.create("burak@dogus.edu.tr")
+    course_id = await create_course(client, instructor, "COME301")
+    await enroll_student(client, instructor, course_id, "burak@dogus.edu.tr")
+    topic_id = await create_topic(client, instructor, course_id, "Deadlock")
+    seeded = await seed_document(
+        admin_engine, course_id=course_id, uploaded_by=instructor_id, passages=DEADLOCK_TEXTS
+    )
+    chunk_ids = seeded.chunk_ids
+
+    question_ids: list[UUID] = []
+    for index in range(approved):
+        use_short = short_answer and index == 0
+        question_ids.append(
+            await seed_question(
+                admin_engine,
+                course_id=course_id,
+                topic_id=topic_id,
+                source_chunk_id=chunk_ids[index % len(chunk_ids)],
+                payload=short_answer_payload() if use_short else mcq_payload(chunk_ids),
+                question_type=QuestionType.OPEN if use_short else QuestionType.MCQ,
+                status="approved",
+                reviewed_by=instructor_id,
+            )
+        )
+    for _ in range(drafts):
+        await seed_question(
+            admin_engine,
+            course_id=course_id,
+            topic_id=topic_id,
+            source_chunk_id=chunk_ids[0],
+            payload=mcq_payload(chunk_ids),
+        )
+
+    return ExamFixture(
+        course_id=str(course_id),
+        instructor=instructor,
+        instructor_id=instructor_id,
+        student=users.auth(student_id),
+        student_id=student_id,
+        topic_id=topic_id,
+        chunk_ids=chunk_ids,
+        question_ids=question_ids,
+    )
+
+
+async def start(client: AsyncClient, fixture: ExamFixture, mode: str) -> dict:
+    response = await client.post(
+        f"/courses/{fixture.course_id}/exams", json={"mode": mode}, headers=fixture.student
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
+
+
+async def rewind(admin_engine: AsyncEngine, session_id: str, *, minutes: int) -> None:
+    """Oturumu geriye alır: süre gerçekten geçmiş gibi davranır."""
+    async with admin_engine.begin() as conn:
+        await conn.execute(
+            sql_text(
+                "UPDATE exam_sessions SET started_at = started_at - make_interval(mins => :m), "
+                "expires_at = expires_at - make_interval(mins => :m) WHERE id = :id"
+            ),
+            {"m": minutes, "id": UUID(session_id)},
+        )
+
+
+# ---------------------------------------------------------------------------
+# Yavaş gömü sağlayıcısı — event loop ve sağlık yoklaması testleri
+# ---------------------------------------------------------------------------
+
+
+#: Sahte sağlayıcının her çağrıda harcadığı süre.
+SLOW_CALL_SECONDS = 0.4
+
+
+class SlowSyncEmbeddingProvider(HashingEmbeddingProvider):
+    """Yavaş ama GIL'i BIRAKAN senkron sağlayıcı.
+
+    `time.sleep` bilinçli bir seçim: GIL'i bırakır, yani ONNX çıkarımının ve
+    PyMuPDF ayrıştırmasının dürüst vekilidir. Saf Python döngüsüyle beklenseydi
+    GIL bırakılmaz, `to_thread` sarması yerindeyken de test kırmızı yanar ve
+    kusur yanlış yerde aranırdı.
+
+    `HashingEmbeddingProvider`'dan türüyor ki `vector_space.space_of` onu
+    tanısın ve damga normal test sağlayıcısıyla aynı kalsın; farklı bir uzay
+    kimliği üretseydi retrieval kapısı ölçümden önce devreye girerdi.
+    """
+
+    def __init__(self, delay: float = SLOW_CALL_SECONDS) -> None:
+        super().__init__()
+        self._delay = delay
+        self.calls = 0
+
+    def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
+        self.calls += 1
+        time.sleep(self._delay)
+        return super().embed_documents(texts)
+
+    def embed_query(self, text: str) -> list[float]:
+        self.calls += 1
+        time.sleep(self._delay)
+        return super().embed_query(text)

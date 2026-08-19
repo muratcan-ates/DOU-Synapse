@@ -6,28 +6,22 @@ import { ErrorNote } from "@/components/page-state";
 import { Field } from "@/components/field";
 import { Button, Card, Input } from "@/components/ui";
 import { requestPasswordReset } from "@/lib/api";
-import { errorMessage } from "@/lib/errors";
 import { supabaseConfigured } from "@/lib/supabase";
+import { useSubmit } from "@/lib/use-submit";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function submit(event: React.FormEvent) {
+  // Çift gönderim kapısı `useSubmit`'te: busy iken çağrı yok sayılır.
+  const { busy, error, submit: send } = useSubmit(async () => {
+    await requestPasswordReset(email.trim());
+    setSent(true);
+  }, "Parola yenileme bağlantısı gönderilemedi.");
+
+  function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await requestPasswordReset(email.trim());
-      setSent(true);
-    } catch (cause) {
-      setError(errorMessage(cause, "Parola yenileme bağlantısı gönderilemedi."));
-    } finally {
-      setBusy(false);
-    }
+    void send();
   }
 
   return (

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 
 import pytest
 from httpx import AsyncClient
@@ -25,10 +25,7 @@ from app.core.db import rls_session
 from app.modules.ingestion.embedding import HashingEmbeddingProvider, set_embedding_provider
 from app.modules.retrieval.dense import dense_search
 from tests.conftest import UserFactory
-from tests.test_ingestion import make_pdf
-
-#: Sahte sağlayıcının her çağrıda harcadığı süre.
-SLOW_CALL_SECONDS = 0.4
+from tests.factories import SlowSyncEmbeddingProvider, make_pdf
 
 #: Sarma yerindeyken loop'ta görülmesi gereken üst sınır. Yavaş iş 0,4 sn
 #: sürüyor; sarma çalışıyorsa loop bu sürenin neredeyse tamamında serbesttir.
@@ -37,35 +34,6 @@ MAX_ACCEPTABLE_LAG_SECONDS = 0.1
 #: Kalibrasyonda (sarma yokken) görülmesi gereken ALT sınır. 0,4 sn'lik bir
 #: bloke için 0,3 sn eşiği, yavaş bir makinede bile yanlış yeşil vermez.
 MIN_BLOCKING_LAG_SECONDS = 0.3
-
-
-class SlowSyncEmbeddingProvider(HashingEmbeddingProvider):
-    """Yavaş ama GIL'i BIRAKAN senkron sağlayıcı.
-
-    `time.sleep` bilinçli bir seçim: GIL'i bırakır, yani ONNX çıkarımının ve
-    PyMuPDF ayrıştırmasının dürüst vekilidir. Saf Python döngüsüyle beklenseydi
-    GIL bırakılmaz, `to_thread` sarması yerindeyken de test kırmızı yanar ve
-    kusur yanlış yerde aranırdı.
-
-    `HashingEmbeddingProvider`'dan türüyor ki `vector_space.space_of` onu
-    tanısın ve damga normal test sağlayıcısıyla aynı kalsın; farklı bir uzay
-    kimliği üretseydi retrieval kapısı ölçümden önce devreye girerdi.
-    """
-
-    def __init__(self, delay: float = SLOW_CALL_SECONDS) -> None:
-        super().__init__()
-        self._delay = delay
-        self.calls = 0
-
-    def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
-        self.calls += 1
-        time.sleep(self._delay)
-        return super().embed_documents(texts)
-
-    def embed_query(self, text: str) -> list[float]:
-        self.calls += 1
-        time.sleep(self._delay)
-        return super().embed_query(text)
 
 
 class LoopProbe:

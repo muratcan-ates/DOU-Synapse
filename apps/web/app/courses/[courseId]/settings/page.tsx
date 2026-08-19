@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 import { api } from "@/lib/api";
@@ -18,6 +19,7 @@ import {
 } from "@/lib/policy";
 import { useSession } from "@/lib/session";
 import type { ChatMode, CourseDocument, Page } from "@/lib/types";
+import { useSubmit } from "@/lib/use-submit";
 
 export default function AiPolicyPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -30,13 +32,13 @@ export default function AiPolicyPage() {
         title="Ders AI politikası"
         description="Asistanın modlarını, kaynak sınırını, kanıt eşiğini, ipucu tavanını ve günlük sohbet bütçesini sunucu tarafında yönetin."
       />
-      {!ready ? (
-        <Loading />
-      ) : isInstructor ? (
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        fallback={<EmptyState title="AI politikası yalnızca dersin eğitmenine gösterilir." />}
+      >
         <PolicyEditor courseId={courseId} />
-      ) : (
-        <EmptyState title="AI politikası yalnızca dersin eğitmenine gösterilir." />
-      )}
+      </InstructorGate>
     </AppShell>
   );
 }
@@ -46,7 +48,6 @@ function PolicyEditor({ courseId }: { courseId: string }) {
   const [draft, setDraft] = useState<PolicyDraft | null>(null);
   const [documents, setDocuments] = useState<CourseDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -74,12 +75,16 @@ function PolicyEditor({ courseId }: { courseId: string }) {
     void load();
   }, [courseId]);
 
-  async function save() {
-    if (!draft || saving) return;
-    setSaving(true);
-    setError(null);
-    setNotice(null);
-    try {
+  /*
+   * Kayıt hatası yükleme hatasıyla AYNI satırı paylaşır (tek `error` durumu);
+   * kanca bu yüzden kendi `error`'ı yerine `onError` ile buraya yazar.
+   * Çift-gönderim kapısı kancada.
+   */
+  const { busy: saving, submit: save } = useSubmit(
+    async () => {
+      if (!draft) return;
+      setError(null);
+      setNotice(null);
       const saved = await api.put<CourseAiPolicy>(
         `/courses/${courseId}/ai-policy`,
         payloadFromDraft(draft),
@@ -87,12 +92,9 @@ function PolicyEditor({ courseId }: { courseId: string }) {
       setPolicy(saved);
       setDraft(draftFromPolicy(saved));
       setNotice("AI politikası kaydedildi ve ilk yeni istekten itibaren uygulanacak.");
-    } catch (cause) {
-      setError(errorMessage(cause, "AI politikası kaydedilemedi."));
-    } finally {
-      setSaving(false);
-    }
-  }
+    },
+    { onError: (cause) => setError(errorMessage(cause, "AI politikası kaydedilemedi.")) },
+  );
 
   if (loading) return <Loading label="AI politikası yükleniyor…" />;
   if (error && (!policy || !draft)) return <ErrorNote message={error} onRetry={() => void load()} />;

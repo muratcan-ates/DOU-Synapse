@@ -39,6 +39,7 @@ from app.modules.guardrails.citation import (
     BLOCK_REASON_NO_VALID_CITATION,
     CitationGuardrail,
 )
+from tests.factories import ScriptedLlm
 
 
 def chunk(
@@ -458,30 +459,8 @@ class TestSanitize:
 
 
 # ---------------------------------------------------------------------------
-# Yardımcı: senaryolu sahte LLM
+# Yardımcı: senaryolu sahte LLM — `tests/factories.py`'de (`ScriptedLlm`)
 # ---------------------------------------------------------------------------
-
-
-class ScriptedLlm:
-    """Sırayla verilen ham metinleri döndüren sahte sağlayıcı.
-
-    `FakeLlmClient` gerçekçi cevap üretir; bu ise BELİRLİ bir bozuk/kötü çıktıyı
-    zincire sokmak için var. İkisi ayrı çünkü "model şunu döndürürse ne olur"
-    sorusu, gerçekçi bir sağlayıcıyla sorulamaz.
-    """
-
-    def __init__(self, *payloads: str) -> None:
-        self._payloads = payloads or ("",)
-        self.calls = 0
-        self.requests: list[object] = []
-
-    async def complete(self, request: object) -> object:
-        from app.modules.generation.llm import LlmCompletion
-
-        index = min(self.calls, len(self._payloads) - 1)
-        self.calls += 1
-        self.requests.append(request)
-        return LlmCompletion(text=self._payloads[index], provider="scripted", model="scripted/test")
 
 
 def test_yardimci_sahte_llm_tekrar_eden_son_yaniti_verir() -> None:
