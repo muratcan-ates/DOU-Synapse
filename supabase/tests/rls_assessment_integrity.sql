@@ -62,16 +62,27 @@ INSERT INTO topics (id, course_id, name, created_by) VALUES (
     '91000000-0000-0000-0000-000000000001'
 );
 
+INSERT INTO learning_outcomes (
+    id, course_id, code, description, topic_id, created_by
+) VALUES (
+    '93300000-0000-0000-0000-000000000001',
+    '92000000-0000-0000-0000-000000000001',
+    'SEC-LO1', 'Sinav guvenligi sinirlarini uygular.',
+    '93200000-0000-0000-0000-000000000001',
+    '91000000-0000-0000-0000-000000000001'
+);
+
 -- 1 practice, 3 approved assessment, 1 draft assessment, 1 rejected assessment.
 INSERT INTO questions (
     id, course_id, topic_id, type, payload, source_chunk_id, status, purpose,
-    created_by, reviewed_by, reviewed_at
+    learning_outcome_id, difficulty, created_by, reviewed_by, reviewed_at
 ) VALUES
     ('94000000-0000-0000-0000-000000000001',
      '92000000-0000-0000-0000-000000000001',
      '93200000-0000-0000-0000-000000000001', 'open',
      '{"stem":"Practice","answer_key":"practice-key"}',
      '93100000-0000-0000-0000-000000000001', 'approved', 'practice',
+     NULL, NULL,
      '91000000-0000-0000-0000-000000000001',
      '91000000-0000-0000-0000-000000000001', now()),
     ('94000000-0000-0000-0000-000000000002',
@@ -79,6 +90,7 @@ INSERT INTO questions (
      '93200000-0000-0000-0000-000000000001', 'open',
      '{"stem":"Ogrenci A kagidi","answer_key":"a-key"}',
      '93100000-0000-0000-0000-000000000001', 'approved', 'assessment',
+     '93300000-0000-0000-0000-000000000001', 'easy',
      '91000000-0000-0000-0000-000000000001',
      '91000000-0000-0000-0000-000000000001', now()),
     ('94000000-0000-0000-0000-000000000003',
@@ -86,6 +98,7 @@ INSERT INTO questions (
      '93200000-0000-0000-0000-000000000001', 'open',
      '{"stem":"Ogrenci B kagidi","answer_key":"b-key"}',
      '93100000-0000-0000-0000-000000000001', 'approved', 'assessment',
+     '93300000-0000-0000-0000-000000000001', 'easy',
      '91000000-0000-0000-0000-000000000001',
      '91000000-0000-0000-0000-000000000001', now()),
     ('94000000-0000-0000-0000-000000000004',
@@ -93,6 +106,7 @@ INSERT INTO questions (
      '93200000-0000-0000-0000-000000000001', 'open',
      '{"stem":"Oturumsuz assessment","answer_key":"hidden-key"}',
      '93100000-0000-0000-0000-000000000001', 'approved', 'assessment',
+     '93300000-0000-0000-0000-000000000001', 'easy',
      '91000000-0000-0000-0000-000000000001',
      '91000000-0000-0000-0000-000000000001', now()),
     ('94000000-0000-0000-0000-000000000005',
@@ -100,12 +114,14 @@ INSERT INTO questions (
      '93200000-0000-0000-0000-000000000001', 'open',
      '{"stem":"Taslak assessment","answer_key":"draft-key"}',
      '93100000-0000-0000-0000-000000000001', 'draft', 'assessment',
+     NULL, NULL,
      '91000000-0000-0000-0000-000000000001', NULL, NULL),
     ('94000000-0000-0000-0000-000000000006',
      '92000000-0000-0000-0000-000000000001',
      '93200000-0000-0000-0000-000000000001', 'open',
      '{"stem":"Reddedilmis assessment","answer_key":"rejected-key"}',
      '93100000-0000-0000-0000-000000000001', 'rejected', 'assessment',
+     NULL, NULL,
      '91000000-0000-0000-0000-000000000001',
      '91000000-0000-0000-0000-000000000001', now());
 
@@ -318,6 +334,29 @@ $$;
 -- Uygulama rolu: terminal satir RLS ile gorunmez; taslak siniflandirma aciktir.
 -- ---------------------------------------------------------------------------
 
+DO $$
+DECLARE
+    v_constraint text;
+BEGIN
+    UPDATE questions
+    SET status = 'approved',
+        reviewed_by = '91000000-0000-0000-0000-000000000001',
+        reviewed_at = now()
+    WHERE id = '94000000-0000-0000-0000-000000000005';
+    RAISE NOTICE 'FAIL  question_classification__siniflandirilmamis_assessment_onaylanamaz (update gecti)';
+EXCEPTION
+    WHEN check_violation THEN
+        GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+        IF v_constraint = 'questions_assessment_classification' THEN
+            RAISE NOTICE 'PASS  question_classification__siniflandirilmamis_assessment_onaylanamaz';
+        ELSE
+            RAISE NOTICE 'FAIL  question_classification__siniflandirilmamis_assessment_onaylanamaz (yanlis constraint: %)', v_constraint;
+        END IF;
+    WHEN OTHERS THEN
+        RAISE NOTICE 'FAIL  question_classification__siniflandirilmamis_assessment_onaylanamaz (beklenmedik hata: %)', SQLERRM;
+END
+$$;
+
 WITH changed AS (
     UPDATE questions
     SET purpose = 'practice'
@@ -331,12 +370,16 @@ FROM changed;
 
 WITH changed AS (
     UPDATE questions
-    SET difficulty = 'medium'
+    SET learning_outcome_id = '93300000-0000-0000-0000-000000000001',
+        difficulty = 'medium',
+        status = 'approved',
+        reviewed_by = '91000000-0000-0000-0000-000000000001',
+        reviewed_at = now()
     WHERE id = '94000000-0000-0000-0000-000000000005'
     RETURNING 1
 )
 SELECT CASE WHEN count(*) = 1 THEN 'PASS' ELSE 'FAIL' END
-       || '  question_immutability__dou_app_taslagi_siniflandirabilir (beklenen 1, gelen '
+       || '  question_classification__siniflandirilmis_assessment_onaylanabilir (beklenen 1, gelen '
        || count(*) || ')'
 FROM changed;
 
