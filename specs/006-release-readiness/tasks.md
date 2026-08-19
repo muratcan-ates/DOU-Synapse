@@ -9,11 +9,11 @@
 
 ## Phase 2: Preflight Foundation
 
-- [ ] T003 [P] Başarılı, blocked, failed ve redaction testlerini `.release/test_staging_preflight.py` içinde önce kırmızı yaz.
-- [ ] T004 `.release/staging_preflight.py` içinde result modeli, exit-code kararı ve güvenli JSON/Markdown renderer'ı uygula.
-- [ ] T005 Candidate exact-SHA/digest doğrulamasını mevcut `.release/validate_evidence.py` ile bağla.
-- [ ] T006 Health, auth, storage, migration, real-provider, kill-switch ve dış evidence kontrollerini timeout/fail-closed davranışla uygula.
-- [ ] T007 `.release/test_staging_preflight.py` paketini yeşile getir ve secret sentinel taramasını kaydet.
+- [x] T003 [P] Başarılı, blocked, failed ve redaction testlerini `.release/test_staging_preflight.py` içinde önce kırmızı yaz.
+- [x] T004 `.release/staging_preflight.py` içinde result modeli, exit-code kararı ve güvenli JSON/Markdown renderer'ı uygula.
+- [x] T005 Candidate exact-SHA/digest doğrulamasını mevcut `.release/validate_evidence.py` ile bağla.
+- [x] T006 Health, auth, storage, migration, real-provider, kill-switch ve dış evidence kontrollerini timeout/fail-closed davranışla uygula.
+- [x] T007 `.release/test_staging_preflight.py` paketini yeşile getir ve secret sentinel taramasını kaydet.
 
 ## Phase 3: Browser Integrity Gates
 
@@ -41,4 +41,3 @@
 - Yeni bağımlılık kurulmaz ve browser indirilmez.
 - `.next`, trace ve screenshot yalnız gerçek E2E koşusu için; alan 10 GiB altındaysa ağır koşu başlatılmaz.
 - Tam paket yerine önce bağımlılıksız `.release` unit testleri çalıştırılır.
-
