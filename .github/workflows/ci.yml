@@ -272,6 +272,9 @@ jobs:
       PGPASSWORD: postgres
       # E2E kendi web sunucusunu 3100'de ayağa kaldırır; API 8000'de koşar.
       E2E_API_URL: http://localhost:8000
+      # Aynı veritabanına bağlı ikinci süreç yalnız operasyonel kill switch'i
+      # gerçek config ile kanıtlar; test yoksa sessizce skip edilmez.
+      E2E_DISABLED_API_URL: http://localhost:8001
       E2E_PORT: 3100
       E2E_DATABASE_NAME: dou_synapse
 
@@ -308,11 +311,16 @@ jobs:
         run: |
           uv sync --extra dev --frozen
           uv run uvicorn app.main:app --port 8000 &
+          COURSE_AGENT_ENABLED=false uv run uvicorn app.main:app --port 8001 &
           # Hazır olana kadar bekle: uyku yerine yoklama, yavaş makinede de doğru.
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8000/openapi.json >/dev/null && break
+            curl -sf http://localhost:8000/openapi.json >/dev/null \
+              && curl -sf http://localhost:8001/openapi.json >/dev/null \
+              && break
             sleep 1
           done
+          curl -sf http://localhost:8000/openapi.json >/dev/null
+          curl -sf http://localhost:8001/openapi.json >/dev/null
 
       - name: Tarayıcıyı kur ve testleri koştur
         working-directory: apps/web

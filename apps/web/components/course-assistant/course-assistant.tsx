@@ -30,7 +30,11 @@ import {
   resolveCourseAssistantIdentity,
   type CourseAssistantIdentity,
 } from "@/lib/course-assistant";
-import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
+import {
+  assistantUnavailableTitle,
+  useChatAvailability,
+  type ChatLock,
+} from "@/lib/chat-availability";
 import { api } from "@/lib/api";
 import { useAssistantPolicyReset } from "@/lib/use-assistant-policy";
 import { useChatTurn } from "@/lib/use-chat-turn";
@@ -193,7 +197,7 @@ export function CourseAssistant({
         ) : access.locked ? (
           <div className="flex flex-1 items-center p-6">
             <AssistantUnavailable
-              title="Asistan sınav sırasında kapalı"
+              title={assistantUnavailableTitle(access.reason)}
               message={access.message ?? "Asistan şu anda kullanılamıyor."}
             />
           </div>
