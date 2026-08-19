@@ -326,6 +326,16 @@ export interface AnswerSubmitRequest {
  * `is_correct` ve `score` null'dır ve arayüz **puan uydurmaz** — "değerlendirilemedi"
  * der. `why_wrong` ve `evidence` kaynaklıdır; kaynaksız açıklama gösterilmez.
  */
+/** Bir rubrik ölçütünden alınan puan (FR-117). Alan adları backend
+ * `RubricCriterionScore` şemasının birebir aynasıdır: `earned` = weight×score/100,
+ * toplam bu satırlardan TÜRETİLİR — model ayrı toplam veremez (Anayasa III). */
+export interface RubricCriterionScore {
+  point: string;
+  weight: number;
+  score: number;
+  earned: number;
+}
+
 export interface AnswerFeedback {
   question_id: string;
   recorded?: boolean;
@@ -333,6 +343,7 @@ export interface AnswerFeedback {
   is_correct?: boolean | null;
   score?: number | null;
   missing_points?: string[];
+  rubric_breakdown?: RubricCriterionScore[];
   why_wrong?: SourceRef | null;
   evidence?: SourceRef | null;
   solution?: Record<string, unknown> | null;
