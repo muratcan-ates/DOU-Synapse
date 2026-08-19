@@ -348,6 +348,42 @@ export function formatScore(score: number | null | undefined): string | null {
 }
 
 /* -------------------------------------------------------------------------
+ * Resmî sınav geri bildirim yayını
+ * ---------------------------------------------------------------------- */
+
+/** Sonuç ekranının kullandığı, sunucu kararından türeyen dar görünüm. */
+export interface FeedbackReleaseView {
+  pending: boolean;
+  availableAtLabel: string | null;
+}
+
+const FEEDBACK_TIME_FORMAT = new Intl.DateTimeFormat("tr-TR", {
+  dateStyle: "long",
+  timeStyle: "short",
+  timeZone: "Europe/Istanbul",
+});
+
+/**
+ * Sonucun açılıp açılmadığına istemci saatiyle karar verilmez.
+ *
+ * `feedback_available_at` yalnız kullanıcıya sunucunun dondurduğu anı
+ * anlatmak içindir. Geçersiz bir zaman puanı erkenden açmaz; yalnız tarih
+ * etiketi gösterilmez. `feedback_released !== true` fail-closed'dur.
+ */
+export function feedbackReleaseView(
+  release: Pick<ExamSession, "feedback_released" | "feedback_available_at">,
+): FeedbackReleaseView {
+  const instant = release.feedback_available_at
+    ? new Date(release.feedback_available_at)
+    : null;
+  const validInstant = instant !== null && !Number.isNaN(instant.getTime());
+  return {
+    pending: release.feedback_released !== true,
+    availableAtLabel: validInstant ? FEEDBACK_TIME_FORMAT.format(instant) : null,
+  };
+}
+
+/* -------------------------------------------------------------------------
  * Çözüm
  * ---------------------------------------------------------------------- */
 

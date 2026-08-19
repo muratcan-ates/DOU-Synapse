@@ -11,6 +11,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { ApiError } from "./api";
 import {
   ANSWER_MAX_LENGTH,
@@ -20,6 +21,7 @@ import {
   describeSolution,
   examSessionKey,
   EXAM_MODE,
+  feedbackReleaseView,
   formatClock,
   formatScore,
   HINT_MAX_LEVEL,
@@ -47,6 +49,8 @@ const session = (overrides: Partial<ExamSession> = {}): ExamSession => ({
   expired: false,
   finished_at: null,
   score: null,
+  feedback_released: true,
+  feedback_available_at: null,
   question_count: 1,
   answered_count: 0,
   ...overrides,
@@ -359,6 +363,55 @@ describe("puan — yoksa uydurulmaz", () => {
   test("ölçek metni rakama gömülmez — yüzeyler onu kendi yoğunluğunda yazar", () => {
     expect(formatScore(50)).not.toContain("/");
     expect(SCORE_SCALE).toBe(100);
+  });
+});
+
+describe("resmî sınav geri bildirimi — karar yalnız sunucunun", () => {
+  test("yayın öncesi durum fail-closed kalır ve dondurulmuş zamanı anlatır", () => {
+    const view = feedbackReleaseView({
+      feedback_released: false,
+      feedback_available_at: "2026-08-20T12:30:00Z",
+    });
+
+    expect(view.pending).toBe(true);
+    expect(view.availableAtLabel).toContain("20 Ağustos 2026");
+    expect(view.availableAtLabel).toContain("15:30");
+  });
+
+  test("sunucu açtığında practice ve legacy sonucu bekletilmez", () => {
+    expect(
+      feedbackReleaseView({ feedback_released: true, feedback_available_at: null }),
+    ).toEqual({ pending: false, availableAtLabel: null });
+  });
+
+  test("bozuk tarih sonuç kararını değiştirmez ve ekranda uydurulmaz", () => {
+    expect(
+      feedbackReleaseView({
+        feedback_released: false,
+        feedback_available_at: "geçerli-bir-tarih-değil",
+      }),
+    ).toEqual({ pending: true, availableAtLabel: null });
+  });
+
+  test("bekleme dalı results GET'i sunar ama puan ve ayrıntı paneline ulaşmaz", () => {
+    const source = readFileSync(
+      new URL("../app/courses/[courseId]/exam/page.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).toContain("`/courses/${courseId}/exams/${session.id}/results`");
+
+    const pendingStart = source.indexOf("if (release.pending)");
+    const releasedStart = source.indexOf("const score = formatScore(result.score)", pendingStart);
+    expect(pendingStart).toBeGreaterThan(-1);
+    expect(releasedStart).toBeGreaterThan(pendingStart);
+
+    const pendingBranch = source.slice(pendingStart, releasedStart);
+    expect(pendingBranch).toContain("Cevaplarınız kaydedildi");
+    expect(pendingBranch).toContain("Sonuçları kontrol et");
+    expect(pendingBranch).toContain('role="status"');
+    expect(pendingBranch).not.toContain("<FeedbackPanel");
+    expect(pendingBranch).not.toContain("<SourceCard");
+    expect(pendingBranch).not.toContain("Puan ·");
   });
 });
 

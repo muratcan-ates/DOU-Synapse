@@ -41,6 +41,7 @@ import {
   describeSolution,
   EXAM_MODE,
   examSessionKey,
+  feedbackReleaseView,
   formatClock,
   formatScore,
   isEmptyPool,
@@ -355,6 +356,7 @@ function RunningExam({
   if (finish !== null || session.finished_at !== null) {
     return (
       <FinishedExam
+        courseId={courseId}
         session={session}
         finish={finish}
         questions={questions}
@@ -798,26 +800,116 @@ function FeedbackPanel({ feedback }: { feedback: AnswerFeedback }) {
  * ---------------------------------------------------------------------- */
 
 function FinishedExam({
+  courseId,
   session,
   finish,
   questions,
   onRestart,
 }: {
+  courseId: string;
   session: ExamSession;
   finish: ExamFinish | null;
   questions: ExamQuestion[];
   onRestart: () => void;
 }) {
   /*
-   * `finish` yalnız sınavı bu sekmede bitiren öğrencide vardır; yenilenen sayfa
-   * yalnız oturum özetini görür (`GET /exams/{id}` soru bazlı sonuç DÖNDÜRMEZ).
-   * Eksik olan uydurulmaz: özet gösterilir, ayrıntı gösterilmez.
+   * `finish` yalnız sınavı bu sekmede bitiren öğrencide vardır. İdempotent
+   * results ucu hem sayfa yenilemesinde ayrıntıyı geri getirir hem de resmî
+   * sınavın yayın anı geldiğinde aynı ekranda güvenle açar.
    */
-  const score = formatScore(finish ? finish.score : session.score);
-  const answered = finish ? finish.answered_count : session.answered_count;
-  const unanswered = finish
-    ? finish.unanswered_count
-    : session.question_count - session.answered_count;
+  const fetchResults = useCallback(
+    () =>
+      api.get<ExamFinish>(
+        `/courses/${courseId}/exams/${session.id}/results`,
+      ),
+    [courseId, session.id],
+  );
+  const results = useResource(fetchResults, [courseId, session.id]);
+  const { busy: checkingResults, submit: checkResults } = useSubmit(results.reload);
+  const result = results.data ?? finish;
+  const release = feedbackReleaseView(result ?? session);
+  const answered = result?.answered_count ?? session.answered_count;
+  const unanswered =
+    result?.unanswered_count ?? session.question_count - session.answered_count;
+
+  if (release.pending) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <PageHeader title="Sınav tamamlandı" />
+
+        <div className="mb-6 rounded-lg border border-border bg-surface p-5">
+          <Badge tone="info">Sonuçlar bekleniyor</Badge>
+          <h2 className="mt-3 text-lg font-medium text-fg">Cevaplarınız kaydedildi</h2>
+          <p role="status" aria-live="polite" className="prose-tr mt-2 text-sm text-fg">
+            Puan, çözüm ve kaynaklı geri bildirim tüm sınav süresi
+            tamamlandıktan sonra açılacak.
+          </p>
+          {release.availableAtLabel && (result ?? session).feedback_available_at && (
+            <p className="mt-3 text-sm text-fg-muted">
+              Planlanan yayın: {" "}
+              <time dateTime={(result ?? session).feedback_available_at ?? undefined}>
+                {release.availableAtLabel}
+              </time>
+            </p>
+          )}
+          {!release.availableAtLabel && (
+            <p className="prose-tr mt-3 text-sm text-fg-muted">
+              Güvenli yayın zamanı doğrulanana kadar sonuç ayrıntıları kapalı
+              kalacak.
+            </p>
+          )}
+        </div>
+
+        <MetricRow
+          items={[
+            { value: answered, label: "Cevaplanan" },
+            { value: unanswered, label: "Boş bırakılan" },
+          ]}
+        />
+
+        <Button
+          variant="secondary"
+          aria-disabled={results.loading || checkingResults}
+          onClick={() => void checkResults()}
+        >
+          {results.loading || checkingResults ? "Kontrol ediliyor…" : "Sonuçları kontrol et"}
+        </Button>
+
+        {(results.error ?? results.refreshError) && (
+          <div className="mt-4">
+            <ErrorNote message={(results.error ?? results.refreshError)!} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (result === null && results.loading) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <PageHeader title="Sınav sonucu" />
+        <Loading label="Sonuçlar getiriliyor…" />
+      </div>
+    );
+  }
+
+  if (result === null && results.error) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <PageHeader title="Sınav sonucu" />
+        <ErrorNote
+          message={results.error}
+          kind={results.errorKind}
+          requestId={results.errorRequestId}
+          onRetry={() => void checkResults()}
+        />
+      </div>
+    );
+  }
+
+  if (result === null) return <Loading label="Sonuçlar getiriliyor…" />;
+
+  const score = formatScore(result.score);
 
   const prompts = new Map(
     questions.map((question) => {
@@ -830,7 +922,7 @@ function FinishedExam({
     <div className="mx-auto max-w-2xl">
       <PageHeader
         title="Sınav sonucu"
-        description={finish?.message}
+        description={result.message}
         action={
           <Button variant="secondary" onClick={onRestart}>
             Yeni sınav başlat
@@ -850,7 +942,7 @@ function FinishedExam({
           ...(score ? [{ value: score, label: `Puan · ${SCORE_SCALE} üzerinden` }] : []),
           { value: answered, label: "Cevaplanan" },
           { value: unanswered, label: "Boş bırakılan" },
-          ...(finish ? [{ value: finish.ungraded_count, label: "Değerlendirilemeyen" }] : []),
+          { value: result.ungraded_count, label: "Değerlendirilemeyen" },
         ]}
       />
 
@@ -859,34 +951,33 @@ function FinishedExam({
         cevaplar üzerinden alınır (backend `score_of`), yani gösterilen puan
         sınavın tamamını temsil etmez.
       */}
-      {finish && finish.ungraded_count > 0 && score && (
+      {result.ungraded_count > 0 && score && (
         <p className="prose-tr mb-6 rounded-lg border border-border bg-surface p-4 text-sm text-fg">
           Bu puan yalnız değerlendirilebilen cevaplar üzerinden hesaplandı;
           {" "}
-          {finish.ungraded_count} cevap paydaya girmedi.
+          {result.ungraded_count} cevap paydaya girmedi.
         </p>
       )}
 
-      {finish === null ? (
-        <p className="prose-tr text-sm text-fg-muted">
-          Bu oturum daha önce tamamlandı. Soru bazlı geri bildirim yalnız sınavın
-          bitirildiği anda gösterilir.
-        </p>
-      ) : (
-        // Hiç cevap yoksa liste boştur; sebebi zaten başlıktaki sunucu mesajında.
-        <ol className="space-y-6">
-          {(finish.results ?? []).map((result, position) => {
-            const prompt = prompts.get(result.question_id);
-            return (
-              <li key={result.question_id}>
-                <h2 className="prose-tr text-sm font-medium text-fg">
-                  {position + 1}. {prompt ?? "Soru metni gösterilemiyor"}
-                </h2>
-                <FeedbackPanel feedback={result} />
-              </li>
-            );
-          })}
-        </ol>
+      {/* Hiç cevap yoksa liste boştur; sebebi başlıktaki sunucu mesajında. */}
+      <ol className="space-y-6">
+        {(result.results ?? []).map((feedback, position) => {
+          const prompt = prompts.get(feedback.question_id);
+          return (
+            <li key={feedback.question_id}>
+              <h2 className="prose-tr text-sm font-medium text-fg">
+                {position + 1}. {prompt ?? "Soru metni gösterilemiyor"}
+              </h2>
+              <FeedbackPanel feedback={feedback} />
+            </li>
+          );
+        })}
+      </ol>
+
+      {results.refreshError && (
+        <div className="mt-6">
+          <ErrorNote message={results.refreshError} onRetry={() => void checkResults()} />
+        </div>
       )}
     </div>
   );

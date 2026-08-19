@@ -290,6 +290,10 @@ export interface ExamSession {
   expired: boolean;
   finished_at: string | null;
   score: number | null;
+  /** Resmî sınav geri bildiriminin sunucu politikasıyla açılıp açılmadığı. */
+  feedback_released: boolean;
+  /** Sunucunun oturum başında dondurduğu güvenli yayın anı. */
+  feedback_available_at: string | null;
   question_count: number;
   answered_count: number;
   questions?: ExamQuestion[];
@@ -333,6 +337,9 @@ export interface ExamFinish {
   unanswered_count: number;
   /** Değerlendirilemeyen cevap sayısı — puanın paydası bu kadar eksik. */
   ungraded_count: number;
+  /** False iken puan, rubrik, çözüm ve kaynaklar istemcide çizilmez. */
+  feedback_released: boolean;
+  feedback_available_at: string | null;
   message: string;
   results?: AnswerFeedback[];
 }
