@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  assessmentPoolQuestions,
   cellKey,
   editingNoticeFor,
   hasDuplicateCells,
@@ -9,6 +10,7 @@ import {
   totalQuestions,
   type Blueprint,
   type BlueprintCellInput,
+  type PoolQuestion,
   type Readiness,
 } from "@/lib/blueprint";
 
@@ -71,6 +73,32 @@ describe("türetmeler", () => {
 
   test("hücre anahtarı üç ekseni birden taşır", () => {
     expect(cellKey(cell())).toBe("co-1|easy|mcq");
+  });
+});
+
+describe("assessmentPoolQuestions", () => {
+  function poolQuestion(id: string, purpose: PoolQuestion["purpose"]): PoolQuestion {
+    return {
+      id,
+      purpose,
+      type: "mcq",
+      payload: { stem: id },
+      learning_outcome_id: "co-1",
+      difficulty: "medium",
+    };
+  }
+
+  test("sunucu süzgeci bozulsa bile prova sorusunu resmî kâğıttan düşürür", () => {
+    const visible = assessmentPoolQuestions([
+      poolQuestion("assessment-1", "assessment"),
+      poolQuestion("practice-1", "practice"),
+      poolQuestion("assessment-2", "assessment"),
+    ]);
+
+    expect(visible.map((question) => question.id)).toEqual([
+      "assessment-1",
+      "assessment-2",
+    ]);
   });
 });
 

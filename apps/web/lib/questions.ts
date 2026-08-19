@@ -18,8 +18,10 @@ import { toSourceInfo } from "@/lib/source";
 import type {
   AnswerFormat,
   Question,
+  QuestionDifficulty,
   QuestionGeneration,
   QuestionGenerateRequest,
+  QuestionPurpose,
   QuestionStatus,
   QuestionType,
   SourceInfo,
@@ -87,6 +89,9 @@ export interface QuestionView {
   id: string;
   type: QuestionType;
   status: QuestionStatus;
+  purpose: QuestionPurpose;
+  learningOutcomeId: string | null;
+  difficulty: QuestionDifficulty | null;
   topicId: string;
   /** `mcq` için `stem`, diğer üç tip için `prompt`. */
   stem: string | null;
@@ -166,6 +171,9 @@ export function toQuestionView(question: Question): QuestionView {
     id: question.id,
     type: question.type,
     status: question.status,
+    purpose: question.purpose,
+    learningOutcomeId: question.learning_outcome_id,
+    difficulty: question.difficulty,
     topicId: question.topic_id,
     options: [] as OptionView[],
     answerKey: null as string | null,
@@ -370,6 +378,9 @@ export function generationSummary(report: QuestionGeneration): GenerationSummary
 /** Eğitmenin kurduğu çerçeve (form durumu). */
 export interface GenerateForm {
   topicId: string;
+  purpose: QuestionPurpose;
+  learningOutcomeId: string;
+  difficulty: QuestionDifficulty | "";
   questionType: QuestionType;
   answerFormat: AnswerFormat;
   count: number;
@@ -401,9 +412,19 @@ export function parseExampleQuestions(text: string): string[] {
 export function buildGenerateRequest(form: GenerateForm): QuestionGenerateRequest {
   const request: QuestionGenerateRequest = {
     topic_id: form.topicId,
+    purpose: form.purpose,
     question_type: form.questionType,
     count: form.count,
   };
+  if (form.purpose === "assessment") {
+    if (form.learningOutcomeId === "" || form.difficulty === "") {
+      throw new Error(
+        "Resmî sınav sorusu için öğrenme çıktısı ve zorluk birlikte seçilmelidir.",
+      );
+    }
+    request.learning_outcome_id = form.learningOutcomeId;
+    request.difficulty = form.difficulty;
+  }
   if (form.questionType === "open") request.answer_format = form.answerFormat;
   const examples = parseExampleQuestions(form.examplesText);
   if (examples.length > 0) request.example_questions = examples;
@@ -422,6 +443,17 @@ export function buildGenerateRequest(form: GenerateForm): QuestionGenerateReques
 export const ANSWER_FORMAT: Record<AnswerFormat, string> = {
   essay: "Klasik",
   short_answer: "Kısa cevap",
+};
+
+export const QUESTION_PURPOSE: Record<QuestionPurpose, string> = {
+  practice: "Prova",
+  assessment: "Resmî sınav",
+};
+
+export const QUESTION_DIFFICULTY: Record<QuestionDifficulty, string> = {
+  easy: "Kolay",
+  medium: "Orta",
+  hard: "Zor",
 };
 
 /** Üretimde sunulan adetler. Serbest metin yok: geçersiz sayı hiç oluşmaz. */

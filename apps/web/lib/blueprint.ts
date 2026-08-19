@@ -13,11 +13,13 @@
  * Her fonksiyon DOM'suz koşar; `blueprint.test.ts` bunları doğrudan sınar.
  */
 
+import type { QuestionDifficulty, QuestionPurpose } from "@/lib/types";
+
 /* -------------------------------------------------------------------------
  * Tipler — backend `schemas/blueprint.py`'ın aynası
  * ---------------------------------------------------------------------- */
 
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = QuestionDifficulty;
 export type BlueprintQuestionType = "mcq" | "open" | "code_trace" | "bug_hunt";
 export type VersionStatus = "draft" | "published" | "superseded";
 
@@ -114,17 +116,15 @@ export interface Readiness {
 }
 
 /**
- * Havuz sorusunun blueprint için gereken iki ek alanı.
- *
- * `lib/types.ts`'teki `Question` genişletilmedi: o dosya bütün ekranların ortak
- * sözleşmesi ve bu turda başka bir şerit de ona dokunuyor. Blueprint'e özgü
- * alanlar burada, kendi modülünde yaşıyor (görev tanımının "blueprint frontend
- * tiplerini kendi modülünde tut" kuralı).
+ * Havuz sorusunun blueprint kâğıt seçicisi için gereken dar görünümü.
+ * Ortak enum'lar `lib/types.ts` sözleşmesinden gelir; bu arayüz yalnız kâğıt
+ * ekranının gerçekten okuduğu alanları taşır.
  */
 export interface PoolQuestion {
   id: string;
   type: BlueprintQuestionType;
   payload: Record<string, unknown>;
+  purpose: QuestionPurpose;
   learning_outcome_id: string | null;
   difficulty: Difficulty | null;
 }
@@ -150,6 +150,17 @@ export const VERSION_STATUS_LABEL: Record<VersionStatus, string> = {
   published: "Yayında",
   superseded: "Yerine yenisi geldi",
 };
+
+/**
+ * Sunucu `purpose=assessment` ile süzse bile istemci yanıtı yeniden doğrular.
+ * Yanlış veya eskimiş bir ara katman practice sorusu döndürürse resmî kâğıt
+ * seçicisi onu göstermeyerek kapanır; yalnız URL parametresine güvenilmez.
+ */
+export function assessmentPoolQuestions(
+  questions: readonly PoolQuestion[],
+): PoolQuestion[] {
+  return questions.filter((question) => question.purpose === "assessment");
+}
 
 /* -------------------------------------------------------------------------
  * Türetmeler

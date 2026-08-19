@@ -3,12 +3,13 @@
 /**
  * Soru havuzu ve eğitmen onayı (T035). Uçlar: `GET/POST /courses/{id}/topics`,
  * `GET /courses/{id}/questions`, `POST .../questions/generate`,
+ * `PATCH .../questions/{qid}/classification`,
  * `POST .../questions/{qid}/approve|reject`.
  *
  * Ürünün en güçlü vaadi bu ekranda görünür hâle gelir: **yapay zekâ üretir,
- * eğitmen yayınlar.** Üretilen her soru `draft` doğar ve onaysız hiçbir soru
- * öğrenci akışına girmez (canlı doğrulandı: öğrenci kimliğiyle aynı uç yalnız
- * `approved` soruları ve beyaz listeden geçmiş payload'ı döndürüyor).
+ * eğitmen karar verir.** Üretilen her soru `draft` doğar. Onaylı prova sorusu
+ * çalışma akışına, onaylı assessment sorusu yalnız resmî kâğıt havuzuna girer;
+ * öğrenci bu soru bankası ucunu toplu okuyamaz.
  *
  * Neden liste + detay (modal değil):
  * Eğitmen otuz taslağı arka arkaya elden geçirecek. Modal her soruda açılıp
@@ -29,6 +30,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { DIFFICULTIES, type LearningOutcome } from "@/lib/blueprint";
 import { errorMessage } from "@/lib/errors";
 import { QUESTION_STATUS, QUESTION_TYPE } from "@/lib/labels";
 import {
@@ -39,6 +41,8 @@ import {
   GENERATE_COUNTS,
   generationSummary,
   nextDraftId,
+  QUESTION_DIFFICULTY,
+  QUESTION_PURPOSE,
   toQuestionView,
   type GenerationSummary,
   type QuestionView,
@@ -48,7 +52,9 @@ import { useSession } from "@/lib/session";
 import type {
   AnswerFormat,
   Question,
+  QuestionDifficulty,
   QuestionGeneration,
+  QuestionPurpose,
   QuestionStatus,
   QuestionType,
   Topic,
@@ -114,7 +120,7 @@ function QuestionsView() {
         title="Soru havuzu"
         description={
           isInstructor
-            ? "Sistem soruları ders materyalinden üretir ve taslak olarak buraya düşürür. Onaylamadığınız hiçbir soru öğrenciye görünmez."
+            ? "Soruları prova veya resmî sınav amacıyla üretin. Resmî sınav soruları onaylansa bile yalnız dondurulmuş sınav kâğıdında açılır."
             : undefined
         }
       />
@@ -129,7 +135,7 @@ function QuestionsView() {
            * olmayan sayfaya girmek arıza değil, sakin bir yönlendirme konusudur.
            */
           <EmptyState
-            title="Soru havuzu yalnızca dersin eğitmenine gösterilir. Onaylanan sorular sınav provasında karşınıza çıkar."
+            title="Soru havuzu yalnızca dersin eğitmenine gösterilir. Prova amacıyla onaylanan sorular sınav provasında karşınıza çıkar."
             action={
               <Link
                 href={`/courses/${courseId}/exam`}
@@ -159,6 +165,10 @@ function QuestionPool({ courseId }: { courseId: string }) {
     [courseId],
   );
   const topicsResource = useResource(fetchTopics, [courseId]);
+  const outcomesResource = useResource<LearningOutcome[]>(
+    () => api.get(`/courses/${courseId}/learning-outcomes`),
+    [courseId],
+  );
   const questionsResource = usePagedResource<Question>(
     `/courses/${courseId}/questions`,
     [courseId],
@@ -186,13 +196,24 @@ function QuestionPool({ courseId }: { courseId: string }) {
 
   // `error` yalnız elde veri YOKKEN dolar (bkz. use-resource.ts); tazeleme
   // hatası ekranı kapatmaz, aşağıda satır içinde gösterilir.
-  const error = topicsResource.error ?? questionsResource.error;
-  const refreshError = topicsResource.refreshError ?? questionsResource.refreshError;
-  const errorKind = topicsResource.errorKind ?? questionsResource.errorKind;
-  const errorRequestId = topicsResource.errorRequestId ?? questionsResource.errorRequestId;
+  const error = topicsResource.error ?? outcomesResource.error ?? questionsResource.error;
+  const refreshError =
+    topicsResource.refreshError ??
+    outcomesResource.refreshError ??
+    questionsResource.refreshError;
+  const errorKind =
+    topicsResource.errorKind ?? outcomesResource.errorKind ?? questionsResource.errorKind;
+  const errorRequestId =
+    topicsResource.errorRequestId ??
+    outcomesResource.errorRequestId ??
+    questionsResource.errorRequestId;
   const reload = useCallback(async () => {
-    await Promise.all([topicsResource.reload(), questionsResource.reload()]);
-  }, [topicsResource.reload, questionsResource.reload]);
+    await Promise.all([
+      topicsResource.reload(),
+      outcomesResource.reload(),
+      questionsResource.reload(),
+    ]);
+  }, [topicsResource.reload, outcomesResource.reload, questionsResource.reload]);
 
   if (error)
     return (
@@ -203,9 +224,12 @@ function QuestionPool({ courseId }: { courseId: string }) {
         onRetry={reload}
       />
     );
-  if (!topicsResource.data || !questionsResource.data) return <Loading />;
+  if (!topicsResource.data || !outcomesResource.data || !questionsResource.data) {
+    return <Loading />;
+  }
 
   const topics = topicsResource.data;
+  const outcomes = outcomesResource.data;
   const questions = questionsResource.data;
   const counts = countByStatus(questions);
   const visible = filterQuestions(questions, statusFilter, topicFilter);
@@ -241,7 +265,9 @@ function QuestionPool({ courseId }: { courseId: string }) {
       // Etiket `lib/labels.ts`'ten gelir; ikinci bir durum sözlüğü yazılmaz.
       setNotice(
         status === "approved"
-          ? `Soru onaylandı. Bu soru artık öğrencilere görünüyor. Durum: ${QUESTION_STATUS[updated.status].label}.`
+          ? updated.purpose === "assessment"
+            ? `Soru onaylandı. Resmî sınav kâğıdı havuzuna alındı. Durum: ${QUESTION_STATUS[updated.status].label}.`
+            : `Soru onaylandı. Artık sınav provasında kullanılabilir. Durum: ${QUESTION_STATUS[updated.status].label}.`
           : `Soru reddedildi. Havuzda kalır ama öğrenciye gösterilmez. Durum: ${QUESTION_STATUS[updated.status].label}.`,
       );
       await reload();
@@ -269,7 +295,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
       <MetricRow
         items={[
           { value: counts.draft, label: "Yüklenen onay bekleyen" },
-          { value: counts.approved, label: "Yüklenen öğrenciye açık" },
+          { value: counts.approved, label: "Yüklenen onaylı" },
           { value: counts.rejected, label: "Yüklenen reddedilen" },
           { value: counts.total, label: "Yüklenen soru" },
         ]}
@@ -282,6 +308,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
       <GeneratePanel
         courseId={courseId}
         topics={topics}
+        outcomes={outcomes}
         onChanged={reload}
         onGenerated={(report) => {
           // Yeni taslaklar listenin başına düşer; seçimi ilkine taşımak
@@ -362,12 +389,18 @@ function QuestionPool({ courseId }: { courseId: string }) {
               stemRef={stemRef}
               question={selected}
               topic={topicName(selected.topic_id)}
+              outcomes={outcomes}
+              courseId={courseId}
               outsideFilter={outsideFilter}
               busy={busyId === selected.id}
               notice={notice}
               decisionError={decisionError}
               hasNextDraft={nextDraftId(questions, selected.id) !== null}
               onDecide={(status) => decide(selected, status)}
+              onClassified={async () => {
+                setNotice("Sınıflandırma kaydedildi.");
+                await reload();
+              }}
               onNextDraft={() => goToNextDraft(selected.id)}
             />
           )}
@@ -458,7 +491,10 @@ function QuestionRow({
         }`}
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-fg-subtle">{QUESTION_TYPE[question.type]}</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-fg-subtle">{QUESTION_TYPE[question.type]}</span>
+            <Badge tone="neutral">{QUESTION_PURPOSE[question.purpose]}</Badge>
+          </span>
           <Badge tone={status.tone}>{status.label}</Badge>
         </div>
         <p className="prose-tr mt-1.5 line-clamp-2 text-sm text-fg">
@@ -474,23 +510,29 @@ function QuestionDetail({
   stemRef,
   question,
   topic,
+  outcomes,
+  courseId,
   outsideFilter,
   busy,
   notice,
   decisionError,
   hasNextDraft,
   onDecide,
+  onClassified,
   onNextDraft,
 }: {
   stemRef: React.RefObject<HTMLHeadingElement | null>;
   question: Question;
   topic: string;
+  outcomes: LearningOutcome[];
+  courseId: string;
   outsideFilter: boolean;
   busy: boolean;
   notice: string | null;
   decisionError: string | null;
   hasNextDraft: boolean;
   onDecide: (status: "approved" | "rejected") => void;
+  onClassified: (question: Question) => Promise<void>;
   onNextDraft: () => void;
 }) {
   const view = toQuestionView(question);
@@ -500,6 +542,7 @@ function QuestionDetail({
     <Card>
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <Badge tone="neutral">{QUESTION_TYPE[question.type]}</Badge>
+        <Badge tone="neutral">{QUESTION_PURPOSE[question.purpose]}</Badge>
         <Badge tone={status.tone}>{status.label}</Badge>
         {view.answerFormat && (
           <Badge tone="neutral">{ANSWER_FORMAT[view.answerFormat]}</Badge>
@@ -547,6 +590,13 @@ function QuestionDetail({
         )}
       </div>
 
+      <ClassificationEditor
+        question={question}
+        outcomes={outcomes}
+        courseId={courseId}
+        onSaved={onClassified}
+      />
+
       {/*
         `disabled` yerine `aria-disabled`: tarayıcı devre dışı bırakılan öğeden
         odağı <body>'ye atar, yani kararı veren klavye kullanıcısı odağını
@@ -554,20 +604,30 @@ function QuestionDetail({
         (components/ui.tsx).
       */}
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
-        <Button
-          variant="primary"
-          aria-disabled={busy || question.status === "approved"}
-          onClick={() => onDecide("approved")}
-        >
-          {question.status === "approved" ? "Onaylandı" : "Onayla ve öğrenciye aç"}
-        </Button>
-        <Button
-          variant="secondary"
-          aria-disabled={busy || question.status === "rejected"}
-          onClick={() => onDecide("rejected")}
-        >
-          {question.status === "rejected" ? "Reddedildi" : "Reddet"}
-        </Button>
+        {question.status === "draft" && (
+          <>
+            <Button
+              variant="primary"
+              aria-disabled={
+                busy ||
+                (question.purpose === "assessment" &&
+                  (question.learning_outcome_id === null || question.difficulty === null))
+              }
+              onClick={() => onDecide("approved")}
+            >
+              {question.purpose === "assessment"
+                ? "Onayla ve resmî kâğıt havuzuna al"
+                : "Onayla ve provaya aç"}
+            </Button>
+            <Button
+              variant="secondary"
+              aria-disabled={busy}
+              onClick={() => onDecide("rejected")}
+            >
+              Reddet
+            </Button>
+          </>
+        )}
         {hasNextDraft && (
           <Button variant="ghost" onClick={onNextDraft}>
             Sıradaki taslağa geç
@@ -576,7 +636,11 @@ function QuestionDetail({
       </div>
 
       <p className="mt-3 text-xs text-fg-subtle">
-        Onaylanmayan soru öğrenci akışında hiç görünmez.
+        {question.status !== "draft"
+          ? "İnceleme kararı ve sınıflandırma sabittir. Değişiklik için yeni taslak üretin."
+          : question.purpose === "assessment"
+            ? "Resmî sınav sorusu onaylansa bile prova havuzunda gösterilmez; yalnız resmî kâğıda eklenebilir."
+            : "Onaylanmayan prova sorusu öğrenci akışında hiç görünmez."}
       </p>
 
       {/*
@@ -589,6 +653,164 @@ function QuestionDetail({
 
       {decisionError && <ErrorNote message={decisionError} />}
     </Card>
+  );
+}
+
+/**
+ * Sınıflandırma soru içeriğinden ayrı bir taslak işlemidir. Purpose burada
+ * değiştirilemez; resmî/prova sınırı üretim anında sabitlenir. İncelenmiş
+ * soruda sunucu da 409 döndürür, ekran da düzenleme kontrolünü hiç çizmez.
+ */
+function ClassificationEditor({
+  question,
+  outcomes,
+  courseId,
+  onSaved,
+}: {
+  question: Question;
+  outcomes: LearningOutcome[];
+  courseId: string;
+  onSaved: (question: Question) => Promise<void>;
+}) {
+  const [outcomeId, setOutcomeId] = useState(question.learning_outcome_id ?? "");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty | "">(
+    question.difficulty ?? "",
+  );
+
+  useEffect(() => {
+    setOutcomeId(question.learning_outcome_id ?? "");
+    setDifficulty(question.difficulty ?? "");
+  }, [question.id, question.learning_outcome_id, question.difficulty]);
+
+  const compatibleOutcomes = outcomes.filter(
+    (outcome) => outcome.topic_id === null || outcome.topic_id === question.topic_id,
+  );
+  const validOutcomeId = compatibleOutcomes.some((outcome) => outcome.id === outcomeId)
+    ? outcomeId
+    : "";
+  const changed =
+    validOutcomeId !== (question.learning_outcome_id ?? "") ||
+    difficulty !== (question.difficulty ?? "");
+
+  const { busy, error, submit } = useSubmit(async () => {
+    if (validOutcomeId === "" || difficulty === "") return;
+    const updated = await api.patch<Question>(
+      `/courses/${courseId}/questions/${question.id}/classification`,
+      {
+        learning_outcome_id: validOutcomeId,
+        difficulty,
+      },
+    );
+    await onSaved(updated);
+  }, "Sınıflandırma kaydedilemedi.");
+
+  const currentOutcome = outcomes.find(
+    (outcome) => outcome.id === question.learning_outcome_id,
+  );
+
+  return (
+    <section className="mt-6 border-t border-border pt-5" aria-labelledby="classification-title">
+      <h3 id="classification-title" className="text-sm font-medium text-fg">
+        Blueprint sınıflandırması
+      </h3>
+      <p className="prose-tr mt-1 text-xs text-fg-muted">
+        Öğrenme çıktısı ve zorluk, sorunun resmî kâğıtta hangi hücreyi doldurduğunu
+        belirler. Kullanım amacı sonradan değiştirilemez.
+      </p>
+
+      {question.status === "draft" ? (
+        <form
+          className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit();
+          }}
+        >
+          <div className="min-w-56 flex-1">
+            <Field label="Öğrenme çıktısı">
+              {(control) => (
+                <select
+                  {...control}
+                  value={validOutcomeId}
+                  onChange={(event) => setOutcomeId(event.target.value)}
+                  className={SELECT_CLASS}
+                  required
+                >
+                  <option value="">Çıktı seçin</option>
+                  {compatibleOutcomes.map((outcome) => (
+                    <option key={outcome.id} value={outcome.id}>
+                      {outcome.code} · {outcome.description}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          </div>
+          <div className="w-full sm:w-36">
+            <Field label="Zorluk">
+              {(control) => (
+                <select
+                  {...control}
+                  value={difficulty}
+                  onChange={(event) =>
+                    setDifficulty(event.target.value as QuestionDifficulty | "")
+                  }
+                  className={SELECT_CLASS}
+                  required
+                >
+                  <option value="">Seçin</option>
+                  {DIFFICULTIES.map((value) => (
+                    <option key={value} value={value}>
+                      {QUESTION_DIFFICULTY[value]}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          </div>
+          <Button
+            type="submit"
+            variant="secondary"
+            aria-disabled={
+              busy || validOutcomeId === "" || difficulty === "" || !changed
+            }
+          >
+            {busy ? "Kaydediliyor…" : "Sınıflandırmayı kaydet"}
+          </Button>
+        </form>
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          <p className="text-fg-muted">
+            Öğrenme çıktısı: {currentOutcome?.code ?? "Atanmamış"}
+          </p>
+          <p className="text-fg-muted">
+            Zorluk: {question.difficulty ? QUESTION_DIFFICULTY[question.difficulty] : "Atanmamış"}
+          </p>
+          <p className="prose-tr basis-full text-xs text-fg-subtle">
+            İncelenmiş sorunun sınıflandırması değiştirilemez. Farklı sınıflandırma
+            için yeni bir taslak üretin.
+          </p>
+        </div>
+      )}
+
+      {question.status === "draft" && compatibleOutcomes.length === 0 && (
+        <p className="prose-tr mt-3 text-xs text-fg-muted">
+          Bu konuya uygun öğrenme çıktısı yok. Önce{" "}
+          <Link href={`/courses/${courseId}/blueprints`} className="text-brand hover:text-brand-strong">
+            sınav planında bir çıktı tanımlayın
+          </Link>
+          .
+        </p>
+      )}
+      {question.status === "draft" &&
+        question.purpose === "assessment" &&
+        (question.learning_outcome_id === null || question.difficulty === null) && (
+          <p className="prose-tr mt-3 text-xs text-warning">
+            Resmî sınav sorusu, bu iki alan kaydedilmeden onaylanamaz.
+          </p>
+        )}
+      {error && <div className="mt-3"><ErrorNote message={error} /></div>}
+    </section>
   );
 }
 
@@ -724,15 +946,20 @@ function Row({ label, value }: { label: string; value: string | null }) {
 function GeneratePanel({
   courseId,
   topics,
+  outcomes,
   onChanged,
   onGenerated,
 }: {
   courseId: string;
   topics: Topic[];
+  outcomes: LearningOutcome[];
   onChanged: () => Promise<void>;
   onGenerated: (report: QuestionGeneration) => void;
 }) {
   const [topicId, setTopicId] = useState<string>("");
+  const [purpose, setPurpose] = useState<QuestionPurpose>("practice");
+  const [learningOutcomeId, setLearningOutcomeId] = useState("");
+  const [difficulty, setDifficulty] = useState<QuestionDifficulty | "">("");
   const [questionType, setQuestionType] = useState<QuestionType>("mcq");
   const [answerFormat, setAnswerFormat] = useState<AnswerFormat>("essay");
   const [count, setCount] = useState<number>(5);
@@ -743,6 +970,16 @@ function GeneratePanel({
   // o durumda ilk konuya düşülür, boş bir `topic_id` gönderilmez.
   const activeTopicId =
     topicId && topics.some((topic) => topic.id === topicId) ? topicId : (topics[0]?.id ?? "");
+  const compatibleOutcomes = outcomes.filter(
+    (outcome) => outcome.topic_id === null || outcome.topic_id === activeTopicId,
+  );
+  const activeLearningOutcomeId = compatibleOutcomes.some(
+    (outcome) => outcome.id === learningOutcomeId,
+  )
+    ? learningOutcomeId
+    : "";
+  const assessmentReady =
+    purpose === "practice" || (activeLearningOutcomeId !== "" && difficulty !== "");
 
   const { busy, error, submit } = useSubmit(async () => {
     setSummary(null);
@@ -750,6 +987,9 @@ function GeneratePanel({
       `/courses/${courseId}/questions/generate`,
       buildGenerateRequest({
         topicId: activeTopicId,
+        purpose,
+        learningOutcomeId: activeLearningOutcomeId,
+        difficulty,
         questionType,
         answerFormat,
         count,
@@ -763,7 +1003,7 @@ function GeneratePanel({
 
   function generate() {
     // Konu doğrulaması gönderim ÖNCESİ; çift-gönderim kapısı kancada.
-    if (activeTopicId === "") return;
+    if (activeTopicId === "" || !assessmentReady) return;
     return submit();
   }
 
@@ -771,8 +1011,9 @@ function GeneratePanel({
     <Card className="mb-6">
       <h2 className="text-sm font-medium text-fg">Soru üret</h2>
       <p className="prose-tr mt-1 text-xs text-fg-muted">
-        Çerçeveyi siz kurarsınız: konu, tip ve biçim sizin seçiminiz. Sistem
-        yalnız ders materyalinden üretir ve her soruyu taslak olarak bırakır.
+        Önce sorunun nerede kullanılacağını seçin. Prova ve resmî sınav havuzları
+        birbirinden ayrıdır; sistem yalnız ders materyalinden üretir ve her soruyu
+        taslak olarak bırakır.
       </p>
 
       {topics.length === 0 ? (
@@ -781,6 +1022,39 @@ function GeneratePanel({
         </p>
       ) : (
         <>
+          <fieldset className="mt-4">
+            <legend className="text-xs font-medium text-fg-muted">Kullanım amacı</legend>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {(Object.keys(QUESTION_PURPOSE) as QuestionPurpose[]).map((value) => (
+                <label
+                  key={value}
+                  className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    purpose === value
+                      ? "border-border-strong bg-bg"
+                      : "border-border hover:border-border-strong"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="question-purpose"
+                    value={value}
+                    checked={purpose === value}
+                    onChange={() => setPurpose(value)}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="block font-medium text-fg">{QUESTION_PURPOSE[value]}</span>
+                    <span className="prose-tr block text-xs text-fg-muted">
+                      {value === "practice"
+                        ? "Onaydan sonra öğrencinin sınav provasında kullanılabilir."
+                        : "Yalnız resmî sınav kâğıdına eklenebilir; prova havuzunda görünmez."}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Konu">
               {(control) => (
@@ -798,6 +1072,50 @@ function GeneratePanel({
                 </select>
               )}
             </Field>
+
+            {purpose === "assessment" && (
+              <>
+                <Field label="Öğrenme çıktısı">
+                  {(control) => (
+                    <select
+                      {...control}
+                      value={activeLearningOutcomeId}
+                      onChange={(event) => setLearningOutcomeId(event.target.value)}
+                      className={SELECT_CLASS}
+                      required
+                    >
+                      <option value="">Çıktı seçin</option>
+                      {compatibleOutcomes.map((outcome) => (
+                        <option key={outcome.id} value={outcome.id}>
+                          {outcome.code} · {outcome.description}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+
+                <Field label="Zorluk">
+                  {(control) => (
+                    <select
+                      {...control}
+                      value={difficulty}
+                      onChange={(event) =>
+                        setDifficulty(event.target.value as QuestionDifficulty | "")
+                      }
+                      className={SELECT_CLASS}
+                      required
+                    >
+                      <option value="">Seçin</option>
+                      {DIFFICULTIES.map((value) => (
+                        <option key={value} value={value}>
+                          {QUESTION_DIFFICULTY[value]}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </Field>
+              </>
+            )}
 
             <Field label="Soru tipi">
               {(control) => (
@@ -860,6 +1178,13 @@ function GeneratePanel({
             </Field>
           </div>
 
+          {purpose === "assessment" && compatibleOutcomes.length === 0 && (
+            <p className="prose-tr mt-3 text-xs text-warning">
+              Seçili konuya uygun öğrenme çıktısı yok. Resmî soru üretmeden önce
+              sınav planında bir çıktı tanımlayın.
+            </p>
+          )}
+
           <div className="mt-3">
             <Field label="Örnek sorular (isteğe bağlı, her satır bir soru)">
               {(control) => (
@@ -879,7 +1204,11 @@ function GeneratePanel({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <Button variant="primary" aria-disabled={busy} onClick={generate}>
+            <Button
+              variant="primary"
+              aria-disabled={busy || !assessmentReady}
+              onClick={generate}
+            >
               {busy ? "Üretiliyor…" : "Soru üret"}
             </Button>
             <p role="status" className="text-xs text-fg-muted">

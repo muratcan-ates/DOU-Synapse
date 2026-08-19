@@ -200,6 +200,8 @@ export interface ChatSessionSummary {
 export type ExamMode = "practice" | "exam";
 export type QuestionType = "mcq" | "open" | "code_trace" | "bug_hunt";
 export type QuestionStatus = "draft" | "approved" | "rejected";
+export type QuestionPurpose = "practice" | "assessment";
+export type QuestionDifficulty = "easy" | "medium" | "hard";
 export type AnswerFormat = "essay" | "short_answer";
 
 /**
@@ -243,6 +245,10 @@ export interface Question {
   /** Soru tipine göre şekil değişir; daraltma arayüzün işi. */
   payload: Record<string, unknown>;
   status: QuestionStatus;
+  /** `practice` prova, `assessment` yalnız resmî sınav kâğıdı içindir. */
+  purpose: QuestionPurpose;
+  learning_outcome_id: string | null;
+  difficulty: QuestionDifficulty | null;
   created_by: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
@@ -252,6 +258,9 @@ export interface Question {
 
 export interface QuestionGenerateRequest {
   topic_id: string;
+  purpose: QuestionPurpose;
+  learning_outcome_id?: string;
+  difficulty?: QuestionDifficulty;
   question_type?: QuestionType;
   answer_format?: AnswerFormat | null;
   count?: number | null;

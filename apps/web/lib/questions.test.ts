@@ -38,6 +38,9 @@ function question(
     type,
     payload,
     status: "draft",
+    purpose: "practice",
+    learning_outcome_id: null,
+    difficulty: null,
     created_by: "u1",
     reviewed_by: null,
     reviewed_at: null,
@@ -63,6 +66,19 @@ describe("toQuestionView — mcq", () => {
 
   test("soru metni `stem` alanından gelir", () => {
     expect(view.stem).toBe(MCQ_PAYLOAD.stem);
+  });
+
+  test("kullanım amacı ve blueprint sınıflandırması kaybolmaz", () => {
+    const classified = toQuestionView(
+      question("q-classified", "mcq", MCQ_PAYLOAD, {
+        purpose: "assessment",
+        learning_outcome_id: "co-1",
+        difficulty: "hard",
+      }),
+    );
+    expect(classified.purpose).toBe("assessment");
+    expect(classified.learningOutcomeId).toBe("co-1");
+    expect(classified.difficulty).toBe("hard");
   });
 
   test("doğru şık `answer_key` ile işaretlenir", () => {
@@ -429,6 +445,9 @@ describe("parseExampleQuestions", () => {
 describe("buildGenerateRequest", () => {
   const base = {
     topicId: "t1",
+    purpose: "practice" as const,
+    learningOutcomeId: "",
+    difficulty: "" as const,
     questionType: "mcq" as QuestionType,
     answerFormat: "essay" as const,
     count: 5,
@@ -437,7 +456,12 @@ describe("buildGenerateRequest", () => {
 
   test("mcq'da answer_format GÖNDERİLMEZ (sunucu 422 döner)", () => {
     const request = buildGenerateRequest(base);
-    expect(request).toEqual({ topic_id: "t1", question_type: "mcq", count: 5 });
+    expect(request).toEqual({
+      topic_id: "t1",
+      purpose: "practice",
+      question_type: "mcq",
+      count: 5,
+    });
     expect("answer_format" in request).toBe(false);
   });
 
@@ -457,5 +481,29 @@ describe("buildGenerateRequest", () => {
   test("örnek sorular satır satır taşınır", () => {
     const request = buildGenerateRequest({ ...base, examplesText: "Örnek 1\nÖrnek 2" });
     expect(request.example_questions).toEqual(["Örnek 1", "Örnek 2"]);
+  });
+
+  test("resmî sınav amacı sınıflandırma çiftini birlikte gönderir", () => {
+    const request = buildGenerateRequest({
+      ...base,
+      purpose: "assessment",
+      learningOutcomeId: "co-1",
+      difficulty: "hard",
+    });
+    expect(request).toMatchObject({
+      purpose: "assessment",
+      learning_outcome_id: "co-1",
+      difficulty: "hard",
+    });
+  });
+
+  test("resmî sınav amacı eksik sınıflandırmada fail-closed durur", () => {
+    expect(() =>
+      buildGenerateRequest({
+        ...base,
+        purpose: "assessment",
+        learningOutcomeId: "co-1",
+      }),
+    ).toThrow("öğrenme çıktısı ve zorluk birlikte");
   });
 });

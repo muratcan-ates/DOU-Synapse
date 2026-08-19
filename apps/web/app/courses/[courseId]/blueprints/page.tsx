@@ -32,6 +32,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { api } from "@/lib/api";
 import {
+  assessmentPoolQuestions,
   DIFFICULTIES,
   DIFFICULTY_LABEL,
   editingNoticeFor,
@@ -66,7 +67,28 @@ const DEFAULT_TYPE = "mcq" as const;
 export default function BlueprintsPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const { isInstructor, ready } = useSession(courseId);
+  return (
+    <AppShell>
+      <CourseNav courseId={courseId} />
+      <InstructorGate
+        ready={ready}
+        isInstructor={isInstructor}
+        fallback={
+          <EmptyState title="Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı." />
+        }
+      >
+        <BlueprintWorkspace courseId={courseId} />
+      </InstructorGate>
+    </AppShell>
+  );
+}
 
+/**
+ * Eğitmen verisi rol doğrulanmadan önce mount edilmez. `useResource` ilk
+ * mount'ta istek attığı için bu sınırın üstüne taşınması öğrenci doğrudan URL'yi
+ * açtığında blueprint ve çıktı isteklerini başlatırdı.
+ */
+function BlueprintWorkspace({ courseId }: { courseId: string }) {
   const outcomes = useResource<LearningOutcome[]>(
     () => api.get(`/courses/${courseId}/learning-outcomes`),
     [courseId],
@@ -79,23 +101,8 @@ export default function BlueprintsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = blueprints.data?.find((item) => item.id === selectedId) ?? null;
 
-  /*
-   * Kapının iyimser varyantı: rol çözülene kadar `Loading` yerine sayfa
-   * iskeleti çizilir (bu sayfanın eskiden beri davranışı — veri kancaları
-   * zaten yukarıda, rolden bağımsız koşuyor). Rol netleşip "öğrenci" çıkarsa
-   * kapak iner.
-   */
   return (
-    <AppShell>
-      <CourseNav courseId={courseId} />
-      <InstructorGate
-        ready={ready}
-        isInstructor={isInstructor}
-        optimistic
-        fallback={
-          <EmptyState title="Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı." />
-        }
-      >
+    <>
       <PageHeader
         title="Sınav blueprint'i"
         description="Sınavın çatısını sorulardan önce çiz: hangi öğrenme çıktısından, hangi zorlukta, kaç soru."
@@ -136,8 +143,7 @@ export default function BlueprintsPage() {
           onChanged={blueprints.reload}
         />
       )}
-      </InstructorGate>
-    </AppShell>
+    </>
   );
 }
 
@@ -813,13 +819,14 @@ function PaperEditor({
   onSaved: () => void;
 }) {
   const pool = usePagedResource<PoolQuestion>(
-    `/courses/${courseId}/questions?status=approved`,
+    `/courses/${courseId}/questions?status=approved&purpose=assessment`,
     [courseId],
   );
   const items = useResource<ExamItem[]>(() => api.get(`${base}/items`), [base]);
   const [picked, setPicked] = useState<string[] | null>(null);
 
   const current = picked ?? (items.data ?? []).map((item) => item.question_id);
+  const officialQuestions = assessmentPoolQuestions(pool.data ?? []);
 
   const { busy, error, submit: save } = useSubmit(async () => {
     await api.post(
@@ -835,8 +842,8 @@ function PaperEditor({
     <div className="mt-4 rounded-lg border border-border-strong p-4">
       <h4 className="mb-1 text-sm font-semibold text-fg">Kâğıt</h4>
       <p className="prose-tr mb-3 text-sm text-fg-muted">
-        Yalnız onaylanmış sorular konulabilir. Onay kapısı sunucudadır; bu liste onu
-        tekrarlamaz, yalnız onaylı havuzu gösterir.
+        Yalnız resmî sınav amacıyla üretilmiş ve onaylanmış sorular seçilebilir.
+        Prova soruları bu listede gösterilmez ve resmî kâğıda eklenemez.
       </p>
 
       {pool.loading && !pool.data && <Loading label="Havuz yükleniyor…" />}
@@ -857,8 +864,16 @@ function PaperEditor({
         />
       )}
 
+      {pool.data && officialQuestions.length === 0 && (
+        <p className="prose-tr mb-3 rounded-lg border border-border bg-bg px-3 py-3 text-sm text-fg-muted">
+          Onaylanmış resmî sınav sorusu yok. Soru havuzunda kullanım amacını
+          “Resmî sınav” seçerek soru üretin; prova soruları burada bilinçli olarak
+          gösterilmez.
+        </p>
+      )}
+
       <ul className="mb-3 flex max-h-80 flex-col gap-1 overflow-y-auto">
-        {(pool.data ?? []).map((question) => {
+        {officialQuestions.map((question) => {
           const checked = current.includes(question.id);
           const outcome = outcomes.find((item) => item.id === question.learning_outcome_id);
           return (
