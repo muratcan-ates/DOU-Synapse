@@ -97,9 +97,9 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from enum import StrEnum
 
 from app.contracts import AnswerStatus, RetrievedChunk
+from app.contracts import EvidenceLevel as EvidenceLevel
 from app.core.text_tr import tokens
 
 #: Kapsam dışı sayılmak için en iyi `ts_rank` bu değerin ALTINDA olmalı.
@@ -116,12 +116,8 @@ COVERAGE_CEILING = 0.27
 MIN_TOKEN_LENGTH = 3
 
 
-class EvidenceLevel(StrEnum):
-    """Kanıt kapısının üç çıktısı."""
-
-    SUFFICIENT = "sufficient"
-    WEAK = "weak"
-    OUT_OF_SCOPE = "out_of_scope"
+# `EvidenceLevel` artık sözleşme dosyasında yaşar (schemas/source.py da tüketiyor);
+# buradaki ad geriye-uyum re-export'udur — karar mantığının evi değişmedi.
 
 
 @dataclass(frozen=True, slots=True)

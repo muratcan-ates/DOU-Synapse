@@ -10,11 +10,12 @@ sahip bağlantısıyla geriye alınır. Süre karşılaştırması zaten veritab
 göre yapıldığı için bu, gerçekten süre geçmiş bir oturumla aynı durumdur.
 
 Ders/üyelik/konu/belge/soru satırlarını `tests/factories.py` yazar. Soru havuzunun
-KORPUSU (`DEADLOCK_TEXTS`, iki payload üreteci, `ESSAY_PAYLOAD`) ve sahte LLM hâlâ
-`test_assessment.py`'den geliyor: ortak fabrikaya taşımanın eşiği üç dosyadır ve
-bunlar ikide kalıyor (Anayasa XI). Kalan tek çapraz bağ budur ve kasıtlıdır —
-sınav testleri havuzun ürettiği soruların aynısını görmek zorunda; ayrı bir korpus
-yazmak iki dosyanın sessizce ayrışmasına açık kapı bırakırdı.
+KORPUSU (`DEADLOCK_TEXTS`, payload üreteçleri, `ESSAY_PAYLOAD`), sahte LLM ve
+sınav kurulumu (`ExamFixture`, `build_course`, `start`, `rewind`) de oradadır:
+sınav testleri havuzun ürettiği soruların aynısını görmek zorunda ve aynı kurulumu
+`test_exam_lock`, `test_user_rights`, `test_sources_api` ile
+`test_role_aware_agent_application_guards` da kullanıyor (Anayasa XI, eşik üç).
+Bu dosyada yalnız buraya özgü uç sarmalayıcıları (`answer`/`finish`/`hint`) kaldı.
 """
 
 from __future__ import annotations
@@ -34,18 +35,17 @@ from app.models.assessment import QuestionType
 from app.modules.assessment import question_gen
 from tests.conftest import UserFactory
 from tests.factories import (
-    create_course,
-    create_topic,
+    ESSAY_PAYLOAD,
+    EXAM_DURATION_SECONDS,
+    ExamFixture,
+    FakeCompletion,
+    build_course,
     enroll_student,
+    mcq_payload,
+    rewind,
     seed_document,
     seed_question,
-)
-from tests.test_assessment import (
-    DEADLOCK_TEXTS,
-    ESSAY_PAYLOAD,
-    FakeCompletion,
-    mcq_payload,
-    short_answer_payload,
+    start,
 )
 
 
@@ -59,117 +59,6 @@ def bind_completion() -> Iterator[Callable[[FakeCompletion], None]]:
     """
     yield lambda completion: question_gen.set_providers(completion=completion)
     question_gen.reset_providers()
-
-
-EXAM_DURATION_SECONDS = 20 * 60  # Settings.exam_duration_minutes varsayılanı
-
-
-class ExamFixture:
-    """Bir ders, bir eğitmen, bir öğrenci ve onaylı bir soru havuzu.
-
-    `course_id` `str` KALIYOR, `UUID` değil: `tests/test_exam_lock.py` bu sınıfı
-    içe aktarıyor ve kendi yardımcılarını `str` olarak imzalıyor. Fabrika artık
-    `UUID` döndürdüğü için dönüşüm `build_course`'un içinde yapılıyor — tipi
-    burada değiştirmek, bu turda dokunulmayan bir dosyanın imzalarını yalancı
-    çıkarırdı.
-    """
-
-    def __init__(
-        self,
-        *,
-        course_id: str,
-        instructor: dict[str, str],
-        instructor_id: UUID,
-        student: dict[str, str],
-        student_id: UUID,
-        topic_id: UUID,
-        chunk_ids: list[UUID],
-        question_ids: list[UUID],
-    ) -> None:
-        self.course_id = course_id
-        self.instructor = instructor
-        self.instructor_id = instructor_id
-        self.student = student
-        self.student_id = student_id
-        self.topic_id = topic_id
-        self.chunk_ids = chunk_ids
-        self.question_ids = question_ids
-
-
-async def build_course(
-    client: AsyncClient,
-    users: UserFactory,
-    admin_engine: AsyncEngine,
-    *,
-    approved: int = 2,
-    drafts: int = 0,
-    short_answer: bool = False,
-) -> ExamFixture:
-    instructor_id = await users.create("ayse@dogus.edu.tr")
-    instructor = users.auth(instructor_id)
-    student_id = await users.create("burak@dogus.edu.tr")
-    course_id = await create_course(client, instructor, "COME301")
-    await enroll_student(client, instructor, course_id, "burak@dogus.edu.tr")
-    topic_id = await create_topic(client, instructor, course_id, "Deadlock")
-    seeded = await seed_document(
-        admin_engine, course_id=course_id, uploaded_by=instructor_id, passages=DEADLOCK_TEXTS
-    )
-    chunk_ids = seeded.chunk_ids
-
-    question_ids: list[UUID] = []
-    for index in range(approved):
-        use_short = short_answer and index == 0
-        question_ids.append(
-            await seed_question(
-                admin_engine,
-                course_id=course_id,
-                topic_id=topic_id,
-                source_chunk_id=chunk_ids[index % len(chunk_ids)],
-                payload=short_answer_payload() if use_short else mcq_payload(chunk_ids),
-                question_type=QuestionType.OPEN if use_short else QuestionType.MCQ,
-                status="approved",
-                reviewed_by=instructor_id,
-            )
-        )
-    for _ in range(drafts):
-        await seed_question(
-            admin_engine,
-            course_id=course_id,
-            topic_id=topic_id,
-            source_chunk_id=chunk_ids[0],
-            payload=mcq_payload(chunk_ids),
-        )
-
-    return ExamFixture(
-        course_id=str(course_id),
-        instructor=instructor,
-        instructor_id=instructor_id,
-        student=users.auth(student_id),
-        student_id=student_id,
-        topic_id=topic_id,
-        chunk_ids=chunk_ids,
-        question_ids=question_ids,
-    )
-
-
-async def start(client: AsyncClient, fixture: ExamFixture, mode: str) -> dict:
-    response = await client.post(
-        f"/courses/{fixture.course_id}/exams", json={"mode": mode}, headers=fixture.student
-    )
-    assert response.status_code == 201, response.text
-    return response.json()
-
-
-async def rewind(admin_engine: AsyncEngine, session_id: str, *, minutes: int) -> None:
-    """Oturumu geriye alır: süre gerçekten geçmiş gibi davranır."""
-    async with admin_engine.begin() as conn:
-        await conn.execute(
-            text(
-                "UPDATE exam_sessions SET started_at = started_at - make_interval(mins => :m), "
-                "expires_at = expires_at - make_interval(mins => :m) WHERE id = :id"
-            ),
-            {"m": minutes, "id": UUID(session_id)},
-        )
 
 
 # ---------------------------------------------------------------------------

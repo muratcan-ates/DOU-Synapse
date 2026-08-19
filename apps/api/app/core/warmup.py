@@ -40,7 +40,6 @@ from typing import Literal
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
-from app.modules.ingestion.embedding import get_embedding_provider
 
 logger = get_logger("app.warmup")
 
@@ -88,6 +87,10 @@ async def warm_embedding() -> None:
     global _state
     _state = "warming"
     try:
+        # Fonksiyon-yerel import: core→modules üst-düzey kenarı katman tersinmesiydi
+        # (vector_space.py ile aynı gerekçe); ısınma zaten çalışma zamanında koşar.
+        from app.modules.ingestion.embedding import get_embedding_provider
+
         await asyncio.to_thread(get_embedding_provider().embed_query, WARMUP_QUERY)
     except asyncio.CancelledError:
         # Kapanış sırasında iptal edildi; bu bir arıza değil.

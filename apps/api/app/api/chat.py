@@ -13,12 +13,17 @@ Router `main.py`'ye ZATEN kayıtlıdır; bu dosya yalnız gövdeyi ekler.
     7. Guardrail        contracts.Guardrail halkaları, Şerit 2'nin sırasıyla
     8. Kayıt            mesajlar + oturum durumu + request_logs
 
-## Şeritler arası dikiş
+## Modülerizasyon v2 bölünmesi (16 Ağustos)
 
-Retrieval (Şerit 1) ve generation/guardrail (Şerit 2) modülleri bu oturum yazılırken
-henüz yoktu. Bu dosya onların **gövdesine değil, `app/contracts.py`'deki imzasına**
-karşı yazıldı. `set_pipeline()` ile gerçek uygulamalar takılır; takılı değilse uç
-fail-closed davranıp 503 döner — sessizce boş cevap üretmez.
+1622 satırlık tek dosya beş katmana ayrıldı; bu dosyada yalnız router ve uç
+zarfları kaldı. Public adların TAMAMI buradan re-export edilir — testler,
+betikler ve `evaluation/` hiçbir import değiştirmeden çalışmaya devam eder:
+
+- `modules/agent/pipeline.py`        DI dikişi (set_pipeline, get_*)
+- `modules/agent/token_precharge.py` kota ön-şarj tavanı + 24 prompt hash'i
+- `modules/agent/answers.py`         produce_answer + ret metinleri (DB'siz hat)
+- `api/chat_cache.py`                önbellek anahtarı/revizyonu, atıf codec'i
+- `api/chat_history.py`              oturum + mesaj kalıcılaştırması
 
 ## Sözleşme sahipliği (9 Ağustos'ta kapatıldı)
 
@@ -38,25 +43,38 @@ kaynağıyla aynı kümedir — tek atıf kümesi, tek doğrulama (Anayasa XI).
 
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 import time
-import unicodedata
-from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import insert as sa_insert
-from sqlalchemy import select, tuple_
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
+from app.api.chat_cache import (
+    PROMPT_REVISION as PROMPT_REVISION,
+)
+from app.api.chat_cache import (
+    CacheRevision,
+    _audience,
+    _cache_revision,
+    _lookup_cache,
+    _store_cache,
+)
+from app.api.chat_cache import (
+    question_hash as question_hash,
+)
+from app.api.chat_history import (
+    _append_messages,
+    _is_first_turn,
+    _load_or_create_session,
+    _opening_question,
+    _record_turn,
+    _stored_state,
+)
 from app.api.deps import (
-    CourseContext,
     CourseMemberDep,
     PageDep,
     SessionDep,
@@ -67,22 +85,12 @@ from app.contracts import (
     AnswerStatus,
     AssistantAudience,
     ChatMode,
-    Citation,
-    ClaimingGenerator,
-    GeneratedAnswer,
-    Generator,
-    Guardrail,
-    RetrievedChunk,
-    Retriever,
     RoleAwareClaimingGenerator,
     SocraticStage,
 )
-from app.core.config import Settings
 from app.core.db import db_now
 from app.core.errors import (
-    AppError,
     ConcurrencyLimitError,
-    ConflictError,
     CourseAgentDisabledError,
     NotFoundError,
     RateLimitError,
@@ -94,20 +102,64 @@ from app.core.pagination import (
     decode_time_cursor,
     encode_message_cursor,
     encode_time_cursor,
+    paginate_keyset,
 )
 from app.core.rate_limit import get_concurrency_gate, get_limiter, reset_rate_limit
 from app.models.chat import (
-    AnswerCache,
     ChatMessage,
     ChatMessageFeedback,
     ChatRole,
     ChatSession,
     RequestLog,
 )
-from app.models.core import Document, DocumentStatus
 from app.modules.agent import quota as agent_quota
+from app.modules.agent.answers import (
+    _REFUSAL_TEXT,
+    AnswerOutcome,
+    _refusal,
+)
+from app.modules.agent.answers import (
+    MESSAGE_BLOCKED as MESSAGE_BLOCKED,
+)
+from app.modules.agent.answers import (
+    MESSAGE_INSUFFICIENT_CONTEXT as MESSAGE_INSUFFICIENT_CONTEXT,
+)
+from app.modules.agent.answers import (
+    MESSAGE_OUT_OF_SCOPE as MESSAGE_OUT_OF_SCOPE,
+)
+from app.modules.agent.answers import (
+    apply_guardrails as apply_guardrails,
+)
+from app.modules.agent.answers import (
+    produce_answer as produce_answer,
+)
+from app.modules.agent.pipeline import (
+    PipelineUnavailableError as PipelineUnavailableError,
+)
+from app.modules.agent.pipeline import (
+    RetrieverFactory as RetrieverFactory,
+)
+from app.modules.agent.pipeline import (
+    get_generator,
+    get_guardrails,
+    get_retriever,
+)
+from app.modules.agent.pipeline import (
+    set_pipeline as set_pipeline,
+)
+from app.modules.agent.token_precharge import (
+    _EXACT_QUOTA_TOKENIZER_MODELS as _EXACT_QUOTA_TOKENIZER_MODELS,
+)
+from app.modules.agent.token_precharge import (
+    _KNOWN_SYSTEM_PROMPT_SHA256S as _KNOWN_SYSTEM_PROMPT_SHA256S,
+)
+from app.modules.agent.token_precharge import (
+    _KNOWN_SYSTEM_PROMPT_TOKEN_CEILING as _KNOWN_SYSTEM_PROMPT_TOKEN_CEILING,
+)
+from app.modules.agent.token_precharge import (
+    _quota_input_token_ceiling as _quota_input_token_ceiling,
+)
 from app.modules.assessment import exam_state, socratic
-from app.modules.generation import prompts as generation_prompts
 from app.modules.policy import service as policy_service
 from app.schemas.chat import (
     MAX_QUESTION_LENGTH,
@@ -121,9 +173,6 @@ from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["chat"])
 logger = get_logger("app.chat")
-
-#: Retriever'ı isteğin RLS oturumundan kuran fabrika.
-RetrieverFactory = Callable[[AsyncSession], Retriever]
 
 # ---------------------------------------------------------------------------
 # FR-035 sınırları
@@ -139,131 +188,10 @@ RetrieverFactory = Callable[[AsyncSession], Retriever]
 #: yankılanıyor (dışa aktarılmış bir addı).
 MAX_QUESTION_CHARS = MAX_QUESTION_LENGTH
 
-
-class PipelineUnavailableError(AppError):
-    """Retrieval/generation modülleri henüz takılı değil.
-
-    Fail-closed (Anayasa IV): eksik hattı "cevap yok" diye maskelemek yerine açıkça
-    hata döneriz. Aksi hâlde hattı bozuk bir sistem, ölçümde "kanıt yetersiz" oranı
-    yüksek ama çalışıyor gibi görünürdü.
-    """
-
-    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    code = "pipeline_unavailable"
-
-
 #: Bu ucun sayaç kapsamı. Kapsam adı zorunlu çünkü sayaç `questions.py` ile
 #: PAYLAŞILIYOR ve iki ucun doğal anahtarı da `kullanıcı:ders` — kapsam olmasaydı
 #: sohbet etmek soru üretim kotasını sessizce tüketirdi.
 RATE_LIMIT_SCOPE = "chat"
-
-
-# ---------------------------------------------------------------------------
-# Şeritler arası dikiş: retrieval / generation / guardrail
-# ---------------------------------------------------------------------------
-
-#: Retriever İSTEK BAŞINA kurulur: `contracts.Retriever` imzasında `session` yoktur,
-#: dolayısıyla gerçek uygulama oturumu kendi içinde taşır ve o oturum isteğin RLS
-#: bağlamıdır. Süreç ömürlü tek bir retriever, isteklerin RLS bağlamını karıştırırdı.
-_retriever_factory: RetrieverFactory | None = None
-_generator: Generator | None = None
-_guardrails: Sequence[Guardrail] | None = None
-
-
-def set_pipeline(
-    *,
-    retriever_factory: RetrieverFactory | None = None,
-    generator: Generator | None = None,
-    guardrails: Sequence[Guardrail] | None = None,
-) -> None:
-    """Cevap hattını takar. `ingestion.storage.set_storage()` ile aynı desen."""
-    global _retriever_factory, _generator, _guardrails
-    _retriever_factory = retriever_factory
-    _generator = generator
-    _guardrails = guardrails
-
-
-class _DocumentScopedRetriever:
-    """Enjekte edilen test retriever'larında da kaynak politikasını uygular."""
-
-    def __init__(self, inner: Retriever, document_ids: frozenset[UUID]) -> None:
-        self._inner = inner
-        self._document_ids = document_ids
-
-    async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
-        chunks = await self._inner.search(course_id=course_id, query=query, limit=limit)
-        return [chunk for chunk in chunks if chunk.document_id in self._document_ids][:limit]
-
-
-def get_retriever(session: AsyncSession, document_ids: frozenset[UUID] | None = None) -> Retriever:
-    if _retriever_factory is not None:
-        injected = _retriever_factory(session)
-        return (
-            injected if document_ids is None else _DocumentScopedRetriever(injected, document_ids)
-        )
-    try:  # Şerit 1, T006
-        from app.modules.retrieval.service import HybridRetriever
-    except ImportError as exc:
-        raise PipelineUnavailableError(
-            "Arama hattı henüz hazır değil. Lütfen daha sonra tekrar deneyin."
-        ) from exc
-    return HybridRetriever(
-        session,
-        document_ids=None if document_ids is None else tuple(sorted(document_ids, key=str)),
-    )
-
-
-def get_generator() -> Generator:
-    if _generator is not None:
-        return _generator
-    try:  # Şerit 2, T012
-        from app.modules.generation.service import GenerationService
-    except ImportError as exc:
-        raise PipelineUnavailableError(
-            "Cevap üretimi henüz hazır değil. Lütfen daha sonra tekrar deneyin."
-        ) from exc
-    return GenerationService()
-
-
-def get_guardrails() -> Sequence[Guardrail]:
-    """Zincir halkaları, Şerit 2'nin belirlediği SIRAYLA.
-
-    Sıra bu dosyada kurulmaz: ARCHITECTURE §5 sırası (citation → leakage → sanitize)
-    `modules/guardrails/chain.py` içinde tek yerde sabitlenir. Halkaların uygulanması
-    (düşen atıfların temizlenmesi, sanitize edilmiş metnin yazılması) çağıranın işidir;
-    `Guardrail.check()` karar döner, nesneyi değiştirmez.
-    """
-    if _guardrails is not None:
-        return _guardrails
-    try:  # Şerit 2
-        from app.modules.guardrails.chain import GUARDRAIL_CHAIN
-    except ImportError as exc:
-        raise PipelineUnavailableError(
-            "Güvenlik zinciri henüz hazır değil. Lütfen daha sonra tekrar deneyin."
-        ) from exc
-    return GUARDRAIL_CHAIN
-
-
-# ---------------------------------------------------------------------------
-# Kullanıcıya dönen sabit metinler
-# ---------------------------------------------------------------------------
-
-# Reddin sözü BİZE aittir, modele değil (Anayasa V + injection savunması): kaynak
-# bulunamadığında ya da cevap bloklandığında kullanıcıya modelin ürettiği metin değil
-# bu sabitler gider. Materyalin içine gömülmüş bir talimat, ret metnini ele geçiremez.
-MESSAGE_INSUFFICIENT_CONTEXT = (
-    "Bu soruya ders materyalinde yeterli dayanak bulamadım, bu yüzden cevap vermiyorum. "
-    "Soruyu biraz daha somutlaştırıp tekrar denemek ister misin? "
-    "Konunun geçtiği hafta ya da kavram adını eklemen genelde yeterli oluyor."
-)
-MESSAGE_OUT_OF_SCOPE = (
-    "Bu soru dersin kapsamı dışında görünüyor. Yalnızca bu derse yüklenmiş "
-    "materyallerden cevap verebiliyorum; ders dışı konularda bilerek sessiz kalıyorum."
-)
-MESSAGE_BLOCKED = (
-    "Bir cevap hazırladım ama gösterebileceğim geçerli bir kaynağa bağlayamadım, "
-    "bu yüzden paylaşmıyorum. Kaynağı doğrulanmamış cevap vermemeyi tercih ediyorum."
-)
 
 
 # ---------------------------------------------------------------------------
@@ -319,200 +247,6 @@ class ChatAvailabilityOut(BaseModel):
     agent_profile: str
 
 
-# ---------------------------------------------------------------------------
-# Önbellek anahtarı
-# ---------------------------------------------------------------------------
-
-
-def question_hash(
-    mode: ChatMode,
-    question: str,
-    *,
-    audience: AssistantAudience = AssistantAudience.STUDENT,
-    policy_revision: str = "legacy",
-    prompt_revision: str = "legacy",
-    corpus_revision: str = "legacy",
-) -> str:
-    """Birebir eşleşme anahtarı (FR-034). Benzerlik tabanlı eşleşme YOKTUR.
-
-    Normalizasyon yalnız Unicode biçimi (NFC) ve boşluk sadeleştirmesidir; harf
-    büyüklüğü KORUNUR. Sebep: Türkçede i/İ ve ı/I dönüşümü kayıplıdır (Anayasa V) ve
-    "aynı soru" tanımını bozar. Mod anahtarın parçasıdır — bir QA cevabı Sokratik moda
-    servis edilirse merdiven baypas edilmiş olur.
-    """
-    normalized = " ".join(unicodedata.normalize("NFC", question).split())
-    identity = "\n".join(
-        (
-            audience.value,
-            mode.value,
-            policy_revision,
-            prompt_revision,
-            corpus_revision,
-            normalized,
-        )
-    )
-    return hashlib.sha256(identity.encode()).hexdigest()
-
-
-PROMPT_REVISION = "005-role-aware-course-agent-v1"
-
-# The role-aware path deliberately allows exactly one provider attempt. The
-# first configured model is therefore the only tokenizer contract relevant to
-# its pre-charge. Current server-owned system prompt variants were measured
-# offline with Xenova/llama-3-tokenizer at immutable revision
-# 72bff9ee09897a16b3b4b2b9995fecb0bfa7dbe6. The largest was 1,021 tokens, so
-# 1,024 is a conservative content ceiling. Runtime code never loads a tokenizer
-# or reaches the network: a changed model or prompt hash retains the original
-# UTF-8 byte ceiling until its tokenizer contract is reviewed.
-_EXACT_QUOTA_TOKENIZER_MODELS = frozenset({"groq/llama-3.3-70b-versatile"})
-_KNOWN_SYSTEM_PROMPT_TOKEN_CEILING = 1_024
-_KNOWN_SYSTEM_PROMPT_SHA256S = frozenset(
-    {
-        "04e64389ae8ae9d4927b8f2fc08bc73e27cf8e3b7cdf23887503c3124b46a731",
-        "12ecae0c278f1f02438c5b84eba3e83018bb7bd1add3edd613dce6401c4768a6",
-        "14b6340cf745a30968e2eb25baa60f85583d665863655c38322e3fd9d1759f97",
-        "214d26a24498f89b91b24f63646a797bf9eb2eb7ff94e0262aa5d75b39ef610c",
-        "21d12ef9470f1b55891ed994bbaaaadd7edfd37c0558059ee29c8110af256257",
-        "25b66d67cdff9aebe26583482aec942fc935c480fdeac0078c1a8975d95709cf",
-        "2986e32d663a2f9ec2a2c2e3ed68f1f3fd01201c2e704968138b3ac2492a969a",
-        "2cae2f0ea35773dd8328a0379cda1d08a401b451b8c7981e48303ca5e3b2a4ac",
-        "6be3c39bc5e5eaf78d3e2560f9b320b1568906dad44a1fd5add6b5e44c746c78",
-        "707d21b48855d4dbbd1862e4861a2a4ef716777a29b154f724df1a596ae7ccdd",
-        "73d86031f7f38729c8398358e0f3ec98b0c8ec1076dae251c816918eb514c336",
-        "8d23337fde9688a02a57d2a18c11cd19aebe88764c3f1bc8b98fb65d8dff2a15",
-        "8dee1ff9e2dce744cfcdcb8d84d6087d1befd38c54bede20cdd46cd9a717a262",
-        "94fedefe163b204aa91e0ff1ae292e3bf4bc178a15488fccc484962073ce9e6c",
-        "99840996caa3914a1b0785eba08f31c80c39bd5dd08f681f4486532fd39e2f16",
-        "a555d952d429d5d5daaa44a84292387f0bf6bd82b7e3b4999aae46528923f1fc",
-        "af52efec0404fbc936536a9f2c7e8a89fd490dfce416fdd0f16553b51fb9c84a",
-        "b23c5ef3d91c17b543a14f1cc534df1f143721db8315a1a171788b207e8137e8",
-        "c7dd3e44c4c1dff02c01171294e1a867774fee9cbc982d99f93f1f0820323728",
-        "cd197f265e9ed408618dd8af26d6966af6921b367a0f5ac171cae9afeef19af7",
-        "e0b5e509112a3b26e3f77c754f6a54c6728287e8fc5042aeb19cfa865d2f47b6",
-        "e6ff7afba2a8ec42ecd517c5f84694e9254b11a51b132f54b78550e1aacb501e",
-        "f2b75ee449c0f2ebaf5e3b7b79c11c5d0c4c370224e43267b3d957714a9d3323",
-        "f4073973c1302b9cbe6b06437005e54f5be79cc2b17a3a5b9739ff95975c49d0",
-    }
-)
-
-
-def _quota_input_token_ceiling(
-    request: generation_prompts.LlmRequest,
-    *,
-    model: str,
-    byte_safe_ceiling: int,
-) -> int:
-    """Return a local, conservative token pre-charge for a reviewed prompt.
-
-    Dynamic user content retains one reserved token per UTF-8 byte, which is a
-    safe ceiling for the reviewed byte-level tokenizer. The known system prompt
-    uses its offline-measured ceiling and the existing framing allowance stays
-    intact. Unknown model/prompt combinations fail closed to the all-byte
-    ceiling; no request-path tokenizer, file, or network dependency exists.
-    """
-
-    if model not in _EXACT_QUOTA_TOKENIZER_MODELS:
-        return byte_safe_ceiling
-    system_prompt_hash = hashlib.sha256(request.system.encode()).hexdigest()
-    if system_prompt_hash not in _KNOWN_SYSTEM_PROMPT_SHA256S:
-        return byte_safe_ceiling
-
-    tokenizer_ceiling = (
-        _KNOWN_SYSTEM_PROMPT_TOKEN_CEILING
-        + len(request.user.encode())
-        + generation_prompts.MESSAGE_FRAMING_TOKEN_CEILING
-    )
-    return min(byte_safe_ceiling, tokenizer_ceiling)
-
-
-@dataclass(frozen=True, slots=True)
-class CacheRevision:
-    audience: AssistantAudience
-    policy: str
-    prompt: str
-    corpus: str
-
-
-def _audience(context: CourseContext) -> AssistantAudience:
-    return AssistantAudience.INSTRUCTOR if context.is_instructor else AssistantAudience.STUDENT
-
-
-async def _cache_revision(
-    session: AsyncSession,
-    context: CourseContext,
-    policy: policy_service.CoursePolicy,
-) -> CacheRevision:
-    policy_payload = {
-        "allowed_modes": sorted(mode.value for mode in policy.allowed_modes),
-        "max_hints": policy.max_hints,
-        "sources": (
-            None
-            if policy.source_document_ids is None
-            else sorted(str(value) for value in policy.source_document_ids)
-        ),
-        "evidence_threshold": policy.evidence_threshold,
-        "daily_token_budget": policy.daily_token_budget,
-        "student_daily_token_budget": policy.student_daily_token_budget,
-        "instructor_daily_token_budget": policy.instructor_daily_token_budget,
-        "max_output_tokens": policy.max_output_tokens,
-        "max_concurrent_requests": policy.max_concurrent_requests,
-    }
-    policy_revision = hashlib.sha256(
-        json.dumps(policy_payload, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()
-
-    query = select(
-        Document.id,
-        Document.file_hash,
-        Document.updated_at,
-        Document.superseded_at,
-    ).where(
-        Document.course_id == context.course_id,
-        Document.status == DocumentStatus.COMPLETED,
-        Document.superseded_at.is_(None),
-    )
-    if policy.source_document_ids is not None:
-        query = query.where(Document.id.in_(policy.source_document_ids))
-    rows = (await session.execute(query.order_by(Document.id))).all()
-    corpus_payload = [
-        (
-            str(row.id),
-            row.file_hash,
-            row.updated_at.isoformat(),
-            None if row.superseded_at is None else row.superseded_at.isoformat(),
-        )
-        for row in rows
-    ]
-    corpus_revision = hashlib.sha256(
-        json.dumps(corpus_payload, separators=(",", ":")).encode()
-    ).hexdigest()
-    return CacheRevision(
-        audience=_audience(context),
-        policy=policy_revision,
-        prompt=PROMPT_REVISION,
-        corpus=corpus_revision,
-    )
-
-
-def _citation_to_json(citation: Citation, claim: str = "") -> dict[str, str]:
-    return {
-        "chunk_id": str(citation.chunk_id),
-        "file_name": citation.file_name,
-        "location": citation.location,
-        "quote": citation.quote,
-        "claim": claim,
-    }
-
-
-def _citation_from_json(raw: dict[str, Any]) -> Citation:
-    return Citation(
-        chunk_id=UUID(str(raw["chunk_id"])),
-        file_name=str(raw["file_name"]),
-        location=str(raw["location"]),
-        quote=str(raw.get("quote", "")),
-    )
-
-
 def _citation_out_from_json(raw: dict[str, Any]) -> CitationOut:
     """Saklanan atıf satırını istemci zarfına çevirir.
 
@@ -529,338 +263,6 @@ def _citation_out_from_json(raw: dict[str, Any]) -> CitationOut:
         location=str(raw["location"]),
         snippet=str(raw.get("quote", "")),
     )
-
-
-# ---------------------------------------------------------------------------
-# Cevap hattı — veritabanından bağımsız, bu yüzden DB'siz test edilebilir
-# ---------------------------------------------------------------------------
-
-
-def apply_guardrails(
-    answer: GeneratedAnswer,
-    retrieved: list[RetrievedChunk],
-    guardrails: Sequence[Guardrail],
-) -> tuple[GeneratedAnswer, bool, list[UUID]]:
-    """Zinciri koşturur — uygulama `guardrails.chain.screen()`'e devredilir.
-
-    Bu fonksiyon önce kendi uygulayıcısını taşıyordu: Şerit 2'nin `chain.py`'si
-    henüz yokken yazılmıştı ve aynı işi ikinci kez yapıyordu (Anayasa XI).
-    9 Ağustos birleştirmesinde gövde silindi; sıra ve halka etkilerinin
-    uygulanması artık tek yerde. Burada yalnız çağrı biçimi korunuyor, çünkü
-    bu dosyanın testleri daraltılmış bir zincir enjekte ediyor.
-    """
-    from app.modules.guardrails.chain import screen
-
-    outcome = screen(answer, retrieved, guardrails)
-    return outcome.answer, outcome.blocked, outcome.dropped_citations
-
-
-@dataclass(frozen=True, slots=True)
-class AnswerOutcome:
-    """Bir turun sonucu: cevap + atıf başına iddia metni.
-
-    `claims` ayrı taşınır çünkü `contracts.Citation` bilinçli olarak `claim`
-    taşımaz (sözleşme dosyasındaki karara bakın): guardrail hiçbir kararında ona
-    bakmaz, dolayısıyla zincirin sözleşmesine girmemesi gerekir. Sunum katmanına
-    ulaşması gereken tek yer burasıdır.
-    """
-
-    answer: GeneratedAnswer
-    claims: dict[UUID, str] = field(default_factory=dict)
-
-
-def _refusal(
-    status_value: AnswerStatus,
-    mode: ChatMode,
-    text: str,
-    *,
-    prompt_tokens: int = 0,
-    completion_tokens: int = 0,
-) -> AnswerOutcome:
-    return AnswerOutcome(
-        GeneratedAnswer(
-            status=status_value,
-            mode=mode,
-            text=text,
-            citations=[],
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-        )
-    )
-
-
-#: Reddin statüsü → kullanıcıya gidecek sabit metin. Sözlük, çağrı yerinde bir
-#: if/else zincirinden iyidir: yeni bir ret statüsü eklendiğinde burada eksik
-#: kalırsa KeyError verir, sessizce yanlış metin göstermez (fail-closed).
-_REFUSAL_TEXT: dict[AnswerStatus, str] = {
-    AnswerStatus.OUT_OF_SCOPE: MESSAGE_OUT_OF_SCOPE,
-    AnswerStatus.INSUFFICIENT_CONTEXT: MESSAGE_INSUFFICIENT_CONTEXT,
-    AnswerStatus.BUDGET_EXHAUSTED: (
-        "Bu dersin günlük sohbet AI bütçesi doldu. Bütçe gece yarısı yenilenir."
-    ),
-}
-
-
-def _evidence_refusal(
-    chunks: list[RetrievedChunk], query: str, threshold: float
-) -> AnswerStatus | None:
-    """Kanıt kapısı. Cevap üretilebiliyorsa `None`, üretilemiyorsa reddin statüsü.
-
-    Ölçülen birincil sinyal **dense skorudur, füzyon skoru değil.** RRF skoru
-    1/(k+sıra) toplamıdır: k=60'ta en iyi sonuç bile ~0.016 çıkar, dolayısıyla
-    füzyon skoru sıralama içindir, kalibre edilebilir bir güven ölçüsü değildir.
-
-    Eşiğe burada ikinci kez bakılması bilinçlidir: iki katman da bağımsız olarak
-    doğru davranmalıdır (Anayasa II deseni). Eşik `evaluation/calibration.md`'de
-    kalibre edildi (0.81); aynı belge holdout'ta hedefi tutturmadığını da yazıyor
-    ve sebebin eşiğin değeri değil sinyalin darlığı olduğunu gösteriyor.
-
-    Bu yüzden eşiğin ALTINDA kalan sorgu artık tek bir etikete düşmüyor: kapsam
-    dışı sorularla dayanağı zayıf sorular `retrieval.scope` içinde, ölçülmüş
-    ikinci ve üçüncü sinyalle ayrılıyor. **Cevaplanan küme değişmez** —
-    "yeterli kanıt" koşulu eskisiyle birebir aynı.
-
-    İçeriden import, `get_retriever`/`apply_guardrails` ile aynı desen: modül
-    henüz inmemişse uç fail-closed davranır, sessizce cevap üretmez.
-    """
-    from app.modules.retrieval.scope import assess_evidence
-
-    return assess_evidence(chunks, query=query, threshold=threshold).refusal_status
-
-
-async def _generate(
-    generator: Generator,
-    *,
-    question: str,
-    chunks: list[RetrievedChunk],
-    mode: ChatMode,
-    stage: SocraticStage | None,
-    student_attempt: str | None,
-    audience: AssistantAudience,
-    max_output_tokens: int,
-) -> tuple[GeneratedAnswer, dict[UUID, str]]:
-    """Üreteci çağırır ve varsa iddia metinlerini de alır.
-
-    `ClaimingGenerator` uygulayan bir üreteç `generate_with_claims` sunar; sunmayan
-    (test ikizleri, sahte üreteç) yalnız `Generator`'ı uygular. Kontrol burada tek
-    yerde yapılır, çağıranların her birinde değil.
-    """
-    if isinstance(generator, RoleAwareClaimingGenerator):
-        result = await generator.generate_role_aware_with_claims(
-            question=question,
-            chunks=chunks,
-            mode=mode,
-            audience=audience,
-            max_output_tokens=max_output_tokens,
-            socratic_stage=stage,
-            student_attempt=student_attempt,
-        )
-        return result.answer, dict(result.claims)
-
-    if isinstance(generator, ClaimingGenerator):
-        result = await generator.generate_with_claims(
-            question=question,
-            chunks=chunks,
-            mode=mode,
-            socratic_stage=stage,
-            student_attempt=student_attempt,
-        )
-        return result.answer, dict(result.claims)
-
-    answer = await generator.generate(
-        question=question,
-        chunks=chunks,
-        mode=mode,
-        socratic_stage=stage,
-        student_attempt=student_attempt,
-    )
-    return answer, {}
-
-
-async def produce_answer(
-    *,
-    question: str,
-    course_id: UUID,
-    mode: ChatMode,
-    decision: socratic.SocraticDecision | None,
-    retriever: Retriever,
-    generator: Generator,
-    guardrails: Sequence[Guardrail],
-    settings: Settings,
-    student_attempt: str | None = None,
-    evidence_threshold: float | None = None,
-    audience: AssistantAudience = AssistantAudience.STUDENT,
-    max_output_tokens: int = 700,
-    before_generation: Callable[[int], Awaitable[None]] | None = None,
-    allow_regeneration: bool = True,
-) -> AnswerOutcome:
-    """Bir turun cevabını üretir. Veritabanına dokunmaz, oturum durumu yazmaz.
-
-    `decision` yalnız Sokratik modda doludur ve kademeyi TAŞIR: servis edilecek kademe
-    state machine'in kararıdır, modelin değil. Model kendini bir üst kademeye terfi
-    ettiremez.
-
-    `student_attempt` öğrencinin bu turdaki denemesidir ve üretime GEÇİRİLİR: neyi
-    yanlış anladığını görmeden verilen ipucu yönlendirme değil tahmindir. 9 Ağustos'a
-    kadar alan sözleşmede vardı ama bu uç onu hiç göndermiyordu.
-    """
-    chunks = await retriever.search(
-        course_id=course_id, query=question, limit=settings.retrieval_top_k
-    )
-    threshold = settings.evidence_threshold if evidence_threshold is None else evidence_threshold
-    refusal = _evidence_refusal(chunks, question, threshold)
-    if refusal is not None:
-        # LLM'e HİÇ gidilmez: kanıt yoksa üretilecek bir şey de yoktur. Kapsam dışı
-        # olduğu deterministik olarak saptanmışsa da gidilmez — modele sormak hem
-        # kota harcar hem de materyale gömülü bir talimata kapıyı açık bırakırdı.
-        return _refusal(refusal, mode, _REFUSAL_TEXT[refusal])
-
-    stage = decision.stage if decision is not None else None
-
-    # Israrcı öğrenci: deneme yapılmadıysa üretim hiç çalıştırılmaz. Kullanıcı nazik
-    # uyarıyı ve AYNI kademenin deterministik şablon ipucunu alır — merdiven ilerlemez,
-    # kaynak yine taşınır (FR-013/FR-016) ve LLM bütçesi ısrarla tüketilemez.
-    if decision is not None and decision.refusal_notice is not None:
-        hint_text, citation = socratic.template_hint(decision.stage, chunks[0])
-        return AnswerOutcome(
-            GeneratedAnswer(
-                status=AnswerStatus.ANSWERED,
-                mode=mode,
-                text=f"{decision.refusal_notice}\n\n{hint_text}",
-                citations=[citation],
-                socratic_stage=decision.stage,
-            )
-        )
-
-    try:
-        chunks, byte_safe_input_token_ceiling = generation_prompts.fit_chunks_to_input_budget(
-            question,
-            chunks,
-            max_input_bytes=settings.llm_chat_max_input_bytes,
-            mode=mode,
-            audience=audience,
-            socratic_stage=stage,
-            student_attempt=student_attempt,
-        )
-    except generation_prompts.PromptBudgetExceeded as exc:
-        raise ValidationError(
-            "Soru ve deneme, asistanın güvenli bağlam sınırını aşıyor.",
-            code="agent_prompt_too_large",
-        ) from exc
-    if not chunks:
-        return _refusal(AnswerStatus.INSUFFICIENT_CONTEXT, mode, MESSAGE_INSUFFICIENT_CONTEXT)
-
-    # Persistent quota is reserved only when this turn will actually reach the
-    # provider. Retrieval abstention and the deterministic Socratic template do
-    # not hold a two-minute reservation or consume provider budget. The callback
-    # receives a reviewed-model token ceiling for known server prompts. Unknown
-    # models/prompts retain the provider-independent byte ceiling instead of
-    # guessing a divisor or loading a tokenizer on the request path.
-    if before_generation is not None:
-        quota_request = generation_prompts.build_request(
-            question,
-            chunks,
-            mode=mode,
-            audience=audience,
-            socratic_stage=stage,
-            student_attempt=student_attempt,
-        )
-        provider_model = settings.llm_primary_model or settings.llm_fallback_model
-        input_token_ceiling = _quota_input_token_ceiling(
-            quota_request,
-            model=provider_model,
-            byte_safe_ceiling=byte_safe_input_token_ceiling,
-        )
-        await before_generation(input_token_ceiling)
-
-    answer, claims = await _generate(
-        generator,
-        question=question,
-        chunks=chunks,
-        mode=mode,
-        stage=stage,
-        student_attempt=student_attempt,
-        audience=audience,
-        max_output_tokens=max_output_tokens,
-    )
-
-    if answer.status is AnswerStatus.OUT_OF_SCOPE:
-        return _refusal(
-            AnswerStatus.OUT_OF_SCOPE,
-            mode,
-            MESSAGE_OUT_OF_SCOPE,
-            prompt_tokens=answer.prompt_tokens,
-            completion_tokens=answer.completion_tokens,
-        )
-    if answer.status is AnswerStatus.INSUFFICIENT_CONTEXT:
-        return _refusal(
-            AnswerStatus.INSUFFICIENT_CONTEXT,
-            mode,
-            MESSAGE_INSUFFICIENT_CONTEXT,
-            prompt_tokens=answer.prompt_tokens,
-            completion_tokens=answer.completion_tokens,
-        )
-
-    # Kademe sunucu otoritesindedir.
-    answer.socratic_stage = stage
-    answer, blocked, _ = apply_guardrails(answer, chunks, guardrails)
-
-    if blocked and mode is ChatMode.SOCRATIC and allow_regeneration:
-        # FR-015: ihlalde BİR kez yeniden üret, sürerse deterministik şablona düş.
-        regenerated, claims = await _generate(
-            generator,
-            question=question,
-            chunks=chunks,
-            mode=mode,
-            stage=stage,
-            student_attempt=student_attempt,
-            audience=audience,
-            max_output_tokens=max_output_tokens,
-        )
-        regenerated.socratic_stage = stage
-        regenerated, blocked, _ = apply_guardrails(regenerated, chunks, guardrails)
-        regenerated.prompt_tokens += answer.prompt_tokens
-        regenerated.completion_tokens += answer.completion_tokens
-        answer = regenerated
-
-    if blocked:
-        if mode is ChatMode.SOCRATIC and stage is not None:
-            hint_text, citation = socratic.template_hint(stage, chunks[0])
-            return AnswerOutcome(
-                GeneratedAnswer(
-                    status=AnswerStatus.ANSWERED,
-                    mode=mode,
-                    text=hint_text,
-                    citations=[citation],
-                    socratic_stage=stage,
-                    prompt_tokens=answer.prompt_tokens,
-                    completion_tokens=answer.completion_tokens,
-                )
-            )
-        # QA modunda deterministik bir son durak yoktur: gösterilemeyen cevap
-        # gösterilmez (FR-012, fail-closed).
-        return _refusal(
-            AnswerStatus.INSUFFICIENT_CONTEXT,
-            mode,
-            MESSAGE_BLOCKED,
-            prompt_tokens=answer.prompt_tokens,
-            completion_tokens=answer.completion_tokens,
-        )
-
-    if not answer.citations:
-        # Zincir bloklamasa bile kaynaksız akademik cevap kullanıcıya gitmez (FR-013).
-        return _refusal(
-            AnswerStatus.INSUFFICIENT_CONTEXT,
-            mode,
-            MESSAGE_BLOCKED,
-            prompt_tokens=answer.prompt_tokens,
-            completion_tokens=answer.completion_tokens,
-        )
-
-    # Düşen atıfların iddiaları da düşer: guardrail bir atıfı elediyse onun iddia
-    # metnini taşımak, gösterilmeyen bir kaynağa ait cümleyi ekranda bırakırdı.
-    kept = {c.chunk_id for c in answer.citations}
-    return AnswerOutcome(answer, {k: v for k, v in claims.items() if k in kept})
 
 
 # ---------------------------------------------------------------------------
@@ -1185,6 +587,26 @@ async def chat_availability(
         session, course_id=context.course_id, settings=settings
     )
     audience = _audience(context)
+
+    def availability(
+        *,
+        available: bool,
+        allowed_modes: list[ChatMode],
+        reason: str | None = None,
+        message: str | None = None,
+    ) -> ChatAvailabilityOut:
+        # Beş dönüş noktasının ortak kuyruğu tek yerde: hint_limit/audience/profile
+        # hiçbir dalda farklılaşmıyordu ama beş kez yazılıyordu.
+        return ChatAvailabilityOut(
+            available=available,
+            reason=reason,
+            message=message,
+            allowed_modes=allowed_modes,
+            hint_limit=policy.max_hints,
+            audience=audience,
+            agent_profile=audience.agent_profile,
+        )
+
     policy_modes: list[ChatMode] = [
         mode for mode in (ChatMode.QA, ChatMode.SOCRATIC) if mode in policy.allowed_modes
     ]
@@ -1194,23 +616,14 @@ async def chat_availability(
     # burada da görünür olmalı, yoksa API izin verirken UI besteciyi kapatır.
     allowed_modes = [ChatMode.QA, ChatMode.SOCRATIC] if context.is_instructor else policy_modes
     if not settings.course_agent_enabled:
-        return ChatAvailabilityOut(
+        return availability(
             available=False,
             reason="globally_disabled",
             message="Ders asistanı şu anda bakım nedeniyle kullanıma kapalı.",
             allowed_modes=[],
-            hint_limit=policy.max_hints,
-            audience=audience,
-            agent_profile=audience.agent_profile,
         )
     if context.is_instructor:
-        return ChatAvailabilityOut(
-            available=True,
-            allowed_modes=allowed_modes,
-            hint_limit=policy.max_hints,
-            audience=audience,
-            agent_profile=audience.agent_profile,
-        )
+        return availability(available=True, allowed_modes=allowed_modes)
     now = await db_now(session)
     active = await exam_state.active_exam_session(
         session,
@@ -1221,30 +634,18 @@ async def chat_availability(
     )
     if active is None:
         if not allowed_modes:
-            return ChatAvailabilityOut(
+            return availability(
                 available=False,
                 reason="policy_all_modes_closed",
                 message="Bu ders için asistan modları eğitmen tarafından kapatıldı.",
                 allowed_modes=allowed_modes,
-                hint_limit=policy.max_hints,
-                audience=audience,
-                agent_profile=audience.agent_profile,
             )
-        return ChatAvailabilityOut(
-            available=True,
-            allowed_modes=allowed_modes,
-            hint_limit=policy.max_hints,
-            audience=audience,
-            agent_profile=audience.agent_profile,
-        )
-    return ChatAvailabilityOut(
+        return availability(available=True, allowed_modes=allowed_modes)
+    return availability(
         available=False,
         reason=exam_state.EXAM_LOCK_REASON,
         message=exam_state.EXAM_LOCK_MESSAGE,
         allowed_modes=allowed_modes,
-        hint_limit=policy.max_hints,
-        audience=audience,
-        agent_profile=audience.agent_profile,
     )
 
 
@@ -1256,20 +657,15 @@ async def list_sessions(
 ) -> PageOut[ChatSessionOut]:
     """Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez."""
     query = select(ChatSession).where(ChatSession.course_id == context.course_id)
-    if page.cursor is not None:
-        updated_at, row_id = decode_time_cursor(page.cursor)
-        query = query.where(tuple_(ChatSession.updated_at, ChatSession.id) < (updated_at, row_id))
-    result = await session.execute(
-        query.order_by(ChatSession.updated_at.desc(), ChatSession.id.desc()).limit(page.limit + 1)
+    result = await paginate_keyset(
+        session,
+        query,
+        key_columns=(ChatSession.updated_at, ChatSession.id),
+        page=page,
+        decode=decode_time_cursor,
+        encode=lambda last: encode_time_cursor(last.updated_at, last.id),
     )
-    rows = list(result.scalars())
-    visible = rows[: page.limit]
-    next_cursor = (
-        encode_time_cursor(visible[-1].updated_at, visible[-1].id)
-        if len(rows) > page.limit
-        else None
-    )
-    return PageOut(items=[_session_out(row) for row in visible], next_cursor=next_cursor)
+    return PageOut(items=[_session_out(row) for row in result.rows], next_cursor=result.next_cursor)
 
 
 @router.get("/chat/sessions/{session_id}", response_model=PageOut[ChatMessageOut])
@@ -1286,26 +682,16 @@ async def list_messages(
         raise NotFoundError("Sohbet oturumu bulunamadı.")
 
     query = select(ChatMessage).where(ChatMessage.session_id == session_id)
-    if page.cursor is not None:
-        created_at, seq, row_id = decode_message_cursor(page.cursor)
-        query = query.where(
-            tuple_(ChatMessage.created_at, ChatMessage.seq, ChatMessage.id)
-            < (created_at, seq, row_id)
-        )
-    result = await session.execute(
-        query.order_by(
-            ChatMessage.created_at.desc(), ChatMessage.seq.desc(), ChatMessage.id.desc()
-        ).limit(page.limit + 1)
+    result = await paginate_keyset(
+        session,
+        query,
+        key_columns=(ChatMessage.created_at, ChatMessage.seq, ChatMessage.id),
+        page=page,
+        decode=decode_message_cursor,
+        encode=lambda last: encode_message_cursor(last.created_at, last.seq, last.id),
     )
-    rows = list(result.scalars())
-    visible_desc = rows[: page.limit]
-    next_cursor = (
-        encode_message_cursor(
-            visible_desc[-1].created_at, visible_desc[-1].seq, visible_desc[-1].id
-        )
-        if len(rows) > page.limit
-        else None
-    )
+    visible_desc = result.rows
+    next_cursor = result.next_cursor
     feedback_rows = (
         list(
             (
@@ -1343,11 +729,6 @@ async def list_messages(
     return PageOut(items=items, next_cursor=next_cursor)
 
 
-# ---------------------------------------------------------------------------
-# Yardımcılar
-# ---------------------------------------------------------------------------
-
-
 def _session_out(chat_session: ChatSession) -> ChatSessionOut:
     state = socratic.SocraticState.from_json(chat_session.state.get("socratic"))
     return ChatSessionOut(
@@ -1361,252 +742,6 @@ def _session_out(chat_session: ChatSession) -> ChatSessionOut:
         created_at=chat_session.created_at,
         updated_at=chat_session.updated_at,
     )
-
-
-def _is_first_turn(chat_session: ChatSession) -> bool:
-    return "socratic" not in chat_session.state
-
-
-def _stored_state(chat_session: ChatSession) -> socratic.SocraticState:
-    return socratic.SocraticState.from_json(chat_session.state.get("socratic"))
-
-
-async def _load_or_create_session(
-    session: AsyncSession, context: CourseContext, payload: ChatRequest
-) -> ChatSession:
-    if payload.session_id is None:
-        chat_session = ChatSession(
-            course_id=context.course_id,
-            user_id=context.user_id,
-            mode=payload.mode,
-            audience=_audience(context),
-            state={},
-            title=payload.question.strip()[:80],
-        )
-        session.add(chat_session)
-        await session.flush()
-        return chat_session
-
-    # Ayrı ad: yukarıdaki dalda `chat_session` ChatSession, burada `get()`
-    # ChatSession | None döndürüyor. Aynı ada yazmak mypy'ı kırıyordu ve
-    # okuyucuya da iki farklı şeyin aynı değişken olduğunu ima ediyordu.
-    existing = await session.get(ChatSession, payload.session_id)
-    if existing is None or existing.course_id != context.course_id:
-        raise NotFoundError("Sohbet oturumu bulunamadı.")
-    if existing.mode is not payload.mode:
-        # Mod ortasında değiştirilemez: Sokratik durum moda aittir, QA'ya geçip geri
-        # dönmek merdiveni sıfırlamanın kolay yolu olurdu.
-        raise ValidationError(
-            "Bu oturum farklı bir modda başlatılmış. Yeni mod için yeni bir sohbet aç."
-        )
-    if existing.audience is not _audience(context):
-        raise ConflictError(
-            "Ders rolün değiştiği için bu sohbet sürdürülemez. Yeni bir sohbet aç.",
-            code="session_audience_changed",
-        )
-    return existing
-
-
-async def _opening_question(
-    session: AsyncSession, chat_session: ChatSession, *, fallback: str
-) -> str:
-    """Oturumu açan kullanıcı mesajı — Sokratik merdivenin üzerinde ilerlediği soru.
-
-    Ayrı bir sütunda kopyalanmıyor, ilk mesajdan okunuyor: aynı veriyi iki yerde
-    tutmak, birinin güncellenip diğerinin unutulduğu bir hata sınıfı açardı
-    (Anayasa XI). `chat_messages` üzerinde (session_id, created_at, seq) indeksi var.
-
-    NOT (gruba iletildi): öğrencinin son denemesi üretime geçirilemiyor çünkü
-    `contracts.Generator.generate` imzasında böyle bir alan yok. Kademe metni bu
-    yüzden denemeye değil yalnız kademeye ve soruya göre şekilleniyor.
-    """
-    content = await session.scalar(
-        select(ChatMessage.content)
-        .where(
-            ChatMessage.session_id == chat_session.id,
-            ChatMessage.role == ChatRole.USER,
-        )
-        .order_by(ChatMessage.created_at, ChatMessage.seq)
-        .limit(1)
-    )
-    return content or fallback
-
-
-async def _lookup_cache(
-    session: AsyncSession,
-    course_id: UUID,
-    question: str,
-    revision: CacheRevision,
-) -> GeneratedAnswer | None:
-    """Birebir eşleşmeli önbellek araması. Ders bazlıdır: A'nın cevabı B'ye gitmez."""
-    row = (
-        await session.execute(
-            select(AnswerCache).where(
-                AnswerCache.course_id == course_id,
-                AnswerCache.audience == revision.audience,
-                AnswerCache.policy_revision == revision.policy,
-                AnswerCache.prompt_revision == revision.prompt,
-                AnswerCache.corpus_revision == revision.corpus,
-                AnswerCache.question_hash
-                == question_hash(
-                    ChatMode.QA,
-                    question,
-                    audience=revision.audience,
-                    policy_revision=revision.policy,
-                    prompt_revision=revision.prompt,
-                    corpus_revision=revision.corpus,
-                ),
-            )
-        )
-    ).scalar_one_or_none()
-    if row is None:
-        return None
-
-    payload = row.answer
-    try:
-        return GeneratedAnswer(
-            status=AnswerStatus(payload["status"]),
-            mode=ChatMode.QA,
-            text=str(payload["text"]),
-            citations=[_citation_from_json(c) for c in payload.get("citations", [])],
-        )
-    except (KeyError, ValueError, TypeError):
-        # Bozuk önbellek satırı yok sayılır ve cevap yeniden üretilir; önbellek bir
-        # hızlandırmadır, doğruluk kaynağı değildir.
-        logger.warning("bozuk önbellek satırı yok sayıldı", extra={"context": {"id": str(row.id)}})
-        return None
-
-
-async def _store_cache(
-    session: AsyncSession,
-    course_id: UUID,
-    question: str,
-    answer: GeneratedAnswer,
-    revision: CacheRevision,
-) -> None:
-    """Yalnız TAM HATTAN geçmiş, kaynaklı bir cevap önbelleğe girer."""
-    if answer.status is not AnswerStatus.ANSWERED or not answer.citations:
-        return
-    await session.execute(
-        pg_insert(AnswerCache)
-        .values(
-            course_id=course_id,
-            audience=revision.audience,
-            policy_revision=revision.policy,
-            prompt_revision=revision.prompt,
-            corpus_revision=revision.corpus,
-            question_hash=question_hash(
-                ChatMode.QA,
-                question,
-                audience=revision.audience,
-                policy_revision=revision.policy,
-                prompt_revision=revision.prompt,
-                corpus_revision=revision.corpus,
-            ),
-            answer={
-                "status": answer.status.value,
-                "text": answer.text,
-                "citations": [_citation_to_json(c) for c in answer.citations],
-            },
-        )
-        .on_conflict_do_nothing(
-            index_elements=[
-                "course_id",
-                "audience",
-                "policy_revision",
-                "prompt_revision",
-                "corpus_revision",
-                "question_hash",
-            ]
-        )
-    )
-
-
-async def _record_turn(
-    session: AsyncSession,
-    context: CourseContext,
-    chat_session: ChatSession,
-    answer: GeneratedAnswer,
-    decision: socratic.SocraticDecision | None,
-) -> None:
-    """Sokratik durumu kalıcılaştırır ve kademe geçişini olay olarak loglar.
-
-    Durum **yalnız gerçekten ipucu servis edildiyse** yazılır. Kanıt eşiği aşılamadıysa
-    ya da soru kapsam dışıysa kullanıcı hiçbir ipucu almamıştır; o turu ilerleme saymak,
-    öğrenciyi hiç yardım almadığı bir kademeye taşırdı. Canlı koşuda gözlendi: materyali
-    olmayan bir soruya yapılan deneme, merdiveni sessizce bir kademe yukarı itiyordu.
-
-    Ölçü olarak `answer.socratic_stage` kullanılıyor çünkü bu alan tam olarak "bu turda
-    şu kademenin ipucu gösterildi" demektir; abstention yollarında None kalır.
-    """
-    if decision is None or answer.socratic_stage is None:
-        return
-
-    chat_session.state = {**chat_session.state, "socratic": decision.state.to_json()}
-
-    if decision.transition is not None:
-        # FR-014: her kademe geçişi kayıt altına alınır. İki yerde birden — durum
-        # jsonb'sinde (kalıcı, sorgulanabilir) ve yapılandırılmış logda (zaman serisi).
-        logger.info(
-            "sokratik kademe ilerledi",
-            extra={
-                "context": {
-                    "course_id": str(context.course_id),
-                    "session_id": str(chat_session.id),
-                    "from": decision.transition.from_stage.value,
-                    "to": decision.transition.to_stage.value,
-                    "attempt": decision.attempt_kind.value,
-                }
-            },
-        )
-    elif decision.refusal_notice is not None:
-        logger.info(
-            "sokratik kademe korundu",
-            extra={
-                "context": {
-                    "course_id": str(context.course_id),
-                    "session_id": str(chat_session.id),
-                    "stage": decision.stage.value,
-                    "attempt": decision.attempt_kind.value,
-                    "refusals": decision.state.refusals,
-                }
-            },
-        )
-
-
-async def _append_messages(
-    session: AsyncSession,
-    context: CourseContext,
-    chat_session: ChatSession,
-    turn_text: str,
-    answer: GeneratedAnswer,
-    claims: dict[UUID, str],
-) -> ChatMessage:
-    session.add(
-        ChatMessage(
-            session_id=chat_session.id,
-            course_id=context.course_id,
-            role=ChatRole.USER,
-            content=turn_text,
-            citations=[],
-            status=None,
-            socratic_stage=None,
-            seq=0,
-        )
-    )
-    assistant = ChatMessage(
-        session_id=chat_session.id,
-        course_id=context.course_id,
-        role=ChatRole.ASSISTANT,
-        content=answer.text,
-        citations=[_citation_to_json(c, claims.get(c.chunk_id, "")) for c in answer.citations],
-        status=answer.status,
-        socratic_stage=answer.socratic_stage,
-        seq=1,
-    )
-    session.add(assistant)
-    await session.flush()
-    return assistant
 
 
 __all__ = [

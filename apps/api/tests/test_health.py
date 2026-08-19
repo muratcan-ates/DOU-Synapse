@@ -26,7 +26,7 @@ from app.core.warmup import (
     warmup_state,
 )
 from app.modules.ingestion.embedding import HashingEmbeddingProvider, set_embedding_provider
-from tests.test_event_loop_blocking import SLOW_CALL_SECONDS, SlowSyncEmbeddingProvider
+from tests.factories import SLOW_CALL_SECONDS, SlowSyncEmbeddingProvider
 
 #: Isıtma bloklamıyorsa `lifespan`'e girmenin alması gereken süre. Sahte
 #: sağlayıcı 0,4 sn harcıyor; `await` edilseydi startup en az o kadar sürerdi.

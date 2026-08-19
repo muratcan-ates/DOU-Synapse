@@ -68,7 +68,8 @@ MUTATIONS: Final[tuple[Mutation, ...]] = (
     Mutation(
         "membership_to_audience",
         "course membership remains the sole audience projection",
-        "apps/api/app/api/chat.py",
+        # Modülerizasyon v2: _audience chat_cache.py'ye taşındı (davranış aynı).
+        "apps/api/app/api/chat_cache.py",
         (
             "def _audience(context: CourseContext) -> AssistantAudience:\n"
             "    return AssistantAudience.INSTRUCTOR if context.is_instructor "
@@ -89,7 +90,8 @@ MUTATIONS: Final[tuple[Mutation, ...]] = (
     Mutation(
         "session_audience_mismatch",
         "a role-changed user cannot continue a session from the old audience",
-        "apps/api/app/api/chat.py",
+        # Modülerizasyon v2: _load_or_create_session chat_history.py'ye taşındı.
+        "apps/api/app/api/chat_history.py",
         "    if existing.audience is not _audience(context):\n",
         "    if False and existing.audience is not _audience(context):\n",
         1,
@@ -103,7 +105,8 @@ MUTATIONS: Final[tuple[Mutation, ...]] = (
     Mutation(
         "cache_audience_and_revisions",
         "audience plus policy/prompt/corpus revisions partition the cache key",
-        "apps/api/app/api/chat.py",
+        # Modülerizasyon v2: question_hash chat_cache.py'ye taşındı.
+        "apps/api/app/api/chat_cache.py",
         (
             "            audience.value,\n"
             "            mode.value,\n"
@@ -123,7 +126,8 @@ MUTATIONS: Final[tuple[Mutation, ...]] = (
     Mutation(
         "reservation_before_provider",
         "the durable quota reservation callback runs before provider generation",
-        "apps/api/app/api/chat.py",
+        # Modülerizasyon v2: produce_answer modules/agent/answers.py'ye taşındı.
+        "apps/api/app/modules/agent/answers.py",
         (
             "    if before_generation is not None:\n"
             "        quota_request = generation_prompts.build_request(\n"

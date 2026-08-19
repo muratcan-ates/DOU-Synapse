@@ -34,13 +34,14 @@ from app.modules.assessment.question_gen import _OpenDraft
 from app.schemas.assessment import OpenPayload, RubricItem, normalized_rubric
 from tests.conftest import UserFactory
 from tests.factories import (
+    DEADLOCK_TEXTS,
     create_course,
     create_topic,
     enroll_student,
+    mcq_payload,
     seed_document,
     seed_question,
 )
-from tests.test_assessment import DEADLOCK_TEXTS, mcq_payload
 
 
 class BlueprintFixture:

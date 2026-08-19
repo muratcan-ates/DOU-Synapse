@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { errorMessage } from "@/lib/errors";
 import type {
   ChatFeedback,
   ChatFeedbackRating,
   ChatFeedbackReason,
 } from "@/lib/types";
+import { useSubmit } from "@/lib/use-submit";
 import { Button } from "@/components/ui";
 
 export const FEEDBACK_REASON_LABEL: Record<ChatFeedbackReason, string> = {
@@ -45,23 +45,19 @@ export function ChatFeedbackControls({
   const [reason, setReason] = useState<ChatFeedbackReason>("inaccurate");
   const [comment, setComment] = useState("");
   const [share, setShare] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setFeedback(initial);
   }, [initial]);
 
-  async function save(
-    rating: ChatFeedbackRating,
-    selectedReason: ChatFeedbackReason,
-    selectedComment: string | null,
-    shareWithInstructor: boolean,
-  ) {
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
+  // Çift gönderim kapısı `useSubmit`'te: busy iken çağrı yok sayılır.
+  const { busy, error, submit: save } = useSubmit(
+    async (
+      rating: ChatFeedbackRating,
+      selectedReason: ChatFeedbackReason,
+      selectedComment: string | null,
+      shareWithInstructor: boolean,
+    ) => {
       const saved = await api.put<ChatFeedback>(
         `/courses/${courseId}/chat/messages/${messageId}/feedback`,
         {
@@ -74,12 +70,9 @@ export function ChatFeedbackControls({
       setFeedback(saved);
       setShowProblem(false);
       onSaved(saved);
-    } catch (cause) {
-      setError(errorMessage(cause, "Geri bildirim kaydedilemedi."));
-    } finally {
-      setBusy(false);
-    }
-  }
+    },
+    "Geri bildirim kaydedilemedi.",
+  );
 
   function openProblemForm() {
     if (feedback?.rating === "unhelpful") {

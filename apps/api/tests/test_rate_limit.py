@@ -33,8 +33,16 @@ from tests.conftest import UserFactory
 # hâlâ `test_assessment.py`'deydi ve oradan ithal ediliyordu; o çapraz bağ aynı
 # gün ortak fabrikaya taşındı. Kalan üç ad (korpus, sahte tamamlayıcı, MCQ yanıtı)
 # yalnız iki dosyada geçtiği için taşınmadı — eşik üçtür (Anayasa XI).
-from tests.factories import FakeRetriever, create_course, create_topic, seed_document
-from tests.test_assessment import DEADLOCK_TEXTS, FakeCompletion, _mcq_response, retrieved
+from tests.factories import (
+    DEADLOCK_TEXTS,
+    FakeCompletion,
+    FakeRetriever,
+    _mcq_response,
+    create_course,
+    create_topic,
+    retrieved,
+    seed_document,
+)
 
 
 @pytest.fixture(autouse=True)

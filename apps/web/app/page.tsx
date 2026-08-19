@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn, signInWithPassword, type DemoUser } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
+import { useSubmit } from "@/lib/use-submit";
 import { ErrorNote } from "@/components/page-state";
 import { Button, Input } from "@/components/ui";
 import { Field } from "@/components/field";
@@ -34,10 +35,12 @@ const DEMO_USERS: DemoUser[] = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const { busy, error, setError, submit } = useSubmit(async () => {
+    await signInWithPassword(email.trim(), password);
+    router.push("/dashboard");
+  }, "Oturum açılamadı. E-posta ve parolanızı kontrol edin.");
 
   function enter(user: DemoUser) {
     /*
@@ -61,19 +64,10 @@ export default function LoginPage() {
     router.push("/dashboard");
   }
 
-  async function enterWithPassword(event: React.FormEvent) {
+  function enterWithPassword(event: React.FormEvent) {
     event.preventDefault();
-    if (busy) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await signInWithPassword(email.trim(), password);
-      router.push("/dashboard");
-    } catch (cause) {
-      setError(errorMessage(cause, "Oturum açılamadı. E-posta ve parolanızı kontrol edin."));
-    } finally {
-      setBusy(false);
-    }
+    // Çift gönderim kapısı `useSubmit`'te: busy iken çağrı yok sayılır.
+    void submit();
   }
 
   return (

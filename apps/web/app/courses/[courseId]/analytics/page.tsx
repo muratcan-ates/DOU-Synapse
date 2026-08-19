@@ -25,6 +25,7 @@ import { useParams } from "next/navigation";
 import { useCallback } from "react";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, MetricRow, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
 import {
@@ -64,11 +65,9 @@ export default function AnalyticsPage() {
   return (
     <AppShell>
       <CourseNav courseId={courseId} />
-      {!ready ? (
-        <Loading />
-      ) : (
-        <AnalyticsView courseId={courseId} isInstructor={isInstructor} />
-      )}
+      <InstructorGate ready={ready} isInstructor={isInstructor}>
+        {(instructor) => <AnalyticsView courseId={courseId} isInstructor={instructor} />}
+      </InstructorGate>
     </AppShell>
   );
 }

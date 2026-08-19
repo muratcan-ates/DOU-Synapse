@@ -5,7 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
-from sqlalchemy import select, text, tuple_
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import (
@@ -14,11 +14,12 @@ from app.api.deps import (
     PageDep,
     SessionDep,
     SettingsDep,
+    load_owned,
 )
 from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.core.pagination import decode_time_cursor, encode_time_cursor
+from app.core.pagination import paginate
 from app.models.core import Chunk, Document, DocumentStatus
 from app.modules.ingestion.storage import get_storage
 from app.modules.ingestion.validation import validate_upload
@@ -98,9 +99,13 @@ async def upload_document(
 
     superseded: Document | None = None
     if replaces_document_id is not None:
-        superseded = await session.get(Document, replaces_document_id)
-        if superseded is None or superseded.course_id != context.course_id:
-            raise NotFoundError("Yerine geçilecek belge bu derste bulunamadı.")
+        superseded = await load_owned(
+            session,
+            Document,
+            replaces_document_id,
+            context,
+            message="Yerine geçilecek belge bu derste bulunamadı.",
+        )
         if superseded.superseded_at is not None:
             raise ConflictError(
                 "Bu belge zaten daha yeni bir sürümle değiştirilmiş. "
@@ -143,21 +148,10 @@ async def list_documents(
     page: PageDep,
 ) -> PageOut[DocumentOut]:
     query = select(Document).where(Document.course_id == context.course_id)
-    if page.cursor is not None:
-        created_at, row_id = decode_time_cursor(page.cursor)
-        query = query.where(tuple_(Document.created_at, Document.id) < (created_at, row_id))
-    result = await session.execute(
-        query.order_by(Document.created_at.desc(), Document.id.desc()).limit(page.limit + 1)
-    )
-    rows = list(result.scalars())
-    visible = rows[: page.limit]
-    next_cursor = (
-        encode_time_cursor(visible[-1].created_at, visible[-1].id)
-        if len(rows) > page.limit
-        else None
-    )
+    result = await paginate(session, query, model=Document, page=page)
     return PageOut(
-        items=[DocumentOut.model_validate(doc) for doc in visible], next_cursor=next_cursor
+        items=[DocumentOut.model_validate(doc) for doc in result.rows],
+        next_cursor=result.next_cursor,
     )
 
 
@@ -165,11 +159,11 @@ async def list_documents(
 async def get_document(
     document_id: UUID, context: CourseMemberDep, session: SessionDep
 ) -> DocumentOut:
-    document = await session.get(Document, document_id)
-    # RLS başka dersin belgesini zaten gizler; yine de ders eşleşmesi açıkça kontrol
-    # edilir — iki katman da bağımsız olarak doğru davranmalı.
-    if document is None or document.course_id != context.course_id:
-        raise NotFoundError("Belge bulunamadı.")
+    # RLS başka dersin belgesini zaten gizler; load_owned ders eşleşmesini yine de
+    # açıkça kontrol eder — iki katman da bağımsız olarak doğru davranmalı.
+    document = await load_owned(
+        session, Document, document_id, context, message="Belge bulunamadı."
+    )
     return DocumentOut.model_validate(document)
 
 
@@ -181,9 +175,9 @@ async def retry_document(
     background: BackgroundTasks,
 ) -> DocumentOut:
     """Kalıcı hataya düşen ingestion işini eğitmen açıkça yeniden kuyruğa alır."""
-    document = await session.get(Document, document_id)
-    if document is None or document.course_id != context.course_id:
-        raise NotFoundError("Belge bulunamadı.")
+    document = await load_owned(
+        session, Document, document_id, context, message="Belge bulunamadı."
+    )
     if document.status != DocumentStatus.FAILED:
         raise ConflictError("Yalnız başarısız bir belge yeniden işlenebilir.")
 
@@ -209,9 +203,7 @@ async def preview_chunks(
     limit: int = 20,
 ) -> list[ChunkPreview]:
     """Eğitmenin, belgeden ne çıkarıldığını görmesi için ilk chunk'lar."""
-    document = await session.get(Document, document_id)
-    if document is None or document.course_id != context.course_id:
-        raise NotFoundError("Belge bulunamadı.")
+    await load_owned(session, Document, document_id, context, message="Belge bulunamadı.")
 
     result = await session.execute(
         select(Chunk)
@@ -248,9 +240,9 @@ async def delete_document(
     reddedilir. Bu kısıt bilinçlidir — kaynağı silinmiş bir soru, kaynağına karşı
     doğrulanamayan bir sorudur (Anayasa I). Kısıtı gevşetmek yerine hatayı çeviriyoruz.
     """
-    document = await session.get(Document, document_id)
-    if document is None or document.course_id != context.course_id:
-        raise NotFoundError("Belge bulunamadı.")
+    document = await load_owned(
+        session, Document, document_id, context, message="Belge bulunamadı."
+    )
 
     storage_key = document.storage_path
     await session.delete(document)

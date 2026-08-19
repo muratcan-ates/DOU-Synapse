@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "007-modularization-v2-r1",
+  "captured_at": "2026-08-16T20:18:57+00:00",
+  "candidate_sha": "SELF",
+  "command": "TEST_DB_NAME=dou_synapse_test_mod_int pytest -q apps/api/tests (üç bağımsız koşu); bun test lib/; bunx tsc --noEmit --incremental false; bun run build; tek-seferlik DB + uvicorn(dou_app) + playwright --workers=1 (36 seri); role_agent_application_mutation_check.py --candidate-sha SELF; node scripts/docs_check.mjs",
+  "environment": "local macOS · PostgreSQL 16 · sahte sağlayıcı · yalnız tek-seferlik veritabanları (dou_synapse_test_mod_*, dou_synapse_e2e_mod_*; hepsi düşürüldü) · paylaşılan dou_synapse'a dokunulmadı",
+  "results": {
+    "backend_tests_passed": 909,
+    "frontend_library_tests_passed": 394,
+    "serial_real_api_playwright_passed": 36,
+    "application_mutations_passed": 12,
+    "e2e_residue_courses": 0,
+    "e2e_residue_audit": 0,
+    "typecheck_errors": 0,
+    "docs_check_exit": 0,
+    "chat_router_lines_after_split": 757,
+    "chatscreen_component_lines_after_split": 130
+  },
+  "governance_note": "Modülerizasyon v2 uygulaması: chat.py (1622) beş katmana bölündü, ChatScreen (578) 130 satıra indi ve durum 4 test'li lib kancasına taşındı; generation↔guardrails ve schemas→modules döngüleri ile core→modules tersinmesi kapandı (AST kanıtlı); paginate/paginate_keyset + load_owned + _outcomes_of + InstructorGate + useSubmit tekilleştirmeleri (~40 kopya). Davranış koruma kanıtı: 904 mevcut backend testi + 352 mevcut web testi değişmeden yeşil (yeni testlerle 909/394), 36 seri E2E gerçek yığında yeşil, 12/12 uygulama mutasyonu yakalandı, OpenAPI 50 yol/66 işlem değişmedi (bayt-özdeş export). Bilinçli davranış değişimi TEK: aynı-tick çift gönderim artık tek POST (sertleştirme; commit mesajlarında beyanlı).",
+  "limitations": "Sahte sağlayıcı; gerçek provider/staging/canary iddiası yok. RLS/SQL yüzeyi bu dalda değişmedi; supabase mutasyon paketleri yeniden koşulmadı (kanıtları 876b4ec/R12'de). GitHub Actions bu makineden izlenemiyor; push sonrası PR koşusu hakemdir.",
+  "privacy": "içerik yok; yalnız sayılar, komutlar ve dosya adları"
+}
