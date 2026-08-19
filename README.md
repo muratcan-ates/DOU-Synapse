@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-909_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 909 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-394_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 394 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-910_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 910 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-395_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 395 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -465,9 +465,9 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **909** <!-- docs-check: backend.tests = 909 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **394** <!-- docs-check: frontend.tests = 394 --> | 36 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 36 --> |
-| Playwright gerçek-API vakaları | **36** <!-- docs-check: e2e.tests = 36 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 36/36; gerçek provider/staging kanıtı değil |
+| Backend testleri | **910** <!-- docs-check: backend.tests = 910 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **395** <!-- docs-check: frontend.tests = 395 --> | 36 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 36 --> |
+| Playwright gerçek-API vakaları | **38** <!-- docs-check: e2e.tests = 38 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile toplanan 38 vaka; gerçek provider/staging kanıtı değil |
 | Migration | **15** <!-- docs-check: migrations.count = 15 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
@@ -784,7 +784,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 909 testtir. <!-- docs-check: backend.tests = 909 -->
+Güncel feature kanıtında backend koleksiyonu 910 testtir. <!-- docs-check: backend.tests = 910 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -798,7 +798,7 @@ Güncel feature kanıtında backend koleksiyonu 909 testtir. <!-- docs-check: ba
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 394 testtir. <!-- docs-check: frontend.tests = 394 -->
+Güncel feature kanıtında frontend kütüphane paketi 395 testtir. <!-- docs-check: frontend.tests = 395 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 

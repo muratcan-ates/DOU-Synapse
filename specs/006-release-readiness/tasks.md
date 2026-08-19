@@ -4,7 +4,7 @@
 
 ## Phase 1: Specification
 
-- [x] T001 Exact base `6c35a7f0bdb44b88205f408ca18e6a4e50cb153e` ve kapsamı `specs/006-release-readiness/` altında kaydet.
+- [x] T001 Exact teslim tabanı `2f40ac193114b896d33ef73e72ea51cc51f34d26`, ilk kapsam tabanı `6c35a7f0bdb44b88205f408ca18e6a4e50cb153e` ve kapsamı `specs/006-release-readiness/` altında kaydet.
 - [x] T002 Yeni migration/deploy olmadığını ve claim boundary'yi plan/contract'ta sabitle.
 
 ## Phase 2: Preflight Foundation
@@ -25,10 +25,10 @@
 
 ## Phase 4: Documentation and Evidence
 
-- [ ] T013 [P] `.release/README.md`, `docs/engineering/RELEASE_PROCESS.md` ve `docs/deployment.md` güncel davranış/sınırlarla düzelt.
-- [ ] T014 Hedefli Python testleri, frontend lint/type ve mümkünse gerçek API Playwright senaryolarını çalıştır.
-- [ ] T015 Release docs kapısı, git whitespace/sızıntı kontrolü ve base diff denetimini çalıştır.
-- [ ] T016 Her doğrulanmış mantıksal dilimi conventional commit ile kapat; çalışmayan/çalıştırılmayan kanıtı açık bırak.
+- [x] T013 [P] `.release/README.md`, `docs/engineering/RELEASE_PROCESS.md` ve `docs/deployment.md` güncel davranış/sınırlarla düzelt.
+- [x] T014 Hedefli Python testleri, frontend lint/type ve mümkünse gerçek API Playwright senaryolarını çalıştır.
+- [x] T015 Release docs kapısı, git whitespace/sızıntı kontrolü ve base diff denetimini çalıştır.
+- [x] T016 Her doğrulanmış mantıksal dilimi conventional commit ile kapat; çalışmayan/çalıştırılmayan kanıtı açık bırak.
 
 ## Dependencies
 

@@ -4,7 +4,7 @@ Bu runbook, exact source SHA'dan tek immutable candidate üretmeyi,
 kanıt paketini saklamayı ve aynı digest'i ortamlar arasında terfi ettirmeyi
 tanımlar. Environment başına yeniden build etmek yasaktır.
 
-> **Mevcut sınır (2026-08-11):** Başlangıç SHA'sı `2c178861` üzerindeki core CI
+> **Mevcut sınır (2026-08-20):** `origin/main` SHA'sı `2f40ac19` üzerindeki core CI
 > API image'ını build/test eder fakat push/deploy etmez. Bu feature branch
 > working tree'sindeki release-candidate workflow'u yalnız current
 > `origin/main` HEAD'e eşit `v*` push event SHA'sını kabul eder; exact checkout,
@@ -154,6 +154,26 @@ olmadan production recovery kanıtı değildir.
 
 Application rollback bir migration'ı geri almaz. Önceki digest yeni schema ile
 uyumsuzsa eski digest'e dönme; güvenli fix-forward uygula.
+
+### 4.1. Fail-closed staging preflight
+
+Deploy kaydı üretildikten sonra, ancak `staging-verified` kararı verilmeden önce
+`.release/staging_preflight.py` çalıştırılır. Gerekli secret'lar komut satırı
+argümanı değil environment değişkenidir; tam örnek
+[`specs/006-release-readiness/quickstart.md`](../../specs/006-release-readiness/quickstart.md)
+belgesindedir.
+
+Araç candidate SHA/digest'ini checkout ve current `origin/main` ile; web,
+live/readiness, gerçek auth, private storage, remote migration ledger,
+availability ve cache-free cited real-provider smoke'unu canlı hedefle; backup,
+previous digest ve rollback referanslarını dış kanıtlarla karşılaştırır. JSON ve
+Markdown çıktıları secret redaction uygular.
+
+Çıkış `0` bütün preflight kontrollerinin geçtiğini, `1` canlı bir kontrolün
+başarısız olduğunu, `2` ise prerequisites/evidence eksikliği nedeniyle kararın
+blocked kaldığını belirtir. Başarılı sonuç bile protected environment approval,
+deployment record ve gözlem kanıtı olmadan promotion veya `staging-verified`
+değildir.
 
 ## 5. Staging promotion
 
