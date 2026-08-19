@@ -43,7 +43,7 @@ from app.contracts import (
     GeneratedAnswer,
     SocraticStage,
 )
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.modules.agent import quota as agent_quota
 from app.modules.assessment import exam_state
 from app.modules.generation import prompts as generation_prompts
@@ -424,6 +424,36 @@ async def test_exam_dependency_blocks_chat_and_history_before_provider(
     )
 
     assert [chat.status_code, listing.status_code, detail.status_code] == [403, 403, 403]
+    assert generator.calls == 0
+
+
+async def test_operational_kill_switch_blocks_before_provider(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The deployment switch closes before retrieval, quota, or generation."""
+
+    fixture = await build_course(client, users, admin_engine)
+    chunk = make_chunk()
+    generator = FakeGenerator([sourced_answer(chunk)])
+    set_pipeline(
+        retriever_factory=lambda _session: FakeRetriever([chunk]),
+        generator=generator,
+        guardrails=[FakeCitationGuardrail()],
+    )
+    monkeypatch.setattr(get_settings(), "course_agent_enabled", False)
+
+    response = await client.post(
+        f"/courses/{fixture.course_id}/chat",
+        json={"question": "Deadlock nedir?", "mode": "qa"},
+        headers=fixture.student,
+    )
+
+    assert response.status_code == 503, response.text
+    assert response.json()["error"]["code"] == "course_agent_disabled"
+    assert response.json()["error"]["request_id"]
     assert generator.calls == 0
 
 

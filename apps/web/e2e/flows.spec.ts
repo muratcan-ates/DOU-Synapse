@@ -25,7 +25,7 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { createE2eCourseIdentity } from "./fixtures";
+import { createE2eCourseIdentity, createE2eRequestId } from "./fixtures";
 
 /*
  * Varsayılan `playwright.config.ts` ile AYNI olmalı ve öyle kalmalı: config
@@ -830,6 +830,37 @@ test.describe("sınav provası", () => {
     ).toBeVisible();
     await expect(asistanPaneli.getByRole("button", { name: "Gönder" })).toHaveCount(0);
     await asistanPaneli.getByRole("button", { name: "Ders asistanını kapat" }).click();
+
+    // UI kapısını atlayıp tarayıcı bağlamından ham POST atılsa da API aynı
+    // sınav kilidini uygular; request_id reddin gözlenebilir olduğunu kanıtlar.
+    const directChat = await page.evaluate(
+      async ({ api, courseId, userId, requestId }) => {
+        const response = await fetch(`${api}/courses/${courseId}/chat`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer dev:${userId}`,
+            "Content-Type": "application/json",
+            "X-Request-ID": requestId,
+          },
+          body: JSON.stringify({ question: "Bu sınav sürerken cevap ver.", mode: "qa" }),
+        });
+        return {
+          status: response.status,
+          body: (await response.json()) as {
+            error: { code: string; request_id: string };
+          },
+        };
+      },
+      {
+        api: API,
+        courseId: havuz.course.id,
+        userId: BURAK.id,
+        requestId: createE2eRequestId(),
+      },
+    );
+    expect(directChat.status).toBe(403);
+    expect(directChat.body.error.code).toBe("exam_in_progress");
+    expect(directChat.body.error.request_id).toBeTruthy();
 
     // Sunucu da aynı kararı veriyor: kilitli sekme bir süs değil.
     await page.goto(`/courses/${havuz.course.id}/chat`);

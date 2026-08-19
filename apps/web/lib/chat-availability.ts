@@ -52,6 +52,8 @@ export function examStateChanged(): void {
 export interface ChatLock {
   /** Sunucu "kapalı" demedikçe açık kabul edilir. */
   locked: boolean;
+  /** Kilit başlığını doğru sınıflandırmak için sunucudan gelen makine sebebi. */
+  reason: string | null;
   /** Kilit sebebi, sunucudan. Kilit yoksa null. */
   message: string | null;
   /** İlk yanıt gelene kadar false — "kilitli değil" ile karıştırılmamalı. */
@@ -85,6 +87,13 @@ interface ChatAvailabilityFailure {
 }
 
 const NOOP_RELOAD = async (): Promise<void> => {};
+
+/** Kilit başlıkları tek yerde yaşar; sunucunun mesaj gövdesi aynen korunur. */
+export function assistantUnavailableTitle(reason: string | null): string {
+  if (reason === "globally_disabled") return "Asistan bakım nedeniyle kapalı";
+  if (reason === "exam_in_progress") return "Asistan sınav sırasında kapalı";
+  return "Asistan şu anda kapalı";
+}
 
 /**
  * `courseId` null verilirse yoklama YAPILMAZ ve persona bilinmiyor döner.
@@ -186,6 +195,7 @@ export function toChatLock(
   if (data === null) {
     return {
       locked: false,
+      reason: null,
       message: null,
       ready: settled,
       audience: null,
@@ -197,6 +207,7 @@ export function toChatLock(
   }
   return {
     locked: !data.available,
+    reason: data.available ? null : data.reason,
     message: data.available ? null : (data.message ?? null),
     ready: true,
     audience: data.audience,
