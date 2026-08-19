@@ -101,7 +101,10 @@ test.describe("belge ekran görüntüleri @ekran", () => {
     await page.goto(`/courses/${DERS}/chat`);
     await sor(page, "İtalya'nın başkenti neresidir?");
 
-    await expect(page.getByText("dersin kapsamı dışında", { exact: false })).toBeVisible();
+    // Kart başlığı da gövdesi de aynı ifadeyi taşır; strict mode için gövdeye daralt.
+    await expect(
+      page.getByText("Bu soru dersin kapsamı dışında görünüyor", { exact: false }),
+    ).toBeVisible();
     // Bu ret de hata gibi görünmemeli — nötr bilgi kartı olmalı.
     await expect(page.getByRole("main").locator('[role="alert"]')).toHaveCount(0);
     await cek(page, "10-sohbet-kapsam-disi-ret");
