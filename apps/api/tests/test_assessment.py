@@ -288,8 +288,8 @@ class TestDraftInvisibility:
             f"/courses/{pool.course_id}/questions", headers=pool.instructor
         )
 
-        assert student.status_code == 200, student.text
-        assert {item["id"] for item in student.json()["items"]} == {str(approved_id)}
+        assert student.status_code == 403, student.text
+        assert student.json()["error"]["code"] == "permission_denied"
         assert {item["id"] for item in instructor.json()["items"]} == {
             str(draft_id),
             str(approved_id),
@@ -298,7 +298,7 @@ class TestDraftInvisibility:
     async def test_ogrenci_status_parametresiyle_taslak_isteyemez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
-        """Uygulama katmanı: `?status=draft` öğrenci için sunucuda yok sayılır."""
+        """Durum filtresi, öğrenciye kapalı soru bankasını açamaz."""
         pool = await build_pool(client, users, admin_engine)
         await seed_question(
             admin_engine,
@@ -312,8 +312,8 @@ class TestDraftInvisibility:
             f"/courses/{pool.course_id}/questions?status=draft", headers=pool.student
         )
 
-        assert response.status_code == 200
-        assert response.json()["items"] == []
+        assert response.status_code == 403
+        assert response.json()["error"]["code"] == "permission_denied"
 
     async def test_rls_katmani_tek_basina_da_taslagi_gizler(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
@@ -347,7 +347,7 @@ class TestDraftInvisibility:
     ) -> None:
         """Onaylı soru bile öğrenciye beyaz listeden geçerek gider."""
         pool = await build_pool(client, users, admin_engine)
-        await seed_question(
+        question_id = await seed_question(
             admin_engine,
             course_id=pool.course_id,
             topic_id=pool.topic_id,
@@ -357,19 +357,25 @@ class TestDraftInvisibility:
             reviewed_by=pool.instructor_id,
         )
 
-        student = (
-            await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
-        ).json()["items"][0]
+        student_bank = await client.get(
+            f"/courses/{pool.course_id}/questions", headers=pool.student
+        )
+        practice = await client.post(
+            f"/courses/{pool.course_id}/exams",
+            json={"mode": "practice"},
+            headers=pool.student,
+        )
         instructor = (
             await client.get(f"/courses/{pool.course_id}/questions", headers=pool.instructor)
         ).json()["items"][0]
 
+        assert student_bank.status_code == 403
+        assert practice.status_code == 201, practice.text
+        student = practice.json()["questions"][0]
+        assert student["id"] == str(question_id)
         assert set(student["payload"]) == {"stem", "options"}
         assert "answer_key" in instructor["payload"]
         assert "distractor_sources" in instructor["payload"]
-        # Kaynak referansı gizli değil: öğrenci sorunun hangi materyalden geldiğini görür.
-        assert student["source"]["file_name"] == "isletim-sistemleri.pdf"
-        assert student["source"]["location"] == "Sayfa 1"
 
 
 # ---------------------------------------------------------------------------
@@ -378,7 +384,7 @@ class TestDraftInvisibility:
 
 
 class TestQuestionReview:
-    async def test_egitmen_onaylayinca_ogrenci_gorur(
+    async def test_egitmen_onaylayinca_ogrenci_kagidinda_gorur(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
         pool = await build_pool(client, users, admin_engine)
@@ -390,20 +396,29 @@ class TestQuestionReview:
             payload=mcq_payload(pool.chunk_ids),
         )
 
-        before = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
+        before = await client.post(
+            f"/courses/{pool.course_id}/exams",
+            json={"mode": "practice"},
+            headers=pool.student,
+        )
         approve = await client.post(
             f"/courses/{pool.course_id}/questions/{question_id}/approve", headers=pool.instructor
         )
-        after = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
+        after = await client.post(
+            f"/courses/{pool.course_id}/exams",
+            json={"mode": "practice"},
+            headers=pool.student,
+        )
 
-        assert before.json()["items"] == []
+        assert before.status_code == 409
         assert approve.status_code == 200, approve.text
         body = approve.json()
         assert body["status"] == "approved"
         # questions_reviewed_consistency CHECK'i ikisini birden ister.
         assert body["reviewed_by"] == str(pool.instructor_id)
         assert body["reviewed_at"] is not None
-        assert [item["id"] for item in after.json()["items"]] == [str(question_id)]
+        assert after.status_code == 201, after.text
+        assert [item["id"] for item in after.json()["questions"]] == [str(question_id)]
 
     async def test_reddedilen_soru_ogrenciye_gorunmez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
@@ -415,18 +430,45 @@ class TestQuestionReview:
             topic_id=pool.topic_id,
             source_chunk_id=pool.chunk_ids[0],
             payload=mcq_payload(pool.chunk_ids),
-            status="approved",
-            reviewed_by=pool.instructor_id,
         )
 
         reject = await client.post(
             f"/courses/{pool.course_id}/questions/{question_id}/reject", headers=pool.instructor
         )
-        student = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
+        practice = await client.post(
+            f"/courses/{pool.course_id}/exams",
+            json={"mode": "practice"},
+            headers=pool.student,
+        )
 
         assert reject.status_code == 200, reject.text
         assert reject.json()["status"] == "rejected"
-        assert student.json()["items"] == []
+        assert practice.status_code == 409
+
+    async def test_incelenmis_soru_ikinci_kez_degistirilemez(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        pool = await build_pool(client, users, admin_engine)
+        question_id = await seed_question(
+            admin_engine,
+            course_id=pool.course_id,
+            topic_id=pool.topic_id,
+            source_chunk_id=pool.chunk_ids[0],
+            payload=mcq_payload(pool.chunk_ids),
+        )
+        first = await client.post(
+            f"/courses/{pool.course_id}/questions/{question_id}/approve",
+            headers=pool.instructor,
+        )
+
+        second = await client.post(
+            f"/courses/{pool.course_id}/questions/{question_id}/reject",
+            headers=pool.instructor,
+        )
+
+        assert first.status_code == 200, first.text
+        assert second.status_code == 409, second.text
+        assert second.json()["error"]["code"] == "question_immutable"
 
     async def test_ogrenci_onaylayamaz(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
@@ -735,7 +777,7 @@ class TestQuestionGeneration:
         assert {question["status"] for question in body["questions"]} == {"draft"}
 
         student = await client.get(f"/courses/{pool.course_id}/questions", headers=pool.student)
-        assert student.json()["items"] == [], "yeni üretilen sorular onaysız görünmemeli"
+        assert student.status_code == 403, "öğrenci soru bankasını toplu okuyamamalı"
 
 
 async def _load_topic(session: Any, topic_id: UUID) -> Any:
@@ -864,6 +906,7 @@ def _verdict(score: int, chunk_id: UUID | str | None, *, missing: list[str] | No
             "score": score,
             "eksik_noktalar": missing or [],
             "dayanak_chunk_id": str(chunk_id) if chunk_id else None,
+            "rubrik": [{"olcut": "Dört koşulu sayar", "puan": score}],
         }
     )
 
@@ -939,11 +982,8 @@ class TestLlmGrading:
         assert outcome.score is None
         assert "tamamlanamadı" in (outcome.message or "")
 
-    async def test_uydurulmus_dayanak_dusurulur_puan_kalir(self) -> None:
-        """Anayasa I: set-membership'ten geçmeyen dayanak gösterilmez.
-
-        Kaynağı uydurmak cevabı geçersiz kılmaz; yalnız kaynağı geçersiz kılar.
-        """
+    async def test_uydurulmus_dayanak_puani_da_gecersiz_kilar(self) -> None:
+        """Doğrulanamayan dayanakta model puanına güvenilmez."""
         from app.modules.assessment.grading import grade_with_llm
 
         chunk_id = uuid4()
@@ -955,8 +995,45 @@ class TestLlmGrading:
             sources=[(chunk_id, DEADLOCK_TEXTS[0])],
         )
 
-        assert outcome.score == 90
+        assert outcome.graded is False
+        assert outcome.score is None
         assert outcome.evidence_chunk_id is None
+
+    async def test_null_dayanak_puani_gecersiz_kilar(self) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        outcome = await grade_with_llm(
+            FakeCompletion(_verdict(90, None)),
+            payload=OpenPayload.model_validate(ESSAY_PAYLOAD),
+            given="Cevap.",
+            sources=[(uuid4(), DEADLOCK_TEXTS[0])],
+        )
+
+        assert outcome.graded is False
+        assert outcome.score is None
+
+    async def test_eksik_rubrik_olcutu_top_level_puana_dusmez(self) -> None:
+        from app.modules.assessment.grading import grade_with_llm
+
+        chunk_id = uuid4()
+        verdict = json.dumps(
+            {
+                "score": 100,
+                "eksik_noktalar": [],
+                "dayanak_chunk_id": str(chunk_id),
+                "rubrik": [],
+            }
+        )
+
+        outcome = await grade_with_llm(
+            FakeCompletion(verdict),
+            payload=OpenPayload.model_validate(ESSAY_PAYLOAD),
+            given="Cevap.",
+            sources=[(chunk_id, DEADLOCK_TEXTS[0])],
+        )
+
+        assert outcome.graded is False
+        assert outcome.score is None
 
     async def test_saglayici_patlarsa_degerlendirme_tamamlanmaz(self) -> None:
         from app.modules.assessment.grading import grade_with_llm

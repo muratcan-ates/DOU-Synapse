@@ -17,6 +17,7 @@ O yüzden yetkiyi doğrudan sınayan testler var.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -27,6 +28,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.core.config import get_settings
 from app.core.db import rls_session
 from app.models.assessment import QuestionType
 from app.modules.assessment.grading import _LlmVerdict, _rubric_breakdown
@@ -124,8 +126,9 @@ async def make_question(
     outcome_id: UUID | None,
     difficulty: str | None,
     status: str = "approved",
+    purpose: str = "assessment",
 ) -> UUID:
-    """Havuza soru yazar ve hücre eksenini atar.
+    """Havuza soru yazar; hücre eksenini, amacı ve inceleme durumunu tek geçişte atar.
 
     `seed_question` bu iki kolonu bilmiyor ve o dosya başka şeritlerin de kullandığı
     ortak kurulum; imzasını değiştirmek yerine sınıflandırma burada yapılıyor.
@@ -137,16 +140,27 @@ async def make_question(
         source_chunk_id=fixture.chunk_ids[0],
         payload=mcq_payload(fixture.chunk_ids),
         question_type=QuestionType.MCQ,
-        status=status,
-        reviewed_by=fixture.instructor_id if status != "draft" else None,
+        status="draft",
     )
     async with admin_engine.begin() as conn:
         await conn.execute(
             text(
                 "UPDATE questions SET learning_outcome_id = :outcome, "
-                "difficulty = CAST(:difficulty AS question_difficulty) WHERE id = :id"
+                "difficulty = CAST(:difficulty AS question_difficulty), "
+                "purpose = CAST(:purpose AS question_purpose), "
+                "status = CAST(:status AS question_status), "
+                "reviewed_by = :reviewed_by, "
+                "reviewed_at = CASE WHEN :status = 'draft' THEN NULL ELSE now() END "
+                "WHERE id = :id"
             ),
-            {"outcome": outcome_id, "difficulty": difficulty, "id": question_id},
+            {
+                "outcome": outcome_id,
+                "difficulty": difficulty,
+                "purpose": purpose,
+                "status": status,
+                "reviewed_by": fixture.instructor_id if status != "draft" else None,
+                "id": question_id,
+            },
         )
     return question_id
 
@@ -171,7 +185,7 @@ async def make_blueprint(
     duration: int = 60,
     max_attempts: int = 1,
     opens_at: str | None = None,
-    closes_at: str | None = None,
+    closes_at: str | None = "2099-01-01T00:00:00Z",
 ) -> UUID:
     body: dict[str, Any] = {
         "title": "Vize",
@@ -399,7 +413,30 @@ class TestYayinKapisi:
         version_id = await make_version(client, fixture, blueprint_id)
 
         sinifli = await make_question(admin_engine, fixture, outcome_id=outcome, difficulty="easy")
-        sinifsiz = await make_question(admin_engine, fixture, outcome_id=None, difficulty=None)
+        # 0016'dan sonra yeni bir assessment taslağı sınıflandırılmadan onaylanamaz.
+        # Readiness yine de göçten önce kalmış taslak sürümleri açıklayabilmeli;
+        # aşağıdaki satır tam olarak o tarihsel durumu temsil eder. Doğrudan INSERT,
+        # normal API akışının yeni onay kapısını taklit etmeye çalışmaz.
+        sinifsiz = uuid4()
+        async with admin_engine.begin() as conn:
+            await conn.execute(text("SET LOCAL session_replication_role = replica"))
+            await conn.execute(
+                text(
+                    "INSERT INTO questions "
+                    "(id, course_id, topic_id, type, payload, source_chunk_id, status, purpose, "
+                    "created_by, reviewed_by, reviewed_at) VALUES "
+                    "(:id, :course, :topic, 'mcq', CAST(:payload AS jsonb), :chunk, "
+                    "'approved', 'assessment', :reviewer, :reviewer, now())"
+                ),
+                {
+                    "id": sinifsiz,
+                    "course": UUID(fixture.course_id),
+                    "topic": fixture.topic_id,
+                    "payload": json.dumps(mcq_payload(fixture.chunk_ids)),
+                    "chunk": fixture.chunk_ids[0],
+                    "reviewer": fixture.instructor_id,
+                },
+            )
         await set_items(client, fixture, blueprint_id, version_id, [sinifli, sinifsiz])
 
         body = (
@@ -669,7 +706,13 @@ class TestYayinPenceresi:
         """Regresyon: kırpma kuralı prova akışında aynen duruyor."""
         fixture = await build(client, users, admin_engine, code="WIN 105")
         outcome = await make_outcome(client, fixture, code="CO1")
-        await make_question(admin_engine, fixture, outcome_id=outcome, difficulty="easy")
+        await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+            purpose="practice",
+        )
 
         oturum = (
             await client.post(
@@ -754,6 +797,12 @@ class TestYayinPenceresi:
             headers=fixture.student,
         )
         assert birinci.status_code == 201, birinci.text
+        assert (
+            await client.post(
+                f"/courses/{fixture.course_id}/exams/{birinci.json()['id']}/finish",
+                headers=fixture.student,
+            )
+        ).status_code == 200
 
         ikinci = await client.post(
             f"/courses/{fixture.course_id}/exams",
@@ -763,6 +812,277 @@ class TestYayinPenceresi:
 
         assert ikinci.status_code == 409, ikinci.text
         assert "deneme hakkınız" in ikinci.json()["error"]["message"]
+
+
+class TestAssessmentIntegrity:
+    """009: practice/assessment ayrımı, yayın kapısı ve aktif sınav izolasyonu."""
+
+    async def test_practice_kagidi_assessment_sorusunu_almaz(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="INT 101")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        assessment = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+        )
+        practice = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+            purpose="practice",
+        )
+
+        response = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"mode": "practice"},
+            headers=fixture.student,
+        )
+
+        assert response.status_code == 201, response.text
+        question_ids = [row["id"] for row in response.json()["questions"]]
+        assert question_ids == [str(practice)]
+        assert str(assessment) not in question_ids
+
+    async def test_blueprint_baslangici_kapanis_plani_olmadan_reddedilir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="INT 102")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client,
+            fixture,
+            cells=[cell(outcome, count=1)],
+            closes_at=None,
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        question_id = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+        )
+        assert (
+            await set_items(client, fixture, blueprint_id, version_id, [question_id])
+        ).status_code == 200
+        assert (await publish(client, fixture, blueprint_id, version_id)).status_code == 200
+
+        response = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"blueprint_id": str(blueprint_id)},
+            headers=fixture.student,
+        )
+
+        assert response.status_code == 409, response.text
+        assert response.json()["error"]["code"] == "assessment_feedback_schedule_missing"
+
+    async def test_kill_switch_yalniz_yeni_blueprint_baslangiclarini_kapatir(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="INT 103")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client,
+            fixture,
+            cells=[cell(outcome, count=1)],
+            max_attempts=2,
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        question_id = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+        )
+        await set_items(client, fixture, blueprint_id, version_id, [question_id])
+        await publish(client, fixture, blueprint_id, version_id)
+        started = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"blueprint_id": str(blueprint_id)},
+            headers=fixture.student,
+        )
+        assert started.status_code == 201, started.text
+
+        with monkeypatch.context() as patch:
+            patch.setenv("ASSESSMENT_BLUEPRINT_ENABLED", "false")
+            get_settings.cache_clear()
+            blocked = await client.post(
+                f"/courses/{fixture.course_id}/exams",
+                json={"blueprint_id": str(blueprint_id)},
+                headers=fixture.student,
+            )
+            existing = await client.get(
+                f"/courses/{fixture.course_id}/exams/{started.json()['id']}",
+                headers=fixture.student,
+            )
+        get_settings.cache_clear()
+
+        assert blocked.status_code == 503, blocked.text
+        assert blocked.json()["error"]["code"] == "assessment_blueprint_disabled"
+        assert existing.status_code == 200, existing.text
+        assert existing.json()["id"] == started.json()["id"]
+
+    async def test_erken_bitis_sonucu_gizler_yayinlaninca_agirlikli_ve_idempotenttir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="INT 104")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client,
+            fixture,
+            cells=[
+                cell(outcome, count=1, points=20, difficulty="easy"),
+                cell(outcome, count=1, points=80, difficulty="hard"),
+            ],
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        easy = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+        )
+        hard = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="hard",
+        )
+        await set_items(client, fixture, blueprint_id, version_id, [easy, hard])
+        await publish(client, fixture, blueprint_id, version_id)
+
+        started = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"blueprint_id": str(blueprint_id)},
+            headers=fixture.student,
+        )
+        assert started.status_code == 201, started.text
+        session_id = started.json()["id"]
+        feedback_at = started.json()["feedback_available_at"]
+
+        correct = await client.post(
+            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
+            json={"question_id": str(easy), "given": "C"},
+            headers=fixture.student,
+        )
+        wrong = await client.post(
+            f"/courses/{fixture.course_id}/exams/{session_id}/answers",
+            json={"question_id": str(hard), "given": "A"},
+            headers=fixture.student,
+        )
+        assert correct.status_code == 201, correct.text
+        assert wrong.status_code == 201, wrong.text
+
+        finished = await client.post(
+            f"/courses/{fixture.course_id}/exams/{session_id}/finish",
+            headers=fixture.student,
+        )
+        pending = await client.get(
+            f"/courses/{fixture.course_id}/exams/{session_id}/results",
+            headers=fixture.student,
+        )
+
+        assert finished.status_code == 200, finished.text
+        assert pending.status_code == 200, pending.text
+        for response in (finished, pending):
+            body = response.json()
+            assert body["feedback_released"] is False
+            assert body["feedback_available_at"] == feedback_at
+            assert body["score"] is None
+            assert body["results"] == []
+
+        async with admin_engine.begin() as conn:
+            await conn.execute(
+                text(
+                    "UPDATE exam_sessions SET feedback_available_at = now() - interval '1 second' "
+                    "WHERE id = :id"
+                ),
+                {"id": UUID(session_id)},
+            )
+
+        first = await client.get(
+            f"/courses/{fixture.course_id}/exams/{session_id}/results",
+            headers=fixture.student,
+        )
+        second = await client.get(
+            f"/courses/{fixture.course_id}/exams/{session_id}/results",
+            headers=fixture.student,
+        )
+
+        assert first.status_code == 200, first.text
+        assert second.status_code == 200, second.text
+        assert first.json() == second.json()
+        assert first.json()["feedback_released"] is True
+        assert first.json()["score"] == 20.0
+        assert {row["score"] for row in first.json()["results"]} == {0, 100}
+
+    async def test_aktif_resmi_sinav_practice_ve_gecmis_kagidi_kilitler(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="INT 105")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+            purpose="practice",
+        )
+        practice = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"mode": "practice"},
+            headers=fixture.student,
+        )
+        assert practice.status_code == 201, practice.text
+        practice_id = practice.json()["id"]
+        assert (
+            await client.post(
+                f"/courses/{fixture.course_id}/exams/{practice_id}/finish",
+                headers=fixture.student,
+            )
+        ).status_code == 200
+
+        blueprint_id = await make_blueprint(client, fixture, cells=[cell(outcome, count=1)])
+        version_id = await make_version(client, fixture, blueprint_id)
+        assessment = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+        )
+        await set_items(client, fixture, blueprint_id, version_id, [assessment])
+        await publish(client, fixture, blueprint_id, version_id)
+        active = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"blueprint_id": str(blueprint_id)},
+            headers=fixture.student,
+        )
+        assert active.status_code == 201, active.text
+
+        history = await client.get(
+            f"/courses/{fixture.course_id}/exams/{practice_id}",
+            headers=fixture.student,
+        )
+        history_results = await client.get(
+            f"/courses/{fixture.course_id}/exams/{practice_id}/results",
+            headers=fixture.student,
+        )
+        new_practice = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"mode": "practice"},
+            headers=fixture.student,
+        )
+
+        for response in (history, history_results, new_practice):
+            assert response.status_code == 403, response.text
+            assert response.json()["error"]["code"] == "exam_in_progress"
 
 
 async def _yetki_reddedilmeli(statement: str) -> None:
