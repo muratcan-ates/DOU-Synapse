@@ -1,8 +1,8 @@
 """Test altyapısı.
 
-Önemli kural: testler API'nin üretimde kullandığı `dou_app` rolüyle bağlanır. Superuser
-ile bağlanılsaydı RLS sessizce atlanır ve izolasyon testleri hiçbir şey kanıtlamadan
-yeşil yanardı.
+Önemli kural: testler API'nin üretimde kullandığı `dou_api_runtime` LOGIN'iyle
+bağlanır. Superuser ile bağlanılsaydı RLS sessizce atlanır ve izolasyon testleri
+hiçbir şey kanıtlamadan yeşil yanardı.
 """
 
 from __future__ import annotations
@@ -46,7 +46,8 @@ TEST_DB = os.environ.get("TEST_DB_NAME") or _default_test_db()
 PG_BIN = os.environ.get("PG_BIN", "/opt/homebrew/opt/postgresql@16/bin")
 ADMIN_DSN = os.environ.get("TEST_ADMIN_DSN", f"postgresql+psycopg://localhost/{TEST_DB}")
 APP_DSN = os.environ.get(
-    "TEST_APP_DSN", f"postgresql+psycopg://dou_app:dou_app_local@localhost/{TEST_DB}"
+    "TEST_APP_DSN",
+    f"postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@localhost/{TEST_DB}",
 )
 # Worker üretimde olduğu gibi ayrı, RLS'i atlayan rolle bağlanır.
 WORKER_DSN = os.environ.get(
@@ -69,9 +70,17 @@ def database() -> Iterator[None]:
     _psql("postgres", "-c", f'CREATE DATABASE "{TEST_DB}"')
     for migration in sorted(MIGRATIONS.glob("*.sql")):
         _psql(TEST_DB, "-f", str(migration))
-    _psql(TEST_DB, "-c", "ALTER ROLE dou_app LOGIN PASSWORD 'dou_app_local'")
+    _psql(
+        TEST_DB,
+        "-c",
+        "ALTER ROLE dou_api_runtime LOGIN PASSWORD 'dou_api_runtime_local'",
+    )
     _psql(TEST_DB, "-c", "ALTER ROLE dou_worker LOGIN PASSWORD 'dou_worker_local'")
-    _psql(TEST_DB, "-c", f'GRANT CONNECT ON DATABASE "{TEST_DB}" TO dou_app, dou_worker')
+    _psql(
+        TEST_DB,
+        "-c",
+        f'GRANT CONNECT ON DATABASE "{TEST_DB}" TO dou_api_runtime, dou_worker',
+    )
     yield
     _psql("postgres", "-c", f'DROP DATABASE IF EXISTS "{TEST_DB}"')
 
@@ -83,6 +92,9 @@ def environment(database: None) -> Iterator[None]:
     os.environ["DATABASE_URL"] = APP_DSN
     os.environ["WORKER_DATABASE_URL"] = WORKER_DSN
     os.environ["DEV_AUTH_ENABLED"] = "true"
+    # Üretim varsayılanı fail-closed; assessment sözleşme testleri özelliği
+    # bilinçli olarak açar.
+    os.environ["ASSESSMENT_BLUEPRINT_ENABLED"] = "true"
     os.environ.pop("SUPABASE_JWT_SECRET", None)
 
     from app.core.config import get_settings

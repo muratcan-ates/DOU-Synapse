@@ -9,7 +9,7 @@
 -- izolasyon, kanıtlı" iken bu, tezin en zayıf noktasıydı.
 --
 -- KAPSAM: 0004'ün on beş politikasının her biri en az bir OLUMLU ve bir OLUMSUZ
--- iddiayla sınanır. Olumlu kontrol ihmal edilemez: `dou_app` rolünün tablo düzeyi
+-- iddiayla sınanır. Olumlu kontrol ihmal edilemez: gerçek `dou_api_runtime`
 -- GRANT'i eksik olsaydı her şey reddedilirdi ve yalnız olumsuz iddia yazan bir test
 -- YANLIŞ SEBEPLE yeşil yanardı. Ayrıca politikası hiç olmayan üç işlem
 -- (questions DELETE, answers UPDATE, mastery DELETE) fail-closed olarak sınanır.
@@ -182,7 +182,7 @@ INSERT INTO mastery (user_id, topic_id, course_id, score, answer_count) VALUES
 -- dosyanın tamamı hiçbir şey kanıtlamadan yeşil yanardı.
 -- ---------------------------------------------------------------------------
 
-SET LOCAL ROLE dou_app;
+SET LOCAL SESSION AUTHORIZATION dou_api_runtime;
 
 -- ===========================================================================
 -- topics_member_read

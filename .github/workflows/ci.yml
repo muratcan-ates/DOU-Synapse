@@ -45,7 +45,7 @@ jobs:
       # iki DSN başka bir veritabanını gösterir — PR #4'te 331 test kurulumda düştü.
       TEST_DB_NAME: dou_synapse_test
       TEST_ADMIN_DSN: postgresql+psycopg://postgres:postgres@localhost/dou_synapse_test
-      TEST_APP_DSN: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse_test
+      TEST_APP_DSN: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@localhost/dou_synapse_test
 
     defaults:
       run:
@@ -134,6 +134,19 @@ jobs:
         env:
           ASSESSMENT_INTEGRITY_DB: rls_assessment_integrity_ci_${{ github.run_id }}_${{ github.run_attempt }}
         run: supabase/tests/rls_assessment_integrity_mutation_check.sh "$ASSESSMENT_INTEGRITY_DB"
+
+      - name: Assessment integrity güvenli upgrade backfill kanıtı
+        working-directory: .
+        env:
+          ASSESSMENT_UPGRADE_DB: assessment_integrity_upgrade_${{ github.run_id }}_${{ github.run_attempt }}
+        run: supabase/tests/assessment_integrity_upgrade_check.sh "$ASSESSMENT_UPGRADE_DB"
+
+      - name: Assessment runtime rol kesimi preflight kanıtı
+        working-directory: .
+        env:
+          ASSESSMENT_PREFLIGHT_ALLOW_ROLE_MUTATION: "1"
+          ASSESSMENT_PREFLIGHT_DB: assessment_runtime_preflight_${{ github.run_id }}_${{ github.run_attempt }}
+        run: supabase/tests/assessment_runtime_preflight_check.sh "$ASSESSMENT_PREFLIGHT_DB"
 
       - name: Rol farkındalıklı ajan RLS ve kota mutasyonları
         working-directory: .
@@ -318,10 +331,11 @@ jobs:
         env:
           ENVIRONMENT: local
           DEV_AUTH_ENABLED: "true"
-          DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse
-          # Worker DSN'siz drain dou_app'e düşer (app/worker.py) ve temiz DB'de
+          DATABASE_URL: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@localhost/dou_synapse
+          # Worker DSN'siz drain runtime rolüne düşer (app/worker.py) ve temiz DB'de
           # ingestion yetki hatasıyla kırılır — rol ayrımı RLS'in parçası.
           WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@localhost/dou_synapse
+          ASSESSMENT_BLUEPRINT_ENABLED: "true"
           CORS_ORIGINS: '["http://localhost:3100"]'
         run: |
           uv sync --extra dev --frozen

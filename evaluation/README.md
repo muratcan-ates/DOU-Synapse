@@ -37,7 +37,7 @@ EMBEDDING_PROVIDER=fastembed uv run python ../../evaluation/build_corpus.py \
     --database dou_synapse_eval --recreate --out /tmp/corpus.json
 
 # 3) Gold set kaynakları gerçek korpusta da var mı
-DATABASE_URL=postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse_eval \
+DATABASE_URL=postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@localhost/dou_synapse_eval \
   uv run python ../../evaluation/verify_gold_set.py --corpus /tmp/corpus.json
 
 # 4) Önce kaç istek atılacağını gör

@@ -163,6 +163,29 @@ async def test_valid_rubric_uses_normalized_breakdown_and_ignores_top_level_scor
     ]
 
 
+async def test_rubric_rounds_weighted_total_once_at_pass_boundary() -> None:
+    chunk_id = uuid4()
+    rubric = [(f"Ölçüt {index}", 49) for index in range(10)]
+    payload = OpenPayload(
+        prompt="On ölçütün tamamını açıklayın.",
+        answer_key="On ölçütün her biri değerlendirilir.",
+        key_points=["ölçütler"],
+        rubric=[RubricItem(point=point, weight=10) for point, _ in rubric],
+    )
+
+    outcome = await grade_with_llm(
+        FakeCompletion(_verdict(100, chunk_id, rubric=rubric)),
+        payload=payload,
+        given="Kısmen doğru yanıt.",
+        sources=[(chunk_id, "Güvenilir kaynak metni.")],
+    )
+
+    assert outcome.graded is True
+    assert outcome.score == 49
+    assert outcome.is_correct is False
+    assert sum(row.earned for row in outcome.rubric_breakdown) == 49
+
+
 @pytest.mark.parametrize("evidence", [None, uuid4()], ids=["null", "forged"])
 async def test_llm_grading_rejects_missing_or_forged_evidence(evidence: UUID | None) -> None:
     provided_chunk_id = uuid4()

@@ -168,8 +168,9 @@ class TestBlueprintRouter:
         assert len(blueprint_yollari) == 7, f"blueprint yolları: {sorted(blueprint_yollari)}"
         # Kaynak bağlamı, privacy ve ders AI politikasıyla 33 olan sözleşmeye
         # blueprint ailesi yedi, ingestion retry bir, kalite döngüsü iki ve ürün
-        # portalı (profil + dashboard + beş admin yolu) yedi path ekler.
-        assert len(yollar) == 50, f"yol sayısı değişmiş: {len(yollar)}"
+        # portalı (profil + dashboard + beş admin yolu) yedi; assessment integrity
+        # sonuç okuma ve soru sınıflandırma uçları da iki path ekler.
+        assert len(yollar) == 52, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

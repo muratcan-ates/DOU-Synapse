@@ -20,8 +20,10 @@ Bu dosyada yalnız buraya özgü uç sarmalayıcıları (`answer`/`finish`/`hint
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import Callable, Iterator
+from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import pytest
@@ -30,6 +32,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.api.exams import _answer_feedback
 from app.core.db import rls_session
 from app.models.assessment import QuestionType
 from app.modules.assessment import question_gen
@@ -59,6 +62,20 @@ def bind_completion() -> Iterator[Callable[[FakeCompletion], None]]:
     """
     yield lambda completion: question_gen.set_providers(completion=completion)
     question_gen.reset_providers()
+
+
+class BlockingCompletion(FakeCompletion):
+    """Değerlendirme sürerken ikinci HTTP isteğini deterministik olarak başlatır."""
+
+    def __init__(self, response: str) -> None:
+        super().__init__(response)
+        self.entered = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def complete(self, *, system: str, user: str) -> str:
+        self.entered.set()
+        await self.release.wait()
+        return await super().complete(system=system, user=user)
 
 
 # ---------------------------------------------------------------------------
@@ -371,6 +388,70 @@ class TestAnswerSubmission:
         assert second.status_code == 409
         assert "tek deneme" in second.json()["error"]["message"]
 
+    async def test_degerlendirme_surerken_bitis_cevabi_bekleyip_dahil_eder(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+        bind_completion: Callable[[FakeCompletion], None],
+    ) -> None:
+        """Cevap ve bitiş aynı oturum kilidinde tek bir sıraya girer."""
+
+        fixture = await build_course(client, users, admin_engine, approved=0)
+        essay_id = await seed_question(
+            admin_engine,
+            course_id=UUID(fixture.course_id),
+            topic_id=fixture.topic_id,
+            source_chunk_id=fixture.chunk_ids[0],
+            payload=ESSAY_PAYLOAD,
+            question_type=QuestionType.OPEN,
+            status="approved",
+            reviewed_by=fixture.instructor_id,
+        )
+        completion = BlockingCompletion(
+            json.dumps(
+                {
+                    "score": 75,
+                    "eksik_noktalar": ["kesilemezlik"],
+                    "dayanak_chunk_id": str(fixture.chunk_ids[0]),
+                    "rubrik": [{"olcut": "Dört koşulu sayar", "puan": 75}],
+                }
+            )
+        )
+        bind_completion(completion)
+        session_id = (await start(client, fixture, "practice"))["id"]
+
+        answer_task = asyncio.create_task(
+            answer(client, fixture, session_id, essay_id, "Üç koşulu sayıyorum.")
+        )
+        await asyncio.wait_for(completion.entered.wait(), timeout=2)
+        finish_task = asyncio.create_task(finish(client, fixture, session_id))
+
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.shield(finish_task), timeout=0.05)
+
+        completion.release.set()
+        answered = await asyncio.wait_for(answer_task, timeout=2)
+        finished = await asyncio.wait_for(finish_task, timeout=2)
+
+        assert answered.status_code == 201, answered.text
+        assert finished.status_code == 200, finished.text
+        assert finished.json()["answered_count"] == 1
+        assert finished.json()["score"] == 75
+
+    async def test_eszamanli_iki_bitisin_yalniz_biri_basarili_olur(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build_course(client, users, admin_engine)
+        session_id = (await start(client, fixture, "practice"))["id"]
+
+        first, second = await asyncio.gather(
+            finish(client, fixture, session_id),
+            finish(client, fixture, session_id),
+        )
+
+        assert sorted([first.status_code, second.status_code]) == [200, 409]
+
     async def test_exam_modunda_ipucu_kademesi_reddedilir(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
@@ -543,6 +624,26 @@ class TestPracticeMode:
 
 
 class TestExamFinish:
+    def test_bozuk_legacy_feedback_sonuc_ucunu_patlatmaz(self) -> None:
+        answer_row = SimpleNamespace(
+            question_id=uuid4(),
+            is_correct=True,
+            score=80,
+            feedback={
+                "durum": "degerlendirildi",
+                "dayanak_chunk_id": "uuid-degil",
+                "neden_yanlis_chunk_id": {"beklenmeyen": "nesne"},
+                "rubrik_kirilimi": [{"point": "Kapsam", "weight": "bozuk"}],
+            },
+        )
+
+        result = _answer_feedback(answer_row, question=None, sources={}, reveal=True)
+
+        assert result.score == 80
+        assert result.evidence is None
+        assert result.why_wrong is None
+        assert result.rubric_breakdown == []
+
     async def test_cevapsiz_sorular_bos_sayilir_puana_katilmaz(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
@@ -727,6 +828,7 @@ class TestMasteryIntegration:
                         "score": 75,
                         "eksik_noktalar": ["kesilemezlik"],
                         "dayanak_chunk_id": str(fixture.chunk_ids[0]),
+                        "rubrik": [{"olcut": "Dört koşulu sayar", "puan": 75}],
                     }
                 )
             )

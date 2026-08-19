@@ -31,8 +31,9 @@ services:
       context: ./apps/api
     environment:
       ENVIRONMENT: local
-      DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@db:5432/dou_synapse
+      DATABASE_URL: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@db:5432/dou_synapse
       WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
+      ASSESSMENT_BLUEPRINT_ENABLED: "true"
       WORKER_DRAIN_SECRET: dou-compose-worker-secret
       WORKER_DRAIN_URL: http://worker:8000/internal/drain
       STORAGE_BACKEND: local
@@ -55,15 +56,16 @@ services:
 
   # Ayrı worker yüzeyi aynı imajı kullanır; kullanıcı ucu açmaz. API yüklemeden
   # sonra paylaşılan sırla `/internal/drain` çağırır. İş yazıları RLS'i bilinçli
-  # olarak atlayan `dou_worker`, kullanıcı istekleri ise `dou_app` rolündedir.
+  # olarak atlayan `dou_worker`, kullanıcı istekleri ise `dou_api_runtime` rolündedir.
   worker:
     build:
       context: ./apps/api
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       ENVIRONMENT: local
-      DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@db:5432/dou_synapse
+      DATABASE_URL: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@db:5432/dou_synapse
       WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
+      ASSESSMENT_BLUEPRINT_ENABLED: "true"
       WORKER_DRAIN_SECRET: dou-compose-worker-secret
       STORAGE_BACKEND: local
       STORAGE_ROOT: /data/storage
@@ -101,8 +103,9 @@ services:
       context: ./apps/api
     environment:
       ENVIRONMENT: demo
-      DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@db:5432/dou_synapse
+      DATABASE_URL: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@db:5432/dou_synapse
       WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
+      ASSESSMENT_BLUEPRINT_ENABLED: "true"
       STORAGE_BACKEND: local
       STORAGE_ROOT: /data/storage
       DEV_AUTH_ENABLED: "true"

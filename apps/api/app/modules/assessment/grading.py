@@ -387,15 +387,33 @@ def _rubric_breakdown(payload: BaseModel, verdict: _LlmVerdict) -> list[RubricCr
         return []
 
     puanlar = {row.olcut.strip().casefold(): row.puan for row in verdict.rubrik}
+    rubric = normalized_rubric(payload.rubric)
+    scores = [puanlar.get(item.point.strip().casefold(), 0) for item in rubric]
+
+    # Her satırı bağımsız yuvarlayıp toplamak geçme sınırını değiştirebilir. Örn.
+    # 10 × (%10 ağırlık, 49 puan) satırı ayrı ayrı 5'e yuvarlanırsa gerçek 49,
+    # ekranda 50 olur. Bunun yerine kesin ağırlıklı toplamı yalnız bir kez yarım
+    # yukarı yuvarlar, tam sayı satırlarını en büyük kalan yöntemiyle o toplama
+    # dağıtırız. Eşit kalanda rubrik sırası deterministik bağlayıcıdır.
+    numerators = [item.weight * score for item, score in zip(rubric, scores, strict=True)]
+    earned = [numerator // 100 for numerator in numerators]
+    rounded_total = (sum(numerators) + 50) // 100
+    remainder_count = rounded_total - sum(earned)
+    allocation_order = sorted(
+        range(len(rubric)),
+        key=lambda index: (-(numerators[index] % 100), index),
+    )
+    for index in allocation_order[:remainder_count]:
+        earned[index] += 1
+
     satirlar: list[RubricCriterionScore] = []
-    for item in normalized_rubric(payload.rubric):
-        puan = puanlar.get(item.point.strip().casefold(), 0)
+    for item, puan, kazanilan in zip(rubric, scores, earned, strict=True):
         satirlar.append(
             RubricCriterionScore(
                 point=item.point,
                 weight=item.weight,
                 score=puan,
-                earned=round(item.weight * puan / 100),
+                earned=kazanilan,
             )
         )
     return satirlar

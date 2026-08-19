@@ -38,10 +38,12 @@ async def ready(response: Response) -> dict[str, Any]:
         factory = get_session_factory()
         async with factory() as session:
             await session.execute(text("SELECT 1"))
+            runtime_role_ready = await session.scalar(text("SELECT app.is_api_runtime()"))
             vector_ready = await session.scalar(
                 text("SELECT count(*) FROM pg_extension WHERE extname = 'vector'")
             )
         checks["database"] = "ok"
+        checks["database_role"] = "ok" if runtime_role_ready else "invalid"
         checks["pgvector"] = "ok" if vector_ready else "missing"
     except Exception as exc:
         logger.warning("hazırlık kontrolü başarısız", extra={"context": {"error": str(exc)}})
@@ -56,6 +58,7 @@ async def ready(response: Response) -> dict[str, Any]:
 
     healthy = (
         checks.get("database") == "ok"
+        and checks.get("database_role") == "ok"
         and checks.get("pgvector") == "ok"
         and warmup_is_ready(embedding_status)
     )

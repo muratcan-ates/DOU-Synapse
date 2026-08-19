@@ -2,8 +2,7 @@
 
 /**
  * Eğitmen render-kapısı — yedi sayfada elle tekrarlanan üçlü dalın tek sahibi
- * (settings, quality, sources, members, questions, analytics + blueprints
- * varyantı).
+ * (settings, quality, sources, members, questions, analytics + blueprints).
  *
  * Kapı yalnız ARAYÜZÜ şekillendirir; güvenlik kontrolü DEĞİLDİR. Yetki her
  * zaman sunucuda doğrulanır (Anayasa II): eğitmen uçları
@@ -13,9 +12,8 @@
  *
  * `ready` gelmeden role dair hiçbir dala girilmez (Anayasa IV, fail-closed):
  * rol istemcide sonradan çözülür; o ana kadar "eğitmen değil" varsayımı
- * eğitmene bir kare boyunca yanlış ekran gösterirdi. İyimser varyant
- * (`optimistic`) bu kuralı bilerek gevşetir — yalnız içeriği iki role de
- * zararsız biçimde erken çizen sayfa için (bugün: blueprints).
+ * eğitmene bir kare boyunca yanlış ekran gösterirdi. Bu kapının iyimser dalı
+ * yoktur: ayrıcalıklı child mount edilmeden ayrıcalıklı istek de başlayamaz.
  *
  * Eğitmen içeriği `children` olarak AYRI bileşende verilmelidir: `useResource`
  * mount olur olmaz istek atar; kapı isteği hiç başlatmamak için içeriği ancak
@@ -35,9 +33,8 @@ export type InstructorGateOutcome = "loading" | "fallback" | "content";
 export function instructorGateOutcome(
   ready: boolean,
   isInstructor: boolean,
-  optimistic: boolean,
 ): InstructorGateOutcome {
-  if (!ready) return optimistic ? "content" : "loading";
+  if (!ready) return "loading";
   return isInstructor ? "content" : "fallback";
 }
 
@@ -45,7 +42,6 @@ export function InstructorGate({
   ready,
   isInstructor,
   fallback,
-  optimistic = false,
   children,
 }: {
   ready: boolean;
@@ -58,12 +54,6 @@ export function InstructorGate({
    */
   fallback?: ReactNode;
   /**
-   * `true` ise rol çözülene kadar `Loading` yerine içerik çizilir (blueprints
-   * varyantı: sayfa iskeleti iki role de zararsız, kapı yalnız rol
-   * netleşince kapanır). Varsayılan fail-closed: önce `Loading`.
-   */
-  optimistic?: boolean;
-  /**
    * Eğitmen içeriği. Fonksiyon verilirse rol çözüldüğünde `isInstructor` ile
    * çağrılır ve `fallback` hiç kullanılmaz — iki role birden hizmet eden ama
    * "ready beklenir" kuralını paylaşan ekran için (bugün: analytics).
@@ -73,7 +63,7 @@ export function InstructorGate({
   if (typeof children === "function") {
     return ready ? <>{children(isInstructor)}</> : <Loading />;
   }
-  const outcome = instructorGateOutcome(ready, isInstructor, optimistic);
+  const outcome = instructorGateOutcome(ready, isInstructor);
   if (outcome === "loading") return <Loading />;
   return <>{outcome === "content" ? children : fallback}</>;
 }

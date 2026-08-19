@@ -1,0 +1,348 @@
+{
+  "schema_version": 1,
+  "change_id": "009-assessment-integrity-r1",
+  "lineage_id": "assessment-integrity",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Assessment integrity: official question, feedback, scoring, grading and runtime identity boundaries",
+  "summary": "Official assessment starts are fail closed by default; questions are separated from practice while existing mixed-use legacy owners retain only narrow own-session continuation; cohort-safe feedback release and frozen weighted scoring are enforced; LLM grading treats answer/source text as untrusted and validates exact rubric/evidence sets; sensitive assessment SQL surfaces require the exact dou_api_runtime session identity, a closed role graph and cross-owner default-ACL cleanup. Evidence is local deterministic/fake-provider only, deployment is not started and promotion remains none.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-20T01:48:02+03:00",
+  "review_by": "2026-09-19T01:48:02+03:00",
+  "base_sha": "2f40ac193114b896d33ef73e72ea51cc51f34d26",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-2f40ac19; local evidence uses deterministic fake provider only",
+    "model_revision": "unchanged-from-base-2f40ac19; no live model alias or provider console change",
+    "prompt_revision": "assessment-grading-untrusted-envelope-v1:sha256:a3cc23b5d7ce852c788a799d489a54fc16b45b64c9bc2889d4b982e893a61491",
+    "tool_schema_revision": "assessment-http-contract-v1:sha256:d869660d2f3d5a113ebd45beff0dcd170cedfb076fcb8435c5f34ed7f1b16786",
+    "guardrail_revision": "assessment-integrity-runtime-and-grading-v1: exact-session-user + narrow-role-graph/default-ACL + legacy-own-session + cohort-release + exact-rubric/evidence",
+    "retrieval_revision": "unchanged-from-base-2f40ac19; no ranking, chunking or scope policy change",
+    "embedding_revision": "unchanged-from-base-2f40ac19; evaluation README/DSN update does not change vector space",
+    "evaluator_revision": "assessment-integrity-fake-v1: exact-final fail-closed backend-961 + default-off smoke + web-402/907 + static/build + 12/24/23 named SQL mutations + 4 upgrade assertions + 2 runtime preflight races"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "9e0a546204c17ad6da578ff6e1169256130a1b273ffa1cd4e5292b12a2cc44a1",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".env.example",
+      "state": "present",
+      "sha256": "96afc007034b3a1192969ca883a6cb7e0d3ccb59f4319f8992eed2c3c8dd7e81"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "6e2e52f85cce86fa9b787ea8749e2a9ec4ea0ac4e361828c1ddeb2d1defeaf61"
+    },
+    {
+      "path": "apps/api/app/api/blueprints.py",
+      "state": "present",
+      "sha256": "fd594a27a8689a59580218c034ce8bd10ae3836955e96f4bcc9c32b05d97758a"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "909f84a1c05445be248b9ff46fe89efbc343808cc63c2aec9b90145fdaacde50"
+    },
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "db40f187eb210650ad74a4b0f7ce0eb196fbad0082e86c341c207f491c9f7570"
+    },
+    {
+      "path": "apps/api/app/api/questions.py",
+      "state": "present",
+      "sha256": "9247cc8de21b5700241ade1ec5eb2bafb198255c67f866e1543dd117128d4b52"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "fa59a0cb600e8df450441f7f08303449700e2e844b36a2cfe065f077e27b7693"
+    },
+    {
+      "path": "apps/api/app/models/assessment.py",
+      "state": "present",
+      "sha256": "a6e4ba77277929fe757d26765bd52b70eea01b1f627751b3bcd7c99ab77729f8"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/blueprint.py",
+      "state": "present",
+      "sha256": "332a8bd3d5f3b1dccfeabb8f32eb3475f21284df810f905c31c4f5bf72aca983"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/exam_paper.py",
+      "state": "present",
+      "sha256": "e251eb154d7536e43b5a211f6a49aa16e8a177c072c012e88fd8258d99fd389d"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/exam_state.py",
+      "state": "present",
+      "sha256": "0d22782a05f84034e7b696f726b34bc928f58ed036371230d5d2140638602ea8"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/feedback_release.py",
+      "state": "present",
+      "sha256": "238b76b7753e045c04d1b75f542f1ffcfb8b68803a755892aaa8aeac9e96910d"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/grading.py",
+      "state": "present",
+      "sha256": "a3cc23b5d7ce852c788a799d489a54fc16b45b64c9bc2889d4b982e893a61491"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/question_gen.py",
+      "state": "present",
+      "sha256": "f12c7a1e4392e77d3363c12d75cfa455b28453e95cb7bc5254db5af390bc49d9"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/scoring.py",
+      "state": "present",
+      "sha256": "36a8b3862edd8860572d27045b2925dccab2b447c67ca6669305ec5cfe1e15a9"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "d869660d2f3d5a113ebd45beff0dcd170cedfb076fcb8435c5f34ed7f1b16786"
+    },
+    {
+      "path": "apps/api/tests/conftest.py",
+      "state": "present",
+      "sha256": "6a367d6f04cb5b885467e47f185c30f476074384450b10d1cb86f1f2d90d74a3"
+    },
+    {
+      "path": "docker-compose.yml",
+      "state": "present",
+      "sha256": "09f8946d594bc2e8e26a8fd436d2c1d8eafd2cb93abac275a4c6288d8c2c22a8"
+    },
+    {
+      "path": "evaluation/README.md",
+      "state": "present",
+      "sha256": "aa4eff7e1196a977ad095c830a185a29faeaee23237aa121b090c5ec267adc1d"
+    },
+    {
+      "path": "evaluation/build_corpus.py",
+      "state": "present",
+      "sha256": "54b0df14e44559e30496e875c4c00e4cd648c6173e4e7199d3a4c32e17edc5ea"
+    },
+    {
+      "path": "supabase/migrations/0016_assessment_integrity.sql",
+      "state": "present",
+      "sha256": "cd6abe421b20a52f2052b0af84d300e9644ed48d5103a7cb375644dd5d18cc08"
+    },
+    {
+      "path": "supabase/tests/assessment_integrity_upgrade_check.sh",
+      "state": "present",
+      "sha256": "676ee81011fa5afb833728a7f29e77dee62277fe382ebf4703fec495b389438a"
+    },
+    {
+      "path": "supabase/tests/assessment_runtime_preflight_check.sh",
+      "state": "present",
+      "sha256": "b6f6d7ca5fe96911155d3971f747fbea717deb10a9bb706fdfcafe9330672fc0"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/009-assessment-integrity-local-r1.json",
+      "report_sha256": "ea6de98a8bde91287417822f536786b9430000da33fde4ef2f6844f38c6e5838",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "evaluation/gold_set/calibration.json",
+    "holdout_ref": "evaluation/gold_set/holdout.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/faithfulness/sample_template.md",
+    "metrics": [
+      {
+        "name": "full_backend_final_passed",
+        "baseline": 909,
+        "candidate": 961,
+        "operator": ">=",
+        "threshold": 961,
+        "sample_size": 961
+      },
+      {
+        "name": "affected_backend_tests_passed",
+        "baseline": 0,
+        "candidate": 104,
+        "operator": ">=",
+        "threshold": 104,
+        "sample_size": 104
+      },
+      {
+        "name": "assessment_integrity_mutations_detected",
+        "baseline": 0,
+        "candidate": 12,
+        "operator": ">=",
+        "threshold": 12,
+        "sample_size": 12
+      },
+      {
+        "name": "legacy_assessment_mutations_detected",
+        "baseline": 24,
+        "candidate": 24,
+        "operator": ">=",
+        "threshold": 24,
+        "sample_size": 24
+      },
+      {
+        "name": "blueprint_mutations_detected",
+        "baseline": 0,
+        "candidate": 23,
+        "operator": ">=",
+        "threshold": 23,
+        "sample_size": 23
+      },
+      {
+        "name": "upgrade_backfill_proof_exit",
+        "baseline": 1,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 1
+      },
+      {
+        "name": "upgrade_assertions_passed",
+        "baseline": 0,
+        "candidate": 4,
+        "operator": ">=",
+        "threshold": 4,
+        "sample_size": 4
+      },
+      {
+        "name": "assessment_blueprint_default_false_smoke_passed",
+        "baseline": 0,
+        "candidate": 1,
+        "operator": ">=",
+        "threshold": 1,
+        "sample_size": 1
+      },
+      {
+        "name": "runtime_preflight_scenarios_passed",
+        "baseline": 0,
+        "candidate": 2,
+        "operator": ">=",
+        "threshold": 2,
+        "sample_size": 2
+      },
+      {
+        "name": "frontend_library_tests_passed",
+        "baseline": 394,
+        "candidate": 402,
+        "operator": ">=",
+        "threshold": 402,
+        "sample_size": 402
+      },
+      {
+        "name": "frontend_typecheck_errors",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 1
+      },
+      {
+        "name": "frontend_production_build_exit",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 1
+      },
+      {
+        "name": "mypy_errors",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 99
+      }
+    ],
+    "exact_command": "set -euo pipefail; env -u ASSESSMENT_BLUEPRINT_ENABLED ENVIRONMENT=local DEV_AUTH_ENABLED=true apps/api/.venv/bin/python -c \"import sys; sys.path.insert(0, 'apps/api'); from app.core.config import Settings; assert Settings().assessment_blueprint_enabled is False\" && TEST_DB_NAME=dou_synapse_test_full_009_failclosed apps/api/.venv/bin/pytest -q apps/api/tests && (cd apps/api && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app) && (cd apps/web && bun test lib/ && bunx tsc --noEmit --incremental false && bun run build) && PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_assessment_integrity_mutation_check.sh && PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_assessment_mutation_check.sh && PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_blueprint_mutation_check.sh && PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/assessment_integrity_upgrade_check.sh && ASSESSMENT_PREFLIGHT_ALLOW_ROLE_MUTATION=1 PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/assessment_runtime_preflight_check.sh && PYTHONDONTWRITEBYTECODE=1 apps/api/.venv/bin/python scripts/ai_sdlc_check.py --base-sha 2f40ac193114b896d33ef73e72ea51cc51f34d26 --head-sha <candidate-commit>"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending course assessment owner",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending Bilgi İşlem security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "ASSESSMENT_BLUEPRINT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:009-assessment-integrity-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "ASSESSMENT_BLUEPRINT_ENABLED",
+    "kill_switch": "Set ASSESSMENT_BLUEPRINT_ENABLED=false and restart/redeploy the API; new official blueprint starts fail closed while existing get/answer/finish/results paths remain available.",
+    "assignment": "After approvals, pin an internal instructor staging pilot to an explicit course and published exam_version; any later student cohort is deterministic and version-sticky for the whole active attempt.",
+    "initial_exposure": "None. Before any traffic: provision dou_api_runtime LOGIN/secret/membership, prove the production pooler preserves session_user, drain every dou_app pool, apply 0016 with the exact role graph and no unsafe cross-owner default ACL residue, prove mixed-use legacy-owner continuation plus no-session denial, and pass runtime-role readiness. First allowed exposure is internal instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any official question, answer key, rubric, source or score visible outside the owning paper or before its safe release time.",
+      "Any incorrect frozen weighted score, rubric/evidence validation bypass or untrusted-text grading influence.",
+      "Any readiness identity failure, unexpected role-graph edge, unsafe default ACL residue, active legacy carrier session or runtime secret disclosure.",
+      "Any active attempt unable to continue after the feature flag is disabled and the kill switch is engaged."
+    ],
+    "expand_conditions": [
+      "Final OpenAPI and real-browser gates pass on the exact candidate and CI confirms the already-green backend/static/frontend package.",
+      "Frozen real-provider adversarial holdout and human assessment anchor pass without threshold changes.",
+      "Managed-pooler staging, runtime secret rotation and bounded rollback rehearsal pass.",
+      "Named independent engineering, domain and security/privacy approvals are recorded against the exact candidate."
+    ],
+    "active_exam_policy": "No student candidate exposure during an active exam. Once an attempt starts, its paper, points, prompt/rubric contract and feedback release time remain version-sticky; disabling the flag blocks only new starts."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2f40ac193114b896d33ef73e72ea51cc51f34d26 only before any 009 official attempt; before canary record a post-0016 staging-verified deployment ID",
+    "procedure": "Disable ASSESSMENT_BLUEPRINT_ENABLED for new starts, preserve existing attempt routes, and deploy the last post-0016-compatible revision or a fix-forward. Keep DATABASE_URL on dou_api_runtime; never re-enable dou_app LOGIN/password or restore its sensitive ACLs. Do not drop 0016 columns/enums or rewrite historical paper/release evidence.",
+    "max_minutes": 15,
+    "verification": "Through the same deployment DSN/pooler, require session_user/current_user dou_api_runtime, app.is_api_runtime() true and /health/ready database_role=ok; then prove new official starts are blocked, an existing attempt can answer/finish/results, and official question/early feedback leakage remains zero.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixture identities and aggregate pass/fail counts only. Runtime/database secrets, prompts, answers, chunks, filenames, emails, row identifiers, provider payloads and raw logs are excluded.",
+    "retention": "Versioned append-only with the repository; temporary databases and local service processes are removed after each proof."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

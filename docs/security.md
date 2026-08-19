@@ -4,8 +4,9 @@ Bu belge, sistemin güvenlik iddialarının tek toplandığı yerdir. Kural: **b
 yazılan her iddianın kodda karşılığı vardır ve satır numarasıyla gösterilir.**
 Karşılığı olmayan şey "uygulanmadı" başlığı altında yazılıdır (Anayasa III).
 
-Tarihsel güvenlik baseline'ı: 9 Ağustos 2026 · Kanıt komutları son
-doğrulama: 11 Ağustos 2026 · Kapsam: güncel repository candidate
+Tarihsel güvenlik baseline'ı: 9 Ağustos 2026 · Assessment runtime-role yerel
+kanıtı: 20 Ağustos 2026 · Kapsam: güncel repository candidate; staging/production
+doğrulaması yapılmadı
 
 ---
 
@@ -113,16 +114,60 @@ erişimi olmayan kullanıcı dersin var olup olmadığını da öğrenemez.
 
 ### Katman 2 — PostgreSQL RLS
 
-API, tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle
-bağlanır. Her istek, işlem içinde `app.current_user_id` GUC'sini ayarlar
+API'nin gerçek LOGIN kimliği `dou_api_runtime`dır. Bu rol tablo sahibi değildir,
+`BYPASSRLS`/superuser/rol yaratma/veritabanı yaratma yetkisi taşımaz ve NOLOGIN
+`dou_app` yetki taşıyıcısının yalnız `INHERIT TRUE`, `SET FALSE`, `ADMIN FALSE`
+üyesidir. `dou_app`ın parolası NULL'dır; doğrudan bağlantı kimliği olarak
+kullanılamaz.
+
+Rol grafiği de sözleşmenin parçasıdır: `dou_app` hiçbir parent rol taşımaz;
+`dou_api_runtime`ın üyesi yoktur ve tek parent'ı `dou_app`tır. `0016` beklenmeyen
+kenarda fail-closed durur. PostgreSQL default ACL'leri owner'a özgü olduğundan aynı
+migration, `public` gelecek tablolarındaki carrier/worker CRUD grant'lerini unsafe
+kayıt owner'ı bazında kaldırır. `app` schema sahibi, current migration owner ve mevcut
+`app` function owner'ları için global hard-wired ile açık schema-local PUBLIC EXECUTE
+varsayılanlarını kapatır; etkin kalıntıyı `acldefault` üzerinden reddeder.
+
+Her istek, işlem içinde `app.current_user_id` GUC'sini ayarlar
 ([`db.py:71`](../apps/api/app/core/db.py#L71)); politikalar bu değeri okur.
 Ayarlanmamışsa `app.current_user_id()` NULL döner ve **hiçbir satır görünmez**
 (fail-closed). Tablolar `FORCE ROW LEVEL SECURITY` taşır, yani sahip rol bile
 politikalara tabidir.
 
+Assessment'in ham soru/cevap/oturum/sürüm/kalem yüzeyinde ikinci bir kimlik
+kapısı vardır. `0016`, taşıyıcının hassas doğrudan ACL'lerini çeker ve restrictive
+politikalar `app.is_api_runtime()` ister. Bu fonksiyon `current_user`, rol adı veya
+GUC değil, tam olarak `session_user = 'dou_api_runtime'` koşulunu doğrular. Bu
+yüzden `SET ROLE dou_api_runtime` ya da kullanıcı kontrollü bir GUC gerçek runtime
+bağlantısını taklit edemez. `/health/ready`, aynı kontrol başarısızsa 503 verir.
+
 `SET LOCAL` işleme bağlıdır: bağlantı havuza dönerken bağlam kendiliğinden
 temizlenir, bir sonraki isteğin önceki kullanıcının kimliğini devralması
 mümkün değildir.
+
+Yönetilen pooler'ın upstream'e başka bir kullanıcıyla bağlanıp yalnız `SET ROLE`
+yapması desteklenmez: bu durumda `session_user` runtime değildir ve readiness
+fail-closed kapanır. Dağıtımdan önce **uygulamanın kullandığı aynı DSN/pooler
+yolunda** `SELECT session_user, current_user, app.is_api_runtime()` sonucu
+`dou_api_runtime | dou_api_runtime | true` olarak ölçülür.
+
+Karma kullanımlı tarihsel soru için practice kopyası yaratılmaz. Blueprint item'ın
+özgün sorusu `assessment` olur; yeni practice seçimi onu filtreler. Yalnız
+`has_own_exam_question`, soruyu migration öncesi `question_ids` dizisinde zaten
+taşıyan mevcut legacy oturum sahibine dar bir devam dalı verir. Oturum/cevap kimliği
+değişmez; aynı derse kayıtlı fakat bu legacy oturuma sahip olmayan öğrenci göremez.
+
+### Runtime secret güven sınırı
+
+`app.current_user_id` bir yetkilendirme bağlamıdır, kriptografik bir son-kullanıcı
+kimliği değildir. `dou_api_runtime` secret'ını ele geçiren veya API sürecinde SQL
+çalıştırabilen saldırgan başka bir kullanıcı UUID'sini GUC'ye yazmayı deneyebilir;
+runtime'ın doğrudan grant aldığı yüzeylerde bu, yüksek etkili backend compromise'dır.
+Dolayısıyla bu credential yalnız API'nin gizli-değer kasasında ve backend ağında
+yaşar; tarayıcıya, mobil uygulamaya, PostgREST/Supabase anon istemcisine veya ders
+personeline verilmez. Ağ kısıtı, secret rotasyonu ve içeriksiz erişim denetimi bu
+sınırın parçasıdır. RLS, sızmış backend credential'ını düşük ayrıcalıklı öğrenci
+credential'ına dönüştürmez.
 
 ### Neden ikisi de
 
@@ -144,6 +189,8 @@ baseline koşusudur; güncel backend test koleksiyonu değildir.
 |---|---|---|
 | Çekirdek şema (`0001` + `0003`) | **98** <!-- docs-check: tarihsel 98 · 2026-08-09 --> | **52/52 yakalandı** <!-- docs-check: tarihsel 52 · 2026-08-09 --> |
 | Ölçme + analitik (`0004` + `0005`) | 58 <!-- docs-check: tarihsel 58 · 2026-08-09 --> | 24/24 yakalandı <!-- docs-check: tarihsel 24 · 2026-08-09 --> |
+| Assessment integrity (`0016`, yerel candidate) | named assertion paketi PASS | 12/12 yakalandı |
+| Blueprint bütünlüğü (`0008` + `0016`, yerel candidate) | ayrı referans paketi | 23/23 yakalandı |
 
 ```bash
 psql -d dou_synapse -f supabase/tests/rls_isolation.sql
@@ -154,6 +201,21 @@ supabase/tests/rls_isolation_mutation_check.sh
 psql -d dou_synapse -f supabase/tests/rls_assessment.sql
 supabase/tests/rls_assessment_mutation_check.sh
 ```
+
+```bash
+psql -d dou_synapse -f supabase/tests/rls_assessment_integrity.sql
+supabase/tests/rls_assessment_integrity_mutation_check.sh
+supabase/tests/rls_blueprint_mutation_check.sh
+supabase/tests/assessment_integrity_upgrade_check.sh
+ASSESSMENT_PREFLIGHT_ALLOW_ROLE_MUTATION=1 \
+  PG_BIN=/opt/homebrew/opt/postgresql@16/bin \
+  supabase/tests/assessment_runtime_preflight_check.sh
+```
+
+Upgrade kanıtı kohort release sınırına ek olarak yalnız legacy sahibin mixed-use
+soruyla devamını, aynı dersteki oturumsuz öğrencinin reddini, farklı owner tablo
+grant'lerinin temizlenmesini ve o owner'ın migration sonrasında oluşturduğu probe
+fonksiyonda PUBLIC EXECUTE'ın etkin olarak kapalı kalmasını ayrı PASS satırlarıyla ölçer.
 
 "Mutasyon" şu demek: betik politikayı teker teker bozar (ör. `USING (true)`
 yapar), testi yeniden koşar ve **hangi iddianın** kırmızıya döndüğünü
@@ -252,7 +314,7 @@ set-membership bir kontroldür.
 | Soru metni ölçüm kaydında | `request_logs` şemasında serbest metin sütunu YOK — yapısal önlem, filtre değil ([`0003_chat.sql`](../supabase/migrations/0003_chat.sql)) |
 | API anahtarı / JWT / TCKN / e-posta logda | `RedactionFilter` her log kaydını maskeler ([`core/logging.py`](../apps/api/app/core/logging.py)) |
 | Dersin varlığı | Üye olmayana 404; "var ama giremezsin" ile "yok" ayırt edilemez |
-| Taslak sınav sorusu ve cevap anahtarı | `questions_read` politikası öğrenciye yalnız `approved` gösterir (`0004`) |
+| Resmî soru, cevap anahtarı ve erken puan | `0016` purpose/own-paper RLS'i + gerçek `dou_api_runtime` identity gate'i; sonuç zarfı güvenli yayın anından önce bunları yüklemez |
 | `request_logs` satırları | Öğrenciye tamamen kapalı; eğitmen yalnız kendi dersini okur (`0005`) |
 
 `request_logs`'un SELECT politikası olmamasının doğrudan bir sonucu var:
@@ -327,6 +389,35 @@ kalır (§1). Aynı e-postayla yeniden kayıt, köprü tarafından reddedilir ve
 arşiv değerine çevirmek). Otomatik bir onarım yolu bilinçli olarak yazılmadı:
 akademik kaydı yeni bir kimliğe sessizce bağlamak daha kötü bir sonuçtur.
 
+**8. Runtime credential bir trusted-backend yetkisidir.** `session_user` kapısı,
+ham `dou_app` oturumunun hassas assessment yüzeyini GUC taklidiyle açmasını önler;
+ele geçirilmiş gerçek `dou_api_runtime` credential'ının kullanıcı bağlamı taklidini
+önlemez. Üretim secret/pooler/ağ rotasyonu gerçek ortamda henüz doğrulanmadı.
+
+Assessment blueprint feature flag'i kodda ve örnek ortamda `false` varsayılır.
+Doğrulanmış yerel Compose/CI akışları ihtiyacı açıkça `true` verir; insan onayı ve
+staging kanıtı olmadan korumalı ortamda açılmaz. Kapatmak yalnız yeni resmî
+başlangıçları durdurur, mevcut oturumun devam uçlarını kesmez.
+
+**9. `dou_app` kesimi migration'dan önce commit edilir.** Trafik durduktan sonra
+owner/admin, `ALTER ROLE dou_app NOLOGIN PASSWORD NULL` komutunu `0016`dan ayrı
+bir transaction'da uygular; eski login'in reddedildiğini ve aktif carrier oturumu
+kalmadığını doğrular. Migration bu durumu ilk kez yaratmak yerine assert eder ve
+özellikleri normalize eder. Aynı transaction içinde kesmek, preflight ile commit
+arasındaki yeni bağlantı yarışını açık bırakırdı. Dedicated active-session failure
+otomasyonu `supabase/tests/assessment_runtime_preflight_check.sh` ile iki vakada
+yerelde geçmiştir: LOGIN precondition reddi ve NOLOGIN sonrası yaşayan eski
+bağlantının drain edilene kadar migration'ı engellemesi. Production rollout sorgusu
+yine gerçek pooler/secret yolunda ayrıca kaydedilir.
+
+**10. Rol grafiği ve default ACL ilgili owner'larda kapalıdır.** `dou_app`ın parent
+rol alması, runtime'ın üyesi olması veya runtime'ın carrier dışında parent taşıması
+migration'ı durdurur. Başka bir migration owner'ın bıraktığı unsafe tablo grant'i
+current owner temizliğiyle kaybolmaz; `0016` ilgili owner kayıtlarını tarar. Function
+PUBLIC EXECUTE için schema-local REVOKE tek başına yetmez; ilgili owner'lara global
+REVOKE da uygulanır ve etkin residue varsa commit edilmez. Bu kapı uygun admin yetkisi
+gerektirir.
+
 ---
 
 ## 9. KVKK — hangi kişisel veri, nerede, ne kadar
@@ -359,14 +450,26 @@ aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 909 test   # docs-check: backend.tests = 909
-cd apps/api && uv run mypy app                  # temiz, 97 dosya   # docs-check: backend.mypyFiles = 97
+cd apps/api && uv run pytest -q
+cd apps/api && uv run mypy app                  # temiz, 99 dosya   # docs-check: backend.mypyFiles = 99
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
+
+009 candidate'ın global function-default ACL düzeltmesinden sonraki exact-tree tam
+backend koşusunda **961 test geçti**; <!-- docs-check: tarihsel 961 · 2026-08-20 -->
+114,58 saniye sürdü ve beş üçüncü-taraf SWIG deprecation uyarısı verdi. Ortam
+değişkeni yokken ayrıca `assessment_blueprint_enabled is False` smoke'u geçti.
 
 ```bash
 psql -d dou_synapse -f supabase/tests/rls_isolation.sql     # 98 iddia   # docs-check: tarihsel 98 · 2026-08-09
 supabase/tests/rls_isolation_mutation_check.sh              # 52/52   # docs-check: tarihsel 52 · 2026-08-09
 psql -d dou_synapse -f supabase/tests/rls_assessment.sql    # 58 iddia   # docs-check: tarihsel 58 · 2026-08-09
 supabase/tests/rls_assessment_mutation_check.sh             # 24/24   # docs-check: tarihsel 24 · 2026-08-09
+psql -d dou_synapse -f supabase/tests/rls_assessment_integrity.sql
+supabase/tests/rls_assessment_integrity_mutation_check.sh   # 12/12 yerel candidate
+supabase/tests/rls_blueprint_mutation_check.sh              # 23/23 yerel candidate
+supabase/tests/assessment_integrity_upgrade_check.sh        # 4 PASS: kohort/mixed-use/default ACL
+ASSESSMENT_PREFLIGHT_ALLOW_ROLE_MUTATION=1 \
+  PG_BIN=/opt/homebrew/opt/postgresql@16/bin \
+  supabase/tests/assessment_runtime_preflight_check.sh      # 2/2 rol kesimi yarışı
 ```

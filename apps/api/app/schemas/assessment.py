@@ -19,12 +19,18 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.models.assessment import ExamMode, QuestionDifficulty, QuestionStatus, QuestionType
+from app.models.assessment import (
+    ExamMode,
+    QuestionDifficulty,
+    QuestionPurpose,
+    QuestionStatus,
+    QuestionType,
+)
 
 # ---------------------------------------------------------------------------
 # Konular
@@ -100,10 +106,11 @@ class RubricItem(BaseModel):
 class RubricCriterionScore(BaseModel):
     """Bir ölçütten alınan puan (FR-117).
 
-    `weight` normalize edilmiş ağırlıktır; `earned` = weight × score / 100. Toplam
-    puan bu satırlardan TÜRETİLİR, modelden okunmaz — model hem kırılım hem ayrı bir
-    toplam verseydi ikisi çelişebilirdi ve öğrenciye gösterilen tablonun toplamı
-    tutmazdı (Anayasa III).
+    `weight` normalize edilmiş ağırlıktır. Tam sayı `earned` değerleri, kesin
+    ağırlıklı toplam bir kez yuvarlandıktan sonra en büyük kalan yöntemiyle
+    satırlara dağıtılır. Toplam puan bu satırlardan TÜRETİLİR, modelden okunmaz —
+    model hem kırılım hem ayrı bir toplam verseydi ikisi çelişebilirdi ve öğrenciye
+    gösterilen tablonun toplamı tutmazdı (Anayasa III).
     """
 
     point: str
@@ -260,6 +267,7 @@ class QuestionOut(BaseModel):
     #: Eğitmene tam payload, öğrenciye `public_payload()` süzgecinden geçmiş hâli.
     payload: dict[str, Any]
     status: QuestionStatus
+    purpose: QuestionPurpose
     created_by: UUID | None
     reviewed_by: UUID | None
     reviewed_at: datetime | None
@@ -285,11 +293,35 @@ class QuestionGenerateRequest(BaseModel):
     """
 
     topic_id: UUID
+    #: Blueprint hücresine hazır üretimde ikisi birlikte verilir. Kâğıttan
+    #: bağımsız practice taslağında ikisi de boş kalabilir.
+    learning_outcome_id: UUID | None = None
+    difficulty: QuestionDifficulty | None = None
     question_type: QuestionType = QuestionType.MCQ
+    #: `practice` öğrenci provasına, `assessment` yalnız resmî blueprint kâğıdına
+    #: adaydır. Geriye uyumlu varsayılan practice'tir; sunucu satıra açıkça yazar.
+    purpose: QuestionPurpose = QuestionPurpose.PRACTICE
     #: Yalnız `open` için anlamlı: klasik mi kısa cevap mı (Karar 4).
     answer_format: AnswerFormat | None = None
     count: int | None = Field(default=None, ge=1, le=20)
     example_questions: list[str] = Field(default_factory=list, max_length=5)
+
+    @model_validator(mode="after")
+    def complete_classification_pair(self) -> Self:
+        if (self.learning_outcome_id is None) != (self.difficulty is None):
+            raise ValueError(
+                "learning_outcome_id ve difficulty birlikte verilmeli veya ikisi de boş olmalıdır"
+            )
+        return self
+
+
+class QuestionClassificationRequest(BaseModel):
+    """Yalnız taslak sorunun blueprint sınıflandırması; içerik değişikliği değildir."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    learning_outcome_id: UUID
+    difficulty: QuestionDifficulty
 
 
 class QuestionGenerationOut(BaseModel):
@@ -338,6 +370,9 @@ class ExamSessionOut(BaseModel):
     finished_at: datetime | None
     #: `answers` satırlarından yeniden hesaplanır, `exam_sessions.score`'dan okunmaz.
     score: float | None
+    #: Blueprint sonucunun güvenli yayın kapısı. Practice/legacy oturumda bitişle açılır.
+    feedback_released: bool = False
+    feedback_available_at: datetime | None = None
     question_count: int
     answered_count: int
     questions: list[ExamQuestionOut] = Field(default_factory=list)
@@ -388,6 +423,9 @@ class ExamFinishOut(BaseModel):
     unanswered_count: int
     #: Kaydedilmiş ama değerlendirmesi tamamlanamamış cevaplar (FR-020).
     ungraded_count: int
+    #: Eksik/legacy üretici bu alanı atladığında güvenli varsayılan kapalıdır.
+    feedback_released: bool = False
+    feedback_available_at: datetime | None = None
     message: str
     results: list[AnswerFeedbackOut] = Field(default_factory=list)
 

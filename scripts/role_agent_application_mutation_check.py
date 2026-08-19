@@ -344,14 +344,16 @@ def _pytest(
     environment.update(
         {
             "DATABASE_URL": (
-                f"postgresql+psycopg://dou_app:dou_app_local@localhost/{database_name}"
+                "postgresql+psycopg://dou_api_runtime:"
+                f"dou_api_runtime_local@localhost/{database_name}"
             ),
             "DEV_AUTH_ENABLED": "true",
             "ENVIRONMENT": "local",
             "PYTHONDONTWRITEBYTECODE": "1",
             "TEST_ADMIN_DSN": f"postgresql+psycopg://localhost/{database_name}",
             "TEST_APP_DSN": (
-                f"postgresql+psycopg://dou_app:dou_app_local@localhost/{database_name}"
+                "postgresql+psycopg://dou_api_runtime:"
+                f"dou_api_runtime_local@localhost/{database_name}"
             ),
             "TEST_DB_NAME": database_name,
             "TEST_WORKER_DSN": (

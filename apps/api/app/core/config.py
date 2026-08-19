@@ -78,10 +78,11 @@ class Settings(BaseSettings):
     api_version: str = "0.1.0"
 
     # --- Veritabanı ---------------------------------------------------------
-    # API bağlantısı `dou_app` rolüyle kurulmalıdır: bu rol tabloların sahibi değildir ve
-    # BYPASSRLS taşımaz, dolayısıyla RLS politikaları gerçekten uygulanır.
+    # API bağlantısı `dou_api_runtime` LOGIN'iyle kurulmalıdır. Bu rol tablo sahibi veya
+    # BYPASSRLS değildir; genel yetkileri dou_app taşıyıcısından miras alır, assessment
+    # soru/cevap yetkilerini ise yalnız gerçek runtime oturumuna doğrudan alır.
     database_url: PostgresDsn = Field(
-        default=PostgresDsn("postgresql+psycopg://dou_app@localhost:5432/dou_synapse"),
+        default=PostgresDsn("postgresql+psycopg://dou_api_runtime@localhost:5432/dou_synapse"),
     )
     # Worker, chunks tablosuna yazabilmek için RLS'i atlayan ayrı bir rolle bağlanır.
     worker_database_url: PostgresDsn | None = None
@@ -255,6 +256,9 @@ class Settings(BaseSettings):
 
     #: Operational kill switch independent from every course policy.
     course_agent_enabled: bool = True
+    #: Acil sınav-gizliliği kill switch'i. Yalnız YENİ blueprint oturumlarını
+    #: durdurur; mevcut oturumların cevap/bitiş/sonuç yollarını kapatmaz.
+    assessment_blueprint_enabled: bool = False
     #: Operator-owned ceilings. Course instructors can choose lower per-course
     #: budgets, never raise a user above these deployment-wide abuse limits.
     course_agent_student_daily_hard_limit: int = Field(default=50_000, gt=0, le=50_000)

@@ -213,6 +213,41 @@ async def any_active_student_exam_session(
     return next(iter(active.values()), None)
 
 
+async def any_unreleased_student_blueprint_session(
+    session: AsyncSession,
+    *,
+    user_id: UUID,
+    now: datetime,
+) -> ExamSession | None:
+    """KVKK export'unda çözüm/puan sızdırabilecek resmî oturumu bulur.
+
+    ``finished_at`` burada istisna değildir: erken biten blueprint sınavının cevap
+    ve puanı güvenli yayın anına kadar hâlâ sınav korumasındadır. NULL schedule,
+    migration öncesi tarihsel belirsizliktir ve fail-closed kilitli kalır. Yalnız
+    bilinen instructor rolü preview istisnası alır.
+    """
+
+    return await session.scalar(
+        select(ExamSession)
+        .outerjoin(
+            CourseMembership,
+            (CourseMembership.course_id == ExamSession.course_id)
+            & (CourseMembership.user_id == ExamSession.user_id),
+        )
+        .where(
+            ExamSession.user_id == user_id,
+            ExamSession.exam_version_id.is_not(None),
+            (
+                ExamSession.feedback_available_at.is_(None)
+                | (ExamSession.feedback_available_at > now)
+            ),
+            CourseMembership.role.is_distinct_from(MembershipRole.INSTRUCTOR),
+        )
+        .order_by(ExamSession.started_at.desc())
+        .limit(1)
+    )
+
+
 async def active_exam_sessions_by_course(
     session: AsyncSession,
     *,

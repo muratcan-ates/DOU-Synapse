@@ -6,8 +6,7 @@
  *
  * Neden test edilmeli: kapının bozulması sessizdir. Fail-closed kural
  * (`ready` gelmeden eğitmen içeriği ASLA çizilmez, Anayasa IV) kırılırsa
- * öğrenciye bir kare eğitmen formu görünür ve hiçbir test kırmızıya düşmez;
- * `optimistic` varyantı yanlışlıkla varsayılan olursa da aynısı olur.
+ * öğrenciye bir kare eğitmen formu görünür ve hiçbir test kırmızıya düşmez.
  */
 
 import { describe, expect, test } from "bun:test";
@@ -16,23 +15,13 @@ import { instructorGateOutcome } from "../components/instructor-gate";
 
 describe("instructorGateOutcome — fail-closed varsayılan", () => {
   test("rol çözülmeden içerik de kapak da çizilmez, yalnız yükleniyor", () => {
-    expect(instructorGateOutcome(false, false, false)).toBe("loading");
+    expect(instructorGateOutcome(false, false)).toBe("loading");
     // isInstructor=true bile olsa ready beklenir: değer henüz güvenilir değil.
-    expect(instructorGateOutcome(false, true, false)).toBe("loading");
+    expect(instructorGateOutcome(false, true)).toBe("loading");
   });
 
   test("rol çözülünce eğitmen içeriği, öğrenci kapağı görür", () => {
-    expect(instructorGateOutcome(true, true, false)).toBe("content");
-    expect(instructorGateOutcome(true, false, false)).toBe("fallback");
-  });
-});
-
-describe("instructorGateOutcome — iyimser varyant (blueprints)", () => {
-  test("rol çözülene kadar iskelet çizilir, sonra karar aynı", () => {
-    expect(instructorGateOutcome(false, false, true)).toBe("content");
-    expect(instructorGateOutcome(false, true, true)).toBe("content");
-    expect(instructorGateOutcome(true, true, true)).toBe("content");
-    // İyimserlik yalnız BEKLERKEN geçerli: rol "öğrenci" çıkarsa kapak iner.
-    expect(instructorGateOutcome(true, false, true)).toBe("fallback");
+    expect(instructorGateOutcome(true, true)).toBe("content");
+    expect(instructorGateOutcome(true, false)).toBe("fallback");
   });
 });

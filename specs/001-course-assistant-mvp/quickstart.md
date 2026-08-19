@@ -63,10 +63,12 @@ psql -d postgres -c "SELECT name FROM pg_available_extensions WHERE name = 'vect
 
 ## 2. Veritabanı: oluştur → migrate → yerel roller → RLS kanıtı → seed
 
-Sıra önemlidir: migration `dou_app`/`dou_worker` rollerini **NOLOGIN** oluşturur;
-`local_dev_setup.sql` bu rollere yalnızca yerelde giriş açar; izolasyon testi kendi
-kimliklerini ekleyip geri alır; seed demo kullanıcılarını yazar. **İzolasyon testi
-seed'den sonra koşturulursa çakışır** — sebebi aşağıda.
+Sıra önemlidir: migration'lar `dou_app`, `dou_api_runtime` ve `dou_worker`
+rollerini **NOLOGIN** oluşturur. `dou_app` ortak yetki taşıyıcısı olarak NOLOGIN
+kalır; `local_dev_setup.sql` yalnız `dou_api_runtime` ve `dou_worker` için yerel
+LOGIN/parola açar. İzolasyon testi kendi kimliklerini ekleyip geri alır; seed demo
+kullanıcılarını yazar. **İzolasyon testi seed'den sonra koşturulursa çakışır** —
+sebebi aşağıda.
 
 ```bash
 createdb dou_synapse
@@ -78,8 +80,9 @@ for f in supabase/migrations/*.sql; do
   psql -v ON_ERROR_STOP=1 -d dou_synapse -f "$f"
 done
 
-# 2) YALNIZCA YEREL: dou_app / dou_worker rollerine LOGIN + parola
-#    (dou_app_local / dou_worker_local — .env.example'daki DSN'lerle eşleşir)
+# 2) YALNIZCA YEREL: dou_api_runtime / dou_worker rollerine LOGIN + parola
+#    (dou_api_runtime_local / dou_worker_local — .env.example DSN'leriyle eşleşir)
+#    dou_app bilinçli olarak NOLOGIN kalır.
 psql -d dou_synapse -f supabase/local_dev_setup.sql
 
 # 3) İzolasyon kanıtı — seed'den ÖNCE (aşağıdaki nota bakın), 8 PASS dönmeli
@@ -93,23 +96,26 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 
 ```bash
 psql -d dou_synapse -tAc "select count(*) from information_schema.tables
-  where table_schema='public' and table_type='BASE TABLE'"     # 15
+  where table_schema='public' and table_type='BASE TABLE'"     # 27
 ```
 
-Migration numaralarının atlamalı gitmesi (`0001, 0003, 0004, 0005`) normaldir: `0002`,
-`0006` ve `0007` devam eden işlere ayrılmıştır ve henüz depoda değildir. `0005` tablo
-oluşturmaz, yalnız analitiğin ihtiyaç duyduğu okuma politikasını ekler — bu dosya
-atlanırsa **eğitmen analitiği sessizce boş görünür.**
+Migration numaraları tarihsel olarak atlamalı olabilir; hangi numaranın var olduğunu
+belgeden tahmin etmeyin. Sıralı glob depodaki bütün migration'ları alır. Bir dosyayı
+elle atlamak, şemanın açılıp belirli bir özelliğin sessizce boş görünmesine kadar
+uzanan kısmi kurulum üretir.
 
 Notlar:
 
 - Bu komutları Homebrew'un varsayılan (superuser) kullanıcınızla çalıştırın;
   seed RLS'i bu sayede atlar. **Uygulama asla superuser ile bağlanmaz** — API
-  `dou_app` (RLS'e tabi), worker `dou_worker` (BYPASSRLS) rolünü kullanır.
+  gerçek LOGIN olarak `dou_api_runtime`ı (RLS'e tabi), worker `dou_worker`ı
+  (BYPASSRLS) kullanır. `dou_app` bağlantı kullanıcısı değil, NOLOGIN yetki
+  taşıyıcısıdır.
 - `local_dev_setup.sql` içindeki `GRANT CONNECT ON DATABASE dou_synapse` satırı
   veritabanı adını sabit taşır; başka bir adla kurarsanız o satırı da değiştirin.
-- `local_dev_setup.sql` ve `seed_demo.sql` üretimde/demoda ÇALIŞTIRILMAZ
-  (dosya başlıklarındaki uyarılar).
+- `local_dev_setup.sql` ve `seed_demo.sql` hosted production/staging ortamında
+  ÇALIŞTIRILMAZ. Kök Docker Compose, yalnız yerel demo için local setup dosyasını
+  init adımı olarak bilinçli biçimde kullanır.
 
 ### RLS kanıtı — seed'den ÖNCE koşturun
 
@@ -159,10 +165,11 @@ değişiklik gerekir; bkz. **§6.1**.
 | Değişken | Varsayılan | Anlamı |
 |---|---|---|
 | `ENVIRONMENT` | `local` | — |
-| `DATABASE_URL` | `postgresql+psycopg://dou_app:dou_app_local@localhost:5432/dou_synapse` | API, RLS'e tabi `dou_app` rolüyle |
+| `DATABASE_URL` | `postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@localhost:5432/dou_synapse` | API, RLS'e tabi gerçek runtime LOGIN kimliğiyle |
 | `WORKER_DATABASE_URL` | `postgresql+psycopg://dou_worker:dou_worker_local@localhost:5432/dou_synapse` | Worker, `chunks` yazabilen ayrı rolle |
 | `SUPABASE_JWT_SECRET` | (boş) | `DEV_AUTH_ENABLED=true` iken gerekmez |
 | `DEV_AUTH_ENABLED` | `true` | İmzasız `Bearer dev:<uuid>` kimlikleri kabul edilir. `ENVIRONMENT=production` iken açılırsa uygulama **başlamaz** (`app/core/config.py` doğrulayıcısı) |
+| `ASSESSMENT_BLUEPRINT_ENABLED` | `false` | Resmî blueprint başlangıçları fail-closed kapalıdır. Yalnız assessment geliştirme/test ortamında bilinçli olarak `true` yapın; Compose ve CI bunu açıkça verir |
 | `CORS_ORIGINS` | `["http://localhost:3000","http://localhost:3100"]` | 3000 geliştirme, 3100 uçtan uca test sunucusu. **Başka bir portta çalıştıracaksanız buraya ekleyin**, yoksa tarayıcı istekleri CORS'a takılır |
 | `EMBEDDING_PROVIDER` | `hashing` | Deterministik yerel embedding — model indirmeden çevrimdışı geliştirme. **Gerçek kullanım için `fastembed` gerekir (§6.1).** Geçiş **ingest-zamanı kararıdır**: tüm korpus yeniden işlenir |
 | `EMBEDDING_CACHE_DIR` | (boş) | Boşken fastembed modeli macOS'ta `$TMPDIR` altına indirir ve **işletim sistemi orayı temizler.** Kalıcı bir dizin verin (§6.1) |
@@ -177,8 +184,13 @@ Doğrulama:
 
 ```bash
 curl http://localhost:8000/health/live    # süreç ayakta mı
-curl http://localhost:8000/health/ready   # veritabanı erişimi dahil
+curl http://localhost:8000/health/ready   # checks.database_role=ok dahil
 ```
+
+`/health/ready` içindeki `database_role=invalid`, DSN'nin taşıyıcı/superuser ile
+açıldığını veya pooler'ın runtime adını yalnız `SET ROLE` ile taklit ettiğini gösterir.
+Uygulamanın kullandığı aynı bağlantı yolunda `session_user` gerçekten
+`dou_api_runtime` olmalıdır.
 
 **Worker hakkında:** yerel geliştirmede ayrı bir worker süreci başlatmak
 zorunlu değildir — yükleme sonrası API worker'ın `drain()` tek turunu kendisi
@@ -192,11 +204,25 @@ uv run python -m app.worker
 
 ```bash
 cd apps/api
-uv run pytest          # 909 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 909
+uv run pytest          # 961 test yeşil olmalı (~50-120 sn)   # docs-check: backend.tests = 961
 uv run mypy app        # temiz
 uv run ruff check .
 uv run ruff format --check .
 ```
+
+`0016` rol-kesimi kanıtı cluster rollerini geçici olarak değiştirdiği için yalnız
+kontrollü yerel PostgreSQL'de açık opt-in ile çalışır:
+
+```bash
+ASSESSMENT_PREFLIGHT_ALLOW_ROLE_MUTATION=1 \
+  PG_BIN=/opt/homebrew/opt/postgresql@16/bin \
+  supabase/tests/assessment_runtime_preflight_check.sh
+```
+
+Mevcut veritabanı upgrade kanıtı `assessment_integrity_upgrade_check.sh` içinde
+kohort yayın sınırı, mixed-use legacy oturum sahibinin devamı, aynı dersteki
+oturumsuz öğrencinin resmî sorudan reddi ve cross-owner tablo grant'leriyle yeni
+fonksiyonda etkin PUBLIC EXECUTE temizliği olmak üzere dört ayrı PASS üretir.
 
 Test altyapısı (`tests/conftest.py`):
 
@@ -206,8 +232,10 @@ Test altyapısı (`tests/conftest.py`):
   çağırır; Postgres başka yerdeyse `PG_BIN` ortam değişkeniyle geçersiz kılın.
   Diğer ayar noktaları: `TEST_DB_NAME`, `TEST_ADMIN_DSN`, `TEST_APP_DSN`,
   `TEST_WORKER_DSN`.
-- Testler kasıtlı olarak `dou_app` rolüyle bağlanır — superuser ile koşan bir
-  izolasyon testi hiçbir şey kanıtlamaz.
+- Testler kasıtlı olarak gerçek `dou_api_runtime` LOGIN kimliğiyle bağlanır;
+  SQL kanıtları da `SESSION AUTHORIZATION dou_api_runtime` kullanır. Superuser
+  veya yalnız `SET ROLE dou_api_runtime` ile koşan bir izolasyon testi runtime
+  identity gate'ini kanıtlamaz.
 
 ## 5. Frontend (apps/web): bun
 
@@ -303,7 +331,8 @@ yazmaz. **Soru üretimi bu modda çalışmaz** (0 soru döner) — gerçek anaht
 | `createdb: command not found` | postgresql@16 keg-only — PATH satırını uygulayın (§1) |
 | Migration'da `extension "vector" is not available` | pgvector yanlış `pg_config` ile derlendi; §1'deki derlemeyi 16'nın `pg_config`'iyle tekrarlayın |
 | API açılışta `SUPABASE_JWT_SECRET tanımlı olmalı ya da DEV_AUTH_ENABLED açılmalı` | `.env` kopyalanmamış ya da `DEV_AUTH_ENABLED` kapalı |
-| `password authentication failed for user "dou_app"` | `supabase/local_dev_setup.sql` çalıştırılmamış |
+| `password authentication failed for user "dou_api_runtime"` | `supabase/local_dev_setup.sql` çalıştırılmamış veya `.env` eski `dou_app` DSN'sinde kalmış |
+| `/health/ready` → `database_role: invalid` | Bağlantının `session_user` değeri `dou_api_runtime` değil; aynı DSN/pooler yolunda `SELECT session_user, current_user` ile doğrulayın. `SET ROLE` yeterli değildir |
 | `pytest`'te `psql` bulunamıyor / bağlanamıyor | `PG_BIN`'i kendi kurulumunuza göre ayarlayın; Postgres servisi ayakta olmalı |
 | Compose ile yerel Postgres aynı anda | İkisi de 5432'yi dinler — birini durdurun (`brew services stop postgresql@16` veya `docker compose down`) |
 | **Her soruya "materyalde dayanak bulamadım" cevabı** | Büyük olasılıkla `EMBEDDING_PROVIDER=hashing` — §6.1. Ya da materyal `Hazır` değil |
@@ -332,17 +361,22 @@ için `seed_demo.sql`'i konteyner veritabanına host'tan ayrıca uygulayın:
 psql "postgresql://postgres:postgres@localhost:5432/dou_synapse" -f supabase/seed_demo.sql
 ```
 
-**Bu yığının üç sınırı vardır ve üçü de bilinçli olarak yazılıyor:**
+Compose veritabanı ilk açılışta migration'ların ardından
+`9999_local_dev_setup.sql` dosyasını çalıştırır. API `dou_api_runtime`, worker
+`dou_worker` ile bağlanır; bu nedenle RLS ve runtime identity gate'i bu yığında
+devrededir. Var olan `db_data` volume'u eski şemadaysa init dosyaları yeniden
+koşmaz; önce veriyi bilinçli taşıyın veya yalnız vazgeçilebilir yerel volume'u
+yeniden oluşturun.
 
-1. **RLS bu yığında DEVREDE DEĞİLDİR.** `api` servisi veritabanına `postgres`
-   (superuser) rolüyle bağlanır; superuser, tablolardaki `FORCE ROW LEVEL SECURITY`
-   işaretine rağmen politikaları atlar. Yerel kurulumda (§2-3) API `dou_app` rolüyle
-   bağlanır ve RLS gerçekten uygulanır. **İzolasyon kanıtı Compose yığınında alınamaz;**
-   `supabase/tests/rls_isolation.sql` yerel kurulumda ya da CI'da koşturulmalıdır.
-2. **LLM üretimi yapamaz** (dil modeli harici bir API'dedir). Çevrimdışı demoda cevaplar
+**Bu yığının iki sınırı vardır ve ikisi de bilinçli olarak yazılıyor:**
+
+1. **Ağsızken LLM üretimi yapamaz** (dil modeli harici bir API'dedir). Çevrimdışı demoda cevaplar
    `answer_cache` üzerinden servis edilir; önbellek yalnız `qa` modunda ve **birebir
    metin eşleşmesiyle** çalışır. Soru üretimi bu yığında hiç çalışmaz.
-3. **Embedding modeli imaja gömülü değildir.** İlk kullanımda indirilmeye çalışılır;
-   gerçekten ağsız bir kurulumda model önceden konteynerde bulunmalıdır.
+2. **Yerel dev-auth gerçek kimlik sağlayıcısı değildir.** `DEV_AUTH_ENABLED=true`
+   olduğundan sabit demo UUID'leri kullanılabilir; bu ayarla üretim ortamı zaten
+   uygulama doğrulamasında açılmaz.
 
-Üçü de kayıt altındadır: [ARCHITECTURE.md §10](../../ARCHITECTURE.md#10-uygulanmayanlar--tasarlandı-kodda-yok).
+Embedding modeli Docker build'inde `/opt/models` içine alınır ve runtime
+`HF_HUB_OFFLINE=1` ile başlar. Bunun gerçek ağsız kanıtı, imaj build'i ve
+`docker run --network none` kontrolü koşulmadan var sayılmaz.

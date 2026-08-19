@@ -23,7 +23,8 @@ Guvenlik siniri:
 * Betik var olan bir veritabanini silmez; ad doluysa baslamadan durur.
 * Cleanup yalniz kendi yarattigi exact DB, process group ve mkdtemp dizinidir.
 * Paylasilan PostgreSQL rollerinin parola/login niteliklerini degistirmez; test
-  oturumlari baglanti secenegiyle mevcut ``dou_app``/``dou_worker`` rollerine gecer.
+  API oturumu gerçek ``dou_api_runtime`` LOGIN'iyle, worker oturumu ise bağlantı
+  seçeneğiyle mevcut ``dou_worker`` rolüne geçer.
 
 Rapor sentetik kimlikler ve agregalar disinda prompt, cevap, kaynak metni,
 e-posta, token, header veya reservation satiri tasimaz. Fake/hash sonucu gercek
@@ -189,8 +190,8 @@ class TemporaryDatabase:
     @property
     def app_dsn(self) -> str:
         return (
-            f"postgresql+psycopg://localhost/{self.name}"
-            "?application_name=dou_t408_app&options=-crole%3Ddou_app"
+            "postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@"
+            f"localhost/{self.name}?application_name=dou_t408_app"
         )
 
     @property
@@ -217,19 +218,35 @@ class TemporaryDatabase:
         migrations = sorted((REPO_ROOT / "supabase" / "migrations").glob("*.sql"))
         for migration in migrations:
             self._psql(self.name, "-f", str(migration))
+        self._psql(
+            self.name,
+            "-c",
+            "ALTER ROLE dou_api_runtime LOGIN PASSWORD 'dou_api_runtime_local'",
+        )
+        self._psql(
+            self.name,
+            "-c",
+            f'GRANT CONNECT ON DATABASE "{self.name}" TO dou_api_runtime',
+        )
         self.verify_runtime_roles()
         return [path.name for path in migrations]
 
     def verify_runtime_roles(self) -> None:
-        for sqlalchemy_dsn, expected_role in (
-            (self.app_dsn, "dou_app"),
-            (self.worker_dsn, "dou_worker"),
+        for sqlalchemy_dsn, expected_current, expected_session in (
+            (self.app_dsn, "dou_api_runtime", "dou_api_runtime"),
+            (self.worker_dsn, "dou_worker", None),
         ):
             dsn = sqlalchemy_dsn.replace("postgresql+psycopg://", "postgresql://", 1)
             with psycopg.connect(dsn) as conn:
                 row = conn.execute("SELECT current_user, session_user").fetchone()
-            if row is None or row[0] != expected_role:
-                raise RuntimeError(f"T408 oturumu {expected_role} rolune gecemedi: {row}")
+            session_matches = expected_session is None or (
+                row is not None and row[1] == expected_session
+            )
+            if row is None or row[0] != expected_current or not session_matches:
+                raise RuntimeError(
+                    "T408 oturumu beklenen current/session rollerine gecemedi: "
+                    f"expected=({expected_current},{expected_session}), actual={row}"
+                )
 
     def drop(self) -> None:
         if not self.created:

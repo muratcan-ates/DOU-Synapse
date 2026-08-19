@@ -125,8 +125,8 @@ async def seed_personal_rows(
         await conn.execute(
             text(
                 "INSERT INTO exam_sessions "
-                "(id, course_id, user_id, mode, finished_at, score, question_ids) "
-                "VALUES (:id, :course_id, :user_id, 'practice', now(), 85, :question_ids)"
+                "(id, course_id, user_id, mode, question_ids) "
+                "VALUES (:id, :course_id, :user_id, 'practice', :question_ids)"
             ),
             {
                 "id": exam_id,
@@ -150,6 +150,10 @@ async def seed_personal_rows(
                 "given": f"{label} cevabı",
                 "feedback": json.dumps({"score": 85, "eksik_noktalar": []}),
             },
+        )
+        await conn.execute(
+            text("UPDATE exam_sessions SET finished_at = now(), score = 85 WHERE id = :id"),
+            {"id": exam_id},
         )
         await conn.execute(
             text(
@@ -373,6 +377,110 @@ async def _seed_export_exam(
         await connection.execute(statement, parameters)
 
 
+async def _seed_released_blueprint_export_exam(
+    admin_engine: AsyncEngine,
+    fixture: ExamFixture,
+) -> tuple[UUID, UUID, UUID]:
+    """question_ids=NULL olan, güvenli yayın zamanı geçmiş resmî oturum kurar."""
+
+    outcome_id = uuid4()
+    question_id = uuid4()
+    blueprint_id = uuid4()
+    version_id = uuid4()
+    session_id = uuid4()
+    async with admin_engine.begin() as connection:
+        await connection.execute(
+            text(
+                "INSERT INTO learning_outcomes "
+                "(id,course_id,code,description,topic_id,created_by) VALUES "
+                "(:id,:course_id,'KVKK-LO','KVKK resmî sınav çıktısı',:topic_id,:teacher)"
+            ),
+            {
+                "id": outcome_id,
+                "course_id": UUID(fixture.course_id),
+                "topic_id": fixture.topic_id,
+                "teacher": fixture.instructor_id,
+            },
+        )
+        await connection.execute(
+            text(
+                "INSERT INTO questions "
+                "(id,course_id,topic_id,type,payload,source_chunk_id,status,purpose,"
+                "learning_outcome_id,difficulty,created_by,reviewed_by,reviewed_at) "
+                "SELECT :id,course_id,topic_id,type,payload,source_chunk_id,'approved',"
+                "'assessment',:outcome_id,'easy',:teacher,:teacher,now() "
+                "FROM questions WHERE id=:source_question_id"
+            ),
+            {
+                "id": question_id,
+                "outcome_id": outcome_id,
+                "teacher": fixture.instructor_id,
+                "source_question_id": fixture.question_ids[0],
+            },
+        )
+        await connection.execute(
+            text(
+                "INSERT INTO exam_blueprints "
+                "(id,course_id,title,duration_minutes,max_attempts,opens_at,closes_at,created_by) "
+                "VALUES (:id,:course_id,'KVKK yayımlanmış sınav',30,1,"
+                "now()-interval '4 hours',now()-interval '2 hours',:teacher)"
+            ),
+            {
+                "id": blueprint_id,
+                "course_id": UUID(fixture.course_id),
+                "teacher": fixture.instructor_id,
+            },
+        )
+        await connection.execute(
+            text(
+                "INSERT INTO exam_versions (id,course_id,blueprint_id,version_no) "
+                "VALUES (:id,:course_id,:blueprint_id,1)"
+            ),
+            {
+                "id": version_id,
+                "course_id": UUID(fixture.course_id),
+                "blueprint_id": blueprint_id,
+            },
+        )
+        await connection.execute(
+            text(
+                "INSERT INTO exam_items "
+                "(course_id,exam_version_id,position,question_id,points) "
+                "VALUES (:course_id,:version_id,1,:question_id,100)"
+            ),
+            {
+                "course_id": UUID(fixture.course_id),
+                "version_id": version_id,
+                "question_id": question_id,
+            },
+        )
+        await connection.execute(
+            text(
+                "UPDATE exam_versions SET status='published',published_at=now(),"
+                "published_by=:teacher,blueprint_snapshot='[]'::jsonb WHERE id=:id"
+            ),
+            {"id": version_id, "teacher": fixture.instructor_id},
+        )
+        await connection.execute(
+            text(
+                "INSERT INTO exam_sessions "
+                "(id,course_id,user_id,mode,started_at,expires_at,finished_at,question_ids,"
+                "exam_version_id,exam_blueprint_id,attempt_no,feedback_available_at) VALUES "
+                "(:id,:course_id,:student,'exam',now()-interval '3 hours',"
+                "now()-interval '150 minutes',now()-interval '150 minutes',NULL,"
+                ":version_id,:blueprint_id,1,now()-interval '90 minutes')"
+            ),
+            {
+                "id": session_id,
+                "course_id": UUID(fixture.course_id),
+                "student": fixture.student_id,
+                "version_id": version_id,
+                "blueprint_id": blueprint_id,
+            },
+        )
+    return session_id, version_id, blueprint_id
+
+
 @pytest.mark.parametrize(
     ("mode", "expires_minutes", "expected_status"),
     [
@@ -402,6 +510,27 @@ async def test_export_active_exam_haricinde_kvkk_hakkini_geciktirmez(
     assert response.status_code == expected_status, response.text
     if expected_status == 423:
         assert response.json()["error"]["code"] == "exam_export_locked"
+
+
+async def test_export_yayinlanmis_blueprint_oturumunu_null_kagitla_serilestirir(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+) -> None:
+    fixture = await build_course(client, users, admin_engine)
+    session_id, version_id, blueprint_id = await _seed_released_blueprint_export_exam(
+        admin_engine, fixture
+    )
+
+    response = await client.get("/me/export", headers=fixture.student)
+
+    assert response.status_code == 200, response.text
+    exported = next(row for row in response.json()["exam_sessions"] if row["id"] == str(session_id))
+    assert exported["question_ids"] is None
+    assert exported["exam_version_id"] == str(version_id)
+    assert exported["exam_blueprint_id"] == str(blueprint_id)
+    assert exported["attempt_no"] == 1
+    assert exported["feedback_available_at"] is not None
 
 
 @pytest.mark.parametrize("membership_change", ["revoke", "delete"])

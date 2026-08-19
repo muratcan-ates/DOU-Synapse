@@ -32,6 +32,19 @@ class QuestionStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class QuestionPurpose(StrEnum):
+    """Sorunun görünür kullanım sınırı.
+
+    ``practice`` öğrenci prova havuzunda kullanılabilir; ``assessment`` yalnız
+    öğrencinin kendi dondurulmuş blueprint kâğıdı üzerinden okunabilir. İki
+    değerin birleşimi bilerek yoktur: aynı soruyu iki havuza koymak resmî soru
+    gizliliğini yeniden practice yoluna bağlardı.
+    """
+
+    PRACTICE = "practice"
+    ASSESSMENT = "assessment"
+
+
 class ExamMode(StrEnum):
     PRACTICE = "practice"
     EXAM = "exam"
@@ -93,6 +106,9 @@ class Question(Base):
     source_chunk_id: Mapped[uuid_fk] = mapped_column(FK("chunks.id", ondelete="RESTRICT"))
     status: Mapped[QuestionStatus] = mapped_column(
         pg_enum(QuestionStatus, "question_status"), default=QuestionStatus.DRAFT
+    )
+    purpose: Mapped[QuestionPurpose] = mapped_column(
+        pg_enum(QuestionPurpose, "question_purpose"), default=QuestionPurpose.PRACTICE
     )
     created_by: Mapped[UUID | None] = mapped_column(
         PgUUID(as_uuid=True), FK("profiles.id", ondelete="SET NULL")
@@ -239,6 +255,9 @@ class ExamSession(Base):
         PgUUID(as_uuid=True), FK("exam_blueprints.id", ondelete="RESTRICT")
     )
     attempt_no: Mapped[int | None] = mapped_column(SmallInteger)
+    # Blueprint sonucu bu andan önce açılmaz. Yeni blueprint oturumunda başlangıçta
+    # `closes_at + duration_minutes` olarak dondurulur; practice/legacy akışta NULL.
+    feedback_available_at: Mapped[ts_optional]
 
 
 class Answer(Base):

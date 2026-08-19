@@ -38,11 +38,13 @@ from app.models.assessment import (
     BlueprintCell,
     ExamBlueprint,
     ExamItem,
+    ExamSession,
     ExamVersion,
     ExamVersionStatus,
     LearningOutcome,
     Question,
     QuestionDifficulty,
+    QuestionPurpose,
     QuestionStatus,
     QuestionType,
     Topic,
@@ -82,18 +84,41 @@ router = APIRouter(prefix="/courses/{course_id}", tags=["blueprints"])
 
 
 async def _load_blueprint(
-    session: AsyncSession, blueprint_id: UUID, context: CourseContext
+    session: AsyncSession,
+    blueprint_id: UUID,
+    context: CourseContext,
+    *,
+    for_update: bool = False,
 ) -> ExamBlueprint:
     """Blueprint'i yükler. Başka dersin blueprint'i, varlığı sızdırılmadan 404 döner."""
+    if for_update:
+        blueprint = await session.scalar(
+            select(ExamBlueprint)
+            .where(
+                ExamBlueprint.id == blueprint_id,
+                ExamBlueprint.course_id == context.course_id,
+            )
+            .with_for_update()
+        )
+        if blueprint is None:
+            raise NotFoundError("Sınav blueprint'i bulunamadı.")
+        return blueprint
     return await load_owned(
         session, ExamBlueprint, blueprint_id, context, message="Sınav blueprint'i bulunamadı."
     )
 
 
 async def _load_version(
-    session: AsyncSession, version_id: UUID, blueprint: ExamBlueprint
+    session: AsyncSession,
+    version_id: UUID,
+    blueprint: ExamBlueprint,
+    *,
+    for_update: bool = False,
 ) -> ExamVersion:
-    version = await session.get(ExamVersion, version_id)
+    query = select(ExamVersion).where(ExamVersion.id == version_id)
+    if for_update:
+        query = query.with_for_update()
+    version = await session.scalar(query)
     if version is None or version.blueprint_id != blueprint.id:
         raise NotFoundError("Sınav sürümü bulunamadı.")
     return version
@@ -341,7 +366,27 @@ async def update_blueprint(
     v1 yayındayken dağılımı düzeltmek isteyen öğretmenin önce sınavı yayından
     kaldırması gerekirdi.
     """
-    blueprint = await _load_blueprint(session, blueprint_id, context)
+    blueprint = await _load_blueprint(session, blueprint_id, context, for_update=True)
+
+    schedule_fields = {"duration_minutes", "max_attempts", "opens_at", "closes_at"}
+    fields_set = payload.model_fields_set
+    schedule_changed = any(
+        field in fields_set and getattr(payload, field) != getattr(blueprint, field)
+        for field in schedule_fields
+    )
+    if schedule_changed:
+        has_session = await session.scalar(
+            select(
+                select(ExamSession.id).where(ExamSession.exam_blueprint_id == blueprint.id).exists()
+            )
+        )
+        if has_session:
+            raise ConflictError(
+                "İlk öğrenci oturumu başladıktan sonra sınav süresi, deneme hakkı ve "
+                "yayın penceresi değiştirilemez. Farklı bir takvim için yeni bir "
+                "blueprint oluşturun.",
+                code="blueprint_schedule_immutable",
+            )
 
     for field in ("title", "description", "duration_minutes", "max_attempts"):
         value = getattr(payload, field)
@@ -349,7 +394,6 @@ async def update_blueprint(
             setattr(blueprint, field, value.strip() if isinstance(value, str) else value)
     # Pencere alanları None ile TEMİZLENEBİLMELİ, bu yüzden ayrı ele alınıyor:
     # "gönderilmedi" ile "sınırı kaldır" aynı şey değil.
-    fields_set = payload.model_fields_set
     if "opens_at" in fields_set:
         blueprint.opens_at = payload.opens_at
     if "closes_at" in fields_set:
@@ -487,8 +531,8 @@ async def set_version_items(
     kopyalanır: puanı kâğıtla birlikte görmek, yayın kapısına gelmeden önce
     toplamın tutup tutmadığını gösterir.
     """
-    blueprint = await _load_blueprint(session, blueprint_id, context)
-    version = await _load_version(session, version_id, blueprint)
+    blueprint = await _load_blueprint(session, blueprint_id, context, for_update=True)
+    version = await _load_version(session, version_id, blueprint, for_update=True)
 
     if version.status is not ExamVersionStatus.DRAFT:
         raise ConflictError(
@@ -515,6 +559,12 @@ async def set_version_items(
             raise ConflictError(
                 "Onaylanmamış bir soru sınava konulamaz. Önce soruyu havuzda onaylayın."
             )
+        if question.purpose is not QuestionPurpose.ASSESSMENT:
+            raise ConflictError(
+                "Prova amacıyla üretilmiş bir soru resmî sınava konulamaz. "
+                "Sınav için assessment amaçlı yeni bir soru üretin.",
+                code="question_not_assessment",
+            )
 
     cells = await _cells_of(session, blueprint.id)
     points_of: dict[tuple[UUID, QuestionDifficulty, QuestionType], int] = {
@@ -526,12 +576,20 @@ async def set_version_items(
     for index, item in enumerate(payload, start=1):
         question = questions[item.question_id]
         # Sınıflandırılmamış sorunun hücresi yoktur ve 1 puanla girer; yayın kapısı
-        # onu zaten ayrı bir madde olarak reddedecek (data-model.md §8 madde 7).
+        # onu ayrı bir madde olarak reddeder (data-model.md §8 madde 7). Tam
+        # sınıflandırılmış ama blueprint dışında kalan soru ise sessiz 1 puan
+        # varsayımıyla resmî kâğıda giremez.
         points = 1
         if question.learning_outcome_id is not None and question.difficulty is not None:
-            points = points_of.get(
-                (question.learning_outcome_id, question.difficulty, question.type), 1
-            )
+            key = (question.learning_outcome_id, question.difficulty, question.type)
+            matching_points = points_of.get(key)
+            if matching_points is None:
+                raise ConflictError(
+                    "Soru sınıflandırması bu blueprint'te tanımlı bir hücreye ait değil. "
+                    "Önce uygun hücreyi ekleyin veya farklı bir soru seçin.",
+                    code="question_outside_blueprint",
+                )
+            points = matching_points
         session.add(
             ExamItem(
                 course_id=blueprint.course_id,
@@ -616,8 +674,8 @@ async def publish_version(
     Yürüyen oturumlar ETKİLENMEZ: eski sürümün satırı ve kalemleri yerinde durur,
     `exam_versions_read`'in üçüncü dalı oturum sahibine okumayı sürdürür.
     """
-    blueprint = await _load_blueprint(session, blueprint_id, context)
-    version = await _load_version(session, version_id, blueprint)
+    blueprint = await _load_blueprint(session, blueprint_id, context, for_update=True)
+    version = await _load_version(session, version_id, blueprint, for_update=True)
 
     if version.status is ExamVersionStatus.PUBLISHED:
         raise ConflictError("Bu sürüm zaten yayında.")
@@ -626,7 +684,8 @@ async def publish_version(
             "Yerine yenisi yayınlanmış bir sürüm tekrar yayınlanamaz. Yeni bir sürüm oluşturun."
         )
 
-    report = await readiness_report(session, version)
+    cells = await _cells_of(session, blueprint.id)
+    report = await readiness_report(session, version, cells=cells)
     if not report.ready:
         detay = " ".join(
             [cell.label for cell in report.missing_cells]
@@ -634,7 +693,6 @@ async def publish_version(
         )
         raise ConflictError(f"{report.message} {detay}")
 
-    cells = await _cells_of(session, blueprint.id)
     codes = await outcome_codes_of(session, [cell.learning_outcome_id for cell in cells])
 
     now = await db_now(session)

@@ -91,7 +91,13 @@ class ExportExamSessionOut(_FromRow):
     expires_at: datetime | None
     finished_at: datetime | None
     score: float | None
-    question_ids: list[UUID]
+    # Legacy/practice kâğıdı burada taşınır; resmî blueprint kâğıdının tek kaynağı
+    # exam_version_id + exam_items olduğu için question_ids bilinçli olarak NULL'dır.
+    question_ids: list[UUID] | None
+    exam_version_id: UUID | None
+    exam_blueprint_id: UUID | None
+    attempt_no: int | None
+    feedback_available_at: datetime | None
     answers: list[ExportAnswerOut] = Field(default_factory=list)
 
 

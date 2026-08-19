@@ -114,22 +114,26 @@ async def export_my_data(
     user_id = principal.user_id
     # Export contains prior sourced assistant answers. Serialize this check
     # with exam start so a second tab cannot download those answers while an
-    # exam is active. The right is delayed, never deleted; practice and expired
-    # sessions do not block it.
+    # exam is active. Finished blueprint answers remain protected until their
+    # release timestamp; the right is delayed, never deleted. Practice does not block it.
     await exam_state.acquire_user_assessment_lock(session, user_id=user_id)
     now = await db_now(session)
-    if (
-        await exam_state.any_active_student_exam_session(
-            session,
-            user_id=user_id,
-            now=now,
-            settings=settings,
-        )
-        is not None
-    ):
+    active_exam = await exam_state.any_active_student_exam_session(
+        session,
+        user_id=user_id,
+        now=now,
+        settings=settings,
+    )
+    unreleased_exam = await exam_state.any_unreleased_student_blueprint_session(
+        session,
+        user_id=user_id,
+        now=now,
+    )
+    if active_exam is not None or unreleased_exam is not None:
         raise exam_state.AssessmentExportLockedError(
-            "Aktif sınavın sürerken sohbet cevaplarını içeren veri dışa aktarımı "
-            "geçici olarak kullanılamaz. Sınav bitince tekrar deneyebilirsin."
+            "Aktif sınavın veya henüz sonuçları yayınlanmamış resmî oturumun varken "
+            "cevap içeren veri dışa aktarımı geçici olarak kullanılamaz. Sonuçlar "
+            "açıldığında tekrar deneyebilirsin."
         )
     profile = await session.get(Profile, user_id)
     if profile is None:

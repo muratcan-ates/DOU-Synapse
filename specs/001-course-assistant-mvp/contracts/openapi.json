@@ -1821,7 +1821,7 @@
           "assessment"
         ],
         "summary": "List Questions",
-        "description": "Soru havuzu.\n\nÖğrenci için `status` parametresi **ne gelirse gelsin** `approved`'a sabitlenir;\neğitmen isterse duruma göre süzer. RLS ikinci katman olarak zaten kapatır, ama\nuygulama katmanı da kapatır — iki katmanlı izolasyon tam olarak budur.",
+        "description": "Eğitmenin soru havuzu; öğrenciye toplu extraction yüzeyi açılmaz.",
         "operationId": "list_questions_courses__course_id__questions_get",
         "parameters": [
           {
@@ -1850,6 +1850,22 @@
                 }
               ],
               "title": "Status"
+            }
+          },
+          {
+            "name": "purpose",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/QuestionPurpose"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Purpose"
             }
           },
           {
@@ -1967,6 +1983,72 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QuestionGenerationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/questions/{question_id}/classification": {
+      "patch": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Classify Question",
+        "description": "Taslak soruyu bir öğrenme çıktısı ve zorluk hücresine bağlar.\n\nSoru gövdesi, cevap, kaynak, tip ve purpose bu uçta yoktur. İncelenmiş bir\nsorunun sınıflandırmasını değiştirmek yayınlanmış kâğıt hücresini geriye dönük\noynatacağından hem uygulama hem RLS/trigger katmanında kapalıdır.",
+        "operationId": "classify_question_courses__course_id__questions__question_id__classification_patch",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionClassificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionOut"
                 }
               }
             }
@@ -2431,7 +2513,7 @@
           "exams"
         ],
         "summary": "List Exams",
-        "description": "Kullanıcının bu dersteki sınav oturumları, en yenisi başta.\n\nNeden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —\ntarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam\neden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci\nyeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin\nhafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak\nda sunucunun işi olmalı.\n\nŞerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`\ndiyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.\n\nRLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile\nkontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).\n\nSorular gövdede TAŞINMAZ. Liste \"hangi oturumlarım var\" sorusunu cevaplar;\nsoru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı\nvermek olurdu ve ekranın bu bilgiye ihtiyacı yok.",
+        "description": "Kullanıcının bu dersteki sınav oturumları, en yenisi başta.\n\nNeden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —\ntarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam\neden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci\nyeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin\nhafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak\nda sunucunun işi olmalı.\n\nŞerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`\ndiyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.\n\nRLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile\nkontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).\n\nSorular gövdede TAŞINMAZ. Liste \"hangi oturumlarım var\" sorusunu cevaplar;\nsoru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı\nvermek olurdu ve ekranın bu bilgiye ihtiyacı yok. Öğrencinin aktif exam'i varsa\nyalnız o satır döner: yeniden bağlanma yolu açık kalırken geçmiş puan/practice\nyüzeyi sınav boyunca kapalı kalır.",
         "operationId": "list_exams_courses__course_id__exams_get",
         "parameters": [
           {
@@ -2669,8 +2751,64 @@
           "exams"
         ],
         "summary": "Finish Exam",
-        "description": "Oturumu kapatır, puanı açıklar ve soru bazlı geri bildirimi verir (FR-018).\n\nCevaplanmamış sorular **boş** sayılır: yanlış değildirler ve paydaya girmezler.\nDeğerlendirilememiş cevaplar da paydaya girmez (FR-020) — uydurma puan yerine\naçık bir \"değerlendirilemedi\" sayısı raporlanır.",
+        "description": "Oturumu kapatır; resmî feedback yalnız güvenli yayın anında açılır.",
         "operationId": "finish_exam_courses__course_id__exams__session_id__finish_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamFinishOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/{session_id}/results": {
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Get Exam Results",
+        "description": "Tamamlanmış oturumun idempotent, yayın-politikalı sonuç okuması.",
+        "operationId": "get_exam_results_courses__course_id__exams__session_id__results_get",
         "parameters": [
           {
             "name": "session_id",
@@ -6249,7 +6387,7 @@
           "out_of_scope"
         ],
         "title": "EvidenceLevel",
-        "description": "Kanıt kapısının üç çıktısı."
+        "description": "Kanıt kapısının üç çıktısı.\n\n`retrieval/scope.py`'de doğdu; `schemas/source.py` da tükettiği için\nmodülerizasyon v2'de sözleşme dosyasına taşındı — schemas→modules yönündeki\ntek import buydu. Karar mantığı scope'ta kalır; burada yalnız sözlük var."
       },
       "ExamFinishOut": {
         "properties": {
@@ -6280,6 +6418,23 @@
           "ungraded_count": {
             "type": "integer",
             "title": "Ungraded Count"
+          },
+          "feedback_released": {
+            "type": "boolean",
+            "title": "Feedback Released",
+            "default": false
+          },
+          "feedback_available_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Available At"
           },
           "message": {
             "type": "string",
@@ -6500,6 +6655,23 @@
               }
             ],
             "title": "Score"
+          },
+          "feedback_released": {
+            "type": "boolean",
+            "title": "Feedback Released",
+            "default": false
+          },
+          "feedback_available_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Available At"
           },
           "question_count": {
             "type": "integer",
@@ -7003,12 +7175,66 @@
             "title": "Score"
           },
           "question_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Question Ids"
+          },
+          "exam_version_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Version Id"
+          },
+          "exam_blueprint_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Blueprint Id"
+          },
+          "attempt_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt No"
+          },
+          "feedback_available_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Available At"
           },
           "answers": {
             "items": {
@@ -7027,7 +7253,11 @@
           "expires_at",
           "finished_at",
           "score",
-          "question_ids"
+          "question_ids",
+          "exam_version_id",
+          "exam_blueprint_id",
+          "attempt_no",
+          "feedback_available_at"
         ],
         "title": "ExportExamSessionOut"
       },
@@ -7711,6 +7941,26 @@
         ],
         "title": "PublishOut"
       },
+      "QuestionClassificationRequest": {
+        "properties": {
+          "learning_outcome_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "$ref": "#/components/schemas/QuestionDifficulty"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "learning_outcome_id",
+          "difficulty"
+        ],
+        "title": "QuestionClassificationRequest",
+        "description": "Yalnız taslak sorunun blueprint sınıflandırması; içerik değişikliği değildir."
+      },
       "QuestionDifficulty": {
         "type": "string",
         "enum": [
@@ -7727,9 +7977,35 @@
             "format": "uuid",
             "title": "Topic Id"
           },
+          "learning_outcome_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionDifficulty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "question_type": {
             "$ref": "#/components/schemas/QuestionType",
             "default": "mcq"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/QuestionPurpose",
+            "default": "practice"
           },
           "answer_format": {
             "anyOf": [
@@ -7841,6 +8117,9 @@
           "status": {
             "$ref": "#/components/schemas/QuestionStatus"
           },
+          "purpose": {
+            "$ref": "#/components/schemas/QuestionPurpose"
+          },
           "created_by": {
             "anyOf": [
               {
@@ -7928,12 +8207,22 @@
           "type",
           "payload",
           "status",
+          "purpose",
           "created_by",
           "reviewed_by",
           "reviewed_at",
           "created_at"
         ],
         "title": "QuestionOut"
+      },
+      "QuestionPurpose": {
+        "type": "string",
+        "enum": [
+          "practice",
+          "assessment"
+        ],
+        "title": "QuestionPurpose",
+        "description": "Sorunun görünür kullanım sınırı.\n\n``practice`` öğrenci prova havuzunda kullanılabilir; ``assessment`` yalnız\nöğrencinin kendi dondurulmuş blueprint kâğıdı üzerinden okunabilir. İki\ndeğerin birleşimi bilerek yoktur: aynı soruyu iki havuza koymak resmî soru\ngizliliğini yeniden practice yoluna bağlardı."
       },
       "QuestionStatus": {
         "type": "string",
@@ -8152,7 +8441,7 @@
           "earned"
         ],
         "title": "RubricCriterionScore",
-        "description": "Bir ölçütten alınan puan (FR-117).\n\n`weight` normalize edilmiş ağırlıktır; `earned` = weight × score / 100. Toplam\npuan bu satırlardan TÜRETİLİR, modelden okunmaz — model hem kırılım hem ayrı bir\ntoplam verseydi ikisi çelişebilirdi ve öğrenciye gösterilen tablonun toplamı\ntutmazdı (Anayasa III)."
+        "description": "Bir ölçütten alınan puan (FR-117).\n\n`weight` normalize edilmiş ağırlıktır. Tam sayı `earned` değerleri, kesin\nağırlıklı toplam bir kez yuvarlandıktan sonra en büyük kalan yöntemiyle\nsatırlara dağıtılır. Toplam puan bu satırlardan TÜRETİLİR, modelden okunmaz —\nmodel hem kırılım hem ayrı bir toplam verseydi ikisi çelişebilirdi ve öğrenciye\ngösterilen tablonun toplamı tutmazdı (Anayasa III)."
       },
       "SharedFeedbackOut": {
         "properties": {

@@ -49,15 +49,22 @@ async def _record(user_id: UUID, topic_id: UUID, course_id: UUID, raw_score: int
         )
 
 
-async def _seed_session(engine: AsyncEngine, *, course_id: UUID, user_id: UUID) -> UUID:
+async def _seed_session(
+    engine: AsyncEngine, *, course_id: UUID, user_id: UUID, question_id: UUID
+) -> UUID:
     session_id = uuid4()
     async with engine.begin() as conn:
         await conn.execute(
             text(
                 "INSERT INTO exam_sessions (id, course_id, user_id, mode, question_ids) "
-                "VALUES (:id, :course_id, :user_id, 'practice', '{}'::uuid[])"
+                "VALUES (:id, :course_id, :user_id, 'practice', ARRAY[:question_id]::uuid[])"
             ),
-            {"id": session_id, "course_id": course_id, "user_id": user_id},
+            {
+                "id": session_id,
+                "course_id": course_id,
+                "user_id": user_id,
+                "question_id": question_id,
+            },
         )
     return session_id
 
@@ -350,7 +357,12 @@ class TestClassAnalytics:
             (True, kolay),
             (None, kolay),
         ):
-            session_id = await _seed_session(admin_engine, course_id=course_id, user_id=burak_id)
+            session_id = await _seed_session(
+                admin_engine,
+                course_id=course_id,
+                user_id=burak_id,
+                question_id=question_id,
+            )
             await _seed_answer(
                 admin_engine,
                 session_id=session_id,
@@ -358,7 +370,9 @@ class TestClassAnalytics:
                 course_id=course_id,
                 is_correct=is_correct,
             )
-        session_id = await _seed_session(admin_engine, course_id=course_id, user_id=burak_id)
+        session_id = await _seed_session(
+            admin_engine, course_id=course_id, user_id=burak_id, question_id=zor
+        )
         await _seed_answer(
             admin_engine,
             session_id=session_id,
@@ -420,7 +434,12 @@ class TestClassAnalytics:
         )
 
         for _ in range(2):
-            session_id = await _seed_session(admin_engine, course_id=course_id, user_id=burak_id)
+            session_id = await _seed_session(
+                admin_engine,
+                course_id=course_id,
+                user_id=burak_id,
+                question_id=herkes_dogru,
+            )
             await _seed_answer(
                 admin_engine,
                 session_id=session_id,

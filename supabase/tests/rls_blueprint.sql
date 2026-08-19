@@ -23,7 +23,7 @@
 --
 -- UYARI: `docker-compose.yml` veritabanına `postgres` superuser'ıyla bağlanır, yani
 -- Compose yığınında RLS ATLANIR. Bu dosyayı Compose'da koşturup yeşil görmek hiçbir
--- şey kanıtlamaz — `SET LOCAL ROLE dou_app` satırı olmadan tamamı boşuna yanar.
+-- şey kanıtlamaz — gerçek `dou_api_runtime` session_user olmadan tamamı boşuna yanar.
 
 \set ON_ERROR_STOP on
 \pset format unaligned
@@ -123,19 +123,26 @@ INSERT INTO blueprint_cells (course_id, blueprint_id, learning_outcome_id, diffi
 INSERT INTO exam_versions (id, course_id, blueprint_id, version_no, status,
                            published_at, published_by, blueprint_snapshot) VALUES
     ('eeee0000-0000-0000-0000-00000000000a', 'aaaaaaaa-0000-0000-0000-000000000001',
-     'bbbb0000-0000-0000-0000-00000000000a', 1, 'published', now(),
-     '11111111-1111-1111-1111-111111111111', '[{"question_count":1}]'),
+     'bbbb0000-0000-0000-0000-00000000000a', 1, 'draft', NULL, NULL, NULL),
     ('eeee0000-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-000000000001',
      'bbbb0000-0000-0000-0000-00000000000b', 1, 'draft', NULL, NULL, NULL),
     ('eeee0000-0000-0000-0000-00000000000c', 'aaaaaaaa-0000-0000-0000-000000000001',
-     'bbbb0000-0000-0000-0000-00000000000c', 1, 'published', now(),
-     '11111111-1111-1111-1111-111111111111', '[{"question_count":1}]');
+     'bbbb0000-0000-0000-0000-00000000000c', 1, 'draft', NULL, NULL, NULL);
 
 INSERT INTO exam_items (id, course_id, exam_version_id, position, question_id, points) VALUES
     ('ffff0000-0000-0000-0000-00000000000a', 'aaaaaaaa-0000-0000-0000-000000000001',
      'eeee0000-0000-0000-0000-00000000000a', 1, '99990000-0000-0000-0000-000000000001', 10),
     ('ffff0000-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-000000000001',
      'eeee0000-0000-0000-0000-00000000000b', 1, '99990000-0000-0000-0000-000000000002', 10);
+
+UPDATE exam_versions
+SET status = 'published', published_at = now(),
+    published_by = '11111111-1111-1111-1111-111111111111',
+    blueprint_snapshot = '[{"question_count":1}]'
+WHERE id IN (
+    'eeee0000-0000-0000-0000-00000000000a',
+    'eeee0000-0000-0000-0000-00000000000c'
+);
 
 -- Burak'ın YÜRÜYEN oturumu, kapanmış sınavın sürümüne bağlı: üçüncü OR dalının
 -- pencereden bağımsız çalıştığını göstermenin tek yolu bu.
@@ -152,7 +159,7 @@ INSERT INTO exam_sessions (id, course_id, user_id, mode, expires_at, question_id
 -- dosyanın tamamı hiçbir şey kanıtlamadan yeşil yanardı.
 -- ---------------------------------------------------------------------------
 
-SET LOCAL ROLE dou_app;
+SET LOCAL SESSION AUTHORIZATION dou_api_runtime;
 
 -- ===========================================================================
 -- learning_outcomes
@@ -500,7 +507,7 @@ $$;
 
 -- Yayınlanmış sürüme kalem eklenemez (politikada status='draft').
 DO $$
-DECLARE etkilenen integer;
+DECLARE v_constraint text;
 BEGIN
     INSERT INTO exam_items (course_id, exam_version_id, position, question_id, points)
     VALUES ('aaaaaaaa-0000-0000-0000-000000000001',
@@ -508,6 +515,13 @@ BEGIN
             '99990000-0000-0000-0000-000000000002', 10);
     RAISE NOTICE 'FAIL  exam_items_insert__yayinlanmis_kagida_soru_eklenemez (insert geçti)';
 EXCEPTION
+    WHEN check_violation THEN
+        GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+        IF v_constraint = 'exam_items_version_draft' THEN
+            RAISE NOTICE 'PASS  exam_items_insert__yayinlanmis_kagida_soru_eklenemez';
+        ELSE
+            RAISE NOTICE 'FAIL  exam_items_insert__yayinlanmis_kagida_soru_eklenemez (yanlis constraint: %)', v_constraint;
+        END IF;
     WHEN insufficient_privilege THEN
         RAISE NOTICE 'PASS  exam_items_insert__yayinlanmis_kagida_soru_eklenemez';
     WHEN others THEN

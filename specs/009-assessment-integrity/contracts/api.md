@@ -1,21 +1,47 @@
 # API Sözleşmesi
 
+## Hazırlık kontrolü
+
+`GET /health/ready`, veritabanı erişimine ek olarak gerçek API bağlantı kimliğini
+doğrular. `checks.database_role=ok` yalnız `session_user=dou_api_runtime` olduğunda
+verilir. Yanlış DSN, superuser veya pooler'ın yalnız `SET ROLE` taklidi 503
+`status=degraded` üretir; aday revizyona trafik verilmez.
+
 ## Soru üretimi
 
 `POST /courses/{course_id}/questions/generate`
 
-İstek additive alanı:
+İstek additive alanları:
 
 ```json
 {
   "topic_id": "uuid",
   "question_type": "mcq",
-  "purpose": "practice"
+  "purpose": "assessment",
+  "learning_outcome_id": "uuid",
+  "difficulty": "medium"
 }
 ```
 
 `purpose` verilmezse geriye uyumlu `practice`; response `QuestionOut.purpose` alanını
-her zaman taşır. Student bu uca/list ucuna erişemez.
+her zaman taşır. `learning_outcome_id` ve `difficulty` birlikte verilir veya ikisi de
+boş bırakılır. Student bu uca/list ucuna erişemez.
+
+`PATCH /courses/{course_id}/questions/{question_id}/classification` yalnız taslak
+sorunun sınıflandırmasını değiştirir:
+
+```json
+{
+  "learning_outcome_id": "uuid",
+  "difficulty": "medium"
+}
+```
+
+Başka ders çıktısı 404, açık konu uyuşmazlığı 422, terminal soru 409
+`question_immutable`; tanımsız alan 422'dir.
+
+Sınıflandırılmamış `assessment` taslağını onaylama 409
+`question_classification_required` döndürür.
 
 ## Sürüm kalemleri
 
@@ -66,4 +92,3 @@ Her ikisi `ExamFinishOut` döndürür:
 
 Yayın sonrası aynı GET, weighted `score`, `feedback_released=true` ve çözüm/rubrik/
 source içeren `results` döndürür. Yayın öncesi endpoint bu verileri DB'den yüklemez.
-

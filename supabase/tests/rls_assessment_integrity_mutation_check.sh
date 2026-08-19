@@ -3,9 +3,9 @@
 # 009 assessment-integrity veritabani sinirlarinin KIRMIZI yanabildiginin kaniti.
 #
 # Her kosu yeni bir sablon DB kurar, tum migrasyonlari uygular, bozulmamis referans
-# davranisini ayri bir klonda dogrular ve dort kritik kontrolu birer klonda gevsetir:
-# soru gorunurlugu, terminal soru degismezligi, guvenli feedback zamani ve yayinlanmis
-# surum snapshot'i. Basari, hata veya sinyal durumunda olusturulan butun DB'ler EXIT
+# davranisini ayri bir klonda dogrular; runtime ACL/policy kapilari ile terminal
+# degismezlik ve feedback guard'larini birer klonda gevsetir. Basari, hata veya
+# sinyal durumunda olusturulan butun DB'ler EXIT
 # trap'iyle temizlenir; ortak gelistirme DB'sine baglanilmaz.
 #
 # Kullanim:
@@ -132,18 +132,67 @@ run_mutation 1 \
     || mutation_failures=$((mutation_failures + 1))
 
 run_mutation 2 \
+    "question runtime gate duserse" \
+    "DROP POLICY questions_api_runtime ON public.questions;" \
+    "runtime_policy__gecici_grantle_cevap_anahtari_acilmaz" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 3 \
+    "answer read runtime gate duserse" \
+    "DROP POLICY answers_api_runtime_read ON public.answers;" \
+    "runtime_policy__gecici_grantle_ham_puan_acilmaz" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 4 \
+    "answer/session insert runtime zinciri duserse" \
+    "DROP POLICY answers_api_runtime_insert ON public.answers;
+     DROP POLICY exam_sessions_api_runtime_read ON public.exam_sessions;" \
+    "runtime_policy__gecici_grantle_sahte_puan_yazilamaz" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 5 \
+    "session insert runtime gate duserse" \
+    "DROP POLICY exam_sessions_api_runtime_insert ON public.exam_sessions;" \
+    "runtime_policy__gecici_grantle_resmi_oturum_practice_olamaz" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 6 \
+    "exam version runtime gate duserse" \
+    "DROP POLICY exam_versions_api_runtime_read ON public.exam_versions;" \
+    "runtime_policy__gecici_grantle_blueprint_snapshot_acilmaz" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 7 \
+    "exam item runtime gate duserse" \
+    "DROP POLICY exam_items_api_runtime_read ON public.exam_items;" \
+    "runtime_policy__gecici_grantle_kagit_kalemleri_acilmaz" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 8 \
+    "session read runtime gate duserse" \
+    "DROP POLICY exam_sessions_api_runtime_read ON public.exam_sessions;" \
+    "runtime_policy__gecici_grantle_oturum_satiri_acilmaz" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 9 \
+    "carrier question grant geri verilirse" \
+    "GRANT SELECT ON public.questions TO dou_app;" \
+    "runtime_grants__hassas_yetki_yalniz_api_logininde" \
+    || mutation_failures=$((mutation_failures + 1))
+
+run_mutation 10 \
     "terminal soru guard'i duserse" \
     "DROP TRIGGER questions_assessment_integrity_guard ON public.questions;" \
     "question_trigger__published_kagit_icerigi_degistirilemez" \
     || mutation_failures=$((mutation_failures + 1))
 
-run_mutation 3 \
+run_mutation 11 \
     "feedback zaman guard'i duserse" \
     "DROP TRIGGER exam_sessions_feedback_schedule_guard ON public.exam_sessions;" \
     "feedback_schedule__erken_snapshot_insert_edilemez" \
     || mutation_failures=$((mutation_failures + 1))
 
-run_mutation 4 \
+run_mutation 12 \
     "surum snapshot guard'i duserse" \
     "DROP TRIGGER exam_versions_assessment_integrity_guard ON public.exam_versions;" \
     "exam_version_immutability__published_snapshot_degistirilemez" \
@@ -154,4 +203,4 @@ if ((mutation_failures > 0)); then
     exit 1
 fi
 
-echo "4/4 hedefli mutasyon ilgili iddiayi kirmiziya cevirdi."
+echo "12/12 hedefli mutasyon ilgili iddiayi kirmiziya cevirdi."

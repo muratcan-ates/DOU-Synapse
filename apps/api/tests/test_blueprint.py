@@ -17,7 +17,9 @@ O yüzden yetkiyi doğrudan sınayan testler var.
 
 from __future__ import annotations
 
+import asyncio
 import json
+from datetime import datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -28,6 +30,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from app.api import blueprints as blueprints_api
+from app.api import exams as exams_api
 from app.core.config import get_settings
 from app.core.db import rls_session
 from app.models.assessment import QuestionType
@@ -478,6 +482,196 @@ class TestYayinKapisi:
         assert response.status_code == 409, response.text
         assert "Onaylanmamış" in response.json()["error"]["message"]
 
+    async def test_blueprint_disindaki_soru_set_ve_yayin_kapisinda_reddedilir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Tanımlı hücreler doluyken fazladan bir hücre sessizce yayına giremez."""
+        fixture = await build(client, users, admin_engine, code="GATE 103B")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(client, fixture, cells=[cell(outcome, count=1)])
+        version_id = await make_version(client, fixture, blueprint_id)
+        expected = await make_question(admin_engine, fixture, outcome_id=outcome, difficulty="easy")
+        extra = await make_question(admin_engine, fixture, outcome_id=outcome, difficulty="hard")
+
+        rejected = await set_items(client, fixture, blueprint_id, version_id, [expected, extra])
+        assert rejected.status_code == 409, rejected.text
+        assert rejected.json()["error"]["code"] == "question_outside_blueprint"
+
+        assert (
+            await set_items(client, fixture, blueprint_id, version_id, [expected])
+        ).status_code == 200
+        # 0016 öncesinden kalabilecek veya sahibi tarafından içeri alınmış bir
+        # kalemi readiness bağımsız olarak yine yakalamalıdır.
+        async with admin_engine.begin() as conn:
+            await conn.execute(
+                text(
+                    "INSERT INTO exam_items "
+                    "(course_id, exam_version_id, position, question_id, points) "
+                    "VALUES (:course, :version, 2, :question, 1)"
+                ),
+                {
+                    "course": UUID(fixture.course_id),
+                    "version": version_id,
+                    "question": extra,
+                },
+            )
+
+        readiness = await client.get(
+            f"/courses/{fixture.course_id}/blueprints/{blueprint_id}"
+            f"/versions/{version_id}/readiness",
+            headers=fixture.instructor,
+        )
+        assert readiness.status_code == 200, readiness.text
+        body = readiness.json()
+        assert body["ready"] is False
+        assert body["missing_cells"] == []
+        assert body["unclassified_items"][0]["question_id"] == str(extra)
+        assert body["unclassified_items"][0]["missing_fields"] == ["blueprint_cell"]
+        assert (await publish(client, fixture, blueprint_id, version_id)).status_code == 409
+
+    async def test_hucre_puani_degiserse_kagit_yeniden_kaydedilmeden_yayinlanamaz(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="GATE 103C")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client, fixture, cells=[cell(outcome, count=1, points=10)]
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        question_id = await make_question(
+            admin_engine, fixture, outcome_id=outcome, difficulty="easy"
+        )
+        assert (
+            await set_items(client, fixture, blueprint_id, version_id, [question_id])
+        ).status_code == 200
+
+        changed = await client.post(
+            f"/courses/{fixture.course_id}/blueprints/{blueprint_id}",
+            json={"cells": [cell(outcome, count=1, points=90)]},
+            headers=fixture.instructor,
+        )
+        assert changed.status_code == 200, changed.text
+
+        readiness = await client.get(
+            f"/courses/{fixture.course_id}/blueprints/{blueprint_id}"
+            f"/versions/{version_id}/readiness",
+            headers=fixture.instructor,
+        )
+        body = readiness.json()
+        assert body["ready"] is False
+        assert body["missing_cells"] == []
+        assert body["unclassified_items"][0]["missing_fields"] == ["points"]
+        assert (await publish(client, fixture, blueprint_id, version_id)).status_code == 409
+
+        reset = await set_items(client, fixture, blueprint_id, version_id, [question_id])
+        assert reset.status_code == 200, reset.text
+        assert reset.json()[0]["points"] == 90
+        published = await publish(client, fixture, blueprint_id, version_id)
+        assert published.status_code == 200, published.text
+        assert published.json()["blueprint_snapshot"][0]["points_per_question"] == 90
+
+    async def test_kalem_mutasyonu_ile_yayin_ayni_surum_kilidinde_siralanir(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="GATE 104")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(client, fixture, cells=[cell(outcome, count=1)])
+        version_id = await make_version(client, fixture, blueprint_id)
+        question_id = await make_question(
+            admin_engine, fixture, outcome_id=outcome, difficulty="easy"
+        )
+        assert (
+            await set_items(client, fixture, blueprint_id, version_id, [question_id])
+        ).status_code == 200
+
+        publish_holds_version = asyncio.Event()
+        release_publish = asyncio.Event()
+        original = blueprints_api.readiness_report
+
+        async def paused_readiness(*args: Any, **kwargs: Any) -> Any:
+            publish_holds_version.set()
+            await release_publish.wait()
+            return await original(*args, **kwargs)
+
+        monkeypatch.setattr(blueprints_api, "readiness_report", paused_readiness)
+        publish_task = asyncio.create_task(publish(client, fixture, blueprint_id, version_id))
+        await asyncio.wait_for(publish_holds_version.wait(), timeout=2)
+        mutation_task = asyncio.create_task(
+            set_items(client, fixture, blueprint_id, version_id, [question_id])
+        )
+
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.shield(mutation_task), timeout=0.05)
+
+        release_publish.set()
+        published = await asyncio.wait_for(publish_task, timeout=2)
+        rejected_mutation = await asyncio.wait_for(mutation_task, timeout=2)
+
+        assert published.status_code == 200, published.text
+        assert rejected_mutation.status_code == 409, rejected_mutation.text
+        assert "soru listesi değiştirilemez" in rejected_mutation.json()["error"]["message"]
+
+    async def test_hucre_guncellemesi_yayin_snapshoti_bitene_kadar_bekler(
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="GATE 105")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client, fixture, cells=[cell(outcome, count=1, points=10)]
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        question_id = await make_question(
+            admin_engine, fixture, outcome_id=outcome, difficulty="easy"
+        )
+        assert (
+            await set_items(client, fixture, blueprint_id, version_id, [question_id])
+        ).status_code == 200
+
+        publish_holds_blueprint = asyncio.Event()
+        release_publish = asyncio.Event()
+        original = blueprints_api.readiness_report
+
+        async def paused_readiness(*args: Any, **kwargs: Any) -> Any:
+            publish_holds_blueprint.set()
+            await release_publish.wait()
+            return await original(*args, **kwargs)
+
+        monkeypatch.setattr(blueprints_api, "readiness_report", paused_readiness)
+        publish_task = asyncio.create_task(publish(client, fixture, blueprint_id, version_id))
+        await asyncio.wait_for(publish_holds_blueprint.wait(), timeout=2)
+        update_task = asyncio.create_task(
+            client.post(
+                f"/courses/{fixture.course_id}/blueprints/{blueprint_id}",
+                json={"cells": [cell(outcome, count=1, points=20)]},
+                headers=fixture.instructor,
+            )
+        )
+
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(asyncio.shield(update_task), timeout=0.05)
+
+        release_publish.set()
+        published = await asyncio.wait_for(publish_task, timeout=2)
+        updated = await asyncio.wait_for(update_task, timeout=2)
+
+        assert published.status_code == 200, published.text
+        assert updated.status_code == 200, updated.text
+        assert published.json()["blueprint_snapshot"][0]["points_per_question"] == 10
+        async with admin_engine.begin() as conn:
+            item_points = await conn.scalar(
+                text("SELECT points FROM exam_items WHERE exam_version_id = :version"),
+                {"version": version_id},
+            )
+        assert item_points == 10
+
 
 class TestSurumDegismezligi:
     """FR-115 — yayınlanmış sürüm ve onun dağılım kanıtı donar."""
@@ -879,6 +1073,50 @@ class TestAssessmentIntegrity:
         assert response.status_code == 409, response.text
         assert response.json()["error"]["code"] == "assessment_feedback_schedule_missing"
 
+    async def test_ilk_oturumdan_sonra_takvim_donar_ama_baslik_degisebilir(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        fixture = await build(client, users, admin_engine, code="INT 102B")
+        outcome = await make_outcome(client, fixture, code="CO1")
+        blueprint_id = await make_blueprint(
+            client,
+            fixture,
+            cells=[cell(outcome, count=1)],
+            duration=60,
+            max_attempts=2,
+        )
+        version_id = await make_version(client, fixture, blueprint_id)
+        question_id = await make_question(
+            admin_engine,
+            fixture,
+            outcome_id=outcome,
+            difficulty="easy",
+        )
+        await set_items(client, fixture, blueprint_id, version_id, [question_id])
+        assert (await publish(client, fixture, blueprint_id, version_id)).status_code == 200
+        started = await client.post(
+            f"/courses/{fixture.course_id}/exams",
+            json={"blueprint_id": str(blueprint_id)},
+            headers=fixture.student,
+        )
+        assert started.status_code == 201, started.text
+
+        extension = await client.post(
+            f"/courses/{fixture.course_id}/blueprints/{blueprint_id}",
+            json={"duration_minutes": 90, "closes_at": "2099-02-01T00:00:00Z"},
+            headers=fixture.instructor,
+        )
+        title_only = await client.post(
+            f"/courses/{fixture.course_id}/blueprints/{blueprint_id}",
+            json={"title": "Vize · salon değişti"},
+            headers=fixture.instructor,
+        )
+
+        assert extension.status_code == 409, extension.text
+        assert extension.json()["error"]["code"] == "blueprint_schedule_immutable"
+        assert title_only.status_code == 200, title_only.text
+        assert title_only.json()["title"] == "Vize · salon değişti"
+
     async def test_kill_switch_yalniz_yeni_blueprint_baslangiclarini_kapatir(
         self,
         client: AsyncClient,
@@ -930,7 +1168,11 @@ class TestAssessmentIntegrity:
         assert existing.json()["id"] == started.json()["id"]
 
     async def test_erken_bitis_sonucu_gizler_yayinlaninca_agirlikli_ve_idempotenttir(
-        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+        self,
+        client: AsyncClient,
+        users: UserFactory,
+        admin_engine: AsyncEngine,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         fixture = await build(client, users, admin_engine, code="INT 104")
         outcome = await make_outcome(client, fixture, code="CO1")
@@ -998,14 +1240,12 @@ class TestAssessmentIntegrity:
             assert body["score"] is None
             assert body["results"] == []
 
-        async with admin_engine.begin() as conn:
-            await conn.execute(
-                text(
-                    "UPDATE exam_sessions SET feedback_available_at = now() - interval '1 second' "
-                    "WHERE id = :id"
-                ),
-                {"id": UUID(session_id)},
-            )
+        released_at = datetime.fromisoformat(feedback_at) + timedelta(seconds=1)
+
+        async def after_release(_session: object) -> datetime:
+            return released_at
+
+        monkeypatch.setattr(exams_api, "db_now", after_release)
 
         first = await client.get(
             f"/courses/{fixture.course_id}/exams/{session_id}/results",
@@ -1159,6 +1399,16 @@ class TestRubrikKirilimi:
 
         assert [row.earned for row in kirilim] == [60, 20]
         assert sum(row.earned for row in kirilim) == 80  # modelin dediği 99 değil
+
+    def test_satir_yuvarlamasi_gecme_sinirini_degistirmez(self) -> None:
+        """On ayrı 4,9 puan bağımsız yuvarlanıp hatalı biçimde 50 olmamalı."""
+        kirilim = _rubric_breakdown(
+            self._payload([10] * 10),
+            self._verdict({f"olcut-{i}": 49 for i in range(10)}),
+        )
+
+        assert [row.earned for row in kirilim] == [5] * 9 + [4]
+        assert sum(row.earned for row in kirilim) == 49
 
     def test_modelin_atladigi_olcut_SIFIR_puanla_girer(self) -> None:
         """Fail-closed: atlanan ölçütü paydadan düşürmek puanı şişirirdi."""

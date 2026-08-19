@@ -19,20 +19,26 @@ def test_blueprint_10_90_weights_produce_10_and_90() -> None:
     heavy = uuid4()
     weights = {light: 10, heavy: 90}
 
-    assert score_of(
-        {
-            light: GradingOutcome(graded=True, score=100),
-            heavy: GradingOutcome(graded=True, score=0),
-        },
-        weights,
-    ) == 10.0
-    assert score_of(
-        {
-            light: GradingOutcome(graded=True, score=0),
-            heavy: GradingOutcome(graded=True, score=100),
-        },
-        weights,
-    ) == 90.0
+    assert (
+        score_of(
+            {
+                light: GradingOutcome(graded=True, score=100),
+                heavy: GradingOutcome(graded=True, score=0),
+            },
+            weights,
+        )
+        == 10.0
+    )
+    assert (
+        score_of(
+            {
+                light: GradingOutcome(graded=True, score=0),
+                heavy: GradingOutcome(graded=True, score=100),
+            },
+            weights,
+        )
+        == 90.0
+    )
 
 
 def test_blueprint_answer_order_does_not_change_weight_mapping() -> None:
@@ -54,13 +60,16 @@ def test_ungraded_and_unanswered_questions_are_excluded() -> None:
     ungraded = uuid4()
     unanswered = uuid4()
 
-    assert score_of(
-        {
-            graded: GradingOutcome(graded=True, score=100),
-            ungraded: GradingOutcome(graded=False, score=0),
-        },
-        {graded: 10, ungraded: 90, unanswered: 100},
-    ) == 100.0
+    assert (
+        score_of(
+            {
+                graded: GradingOutcome(graded=True, score=100),
+                ungraded: GradingOutcome(graded=False, score=0),
+            },
+            {graded: 10, ungraded: 90, unanswered: 100},
+        )
+        == 100.0
+    )
 
 
 def test_missing_weight_for_included_answer_fails_closed() -> None:
@@ -86,13 +95,16 @@ def test_legacy_flow_preserves_equal_one_decimal_mean() -> None:
     second = uuid4()
     third = uuid4()
 
-    assert score_of(
-        {
-            first: GradingOutcome(graded=True, score=100),
-            second: GradingOutcome(graded=True, score=0),
-            third: GradingOutcome(graded=True, score=0),
-        }
-    ) == 33.3
+    assert (
+        score_of(
+            {
+                first: GradingOutcome(graded=True, score=100),
+                second: GradingOutcome(graded=True, score=0),
+                third: GradingOutcome(graded=True, score=0),
+            }
+        )
+        == 33.3
+    )
 
 
 def test_no_graded_non_null_answer_has_no_score() -> None:

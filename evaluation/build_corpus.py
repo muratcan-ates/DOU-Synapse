@@ -64,7 +64,7 @@ def prepare_database(database: str, *, recreate: bool, pg_bin: str) -> None:
     _psql(
         database,
         "-c",
-        f'GRANT CONNECT ON DATABASE "{database}" TO dou_app, dou_worker',
+        f'GRANT CONNECT ON DATABASE "{database}" TO dou_api_runtime, dou_worker',
         pg_bin=pg_bin,
     )
 
@@ -282,7 +282,8 @@ def main(argv: list[str] | None = None) -> int:
         prepare_database(args.database, recreate=args.recreate, pg_bin=args.pg_bin)
 
     os.environ["DATABASE_URL"] = (
-        f"postgresql+psycopg://dou_app:dou_app_local@localhost/{args.database}"
+        "postgresql+psycopg://dou_api_runtime:"
+        f"dou_api_runtime_local@localhost/{args.database}"
     )
     os.environ["WORKER_DATABASE_URL"] = (
         f"postgresql+psycopg://dou_worker:dou_worker_local@localhost/{args.database}"

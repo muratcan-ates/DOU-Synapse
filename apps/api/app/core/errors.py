@@ -142,6 +142,13 @@ class CourseAgentDisabledError(AppError):
     code = "course_agent_disabled"
 
 
+class AssessmentBlueprintDisabledError(AppError):
+    """Yeni resmî sınav başlangıçları operatör tarafından durduruldu."""
+
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "assessment_blueprint_disabled"
+
+
 class ConcurrencyLimitError(AppError):
     """Aynı kullanıcının hâlâ süren bir işi var (FR-222).
 

@@ -150,7 +150,46 @@ class TestReadiness:
         assert response.status_code == 200
         body = response.json()
         assert body["status"] == "ok"
+        assert body["checks"]["database_role"] == "ok"
         assert body["checks"]["embedding"] == "disabled"
+
+    async def test_yanlis_veritabani_login_hazirligi_kapatir(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Bağlantı canlı olsa da permission-carrier/superuser DSN kabul edilmez."""
+        from app.api import health as health_api
+
+        class WrongRoleSession:
+            scalar_calls = 0
+
+            async def execute(self, _statement: object) -> None:
+                return None
+
+            async def scalar(self, _statement: object) -> bool | int:
+                self.scalar_calls += 1
+                return False if self.scalar_calls == 1 else 1
+
+            async def __aenter__(self) -> WrongRoleSession:
+                return self
+
+            async def __aexit__(self, *_args: object) -> None:
+                return None
+
+        class WrongRoleFactory:
+            def __call__(self) -> WrongRoleSession:
+                return WrongRoleSession()
+
+        monkeypatch.setattr(health_api, "get_session_factory", lambda: WrongRoleFactory())
+
+        response = await client.get("/health/ready")
+
+        assert response.status_code == 503
+        assert response.json()["checks"] == {
+            "database": "ok",
+            "database_role": "invalid",
+            "pgvector": "ok",
+            "embedding": "disabled",
+        }
 
     async def test_isinirken_hazirlik_dusuk_kalir(
         self, client: AsyncClient, isitma_acik: None

@@ -51,6 +51,7 @@ from app.models.assessment import (
     LearningOutcome,
     Question,
     QuestionDifficulty,
+    QuestionPurpose,
     QuestionStatus,
     QuestionType,
     Topic,
@@ -506,6 +507,7 @@ async def generate_questions(
     retrieval_limit: int = 8,
     learning_outcome: LearningOutcome | None = None,
     difficulty: QuestionDifficulty | None = None,
+    purpose: QuestionPurpose = QuestionPurpose.PRACTICE,
 ) -> GenerationReport:
     """Konu adıyla retrieve edilen chunk'lardan `status=draft` soru üretir.
 
@@ -578,6 +580,7 @@ async def generate_questions(
             payload=payload,
             source_chunk_id=draft.source_chunk_id,
             status=QuestionStatus.DRAFT,
+            purpose=purpose,
             created_by=created_by,
             # FR-113: üretilen taslak, istendiyse hücre ekseniyle birlikte doğar.
             # Verilmezse NULL kalır ve yayın kapısı onu "sınıflandırılmamış" diye

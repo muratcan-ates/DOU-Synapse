@@ -28,6 +28,7 @@ from app.models.assessment import (
     LearningOutcome,
     Question,
     QuestionDifficulty,
+    QuestionPurpose,
     QuestionStatus,
     QuestionType,
 )
@@ -156,34 +157,45 @@ def validate_distribution(
 # ---------------------------------------------------------------------------
 
 
-async def readiness_report(session: AsyncSession, version: ExamVersion) -> ReadinessOut:
+async def readiness_report(
+    session: AsyncSession,
+    version: ExamVersion,
+    *,
+    cells: Sequence[BlueprintCell] | None = None,
+) -> ReadinessOut:
     """Sürümün blueprint'ini karşılayıp karşılamadığını raporlar.
 
     İki liste döner ve **ikisi de** kapıyı kapatır:
 
     - `missing_cells` — istenen adet ile dolan adet tutmayan hücreler.
-    - `unclassified_items` — kalemde olup `learning_outcome_id`'si veya
-      `difficulty`'si NULL olan sorular. Bunlar hiçbir hücreye sayılmaz; ayrı
+    - `unclassified_items` — sınıflandırması eksik, blueprint'te hücresi olmayan
+      veya dondurulan puanı güncel hücre puanıyla uyuşmayan kalemler. Bunlar ayrı
       raporlanmasalardı başka bir hücre eksikmiş gibi görünürlerdi ve öğretmen
-      yanlış hücreye soru eklemeye çalışırdı (data-model.md §8 madde 7).
+      yanlış hücreyi düzeltmeye çalışırdı (data-model.md §8 madde 7).
 
     Yalnız `approved` sorular sayılır: FR-119'un onay kapısı burada da geçerlidir,
     onaysız bir soru kâğıdı dolduramaz.
     """
-    cells = list(
-        (
-            await session.execute(
-                select(BlueprintCell).where(BlueprintCell.blueprint_id == version.blueprint_id)
+    if cells is None:
+        cells = list(
+            (
+                await session.execute(
+                    select(BlueprintCell).where(BlueprintCell.blueprint_id == version.blueprint_id)
+                )
             )
+            .scalars()
+            .all()
         )
-        .scalars()
-        .all()
-    )
+    else:
+        cells = list(cells)
     codes = await outcome_codes_of(session, [cell.learning_outcome_id for cell in cells])
+    cell_by_key = {
+        (cell.learning_outcome_id, cell.difficulty, cell.question_type): cell for cell in cells
+    }
 
     rows = list(
         await session.execute(
-            select(ExamItem.position, Question)
+            select(ExamItem.position, ExamItem.points, Question)
             .join(Question, Question.id == ExamItem.question_id)
             .where(ExamItem.exam_version_id == version.id)
             .order_by(ExamItem.position)
@@ -193,7 +205,7 @@ async def readiness_report(session: AsyncSession, version: ExamVersion) -> Readi
     filled: dict[tuple[UUID, QuestionDifficulty, QuestionType], int] = {}
     unclassified: list[UnclassifiedItem] = []
 
-    for position, question in rows:
+    for position, item_points, question in rows:
         missing_fields = [
             name
             for name, value in (
@@ -220,6 +232,20 @@ async def readiness_report(session: AsyncSession, version: ExamVersion) -> Readi
             )
             continue
 
+        if question.purpose is not QuestionPurpose.ASSESSMENT:
+            unclassified.append(
+                UnclassifiedItem(
+                    question_id=question.id,
+                    position=position,
+                    missing_fields=["purpose"],
+                    label=(
+                        f"{position}. soru prova amaçlı; resmî kâğıda yalnız assessment "
+                        "amaçlı soru konulabilir."
+                    ),
+                )
+            )
+            continue
+
         if question.status is not QuestionStatus.APPROVED:
             # Onaysız soru hücreyi doldurmaz; eksik hücre olarak görünür.
             continue
@@ -227,7 +253,35 @@ async def readiness_report(session: AsyncSession, version: ExamVersion) -> Readi
         assert question.learning_outcome_id is not None
         assert question.difficulty is not None
         key = (question.learning_outcome_id, question.difficulty, question.type)
+        cell = cell_by_key.get(key)
+        if cell is None:
+            unclassified.append(
+                UnclassifiedItem(
+                    question_id=question.id,
+                    position=position,
+                    missing_fields=["blueprint_cell"],
+                    label=(
+                        f"{position}. sorunun öğrenme çıktısı, zorluk ve tür birleşimi "
+                        "blueprint'te tanımlı bir hücreye ait değil."
+                    ),
+                )
+            )
+            continue
+
         filled[key] = filled.get(key, 0) + 1
+        if item_points != cell.points_per_question:
+            unclassified.append(
+                UnclassifiedItem(
+                    question_id=question.id,
+                    position=position,
+                    missing_fields=["points"],
+                    label=(
+                        f"{position}. sorunun dondurulan puanı {item_points}; "
+                        f"blueprint hücresi {cell.points_per_question} puan istiyor. "
+                        "Kâğıdın soru listesini yeniden kaydedin."
+                    ),
+                )
+            )
 
     missing: list[MissingCell] = []
     for cell in cells:
@@ -270,7 +324,7 @@ def _readiness_message(
     if missing:
         parts.append(f"{len(missing)} hücre blueprint'e uymuyor.")
     if unclassified:
-        parts.append(f"{len(unclassified)} soru sınıflandırılmamış ve hiçbir hücreye sayılmıyor.")
+        parts.append(f"{len(unclassified)} soru sınıflandırma, hücre veya puan bakımından uyumsuz.")
     parts.append("Sınav bu hâliyle yayınlanamaz.")
     return " ".join(parts)
 

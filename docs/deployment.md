@@ -4,7 +4,7 @@ DOU-Synapse'ın kurulumunun tek doğru anlatımı. Değerler burada YOKTUR — y
 değişken adları ve ne işe yaradıkları. Gerçek değerler sağlayıcıların gizli
 değer kasalarında durur ve depoya asla girmez.
 
-> **Durum, 9 Ağustos 2026.** Bu belgedeki bulut adımları **KOŞULMADI**: gerçek
+> **Durum, 20 Ağustos 2026.** Bu belgedeki bulut adımları **KOŞULMADI**: gerçek
 > Azure/Vercel/Supabase erişimi olmadan yazıldılar (T050 hâlâ açık). Yerelde
 > ölçülmüş ve koşulmuş olanlar §7'de ayrıca işaretli. Bir adımı ilk kez koşan
 > kişi, buradaki anlatımla gerçek arasında fark görürse belgeyi düzeltsin —
@@ -39,7 +39,7 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 | Değişken | Ne işe yarar |
 |---|---|
 | `ENVIRONMENT` | `production` — bu değer `DEV_AUTH_ENABLED` ve `LLM_FAKE_PROVIDER`'ı kilitler |
-| `DATABASE_URL` | API bağlantısı. **`dou_app` rolüyle**: sahip değildir, `BYPASSRLS` taşımaz, dolayısıyla RLS gerçekten uygulanır |
+| `DATABASE_URL` | API bağlantısı. Gerçek LOGIN kimliği **`dou_api_runtime`** olmalıdır; rol sahip değildir ve `BYPASSRLS` taşımaz. `dou_app` yalnız NOLOGIN yetki taşıyıcısıdır |
 | `WORKER_DATABASE_URL` | Worker bağlantısı. `dou_worker` rolü RLS'i atlar; `chunks` tablosuna yalnız o yazabilir |
 | `SUPABASE_JWT_SECRET` | Supabase JWT'lerini doğrular. Yoksa ve dev-auth da kapalıysa uygulama **başlamaz** |
 | `SUPABASE_JWT_ISSUER` | Beklenen `iss` claim'i — Supabase proje URL'sinin `/auth/v1` eki. **Boş bırakılırsa issuer doğrulanmaz** ve başka bir Supabase projesinin token'ı da kabul edilir. İmza doğrulaması etkilenmez; kaybedilen katman issuer sabitlemesidir. Üretimde doldurun |
@@ -54,6 +54,7 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 | Değişken | Ne işe yarar |
 |---|---|
 | `WORKER_DRAIN_URL` | Worker'ın drain ucunun tam adresi. **Tanımlıysa** tetik HTTP'ye döner; tanımsızsa süreç içinde `drain()` koşar |
+| `ASSESSMENT_BLUEPRINT_ENABLED` | Varsayılan `false`: resmî blueprint başlangıçlarını fail-closed kapatır. Yalnız aynı candidate için onaylı rollout ortamında `true` yapılır; mevcut oturum devam yolları bu kill switch'ten etkilenmez |
 | `CHAT_RATE_LIMIT_REQUESTS`, `CHAT_RATE_LIMIT_WINDOW_SECONDS` | Kullanıcı başına sohbet sınırı. Sayaç **süreç içidir**: birden fazla replikada sınır replika başına uygulanır |
 
 > **Lidere:** `WORKER_DRAIN_URL` şu an `Settings` alanı DEĞİL, doğrudan ortamdan
@@ -85,9 +86,86 @@ done
 | `0004` | Ölçme ve analitik |
 | `0005` | Ek politikalar |
 | `0006` / `0007` | R4 / R3'e ayrıldı, gerekirse |
+| `0016` | Assessment integrity + `dou_api_runtime` bağlantı kimliği kesimi |
 
 **`main`'e girmiş bir migration yerinde değiştirilmez.** Yeni numara açılır.
 Bir dağıtımda migration'ları uygulamadan önce §6'daki yedeği alın.
+
+### `0016` çalışma zamanı kimliği kesimi
+
+`0016_assessment_integrity.sql`, hassas assessment tablolarını gerçek bağlantı
+kimliğine bağlar. Mevcut bir ortamda sıradan “migration çalıştır, sonra uygulamayı
+yenile” sırası güvenli değildir. Aşağıdaki kesim tek bakım penceresinde ve bu sırayla
+yapılır:
+
+1. `0001..0015` uygulanmışken, altyapı yöneticisi `dou_api_runtime` rolünü
+   `LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS`
+   özellikleriyle ve gizli-değer kasasından gelen benzersiz bir parolayla önceden
+   oluşturur. Rol `dou_app` üyesi olur; üyelik `INHERIT TRUE`, `SET FALSE`,
+   `ADMIN FALSE` olmalıdır. Hedef veritabanına `CONNECT` verilir. Gerçek parola
+   SQL dosyasına, terminal geçmişine veya repoya yazılmaz.
+2. Yeni API secret/revision'ı `DATABASE_URL` içinde `dou_api_runtime` kullanacak
+   şekilde hazırla. Aynı DSN veya aynı yönetilen pooler yolu üzerinden aşağıdaki
+   preflight'i çalıştır:
+
+   ```sql
+   SELECT session_user, current_user;
+   -- ikisi de dou_api_runtime olmalı
+   ```
+
+   Pooler upstream'e başka bir kullanıcıyla bağlanıp yalnız `SET ROLE
+   dou_api_runtime` yapıyorsa bu sözleşmeyi sağlamaz. `0016` güven işaretini
+   `session_user` ile doğrular; transaction/session pooler seçimi bu kimliği
+   korumalıdır.
+3. Eski `dou_app` API replikalarına trafik vermeyi kes. Owner/admin bağlantısında,
+   migration transaction'ından **ayrı ve commit edilmiş** bir kesim uygula:
+
+   ```sql
+   ALTER ROLE dou_app NOLOGIN PASSWORD NULL;
+   ```
+
+   Bu adım yeni carrier oturumlarını keser; mevcut oturumları öldürmez. Eski
+   replikaların pool'larını kapat, eski DSN ile yeni bağlantının authentication
+   hatası verdiğini gözle, sonra rol ve aktif oturum preflight'ini yap:
+
+   ```sql
+   SELECT rolcanlogin FROM pg_roles WHERE rolname = 'dou_app';
+   -- false
+
+   SELECT count(*) FROM pg_stat_activity
+   WHERE usename = 'dou_app' AND pid <> pg_backend_pid();
+   -- 0
+   ```
+
+   `ALTER ROLE` ile `0016` aynı transaction'a konmaz. Aksi hâlde preflight ile
+   commit arasındaki aralıkta eski parola yeni ve kalıcı bir oturum açabilir.
+4. `0016`yı owner/admin bağlantısıyla uygula. Migration `dou_app`ın zaten NOLOGIN
+   ve aktif oturumsuz olduğunu doğrular; carrier'ın parent rolü, runtime'ın üyesi
+   veya `dou_app` dışında parent'ı varsa fail-closed durur. Güvenli rol
+   özelliklerini normalize eder, hassas ACL'leri `dou_api_runtime`a verir ve
+   `app.is_api_runtime()` kontrolünü kurar. Ayrıca `public` tablo CRUD grant'lerini
+   unsafe kayıt sahibi bazında kaldırır. `app` schema sahibi, current migration owner
+   ve mevcut `app` fonksiyon owner'ları için fonksiyonların global hard-wired ve açık
+   schema-local PUBLIC EXECUTE varsayılanlarını kapatır; etkin kalıntı varsa commit
+   etmez. Migration kimliği bu owner'lar adına default privilege değiştirebilmelidir;
+   yetki hatasında doğru admin kimliğini kullan, kontrolü atlama.
+   İlk LOGIN kesimini migration'a bırakmak desteklenen rollout değildir.
+5. Aday API'yi yalnız runtime DSN ile başlat. `/health/ready` 200 dönmeli ve
+   `checks.database_role` değeri `ok` olmalıdır. `invalid`, pooler/DSN kimliğinin
+   yanlış olduğunu gösterir; bu revizyona trafik verilmez.
+
+Temiz ilk kurulumda da aynı rol özellikleri korunur. Migration rolü NOLOGIN olarak
+oluşturduysa uygulama başlamadan önce altyapı onu LOGIN + secret ile hazırlar;
+`dou_app` hiçbir ortamda bağlantı kullanıcısına çevrilmez. `supabase/local_dev_setup.sql`
+yalnız yerel geliştirme içindir ve bu üretim secret adımının yerine geçmez.
+
+Mevcut veride aynı soru hem resmî `exam_item` hem eski kâğıtsız oturumun
+`question_ids` dizisindeyse `0016` soruyu `assessment` yapar; legacy referansları
+değiştirmez. Dar own-session RLS dalı yalnız o mevcut oturum sahibinin devamına izin
+verir. Yeni practice seçimi `purpose=practice` filtresinde kalır; aynı dersteki
+oturumsuz öğrenci resmî satırı göremez. Üretim öncesi kopyada upgrade kanıtının
+kohort sınırı, legacy sahip devamı, oturumsuz öğrenci reddi ve owner'lar arası default
+ACL temizliği PASS sonuçları birlikte aranır.
 
 `supabase/local_dev_setup.sql` ve `supabase/seed_demo.sql` **üretimde
 koşturulmaz**: birincisi yerel roller kurar, ikincisi sahte kullanıcı yaratır.
@@ -107,7 +185,9 @@ Faz 2 brifingindeki daha yüksek tablo tahmini o gün için de yanlıştı.
 ## 4. İlk kurulum
 
 1. **Supabase**: proje aç, `vector` eklentisini etkinleştir, migration'ları
-   sırayla uygula, `dou_app` ve `dou_worker` rollerini oluştur ve yetkilerini ver.
+   sırayla uygula; `dou_api_runtime` ve `dou_worker` LOGIN secret'larını altyapıda
+   oluştur. `dou_app` NOLOGIN yetki taşıyıcısı olarak kalır. Mevcut ortamın `0016`
+   yükseltmesi için §3'teki bakım penceresini uygula.
 2. **İmaj**: `docker build -t <registry>/dou-synapse-api:<sürüm> apps/api`
    Build, modeli indirir ve int8'e quantize eder; **denklik kapısı düşerse build
    de düşer** (§5).
@@ -115,10 +195,12 @@ Faz 2 brifingindeki daha yüksek tablo tahmini o gün için de yanlıştı.
    - `api`: varsayılan `CMD`, 8000 portu, `minReplicas=0`
    - `worker`: `command: ["python", "-m", "app.worker"]`, giriş portu yok
    - `WORKER_DRAIN_URL` API'ye worker'ın iç adresini gösterir
+   - `ASSESSMENT_BLUEPRINT_ENABLED=false` ilk güvenli dağıtımda korunur; staging,
+     insan onayı ve rollout kanıtı olmadan açılmaz
 4. **Vercel**: `apps/web`, `NEXT_PUBLIC_API_URL` API'nin genel adresi.
 5. **Duman testi**:
    ```bash
-   curl -sf "$API_URL/health/ready"     # {"status":"ok", ...}
+   curl -sf "$API_URL/health/ready"     # status=ok ve checks.database_role=ok
    curl -si "$API_URL/internal/drain"   # 404 beklenir: sırsız istek uç yokmuş gibi davranır
    ```
 6. **GitHub Secrets** (keepalive için): `KEEPALIVE_DATABASE_URL`,
@@ -168,7 +250,7 @@ tar -czf backup/storage.tar.gz -C "$STORAGE_PARENT" storage
 # Geri yükleme (TEMİZ bir veritabanına)
 createdb "$TARGET"
 pg_restore -d "$TARGET" --no-owner backup/dou_synapse.dump
-psql -d "$TARGET" -c "GRANT CONNECT ON DATABASE \"$TARGET\" TO dou_app, dou_worker"
+psql -d "$TARGET" -c "GRANT CONNECT ON DATABASE \"$TARGET\" TO dou_api_runtime, dou_worker"
 tar -xzf backup/storage.tar.gz -C "$STORAGE_PARENT"
 ```
 
@@ -254,12 +336,21 @@ uv run python scripts/measure_latency.py cold --base-url "$API_URL" \
 
 ## 9. Geri alma (rollback)
 
-1. **Uygulama**: Container Apps'te bir önceki revizyona geç. İmajlar
-   sürümlenmiş etiketlerle itilir; `latest` üretimde kullanılmaz.
-2. **Migration**: geri alma betiği YOKTUR. Bir migration üretimde soruna yol
+1. **Assessment kill switch**: `ASSESSMENT_BLUEPRINT_ENABLED=false` ile yeni
+   resmî başlangıçları kapat; mevcut oturumların get/answer/finish/results yollarını
+   açık tut. Bu, yarım sınavı veya öğrencinin süresini kaybetmeden blast radius'u
+   durdurur.
+2. **Uygulama**: yalnız post-`0016` sözleşmesiyle önceden doğrulanmış bir önceki
+   revizyona geç veya fix-forward uygula. İmajlar sürümlenmiş etiketlerle itilir;
+   `latest` üretimde kullanılmaz.
+3. **Migration**: geri alma betiği YOKTUR. Bir migration üretimde soruna yol
    açtıysa yol, ileri doğru düzelten yeni bir migration'dır; şema geri sarılmaz.
    Veri kaybı riski varsa §6'daki yedekten geri yüklenir.
-3. **Sıra önemli**: uygulamayı geri almak, uygulanmış bir migration'ı geri
+4. **Veritabanı kimliği değişmez**: `0016` sonrasında eski uygulama revizyonu da
+   `dou_api_runtime` DSN ile çalıştırılır. `dou_app` NOLOGIN/parolasızdır ve hassas
+   ACL'leri geri verilmez. “Rollback” adı altında `dou_app` LOGIN açmak güvenlik
+   sınırını kaldırmaktır.
+5. **Sıra önemli**: uygulamayı geri almak, uygulanmış bir migration'ı geri
    almaz. Yeni sürüm yeni bir sütuna yazıyorduysa eski sürüm o sütunu görmez
    ama veri orada durur.
 
@@ -268,6 +359,14 @@ uv run python scripts/measure_latency.py cold --base-url "$API_URL" \
 Gerçek erişim gerektiren, henüz yapılmamış adımlar:
 
 - [ ] Migration'lar gerçek Supabase'de koşuldu
+- [ ] `dou_api_runtime` secret + üyelik + `session_user` pooler preflight'i gerçek
+      Supabase yolunda doğrulandı; rol grafiği dar; eski `dou_app` havuzu sıfırlandı
+- [ ] `0016` cross-owner tablo default grant'lerini ve ilgili owner'ların global/
+      schema-local PUBLIC function EXECUTE varsayılanlarını temizledi; yeni probe
+      fonksiyon PUBLIC'e kapalı kaldı
+- [ ] Mixed-use legacy sahibi devam ederken aynı dersteki oturumsuz öğrenci resmî
+      soruyu göremedi
+- [ ] `/health/ready` gerçek dağıtımda `checks.database_role=ok` gösterdi
 - [ ] Vercel'de `NEXT_PUBLIC_API_URL` + Supabase anahtarları ayarlandı
 - [ ] ACA'da `DEV_AUTH_ENABLED=false` ile uygulamanın gerçekten açıldığı
       (ve `true` bırakılırsa açılmadığı) gözlendi

@@ -1,10 +1,9 @@
 """Soru ve konu (topic) uçları — T030.
 
-İki katmanlı izolasyonun ölçme ayağı burada görünür hâle gelir: **öğrenci yalnız
-`approved` soruları görür.** Bu kural iki kez zorlanır — uygulama katmanında
-sorguya `status = 'approved'` eklenerek, veritabanı katmanında `questions_read`
-politikasıyla. İki katmanın biri kaldırıldığında diğerinin hâlâ tuttuğu
-`tests/test_assessment.py`'de kanıtlanır.
+İki katmanlı izolasyonun ölçme ayağı burada görünür hâle gelir: soru bankası
+yalnız eğitmene açıktır. Öğrenci onaylı practice sorularını dahi toplu listelemez;
+onlara yalnız sunucunun kurduğu practice kâğıdı üzerinden ulaşır. Resmî assessment
+sorusu ise RLS'te ayrıca öğrencinin kendi dondurulmuş sınav kâğıdına bağlanır.
 
 `payload` istemciye asla ham gitmez: eğitmen tam payload'ı görür (cevap anahtarını
 görerek onaylar — FR-023), öğrenci `public_payload()` beyaz listesinden geçmiş
@@ -36,12 +35,20 @@ from app.core.config import get_settings
 from app.core.errors import ConflictError, NotFoundError, RateLimitError, ValidationError
 from app.core.pagination import paginate
 from app.core.rate_limit import get_concurrency_gate, get_limiter
-from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.models.assessment import (
+    LearningOutcome,
+    Question,
+    QuestionPurpose,
+    QuestionStatus,
+    QuestionType,
+    Topic,
+)
 from app.models.core import Chunk, Document
 from app.modules.assessment import question_gen
 from app.modules.assessment.grading import load_source_refs
 from app.modules.generation.llm import LlmTask
 from app.schemas.assessment import (
+    QuestionClassificationRequest,
     QuestionGenerateRequest,
     QuestionGenerationOut,
     QuestionOut,
@@ -162,12 +169,15 @@ def _build_out(
         type=question.type,
         payload=payload,
         status=question.status,
+        purpose=question.purpose,
         created_by=question.created_by,
         reviewed_by=question.reviewed_by,
         reviewed_at=question.reviewed_at,
         created_at=question.created_at,
         source=source,
         source_stale=source_stale,
+        learning_outcome_id=question.learning_outcome_id,
+        difficulty=question.difficulty,
     )
 
 
@@ -181,25 +191,20 @@ async def _load_question(session: AsyncSession, question_id: UUID, course_id: UU
 
 @router.get("/questions", response_model=PageOut[QuestionOut])
 async def list_questions(
-    context: CourseMemberDep,
+    context: CourseInstructorDep,
     session: SessionDep,
     page: PageDep,
     status_filter: Annotated[QuestionStatus | None, Query(alias="status")] = None,
+    purpose_filter: Annotated[QuestionPurpose | None, Query(alias="purpose")] = None,
     topic_id: Annotated[UUID | None, Query()] = None,
 ) -> PageOut[QuestionOut]:
-    """Soru havuzu.
-
-    Öğrenci için `status` parametresi **ne gelirse gelsin** `approved`'a sabitlenir;
-    eğitmen isterse duruma göre süzer. RLS ikinci katman olarak zaten kapatır, ama
-    uygulama katmanı da kapatır — iki katmanlı izolasyon tam olarak budur.
-    """
+    """Eğitmenin soru havuzu; öğrenciye toplu extraction yüzeyi açılmaz."""
     query = select(Question).where(Question.course_id == context.course_id)
 
-    if context.is_instructor:
-        if status_filter is not None:
-            query = query.where(Question.status == status_filter)
-    else:
-        query = query.where(Question.status == QuestionStatus.APPROVED)
+    if status_filter is not None:
+        query = query.where(Question.status == status_filter)
+    if purpose_filter is not None:
+        query = query.where(Question.purpose == purpose_filter)
 
     if topic_id is not None:
         query = query.where(Question.topic_id == topic_id)
@@ -280,6 +285,17 @@ async def generate_questions(
         if payload.answer_format is not None and payload.question_type is not QuestionType.OPEN:
             raise ValidationError("answer_format yalnızca 'open' tipi sorular için verilebilir.")
 
+        learning_outcome: LearningOutcome | None = None
+        if payload.learning_outcome_id is not None:
+            learning_outcome = await session.get(LearningOutcome, payload.learning_outcome_id)
+            if learning_outcome is None or learning_outcome.course_id != context.course_id:
+                raise NotFoundError("Öğrenme çıktısı bulunamadı.")
+            if learning_outcome.topic_id not in (None, topic.id):
+                raise ValidationError(
+                    "Seçilen öğrenme çıktısı bu konuya bağlı değil. "
+                    "Önce çıktıyı doğru konuya bağlayın."
+                )
+
         report = await question_gen.generate_questions(
             session,
             course_id=context.course_id,
@@ -292,6 +308,9 @@ async def generate_questions(
             answer_format=payload.answer_format,
             example_questions=payload.example_questions,
             retrieval_limit=settings.retrieval_top_k,
+            learning_outcome=learning_outcome,
+            difficulty=payload.difficulty,
+            purpose=payload.purpose,
         )
 
         refs = await load_source_refs(
@@ -330,11 +349,68 @@ async def _review(
     ikisini birden ister; ikisi de burada, tek yerde yazılır.
     """
     question = await _load_question(session, question_id, context.course_id)
+    if question.status is not QuestionStatus.DRAFT:
+        raise ConflictError(
+            "İncelenmiş bir soru değiştirilemez. İçerik veya karar değişikliği için "
+            "yeni bir taslak üretin; yayınlanmış sınav kâğıtları sabit kalır.",
+            code="question_immutable",
+        )
+    if (
+        new_status is QuestionStatus.APPROVED
+        and question.purpose is QuestionPurpose.ASSESSMENT
+        and (question.learning_outcome_id is None or question.difficulty is None)
+    ):
+        raise ConflictError(
+            "Resmî sınav sorusu onaylanmadan önce öğrenme çıktısı ve zorluk "
+            "sınıflandırması tamamlanmalıdır.",
+            code="question_classification_required",
+        )
     question.status = new_status
     question.reviewed_by = context.user_id
     # Zaman damgası veritabanı saatinden: incelemeler farklı sunucu saatleriyle
     # sıralanamaz hâle gelmesin.
     question.reviewed_at = func.now()
+    await session.flush()
+    await session.refresh(question)
+    return await _question_out(session, question, context=context)
+
+
+@router.patch(
+    "/questions/{question_id}/classification",
+    response_model=QuestionOut,
+)
+async def classify_question(
+    question_id: UUID,
+    payload: QuestionClassificationRequest,
+    context: CourseInstructorDep,
+    session: SessionDep,
+) -> QuestionOut:
+    """Taslak soruyu bir öğrenme çıktısı ve zorluk hücresine bağlar.
+
+    Soru gövdesi, cevap, kaynak, tip ve purpose bu uçta yoktur. İncelenmiş bir
+    sorunun sınıflandırmasını değiştirmek yayınlanmış kâğıt hücresini geriye dönük
+    oynatacağından hem uygulama hem RLS/trigger katmanında kapalıdır.
+    """
+
+    question = await _load_question(session, question_id, context.course_id)
+    if question.status is not QuestionStatus.DRAFT:
+        raise ConflictError(
+            "İncelenmiş bir sorunun sınıflandırması değiştirilemez. "
+            "Yeni sınıflandırma için yeni bir taslak üretin.",
+            code="question_immutable",
+        )
+
+    learning_outcome = await session.get(LearningOutcome, payload.learning_outcome_id)
+    if learning_outcome is None or learning_outcome.course_id != context.course_id:
+        raise NotFoundError("Öğrenme çıktısı bulunamadı.")
+    if learning_outcome.topic_id not in (None, question.topic_id):
+        raise ValidationError(
+            "Seçilen öğrenme çıktısı bu sorunun konusuna bağlı değil. "
+            "Önce çıktıyı doğru konuya bağlayın."
+        )
+
+    question.learning_outcome_id = learning_outcome.id
+    question.difficulty = payload.difficulty
     await session.flush()
     await session.refresh(question)
     return await _question_out(session, question, context=context)
