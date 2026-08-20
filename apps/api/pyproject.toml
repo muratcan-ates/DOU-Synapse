@@ -8,13 +8,13 @@ requires-python = ">=3.12,<3.13"
 
 dependencies = [
     "fastapi>=0.115",
-    "uvicorn[standard]>=0.32",
+    "uvicorn[standard]>=0.52.3",
     "pydantic>=2.9",
-    "pydantic-settings>=2.6",
-    "sqlalchemy[asyncio]>=2.0.36",
-    "psycopg[binary,pool]>=3.2",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.0.52",
+    "psycopg[binary,pool]>=3.3.4",
     "pgvector>=0.3.6",
-    "pyjwt[crypto]>=2.9",
+    "pyjwt[crypto]>=2.13.0",
     "python-multipart>=0.0.12",
     "httpx>=0.27",
     # Sürüm ARALIĞI değil ÜST SINIR da var: 0.8.0, e5-large'ı mean pooling ile
@@ -23,14 +23,14 @@ dependencies = [
     # ÇÖKMEZ, sessizce yanlış komşu döndürür. Korpus 0.8.0 ile gömüldü
     # (`chunks.embedding_space` damgası bunu kayda geçiriyor, 0006).
     "fastembed>=0.8,<0.9",
-    "pymupdf>=1.24",
+    "pymupdf>=1.28.2",
     "python-pptx>=1.0",
-    "greenlet>=3.1",
+    "greenlet>=3.5.5",
     "email-validator>=2.2",
     # Faz B: sağlayıcı bağımsız LLM erişimi + Groq→Gemini failover.
     # Paralel geliştirme başlamadan önce eklendi; beş oturum aynı dosyaya
     # ayrı ayrı bağımlılık yazmasın diye.
-    "litellm>=1.55",
+    "litellm>=1.96.2",
 ]
 
 [project.optional-dependencies]
@@ -38,7 +38,7 @@ dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
     "pyyaml>=6",
-    "ruff>=0.7",
+    "ruff>=0.16.3",
     "mypy>=1.13",
 ]
 
