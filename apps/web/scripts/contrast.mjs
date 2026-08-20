@@ -141,6 +141,14 @@ const TEXT_TOKENS = [
 // demektir — `min` üçünün en kötüsünü alır, yani yeni yüzey kapıyı da bağlar.
 const BACKDROPS = ["bg", "surface", "surface-sunken"];
 
+/** Mürekkep rayının kendi metin çiftleri; ray koyu, kanvas açık. */
+const INK_PAIRS = [
+  ["ink-fg", "ink", "ray birincil metni"],
+  ["ink-fg-muted", "ink", "ray ikincil metni"],
+  ["ink-fg", "ink-raised", "ray içinde yükseltilmiş yüzey"],
+  ["brand-on-ink", "ink", "rayda marka aksanı"],
+];
+
 /** Rozet çiftleri: metin kendi soluk zemini üstünde (components/ui.tsx Badge). */
 const BADGE_PAIRS = [
   ["success", "success-bg"],
@@ -188,6 +196,18 @@ function measure(theme, tokens) {
       onSurface: cells[1],
       onSunken: cells[2],
       min: Math.min(...cells),
+      threshold: AA_NORMAL,
+    });
+  }
+  for (const [fg, bg, note] of INK_PAIRS) {
+    if (!tokens[fg] || !tokens[bg]) continue;
+    rows.push({
+      kind: "badge",
+      theme,
+      token: `--${fg} / --${bg}`,
+      value: `${tokens[fg]} / ${tokens[bg]}`,
+      note,
+      min: contrast(tokens[fg], tokens[bg]),
       threshold: AA_NORMAL,
     });
   }

@@ -8,6 +8,7 @@
  */
 
 import Link from "next/link";
+import { BrandLockup } from "@/components/brand-mark";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn, signInWithPassword, type DemoUser } from "@/lib/api";
@@ -76,6 +77,7 @@ export default function LoginPage() {
       <section className="flex flex-col justify-between border-b border-border p-8 lg:border-r lg:border-b-0 lg:p-14">
         <div className="rise border-l-2 border-brand pl-4">
           <div>
+            <BrandLockup tone="canvas" className="mb-2" />
             <p className="text-sm font-medium text-fg">Doğuş Üniversitesi</p>
             <p className="text-xs text-fg-subtle">COME 492 · Bitirme projesi</p>
           </div>

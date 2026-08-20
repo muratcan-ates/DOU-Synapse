@@ -68,6 +68,21 @@
   --elev-1: 0 1px 2px rgb(28 25 23 / 0.05), 0 10px 24px -16px rgb(28 25 23 / 0.24);
   --elev-2: 0 2px 6px rgb(28 25 23 / 0.07), 0 18px 40px -20px rgb(28 25 23 / 0.30);
   --elev-3: 0 28px 64px -24px rgb(28 25 23 / 0.36);
+
+  /* Mürekkep rayı (20 Ağustos, overhaul): ürünün kimliği yalnız kırmızı bir
+     kareydi ve arayüz her yerde beyaz kâğıttı — hangi ürüne baktığınız ekrandan
+     okunmuyordu. Sol gezinme rayı artık mürekkep bloğu; kemik kanvasla kontrast
+     kurar ve kırmızı aksanı taşıyacak koyu bir zemin verir.
+     Bu bir TEMA ÇEVİRME DEĞİLDİR (DESIGN.md tema kilidi): sayfa açık temada
+     kalır, ray bilinçli bir renk bloğudur ve iki temada da mürekkeptir. */
+  --ink: #1a1613;
+  --ink-raised: #241f1a;
+  --ink-fg: #f2efe9;
+  --ink-fg-muted: #a8a099;
+  /* Ham marka kırmızısı mürekkep üstünde 2.95:1 verir (kapı ölçtü) — okunmaz.
+     Ray, koyu temanın çözümünü ödünç alır: kırmızı açılır. Aynı token iki
+     temada da kullanılır, çünkü ray iki temada da mürekkeptir. */
+  --brand-on-ink: #ff6b78;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -108,6 +123,14 @@
     --elev-1: inset 0 1px 0 rgb(245 244 242 / 0.04), 0 1px 2px rgb(0 0 0 / 0.45);
     --elev-2: inset 0 1px 0 rgb(245 244 242 / 0.05), 0 12px 28px -18px rgb(0 0 0 / 0.75);
     --elev-3: inset 0 1px 0 rgb(245 244 242 / 0.06), 0 28px 64px -24px rgb(0 0 0 / 0.85);
+
+    /* Koyu temada ray kanvastan AYRIŞMALI: aynı mürekkep kullanılırsa ray
+       kaybolur. Bir kademe koyu ve kendi kenarlığıyla ayrık. */
+    --ink: #131110;
+    --ink-raised: #1d1a17;
+    --ink-fg: #f5f4f2;
+    --ink-fg-muted: #b0aaa4;
+    --brand-on-ink: #ff6b78;
   }
 }
 
@@ -121,6 +144,11 @@
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
+  --color-ink-fg: var(--ink-fg);
+  --color-ink-fg-muted: var(--ink-fg-muted);
+  --color-brand-on-ink: var(--brand-on-ink);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-success: var(--success);

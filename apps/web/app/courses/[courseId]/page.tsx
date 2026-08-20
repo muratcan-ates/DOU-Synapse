@@ -205,10 +205,7 @@ function ProductRoles({
     >
       <div className="border-b border-border px-5 py-4 md:px-6">
         <div>
-          <p className="font-mono text-xs text-brand">
-            {identity.eyebrow}
-          </p>
-          <h2 id="ai-roles-title" className="mt-1 text-lg font-medium text-fg">
+          <h2 id="ai-roles-title" className="text-lg font-medium text-fg">
             Bu derste çalışma yolları
           </h2>
           <p className="prose-tr mt-1 text-xs text-fg-muted">
@@ -218,9 +215,9 @@ function ProductRoles({
       </div>
 
       <div className="grid md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-        <div className="bg-brand-subtle p-5 md:p-6">
-          <p className="font-mono text-xs text-brand">{primary.name}</p>
-          <h3 className="mt-3 text-xl font-semibold tracking-tight text-fg">
+        <div className="border-l-2 border-brand bg-surface-sunken p-5 md:p-6">
+          <p className="text-xs font-medium text-fg-muted">{primary.name}</p>
+          <h3 className="mt-2 text-xl font-semibold tracking-tight text-fg">
             {primary.task}
           </h3>
           <p className="prose-tr mt-2 text-sm text-fg-muted">{primary.description}</p>
