@@ -96,10 +96,12 @@ psql -d dou_synapse -tAc "select count(*) from information_schema.tables
   where table_schema='public' and table_type='BASE TABLE'"     # 15
 ```
 
-Migration numaralarının atlamalı gitmesi (`0001, 0003, 0004, 0005`) normaldir: `0002`,
-`0006` ve `0007` devam eden işlere ayrılmıştır ve henüz depoda değildir. `0005` tablo
-oluşturmaz, yalnız analitiğin ihtiyaç duyduğu okuma politikasını ekler — bu dosya
-atlanırsa **eğitmen analitiği sessizce boş görünür.**
+Depoda **15 migration dosyası** var (`0001`'den `0015`'e, aralıksız); hepsi tablo <!-- docs-check: migrations.count = 15 -->
+oluşturmaz. `0005` yalnız analitiğin ihtiyaç duyduğu okuma politikasını ekler — bu
+dosya atlanırsa **eğitmen analitiği sessizce boş görünür.** `0006` `chunks`'a
+`embedding_space` sütununu ekler, `0007` silme/yetki politikalarını düzeltir. `0002`
+Supabase Auth köprüsüdür ve **`auth` şeması yoksa kendini atlar** — yerel
+PostgreSQL'de böyledir, hata vermez.
 
 Notlar:
 
@@ -293,8 +295,10 @@ curl -s -X POST "http://localhost:8000/courses/<COURSE_ID>/chat" \
 
 **LLM anahtarı yoksa** sistem deterministik sahte sağlayıcıya düşer (logda
 `llm anahtarı yok — deterministik sahte sağlayıcıya düşülüyor`). Atıflar yine gerçek
-parçalara bağlıdır ve guardrail zinciri aynen koşar; yalnız cevabın düzyazısını model
-yazmaz. **Soru üretimi bu modda çalışmaz** (0 soru döner) — gerçek anahtar ister.
+parçalara bağlıdır, guardrail zinciri aynen koşar ve **soru üretimi de çalışır**
+(ölçüldü, 9 Ağustos: 3 istendi, 3 üretildi, şemadan geçti). Değişen tek şey cevabın
+düzyazısını modelin yazmaması — bu yüzden "uç 200 döndü" ile "üretim çalışıyor" aynı
+şey değildir.
 
 ## 7. Sorun giderme
 
@@ -310,7 +314,7 @@ yazmaz. **Soru üretimi bu modda çalışmaz** (0 soru döner) — gerçek anaht
 | **Cevaplar alakasız parçalara atıf yapıyor** | Sağlayıcı değiştirildi ama korpus yeniden işlenmedi. Materyalleri silip yeniden yükleyin (§6.1) |
 | **Eğitmen analitiği boş / ret oranı hep %0** | `0005_analytics.sql` uygulanmamış olabilir: `psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"` — iki politika görmelisiniz. (Oranın %0 görünmesinin ayrı ve bilinen bir sebebi daha var: [ARCHITECTURE §5](../../ARCHITECTURE.md#5-sorgu-pipelineı-ve-guardrail-zinciri)) |
 | **Tarayıcıdan istek CORS'a takılıyor** | Frontend'i 3000/3100 dışında bir portta çalıştırıyorsunuz; portu `CORS_ORIGINS`'e ekleyin |
-| **"0 soru üretildi"** | Soru üretimi gerçek LLM anahtarı ister; sahte sağlayıcının soru şeması yok |
+| **"0 soru üretildi"** | Konuya bağlı materyal yoksa üretilecek soru da yoktur; önce konuyu kapsayan materyalin `Hazır` olduğundan emin olun |
 | İlk soru çok uzun sürüyor / asılı kalıyor | Model indiriliyor olabilir (2,1 GB). `EMBEDDING_CACHE_DIR`'i kontrol edin (§6.1) |
 | `bunx playwright` "two different versions" hatası | `bunx` ayrı bir kopya indirir; `node_modules/.bin/playwright` kullanın |
 
@@ -341,7 +345,7 @@ psql "postgresql://postgres:postgres@localhost:5432/dou_synapse" -f supabase/see
    `supabase/tests/rls_isolation.sql` yerel kurulumda ya da CI'da koşturulmalıdır.
 2. **LLM üretimi yapamaz** (dil modeli harici bir API'dedir). Çevrimdışı demoda cevaplar
    `answer_cache` üzerinden servis edilir; önbellek yalnız `qa` modunda ve **birebir
-   metin eşleşmesiyle** çalışır. Soru üretimi bu yığında hiç çalışmaz.
+   metin eşleşmesiyle** çalışır.
 3. **Embedding modeli imaja gömülü değildir.** İlk kullanımda indirilmeye çalışılır;
    gerçekten ağsız bir kurulumda model önceden konteynerde bulunmalıdır.
 

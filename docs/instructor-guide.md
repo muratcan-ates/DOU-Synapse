@@ -4,9 +4,9 @@ DOU-Synapse, dersinize yüklediğiniz materyallerden — **ve yalnız onlardan**
 bir asistandır. Bu kılavuz sırasıyla: ders açma, materyal yükleme, öğrenci ekleme, soru
 havuzu ve onay, sınıf analitiği.
 
-> **Belgedeki ekran görüntüleri gerçektir** — 9 Ağustos 2026'da çalışan sistemden alındı,
-> çizim değildir. Ekranların bir kısmı henüz tasarım önizlemesidir ve o bölümlerde açıkça
-> belirtilmiştir.
+> **Belgedeki ekran görüntüleri gerçektir** — çalışan sistemden alındı, çizim değildir.
+> Beş şerit birleştikten sonra (9 Ağustos akşamı) yeniden çekildi; artık **hiçbiri
+> tasarım önizlemesi değil**, hepsi gerçek veriyle çalışan ekranlar.
 
 ---
 
@@ -81,11 +81,7 @@ Ders → **Katılımcılar**. Öğrenciyi e-postasıyla ekleyin ve rolünü seç
 
 ## 4. Soru havuzu ve onay
 
-> ⚠️ **Bu ekran şu an tasarım önizlemesidir.** Üstünde "Tasarım önizlemesi: sorular örnek
-> veridir ve onay kararı kaydedilmez" şeridi görürsünüz. **Arka uç çalışıyor** ve aşağıda
-> anlatılan bütün kurallar bugün geçerlidir; bağlanmayı bekleyen yalnız ekranın kendisi.
-
-![Soru havuzu (önizleme)](images/05-egitmen-soru-havuzu.png)
+![Soru havuzu](images/05-egitmen-soru-havuzu.png)
 
 ### Akış
 
@@ -123,10 +119,7 @@ kurulumda soru üretimi çalışmaz.
 
 ## 5. Sınıf analitiği
 
-> ⚠️ **Bu ekran da şu an tasarım önizlemesidir.** Arka uç çalışıyor ve aşağıdaki alanları
-> gerçekten döndürüyor.
-
-![Sınıf analitiği (önizleme)](images/06-egitmen-sinif-analitigi.png)
+![Sınıf analitiği](images/06-egitmen-sinif-analitigi.png)
 
 Ekran üç soruyu cevaplar:
 
@@ -142,14 +135,19 @@ Ekran üç soruyu cevaplar:
 | Konu ortalaması | 0-1 arası ağırlıklı puan | Yanında **kaç cevaba dayandığı** yazar. 4 cevaba dayanan bir ortalama sınıf hükmü değildir |
 | Seviye | <0.40 Geliştirilmeli · 0.40-0.74 Orta · ≥0.75 İyi | Eşikler sabit |
 | Yanlış oranı | Sorunun yanlış cevaplanma oranı | Az cevaplı soruda 1.0 görmek olağandır |
-| **Kapsam dışı ret oranı** | Kapsam dışı diye reddedilen isteklerin payı | **Bugün bu sayı hep %0 görünür** — aşağıya bakın |
+| **Kapsam dışı ret oranı** | Kapsam dışı diye reddedilen isteklerin payı | Kanıt yetersizliği bu orana **girmez**, ayrı sayılır |
 
-**Kapsam dışı ret oranı neden %0 görünüyor?** Asistan ders dışı bir soruyu reddettiğinde
-bunu "kanıt yetersiz" kategorisine yazıyor, "kapsam dışı" kategorisine değil. Sebebi
-teknik: kanıt kapısı dil modelinden önce kapanıyor ve karar orada veriliyor. Yani sistem
-soruları **doğru reddediyor**, sayaç yanlış kutuya işaretliyor. Bilinen bir kusurdur ve
-kayıt altındadır ([ARCHITECTURE §5](../ARCHITECTURE.md#5-sorgu-pipelineı-ve-guardrail-zinciri)).
-Bu düzelene kadar bu karta bakarak "asistan hiç ret vermiyor" sonucunu çıkarmayın.
+**Bu kartı doğru okumak.** Asistanın iki farklı reddi vardır ve kart yalnız birini sayar:
+
+- **Kapsam dışı** — soru bu dersin konusu değil ("İtalya'nın başkenti"). Orana **girer**.
+- **Kanıt yetersiz** — konu dersin alanında ama materyalde yeterli dayanak yok. Orana
+  **girmez**, ayrıca gösterilir.
+
+Ayrım bilinçlidir: birincisi sistemin doğru çalıştığının göstergesi, ikincisi
+*"bu konuda materyal eksik olabilir"* sinyalidir ve size farklı bir iş verir.
+
+Ders henüz hiç cevap üretmediyse kart sayı yerine **"Ölçüm yok"** der. Sıfır ile
+ölçülmemiş aynı şey değildir; kart bunları karıştırmaz.
 
 ### Öğrencilerin sorularını göremezsiniz — bilerek
 
