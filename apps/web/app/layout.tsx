@@ -46,8 +46,26 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr">
+    /*
+     * suppressHydrationWarning: `data-theme` özniteliğini açılış betiği
+     * tarayıcıda yazar, sunucu render'ında yoktur. Uyarı bastırılmazsa React
+     * her sayfada gerçek olmayan bir uyuşmazlık bildirir; öznitelik bilinçli
+     * olarak istemcide oluşur.
+     */
+    <html lang="tr" suppressHydrationWarning>
       <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
+        {/*
+         * Tema açılış betiği (public/theme-boot.js) gövdenin İLK çocuğudur:
+         * tarayıcı onu, arkasından gelen içeriği ayrıştırmadan önce çalıştırır,
+         * bu yüzden koyu tema kullanıcısı beyaz bir çakma görmez (FOUC).
+         *
+         * Satır içi yazılmaz ve `<head>` öğesi olarak render edilmez: App
+         * Router'da kök layout'ta düz bir <head> öğesi geçersiz iç içe geçme
+         * uyarısı üretir, satır içi betik ise React 19'da "istemcide asla
+         * çalıştırılmaz" uyarısı verir. Statik dosya ikisinden de kaçınır ve
+         * CSP'nin `script-src 'self'` tarafında kalır.
+         */}
+        <script src="/theme-boot.js" />
         {children}
       </body>
     </html>

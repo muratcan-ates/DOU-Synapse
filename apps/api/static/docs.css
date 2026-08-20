@@ -28,24 +28,34 @@
   --elev-1: 0 1px 2px rgb(28 25 23 / 0.05), 0 10px 24px -16px rgb(28 25 23 / 0.24);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --brand: #ff6b78;
-    --fg: #f5f4f2;
-    --fg-muted: #b0aaa4;
-    --fg-subtle: #8f8a84;
-    --bg: #191715;
-    --surface: #211f1c;
-    --surface-sunken: #141210;
-    --border: rgba(245, 244, 242, 0.08);
-    --border-strong: rgba(245, 244, 242, 0.36);
-    --ink: #131110;
-    --ink-raised: #1d1a17;
-    --danger: #f08c8a;
-  }
+/* Koyu palet uygulamayla aynı değerlerdedir ve aynı yoldan gelir:
+   `data-theme` özniteliği (docs-theme.js). Medya sorgusu kullanılmaz,
+   çünkü kullanıcı temayı uygulamadan seçtiğinde belge sayfası da
+   ona uymalıdır. */
+:root[data-theme="dark"] {
+  --brand: #ff6b78;
+  --fg: #f5f4f2;
+  --fg-muted: #b0aaa4;
+  --fg-subtle: #8f8a84;
+  --bg: #191715;
+  --surface: #211f1c;
+  --surface-sunken: #141210;
+  --border: rgba(245, 244, 242, 0.08);
+  --border-strong: rgba(245, 244, 242, 0.36);
+  --ink: #131110;
+  --ink-raised: #1d1a17;
+  --danger: #f08c8a;
 }
 
 * { box-sizing: border-box; }
+
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
 
 body {
   margin: 0;
@@ -126,8 +136,44 @@ body {
   outline-offset: 2px;
 }
 
-.here {
+/* Tema seçici: uygulamanın segment kontrolüyle aynı gramer, mürekkep tonunda. */
+.theme {
+  display: flex;
+  gap: 2px;
   margin-left: auto;
+  flex: none;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--ink-raised);
+}
+
+.theme button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-fg-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 200ms, color 200ms;
+}
+
+.theme button:hover { color: var(--ink-fg); }
+
+.theme button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--ink-fg);
+}
+
+.theme button:focus-visible {
+  outline: 2px solid var(--brand-on-ink);
+  outline-offset: 2px;
+}
+
+.here {
+  margin-left: 16px;
   flex: none;
   color: var(--ink-fg);
   font-size: 13px;
@@ -278,6 +324,7 @@ body {
 
 @media (max-width: 640px) {
   .here { display: none; }
+  .theme button { padding: 0 8px; }
   .intro { padding-top: 32px; }
 }
 

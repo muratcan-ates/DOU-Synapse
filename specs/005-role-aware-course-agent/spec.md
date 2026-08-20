@@ -5,7 +5,7 @@
 **Created**: 2026-08-11
 
 **Status**: Backend, `0015` ve frontend kodlandı; tam API 915/915, mypy 97 dosya, <!-- docs-check: backend.tests = 915 --><!-- docs-check: backend.mypyFiles = 97 -->
-frontend 394/394, typecheck ve production build geçti. <!-- docs-check: frontend.tests = 394 --> Seri gerçek-API tarayıcı
+frontend 398/398, typecheck ve production build geçti. <!-- docs-check: frontend.tests = 398 --> Seri gerçek-API tarayıcı
 36/36; manuel VoiceOver+Safari, doğrudan exam/kill-switch browser yolları, <!-- docs-check: e2e.tests = 36 -->
 real-provider, staging, isimli onay ve canlı rollout kanıtı henüz yok.
 **Risk**: R3 — öğrenci/eğitmen davranışı, kota, kötüye kullanım ve sınav kilidi değişiyor
