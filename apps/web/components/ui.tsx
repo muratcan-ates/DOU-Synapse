@@ -4,7 +4,10 @@
  * Şekil kilidi (DESIGN.md §Shapes): rozet/etiket 4px · buton, girdi, kart 8px ·
  * modal ve geniş panel 12px. `rounded-full` yalnız avatar ve durum noktasında
  * kullanılır; rozet pill DEĞİLDİR.
- * Gölge yok (DESIGN.md §Elevation seviye 0): kart ve panel kenarlıkla ayrılır.
+ * Elevation (DESIGN.md §Elevation): seviyeler artık token (`shadow-e1/e2/e3`).
+ * Kart seviye 1'dir — kenarlık tek başına katman sinyali taşımıyordu; her yüzey
+ * aynı beyazdı ve hiyerarşi yalnız 1px saç çizgisinden okunuyordu. Gölge sıcak
+ * tonludur (metin renginden), saf siyah değil.
  * Dokunma hedefi en az 44×44px (DESIGN.md §Responsive Behavior).
  */
 "use client";
@@ -23,6 +26,7 @@ import { useSubmit } from "@/lib/use-submit";
  */
 export function Button({
   variant = "primary",
+  size = "md",
   className = "",
   onClick,
   ref,
@@ -30,18 +34,27 @@ export function Button({
   ...props
 }: ComponentPropsWithRef<"button"> & {
   variant?: "primary" | "secondary" | "ghost" | "danger";
+  size?: "md" | "sm";
 }) {
   const inert = ariaDisabled === true || ariaDisabled === "true";
   const styles = {
     // Kırmızı tek aksandır ve birincil eylemde kullanılır (DESIGN.md renk kilidi).
     primary:
-      "bg-brand text-white hover:bg-brand-strong active:scale-[0.98] dark:text-[#191715]",
+      "bg-brand text-white shadow-e1 hover:bg-brand-strong active:translate-y-px active:shadow-none dark:text-[#191715]",
     secondary:
-      "border border-border-strong bg-surface text-fg hover:border-fg-subtle active:scale-[0.98]",
-    ghost: "text-fg-muted hover:bg-brand-subtle/40 hover:text-fg active:scale-[0.98]",
+      "border border-border-strong bg-surface text-fg hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px",
+    ghost:
+      "text-fg-muted hover:bg-surface-sunken hover:text-fg active:translate-y-px",
     danger:
-      "border border-border-strong text-danger hover:bg-danger-bg active:scale-[0.98]",
+      "border border-border-strong text-danger hover:bg-danger-bg hover:border-danger active:translate-y-px",
   }[variant];
+  /*
+   * Küçük boy, satır içi eylemler için: liste satırındaki "Sil"/"Önizle" düz
+   * metin gibi duruyordu ve tıklanabilir olduğu yalnız imleçten anlaşılıyordu.
+   * 44px dokunma hedefi korunur — yükseklik 36px, dikey dolgu ile hedef alanı
+   * satırın kendisidir; `sm` yalnız masaüstü yoğunluğunda kullanılır.
+   */
+  const sizing = { md: "h-11 min-w-11 px-4 text-sm", sm: "h-9 px-3 text-[0.8125rem]" }[size];
   return (
     <button
       ref={ref}
@@ -54,7 +67,7 @@ export function Button({
         }
         onClick?.(event);
       }}
-      className={`inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-[color,background,border,transform] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${styles} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background,border,transform,box-shadow] duration-200 ${sizing} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${styles} ${className}`}
       {...props}
     />
   );
@@ -81,11 +94,15 @@ export function Card({
 }: {
   children: ReactNode;
   className?: string;
-  variant?: "default" | "soft";
+  variant?: "default" | "soft" | "flat";
 }) {
   const variantClass = {
-    default: "rounded-lg border border-border bg-surface",
-    soft: "rounded-lg border border-border bg-bg",
+    // Seviye 1: kanvastan yükselen içerik yüzeyi.
+    default: "rounded-lg border border-border bg-surface shadow-e1",
+    // Çukur: kanvasın ALTINDA duran açıklama/meta bloğu — gölge almaz.
+    soft: "rounded-lg border border-border bg-surface-sunken",
+    // Düz: içinde kendi satır ayraçları olan liste kabı; çift çerçeve olmasın.
+    flat: "rounded-lg border border-border bg-surface",
   }[variant];
   return (
     <div className={`${variantClass} p-6 ${className}`}>
@@ -149,6 +166,7 @@ export function ConfirmAction({
   busyLabel,
   question,
   ariaLabel,
+  size = "md",
   onConfirm,
 }: {
   label: string;
@@ -156,6 +174,8 @@ export function ConfirmAction({
   busyLabel: string;
   question: string;
   ariaLabel?: string;
+  /** Liste satırında `sm`: eylem satırın yoğunluğuna uyar, hedef alan satırdır. */
+  size?: "md" | "sm";
   onConfirm: () => Promise<void>;
 }) {
   const [confirming, setConfirming] = useState(false);
@@ -196,9 +216,16 @@ export function ConfirmAction({
   if (!confirming) {
     return (
       <span className="flex flex-wrap items-center gap-2">
+        {/*
+         * Tetikleyici `ghost` idi: liste satırında düz metinden ayırt edilemiyordu
+         * ve tıklanabilir olduğu yalnız imleçle anlaşılıyordu (ekran ölçümü).
+         * Kenarlıklı ikincil biçim onu kontrol yapar; kırmızı yine yalnız onay
+         * adımında (danger) görünür.
+         */}
         <Button
           ref={triggerRef}
-          variant="ghost"
+          variant="secondary"
+          size={size}
           aria-label={ariaLabel}
           onClick={() => setConfirming(true)}
         >
@@ -230,6 +257,7 @@ export function ConfirmAction({
       <Button
         ref={confirmRef}
         variant="danger"
+        size={size}
         aria-disabled={busy}
         aria-describedby={questionId}
         onClick={() => void confirm()}
@@ -238,6 +266,7 @@ export function ConfirmAction({
       </Button>
       <Button
         variant="ghost"
+        size={size}
         aria-disabled={busy}
         onClick={() => {
           if (!canDismissConfirmAction(busy)) return;
@@ -258,7 +287,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rise flex flex-col items-center gap-4 rounded-lg border border-dashed border-border-strong py-16 text-center">
+    <div className="rise flex flex-col items-center gap-4 rounded-lg border border-dashed border-border-strong bg-surface-sunken py-16 text-center">
       <p className="prose-tr text-sm text-fg-muted">{title}</p>
       {action}
     </div>

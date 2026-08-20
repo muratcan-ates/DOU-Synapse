@@ -123,7 +123,7 @@ const fmt = (n) => round(n).toFixed(2);
 
 // --- Ölçülecekler ----------------------------------------------------------
 
-/** Bilgi taşıyan metin token'ları; hepsi --bg ve --surface üstünde ölçülür. */
+/** Bilgi taşıyan metin token'ları; --bg, --surface ve --surface-sunken üstünde ölçülür. */
 const TEXT_TOKENS = [
   "fg",
   "fg-muted",
@@ -136,7 +136,10 @@ const TEXT_TOKENS = [
   "info",
 ];
 
-const BACKDROPS = ["bg", "surface"];
+// Çukur yüzey (16 Ağustos'ta eklendi) da bir metin zeminidir: meta blokları ve
+// iç paneller onun üstünde yaşıyor. Ölçülmeyen zemin, iddia edilmemiş kontrast
+// demektir — `min` üçünün en kötüsünü alır, yani yeni yüzey kapıyı da bağlar.
+const BACKDROPS = ["bg", "surface", "surface-sunken"];
 
 /** Rozet çiftleri: metin kendi soluk zemini üstünde (components/ui.tsx Badge). */
 const BADGE_PAIRS = [
@@ -183,6 +186,7 @@ function measure(theme, tokens) {
       value: tokens[token],
       onBg: cells[0],
       onSurface: cells[1],
+      onSunken: cells[2],
       min: Math.min(...cells),
       threshold: AA_NORMAL,
     });
@@ -229,12 +233,14 @@ function measure(theme, tokens) {
 function printMarkdown(theme, rows, tokens) {
   console.log(`\n### ${theme === "light" ? "Açık" : "Koyu"} tema\n`);
   console.log(
-    `| Token | Değer | \`--bg\` (${tokens.bg}) | \`--surface\` (${tokens.surface}) |`,
+    `| Token | Değer | \`--bg\` (${tokens.bg}) | \`--surface\` (${tokens.surface}) | \`--surface-sunken\` (${tokens["surface-sunken"]}) |`,
   );
-  console.log("|---|---|---|---|");
+  console.log("|---|---|---|---|---|");
   for (const r of rows.filter((r) => r.kind === "text")) {
     const mark = (v) => `${fmt(v)}:1 ${v >= AA_NORMAL ? "AA" : v >= AA_LARGE ? "yalnız büyük metin" : "KALDI"}`;
-    console.log(`| \`${r.token}\` | \`${r.value}\` | ${mark(r.onBg)} | ${mark(r.onSurface)} |`);
+    console.log(
+      `| \`${r.token}\` | \`${r.value}\` | ${mark(r.onBg)} | ${mark(r.onSurface)} | ${mark(r.onSunken)} |`,
+    );
   }
   console.log("\n| Çift | Not | Oran |");
   console.log("|---|---|---|");
@@ -252,7 +258,7 @@ function printTable(theme, rows) {
     const ok = r.min >= r.threshold;
     const detail =
       r.kind === "text"
-        ? `bg ${fmt(r.onBg)}  surface ${fmt(r.onSurface)}`
+        ? `bg ${fmt(r.onBg)}  surface ${fmt(r.onSurface)}  çukur ${fmt(r.onSunken)}`
         : `${fmt(r.min)}`;
     console.log(
       `  ${ok ? "✓" : "✗"} ${r.token.padEnd(28)} ${String(r.value).padEnd(22)} ${detail}` +

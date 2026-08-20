@@ -21,8 +21,13 @@
   --fg: #1c1917;
   --fg-muted: #57534e;
   /* #8a8580 idi: --bg üstünde 3.53:1 ile AA'nın altındaydı ve 29 yerde bilgi
-     taşıyan 12px metin bu token'la yazılıyor. Ölçüm: scripts/contrast.mjs. */
-  --fg-subtle: #78716c;
+     taşıyan 12px metin bu token'la yazılıyor. Ölçüm: scripts/contrast.mjs.
+     16 Ağustos: #78716c da yeni --surface-sunken üstünde 4.25:1 ile eşiğin
+     altında kaldı (kapı yakaladı). Çukur yüzeyi açmak çözüm değildi — AA'yı
+     tutan en koyu çukur, kanvastan 1.036 oranla ayırt edilemiyordu, yani
+     katman olmaktan çıkıyordu. Bu yüzden metin koyultuldu: #726b66 üç zeminde
+     de payla geçer (5.06 / 5.24 / 4.64). */
+  --fg-subtle: #726b66;
   --bg: #fbfbfa;
   --surface: #ffffff;
   /* İki kenarlık token'ı iki AYRI iş yapar; oranları da ayrı eşiğe tabidir.
@@ -50,6 +55,19 @@
   --danger-bg: #fdebec;
   --info: #1f6c9f;
   --info-bg: #e1f3fe;
+
+  /* Çukur yüzey: kanvasın ALTINDA duran blok (meta, açıklama, iç panel).
+     Üç katman oldu — çukur (--surface-sunken) < kanvas (--bg) < kart
+     (--surface + gölge). Önceden her şey kanvas üstünde beyaz karttı ve
+     hiyerarşi yalnız 1px saç çizgisinden okunuyordu. */
+  --surface-sunken: #f2f1ef;
+
+  /* DESIGN.md §Elevation seviyeleri artık token; gölge saf siyah DEĞİL,
+     metin renginin (28,25,23) sıcak tonuyla renklendirilir — soğuk siyah
+     gölge kemik kanvasın üstünde kirli gri görünür. */
+  --elev-1: 0 1px 2px rgb(28 25 23 / 0.05), 0 10px 24px -16px rgb(28 25 23 / 0.24);
+  --elev-2: 0 2px 6px rgb(28 25 23 / 0.07), 0 18px 40px -20px rgb(28 25 23 / 0.30);
+  --elev-3: 0 28px 64px -24px rgb(28 25 23 / 0.36);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -81,6 +99,15 @@
     --danger-bg: #331a1c;
     --info: #6fb4dd;
     --info-bg: #14232e;
+
+    --surface-sunken: #141210;
+
+    /* Koyu zeminde gölge görünmez (DESIGN.md); katmanı üstteki 1px iç
+       aydınlatma taşır — fiziksel kenar refraksiyonu. Gölge yalnız derinlik
+       için altta kalır. */
+    --elev-1: inset 0 1px 0 rgb(245 244 242 / 0.04), 0 1px 2px rgb(0 0 0 / 0.45);
+    --elev-2: inset 0 1px 0 rgb(245 244 242 / 0.05), 0 12px 28px -18px rgb(0 0 0 / 0.75);
+    --elev-3: inset 0 1px 0 rgb(245 244 242 / 0.06), 0 28px 64px -24px rgb(0 0 0 / 0.85);
   }
 }
 
@@ -93,6 +120,7 @@
   --color-fg-subtle: var(--fg-subtle);
   --color-bg: var(--bg);
   --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-success: var(--success);
@@ -103,6 +131,10 @@
   --color-danger-bg: var(--danger-bg);
   --color-info: var(--info);
   --color-info-bg: var(--info-bg);
+
+  --shadow-e1: var(--elev-1);
+  --shadow-e2: var(--elev-2);
+  --shadow-e3: var(--elev-3);
 
   --font-sans: var(--font-geist), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -184,6 +216,33 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .rise, .rise-1, .rise-2, .rise-3 {
     animation: none;
+  }
+}
+
+/*
+ * Yapışkan üst çubuğun katman sinyali: sayfa kaydıkça gölge belirir
+ * (DESIGN.md §Elevation seviye 1 — "kaydırıldığında"). Kaydırma durumu
+ * JS'siz okunur; `window.addEventListener('scroll')` bu depoda yasak ve
+ * React state'i her karede yeniden render ederdi.
+ *
+ * Bu bir "hareket" değil, konuma bağlı bir durum göstergesidir: bir şey
+ * kendiliğinden oynamaz, yalnız gölge yoğunluğu kaydırmayı izler. Yine de
+ * desteklemeyen tarayıcıda çubuk kenarlıkla ayrık kalır (fail-soft).
+ */
+@supports (animation-timeline: scroll()) {
+  .scroll-elevate {
+    animation: sticky-elevate linear both;
+    animation-timeline: scroll();
+    animation-range: 0 96px;
+  }
+}
+
+@keyframes sticky-elevate {
+  from {
+    box-shadow: 0 0 0 0 rgb(28 25 23 / 0);
+  }
+  to {
+    box-shadow: var(--elev-1);
   }
 }
 

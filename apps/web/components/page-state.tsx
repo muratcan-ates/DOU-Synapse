@@ -200,9 +200,16 @@ export function MetricRow({ items }: { items: Metric[] }) {
     <Card className="mb-6">
       <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
         {items.map((item) => (
-          <div key={item.label} className="flex flex-col-reverse gap-1">
+          <div key={item.label} className="flex flex-col-reverse gap-1.5">
             <dt className="text-xs text-fg-muted">{item.label}</dt>
-            <dd className="font-mono text-2xl text-fg">{item.value}</dd>
+            {/*
+             * `font-mono` idi: Geist Mono'da Türkçe ondalık ayracı rakamlardan
+             * kopuk duruyordu ve "0,47" ekranda "0 , 47" gibi okunuyordu.
+             * `tabular-nums` sütun hizasını mono olmadan verir.
+             */}
+            <dd className="text-2xl leading-none font-semibold tracking-tight tabular-nums text-fg">
+              {item.value}
+            </dd>
           </div>
         ))}
       </dl>

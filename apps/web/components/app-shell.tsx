@@ -90,7 +90,14 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
       >
         Ana içeriğe geç
       </a>
-      <header className="sticky top-0 z-10 border-b border-border bg-surface">
+      {/*
+       * DESIGN.md §Elevation: "seviye 1 — yapışkan üst çubuk, KAYDIRILDIĞINDA".
+       * Bugüne kadar uygulanamıyordu çünkü kaydırma durumu JS ister ve
+       * `window.addEventListener('scroll')` bu depoda yasak. CSS scroll-driven
+       * animation ile durum stile bağlanır: dinleyici yok, re-render yok,
+       * desteklemeyen tarayıcıda çubuk yalnız kenarlıklı kalır.
+       */}
+      <header className="sticky top-0 z-10 border-b border-border bg-surface scroll-elevate">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-4 px-4">
           <Link
             href="/dashboard"
@@ -99,7 +106,7 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
           >
             <span
               aria-hidden="true"
-              className="grid h-9 w-9 place-items-center rounded-md bg-brand font-mono text-sm font-semibold text-bg"
+              className="grid h-9 w-9 place-items-center rounded-md bg-brand text-sm font-semibold text-bg shadow-e1"
             >
               D
             </span>
@@ -119,7 +126,7 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
             <Link
               href="/profile"
               aria-label={`Profil: ${displayName}`}
-              className="flex min-h-11 max-w-44 items-center gap-2 rounded-lg px-2 text-xs font-medium text-fg-muted hover:bg-bg hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="flex min-h-11 max-w-44 items-center gap-2.5 rounded-lg px-2 text-sm font-medium text-fg-muted transition-colors duration-200 hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <span
                 aria-hidden="true"
@@ -152,7 +159,17 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       )}
-      <main id="main-content" tabIndex={-1} className="mx-auto max-w-[1200px] px-4 py-8">
+      {/*
+       * Alt dolgu 7rem: sağ altta `fixed` duran ders asistanı düğmesi sayfanın
+       * son satırlarının üstüne biniyordu (ölçüm: ilerleme ekranının son konu
+       * satırındaki "cevap" sayacı kapanmıştı). Düğme R3 korumalı dosyada
+       * yaşıyor; çakışma kaptan çözülür, o dosyaya dokunulmadan.
+       */}
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto max-w-[1200px] px-4 pt-8 pb-28"
+      >
         {children}
       </main>
     </div>
@@ -178,8 +195,8 @@ function PortalNavigation({
       aria-label={mobile ? "Mobil ana menü" : "Ana menü"}
       className={
         mobile
-          ? "mx-auto flex max-w-[1200px] gap-4 overflow-x-auto border-t border-border px-4 md:hidden"
-          : "hidden h-full items-stretch gap-5 md:flex"
+          ? "mx-auto flex max-w-[1200px] gap-5 overflow-x-auto border-t border-border px-4 md:hidden"
+          : "hidden h-full items-stretch gap-7 md:flex"
       }
     >
       {items.map((item) => {
@@ -187,8 +204,8 @@ function PortalNavigation({
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
         const className = current
-          ? "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 border-brand px-1 text-xs font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          : "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-1 text-xs font-medium text-fg-muted hover:border-border-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+          ? "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 border-brand px-1 text-sm font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          : "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 border-transparent px-1 text-sm font-medium text-fg-muted transition-colors duration-200 hover:border-border-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
         return (
           <Link
             key={item.href}

@@ -97,20 +97,23 @@ betik ikisine karşı da ölçer ve düşük olanı kapıya sokar.
 ### Açık tema
 
 Kanvas saf beyaz değil kemik (`--bg`), kartlar beyaza **yükselir** (`--surface`) — kâğıt
-üstünde kâğıt. Bu yüzden metin için en kötü zemin `--surface` değil `--bg`'dir ve eşik
-ona göre kurulur.
+üstünde kâğıt. 16 Ağustos'ta üçüncü katman eklendi: `--surface-sunken`, kanvasın
+**altında** duran blok (açıklama, meta, araç paneli). Metin için en kötü zemin artık
+çukur yüzeydir ve eşik ona göre kurulur — betik üç zemini de ölçer, `min` en kötüsünü
+alır. Ölçüm bunu hemen kanıtladı: eski `--fg-subtle` (#78716c) çukur yüzeyde 4.25:1
+ile AA'nın altında kaldı ve token koyultuldu.
 
-| Token | Değer | Kullanım | `--bg` (#fbfbfa) | `--surface` (#ffffff) |
-|---|---|---|---|---|
-| `--fg` | `#1c1917` | Gövde metni | 16.89:1 AA | 17.49:1 AA |
-| `--fg-muted` | `#57534e` | İkincil metin, etiket, alıntı | 7.37:1 AA | 7.63:1 AA |
-| `--fg-subtle` | `#78716c` | Zaman damgası, kimlik, kırıntı yolu | 4.63:1 AA | 4.80:1 AA |
-| `--brand` | `#c50c1f` | Birincil buton, aktif sekme | 5.88:1 AA | 6.09:1 AA |
-| `--brand-strong` | `#a00a19` | Hover, basılı durum | 7.95:1 AA | 8.23:1 AA |
-| `--success` | `#346538` | Hazır, onaylandı, doğru | 6.62:1 AA | 6.85:1 AA |
-| `--warning` | `#956400` | İşleniyor, geliştirilmeli | 4.95:1 AA | 5.12:1 AA |
-| `--danger` | `#9f2f2d` | Gerçek hata, yıkıcı eylem | 6.95:1 AA | 7.20:1 AA |
-| `--info` | `#1f6c9f` | Kaynak referansı, taslak | 5.48:1 AA | 5.67:1 AA |
+| Token | Değer | Kullanım | `--bg` (#fbfbfa) | `--surface` (#ffffff) | `--surface-sunken` (#f2f1ef) |
+|---|---|---|---|---|---|
+| `--fg` | `#1c1917` |Gövde metni | 16.89:1 AA | 17.49:1 AA | 15.49:1 AA |
+| `--fg-muted` | `#57534e` |İkincil metin, etiket, alıntı | 7.37:1 AA | 7.63:1 AA | 6.76:1 AA |
+| `--fg-subtle` | `#726b66` |Zaman damgası, kimlik, kırıntı yolu | 5.06:1 AA | 5.24:1 AA | 4.64:1 AA |
+| `--brand` | `#c50c1f` |Birincil buton, aktif sekme | 5.88:1 AA | 6.09:1 AA | 5.40:1 AA |
+| `--brand-strong` | `#a00a19` |Hover, basılı durum | 7.95:1 AA | 8.23:1 AA | 7.29:1 AA |
+| `--success` | `#346538` |Hazır, onaylandı, doğru | 6.62:1 AA | 6.85:1 AA | 6.07:1 AA |
+| `--warning` | `#956400` |İşleniyor, geliştirilmeli | 4.95:1 AA | 5.12:1 AA | 4.54:1 AA |
+| `--danger` | `#9f2f2d` |Gerçek hata, yıkıcı eylem | 6.95:1 AA | 7.20:1 AA | 6.37:1 AA |
+| `--info` | `#1f6c9f` |Kaynak referansı, taslak | 5.48:1 AA | 5.67:1 AA | 5.02:1 AA |
 
 Zeminler ve kenarlıklar (metin değil; üstlerindeki metnin oranı yukarıdaki iki sütunda,
 kenarlığın kendi oranı "Karşılanmayan eşikler" başlığında):
@@ -133,17 +136,17 @@ Koyu tema **zorunludur**, süs değil: öğrenciler geceleri çalışıyor.
 koyu temada **açılarak** yükseldiği için en kötü zemin `--surface`'tır ve eşik ona göre
 kurulur.
 
-| Token | Değer | `--bg` (#191715) | `--surface` (#211f1c) |
-|---|---|---|---|
-| `--fg` | `#f5f4f2` | 16.26:1 AA | 14.96:1 AA |
-| `--fg-muted` | `#b0aaa4` | 7.77:1 AA | 7.15:1 AA |
-| `--fg-subtle` | `#8f8a84` | 5.22:1 AA | 4.80:1 AA |
-| `--brand` | `#ff6b78` | 6.49:1 AA | 5.97:1 AA |
-| `--brand-strong` | `#ffa1aa` | 9.30:1 AA | 8.56:1 AA |
-| `--success` | `#7bc47f` | 8.55:1 AA | 7.86:1 AA |
-| `--warning` | `#d9a23d` | 7.82:1 AA | 7.19:1 AA |
-| `--danger` | `#f08c8a` | 7.51:1 AA | 6.91:1 AA |
-| `--info` | `#6fb4dd` | 7.87:1 AA | 7.24:1 AA |
+| Token | Değer | `--bg` (#191715) | `--surface` (#211f1c) | `--surface-sunken` (#141210) |
+|---|---|---|---|---|
+| `--fg` | `#f5f4f2` | 16.26:1 AA | 14.96:1 AA | 17.00:1 AA |
+| `--fg-muted` | `#b0aaa4` | 7.77:1 AA | 7.15:1 AA | 8.13:1 AA |
+| `--fg-subtle` | `#8f8a84` | 5.22:1 AA | 4.80:1 AA | 5.46:1 AA |
+| `--brand` | `#ff6b78` | 6.49:1 AA | 5.97:1 AA | 6.79:1 AA |
+| `--brand-strong` | `#ffa1aa` | 9.30:1 AA | 8.56:1 AA | 9.73:1 AA |
+| `--success` | `#7bc47f` | 8.55:1 AA | 7.86:1 AA | 8.94:1 AA |
+| `--warning` | `#d9a23d` | 7.82:1 AA | 7.19:1 AA | 8.17:1 AA |
+| `--danger` | `#f08c8a` | 7.51:1 AA | 6.91:1 AA | 7.85:1 AA |
+| `--info` | `#6fb4dd` | 7.87:1 AA | 7.24:1 AA | 8.23:1 AA |
 
 Zeminler: `--bg #191715` · `--surface #211f1c` · `--border rgba(245,244,242,.08)` ·
 `--border-strong rgba(245,244,242,.36)` — 3.12:1 (`--surface`) · 3.15:1 (`--bg`) ·
@@ -280,19 +283,26 @@ hâli zaten "gizlenmez" kuralını karşılıyor; katlanabilirlik gerekirse ayr�
 
 ## Elevation & Depth
 
-Neredeyse düz. Gölge bir dekorasyon değil, **katman sinyali**:
+Neredeyse düz — ama düz DEĞİL. Gölge bir dekorasyon değil, **katman sinyali**:
 
-| Seviye | Gölge | Ne zaman |
+| Seviye | Token | Ne zaman |
 |---|---|---|
-| 0 | yok | Kartlar, paneller — kenarlıkla ayrılır |
-| 1 | `0 1px 2px rgb(0 0 0 / .06)` | Yapışkan üst çubuk, kaydırıldığında |
-| 2 | `0 8px 24px rgb(0 0 0 / .12)` | Açılır menü, popover |
-| 3 | `0 16px 48px rgb(0 0 0 / .18)` | Modal |
+| 0 | yok | Liste satırı, şerit — kenarlıkla ayrılır |
+| 1 | `shadow-e1` | İçerik kartı; yapışkan üst çubuk kaydırıldığında |
+| 2 | `shadow-e2` | Açılır menü, popover |
+| 3 | `shadow-e3` | Modal |
 
-Koyu temada gölge yerine yüzey rengi bir kademe açılır; koyu zeminde gölge görünmez.
+Seviyeler `--elev-1/2/3` olarak token'landı (16 Ağustos); bileşende ham gölge değeri
+yazılmaz. Gölge **sıcak tonludur** — metin renginin (28 25 23) saydamı. Saf siyah gölge
+kemik kanvasın üstünde kirli gri görünür.
 
-Seviyeler henüz `--shadow-*` olarak token'lanmadı; token açılana kadar bileşende ham
-gölge değeri yazılmaz, seviye 0 (gölgesiz, kenarlıkla ayrık) varsayılandır.
+Koyu temada gölge görünmez; katmanı üstteki 1px **iç aydınlatma** taşır
+(`inset 0 1px 0 rgb(245 244 242 / .04)`) — fiziksel kenar refraksiyonu.
+
+Yapışkan üst çubuğun "kaydırıldığında" koşulu JS'siz kurulur: CSS scroll-driven
+animation (`animation-timeline: scroll()`), çünkü `window.addEventListener('scroll')`
+bu depoda yasaktır ve React state'i her karede yeniden render ederdi. Desteklemeyen
+tarayıcıda çubuk kenarlıkla ayrık kalır (fail-soft).
 
 ---
 

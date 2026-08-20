@@ -310,14 +310,20 @@ function UploadBox({
   }, "Yükleme tamamlanamadı.");
 
   return (
-    <Card className="mb-6">
-      <div className="grid items-end gap-4 md:grid-cols-[1fr_1fr_auto]">
-        <div>
-          <p className="text-sm font-medium text-fg">Materyal yükle</p>
-          <p className="text-xs text-fg-muted">
-            PDF, PPTX, Markdown veya kod dosyası · en fazla 20 MB
-          </p>
-        </div>
+    <Card variant="soft" className="mb-6">
+      {/*
+       * Panel bir araçtır, okunacak içerik değil — çukur yüzeyde durur.
+       * Hizalama: başlık bloğu iki satır, kontrol bloğu tek satırdı ve
+       * `items-end` ikisini farklı taban çizgisine oturtuyordu. Başlık artık
+       * kendi satırında; kontroller altta tek hizada.
+       */}
+      <div className="mb-4">
+        <p className="text-sm font-medium text-fg">Materyal yükle</p>
+        <p className="text-xs text-fg-muted">
+          PDF, PPTX, Markdown veya kod dosyası · en fazla 20 MB
+        </p>
+      </div>
+      <div className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
         <label className="text-sm text-fg-muted">
           <span className="mb-1 block">Yerine geçtiği belge (isteğe bağlı)</span>
           <select
@@ -426,7 +432,8 @@ function DocumentRow({
           {doc.superseded_at && <Badge tone="warning">Eski sürüm</Badge>}
           {isInstructor && doc.status === "completed" && (
             <Button
-              variant="ghost"
+              variant="secondary"
+              size="sm"
               aria-expanded={open}
               aria-controls={open ? panelId : undefined}
               onClick={togglePreview}
@@ -437,6 +444,7 @@ function DocumentRow({
           {isInstructor && doc.status === "failed" && (
             <Button
               variant="secondary"
+              size="sm"
               aria-disabled={retry.busy}
               onClick={() => void retry.submit()}
             >
@@ -445,6 +453,7 @@ function DocumentRow({
           )}
           {isInstructor && (
             <ConfirmAction
+              size="sm"
               label="Sil"
               confirmLabel="Evet, sil"
               busyLabel="Siliniyor…"
