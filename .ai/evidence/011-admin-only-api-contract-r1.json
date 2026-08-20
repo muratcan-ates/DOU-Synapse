@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "011-admin-only-api-contract-r1",
+  "captured_at": "2026-08-20T14:40:16+00:00",
+  "candidate_sha": "SELF",
+  "command": "TEST_DB_NAME=dou_synapse_test_docs2 pytest -q apps/api/tests; ruff check .; ruff format --check .; mypy app; canlı kapı denemesi: curl ile jetonsuz/öğrenci/yönetici; audit tablosu sorgusu; tarayıcıda /docs kapısı (jeton → 66 uç, 15 grup) ve gece modu",
+  "environment": "local macOS · PostgreSQL 16 · sağlayıcı anahtarları test oturumunda boşaltılmış",
+  "results": {
+    "backend_tests_passed": 915,
+    "contract_without_token_status": 401,
+    "contract_with_course_member_status": 403,
+    "contract_with_platform_admin_status": 200,
+    "audit_rows_written": 2,
+    "docs_operations_after_gate": 66,
+    "typecheck_errors": 0
+  },
+  "governance_note": "API sözleşmesi artık herkese açık değil: `/openapi.json` platform yöneticisi kapısının arkasında ve FastAPI'nin varsayılan public uç'u kapatıldı (openapi_url=None) — kapı yalnız sayfada olsaydı şemayı doğrudan çeken biri kapıyı atlardı. Kapı `PlatformAdminDep` ile denetlenir; REDDEDİLEN denemeler dahil her erişim audit tablosuna yazılır (canlı denemede 'allowed' ve 'denied' satırları doğrulandı). 0016 migration'ı iki katmanı birden genişletir: SECURITY DEFINER fonksiyonunun eylem beyaz listesi ve audit tablosunun CHECK kısıtı — yalnız biri genişletilseydi yetkili yönetici bile CheckViolation alırdı (testte tam bu yaşandı). Belge sayfasının KABUĞU açık kalır ve içinde sözleşme yoktur; bunu ayrı bir test çiviler.",
+  "limitations": "Jeton tarayıcıda sessionStorage'da tutulur (sekme kapanınca silinir); kalıcı oturum yok. Kapı yalnız yerelde denendi, staging/production iddiası yok.",
+  "privacy": "içerik yok; durum kodları ve sayılar"
+}

@@ -19,6 +19,7 @@ import {
 } from "@/components/portal/portal-profile-context";
 import { ErrorNote } from "@/components/page-state";
 import { BrandLockup } from "@/components/brand-mark";
+import { ThemeControl } from "@/components/theme-control";
 import { Button } from "@/components/ui";
 import { signOutCurrent } from "@/lib/api";
 import { describeError, type ErrorInfo } from "@/lib/errors";
@@ -114,6 +115,12 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
         </div>
 
         <div className="flex flex-col gap-1 border-t border-white/10 pt-4">
+          {/*
+           * Tema seçici rayın dibinde, hesap bloğunun hemen üstünde: gün boyu
+           * değişmeyen ama her zaman elin altında olması beklenen bir tercih.
+           * Aynı kontrol Profil sayfasında da var — dar ekranda ray yok.
+           */}
+          <ThemeControl />
           <Link
             href="/profile"
             aria-label={`Profil: ${displayName}`}

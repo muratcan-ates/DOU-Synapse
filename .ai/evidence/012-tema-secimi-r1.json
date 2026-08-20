@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "012-tema-secimi-r1",
+  "captured_at": "2026-08-20T15:07:12+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/web && node scripts/contrast.mjs && bun test lib/ && bunx tsc --noEmit && bun run build; cd ../api && TEST_DB_NAME=dou_synapse_test_tema .venv/bin/python -m pytest -q tests/test_security_headers.py tests/test_internal.py; E2E: izole yığın (dou_synapse_e2e + :8031) ile playwright",
+  "environment": "local macOS · PostgreSQL 16 · izole E2E veritabanı ve ikinci API örneği",
+  "results": {
+    "contrast_pairs_pass": "tümü (iki tema)",
+    "web_tests_passed": 398,
+    "api_tests_passed": 22,
+    "e2e_parallel_passed": 31,
+    "e2e_parallel_failed": 4,
+    "e2e_serial_rerun_passed": 4,
+    "typecheck_errors": 0
+  },
+  "governance_note": "Bu revizyon yönetici kapısını (011) taşımaya devam eder; dosyalar değişmedi, sha256'lar aynıdır. Yeni iş tema seçimidir. E2E'nin paralel koşusunda 4 test düştü; hepsi LLM'e dokunan uçlardaydı ve tek işçiyle tekrar koşturulunca geçti — sebep kullanıcı başına eşzamanlılık kapısının 409'u, tema değil. Bu dürüstçe bildirilir, 'yeşil' diye yuvarlanmaz. Ayrıca kapının bir yan etkisi bulundu ve düzeltildi: CI hazırlık yoklaması /openapi.json'a vuruyordu, o uç artık 401 döndüğü için yoklama hiçbir zaman başarılı olmuyordu.",
+  "limitations": "Tema tercihi origin başına saklanır; uygulama ile API belge sayfası ayrı portlarda olduğu için tercih taşınmaz (ölçüldü). Sunucu tarafı tercih yok.",
+  "privacy": "içerik yok; sayaçlar ve durum kodları"
+}

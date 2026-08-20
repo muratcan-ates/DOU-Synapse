@@ -309,8 +309,12 @@ jobs:
           uv sync --extra dev --frozen
           uv run uvicorn app.main:app --port 8000 &
           # Hazır olana kadar bekle: uyku yerine yoklama, yavaş makinede de doğru.
+          # Yoklama /health/ready'ye yapılır: /openapi.json artık platform
+          # yöneticisi kapısının arkasında (401) ve `curl -sf` onu asla
+          # "hazır" saymaz — döngü sessizce 30 saniye harcayıp API hazır
+          # olmadan devam ederdi.
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8000/openapi.json >/dev/null && break
+            curl -sf http://localhost:8000/health/ready >/dev/null && break
             sleep 1
           done
 
