@@ -10,6 +10,7 @@ import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
@@ -35,6 +36,7 @@ from app.api import (
     questions,
     sources,
 )
+from app.api.deps import PlatformAdminDep
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import (
@@ -118,6 +120,10 @@ def create_app() -> FastAPI:
         # markalı, kendi varlıklarını barındıran `/docs` sayfası servis edilir.
         docs_url=None,
         redoc_url=None,
+        # Sözleşme HERKESE AÇIK DEĞİL: `/openapi.json` aşağıda platform yöneticisi
+        # kapısıyla yeniden tanımlanır. Varsayılan uç açık kalsaydı kapı yalnız
+        # sayfada olurdu ve şemayı doğrudan çekmek isteyen biri kapıyı atlardı.
+        openapi_url=None,
     )
 
     app.add_middleware(
@@ -205,9 +211,27 @@ def create_app() -> FastAPI:
     # doğru sırla bir ingestion turu çalıştırır.
     app.include_router(internal.router)
 
+    @app.get("/openapi.json", include_in_schema=False)
+    async def openapi_spec(admin: PlatformAdminDep) -> dict[str, Any]:
+        """API sözleşmesi — yalnız platform yöneticisi.
+
+        Şema, ürünün tüm yüzeyini (uçlar, alanlar, hata kodları) tek dosyada
+        anlatır; dışarıya açık bırakmak saldırı yüzeyini haritalamayı kolaylaştırır.
+        `PlatformAdminDep` yetkiyi `platform_admins` tablosundan doğrular ve
+        REDDEDİLEN denemeler dahil her erişimi audit tablosuna yazar — yani bu
+        kapı yalnız engellemez, iz de bırakır.
+        """
+        return app.openapi()
+
     @app.get("/docs", include_in_schema=False)
     def api_docs() -> FileResponse:
-        """Markalı API belge sayfası (kendi varlıkları, CDN yok)."""
+        """Markalı API belge sayfası (kendi varlıkları, CDN yok).
+
+        Sayfanın KABUĞU herkese açıktır ve içinde sözleşme yoktur: şemayı
+        tarayıcıdan `/openapi.json` çağrısıyla ister ve o çağrı yönetici
+        jetonu gerektirir. Kapıyı sunucuda tutmanın sebebi bu — sayfayı
+        gizlemek koruma değildir, şemayı korumak korumadır.
+        """
         return FileResponse(STATIC_DIR / "docs.html")
 
     # Statik varlıklar EN SONA monte edilir: `app.mount` bir alt-uygulamadır ve

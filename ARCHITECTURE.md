@@ -132,7 +132,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 27 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015`): <!-- docs-check: tables.count = 27 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015 -->
+Kodda gerçekten var olan 27 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016`): <!-- docs-check: tables.count = 27 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016 -->
 
 ```
 profiles            (id, email, full_name, created_at)

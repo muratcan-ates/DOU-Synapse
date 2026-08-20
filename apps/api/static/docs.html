@@ -12,7 +12,7 @@
     kendi 'self' politikasıyla servis edilir, JSON uçları katı politikada kalır.
   -->
   <link rel="stylesheet" href="/static/vendor/swagger-ui.css" />
-  <link rel="stylesheet" href="/static/docs.css?v=2" />
+  <link rel="stylesheet" href="/static/docs.css?v=3" />
 </head>
 <body>
   <header class="rail" aria-label="Ürün gezinmesi">
@@ -59,8 +59,32 @@
     <p class="spec"><a href="/openapi.json">/openapi.json</a></p>
   </section>
 
-  <div id="swagger-ui" class="swagger-host"></div>
+  <section class="gate" id="gate">
+    <h2>Yönetici erişimi gerekiyor</h2>
+    <p>
+      API sözleşmesi ürünün tüm yüzeyini anlatır; bu yüzden yalnız Bilgi İşlem
+      yöneticilerine açıktır. Erişim jetonunuzu girin. Her deneme, reddedilenler
+      dahil, yönetim erişim kaydına yazılır.
+    </p>
+    <form id="gate-form">
+      <label for="gate-token">Erişim jetonu</label>
+      <input
+        id="gate-token"
+        name="token"
+        type="password"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Bearer jetonu"
+      />
+      <button type="submit">Sözleşmeyi aç</button>
+    </form>
+    <p id="gate-note" class="note" role="status" data-tone="info">
+      Jeton yalnız bu sekmede tutulur; sekme kapanınca silinir.
+    </p>
+  </section>
+
+  <div id="swagger-ui" class="swagger-host" hidden></div>
   <script src="/static/vendor/swagger-ui-bundle.js"></script>
-  <script src="/static/vendor/swagger-init.js?v=1"></script>
+  <script src="/static/docs-init.js?v=1"></script>
 </body>
 </html>

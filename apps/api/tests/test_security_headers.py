@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from httpx import AsyncClient
 
+from tests.conftest import UserFactory
+
 EXPECTED_HEADERS = {
     "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
     "x-content-type-options": "nosniff",
@@ -68,3 +70,33 @@ async def test_belge_sayfasi_cdn_ve_inline_script_kullanmaz(client: AsyncClient)
     assert "https://cdn." not in body and "unpkg.com" not in body
     assert "<script>" not in body  # yalnız `src` ile yüklenen betikler
     assert "/static/vendor/swagger-ui-bundle.js" in body
+
+
+async def test_sozlesme_yonetici_olmadan_alinamaz(client: AsyncClient) -> None:
+    """`/openapi.json` ürünün tüm yüzeyini anlatır; herkese açık değildir."""
+    response = await client.get("/openapi.json")
+
+    assert response.status_code in (401, 403), response.text
+    assert "paths" not in response.text
+
+
+async def test_sozlesme_ders_uyesine_de_kapali(client: AsyncClient, users: UserFactory) -> None:
+    """Ders üyeliği yeterli DEĞİL: kapı platform yöneticiliğine bakar."""
+    user_id = await users.create("sozlesme-uye@dogus.edu.tr")
+
+    response = await client.get("/openapi.json", headers=users.auth(user_id))
+
+    assert response.status_code == 403, response.text
+
+
+async def test_belge_kabugu_sozlesme_icermez(client: AsyncClient) -> None:
+    """Kabuk herkese açıktır ama içinde uç listesi YOKTUR.
+
+    Sayfayı gizlemek koruma değildir; korunması gereken şey sözleşmedir. Bu
+    test, kabuğa bir gün şema gömülürse kırmızı yanar.
+    """
+    body = (await client.get("/docs")).text
+
+    assert "/courses/{course_id}/chat" not in body
+    assert '"paths"' not in body
+    assert "Yönetici erişimi gerekiyor" in body
