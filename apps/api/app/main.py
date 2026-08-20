@@ -9,10 +9,13 @@ import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import (
     admin,
@@ -53,6 +56,28 @@ API_SECURITY_HEADERS: dict[str, str] = {
     "Referrer-Policy": "no-referrer",
 }
 
+#: Markalı API belge sayfasının kaynakları (`apps/api/static/`).
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+#: Belge YÜZEYİNİN politikası. JSON uçlarının `default-src 'none'` kuralı
+#: bir sayfa için uygulanamaz: kendi CSS'ini ve Swagger paketini yükleyemez,
+#: kullanıcı boş ekran görür. Gevşetme yalnız bu yüzeye ve yalnız `'self'`
+#: kadardır — CDN yok (paket `static/vendor` altında), inline script yok
+#: (başlatma ayrı dosyada), çerçevelenme hâlâ kapalı.
+DOCS_SECURITY_HEADERS: dict[str, str] = {
+    "Content-Security-Policy": (
+        "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; font-src 'self'; connect-src 'self'; "
+        "base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
+
+#: Belge yüzeyi olan yollar. Ön ek karşılaştırması yapılır çünkü statik
+#: varlıklar `/static/...` altında dallanır.
+_DOCS_SURFACE_PREFIXES = ("/docs", "/static/", "/openapi.json")
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -80,7 +105,19 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.api_title,
         version=settings.api_version,
+        description=(
+            "Ders materyaline bağlı, kaynaklı cevap üreten ders asistanının HTTP "
+            "yüzeyi. Her cevap dayandığı sayfayla döner; dayanak yoksa uç cevap "
+            "değil gerekçeli ret döndürür. Ders izolasyonu iki katmanda zorlanır: "
+            "sunucu tarafında üyelik doğrulaması ve aynı oturumda PostgreSQL satır "
+            "düzeyi güvenlik."
+        ),
         lifespan=lifespan,
+        # Varsayılan Swagger sayfası devre dışı: CDN'den script çeker ve inline
+        # script kullanır; bu API'nin politikasında ikisi de çalışmaz. Yerine
+        # markalı, kendi varlıklarını barındıran `/docs` sayfası servis edilir.
+        docs_url=None,
+        redoc_url=None,
     )
 
     app.add_middleware(
@@ -100,7 +137,13 @@ def create_app() -> FastAPI:
     ) -> Response:
         """API JSON yanıtlarına yüzeye uygun, fail-closed tarayıcı politikası ekle."""
         response = await call_next(request)
-        for key, value in API_SECURITY_HEADERS.items():
+        path = request.url.path
+        headers = (
+            DOCS_SECURITY_HEADERS
+            if any(path.startswith(prefix) for prefix in _DOCS_SURFACE_PREFIXES)
+            else API_SECURITY_HEADERS
+        )
+        for key, value in headers.items():
             response.headers[key] = value
         return response
 
@@ -161,6 +204,18 @@ def create_app() -> FastAPI:
     # İç worker tetiği OpenAPI'den bilinçli olarak gizlidir; sır yoksa 404,
     # doğru sırla bir ingestion turu çalıştırır.
     app.include_router(internal.router)
+
+    @app.get("/docs", include_in_schema=False)
+    def api_docs() -> FileResponse:
+        """Markalı API belge sayfası (kendi varlıkları, CDN yok)."""
+        return FileResponse(STATIC_DIR / "docs.html")
+
+    # Statik varlıklar EN SONA monte edilir: `app.mount` bir alt-uygulamadır ve
+    # router'lardan önce monte edilseydi `/static` ön ekiyle çakışan hiçbir uç
+    # kalmasa bile sıralama okunmaz olurdu. Dizin yoksa (bazı test ortamları)
+    # montaj atlanır; API bu sayfa olmadan da çalışır.
+    if STATIC_DIR.is_dir():
+        app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     return app
 
 

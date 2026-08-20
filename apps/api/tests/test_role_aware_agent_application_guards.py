@@ -118,7 +118,16 @@ async def test_provider_budget_is_reserved_before_generation() -> None:
             events.append("provider")
             return await super().generate(**kwargs)
 
-    settings = Settings(dev_auth_enabled=True, evidence_threshold=0.35)
+    # Model AÇIKÇA sabitlenir, ortamdan okunmaz: bu test "incelenmiş model +
+    # incelenmiş prompt" sözleşmesini çiviler ve geliştiricinin .env'inde hangi
+    # modelin yazdığına bağlı olmamalıdır. Ortamdaki model incelenmiş kümede
+    # değilse sistem tasarım gereği bayt tavanına düşer ve test, ürün doğru
+    # davranırken kırmızı yanardı (20 Ağustos'ta bu yaşandı).
+    settings = Settings(
+        dev_auth_enabled=True,
+        evidence_threshold=0.35,
+        llm_primary_model="groq/llama-3.3-70b-versatile",
+    )
     selected_chunks, byte_safe_ceiling = generation_prompts.fit_chunks_to_input_budget(
         "Deadlock nedir?",
         [chunk],

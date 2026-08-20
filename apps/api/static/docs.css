@@ -1,0 +1,280 @@
+/*
+ * API belge sayfasının markası. Swagger UI'ın kendi tabakası altta kalır;
+ * burada yalnız ürünün token'ları ve üst ray tanımlanır, sonra Swagger'ın
+ * en göze batan yüzeyleri (blok renkleri, tipografi) ürüne çekilir.
+ *
+ * Token'lar web uygulamasıyla AYNI değerlerdir (apps/web/app/globals.css):
+ * iki yüzey aynı üründür ve API sayfası "geliştirici tarafı" diye başka bir
+ * ürüne benzemez. Kontrast oranları orada ölçülür (scripts/contrast.mjs).
+ */
+:root {
+  --brand: #c50c1f;
+  --brand-strong: #a00a19;
+  --brand-subtle: #fdebec;
+  --fg: #1c1917;
+  --fg-muted: #57534e;
+  --fg-subtle: #726b66;
+  --bg: #fbfbfa;
+  --surface: #ffffff;
+  --surface-sunken: #f2f1ef;
+  --border: rgba(28, 25, 23, 0.08);
+  --border-strong: rgba(28, 25, 23, 0.48);
+  --ink: #1a1613;
+  --ink-raised: #241f1a;
+  --ink-fg: #f2efe9;
+  --ink-fg-muted: #a8a099;
+  --brand-on-ink: #ff6b78;
+  --elev-1: 0 1px 2px rgb(28 25 23 / 0.05), 0 10px 24px -16px rgb(28 25 23 / 0.24);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #ff6b78;
+    --fg: #f5f4f2;
+    --fg-muted: #b0aaa4;
+    --fg-subtle: #8f8a84;
+    --bg: #191715;
+    --surface: #211f1c;
+    --surface-sunken: #141210;
+    --border: rgba(245, 244, 242, 0.08);
+    --border-strong: rgba(245, 244, 242, 0.36);
+    --ink: #131110;
+    --ink-raised: #1d1a17;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.625;
+}
+
+/* --- Üst ray: uygulamanın mürekkep rayının yatay hâli ------------------- */
+
+.rail {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 0 24px;
+  min-height: 64px;
+  background: var(--ink);
+  /* Sarma YOK: ray sarınca "API" göstergesi tek başına üçüncü satıra düşüyordu
+     ve bozuk görünüyordu. Dar ekranda etiketler yatay kayar, ray tek satır
+     kalır (uygulamanın mobil şeridiyle aynı davranış). */
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  padding: 8px 0;
+}
+
+.mark { width: 24px; height: 24px; flex: none; }
+
+.wordmark {
+  color: var(--ink-fg);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.unit {
+  color: var(--ink-fg-muted);
+  font-size: 12px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.tags {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+
+.tags::-webkit-scrollbar { display: none; }
+
+.tags a {
+  color: var(--ink-fg-muted);
+  white-space: nowrap;
+  font-size: 14px;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 200ms, color 200ms;
+}
+
+.tags a:hover { background: var(--ink-raised); color: var(--ink-fg); }
+
+.tags a:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid var(--brand-on-ink);
+  outline-offset: 2px;
+}
+
+.here {
+  margin-left: auto;
+  flex: none;
+  color: var(--ink-fg);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--ink-raised);
+  border-left: 2px solid var(--brand-on-ink);
+}
+
+/* --- Giriş bloğu -------------------------------------------------------- */
+
+.intro {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 48px 24px 8px;
+}
+
+.intro h1 {
+  margin: 0 0 12px;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  border-left: 2px solid var(--brand);
+  padding-left: 20px;
+}
+
+.lede {
+  max-width: 70ch;
+  margin: 0 0 24px 22px;
+  color: var(--fg-muted);
+  font-size: 15px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  margin: 0 0 20px 22px;
+  padding: 0;
+  list-style: none;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.facts li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+
+.facts span { color: var(--fg-subtle); font-size: 12px; }
+.facts strong { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.spec { margin: 0 0 8px 22px; font-size: 13px; }
+.spec a { color: var(--brand); text-decoration: none; }
+.spec a:hover { text-decoration: underline; }
+
+/* --- Swagger yüzeyi ürüne çekilir --------------------------------------- */
+
+.swagger-host { max-width: 1160px; margin: 0 auto; padding: 0 8px 64px; }
+
+.swagger-ui .topbar { display: none; }
+.swagger-ui .info { display: none; }          /* başlık bloğu yukarıda, tekrarı gereksiz */
+.swagger-ui .scheme-container { background: transparent; box-shadow: none; padding: 8px 16px 24px; }
+
+.swagger-ui,
+.swagger-ui .opblock-tag,
+.swagger-ui .opblock .opblock-summary-path,
+.swagger-ui .opblock .opblock-summary-description,
+.swagger-ui table thead tr th,
+.swagger-ui .parameter__name,
+.swagger-ui .response-col_status {
+  font-family: inherit;
+  color: var(--fg);
+}
+
+.swagger-ui .opblock-tag {
+  border-bottom: 1px solid var(--border);
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+.swagger-ui .opblock {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--elev-1);
+  margin: 0 0 12px;
+}
+
+.swagger-ui .opblock .opblock-summary { border-color: transparent; }
+
+/* Metot rozetleri: Swagger'ın pastel kutuları yerine ürünün sakin dili.
+   Renk tek başına bilgi taşımaz — metot adı zaten rozetin içinde yazılı. */
+.swagger-ui .opblock.opblock-get .opblock-summary-method,
+.swagger-ui .opblock.opblock-post .opblock-summary-method,
+.swagger-ui .opblock.opblock-put .opblock-summary-method,
+.swagger-ui .opblock.opblock-patch .opblock-summary-method,
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  min-width: 76px;
+  box-shadow: none;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method { background: #1f6c9f; }
+.swagger-ui .opblock.opblock-post .opblock-summary-method { background: #346538; }
+.swagger-ui .opblock.opblock-put .opblock-summary-method,
+.swagger-ui .opblock.opblock-patch .opblock-summary-method { background: #956400; }
+.swagger-ui .opblock.opblock-delete .opblock-summary-method { background: var(--brand-strong); }
+
+.swagger-ui .opblock.opblock-get { background: var(--surface); border-color: var(--border); }
+.swagger-ui .opblock.opblock-post { background: var(--surface); border-color: var(--border); }
+.swagger-ui .opblock.opblock-delete { background: var(--surface); border-color: var(--border); }
+
+.swagger-ui .btn.execute {
+  background: var(--brand);
+  border-color: var(--brand);
+  border-radius: 8px;
+}
+
+.swagger-ui .btn.try-out__btn {
+  border-radius: 8px;
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
+.swagger-ui section.models {
+  border-radius: 12px;
+  border-color: var(--border);
+  background: var(--surface-sunken);
+}
+
+.swagger-ui .model-box,
+.swagger-ui .model { background: transparent; }
+
+@media (max-width: 900px) {
+  .rail { gap: 16px; padding: 0 16px; }
+  .unit { display: none; }
+}
+
+@media (max-width: 640px) {
+  .here { display: none; }
+  .intro { padding-top: 32px; }
+}
