@@ -14,7 +14,7 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
 ![Backend tests](https://img.shields.io/badge/backend_tests-915_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 915 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-394_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 394 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-398_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 398 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -262,6 +262,9 @@ Mevcut feature dalındaki ürün arayüzü:
 - Next.js 16 + React 19 + TypeScript ile gerçek çok sayfalı web uygulaması.
 - Rol farkındalıklı dashboard, ders alanı, profil ve admin portalı.
 - Mobil 375px, masaüstü, açık/koyu tema ve klavye erişimi.
+- Tema **uygulama içinden** seçilir (Sistem / Açık / Koyu): rayda, profilde ve
+  giriş ekranında; API belge sayfasının kendi seçicisi var. Seçim ilk boyamadan
+  önce uygulanır, açılışta beyaz çakma olmaz.
 - Yükleniyor, boş, hata ve kilit durumları için ortak bileşenler.
 - Tasarım token’larıyla yönetilen tutarlı arayüz.
 - Son yerel tasarım çalışmasında tek kırmızı aksanlı, daha editoryal ve insan eliyle
@@ -466,7 +469,7 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
 | Backend testleri | **915** <!-- docs-check: backend.tests = 915 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **394** <!-- docs-check: frontend.tests = 394 --> | 36 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 36 --> |
+| Frontend birim testleri | **398** <!-- docs-check: frontend.tests = 398 --> | 37 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 37 --> |
 | Playwright gerçek-API vakaları | **36** <!-- docs-check: e2e.tests = 36 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 36/36; gerçek provider/staging kanıtı değil |
 | Migration | **16** <!-- docs-check: migrations.count = 16 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
@@ -798,7 +801,7 @@ Güncel feature kanıtında backend koleksiyonu 915 testtir. <!-- docs-check: ba
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 394 testtir. <!-- docs-check: frontend.tests = 394 -->
+Güncel feature kanıtında frontend kütüphane paketi 398 testtir. <!-- docs-check: frontend.tests = 398 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 

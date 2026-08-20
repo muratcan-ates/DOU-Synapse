@@ -11,8 +11,10 @@
     Varlıklar static/vendor altında, başlatma betiği ayrı dosyada: belge yüzeyi
     kendi 'self' politikasıyla servis edilir, JSON uçları katı politikada kalır.
   -->
+  <!-- Tema, uygulamada seçilen tercihi izler; ilk boyamadan önce koşar. -->
+  <script src="/static/docs-theme.js?v=3"></script>
   <link rel="stylesheet" href="/static/vendor/swagger-ui.css" />
-  <link rel="stylesheet" href="/static/docs.css?v=3" />
+  <link rel="stylesheet" href="/static/docs.css?v=5" />
 </head>
 <body>
   <header class="rail" aria-label="Ürün gezinmesi">
@@ -38,6 +40,12 @@
       <a href="#/privacy">KVKK</a>
       <a href="#/admin">Bilgi İşlem</a>
     </nav>
+
+    <div class="theme" role="group" aria-label="Tema">
+      <button type="button" data-theme-option="system">Sistem</button>
+      <button type="button" data-theme-option="light">Açık</button>
+      <button type="button" data-theme-option="dark">Koyu</button>
+    </div>
 
     <span class="here" aria-current="page">API</span>
   </header>
