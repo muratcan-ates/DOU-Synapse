@@ -200,9 +200,16 @@ export function MetricRow({ items }: { items: Metric[] }) {
     <Card className="mb-6">
       <dl className="grid grid-cols-2 gap-6 sm:grid-cols-4">
         {items.map((item) => (
-          <div key={item.label} className="flex flex-col-reverse gap-1">
+          <div key={item.label} className="flex flex-col-reverse gap-1.5">
             <dt className="text-xs text-fg-muted">{item.label}</dt>
-            <dd className="font-mono text-2xl text-fg">{item.value}</dd>
+            {/*
+             * `font-mono` idi: Geist Mono'da Türkçe ondalık ayracı rakamlardan
+             * kopuk duruyordu ve "0,47" ekranda "0 , 47" gibi okunuyordu.
+             * `tabular-nums` sütun hizasını mono olmadan verir.
+             */}
+            <dd className="text-2xl leading-none font-semibold tracking-tight tabular-nums text-fg">
+              {item.value}
+            </dd>
           </div>
         ))}
       </dl>
@@ -225,14 +232,19 @@ export function PageHeader({
   compact?: boolean;
 }) {
   return (
-    <div className="rise mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
-      <div className="min-w-0">
+    <div className="rise mb-8 flex flex-wrap items-end justify-between gap-4 pb-6">
+      {/*
+       * Başlık bloğu artık kırmızı bir dikey rayla açılıyor: sayfanın nerede
+       * başladığı tek bakışta okunuyor. Önceki hâlde başlık ile içerik arasında
+       * yalnız bir alt saç çizgisi vardı ve her sayfa aynı düzlükte başlıyordu.
+       */}
+      <div className="min-w-0 border-l-2 border-brand pl-5">
         {eyebrow && (
-          <p className="mb-2 font-mono text-xs font-medium text-brand">{eyebrow}</p>
+          <p className="mb-2 text-xs font-medium tracking-wide text-brand">{eyebrow}</p>
         )}
         <h1
           className={`text-balance font-semibold tracking-tight text-fg ${
-            compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+            compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-[2.75rem] sm:leading-[1.05]"
           }`}
         >
           {title}

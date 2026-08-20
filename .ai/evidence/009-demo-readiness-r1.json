@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "009-demo-readiness-r1",
+  "captured_at": "2026-08-20T13:47:53+00:00",
+  "candidate_sha": "SELF",
+  "command": "bun test lib/; bunx tsc --noEmit; bun run build; node scripts/contrast.mjs; playwright test --workers=1 (seri E2E, izole klon); playwright test screenshots --grep @ekran; node scripts/docs_check.mjs",
+  "environment": "local macOS · PostgreSQL 16 · izole klon dou_synapse_e2e_ekran (düşürüldü) · gerçek Groq sağlayıcısı yalnız elle doğrulamada",
+  "results": {
+    "frontend_library_tests_passed": 394,
+    "serial_e2e_passed": 35,
+    "serial_e2e_skipped": 1,
+    "typecheck_errors": 0,
+    "contrast_gate_exit": 0,
+    "docs_check_exit": 0,
+    "screenshots_regenerated": 8
+  },
+  "governance_note": "Arayüz overhaul'ünde .env.example değişti (R2): (1) EMBEDDING_CACHE_DIR belgelendi — yokluğunda API her açılışta ~2 GB model indirmeye çalışıp dolu diskte 'No space left on device' ile düşüyor ve /health/ready embedding:failed veriyor (20 Ağustos'ta ölçüldü); (2) LLM_PRIMARY_MODEL groq/llama-3.3-70b-versatile Groq'ta artık yok (API NotFoundError) — geçerli modele çevrildi ve ölü model kaydı yorumda bırakıldı. Sır DEĞİŞMEDİ: dosya yalnız örnek değerler taşır, gerçek anahtar gitignore'lu .env'de yaşar ve depoda/geçmişte hiçbir yerde geçmez (arandı).",
+  "limitations": "Gerçek sağlayıcı yalnız elle tek istekle doğrulandı; otomatik kapılar sahte/deterministik yolda koşar. Staging, canary ve production iddiası yok.",
+  "privacy": "içerik yok; sayılar, komutlar ve dosya adları"
+}

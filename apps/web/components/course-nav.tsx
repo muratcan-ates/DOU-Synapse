@@ -68,7 +68,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
        * şerit tamamen kalkar, sayfa dikey olarak zıplar.
        */}
       <nav
-        className={`mb-8 flex gap-1 overflow-x-auto border-b border-border ${
+        className={`mb-8 flex gap-1 overflow-x-auto rounded-xl bg-surface-sunken p-1 ${
           ready ? "" : "invisible"
         }`}
         aria-label={lock.locked ? lock.message ?? undefined : undefined}
@@ -88,7 +88,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
               key={tab.slug}
               aria-disabled="true"
               title={lock.message ?? undefined}
-              className="-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm text-fg-subtle"
+              className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm text-fg-subtle"
             >
               {tab.label}
               <span className="rounded-sm border border-border px-1.5 py-0.5 text-xs text-fg-muted">
@@ -109,10 +109,10 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
             key={tab.slug}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`-mb-px flex items-center whitespace-nowrap border-b-2 px-4 py-3 text-sm transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
+            className={`flex items-center whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm transition-colors duration-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
               active
-                ? "border-brand font-medium text-fg"
-                : "border-transparent text-fg-muted hover:border-border-strong hover:text-fg"
+                ? "bg-surface font-medium text-fg shadow-e1"
+                : "text-fg-muted hover:bg-surface/70 hover:text-fg"
             }`}
           >
             {tab.label}

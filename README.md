@@ -31,10 +31,10 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 
 | Katman | Durum | Açıklama |
 |---|---|---|
-| **Birleşmiş temel ürün** | <code>origin/main · 2c17886</code> | Production-hardening ve ürün portalı PR #4 ile main’e birleşti |
-| **AI-SDLC ve engineering excellence** | <code>004-ai-sdlc-excellence · 7c1c219</code> | Uzak feature dalında; main’e henüz birleşmedi |
-| **Rol farkındalıklı ders ajanı** | <code>005-role-aware-course-agent · fc5bd59</code> | Uzak feature dalında; main’e henüz birleşmedi |
-| **Güncel ürün adayı** | <code>design/product-ui-refresh</code> | 005 üzerinde UI, KVKK ve append-only R3 kanıt revizyonu; doğrulandı ve feature dalında, main’e henüz birleşmedi |
+| **Birleşmiş ürün** | <code>origin/main · 9beafca</code> | AI-SDLC yönetişimi, rol farkındalıklı ders ajanı, ürün portalı ve arayüz yenilemesi PR #5 ile; modülerizasyon PR #16 ile; bağımlılık bakımı, rubrik kırılımı ve belge/ekran tazelemesi PR #18-#20 ile main'de |
+| **Yönetişim zinciri** | <code>.ai/ · dossier 008</code> | Her hassas değişiklik dossier + aynı-commit kanıtla; doğrulayıcı CI'da her push'ta koşar (append-only denetim, kanıt bağlama, metrik eşitliği) |
+| **Arayüz derinleştirmesi** | <code>design/product-ui-depth · PR #22</code> | Yüzey hiyerarşisi, tokenlanmış elevation, kontrast kapısına üçüncü zemin; kapılar yeşil, main'e birleşme bekliyor |
+| **Ürün arayüzü** | <code>design/product-ui-depth · PR #22</code> ve devamı | Mürekkep gezinme rayı, yeni marka işareti (kaynak-atıf-cevap diyagramı), segment sekme şeridi, tokenlanmış elevation; kontrast kapısı üç zemini ve rayı ölçer |
 | **Canlı production** | **Kanıtlanmadı** | Staging URL, canlı Supabase, gerçek LLM değerlendirmesi, canary ve rollback kanıtı açık |
 
 ### Kanıt etiketleri

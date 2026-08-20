@@ -176,7 +176,7 @@ function AnalyticsView({
  */
 function ScoreDisclaimer() {
   return (
-    <Card className="mb-6">
+    <Card variant="soft" className="mb-6">
       <p className="prose-tr text-sm text-fg-muted">
         <span className="font-medium text-fg">Bu gösterge resmî bir not değildir.</span>{" "}
         Nereye çalışılacağını gösteren pedagojik bir öneridir. Skor, son cevaplara
@@ -251,9 +251,9 @@ function TopicRowItem({ row, rank }: { row: TopicRow; rank: number }) {
   return (
     <li className="border-b border-border px-4 py-3 last:border-0">
       <div className="flex items-center gap-3">
-        <span className="w-6 shrink-0 font-mono text-xs text-fg-subtle">#{rank}</span>
+        <span className="w-6 shrink-0 text-xs tabular-nums text-fg-subtle">#{rank}</span>
         <p className="min-w-0 flex-1 truncate text-sm text-fg">{row.name}</p>
-        <span className="shrink-0 font-mono text-sm text-fg">
+        <span className="shrink-0 text-sm font-semibold tabular-nums text-fg">
           {scoreText(row.score)}
         </span>
       </div>
@@ -261,10 +261,10 @@ function TopicRowItem({ row, rank }: { row: TopicRow; rank: number }) {
       <div className="mt-1.5 flex items-center gap-3 pl-9">
         <div
           aria-hidden="true"
-          className="h-1 w-full max-w-[220px] rounded-full bg-border"
+          className="h-1.5 w-full max-w-[26rem] rounded-full bg-surface-sunken"
         >
           <div
-            className="h-1 rounded-full bg-fg-subtle"
+            className="h-1.5 rounded-full bg-fg-subtle transition-[width] duration-500"
             style={{ width: `${barPercent(row.score)}%` }}
           />
         </div>
@@ -350,7 +350,9 @@ function OutOfScopeCard({ stat }: { stat: ClassAnalytics["out_of_scope"] }) {
   return (
     <Card className="mb-6">
       <h2 className="text-sm font-medium text-fg">Kapsam dışı ret oranı</h2>
-      <p className="mt-2 font-mono text-2xl text-fg">{rateText(stat.rate)}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-fg">
+        {rateText(stat.rate)}
+      </p>
       {stat.rate !== null && (
         <p className="prose-tr mt-2 text-sm text-fg-muted">
           {outOfScopeCountsText(stat)}

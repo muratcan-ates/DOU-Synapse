@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "change_id": "009-demo-readiness-r1",
+  "lineage_id": "demo-readiness",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Sunum hazırlığı: model önbellek yolu ve geçerli LLM modeli belgelendi",
+  "summary": "Arayüz overhaul'ü ile aynı dalda .env.example iki gerçek arızayı kaydeder: belgesiz EMBEDDING_CACHE_DIR (dolu diskte açılışı düşürüyordu) ve Groq'ta kalkmış model adı.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-20T16:47:53+03:00",
+  "review_by": "2026-09-19T16:47:53+03:00",
+  "base_sha": "9beafcac7b8da7d0dcfb6d245d54e2d70c36f798",
+  "candidate_sha": "SELF",
+  "risk_tier": "R2",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-9beafcac (yalnız örnek yapılandırma ve arayüz)",
+    "model_revision": "unchanged-from-base-9beafcac (yalnız örnek yapılandırma ve arayüz)",
+    "prompt_revision": "unchanged-from-base-9beafcac (yalnız örnek yapılandırma ve arayüz)",
+    "tool_schema_revision": "unchanged-from-base-9beafcac (yalnız örnek yapılandırma ve arayüz)",
+    "guardrail_revision": "unchanged-from-base-9beafcac (yalnız örnek yapılandırma ve arayüz)",
+    "retrieval_revision": "unchanged-from-base-9beafcac (yalnız örnek yapılandırma ve arayüz)",
+    "embedding_revision": "unchanged-from-base-9beafcac (yalnız örnek yapılandırma ve arayüz)",
+    "evaluator_revision": "frontend-394; serial-e2e-35; contrast-gate-with-ink-rail; screenshots-8"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "0df827af086eee4d46d72d1cedebefbc8e991faf33a19361103b028f5b0c6628",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".env.example",
+      "state": "present",
+      "sha256": "a46a227f19853cca74caea87e7c96eaca974bd76ca2d660e8861a841a72e234b"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/009-demo-readiness-r1.json",
+      "report_sha256": "00af82529bbed5b2e846e8200fd4245b279501a1f8ecdb18dcc7cf6268c1cf64",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "DESIGN.md",
+    "holdout_ref": "seri E2E 35/36 gerçek API + tarayıcı (izole klon)",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: yapılandırma örneği ve arayüz; davranış ağı mevcut test+E2E",
+    "metrics": [
+      {
+        "name": "frontend_library_tests_passed",
+        "baseline": 394,
+        "candidate": 394,
+        "operator": ">=",
+        "threshold": 394,
+        "sample_size": 394
+      },
+      {
+        "name": "serial_e2e_passed",
+        "baseline": 35,
+        "candidate": 35,
+        "operator": ">=",
+        "threshold": 35,
+        "sample_size": 36
+      }
+    ],
+    "exact_command": "set -euo pipefail; cd apps/web && bun test lib/ && bunx tsc --noEmit --incremental false && bun run build && node scripts/contrast.mjs; cd .. && node scripts/docs_check.mjs; apps/api/.venv/bin/python scripts/ai_sdlc_check.py --base-sha 9beafcac7b8da7d0dcfb6d245d54e2d70c36f798 --head-sha \"$(git rev-parse HEAD)\""
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "course_or_product",
+      "actor": "Pending course/product reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:009-demo-readiness-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope, kill-switch or rollback fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and the frozen real-provider holdout passes.",
+      "Staging auth, storage, RLS and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under the shared user assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:9beafcac7b8da7d0dcfb6d245d54e2d70c36f798",
+    "procedure": "Dalı revert et; .env.example örnek değerlere döner, çalışan sistem etkilenmez (gerçek yapılandırma .env'de).",
+    "max_minutes": 15,
+    "verification": "docs_check ve contrast kapısı eski ağaçta yeşil.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

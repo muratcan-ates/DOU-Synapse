@@ -11,6 +11,91 @@
 
 ---
 
+## Sunumdan 10 dakika önce — yığını kaldırma ve kanıt turu
+
+Aşağıdaki sıra **20 Ağustos 2026'da bu makinede birebir koşuldu**; her madde o koşuda
+ölçülmüş bir tuzağı kapatır (hepsi gerçekten yaşandı, hiçbiri varsayım değil).
+
+1. **PostgreSQL ayakta mı?**
+   ```bash
+   pg_isready
+   ```
+   Cevap vermiyorsa: bilgisayar çökmüşse `postmaster.pid` bayat kalır ve içindeki PID
+   başka bir sürece ait olabilir (ölçüldü: PID McAfee'ye aitti). O dosyayı silip
+   `brew services restart postgresql@16`.
+
+2. **Rollerin giriş yetkisi duruyor mu?** (test koşuları bunu düşürebiliyor)
+   ```bash
+   psql -d postgres -tAc "select rolname, rolcanlogin from pg_roles where rolname like 'dou_%'"
+   ```
+   `f` görürsen: `psql -q -d dou_synapse -f supabase/local_dev_setup.sql`.
+
+3. **Model önbelleği gösteriliyor mu?** `apps/api/.env` içinde `EMBEDDING_CACHE_DIR`
+   dolu olmalı. Boşsa fastembed ~2 GB'ı yeniden indirmeye çalışır; dolu diskte açılış
+   `No space left on device` ile düşer ve asistan sunumda hiç cevap veremez. Doğru
+   ayarla ilk hazırlık **~5 saniye** sürer.
+
+4. **API ve web'i başlat** (ayrı iki terminal ya da Claude'un sunucu profilleri):
+   ```bash
+   cd apps/api && EMBEDDING_PROVIDER=fastembed uv run uvicorn app.main:app --port 8030
+   ```
+   ```bash
+   cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:8030 bun run dev --port 3030
+   ```
+
+5. **Hazırlık kanıtı — üçü de `ok` olmadan sahneye çıkma:**
+   ```bash
+   curl -s http://localhost:8030/health/ready
+   ```
+   Beklenen: `{"status":"ok","checks":{"database":"ok","pgvector":"ok","embedding":"ok"}}`
+
+6. **Sağlayıcı dürüstlüğü.** `GROQ_API_KEY` doluysa cevaplar gerçek modelden gelir.
+   Boşsa uygulama **deterministik sahte sağlayıcıya** düşer (log: "llm anahtarı yok"),
+   cevaplar materyalden alıntı birleştirir. İkisi de meşrudur ama **hangisinde
+   olduğunuzu bilerek** anlatın; jüriye "gerçek model" demeden önce logdan doğrulayın.
+
+7. **Isıtma turu.** Sahneye çıkmadan bir soru sorup atın: ilk soru embedding modelini
+   belleğe alır (~12 sn), sonrakiler saniyenin altında döner. Jüri o 12 saniyeyi
+   görmesin.
+
+8. **Ders listesi temiz mi?** Demo veritabanında yalnız gerçek dersler olmalı
+   (`COME 331` ve arkadaşları). Test artığı ders birikirse liste çöplük görünür:
+   ```bash
+   psql -d dou_synapse -tAc "select count(*) from courses"
+   ```
+   20 Ağustos'ta bu sayı 204'tü ve 197'si test artığıydı; temizlendi, **7 kaldı**.
+
+9. **LLM modeli hâlâ geçerli mi?** Sağlayıcılar model adlarını kullanımdan
+   kaldırır. 20 Ağustos'ta `groq/llama-3.3-70b-versatile` Groq'ta artık yoktu ve
+   asistan "Cevap üretme servisine ulaşılamıyor" hatası veriyordu. Kontrol:
+   ```bash
+   curl -s -H "Authorization: Bearer $GROQ_API_KEY" https://api.groq.com/openai/v1/models \
+     | python3 -c "import json,sys; print([m['id'] for m in json.load(sys.stdin)['data']])"
+   ```
+   `.env`'deki `LLM_PRIMARY_MODEL` bu listede yoksa listeden bir model seçin.
+
+10. **Demo öğrencisinin günlük AI kotası boş mu?** Kota kalıcıdır (veritabanında);
+    prova sırasında dolarsa sunumda "Günlük kişisel AI kullanım kotan doldu"
+    hatası çıkar. Provadan sonra sıfırlayın:
+    ```bash
+    psql -d dou_synapse -c "delete from ai_token_reservations"
+    ```
+
+11. **Bilgi İşlem konsolu görünüyor mu?** Ayşe Hoca platform yöneticisi değilse
+    admin sekmesi hiç çizilmez (20 Ağustos'ta paylaşılan veritabanında bu satır
+    eksikti ve üç E2E testi de bu yüzden düşüyordu):
+    ```bash
+    psql -d dou_synapse -tAc "select count(*) from platform_admins"
+    ```
+    `0` ise: `psql -d dou_synapse -f supabase/seed_demo.sql`
+
+**Demoda gösterilecek ders:** `COME 331 · İşletim Sistemleri` — üç materyali işlenmiş
+durumda (`producer_consumer.py`, `04-synchronization.pdf`, `01-processes.pdf`).
+Kimlikler: **Ayşe Hoca** (eğitmen) ve **Burak Yılmaz** (öğrenci); giriş ekranında iki
+kartla seçilir, parola yoktur (geliştirme kimliği).
+
+---
+
 ## Anlatının omurgası
 
 Ürünün tezi tek cümlede: **"Kaynak yoksa cevap da yok."**
