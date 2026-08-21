@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/*
+ * DOU-Synapse tasarım token'ları — kaynak: DESIGN.md
+ * Uygulanan skill'ler: minimalist-ui (sıcak monokrom, editoryal), design-taste-frontend
+ * (tek aksan kilidi, anti-Inter, shape lock: radius 8-12, pill yalnız rozet).
+ * Türkçe istisnası: uppercase dönüşümü kullanılmaz (i/İ bozulur).
+ */
+:root {
+  /* Tek aksan: Doğuş kırmızısı (resmî logodan, #C50C1F, beyazda 6.09:1). */
+  --brand: #c50c1f;
+  --brand-strong: #a00a19;
+  --brand-subtle: #fdebec;
+
+  /* Sıcak monokrom kanvas (minimalist-ui): saf beyaz değil, kemik. */
+  --fg: #1c1917;
+  --fg-muted: #57534e;
+  --fg-subtle: #8a8580;
+  --bg: #fbfbfa;
+  --surface: #ffffff;
+  --border: rgba(28, 25, 23, 0.08);
+  --border-strong: rgba(28, 25, 23, 0.14);
+
+  /* Durum renkleri: metin koyu, zemin soluk pastel (pill rozetler). */
+  --success: #346538;
+  --success-bg: #edf3ec;
+  --warning: #956400;
+  --warning-bg: #fbf3db;
+  --danger: #9f2f2d;
+  --danger-bg: #fdebec;
+  --info: #1f6c9f;
+  --info-bg: #e1f3fe;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Ham #C50C1F koyu zeminde 2.87:1 — okunmaz; marka açılır (DESIGN.md ölçümü). */
+    --brand: #ff6b78;
+    --brand-strong: #ffa1aa;
+    --brand-subtle: #3a1a1e;
+
+    --fg: #f5f4f2;
+    --fg-muted: #b0aaa4;
+    --fg-subtle: #7d7873;
+    --bg: #191715;
+    --surface: #211f1c;
+    --border: rgba(245, 244, 242, 0.08);
+    --border-strong: rgba(245, 244, 242, 0.16);
+
+    --success: #7bc47f;
+    --success-bg: #1d2a1e;
+    --warning: #d9a23d;
+    --warning-bg: #2b2312;
+    --danger: #f08c8a;
+    --danger-bg: #331a1c;
+    --info: #6fb4dd;
+    --info-bg: #14232e;
+  }
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-subtle: var(--brand-subtle);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  line-height: 1.625; /* uzun okuma için bilinçli yüksek */
+  -webkit-font-smoothing: antialiased;
+}
+
+.prose-tr {
+  max-width: 70ch;
+}
+
+/*
+ * Giriş animasyonu (minimalist-ui §7): görünmez denecek kadar sakin.
+ * transform+opacity dışında özellik animate edilmez; sınav ekranı bunu KULLANMAZ.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rise-1 { animation-delay: 60ms; }
+.rise-2 { animation-delay: 140ms; }
+.rise-3 { animation-delay: 220ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .rise-1, .rise-2, .rise-3 {
+    animation: none;
+  }
+}
+
+/* Ambiyans: giriş ekranı arkasında tek, sabit, çok soluk ışık lekesi. */
+.ambient {
+  background:
+    radial-gradient(560px 380px at 18% 22%, rgba(197, 12, 31, 0.05), transparent 68%),
+    radial-gradient(480px 340px at 85% 78%, rgba(197, 12, 31, 0.03), transparent 70%);
+}
+@media (prefers-color-scheme: dark) {
+  .ambient {
+    background:
+      radial-gradient(560px 380px at 18% 22%, rgba(255, 107, 120, 0.05), transparent 68%),
+      radial-gradient(480px 340px at 85% 78%, rgba(255, 107, 120, 0.03), transparent 70%);
+  }
+}

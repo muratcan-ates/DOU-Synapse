@@ -1,0 +1,331 @@
+[
+ {
+  "siddet": "major",
+  "dosya": "app/courses/[courseId]/page.tsx",
+  "satir": "289-345 (özellikle 331-333 ve 342)",
+  "baslik": "DeleteDocumentButton, ConfirmAction'a taşınmamış kopya — ve hata mesajı hiç ekrana gelmiyor",
+  "fix": "DeleteDocumentButton'ı tamamen sil, yerine ConfirmAction koy: label=\"Sil\", confirmLabel=\"Evet, sil\", busyLabel=\"Siliniyor…\", question=\"Materyal ve tüm parçaları silinecek.\", ariaLabel={`${doc.file_name} dosyasını sil`}, onConfirm={async () => { await api.delete(...); onDeleted(); }}. Bu tek değişiklik hem sessiz hatayı hem 57 satırlık kopyayı kaldırır ve dosyayı 345'ten ~295 satıra indirir."
+ },
+ {
+  "siddet": "major",
+  "dosya": "app/globals.css",
+  "satir": "18 (açık: --fg-subtle) ve 44 (koyu: --fg-subtle)",
+  "baslik": "`--fg-subtle` her iki temada da WCAG AA'yı geçmiyor (3.24–4.09:1); 29 yerde bilgi taşıyan metin için kullanılıyor",
+  "fix": "Açık temada `--fg-subtle`'ı en az `#6f6a65` civarına (≥4.5:1), koyu temada `#8d8882` civarına koyulaştır/aç ve DESIGN.md tablosunu ölçülen gerçek değerle güncelle. Alternatif: 12px bilgi metinlerini `--fg-muted`'a taşıyıp `--fg-subtle`'ı yalnız gerçekten dekoratif öğelere bırak."
+ },
+ {
+  "siddet": "major",
+  "dosya": "app/layout.tsx",
+  "satir": "16-20 (metadata) + tüm rota sayfaları",
+  "baslik": "Her rotada `document.title` sabit \"DOU-Synapse\" — Next'in rota duyurucusu hiçbir sayfa değişimini duyurmuyor",
+  "fix": "Her rotaya kendi başlığını ver. İstemci bileşeni oldukları için `generateMetadata` yerine ya rotaya ince bir sunucu `layout.tsx` ekleyip `metadata` tanımla, ya da `<title>` yerine sayfa başına `useEffect(() => { document.title = \"Soru havuzu · DOU-Synapse\" })` kullan. Sohbet sayfasına `PageHeader`/`<h1>` ekle."
+ },
+ {
+  "siddet": "major",
+  "dosya": "apps/web/app/courses/[courseId]/page.tsx",
+  "satir": "289-345",
+  "baslik": "Belge silme hatası ekranda HİÇ görünmüyor — ConfirmAction'a taşınmamış tek çağrı yeri",
+  "fix": "`DeleteDocumentButton`'ı sil ve yerine `ConfirmAction`'ı kullan (label=\"Sil\", confirmLabel=\"Evet, sil\", busyLabel=\"Siliniyor…\", question=\"Materyal ve tüm parçaları silinecek.\", ariaLabel=`${doc.file_name} dosyasını sil`, onConfirm içinde api.delete + onDeleted)."
+ },
+ {
+  "siddet": "major",
+  "dosya": "apps/web/app/globals.css",
+  "satir": "18, 47",
+  "baslik": "`--fg-subtle` WCAG AA'yı geçmiyor: 3.53:1 (açık) / 4.09:1 (koyu) — 29 kullanım yeri",
+  "fix": "Açık temada `--fg-subtle`'ı en az #6f6a65 seviyesine koyulaştır (#fbfbfa üstünde ≈4.9:1), koyu temada en az #9a948e'ye açık al (#211f1c üstünde ≈5.4:1); değişikliği DESIGN.md renk tablosuna ölçülmüş oranla birlikte yaz. Ayrıca \"doğru\" etiketini `text-fg-muted`'a çek — o zaten 7.37:1."
+ },
+ {
+  "siddet": "major",
+  "dosya": "app/courses/[courseId]/page.tsx",
+  "satir": "56 (kök neden: lib/use-resource.ts:43-52)",
+  "baslik": "Polling sırasında tek bir başarısız istek, ekrandaki sağlam veriyi atıp bütün sayfayı tek satır hataya indiriyor",
+  "fix": "Elde veri varken hatayı sayfayı düşürmeden göster: `if (error && !data) return <ErrorNote/>` yap, `data` varken hatayı listenin üstünde satır içi bir uyarı olarak ver (members ekranındaki desen). Alternatif/ek olarak `useResource`'ta arka plan tazelemelerinin hatasını ayrı bir `refreshError` alanında tut ve ilk yükleme hatasından ayır."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "lib/use-resource.ts",
+  "satir": "43-66 (özellikle 46 ve 60-62)",
+  "baslik": "useResource'ta `cancelled` bayrağı setData'yı korumuyor: geç gelen eski cevap taze veriyi kalıcı olarak eziyor, silinen belge geri geliyor",
+  "fix": "`reload`'a istek kimliği verin ve yalnız en son istek yazsın: modül içinde `const seq = useRef(0)`, `reload` başında `const my = ++seq.current`, `await` sonrası `if (my !== seq.current) return;` kontrolüyle hem `setData` hem `setError` korunsun. `deps` değişince `seq.current++` ile uçuştaki tüm istekleri geçersizleştirin (satır 54-66'daki efektte, `cancelled` yerine). Tercihen `AbortController` ile isteği de iptal ed"
+ },
+ {
+  "siddet": "minor",
+  "dosya": "lib/use-resource.ts",
+  "satir": "48-50 (hata), kullanım: app/courses/[courseId]/page.tsx:56 ve app/courses/page.tsx:31",
+  "baslik": "Tazeleme sırasında tek bir geçici hata bütün sayfayı kalıcı olarak siliyor: başlık, sekmeler, liste gidiyor, geri dönüş yolu yok",
+  "fix": "`useResource`'ta hatayı ilk yükleme (data===null) ile tazeleme hatasından ayırın: `Resource`'a `refreshError` gibi ikinci bir alan ekleyin ya da başarısız tazelemede `error`'ı ayrı tutup `data` varken sayfanın erken dönmemesini sağlayın. Sayfa tarafında `app/courses/[courseId]/page.tsx:56` ve `app/courses/page.tsx:31`'i `members/page.tsx:46`'daki desene çevirin: veri varsa sayfayı çizmeye devam edip hatayı satır içi "
+ },
+ {
+  "siddet": "minor",
+  "dosya": "lib/use-resource.ts",
+  "satir": "54-66",
+  "baslik": "`cancelled` bayrağı ölü — iptal koruması hiçbir şey korumuyor, yarış koşulu açık",
+  "fix": "İptali reload'ın kendisine taşı: modül seviyesinde bir `requestId` ref'i tut, her çağrıda artır, setData/setError'dan önce `if (id !== latestRef.current) return;` kontrolü yap. Böylece hem deps değişimi hem üst üste binen polling turları için son-kazanır yerine en-son-başlayan-kazanır semantiği olur. Alternatif olarak AbortController'ı fetcher'a geçir. Mevcut `cancelled` bloğu ya işlevsel hale getirilmeli ya da yanıl"
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/courses/[courseId]/exam/page.tsx",
+  "satir": "24-55",
+  "baslik": "İkinci bir PREVIEW_QUESTIONS: aynı ad, farklı şekil, kopyalanmış içerik",
+  "fix": "Sınav soru listesini lib/preview-data.ts'e taşı (ör. `EXAM_PREVIEW_QUESTIONS`), veya daha iyisi mevcut PREVIEW_QUESTIONS'ın `type === \"mcq\"` olanlarından türet — sınav ekranı zaten yalnız çoktan seçmeli gösteriyor. En azından yerel sabitin adını değiştir; iki farklı şeye aynı ad verilmesin."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "components/app-shell.tsx",
+  "satir": "15-28 (ayrıca components/course-nav.tsx:25)",
+  "baslik": "useSession iki bileşende atlanıyor; oturum okuma hâlâ üç ayrı yerde",
+  "fix": "AppShell `const { user, ready } = useSession()` kullansın, yönlendirmeyi `useEffect(() => { if (ready && !user) router.replace(\"/\") }, [ready, user, router])` ile yapsın. CourseNav `const { isInstructor } = useSession()` kullansın. Sonrasında `getStoredUser`'ın tek tüketicisi lib/session.ts kalır ve ona `@internal` notu düşülebilir."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/courses/[courseId]/members/page.tsx",
+  "satir": "149 (ayrıca 54 ve 58; [courseId]/page.tsx:91 ve 204; analytics/page.tsx:107,122; questions/page.tsx:86)",
+  "baslik": "Tekrarlanan Tailwind dizileri: form kontrolü, liste kabuğu ve panel başlığı bileşenleşmemiş",
+  "fix": "ui.tsx'e `Select` ekle (Input ile ortak className sabitini paylaşsın, ör. `const CONTROL = \"h-10 rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:…\"`). page-state.tsx'e `RowList` (ul kabuğu) ve `Row` (satır kabuğu) ekle; `Panel({title, aside, children})` ile p-0 Card + başlık kalıbını kapat. Bunlar zaten var olan üç bileşenden fazlasını gerektirmiyor."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "components/ui.tsx",
+  "satir": "89-97 (ayrıca lib/session.ts:6-8)",
+  "baslik": "Yeni yorumlar tamamlanmamış refactor'u tamamlanmış gibi anlatıyor",
+  "fix": "1. ve 9. bulgular düzeltilince yorumlar zaten doğru olur — sıra bu: önce kodu yorumun anlattığı hale getir. Düzeltilmeyecekse yorumu geçmiş zamandan bugüne çevir ('… hâlâ [courseId]/page.tsx'te ayrı kopya var, taşınacak'). use-resource.ts:22'yi sil (kod kendini anlatıyor), :26-27'yi setData ile birlikte kaldır."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/courses/[courseId]/exam/page.tsx",
+  "satir": "103-110 (aria-live), 69-75 (setInterval)",
+  "baslik": "Sınav sayacı saniyede bir `aria-live=\"polite\"` duyurusu üretiyor — ekran okuyucu 12 dakika boyunca soru metnini basıyor",
+  "fix": "`aria-live` kaldırılıp `role=\"timer\"` (varsayılan `aria-live=\"off\"`) verilmeli; duyuru yalnız eşiklerde yapılmalı (ör. 5 dk / 1 dk kala ayrı bir `role=\"status\"` bölgesine \"1 dakika kaldı\" yazılır). Görsel sayaç aynen kalır."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/courses/[courseId]/questions/page.tsx",
+  "satir": "53-59 (decide), 174-180 (Onayla butonu)",
+  "baslik": "Onaydan sonra detay paneli sessizce başka soruya geçiyor; son taslakta odak tamamen kayboluyor",
+  "fix": "Karar sonrası `role=\"status\"` bir bölgeye \"S-001 onaylandı. Sıradaki taslak: S-002\" yaz ve odağı yeni seçilen soruya (ya da detay panelinin `tabIndex={-1}` başlığına) taşı. Buton devre dışı bırakılacaksa önce odağı güvenli bir öğeye al; ya da devre dışı bırakmak yerine `aria-disabled` + no-op kullan."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "components/ui.tsx",
+  "satir": "117-134 (ConfirmAction) — aynı desen app/courses/[courseId]/page.tsx:302-312",
+  "baslik": "Onay moduna girerken ve vazgeçerken odak `<body>`'ye düşüyor",
+  "fix": "`useEffect` ile `confirming` true olunca \"Evet, sil\" butonuna, false olunca tetikleyici butona odağı geri ver (tetikleyici için `useRef`). Onay bloğuna `role=\"group\"` + `aria-label` de eklenebilir."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "components/course-nav.tsx",
+  "satir": "28",
+  "baslik": "Ders sekmelerinin odak halkası `overflow-x-auto` tarafından kırpılıyor — üst ve alt kenarı görünmüyor",
+  "fix": "Nav'a `py-px` veya `pb-1` gibi küçük bir iç boşluk ver ki halka kırpılmasın; sekmelere de butonlarla aynı `focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand` sınıflarını ekle (negatif offset kırpılmayı da bitirir)."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/courses/[courseId]/members/page.tsx",
+  "satir": "136-153; aynı desen app/courses/page.tsx:115-132",
+  "baslik": "Görünür etiket yok: placeholder etiket yerine kullanılıyor (DESIGN.md açıkça yasaklıyor) ve hata girdiyle ilişkilendirilmiyor",
+  "fix": "Her alana görünür `<label htmlFor>` ekle (küçük `text-xs text-fg-muted` etiket satırı düzeni bozmaz), placeholder'ı yalnız örnek değer olarak bırak; hata durumunda `aria-invalid=\"true\"` + `aria-describedby` ile hata ve yardım metnini bağla."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/courses/[courseId]/page.tsx",
+  "satir": "240-244 (previewError) ve 342 (silme hatası)",
+  "baslik": "Ders detayındaki iki hata mesajında `role=\"alert\"` yok — refactor sonrası ConfirmAction ile tutarsız kalmış",
+  "fix": "Her iki yeri de `ErrorNote`/`ConfirmAction` ile aynı hale getir: `role=\"alert\"` ekle (veya `DeleteDocumentButton`'ı tamamen `ConfirmAction`'a taşı — zaten aynı desen). Önizleme paneli için `aria-controls` + panel id'si de eklenebilir."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "apps/web/app/globals.css",
+  "satir": "61-83",
+  "baslik": "DESIGN.md tipografi ölçeği hiç uygulanmamış; `text-lg`/`text-base` Tailwind varsayılanına düşüyor",
+  "fix": "@theme inline içine DESIGN.md tablosunu birebir yaz (--text-base: 1rem / --text-base--line-height: 1.625; --text-lg: 1.25rem/1.4; --text-xl: 1.5625rem/1.28; --text-2xl: 1.9375rem/1.226), sonra `text-3xl`→`text-xl`, `text-5xl/6xl`→ölçek içi bir adım olarak düzelt. Ya da ölçeği ürünün gerçekte kullandığı adımlara göre DESIGN.md'de güncelle — ama iki taraftan biri diğerine uymalı."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "apps/web/components/page-state.tsx",
+  "satir": "42-46",
+  "baslik": "Kırmızı kilidi üç yerde kırılmış: önizleme şeridi, kaynak konum rozeti, Sokratik kademe noktaları",
+  "fix": "PreviewBanner'ı `bg-info-bg` + `text-info` (ya da tamamen nötr `bg-surface`/`text-fg-muted`) yap; SourceCard konum rozetini `bg-info-bg text-info`'ya çevir — token zaten bu iş için tanımlı; SocraticLadder noktalarını `bg-fg` / `bg-border-strong` ikilisine indir."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "apps/web/app/courses/page.tsx",
+  "satir": "113-133",
+  "baslik": "Formlarda görünür etiket yok; placeholder etiket görevinde — açık \"Yapma\" ihlali",
+  "fix": "`Input`'a zorunlu `label: string` prop'u ekle, `<label>`+`<input>` çiftini id/htmlFor ile bağla ve etiketi `text-sm text-fg-muted` olarak girdinin üstüne koy; placeholder'ı yalnız örnek değer olarak bırak (\"örn. COME301\"). `<select>` için de aynısı."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "apps/web/app/globals.css",
+  "satir": "11-58",
+  "baslik": "Renk token'larının neredeyse tamamı DESIGN.md tablosundan sapmış; belge artık ürünü tarif etmiyor",
+  "fix": "Tek bir seferde karar ver: ya globals.css'i DESIGN.md değerlerine döndür, ya da DESIGN.md tablolarını uygulanan değerlerle + yeniden ölçülmüş oranlarla güncelle ve eksik token'ları (border, *-bg, koyu brand-strong) belgeye ekle. İkincisi daha gerçekçi."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "apps/web/app/globals.css",
+  "satir": "126-138",
+  "baslik": "`.ambient` iki radial-gradient uyguluyor — \"Gradyan (zemin, metin, buton — hiçbiri)\" açık yasağı",
+  "fix": "`.ambient`'i kaldır ve giriş ekranını düz `--bg` üstünde bırak; ayrım zaten sağ paneldeki `border-l` ve `bg-surface/60` ile kuruluyor. Tutulacaksa DESIGN.md'ye açık bir istisna maddesi yazılmalı (\"yalnız giriş ekranı zemininde, opaklık ≤ %5\")."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "apps/web/app/courses/[courseId]/page.tsx",
+  "satir": "64-76",
+  "baslik": "CourseNav sırası bir ekranda farklı: sekme şeridi ders detayında aşağı kayıyor",
+  "fix": "Ders detayında da `CourseNav`'ı `PageHeader`'ın üstüne al (breadcrumb → CourseNav → PageHeader). Daha iyisi: breadcrumb+CourseNav'ı tek bir `CourseHeader` bileşenine topla ve altı sayfanın hepsinde ders adını göster."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "apps/web/components/ui.tsx",
+  "satir": "30",
+  "baslik": "Dokunma hedefleri 44px değil: butonlar/girdiler 40px, üst çubuktaki Çıkış ~28px",
+  "fix": "`Button` ve `Input`'u `h-11` (44px) yap — DESIGN.md 4px ölçeğinde 44 zaten var. Çıkış butonuna `min-h-11 min-w-11` ekle (görsel olarak küçük kalabilir, dokunma alanı büyür). CourseNav sekmelerini `py-3`'e çıkar."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "lib/api.ts",
+  "satir": "86, 95 (ayrıca lib/use-resource.ts:80)",
+  "baslik": "Ayrıştırılamayan 200 yanıtı sessizce null'a düşüyor; ekran sonsuz \"Yükleniyor…\" kalıyor",
+  "fix": "`request()` içinde ayrıştırma sonucunu ok yanıtta ayrıca ele al: `const text = await response.text()` sonra try/catch ile parse et; 204/boş gövde beklenen uçlar dışında parse başarısızlığında ApiError fırlat (kod: `invalid_response`). Ek olarak `useResource`'ta `loading`'i veriden türetmek yerine ayrı bir `loaded` bayrağıyla izle ki `null` dönen bir uç ekranı asla kilitlemesin."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "lib/api.ts",
+  "satir": "88-93",
+  "baslik": "FastAPI'nin kendi 422 doğrulama yanıtı ({detail:[...]}) çözülmüyor; kullanıcı hiçbir şey anlatmayan genel mesaj görüyor",
+  "fix": "`request()` içinde ikinci biçimi de çöz: `body?.error?.message ?? (Array.isArray(body?.detail) ? body.detail.map(d=>d.msg).join(' ') : typeof body?.detail === 'string' ? body.detail : undefined) ?? genel_metin`. Ham İngilizce Pydantic metnini kullanıcıya basmak istenmiyorsa en azından 422 için alan bazlı Türkçe bir eşleme yap (ör. loc[1]===\"email\" → \"Geçerli bir e-posta adresi girin.\"). Kalıcı çözüm backend'de bir Re"
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/layout.tsx",
+  "satir": "app/ altında error.tsx / global-error.tsx yok",
+  "baslik": "Render sırasında istisna olursa Next'in İngilizce \"This page couldn't load\" ekranı geliyor; hata sınırı hiç yok",
+  "fix": "`app/error.tsx` (ve tercihen `app/global-error.tsx`) ekle: DESIGN.md tonunda Türkçe metin, `reset()` çağıran bir \"Tekrar dene\" ve /courses'a dönüş bağlantısı. Ayrıca `useResource`/çağrı yerlerinde en azından dizi bekleyen uçlar için `Array.isArray(next)` kontrolü yapıp değilse ApiError'a çevir."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "app/courses/[courseId]/members/page.tsx",
+  "satir": "44",
+  "baslik": "Katılımcı ekleme formu rol kontrolü olmadan render ediliyor; öğrenci de çalışmayan \"Derse ekle\" formunu görüyor",
+  "fix": "`const { user, isInstructor } = useSession();` alıp formu `{isInstructor && <AddMemberForm .../>}` ile sar; ayrıca eğitmen olmayan için sayfa başlığı/açıklamasını da rolüne uygun hale getir veya doğrudan ders sayfasına yönlendir."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "lib/use-resource.ts",
+  "satir": "43-52 ve 54-66",
+  "baslik": "Yanıtlar sıra dışı gelince eski veri yenisinin üstüne yazıyor; `cancelled` bayrağı hiçbir şeyi korumuyor",
+  "fix": "`useResource`'ta bir istek sırası sayacı tut (`const seq = useRef(0)`; `reload` başında `const my = ++seq.current`, `setData`/`setError`'dan önce `if (my !== seq.current) return`). Deps değişiminde ve unmount'ta da aynı sayaç eski yanıtları düşürür; böylece `cancelled` bayrağı da gerçek bir iş yapar."
+ },
+ {
+  "siddet": "minor",
+  "dosya": "components/page-state.tsx",
+  "satir": "25-31 (kullanım: app/courses/page.tsx:31, app/courses/[courseId]/page.tsx:56)",
+  "baslik": "Hata durumunda \"Tekrar dene\" yok; kullanıcının tek çıkışı tarayıcıyı yenilemek",
+  "fix": "`ErrorNote`'a isteğe bağlı bir `onRetry` ekleyip `useResource`'un `reload`'unu bağla (\"Tekrar dene\" ikincil düğme). Ders içi ekranlarda hata durumunda da breadcrumb + `CourseNav`'ı render etmeyi sürdür ki kullanıcı başka sekmeye geçebilsin."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "components/course-nav.tsx",
+  "satir": "25 (ayrıca components/app-shell.tsx:14-28)",
+  "baslik": "Oturum üç ayrı mekanizmayla okunuyor: lib/session.ts'in \"tek kaynak\" iddiası tutmuyor, CourseNav render sırasında localStorage okuyor",
+  "fix": "`course-nav.tsx` ve `app-shell.tsx`'i `useSession()` üzerine alın; CourseNav rol okumasını render gövdesinden çıkarın (kanca zaten effect içinde okuyor). AppShell'in yönlendirme mantığı `useSession().ready` üzerinden kurulabilir, ayrı bir state kopyasına gerek yok."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "lib/use-resource.ts",
+  "satir": "26-27 ve 82",
+  "baslik": "`setData` \"iyimser güncelleme\" gerekçesiyle dışa açılmış ama hiçbir çağrı yeri kullanmıyor (ölü API yüzeyi)",
+  "fix": "Ya kaldırın (arayüz ve satır 82), ya da en az bir yerde gerçekten kullanın; ör. belge silmede satırı hemen listeden düşürüp arkadan `reload()` ile doğrulayın. Bırakılacaksa 1 numaralı bulgudaki sıra numarası koruması `setData` için de geçerli olmalı."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "components/ui.tsx",
+  "satir": "70",
+  "baslik": "`Tone` export'u hiç import edilmiyor; Badge aynı union'ı elle tekrar yazıyor",
+  "fix": "components/ui.tsx `import type { Tone } from \"@/lib/labels\"` yapsın, Badge prop'u `tone: Tone` olsun, styles haritası `Record<Tone, string>` olarak tiplensin — böylece yeni ton eklendiğinde derleyici eksik stili gösterir. (labels.ts yalnız lib/types'a bağlı olduğu için bu çevrim üretmez.)"
+ },
+ {
+  "siddet": "nit",
+  "dosya": "app/courses/[courseId]/members/page.tsx",
+  "satir": "17-23, 35-44 (ayrıca questions/page.tsx:36-73, analytics/page.tsx:60-86, [courseId]/page.tsx:62-78)",
+  "baslik": "Ders sayfası iskeleti beş kez elle kuruluyor: sıra tutarsız, rol kapısı yok",
+  "fix": "`components/course-shell.tsx`: `<CourseShell courseId title description banner requireInstructor>` — AppShell + CourseNav + banner + PageHeader sırasını tek yerde sabitlesin, `requireInstructor` iken useSession ile kontrol edip EmptyState/yönlendirme göstersin. Beş sayfa da bu kabuğa geçsin; sıra tartışması ve unutulan rol kapısı aynı anda kapanır."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "components/ui.tsx",
+  "satir": "141; ayrıca app/courses/page.tsx:134, app/courses/[courseId]/members/page.tsx:154, app/courses/[courseId]/page.tsx:151 ve 321",
+  "baslik": "`disabled={busy}` istek süresince odağı çalıyor — form gönderimi klavyeyle her seferinde odağı sıfırlıyor",
+  "fix": "`disabled` yerine `aria-disabled=\"true\"` + onClick'te erken dönüş kullan (öğe odakta kalır), ya da hata/başarı sonrası odağı bilinçli olarak ilgili alana veya duyuru bölgesine taşı."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "components/ui.tsx",
+  "satir": "138; aynı desen app/courses/[courseId]/page.tsx:316",
+  "baslik": "Yıkıcı eylemin sonucunu anlatan cümle mobilde `display:none`, hiçbir yerde de butona bağlı değil",
+  "fix": "Açıklamaya bir `id` verip onay butonuna `aria-describedby` ile bağla (görsel olarak gizlense bile okunur olur) ve mobilde `hidden` yerine satır altına akan bir blok yap; ya da butonun `aria-label`'ını \"producer_consumer.py ve tüm parçalarını sil\" gibi tam cümle yap."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "app/courses/[courseId]/analytics/page.tsx",
+  "satir": "36-45",
+  "baslik": "İlerleme şeridinin `role=\"img\"` etiketi satırdaki metni birebir tekrarlıyor; doğru cevap `aria-hidden`",
+  "fix": "Şeridi `aria-hidden=\"true\"` yap — bilgi zaten metinde. Görsel öğenin mutlaka rol taşıması isteniyorsa `role=\"meter\"` + `aria-valuenow/valuemin/valuemax` + `aria-labelledby` (konu adına) kullan, `role=\"progressbar\"` kullanma."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "components/page-state.tsx",
+  "satir": "59-72",
+  "baslik": "`MetricRow`'da sayı ile etiketi birbirine bağlayan hiçbir ilişki yok",
+  "fix": "Hücreleri `<dl>` / `<div><dt>Sınıf ortalaması</dt><dd>0.62</dd></div>` yapısına çevir (görsel sıra `flex-col-reverse` ile korunur), ya da değere `aria-labelledby` ile etiketin id'sini bağla."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "components/socratic-ladder.tsx",
+  "satir": "26-36",
+  "baslik": "İpucu kademesi göstergesi bilgiyi yalnız renkle taşıyor; `aria-label` rolü olmayan bir `div`'de",
+  "fix": "Nokta satırını `aria-hidden=\"true\"` yapıp yanına metin bir özet koy (\"4 kademeden 2'si kullanıldı\"), ya da sarmalayıcıya `role=\"group\"` verip her noktaya `<span className=\"sr-only\">` ile \"verildi / verilmedi\" durumunu yaz."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "components/ui.tsx",
+  "satir": "30 (h-10); ayrıca components/app-shell.tsx:48 (Çıkış butonu)",
+  "baslik": "Dokunma hedefleri 40px ve 28px — DESIGN.md 44×44px diyor",
+  "fix": "`Button`'ı `h-11` (44px) yap veya `min-h-[44px]` ekle; \"Çıkış\" butonuna `min-h-[44px]` ver (görsel yükseklik `py` yerine `flex items-center` ile korunur). Ya da DESIGN.md'yi ölçülen gerçek değerle güncelle — belge/uygulama ayrışması `--fg-subtle`'da zaten bir kez yaşanmış."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "apps/web/components/ui.tsx",
+  "satir": "82",
+  "baslik": "Radius kilidi dört yerde kırık: rozet pill, kart 12px, ilerleme şeridi rounded-full, aynı şık iki farklı radius",
+  "fix": "Badge'i `rounded-sm`'e (4px), Card'ı `rounded-lg`'ye (8px) indir; analytics şeridini `rounded-sm` yap; exam şıklarını `rounded-lg` yaparak questions ile eşitle; chat aside öğelerini `rounded-lg`'ye çıkar. Alternatif: DESIGN.md §Shapes'i kart=12px, rozet=pill olacak şekilde güncelle — ama o zaman tek seferde ve gerekçeyle."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "apps/web/DESIGN.md",
+  "satir": "120-135",
+  "baslik": "DESIGN.md'nin uygulama iskeleti (240px yan menü + mobilde alt gezinme) hiç uygulanmamış, belge de güncellenmemiş",
+  "fix": "Sekme şeridi bilinçli bir karar ise DESIGN.md §Layout şemasını ve §Responsive maddesini onunla değiştir, §Components'e \"Ders sekme şeridi\" davranışını yaz. Değilse yan menüyü ekle. Her hâlükârda belge ile kod arasındaki bu boşluk kapatılmalı — belge \"tek otorite\" iddiasını taşıyor."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "apps/web/app/layout.tsx",
+  "satir": "10-14",
+  "baslik": "Gövde ve kod fontu belgede yazandan farklı (Inter/JetBrains Mono → Geist/Geist Mono), belge güncellenmemiş",
+  "fix": "DESIGN.md §Typography'yi Geist/Geist Mono olarak güncelle, Türkçe glif gerekçesini koru ve §Known Gaps'ten font barındırma maddesini \"next/font ile self-host, çözüldü\" diye kapat."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "apps/web/components/ui.tsx",
+  "satir": "54",
+  "baslik": "Elevation tablosu dışında gölgeler ve bileşen içinde ham rgba",
+  "fix": "Gölge değerlerini `--shadow-1`/`--shadow-2` token'ı olarak globals.css'e taşı, Card'dan gölgeyi tamamen kaldır (seviye 0), hover vurgusunu yalnız `border-border-strong` ile yap."
+ },
+ {
+  "siddet": "nit",
+  "dosya": "apps/web/app/courses/[courseId]/members/page.tsx",
+  "satir": "133",
+  "baslik": "`rise` giriş animasyonu aynı rolü oynayan üç kartta tutarsız",
+  "fix": "Üçünü de aynı yap — ya hepsine `rise` ver ya hiçbirine verme. Tercihen ikincisi: bu kartlar kullanıcının tetiklediği bir eylemden sonra açılıyor, giriş animasyonu bilgi katmıyor."
+ }
+]
