@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "change_id": "005-role-aware-course-agent-cache-invalidation-r5",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-08-16T02:39:36+03:00",
+  "command": "Apply migrations 0001..0015 to dou_synapse_test_pr5_cache_20260816b; run supabase/tests/rls_isolation.sql; run PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_isolation_mutation_check.sh dou_synapse_test_pr5_cache_20260816b; run TEST_DB_NAME=dou_synapse_test_pr5_pytest_20260816c apps/api/.venv/bin/python -m pytest -q apps/api/tests/test_policy.py apps/api/tests/test_answer_cache.py apps/api/tests/test_role_aware_agent.py; run TEST_DB_NAME=dou_synapse_test_pr5_full_20260816d apps/api/.venv/bin/python -m pytest -q apps/api/tests; run Ruff check/format and mypy app; verify and remove only the named disposable databases",
+  "environment": "local PostgreSQL 16 with one explicitly named disposable template, PID-scoped mutation databases and a separately named pytest database",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic UUIDs, stable policy labels, aggregate counts and repository hashes only; no prompts, answers, student content, emails, secrets or provider payloads retained",
+  "source_sha256": {
+    "supabase/migrations/0015_role_aware_course_agent.sql": "9e77483f6664b6e780ff847fef1757fdfe00241ec640cda243d1c3d71029039f",
+    "supabase/tests/rls_isolation.sql": "df4bbde2a13b06f1588573edadc06995d73935e80e3142192e96dcac7c18a72a",
+    "supabase/tests/rls_isolation_mutation_check.sh": "6cbc2ebe272b05ecc4179523f3a9943eb5fd8baf4f6c47ae88b45f4adc22a5a0",
+    "apps/api/tests/test_policy.py": "084361cd8a6aacf36eaeaaabd3edd803a0cf4d1011758d9c2fb9c266e56affd1",
+    "apps/api/tests/test_answer_cache.py": "5c0c4427041f9b5ebd18ea504cfd9512364771671d7f182d9fa1f5cd196563dd",
+    "apps/api/tests/test_role_aware_agent.py": "a073070443697bc90ac6948060518023d2174404d86b3cc5ab897029b8396bd7"
+  },
+  "results": {
+    "rls_reference_assertions_passed": 115,
+    "rls_reference_assertions_failed": 0,
+    "rls_mutations_caught": 57,
+    "rls_mutations_missed": 0,
+    "cache_delete_grant_policy_mutation_caught": true,
+    "worker_direct_table_grant_mutation_caught": true,
+    "cache_invalidation_instructor_guard_mutation_caught": true,
+    "targeted_backend_tests_passed": 49,
+    "targeted_backend_tests_failed": 0,
+    "full_backend_tests_passed": 894,
+    "full_backend_tests_failed": 0,
+    "mypy_source_files_passed": 92,
+    "temporary_databases_remaining": 0
+  },
+  "contract": {
+    "direct_delete": "student and instructor roles are denied direct answer_cache DELETE",
+    "direct_worker_access": "the worker role has no direct answer_cache SELECT, INSERT, UPDATE or DELETE privilege",
+    "safe_invalidation": "only an active course instructor may invoke app.invalidate_course_agent_cache, which deletes every audience and revision for that course",
+    "student_failure": "student invocation raises SQLSTATE 42501 and preserves all seeded audience rows"
+  },
+  "not_run": [
+    "real provider",
+    "staging",
+    "canary",
+    "production"
+  ],
+  "limitations": "This is local deterministic PostgreSQL and backend evidence for the cache-invalidation authorization boundary. GitHub CI, a real provider, staging, canary, deployment and production observation are separate gates."
+}

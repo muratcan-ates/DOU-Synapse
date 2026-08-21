@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "change_id": "005-role-aware-course-agent-r2",
+  "lineage_id": "role-aware-course-agent",
+  "revision": 2,
+  "supersedes": {
+    "path": ".ai/changes/005-role-aware-course-agent.json",
+    "sha256": "aa68201c9876b2d8e4d2a261c1959e4aa284bf02ff364718387289a8008017c3"
+  },
+  "previous_status": "evidence-ready",
+  "governance_record_risk": "R3",
+  "title": "Role-aware course agent verification and product experience revision",
+  "summary": "Bind the role-aware course assistant's privacy-safe export explanation, human-designed product surfaces and completed local browser/RLS evidence to a new append-only revision without rewriting the original record.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-11T13:57:52+03:00",
+  "review_by": "2026-09-11T13:57:52+03:00",
+  "base_sha": "fc5bd59622c19dfea825f6a751871b7da3dcfc56",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "litellm-role-aware-single-attempt-v1; real provider not verified",
+    "model_revision": "not-pinned:not-deployed; exact model required before staging",
+    "prompt_revision": "005-role-aware-course-agent-v1",
+    "tool_schema_revision": "none-v1:no-tools-no-writes",
+    "guardrail_revision": "005-role-quota-exam-privacy-v2",
+    "retrieval_revision": "base-fc5bd59-hybrid-retrieval; source-policy and corpus-revision cache binding unchanged",
+    "embedding_revision": "unchanged-from-base-fc5bd59",
+    "evaluator_revision": "005-local-contract-browser-rls-suite-v2"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "18d69516619b58119b9afb50e7cc42d9229994372f0ddf2dd824dd1b1b3c284b",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "19ef43cfcba0e759402dd7fb12c05c6ce167dcd0ae816243984fc36c8eac3d6d"
+    },
+    {
+      "path": "apps/web/lib/course-assistant.ts",
+      "state": "present",
+      "sha256": "1bfbe2986517db2ab6c2e7141a3ec0ac5651fb2b398f3aba7008c42edebadc95"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/005-role-aware-course-agent-local-r2.json",
+      "report_sha256": "5e7a4e0333e27398899de56e39326de1cdef811c0a40fa125a95a2c92fc20f5f",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "specs/005-role-aware-course-agent/spec.md mechanical acceptance gates",
+    "holdout_ref": "not-run: role-separated real-provider holdout remains T407/external validation",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: pedagogy and privacy human anchor plus named approvals remain pending",
+    "metrics": [
+      {
+        "name": "backend_tests_passed",
+        "baseline": 879,
+        "candidate": 882,
+        "operator": ">=",
+        "threshold": 879,
+        "sample_size": 882
+      },
+      {
+        "name": "frontend_library_tests_passed",
+        "baseline": 322,
+        "candidate": 325,
+        "operator": ">=",
+        "threshold": 322,
+        "sample_size": 325
+      },
+      {
+        "name": "serial_real_api_playwright_passed",
+        "baseline": 0,
+        "candidate": 35,
+        "operator": ">=",
+        "threshold": 35,
+        "sample_size": 35
+      },
+      {
+        "name": "database_mutations_caught",
+        "baseline": 0,
+        "candidate": 8,
+        "operator": "==",
+        "threshold": 8,
+        "sample_size": 8
+      },
+      {
+        "name": "e2e_database_residue",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 2
+      }
+    ],
+    "exact_command": "TEST_DB_NAME=<unique> apps/api/.venv/bin/pytest -q apps/api/tests; cd apps/web && bun test lib/ && bunx tsc --noEmit --incremental false && bun run build; PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_role_aware_agent_mutation_check.sh <unique>; E2E_DATABASE_NAME=<unique> bunx playwright test --workers=1; node scripts/docs_check.mjs"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Yasemin Karagül",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending Bilgi İşlem security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:005-role-aware-course-agent-r2",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal and instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope or kill-switch fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and a frozen real-provider holdout passes.",
+      "Staging auth, RLS, multi-worker load and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under a shared user-level assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:fc5bd59622c19dfea825f6a751871b7da3dcfc56",
+    "procedure": "Set COURSE_AGENT_ENABLED=false, verify chat returns 503 without provider or artifact creation, and revert this candidate to the base SHA; additive migration 0015 remains compatible.",
+    "max_minutes": 15,
+    "verification": "Confirm availability is disabled, chat creates no provider call, session, cache or quota artifact, and core chat, exam and privacy routes still pass.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

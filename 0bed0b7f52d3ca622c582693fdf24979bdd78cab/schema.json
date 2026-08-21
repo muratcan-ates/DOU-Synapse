@@ -1,0 +1,748 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dou-synapse.local/schemas/ai-change-dossier-v1.json",
+  "title": "DOU-Synapse AI Change Dossier",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "change_id",
+    "lineage_id",
+    "revision",
+    "supersedes",
+    "previous_status",
+    "governance_record_risk",
+    "title",
+    "summary",
+    "owner",
+    "created_at",
+    "review_by",
+    "base_sha",
+    "candidate_sha",
+    "risk_tier",
+    "status",
+    "behavior",
+    "data",
+    "artifacts",
+    "evidence",
+    "evaluation",
+    "approval_requirements",
+    "deployment",
+    "rollout",
+    "rollback",
+    "privacy",
+    "promotion"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "change_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "lineage_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "supersedes": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/supersedes"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "previous_status": {
+      "oneOf": [
+        {
+          "enum": [
+            "draft",
+            "evidence-ready",
+            "awaiting-approval",
+            "canary",
+            "expanded",
+            "rolled-back",
+            "closed"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "governance_record_risk": {
+      "const": "R3"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_by": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "base_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "candidate_sha": {
+      "oneOf": [
+        {
+          "const": "SELF"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      ]
+    },
+    "risk_tier": {
+      "enum": [
+        "R1",
+        "R2",
+        "R3"
+      ]
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "evidence-ready",
+        "awaiting-approval",
+        "canary",
+        "expanded",
+        "rolled-back",
+        "closed"
+      ]
+    },
+    "behavior": {
+      "$ref": "#/$defs/behavior"
+    },
+    "data": {
+      "$ref": "#/$defs/data"
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/evidence"
+      }
+    },
+    "evaluation": {
+      "$ref": "#/$defs/evaluation"
+    },
+    "approval_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/approval"
+      }
+    },
+    "deployment": {
+      "$ref": "#/$defs/deployment"
+    },
+    "rollout": {
+      "$ref": "#/$defs/rollout"
+    },
+    "rollback": {
+      "$ref": "#/$defs/rollback"
+    },
+    "privacy": {
+      "$ref": "#/$defs/privacy"
+    },
+    "promotion": {
+      "$ref": "#/$defs/promotion"
+    }
+  },
+  "$defs": {
+    "supersedes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_revision",
+        "model_revision",
+        "prompt_revision",
+        "tool_schema_revision",
+        "guardrail_revision",
+        "retrieval_revision",
+        "embedding_revision",
+        "evaluator_revision"
+      ],
+      "properties": {
+        "provider_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prompt_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tool_schema_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "guardrail_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retrieval_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "embedding_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evaluator_revision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_digest",
+        "eval_set_digest",
+        "privacy_classification"
+      ],
+      "properties": {
+        "corpus_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "eval_set_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "privacy_classification": {
+          "enum": [
+            "synthetic-non-personal",
+            "deidentified-educational",
+            "restricted-educational"
+          ]
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "state",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "enum": [
+            "present",
+            "deleted"
+          ]
+        },
+        "sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "result",
+        "report_path",
+        "report_sha256",
+        "candidate_sha"
+      ],
+      "properties": {
+        "label": {
+          "enum": [
+            "fake-provider",
+            "offline-replay",
+            "real-provider",
+            "staging",
+            "canary",
+            "production",
+            "rollback"
+          ]
+        },
+        "result": {
+          "enum": [
+            "pass",
+            "fail",
+            "blocked",
+            "not-run"
+          ]
+        },
+        "report_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "report_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "candidate_sha": {
+          "oneOf": [
+            {
+              "const": "SELF"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          ]
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "calibration_ref",
+        "holdout_ref",
+        "thresholds_declared_before_scoring",
+        "human_anchor_ref",
+        "metrics",
+        "exact_command"
+      ],
+      "properties": {
+        "calibration_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "holdout_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "thresholds_declared_before_scoring": {
+          "type": "boolean"
+        },
+        "human_anchor_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/metric"
+          }
+        },
+        "exact_command": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "baseline",
+        "candidate",
+        "operator",
+        "threshold",
+        "sample_size"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "baseline": {
+          "type": "number"
+        },
+        "candidate": {
+          "type": "number"
+        },
+        "operator": {
+          "enum": [
+            ">=",
+            "<=",
+            ">",
+            "<",
+            "=="
+          ]
+        },
+        "threshold": {
+          "type": "number"
+        },
+        "sample_size": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "actor",
+        "decision",
+        "approval_ref",
+        "approved_at",
+        "candidate_sha",
+        "independent_of_author"
+      ],
+      "properties": {
+        "role": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "enum": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "approval_ref": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "approved_at": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "candidate_sha": {
+          "oneOf": [
+            {
+              "const": "SELF"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          ]
+        },
+        "independent_of_author": {
+          "type": "boolean"
+        }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_flag",
+        "flag_state",
+        "candidate_sha",
+        "deployment_id",
+        "environment"
+      ],
+      "properties": {
+        "feature_flag": {
+          "type": "string",
+          "minLength": 1
+        },
+        "flag_state": {
+          "enum": [
+            "disabled",
+            "shadow",
+            "canary",
+            "enabled",
+            "not-applicable"
+          ]
+        },
+        "candidate_sha": {
+          "oneOf": [
+            {
+              "const": "SELF"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            }
+          ]
+        },
+        "deployment_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "environment": {
+          "enum": [
+            "not-deployed",
+            "development",
+            "staging",
+            "canary",
+            "production"
+          ]
+        }
+      }
+    },
+    "rollout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature_flag",
+        "kill_switch",
+        "assignment",
+        "initial_exposure",
+        "stop_conditions",
+        "expand_conditions",
+        "active_exam_policy"
+      ],
+      "properties": {
+        "feature_flag": {
+          "type": "string"
+        },
+        "kill_switch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assignment": {
+          "type": "string",
+          "minLength": 1
+        },
+        "initial_exposure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stop_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "expand_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "active_exam_policy": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "previous_compatible_artifact",
+        "procedure",
+        "max_minutes",
+        "verification",
+        "state",
+        "evidence_report_path",
+        "evidence_report_sha256",
+        "evidence_candidate_sha",
+        "evidence_deployment_id"
+      ],
+      "properties": {
+        "previous_compatible_artifact": {
+          "type": "string",
+          "minLength": 1
+        },
+        "procedure": {
+          "type": "string",
+          "minLength": 1
+        },
+        "max_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "verification": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "enum": [
+            "planned",
+            "verified-before-production",
+            "verified-after-production"
+          ]
+        },
+        "evidence_report_path": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_report_sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_candidate_sha": {
+          "oneOf": [
+            {
+              "const": "SELF"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{40}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_deployment_id": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contains_identifiable_student_content",
+        "handling",
+        "retention"
+      ],
+      "properties": {
+        "contains_identifiable_student_content": {
+          "type": "boolean"
+        },
+        "handling": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retention": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim",
+        "target",
+        "human_approval_refs"
+      ],
+      "properties": {
+        "claim": {
+          "enum": [
+            "none",
+            "development",
+            "production-ready"
+          ]
+        },
+        "target": {
+          "enum": [
+            "none",
+            "internal",
+            "staging",
+            "canary",
+            "production"
+          ]
+        },
+        "human_approval_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

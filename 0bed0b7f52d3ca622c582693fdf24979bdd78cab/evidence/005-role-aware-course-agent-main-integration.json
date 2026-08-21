@@ -1,0 +1,27 @@
+{
+  "candidate_sha": "SELF",
+  "change_id": "005-role-aware-course-agent-r3",
+  "captured_at": "2026-08-11T14:59:00+03:00",
+  "command": "python3 scripts/ai_sdlc_check.py --base-sha 2c178861a3e484af8643f999f210db040eb84e68 --head-sha 50543c4f555a9d21de288040c10b27621e93172a",
+  "environment": "local iCloud-free integration worktree; exact origin/main merge base and pushed product-ui candidate",
+  "evidence_label": "fake-provider",
+  "result": "blocked",
+  "privacy": "repository paths, immutable Git identifiers and stable validator error classes only; no prompts, answers, student content, emails, secrets or provider payloads retained",
+  "results": {
+    "merge_base": "2c178861a3e484af8643f999f210db040eb84e68",
+    "reviewed_candidate": "50543c4f555a9d21de288040c10b27621e93172a",
+    "reviewed_commits": 13,
+    "reviewed_paths": 123,
+    "validator_unit_tests_previously_verified": 47,
+    "blocking_error_classes": [
+      "BASE_SHA",
+      "HASH_MISMATCH",
+      "LINEAGE_BASE",
+      "UNCOVERED",
+      "UNREFERENCED_EVIDENCE"
+    ]
+  },
+  "diagnosis": "The exact pull-request invocation spans the governance bootstrap and two stacked role-agent revisions. The current validator requires every dossier added anywhere in the reviewed range to use the final merge base and requires every superseded parent to exist in that base. Those assumptions reject immutable intermediate dossiers even though their candidate commits are ancestors of the reviewed head. Append-only history forbids rewriting those committed records.",
+  "required_validator_semantics": "Validate current lineage tips against the exact pull-request base and head; accept an immutable superseded parent introduced earlier in the same reviewed ancestry after verifying its head-tree hash, lineage, revision, status transition and commit ancestry; retain historical dossiers as audit history rather than requiring them to restate the final merge base; treat evidence as referenced when any immutable dossier in the reviewed tree hash-binds it.",
+  "limitations": "This is a negative integration finding, not passing release evidence. The existing 882 backend, 325 frontend, 35 browser and 8-of-8 RLS mutation evidence remains in the append-only r2 report and must be re-bound by the current lineage tip after the validator semantics are corrected."
+}
