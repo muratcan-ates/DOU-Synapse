@@ -1,0 +1,45 @@
+{
+  "_aciklama": [
+    "Demo günü sorulacak sorular ve onları soracak kullanıcı. `fill_answer_cache.py`",
+    "bu dosyayı okur; sorular koda GÖMÜLMEZ, çünkü senaryo değişince kod değişmemeli.",
+    "",
+    "`as_user_id` yalnız DEV_AUTH_ENABLED=true iken çalışır (yerel + çevrimdışı demo",
+    "yığını). Buradaki UUID'ler supabase/seed_demo.sql ile eşleşir. Gerçek Supabase",
+    "kimliğiyle koşturmak için `as_user_id` yerine `token` alanına bir JWT koyun.",
+    "",
+    "Sorular sample_data/isletim-sistemleri korpusundan cevaplanabilecek biçimde",
+    "yazıldı. Bir soru abstention alırsa betik onu ✗ ile raporlar: o soru çevrimdışı",
+    "demoda güvenli DEĞİLDİR.",
+    "",
+    "`out_of_scope_questions` BİLİNÇLİ olarak kapsam dışıdır. Sunumda 'kaynak yoksa",
+    "cevap yok' güvencesini göstermek için sorulurlar. Betik bunlarda TERSİNİ sınar:",
+    "başarı, reddedilmiş olmalarıdır. Biri cevaplanırsa ✗ verir — o soruyla sunumda",
+    "reddetme davranışını göstermek artık güvenli değildir."
+  ],
+  "courses": [
+    {
+      "code": "COME301",
+      "as_user_id": "22222222-2222-2222-2222-222222222222",
+      "questions": [
+        "Deadlock oluşabilmesi için hangi dört koşulun sağlanması gerekir?",
+        "Dairesel bekleme koşulu nedir?",
+        "Banker's Algorithm hangi deadlock stratejisine girer?",
+        "Deadlock'u önlemek için tut ve bekle koşulu nasıl kırılır?",
+        "Round-robin zamanlamada quantum süresinin seçimi neyi etkiler?",
+        "Turnaround time ile waiting time arasındaki fark nedir?",
+        "Context switch ne zaman gerçekleşir?",
+        "Sayfalama (paging) dış parçalanmayı nasıl ortadan kaldırır?",
+        "TLB ne işe yarar?",
+        "Mutex ile semafor arasındaki fark nedir?",
+        "Üretici-tüketici probleminde sınırlı tampon neden gerekir?",
+        "fork() çağrısı ne döndürür?",
+        "inode ne saklar?",
+        "Süreç ile thread arasındaki temel fark nedir?"
+      ],
+      "out_of_scope_questions": [
+        "Bu dersin vize sınavı ne zaman yapılacak?",
+        "Bugün İstanbul'da hava nasıl?"
+      ]
+    }
+  ]
+}
