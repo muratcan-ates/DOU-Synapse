@@ -1,0 +1,1 @@
+"""Ders bazlı AI politikası."""
