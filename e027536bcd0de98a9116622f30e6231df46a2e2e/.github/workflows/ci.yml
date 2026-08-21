@@ -1,0 +1,267 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API — lint, tip, test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # pgvector'ü hazır getiren resmî imaj; CI'da eklenti derlemeye gerek kalmaz.
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PG_BIN: /usr/bin
+      TEST_ADMIN_DSN: postgresql+psycopg://postgres:postgres@localhost/dou_synapse_test
+      TEST_APP_DSN: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse_test
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PostgreSQL istemcisini kur
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Bağımlılıkları kur
+        run: |
+          uv venv --python 3.12
+          uv pip install -e ".[dev]"
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Biçim kontrolü
+        run: uv run ruff format --check .
+
+      - name: Tip kontrolü (mypy)
+        run: uv run mypy app
+        continue-on-error: true
+
+      - name: Testler
+        run: uv run pytest -q
+
+      - name: RLS izolasyon kanıtı
+        working-directory: .
+        run: |
+          psql -d postgres -c 'DROP DATABASE IF EXISTS rls_check'
+          psql -d postgres -c 'CREATE DATABASE rls_check'
+          for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -d rls_check -f "$f"; done
+          # Testin gerçekten kırmızı yanabildiğini de doğrularız: politika bozulunca FAIL
+          # çıkmalı, aksi halde test hiçbir şey kanıtlamıyor demektir.
+          psql -d rls_check -f supabase/tests/rls_isolation.sql 2>&1 | tee /tmp/rls.out
+          if grep -q FAIL /tmp/rls.out; then echo "RLS izolasyonu bozuk"; exit 1; fi
+          psql -q -d rls_check -c "DROP POLICY chunks_member_read ON chunks;
+                                   CREATE POLICY chunks_member_read ON chunks FOR SELECT USING (true);"
+          psql -d rls_check -f supabase/tests/rls_isolation.sql 2>&1 | tee /tmp/rls_broken.out
+          if ! grep -q FAIL /tmp/rls_broken.out; then
+            echo "Politika bilerek bozuldu ama test yeşil kaldı — test bir şey kanıtlamıyor"; exit 1
+          fi
+          echo "RLS testi hem doğru hem kırmızı yanabiliyor"
+
+      # Ölçme/analitik katmanının (0004 + 0005) RLS kanıtı — R3, T052.
+      #
+      # AYRI BİR VERİTABANI kullanır. Yukarıdaki adım `rls_check`'te
+      # `chunks_member_read` politikasını bilerek BOZUK bırakıyor (mutasyon
+      # denemesinin kendisi). Aynı veritabanında koşmak, bu adımın yanlış
+      # sebeple kırmızı ya da yeşil yanmasına yol açardı.
+      #
+      # İki kapı birden: iddialar geçmeli VE politikalar bozulduğunda kırmızı
+      # yanabildikleri gösterilmeli. Yanmayan test hiçbir şey kanıtlamaz.
+      - name: Ölçme katmanı RLS kanıtı (rls_assessment)
+        working-directory: .
+        run: |
+          psql -d postgres -c 'DROP DATABASE IF EXISTS rls_assessment_template'
+          psql -d postgres -c 'CREATE DATABASE rls_assessment_template'
+          for f in supabase/migrations/*.sql; do
+            psql -v ON_ERROR_STOP=1 -q -d rls_assessment_template -f "$f"
+          done
+          psql -d rls_assessment_template -f supabase/tests/rls_assessment.sql 2>&1 | tee /tmp/rls_a.out
+          if grep -q FAIL /tmp/rls_a.out; then echo "assessment RLS bozuk"; exit 1; fi
+          supabase/tests/rls_assessment_mutation_check.sh rls_assessment_template
+
+  image:
+    name: API imajı — build + ağsız embedding kanıtı
+    runs-on: ubuntu-latest
+    # Model indirme + quantizasyon uzun sürer; hızlı geri bildirimi bloklamasın
+    # diye ayrı iş. Push EDİLMEZ: burada sınanan şey imajın kurulabilirliği ve
+    # çalışma zamanında ağa çıkmadığı.
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Runner'da model (~2.1 GB) + quantizasyon için yer açılır. Yerel makinede
+      # 9 Ağustos'ta ölçüldü: quantizasyon tepe diski ~4.5 GB isteyebiliyor.
+      - name: Disk aç
+        run: |
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h /
+
+      - name: İmajı kur
+        run: docker build -t dou-synapse-api:ci apps/api
+
+      - name: İmaj boyutu
+        run: |
+          bytes=$(docker image inspect dou-synapse-api:ci --format '{{.Size}}')
+          awk -v b="$bytes" 'BEGIN { printf "imaj boyutu: %.2f GB\n", b/1e9 }'
+
+      # T048'in asıl iddiası: ağsız bir konteynerde embedding üretilebiliyor.
+      # `--network none` olmadan bu adım hiçbir şey kanıtlamaz — model eksik olsa
+      # bile çalışma zamanında indirilir ve test yeşil yanardı.
+      - name: Ağsız konteynerde embedding üretimi
+        run: |
+          docker run --rm --network none dou-synapse-api:ci python -c "
+          import os
+          from app.modules.ingestion.embedding import FastEmbedProvider
+          provider = FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR'])
+          vector = provider.embed_query('deadlock için dört koşul nedir')
+          assert len(vector) == 1024, len(vector)
+          print('ağsız embedding üretildi, boyut:', len(vector))
+          "
+
+      # Build sırasında ölçülen int8 ↔ fp32 denkliği rapora çıkar. Kapı build'i
+      # zaten düşürür; bu adım sayıyı GÖRÜNÜR kılar, çünkü "geçti" ile "ne kadar
+      # payla geçti" aynı şey değil.
+      - name: int8 ↔ fp32 denklik raporu
+        run: |
+          docker run --rm --network none dou-synapse-api:ci \
+            cat /opt/models/embedding_bake_report.json
+
+      - name: Replika belleği (RSS)
+        run: |
+          docker run --rm --network none --name rss-probe dou-synapse-api:ci python -c "
+          import os, resource
+          from app.modules.ingestion.embedding import FastEmbedProvider
+          provider = FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR'])
+          provider.embed_documents(['ısınma metni'] * 8)
+          peak_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+          print(f'model yüklü tepe RSS: {peak_kb/1024/1024:.2f} GiB (ACA sınırı 4 GiB)')
+          "
+
+  web:
+    name: Web — lint, tip
+    runs-on: ubuntu-latest
+    # NOT: burada `if: hashFiles(...)` KULLANILAMAZ. hashFiles yalnız adım düzeyinde
+    # (steps.*.if) tanımlıdır; job düzeyinde workflow dosyasının tamamı parse edilemez
+    # ve HİÇBİR job çalışmaz (startup_failure). `apps/web` artık her zaman var.
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test lib/
+      # Kontrast kapısı: DESIGN.md "ölçülmüş AA" iddia ediyor ve bu iddianın tek
+      # koruması bu adım. Betik her token çiftini iki temada ölçer ve eşiğin
+      # altında kalan varsa sıfırdan farklı çıkar. 9 Ağustos'ta `--fg-subtle` 29
+      # yerde AA'nın altındaydı ve kimse fark etmemişti; kapı olmadan aynı sapma
+      # bir sonraki renk değişikliğinde sessizce geri gelir.
+      - run: node scripts/contrast.mjs
+      - run: bun run build
+
+  e2e:
+    name: Uçtan uca — gerçek API + tarayıcı
+    runs-on: ubuntu-latest
+    needs: [api, web]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      # E2E kendi web sunucusunu 3100'de ayağa kaldırır; API 8000'de koşar.
+      E2E_API_URL: http://localhost:8000
+      E2E_PORT: 3100
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PostgreSQL istemcisini kur
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Veritabanını kur
+        run: |
+          createdb dou_synapse
+          for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -d dou_synapse -f "$f"; done
+          psql -q -d dou_synapse -f supabase/local_dev_setup.sql
+          psql -q -d dou_synapse -f supabase/seed_demo.sql
+
+      - name: API'yi başlat
+        working-directory: apps/api
+        env:
+          ENVIRONMENT: local
+          DEV_AUTH_ENABLED: "true"
+          DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse
+          CORS_ORIGINS: '["http://localhost:3100"]'
+        run: |
+          uv venv --python 3.12
+          uv pip install -e ".[dev]"
+          uv run uvicorn app.main:app --port 8000 &
+          # Hazır olana kadar bekle: uyku yerine yoklama, yavaş makinede de doğru.
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/openapi.json >/dev/null && break
+            sleep 1
+          done
+
+      - name: Tarayıcıyı kur ve testleri koştur
+        working-directory: apps/web
+        run: |
+          bun install --frozen-lockfile
+          bunx playwright install --with-deps chromium
+          bun run test:e2e
+
+      - name: Başarısızlık izlerini yükle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
