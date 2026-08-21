@@ -1,0 +1,71 @@
+# Supabase free-tier'ın projeyi duraklatmasını önler (T052).
+#
+# Neden var: ücretsiz katman bir hafta boyunca istek görmeyen projeyi duraklatır.
+# Teslim 24 Ağustos; jüri değerlendirmesi günler sonra olabilir. Duraklamış bir
+# veritabanıyla karşılaşan jüri, çalışan bir sistemi çalışmıyor olarak görür ve
+# bunu ilk fark eden biz olmayız.
+#
+# Ping HAFİFTİR ve veri değiştirmez: bir SELECT ve bir sağlık ucu. Amaç projeyi
+# canlı tutmak, yük üretmek değil.
+#
+# Sırlar GitHub Secrets'tan gelir, repoda DEĞİLDİR:
+#   KEEPALIVE_DATABASE_URL  — Supabase bağlantı dizesi (salt okunur rol yeterli)
+#   KEEPALIVE_API_URL       — dağıtılmış API'nin kök adresi (ör. https://... )
+#
+# Sır tanımlı değilse ilgili adım ATLANIR ve iş yeşil kalır. Sebebi: bu workflow
+# depoyu fork'layan ya da henüz deploy etmemiş biri için kırmızı yanmamalı —
+# kırmızı bir zamanlanmış iş, birkaç gün sonra kimsenin bakmadığı bir gürültüye
+# dönüşür ve gerçek arıza da o gürültünün içinde kaybolur.
+
+name: Keepalive
+
+on:
+  schedule:
+    # Her gün 06:17 UTC. Tam saat başı bilinçli olarak seçilmedi: GitHub'ın
+    # zamanlanmış iş kuyruğu tam saatlerde yoğun ve gecikme büyüyor.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Supabase + API canlı tutma
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Veritabanına hafif sorgu
+        env:
+          DATABASE_URL: ${{ secrets.KEEPALIVE_DATABASE_URL }}
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "KEEPALIVE_DATABASE_URL tanımsız — veritabanı ping'i atlandı."
+            exit 0
+          fi
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+          # Veri okumaz, yalnız bağlantıyı ve sunucunun uyanık olduğunu kanıtlar.
+          psql "${DATABASE_URL}" -v ON_ERROR_STOP=1 -tAc "select 1" > /dev/null
+          echo "veritabanı yanıt verdi"
+
+      - name: API hazırlık ucunu yokla
+        env:
+          API_URL: ${{ secrets.KEEPALIVE_API_URL }}
+        run: |
+          if [ -z "${API_URL}" ]; then
+            echo "KEEPALIVE_API_URL tanımsız — API ping'i atlandı."
+            exit 0
+          fi
+          # /health/ready veritabanına da dokunur: bu tek istek hem API
+          # replikasını hem bağlantı havuzunu ısıtır. Scale-to-zero'dan uyanma
+          # zaman aldığı için cömert bir zaman aşımı ve birkaç deneme verilir.
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -sS -o /tmp/ready.json -w "%{http_code}" --max-time 60 "${API_URL%/}/health/ready" || echo 000)
+            echo "deneme ${attempt}: HTTP ${code}"
+            if [ "${code}" = "200" ]; then
+              cat /tmp/ready.json
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "API /health/ready beş denemede 200 vermedi"
+          cat /tmp/ready.json 2>/dev/null || true
+          exit 1
