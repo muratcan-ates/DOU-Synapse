@@ -1,0 +1,580 @@
+"""Puanlama — T031.
+
+**KOD ASLA ÇALIŞTIRILMAZ.** `code_trace` ve `bug_hunt` dahil hiçbir değerlendirme
+öğrenci kodunu ya da soru kodunu yürütmez: ne `exec`, ne `eval`, ne `subprocess`,
+ne sandbox (FR-026). Değerlendirme tamamen cevap anahtarı ve kaynak chunk üzerinden
+metinseldir. Bu, isteğe bağlı bir sadeleştirme değil, bilinçli bir güvenlik
+kararıdır — kullanıcıdan gelen kodu çalıştıran bir uç, sızdırdığı her şeyi
+sunucunun yetkileriyle sızdırır.
+
+Üç ayrı yol var ve karıştırılmaz:
+
+| Tip | Yol | LLM |
+|---|---|---|
+| `mcq` | cevap anahtarıyla karşılaştırma + çeldirici→kaynak eşlemesi | **hayır** |
+| `open` + `short_answer` | kabul edilen karşılıklarla normalize eşleştirme | **hayır** |
+| `open` + `essay`, `code_trace`, `bug_hunt` | rubrik + anahtar + kaynakla şemalı | evet |
+
+LLM yolunda çıktı şemaya uymazsa **bir kez** yeniden denenir; yine uymazsa öğrenciye
+uydurma puan gösterilmez, "değerlendirme tamamlanamadı" döner (FR-020). Değerlendirmenin
+dayandığı `dayanak_chunk_id` set-membership kontrolünden geçer; geçmezse dayanak düşer
+ama puan durur — kaynak uydurmak cevabı geçersiz kılmaz, yalnız kaynağı geçersiz kılar.
+
+Dosya adı ve sayfa numarası her zaman **chunk metadata'sından** üretilir, model
+metninden değil (Anayasa I).
+
+Sonuç tipi neden `contracts.GradedAnswer` değil: o tip `score: int` taşır ve
+"değerlendirme tamamlanamadı" durumunu ifade edemez — döndürebilmek için bir puan
+uydurmak gerekirdi, ki FR-020 tam olarak bunu yasaklıyor. Bu yüzden buradaki
+`GradingOutcome` bir üst kümedir (`graded`, `why_wrong_chunk_id`, `message`).
+`contracts.py` tek taraflı değiştirilmez; gerekirse gruba yazılır
+(bkz. docs/team/parallel/KARARLAR_SERIT4.md).
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from uuid import UUID
+
+from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.errors import AppError
+from app.core.logging import get_logger
+from app.models.assessment import Question
+from app.models.core import Chunk, Document
+from app.modules.assessment.question_gen import (
+    StructuredCompletion,
+    extract_json_object,
+    normalize_tr,
+    resolve_completion,
+)
+from app.schemas.assessment import (
+    AnswerFormat,
+    BugHuntPayload,
+    CodeTracePayload,
+    McqPayload,
+    OpenPayload,
+<<<<<<< HEAD
+    RubricCriterionScore,
+=======
+    RubricScoreOut,
+>>>>>>> codex/production-completion
+    SourceRefOut,
+    normalized_rubric,
+    parse_payload,
+)
+
+logger = get_logger("app.assessment.grading")
+
+SNIPPET_CHARS = 320
+
+
+# ---------------------------------------------------------------------------
+# Kaynak referansları
+# ---------------------------------------------------------------------------
+
+
+def chunk_location(chunk: Chunk) -> str:
+    """'Sayfa 7' | 'Slayt 3' | bölüm adı. `contracts.RetrievedChunk.location` ile aynı kural."""
+    if chunk.page_number is not None:
+        return f"Sayfa {chunk.page_number}"
+    if chunk.slide_number is not None:
+        return f"Slayt {chunk.slide_number}"
+    return chunk.section_title or "Konum yok"
+
+
+def _best_snippet(text: str, focus: str | None) -> str:
+    """Chunk'ın `focus` metniyle en çok örtüşen cümlesini kısaltarak döndürür.
+
+    "Neden yanlış?" bütün chunk'ı basmak yerine çelişen cümleyi göstermelidir;
+    seçim kelime örtüşmesiyle deterministiktir, modele sorulmaz.
+    """
+    condensed = " ".join(text.split())
+    if not focus:
+        return condensed[:SNIPPET_CHARS]
+
+    needle = set(normalize_tr(focus).split())
+    sentences = [part.strip() for part in condensed.replace("!", ".").split(".") if part.strip()]
+    if not sentences:
+        return condensed[:SNIPPET_CHARS]
+
+    best = max(sentences, key=lambda part: len(needle & set(normalize_tr(part).split())))
+    return best[:SNIPPET_CHARS]
+
+
+@dataclass(frozen=True, slots=True)
+class SourceMaterial:
+    """Alıntı üretmek için gereken ham malzeme.
+
+    Referanstan ayrı durur çünkü aynı chunk, farklı cevaplar için **farklı
+    odaklarla** alıntılanır: bir sınavda iki öğrenci farklı çeldirici seçtiyse
+    ikisine de kendi seçimiyle çelişen cümle gösterilmelidir. Malzeme bir kez
+    toplu okunur, referanslar ondan üretilir — soru başına ayrı sorgu atılmaz.
+    """
+
+    chunk_id: UUID
+    file_name: str
+    location: str
+    text: str
+
+    def reference(self, *, focus: str | None = None) -> SourceRefOut:
+        return SourceRefOut(
+            chunk_id=self.chunk_id,
+            file_name=self.file_name,
+            location=self.location,
+            snippet=_best_snippet(self.text, focus),
+        )
+
+
+async def load_source_material(
+    session: AsyncSession, chunk_ids: Sequence[UUID]
+) -> dict[UUID, SourceMaterial]:
+    """Chunk kimliklerini tek sorguda kaynak malzemesine çevirir.
+
+    Görünmeyen (başka dersin) bir chunk RLS yüzünden sonuçta yer almaz; çağıran
+    eksik kimliği "kaynak gösterilemedi" olarak karşılar.
+    """
+    unique = list(dict.fromkeys(chunk_ids))
+    if not unique:
+        return {}
+    rows = await session.execute(
+        select(Chunk, Document.file_name)
+        .join(Document, Document.id == Chunk.document_id)
+        .where(Chunk.id.in_(unique))
+    )
+    return {
+        chunk.id: SourceMaterial(
+            chunk_id=chunk.id,
+            file_name=file_name,
+            location=chunk_location(chunk),
+            text=chunk.text,
+        )
+        for chunk, file_name in rows.all()
+    }
+
+
+async def load_source_refs(
+    session: AsyncSession, chunk_ids: Sequence[UUID], *, focus: str | None = None
+) -> dict[UUID, SourceRefOut]:
+    """Tek odakla yetinen çağıranlar için kısayol (soru listesi, ipucu)."""
+    material = await load_source_material(session, chunk_ids)
+    return {chunk_id: item.reference(focus=focus) for chunk_id, item in material.items()}
+
+
+# ---------------------------------------------------------------------------
+# Sonuç
+# ---------------------------------------------------------------------------
+
+
+@dataclass(slots=True)
+class GradingOutcome:
+    """Tek bir cevabın değerlendirme sonucu.
+
+    `graded=False` "cevap yanlış" DEĞİLDİR: "değerlendirme tamamlanamadı"dır. İkisi
+    ayrı tutulur çünkü ilki puana 0 olarak girer, ikincisi puana hiç girmez.
+    """
+
+    graded: bool
+    score: int | None = None
+    is_correct: bool | None = None
+    missing_points: list[str] = field(default_factory=list)
+    rubric_breakdown: list[RubricScoreOut] | None = None
+    #: MCQ'da seçilen çeldiricinin çeliştiği chunk (FR-021).
+    why_wrong_chunk_id: UUID | None = None
+    #: Açık uçluda değerlendirmenin dayandığı chunk.
+    evidence_chunk_id: UUID | None = None
+    message: str | None = None
+    #: "Neden yanlış" alıntısını odaklamak için: öğrencinin seçtiği/yazdığı metin.
+    focus: str | None = None
+    #: Rubriğe bağlı sorularda ölçüt kırılımı (FR-117). Toplam puan bu satırlardan
+    #: türetilir; model ayrı bir toplam verse bile o okunmaz.
+    rubric_breakdown: list[RubricCriterionScore] = field(default_factory=list)
+
+
+_UNGRADABLE_MESSAGE = (
+    "Bu cevabın değerlendirmesi tamamlanamadı. Puanınıza katılmadı; eğitmeninize bildirebilirsiniz."
+)
+
+
+def _ungraded(reason: str) -> GradingOutcome:
+    logger.warning("değerlendirme tamamlanamadı", extra={"context": {"reason": reason}})
+    return GradingOutcome(graded=False, message=_UNGRADABLE_MESSAGE)
+
+
+# ---------------------------------------------------------------------------
+# MCQ — deterministik
+# ---------------------------------------------------------------------------
+
+
+def grade_mcq(payload: McqPayload, given: str) -> GradingOutcome:
+    """Şık karşılaştırması. LLM yok, rastgelelik yok, ağ yok.
+
+    Öğrencinin gönderdiği şık anahtarı büyük/küçük harf ve boşluk toleranslı
+    okunur; tanınmayan bir şık 0 puan alır ve "neden yanlış" gösterilmez —
+    gösterilecek bir çeldirici yoktur.
+    """
+    chosen = given.strip()
+    keys = {option.key.strip().casefold(): option for option in payload.options}
+    option = keys.get(chosen.casefold())
+    if option is None:
+        return GradingOutcome(
+            graded=True,
+            score=0,
+            is_correct=False,
+            message="Geçersiz şık gönderildi.",
+        )
+
+    if option.key == payload.answer_key:
+        return GradingOutcome(graded=True, score=100, is_correct=True, focus=option.text)
+
+    return GradingOutcome(
+        graded=True,
+        score=0,
+        is_correct=False,
+        why_wrong_chunk_id=payload.distractor_sources.get(option.key),
+        focus=option.text,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Kısa cevap — deterministik
+# ---------------------------------------------------------------------------
+
+
+def grade_short_answer(
+    payload: OpenPayload, given: str, *, source_chunk_id: UUID
+) -> GradingOutcome:
+    """Kabul edilen karşılıklarla normalize eşleştirme (Karar 4).
+
+    Eşleşme kuralı: normalize edilmiş öğrenci cevabı, kabul edilen karşılıklardan
+    birine eşitse ya da onu bir kelime sınırında içeriyorsa doğrudur. Kapsama izni
+    "İşletim sistemi çekirdeği" gibi cümle içinde verilen doğru cevapları kurtarır;
+    kelime sınırı şartı "ram" ile "program"ı birbirine karıştırmayı önler.
+    """
+    answer = normalize_tr(given)
+    if not answer:
+        return GradingOutcome(graded=True, score=0, is_correct=False, focus=given)
+
+    haystack = f" {answer} "
+    for accepted in payload.accepted_answers:
+        needle = normalize_tr(accepted)
+        if needle and (answer == needle or f" {needle} " in haystack):
+            return GradingOutcome(graded=True, score=100, is_correct=True, focus=given)
+
+    return GradingOutcome(
+        graded=True,
+        score=0,
+        is_correct=False,
+        missing_points=[payload.answer_key],
+        why_wrong_chunk_id=source_chunk_id,
+        focus=given,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Açık uçlu / kod — şemalı LLM değerlendirmesi
+# ---------------------------------------------------------------------------
+
+
+<<<<<<< HEAD
+class _RubrikSatiri(BaseModel):
+    """Modelin tek bir ölçüt için verdiği puan. Ağırlığı model DEĞİL biz biliriz."""
+
+=======
+class _RubricCriterionVerdict(BaseModel):
+>>>>>>> codex/production-completion
+    olcut: str = Field(min_length=1, max_length=500)
+    puan: int = Field(ge=0, le=100)
+
+
+class _LlmVerdict(BaseModel):
+    """Modelden beklenen şema. Alan adları Türkçedir (03_ASSESSMENT_BRIEF)."""
+
+    #: Rubriksiz sorularda kullanılır. Rubrik varsa toplam buradan ASLA okunmaz.
+    score: int | None = Field(default=None, ge=0, le=100)
+    rubrik_kirilimi: list[_RubricCriterionVerdict] = Field(default_factory=list, max_length=12)
+    eksik_noktalar: list[str] = Field(default_factory=list, max_length=12)
+    dayanak_chunk_id: UUID | None = None
+    #: Rubrik verilmişse ölçüt başına puan. Toplamı biz hesaplarız (FR-117).
+    rubrik: list[_RubrikSatiri] = Field(default_factory=list, max_length=12)
+
+
+_SYSTEM_PROMPT = (
+    "Sen bir üniversite dersinin sınav kâğıdını okuyan asistansın. Öğrencinin "
+    "cevabını, verilen cevap anahtarı ve kaynak bölümlere göre değerlendirirsin. "
+    "Kaynakta olmayan bir bilgiyi eksiklik saymazsın. Cevabın SADECE JSON olmalı: "
+    "Rubrik verildiyse her ölçüt için rubrik_kirilimi döndür: "
+    '[{"olcut": "ölçüt adı birebir", "puan": 0-100}]. Toplam score yazma; toplamı '
+    "sunucu hesaplar. Rubrik yoksa score alanını 0-100 arasında döndür. Her iki durumda "
+    '"eksik_noktalar" ve "dayanak_chunk_id" alanlarını da ekle. '
+    "Açıklama, markdown ya da ek metin yazma. eksik_noktalar Türkçedir. "
+    "KOD ÇALIŞTIRMA; yalnız metin olarak karşılaştır. "
+    "Rubrik verilmişse her ölçüt için ayrıca "
+    '"rubrik": [{"olcut": "<ölçütün metni>", "puan": 0-100} ...] yaz; ölçüt metnini '
+    "verildiği gibi kopyala ve AĞIRLIKLARLA ÇARPMA — ağırlığı biz uygularız."
+)
+
+
+def _reference_block(payload: BaseModel) -> str:
+    """Değerlendirmenin dayanacağı anahtar/rubrik/ölçütler."""
+    lines: list[str] = []
+    if isinstance(payload, OpenPayload):
+        lines.append(f"Soru: {payload.prompt}")
+        lines.append(f"Cevap anahtarı: {payload.answer_key}")
+        if payload.key_points:
+            lines.append("Bulunması gereken noktalar:")
+            lines += [f"- {point}" for point in payload.key_points]
+        if payload.rubric:
+            lines.append("Rubrik (ağırlıklar 100 üzerinden):")
+            weights = _normalized_rubric_weights(payload)
+            lines += [f"- {item.point} ({weights[item.point]:.4g})" for item in payload.rubric]
+    elif isinstance(payload, CodeTracePayload):
+        lines.append(f"Soru: {payload.prompt}")
+        lines.append(f"Kod:\n{payload.code}")
+        lines.append(f"Beklenen çıktı: {payload.answer_key}")
+    elif isinstance(payload, BugHuntPayload):
+        lines.append(f"Soru: {payload.prompt}")
+        lines.append(f"Kod:\n{payload.code}")
+        lines.append(
+            "Beklenen tespit: "
+            f"satır {payload.answer_key.line}, tür '{payload.answer_key.bug_type}', "
+            f"düzeltme: {payload.answer_key.fix_summary}"
+        )
+    return "\n".join(lines)
+
+
+def _normalized_rubric_weights(payload: OpenPayload) -> dict[str, float]:
+    """Eski rubrikleri okurken ağırlıkları toplam 100'e normalize eder.
+
+    Yeni üretim toplamı 100 zorlar. Bu yol, daha önce havuza girmiş toplamı 100
+    olmayan soruları sessizce değerlendirilemez hâle getirmeden taşır.
+    """
+    total = sum(item.weight for item in payload.rubric)
+    if total <= 0:
+        return {}
+    return {item.point: item.weight * 100 / total for item in payload.rubric}
+
+
+def _sources_block(refs: Sequence[tuple[UUID, str]]) -> str:
+    return "\n\n".join(f"chunk_id: {chunk_id}\n{text}" for chunk_id, text in refs)
+
+
+def _parse_verdict(raw: str) -> _LlmVerdict | None:
+    """Ham yanıtı şemaya çevirir; uymuyorsa None (çağıran yeniden dener).
+
+    Çit temizleme kuralı `question_gen.extract_json_object` ile ortaktır: üretim ve
+    değerlendirme aynı sağlayıcıdan aynı gürültüyü alır, iki farklı temizleme
+    kuralı sessiz tutarsızlık üretirdi (Anayasa XI).
+    """
+    try:
+        return _LlmVerdict.model_validate(extract_json_object(raw))
+    except (json.JSONDecodeError, ValidationError, ValueError):
+        return None
+
+
+def _rubric_breakdown(payload: BaseModel, verdict: _LlmVerdict) -> list[RubricCriterionScore]:
+    """Ölçüt puanlarını normalize edilmiş ağırlıklarla birleştirir.
+
+    İki "boş" durumu birbirinden AYRI tutulur ve ayrımı karıştırmak pahalıydı:
+
+    - **Sorunun rubriği yok** → kırılım da yok, çağıran modelin `score`'unu kullanır.
+    - **Model hiç kırılım döndürmedi** (eski sağlayıcı, sahte sağlayıcı, ya da
+      talimatı yok sayan bir yanıt) → yine kırılım yok. Bu dal olmadan bütün
+      ölçütler 0 puanla girer ve gerçekten 75 alan bir cevap SESSİZCE 0'a düşerdi.
+      İlk yazımda bu dal yoktu ve dört değerlendirme testi bunu yakaladı; kusurun
+      sınıfı `data-model.md` §2.15'in uyardığı "sessizce değerlendirilemez hâle
+      gelme" sınıfıdır.
+    - **Model KISMİ kırılım döndürdü** → atlanan ölçüt 0 puanla girer. Burada
+      fail-closed doğrudur: cevaplanmamış bir kriteri karşılanmış saymak, puanı
+      şişirmek olurdu (Anayasa IV).
+    """
+    if not isinstance(payload, OpenPayload) or not payload.rubric:
+        return []
+    if not verdict.rubrik:
+        return []
+
+    puanlar = {row.olcut.strip().casefold(): row.puan for row in verdict.rubrik}
+    satirlar: list[RubricCriterionScore] = []
+    for item in normalized_rubric(payload.rubric):
+        puan = puanlar.get(item.point.strip().casefold(), 0)
+        satirlar.append(
+            RubricCriterionScore(
+                point=item.point,
+                weight=item.weight,
+                score=puan,
+                earned=round(item.weight * puan / 100),
+            )
+        )
+    return satirlar
+
+
+async def grade_with_llm(
+    completion: StructuredCompletion,
+    *,
+    payload: BaseModel,
+    given: str,
+    sources: Sequence[tuple[UUID, str]],
+) -> GradingOutcome:
+    """Rubrik + cevap anahtarı + kaynak parçalarla şemalı değerlendirme.
+
+    Şema bozuksa bir kez yeniden denenir; yine bozuksa uydurma puan gösterilmez.
+    `dayanak_chunk_id` verilen kaynak kümesinde değilse yalnız dayanak düşer.
+    """
+    valid_ids = {chunk_id for chunk_id, _ in sources}
+    user_prompt = "\n\n".join(
+        [
+            _reference_block(payload),
+            f"Öğrencinin cevabı:\n{given}",
+            "--- KAYNAK BÖLÜMLER ---",
+            _sources_block(sources),
+            "dayanak_chunk_id yukarıdaki kimliklerden biri olmalı.",
+        ]
+    )
+
+    for attempt in range(2):
+        try:
+            raw = await completion.complete(system=_SYSTEM_PROMPT, user=user_prompt)
+        except Exception:  # sağlayıcı hatası değerlendirmeyi düşürür, isteği patlatmaz
+            logger.exception("değerlendirmede sağlayıcı hatası")
+            continue
+
+        verdict = _parse_verdict(raw)
+        if verdict is None:
+            logger.info("değerlendirme şeması bozuk", extra={"context": {"attempt": attempt + 1}})
+            continue
+
+        rubric_breakdown: list[RubricScoreOut] | None = None
+        score = verdict.score
+        if isinstance(payload, OpenPayload) and payload.rubric:
+            expected = [item.point for item in payload.rubric]
+            returned = [item.olcut for item in verdict.rubrik_kirilimi]
+            if len(returned) != len(set(returned)) or set(returned) != set(expected):
+                logger.info(
+                    "rubrik ölçüt kümesi eşleşmedi",
+                    extra={"context": {"attempt": attempt + 1}},
+                )
+                continue
+
+            score_by_criterion = {item.olcut: item.puan for item in verdict.rubrik_kirilimi}
+            weights = _normalized_rubric_weights(payload)
+            rubric_breakdown = []
+            weighted_total = 0.0
+            for criterion in expected:
+                criterion_score = score_by_criterion[criterion]
+                weight = weights[criterion]
+                contribution = weight * criterion_score / 100
+                weighted_total += contribution
+                rubric_breakdown.append(
+                    RubricScoreOut(
+                        criterion=criterion,
+                        weight=round(weight, 4),
+                        score=criterion_score,
+                        awarded_points=round(contribution, 2),
+                    )
+                )
+            score = round(weighted_total)
+        elif score is None:
+            logger.info(
+                "rubriksiz değerlendirmede toplam puan yok",
+                extra={"context": {"attempt": attempt + 1}},
+            )
+            continue
+
+        evidence = verdict.dayanak_chunk_id
+        if evidence is not None and evidence not in valid_ids:
+            # Uydurulmuş dayanak: puan durur, kaynak düşer (Anayasa I).
+            logger.info("değerlendirme dayanağı set-membership'ten geçmedi")
+            evidence = None
+
+        breakdown = _rubric_breakdown(payload, verdict)
+        # FR-117: rubrik varsa toplam KIRILIMDAN türetilir. Model kendi `score`'unu
+        # da verir ama okunmaz — ikisi çelişirse öğrenciye gösterilen tablonun
+        # toplamı tutmazdı (Anayasa III).
+        score = sum(row.earned for row in breakdown) if breakdown else verdict.score
+
+        return GradingOutcome(
+            graded=True,
+            score=score,
+            is_correct=score >= 50,
+            missing_points=verdict.eksik_noktalar,
+            evidence_chunk_id=evidence,
+            focus=given,
+<<<<<<< HEAD
+            rubric_breakdown=breakdown,
+=======
+            rubric_breakdown=rubric_breakdown,
+>>>>>>> codex/production-completion
+        )
+
+    return _ungraded("şema iki denemede de tutmadı")
+
+
+# ---------------------------------------------------------------------------
+# Giriş noktası
+# ---------------------------------------------------------------------------
+
+
+async def grade_answer(
+    session: AsyncSession,
+    question: Question,
+    given: str,
+    *,
+    completion: StructuredCompletion | None = None,
+) -> GradingOutcome:
+    """Bir cevabı tipine uygun yolla değerlendirir.
+
+    Sağlayıcı **yalnız LLM gerektiren tipler için** ve ancak o noktaya gelindiğinde
+    çözümlenir. Bu sıralama bilinçli: `mcq` ve `short_answer` deterministiktir ve
+    sağlayıcı hiç kurulamıyorken bile puanlanmalıdır — sınavın çekirdeği LLM'in
+    ayakta olmasına bağlı olmamalı.
+
+    Sağlayıcı kurulamazsa istek 503'e dönmez; o cevap "değerlendirilemedi" olur
+    (FR-020). Sınavın ortasında bir sağlayıcı arızası, öğrencinin diğer cevaplarını
+    da düşürmemelidir.
+    """
+    try:
+        payload = parse_payload(question.type, question.payload)
+    except ValidationError:
+        # Havuzdaki payload bozulmuş: onaylanmış bir soru okunamıyorsa öğrenciye
+        # tahmin edilmiş bir puan vermektense değerlendirmeyi tamamlamamak yeğdir.
+        return _ungraded("havuzdaki payload şemadan geçmedi")
+
+    if isinstance(payload, McqPayload):
+        return grade_mcq(payload, given)
+
+    if isinstance(payload, OpenPayload) and payload.format is AnswerFormat.SHORT_ANSWER:
+        return grade_short_answer(payload, given, source_chunk_id=question.source_chunk_id)
+
+    if completion is None:
+        try:
+            completion = resolve_completion()
+        except AppError:
+            return _ungraded("LLM sağlayıcısı kurulamadı")
+
+    chunk = await session.get(Chunk, question.source_chunk_id)
+    if chunk is None:
+        return _ungraded("sorunun kaynak parçası okunamadı")
+
+    return await grade_with_llm(
+        completion,
+        payload=payload,
+        given=given,
+        sources=[(chunk.id, chunk.text)],
+    )
+
+
+def score_of(outcomes: Sequence[GradingOutcome]) -> float | None:
+    """Cevaplanan soruların ortalaması.
+
+    Değerlendirilememiş cevaplar (`graded=False`) paydaya da girmez: puanı hem
+    düşürmezler hem şişirmezler. Hiç değerlendirilmiş cevap yoksa None döner —
+    0 döndürmek "her şeyi yanlış yaptın" demekle aynı şeydir ve yanlıştır.
+    """
+    scores = [outcome.score for outcome in outcomes if outcome.graded and outcome.score is not None]
+    if not scores:
+        return None
+    return round(sum(scores) / len(scores), 1)
