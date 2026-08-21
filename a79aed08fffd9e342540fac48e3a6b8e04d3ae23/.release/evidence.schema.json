@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/muratcan-ates/DOU-Synapse/.release/evidence.schema.json",
+  "title": "DOU-Synapse release evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "x-release-record-semantics": true,
+  "required": [
+    "schema_version",
+    "record_type",
+    "source",
+    "image",
+    "supply_chain",
+    "artifact_verification",
+    "admission",
+    "environments",
+    "checks",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "record_type": { "enum": ["candidate", "promotion"] },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "sha", "tag_ref", "workflow"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "tag_ref": { "type": "string", "pattern": "^refs/tags/v[^/]+$" },
+        "workflow": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "event", "run_id", "run_attempt", "run_url"],
+          "properties": {
+            "path": { "const": ".github/workflows/release-candidate.yml" },
+            "event": { "const": "push" },
+            "run_id": { "type": "integer", "minimum": 1 },
+            "run_attempt": { "type": "integer", "minimum": 1 },
+            "run_url": { "type": "string", "pattern": "^https://github\\.com/" }
+          }
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "x-exact-image-reference": {
+        "name": "name",
+        "digest": "digest",
+        "reference": "immutable_reference"
+      },
+      "required": ["name", "digest", "immutable_reference", "quarantine_reference"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^ghcr\\.io/" },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "immutable_reference": { "type": "string", "pattern": "@sha256:[0-9a-f]{64}$" },
+        "quarantine_reference": { "type": "string", "pattern": ":quarantine-[0-9a-f]{40}-[0-9]+-[0-9]+$" }
+      }
+    },
+    "supply_chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sbom", "provenance", "github_attestation"],
+      "properties": {
+        "sbom": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["predicate_type", "reference", "digest"],
+          "properties": {
+            "predicate_type": { "const": "https://spdx.dev/Document" },
+            "reference": { "type": "string", "pattern": "^oci://ghcr\\.io/.+@sha256:[0-9a-f]{64}$" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["predicate_type", "reference", "digest"],
+          "properties": {
+            "predicate_type": { "const": "https://slsa.dev/provenance/v0.2" },
+            "reference": { "type": "string", "pattern": "^oci://ghcr\\.io/.+@sha256:[0-9a-f]{64}$" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        },
+        "github_attestation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["reference", "bundle_digest"],
+          "properties": {
+            "reference": { "type": "string", "pattern": "^https://github\\.com/" },
+            "bundle_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        }
+      }
+    },
+    "artifact_verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image_reference", "offline_embedding", "bake_report", "rss"],
+      "properties": {
+        "image_reference": { "type": "string", "pattern": "@sha256:[0-9a-f]{64}$" },
+        "offline_embedding": { "const": "passed" },
+        "bake_report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "digest"],
+          "properties": {
+            "status": { "const": "passed" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        },
+        "rss": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "peak_bytes", "limit_bytes"],
+          "properties": {
+            "status": { "const": "passed" },
+            "peak_bytes": { "type": "integer", "minimum": 1 },
+            "limit_bytes": { "const": 4294967296 }
+          }
+        }
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "mechanism", "evidence_artifact", "admitted_at"],
+      "properties": {
+        "status": { "const": "admitted" },
+        "mechanism": { "const": "immutable-evidence-record" },
+        "evidence_artifact": { "type": "string", "minLength": 1 },
+        "admitted_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "environments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["staging", "production"],
+      "properties": {
+        "staging": { "enum": ["not-configured", "verified", "failed", "rolled-back"] },
+        "production": { "enum": ["not-configured", "verified", "failed", "rolled-back"] }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "uniqueItems": true,
+      "x-exact-item-key-set": {
+        "key": "name",
+        "values": [
+          "API — lint, tip, test",
+          "API imajı — build + ağsız embedding kanıtı",
+          "Web — lint, tip",
+          "Belgeler — canlı sayı kapısı",
+          "Uçtan uca — gerçek API + tarayıcı",
+          "Govern reviewed AI diff",
+          "Verify gold-set integrity",
+          "Workflow dependency policy",
+          "CodeQL (javascript-typescript)",
+          "CodeQL (python)"
+        ]
+      },
+      "x-check-workflow-map": {
+        "API — lint, tip, test": ".github/workflows/ci.yml",
+        "API imajı — build + ağsız embedding kanıtı": ".github/workflows/ci.yml",
+        "Web — lint, tip": ".github/workflows/ci.yml",
+        "Belgeler — canlı sayı kapısı": ".github/workflows/ci.yml",
+        "Uçtan uca — gerçek API + tarayıcı": ".github/workflows/ci.yml",
+        "Govern reviewed AI diff": ".github/workflows/ai-quality.yml",
+        "Verify gold-set integrity": ".github/workflows/ai-quality.yml",
+        "Workflow dependency policy": ".github/workflows/security.yml",
+        "CodeQL (javascript-typescript)": ".github/workflows/security.yml",
+        "CodeQL (python)": ".github/workflows/security.yml"
+      },
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "status",
+          "workflow_path",
+          "workflow_run_id",
+          "workflow_run_attempt",
+          "job_id",
+          "event",
+          "head_sha",
+          "run_url",
+          "job_url"
+        ],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "status": { "const": "passed" },
+          "workflow_path": { "enum": [".github/workflows/ci.yml", ".github/workflows/ai-quality.yml", ".github/workflows/security.yml"] },
+          "workflow_run_id": { "type": "integer", "minimum": 1 },
+          "workflow_run_attempt": { "type": "integer", "minimum": 1 },
+          "job_id": { "type": "integer", "minimum": 1 },
+          "event": { "const": "push" },
+          "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+          "run_url": { "type": "string", "pattern": "^https://github\\.com/" },
+          "job_url": { "type": "string", "pattern": "^https://github\\.com/" }
+        }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "status", "source_digest", "approval", "smoke", "migration", "backup", "rollback"],
+      "properties": {
+        "target": { "enum": ["staging", "production"] },
+        "status": { "const": "verified" },
+        "source_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "approval": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "identity_ref", "evidence_ref", "approved_at", "source_sha", "digest"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "identity_ref": { "type": "string", "pattern": "^github-user:[0-9]+$" },
+            "evidence_ref": { "type": "string", "pattern": "^https://github\\.com/" },
+            "approved_at": { "type": "string", "format": "date-time" },
+            "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        },
+        "smoke": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "evidence_ref", "checked_at", "source_sha", "digest"],
+          "properties": {
+            "status": { "const": "passed" },
+            "evidence_ref": { "type": "string", "minLength": 1 },
+            "checked_at": { "type": "string", "format": "date-time" },
+            "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        },
+        "migration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "decision", "evidence_ref", "checked_at", "source_sha", "digest"],
+          "properties": {
+            "status": { "const": "passed" },
+            "decision": { "enum": ["none", "expand", "contract"] },
+            "evidence_ref": { "type": "string", "minLength": 1 },
+            "checked_at": { "type": "string", "format": "date-time" },
+            "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        },
+        "backup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "evidence_ref", "checked_at", "source_sha", "digest"],
+          "properties": {
+            "status": { "const": "passed" },
+            "evidence_ref": { "type": "string", "minLength": 1 },
+            "checked_at": { "type": "string", "format": "date-time" },
+            "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        },
+        "rollback": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "previous_digest", "evidence_ref", "checked_at", "source_sha", "digest"],
+          "properties": {
+            "status": { "enum": ["ready", "exercised"] },
+            "previous_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "evidence_ref": { "type": "string", "minLength": 1 },
+            "checked_at": { "type": "string", "format": "date-time" },
+            "source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+          }
+        }
+      }
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  }
+}

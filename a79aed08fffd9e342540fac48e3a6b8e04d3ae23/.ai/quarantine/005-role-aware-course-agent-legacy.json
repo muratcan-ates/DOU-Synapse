@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "quarantine_id": "005-role-aware-course-agent-legacy",
+  "title": "Quarantine rewritten role-aware agent governance history",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-11T16:10:00+03:00",
+  "base_sha": "2c178861a3e484af8643f999f210db040eb84e68",
+  "candidate_sha": "SELF",
+  "replacement_dossier": ".ai/changes/005-role-aware-course-agent-r3.json",
+  "records": [
+    {
+      "path": ".ai/changes/005-role-aware-course-agent.json",
+      "introduced_sha": "df4776dafa7c6e2352a9cc39e136b790999c1ece",
+      "final_blob_sha256": "aa68201c9876b2d8e4d2a261c1959e4aa284bf02ff364718387289a8008017c3",
+      "reason": "history-rewritten",
+      "contaminated_by": null
+    },
+    {
+      "path": ".ai/changes/005-role-aware-course-agent-r2.json",
+      "introduced_sha": "50543c4f555a9d21de288040c10b27621e93172a",
+      "final_blob_sha256": "e3b98e2ccdfc997d8144a13c78f1077c56bbd992dd34441cde4d7c6ac5aa1c34",
+      "reason": "descends-from-quarantined",
+      "contaminated_by": ".ai/changes/005-role-aware-course-agent.json"
+    }
+  ]
+}

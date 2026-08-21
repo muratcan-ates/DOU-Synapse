@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/*
+ * DOU-Synapse tasarım token'ları. Tek otorite DESIGN.md'dir; şekil, gölge ve boşluk
+ * kuralları orada yaşar, burada tekrarlanmaz (tekrarlanan kural ayrışır).
+ *
+ * Buradaki renk oranlarının hepsi ÖLÇÜLDÜ, tahmin edilmedi (Anayasa III):
+ *   cd apps/web && node scripts/contrast.mjs        # metin AA'yı geçmezse çıkış 1
+ *   cd apps/web && node scripts/contrast.mjs --md   # DESIGN.md tablolarını üretir
+ * Token değeri değiştiren betiği koşturur ve DESIGN.md §Colors tablolarını yeniler.
+ *
+ * Türkçe istisnası: uppercase dönüşümü kullanılmaz (i/İ bozulur).
+ */
+:root {
+  /* Tek aksan: Doğuş kırmızısı (resmî logodan). --bg üstünde 5.88:1, beyazda 6.09:1. */
+  --brand: #c50c1f;
+  --brand-strong: #a00a19;
+  --brand-subtle: #fdebec;
+
+  /* Sıcak monokrom kanvas (minimalist-ui): saf beyaz değil, kemik. */
+  --fg: #1c1917;
+  --fg-muted: #57534e;
+  /* #8a8580 idi: --bg üstünde 3.53:1 ile AA'nın altındaydı ve 29 yerde bilgi
+     taşıyan 12px metin bu token'la yazılıyor. Ölçüm: scripts/contrast.mjs. */
+  --fg-subtle: #78716c;
+  --bg: #fbfbfa;
+  --surface: #ffffff;
+  /* İki kenarlık token'ı iki AYRI iş yapar; oranları da ayrı eşiğe tabidir.
+     --border DEKORATİF ayraçtır (kart kenarı, liste ayracı, şerit altı): bir
+     kontrolün sınırını çizmez, kaldırılsa da hiçbir öğe kullanılamaz hâle
+     gelmez. WCAG 1.4.11 onu kapsamaz, 3:1 zorunlu değildir.
+     --border-strong KONTROL SINIRIDIR: girdinin ve ikincil butonun nerede
+     başlayıp bittiğini yalnız o gösteriyor (girdi zemini --surface, sayfa
+     zemini --bg; ikisi arasında 1.04:1 var, yani zemin farkı sınır işi
+     görmez). 1.4.11 tam olarak bunu ister → 3:1 ZORUNLU.
+     0.14 idi: --surface üstünde 1.33:1 ile eşiğin çok altındaydı. 0.48 ile
+     3.16:1 (--surface) ve 3.13:1 (--bg). Ölçüm: scripts/contrast.mjs. */
+  --border: rgba(28, 25, 23, 0.08);
+  --border-strong: rgba(28, 25, 23, 0.48);
+
+  /* Durum renkleri: metin koyu, zemin soluk pastel. Rozet metni kendi zemininin
+     üstünde ölçülür (en düşük çift: --warning/--warning-bg 4.62:1).
+     Bilinen çakışma: --danger-bg ile --brand-subtle aynı değerde; gerekçesi ve
+     neden değiştirilmediği DESIGN.md §Colors "Karşılanmayan eşikler"de. */
+  --success: #346538;
+  --success-bg: #edf3ec;
+  --warning: #956400;
+  --warning-bg: #fbf3db;
+  --danger: #9f2f2d;
+  --danger-bg: #fdebec;
+  --info: #1f6c9f;
+  --info-bg: #e1f3fe;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Ham #c50c1f bu zeminlerde 2.93:1 (--bg) ve 2.70:1 (--surface) — okunmaz.
+       Koyu temada marka mutlaka açılır; en kötü zemin --surface'tır. */
+    --brand: #ff6b78;
+    --brand-strong: #ffa1aa;
+    --brand-subtle: #3a1a1e;
+
+    --fg: #f5f4f2;
+    --fg-muted: #b0aaa4;
+    /* #7d7873 idi: --surface üstünde 3.76:1 — AA'nın altı. Koyu temada en
+       kötü zemin --surface'tır (daha açık), eşik ona göre kurulur. */
+    --fg-subtle: #8f8a84;
+    --bg: #191715;
+    --surface: #211f1c;
+    --border: rgba(245, 244, 242, 0.08);
+    /* 0.16 idi: --surface üstünde 1.62:1. Koyu temada en kötü zemin --surface
+       (daha açık), eşik ona göre kurulur. 0.36 ile 3.12:1 (--surface) ve
+       3.15:1 (--bg). Ölçüm: scripts/contrast.mjs. */
+    --border-strong: rgba(245, 244, 242, 0.36);
+
+    --success: #7bc47f;
+    --success-bg: #1d2a1e;
+    --warning: #d9a23d;
+    --warning-bg: #2b2312;
+    --danger: #f08c8a;
+    --danger-bg: #331a1c;
+    --info: #6fb4dd;
+    --info-bg: #14232e;
+  }
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-subtle: var(--brand-subtle);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /*
+   * Tipografi ölçeği — DESIGN.md §Typography (1.250 major third, 16px taban).
+   * Bu adımlar tanımlanmazsa `text-lg` / `text-2xl` Tailwind varsayılanına düşer
+   * ve belgedeki ölçek yalnız kâğıtta kalır. Ham px: 12 · 14 · 16 · 20 · 25 ·
+   * 31.25 · 39.06. `text-4xl` ve üstü bilerek tanımlanmadı: ölçek ürün metnini
+   * kapsar, giriş ekranı başlığı ölçek dışı display boyudur (DESIGN.md'de yazılı).
+   */
+  --text-xs: 0.75rem; /* 12px */
+  --text-xs--line-height: 1rem; /* 16 */
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--line-height: 1.25rem; /* 20 */
+  --text-base: 1rem; /* 16px */
+  --text-base--line-height: 1.625rem; /* 26 — uzun okuma için bilinçli yüksek */
+  --text-lg: 1.25rem; /* 20px */
+  --text-lg--line-height: 1.75rem; /* 28 */
+  --text-xl: 1.5625rem; /* 25px */
+  --text-xl--line-height: 2rem; /* 32 */
+  --text-2xl: 1.9375rem; /* 31px */
+  --text-2xl--line-height: 2.375rem; /* 38 */
+  --text-3xl: 2.4375rem; /* 39px */
+  --text-3xl--line-height: 2.75rem; /* 44 */
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  line-height: 1.625; /* uzun okuma için bilinçli yüksek */
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--brand-subtle);
+  color: var(--fg);
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
+
+.prose-tr {
+  max-width: 70ch;
+}
+
+/*
+ * Giriş animasyonu (minimalist-ui §7): görünmez denecek kadar sakin.
+ * transform+opacity dışında özellik animate edilmez; sınav ekranı bunu KULLANMAZ.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rise-1 { animation-delay: 60ms; }
+.rise-2 { animation-delay: 140ms; }
+.rise-3 { animation-delay: 220ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise, .rise-1, .rise-2, .rise-3 {
+    animation: none;
+  }
+}
+
+/*
+ * `.ambient` kaldırıldı (9 Ağustos). İki radial-gradient uyguluyordu; DESIGN.md
+ * "Gradyan (zemin, metin, buton — hiçbiri)" diyor ve gradyanlar marka kırmızısının
+ * saydam tonuydu — kırmızının üç meşru kullanımı (birincil eylem, aktif navigasyon,
+ * marka işareti) arasında dekoratif zemin lekesi yok. Giriş ekranındaki panel ayrımı
+ * zaten `border-l` + `bg-surface` ile kuruluyor; ekran düz token yüzeyleri üstünde
+ * kalır ve atıl `ambient` sınıfı artık kullanılmaz.
+ */
