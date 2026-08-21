@@ -1,0 +1,102 @@
+{
+  "kind": "paired_comparison",
+  "set": "holdout",
+  "n_items": 105,
+  "baseline": {
+    "run_id": "2026-08-09T1552-holdout-dense-fastembed-retrieval",
+    "mode": "dense",
+    "embedding_provider": "fastembed",
+    "embedding_model": "intfloat/multilingual-e5-large",
+    "database": "dou_synapse_eval"
+  },
+  "candidate": {
+    "run_id": "2026-08-09T1553-holdout-dense-bge-m3-onnx-retrieval",
+    "mode": "dense",
+    "embedding_provider": "bge-m3-onnx",
+    "embedding_model": "BAAI/bge-m3 (onnx, öneksiz)",
+    "database": "dou_synapse_eval_bge"
+  },
+  "varied": [
+    "database",
+    "embedding_model",
+    "embedding_provider"
+  ],
+  "comparisons": {
+    "hit_at_5": {
+      "n": 105,
+      "baseline_mean": 0.9619047619047619,
+      "candidate_mean": 0.9142857142857143,
+      "bootstrap": {
+        "difference": -0.047619047619047616,
+        "ci_lower": -0.09523809523809523,
+        "ci_upper": 0.0,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": false
+      },
+      "mcnemar": {
+        "only_a_correct": 6,
+        "only_b_correct": 1,
+        "discordant": 7,
+        "p_value": 0.125
+      }
+    },
+    "hit_at_8": {
+      "n": 105,
+      "baseline_mean": 0.9809523809523809,
+      "candidate_mean": 0.9333333333333333,
+      "bootstrap": {
+        "difference": -0.047619047619047616,
+        "ci_lower": -0.09523809523809523,
+        "ci_upper": -0.009523809523809525,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": true
+      },
+      "mcnemar": {
+        "only_a_correct": 5,
+        "only_b_correct": 0,
+        "discordant": 5,
+        "p_value": 0.0625
+      }
+    },
+    "reciprocal_rank": {
+      "n": 105,
+      "baseline_mean": 0.8070748299319729,
+      "candidate_mean": 0.8000907029478458,
+      "bootstrap": {
+        "difference": -0.006984126984126993,
+        "ci_lower": -0.05333333333333334,
+        "ci_upper": 0.04063492063492065,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": false
+      }
+    },
+    "full_coverage_at_8": {
+      "n": 26,
+      "baseline_mean": 0.8846153846153846,
+      "candidate_mean": 0.8846153846153846,
+      "bootstrap": {
+        "difference": 0.0,
+        "ci_lower": -0.11538461538461539,
+        "ci_upper": 0.11538461538461539,
+        "confidence": 0.95,
+        "iterations": 10000,
+        "seed": 20260809,
+        "excludes_zero": false
+      },
+      "mcnemar": {
+        "only_a_correct": 1,
+        "only_b_correct": 1,
+        "discordant": 2,
+        "p_value": 1.0
+      }
+    }
+  },
+  "note": "n=105 — yön göstergesi, kesin hüküm değildir. Eşleştirilmiş bootstrap 10.000 yeniden örneklemeli, tohum sabit; McNemar tam (binom) biçimde, yalnız ikili ölçütlerde.",
+  "warning": "İki kol arasında birden fazla ayar değişiyor: ['database', 'embedding_model', 'embedding_provider']. Farkın hangisinden geldiği bu karşılaştırmadan çıkarılamaz."
+}

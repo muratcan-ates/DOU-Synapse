@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dou-web",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev", "--port", "3010"],
+      "cwd": "apps/web",
+      "port": 3010
+    }
+  ]
+}
