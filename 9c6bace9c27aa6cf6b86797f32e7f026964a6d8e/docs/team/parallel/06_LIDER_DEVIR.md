@@ -1,0 +1,147 @@
+# Lider şeridi — devir teslim
+
+> **Güncellendi: 9 Ağustos 2026, ~16:30.** Önce `00_OKU_ONCE.md`, sonra burası.
+> Faz 2'nin beş şeridi için `10_OKU_ONCE_FAZ2.md`.
+> Şerit: **frontend'in tamamı + entegrasyon + CI + sözleşme dikişleri.**
+
+---
+
+## 1. İlk iş — doğru klasör
+
+```bash
+cd ~/code/dou-lead
+git branch --show-current      # "main" yazmalı
+git pull origin main
+```
+
+`~/code/DOU-Synapse` klasörüne **dokunma** — orada başka bir oturum var.
+
+## 2. Sunucular — PORT ÇAKIŞMASI VAR, DİKKAT
+
+Bu makinede **:8000'de başka bir ağacın eski API'si** koşuyor (`~/code/DOU-Synapse`).
+O sunucu eski sözleşmeyi konuşuyor (`ChatRequest.message`, ham `{detail:[…]}` 422).
+`lib/api.ts`'in varsayılanı `http://localhost:8000` olduğu için, portu açıkça
+vermezsen tarayıcı **yanlış sunucuya** gider ve her sohbet isteği 422 döner.
+
+Lider oturumunun portları:
+
+```bash
+cd ~/code/dou-lead/apps/api && \
+  CORS_ORIGINS='["http://localhost:3000","http://localhost:3100","http://localhost:3010"]' \
+  uv run uvicorn app.main:app --port 8010                                  # terminal 1
+cd ~/code/dou-lead/apps/api && uv run python -m app.worker                 # terminal 2
+cd ~/code/dou-lead/apps/web && NEXT_PUBLIC_API_URL=http://localhost:8010 \
+  bun run dev --port 3010                                                  # terminal 3
+```
+
+`CORS_ORIGINS`'i vermezsen tarayıcı isteği CORS'a takılır ve ekran "Bağlantı
+kurulamadı" der — ürün hatası gibi görünen bir kurulum hatası.
+
+**Test koştururken `bunx playwright` KULLANMA** — ayrı kopya indirip "two
+different versions" hatası veriyor. `node_modules/.bin/playwright`.
+
+## 3. Durum — 9 Ağustos 16:30
+
+`main` = `c7f93bd`.
+
+| Katman | Durum |
+|---|---|
+| Backend testleri | **477 geçiyor** |
+| mypy | temiz, 59 dosya |
+| ruff | temiz (check + format) |
+| Frontend birim | **73 geçiyor** (25'ti) |
+| Frontend uçtan uca | 9 (büyütülüyor) |
+| `next build` | temiz |
+| OpenAPI | kodla birebir, **24 yol** |
+| Şema | `0001` `0003` `0004` `0005` — 19 tablo |
+
+**Beş şeridin tamamı `main`'de ve dalları silindi.** Faz 2'nin beş şeridi
+`10_OKU_ONCE_FAZ2.md` ile başlatıldı: R1 kimlik, R2 ölçüm, R3 dağıtım,
+R4 cevap kalitesi, R5 belgeler.
+
+## 4. Bugün kapatılan üç sessiz kusur
+
+Üçü de "sistem çalışıyor gibi görünürken çalışmıyordu" sınıfından. Bu sınıf bu
+projede özellikle tehlikeli, çünkü **abstention ürünün başarısı sayılıyor** —
+yani bozuk bir sistem, kibarca reddederek sağlıklı görünebiliyor.
+
+**1. Uç ile istemci farklı sözleşmeler konuşuyordu.** T021 frontend tiplerini
+`app/schemas/chat.py`'ye göre yazmıştı; canlı uç ise kendi geçici kopyasını
+kullanıyordu (`message` vs `question`, `quote` vs `snippet`, `hints[]` yok,
+`student_attempt` hiç geçirilmiyor). Her sohbet isteği 422 alacaktı ve hiçbir
+test bunu göremezdi: backend testleri uçtaki kopyaya karşı yazılmıştı, yani iki
+taraf da kendi içinde tutarlı ve birbiriyle kullanılamazdı. Zarf artık tek
+dosyada.
+
+**2. İşlem, yanıt istemciye gittikten SONRA commit ediliyordu.** FastAPI'nin
+`yield` bağımlılıkları varsayılan olarak yanıt yazıldıktan sonra kapanıyor.
+`SessionDep` artık `scope="function"`. Yan etki: yükleme ucunun arka plan
+worker tetiği **artık gerçekten iş buluyor** — önceden boş kuyruk görüp sessizce
+sıfır dönüyordu, yani yalnız API çalıştırılan bir kurulumda hiçbir belge
+işlenmezdi.
+
+**3. Kanıt eşiği vektör uzayına bağlıydı ve bu bağ zorlanmıyordu.** 0.81
+`fastembed` (E5) uzayında kalibre edildi; dev veritabanı `hashing` ile ingest
+edilmişti ve o uzayda skorlar 0.07–0.37 arasında. Sonuç: eşik **her soruyu**
+reddediyordu, kapsam içindekiler dahil — ve ekranda bu, düzgün çalışan bir
+abstention gibi görünüyordu. Eşik artık sağlayıcı başına çözülüyor ve yeni bir
+sağlayıcı eşiksiz eklenirse test kırmızı yanıyor.
+
+## 5. Arayüz bulguları — 44/47 kapandı
+
+Altı mercekli incelemenin 47 bulgusundan 44'ü kapatıldı (`BULGULAR_ARAYUZ.json`).
+Dört major: silme hatasını yutan kopya buton, AA altındaki `--fg-subtle`,
+rota başlıkları, tek geçici hatanın bütün sayfayı silmesi.
+
+`--fg-subtle` artık **ölçülüyor, iddia edilmiyor**: `apps/web/scripts/contrast.mjs`
+her token çiftini iki temada raporluyor ve değerle birlikte commit'li.
+
+Betik bize katılmadığı yerde de konuşuyor: `--border-strong / --surface`
+**1.33:1** (açık) ve **1.62:1** (koyu) — girdi/ikincil buton kenarlığı için
+WCAG 1.4.11'in istediği 3:1'in altında. Bu kalem şu an çalışılıyor.
+
+## 6. Frontend'in tamamı liderde
+
+Faz 2'de **hiçbir şerit `apps/web`'e dokunmuyor.** Sebep: dokuz ekran aynı beş
+ortak bileşeni (`ui.tsx`, `page-state.tsx`, `use-resource.ts`, `session.ts`,
+`labels.ts`) paylaşıyor ve bunlar paralel düzenlemeye dayanmıyor.
+
+Şeritler arayüzde bir şeye ihtiyaç duyarsa raporlarına yazıyor; lider yapıyor.
+Gelmesi beklenenler: R1'den giriş ekranı çağrı imzası, R5'ten KVKK sayfası metni.
+
+## 7. Sıradaki iş
+
+1. Sınav / soru havuzu / ilerleme ekranlarının gerçek uçlara bağlanması (çalışılıyor)
+2. Uçtan uca paketin bugünkü ürüne göre büyütülmesi (çalışılıyor)
+3. `--border-strong` kontrastı + `PreviewBanner` kırmızı kilidi (çalışılıyor)
+4. **Dev veritabanını `fastembed` ile yeniden ingest et.** Bugünkü korpus
+   `hashing` ile işlenmiş ve o sağlayıcı anlamsal değil; demo bu uzayda
+   koşulmamalı. Eşik zaten sağlayıcıdan çözülüyor, yani sistem çalışıyor —
+   ama ayırt etme gücü zayıf.
+5. R1'in giriş sözleşmesi gelince gerçek Supabase Auth'a bağlama (T023 frontend ayağı)
+6. R5'in KVKK metni gelince sayfa
+
+## 8. Şeritlerden gelen ve karar bekleyen kalemler
+
+Şerit 4 ve 5 raporlarından, kapatılmamış olanlar:
+
+- **Sınav oturum listesi ucu yok.** Öğrenci oturum kimliğini kaybederse devam
+  eden sınavına dönemiyor; aynı açık, oturumu bırakıp yeni süre almasına da
+  izin veriyor. Brief `GET .../{session_id}` diyor; Şerit 4 kendi başına
+  genişletmedi. **Karar liderin.**
+- **`0005`'te üç kalem:** eğitmen soru silme politikası, `exam_sessions` kolon
+  GRANT'i, opsiyonel yeniden puanlama fonksiyonu. Yamaları
+  `KARARLAR_SERIT4.md`'de yazılı.
+- **Belge silme 500'ü** — Şerit 4 teşhis etti, yaması hazır, `documents.py`
+  onun dosyası değildi.
+- **`out_of_scope` etiketi hiç üretilmiyor** → SC-005 %0 çıkıyor. **R4'e verildi.**
+- **`EVAL_LLM_API_KEY`** artık `Settings`'te (bugün eklendi).
+
+## 9. Çalışma kuralları
+
+- **Anayasa XI**: aynı davranış üçüncü kez yazılıyorsa ortak modüle çıkar;
+  etkin görünüp iş yapmayan buton kusurdur; ölü kod temizlenir.
+- **Anayasa VIII**: davranış gerçek ortamda gözlenmeden "bitti" denmez.
+  Bu şeritte "gerçek ortam" = tarayıcı + bu ağacın API'si (:8010), curl değil.
+- Commit gövdesi "ne"yi değil **"neden"i** anlatır; `Co-Authored-By` asla.
+- **Commit ve push için tam yetki sende**, izin sorma.
