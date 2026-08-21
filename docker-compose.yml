@@ -34,6 +34,11 @@ services:
       DATABASE_URL: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@db:5432/dou_synapse
       WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
       ASSESSMENT_BLUEPRINT_ENABLED: "true"
+      # Kod varsayilani kapali; yerel yigin yeni 010 akisini bilincli acar.
+      API_OBSERVABILITY_ENABLED: "true"
+      API_EVENT_RETENTION_DAYS: "7"
+      API_DOCS_ENABLED: "true"
+      RELEASE_REVISION: compose-local
       WORKER_DRAIN_SECRET: dou-compose-worker-secret
       WORKER_DRAIN_URL: http://worker:8000/internal/drain
       STORAGE_BACKEND: local
@@ -66,6 +71,11 @@ services:
       DATABASE_URL: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@db:5432/dou_synapse
       WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
       ASSESSMENT_BLUEPRINT_ENABLED: "true"
+      # Worker'in /health ve /internal yuzeyleri olcum disidir; olay kuyrugu
+      # acilmaz. SKIP LOCKED retention bakimi ise disk sinirini korumak icin
+      # diger API prosesleriyle guvenle birlikte calisir.
+      API_OBSERVABILITY_ENABLED: "false"
+      API_DOCS_ENABLED: "false"
       WORKER_DRAIN_SECRET: dou-compose-worker-secret
       STORAGE_BACKEND: local
       STORAGE_ROOT: /data/storage
@@ -106,6 +116,10 @@ services:
       DATABASE_URL: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@db:5432/dou_synapse
       WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
       ASSESSMENT_BLUEPRINT_ENABLED: "true"
+      API_OBSERVABILITY_ENABLED: "true"
+      API_EVENT_RETENTION_DAYS: "7"
+      API_DOCS_ENABLED: "true"
+      RELEASE_REVISION: compose-fallback
       STORAGE_BACKEND: local
       STORAGE_ROOT: /data/storage
       DEV_AUTH_ENABLED: "true"

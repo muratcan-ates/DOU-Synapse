@@ -8,7 +8,12 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { createE2eCourseIdentity, createE2eRequestId } from "./fixtures";
+import {
+  createE2eCourseIdentity,
+  fetchE2eApi,
+  recordE2eApiResponses,
+  recordE2eServerRequestId,
+} from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 
@@ -44,7 +49,6 @@ function authorization(user: DemoUser) {
 }
 
 async function signIn(page: Page, user: DemoUser) {
-  await page.setExtraHTTPHeaders({ "X-Request-ID": createE2eRequestId() });
   await page.addInitScript(
     ([token, payload]) => {
       localStorage.setItem("dou-synapse-token", token as string);
@@ -54,8 +58,16 @@ async function signIn(page: Page, user: DemoUser) {
   );
 }
 
-async function apiPost<T>(path: string, body: unknown, user: DemoUser): Promise<T> {
-  const response = await fetch(`${API}${path}`, {
+test.beforeEach(({ page }) => {
+  recordE2eApiResponses(page);
+});
+
+async function apiPost<T>(
+  path: string,
+  body: unknown,
+  user: DemoUser,
+): Promise<T> {
+  const response = await fetchE2eApi(`${API}${path}`, {
     method: "POST",
     headers: {
       Authorization: authorization(user),
@@ -63,6 +75,7 @@ async function apiPost<T>(path: string, body: unknown, user: DemoUser): Promise<
     },
     body: JSON.stringify(body),
   });
+  recordE2eServerRequestId(response.headers.get("x-request-id"));
   if (!response.ok) {
     throw new Error(`${path} → ${response.status} ${await response.text()}`);
   }
@@ -119,14 +132,17 @@ function recordBrowserSignals(page: Page) {
 
 function requestsFor(calls: BrowserApiCall[], method: string, path: string) {
   return calls.filter(
-    (call) => call.phase === "request" && call.method === method && call.path === path,
+    (call) =>
+      call.phase === "request" && call.method === method && call.path === path,
   );
 }
 
 test.describe("rolü sunucudan gelen ders asistanı", () => {
   test.describe.configure({ mode: "serial" });
 
-  test("öğrenci dashboard'unda Ders Koçu kimliği üyelikten gelir", async ({ page }) => {
+  test("öğrenci dashboard'unda Ders Koçu kimliği üyelikten gelir", async ({
+    page,
+  }) => {
     const course = await createCourse("AGENTOGR");
     await addStudent(course);
     await signIn(page, BURAK);
@@ -154,14 +170,21 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
     });
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: "Ders Koçu" })).toBeVisible();
+    await expect(
+      dialog.getByRole("heading", { name: "Ders Koçu" }),
+    ).toBeVisible();
     await expect(dialog.getByText(/^Öğrenci çalışma alanı · /)).toBeVisible();
-    await expect(dialog.getByRole("button", { name: "Konuyu adım adım çalış" }))
-      .toBeVisible();
-    await expect(dialog.getByRole("combobox", { name: /rol|persona/i })).toHaveCount(0);
+    await expect(
+      dialog.getByRole("button", { name: "Konuyu adım adım çalış" }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("combobox", { name: /rol|persona/i }),
+    ).toHaveCount(0);
   });
 
-  test("eğitmen asistanı konuşurken istemci persona veya rol göndermez", async ({ page }) => {
+  test("eğitmen asistanı konuşurken istemci persona veya rol göndermez", async ({
+    page,
+  }) => {
     const course = await createCourse("AGENTEGT");
     await signIn(page, AYSE);
     await page.goto("/dashboard");
@@ -184,12 +207,16 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
     });
 
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: "Eğitmen Asistanı" })).toBeVisible();
+    await expect(
+      dialog.getByRole("heading", { name: "Eğitmen Asistanı" }),
+    ).toBeVisible();
     await expect(dialog.getByText(/^Eğitmen çalışma alanı · /)).toBeVisible();
 
-    await dialog.getByLabel("Sorun").fill(
-      "Yüklenen ders kaynaklarındaki temel kavramları kaynaklarıyla özetle.",
-    );
+    await dialog
+      .getByLabel("Sorun")
+      .fill(
+        "Yüklenen ders kaynaklarındaki temel kavramları kaynaklarıyla özetle.",
+      );
     const answerPromise = page.waitForResponse(
       (response) =>
         response.request().method() === "POST" &&
@@ -199,7 +226,10 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
 
     const answerResponse = await answerPromise;
     expect(answerResponse.status()).toBe(200);
-    const requestBody = answerResponse.request().postDataJSON() as Record<string, unknown>;
+    const requestBody = answerResponse.request().postDataJSON() as Record<
+      string,
+      unknown
+    >;
     expect(requestBody).not.toHaveProperty("audience");
     expect(requestBody).not.toHaveProperty("agent_profile");
     expect(requestBody).not.toHaveProperty("role");
@@ -214,7 +244,9 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
       agent_profile: "instructor_assistant",
     });
     expect(["insufficient_context", "out_of_scope"]).toContain(answer.status);
-    await expect(dialog.getByText(answer.answer, { exact: true })).toBeVisible();
+    await expect(
+      dialog.getByText(answer.answer, { exact: true }),
+    ).toBeVisible();
   });
 
   test("mobil koyu dialog erişilebilir kalır ve aynı açılışta tek istek üretir", async ({
@@ -266,7 +298,8 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
       documentWidth: document.documentElement.scrollWidth,
       bodyWidth: document.body.scrollWidth,
       dark: window.matchMedia("(prefers-color-scheme: dark)").matches,
-      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)")
+        .matches,
     }));
     expect(surface.viewport).toBe(375);
     expect(surface.documentWidth).toBeLessThanOrEqual(surface.viewport);
@@ -275,12 +308,16 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
     expect(surface.reducedMotion).toBe(true);
 
     // Native modal focus scope: both directions must remain inside the dialog.
-    await expect(dialog.getByRole("button", { name: "Ders asistanını kapat" })).toBeFocused();
+    await expect(
+      dialog.getByRole("button", { name: "Ders asistanını kapat" }),
+    ).toBeFocused();
     for (let index = 0; index < 16; index += 1) {
       await page.keyboard.press("Tab");
       await expect
         .poll(() =>
-          dialog.evaluate((element) => element.contains(document.activeElement)),
+          dialog.evaluate((element) =>
+            element.contains(document.activeElement),
+          ),
         )
         .toBe(true);
     }
@@ -288,7 +325,9 @@ test.describe("rolü sunucudan gelen ders asistanı", () => {
       await page.keyboard.press("Shift+Tab");
       await expect
         .poll(() =>
-          dialog.evaluate((element) => element.contains(document.activeElement)),
+          dialog.evaluate((element) =>
+            element.contains(document.activeElement),
+          ),
         )
         .toBe(true);
     }

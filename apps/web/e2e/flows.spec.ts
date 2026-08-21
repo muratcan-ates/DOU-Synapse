@@ -25,7 +25,12 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { createE2eCourseIdentity } from "./fixtures";
+import {
+  createE2eCourseIdentity,
+  fetchE2eApi,
+  recordE2eApiResponses,
+  recordE2eServerRequestId,
+} from "./fixtures";
 
 /*
  * Varsayılan `playwright.config.ts` ile AYNI olmalı ve öyle kalmalı: config
@@ -62,12 +67,16 @@ async function signIn(page: Page, user: DemoUser) {
   );
 }
 
+test.beforeEach(({ page }) => {
+  recordE2eApiResponses(page);
+});
+
 function authHeader(user: DemoUser) {
   return `Bearer dev:${user.id}`;
 }
 
 async function apiPost(path: string, body: unknown, user: DemoUser) {
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetchE2eApi(`${API}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -75,12 +84,59 @@ async function apiPost(path: string, body: unknown, user: DemoUser) {
     },
     body: JSON.stringify(body),
   });
+  recordE2eServerRequestId(res.headers.get("x-request-id"));
   if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
   return res.json();
 }
 
+async function apiPostAfterConcurrentRequest<T>(
+  path: string,
+  body: unknown,
+  user: DemoUser,
+): Promise<T> {
+  // Soru üretimi kullanıcı başına tek uçuşla korunur. Paralel E2E worker'ları
+  // aynı tohum eğitmeni kullandığı için başka bir vakanın kısa üretim turu bu
+  // fikstürü 409'a düşürebilir; yalnız exact `concurrent_request` kararını
+  // bounded biçimde bekler, diğer bütün hataları anında görünür bırakır.
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const res = await fetchE2eApi(`${API}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authHeader(user),
+      },
+      body: JSON.stringify(body),
+    });
+    recordE2eServerRequestId(res.headers.get("x-request-id"));
+    const responseText = await res.text();
+    if (res.ok) return JSON.parse(responseText) as T;
+
+    let errorCode: string | undefined;
+    try {
+      errorCode = (
+        JSON.parse(responseText) as { error?: { code?: string } }
+      ).error?.code;
+    } catch {
+      // Aşağıdaki ortak hata yolu ham yanıtı görünür bırakır.
+    }
+    if (
+      res.status === 409 &&
+      errorCode === "concurrent_request" &&
+      attempt < 39
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      continue;
+    }
+    throw new Error(`${path} → ${res.status} ${responseText}`);
+  }
+  throw new Error(`${path} → eşzamanlı üretim bounded bekleme içinde bitmedi`);
+}
+
 async function apiGet<T>(path: string, user: DemoUser): Promise<T> {
-  const res = await fetch(`${API}${path}`, { headers: { Authorization: authHeader(user) } });
+  const res = await fetchE2eApi(`${API}${path}`, {
+    headers: { Authorization: authHeader(user) },
+  });
+  recordE2eServerRequestId(res.headers.get("x-request-id"));
   if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
   return res.json() as Promise<T>;
 }
@@ -95,11 +151,7 @@ async function apiGet<T>(path: string, user: DemoUser): Promise<T> {
  */
 async function createCourse(suffix: string) {
   const identity = createE2eCourseIdentity(suffix);
-  return apiPost(
-    "/courses",
-    identity,
-    AYSE,
-  );
+  return apiPost("/courses", identity, AYSE);
 }
 
 /* -------------------------------------------------------------------------
@@ -120,7 +172,8 @@ async function createCourse(suffix: string) {
  * Türkçedir ve öyle olması gerekir (Anayasa V).
  */
 function kucukPdf(sayfalar: string[][]): Buffer {
-  const kacir = (s: string) => s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  const kacir = (s: string) =>
+    s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 
   const sayfaKimlik = sayfalar.map((_, i) => 4 + 2 * i);
   const icerikKimlik = sayfalar.map((_, i) => 5 + 2 * i);
@@ -173,7 +226,11 @@ function kucukPdf(sayfalar: string[][]): Buffer {
 /** İki sayfalık ders materyali; "Sayfa 1" ve "Sayfa 2" iddiası buradan doğar. */
 const KAYNAK_PDF_ADI = "e2e_kaynak.pdf";
 const KAYNAK_PDF = kucukPdf([
-  ["Deadlock nedir?", "Deadlock, iki veya daha fazla surecin birbirini", "beklemesi durumudur."],
+  [
+    "Deadlock nedir?",
+    "Deadlock, iki veya daha fazla surecin birbirini",
+    "beklemesi durumudur.",
+  ],
   [
     "Coffman kosullari",
     "Deadlock icin dort Coffman kosulunun ayni anda",
@@ -188,14 +245,24 @@ interface BelgeOzeti {
   status: string;
 }
 
-async function apiUpload(courseId: string, fileName: string, bytes: Buffer, user: DemoUser) {
+async function apiUpload(
+  courseId: string,
+  fileName: string,
+  bytes: Buffer,
+  user: DemoUser,
+) {
   const form = new FormData();
-  form.append("file", new Blob([new Uint8Array(bytes)], { type: "application/pdf" }), fileName);
-  const res = await fetch(`${API}/courses/${courseId}/documents`, {
+  form.append(
+    "file",
+    new Blob([new Uint8Array(bytes)], { type: "application/pdf" }),
+    fileName,
+  );
+  const res = await fetchE2eApi(`${API}/courses/${courseId}/documents`, {
     method: "POST",
     headers: { Authorization: authHeader(user) },
     body: form,
   });
+  recordE2eServerRequestId(res.headers.get("x-request-id"));
   if (!res.ok) throw new Error(`yükleme → ${res.status} ${await res.text()}`);
   return res.json();
 }
@@ -211,9 +278,13 @@ async function belgeHazirOlanaKadarBekle(courseId: string, user: DemoUser) {
   for (let deneme = 0; deneme < 40; deneme++) {
     // 10 Ağu: liste uçları sayfalama zarfına geçti; gövde artık {items, next_cursor}.
     const belgeler = (
-      await apiGet<{ items: BelgeOzeti[] }>(`/courses/${courseId}/documents`, user)
+      await apiGet<{ items: BelgeOzeti[] }>(
+        `/courses/${courseId}/documents`,
+        user,
+      )
     ).items;
-    if (belgeler.length > 0 && belgeler.every((b) => b.status === "completed")) return;
+    if (belgeler.length > 0 && belgeler.every((b) => b.status === "completed"))
+      return;
     const bozuk = belgeler.find((b) => b.status === "failed");
     if (bozuk) throw new Error(`belge işlenemedi: ${bozuk.file_name}`);
     await new Promise((r) => setTimeout(r, 500));
@@ -224,7 +295,11 @@ async function belgeHazirOlanaKadarBekle(courseId: string, user: DemoUser) {
 /** Materyali hazır, öğrencisi eklenmiş bir ders. Sohbet vakalarının ortak zemini. */
 async function materyalliDers(suffix: string) {
   const course = await createCourse(suffix);
-  await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+  await apiPost(
+    `/courses/${course.id}/members`,
+    { email: BURAK.email, role: "student" },
+    AYSE,
+  );
   await apiUpload(course.id, KAYNAK_PDF_ADI, KAYNAK_PDF, AYSE);
   await belgeHazirOlanaKadarBekle(course.id, AYSE);
   return course;
@@ -267,8 +342,15 @@ const HAVUZ_YOK =
 
 async function soruHavuzuKur(suffix: string): Promise<HavuzFiksturu> {
   const course = await materyalliDers(suffix);
-  const topic = await apiPost(`/courses/${course.id}/topics`, { name: "Deadlock" }, AYSE);
-  const rapor = await apiPost(
+  const topic = await apiPost(
+    `/courses/${course.id}/topics`,
+    { name: "Deadlock" },
+    AYSE,
+  );
+  const rapor = await apiPostAfterConcurrentRequest<{
+    questions?: { id: string }[];
+    rejection_reasons?: string[];
+  }>(
     `/courses/${course.id}/questions/generate`,
     { topic_id: topic.id, question_type: "mcq", count: 3 },
     AYSE,
@@ -284,7 +366,11 @@ async function soruHavuzuKur(suffix: string): Promise<HavuzFiksturu> {
 /** Sınav ancak onaylanmış sorularla başlar; onayı veren tek yer eğitmen ucudur. */
 async function hepsiniOnayla(havuz: HavuzFiksturu) {
   for (const soru of havuz.taslaklar) {
-    await apiPost(`/courses/${havuz.course.id}/questions/${soru.id}/approve`, {}, AYSE);
+    await apiPost(
+      `/courses/${havuz.course.id}/questions/${soru.id}/approve`,
+      {},
+      AYSE,
+    );
   }
 }
 
@@ -327,7 +413,11 @@ function hataDuyurulari(page: Page) {
 }
 
 /** Sohbete bir tur gönderir ve girdinin boşalmasını (isteğin gittiğini) bekler. */
-async function sohbetGonder(page: Page, etiket: "Sorun" | "Denemen", metin: string) {
+async function sohbetGonder(
+  page: Page,
+  etiket: "Sorun" | "Denemen",
+  metin: string,
+) {
   const girdi = page.getByLabel(etiket);
   await girdi.fill(metin);
   await page.getByRole("button", { name: "Gönder" }).click();
@@ -377,7 +467,9 @@ test.describe("materyal yönetimi", () => {
       mimeType: "application/pdf",
       buffer: KAYNAK_PDF,
     });
-    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeVisible({ timeout: 15_000 });
+    await expect(
+      page.getByRole("listitem").getByText(KAYNAK_PDF_ADI),
+    ).toBeVisible({ timeout: 15_000 });
 
     const row = page.locator("li", { hasText: KAYNAK_PDF_ADI });
 
@@ -398,23 +490,34 @@ test.describe("materyal yönetimi", () => {
     await expect(page.getByText("Evet, sil")).toBeVisible();
     await page.getByRole("button", { name: "Vazgeç" }).click();
     await expect(page.getByText("Evet, sil")).toBeHidden();
-    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeVisible();
+    await expect(
+      page.getByRole("listitem").getByText(KAYNAK_PDF_ADI),
+    ).toBeVisible();
 
     // Gerçekten silme — ve TAM SAYFA YENİLEME OLMAMALI
     await silButonu.click();
     await row.getByRole("button", { name: "Evet, sil" }).click();
-    await expect(page.getByRole("listitem").getByText(KAYNAK_PDF_ADI)).toBeHidden({ timeout: 15_000 });
+    await expect(
+      page.getByRole("listitem").getByText(KAYNAK_PDF_ADI),
+    ).toBeHidden({ timeout: 15_000 });
 
     const navType = await page.evaluate(
-      () => performance.getEntriesByType("navigation")[0]?.entryType &&
-        (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming).type,
+      () =>
+        performance.getEntriesByType("navigation")[0]?.entryType &&
+        (
+          performance.getEntriesByType(
+            "navigation",
+          )[0] as PerformanceNavigationTiming
+        ).type,
     );
     expect(navType).not.toBe("reload");
   });
 });
 
 test.describe("sohbet — ürünün tezi", () => {
-  test("kaynaklı cevap dosya adını ve sayfa numarasını gösterir", async ({ page }) => {
+  test("kaynaklı cevap dosya adını ve sayfa numarasını gösterir", async ({
+    page,
+  }) => {
     // Sistemin tek iddiası bu: cevap uydurulmaz, gerçek bir sayfaya dayanır.
     // Dosya adı ve konum chunk metadata'sından gelir, model metninden değil
     // (Anayasa I) — bu yüzden ikisinin AYNI kartta durması sınanıyor.
@@ -430,7 +533,9 @@ test.describe("sohbet — ürünün tezi", () => {
     await expect(kart).toContainText(/Sayfa \d+/);
   });
 
-  test("dayanaksız soru nazik ret alır ve bu ret HATA GİBİ GÖRÜNMEZ", async ({ page }) => {
+  test("dayanaksız soru nazik ret alır ve bu ret HATA GİBİ GÖRÜNMEZ", async ({
+    page,
+  }) => {
     /*
      * DESIGN.md'nin en kritik kararı ve tek koruması bu vaka.
      *
@@ -464,9 +569,15 @@ test.describe("sohbet — ürünün tezi", () => {
     await expect(page.locator("blockquote")).toHaveCount(0);
   });
 
-  test("öğrenci sorunlu yanıtı izinle öğretmen incelemesine açar", async ({ page }) => {
+  test("öğrenci sorunlu yanıtı izinle öğretmen incelemesine açar", async ({
+    page,
+  }) => {
     const course = await createCourse("KALITE");
-    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+    await apiPost(
+      `/courses/${course.id}/members`,
+      { email: BURAK.email, role: "student" },
+      AYSE,
+    );
     await signIn(page, BURAK);
     await page.goto(`/courses/${course.id}/chat`);
 
@@ -494,21 +605,31 @@ test.describe("sohbet — ürünün tezi", () => {
     // init script intentionally restores Burak on a full page load.
     await page.getByRole("link", { name: "Tüm dersler" }).click();
     await expect(page).toHaveURL(/\/courses$/);
-    const courseLink = page.getByRole("link", { name: new RegExp(course.code) });
+    const courseLink = page.getByRole("link", {
+      name: new RegExp(course.code),
+    });
     await expect(courseLink).toBeVisible();
     await courseLink.click();
     await expect(page).toHaveURL(new RegExp(`/courses/${course.id}$`));
     await page.getByRole("link", { name: "AI kalite", exact: true }).click();
     await expect(page).toHaveURL(/\/quality$/);
 
-    await expect(page.getByRole("heading", { name: "AI kalite" })).toBeVisible();
-    await expect(page.getByText("Burak Yılmaz")).toBeVisible();
-    await expect(page.getByText("Deadlock koşullarını açıklar mısın?")).toBeVisible();
     await expect(
-      page.getByText("Öğrenci notu: Kaynak görünmedi; öğretmenim bu örneği inceleyebilir."),
+      page.getByRole("heading", { name: "AI kalite" }),
+    ).toBeVisible();
+    await expect(page.getByText("Burak Yılmaz")).toBeVisible();
+    await expect(
+      page.getByText("Deadlock koşullarını açıklar mısın?"),
     ).toBeVisible();
     await expect(
-      page.getByText("Puanlanan yanıt", { exact: true }).locator("xpath=following-sibling::dd[1]"),
+      page.getByText(
+        "Öğrenci notu: Kaynak görünmedi; öğretmenim bu örneği inceleyebilir.",
+      ),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByText("Puanlanan yanıt", { exact: true })
+        .locator("xpath=following-sibling::dd[1]"),
     ).toHaveText("1");
   });
 
@@ -553,7 +674,11 @@ test.describe("sohbet — ürünün tezi", () => {
     await expect(kademeler).toHaveCount(1, { timeout: 30_000 });
 
     // Gerçek deneme merdiveni bir kademe ilerletir: Tanı → Yönlendirme.
-    await sohbetGonder(page, "Denemen", "Sanırım dört koşul var ama hepsini hatırlamıyorum");
+    await sohbetGonder(
+      page,
+      "Denemen",
+      "Sanırım dört koşul var ama hepsini hatırlamıyorum",
+    );
     await expect(kademeler).toHaveCount(2, { timeout: 30_000 });
     await expect(kademeler.nth(1)).toContainText("Yönlendirme");
 
@@ -582,7 +707,9 @@ test.describe("sohbet — ürünün tezi", () => {
 
     // Oturum geri açıldı: soru balonu, cevabın kaynak kartı ve listedeki
     // etkin oturum işareti yerinde.
-    await expect(kaynakKarti(page)).toContainText(KAYNAK_PDF_ADI, { timeout: 30_000 });
+    await expect(kaynakKarti(page)).toContainText(KAYNAK_PDF_ADI, {
+      timeout: 30_000,
+    });
     await expect(page.getByText(soru).first()).toBeVisible();
     await expect(page.locator('[aria-current="true"]')).toBeVisible();
   });
@@ -638,11 +765,16 @@ test.describe("gezinme", () => {
 });
 
 test.describe("soru havuzu — eğitmen onayı", () => {
-  test("satır seçimi, onay ve red butonları GERÇEKTEN iş yapar", async ({ page }) => {
+  test("satır seçimi, onay ve red butonları GERÇEKTEN iş yapar", async ({
+    page,
+  }) => {
     // Kusur: butonlar seçim yapılınca etkinleşiyor ama tıklanınca hiçbir şey
     // olmuyordu. Etkin görünüp iş yapmayan buton kusurdur (Anayasa XI).
     const havuz = await soruHavuzuKur("SORU");
-    test.skip(havuz.taslaklar.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    test.skip(
+      havuz.taslaklar.length < 2,
+      `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`,
+    );
 
     await signIn(page, AYSE);
     await page.goto(`/courses/${havuz.course.id}/questions`);
@@ -659,25 +791,26 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     await expect(satirlar.nth(1)).not.toHaveAttribute("aria-current", "true");
 
     // Onay gerçekten iş yapar: karar cümlesi sunucudan dönen duruma dayanır ve
-    // düğmenin kendi etiketi de yeni duruma döner.
-    await page.getByRole("button", { name: /Onayla ve öğrenciye aç/ }).click();
+    // seçili havuz satırının durumu terminal etikete döner. Terminal sorularda
+    // eylem düğmesi bilerek kaldırılır; yeniden karar verilemez.
+    await page.getByRole("button", { name: /Onayla ve provaya aç/ }).click();
     await expect(page.getByText(/Soru onaylandı/)).toBeVisible();
-    /*
-     * `exact: true` şart: havuzda onaylı soru olunca üstteki süzgeç çipi de
-     * "Onaylandı (1)" oluyor ve satırın erişilebilir adı da bu kelimeyi
-     * taşıyor. Gevşek eşleşme üç öğeye birden uyup strict mode ihlali veriyordu
-     * — testin ölçmek istediği tek şey EYLEM düğmesinin yeni etiketi.
-     */
-    await expect(page.getByRole("button", { name: "Onaylandı", exact: true })).toBeVisible();
+    await expect(satirlar.nth(0)).toContainText("Onaylandı");
+    await expect(
+      page.getByRole("button", { name: /Onayla ve provaya aç/ }),
+    ).toHaveCount(0);
 
     // Red de öyle.
     await satirlar.nth(1).click();
     await page.getByRole("button", { name: /^Reddet$/ }).click();
     await expect(page.getByText(/Soru reddedildi/)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Reddedildi", exact: true })).toBeVisible();
+    await expect(satirlar.nth(1)).toContainText("Reddedildi");
+    await expect(page.getByRole("button", { name: /^Reddet$/ })).toHaveCount(0);
   });
 
-  test("üretim muhasebesi GİZLENMEZ ama hata gibi de gösterilmez", async ({ page }) => {
+  test("üretim muhasebesi GİZLENMEZ ama hata gibi de gösterilmez", async ({
+    page,
+  }) => {
     /*
      * İstenen / dönen / kabul edilen sayıları ekranda durur (Anayasa III) ve
      * `returned: 0` bir çökme değildir: sağlayıcı şemaya ve kaynağa uyan soru
@@ -693,7 +826,9 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     await page.goto(`/courses/${course.id}/questions`);
 
     await page.getByRole("button", { name: "Soru üret" }).click();
-    await expect(page.getByText("Üretim raporu")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("Üretim raporu")).toBeVisible({
+      timeout: 60_000,
+    });
     await expect(page.getByText(/soru istendi/)).toBeVisible();
 
     await expect(hataDuyurulari(page)).toHaveCount(0);
@@ -705,7 +840,11 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     // Girildiğinde eğitmen formunun gösterilmesi, öğrenciye 403 alacağı bir
     // düğme sunmak olurdu (Anayasa XI); ekran sakin bir yönlendirmeye düşer.
     const course = await createCourse("HAVUZROL");
-    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+    await apiPost(
+      `/courses/${course.id}/members`,
+      { email: BURAK.email, role: "student" },
+      AYSE,
+    );
 
     await signIn(page, BURAK);
     await page.goto(`/courses/${course.id}/questions`);
@@ -713,21 +852,32 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     await expect(
       page.getByText(/Soru havuzu yalnızca dersin eğitmenine gösterilir/),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Soru üret" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Konu ekle" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Soru üret" })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole("button", { name: "Konu ekle" })).toHaveCount(
+      0,
+    );
     await expect(page.getByLabel("Yeni konu")).toHaveCount(0);
     await expect(page.getByLabel("Konu süzgeci")).toHaveCount(0);
     // Sekme de yok: devre dışı görünen sekme bırakılmaz.
-    await expect(page.getByRole("link", { name: "Soru havuzu", exact: true })).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "Soru havuzu", exact: true }),
+    ).toHaveCount(0);
     // Çıkışı olan boş durum: nereye gideceği söyleniyor.
-    await expect(page.getByRole("link", { name: "Sınav provasına git" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Sınav provasına git" }),
+    ).toBeVisible();
   });
 });
 
 test.describe("sınav provası", () => {
   test("ileri-geri gezinme çalışır ve cevap korunur", async ({ page }) => {
     const havuz = await soruHavuzuKur("SINAV");
-    test.skip(havuz.taslaklar.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    test.skip(
+      havuz.taslaklar.length < 2,
+      `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`,
+    );
     await hepsiniOnayla(havuz);
 
     await signIn(page, BURAK);
@@ -758,7 +908,10 @@ test.describe("sınav provası", () => {
      * düğme bırakılsaydı öğrenci sınav sırasında ona basmayı denerdi.
      */
     const havuz = await soruHavuzuKur("IPUCU");
-    test.skip(havuz.taslaklar.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    test.skip(
+      havuz.taslaklar.length === 0,
+      `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`,
+    );
     await hepsiniOnayla(havuz);
 
     const ipucu = page.getByRole("button", { name: /İpucu al|Sonraki ipucu/ });
@@ -782,11 +935,15 @@ test.describe("sınav provası", () => {
     await page.reload();
 
     await page.getByRole("button", { name: "Sınav başlat" }).click();
-    await expect(page.getByRole("button", { name: "Cevabı gönder" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Cevabı gönder" }),
+    ).toBeVisible();
     await expect(ipucu).toHaveCount(0);
   });
 
-  test("sınav başlayınca Asistan AYNI SEKMEDE kilitlenir, bitince açılır", async ({ page }) => {
+  test("sınav başlayınca Asistan AYNI SEKMEDE kilitlenir, bitince açılır", async ({
+    page,
+  }) => {
     /*
      * İki ayrı kusurun testi, ikisi de canlı tarayıcıda bulundu.
      *
@@ -803,7 +960,10 @@ test.describe("sınav provası", () => {
      * bırakırdı.
      */
     const havuz = await soruHavuzuKur("KILIT");
-    test.skip(havuz.taslaklar.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    test.skip(
+      havuz.taslaklar.length === 0,
+      `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`,
+    );
     await hepsiniOnayla(havuz);
 
     const asistanBaglantisi = page.getByRole("link", { name: "Asistan" });
@@ -814,7 +974,9 @@ test.describe("sınav provası", () => {
     await expect(asistanBaglantisi).toBeVisible();
 
     await page.getByRole("button", { name: "Sınav başlat" }).click();
-    await expect(page.getByRole("button", { name: "Cevabı gönder" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Cevabı gönder" }),
+    ).toBeVisible();
 
     // Sayfa YENİLENMEDEN: geçişin izlendiğinin kanıtı burası.
     await expect(kilitliSekme).toBeVisible();
@@ -826,15 +988,23 @@ test.describe("sınav provası", () => {
     await page.getByRole("button", { name: "Ders Koçu" }).click();
     const asistanPaneli = page.getByRole("dialog");
     await expect(
-      asistanPaneli.getByText("Asistan sınav sırasında kapalı", { exact: true }),
+      asistanPaneli.getByText("Asistan sınav sırasında kapalı", {
+        exact: true,
+      }),
     ).toBeVisible();
-    await expect(asistanPaneli.getByRole("button", { name: "Gönder" })).toHaveCount(0);
-    await asistanPaneli.getByRole("button", { name: "Ders asistanını kapat" }).click();
+    await expect(
+      asistanPaneli.getByRole("button", { name: "Gönder" }),
+    ).toHaveCount(0);
+    await asistanPaneli
+      .getByRole("button", { name: "Ders asistanını kapat" })
+      .click();
 
     // Sunucu da aynı kararı veriyor: kilitli sekme bir süs değil.
     await page.goto(`/courses/${havuz.course.id}/chat`);
     await expect(page.getByText(/süren bir sınav oturumun var/)).toBeVisible();
-    await expect(page.getByPlaceholder("Ders materyaline soru sorun…")).toHaveCount(0);
+    await expect(
+      page.getByPlaceholder("Ders materyaline soru sorun…"),
+    ).toHaveCount(0);
 
     await page.goto(`/courses/${havuz.course.id}/exam`);
     await page.getByRole("button", { name: "Sınavı bitir" }).click();
@@ -844,17 +1014,25 @@ test.describe("sınav provası", () => {
     await expect(kilitliSekme).toHaveCount(0);
   });
 
-  test("onaylanmış sorusu olmayan derste sınav bir HATA değil, boş durumdur", async ({ page }) => {
+  test("onaylanmış sorusu olmayan derste sınav bir HATA değil, boş durumdur", async ({
+    page,
+  }) => {
     // Havuz boşken sunucu 409 döndürüyor; ekran bunu kırmızı kutuya değil nötr
     // boş duruma çeviriyor. Öğrencinin yapabileceği bir şey yok, arıza da yok.
     const course = await createCourse("BOSHAVUZ");
-    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+    await apiPost(
+      `/courses/${course.id}/members`,
+      { email: BURAK.email, role: "student" },
+      AYSE,
+    );
 
     await signIn(page, BURAK);
     await page.goto(`/courses/${course.id}/exam`);
     await page.getByRole("button", { name: "Alıştırma başlat" }).click();
 
-    await expect(page.getByText(/henüz onaylanmış soru yok/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/henüz onaylanmış soru yok/)).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(hataDuyurulari(page)).toHaveCount(0);
     await expect(page.locator(".text-danger")).toHaveCount(0);
   });
@@ -863,20 +1041,36 @@ test.describe("sınav provası", () => {
 test.describe("rol ayrımı", () => {
   test("öğrenci eğitmen kontrollerini görmez", async ({ page }) => {
     const course = await createCourse("ROL");
-    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+    await apiPost(
+      `/courses/${course.id}/members`,
+      { email: BURAK.email, role: "student" },
+      AYSE,
+    );
 
     await signIn(page, BURAK);
     await page.goto(`/courses/${course.id}`);
 
     // exact: "Materyal yükle" alt dizgesi "materyal yüklemedi" içinde de geçiyor.
-    await expect(page.getByText("Materyal yükle", { exact: true })).toBeHidden();
-    await expect(page.getByRole("button", { name: /dosyasını sil$/ })).toHaveCount(0);
-    await expect(page.getByRole("navigation").getByText("Soru havuzu")).toHaveCount(0);
+    await expect(
+      page.getByText("Materyal yükle", { exact: true }),
+    ).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: /dosyasını sil$/ }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("navigation").getByText("Soru havuzu"),
+    ).toHaveCount(0);
   });
 
-  test("ilerleme ekranı role göre farklı soruya cevap verir", async ({ page }) => {
+  test("ilerleme ekranı role göre farklı soruya cevap verir", async ({
+    page,
+  }) => {
     const course = await createCourse("ILERLEME");
-    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
+    await apiPost(
+      `/courses/${course.id}/members`,
+      { email: BURAK.email, role: "student" },
+      AYSE,
+    );
 
     await signIn(page, BURAK);
     await page.goto(`/courses/${course.id}/analytics`);
@@ -893,14 +1087,28 @@ test.describe("rol ayrımı", () => {
      * göndermiyor, yalnız SAYIYORUM diyor (`untracked_topics`).
      */
     const course = await createCourse("OLCUMSUZ");
-    await apiPost(`/courses/${course.id}/members`, { email: BURAK.email, role: "student" }, AYSE);
-    await apiPost(`/courses/${course.id}/topics`, { name: "E2E Konu Bir" }, AYSE);
-    await apiPost(`/courses/${course.id}/topics`, { name: "E2E Konu İki" }, AYSE);
+    await apiPost(
+      `/courses/${course.id}/members`,
+      { email: BURAK.email, role: "student" },
+      AYSE,
+    );
+    await apiPost(
+      `/courses/${course.id}/topics`,
+      { name: "E2E Konu Bir" },
+      AYSE,
+    );
+    await apiPost(
+      `/courses/${course.id}/topics`,
+      { name: "E2E Konu İki" },
+      AYSE,
+    );
 
     await signIn(page, BURAK);
     await page.goto(`/courses/${course.id}/analytics`);
 
-    await expect(page.getByText(/2 konu henüz çalışılmadı/)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/2 konu henüz çalışılmadı/)).toBeVisible({
+      timeout: 15_000,
+    });
     // Konular listede HİÇ yok — dolayısıyla yanlarında bir puan da yok.
     await expect(page.getByText("E2E Konu Bir")).toHaveCount(0);
     await expect(page.getByText("E2E Konu İki")).toHaveCount(0);
@@ -909,18 +1117,24 @@ test.describe("rol ayrımı", () => {
     await expect(page.getByText("Ölçüm yok").first()).toBeVisible();
     // Boşluk bir arıza değil: sakin bir sonraki adım var.
     await expect(hataDuyurulari(page)).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Sınav provasına git" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Sınav provasına git" }),
+    ).toBeVisible();
   });
 });
 
 test.describe("izolasyon", () => {
-  test("üye olmayan öğrenci dersin VARLIĞINI bile öğrenemez", async ({ page }) => {
+  test("üye olmayan öğrenci dersin VARLIĞINI bile öğrenemez", async ({
+    page,
+  }) => {
     // "Yetkiniz yok" demek dersin var olduğunu sızdırmaktır; sistem 404 döner.
     const course = await createCourse("IZOLASYON");
     await signIn(page, BURAK); // derse ÜYE DEĞİL
     await page.goto(`/courses/${course.id}`);
 
-    await expect(page.getByText("Ders bulunamadı.")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Ders bulunamadı.")).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByText("E2E Test Dersi IZOLASYON")).toBeHidden();
 
     /*

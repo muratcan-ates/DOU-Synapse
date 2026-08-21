@@ -6,9 +6,16 @@ production performansı iddiası değildir.
 
 > **Durum:** Tüm SLO'lar `planned / unmeasured` durumundadır. Repository'de
 > `/health/live` ve `/health/ready`, yapısal request/ingestion kayıtları ve yerel
-> ölçüm araçları vardır; production monitor, güvenilir event collector,
+> ölçüm araçları ve `010` adayında içeriksiz, kısa ömürlü yerel API event
+> collector/admin snapshot'ı vardır; production monitor, harici güvenilir collector,
 > dashboard, alert delivery ve on-call route bu turda yapılandırılmamış veya
 > gözlenmemiştir. Yerel ya da fake-provider sonucu production SLI verisi olmaz.
+
+`/admin/api-events/query` bir tanılama snapshot'ıdır: yalnız o ortamdaki API
+route şablonu, durum sınıfı ve gecikmeyi gösterir. Eksik/düşmüş kuyruk olaylarını
+başarı saymaz; buna rağmen çok-replika completeness, edge/network failure,
+synthetic probe, alert teslimi ve production retention kanıtı bağlanana kadar
+SLO denominator'ı veya error-budget kaynağı değildir.
 
 `.github/workflows/keepalive.yml` yalnız zamanlanmış readiness smoke'udur.
 Gerekli hedef yapılandırılmadıysa yeşil geçmez, açıkça kırmızı olur; buna

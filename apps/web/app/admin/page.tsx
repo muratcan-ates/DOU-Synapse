@@ -7,6 +7,7 @@ import {
   AdminPagination,
   type AdminColumn,
 } from "@/components/portal/admin-data-table";
+import { AdminApiWorkbench } from "@/components/portal/admin-api-workbench";
 import { usePortalProfile } from "@/components/portal/portal-profile-context";
 import { PortalMetrics } from "@/components/portal/portal-metrics";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
@@ -29,7 +30,7 @@ import {
 import { useResource, type Resource } from "@/lib/use-resource";
 
 const PAGE_SIZE = 25;
-type AdminTab = "users" | "courses" | "requests" | "ingestion";
+type AdminTab = "api" | "users" | "courses" | "requests" | "ingestion";
 
 export default function AdminPage() {
   return (
@@ -41,7 +42,7 @@ export default function AdminPage() {
 
 /**
  * Kritik kapı: profil sunucudan doğrulanmadan AdminContent mount olmaz.
- * Böylece yönetici olmayan tarayıcı dört liste isteğini kısa süreliğine bile atmaz.
+ * Böylece yönetici olmayan tarayıcı hiçbir yönetim veri isteğini kısa süreliğine bile atmaz.
  */
 function AdminGate() {
   const profile = usePortalProfile();
@@ -75,14 +76,28 @@ function AdminGate() {
 }
 
 function AdminContent() {
-  const [activeTab, setActiveTab] = useState<AdminTab>("users");
+  const [activeTab, setActiveTab] = useState<AdminTab>("api");
+  const [visitedTabs, setVisitedTabs] = useState<ReadonlySet<AdminTab>>(
+    () => new Set<AdminTab>(["api"]),
+  );
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const tabs: Array<{ id: AdminTab; label: string }> = [
+    { id: "api", label: "API akışı" },
     { id: "users", label: "Kullanıcılar" },
     { id: "courses", label: "Dersler" },
     { id: "requests", label: "AI kullanım kayıtları" },
     { id: "ingestion", label: "İşleme işleri" },
   ];
+
+  function activateTab(tab: AdminTab): void {
+    setActiveTab(tab);
+    setVisitedTabs((current) => {
+      if (current.has(tab)) return current;
+      const next = new Set(current);
+      next.add(tab);
+      return next;
+    });
+  }
 
   return (
     <div className="space-y-10">
@@ -121,14 +136,14 @@ function AdminContent() {
               type="button"
               role="tab"
               aria-selected={activeTab === tab.id}
-              aria-controls="admin-tab-panel"
+              aria-controls={`admin-tab-panel-${tab.id}`}
               tabIndex={activeTab === tab.id ? 0 : -1}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => activateTab(tab.id)}
               onKeyDown={(event) => {
                 const next = adminTabIndexAfterKey(index, event.key, tabs.length);
                 if (next === null) return;
                 event.preventDefault();
-                setActiveTab(tabs[next]!.id);
+                activateTab(tabs[next]!.id);
                 tabRefs.current[next]?.focus();
               }}
               className={
@@ -142,21 +157,32 @@ function AdminContent() {
           ))}
         </div>
 
-        <div
-          id="admin-tab-panel"
-          role="tabpanel"
-          aria-labelledby={`admin-tab-${activeTab}`}
-          tabIndex={0}
-          className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-        >
-          {activeTab === "users" && <AdminUsersPanel />}
-          {activeTab === "courses" && <AdminCoursesPanel />}
-          {activeTab === "requests" && <AdminRequestsPanel />}
-          {activeTab === "ingestion" && <AdminIngestionPanel />}
-        </div>
+        {tabs.map((tab) => (
+          <div
+            key={tab.id}
+            id={`admin-tab-panel-${tab.id}`}
+            role="tabpanel"
+            aria-labelledby={`admin-tab-${tab.id}`}
+            tabIndex={activeTab === tab.id ? 0 : -1}
+            hidden={activeTab !== tab.id}
+            className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            {visitedTabs.has(tab.id) ? (
+              <AdminTabPanel tab={tab.id} active={activeTab === tab.id} />
+            ) : null}
+          </div>
+        ))}
       </section>
     </div>
   );
+}
+
+function AdminTabPanel({ tab, active }: { tab: AdminTab; active: boolean }) {
+  if (tab === "api") return <AdminApiWorkbench active={active} />;
+  if (tab === "users") return <AdminUsersPanel />;
+  if (tab === "courses") return <AdminCoursesPanel />;
+  if (tab === "requests") return <AdminRequestsPanel />;
+  return <AdminIngestionPanel />;
 }
 
 function AdminOverviewSection() {
@@ -601,11 +627,13 @@ function AdminIngestionPanel() {
   const columns: AdminColumn<AdminIngestionJob>[] = [
     {
       key: "document",
-      header: "Belge",
+      header: "Bağlam",
       render: (item) => (
         <span>
-          <span className="block">Belge {item.document_id.slice(0, 8)}</span>
-          <span className="block font-mono text-xs text-fg-muted">{item.course_code}</span>
+          <span className="block">Kaynak işleme işi</span>
+          <span className="block font-mono text-xs text-fg-muted">
+            {item.course_code}
+          </span>
         </span>
       ),
     },
@@ -640,7 +668,7 @@ function AdminIngestionPanel() {
       />
       <AdminDataTable
         title="Kaynak işleme işleri"
-        description="Belge yalnız teknik kimliğiyle görünür; dosya adı ve ders içeriği platform yöneticisine açılmaz."
+        description="Dosya adı, belge kimliği ve ders içeriği platform yöneticisine açılmaz."
         items={resource.data.items}
         columns={columns}
         rowKey={(item) => item.id}

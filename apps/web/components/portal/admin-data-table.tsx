@@ -22,7 +22,7 @@ export function AdminDataTable<T>({
   description: string;
   items: T[];
   columns: AdminColumn<T>[];
-  rowKey: (item: T) => string;
+  rowKey: (item: T, index: number) => string;
   emptyMessage: string;
 }) {
   const titleId = useId();
@@ -31,18 +31,20 @@ export function AdminDataTable<T>({
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-surface">
       <div className="border-b border-border px-5 py-4">
-        <h2 id={titleId} className="text-lg font-medium text-fg">{title}</h2>
+        <h2 id={titleId} className="text-lg font-medium text-fg">
+          {title}
+        </h2>
         <p id={descriptionId} className="mt-1 text-xs text-fg-muted">
           {description}
         </p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-hidden md:overflow-x-auto">
         <table
-          className="min-w-full border-collapse text-left text-sm"
+          className="block min-w-full border-collapse text-left text-sm md:table"
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
         >
-          <thead className="bg-bg text-xs text-fg-muted">
+          <thead className="hidden bg-bg text-xs text-fg-muted md:table-header-group">
             <tr>
               {columns.map((column) => (
                 <th
@@ -55,25 +57,33 @@ export function AdminDataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block divide-y divide-border md:table-row-group md:divide-y-0">
             {items.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length} className="px-4 py-10 text-center text-fg-muted">
+              <tr className="block md:table-row">
+                <td
+                  colSpan={columns.length}
+                  className="block px-4 py-10 text-center text-fg-muted md:table-cell"
+                >
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
-              items.map((item) => (
+              items.map((item, index) => (
                 <tr
-                  key={rowKey(item)}
-                  className="border-b border-border transition-colors duration-200 hover:bg-bg last:border-b-0"
+                  key={rowKey(item, index)}
+                  className="block px-4 py-3 transition-colors duration-200 hover:bg-bg md:table-row md:border-b md:border-border md:px-0 md:py-0 md:last:border-b-0"
                 >
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={`whitespace-nowrap px-4 py-3 align-top text-fg ${column.className ?? ""}`}
+                      className={`grid min-w-0 grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-3 py-1.5 align-top text-fg md:table-cell md:whitespace-nowrap md:px-4 md:py-3 ${column.className ?? ""}`}
                     >
-                      {column.render(item)}
+                      <span className="text-xs font-medium text-fg-muted md:hidden">
+                        {column.header}
+                      </span>
+                      <span className="min-w-0 break-words">
+                        {column.render(item)}
+                      </span>
                     </td>
                   ))}
                 </tr>
@@ -99,8 +109,11 @@ export function AdminPagination({
   busy: boolean;
   onChange: (offset: number) => void;
 }) {
-  const first = total === 0 ? 0 : offset + 1;
-  const last = Math.min(offset + limit, total);
+  const lastPageOffset =
+    total === 0 ? 0 : Math.floor((total - 1) / limit) * limit;
+  const safeOffset = Math.min(offset, lastPageOffset);
+  const first = total === 0 ? 0 : safeOffset + 1;
+  const last = Math.min(safeOffset + limit, total);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
@@ -110,15 +123,15 @@ export function AdminPagination({
       <div className="flex gap-2">
         <Button
           variant="secondary"
-          aria-disabled={busy || offset === 0}
-          onClick={() => onChange(Math.max(0, offset - limit))}
+          aria-disabled={busy || safeOffset === 0}
+          onClick={() => onChange(Math.max(0, safeOffset - limit))}
         >
           Önceki
         </Button>
         <Button
           variant="secondary"
-          aria-disabled={busy || offset + limit >= total}
-          onClick={() => onChange(offset + limit)}
+          aria-disabled={busy || safeOffset + limit >= total}
+          onClick={() => onChange(safeOffset + limit)}
         >
           Sonraki
         </Button>

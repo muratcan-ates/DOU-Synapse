@@ -685,7 +685,6 @@ class TestPlatformAdmin:
         item = response.json()["items"][0]
         assert set(item) == {
             "log_id",
-            "course_id",
             "course_code",
             "route",
             "mode",
@@ -697,6 +696,7 @@ class TestPlatformAdmin:
             "created_at",
         }
         assert "user_ref" not in item
+        assert "course_id" not in item
         assert str(student_id) not in response.text
         assert "student@dogus.edu.tr" not in response.text
         assert "prompt" not in item
@@ -741,8 +741,6 @@ class TestPlatformAdmin:
         item = response.json()["items"][0]
         assert set(item) == {
             "id",
-            "document_id",
-            "course_id",
             "course_code",
             "status",
             "attempt_count",
@@ -751,5 +749,7 @@ class TestPlatformAdmin:
             "created_at",
         }
         assert item["id"] == str(job_id)
+        assert "document_id" not in item
+        assert "course_id" not in item
         assert "sinav-cevap-anahtari.pdf" not in response.text
         assert "gizli worker hatası" not in response.text

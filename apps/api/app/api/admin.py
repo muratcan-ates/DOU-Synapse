@@ -10,9 +10,12 @@ from sqlalchemy import text
 
 from app.api.deps import PlatformAdminDep, SessionDep
 from app.contracts import AnswerStatus
+from app.core.request_observability import observer_snapshot
 from app.core.warmup import warmup_is_ready, warmup_state
 from app.models.core import JobStatus
 from app.schemas.admin import (
+    AdminApiEventListOut,
+    AdminApiEventQueryIn,
     AdminCourseListOut,
     AdminIngestionListOut,
     AdminOverviewOut,
@@ -123,3 +126,33 @@ async def list_admin_ingestion(
         },
     )
     return AdminIngestionListOut.model_validate(value)
+
+
+@router.post("/api-events/query", response_model=AdminApiEventListOut)
+async def query_admin_api_events(
+    query: AdminApiEventQueryIn,
+    admin: PlatformAdminDep,
+    session: SessionDep,
+) -> AdminApiEventListOut:
+    """Kisisel icerik olmadan API sagligi ve destek kodu aramasi."""
+
+    del admin
+    value = await session.scalar(
+        text(
+            "SELECT app.admin_api_request_events("
+            ":window_minutes, :limit, :offset, :method, :route, "
+            ":status_class, :request_id)"
+        ),
+        {
+            "window_minutes": query.window_minutes,
+            "limit": query.limit,
+            "offset": query.offset,
+            "method": query.method,
+            "route": query.route,
+            "status_class": query.status_class,
+            "request_id": query.request_id,
+        },
+    )
+    result = dict(value or {})
+    result["collector"] = observer_snapshot()
+    return AdminApiEventListOut.model_validate(result)

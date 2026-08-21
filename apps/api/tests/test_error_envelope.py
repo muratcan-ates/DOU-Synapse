@@ -16,6 +16,7 @@ kimliği üretmektir.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -36,7 +37,7 @@ from tests.conftest import UserFactory
 
 
 def _assert_envelope(body: dict[str, Any]) -> dict[str, Any]:
-    """Zarfın şeklini tek yerde doğrular; üç handler da aynı şekli üretmeli."""
+    """Zarfın şeklini tek yerde doğrular; dört handler da aynı şekli üretmeli."""
     assert set(body) == {"error"}, f"zarfın kökü yalnız 'error' olmalı: {body}"
     error = body["error"]
     assert set(error) == {"code", "message", "request_id"}, f"alan kümesi değişmiş: {error}"
@@ -96,17 +97,20 @@ class TestUcHandlerAyniZarfiUretir:
 
 
 class TestRequestId:
-    async def test_gonderilen_kimlik_zarfa_ve_basliga_yansir(
+    async def test_istemci_kimligi_yok_sayilir_ve_sunucu_kodu_kullanilir(
         self, client: AsyncClient, users: UserFactory
     ) -> None:
-        """İstemci kimliği verirse sunucu onu korur: uçtan uca izleme bunu ister."""
+        """İstemci başlığı içerik kanalı olamaz; korelasyon kodunu sunucu üretir."""
         user_id = await users.create("zarf-rid@dogus.edu.tr")
-        headers = {**users.auth(user_id), "X-Request-ID": "izlenebilir-kimlik-42"}
+        supplied = "c2VjcmV0X2VtYWlsX2NvbnRlbnQ"
+        headers = {**users.auth(user_id), "X-Request-ID": supplied}
 
         response = await client.get(f"/courses/{uuid4()}/documents", headers=headers)
 
-        assert response.json()["error"]["request_id"] == "izlenebilir-kimlik-42"
-        assert response.headers["X-Request-ID"] == "izlenebilir-kimlik-42"
+        request_id = response.headers["X-Request-ID"]
+        assert re.fullmatch(r"[a-f0-9]{32}", request_id)
+        assert request_id != supplied
+        assert response.json()["error"]["request_id"] == request_id
 
     async def test_kimlik_verilmezse_uretilir_ve_basligla_ayni_olur(
         self, client: AsyncClient, users: UserFactory
@@ -170,7 +174,9 @@ class TestBlueprintRouter:
         # blueprint ailesi yedi, ingestion retry bir, kalite döngüsü iki ve ürün
         # portalı (profil + dashboard + beş admin yolu) yedi; assessment integrity
         # sonuç okuma ve soru sınıflandırma uçları da iki path ekler.
-        assert len(yollar) == 52, f"yol sayısı değişmiş: {len(yollar)}"
+        # API gözlenebilirliği, içeriksiz admin olay sorgusunu tek yeni path
+        # olarak ekler; internal worker ucu hâlâ şemadan gizlidir.
+        assert len(yollar) == 53, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

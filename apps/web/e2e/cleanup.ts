@@ -1,10 +1,14 @@
 import { execFileSync } from "node:child_process";
-import { join } from "node:path";
+import { existsSync, readFileSync, readdirSync, unlinkSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 import {
   PROTECTED_COURSE_CODES,
   PROTECTED_COURSE_IDS,
+  e2eRequestIdFailureMarkerPath,
+  e2eRequestManifestPath,
   isRunScopedE2eCourseCode,
+  validateE2eServerRequestId,
   validateE2eRunId,
 } from "./fixtures";
 
@@ -21,10 +25,29 @@ interface CleanupAudit {
   result: "allowed" | "denied";
 }
 
+interface CleanupApiEvent {
+  id: string;
+  requestId: string;
+  routeTemplate: string;
+  statusCode: number;
+}
+
+export interface ApiEventCleanupIo {
+  pause: () => Promise<void>;
+  list: () => CleanupApiEvent[];
+  remove: (events: CleanupApiEvent[]) => CleanupApiEvent[];
+}
+
+export interface ApiEventBarrierIo {
+  pause: () => Promise<void>;
+  exists: (requestId: string) => boolean | Promise<boolean>;
+}
+
 export interface CleanupOptions {
   onayli: boolean;
   runId?: string;
   databaseName?: string;
+  apiEventBarrierRequestId?: string;
   env?: NodeJS.ProcessEnv;
 }
 
@@ -33,10 +56,21 @@ export interface CleanupResult {
   deleted: CleanupCourse[];
   listedAudits: CleanupAudit[];
   deletedAudits: CleanupAudit[];
+  listedApiEvents: CleanupApiEvent[];
+  deletedApiEvents: CleanupApiEvent[];
 }
 
 const SAFE_LOCAL_DATABASE_PATTERN = /(?:^|_)(?:e2e|test|preview)(?:_|$)/;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SERVER_REQUEST_ID_PATTERN = /^[a-f0-9]{32}$/;
+const REQUEST_MANIFEST_PATTERN = /^request-ids-([a-z0-9]{6,20})\.txt$/;
+const REQUEST_ID_FAILURE_MARKER_PATTERN =
+  /^request-id-errors-([a-z0-9]{6,20})\.txt$/;
+const EVENT_BARRIER_INTERVAL_MS = 2_000;
+const EVENT_BARRIER_MAX_ROUNDS = 26;
+const EVENT_SETTLE_INTERVAL_MS = 2_500;
+const EVENT_SETTLE_MAX_ROUNDS = 6;
 type Environment = Readonly<Record<string, string | undefined>>;
 
 export function resolveE2eDatabaseName(
@@ -50,14 +84,18 @@ export function resolveE2eDatabaseName(
     );
   }
   if (!/^[a-zA-Z0-9_]+$/.test(databaseName)) {
-    throw new Error("E2E_DATABASE_NAME yalnızca harf, rakam ve alt çizgi içerebilir.");
+    throw new Error(
+      "E2E_DATABASE_NAME yalnızca harf, rakam ve alt çizgi içerebilir.",
+    );
   }
   if (["postgres", "template0", "template1"].includes(databaseName)) {
     throw new Error(`Sistem veritabanı temizlenemez: ${databaseName}`);
   }
 
   const ephemeralCiDatabase =
-    env.CI === "true" && env.GITHUB_ACTIONS === "true" && databaseName === "dou_synapse";
+    env.CI === "true" &&
+    env.GITHUB_ACTIONS === "true" &&
+    databaseName === "dou_synapse";
   if (!ephemeralCiDatabase && !SAFE_LOCAL_DATABASE_PATTERN.test(databaseName)) {
     throw new Error(
       `Paylaşılan veritabanı temizlenemez: ${databaseName}. ` +
@@ -71,10 +109,26 @@ function psqlPath(env: NodeJS.ProcessEnv): string {
   return env.PG_BIN ? join(env.PG_BIN, "psql") : "psql";
 }
 
-function runPsql(databaseName: string, sql: string, env: NodeJS.ProcessEnv): string {
+function runPsql(
+  databaseName: string,
+  sql: string,
+  env: NodeJS.ProcessEnv,
+): string {
   return execFileSync(
     psqlPath(env),
-    ["-X", "-v", "ON_ERROR_STOP=1", "-A", "-t", "-F", "\t", "-d", databaseName, "-c", sql],
+    [
+      "-X",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-A",
+      "-t",
+      "-F",
+      "\t",
+      "-d",
+      databaseName,
+      "-c",
+      sql,
+    ],
     { encoding: "utf8", env },
   ).trim();
 }
@@ -114,7 +168,11 @@ export function deleteIdentityProbe(
   code: string,
   env: NodeJS.ProcessEnv = process.env,
 ): void {
-  runPsql(databaseName, `DELETE FROM courses WHERE code = ${sqlLiteral(code)}`, env);
+  runPsql(
+    databaseName,
+    `DELETE FROM courses WHERE code = ${sqlLiteral(code)}`,
+    env,
+  );
 }
 
 export async function verifyDatabaseIdentity(options: {
@@ -148,7 +206,13 @@ export function parseCleanupRows(output: string): CleanupCourse[] {
   if (!output.trim()) return [];
   return output.split("\n").map((line) => {
     const [id, code, title, ...extra] = line.split("\t");
-    if (!id || !code || title === undefined || extra.length > 0 || !UUID_PATTERN.test(id)) {
+    if (
+      !id ||
+      !code ||
+      title === undefined ||
+      extra.length > 0 ||
+      !UUID_PATTERN.test(id)
+    ) {
       throw new Error(`Beklenmeyen psql temizlik satırı: ${line}`);
     }
     return { id, code, title };
@@ -166,7 +230,7 @@ export function parseAuditRows(output: string): CleanupAudit[] {
       (result !== "allowed" && result !== "denied") ||
       extra.length > 0 ||
       !UUID_PATTERN.test(id) ||
-      !/^e2e-[a-z0-9]{6,20}-[A-Za-z0-9_-]+$/.test(requestId)
+      !SERVER_REQUEST_ID_PATTERN.test(requestId)
     ) {
       throw new Error(`Beklenmeyen admin audit temizlik satırı: ${line}`);
     }
@@ -174,12 +238,48 @@ export function parseAuditRows(output: string): CleanupAudit[] {
   });
 }
 
+export function parseApiEventRows(output: string): CleanupApiEvent[] {
+  if (!output.trim()) return [];
+  return output.split("\n").map((line) => {
+    const [id, requestId, routeTemplate, statusText, ...extra] =
+      line.split("\t");
+    const statusCode = Number(statusText);
+    if (
+      !id ||
+      !requestId ||
+      !routeTemplate ||
+      extra.length > 0 ||
+      !UUID_PATTERN.test(id) ||
+      !SERVER_REQUEST_ID_PATTERN.test(requestId) ||
+      !Number.isInteger(statusCode) ||
+      statusCode < 100 ||
+      statusCode > 599
+    ) {
+      throw new Error(`Beklenmeyen API event temizlik satırı: ${line}`);
+    }
+    return { id, requestId, routeTemplate, statusCode };
+  });
+}
+
+export function parseRequestManifest(output: string): string[] {
+  if (!output.trim()) return [];
+  const requestIds = output.split("\n").filter(Boolean);
+  for (const requestId of requestIds) {
+    if (!SERVER_REQUEST_ID_PATTERN.test(requestId)) {
+      throw new Error(`Beklenmeyen E2E request manifest kimliği: ${requestId}`);
+    }
+  }
+  return [...new Set(requestIds)];
+}
+
 function sqlLiteral(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
 function protectedSql(): string {
-  const ids = PROTECTED_COURSE_IDS.map((id) => `${sqlLiteral(id)}::uuid`).join(", ");
+  const ids = PROTECTED_COURSE_IDS.map((id) => `${sqlLiteral(id)}::uuid`).join(
+    ", ",
+  );
   const codes = PROTECTED_COURSE_CODES.map(sqlLiteral).join(", ");
   return `id NOT IN (${ids}) AND code NOT IN (${codes})`;
 }
@@ -203,7 +303,9 @@ ORDER BY code;
 }
 
 function deleteSql(courses: CleanupCourse[], runId?: string): string {
-  const ids = courses.map((course) => `${sqlLiteral(course.id)}::uuid`).join(", ");
+  const ids = courses
+    .map((course) => `${sqlLiteral(course.id)}::uuid`)
+    .join(", ");
   return `
 WITH removed AS (
   DELETE FROM public.courses
@@ -219,32 +321,66 @@ ORDER BY code;
 `.trim();
 }
 
-function auditCandidateSql(runId?: string): string {
-  const pattern = runId
-    ? `^e2e-${validateE2eRunId(runId)}-[A-Za-z0-9_-]+$`
-    : "^e2e-[a-z0-9]{6,20}-[A-Za-z0-9_-]+$";
-  return `request_id ~ ${sqlLiteral(pattern)}`;
+function requestManifestPaths(
+  runId: string | undefined,
+  env: NodeJS.ProcessEnv,
+): string[] {
+  if (runId) return [e2eRequestManifestPath(runId, env)];
+  const directory = dirname(e2eRequestManifestPath("aaaaaa", env));
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory)
+    .filter((name) => REQUEST_MANIFEST_PATTERN.test(name))
+    .map((name) => join(directory, name));
 }
 
-function listAuditSql(runId?: string): string {
+function requestIdFailureMarkerPaths(
+  runId: string | undefined,
+  env: NodeJS.ProcessEnv,
+): string[] {
+  if (runId) return [e2eRequestIdFailureMarkerPath(runId, env)];
+  const directory = dirname(e2eRequestIdFailureMarkerPath("aaaaaa", env));
+  if (!existsSync(directory)) return [];
+  return readdirSync(directory)
+    .filter((name) => REQUEST_ID_FAILURE_MARKER_PATTERN.test(name))
+    .map((name) => join(directory, name));
+}
+
+function manifestedRequestIds(paths: string[]): string[] {
+  return [
+    ...new Set(
+      paths.flatMap((path) =>
+        existsSync(path)
+          ? parseRequestManifest(readFileSync(path, "utf8"))
+          : [],
+      ),
+    ),
+  ];
+}
+
+export function auditCandidateSql(requestIds: string[]): string {
+  if (requestIds.length === 0) return "FALSE";
+  return `request_id IN (${requestIds.map(sqlLiteral).join(", ")})`;
+}
+
+function listAuditSql(requestIds: string[]): string {
   return `
 SELECT id::text,
        request_id,
        action,
        result
 FROM public.platform_admin_access_audit
-WHERE ${auditCandidateSql(runId)}
+WHERE ${auditCandidateSql(requestIds)}
 ORDER BY created_at, id;
 `.trim();
 }
 
-function deleteAuditSql(audits: CleanupAudit[], runId?: string): string {
+function deleteAuditSql(audits: CleanupAudit[], requestIds: string[]): string {
   const ids = audits.map((audit) => `${sqlLiteral(audit.id)}::uuid`).join(", ");
   return `
 WITH removed AS (
   DELETE FROM public.platform_admin_access_audit
   WHERE id IN (${ids})
-    AND ${auditCandidateSql(runId)}
+    AND ${auditCandidateSql(requestIds)}
   RETURNING id, request_id, action, result
 )
 SELECT id::text,
@@ -256,9 +392,165 @@ ORDER BY request_id, id;
 `.trim();
 }
 
+function listApiEventSql(requestIds: string[]): string {
+  return `
+SELECT id::text,
+       request_id,
+       route_template,
+       status_code::text
+FROM public.api_request_events
+WHERE ${auditCandidateSql(requestIds)}
+ORDER BY created_at, id;
+`.trim();
+}
+
+function deleteApiEventSql(
+  events: CleanupApiEvent[],
+  requestIds: string[],
+): string {
+  const ids = events.map((event) => `${sqlLiteral(event.id)}::uuid`).join(", ");
+  return `
+WITH removed AS (
+  DELETE FROM public.api_request_events
+  WHERE id IN (${ids})
+    AND ${auditCandidateSql(requestIds)}
+  RETURNING id, request_id, route_template, status_code
+)
+SELECT id::text,
+       request_id,
+       route_template,
+       status_code::text
+FROM removed
+ORDER BY request_id, id;
+`.trim();
+}
+
+function apiEventBarrierExistsSql(requestId: string): string {
+  const validated = validateE2eServerRequestId(requestId);
+  return `
+SELECT EXISTS (
+  SELECT 1
+  FROM public.api_request_events
+  WHERE request_id = ${sqlLiteral(validated)}
+);
+`.trim();
+}
+
+export async function waitForApiEventBarrier(
+  requestId: string,
+  io: ApiEventBarrierIo,
+  maxRounds = EVENT_BARRIER_MAX_ROUNDS,
+): Promise<void> {
+  const validated = validateE2eServerRequestId(requestId);
+  if (!Number.isInteger(maxRounds) || maxRounds < 1) {
+    throw new Error("API event bariyeri için pozitif bir tur sınırı gerekir.");
+  }
+
+  for (let round = 0; round < maxRounds; round += 1) {
+    if (await io.exists(validated)) return;
+    if (round + 1 < maxRounds) await io.pause();
+  }
+
+  throw new Error(
+    "API event FIFO bariyeri bounded bekleme içinde kalıcı depoda görünmedi; " +
+      "manifest korunarak temizlik durduruldu.",
+  );
+}
+
+async function waitForPersistedApiEventBarrier(
+  databaseName: string,
+  requestId: string,
+  env: NodeJS.ProcessEnv,
+): Promise<void> {
+  await waitForApiEventBarrier(requestId, {
+    pause: () =>
+      new Promise((resolve) => setTimeout(resolve, EVENT_BARRIER_INTERVAL_MS)),
+    exists: (candidate) => {
+      const output = runPsql(
+        databaseName,
+        apiEventBarrierExistsSql(candidate),
+        env,
+      );
+      if (output === "t") return true;
+      if (output === "f") return false;
+      throw new Error("API event bariyer sorgusu beklenmeyen sonuç döndürdü.");
+    },
+  });
+}
+
+export async function settleApiEventCleanup(
+  initial: CleanupApiEvent[],
+  io: ApiEventCleanupIo,
+  maxRounds = EVENT_SETTLE_MAX_ROUNDS,
+): Promise<{ listed: CleanupApiEvent[]; deleted: CleanupApiEvent[] }> {
+  const listedById = new Map(initial.map((event) => [event.id, event]));
+  const deletedById = new Map<string, CleanupApiEvent>();
+  let current = initial;
+  let consecutiveEmpty = 0;
+
+  for (let round = 0; round < maxRounds; round += 1) {
+    if (round > 0) {
+      await io.pause();
+      current = io.list();
+      for (const event of current) listedById.set(event.id, event);
+    }
+
+    if (current.length === 0) {
+      consecutiveEmpty += 1;
+      // Collector ayni batch'i iki kez, her biri 2 saniyeye kadar deneyebilir.
+      // 0 / 2.5 / 5.0 saniye sessizligi, kuyruktan alinmis ama henuz commit
+      // etmemis bir olayin manifest silindikten sonra geri gelmesini engeller.
+      if (consecutiveEmpty >= 3) {
+        return {
+          listed: [...listedById.values()],
+          deleted: [...deletedById.values()],
+        };
+      }
+      continue;
+    }
+
+    consecutiveEmpty = 0;
+    const deleted = io.remove(current);
+    if (deleted.length !== current.length) {
+      throw new Error(
+        `API event temizliği eksik kaldı: ${current.length} adaydan ` +
+          `${deleted.length} kayıt silindi.`,
+      );
+    }
+    for (const event of deleted) deletedById.set(event.id, event);
+  }
+
+  throw new Error(
+    "API event kuyruğu bounded bekleme içinde üç ardışık boş tur vermedi; " +
+      "manifest korunarak temizlik durduruldu.",
+  );
+}
+
+async function settleAndDeleteApiEvents(
+  databaseName: string,
+  requestIds: string[],
+  initial: CleanupApiEvent[],
+  env: NodeJS.ProcessEnv,
+): Promise<{ listed: CleanupApiEvent[]; deleted: CleanupApiEvent[] }> {
+  if (requestIds.length === 0) return { listed: [], deleted: [] };
+  return settleApiEventCleanup(initial, {
+    pause: () =>
+      new Promise((resolve) => setTimeout(resolve, EVENT_SETTLE_INTERVAL_MS)),
+    list: () =>
+      parseApiEventRows(
+        runPsql(databaseName, listApiEventSql(requestIds), env),
+      ),
+    remove: (events) =>
+      parseApiEventRows(
+        runPsql(databaseName, deleteApiEventSql(events, requestIds), env),
+      ),
+  });
+}
+
 function printCandidates(
   courses: CleanupCourse[],
   audits: CleanupAudit[],
+  apiEvents: CleanupApiEvent[],
   runId?: string,
 ) {
   const scope = runId ? `koşu ${runId}` : "tüm koşular";
@@ -266,9 +558,19 @@ function printCandidates(
   for (const course of courses) {
     console.log(`  ${course.code}\t${course.id}\t${course.title}`);
   }
-  console.log(`[e2e:clean] ${scope}: ${audits.length} Bilgi İşlem audit kaydı bulundu.`);
+  console.log(
+    `[e2e:clean] ${scope}: ${audits.length} Bilgi İşlem audit kaydı bulundu.`,
+  );
   for (const audit of audits) {
     console.log(`  ${audit.requestId}\t${audit.action}\t${audit.result}`);
+  }
+  console.log(
+    `[e2e:clean] ${scope}: ${apiEvents.length} API event kaydı bulundu.`,
+  );
+  for (const event of apiEvents) {
+    console.log(
+      `  ${event.requestId}\t${event.routeTemplate}\t${event.statusCode}`,
+    );
   }
 }
 
@@ -276,19 +578,49 @@ export async function temizle(options: CleanupOptions): Promise<CleanupResult> {
   const env = options.env ?? process.env;
   const runId = options.runId ? validateE2eRunId(options.runId) : undefined;
   const databaseName = resolveE2eDatabaseName(options.databaseName, env);
+  if (
+    requestIdFailureMarkerPaths(runId, env).some((path) => existsSync(path))
+  ) {
+    throw new Error(
+      "Bir API yanıtında geçersiz sunucu X-Request-ID görüldü; manifest korunarak E2E temizliği durduruldu.",
+    );
+  }
+  if (options.apiEventBarrierRequestId) {
+    await waitForPersistedApiEventBarrier(
+      databaseName,
+      options.apiEventBarrierRequestId,
+      env,
+    );
+  }
+  const manifestPaths = requestManifestPaths(runId, env);
+  const requestIds = manifestedRequestIds(manifestPaths);
   const listed = parseCleanupRows(runPsql(databaseName, listSql(runId), env));
-  const listedAudits = parseAuditRows(runPsql(databaseName, listAuditSql(runId), env));
+  const listedAudits = parseAuditRows(
+    runPsql(databaseName, listAuditSql(requestIds), env),
+  );
+  const listedApiEvents = parseApiEventRows(
+    runPsql(databaseName, listApiEventSql(requestIds), env),
+  );
 
   for (const course of listed) {
     if (!isRunScopedE2eCourseCode(course.code, runId)) {
       throw new Error(`Test deseni dışındaki ders reddedildi: ${course.code}`);
     }
   }
-  printCandidates(listed, listedAudits, runId);
+  printCandidates(listed, listedAudits, listedApiEvents, runId);
 
   if (!options.onayli) {
-    console.log("[e2e:clean] Kuru koşu: silme yapılmadı. Silmek için --evet kullanın.");
-    return { listed, deleted: [], listedAudits, deletedAudits: [] };
+    console.log(
+      "[e2e:clean] Kuru koşu: silme yapılmadı. Silmek için --evet kullanın.",
+    );
+    return {
+      listed,
+      deleted: [],
+      listedAudits,
+      deletedAudits: [],
+      listedApiEvents,
+      deletedApiEvents: [],
+    };
   }
   const deleted =
     listed.length === 0
@@ -302,18 +634,38 @@ export async function temizle(options: CleanupOptions): Promise<CleanupResult> {
   const deletedAudits =
     listedAudits.length === 0
       ? []
-      : parseAuditRows(runPsql(databaseName, deleteAuditSql(listedAudits, runId), env));
+      : parseAuditRows(
+          runPsql(databaseName, deleteAuditSql(listedAudits, requestIds), env),
+        );
   if (deletedAudits.length !== listedAudits.length) {
     throw new Error(
       `Audit temizliği eksik kaldı: ${listedAudits.length} adaydan ` +
         `${deletedAudits.length} kayıt silindi.`,
     );
   }
-  console.log(
-    `[e2e:clean] ${deleted.length} ders ve ${deletedAudits.length} ` +
-      "Bilgi İşlem audit kaydı silindi.",
+  const settledEvents = await settleAndDeleteApiEvents(
+    databaseName,
+    requestIds,
+    listedApiEvents,
+    env,
   );
-  return { listed, deleted, listedAudits, deletedAudits };
+  const allListedApiEvents = settledEvents.listed;
+  const deletedApiEvents = settledEvents.deleted;
+  console.log(
+    `[e2e:clean] ${deleted.length} ders, ${deletedAudits.length} ` +
+      `Bilgi İşlem audit ve ${deletedApiEvents.length} API event kaydı silindi.`,
+  );
+  for (const manifestPath of manifestPaths) {
+    if (existsSync(manifestPath)) unlinkSync(manifestPath);
+  }
+  return {
+    listed,
+    deleted,
+    listedAudits,
+    deletedAudits,
+    listedApiEvents: allListedApiEvents,
+    deletedApiEvents,
+  };
 }
 
 function readCliOptions(args: string[]) {
@@ -337,7 +689,9 @@ function readCliOptions(args: string[]) {
   return { onayli, runId };
 }
 
-const cliEntry = process.argv[1]?.replaceAll("\\", "/").endsWith("/e2e/cleanup.ts");
+const cliEntry = process.argv[1]
+  ?.replaceAll("\\", "/")
+  .endsWith("/e2e/cleanup.ts");
 if (cliEntry) {
   const options = readCliOptions(process.argv.slice(2));
   void temizle(options).catch((error: unknown) => {

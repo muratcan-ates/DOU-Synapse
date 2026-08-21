@@ -95,6 +95,9 @@ def environment(database: None) -> Iterator[None]:
     # Üretim varsayılanı fail-closed; assessment sözleşme testleri özelliği
     # bilinçli olarak açar.
     os.environ["ASSESSMENT_BLUEPRINT_ENABLED"] = "true"
+    os.environ["API_OBSERVABILITY_ENABLED"] = "true"
+    os.environ["API_EVENT_RETENTION_DAYS"] = "7"
+    os.environ["RELEASE_REVISION"] = "pytest"
     os.environ.pop("SUPABASE_JWT_SECRET", None)
 
     from app.core.config import get_settings
@@ -154,7 +157,8 @@ async def clean_tables(environment: None, _admin_engine_pool: AsyncEngine) -> As
     async with _admin_engine_pool.begin() as conn:
         await conn.execute(
             text(
-                "TRUNCATE platform_admin_access_audit, platform_admins, mastery, answers, "
+                "TRUNCATE api_request_events, platform_admin_access_audit, platform_admins, "
+                "mastery, answers, "
                 "exam_sessions, questions, topics, "
                 "chunks, ingestion_jobs, documents, course_memberships, "
                 "courses, profiles RESTART IDENTITY CASCADE"

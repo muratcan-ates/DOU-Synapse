@@ -13,7 +13,8 @@ from dataclasses import dataclass
 from typing import Annotated, Protocol
 from uuid import UUID
 
-from fastapi import Depends, Path, Query, Request
+from fastapi import Depends, Path, Query, Request, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,6 +31,16 @@ from app.models.core import CourseMembership, MembershipRole, MembershipStatus
 from app.modules.assessment import exam_state
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+# `auto_error=False` zorunludur: HTTPBearer'ın varsayılan İngilizce 401/403
+# gövdesi projenin Türkçe ErrorEnvelope sözleşmesini atlamamalı. Aynı dependency
+# OpenAPI'ye gerçek bearer güvenlik şemasını da taşır; sözleşme artık elle yazılan
+# bir "Authorization" açıklamasına dayanmaz.
+_bearer_auth = HTTPBearer(auto_error=False, scheme_name="BearerAuth")
+BearerCredentialsDep = Annotated[
+    HTTPAuthorizationCredentials | None,
+    Security(_bearer_auth),
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,15 +62,16 @@ def get_page_params(
 PageDep = Annotated[PageParams, Depends(get_page_params)]
 
 
-def get_principal(request: Request, settings: SettingsDep) -> Principal:
-    header = request.headers.get("Authorization", "")
-    scheme, _, token = header.partition(" ")
-    if scheme.lower() != "bearer" or not token:
+def get_principal(
+    credentials: BearerCredentialsDep,
+    settings: SettingsDep,
+) -> Principal:
+    if credentials is None or not credentials.credentials:
         raise AuthenticationError("Bu işlem için giriş yapmanız gerekiyor.")
-    return authenticate(token, settings)
+    return authenticate(credentials.credentials, settings)
 
 
-PrincipalDep = Annotated[Principal, Depends(get_principal)]
+PrincipalDep = Annotated[Principal, Security(get_principal)]
 
 
 async def get_session(principal: PrincipalDep) -> AsyncIterator[AsyncSession]:

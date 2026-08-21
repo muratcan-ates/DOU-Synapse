@@ -6,16 +6,18 @@ teknik ayrıntı loglara, anlaşılır Türkçe mesaj kullanıcıya gider.
 
 from __future__ import annotations
 
+import re
 import uuid
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
 class ErrorDetail(BaseModel):
-    """Hata zarfının gövdesi. Üç handler da bunu üretir, kimse elle sözlük yazmaz."""
+    """Hata zarfının gövdesi. Dört handler da bunu üretir, kimse elle sözlük yazmaz."""
 
     code: str
     message: str
@@ -23,7 +25,7 @@ class ErrorDetail(BaseModel):
     #: middleware'den geçmediyse (doğrudan çağrılan handler, bazı test yolları)
     #: burada üretilir. "Bazen var" bir alan, istemcide "bazen göster" demektir
     #: ve kullanıcıya destek kodu vaat edip vermemek en kötüsüdür.
-    request_id: str
+    request_id: str = Field(min_length=32, max_length=32, pattern=r"^[a-f0-9]{32}$")
 
 
 class ErrorEnvelope(BaseModel):
@@ -50,7 +52,9 @@ def request_id_of(request: Request) -> str:
     yanıtı, kullanıcıya gösterilecek destek kodunun olmadığı anlamına gelir.
     """
     existing = getattr(request.state, "request_id", None)
-    return existing if isinstance(existing, str) and existing else uuid.uuid4().hex
+    if isinstance(existing, str) and re.fullmatch(r"[a-f0-9]{32}", existing):
+        return existing
+    return uuid.uuid4().hex
 
 
 def error_response(
@@ -62,6 +66,10 @@ def error_response(
     headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     """Tek çıkış noktası. Hata yanıtı üreten her yol buradan geçer."""
+    # Request middleware bu alanı içeriksiz operasyon sonucuna dönüştürür.
+    # Mesajı değil yalnız sabit hata kodunu taşımak, telemetry'de kullanıcı
+    # girdisinin veya sağlayıcı ayrıntısının yer almasını yapısal olarak önler.
+    request.state.outcome_code = code
     envelope = ErrorEnvelope(
         error=ErrorDetail(code=code, message=message, request_id=request_id_of(request))
     )
@@ -252,11 +260,56 @@ async def validation_error_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
+_HTTP_ERROR_MESSAGES: dict[int, tuple[str, str]] = {
+    status.HTTP_404_NOT_FOUND: ("not_found", "İstenen adres bulunamadı."),
+    status.HTTP_405_METHOD_NOT_ALLOWED: (
+        "method_not_allowed",
+        "Bu işlem bu adres için desteklenmiyor.",
+    ),
+}
+
+
+async def starlette_http_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Router kaynaklı 404/405 dahil HTTP hatalarını tek Türkçe zarfa çevirir.
+
+    Starlette'in varsayılanı ``{"detail": "Not Found"}`` döndürür. Bu yol bir
+    endpoint gövdesine hiç girmediği için AppError handler'ı tarafından
+    yakalanamaz; ayrıca ``Allow`` gibi standart başlıklar korunmalıdır.
+    """
+
+    assert isinstance(exc, StarletteHTTPException)
+    code, message = _HTTP_ERROR_MESSAGES.get(
+        exc.status_code,
+        ("http_error", "İstek tamamlanamadı."),
+    )
+    return error_response(
+        request,
+        status_code=exc.status_code,
+        code=code,
+        message=message,
+        headers=dict(exc.headers) if exc.headers else None,
+    )
+
+
 async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
     """Beklenmeyen hatalar: ayrıntı loga, kullanıcıya genel mesaj."""
     from app.core.logging import get_logger
 
-    get_logger("app.error").exception("beklenmeyen hata", exc_info=exc)
+    request_id = request_id_of(request)
+    # Middleware dışından doğrudan çağrılan handler testinde de log ve yanıt aynı
+    # kimliği taşısın. Exception sınıfı operasyonel sınıflandırmadır; path, query,
+    # gövde, kullanıcı kimliği veya exception metni context'e eklenmez.
+    request.state.request_id = request_id
+    get_logger("app.error").exception(
+        "beklenmeyen hata",
+        exc_info=exc,
+        extra={
+            "context": {
+                "request_id": request_id,
+                "exception_class": type(exc).__name__,
+            }
+        },
+    )
     return error_response(
         request,
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

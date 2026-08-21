@@ -26,6 +26,36 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
         }
       }
@@ -46,6 +76,36 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Ready Health Ready Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -70,8 +130,63 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       },
       "patch": {
         "tags": [
@@ -102,16 +217,71 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/dashboard": {
@@ -131,8 +301,63 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/admin/overview": {
@@ -152,8 +377,63 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/admin/users": {
@@ -186,16 +466,71 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/admin/courses": {
@@ -205,6 +540,11 @@
         ],
         "summary": "List Admin Courses",
         "operationId": "list_admin_courses_admin_courses_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -259,11 +599,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -278,6 +668,11 @@
         ],
         "summary": "List Admin Requests",
         "operationId": "list_admin_requests_admin_requests_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -348,11 +743,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -367,6 +812,11 @@
         ],
         "summary": "List Admin Ingestion",
         "operationId": "list_admin_ingestion_admin_ingestion_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -420,16 +870,163 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
           }
         }
+      }
+    },
+    "/admin/api-events/query": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Query Admin Api Events",
+        "description": "Kisisel icerik olmadan API sagligi ve destek kodu aramasi.",
+        "operationId": "query_admin_api_events_admin_api_events_query_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminApiEventQueryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminApiEventListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Gönderilen veri geçersiz.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/courses": {
@@ -440,6 +1037,11 @@
         "summary": "List My Courses",
         "description": "Kullanıcının aktif üyeliği olan dersler.",
         "operationId": "list_my_courses_courses_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "limit",
@@ -488,11 +1090,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -506,6 +1158,11 @@
         "summary": "Create Course",
         "description": "Ders oluşturur ve oluşturana aynı işlemde eğitmen üyeliği verir.\n\nİki kayıt tek işlemde yazılır; aksi halde sahipsiz (kimsenin göremediği) bir ders\nkalabilirdi.",
         "operationId": "create_course_courses_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -528,11 +1185,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -547,6 +1254,11 @@
         ],
         "summary": "Get Course",
         "operationId": "get_course_courses__course_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -573,11 +1285,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -592,6 +1354,11 @@
         ],
         "summary": "List Members",
         "operationId": "list_members_courses__course_id__members_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -622,11 +1389,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -640,6 +1457,11 @@
         "summary": "Add Member",
         "description": "Derse üye ekler. Kullanıcının sistemde kayıtlı olması gerekir.\n\nE-postadan kullanıcı bulmak profiles üzerindeki RLS'i aşmayı gerektirdiğinden işlem,\nyetki kontrolünü kendi içinde yapan `app.add_course_member()` fonksiyonuna devredilir.",
         "operationId": "add_member_courses__course_id__members_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -676,11 +1498,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -696,6 +1568,11 @@
         "summary": "Revoke Member",
         "description": "Üyeliği iptal eder (kayıt silinmez, geçmiş korunur).",
         "operationId": "revoke_member_courses__course_id__members__user_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "user_id",
@@ -725,11 +1602,61 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -745,6 +1672,11 @@
         "summary": "Upload Document",
         "description": "Ders materyali yükler ve işleme kuyruğuna alır.\n\nDosya diske yazılmadan önce uzantı, boyut ve sihirli baytlarıyla doğrulanır; depolama\nanahtarı sunucuda üretilir, kullanıcının verdiği ad hiçbir zaman yol olarak\nkullanılmaz.\n\n**`replaces_document_id` AÇIK bir eylemdir, tahmin değil (FR-118).** Dosya adına\nbakarak otomatik eşleme reddedildi: `file_name` üzerinde hiçbir tekillik yok,\n\"hafta3.pdf\" her dönem yeniden yüklenir (yanlış pozitif) ve yeniden adlandırılmış\nbir güncelleme yakalanmaz (yanlış negatif). Yanlış işaretlenen bir soru,\nöğretmenin işarete olan güvenini bitirir; güvenilmez işaret, hiç işaret\nolmamasından kötüdür.\n\nEski belge SİLİNMEZ, yalnız `superseded_at` damgası alır: ona dayanan soruların\nkaynağı yerinde kalmalı, yoksa \"bayat\" işareti de okunamaz hâle gelirdi.",
         "operationId": "upload_document_courses__course_id__documents_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -781,11 +1713,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -798,6 +1780,11 @@
         ],
         "summary": "List Documents",
         "operationId": "list_documents_courses__course_id__documents_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -858,11 +1845,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -877,6 +1914,11 @@
         ],
         "summary": "Get Document",
         "operationId": "get_document_courses__course_id__documents__document_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "document_id",
@@ -913,11 +1955,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -931,6 +2023,11 @@
         "summary": "Delete Document",
         "description": "Belgeyi ve ona bağlı tüm chunk'ları siler.\n\nChunk'lar FK cascade ile gider: materyal kaldırıldığında ondan üretilmiş vektörlerin\naramada kalmaması, \"yalnızca yüklenen materyalden cevap\" garantisinin parçasıdır.\n\nAma cascade her yere ulaşmaz: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşır, yani o chunk'tan üretilmiş bir soru havuzdaysa silme veritabanı düzeyinde\nreddedilir. Bu kısıt bilinçlidir — kaynağı silinmiş bir soru, kaynağına karşı\ndoğrulanamayan bir sorudur (Anayasa I). Kısıtı gevşetmek yerine hatayı çeviriyoruz.",
         "operationId": "delete_document_courses__course_id__documents__document_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "document_id",
@@ -960,11 +2057,61 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -980,6 +2127,11 @@
         "summary": "Retry Document",
         "description": "Kalıcı hataya düşen ingestion işini eğitmen açıkça yeniden kuyruğa alır.",
         "operationId": "retry_document_courses__course_id__documents__document_id__retry_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "document_id",
@@ -1016,11 +2168,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1036,6 +2238,11 @@
         "summary": "Preview Chunks",
         "description": "Eğitmenin, belgeden ne çıkarıldığını görmesi için ilk chunk'lar.",
         "operationId": "preview_chunks_courses__course_id__documents__document_id__chunks_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "document_id",
@@ -1086,11 +2293,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1106,6 +2363,11 @@
         "summary": "Inspect Sources",
         "description": "Bir sorgunun getirdiği parçaları ve kanıt kararını LLM çağırmadan göster.",
         "operationId": "inspect_sources_courses__course_id__sources_inspect_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1142,11 +2404,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1162,6 +2474,11 @@
         "summary": "Source Context",
         "description": "Atıfın seçili parçasını komşu parçalarıyla özgün belge bağlamında göster.\n\nBu bir yardım yüzeyidir; öğrenci için aktif sınav kilidine bağlıdır. Eğitmen\naynı bağımlılığın içinde muaf tutulur. Yalnız snippet değil, önceki/sonraki\nparça da döner; kullanıcı atfın cümle bağlamını gerçekten denetleyebilir.",
         "operationId": "source_context_courses__course_id__sources__chunk_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "chunk_id",
@@ -1198,11 +2515,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1217,6 +2584,11 @@
         ],
         "summary": "Delete Chat Session",
         "operationId": "delete_chat_session_courses__course_id__chat_sessions__session_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "session_id",
@@ -1253,11 +2625,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1270,6 +2692,11 @@
         ],
         "summary": "List Messages",
         "operationId": "list_messages_courses__course_id__chat_sessions__session_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "session_id",
@@ -1340,11 +2767,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1359,6 +2836,11 @@
         ],
         "summary": "Delete Course Chat History",
         "operationId": "delete_course_chat_history_courses__course_id__chat_sessions_delete",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1385,11 +2867,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1403,6 +2935,11 @@
         "summary": "List Sessions",
         "description": "Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez.",
         "operationId": "list_sessions_courses__course_id__chat_sessions_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1463,11 +3000,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1493,8 +3080,63 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/me/export": {
@@ -1515,8 +3157,63 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/me": {
@@ -1537,8 +3234,63 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/courses/{course_id}/ai-policy": {
@@ -1548,6 +3300,11 @@
         ],
         "summary": "Get Policy",
         "operationId": "get_policy_courses__course_id__ai_policy_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1574,11 +3331,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1591,6 +3398,11 @@
         ],
         "summary": "Put Policy",
         "operationId": "put_policy_courses__course_id__ai_policy_put",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1627,11 +3439,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1646,6 +3508,11 @@
         ],
         "summary": "Policy History",
         "operationId": "policy_history_courses__course_id__ai_policy_history_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1699,11 +3566,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1719,6 +3636,11 @@
         "summary": "Create Topic",
         "description": "Konu oluşturur. Yalnızca dersin eğitmeni oluşturabilir (FR-027).",
         "operationId": "create_topic_courses__course_id__topics_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1755,11 +3677,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1773,6 +3745,11 @@
         "summary": "List Topics",
         "description": "Konu listesi. Dersin tüm üyeleri (öğrenci + eğitmen) görebilir.",
         "operationId": "list_topics_courses__course_id__topics_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1803,11 +3780,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1823,6 +3850,11 @@
         "summary": "List Questions",
         "description": "Eğitmenin soru havuzu; öğrenciye toplu extraction yüzeyi açılmaz.",
         "operationId": "list_questions_courses__course_id__questions_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1932,11 +3964,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -1952,6 +4034,11 @@
         "summary": "Generate Questions",
         "description": "Materyalden soru üretir. Üretilen her soru `draft`'tır (FR-023).\n\nEğitmen çerçeveyi kurar: konu, tip, biçim ve isterse örnek sorular. Sistem o\nüslupta üretir ama onay vermez — bu uçtan `approved` çıkmaz.\n\nYanıt `201` değil `200`: bu uç N kaynak yaratan bir toplu iştir ve kaçının\nyazıldığı gövdedeki raporda durur. Hiçbiri şemadan geçmediğinde `201 Created`\ndönmek, yaratılmamış bir şeyi yaratıldı diye bildirmek olurdu.",
         "operationId": "generate_questions_courses__course_id__questions_generate_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -1988,11 +4075,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2008,6 +4145,11 @@
         "summary": "Classify Question",
         "description": "Taslak soruyu bir öğrenme çıktısı ve zorluk hücresine bağlar.\n\nSoru gövdesi, cevap, kaynak, tip ve purpose bu uçta yoktur. İncelenmiş bir\nsorunun sınıflandırmasını değiştirmek yayınlanmış kâğıt hücresini geriye dönük\noynatacağından hem uygulama hem RLS/trigger katmanında kapalıdır.",
         "operationId": "classify_question_courses__course_id__questions__question_id__classification_patch",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "question_id",
@@ -2054,11 +4196,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2074,6 +4266,11 @@
         "summary": "Approve Question",
         "description": "Soruyu onaylar; ancak bundan sonra öğrenciye görünür.",
         "operationId": "approve_question_courses__course_id__questions__question_id__approve_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "question_id",
@@ -2110,11 +4307,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2130,6 +4377,11 @@
         "summary": "Reject Question",
         "description": "Soruyu reddeder. Kayıt silinmez: havuzun neyi elediği de bir veridir.",
         "operationId": "reject_question_courses__course_id__questions__question_id__reject_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "question_id",
@@ -2166,11 +4418,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2186,6 +4488,11 @@
         "summary": "Delete Question",
         "description": "Soruyu havuzdan tamamen siler. Reddetmekten FARKLI bir iş.\n\nReddetmek pedagojik bir karardır: soru öğrenciye görünmez ama satır durur ve\n\"havuzun neyi elediği\" ölçülebilir kalır. Silmek yapısal bir işlemdir ve tek\nbir gerçek ihtiyaçtan doğuyor: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşıyor, yani bir belgeden üretilmiş soru havuzda durduğu sürece o BELGE\nsilinemiyor.\n\nBu uç olmadan `documents.py`'nin 409 mesajı (\"Önce ilgili soruları kaldırın\")\nvar olmayan bir çıkış yolunu tarif ediyordu — yapılamayacak bir şeyi öneren\nhata mesajı, hiç mesaj vermemekten kötüdür.\n\nCevaplanmış soru silinmez: `answers.question_id` de RESTRICT taşır ve bir\nöğrencinin verdiği cevabın sorusunu silmek, o cevabı okunamaz hâle getirirdi.\nVeritabanı bunu zaten reddediyor; burada hata anlaşılır Türkçeye çevriliyor.",
         "operationId": "delete_question_courses__course_id__questions__question_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "question_id",
@@ -2215,11 +4522,61 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2235,6 +4592,11 @@
         "summary": "Post Chat",
         "description": "Bir soru sorar ve kaynaklı cevabı (ya da gerekçeli reddi) döndürür.\n\nAbstention bir HATA DEĞİLDİR: kanıt yetersizse de kapsam dışıysa da yanıt 200'dür,\n`status` alanı sebebi söyler. Hata zarfına düşürülseydi istemci bunu bir arıza gibi\ngösterirdi; oysa reddetmek ürünün çalıştığının kanıtı.",
         "operationId": "post_chat_courses__course_id__chat_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -2271,11 +4633,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2291,6 +4703,11 @@
         "summary": "Chat Availability",
         "description": "Asistan bu kullanıcı için açık mı?\n\nBu uç bilerek `CourseMemberDep` alır, `UnlockedCourseMemberDep` DEĞİL:\nkilitliyken de cevap verebilmesi gerekiyor, yoksa arayüz kilidin sebebini\nhiç öğrenemez ve kullanıcıya \"bir şeyler ters gitti\" demek zorunda kalır.\n\nKararı `deps.require_assistant_unlocked` ile AYNI fonksiyondan okur; iki\nyüzey ayrı ayrı hesaplasaydı biri diğerinden sapardı (Anayasa XI) ve sapma\nsessiz olurdu — sekme açık görünüp istek 403 dönerdi.",
         "operationId": "chat_availability_courses__course_id__chat_availability_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -2317,11 +4734,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2337,6 +4804,11 @@
         "summary": "Upsert Feedback",
         "description": "Kendi asistan mesajımın puanını oluşturur veya değiştirir.\n\nMesaj metni istemciden alınmaz. Paylaşım seçilmişse SQL tetikleyicisi gerçek\noturumdaki soru-cevap çiftini kopyalar; böylece sahte bir alıntı yüklenemez.",
         "operationId": "upsert_feedback_courses__course_id__chat_messages__message_id__feedback_put",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "message_id",
@@ -2383,11 +4855,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2403,6 +4925,11 @@
         "summary": "Chat Quality",
         "description": "Toplu kalite dağılımı ve öğrencinin açıkça paylaştığı inceleme kayıtları.",
         "operationId": "chat_quality_courses__course_id__chat_quality_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -2441,11 +4968,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2461,6 +5038,11 @@
         "summary": "Start Exam",
         "description": "Sınav ya da alıştırma oturumu açar.\n\nİki akış var ve ayrımı `blueprint_id` yapar:\n\n- **Prova (bugünkü akış).** Onaylı havuzdan rastgele soru çekilir ve oturumun\n  `question_ids`'ine sabitlenir. Onaylı havuz boşsa oturum açılmaz: \"kaynak\n  yoksa cevap yok\"un sınav ayağıdır.\n- **Blueprint sınavı (0008).** Kâğıt yayınlanmış sürümün `exam_items`'ından\n  gelir; `question_ids` NULL kalır ve oturum `exam_version_id` ile o sürüme\n  bağlanır. Sonradan yeni sürüm yayınlanması başlamış oturumu değiştirmez.\n\nİki akış aynı satırda karışamaz: `exam_sessions_paper_source` kısıtı kâğıdın\niki kaynağı olmasını ifade edilemez kılıyor.",
         "operationId": "start_exam_courses__course_id__exams_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -2497,11 +5079,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2515,6 +5147,11 @@
         "summary": "List Exams",
         "description": "Kullanıcının bu dersteki sınav oturumları, en yenisi başta.\n\nNeden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —\ntarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam\neden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci\nyeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin\nhafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak\nda sunucunun işi olmalı.\n\nŞerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`\ndiyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.\n\nRLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile\nkontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).\n\nSorular gövdede TAŞINMAZ. Liste \"hangi oturumlarım var\" sorusunu cevaplar;\nsoru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı\nvermek olurdu ve ekranın bu bilgiye ihtiyacı yok. Öğrencinin aktif exam'i varsa\nyalnız o satır döner: yeniden bağlanma yolu açık kalırken geçmiş puan/practice\nyüzeyi sınav boyunca kapalı kalır.",
         "operationId": "list_exams_courses__course_id__exams_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -2545,11 +5182,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2565,6 +5252,11 @@
         "summary": "Get Exam",
         "description": "Oturum durumu ve **kalan süre**.\n\nBağlantı koparsa öğrenci buraya döner ve kaldığı yerden devam eder: sayaç\nistemcide, süre sunucudadır.",
         "operationId": "get_exam_courses__course_id__exams__session_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "session_id",
@@ -2601,11 +5293,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2621,6 +5363,11 @@
         "summary": "Submit Answer",
         "description": "Cevabı kaydeder ve **aynı işlemde** puanlar.\n\nPuan cevapla birlikte yazılır çünkü `answers` satırı bir daha güncellenmez\n(Karar 1). `exam` modunda puan yazılır ama döndürülmez; `practice` modunda\nanında geri bildirim olarak döner.",
         "operationId": "submit_answer_courses__course_id__exams__session_id__answers_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "session_id",
@@ -2667,11 +5414,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2687,6 +5484,11 @@
         "summary": "Request Hint",
         "description": "Kademeli ipucu — yalnız `practice` modunda.\n\nİpucu metni **kaynaktan türetilir**, modelden değil: kademe yükseldikçe sorunun\ndayandığı chunk'tan daha çoğu açılır. Böylece ipucu her zaman gerçek bir\nmateryal parçasına dayanır (Anayasa I) ve LLM ayakta olmasa da çalışır.",
         "operationId": "request_hint_courses__course_id__exams__session_id__hint_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "session_id",
@@ -2733,11 +5535,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2753,6 +5605,11 @@
         "summary": "Finish Exam",
         "description": "Oturumu kapatır; resmî feedback yalnız güvenli yayın anında açılır.",
         "operationId": "finish_exam_courses__course_id__exams__session_id__finish_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "session_id",
@@ -2789,11 +5646,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2809,6 +5716,11 @@
         "summary": "Get Exam Results",
         "description": "Tamamlanmış oturumun idempotent, yayın-politikalı sonuç okuması.",
         "operationId": "get_exam_results_courses__course_id__exams__session_id__results_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "session_id",
@@ -2845,11 +5757,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2865,6 +5827,11 @@
         "summary": "Create Learning Outcome",
         "description": "Ders bazlı ölçülebilir kazanım tanımlar.\n\nKod derste büyük/küçük harf duyarsız tekildir; ikinci kez aynı kod 409 döner.",
         "operationId": "create_learning_outcome_courses__course_id__learning_outcomes_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -2901,11 +5868,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2918,6 +5935,11 @@
         ],
         "summary": "List Learning Outcomes",
         "operationId": "list_learning_outcomes_courses__course_id__learning_outcomes_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -2948,11 +5970,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -2968,6 +6040,11 @@
         "summary": "Create Blueprint",
         "description": "Blueprint'i hücreleriyle birlikte kurar.\n\nSorulardan ÖNCE var olur: çatı önce çizilir, kâğıt sonra doldurulur.",
         "operationId": "create_blueprint_courses__course_id__blueprints_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -3004,11 +6081,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3021,6 +6148,11 @@
         ],
         "summary": "List Blueprints",
         "operationId": "list_blueprints_courses__course_id__blueprints_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -3051,11 +6183,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3070,6 +6252,11 @@
         ],
         "summary": "Get Blueprint",
         "operationId": "get_blueprint_courses__course_id__blueprints__blueprint_id__get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3106,11 +6293,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3124,6 +6361,11 @@
         "summary": "Update Blueprint",
         "description": "Blueprint meta verisini ve gerekirse hücre kümesini günceller.\n\nYayınlanmış bir sürüm varken hücreleri düzenlemek SERBESTTİR: yayınlanmış\nsürümün dağılım kanıtı kendi `blueprint_snapshot`'ında dondurulmuştur ve bu\ndüzenlemeden etkilenmez (data-model.md §8 madde 1). Kilitleme yolu seçilseydi,\nv1 yayındayken dağılımı düzeltmek isteyen öğretmenin önce sınavı yayından\nkaldırması gerekirdi.",
         "operationId": "update_blueprint_courses__course_id__blueprints__blueprint_id__post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3170,11 +6412,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3188,6 +6480,11 @@
         "summary": "Delete Blueprint",
         "description": "Blueprint'i siler.\n\nYayınlanmış bir sürüme bağlı oturum varsa veritabanı RESTRICT ile reddeder ve\nbu 409'a çevrilir: kanıtı olan bir sınav silinemez.",
         "operationId": "delete_blueprint_courses__course_id__blueprints__blueprint_id__delete",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3217,11 +6514,61 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3237,6 +6584,11 @@
         "summary": "Create Version",
         "description": "Yeni bir TASLAK sürüm açar. Numara mevcut en büyüğün bir fazlasıdır.\n\nSürüm boş doğar; kalemler ayrı bir çağrıyla yazılır. Böylece \"sürüm oluştur\" ve\n\"kâğıdı doldur\" ayrı ayrı geri alınabilir işlemler olur.",
         "operationId": "create_version_courses__course_id__blueprints__blueprint_id__versions_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3273,11 +6625,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3290,6 +6692,11 @@
         ],
         "summary": "List Versions",
         "operationId": "list_versions_courses__course_id__blueprints__blueprint_id__versions_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3330,11 +6737,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3350,6 +6807,11 @@
         "summary": "Set Version Items",
         "description": "Kâğıdı bütün olarak yazar. YALNIZ taslak sürümde çalışır.\n\nYayınlanmış sürümde kalem yazmak yalnız burada değil, RLS politikasında ve\nyetki düzeyinde de kapalıdır (`exam_items`'a UPDATE yetkisi yok, INSERT/DELETE\npolitikaları `status='draft'` istiyor). Üç katman da bağımsız olarak doğru\ndavranmalı (Anayasa II).\n\n`points` blueprint hücresinden **yayın anında değil, kalem yazılırken**\nkopyalanır: puanı kâğıtla birlikte görmek, yayın kapısına gelmeden önce\ntoplamın tutup tutmadığını gösterir.",
         "operationId": "set_version_items_courses__course_id__blueprints__blueprint_id__versions__version_id__items_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3414,11 +6876,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3431,6 +6943,11 @@
         ],
         "summary": "List Version Items",
         "operationId": "list_version_items_courses__course_id__blueprints__blueprint_id__versions__version_id__items_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3481,11 +6998,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3501,6 +7068,11 @@
         "summary": "Get Readiness",
         "description": "FR-114'ün raporu: yayınlamadan önce neyin tutmadığını gösterir.\n\nYayın ucu aynı raporu kullanır; ayrı bir uç olmasının sebebi öğretmenin kapıya\nçarpmadan önce eksiği görebilmesidir.",
         "operationId": "get_readiness_courses__course_id__blueprints__blueprint_id__versions__version_id__readiness_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3547,11 +7119,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3567,6 +7189,11 @@
         "summary": "Publish Version",
         "description": "Sürümü yayınlar: kapıyı koşturur, dağılımı dondurur, öncekini superseded yapar.\n\nSıra önemli — önceki sürüm `superseded` yapılmadan yenisi yayınlanamaz:\n`exam_versions_one_published` kısmi tekil indeksi aynı anda iki yayınlanmış\nsürüme izin vermez ve bu kural yapısaldır, uygulama koduna sorulmaz.\n\nYürüyen oturumlar ETKİLENMEZ: eski sürümün satırı ve kalemleri yerinde durur,\n`exam_versions_read`'in üçüncü dalı oturum sahibine okumayı sürdürür.",
         "operationId": "publish_version_courses__course_id__blueprints__blueprint_id__versions__version_id__publish_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "blueprint_id",
@@ -3613,11 +7240,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3633,6 +7310,11 @@
         "summary": "My Progress",
         "description": "Kendi konu bazlı ilerlemem. Dersin her üyesi kendi satırlarını görür.\n\nBu gösterge resmî bir not DEĞİLDİR; nereye çalışılacağını gösteren bir öneridir\n(ARCHITECTURE §5). İbare arayüzde zorunludur.",
         "operationId": "my_progress_courses__course_id__analytics_me_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -3659,11 +7341,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3679,6 +7411,11 @@
         "summary": "Class Progress",
         "description": "Sınıf analitiği. Yalnız dersin eğitmeni görebilir.",
         "operationId": "class_progress_courses__course_id__analytics_class_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
         "parameters": [
           {
             "name": "course_id",
@@ -3717,11 +7454,61 @@
             }
           },
           "422": {
-            "description": "Validation Error",
+            "description": "Gönderilen veri geçersiz.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kimlik doğrulaması gerekli.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bu işlem için yetkiniz yok.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "İstenen adres veya kaynak bulunamadı.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Bu HTTP metodu bu adreste desteklenmiyor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Beklenmeyen sunucu hatası.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
             }
@@ -3769,6 +7556,468 @@
           "message"
         ],
         "title": "AccountAnonymizationOut"
+      },
+      "AdminApiEventCollectorOut": {
+        "properties": {
+          "scope": {
+            "type": "string",
+            "const": "process",
+            "title": "Scope",
+            "default": "process"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "healthy",
+              "degraded",
+              "stopped"
+            ],
+            "title": "Status"
+          },
+          "retention_status": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "degraded"
+            ],
+            "title": "Retention Status"
+          },
+          "queue_depth": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Queue Depth"
+          },
+          "queue_capacity": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Queue Capacity"
+          },
+          "persisted_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Persisted Total"
+          },
+          "dropped_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dropped Total"
+          },
+          "failure_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Failure Total"
+          },
+          "last_persisted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Persisted At"
+          },
+          "last_error_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "retention_status",
+          "queue_depth",
+          "queue_capacity",
+          "persisted_total",
+          "dropped_total",
+          "failure_total",
+          "last_persisted_at",
+          "last_error_at"
+        ],
+        "title": "AdminApiEventCollectorOut"
+      },
+      "AdminApiEventItem": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Request Id"
+          },
+          "service": {
+            "type": "string",
+            "const": "api",
+            "title": "Service"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "local",
+              "demo",
+              "production"
+            ],
+            "title": "Environment"
+          },
+          "release_revision": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "title": "Release Revision"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD"
+            ],
+            "title": "Method"
+          },
+          "route_template": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^(?:/[A-Za-z0-9_{}./-]{0,255}|UNMATCHED)$",
+            "title": "Route Template"
+          },
+          "status_code": {
+            "type": "integer",
+            "maximum": 599.0,
+            "minimum": 100.0,
+            "title": "Status Code"
+          },
+          "outcome_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9_:-]{1,64}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome Code"
+          },
+          "duration_ms": {
+            "type": "integer",
+            "maximum": 3600000.0,
+            "minimum": 0.0,
+            "title": "Duration Ms"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "service",
+          "environment",
+          "release_revision",
+          "method",
+          "route_template",
+          "status_code",
+          "duration_ms",
+          "created_at"
+        ],
+        "title": "AdminApiEventItem"
+      },
+      "AdminApiEventListOut": {
+        "properties": {
+          "measured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Measured At"
+          },
+          "window_minutes": {
+            "type": "integer",
+            "enum": [
+              15,
+              60,
+              1440
+            ],
+            "title": "Window Minutes"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AdminApiEventSummary"
+          },
+          "routes": {
+            "items": {
+              "$ref": "#/components/schemas/AdminApiRouteAggregate"
+            },
+            "type": "array",
+            "title": "Routes"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminApiEventItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset"
+          },
+          "collector": {
+            "$ref": "#/components/schemas/AdminApiEventCollectorOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "measured_at",
+          "window_minutes",
+          "summary",
+          "routes",
+          "items",
+          "total",
+          "limit",
+          "offset",
+          "collector"
+        ],
+        "title": "AdminApiEventListOut"
+      },
+      "AdminApiEventQueryIn": {
+        "properties": {
+          "window_minutes": {
+            "type": "integer",
+            "enum": [
+              15,
+              60,
+              1440
+            ],
+            "title": "Window Minutes",
+            "default": 60
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 25
+          },
+          "offset": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Offset",
+            "default": 0
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "PATCH",
+                  "DELETE",
+                  "HEAD"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "status_class": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "2xx",
+                  "3xx",
+                  "4xx",
+                  "5xx"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Class"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{32}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AdminApiEventQueryIn",
+        "description": "Icerik/kimlik tasimayan HTTP operasyon olaylarini sorgular."
+      },
+      "AdminApiEventSummary": {
+        "properties": {
+          "requests_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Requests Total"
+          },
+          "successful_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Successful Total"
+          },
+          "redirect_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Redirect Total"
+          },
+          "client_error_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Client Error Total"
+          },
+          "server_error_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Server Error Total"
+          },
+          "p50_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50 Latency Ms"
+          },
+          "p95_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Latency Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requests_total",
+          "successful_total",
+          "redirect_total",
+          "client_error_total",
+          "server_error_total"
+        ],
+        "title": "AdminApiEventSummary"
+      },
+      "AdminApiRouteAggregate": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD"
+            ],
+            "title": "Method"
+          },
+          "route_template": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^(?:/[A-Za-z0-9_{}./-]{0,255}|UNMATCHED)$",
+            "title": "Route Template"
+          },
+          "requests_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Requests Total"
+          },
+          "error_total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Error Total"
+          },
+          "p95_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P95 Latency Ms"
+          },
+          "last_seen_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "route_template",
+          "requests_total",
+          "error_total",
+          "last_seen_at"
+        ],
+        "title": "AdminApiRouteAggregate"
       },
       "AdminCourseItem": {
         "properties": {
@@ -3858,16 +8107,6 @@
             "format": "uuid",
             "title": "Id"
           },
-          "document_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Document Id"
-          },
-          "course_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Course Id"
-          },
           "course_code": {
             "type": "string",
             "title": "Course Code"
@@ -3912,8 +8151,6 @@
         "type": "object",
         "required": [
           "id",
-          "document_id",
-          "course_id",
           "course_code",
           "status",
           "attempt_count",
@@ -4042,11 +8279,6 @@
             "format": "uuid",
             "title": "Log Id"
           },
-          "course_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Course Id"
-          },
           "course_code": {
             "type": "string",
             "title": "Course Code"
@@ -4100,7 +8332,6 @@
         "type": "object",
         "required": [
           "log_id",
-          "course_id",
           "course_code",
           "route",
           "mode",
@@ -7362,19 +11593,6 @@
         ],
         "title": "ExportProfileOut"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
       "HintRequest": {
         "properties": {
           "question_id": {
@@ -8939,46 +13157,6 @@
         ],
         "title": "UserDataExportOut"
       },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      },
       "app__schemas__assessment__HintOut": {
         "properties": {
           "question_id": {
@@ -9046,6 +13224,52 @@
         ],
         "title": "HintOut",
         "description": "Sokratik ipucu. Kaynağı olmayan ipucu istemciye hiç ulaşmaz."
+      },
+      "ErrorDetail": {
+        "description": "Hata zarfının gövdesi. Dört handler da bunu üretir, kimse elle sözlük yazmaz.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 32,
+            "minLength": 32,
+            "pattern": "^[a-f0-9]{32}$",
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "request_id"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "description": "Projenin TEK hata sözleşmesi: `{\"error\": {\"code\", \"message\", \"request_id\"}}`.\n\nZarf 002'ye kadar `{\"code\", \"message\"}` idi ve istek kimliği yalnız\n`X-Request-ID` yanıt başlığında taşınıyordu. İki sorun vardı: çapraz-origin\nJavaScript o başlığı `expose_headers` olmadan okuyamıyor, ve başlık\nsözleşmenin parçası değil taşıyıcının ayrıntısı. Kimliği gövdeye almak,\ntarayıcının başlık politikasına bağımlılığı tamamen kaldırıyor.\n\nZarfı router içinde yeniden tanımlamak yasak (Anayasa XI): bu depoda aynı\nhata bir kez `chat.py` ile `schemas/chat.py` arasında yaşandı ve iki taraf\nayrıştığında her istek 422 dönüyordu.",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   }

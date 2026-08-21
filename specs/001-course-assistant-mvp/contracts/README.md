@@ -15,7 +15,7 @@ görülürse şema yeniden üretilir (aşağıdaki komut).
 
 ---
 
-## Mevcut uçlar (50 yol, 66 işlem — canlı spec'ten ölçüldü)
+## Mevcut uçlar (53 yol, 69 işlem — canlı spec'ten ölçüldü)
 
 Tek tek uçların şeması, parametreleri ve yanıt tipleri `openapi.json`'dadır; burada
 yalnız aile haritası tutulur (etiketler spec'teki `tags` alanından):
@@ -50,8 +50,9 @@ Tek istisna, ayrı tüketicisi olan `/admin` uçlarının `total/offset` biçimi
 
 ## Hata zarfı sözleşmesi
 
-Uygulama hataları tek biçimde döner (`apps/api/app/core/errors.py`; üç handler —
-`AppError`, `RequestValidationError`, beklenmeyen istisna — `main.py`'de kayıtlıdır):
+Uygulama hataları tek biçimde döner (`apps/api/app/core/errors.py`; dört handler —
+`AppError`, router `HTTPException`, `RequestValidationError` ve beklenmeyen istisna —
+`main.py`'de kayıtlıdır):
 
 ```json
 { "error": { "code": "...", "message": "Anlaşılır Türkçe mesaj.", "request_id": "..." } }
@@ -75,19 +76,20 @@ Uygulama hataları tek biçimde döner (`apps/api/app/core/errors.py`; üç hand
 | 503 | `pipeline_unavailable` / `course_agent_disabled` | Cevap hattı takılı değil ya da asistan kapalı (fail-closed) |
 | 500 | `internal_error` | Beklenmeyen hata; ayrıntı loga, kullanıcıya genel mesaj |
 
-**Bilinen spec boşluğu:** üretilen `openapi.json`, hata yanıtlarında yalnız FastAPI'nin
-`HTTPValidationError` şemasını belgeliyor; zarf şeması (`error.code/message/request_id`)
-spec'te henüz yok. Çalışma zamanı davranışı yukarıdaki gibidir ve testle çivilidir;
-zarfın spec'e eklenmesi (router `responses` ya da openapi post-processing) modülerizasyon
-PR dizisinin 10. adımıdır — spec'ten istemci üretecek biri o adıma kadar hata tiplerini
-bu tablodan almalıdır.
+`010-api-observability` adayı bu runtime/spec boşluğunu kapatır: mevcut 422 yanıtları
+`ErrorEnvelope` referansına çevrilir, korumalı işlemler `BearerAuth`, bütün işlemler
+500 zarfını taşır ve `HTTPValidationError` artık export edilen sözleşmede kalmaz.
+Bilinmeyen yol ile yanlış metot da runtime'da aynı Türkçe zarfı döndürür. Bu iddia
+generated JSON ve `tests/test_openapi_contract.py` ile birlikte doğrulanır.
 
 ---
 
 ## Kimlik doğrulama şeması
 
 Tüm korumalı uçlar `Authorization: Bearer <token>` bekler
-(`apps/api/app/core/security.py`):
+(`apps/api/app/api/deps.py`, `apps/api/app/core/security.py`). Yerel/demo Swagger
+`Authorize` düğmesi aynı HTTP Bearer şemasını kullanır. `/health/live` ve
+`/health/ready` public kalır; production'da docs/OpenAPI yüzeyi fail-closed kapalıdır:
 
 1. **Üretim / normal yol:** Supabase Auth'un verdiği JWT. Backend, `SUPABASE_JWT_SECRET`
    ile HS256 doğrular (`aud=authenticated`, `exp` ve `sub` zorunlu); `sub` → `user_id`.
@@ -98,7 +100,8 @@ Tüm korumalı uçlar `Authorization: Bearer <token>` bekler
 
 Yetkilendirme (kim hangi derse erişir) token katmanında değil, ders bağımlılıklarında
 (`deps.py`) ve RLS'te yapılır. API veritabanına tablo sahibi olmayan, BYPASSRLS
-taşımayan `dou_app` rolüyle bağlanır.
+taşımayan gerçek LOGIN `dou_api_runtime` rolüyle bağlanır; `dou_app` NOLOGIN izin
+taşıyıcısıdır.
 
 ---
 
@@ -121,9 +124,9 @@ Notlar:
 
 - `ensure_ascii=False` zorunludur: docstring'lerdeki Türkçe metin (ör. "Ders kimliği")
   escape edilmeden kalmalı.
-- Export'un unutulmasına karşı öneri (modülerizasyon PR dizisi, 3. adım): CI'a
-  "yeniden export et, `git diff --exit-code` boşsa geç" kapısı. Bu kapı henüz ekli
-  değil; o güne kadar PR kontrol listesindeki "sözleşme güncel mi?" maddesi geçerli.
+- `apps/api/tests/test_openapi_contract.py` tracked JSON'u gerçek
+  `create_app().openapi()` çıktısıyla birebir karşılaştırır; CI backend paketi bu
+  drift kapısını çalıştırır. Şema değişince export ve kod aynı adayda güncellenmelidir.
 - Frontend tipleri (`apps/web/lib/types.ts` + `lib/*.ts`) spec'in elle yazılmış
   aynasıdır; codegen yoktur. Ölçülmüş drift listesi ve kapatma planı için
   [docs/team/modularization-v2-audit.md](../../../docs/team/modularization-v2-audit.md) §5-7.

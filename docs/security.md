@@ -341,6 +341,38 @@ kullanır — `.inline()` bunu zorlar
   **kapalıdır** (fail-closed). Gövde Faz G şeridinde yazılır; bugün router boş
   ([`api/internal.py`](../apps/api/app/api/internal.py)).
 
+### 7.1 İçeriksiz API gözlem sınırı (`0017` adayı)
+
+Genel HTTP gözlemi chat'e özgü `request_logs`'u yeniden adlandırmaz; ayrı
+`api_request_events` tablosundadır. Tablo şemasında kullanıcı/ders/belge kimliği,
+ham URL veya query, body, IP, user-agent, prompt, cevap, kaynak, stack trace ve ham
+hata mesajı için kolon yoktur
+([`0017_api_observability.sql`](../supabase/migrations/0017_api_observability.sql)).
+Yalnız request destek kodu, servis/ortam/revizyon etiketi, HTTP yöntemi, FastAPI
+route şablonu, durum, bounded outcome code ve süre yazılır.
+
+Üç bağımsız kapı vardır:
+
+1. Middleware ham `request.url.path` yerine router'ın sabit şablonunu alır;
+   eşleşme yoksa içerik taşımayan `UNMATCHED` yazar. `/admin/*`, `/health/*` ve
+   `OPTIONS` kalıcı ölçüm dışında kalır
+   ([`request_observability.py`](../apps/api/app/core/request_observability.py)).
+2. Runtime tabloya doğrudan erişemez. En fazla 100 olaylık recorder hem exact
+   `session_user=dou_api_runtime` ister hem alan/uzunluk/enum kontrollerini SQL'de
+   yeniden yapar. PUBLIC, `dou_app` ve worker execute alamaz.
+3. Admin query önce API bağımlılığında audit edilir, SECURITY DEFINER projection
+   içinde `app.is_platform_admin()` ile tekrar doğrulanır; iç DB kimliği ve expiry
+   API'ye çıkmaz ([`admin.py`](../apps/api/app/api/admin.py)).
+
+Collector bounded queue ve ayrı tek bağlantılı pool kullanır. Dolu queue, timeout
+veya DB hatası ürün yanıtını değiştirmez; yalnız process-local collector durumunu
+`degraded` yapar. `API_OBSERVABILITY_ENABLED=false` varsayılan kill switch'tir;
+olay kuyruğunu kapatır, bağımsız retention bakımını kapatmaz. UI ayrı
+`retention_status` ile bu bakımın güncel sağlığını gösterir. Retention 1–30 gün ve
+bounded purge'dür. Bu yerel snapshot, edge/network kayıplarını
+ve çok-replika completeness'i kanıtlamadığı için production SLO/incident kaynağı
+olarak sertifikalandırılmamıştır.
+
 ---
 
 ## 8. Sınırlar ve uygulanmayanlar

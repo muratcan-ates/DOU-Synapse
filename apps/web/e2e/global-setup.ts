@@ -1,5 +1,11 @@
 import { resolveE2eDatabaseName, verifyDatabaseIdentity } from "./cleanup";
-import { createE2eCourseIdentity, createE2eRunId, validateE2eRunId } from "./fixtures";
+import {
+  createE2eCourseIdentity,
+  createE2eRunId,
+  fetchE2eApi,
+  recordE2eServerRequestId,
+  validateE2eRunId,
+} from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 //: Tohumlanmış eğitmen (seed_demo.sql). Kurulum bu kimlikle yalnız OKUR.
@@ -26,17 +32,22 @@ export default async function globalSetup() {
     databaseName,
     probe: createE2eCourseIdentity("KIMLIK", { runId }),
     apiHasCourse: async (code) => {
-      const response = await fetch(`${API}/courses?limit=100`, {
+      const response = await fetchE2eApi(`${API}/courses?limit=100`, {
         headers: { Authorization: `Bearer ${AYSE_TOKEN}` },
       });
+      recordE2eServerRequestId(response.headers.get("x-request-id"), { runId });
       if (!response.ok) {
         throw new Error(
           `E2E kimlik sondası okunamadı (${response.status}): API ${API} ayakta ve tohumlanmış mı?`,
         );
       }
-      const body = (await response.json()) as { items: Array<{ code: string }> };
+      const body = (await response.json()) as {
+        items: Array<{ code: string }>;
+      };
       return body.items.some((course) => course.code === code);
     },
   });
-  console.log(`[e2e] koşu kimliği: ${runId} · veritabanı kimliği doğrulandı: ${databaseName}`);
+  console.log(
+    `[e2e] koşu kimliği: ${runId} · veritabanı kimliği doğrulandı: ${databaseName}`,
+  );
 }

@@ -399,6 +399,25 @@ kaldırılır: sıradaki yarım ekran aynı sözleşmeye ihtiyaç duyacak.
 Her liste boşken ne yapılacağını söyler: "Henüz ders materyali yok. PDF, sunum veya kod
 dosyası yükleyerek başlayın." İllüstrasyon yok, tek cümle ve bir eylem butonu.
 
+### Bilgi İşlem API çalışma tezgâhı
+
+API gözlemi bir Swagger kopyası veya ham istek çalıştırıcısı değildir. Platform
+yöneticisi zaman aralığını ve içeriksiz teknik filtreleri seçer, ölçümü elle yeniler
+ve isterse sayfa görünürken canlı izlemeyi açar. Canlı izleme varsayılan olarak
+kapalıdır; sağlık, özet, uç dağılımı ve olay listesi aynı sunucu snapshot'ından gelir.
+Alt bileşenler aynı veriyi yeniden istemez.
+
+Ölçüm zamanı ve toplayıcı durumu başta yatay bir işletim şerididir. Metrikler onun
+altında kompakt, kurallarla ayrılmış bir veri bandı olarak gelir; grafik paleti veya
+dört dekoratif kart kullanılmaz. Destek kodu yalnız filtre gövdesinde ve olay satırında
+yer alır. Kullanıcı/ders kimliği, ham URL, sorgu parametresi, istek/yanıt gövdesi,
+akademik içerik, IP ve stack trace bu yüzeye ait değildir.
+
+Admin tabloları 768px altında yatay anlam kaybına zorlanmaz. Her kayıt, her değerin
+yanında sütun başlığını görünür etiket yapan bir satır grubuna dönüşür; masaüstünde aynı
+veri yoğun tablo olarak kalır. Sekmeler ilk ziyarette veri ister, sonra mount hâlinde kalır;
+geri dönüş filtreyi ve sonucu korur. Gizlenen API sekmesinde canlı yoklama durur.
+
 ---
 
 ## Do's and Don'ts

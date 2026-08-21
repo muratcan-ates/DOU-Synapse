@@ -46,6 +46,9 @@ jobs:
       TEST_DB_NAME: dou_synapse_test
       TEST_ADMIN_DSN: postgresql+psycopg://postgres:postgres@localhost/dou_synapse_test
       TEST_APP_DSN: postgresql+psycopg://dou_api_runtime:dou_api_runtime_local@localhost/dou_synapse_test
+      API_OBSERVABILITY_ENABLED: "true"
+      API_EVENT_RETENTION_DAYS: "7"
+      RELEASE_REVISION: ci-api
 
     defaults:
       run:
@@ -147,6 +150,12 @@ jobs:
           ASSESSMENT_PREFLIGHT_ALLOW_ROLE_MUTATION: "1"
           ASSESSMENT_PREFLIGHT_DB: assessment_runtime_preflight_${{ github.run_id }}_${{ github.run_attempt }}
         run: supabase/tests/assessment_runtime_preflight_check.sh "$ASSESSMENT_PREFLIGHT_DB"
+
+      - name: API gözlenebilirliği RLS ve mutasyon kanıtı
+        working-directory: .
+        env:
+          API_OBSERVABILITY_RLS_DB: rls_api_observability_${{ github.run_id }}_${{ github.run_attempt }}
+        run: supabase/tests/rls_api_observability_mutation_check.sh "$API_OBSERVABILITY_RLS_DB"
 
       - name: Rol farkındalıklı ajan RLS ve kota mutasyonları
         working-directory: .
@@ -336,13 +345,17 @@ jobs:
           # ingestion yetki hatasıyla kırılır — rol ayrımı RLS'in parçası.
           WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@localhost/dou_synapse
           ASSESSMENT_BLUEPRINT_ENABLED: "true"
+          API_OBSERVABILITY_ENABLED: "true"
+          API_EVENT_RETENTION_DAYS: "7"
+          API_DOCS_ENABLED: "true"
+          RELEASE_REVISION: ci-e2e
           CORS_ORIGINS: '["http://localhost:3100"]'
         run: |
           uv sync --extra dev --frozen
           uv run uvicorn app.main:app --port 8000 &
           # Hazır olana kadar bekle: uyku yerine yoklama, yavaş makinede de doğru.
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8000/openapi.json >/dev/null && break
+            curl -sf http://localhost:8000/health/live >/dev/null && break
             sleep 1
           done
 

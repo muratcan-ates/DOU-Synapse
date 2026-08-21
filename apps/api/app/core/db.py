@@ -26,6 +26,8 @@ _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 _control_engine: AsyncEngine | None = None
 _control_session_factory: async_sessionmaker[AsyncSession] | None = None
+_observability_engine: AsyncEngine | None = None
+_observability_session_factory: async_sessionmaker[AsyncSession] | None = None
 
 
 def _build_engine(settings: Settings) -> AsyncEngine:
@@ -48,6 +50,18 @@ def _build_control_engine(settings: Settings) -> AsyncEngine:
     kisa reservation/reconcile islemleri icindir; bir baglanti ve sifir overflow
     ile veritabani yukunu sinirli tutarken ana istek havuzundan bagimsiz kalir.
     """
+    return create_async_engine(
+        str(settings.database_url),
+        echo=settings.db_echo,
+        hide_parameters=True,
+        pool_size=1,
+        max_overflow=0,
+        pool_pre_ping=True,
+    )
+
+
+def _build_observability_engine(settings: Settings) -> AsyncEngine:
+    """Istek ve kota havuzundan bagimsiz, tek baglantili telemetri havuzu."""
     return create_async_engine(
         str(settings.database_url),
         echo=settings.db_echo,
@@ -89,14 +103,33 @@ def get_control_session_factory() -> async_sessionmaker[AsyncSession]:
     return _control_session_factory
 
 
+def get_observability_session_factory() -> async_sessionmaker[AsyncSession]:
+    """Iceriksiz API olaylarini yazan ayrik oturum fabrikasi."""
+    global _observability_engine, _observability_session_factory
+    if _observability_engine is None:
+        _observability_engine = _build_observability_engine(get_settings())
+    if _observability_session_factory is None:
+        _observability_session_factory = async_sessionmaker(
+            bind=_observability_engine,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+    return _observability_session_factory
+
+
 async def dispose_engine() -> None:
     global _control_engine, _control_session_factory, _engine, _session_factory
+    global _observability_engine, _observability_session_factory
+    if _observability_engine is not None:
+        await _observability_engine.dispose()
     if _control_engine is not None:
         await _control_engine.dispose()
     if _engine is not None:
         await _engine.dispose()
     _control_engine = None
     _control_session_factory = None
+    _observability_engine = None
+    _observability_session_factory = None
     _engine = None
     _session_factory = None
 

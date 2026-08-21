@@ -55,6 +55,10 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 |---|---|
 | `WORKER_DRAIN_URL` | Worker'ın drain ucunun tam adresi. **Tanımlıysa** tetik HTTP'ye döner; tanımsızsa süreç içinde `drain()` koşar |
 | `ASSESSMENT_BLUEPRINT_ENABLED` | Varsayılan `false`: resmî blueprint başlangıçlarını fail-closed kapatır. Yalnız aynı candidate için onaylı rollout ortamında `true` yapılır; mevcut oturum devam yolları bu kill switch'ten etkilenmez |
+| `API_OBSERVABILITY_ENABLED` | Varsayılan `false`: içeriksiz HTTP event kuyruğunu/yazıcısını açar. Kapamak ana API'yi veya geçmiş admin sorgusunu kapatmaz |
+| `API_EVENT_RETENTION_DAYS` | 1–30 gün. Collector production'da açıksa açıkça verilmesi zorunludur; varsayılanı canlı saklama kararı sayılmaz |
+| `RELEASE_REVISION` | Event korelasyonu için güvenli deployment etiketi/Git SHA; secret veya serbest metin değildir |
+| `API_DOCS_ENABLED` | Local/demo'da varsayılan açık; production'da zorla kapalıdır ve `true` konfigürasyonu uygulamayı başlatmaz |
 | `CHAT_RATE_LIMIT_REQUESTS`, `CHAT_RATE_LIMIT_WINDOW_SECONDS` | Kullanıcı başına sohbet sınırı. Sayaç **süreç içidir**: birden fazla replikada sınır replika başına uygulanır |
 
 > **Lidere:** `WORKER_DRAIN_URL` şu an `Settings` alanı DEĞİL, doğrudan ortamdan
@@ -87,6 +91,7 @@ done
 | `0005` | Ek politikalar |
 | `0006` / `0007` | R4 / R3'e ayrıldı, gerekirse |
 | `0016` | Assessment integrity + `dou_api_runtime` bağlantı kimliği kesimi |
+| `0017` | İçeriksiz API request event'i, exact-runtime recorder, admin projection ve bounded retention |
 
 **`main`'e girmiş bir migration yerinde değiştirilmez.** Yeni numara açılır.
 Bir dağıtımda migration'ları uygulamadan önce §6'daki yedeği alın.
@@ -176,7 +181,7 @@ Kurulumdan sonra şemayı doğrulayın:
 psql -d "$DATABASE" -c "\dt"
 ```
 
-Güncel migration setiyle temiz bir kurulumda **27 tablo** görürsünüz. <!-- docs-check: tables.count = 27 -->
+Güncel migration setiyle temiz bir kurulumda **28 tablo** görürsünüz. <!-- docs-check: tables.count = 28 -->
 
 Tarihsel not: 9 Ağustos'ta hem paylaşılan geliştirme veritabanında hem sıfırdan
 kurulan veritabanında **15 tablo** ölçülmüştü. <!-- docs-check: tarihsel 15 · 2026-08-09 -->
@@ -197,12 +202,21 @@ Faz 2 brifingindeki daha yüksek tablo tahmini o gün için de yanlıştı.
    - `WORKER_DRAIN_URL` API'ye worker'ın iç adresini gösterir
    - `ASSESSMENT_BLUEPRINT_ENABLED=false` ilk güvenli dağıtımda korunur; staging,
      insan onayı ve rollout kanıtı olmadan açılmaz
+   - `API_OBSERVABILITY_ENABLED=false` ilk güvenli dağıtımda korunur. `0017`,
+     runtime kimliği, retention ve admin projection doğrulandıktan sonra staging/canary'de açılır
+     (`0017` migration-first uygulanabilir: eski API'nin güvenli karakterli legacy
+     request ID'si ham saklanmadan yeni 32-hex audit koduna çevrilir; eski replikalar
+     drain edilmeden bu uyumluluk dalı kaldırılmaz)
+   - `API_DOCS_ENABLED=false` production'da değiştirilemez; Swagger yalnız local/demo içindir
 4. **Vercel**: `apps/web`, `NEXT_PUBLIC_API_URL` API'nin genel adresi.
 5. **Duman testi**:
    ```bash
    curl -sf "$API_URL/health/ready"     # status=ok ve checks.database_role=ok
    curl -si "$API_URL/internal/drain"   # 404 beklenir: sırsız istek uç yokmuş gibi davranır
    ```
+   Staging collector açıldıysa platform admin token'ıyla
+   `POST /admin/api-events/query` çağrısı yalnız route/status/süre/support-code
+   alanlarını dönmeli; kullanıcı, ders, ham path/query/body bulunmamalıdır.
 6. **GitHub Secrets** (keepalive için): `KEEPALIVE_DATABASE_URL`,
    `KEEPALIVE_API_URL`. Tanımlanmazsa keepalive işi sessizce atlar.
 
@@ -340,17 +354,27 @@ uv run python scripts/measure_latency.py cold --base-url "$API_URL" \
    resmî başlangıçları kapat; mevcut oturumların get/answer/finish/results yollarını
    açık tut. Bu, yarım sınavı veya öğrencinin süresini kaybetmeden blast radius'u
    durdurur.
-2. **Uygulama**: yalnız post-`0016` sözleşmesiyle önceden doğrulanmış bir önceki
+2. **Observability kill switch**: `API_OBSERVABILITY_ENABLED=false` ile yeni event
+   kuyruğunu/yazıcısını kapat. Tek bağlantılı bounded retention bakımı ve ayrı
+   pool, süresi dolan mevcut satırların diski büyütmemesi için çalışmayı sürdürür.
+   Ürün trafiği, geçmiş admin query ve additive `0017` tablosu yerinde kalır;
+   migration'ı geri sökme. Queue drop, DB write failure veya tablo büyümesi
+   normale dönmeden tekrar açma.
+3. **Uygulama**: yalnız post-`0016` sözleşmesiyle önceden doğrulanmış bir önceki
    revizyona geç veya fix-forward uygula. İmajlar sürümlenmiş etiketlerle itilir;
    `latest` üretimde kullanılmaz.
-3. **Migration**: geri alma betiği YOKTUR. Bir migration üretimde soruna yol
+4. **Migration**: geri alma betiği YOKTUR. Bir migration üretimde soruna yol
    açtıysa yol, ileri doğru düzelten yeni bir migration'dır; şema geri sarılmaz.
    Veri kaybı riski varsa §6'daki yedekten geri yüklenir.
-4. **Veritabanı kimliği değişmez**: `0016` sonrasında eski uygulama revizyonu da
+   `0017` öncesi bir uygulama revizyonuna dönmek retention görevini de kaldırır;
+   olay satırları varken bu dönüş yasaktır. Böyle bir zorunlulukta önce aynı
+   runtime rolüyle periyodik `app.purge_expired_api_request_events(1000)` bakımını
+   kur ve prova et ya da `010` uyumlu fix-forward revizyonu kullan.
+5. **Veritabanı kimliği değişmez**: `0016` sonrasında eski uygulama revizyonu da
    `dou_api_runtime` DSN ile çalıştırılır. `dou_app` NOLOGIN/parolasızdır ve hassas
    ACL'leri geri verilmez. “Rollback” adı altında `dou_app` LOGIN açmak güvenlik
    sınırını kaldırmaktır.
-5. **Sıra önemli**: uygulamayı geri almak, uygulanmış bir migration'ı geri
+6. **Sıra önemli**: uygulamayı geri almak, uygulanmış bir migration'ı geri
    almaz. Yeni sürüm yeni bir sütuna yazıyorduysa eski sürüm o sütunu görmez
    ama veri orada durur.
 

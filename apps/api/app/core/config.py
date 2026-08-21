@@ -90,6 +90,19 @@ class Settings(BaseSettings):
     db_max_overflow: int = 5
     db_echo: bool = False
 
+    # --- API gozlemlenebilirligi -------------------------------------------
+    #: Iceriksiz HTTP olay kolektoru bilincli olarak opt-in'dir. Migration'in
+    #: uygulanmis olmasi veri toplamayi kendiliginden baslatmaz.
+    api_observability_enabled: bool = False
+    #: Olaylar kisa omurludur. Uretimde kolektor acilacaksa bu deger ortamda
+    #: acikca verilmelidir; yerel varsayim canli veri saklama karari olamaz.
+    api_event_retention_days: int = Field(default=7, ge=1, le=30)
+    #: Deploy kimligi yalniz guvenli, dusuk kardinaliteli bir etikettir.
+    release_revision: str = Field(default="unknown", pattern=r"^[A-Za-z0-9._-]{1,128}$")
+    #: None ortama gore cozulur: local/demo acik, production kapali. Uretimde
+    #: dogrudan FastAPI dokumani kimlik kapisini dolasamayacagi icin true reddedilir.
+    api_docs_enabled: bool | None = None
+
     # --- Kimlik doğrulama ---------------------------------------------------
     # Supabase JWT'lerini doğrulamak için proje JWT secret'ı (HS256).
     supabase_jwt_secret: str | None = None
@@ -327,6 +340,25 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.environment is Environment.PRODUCTION
+
+    @model_validator(mode="after")
+    def _resolve_operational_surface(self) -> Settings:
+        """Dokuman yuzeyini ve telemetri saklama kararini fail-closed cozer."""
+        docs_was_explicit = "api_docs_enabled" in self.model_fields_set
+        retention_was_explicit = "api_event_retention_days" in self.model_fields_set
+
+        if self.is_production:
+            if docs_was_explicit and self.api_docs_enabled is True:
+                raise ValueError("API_DOCS_ENABLED uretim ortaminda true olamaz.")
+            object.__setattr__(self, "api_docs_enabled", False)
+            if self.api_observability_enabled and not retention_was_explicit:
+                raise ValueError(
+                    "API gozlemlenebilirligi uretimde aciksa "
+                    "API_EVENT_RETENTION_DAYS acikca tanimlanmali."
+                )
+        elif self.api_docs_enabled is None:
+            object.__setattr__(self, "api_docs_enabled", True)
+        return self
 
     @model_validator(mode="after")
     def _check_auth_configuration(self) -> Settings:
