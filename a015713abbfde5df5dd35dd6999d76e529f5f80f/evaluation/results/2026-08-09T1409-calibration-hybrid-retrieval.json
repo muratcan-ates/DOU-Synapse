@@ -1,0 +1,1102 @@
+{
+  "run_id": "2026-08-09T1409-calibration-hybrid-retrieval",
+  "started_at": "2026-08-09T14:09:05.067691+03:00",
+  "git_sha": "6c7419f",
+  "set": "calibration",
+  "set_version": "1.0",
+  "material": "sample_data/isletim-sistemleri v1",
+  "layer": "retrieval",
+  "mode": "hybrid",
+  "chat_mode": null,
+  "course_id": "3d3a5f6c-045b-4247-846d-efcea4452edc",
+  "embedding_provider": "fastembed",
+  "embedding_model": "intfloat/multilingual-e5-large",
+  "retrieval": {
+    "top_k": 8,
+    "dense_candidates": 24,
+    "fts_candidates": 24,
+    "rrf_k": 60,
+    "evidence_threshold": 0.35,
+    "evidence_threshold_calibrated": false
+  },
+  "llm": {
+    "primary": "groq/llama-3.3-70b-versatile",
+    "fallback": "gemini/gemini-2.0-flash",
+    "fake_provider": false,
+    "separate_eval_key": false
+  },
+  "config_fingerprint": "853dcf06b84f0040",
+  "entry_point": "app.modules.retrieval.service:HybridRetriever",
+  "finished_at": "2026-08-09T14:09:09.259789+03:00",
+  "wall_seconds": 4.2,
+  "n_items": 15,
+  "runner": {
+    "attempts": 15,
+    "retries": 0,
+    "rate_limited": 0,
+    "failures": 0,
+    "concurrency": 1
+  },
+  "metrics": {
+    "n_items": 12,
+    "recall_at_5": 1.0,
+    "recall_at_8": 1.0,
+    "mrr": 0.8611111111111112,
+    "full_coverage_at_5": 0.6666666666666666,
+    "full_coverage_at_8": 1.0,
+    "n_multi_source": 3,
+    "by_category": {
+      "direct": {
+        "n": 6,
+        "recall_at_5": 1.0,
+        "recall_at_8": 1.0,
+        "mrr": 0.8333333333333334,
+        "full_coverage_at_8": null
+      },
+      "multi_chunk": {
+        "n": 3,
+        "recall_at_5": 1.0,
+        "recall_at_8": 1.0,
+        "mrr": 0.7777777777777778,
+        "full_coverage_at_8": 1.0
+      },
+      "technical_term": {
+        "n": 3,
+        "recall_at_5": 1.0,
+        "recall_at_8": 1.0,
+        "mrr": 1.0,
+        "full_coverage_at_8": null
+      }
+    },
+    "n_asked": 15,
+    "latency_p95_seconds": 0.8986099999999972,
+    "threshold_sweep": [
+      {
+        "threshold": 0.0,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.05,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.1,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.15,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.2,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.25,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.3,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.35,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.4,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.45,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.5,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.55,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.6,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.65,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.7,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.75,
+        "correct_refusal": 0,
+        "missed_out_of_scope": 3,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.8,
+        "correct_refusal": 1,
+        "missed_out_of_scope": 2,
+        "incorrect_refusal": 0,
+        "answered": 12
+      },
+      {
+        "threshold": 0.85,
+        "correct_refusal": 3,
+        "missed_out_of_scope": 0,
+        "incorrect_refusal": 6,
+        "answered": 6
+      },
+      {
+        "threshold": 0.9,
+        "correct_refusal": 3,
+        "missed_out_of_scope": 0,
+        "incorrect_refusal": 12,
+        "answered": 0
+      },
+      {
+        "threshold": 0.95,
+        "correct_refusal": 3,
+        "missed_out_of_scope": 0,
+        "incorrect_refusal": 12,
+        "answered": 0
+      }
+    ],
+    "threshold_sweep_note": "Kaydedilen best_dense_score'lardan hesaplandı; kapının üretimdeki formülü (service.retrieve: best_dense_score < threshold) birebir uygulandı. Kapsam dışı ret oranı YALNIZ holdout'ta raporlanır."
+  },
+  "per_item": [
+    {
+      "item_id": "C-001",
+      "category": "direct",
+      "question": "Process Control Block (PCB) içinde hangi bilgiler saklanır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8370753217611838,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1
+        ]
+      ],
+      "expected_sources": [
+        "01-processes.pdf#s1"
+      ],
+      "top_results": [
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "producer_consumer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "producer_consumer.py",
+          "page_number": null,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 2.6792
+    },
+    {
+      "item_id": "C-002",
+      "category": "direct",
+      "question": "Round-robin zamanlamada quantum süresi çok büyük seçilirse ne olur?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.869271250155319,
+      "best_fused_score": 0.03252247488101534,
+      "ranks_by_source": [
+        [
+          2
+        ]
+      ],
+      "expected_sources": [
+        "02-cpu-scheduling.pdf#s1"
+      ],
+      "top_results": [
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.092
+    },
+    {
+      "item_id": "C-003",
+      "category": "direct",
+      "question": "Sayfa hatası (page fault) oluştuğunda işletim sistemi hangi adımları uygular?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8598929817013741,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1
+        ]
+      ],
+      "expected_sources": [
+        "03-memory-management.pdf#s1"
+      ],
+      "top_results": [
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.1027
+    },
+    {
+      "item_id": "C-004",
+      "category": "direct",
+      "question": "Bir kritik bölge çözümünün sağlaması gereken üç özellik nedir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8120506254373577,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1
+        ]
+      ],
+      "expected_sources": [
+        "04-synchronization.pdf#s1"
+      ],
+      "top_results": [
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0826
+    },
+    {
+      "item_id": "C-005",
+      "category": "direct",
+      "question": "Banker's Algorithm hangi bilgiyi her süreç için tutar?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8539234437939606,
+      "best_fused_score": 0.03252247488101534,
+      "ranks_by_source": [
+        [
+          1,
+          2
+        ]
+      ],
+      "expected_sources": [
+        "05-deadlock-demo.pdf#s2"
+      ],
+      "top_results": [
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0843
+    },
+    {
+      "item_id": "C-006",
+      "category": "direct",
+      "question": "inode nedir ve içinde hangi bilgiler tutulur?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8454099062682848,
+      "best_fused_score": 0.03252247488101534,
+      "ranks_by_source": [
+        [
+          2
+        ]
+      ],
+      "expected_sources": [
+        "06-file-systems.pptx#slayt5"
+      ],
+      "top_results": [
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 5
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 4
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0771
+    },
+    {
+      "item_id": "C-007",
+      "category": "multi_chunk",
+      "question": "Süreçler arası context switch neden aynı süreç içindeki iki thread arasındaki geçişten daha pahalıdır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8963494302695156,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "expected_sources": [
+        "01-processes.pdf#s3",
+        "03-memory-management.pdf#s2"
+      ],
+      "top_results": [
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 3,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.1069
+    },
+    {
+      "item_id": "C-008",
+      "category": "multi_chunk",
+      "question": "Aynı sürecin thread'leri belleği paylaştığı için hangi sorun doğar ve bu sorun hangi araçlarla önlenir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8454792834737841,
+      "best_fused_score": 0.03252247488101534,
+      "ranks_by_source": [
+        [
+          1
+        ],
+        [
+          4
+        ]
+      ],
+      "expected_sources": [
+        "01-processes.pdf#s2",
+        "04-synchronization.pdf#s1"
+      ],
+      "top_results": [
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.1355
+    },
+    {
+      "item_id": "C-009",
+      "category": "multi_chunk",
+      "question": "Round-robin quantum seçimi ile TLB arasında nasıl bir ilişki vardır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8414137548498356,
+      "best_fused_score": 0.03252247488101534,
+      "ranks_by_source": [
+        [
+          3
+        ],
+        [
+          6,
+          8
+        ]
+      ],
+      "expected_sources": [
+        "02-cpu-scheduling.pdf#s1",
+        "03-memory-management.pdf#s2"
+      ],
+      "top_results": [
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0857
+    },
+    {
+      "item_id": "C-010",
+      "category": "technical_term",
+      "question": "fork() çağrısı kaç kez döner ve ebeveyn ile çocukta hangi değeri döndürür?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8541767512749432,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1
+        ]
+      ],
+      "expected_sources": [
+        "01-processes.pdf#s2"
+      ],
+      "top_results": [
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "fork_example.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "fork_example.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.1227
+    },
+    {
+      "item_id": "C-011",
+      "category": "technical_term",
+      "question": "TLB miss durumunda ne olur?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.814209807205838,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1,
+          2
+        ]
+      ],
+      "expected_sources": [
+        "03-memory-management.pdf#s2"
+      ],
+      "top_results": [
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0624
+    },
+    {
+      "item_id": "C-012",
+      "category": "technical_term",
+      "question": "Öncelik kuyruğu (min-heap) tabanlı bir zamanlayıcının karmaşıklığı nedir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8681011283789375,
+      "best_fused_score": 0.03278688524590164,
+      "ranks_by_source": [
+        [
+          1
+        ]
+      ],
+      "expected_sources": [
+        "02-cpu-scheduling.pdf#s2"
+      ],
+      "top_results": [
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.1129
+    },
+    {
+      "item_id": "C-013",
+      "category": "out_of_scope",
+      "question": "Blockchain'de proof-of-work konsensüsü nasıl çalışır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8066298974739907,
+      "best_fused_score": 0.03200204813108039,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "producer_consumer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "fork_example.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "fork_example.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0906
+    },
+    {
+      "item_id": "C-014",
+      "category": "out_of_scope",
+      "question": "React'te useEffect hook'u ne zaman çalışır?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.7823656223796193,
+      "best_fused_score": 0.03125763125763126,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0843
+    },
+    {
+      "item_id": "C-015",
+      "category": "out_of_scope",
+      "question": "İlişkisel veritabanlarında üçüncü normal form (3NF) nedir?",
+      "retrieved_count": 8,
+      "best_dense_score": 0.8054497621848228,
+      "best_fused_score": 0.028373015873015873,
+      "ranks_by_source": [],
+      "expected_sources": [],
+      "top_results": [
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "05-deadlock-demo.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 3
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "06-file-systems.pptx",
+          "page_number": null,
+          "slide_number": 1
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        }
+      ],
+      "latency_seconds": 0.0909
+    }
+  ]
+}
