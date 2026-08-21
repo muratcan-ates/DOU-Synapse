@@ -1,0 +1,42 @@
+refs/heads/002-production-hardening	3532d49ad939746aad8789d695249f90c1c373c7	origin/002-production-hardening	[gone]
+refs/heads/003-product-portal	2c8ded83791df0dbf4aa0c057078e27f58c36671	origin/003-product-portal	[gone]
+refs/heads/004-ai-sdlc-excellence	7c1c2192ab80cb63f593d433392d9f58a4d2f476	origin/004-ai-sdlc-excellence	[gone]
+refs/heads/005-role-aware-course-agent	fc5bd59622c19dfea825f6a751871b7da3dcfc56	origin/005-role-aware-course-agent	[gone]
+refs/heads/006-release-readiness	ce0aaf3bea657e3d8e6819467b81c49195bba853		
+refs/heads/009-assessment-integrity	db2f42a9ef7e75423c54db45fecedd1436ffa91b	origin/main	[ahead 11, behind 14]
+refs/heads/010-api-observability	db2f42a9ef7e75423c54db45fecedd1436ffa91b		
+refs/heads/archive/codex-session-recovery-2026-08-12	384388822fcb0c0e315aa951047ead6d7ceef37e	origin/archive/codex-session-recovery-2026-08-12	
+refs/heads/backup/device-cleanup-2026-08-21	6ce4f3561a7c25eeb0e7794090f2dd771f727a57		
+refs/heads/chore/disable-dependabot	f4a9cf21938fd9d7bb85730e0fb395857f82002b	origin/chore/disable-dependabot	[gone]
+refs/heads/codex/product-parity-quality-loop	8f130451f84a1d815c1bc4fc9a191f6d71f48ffb		
+refs/heads/codex/production-completion	e284b303f7d16796e22155a970c59a4801bb34a3		
+refs/heads/deps/maintenance-2026-08	d59ca18edc43cf2fbb612856077d687f60c687cf	origin/deps/maintenance-2026-08	[gone]
+refs/heads/design/product-ui-depth	c305482b77e67f74b1356c0f3739a5f419fe62f2	origin/design/product-ui-depth	
+refs/heads/design/product-ui-refresh	50543c4f555a9d21de288040c10b27621e93172a	origin/design/product-ui-refresh	[gone]
+refs/heads/docs/port-refresh	bf4d8b1f6b3e4a4662df97c4d5ecd30eea76df29	origin/docs/port-refresh	[gone]
+refs/heads/docs/readme-current-product	dbb8988a0f9bfefa0a9bcf43e3d62668ca594a80	origin/main	[behind 36]
+refs/heads/docs/readme-current-product-v2	1daed066301a768c2e64caf04af999397bccfe1f	origin/main	[ahead 1, behind 36]
+refs/heads/docs/refresh-after-merge	a7b97d89b96174ec4fbe6b3187db65ab87ce2cd0	origin/docs/refresh-after-merge	[gone]
+refs/heads/evaluation/human-study-prep	38bf0d889d6f3facc86b1672e32ff9202af247f8		
+refs/heads/feat/api-docs-brand	fbc142734ea7f1b56c79f2972c154080249a77cd	origin/feat/api-docs-brand	
+refs/heads/feat/chat-socratic	439efee5f4e1b49d1818b9b78068b80c73b5415e	origin/feat/chat-socratic	[gone]
+refs/heads/feat/rubric-breakdown-ui	f4b4f72b15f69631cbfcbb7292a99a3d1c64bf66	origin/feat/rubric-breakdown-ui	[gone]
+refs/heads/feature/course-ai-policy	973a678c32ecb93f0cb27b326d78a44f7b471877		
+refs/heads/feature/exam-blueprint	827b8bb490c893d9cdd3d1d0b280533b14143a37	origin/feature/exam-blueprint	[gone]
+refs/heads/feature/privacy-rights	72f2bc693dcfc38240cb63641b2da6e3dac7b5a2		
+refs/heads/feature/role-admin-panels	d25ce0548e362bd6b12a2fd403f30b85e7686012		
+refs/heads/feature/source-quality-lab	cd87bfa0b68df8884e8390a80e6c812ca8fb2c3a		
+refs/heads/fix/governance-merge-head	f71c98a11dcf0047e207d5a0a0ccad44b7e3afee	origin/fix/governance-merge-head	[gone]
+refs/heads/hardening/docs-and-test-hygiene	f5ea3f6711cc7b8d68ecd1eaedd0bc4dc8e5775d		
+refs/heads/hardening/frontend-reliability	d0bb3de1162ab714021901d65a0edc93a4424fad	origin/hardening/frontend-reliability	[gone]
+refs/heads/hardening/runtime-safety	6b93fc420ecd60402fd86a1a94dd650ada6e2a9a	origin/hardening/runtime-safety	[gone]
+refs/heads/hardening/security-headers	950e1e36244d396b39431e63c04747afef1f1382		
+refs/heads/integration/agent-ui-release-fixes	876b4ec2c3d2b4000afce440228fd3d4d7d011aa	origin/integration/agent-ui-release-fixes	[gone]
+refs/heads/main	ba69ff9eec0a2867614dd145eb6e995f6c0af5ac	origin/main	
+refs/heads/refactor/modularization-v2	af68e9933439a6f316b2a99335273c2d5ce7fd4f	origin/refactor/modularization-v2	[gone]
+refs/heads/refactor/modularize	a860ba277bd65a36bf602a3926c452a1f7b79e9a		
+refs/remotes/origin/HEAD	ba69ff9eec0a2867614dd145eb6e995f6c0af5ac		
+refs/remotes/origin/archive/codex-session-recovery-2026-08-12	384388822fcb0c0e315aa951047ead6d7ceef37e		
+refs/remotes/origin/design/product-ui-depth	c305482b77e67f74b1356c0f3739a5f419fe62f2		
+refs/remotes/origin/feat/api-docs-brand	fbc142734ea7f1b56c79f2972c154080249a77cd		
+refs/remotes/origin/main	ba69ff9eec0a2867614dd145eb6e995f6c0af5ac		
