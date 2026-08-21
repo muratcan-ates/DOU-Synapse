@@ -1,0 +1,135 @@
+# Yerel geliştirme ve çevrimdışı demo yığını (PLAN.md §6, C planı).
+#
+# Not: Bu yığın internet olmadan çalışır ama LLM üretimi yapamaz — dil modeli harici
+# API'dedir. Çevrimdışı demoda cevaplar `answer_cache` üzerinden servis edilir ve bu
+# sınır sunumda açıkça belirtilir. Kimlik doğrulama DEV_AUTH_ENABLED ile yereldedir.
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dou_synapse
+    ports: ["5432:5432"]
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Migration'lar ilk açılışta alfabetik sırayla çalışır.
+      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+      # Migration'lar NOLOGIN rollerini oluşturur; bu son yerel adım giriş
+      # parolalarını açar. API'nin postgres superuser'ıyla RLS'i atlamasını
+      # engellemek için yalnız yerel Compose yığınında kullanılır.
+      - ./supabase/local_dev_setup.sql:/docker-entrypoint-initdb.d/9999_local_dev_setup.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dou_synapse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      ENVIRONMENT: local
+      DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@db:5432/dou_synapse
+      WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
+      WORKER_DRAIN_SECRET: dou-compose-worker-secret
+      WORKER_DRAIN_URL: http://worker:8000/internal/drain
+      STORAGE_BACKEND: local
+      STORAGE_ROOT: /data/storage
+      DEV_AUTH_ENABLED: "true"
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    ports: ["8000:8000"]
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      worker:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ayrı worker yüzeyi aynı imajı kullanır; kullanıcı ucu açmaz. API yüklemeden
+  # sonra paylaşılan sırla `/internal/drain` çağırır. İş yazıları RLS'i bilinçli
+  # olarak atlayan `dou_worker`, kullanıcı istekleri ise `dou_app` rolündedir.
+  worker:
+    build:
+      context: ./apps/api
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      ENVIRONMENT: local
+      DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@db:5432/dou_synapse
+      WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
+      WORKER_DRAIN_SECRET: dou-compose-worker-secret
+      STORAGE_BACKEND: local
+      STORAGE_ROOT: /data/storage
+      DEV_AUTH_ENABLED: "true"
+      CORS_ORIGINS: '[]'
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Çevrimdışı yedek profili (T054, PLAN §6 C planı) --------------------
+  #
+  # `docker compose --profile fallback up` ile açılır. Yukarıdaki `api`
+  # servisinden farkı, DIŞARIYA HİÇBİR BAĞIMLILIĞI OLMAMASI:
+  #
+  #   * embedding modeli imajın içinde (T048), indirme yok
+  #   * LLM_FAKE_PROVIDER yerine ÖNCEDEN DOLDURULMUŞ answer_cache (T053) —
+  #     sahte sağlayıcı uydurma metin üretir ve jüriye onu göstermek dürüst
+  #     olmaz; önbellekten gelen cevap ise gerçek hattan geçmiş bir cevaptır
+  #     ve zarfta `cached: true` ile işaretlidir.
+  #   * DEV_AUTH_ENABLED=true — Supabase Auth'a çıkış yok
+  #
+  # `network_mode` bilerek kısıtlanmadı: konteynerin ağa ihtiyacı OLMADIĞI
+  # iddiası `docker run --network none` ile ayrıca kanıtlanır (CI, image işi).
+  # Compose yığınının kendi içinde db↔api konuşması gerekir.
+  api-fallback:
+    profiles: ["fallback"]
+    build:
+      context: ./apps/api
+    environment:
+      ENVIRONMENT: demo
+      DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@db:5432/dou_synapse
+      WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
+      STORAGE_BACKEND: local
+      STORAGE_ROOT: /data/storage
+      DEV_AUTH_ENABLED: "true"
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      # Model imajın içinde; Dockerfile bunu zaten ayarlıyor, burada açıkça
+      # tekrarlanması çevrimdışı yığında yanlışlıkla değiştirilmesini zorlaştırır.
+      EMBEDDING_PROVIDER: fastembed
+      EMBEDDING_CACHE_DIR: /opt/models
+      HF_HUB_OFFLINE: "1"
+      # Anahtar YOK: önbellekte olmayan bir soru LLM'e gidemez ve nazikçe
+      # reddedilir. Sessizce uydurulmuş bir cevaptan iyidir (Anayasa IV).
+      GROQ_API_KEY: ""
+      GEMINI_API_KEY: ""
+    ports: ["8000:8000"]
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+  # API'nin yüklediği belgeyi ayrı worker'ın okuyabilmesi için ortak depo.
+  # Production bu volume yerine SupabaseStorage adaptörünü kullanır.
+  storage_data:
