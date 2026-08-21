@@ -1,0 +1,86 @@
+name: AI quality
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  governance:
+    name: Govern reviewed AI diff
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_SHA: >-
+        ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha
+        || github.event.before }}
+      HEAD_SHA: >-
+        ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
+        || github.sha }}
+    steps:
+      - name: Check out the exact reviewed candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ env.HEAD_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Bind SELF to the reviewed commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+
+      - name: Validate policy, schema and reviewed diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/ai_sdlc_check.py \
+            --repo-root . \
+            --policy .ai/policy.json \
+            --base-sha "$BASE_SHA" \
+            --head-sha "$HEAD_SHA"
+
+      - name: Prove fail-closed governance mutations
+        run: python3 -m unittest scripts/test_ai_sdlc_check.py
+
+  gold-set-integrity:
+    name: Verify gold-set integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HEAD_SHA: >-
+        ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha
+        || github.sha }}
+    steps:
+      - name: Check out the exact reviewed candidate
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ env.HEAD_SHA }}
+          persist-credentials: false
+
+      - name: Bind gold-set verification to the reviewed commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6.8.0
+        with:
+          enable-cache: true
+
+      - name: Install locked API development environment
+        working-directory: apps/api
+        run: uv sync --frozen --extra dev
+
+      - name: Verify source references and calibration/holdout separation
+        working-directory: apps/api
+        run: uv run python ../../evaluation/verify_gold_set.py

@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "change_id": "example",
+  "lineage_id": "ai-sdlc-bootstrap",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Bootstrap deterministic AI change governance",
+  "summary": "Introduce commit-bound AI change dossiers, risk policy, privacy-safe evidence checks and a fail-closed pull-request gate.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-11T00:00:00+03:00",
+  "review_by": "2026-09-11T00:00:00+03:00",
+  "base_sha": "2c178861a3e484af8643f999f210db040eb84e68",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "not-applicable:governance-bootstrap",
+    "model_revision": "not-applicable:governance-bootstrap",
+    "prompt_revision": "not-applicable:governance-bootstrap",
+    "tool_schema_revision": "ai-dossier-schema:v1",
+    "guardrail_revision": "ai-sdlc-validator:v2",
+    "retrieval_revision": "not-applicable:governance-bootstrap",
+    "embedding_revision": "not-applicable:governance-bootstrap",
+    "evaluator_revision": "validator-mutation-suite:47"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".ai/policy.json",
+      "state": "present",
+      "sha256": "ed23556af08431645f9cdac74e3436d0f66176db546f8d0fa68036b5b927be06"
+    },
+    {
+      "path": ".ai/schema.json",
+      "state": "present",
+      "sha256": "90f5f2e516a51ab4d148ffacb6a322311a3dad9cf6c47a25d20a4d0c8f373606"
+    },
+    {
+      "path": ".ai/README.md",
+      "state": "present",
+      "sha256": "3be993a93233a28f3ebe2b7fd7e9b4e16f7f13701581152e9904017c38d45256"
+    },
+    {
+      "path": "scripts/ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "9a04ea46283dd840543b974df667454466ad69404b93d943ad831f2ac9defafb"
+    },
+    {
+      "path": "scripts/test_ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "859d7449b7153dec641db76e5a8ad31faaf9a1398b153babb98c0a48eeeb6a66"
+    },
+    {
+      "path": ".github/workflows/ai-quality.yml",
+      "state": "present",
+      "sha256": "cb7e4dff09276f53b4bb1d12d185bdbc942d20007bf82f5821ac35bcadab30bd"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/004-validator-tests.json",
+      "report_sha256": "70a40830b7dff6ef4ba13dfd6a6e49265819db29609340270b56ccfc77236390",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/004-validator-tests-v2.json",
+      "report_sha256": "949b821641e25e1d14c9a228f8cf1fd334e752b2e2f0b09731e040f2615ae673",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "not-applicable: governance validator mechanics",
+    "holdout_ref": "not-applicable: no model-quality threshold changed",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: evaluator semantics unchanged",
+    "metrics": [
+      {
+        "name": "validator_tests_passed",
+        "baseline": 36,
+        "candidate": 47,
+        "operator": ">=",
+        "threshold": 47,
+        "sample_size": 47
+      }
+    ],
+    "exact_command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts/test_ai_sdlc_check.py"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "required-check:AI quality / Govern reviewed AI diff",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:ai-sdlc-bootstrap",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "required-check:AI quality / Govern reviewed AI diff",
+    "kill_switch": "Repository administrator documents an emergency exception before temporarily removing the required check.",
+    "assignment": "Sticky per pull-request head SHA; reruns inspect the same reviewed commit.",
+    "initial_exposure": "All pull requests after branch-protection activation.",
+    "stop_conditions": [
+      "The gate exposes secret or student content.",
+      "The gate accepts an uncovered AI-sensitive diff.",
+      "The gate validates a commit other than the reviewed pull-request head."
+    ],
+    "expand_conditions": [
+      "Mutation suite remains green in CI.",
+      "Required reviewers accept the policy and workflow."
+    ],
+    "active_exam_policy": "No runtime or active-exam behaviour changes; this is a repository control."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2c178861a3e484af8643f999f210db040eb84e68",
+    "procedure": "Disable the required AI-quality check if active, revert this governance change, and rerun the pre-existing core CI gates.",
+    "max_minutes": 15,
+    "verification": "Confirm core CI still runs and no AI-quality check is reported as required after the documented rollback.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes and stable error codes are recorded.",
+    "retention": "Versioned with the repository; no raw prompts, secrets, student answers or provider payloads."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
