@@ -1,0 +1,53 @@
+{
+  "candidate_sha": "SELF",
+  "change_id": "005-role-aware-course-agent",
+  "captured_at": "2026-08-11T08:33:53+03:00",
+  "command": "TEST_DB_NAME=dou_synapse_test_005_final_root apps/api/.venv/bin/pytest -q apps/api/tests; bun test lib/; bun run typecheck; apps/api/.venv/bin/mypy apps/api/app",
+  "environment": "local PostgreSQL test databases, deterministic fake provider, iCloud-free Git worktree",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic fixture identities and aggregate counts only; no prompts, answers, document text, email addresses, secrets or provider payloads retained",
+  "results": {
+    "backend_tests": {
+      "passed": 879,
+      "failed": 0
+    },
+    "frontend_library_tests": {
+      "passed": 322,
+      "failed": 0
+    },
+    "backend_types": {
+      "files": 92,
+      "result": "pass"
+    },
+    "frontend_types": {
+      "result": "pass"
+    },
+    "ruff": {
+      "result": "pass"
+    },
+    "openapi": {
+      "paths": 50,
+      "schemas": 119,
+      "client_persona_fields_rejected": true
+    },
+    "playwright_discovery": {
+      "role_aware_journeys": 2,
+      "selected_files_total": 23,
+      "result": "pass"
+    },
+    "quota_and_exam_security": {
+      "cross_course_user_and_platform_overshoots": 0,
+      "server_derived_persona_spoof_cases": 2,
+      "active_exam_chat_and_export_race_guards": "pass"
+    }
+  },
+  "not_run": [
+    "real-provider frozen holdout and pedagogical human review",
+    "local runtime Playwright journey against a running API and browser",
+    "multi-worker load and distributed edge or WAF abuse controls",
+    "staging deployment, canary telemetry and live rollback rehearsal",
+    "production promotion, backup restore and external retention or residency review"
+  ],
+  "limitations": "This record proves deterministic mechanics and repository contracts only. It is not real-model, staging, canary or production evidence."
+}

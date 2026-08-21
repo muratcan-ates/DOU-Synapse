@@ -1,0 +1,22 @@
+{
+  "candidate_sha": "SELF",
+  "change_id": "005-role-aware-course-agent-r3",
+  "captured_at": "2026-08-11T15:46:48+03:00",
+  "command": "supabase/tests/rls_role_aware_agent_mutation_check.sh",
+  "environment": "local PostgreSQL with isolated PID-scoped template and scratch databases; EXIT trap cleanup enabled",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "synthetic UUIDs, course codes and stable mutation labels only; no prompts, answers, student content, emails, secrets or provider payloads retained",
+  "results": {
+    "reference_closed_boundaries_passed": 8,
+    "reference_quota_claims_passed": 3,
+    "mutations_caught": 11,
+    "mutations_missed": 0,
+    "temporary_databases_remaining": 0,
+    "separate_membership_mutation": "pass",
+    "separate_daily_quota_mutation": "pass",
+    "separate_concurrency_mutation": "pass",
+    "advisory_lock_race_mutation": "pass"
+  },
+  "limitations": "The /me/export assessment-user lock is an HTTP-layer invariant and is deliberately excluded from this SQL mutation package; its API and race coverage remains in the backend user-rights tests. This is not staging or production evidence."
+}
