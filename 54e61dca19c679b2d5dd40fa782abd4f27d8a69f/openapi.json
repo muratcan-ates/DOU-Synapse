@@ -1,0 +1,5291 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DOU-Synapse API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health/live": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Live",
+        "operationId": "live_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Live Health Live Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Ready",
+        "operationId": "ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Ready Health Ready Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses": {
+      "get": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "List My Courses",
+        "description": "Kullanıcının aktif üyeliği olan dersler.",
+        "operationId": "list_my_courses_courses_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOut_CourseWithRole_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Create Course",
+        "description": "Ders oluşturur ve oluşturana aynı işlemde eğitmen üyeliği verir.\n\nİki kayıt tek işlemde yazılır; aksi halde sahipsiz (kimsenin göremediği) bir ders\nkalabilirdi.",
+        "operationId": "create_course_courses_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseWithRole"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}": {
+      "get": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Get Course",
+        "operationId": "get_course_courses__course_id__get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseWithRole"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/members": {
+      "get": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "List Members",
+        "operationId": "list_members_courses__course_id__members_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MembershipOut"
+                  },
+                  "title": "Response List Members Courses  Course Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Add Member",
+        "description": "Derse üye ekler. Kullanıcının sistemde kayıtlı olması gerekir.\n\nE-postadan kullanıcı bulmak profiles üzerindeki RLS'i aşmayı gerektirdiğinden işlem,\nyetki kontrolünü kendi içinde yapan `app.add_course_member()` fonksiyonuna devredilir.",
+        "operationId": "add_member_courses__course_id__members_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/members/{user_id}": {
+      "delete": {
+        "tags": [
+          "courses"
+        ],
+        "summary": "Revoke Member",
+        "description": "Üyeliği iptal eder (kayıt silinmez, geçmiş korunur).",
+        "operationId": "revoke_member_courses__course_id__members__user_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/documents": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Upload Document",
+        "description": "Ders materyali yükler ve işleme kuyruğuna alır.\n\nDosya diske yazılmadan önce uzantı, boyut ve sihirli baytlarıyla doğrulanır; depolama\nanahtarı sunucuda üretilir, kullanıcının verdiği ad hiçbir zaman yol olarak\nkullanılmaz.",
+        "operationId": "upload_document_courses__course_id__documents_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_courses__course_id__documents_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "List Documents",
+        "operationId": "list_documents_courses__course_id__documents_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOut_DocumentOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/documents/{document_id}": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Get Document",
+        "operationId": "get_document_courses__course_id__documents__document_id__get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Delete Document",
+        "description": "Belgeyi ve ona bağlı tüm chunk'ları siler.\n\nChunk'lar FK cascade ile gider: materyal kaldırıldığında ondan üretilmiş vektörlerin\naramada kalmaması, \"yalnızca yüklenen materyalden cevap\" garantisinin parçasıdır.\n\nAma cascade her yere ulaşmaz: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşır, yani o chunk'tan üretilmiş bir soru havuzdaysa silme veritabanı düzeyinde\nreddedilir. Bu kısıt bilinçlidir — kaynağı silinmiş bir soru, kaynağına karşı\ndoğrulanamayan bir sorudur (Anayasa I). Kısıtı gevşetmek yerine hatayı çeviriyoruz.",
+        "operationId": "delete_document_courses__course_id__documents__document_id__delete",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/documents/{document_id}/retry": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Retry Document",
+        "description": "Kalıcı hataya düşen ingestion işini eğitmen açıkça yeniden kuyruğa alır.",
+        "operationId": "retry_document_courses__course_id__documents__document_id__retry_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/documents/{document_id}/chunks": {
+      "get": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Preview Chunks",
+        "description": "Eğitmenin, belgeden ne çıkarıldığını görmesi için ilk chunk'lar.",
+        "operationId": "preview_chunks_courses__course_id__documents__document_id__chunks_get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChunkPreview"
+                  },
+                  "title": "Response Preview Chunks Courses  Course Id  Documents  Document Id  Chunks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/sources/inspect": {
+      "post": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Inspect Sources",
+        "description": "Bir sorgunun getirdiği parçaları ve kanıt kararını LLM çağırmadan göster.",
+        "operationId": "inspect_sources_courses__course_id__sources_inspect_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievalInspectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetrievalInspectionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/sources/{chunk_id}": {
+      "get": {
+        "tags": [
+          "sources"
+        ],
+        "summary": "Source Context",
+        "description": "Atıfın seçili parçasını komşu parçalarıyla özgün belge bağlamında göster.\n\nBu bir yardım yüzeyidir; öğrenci için aktif sınav kilidine bağlıdır. Eğitmen\naynı bağımlılığın içinde muaf tutulur. Yalnız snippet değil, önceki/sonraki\nparça da döner; kullanıcı atfın cümle bağlamını gerçekten denetleyebilir.",
+        "operationId": "source_context_courses__course_id__sources__chunk_id__get",
+        "parameters": [
+          {
+            "name": "chunk_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Chunk Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceContextOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat/sessions/{session_id}": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Delete Chat Session",
+        "operationId": "delete_chat_session_courses__course_id__chat_sessions__session_id__delete",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatDeletionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "List Messages",
+        "operationId": "list_messages_courses__course_id__chat_sessions__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOut_ChatMessageOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat/sessions": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Delete Course Chat History",
+        "operationId": "delete_course_chat_history_courses__course_id__chat_sessions_delete",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatDeletionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "List Sessions",
+        "description": "Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez.",
+        "operationId": "list_sessions_courses__course_id__chat_sessions_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOut_ChatSessionOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/chat-history": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Delete All Chat History",
+        "description": "Aktif üyelikten bağımsız olarak kullanıcının tüm sohbet geçmişini sil.",
+        "operationId": "delete_all_chat_history_me_chat_history_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatDeletionOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/export": {
+      "get": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Export My Data",
+        "description": "Kullanıcının verisini açık uygulama filtreleriyle tek JSON dosyası olarak ver.",
+        "operationId": "export_my_data_me_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDataExportOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "delete": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Anonymize My Account",
+        "description": "Kişisel profili anonimleştir, geçmişi sil ve üyelikleri iptal et.\n\nDers/materyal/konu sahipliği RESTRICT bağları nedeniyle silinmez. Profil satırı\nbenzersiz bir tombstone olarak kalır; bağlı akademik kayıtların bütünlüğü korunur.\nGerçek auth hesabı kimlik sağlayıcısında ayrıca kapatılmalıdır.",
+        "operationId": "anonymize_my_account_me_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountAnonymizationOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/ai-policy": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Get Policy",
+        "operationId": "get_policy_courses__course_id__ai_policy_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseAiPolicyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Put Policy",
+        "operationId": "put_policy_courses__course_id__ai_policy_put",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseAiPolicyIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseAiPolicyOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/ai-policy/history": {
+      "get": {
+        "tags": [
+          "policy"
+        ],
+        "summary": "Policy History",
+        "operationId": "policy_history_courses__course_id__ai_policy_history_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourseAiPolicyAuditOut"
+                  },
+                  "title": "Response Policy History Courses  Course Id  Ai Policy History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/topics": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Create Topic",
+        "description": "Konu oluşturur. Yalnızca dersin eğitmeni oluşturabilir (FR-027).",
+        "operationId": "create_topic_courses__course_id__topics_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopicCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "List Topics",
+        "description": "Konu listesi. Dersin tüm üyeleri (öğrenci + eğitmen) görebilir.",
+        "operationId": "list_topics_courses__course_id__topics_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TopicOut"
+                  },
+                  "title": "Response List Topics Courses  Course Id  Topics Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/questions": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "List Questions",
+        "description": "Soru havuzu.\n\nÖğrenci için `status` parametresi **ne gelirse gelsin** `approved`'a sabitlenir;\neğitmen isterse duruma göre süzer. RLS ikinci katman olarak zaten kapatır, ama\nuygulama katmanı da kapatır — iki katmanlı izolasyon tam olarak budur.",
+        "operationId": "list_questions_courses__course_id__questions_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/QuestionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "topic_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Topic Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOut_QuestionOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/questions/generate": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Generate Questions",
+        "description": "Materyalden soru üretir. Üretilen her soru `draft`'tır (FR-023).\n\nEğitmen çerçeveyi kurar: konu, tip, biçim ve isterse örnek sorular. Sistem o\nüslupta üretir ama onay vermez — bu uçtan `approved` çıkmaz.\n\nYanıt `201` değil `200`: bu uç N kaynak yaratan bir toplu iştir ve kaçının\nyazıldığı gövdedeki raporda durur. Hiçbiri şemadan geçmediğinde `201 Created`\ndönmek, yaratılmamış bir şeyi yaratıldı diye bildirmek olurdu.",
+        "operationId": "generate_questions_courses__course_id__questions_generate_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionGenerationOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/questions/{question_id}/approve": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Approve Question",
+        "description": "Soruyu onaylar; ancak bundan sonra öğrenciye görünür.",
+        "operationId": "approve_question_courses__course_id__questions__question_id__approve_post",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/questions/{question_id}/reject": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Reject Question",
+        "description": "Soruyu reddeder. Kayıt silinmez: havuzun neyi elediği de bir veridir.",
+        "operationId": "reject_question_courses__course_id__questions__question_id__reject_post",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/questions/{question_id}": {
+      "delete": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Delete Question",
+        "description": "Soruyu havuzdan tamamen siler. Reddetmekten FARKLI bir iş.\n\nReddetmek pedagojik bir karardır: soru öğrenciye görünmez ama satır durur ve\n\"havuzun neyi elediği\" ölçülebilir kalır. Silmek yapısal bir işlemdir ve tek\nbir gerçek ihtiyaçtan doğuyor: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşıyor, yani bir belgeden üretilmiş soru havuzda durduğu sürece o BELGE\nsilinemiyor.\n\nBu uç olmadan `documents.py`'nin 409 mesajı (\"Önce ilgili soruları kaldırın\")\nvar olmayan bir çıkış yolunu tarif ediyordu — yapılamayacak bir şeyi öneren\nhata mesajı, hiç mesaj vermemekten kötüdür.\n\nCevaplanmış soru silinmez: `answers.question_id` de RESTRICT taşır ve bir\nöğrencinin verdiği cevabın sorusunu silmek, o cevabı okunamaz hâle getirirdi.\nVeritabanı bunu zaten reddediyor; burada hata anlaşılır Türkçeye çevriliyor.",
+        "operationId": "delete_question_courses__course_id__questions__question_id__delete",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Post Chat",
+        "description": "Bir soru sorar ve kaynaklı cevabı (ya da gerekçeli reddi) döndürür.\n\nAbstention bir HATA DEĞİLDİR: kanıt yetersizse de kapsam dışıysa da yanıt 200'dür,\n`status` alanı sebebi söyler. Hata zarfına düşürülseydi istemci bunu bir arıza gibi\ngösterirdi; oysa reddetmek ürünün çalıştığının kanıtı.",
+        "operationId": "post_chat_courses__course_id__chat_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/chat/availability": {
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Chat Availability",
+        "description": "Asistan bu kullanıcı için açık mı?\n\nBu uç bilerek `CourseMemberDep` alır, `UnlockedCourseMemberDep` DEĞİL:\nkilitliyken de cevap verebilmesi gerekiyor, yoksa arayüz kilidin sebebini\nhiç öğrenemez ve kullanıcıya \"bir şeyler ters gitti\" demek zorunda kalır.\n\nKararı `deps.require_assistant_unlocked` ile AYNI fonksiyondan okur; iki\nyüzey ayrı ayrı hesaplasaydı biri diğerinden sapardı (Anayasa XI) ve sapma\nsessiz olurdu — sekme açık görünüp istek 403 dönerdi.",
+        "operationId": "chat_availability_courses__course_id__chat_availability_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatAvailabilityOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams": {
+      "post": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Start Exam",
+        "description": "Sınav ya da alıştırma oturumu açar.\n\nOnaylı havuz boşsa oturum açılmaz: \"kaynak yoksa cevap yok\"un sınav ayağıdır.\nSorular burada sabitlenir; sonradan yapılan onay/red başlamış oturumun soru\nlistesini değiştirmez.",
+        "operationId": "start_exam_courses__course_id__exams_post",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExamStartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamSessionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "List Exams",
+        "description": "Kullanıcının bu dersteki sınav oturumları, en yenisi başta.\n\nNeden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —\ntarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam\neden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci\nyeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin\nhafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak\nda sunucunun işi olmalı.\n\nŞerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`\ndiyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.\n\nRLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile\nkontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).\n\nSorular gövdede TAŞINMAZ. Liste \"hangi oturumlarım var\" sorusunu cevaplar;\nsoru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı\nvermek olurdu ve ekranın bu bilgiye ihtiyacı yok.",
+        "operationId": "list_exams_courses__course_id__exams_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExamSessionOut"
+                  },
+                  "title": "Response List Exams Courses  Course Id  Exams Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/{session_id}": {
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Get Exam",
+        "description": "Oturum durumu ve **kalan süre**.\n\nBağlantı koparsa öğrenci buraya döner ve kaldığı yerden devam eder: sayaç\nistemcide, süre sunucudadır.",
+        "operationId": "get_exam_courses__course_id__exams__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamSessionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/{session_id}/answers": {
+      "post": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Submit Answer",
+        "description": "Cevabı kaydeder ve **aynı işlemde** puanlar.\n\nPuan cevapla birlikte yazılır çünkü `answers` satırı bir daha güncellenmez\n(Karar 1). `exam` modunda puan yazılır ama döndürülmez; `practice` modunda\nanında geri bildirim olarak döner.",
+        "operationId": "submit_answer_courses__course_id__exams__session_id__answers_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerSubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerFeedbackOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/{session_id}/hint": {
+      "post": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Request Hint",
+        "description": "Kademeli ipucu — yalnız `practice` modunda.\n\nİpucu metni **kaynaktan türetilir**, modelden değil: kademe yükseldikçe sorunun\ndayandığı chunk'tan daha çoğu açılır. Böylece ipucu her zaman gerçek bir\nmateryal parçasına dayanır (Anayasa I) ve LLM ayakta olmasa da çalışır.",
+        "operationId": "request_hint_courses__course_id__exams__session_id__hint_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HintRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__schemas__assessment__HintOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/{session_id}/finish": {
+      "post": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Finish Exam",
+        "description": "Oturumu kapatır, puanı açıklar ve soru bazlı geri bildirimi verir (FR-018).\n\nCevaplanmamış sorular **boş** sayılır: yanlış değildirler ve paydaya girmezler.\nDeğerlendirilememiş cevaplar da paydaya girmez (FR-020) — uydurma puan yerine\naçık bir \"değerlendirilemedi\" sayısı raporlanır.",
+        "operationId": "finish_exam_courses__course_id__exams__session_id__finish_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamFinishOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/analytics/me": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "My Progress",
+        "description": "Kendi konu bazlı ilerlemem. Dersin her üyesi kendi satırlarını görür.\n\nBu gösterge resmî bir not DEĞİLDİR; nereye çalışılacağını gösteren bir öneridir\n(ARCHITECTURE §5). İbare arayüzde zorunludur.",
+        "operationId": "my_progress_courses__course_id__analytics_me_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentAnalytics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/analytics/class": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Class Progress",
+        "description": "Sınıf analitiği. Yalnız dersin eğitmeni görebilir.",
+        "operationId": "class_progress_courses__course_id__analytics_class_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassAnalytics"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccountAnonymizationOut": {
+        "properties": {
+          "anonymized": {
+            "type": "boolean",
+            "title": "Anonymized",
+            "default": true
+          },
+          "deleted_chat_sessions": {
+            "type": "integer",
+            "title": "Deleted Chat Sessions"
+          },
+          "revoked_memberships": {
+            "type": "integer",
+            "title": "Revoked Memberships"
+          },
+          "retained_owned_courses": {
+            "type": "integer",
+            "title": "Retained Owned Courses"
+          },
+          "identity_provider_action_required": {
+            "type": "boolean",
+            "title": "Identity Provider Action Required",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted_chat_sessions",
+          "revoked_memberships",
+          "retained_owned_courses",
+          "message"
+        ],
+        "title": "AccountAnonymizationOut"
+      },
+      "AnswerFeedbackOut": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "recorded": {
+            "type": "boolean",
+            "title": "Recorded",
+            "default": true
+          },
+          "graded": {
+            "type": "boolean",
+            "title": "Graded"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "missing_points": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Points"
+          },
+          "why_wrong": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "solution": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solution"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "graded"
+        ],
+        "title": "AnswerFeedbackOut"
+      },
+      "AnswerFormat": {
+        "type": "string",
+        "enum": [
+          "essay",
+          "short_answer"
+        ],
+        "title": "AnswerFormat",
+        "description": "`open` tipinin alt türü (FR-036, KARARLAR_SERIT4.md Karar 4).\n\nBeşinci bir `question_type` değeri DEĞİLDİR: hocanın istediği \"klasik / kısa\ncevap\" ayrımı değerlendirme mantığını değiştirir, soru tipini değil.\n`essay` rubrikle LLM'e değerlendirtilir; `short_answer` `accepted_answers`\nlistesiyle deterministik eşleştirilir."
+      },
+      "AnswerStatus": {
+        "type": "string",
+        "enum": [
+          "answered",
+          "insufficient_context",
+          "out_of_scope",
+          "budget_exhausted"
+        ],
+        "title": "AnswerStatus",
+        "description": "Cevabın dört meşru sonucu. Üçü 'cevap yok' ama SEBEPLERİ farklı.\n\nKarıştırılmamalı: `insufficient_context` \"materyalde var olabilir ama kanıt\nzayıf\", `out_of_scope` \"bu ders bu konuyu hiç kapsamıyor\". Kullanıcıya\nverilen metin de ölçüm kategorisi de farklıdır (SC-005 yalnız ikincisini ölçer)."
+      },
+      "AnswerSubmitRequest": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "given": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Given"
+          },
+          "hint_level": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 0.0,
+            "title": "Hint Level",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "given"
+        ],
+        "title": "AnswerSubmitRequest"
+      },
+      "Body_upload_document_courses__course_id__documents_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "PDF, PPTX, Markdown, metin veya kod dosyası"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_courses__course_id__documents_post"
+      },
+      "ChatAvailabilityOut": {
+        "properties": {
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "allowed_modes": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMode"
+            },
+            "type": "array",
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "type": "integer",
+            "title": "Hint Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "available",
+          "allowed_modes",
+          "hint_limit"
+        ],
+        "title": "ChatAvailabilityOut",
+        "description": "Asistanın bu kullanıcı için açık olup olmadığı.\n\nArayüzün sekmeyi kilitlemek için ihtiyaç duyduğu tek bilgi. `reason` ve\n`message` sunucudan gelir; arayüz kendi metnini uydurmaz (Anayasa V) ve\nmuafiyet kuralını tekrarlamaz — eğitmene her zaman `available=True` döner."
+      },
+      "ChatDeletionOut": {
+        "properties": {
+          "deleted_sessions": {
+            "type": "integer",
+            "title": "Deleted Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted_sessions"
+        ],
+        "title": "ChatDeletionOut"
+      },
+      "ChatMessageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ChatRole"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "content",
+          "created_at"
+        ],
+        "title": "ChatMessageOut"
+      },
+      "ChatMode": {
+        "type": "string",
+        "enum": [
+          "qa",
+          "socratic",
+          "exam"
+        ],
+        "title": "ChatMode"
+      },
+      "ChatRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Question"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode",
+            "default": "qa"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "student_attempt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Attempt"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "question"
+        ],
+        "title": "ChatRequest",
+        "description": "Sohbet isteği.\n\n`socratic_stage` bilinçli olarak YOKTUR: kademe ilerletme kararı istemcide\ndeğil, sunucudaki state machine'de verilir (spec FR-014). İstemci kademe\nseçebilseydi öğrenci tek istekle `EXPLAIN_WITH_SOURCE` isteyip merdiveni\natlardı."
+      },
+      "ChatResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Message Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AnswerStatus"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "hints": {
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__chat__HintOut"
+            },
+            "type": "array",
+            "title": "Hints"
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "message_id",
+          "status",
+          "mode",
+          "answer"
+        ],
+        "title": "ChatResponse",
+        "description": "ARCHITECTURE §5 cevap zarfı.\n\nAbstention bir HATA DEĞİLDİR: `insufficient_context`, `out_of_scope` ve\n`budget_exhausted` normal 200 gövdesiyle döner (Anayasa VII — abstention\nhata gibi gösterilmez).\nSağlayıcı/model adı bilinçli olarak dışarı verilmez; altyapı ayrıntısı\nkullanıcıya gitmez, ölçüm için `GeneratedAnswer` üzerinde loglanır.\n\n`session_id`/`message_id` zarfın parçasıdır ve opsiyonel DEĞİLDİR: istemci bir\nsonraki turu aynı oturuma bağlamak zorundadır ve oturum kimliğini kendisi\nuyduramaz. 9 Ağustos'a kadar bu iki alan yalnız `api/chat.py`'nin geçici\nkopyasında vardı; zarfın iki ayrı tanımı olması istemciyi hiçbir zaman\nkoşmamış bir sözleşmeye karşı yazdırdı (bkz. modül docstring'i)."
+      },
+      "ChatRole": {
+        "type": "string",
+        "enum": [
+          "user",
+          "assistant"
+        ],
+        "title": "ChatRole",
+        "description": "Mesajın sahibi. `contracts.py`'de yok çünkü modüller arası bir tip değil."
+      },
+      "ChatSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "title": "Created At"
+          },
+          "updated_at": {
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "mode",
+          "title",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ChatSessionOut"
+      },
+      "ChunkPreview": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "chunk_index": {
+            "type": "integer",
+            "title": "Chunk Index"
+          },
+          "page_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Number"
+          },
+          "slide_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slide Number"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "token_count": {
+            "type": "integer",
+            "title": "Token Count"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "chunk_index",
+          "page_number",
+          "slide_number",
+          "section_title",
+          "content_type",
+          "token_count",
+          "text"
+        ],
+        "title": "ChunkPreview",
+        "description": "Eğitmenin, sistemin belgeden ne çıkardığını görebilmesi için."
+      },
+      "CitationOut": {
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "claim": {
+            "type": "string",
+            "title": "Claim",
+            "default": ""
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "file_name",
+          "location",
+          "snippet"
+        ],
+        "title": "CitationOut",
+        "description": "Kullanıcıya gösterilen atıf.\n\n`file_name`, `location` ve `snippet` chunk metadata'sından gelir. Modelin\nmetninden türetilen tek alan `claim`'dir ve o da yalnız açıklayıcıdır —\nhiçbir güvenlik kararı ona bakmaz."
+      },
+      "ClassAnalytics": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/ClassTopicProgress"
+            },
+            "type": "array",
+            "title": "Topics"
+          },
+          "missed_questions": {
+            "items": {
+              "$ref": "#/components/schemas/MissedQuestion"
+            },
+            "type": "array",
+            "title": "Missed Questions"
+          },
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "tracked_topics": {
+            "type": "integer",
+            "title": "Tracked Topics"
+          },
+          "untracked_topics": {
+            "type": "integer",
+            "title": "Untracked Topics"
+          },
+          "student_count": {
+            "type": "integer",
+            "title": "Student Count"
+          },
+          "answered_questions": {
+            "type": "integer",
+            "title": "Answered Questions"
+          },
+          "out_of_scope": {
+            "$ref": "#/components/schemas/OutOfScopeStat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "topics",
+          "missed_questions",
+          "average_score",
+          "tracked_topics",
+          "untracked_topics",
+          "student_count",
+          "answered_questions",
+          "out_of_scope"
+        ],
+        "title": "ClassAnalytics"
+      },
+      "ClassTopicProgress": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "average_score": {
+            "type": "number",
+            "title": "Average Score"
+          },
+          "level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "student_count": {
+            "type": "integer",
+            "title": "Student Count"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id",
+          "name",
+          "average_score",
+          "level",
+          "student_count",
+          "answer_count"
+        ],
+        "title": "ClassTopicProgress"
+      },
+      "CourseAiPolicyAuditOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "changed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed By"
+          },
+          "changed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Changed At"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "after": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "changed_by",
+          "changed_at",
+          "before",
+          "after"
+        ],
+        "title": "CourseAiPolicyAuditOut"
+      },
+      "CourseAiPolicyIn": {
+        "properties": {
+          "allowed_modes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChatMode"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Limit"
+          },
+          "evidence_threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Threshold"
+          },
+          "daily_llm_budget": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Llm Budget"
+          },
+          "source_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CourseAiPolicyIn"
+      },
+      "CourseAiPolicyOut": {
+        "properties": {
+          "allowed_modes": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChatMode"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Limit"
+          },
+          "evidence_threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Threshold"
+          },
+          "daily_llm_budget": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Llm Budget"
+          },
+          "source_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Ids"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "effective": {
+            "$ref": "#/components/schemas/EffectivePolicyOut"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "budget_used_today": {
+            "type": "integer",
+            "title": "Budget Used Today",
+            "default": 0
+          },
+          "budget_remaining_today": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Remaining Today"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "course_id",
+          "effective"
+        ],
+        "title": "CourseAiPolicyOut"
+      },
+      "CourseCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Code",
+            "examples": [
+              "COME301"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Title",
+            "examples": [
+              "İşletim Sistemleri"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "title"
+        ],
+        "title": "CourseCreate"
+      },
+      "CourseWithRole": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "created_at",
+          "role"
+        ],
+        "title": "CourseWithRole",
+        "description": "Listelemede kullanıcının o dersteki rolü de döner."
+      },
+      "DocumentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_type": {
+            "type": "string",
+            "title": "File Type"
+          },
+          "byte_size": {
+            "type": "integer",
+            "title": "Byte Size"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DocumentStatus"
+          },
+          "page_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Count"
+          },
+          "chunk_count": {
+            "type": "integer",
+            "title": "Chunk Count"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "file_name",
+          "file_type",
+          "byte_size",
+          "status",
+          "page_count",
+          "chunk_count",
+          "error_message",
+          "created_at"
+        ],
+        "title": "DocumentOut"
+      },
+      "DocumentStatus": {
+        "type": "string",
+        "enum": [
+          "uploaded",
+          "processing",
+          "completed",
+          "failed"
+        ],
+        "title": "DocumentStatus"
+      },
+      "DocumentUploadOut": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/DocumentOut"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Belge alındı ve işleme kuyruğuna eklendi."
+          }
+        },
+        "type": "object",
+        "required": [
+          "document"
+        ],
+        "title": "DocumentUploadOut",
+        "description": "Yükleme kabul yanıtı.\n\nBelge arka planda işlendiği için 202 döner; istemci `status` alanını izleyerek\nilerlemeyi gösterir."
+      },
+      "EffectivePolicyOut": {
+        "properties": {
+          "allowed_modes": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMode"
+            },
+            "type": "array",
+            "title": "Allowed Modes"
+          },
+          "hint_limit": {
+            "type": "integer",
+            "title": "Hint Limit"
+          },
+          "evidence_threshold": {
+            "type": "number",
+            "title": "Evidence Threshold"
+          },
+          "daily_llm_budget": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Llm Budget"
+          },
+          "source_document_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Document Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "allowed_modes",
+          "hint_limit",
+          "evidence_threshold",
+          "daily_llm_budget",
+          "source_document_ids"
+        ],
+        "title": "EffectivePolicyOut"
+      },
+      "EvidenceLevel": {
+        "type": "string",
+        "enum": [
+          "sufficient",
+          "weak",
+          "out_of_scope"
+        ],
+        "title": "EvidenceLevel",
+        "description": "Kanıt kapısının üç çıktısı."
+      },
+      "ExamFinishOut": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "answered_count": {
+            "type": "integer",
+            "title": "Answered Count"
+          },
+          "unanswered_count": {
+            "type": "integer",
+            "title": "Unanswered Count"
+          },
+          "ungraded_count": {
+            "type": "integer",
+            "title": "Ungraded Count"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerFeedbackOut"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "score",
+          "answered_count",
+          "unanswered_count",
+          "ungraded_count",
+          "message"
+        ],
+        "title": "ExamFinishOut"
+      },
+      "ExamMode": {
+        "type": "string",
+        "enum": [
+          "practice",
+          "exam"
+        ],
+        "title": "ExamMode"
+      },
+      "ExamQuestionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "answered": {
+            "type": "boolean",
+            "title": "Answered"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "payload",
+          "answered"
+        ],
+        "title": "ExamQuestionOut"
+      },
+      "ExamSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ExamMode"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "remaining_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Seconds"
+          },
+          "expired": {
+            "type": "boolean",
+            "title": "Expired"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "question_count": {
+            "type": "integer",
+            "title": "Question Count"
+          },
+          "answered_count": {
+            "type": "integer",
+            "title": "Answered Count"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/ExamQuestionOut"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "mode",
+          "started_at",
+          "expires_at",
+          "remaining_seconds",
+          "expired",
+          "finished_at",
+          "score",
+          "question_count",
+          "answered_count"
+        ],
+        "title": "ExamSessionOut"
+      },
+      "ExamStartRequest": {
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/ExamMode",
+            "default": "practice"
+          },
+          "topic_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic Id"
+          }
+        },
+        "type": "object",
+        "title": "ExamStartRequest"
+      },
+      "ExportAnswerOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "given": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Given"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "hint_level": {
+            "type": "integer",
+            "title": "Hint Level"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "answered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Answered At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "question_id",
+          "given",
+          "is_correct",
+          "score",
+          "hint_level",
+          "feedback",
+          "answered_at"
+        ],
+        "title": "ExportAnswerOut"
+      },
+      "ExportChatMessageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ChatRole"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "citations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Citations"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "socratic_stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "content",
+          "status",
+          "socratic_stage",
+          "seq",
+          "created_at"
+        ],
+        "title": "ExportChatMessageOut"
+      },
+      "ExportChatSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ChatMode"
+          },
+          "state": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "State"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ExportChatMessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "mode",
+          "title",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ExportChatSessionOut"
+      },
+      "ExportExamSessionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/ExamMode"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Question Ids"
+          },
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/ExportAnswerOut"
+            },
+            "type": "array",
+            "title": "Answers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "mode",
+          "started_at",
+          "expires_at",
+          "finished_at",
+          "score",
+          "question_ids"
+        ],
+        "title": "ExportExamSessionOut"
+      },
+      "ExportMasteryOut": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "topic_id",
+          "score",
+          "answer_count",
+          "updated_at"
+        ],
+        "title": "ExportMasteryOut"
+      },
+      "ExportMembershipOut": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "role",
+          "status",
+          "created_at"
+        ],
+        "title": "ExportMembershipOut"
+      },
+      "ExportProfileOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "full_name",
+          "created_at"
+        ],
+        "title": "ExportProfileOut"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HintRequest": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "hint_level": {
+            "type": "integer",
+            "maximum": 4.0,
+            "minimum": 1.0,
+            "title": "Hint Level",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id"
+        ],
+        "title": "HintRequest"
+      },
+      "MasteryLevel": {
+        "type": "string",
+        "enum": [
+          "needs_work",
+          "medium",
+          "good"
+        ],
+        "title": "MasteryLevel"
+      },
+      "MembershipCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Derse eklenecek kullanıcının e-posta adresi"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole",
+            "default": "student"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "MembershipCreate"
+      },
+      "MembershipOut": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MembershipRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "email",
+          "full_name",
+          "role",
+          "status"
+        ],
+        "title": "MembershipOut"
+      },
+      "MembershipRole": {
+        "type": "string",
+        "enum": [
+          "instructor",
+          "student"
+        ],
+        "title": "MembershipRole"
+      },
+      "MembershipStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "revoked"
+        ],
+        "title": "MembershipStatus"
+      },
+      "MissedQuestion": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "topic_name": {
+            "type": "string",
+            "title": "Topic Name"
+          },
+          "stem": {
+            "type": "string",
+            "title": "Stem"
+          },
+          "wrong_rate": {
+            "type": "number",
+            "title": "Wrong Rate"
+          },
+          "graded_answer_count": {
+            "type": "integer",
+            "title": "Graded Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "topic_name",
+          "stem",
+          "wrong_rate",
+          "graded_answer_count"
+        ],
+        "title": "MissedQuestion"
+      },
+      "OutOfScopeStat": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "const": "request_logs",
+            "title": "Source"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate"
+          },
+          "out_of_scope_count": {
+            "type": "integer",
+            "title": "Out Of Scope Count"
+          },
+          "insufficient_context_count": {
+            "type": "integer",
+            "title": "Insufficient Context Count"
+          },
+          "answered_request_count": {
+            "type": "integer",
+            "title": "Answered Request Count"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "rate",
+          "out_of_scope_count",
+          "insufficient_context_count",
+          "answered_request_count",
+          "note"
+        ],
+        "title": "OutOfScopeStat",
+        "description": "Kapsam dışı ret istatistiği (SC-005).\n\nKaynak `request_logs`, `chat_messages` DEĞİL. Sebep bir gizlilik kararı: sohbet\nmesajları eğitmene bilinçli olarak kapalıdır (0003), çünkü öğrencinin hocasına\nsormaya çekindiği soruyu sisteme sorabilmesi ürünün gerekçelerinden biri.\n`request_logs` ise şema gereği serbest metin taşımaz — eğitmen \"kaç soru kapsam\ndışı diye reddedildi\" sorusunun cevabını alır, kimsenin ne sorduğunu göremez.\n\n`source` alanı zorunlu: sayının nereden geldiği görünmeden sayı raporlanamaz.\nHenüz hiç cevap üretilmemişse `rate` None kalır — 0.0 döndürmek \"bu derste hiçbir\nsoru reddedilmedi\" demek olurdu ve bu, ölçülmemiş bir şeyi ölçülmüş gibi\ngöstermek olurdu (Anayasa III)."
+      },
+<<<<<<< HEAD
+=======
+      "PageOut_ChatMessageOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[ChatMessageOut]"
+      },
+      "PageOut_ChatSessionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ChatSessionOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[ChatSessionOut]"
+      },
+      "PageOut_CourseWithRole_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CourseWithRole"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[CourseWithRole]"
+      },
+      "PageOut_DocumentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[DocumentOut]"
+      },
+      "PageOut_QuestionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[QuestionOut]"
+      },
+      "PublishOut": {
+        "properties": {
+          "version": {
+            "$ref": "#/components/schemas/ExamVersionOut"
+          },
+          "blueprint_snapshot": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Blueprint Snapshot"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "blueprint_snapshot",
+          "message"
+        ],
+        "title": "PublishOut"
+      },
+      "QuestionDifficulty": {
+        "type": "string",
+        "enum": [
+          "easy",
+          "medium",
+          "hard"
+        ],
+        "title": "QuestionDifficulty"
+      },
+>>>>>>> e284b30 (Complete production hardening and runtime proof)
+      "QuestionGenerateRequest": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "question_type": {
+            "$ref": "#/components/schemas/QuestionType",
+            "default": "mcq"
+          },
+          "answer_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          },
+          "example_questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Example Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id"
+        ],
+        "title": "QuestionGenerateRequest",
+        "description": "Eğitmenin kurduğu çerçeve (6 Ağustos toplantısı: biçimi eğitmen seçer).\n\n`example_questions` verilirse üretim o üslubu taklit eder; verilmezse yalnız\nmateryalden gidilir."
+      },
+      "QuestionGenerationOut": {
+        "properties": {
+          "requested": {
+            "type": "integer",
+            "title": "Requested"
+          },
+          "returned": {
+            "type": "integer",
+            "title": "Returned"
+          },
+          "accepted": {
+            "type": "integer",
+            "title": "Accepted"
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected"
+          },
+          "rejection_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rejection Reasons"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requested",
+          "returned",
+          "accepted",
+          "rejected"
+        ],
+        "title": "QuestionGenerationOut",
+        "description": "Üretim raporu. `accepted/returned` oranı SC-009'un ölçüm girdisidir."
+      },
+      "QuestionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/QuestionType"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "status": {
+            "$ref": "#/components/schemas/QuestionStatus"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "topic_id",
+          "type",
+          "payload",
+          "status",
+          "created_by",
+          "reviewed_by",
+          "reviewed_at",
+          "created_at"
+        ],
+        "title": "QuestionOut"
+      },
+      "QuestionStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "approved",
+          "rejected"
+        ],
+        "title": "QuestionStatus"
+      },
+      "QuestionType": {
+        "type": "string",
+        "enum": [
+          "mcq",
+          "open",
+          "code_trace",
+          "bug_hunt"
+        ],
+        "title": "QuestionType"
+      },
+      "RetrievalCandidateOut": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "dense_score": {
+            "type": "number",
+            "title": "Dense Score"
+          },
+          "fts_score": {
+            "type": "number",
+            "title": "Fts Score"
+          },
+          "fused_score": {
+            "type": "number",
+            "title": "Fused Score"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "chunk_id",
+          "document_id",
+          "file_name",
+          "location",
+          "text",
+          "dense_score",
+          "fts_score",
+          "fused_score"
+        ],
+        "title": "RetrievalCandidateOut"
+      },
+      "RetrievalInspectRequest": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 3,
+            "title": "Query"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 8
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "RetrievalInspectRequest",
+        "description": "LLM çağırmadan çalıştırılan öğretmen retrieval sorgusu."
+      },
+      "RetrievalInspectionOut": {
+        "properties": {
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "level": {
+            "$ref": "#/components/schemas/EvidenceLevel"
+          },
+          "answer_allowed": {
+            "type": "boolean",
+            "title": "Answer Allowed"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "best_dense_score": {
+            "type": "number",
+            "title": "Best Dense Score"
+          },
+          "best_fts_score": {
+            "type": "number",
+            "title": "Best Fts Score"
+          },
+          "lexical_coverage": {
+            "type": "number",
+            "title": "Lexical Coverage"
+          },
+          "candidate_count": {
+            "type": "integer",
+            "title": "Candidate Count"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/RetrievalCandidateOut"
+            },
+            "type": "array",
+            "title": "Candidates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "query",
+          "level",
+          "answer_allowed",
+          "threshold",
+          "best_dense_score",
+          "best_fts_score",
+          "lexical_coverage",
+          "candidate_count",
+          "candidates"
+        ],
+        "title": "RetrievalInspectionOut"
+      },
+      "SocraticStage": {
+        "type": "string",
+        "enum": [
+          "diagnose",
+          "nudge",
+          "concept_hint",
+          "similar_example",
+          "explain_with_source"
+        ],
+        "title": "SocraticStage",
+        "description": "Sokratik merdiven. Sıra ANLAMLIDIR ve atlanamaz (spec FR-014).\n\nÖğrenci kendi denemesini yapmadan bir sonraki kademeye geçilmez; bu kural\nstate machine'de zorlanır, prompt'a bırakılmaz."
+      },
+      "SourceContextChunkOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "chunk_index": {
+            "type": "integer",
+            "title": "Chunk Index"
+          },
+          "page_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Number"
+          },
+          "slide_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slide Number"
+          },
+          "section_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Title"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "token_count": {
+            "type": "integer",
+            "title": "Token Count"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "selected": {
+            "type": "boolean",
+            "title": "Selected"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "chunk_index",
+          "page_number",
+          "slide_number",
+          "section_title",
+          "content_type",
+          "token_count",
+          "text",
+          "selected"
+        ],
+        "title": "SourceContextChunkOut"
+      },
+      "SourceContextOut": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "selected_chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Selected Chunk Id"
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/SourceContextChunkOut"
+            },
+            "type": "array",
+            "title": "Chunks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "file_name",
+          "selected_chunk_id",
+          "chunks"
+        ],
+        "title": "SourceContextOut"
+      },
+      "SourceRefOut": {
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "snippet": {
+            "type": "string",
+            "title": "Snippet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "file_name",
+          "location",
+          "snippet"
+        ],
+        "title": "SourceRefOut",
+        "description": "Kaynak referansı. Dosya adı ve konum **chunk metadata'sından** gelir.\n\nModel metninden üretilmez (Anayasa I); bu yüzden burada bir `text` alanı değil,\nkısaltılmış `snippet` vardır — gösterilen alıntı gerçekten o chunk'ın içindedir."
+      },
+      "StudentAnalytics": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "topics": {
+            "items": {
+              "$ref": "#/components/schemas/TopicProgress"
+            },
+            "type": "array",
+            "title": "Topics"
+          },
+          "average_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Score"
+          },
+          "tracked_topics": {
+            "type": "integer",
+            "title": "Tracked Topics"
+          },
+          "untracked_topics": {
+            "type": "integer",
+            "title": "Untracked Topics"
+          },
+          "needs_work_topics": {
+            "type": "integer",
+            "title": "Needs Work Topics"
+          },
+          "answered_questions": {
+            "type": "integer",
+            "title": "Answered Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "topics",
+          "average_score",
+          "tracked_topics",
+          "untracked_topics",
+          "needs_work_topics",
+          "answered_questions"
+        ],
+        "title": "StudentAnalytics"
+      },
+      "TopicCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Name",
+            "examples": [
+              "Deadlock"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "TopicCreate"
+      },
+      "TopicOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "course_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Course Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "course_id",
+          "name",
+          "created_by",
+          "created_at"
+        ],
+        "title": "TopicOut"
+      },
+      "TopicProgress": {
+        "properties": {
+          "topic_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Topic Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "level": {
+            "$ref": "#/components/schemas/MasteryLevel"
+          },
+          "answer_count": {
+            "type": "integer",
+            "title": "Answer Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic_id",
+          "name",
+          "score",
+          "level",
+          "answer_count"
+        ],
+        "title": "TopicProgress",
+        "description": "Öğrencinin tek bir konudaki durumu."
+      },
+      "UserDataExportOut": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1",
+            "title": "Schema Version",
+            "default": "1"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ExportProfileOut"
+          },
+          "memberships": {
+            "items": {
+              "$ref": "#/components/schemas/ExportMembershipOut"
+            },
+            "type": "array",
+            "title": "Memberships"
+          },
+          "chat_sessions": {
+            "items": {
+              "$ref": "#/components/schemas/ExportChatSessionOut"
+            },
+            "type": "array",
+            "title": "Chat Sessions"
+          },
+          "exam_sessions": {
+            "items": {
+              "$ref": "#/components/schemas/ExportExamSessionOut"
+            },
+            "type": "array",
+            "title": "Exam Sessions"
+          },
+          "mastery": {
+            "items": {
+              "$ref": "#/components/schemas/ExportMasteryOut"
+            },
+            "type": "array",
+            "title": "Mastery"
+          }
+        },
+        "type": "object",
+        "required": [
+          "generated_at",
+          "profile",
+          "memberships",
+          "chat_sessions",
+          "exam_sessions",
+          "mastery"
+        ],
+        "title": "UserDataExportOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "app__schemas__assessment__HintOut": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Question Id"
+          },
+          "hint_level": {
+            "type": "integer",
+            "title": "Hint Level"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRefOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "hint_level",
+          "text",
+          "source"
+        ],
+        "title": "HintOut"
+      },
+      "app__schemas__chat__HintOut": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SocraticStage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "chunk_id",
+          "file_name",
+          "location"
+        ],
+        "title": "HintOut",
+        "description": "Sokratik ipucu. Kaynağı olmayan ipucu istemciye hiç ulaşmaz."
+      }
+    }
+  }
+}
