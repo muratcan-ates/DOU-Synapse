@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "change_id": "010-dense-tiebreak-determinism-r1",
+  "lineage_id": "dense-tiebreak-determinism",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "dense_search: eşitlik bozma alanını (document_id, chunk_index)'e bağla",
+  "summary": "docs/test-report.md §6.4'te fts.py için tespit edilip düzeltilen kusurla aynı sınıftan: dense.py'de eşit mesafeli satırların sırası c.id'ye bağlıydı, id her ingest'te yeniden üretildiği için sıralama korpus yeniden yüklendiğinde nedensiz değişebiliyordu. fts.py'nin zaten uyguladığı (document_id, chunk_index) deseni dense.py'ye de uygulandı. Model, sağlayıcı, prompt, embedding veya eşik mantığı DEĞİŞMEDİ.",
+  "owner": "Metehan Alphan",
+  "created_at": "2026-08-22T22:10:00+03:00",
+  "review_by": "2026-09-22T22:10:00+03:00",
+  "base_sha": "ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+  "candidate_sha": "SELF",
+  "risk_tier": "R2",
+  "status": "draft",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-ba69ff9e (yalnız sıralama)",
+    "model_revision": "unchanged-from-base-ba69ff9e (yalnız sıralama)",
+    "prompt_revision": "unchanged-from-base-ba69ff9e (yalnız sıralama)",
+    "tool_schema_revision": "unchanged-from-base-ba69ff9e (yalnız sıralama)",
+    "guardrail_revision": "unchanged-from-base-ba69ff9e (yalnız sıralama)",
+    "retrieval_revision": "dense.py eşitlik bozma alanı c.id -> (document_id, chunk_index); fts.py ile aynı desen (T303)",
+    "embedding_revision": "unchanged-from-base-ba69ff9e (yalnız sıralama)",
+    "evaluator_revision": "unchanged-from-base-ba69ff9e (yalnız sıralama)"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/modules/retrieval/dense.py",
+      "state": "present",
+      "sha256": "73d5db65f49a279f17d62bba92f740df5ab8a490b6b8c331e84917089cf6e7dd"
+    },
+    {
+      "path": "apps/api/tests/test_retrieval.py",
+      "state": "present",
+      "sha256": "a5e20cfb61f93c9dda444d131dfc205393b1ad46c65e2309f7bb1e52ecafb2ff"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "not-run",
+      "report_path": ".ai/evidence/010-dense-tiebreak-determinism-r1.json",
+      "report_sha256": "51f9564fbc4820e276ea7a59ca5d34af14eed0517f211d232b838eff3ac2decf",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "not-applicable: eşik veya kalite metriği değişmedi",
+    "holdout_ref": "not-run: gerçek Postgres/pgvector hazırlayan ortamda yoktu",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: evaluator semantiği değişmedi",
+    "metrics": [
+      {
+        "name": "ruff_check_and_format",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 2
+      }
+    ],
+    "exact_command": "python3 -m py_compile apps/api/app/modules/retrieval/dense.py apps/api/tests/test_retrieval.py && python3 -m ruff check apps/api/app/modules/retrieval/dense.py apps/api/tests/test_retrieval.py --config apps/api/pyproject.toml && python3 -m ruff format --check apps/api/app/modules/retrieval/dense.py apps/api/tests/test_retrieval.py --config apps/api/pyproject.toml"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "course_or_product",
+      "actor": "Pending course/product reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable:no-flag-retrieval-ordering-only",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:010-dense-tiebreak-determinism-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable:no-flag-retrieval-ordering-only",
+    "kill_switch": "Dalı revert et; c.id ile eşitlik bozmaya geri döner, retrieval'in geri kalanı etkilenmez.",
+    "assignment": "Sticky: kod yolunda ayrım veya feature flag yok, sıralama davranışı tüm isteklerde aynı candidate_sha'ya bağlı olarak tek biçimde uygulanır.",
+    "initial_exposure": "Merge sonrası tüm ortamlar; ayrı bir canary aşaması gerektirmiyor.",
+    "stop_conditions": [
+      "test_retrieval.py::TestEsitMesafeliParcalarinSirasi kırmızı yanar.",
+      "Herhangi bir retrieval izolasyon veya kanıt eşiği testi bu değişiklikten sonra kırmızı yanar."
+    ],
+    "expand_conditions": [
+      "Gerçek Postgres/pgvector ortamında uv run pytest tests/test_retrieval.py yeşil.",
+      "Engineering ve course_or_product onayları kaydedildi."
+    ],
+    "active_exam_policy": "Aktif sınav davranışını etkilemiyor; yalnız eşit mesafeli nadir durumda sıralama kararlılığı."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+    "procedure": "Dalı revert et; dense.py ve test_retrieval.py base_sha'daki hâline döner.",
+    "max_minutes": 15,
+    "verification": "Revert sonrası mevcut CI paketi (ruff/format/mypy) değişmeden yeşil kalır.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "İçerik yok; yalnız sorgu sıralama mekaniği ve chunk kimlikleri/indeksleri (öğrenci verisi değil, belge yapısı).",
+    "retention": "Repository ile sürümlenir; ham prompt, cevap, chunk metni, öğrenci kimliği veya sağlayıcı yükü taşımaz."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

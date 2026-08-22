@@ -127,7 +127,7 @@ Ardından statik ve tam paket:
 RUFF_CACHE_DIR=/private/tmp/dou-agent-ruff uv run ruff check .
 RUFF_CACHE_DIR=/private/tmp/dou-agent-ruff uv run ruff format --check .
 uv run mypy app
-PYTHONDONTWRITEBYTECODE=1 uv run pytest -q  # 909 passed  # docs-check: backend.tests = 909
+PYTHONDONTWRITEBYTECODE=1 uv run pytest -q  # 910 passed  # docs-check: backend.tests = 910
 ```
 
 2026-08-11 backend handoff kanıtı:

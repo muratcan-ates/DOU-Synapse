@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "evidence_label": "offline-replay",
+  "result": "not-run",
+  "change_id": "010-dense-tiebreak-determinism-r1",
+  "captured_at": "2026-08-22T22:10:00+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && uv sync --extra dev --frozen && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app && TEST_DB_NAME=dou_synapse_test_dense .venv/bin/python -m pytest -q tests/test_retrieval.py",
+  "environment": "Bu değişiklik canlı PostgreSQL/pgvector bulunmayan bir ortamda hazırlandı; yukarıdaki komut ÇALIŞTIRILMADI. Yalnız statik kontroller (python3 -m py_compile, ruff check, ruff format --check) bu ortamda koşuldu ve temiz çıktı.",
+  "results": {
+    "backend_tests_passed": null,
+    "typecheck_errors": null,
+    "ruff_check_errors": 0,
+    "ruff_format_diffs": 0
+  },
+  "governance_note": "docs/test-report.md §6.4, fts.py'de ölçülüp düzeltilen bir kusuru belgeliyor: eşit skorlu satırların sırası chunks.id'ye (her ingest'te gen_random_uuid() ile yeniden üretilir) bağlıydı, aynı korpus yeniden yüklendiğinde hibrit sonuçlar nedensiz değişiyordu. fts.py bunun için zaten (document_id, chunk_index) ile düzeltilmişti (T303). dense.py'nin kendi koddaki notu aynı kırılganlığın orada da olduğunu ama tetiklenmediğini söylüyor. Bu değişiklik yalnız dense.py'nin iç LIMIT'li ve dış sıralama sorgularındaki eşitlik bozma alanını fts.py ile aynı desene (document_id, chunk_index) getiriyor; model, sağlayıcı, prompt, embedding veya eşik mantığına dokunmuyor. test_retrieval.py'e hashing sağlayıcıyla garanti eşitlik üreten bir determinizm testi eklendi.",
+  "limitations": "pytest gerçek Postgres/pgvector gerektirir; bu değişikliği hazırlayan ortamda ikisi de yoktu, bu yüzden test ÇALIŞTIRILAMADI. PR sahibi (Metehan Alphan) veya bir inceleyen, birleştirmeden önce yukarıdaki tam komutu kendi ortamında koşup sonucu bu dosyaya (ya da yeni bir evidence girdisine) eklemelidir.",
+  "privacy": "içerik yok; yalnız sorgu/sıralama mekaniği"
+}
