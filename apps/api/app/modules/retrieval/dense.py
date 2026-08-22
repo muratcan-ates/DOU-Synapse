@@ -84,6 +84,7 @@ _SQL = text(
     WITH nearest AS (
         SELECT c.id,
                c.document_id,
+               c.chunk_index,
                c.page_number,
                c.slide_number,
                c.section_title,
@@ -97,7 +98,13 @@ _SQL = text(
               OR c.document_id = ANY(CAST(:document_ids AS uuid[]))
           )
           AND c.embedding IS NOT NULL
-        ORDER BY c.embedding <=> CAST(:query_vector AS vector)
+        -- Eşitlik bozma `c.id` DEĞİL: birincil anahtar `gen_random_uuid()` ile
+        -- üretiliyor, aynı korpus yeniden ingest edildiğinde eşit mesafeli
+        -- satırların sırası değişir (fts.py'de ölçülüp docs/test-report.md
+        -- §6.4'te belgelenen kusurla aynı sınıftan — T303). `(document_id,
+        -- chunk_index)` belgenin içeriğinden türüyor: aynı materyal yeniden
+        -- işlendiğinde aynı sırayı verir.
+        ORDER BY distance, c.document_id, c.chunk_index
         LIMIT :limit
     )
     SELECT n.id,
@@ -111,7 +118,7 @@ _SQL = text(
            1 - n.distance AS similarity
     FROM nearest n
     JOIN documents d ON d.id = n.document_id
-    ORDER BY n.distance, n.id
+    ORDER BY n.distance, n.document_id, n.chunk_index
     """
 )
 
