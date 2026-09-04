@@ -30,12 +30,14 @@ from __future__ import annotations
 import os
 from secrets import compare_digest
 from typing import Annotated
+from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Header, Request
 from pydantic import BaseModel, Field
 
 from app.api.deps import SettingsDep
+from app.api.evaluation_runtime import authorize_evaluation, runtime_manifest
 from app.core.config import get_settings
 from app.core.errors import NotFoundError, PermissionDeniedError
 from app.core.logging import get_logger
@@ -135,3 +137,13 @@ async def trigger_drain() -> None:
         )
     except Exception:
         logger.exception("uzak worker tetiklenemedi", extra={"context": {"url": url}})
+
+
+@router.get("/evaluation/runtime")
+async def evaluation_runtime(
+    run_id: UUID,
+    request: Request,
+    settings: SettingsDep,
+) -> dict[str, object]:
+    """Return this isolated runtime's secret-free configuration receipt."""
+    return runtime_manifest(authorize_evaluation(request, settings), run_id)

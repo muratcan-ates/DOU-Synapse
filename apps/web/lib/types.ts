@@ -1,5 +1,5 @@
 /** Backend şemalarıyla birebir sözleşmeler (apps/api/app/schemas). */
-import type { Difficulty } from "@/lib/blueprint";
+import type { Difficulty, VersionStatus } from "@/lib/blueprint";
 
 export interface Page<T> {
   items: T[];
@@ -252,6 +252,15 @@ export interface Question {
   source_stale?: boolean;
   learning_outcome_id?: string | null;
   difficulty?: Difficulty | null;
+}
+
+export interface QuestionExamUsage {
+  id: string;
+  blueprint_id: string;
+  title: string;
+  version_id: string;
+  version_no: number;
+  status: VersionStatus;
 }
 
 export interface QuestionDraftRequest {

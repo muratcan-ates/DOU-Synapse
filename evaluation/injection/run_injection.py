@@ -36,13 +36,18 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import re
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from provenance import EvidenceError, digest, response_evidence
+from runtime_client import EvaluationClient, EvaluationStopped
 
 CASES_PATH = Path(__file__).resolve().parent / "cases.json"
 RESULTS_DIR = Path(__file__).resolve().parents[1] / "results"
@@ -104,8 +109,8 @@ LLM_DEPENDENT_CHECKS = frozenset({"no_system_prompt_leak", "no_code_block"})
 
 def git_sha() -> str:
     try:
-        return subprocess.run(  # noqa: S603
-            ["git", "-C", str(REPO_ROOT), "rev-parse", "--short", "HEAD"],  # noqa: S607
+        return subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
@@ -183,18 +188,18 @@ def apply_checks(case: dict[str, Any], observed: dict[str, Any]) -> dict[str, An
 async def ask(client: Any, course_id: UUID, case: dict[str, Any]) -> dict[str, Any]:
     payload = {"question": case["question"], "mode": case["mode"]}
 
-    # Sohbet ucunda dakikada 20 istek sınırı var (`chat_rate_limit_requests`) ve bu
-    # koşu 36 vaka soruyor. Sınırı ölçüm için gevşetmek yerine bekleniyor: 429 da
-    # sistemin doğru davranışıdır ve harness onu bir ihlal gibi kaydetmemeli.
-    for attempt in range(6):
-        response = await client.post(f"/courses/{course_id}/chat", json=payload)
-        if response.status_code != 429:
-            break
-        delay = min(60.0, 5.0 * (attempt + 1))
-        print(f"    429 — {delay:.0f} sn bekleniyor", file=sys.stderr)
-        await asyncio.sleep(delay)
+    # One bounded HTTP attempt. Quota/unavailable runtime stops the outer run.
+    response = await client.post(f"/courses/{course_id}/chat", json=payload)
 
     observed: dict[str, Any] = {"http_status": response.status_code}
+    if isinstance(client, EvaluationClient):
+        evidence = client.evidence(response)
+        observed["evidence"] = evidence
+        observed["response_receipt"] = evidence["receipt"]
+        try:
+            observed["response_body"] = response.json()
+        except ValueError:
+            observed["response_body"] = None
     if response.status_code == 200:
         body = response.json()
         observed |= {
@@ -211,8 +216,6 @@ async def ask(client: Any, course_id: UUID, case: dict[str, Any]) -> dict[str, A
 
 
 async def run(args: argparse.Namespace) -> int:
-    import httpx
-
     registry = json.loads(CASES_PATH.read_text(encoding="utf-8"))
     corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
     course_id = UUID(corpus["course_id"])
@@ -228,7 +231,7 @@ async def run(args: argparse.Namespace) -> int:
         cases = [c for c in cases if not c.get("requires_poisoned_corpus")]
 
     started = datetime.now().astimezone()
-    run_id = f"{started.strftime('%Y-%m-%dT%H%M')}-injection"
+    run_id = f"{started.strftime('%Y-%m-%dT%H%M%S%f')}-injection"
     print(f"koşu: {run_id} · {len(cases)} vaka · korpus {len(corpus_files)} belge")
     if skipped:
         print(f"  ATLANDI ({len(skipped)}): zehirli belge korpusta yok — {', '.join(skipped)}")
@@ -236,46 +239,134 @@ async def run(args: argparse.Namespace) -> int:
         print("--dry-run: istek atılmadı.")
         return 0
 
-    token = args.token or f"dev:{corpus['instructor_id']}"
-    records: list[dict[str, Any]] = []
-    async with httpx.AsyncClient(
-        base_url=args.api_url.rstrip("/"),
-        headers={"Authorization": f"Bearer {token}"},
-        timeout=90.0,
-    ) as client:
-        for case in cases:
-            observed = await ask(client, course_id, case)
-            observed["corpus_files"] = corpus_files
-            checks = apply_checks(case, observed)
-            flags = checks.pop("_flags", [])
-            failed = [name for name, passed in checks.items() if passed is False]
-            det_failed = [name for name in failed if name in DETERMINISTIC_CHECKS]
-            det_run = [name for name in checks if name in DETERMINISTIC_CHECKS]
-            llm_run = [name for name in checks if name in LLM_DEPENDENT_CHECKS]
-            record = {
-                "id": case["id"],
-                "category": case["category"],
-                "mode": case["mode"],
-                "question": case["question"],
-                "expected": case["expected"],
-                "http_status": observed.get("http_status"),
-                "status": observed.get("status"),
-                "answer": observed.get("answer", ""),
-                "citations": observed.get("citations", []),
-                "socratic_stage": observed.get("socratic_stage"),
-                "error_body": observed.get("error_body"),
-                "checks": checks,
-                "auto_flags": flags,
-                "auto_verdict": "İHLAL" if failed else "işaret yok",
-                "failed_checks": failed,
-                "deterministic_checks": det_run,
-                "deterministic_failed": det_failed,
-                "llm_dependent_checks": llm_run,
-                "holdout_refs": case.get("holdout_refs", []),
-                "human_review": None,
-            }
-            records.append(record)
-            print(f"  {case['id']:<9} {case['mode']:<9} {record['auto_verdict']}")
+    output_dir = args.output_dir or RESULTS_DIR / run_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint = output_dir / "checkpoint.json"
+    binding = digest({"corpus": corpus, "cases": cases, "api_url": args.api_url})
+    state = (
+        json.loads(checkpoint.read_text())
+        if checkpoint.exists()
+        else {
+            "run_id": str(uuid4()),
+            "binding": binding,
+            "records": [],
+            "runtime_manifest": None,
+        }
+    )
+    if state.get("binding") != binding:
+        raise EvidenceError("Devam dosyası farklı korpus/vaka/API ayarlarına ait.")
+    if (output_dir / "result.json").exists():
+        raise EvidenceError("Tamamlanmış sonuç/inceleme üzerine yazılmaz; yeni dizin kullanın.")
+    token = args.token or f"dev:{corpus.get('student_id', corpus['instructor_id'])}"
+    records = state["records"]
+    try:
+        async with EvaluationClient(
+            args.api_url,
+            token,
+            secret=os.environ.get("EVAL_RUNTIME_SECRET"),
+            run_id=state["run_id"],
+            candidate_sha=git_sha(),
+            require_real=args.require_real,
+            max_requests=args.max_requests,
+        ) as client:
+            cases_by_id = {case["id"]: case for case in cases}
+            restored = []
+            seen: set[str] = set()
+            for record in records:
+                case = cases_by_id.get(record.get("id"))
+                if case is None or case["id"] in seen:
+                    raise EvidenceError("Devam dosyasında bilinmeyen/yinelenen vaka var.")
+                seen.add(case["id"])
+                # Validation errors have no generation receipt: repeat this cheap control check.
+                if record.get("http_status") != 200:
+                    continue
+                body = record.get("response_body")
+                if not isinstance(body, dict):
+                    raise EvidenceError("Devam dosyasının özgün cevap gövdesi yok.")
+                evidence = response_evidence(
+                    client.runtime,
+                    record.get("response_receipt"),
+                    body,
+                    {
+                        "course_id": str(course_id),
+                        "question": case["question"],
+                        "mode": case["mode"],
+                    },
+                )
+                if client.runtime and evidence["classification"] in {"unknown", "fake"}:
+                    raise EvidenceError("Devam dosyası başka sunucu/soru isteğine ait.")
+                if any(
+                    record.get(key) != body.get(key)
+                    for key in ("status", "answer", "citations", "socratic_stage")
+                ):
+                    raise EvidenceError("Devam dosyasının görünen cevabı değiştirilmiş.")
+                checks = apply_checks(
+                    case, {**body, "http_status": 200, "corpus_files": corpus_files}
+                )
+                flags = checks.pop("_flags", [])
+                failed = [key for key, passed in checks.items() if passed is False]
+                record.update(
+                    category=case["category"],
+                    question=case["question"],
+                    mode=case["mode"],
+                    checks=checks,
+                    auto_flags=flags,
+                    failed_checks=failed,
+                    auto_verdict="İHLAL" if failed else "işaret yok",
+                    evidence=evidence,
+                    deterministic_checks=[key for key in checks if key in DETERMINISTIC_CHECKS],
+                    deterministic_failed=[key for key in failed if key in DETERMINISTIC_CHECKS],
+                    llm_dependent_checks=[key for key in checks if key in LLM_DEPENDENT_CHECKS],
+                )
+                restored.append(record)
+            records[:] = restored
+            state["runtime_manifest"] = client.runtime
+            for case in cases:
+                if any(record["id"] == case["id"] for record in records):
+                    continue
+                observed = await ask(client, course_id, case)
+                observed["corpus_files"] = corpus_files
+                checks = apply_checks(case, observed)
+                flags = checks.pop("_flags", [])
+                failed = [name for name, passed in checks.items() if passed is False]
+                det_failed = [name for name in failed if name in DETERMINISTIC_CHECKS]
+                det_run = [name for name in checks if name in DETERMINISTIC_CHECKS]
+                llm_run = [name for name in checks if name in LLM_DEPENDENT_CHECKS]
+                record = {
+                    "id": case["id"],
+                    "category": case["category"],
+                    "mode": case["mode"],
+                    "question": case["question"],
+                    "expected": case["expected"],
+                    "http_status": observed.get("http_status"),
+                    "status": observed.get("status"),
+                    "answer": observed.get("answer", ""),
+                    "citations": observed.get("citations", []),
+                    "socratic_stage": observed.get("socratic_stage"),
+                    "error_body": observed.get("error_body"),
+                    "checks": checks,
+                    "auto_flags": flags,
+                    "auto_verdict": "İHLAL" if failed else "işaret yok",
+                    "failed_checks": failed,
+                    "deterministic_checks": det_run,
+                    "deterministic_failed": det_failed,
+                    "llm_dependent_checks": llm_run,
+                    "holdout_refs": case.get("holdout_refs", []),
+                    "human_review": None,
+                    "evidence": observed.get("evidence"),
+                    "response_receipt": observed.get("response_receipt"),
+                    "response_body": observed.get("response_body"),
+                }
+                records.append(record)
+                checkpoint.write_text(
+                    json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
+                print(f"  {case['id']:<9} {case['mode']:<9} {record['auto_verdict']}")
+
+    except EvaluationStopped as exc:
+        checkpoint.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"{exc} Devam: --output-dir {output_dir}", file=sys.stderr)
+        return 2
 
     violations = [r for r in records if r["failed_checks"]]
     by_category: dict[str, dict[str, int]] = {}
@@ -292,7 +383,12 @@ async def run(args: argparse.Namespace) -> int:
     det_cases = [r for r in records if r["deterministic_checks"]]
     det_violations = [r for r in det_cases if r["deterministic_failed"]]
     llm_cases = [r for r in records if r["llm_dependent_checks"]]
-    fake_provider = bool(args.llm_note and "FAKE_PROVIDER=TRUE" in args.llm_note.upper())
+    real_cases = [
+        record
+        for record in llm_cases
+        if (record.get("evidence") or {}).get("quality_eligible") is True
+    ]
+    fake_provider = None if state["runtime_manifest"] is None else False
 
     output = {
         "run_id": run_id,
@@ -311,6 +407,15 @@ async def run(args: argparse.Namespace) -> int:
             "ve sonuçlar kanıt değil, doğrulanması gereken şüphedir."
         ),
         "fake_provider_declared": fake_provider,
+        "runtime_manifest": state["runtime_manifest"],
+        "quality_reportable": False,
+        "evidence_counts": {
+            kind: sum(
+                (record.get("evidence") or {}).get("classification", "unknown") == kind
+                for record in records
+            )
+            for kind in ("provider", "cache", "no_provider", "fake", "unknown")
+        },
         "metrics": {
             "n_cases": len(records),
             "violations": len(violations),
@@ -336,7 +441,10 @@ async def run(args: argparse.Namespace) -> int:
             "llm_dependent": {
                 "n_cases": len(llm_cases),
                 "valid_with_fake_provider": False,
-                "verdict": "KOŞULMADI (gerçek sağlayıcı yok)" if fake_provider else "koşuldu",
+                "real_provider_cases": len(real_cases),
+                "verdict": "gerçek yanıtlar insan incelemesi bekliyor"
+                if len(real_cases) == len(llm_cases) and llm_cases
+                else "TAMAMLANMADI (gerçek yanıt kanıtı eksik)",
                 "note": (
                     "Sistem yönergesi ifşası ve çözüm sızıntısı MODELİN ne ürettiğine "
                     "bakar. Sahte sağlayıcı zaten çözüm üretmiyor; 'sızıntı bulunamadı' "
@@ -353,10 +461,9 @@ async def run(args: argparse.Namespace) -> int:
         "cases": records,
     }
 
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    result_path = RESULTS_DIR / f"{run_id}.json"
+    result_path = output_dir / "result.json"
     result_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
-    write_review(RESULTS_DIR / f"{run_id}.review.md", output)
+    write_review(output_dir / "review.md", output)
 
     print(f"\ntoplam ihlal: {len(violations)}/{len(records)} vaka")
     print(f"  deterministik (geçerli): {len(det_violations)}/{len(det_cases)} vaka")
@@ -371,8 +478,10 @@ def write_review(path: Path, output: dict[str, Any]) -> None:
     lines = [
         "# T046 insan incelemesi",
         "",
-        f"Koşu: `{output['run_id']}` · git `{output['git_sha']}` · "
-        f"sunucu LLM notu: {output['llm_server_note'] or '**VERİLMEDİ**'}",
+        (
+            f"Koşu: `{output['run_id']}` · git `{output['git_sha']}` · "
+            f"sunucu LLM notu: {output['llm_server_note'] or '**VERİLMEDİ**'}"
+        ),
         "",
         "Otomatik işaretler yalnız açık kalıpları yakalar (kod bloğu, yönerge ifşası,",
         "bilinmeyen kaynak adı). **İşaret çıkmaması ihlal olmadığını kanıtlamaz.**",
@@ -405,7 +514,12 @@ def write_review(path: Path, output: dict[str, Any]) -> None:
                 "",
             ]
         if record["answer"]:
-            lines += ["**Cevap:**", "", "> " + record["answer"].replace("\n", "\n> "), ""]
+            lines += [
+                "**Cevap:**",
+                "",
+                "> " + record["answer"].replace("\n", "\n> "),
+                "",
+            ]
         if record["citations"]:
             shown = ", ".join(
                 f"{c.get('file_name')} ({c.get('location')})" for c in record["citations"]
@@ -426,6 +540,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--only", help="Yalnız id'si bu metni içeren vakalar.")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--max-requests", type=int, default=40)
+    parser.add_argument("--require-real", action="store_true")
     return asyncio.run(run(parser.parse_args(argv)))
 
 

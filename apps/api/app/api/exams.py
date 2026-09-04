@@ -766,6 +766,31 @@ async def exam_results(
     return await _completed_results_out(session, exam)
 
 
+@router.get("/exams/{session_id}/answers/{question_id}", response_model=AnswerFeedbackOut)
+async def saved_practice_answer(
+    session_id: UUID,
+    question_id: UUID,
+    context: CourseMemberDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> AnswerFeedbackOut:
+    """Read owned practice feedback without grading or changing historical records."""
+    _require_workspace_enabled(settings)
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
+    exam = await _load_exam(session, session_id, context)
+    if exam.mode is not ExamMode.PRACTICE:
+        raise PermissionDeniedError("Sınav cevapları yalnız tamamlanan sonuç ekranında açılır.")
+    await _require_help_unlocked(session, context, settings=settings)
+    if question_id not in await paper_question_ids(session, exam):
+        raise NotFoundError("Bu soru bu alıştırma oturumunda yok.")
+    answer = await session.scalar(
+        select(Answer).where(Answer.session_id == exam.id, Answer.question_id == question_id)
+    )
+    if answer is None:
+        raise NotFoundError("Bu soru için kayıtlı cevap bulunamadı.")
+    return (await _saved_feedback(session, [answer]))[0]
+
+
 @router.get("/exams/{session_id}", response_model=ExamSessionOut)
 async def get_exam(
     session_id: UUID, context: CourseMemberDep, session: SessionDep

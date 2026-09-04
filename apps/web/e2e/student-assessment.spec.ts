@@ -59,7 +59,17 @@ test("öğrenci konu seçer, yayımlanan sınava döner ve kaynaklı sonucunu ye
   expect(practice.mode).toBe("practice");
   const wrongIndex = (question.payload.options as Array<{ key: string }>).findIndex((option) => option.key !== question.payload.answer_key);
   await page.getByRole("radio").nth(wrongIndex).check();
+  const draftKey = `dou-synapse:exam-drafts:v1:${student.id}:${course.id}:${practice.id}`;
+  await expect.poll(() => page.evaluate((key) => sessionStorage.getItem(key), draftKey)).not.toBeNull();
+  await page.reload();
+  await expect(page.getByRole("radio").nth(wrongIndex)).toBeChecked();
   await page.getByRole("button", { name: "Cevabı gönder", exact: true }).click();
+  await expect.poll(() => page.evaluate((key) => sessionStorage.getItem(key), draftKey)).toBeNull();
+  await expect(page.getByText("Neden yanlış?", { exact: true })).toBeVisible();
+  await expect(page.getByText("student-assessment.md", { exact: true }).first()).toBeVisible();
+  const feedbackRead = page.waitForResponse((response) => response.url() === `${base}/exams/${practice.id}/answers/${question.id}`);
+  await page.reload();
+  expect((await feedbackRead).ok()).toBeTruthy();
   await expect(page.getByText("Neden yanlış?", { exact: true })).toBeVisible();
   await expect(page.getByText("student-assessment.md", { exact: true }).first()).toBeVisible();
   await page.getByRole("button", { name: "Sınavı bitir", exact: true }).click();
@@ -82,6 +92,7 @@ test("öğrenci konu seçer, yayımlanan sınava döner ve kaynaklı sonucunu ye
   await expect(page.getByText("Neden yanlış?", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Cevap anahtarı", { exact: true })).toHaveCount(0);
   expect((await request.get(`${base}/exams/${practice.id}/results`, { headers: studentHeaders })).status()).toBe(403);
+  expect((await request.get(`${base}/exams/${practice.id}/answers/${question.id}`, { headers: studentHeaders })).status()).toBe(403);
   await page.getByRole("button", { name: "Yeni sınav başlat", exact: true }).click();
 
   // Simulate another device: no remembered id. Durable history still finds the session.

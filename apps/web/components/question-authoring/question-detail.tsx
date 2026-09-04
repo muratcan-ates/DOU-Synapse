@@ -5,6 +5,7 @@ import type { Question } from "@/lib/types";
 import { ErrorNote } from "@/components/page-state";
 import { SourceCard } from "@/components/source-card";
 import { Badge, Button, Card } from "@/components/ui";
+import { QuestionExamUsage } from "./question-exam-usage";
 import { DraftEditor } from "./draft-editor";
 
 export function QuestionDetail({
@@ -60,8 +61,9 @@ export function QuestionDetail({
         {" · "}Zorluk: {question.difficulty ? DIFFICULTY_LABEL[question.difficulty] : "Sınıflandırılmadı"}
       </p>
       {question.source_stale && <p role="status" className="prose-tr mb-4 rounded-lg border border-warning bg-warning-bg px-4 py-3 text-sm text-warning">
-        Bu sorunun kaynağı yeni bir sürümle değiştirilmiş. Onaylamadan önce güncel materyalle karşılaştırın.
+        Bu sorunun kaynağı yeni bir sürümle değiştirilmiş. Güncel materyalle karşılaştırın ve kullanıldığı sınavları gözden geçirin.
       </p>}
+      {question.source_stale && <QuestionExamUsage key={question.id} courseId={courseId} questionId={question.id} />}
       {outsideFilter && (
         <p className="mb-4 text-xs text-fg-muted">
           Bu soru seçili süzgeçte görünmüyor; kararınızı görebilesiniz diye

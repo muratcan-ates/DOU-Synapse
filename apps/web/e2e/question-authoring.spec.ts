@@ -41,6 +41,7 @@ test("eğitmen üretir, taslağı düzenler ve sınıflandırılmış soruyu yay
     },
   });
   expect(upload.ok()).toBeTruthy();
+  const { document } = await upload.json();
   await expect.poll(async () => {
     const response = await request.get(`${base}/documents`, { headers });
     const result = await response.json();
@@ -143,4 +144,32 @@ test("eğitmen üretir, taslağı düzenler ve sınıflandırılmış soruyu yay
       learning_outcome_id: outcome.id, difficulty: "medium" },
   });
   expect(forbiddenRewrite.status()).toBe(409);
+
+  const replacement = await request.post(`${base}/documents`, {
+    headers, multipart: {
+      replaces_document_id: document.id,
+      file: { name: "question-authoring-v2.md", mimeType: "text/markdown",
+        buffer: Buffer.from("# Deadlock — güncel\nDeadlock için karşılıklı dışlama, tut ve bekle, kesintisizlik ve dairesel bekleme koşulları birlikte gerekir.\n") },
+    },
+  });
+  expect(replacement.ok(), await replacement.text()).toBeTruthy();
+  await expect.poll(async () => {
+    const result = await (await request.get(`${base}/questions`, { headers })).json();
+    return result.items.find((item: { id: string }) => item.id === question.id)?.source_stale;
+  }).toBe(true);
+  await page.goto(`/courses/${course.id}/questions`);
+  await expect(page.getByRole("heading", { name: editedStem, exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Etkilenen sınavları göster", exact: true }).click();
+  await page.getByRole("link", { name: "Düzenlenmiş soru sınavı · 1. sürüm · Yayında", exact: true }).click();
+  await expect(page).toHaveURL(/blueprint_id=.*version_id=/);
+  const preview = page.getByRole("region", { name: "Kâğıt önizlemesi" });
+  await expect(preview).toBeVisible();
+  await expect(preview.getByRole("listitem").first()).toContainText(editedStem);
+  await expect(page.getByRole("button", { name: "Kâğıdı düzenle", exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 375, height: 812 });
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`affected-paper-375-${theme}.png`), fullPage: true });
+  }
 });

@@ -44,6 +44,7 @@ from app.contracts import (
     SocraticStage,
 )
 from app.core.config import Settings
+from app.core.provider_config import DEFAULT_LLM_PRIMARY_MODEL
 from app.modules.agent import quota as agent_quota
 from app.modules.assessment import exam_state
 from app.modules.generation import prompts as generation_prompts
@@ -107,8 +108,15 @@ def test_cache_identity_changes_with_audience_and_every_revision(
     assert candidate != base
 
 
-async def test_provider_budget_is_reserved_before_generation() -> None:
-    """The durable precharge callback runs before the provider seam."""
+@pytest.mark.parametrize(
+    ("model", "optimized"),
+    [
+        pytest.param("groq/llama-3.3-70b-versatile", True, id="measured-tokenizer"),
+        pytest.param(DEFAULT_LLM_PRIMARY_MODEL, False, id="unmeasured-default"),
+    ],
+)
+async def test_provider_budget_is_reserved_before_generation(model: str, optimized: bool) -> None:
+    """Reserve first; only a reviewed tokenizer may narrow the byte-safe ceiling."""
 
     chunk = make_chunk()
     events: list[str] = []
@@ -118,7 +126,11 @@ async def test_provider_budget_is_reserved_before_generation() -> None:
             events.append("provider")
             return await super().generate(**kwargs)
 
-    settings = Settings(dev_auth_enabled=True, evidence_threshold=0.35)
+    settings = Settings(
+        dev_auth_enabled=True,
+        evidence_threshold=0.35,
+        llm_primary_model=model,
+    )
     selected_chunks, byte_safe_ceiling = generation_prompts.fit_chunks_to_input_budget(
         "Deadlock nedir?",
         [chunk],
@@ -140,7 +152,10 @@ async def test_provider_budget_is_reserved_before_generation() -> None:
 
     async def reserve(input_token_ceiling: int) -> None:
         assert input_token_ceiling == expected_ceiling
-        assert input_token_ceiling < byte_safe_ceiling
+        if optimized:
+            assert input_token_ceiling < byte_safe_ceiling
+        else:
+            assert input_token_ceiling == byte_safe_ceiling
         events.append("reserve")
 
     outcome = await produce_answer(

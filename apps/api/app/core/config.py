@@ -9,8 +9,16 @@ from enum import StrEnum
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AliasChoices, Field, PostgresDsn, model_validator
+from pydantic import AliasChoices, Field, PostgresDsn, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.provider_config import (
+    DEFAULT_LLM_FALLBACK_MODEL,
+    DEFAULT_LLM_PRIMARY_MODEL,
+    configured_targets,
+    provider_of,
+    safe_model_id,
+)
 
 
 class Environment(StrEnum):
@@ -71,6 +79,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
     environment: Environment = Environment.LOCAL
@@ -216,6 +225,11 @@ class Settings(BaseSettings):
     #: Ölçüm koşularının kullandığı LLM anahtarı. Üretim anahtarından AYRI tutulur:
     #: bir ölçüm koşusu üretim kotasını tüketmemeli ve tersi de olmamalı.
     eval_llm_api_key: str | None = None
+    #: Explicit isolated evaluation runtime; merely setting a key does not activate it.
+    eval_llm_provider: Literal["groq", "gemini"] | None = None
+    eval_runtime_enabled: bool = False
+    #: Separate receipt authentication secret; never use an LLM key in a request header.
+    eval_runtime_secret: str | None = None
 
     # --- Worker tetiği (Faz G) ----------------------------------------------
     #: `POST /internal/drain` ucunu koruyan paylaşılan sır. Tanımsızsa uç KAPALIDIR
@@ -230,8 +244,8 @@ class Settings(BaseSettings):
 
     # --- LLM (Faz B) --------------------------------------------------------
     #: Sağlayıcı sırası: ilki denenir, hata/kota durumunda sıradakine düşülür.
-    llm_primary_model: str = "groq/llama-3.3-70b-versatile"
-    llm_fallback_model: str = "gemini/gemini-2.0-flash"
+    llm_primary_model: str = DEFAULT_LLM_PRIMARY_MODEL
+    llm_fallback_model: str = DEFAULT_LLM_FALLBACK_MODEL
     groq_api_key: str | None = None
     gemini_api_key: str | None = None
     # Two configured providers share a single role-aware request deadline. The
@@ -353,6 +367,38 @@ class Settings(BaseSettings):
                 "LLM_FAKE_PROVIDER üretim ortamında açılamaz. "
                 "Bu bayrak yalnız test ve çevrimdışı demo içindir."
             )
+        return self
+
+    @field_validator("eval_llm_provider", mode="before")
+    @classmethod
+    def _empty_eval_provider(cls, value: object) -> object:
+        return None if value == "" else value
+
+    @model_validator(mode="after")
+    def _isolate_evaluation_credentials(self) -> Settings:
+        if not self.eval_runtime_enabled:
+            return self
+        if self.is_production:
+            raise ValueError("EVAL_RUNTIME_ENABLED üretim ortamında açılamaz.")
+        if self.llm_fake_provider:
+            raise ValueError("Gerçek değerlendirme ortamında sahte sağlayıcı kullanılamaz.")
+        if not self.eval_llm_provider or not (self.eval_llm_api_key or "").strip():
+            raise ValueError("Değerlendirme için EVAL_LLM_PROVIDER ve EVAL_LLM_API_KEY zorunludur.")
+        targets = configured_targets(self)
+        if not targets or any(
+            provider_of(model) != self.eval_llm_provider or safe_model_id(model) == "<invalid>"
+            for model in targets
+        ):
+            raise ValueError("Tüm değerlendirme hedefleri EVAL_LLM_PROVIDER ile eşleşmelidir.")
+        if self.eval_runtime_secret and self.eval_runtime_secret == self.eval_llm_api_key:
+            raise ValueError("Değerlendirme erişim sırrı LLM anahtarından ayrı olmalıdır.")
+        if self.eval_llm_api_key in {self.groq_api_key, self.gemini_api_key}:
+            raise ValueError(
+                "Değerlendirme anahtarı bilinen uygulama anahtarından farklı olmalıdır."
+            )
+        # Override the actual runtime route; a fallback may never consume application quota.
+        self.groq_api_key = self.eval_llm_api_key if self.eval_llm_provider == "groq" else None
+        self.gemini_api_key = self.eval_llm_api_key if self.eval_llm_provider == "gemini" else None
         return self
 
     @model_validator(mode="after")

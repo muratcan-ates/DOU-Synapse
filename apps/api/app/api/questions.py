@@ -44,8 +44,10 @@ from app.core.pagination import paginate
 from app.core.rate_limit import get_concurrency_gate, get_limiter
 from app.models.assessment import (
     Answer,
+    ExamBlueprint,
     ExamItem,
     ExamSession,
+    ExamVersion,
     Question,
     QuestionStatus,
     QuestionType,
@@ -68,6 +70,7 @@ from app.schemas.assessment import (
     public_payload,
 )
 from app.schemas.page import PageOut
+from app.schemas.question_usage import QuestionExamUsageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["assessment"])
 
@@ -242,6 +245,45 @@ async def list_questions(
         for question in visible
     ]
     return PageOut(items=items, next_cursor=result.next_cursor)
+
+
+@router.get("/questions/{question_id}/exam-usage", response_model=PageOut[QuestionExamUsageOut])
+async def question_exam_usage(
+    question_id: UUID,
+    context: CourseInstructorDep,
+    session: SessionDep,
+    page: PageDep,
+) -> PageOut[QuestionExamUsageOut]:
+    """Locate affected papers without exposing student, answer or score data."""
+    await _load_question(session, question_id, context.course_id)
+    query = (
+        select(ExamVersion, ExamBlueprint.title)
+        .join(ExamBlueprint, ExamBlueprint.id == ExamVersion.blueprint_id)
+        .where(
+            ExamVersion.course_id == context.course_id,
+            ExamBlueprint.course_id == context.course_id,
+            exists().where(
+                ExamItem.exam_version_id == ExamVersion.id,
+                ExamItem.course_id == context.course_id,
+                ExamItem.question_id == question_id,
+            ),
+        )
+    )
+    result = await paginate(session, query, model=ExamVersion, page=page, scalars=False)
+    return PageOut(
+        items=[
+            QuestionExamUsageOut(
+                id=version.id,
+                blueprint_id=version.blueprint_id,
+                title=title,
+                version_id=version.id,
+                version_no=version.version_no,
+                status=version.status,
+            )
+            for version, title in result.rows
+        ],
+        next_cursor=result.next_cursor,
+    )
 
 
 @router.get("/questions/authoring", response_model=QuestionAuthoringOut)

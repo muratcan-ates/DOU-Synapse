@@ -53,12 +53,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 
 import goldset
 import metrics
 from _paths import GOLD_SET_DIR, REPO_ROOT, RESULTS_DIR, ensure_api_on_path
 from backends import BackendUnavailable, ChatBackend, RetrievalBackend, RetrievedItem
+from provenance import EvidenceError, digest, response_evidence
+from runtime_client import EvaluationStopped
 
 #: Sokratik modda çözümün sızdığına işaret eden AÇIK kalıplar. Liste bilinçli olarak
 #: dar: geniş tutulsaydı meşru kaynaklı ipuçları da işaretlenir ve insan incelemesi
@@ -90,8 +92,8 @@ REFUSAL_STATUSES = frozenset({"out_of_scope", "insufficient_context"})
 
 def git_sha() -> str:
     try:
-        return subprocess.run(  # noqa: S603
-            ["git", "-C", str(REPO_ROOT), "rev-parse", "--short", "HEAD"],  # noqa: S607
+        return subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
             check=True,
             capture_output=True,
             text=True,
@@ -111,6 +113,9 @@ def config_fingerprint(metadata: dict[str, Any]) -> str:
     material = {
         key: metadata[key]
         for key in (
+            "git_sha",
+            "course_id",
+            "corpus_digest",
             "set",
             "set_version",
             "layer",
@@ -170,7 +175,9 @@ def build_metadata(args: argparse.Namespace, gold: goldset.GoldSet) -> dict[str,
     # koşuluyor; sağlayıcı adı olmasaydı iki koşu aynı dakikada bitince ikincisi
     # birincinin sonuç dosyasının üzerine yazardı ve karşılaştırmanın bir kolu
     # sessizce kaybolurdu.
-    run_id = f"{started.strftime('%Y-%m-%dT%H%M')}-{gold.name}-{args.mode}-{provider}-{args.layer}"
+    run_id = (
+        f"{started.strftime('%Y-%m-%dT%H%M%S%f')}-{gold.name}-{args.mode}-{provider}-{args.layer}"
+    )
     return {
         "run_id": run_id,
         "started_at": started.isoformat(),
@@ -214,13 +221,14 @@ def build_metadata(args: argparse.Namespace, gold: goldset.GoldSet) -> dict[str,
             "primary": settings.llm_primary_model,
             "fallback": settings.llm_fallback_model,
             "fake_provider": settings.llm_fake_provider,
-            "separate_eval_key": bool(os.environ.get("EVAL_LLM_API_KEY")),
+            "quality_eligible": False,
+            "classification": "unknown" if args.layer == "e2e" else "no_provider",
             "api_url": args.api_url if args.layer == "e2e" else None,
             "server_config_note": args.llm_note if args.layer == "e2e" else None,
             "warning": (
                 "Bu değerler harness sürecinin ortamından okundu. Cevabı API sunucusu "
                 "üretti; sunucunun ayarı farklıysa buradaki satırlar YANILTICIDIR. "
-                "Sunucunun gerçek ayarını --llm-note ile kaydedin."
+                "Serbest not kanıt değildir; gerçek kalite için sunucu yanıt kanıtı gerekir."
             )
             if args.layer == "e2e"
             else None,
@@ -427,9 +435,8 @@ async def preflight_corpus(course_id: UUID, as_user: UUID) -> int:
     geçersiz kılar (Anayasa IV, fail-closed).
     """
     ensure_api_on_path()
-    from sqlalchemy import text
-
     from app.core.db import rls_session
+    from sqlalchemy import text
 
     async with rls_session(as_user) as session:
         result = await session.execute(
@@ -521,7 +528,44 @@ async def run_e2e_layer(
     results: list[dict[str, Any]] = []
     for item in items:
         if item.id in progress:
-            results.append(progress[item.id])
+            old = progress[item.id]
+            body = old.get("response_body")
+            mode = "socratic" if item.category == "socratic_leak" else chat_mode
+            if backend.runtime_manifest:
+                evidence = response_evidence(
+                    backend.runtime_manifest,
+                    old.get("response_receipt"),
+                    body,
+                    {"course_id": str(course_id), "question": item.question, "mode": mode},
+                )
+                if evidence["classification"] in {"unknown", "fake"} or not isinstance(body, dict):
+                    raise EvidenceError("Devam kaydı başka/eski sunucu veya soru isteğine ait.")
+                if any(old.get(key) != body.get(key) for key in ("status", "answer", "citations")):
+                    raise EvidenceError(
+                        "Devam kaydının görünen cevabı doğrulanmış gövdeden farklı."
+                    )
+                # Never trust cached derived metrics: regenerate from the bound body and gold.
+                answer, citations = str(body.get("answer", "")), list(body.get("citations", []))
+                old = {
+                    **old,
+                    "item_id": item.id,
+                    "category": item.category,
+                    "question": item.question,
+                    "chat_mode": mode,
+                    "evidence": evidence,
+                    "cached": bool(body.get("cached")),
+                    "citations_shown": len(citations),
+                    "citations_correct": sum(
+                        citation_is_correct(citation, item) for citation in citations
+                    ),
+                    "leak_flags": flag_patterns(answer, _LEAK_PATTERNS)
+                    if item.category == "socratic_leak"
+                    else [],
+                    "injection_flags": flag_patterns(answer, _INJECTION_PATTERNS)
+                    if item.category == "injection"
+                    else [],
+                }
+            results.append(old)
             continue
         # Sokratik sızıntı senaryoları Sokratik modda sorulur; onları qa modunda
         # sormak sızıntı testini anlamsız kılardı.
@@ -543,6 +587,11 @@ async def run_e2e_layer(
             "citations_shown": len(citations),
             "citations_correct": sum(1 for c in citations if citation_is_correct(c, item)),
             "cached": bool(response.get("cached")),
+            "response_body": response.get("_response_body"),
+            "response_receipt": response.get("_evaluation", {}).get("receipt"),
+            "evidence": response.get(
+                "_evaluation", {"quality_eligible": False, "classification": "unknown"}
+            ),
             "leak_flags": flag_patterns(answer, _LEAK_PATTERNS)
             if item.category == "socratic_leak"
             else [],
@@ -741,7 +790,8 @@ def score_e2e(entries: list[dict[str, Any]], gold: goldset.GoldSet) -> dict[str,
             ),
         },
         "latency_p95_seconds": metrics.percentile(
-            [entry["latency_seconds"] for entry in entries if not entry.get("cached")], 0.95
+            [entry["latency_seconds"] for entry in entries if not entry.get("cached")],
+            0.95,
         ),
         "cached_responses": sum(1 for entry in entries if entry.get("cached")),
     }
@@ -767,8 +817,10 @@ def write_review_file(path: Path, entries: list[dict[str, Any]]) -> None:
             "",
             f"**Soru:** {entry['question']}",
             "",
-            f"**Durum:** `{entry['status']}` · **Otomatik işaret:** "
-            f"{', '.join(flags) if flags else 'yok'}",
+            (
+                f"**Durum:** `{entry['status']}` · **Otomatik işaret:** "
+                f"{', '.join(flags) if flags else 'yok'}"
+            ),
             "",
             "**Cevap:**",
             "",
@@ -886,7 +938,11 @@ def compare_runs(baseline_path: Path, candidate_path: Path, results_dir: Path) -
         ("hit_at_5", lambda e: 1.0 if hit_at(e, 5) else 0.0, shared),
         ("hit_at_8", lambda e: 1.0 if hit_at(e, 8) else 0.0, shared),
         ("reciprocal_rank", reciprocal, shared),
-        ("full_coverage_at_8", lambda e: 1.0 if full_coverage(e, 8) else 0.0, multi_source),
+        (
+            "full_coverage_at_8",
+            lambda e: 1.0 if full_coverage(e, 8) else 0.0,
+            multi_source,
+        ),
     ):
         if not subset:
             continue
@@ -992,6 +1048,18 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     parser.add_argument("--limit", type=int, help="İlk N soru — oyuncak koşular için.")
     parser.add_argument("--concurrency", type=int, default=1)
+    parser.add_argument(
+        "--max-requests",
+        type=int,
+        default=30,
+        help="HTTP çağrı bütçesi; model iç denemeleri ayrıca sayılır.",
+    )
+    parser.add_argument(
+        "--require-real",
+        action="store_true",
+        help="Doğrulanmış değerlendirme sunucusu olmadan çağrı yapma.",
+    )
+    parser.add_argument("--eval-run-id", help="Aynı sunucu örneğinde koşuyu sürdürmek için UUID.")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
     parser.add_argument("--dry-run", action="store_true", help="Kaç istek atılacağını yaz ve çık.")
     parser.add_argument("--no-resume", action="store_true", help="Devam dosyasını yok say.")
@@ -1007,7 +1075,9 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         "kapısı; kullanıldığı sonuç dosyasına yazılır.",
     )
     parser.add_argument(
-        "--sweep-from", type=Path, help="Kayıtlı koşudan eşik taramasını yeniden hesapla."
+        "--sweep-from",
+        type=Path,
+        help="Kayıtlı koşudan eşik taramasını yeniden hesapla.",
     )
     parser.add_argument("--sweep-min", type=float, default=0.0)
     parser.add_argument("--sweep-max", type=float, default=1.0)
@@ -1032,7 +1102,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     if args.corpus:
         corpus = json.loads(args.corpus.read_text(encoding="utf-8"))
         args.course_id = args.course_id or corpus["course_id"]
-        args.as_user = args.as_user or corpus["instructor_id"]
+        args.as_user = args.as_user or corpus.get("student_id", corpus["instructor_id"])
         args.corpus_provider = corpus.get("embedding_provider")
         args.corpus_runtime = corpus.get("embedding_runtime")
         # Korpus özeti hangi veritabanında kurulduğunu taşıyorsa oraya bağlanılır.
@@ -1044,6 +1114,14 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
             os.environ["DATABASE_URL"] = args.database_url
         elif args.corpus_database:
             os.environ["DATABASE_URL"] = args.corpus_database
+    if args.database_url:
+        os.environ["DATABASE_URL"] = args.database_url
+    if args.corpus and args.layer == "retrieval" and corpus.get("database_identity"):
+        from build_corpus import database_identity
+
+        actual_dsn = args.database_url or os.environ.get("DATABASE_URL")
+        if not actual_dsn or database_identity(actual_dsn) != corpus["database_identity"]:
+            parser.error("--database-url / DATABASE_URL korpusun veritabanı kimliğiyle eşleşmeli.")
     if not args.course_id or not args.as_user:
         parser.error("--corpus ya da (--course-id ve --as-user) gerekir.")
     args.course_id = UUID(args.course_id)
@@ -1083,6 +1161,8 @@ async def execute(args: argparse.Namespace) -> int:
         return 1
 
     metadata = build_metadata(args, gold)
+    if args.corpus:
+        metadata["corpus_digest"] = digest(json.loads(args.corpus.read_text(encoding="utf-8")))
 
     # Korpus bir sağlayıcıyla gömüldü, sorgu başka biriyle gömülürse iki vektör ayrı
     # uzaylardadır: arama hata vermez, yalnız sonuçlar gürültü olur ve Recall sessizce
@@ -1119,7 +1199,10 @@ async def execute(args: argparse.Namespace) -> int:
             "corpus": args.corpus_runtime,
             "run": metadata["embedding_runtime"],
         }
-        print(f"  UYARI: {message} (--allow-runtime-mismatch ile geçildi)", file=sys.stderr)
+        print(
+            f"  UYARI: {message} (--allow-runtime-mismatch ile geçildi)",
+            file=sys.stderr,
+        )
 
     # Korpus görünür mü? Retrieval katmanı doğrudan veritabanına bağlanır; uçtan uca
     # katman API sunucusuna gider ve onun veritabanını buradan göremeyiz, o yüzden
@@ -1181,19 +1264,30 @@ async def execute(args: argparse.Namespace) -> int:
     try:
         if args.layer == "retrieval":
             backend = RetrievalBackend(
-                args.mode, as_user=UUID(str(args.as_user)), top_k=metadata["retrieval"]["top_k"]
+                args.mode,
+                as_user=UUID(str(args.as_user)),
+                top_k=metadata["retrieval"]["top_k"],
             )
             metadata["entry_point"] = backend.entry_point
             entries = await run_retrieval_layer(items, backend, runner, progress, args.course_id)
             computed = score_retrieval(entries, gold)
         else:
             token = args.token or f"dev:{args.as_user}"
-            async with ChatBackend(args.api_url, token) as chat:
+            async with ChatBackend(
+                args.api_url,
+                token,
+                secret=os.environ.get("EVAL_RUNTIME_SECRET"),
+                run_id=args.eval_run_id or str(uuid5(NAMESPACE_URL, fingerprint)),
+                candidate_sha=metadata["git_sha"],
+                require_real=args.require_real,
+                max_requests=args.max_requests,
+            ) as chat:
+                metadata["runtime_manifest"] = chat.runtime_manifest
                 entries = await run_e2e_layer(
                     items, chat, runner, progress, args.course_id, args.chat_mode
                 )
             computed = score_e2e(entries, gold)
-    except BackendUnavailable as error:
+    except (BackendUnavailable, EvidenceError, EvaluationStopped) as error:
         print(f"\nArka uç hazır değil:\n{error}", file=sys.stderr)
         return 2
     finally:
@@ -1215,6 +1309,19 @@ async def execute(args: argparse.Namespace) -> int:
     }
 
     args.results_dir.mkdir(parents=True, exist_ok=True)
+    if args.layer == "e2e":
+        metadata["evidence_counts"] = dict(
+            Counter(entry.get("evidence", {}).get("classification", "unknown") for entry in entries)
+        )
+        metadata["quality_reportable"] = (
+            False  # Human semantic/pedagogical review is still pending.
+        )
+        metadata["provider_calls"] = sum(
+            len(entry.get("response_receipt", {}).get("calls", []))
+            if isinstance(entry.get("response_receipt"), dict)
+            else 0
+            for entry in entries
+        )
     output = {**metadata, "metrics": computed, "per_item": entries}
     result_path = args.results_dir / f"{metadata['run_id']}.json"
     result_path.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")

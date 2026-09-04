@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "015-completion-candidate-r1",
+  "captured_at": "2026-09-04T14:34:52.792034+00:00",
+  "candidate_sha": "SELF",
+  "command": "Compare every original non-.ai tracked file byte-for-byte against git show 4f89369a9bcf380d5b671f0ffd323b3ee16396e6:path; fail on any mismatch. New exact commit governance check is recorded separately after commit.",
+  "environment": {
+    "os": "macOS",
+    "scope": "Local candidate reconstruction; no provider requests or database writes."
+  },
+  "results": {
+    "unchanged_tracked_product_files": 698,
+    "product_identity_mismatches": 0,
+    "docs_check_exit": 0
+  },
+  "product_snapshot_sha256": "a4ffbf3244fdcd1be9c72ce84bbfad8066a08d6d33638fe43a547e122a6747a4",
+  "inherited_verification": {
+    "source_candidate_sha": "4f89369a9bcf380d5b671f0ffd323b3ee16396e6",
+    "source_report_path": ".ai/evidence/015-completion-program-r1.json",
+    "source_report_sha256": "2849e7e4609555e61630bfd4537dab865b5a7e100708a8e3d692156af5b6aa43",
+    "results": {
+      "backend_tests_passed": 1154,
+      "frontend_library_tests_passed": 421,
+      "browser_tests_passed": 38,
+      "browser_tests_skipped": 0,
+      "governance_validator_tests_passed": 76,
+      "root_focused_tests_passed": 81,
+      "provider_focused_tests_passed": 151,
+      "quota_focused_tests_passed": 17,
+      "evaluation_focused_tests_passed": 107,
+      "independent_review_findings_fixed": 6,
+      "practice_lock_mutations_detected": 1,
+      "ruff_exit": 0,
+      "format_exit": 0,
+      "mypy_exit": 0,
+      "typecheck_exit": 0,
+      "production_web_build_exit": 0,
+      "docs_check_exit": 0,
+      "contrast_exit": 0,
+      "gold_set_integrity_exit": 0,
+      "openapi_paths": 57,
+      "offline_provider_calls": 0,
+      "corpus_smoke_chunks": 6,
+      "restore_public_tables": 27
+    },
+    "log_hashes": [
+      {
+        "path": "/private/tmp/dou015-full-tests-final.log",
+        "sha256": "edff087564eb0bb0f455ddad9f552c9a3ef6e79a30482116074754d5b3d6bb73"
+      },
+      {
+        "path": "/private/tmp/dou015-web-tests.log",
+        "sha256": "e5876a3afba04127841f7543297e0f1c94dcdb09be02608fa3a25c4766e31e79"
+      },
+      {
+        "path": "/private/tmp/dou015-e2e-final.log",
+        "sha256": "d3ca5db01269be58808599f91acf528d78bc5ea716ff56b228023fde629913e1"
+      },
+      {
+        "path": "/private/tmp/dou015-governance-tests.log",
+        "sha256": "132bb7cee128654ff930eb12af7034f76bc4421bbf59520bb163ce86a2617137"
+      },
+      {
+        "path": "/private/tmp/dou015-ai-candidate.log",
+        "sha256": "a5bd51e180c393b005ab6d39da793f6108385584523a4dc9171c6125070e0c66"
+      }
+    ],
+    "rerun_on_this_candidate": false,
+    "basis": "All original non-.ai tracked files match exactly; only new governance/correction documentation differs."
+  },
+  "rejected_candidate": {
+    "sha": "4f89369a9bcf380d5b671f0ffd323b3ee16396e6",
+    "branch": "015-completion-program",
+    "base_sha": "4e948d5fc5ec42f447838cb1e95e22f5881cb0fa",
+    "gate_result": "fail",
+    "error": "HUMAN_ANCHOR:015-completion-program-r1:human_anchor_ref",
+    "dossier_path": ".ai/changes/015-completion-program-r1.json",
+    "dossier_sha256": "eec924e2a5330db3398d40a8c8cf796110bd0b63043b1928cfb2e2cb5dc880c7",
+    "history_preserved": true
+  },
+  "limitations": [
+    "No real-provider semantic/pedagogical quality, live grading, teacher labels or human release approvals.",
+    "No main merge, PR CI, Docker build, staging deployment, real storage/auth/PITR or live rollback.",
+    "Draft recovery is tab-local; no cross-device unsent answer synchronization.",
+    "Receipts are trusted local runtime observations, not cryptographic remote code attestation.",
+    "New default model quota uses conservative byte ceiling until independent token calibration.",
+    "New candidate has identity verification; full application suites are inherited, not rerun. Original candidate remains governance-invalid."
+  ],
+  "privacy": "Synthetic fixtures only; reports exclude real student content, keys, raw connection strings and provider bodies.",
+  "fresh_verification": {
+    "docs_check": {
+      "exit": 0,
+      "log": "/private/tmp/dou015-candidate-docs.log",
+      "sha256": "b82d8410c63995d7dd0b7617ed6aa98c4bc50780788c839af0cd570fcd41149f",
+      "scope": "Frontend library execution, backend collection, browser collection and mypy; full API/browser suites not rerun."
+    }
+  }
+}

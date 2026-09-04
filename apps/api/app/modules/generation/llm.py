@@ -1,4 +1,4 @@
-"""LLM erişimi — Groq → Gemini otomatik failover (T009).
+"""LLM erişimi — yapılandırılmış hedefler arasında sınırlı failover (T009).
 
 Failover neden KOD seviyesinde: ücretsiz katmanda kota bir anda dolar ve 429
 döner. Elle model değiştirmek, sunum sırasında kimsenin yapamayacağı bir iştir;
@@ -33,6 +33,9 @@ from app.contracts import ChatMode, SocraticStage
 from app.core.config import Settings, get_settings
 from app.core.errors import AppError
 from app.core.logging import get_logger
+from app.core.provider_config import configured_targets, credential_for
+from app.core.provider_config import provider_of as provider_of
+from app.core.provider_evidence import observe_provider_call
 
 logger = get_logger("app.llm")
 
@@ -145,11 +148,6 @@ class LlmClient(Protocol):
     async def complete(self, request: LlmRequest) -> LlmCompletion: ...
 
 
-def provider_of(model: str) -> str:
-    """`groq/llama-3.3-70b` → `groq`. LiteLLM model adı sağlayıcıyı önek olarak taşır."""
-    return model.split("/", 1)[0] if "/" in model else model
-
-
 class LiteLlmClient:
     """LiteLLM üzerinden sırayla sağlayıcı deneyen istemci.
 
@@ -170,20 +168,10 @@ class LiteLlmClient:
     @property
     def _targets(self) -> list[str]:
         """Denenecek modeller, sırayla. Aynı model iki kez listelenmez."""
-        ordered = [self._settings.llm_primary_model, self._settings.llm_fallback_model]
-        seen: list[str] = []
-        for model in ordered:
-            if model and model not in seen:
-                seen.append(model)
-        return seen
+        return configured_targets(self._settings)
 
     def _api_key_for(self, model: str) -> str | None:
-        provider = provider_of(model)
-        if provider == "groq":
-            return self._settings.groq_api_key
-        if provider in {"gemini", "vertex_ai"}:
-            return self._settings.gemini_api_key
-        return None
+        return credential_for(self._settings, model)
 
     async def _load_completion_fn(self) -> Any:
         if self._completion_fn is not None:
@@ -260,54 +248,55 @@ class LiteLlmClient:
     async def _attempt(
         self, model: str, request: LlmRequest, *, budget: float, attempt: int
     ) -> LlmCompletion:
-        completion_fn = await self._load_completion_fn()
-        kwargs: dict[str, Any] = {
-            "model": model,
-            "messages": [
-                {"role": "system", "content": request.system},
-                {"role": "user", "content": request.user},
-            ],
-            "temperature": self._settings.llm_temperature,
-            "timeout": budget,
-        }
-        if request.max_tokens is not None:
-            kwargs["max_tokens"] = request.max_tokens
-        api_key = self._api_key_for(model)
-        if api_key:
-            kwargs["api_key"] = api_key
-        if request.json_output:
-            kwargs["response_format"] = {"type": "json_object"}
+        with observe_provider_call(provider_of(model), model):
+            completion_fn = await self._load_completion_fn()
+            kwargs: dict[str, Any] = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": request.system},
+                    {"role": "user", "content": request.user},
+                ],
+                "temperature": self._settings.llm_temperature,
+                "timeout": budget,
+            }
+            if request.max_tokens is not None:
+                kwargs["max_tokens"] = request.max_tokens
+            api_key = self._api_key_for(model)
+            if api_key:
+                kwargs["api_key"] = api_key
+            if request.json_output:
+                kwargs["response_format"] = {"type": "json_object"}
 
-        started = time.perf_counter()
-        async with asyncio.timeout(budget):
-            response = await completion_fn(**kwargs)
-        duration_ms = round((time.perf_counter() - started) * 1000, 1)
+            started = time.perf_counter()
+            async with asyncio.timeout(budget):
+                response = await completion_fn(**kwargs)
+            duration_ms = round((time.perf_counter() - started) * 1000, 1)
 
-        text = _extract_text(response)
-        prompt_tokens, completion_tokens = _extract_usage(response)
-        # Token kullanımı maskeli logger'a yazılır: kota tüketimini ölçmeden
-        # "ücretsiz katmana sığıyoruz" diyemeyiz (Anayasa III).
-        logger.info(
-            "llm cevabı üretildi",
-            extra={
-                "context": {
-                    "provider": provider_of(model),
-                    "model": model,
-                    "attempt": attempt,
-                    "duration_ms": duration_ms,
-                    "prompt_tokens": prompt_tokens,
-                    "completion_tokens": completion_tokens,
-                }
-            },
-        )
-        return LlmCompletion(
-            text=text,
-            provider=provider_of(model),
-            model=model,
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            duration_ms=duration_ms,
-        )
+            text = _extract_text(response)
+            prompt_tokens, completion_tokens = _extract_usage(response)
+            # Token kullanımı maskeli logger'a yazılır: kota tüketimini ölçmeden
+            # "ücretsiz katmana sığıyoruz" diyemeyiz (Anayasa III).
+            logger.info(
+                "llm cevabı üretildi",
+                extra={
+                    "context": {
+                        "provider": provider_of(model),
+                        "model": model,
+                        "attempt": attempt,
+                        "duration_ms": duration_ms,
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                    }
+                },
+            )
+            return LlmCompletion(
+                text=text,
+                provider=provider_of(model),
+                model=model,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                duration_ms=duration_ms,
+            )
 
 
 def _backoff_for(attempt: int) -> float:

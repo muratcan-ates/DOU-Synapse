@@ -1,0 +1,3 @@
+# Decisions — 015
+
+The 014 code already implements course-scoped RAG, approved questions, timed exams, citations and guarded saved results. Remaining work must extend those paths rather than create parallel products. Existing EVAL_LLM_API_KEY metadata was not proof of actual runtime use; arbitrary llm_note is not provenance. Real access and real quality are distinct. Existing human faithfulness scoring supports independent labels and should be reused. Current local keys are absent (presence inspected only). Model defaults are verified against official provider documentation before changes. sessionStorage is suitable for reload recovery within a tab, not cross-device persistence. Existing source-stale warning needs affected-version navigation, not historical mutation.

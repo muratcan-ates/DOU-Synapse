@@ -183,7 +183,13 @@ class TestBlueprintRouter:
         }
         assert workspace_yollari <= yollar
         assert all("get" in app.openapi()["paths"][path] for path in workspace_yollari)
-        assert len(yollar) == 55, f"yol sayısı değişmiş: {len(yollar)}"
+        continuity_yollari = {
+            "/courses/{course_id}/exams/{session_id}/answers/{question_id}",
+            "/courses/{course_id}/questions/{question_id}/exam-usage",
+        }
+        assert continuity_yollari <= yollar
+        assert all("get" in app.openapi()["paths"][path] for path in continuity_yollari)
+        assert len(yollar) == 57, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

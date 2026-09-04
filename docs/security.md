@@ -359,8 +359,8 @@ aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 1040 test   # docs-check: backend.tests = 1040
-cd apps/api && uv run mypy app                  # temiz, 99 dosya   # docs-check: backend.mypyFiles = 99
+cd apps/api && uv run pytest -q                 # 1154 test   # docs-check: backend.tests = 1154
+cd apps/api && uv run mypy app                  # temiz, 105 dosya   # docs-check: backend.mypyFiles = 105
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -389,3 +389,11 @@ sonuçlar hem yeni üretimde hem geçmiş gösteriminde puansız ve çözümsüz
 Süre ve giriş penceresi kontrolleri kilit beklemesinden sonraki veritabanı saatini kullanır.
 PostgreSQL transaction başlangıcına sabitlenen `now()` ile geç gelen cevap kabul edilmez;
 ipucu da kilit alındıktan sonra güncel oturum durumunu yükler.
+
+## 015 çalışma sürekliliği ve değerlendirme kanıtı
+
+Kayıtlı alıştırma geri bildirimi, üye olmanın yanında açık oturum sahipliği gerektirir; eğitmenin daha geniş RLS okuma yetkisi öğrencinin yanıtını bu uçtan açmaz. Yardım okuması sınav başlangıcıyla aynı kullanıcı kilidini alır. Kaynak yeniden doğrulanır; okuma puan/mastery değiştirmez. Soru kullanım listesi yalnız ders eğitmenine sınav sürümü başlık/durum bilgisi açar.
+
+Gönderilmemiş tarayıcı taslakları sessionStorage içinde kullanıcı/ders/oturum kapsamında tutulur; anahtar, kaynak, geri bildirim veya kimlik belirteci içermez. Geri yükleme sunucunun doğruladığı oturumdan sonra yapılır; gönderme, bitirme, süre dolması, kayıp oturum ve çıkış temizliği vardır. Bu depolama XSS için ayrı bir güvenlik sınırı değildir ve cihazlar arası eşitleme sağlamaz.
+
+Değerlendirme kanıt uçları varsayılan kapalı ayrı runtime moduna ve ayrı sırra bağlıdır; üretimde bu mod reddedilir. Gerçek sağlayıcıya ulaşılmadığını belirten sonuçlar gerçek cevap kalite kanıtı sayılmaz. Anahtar değerleri/ham bağlantı dizeleri raporlanmaz. Değerlendirme verileri yalnız izole, sentetik veri tabanında hazırlanır.

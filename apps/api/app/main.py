@@ -32,6 +32,7 @@ from app.api import (
     questions,
     sources,
 )
+from app.api.evaluation_runtime import initialize_evaluation_runtime
 from app.core.config import get_settings
 from app.core.db import dispose_engine
 from app.core.errors import (
@@ -82,6 +83,8 @@ def create_app() -> FastAPI:
         version=settings.api_version,
         lifespan=lifespan,
     )
+
+    initialize_evaluation_runtime(app, settings)
 
     app.add_middleware(
         CORSMiddleware,

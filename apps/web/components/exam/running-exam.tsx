@@ -6,16 +6,20 @@ import { canSubmitAnswer, describeQuestion, EXAM_MODE, formatClock, isLastMinute
   nextHintLevel, shownQuestions, showsHints, sourceInfo, tickRemaining, timeIsUp, timeNotice } from "@/lib/exam";
 import type { AnswerFeedback, ExamFinish, ExamHint, ExamSession } from "@/lib/types";
 import { useSubmit } from "@/lib/use-submit";
-import { examStateChanged } from "@/lib/chat-availability";
-import { ErrorNote } from "@/components/page-state";
+import { useExamDrafts } from "@/lib/use-exam-drafts";
+import { examStateChanged, type ChatLock } from "@/lib/chat-availability";
+import { ErrorNote, Loading } from "@/components/page-state";
 import { SourceCard } from "@/components/source-card";
 import { Badge, Button, ConfirmAction, EmptyState } from "@/components/ui";
 import { QuestionBody, AnswerInput } from "@/components/exam/question-input";
 import { FeedbackPanel } from "@/components/exam/feedback-panel";
+import { SavedPracticeFeedback } from "@/components/exam/saved-practice-feedback";
 import { FinishedExam } from "@/components/exam/finished-exam";
 
 export function RunningExam({
   courseId,
+  userId,
+  helpLock,
   session,
   refreshError,
   onReload,
@@ -23,6 +27,8 @@ export function RunningExam({
   historyEnabled,
 }: {
   courseId: string;
+  userId: string;
+  helpLock: ChatLock;
   session: ExamSession;
   refreshError: string | null;
   onReload: () => Promise<void>;
@@ -32,10 +38,25 @@ export function RunningExam({
   const questions = shownQuestions(session);
 
   const [index, setIndex] = useState(0);
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const draftStore = useExamDrafts({ userId, courseId, sessionId: session.id }, session, historyEnabled);
+  const drafts = draftStore.drafts;
+  const [submitted, setSubmitted] = useState<Record<string, string>>({});
+  const helpAvailable = session.mode === "exam" ||
+    (helpLock.ready && !helpLock.locked && !helpLock.error && !helpLock.refreshError);
   const [feedbacks, setFeedbacks] = useState<Record<string, AnswerFeedback>>({});
   const [hints, setHints] = useState<Record<string, ExamHint[]>>({});
   const [finish, setFinish] = useState<ExamFinish | null>(null);
+  useEffect(() => {
+    const refresh = () => { void helpLock.reload(); };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [helpLock.reload]);
+  useEffect(() => {
+    if (session.mode === "practice" && !helpAvailable) {
+      setFeedbacks({});
+      setHints({});
+    }
+  }, [session.mode, helpAvailable]);
 
   /*
    * Cevap gönderme ve ipucu isteme aynı kancada: `busy` ve hata satırı zaten
@@ -59,6 +80,9 @@ export function RunningExam({
           { question_id: task.questionId, given: task.given, hint_level: task.hintLevel },
         );
         setFeedbacks((prev) => ({ ...prev, [task.questionId]: result }));
+        setSubmitted((prev) => ({ ...prev, [task.questionId]: task.given }));
+        draftStore.discard(task.questionId);
+        await onReload();
         return;
       }
       const hint = await api.post<ExamHint>(`/courses/${courseId}/exams/${session.id}/hint`, {
@@ -157,7 +181,7 @@ export function RunningExam({
   const upcomingHint = nextHintLevel(lastRung);
 
   const submittable =
-    view.kind !== "unsupported" &&
+    view.kind !== "unsupported" && draftStore.ready && helpAvailable &&
     canSubmitAnswer({
       session,
       question: { ...question, answered },
@@ -225,6 +249,7 @@ export function RunningExam({
               const result = await api.post<ExamFinish>(
                 `/courses/${courseId}/exams/${session.id}/finish`,
               );
+              draftStore.clear();
               setFinish(result);
               // Kilit kalkışı da haber verilir: kilitliyken koşan yoklama bunu
               // 30 saniye içinde görürdü, ama bekletmenin bir sebebi yok.
@@ -255,6 +280,13 @@ export function RunningExam({
         </div>
       )}
 
+      {session.mode === "practice" && !helpAvailable && (
+        <div className="mb-6">
+          {!helpLock.ready ? <Loading label="Çalışma durumu doğrulanıyor…" /> :
+            helpLock.error || helpLock.refreshError ? <ErrorNote message={helpLock.error ?? helpLock.refreshError ?? ""} onRetry={helpLock.reload} /> :
+            <p role="status" className="prose-tr text-sm text-fg-muted">{helpLock.message}</p>}
+        </div>
+      )}
       <QuestionBody
         view={view}
         headingRef={questionRef}
@@ -270,8 +302,8 @@ export function RunningExam({
       ) : answered ? (
         <div className="mt-6 rounded-lg border border-border bg-surface p-4">
           <p className="text-sm text-fg-muted">Bu soruyu cevapladınız.</p>
-          {draft.trim() !== "" && (
-            <p className="prose-tr mt-2 text-sm text-fg">Gönderdiğiniz cevap: {draft.trim()}</p>
+          {(submitted[question.id] ?? "").trim() !== "" && (
+            <p className="prose-tr mt-2 text-sm text-fg">Gönderdiğiniz cevap: {submitted[question.id]}</p>
           )}
         </div>
       ) : (
@@ -279,11 +311,17 @@ export function RunningExam({
           view={view}
           questionId={question.id}
           draft={draft}
-          disabled={timeUp}
-          onChange={(value) => setDrafts((prev) => ({ ...prev, [question.id]: value }))}
+          disabled={timeUp || !draftStore.ready || !helpAvailable}
+          onChange={(value) => draftStore.change(question.id, value)}
         />
       )}
 
+      {!answered && historyEnabled && (
+        <p role="status" className="prose-tr mt-2 text-xs text-fg-muted">
+          {!draftStore.available ? "Tarayıcı taslağı saklayamıyor. Sayfayı yenilemeden cevabınızı gönderin." :
+            draft.length > 0 ? "Gönderilmemiş taslağınız bu sekmede saklandı. Sekmeyi kapatınca veya çıkış yapınca silinir." : ""}
+        </p>
+      )}
       {!answered && view.kind !== "unsupported" && (
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Button aria-disabled={!submittable || busy} onClick={() => void submit()}>
@@ -293,7 +331,7 @@ export function RunningExam({
             İpucu yüzeyi sınav modunda HİÇ çizilmez (sunucu 403 verir); merdivenin
             son kademesinde de düğme kalmaz — iş yapmayan buton kusurdur.
           */}
-          {showsHints(session.mode) && upcomingHint !== null && !timeUp && (
+          {showsHints(session.mode) && helpAvailable && upcomingHint !== null && !timeUp && (
             <Button variant="secondary" aria-disabled={busy} onClick={() => void askHint(upcomingHint)}>
               {rungs.length === 0 ? "İpucu al" : "Sonraki ipucu"}
             </Button>
@@ -307,9 +345,11 @@ export function RunningExam({
         </div>
       )}
 
-      {rungs.length > 0 && <HintLadder rungs={rungs} />}
+      {helpAvailable && rungs.length > 0 && <HintLadder rungs={rungs} />}
 
-      {feedback && <FeedbackPanel feedback={feedback} />}
+      {session.mode === "practice" && historyEnabled ? (
+        answered && helpAvailable && <SavedPracticeFeedback key={question.id} courseId={courseId} sessionId={session.id} questionId={question.id} onLocked={helpLock.reload} />
+      ) : helpAvailable && feedback && <FeedbackPanel feedback={feedback} />}
 
       <div className="mt-10 flex items-center justify-between gap-4">
         {/*

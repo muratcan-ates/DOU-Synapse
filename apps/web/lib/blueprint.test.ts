@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   cellKey,
+  blueprintVersionHref,
   editingNoticeFor,
   hasDuplicateCells,
   readinessCounts,
@@ -140,5 +141,17 @@ describe("editingNoticeFor", () => {
 
   test("yayınlanmış sürüm yoksa uyarı da yok", () => {
     expect(editingNoticeFor(blueprint(null))).toBeNull();
+  });
+});
+
+
+describe("kaynak değişikliğinden sınav sürümüne geçiş", () => {
+  test("ders yolu ve iki ayrı sürüm kimliği güvenli kodlanır", () => {
+    const href = blueprintVersionHref("ders/1", "b&diğer=2", "v#3");
+    const parsed = new URL(href, "https://example.test");
+    expect(parsed.pathname).toBe("/courses/ders%2F1/blueprints");
+    expect(parsed.searchParams.get("blueprint_id")).toBe("b&diğer=2");
+    expect(parsed.searchParams.get("version_id")).toBe("v#3");
+    expect(parsed.hash).toBe("");
   });
 });

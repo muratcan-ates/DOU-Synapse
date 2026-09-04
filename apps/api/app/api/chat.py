@@ -48,7 +48,7 @@ import time
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import insert as sa_insert
 from sqlalchemy import select
@@ -81,6 +81,7 @@ from app.api.deps import (
     SettingsDep,
     UnlockedCourseMemberDep,
 )
+from app.api.evaluation_runtime import EvaluationContextDep, attach_evaluation_receipt
 from app.contracts import (
     AnswerStatus,
     AssistantAudience,
@@ -104,6 +105,7 @@ from app.core.pagination import (
     encode_time_cursor,
     paginate_keyset,
 )
+from app.core.provider_config import evaluation_request_digest
 from app.core.rate_limit import get_concurrency_gate, get_limiter, reset_rate_limit
 from app.models.chat import (
     ChatMessage,
@@ -273,6 +275,9 @@ def _citation_out_from_json(raw: dict[str, Any]) -> CitationOut:
 @router.post("/chat", response_model=ChatResponse)
 async def post_chat(
     payload: ChatRequest,
+    request: Request,
+    response: Response,
+    evaluation: EvaluationContextDep,
     context: UnlockedCourseMemberDep,
     session: SessionDep,
     settings: SettingsDep,
@@ -557,7 +562,7 @@ async def post_chat(
     # (`_load_or_create_session`), üretecin döndürdüğü alan ise yalnız bir yankı. Sahte
     # bir üreteç yanlış modu yankılarsa zarf Sokratik turu QA gibi gösterirdi.
     answer.mode = chat_session.mode
-    return to_chat_response(
+    result = to_chat_response(
         answer,
         session_id=chat_session.id,
         message_id=assistant_message.id,
@@ -565,6 +570,22 @@ async def post_chat(
         cached=cached_answer is not None,
         audience=audience,
     )
+
+    attach_evaluation_receipt(
+        evaluation,
+        request,
+        response,
+        result.model_dump(mode="json"),
+        cached=cached_answer is not None,
+        request_digest=evaluation_request_digest(
+            course_id=str(context.course_id),
+            question=payload.question,
+            mode=payload.mode.value,
+            session_id=str(payload.session_id) if payload.session_id else None,
+            student_attempt=payload.student_attempt,
+        ),
+    )
+    return result
 
 
 @router.get("/chat/availability", response_model=ChatAvailabilityOut)

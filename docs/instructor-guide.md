@@ -231,3 +231,11 @@ Açık uçlu/kod değerlendirmesi okunabilir ders kaynağına bağlanamazsa sist
 tek başına pedagojik doğruluk kanıtı değildir; gerçek ders materyalinde puan/rubrik ve
 “Neden yanlış?” açıklamalarını örnek cevaplarla ayrıca inceleyin. Yerel sahte sağlayıcı
 testleri gerçek model başarı raporunun yerine geçmez.
+
+## Kaynak değişikliğinden etkilenen sınavlar (015)
+
+Bir belgenin yeni sürümünü yüklediğinizde eski kaynağa bağlı soru ayrıntısında **Etkilenen sınavları göster** düğmesi görünür. Liste, soruyu kullanan taslak, yayındaki ve önceki sınav sürümlerini gösterir. Bir bağlantı ilgili sınavın doğru sürümünü **Kâğıt önizlemesi** olarak açar.
+
+Yayımlanmış veya incelenmiş sorunun geçmişi değiştirilmez. Güncel materyal yeni soru gerektiriyorsa yeni soruyu gözden geçirip onaylayın, ardından yeni sınav sürümü hazırlayın. Eski sürüm listesi öğrenci yanıtlarını veya kişisel sonuçları içermez.
+
+Gerçek model kabulü için [değerlendirme paketi](../evaluation/acceptance/README.md) kullanılmalıdır. Çevrimdışı kurulum kontrolü ve yerel sahte yanıtlar pedagojik başarı raporu değildir; kaynak uygunluğu ve puanlama ölçütlerini bağımsız değerlendirmeniz gerekir.

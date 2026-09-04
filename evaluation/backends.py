@@ -21,7 +21,7 @@ import importlib
 import inspect
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Protocol, Self
 from uuid import UUID
 
 from _paths import ensure_api_on_path
@@ -119,7 +119,12 @@ def _build_arguments(
     parametre adını değiştirmesi koşuyu sessizce değil ama anlaşılmaz biçimde
     kırardı; burada eksik parametre açıkça raporlanır.
     """
-    available = {"session": session, "course_id": course_id, "query": query, "limit": limit}
+    available = {
+        "session": session,
+        "course_id": course_id,
+        "query": query,
+        "limit": limit,
+    }
     parameters = inspect.signature(function).parameters
     arguments: dict[str, Any] = {}
     for role, aliases in _PARAMETER_ALIASES.items():
@@ -253,29 +258,43 @@ class ChatBackend:
     alan alan yazıldı ki bir sonraki değişiklik gözden kaçmasın.
     """
 
-    def __init__(self, base_url: str, token: str, *, timeout: float = 60.0) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        token: str,
+        *,
+        timeout: float = 60.0,
+        **evaluation_options: Any,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self._token = token
         self._timeout = timeout
         self._client: Any = None
+        self._evaluation_options = evaluation_options
 
     @property
     def calls_llm(self) -> bool:
         return True
 
-    async def __aenter__(self) -> ChatBackend:
-        import httpx
+    async def __aenter__(self) -> Self:
+        from runtime_client import EvaluationClient
 
-        self._client = httpx.AsyncClient(
-            base_url=self.base_url,
-            headers={"Authorization": f"Bearer {self._token}"},
+        self._client = EvaluationClient(
+            self.base_url,
+            self._token,
             timeout=self._timeout,
+            **self._evaluation_options,
         )
+        await self._client.__aenter__()
         return self
+
+    @property
+    def runtime_manifest(self) -> dict[str, Any] | None:
+        return self._client.runtime if self._client else None
 
     async def __aexit__(self, *exc_info: object) -> None:
         if self._client is not None:
-            await self._client.aclose()
+            await self._client.__aexit__(*exc_info)
             self._client = None
 
     async def ask(self, question: str, course_id: UUID, *, mode: str = "qa") -> dict[str, Any]:
@@ -293,4 +312,9 @@ class ChatBackend:
         # 429 ve 5xx çağırana bırakılır: yeniden deneme ve backoff kararı kuyruğundur,
         # tek bir isteğin değil.
         response.raise_for_status()
-        return dict(response.json())
+        body = dict(response.json())
+        return {
+            **body,
+            "_evaluation": self._client.evidence(response),
+            "_response_body": body,
+        }

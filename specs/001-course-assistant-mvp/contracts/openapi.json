@@ -1928,6 +1928,96 @@
         }
       }
     },
+    "/courses/{course_id}/questions/{question_id}/exam-usage": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Question Exam Usage",
+        "description": "Locate affected papers without exposing student, answer or score data.",
+        "operationId": "question_exam_usage_courses__course_id__questions__question_id__exam_usage_get",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOut_QuestionExamUsageOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/questions/authoring": {
       "get": {
         "tags": [
@@ -2752,6 +2842,72 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExamFinishOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/{session_id}/answers/{question_id}": {
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Saved Practice Answer",
+        "description": "Read owned practice feedback without grading or changing historical records.",
+        "operationId": "saved_practice_answer_courses__course_id__exams__session_id__answers__question_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerFeedbackOut"
                 }
               }
             }
@@ -7910,6 +8066,33 @@
         ],
         "title": "PageOut[ExamSessionOut]"
       },
+      "PageOut_QuestionExamUsageOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionExamUsageOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[QuestionExamUsageOut]"
+      },
       "PageOut_QuestionOut_": {
         "properties": {
           "items": {
@@ -8201,6 +8384,46 @@
         ],
         "title": "QuestionDraftRequest",
         "description": "Tam taslak değişimi; kimlik, kaynak ve inceleme alanları düzenlenemez."
+      },
+      "QuestionExamUsageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "blueprint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Blueprint Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "version_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Version Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExamVersionStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "blueprint_id",
+          "title",
+          "version_id",
+          "version_no",
+          "status"
+        ],
+        "title": "QuestionExamUsageOut"
       },
       "QuestionGenerateRequest": {
         "properties": {

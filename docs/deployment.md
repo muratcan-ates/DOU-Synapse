@@ -44,7 +44,7 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 | `SUPABASE_JWT_SECRET` | Supabase JWT'lerini doğrular. Yoksa ve dev-auth da kapalıysa uygulama **başlamaz** |
 | `SUPABASE_JWT_ISSUER` | Beklenen `iss` claim'i — Supabase proje URL'sinin `/auth/v1` eki. **Boş bırakılırsa issuer doğrulanmaz** ve başka bir Supabase projesinin token'ı da kabul edilir. İmza doğrulaması etkilenmez; kaybedilen katman issuer sabitlemesidir. Üretimde doldurun |
 | `CORS_ORIGINS` | JSON dizisi. Üretimde yalnız gerçek Vercel alan adı |
-| `GROQ_API_KEY`, `GEMINI_API_KEY` | LLM sağlayıcıları; ilki düşerse ikincisine otomatik geçilir |
+| `GROQ_API_KEY`, `GEMINI_API_KEY` | Yapılandırılmış hedefin sağlayıcısına ait anahtar gerekir. Genel istemci sınırlı failover uygular; kota korumalı ders sohbeti tek deneme yapar. Varsayılan iki hedef de Groq kullanır ve aynı sağlayıcı/kota arızasını paylaşır. [Sağlayıcı ön kontrolü](provider-readiness.md) |
 | `WORKER_DRAIN_SECRET` | `POST /internal/drain` ucunu korur. **Boşsa uç 404 döner** (fail-closed) |
 | `EMBEDDING_PROVIDER` | Üretimde `fastembed`. **İngest zamanı ayarıdır** — değiştirmek tüm korpusun yeniden işlenmesini gerektirir |
 | `EMBEDDING_CACHE_DIR` | İmajda `/opt/models`; Dockerfile ayarlar |
@@ -300,3 +300,10 @@ yeniden puanlamayın. Canlı rollback provası bu yerel teslimde yapılmadı.
 014, henüz main'e alınmamış yerel013 değişikliğinin üzerine kuruludur. Canlıya geçişten
 önce tam birleşik aday, migration sırası, gerçek sağlayıcı değerlendirmesi ve bağımsız
 mühendislik/eğitim/güvenlik onayı doğrulanmalıdır. Yerel test sonucu yayın onayı değildir.
+
+
+## 015 değerlendirme ve çalışma sürekliliği
+
+Yeni kayıtlı alıştırma geri bildirimi mevcut `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` bayrağına bağlıdır. Bayrak kapalıyken yeni geri bildirim/geçmiş/sonuç uçları503 verir; temel sınav bitirme ve kaynak/süre korumaları sürer. Soru kullanım listesi ders eğitmeni yetkisiyle salt okunur sürüm bilgisi sunar; yeni göç yoktur.
+
+Değerlendirme modu üretimde kapalıdır. `EVAL_RUNTIME_ENABLED=false` ve boş değerlendirme sırrı varsayılandır. Ayrı anahtar, loopback, güvenilir çalışma/yanıt kanıtı ve sınırlı çağrı komutları için [sağlayıcı hazırlığı](provider-readiness.md) ile [kabul paketi](../evaluation/acceptance/README.md) kullanılır. Çevrimdışı kontrol veya sentetik yedek geri yükleme, gerçek sağlayıcı/staging/PITR kanıtı değildir. Tam durum [015 doğrulaması](../specs/015-completion-program/verification.md) ve [teslim incelemesinde](../specs/015-completion-program/release-review.md) kayıtlıdır.

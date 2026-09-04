@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1040_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1040 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-411_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 411 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1154_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1154 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-421_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 421 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -465,8 +465,8 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1040** <!-- docs-check: backend.tests = 1040 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **411** <!-- docs-check: frontend.tests = 411 --> | 37 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 37 --> |
+| Backend testleri | **1154** <!-- docs-check: backend.tests = 1154 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **421** <!-- docs-check: frontend.tests = 421 --> | 38 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 38 --> |
 | Playwright gerçek-API vakaları | **38** <!-- docs-check: e2e.tests = 38 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 38/38; gerçek provider/staging kanıtı değil |
 | Migration | **17** <!-- docs-check: migrations.count = 17 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
@@ -784,7 +784,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1040 testtir. <!-- docs-check: backend.tests = 1040 -->
+Güncel feature kanıtında backend koleksiyonu 1154 testtir. <!-- docs-check: backend.tests = 1154 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -798,7 +798,7 @@ Güncel feature kanıtında backend koleksiyonu 1040 testtir. <!-- docs-check: b
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 411 testtir. <!-- docs-check: frontend.tests = 411 -->
+Güncel feature kanıtında frontend kütüphane paketi 421 testtir. <!-- docs-check: frontend.tests = 421 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 
@@ -914,3 +914,7 @@ ortamında açılır. Bu değişiklik main/staging/üretim yayını değildir. K
 kanıtlar: [014 gereksinimleri](specs/014-student-assessment/spec.md),
 [hocanın mailiyle eşleme](specs/014-student-assessment/mail-acceptance.md),
 [014 doğrulama raporu](specs/014-student-assessment/verification.md).
+
+## CourseGPT tamamlama programı
+
+Kalan işlerin sırası, tamamlanma ölçütleri ve dış girdiler [tamamlama programında](docs/completion-program.md) tutulur. 015 yerel geliştirmesi için [özellik sözleşmesi](specs/015-completion-program/spec.md), [doğrulama kaydı](specs/015-completion-program/verification.md) ve [entegrasyon/teslim incelemesi](specs/015-completion-program/release-review.md) kaynak alınır. Yerel test ile gerçek model/hoca kabulü ve canlı yayın ayrı aşamalardır.

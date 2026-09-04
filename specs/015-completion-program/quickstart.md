@@ -1,0 +1,3 @@
+# Local verification — 015
+
+Use isolated PostgreSQL DB names in plan.md; never point destructive test fixtures or corpus builder at a shared database. Install locked API development dependencies and web dependencies. Set feature flags explicitly in synthetic browser runs. Run focused tests first, then the unified gates recorded in verification.md. Provider preflight defaults offline; explicitly requested probes need real keys and bounded calls. Evaluation receipt/acceptance commands are documented under evaluation/acceptance and provider docs by their owners. Missing external credentials and human labels remain pending, not passed. The canonical next action is docs/completion-program.md.

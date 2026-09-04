@@ -28,6 +28,7 @@
  *   exam modunda mcq   → graded: true, is_correct: null, score: null, solution: null
  */
 
+import { ANSWER_MAX_LENGTH } from "@/lib/exam-limits";
 import { ApiError } from "@/lib/api";
 import type { Tone } from "@/lib/labels";
 import type { AnswerFeedback, ExamMode, ExamQuestion, ExamSession } from "@/lib/types";
@@ -37,7 +38,7 @@ import type { AnswerFeedback, ExamMode, ExamQuestion, ExamSession } from "@/lib/
  * ---------------------------------------------------------------------- */
 
 /** `AnswerSubmitRequest.given` sunucuda 1-8000 karakter (openapi.json). */
-export const ANSWER_MAX_LENGTH = 8000;
+export { ANSWER_MAX_LENGTH } from "@/lib/exam-limits";
 
 /** İpucu merdiveninin son kademesi (`HintRequest.hint_level` ≤ 4). */
 export const HINT_MAX_LEVEL = 4;

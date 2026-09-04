@@ -27,7 +27,22 @@ def _sample(*, fake: bool = False) -> dict[str, Any]:
         }
         for index in range(1, 21)
     ]
+    # Synthetic transport receipts exercise the scorer; this fixture is not model evidence.
+    from provenance import evaluation_request_digest
+
+    from tests.test_eval_readiness import receipt_fixture, runtime_fixture
+
+    runtime = runtime_fixture()
+    for record in records:
+        body = {"status": record["status"], "answer": record["answer"], "citations": []}
+        receipt = receipt_fixture(runtime, body)
+        receipt["request_digest"] = evaluation_request_digest(
+            course_id="course", question=record["question"], mode="qa"
+        )
+        record.update(citations=[], response_body=body, response_receipt=receipt)
     return {
+        "course_id": "course",
+        "runtime_manifest": runtime,
         "kind": "faithfulness_sample",
         "pulled_at": "2026-08-10T00:30:00+03:00",
         "seed": 20260809,

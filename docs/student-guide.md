@@ -239,3 +239,9 @@ son performansınız öne çıkar. Aldığınız ipuçları puanı düşürür.
 
 - [Eğitmen Kılavuzu](instructor-guide.md)
 - [KVKK Aydınlatma Metni](kvkk.md)
+
+## Yarım kalan yanıt ve önceki alıştırma geri bildirimi (015)
+
+Bir yanıtı yazıp henüz göndermediğinizde aynı sekmede sayfayı yenilemeniz metni veya seçtiğiniz şıkkı korur. **Cevabı gönder** düğmesine basmadan yanıt sunucuya teslim edilmiş sayılmaz. Taslak yalnız bu tarayıcı sekmesindedir; sekme kapanınca veya çıkış yapınca silinir ve başka cihaza taşınmaz. Tarayıcı saklamayı engelliyorsa uyarı görürsünüz; yine de yanıtınızı gönderebilirsiniz.
+
+Gönderdiğiniz alıştırma sorusuna geri döndüğünüzde kayıtlı geri bildirim ve okunabilir kaynak tekrar açılır. Sistem yeniden puanlama yapmaz. Kaynak artık okunamıyorsa eski yapay zekâ puanı güvenilir bir değerlendirme gibi sunulmaz. Aynı derste süreli sınavınız sürüyorsa eski alıştırma geri bildirimi kilitlenir. Süreli sınavın cevapları yalnız bitmiş sonuç ekranında açılır.

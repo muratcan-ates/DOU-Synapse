@@ -240,3 +240,9 @@ export function editingNoticeFor(blueprint: Blueprint): string | null {
     "Değişiklik ancak yeni bir sürüm yayınlarsan öğrenciye ulaşır."
   );
 }
+
+/** Bağlantı yalnız mevcut dersin eğitmen ekranını açar; kimlikler yetki değildir. */
+export function blueprintVersionHref(courseId: string, blueprintId: string, versionId: string): string {
+  const query = new URLSearchParams({ blueprint_id: blueprintId, version_id: versionId });
+  return `/courses/${encodeURIComponent(courseId)}/blueprints?${query.toString()}`;
+}

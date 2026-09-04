@@ -58,6 +58,7 @@ import re
 from dataclasses import dataclass
 
 from app.contracts import AnswerStatus, ChatMode, SocraticStage
+from app.core.provider_evidence import observe_provider_call
 from app.modules.generation.llm import LlmCompletion, LlmRequest, LlmTask
 
 FAKE_PROVIDER = "fake"
@@ -359,6 +360,10 @@ class FakeLlmClient:
         self.calls = 0
 
     async def complete(self, request: LlmRequest) -> LlmCompletion:
+        with observe_provider_call(FAKE_PROVIDER, FAKE_MODEL):
+            return await self._complete(request)
+
+    async def _complete(self, request: LlmRequest) -> LlmCompletion:
         self.calls += 1
         text = self._payload_for(request)
         return LlmCompletion(

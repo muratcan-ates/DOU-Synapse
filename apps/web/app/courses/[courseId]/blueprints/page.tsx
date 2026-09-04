@@ -28,8 +28,8 @@
  * (bkz. `lib/blueprint.test.ts`).
  */
 
-import { useParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
   DIFFICULTIES,
@@ -57,6 +57,7 @@ import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
+import { PaperPreview } from "@/components/blueprint/paper-preview";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
@@ -64,8 +65,16 @@ import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 const DEFAULT_TYPE = "mcq" as const;
 
 export default function BlueprintsPage() {
+  return <Suspense fallback={<Loading />}><BlueprintScreen /></Suspense>;
+}
+
+function BlueprintScreen() {
   const { courseId } = useParams<{ courseId: string }>();
   const { isInstructor, ready } = useSession(courseId);
+  const search = useSearchParams();
+  const queryKey = search.toString();
+  const linkedBlueprintId = search.get("blueprint_id");
+  const linkedVersionId = search.get("version_id");
 
   const outcomes = useResource<LearningOutcome[]>(
     () => api.get(`/courses/${courseId}/learning-outcomes`),
@@ -76,7 +85,9 @@ export default function BlueprintsPage() {
     [courseId],
   );
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{ queryKey: string; id: string } | null>(null);
+  const selectedId = selection?.queryKey === queryKey ? selection.id : linkedBlueprintId;
+  const setSelectedId = (id: string) => setSelection({ queryKey, id });
   const selected = blueprints.data?.find((item) => item.id === selectedId) ?? null;
 
   /*
@@ -128,10 +139,14 @@ export default function BlueprintsPage() {
         onSelect={setSelectedId}
       />
 
+      {linkedBlueprintId && !selected && blueprints.data && (
+        <p role="status" className="mb-4 text-sm text-fg-muted">Bağlantıdaki sınav bu listede bulunmuyor.</p>
+      )}
       {selected && (
         <BlueprintDetail
           courseId={courseId}
           blueprint={selected}
+          linkedVersionId={selected.id === linkedBlueprintId ? linkedVersionId : null}
           outcomes={outcomes.data ?? []}
           onChanged={blueprints.reload}
         />
@@ -559,11 +574,13 @@ function BlueprintDetail({
   blueprint,
   outcomes,
   onChanged,
+  linkedVersionId,
 }: {
   courseId: string;
   blueprint: Blueprint;
   outcomes: LearningOutcome[];
   onChanged: () => void;
+  linkedVersionId: string | null;
 }) {
   const versions = useResource<ExamVersion[]>(
     () => api.get(`/courses/${courseId}/blueprints/${blueprint.id}/versions`),
@@ -635,10 +652,14 @@ function BlueprintDetail({
           <EmptyState title="Henüz sürüm yok. Kâğıdı doldurmak için bir taslak sürüm aç." />
         )}
 
+        {linkedVersionId && versions.data && !versions.data.some((version) => version.id === linkedVersionId) && (
+          <p role="status" className="mb-4 text-sm text-fg-muted">Bağlantıdaki sürüm bu listede bulunmuyor.</p>
+        )}
         <ul className="flex flex-col gap-4">
           {(versions.data ?? []).map((version) => (
             <VersionRow
-              key={version.id}
+              key={`${version.id}:${version.id === linkedVersionId}`}
+              linked={version.id === linkedVersionId}
               courseId={courseId}
               blueprint={blueprint}
               version={version}
@@ -661,16 +682,21 @@ function VersionRow({
   version,
   outcomes,
   onChanged,
+  linked,
 }: {
   courseId: string;
   blueprint: Blueprint;
   version: ExamVersion;
   outcomes: LearningOutcome[];
   onChanged: () => void;
+  linked: boolean;
 }) {
   const base = `/courses/${courseId}/blueprints/${blueprint.id}/versions/${version.id}`;
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [open, setOpen] = useState(false);
+  const [preview, setPreview] = useState(linked);
+  const versionRef = useRef<HTMLLIElement>(null);
+  useEffect(() => { if (linked) versionRef.current?.focus(); }, [linked]);
 
   const counts = readinessCounts(readiness);
 
@@ -691,7 +717,7 @@ function VersionRow({
   const publish = () => submit("publish");
 
   return (
-    <li className="rounded-lg border border-border p-4">
+    <li ref={versionRef} tabIndex={linked ? -1 : undefined} aria-label={`${blueprint.title} · ${version.version_no}. sürüm`} className="rounded-lg border border-border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
       <div className="flex flex-wrap items-center gap-3">
         <span className="font-medium text-fg">{version.version_no}. sürüm</span>
         <Badge
@@ -709,8 +735,11 @@ function VersionRow({
           {version.item_count} soru · {version.total_points} puan
         </span>
         <div className="ml-auto flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={() => { setPreview((value) => !value); setOpen(false); }}>
+            {preview ? "Önizlemeyi kapat" : "Kâğıdı görüntüle"}
+          </Button>
           {version.status === "draft" && (
-            <Button variant="ghost" onClick={() => setOpen((value) => !value)}>
+            <Button variant="ghost" onClick={() => { setOpen((value) => !value); setPreview(false); }}>
               {open ? "Kâğıdı kapat" : "Kâğıdı düzenle"}
             </Button>
           )}
@@ -782,6 +811,7 @@ function VersionRow({
         </div>
       )}
 
+      {preview && <PaperPreview base={base} />}
       {open && version.status === "draft" && (
         <PaperEditor
           courseId={courseId}

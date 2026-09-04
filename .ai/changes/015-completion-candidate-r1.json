@@ -1,0 +1,535 @@
+{
+  "schema_version": 1,
+  "change_id": "015-completion-candidate-r1",
+  "lineage_id": "completion-candidate",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Çalışma sürekliliği ve doğrulanabilir değerlendirme hazırlığı",
+  "summary": "Gönderilmemiş yanıt kurtarma, kayıtlı alıştırma geri bildirimi, etkilenen sınav sürümü gezinmesi; sağlayıcı yapılandırma ve gerçek değerlendirme kanıtı, izole corpus ve insan kabul paketi. Önceki015 adayın hatalı insan kabulü bağlantısını açıkça kaydederek aynı ürün ağacının ayrı adayı; eski dal ve kayıtlar korunur.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-04T14:34:52.792034+00:00",
+  "review_by": "2026-09-18T14:34:52.792034+00:00",
+  "base_sha": "4e948d5fc5ec42f447838cb1e95e22f5881cb0fa",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "central Groq/Gemini target credentials; isolated opt-in evaluation key and bounded preflight",
+    "model_revision": "defaults groq/openai/gpt-oss-120b and groq/qwen/qwen3.6-27b; no live access/quality claim",
+    "prompt_revision": "unchanged-from-4e948d5f",
+    "tool_schema_revision": "015-practice-answer-read and instructor-question-usage; OpenAPI57; hidden eval runtime and receipt headers",
+    "guardrail_revision": "015-owner/help-lock/source-read; evaluation proxy/DSN/request/body/replay/target isolation",
+    "retrieval_revision": "unchanged retrieval policy; evaluation corpus DSN identity and student role corrected",
+    "embedding_revision": "unchanged-from-4e948d5f; local hashing evidence only",
+    "evaluator_revision": "015-bound-runtime-and-response; fail-closed quality label; bounded/resumable existing harness and human scorer"
+  },
+  "data": {
+    "corpus_digest": "dab147398fec7b76b60320042324127a60eab1abc23bfdd06f93b4d169eceae6",
+    "eval_set_digest": "7b20d55902e91c3e1baa45dbd753e93737bfdf66a6e13c9fb0acad8bebef0e74",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".env.example",
+      "state": "present",
+      "sha256": "edd9f10ef26b78d3f4682852a911708172a705bd24c6cd5e08f6bee1bff5a4ec"
+    },
+    {
+      "path": ".specify/feature.json",
+      "state": "present",
+      "sha256": "ed37fdd0be29e23fd4a6585dd6c6272dae9d80d7b15770323d795afafb83047e"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "27bbb2087ef6b6b6a8002359803498c094e7da7cace1ca5eb5d3bf98250609ac"
+    },
+    {
+      "path": "apps/api/app/api/chat.py",
+      "state": "present",
+      "sha256": "b1735d7d33f5a0c77befaf2ff717b11ef927aebca4022b8c6893b0a1f3940eb9"
+    },
+    {
+      "path": "apps/api/app/api/evaluation_runtime.py",
+      "state": "present",
+      "sha256": "379bb536b59ca758fc724bdf6f3860774d1f6f26536547fb19587c5e1368ad0b"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "b7fc1f5e1421ebd5e26d0545fb213991b7d6026c5b5d835aadbd23c4a8dbfc13"
+    },
+    {
+      "path": "apps/api/app/api/internal.py",
+      "state": "present",
+      "sha256": "2770d06441a4cd53e35b64099af195c3c5dc4ad4f1d445a819a502b4d9a7f5bf"
+    },
+    {
+      "path": "apps/api/app/api/questions.py",
+      "state": "present",
+      "sha256": "e112de4441c8e5ef21c0b622bc535011d7f787b600478f2c2e84c18c1f14164b"
+    },
+    {
+      "path": "apps/api/app/core/candidate_identity.py",
+      "state": "present",
+      "sha256": "568c744a7bd3d8248ce661a50563ac9f3aca1e1db59de79a75ed2373246cc034"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "31db6bd6eb2c7f0738305dfb6d235409116d41aefcb4718e0c8b82ad9145f348"
+    },
+    {
+      "path": "apps/api/app/core/provider_config.py",
+      "state": "present",
+      "sha256": "33e72ff73e13baceedfae9cf888a3c8b7ba51912f336da0a294a3c95f3884834"
+    },
+    {
+      "path": "apps/api/app/core/provider_evidence.py",
+      "state": "present",
+      "sha256": "d551aec0661cd2b4eea8e0b8bb4800faf8a25e11a815a01c8ba8e29213f83b94"
+    },
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "a97d9b3c133bf7268e489d5b7dc5bd81a66ead3bfe4da0dd2233df1b4e8cbdf5"
+    },
+    {
+      "path": "apps/api/app/modules/generation/fake.py",
+      "state": "present",
+      "sha256": "9b4ce3dd36bbebb56ef5288f64e106909b6e1ec650ec7c703136291c48a8bc47"
+    },
+    {
+      "path": "apps/api/app/modules/generation/llm.py",
+      "state": "present",
+      "sha256": "1254be9c025e8caafbf1fa378bf884ca186a3b63fccaee58fa9155d7efdb7d23"
+    },
+    {
+      "path": "apps/api/app/modules/generation/preflight.py",
+      "state": "present",
+      "sha256": "94da9a417907ffa2f42a7c201abd36b179e230c0f59239b6e07a2863c56ff7e0"
+    },
+    {
+      "path": "apps/api/app/schemas/question_usage.py",
+      "state": "present",
+      "sha256": "f065963b150184886bcb4a2daec023a268a2ce3da8313c93fc43a5212fe4d5ce"
+    },
+    {
+      "path": "apps/api/tests/test_error_envelope.py",
+      "state": "present",
+      "sha256": "2bf91c8050e091ebd2dd5d196639d20af3e603c318a93763fb598ec68b3b9389"
+    },
+    {
+      "path": "apps/api/tests/test_eval_readiness.py",
+      "state": "present",
+      "sha256": "6e4d38366b53e22881024681ff3df45568b2ab7cedb3344c63b0c16c999dbaf7"
+    },
+    {
+      "path": "apps/api/tests/test_evaluation_runtime.py",
+      "state": "present",
+      "sha256": "2dedc339f49f5aa8efd7059bcea6e3c5837cdab7c527f8b48158ed75c6cf628c"
+    },
+    {
+      "path": "apps/api/tests/test_faithfulness_scoring.py",
+      "state": "present",
+      "sha256": "e953a91e50f667e221c2d2571acc5b54a99cd0b84964470f2e03eff1563f0f77"
+    },
+    {
+      "path": "apps/api/tests/test_provider_readiness.py",
+      "state": "present",
+      "sha256": "02c3e57e19a6aae0dc24f6b3996303c037329b515ef7b9ef24eb5e947bf9a928"
+    },
+    {
+      "path": "apps/api/tests/test_role_aware_agent_application_guards.py",
+      "state": "present",
+      "sha256": "1553c1821983f35848d7e72fcc025c69d7643f6d3149a1893c07a11d22f48847"
+    },
+    {
+      "path": "apps/api/tests/test_study_continuity.py",
+      "state": "present",
+      "sha256": "bdb48c4175a207d5f5c0ddcfe8d9efa8d5b33e05829a2d213fd4e7bd63a06cb5"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/blueprints/page.tsx",
+      "state": "present",
+      "sha256": "30360afbff8273496301d6037568a70e9b21e6d4d00c5cbcc797d070231e8972"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/exam/page.tsx",
+      "state": "present",
+      "sha256": "300901094d73566288f0f37ee79686d95e4d0a29a55708bc3d9207e9da25365e"
+    },
+    {
+      "path": "apps/web/components/blueprint/paper-preview.tsx",
+      "state": "present",
+      "sha256": "6fc166c8133a85d1693fdf654a140283e8b4c1c7f7d6d15c1ad7cb954421121e"
+    },
+    {
+      "path": "apps/web/components/exam/running-exam.tsx",
+      "state": "present",
+      "sha256": "628e141dfba3b5edee7c5629f97c4c291286e4d268cd00ed8863f7ae0c21c167"
+    },
+    {
+      "path": "apps/web/components/exam/saved-practice-feedback.tsx",
+      "state": "present",
+      "sha256": "0a8a4b0681e0b9c0a21237aebd85ca4da07513cb46d0d0f2f5789e212d54d25a"
+    },
+    {
+      "path": "apps/web/components/question-authoring/question-detail.tsx",
+      "state": "present",
+      "sha256": "c404227a67f18959eeed30477d9421a45b7ccb5caccf2f0887ed1cce66c55cbb"
+    },
+    {
+      "path": "apps/web/components/question-authoring/question-exam-usage.tsx",
+      "state": "present",
+      "sha256": "8a0c62c392da8b451dd97495fa9119f611ddf71dbd66c813ea242de6c38ad6f0"
+    },
+    {
+      "path": "apps/web/e2e/question-authoring.spec.ts",
+      "state": "present",
+      "sha256": "419c29b0fbe2b616df92eafc23ba49717df18ec480eee53eff552b6a13497ed4"
+    },
+    {
+      "path": "apps/web/e2e/student-assessment.spec.ts",
+      "state": "present",
+      "sha256": "3ed019121705b3c140af3f104d2e73b53428ebd9e15fef286b88477a375a5751"
+    },
+    {
+      "path": "apps/web/lib/api.ts",
+      "state": "present",
+      "sha256": "fdf8c676771f4b0847796bfaf2a393b56604615074062915a60344b19e5ab956"
+    },
+    {
+      "path": "apps/web/lib/blueprint.test.ts",
+      "state": "present",
+      "sha256": "018d126b919a8b1024337290901fbade71b2e711f5fd6b7febdfef45e8a29c28"
+    },
+    {
+      "path": "apps/web/lib/blueprint.ts",
+      "state": "present",
+      "sha256": "a78f7c93cfd3824020922b275f5e52f7b9e55a6ede07adc3302785897f7e9712"
+    },
+    {
+      "path": "apps/web/lib/exam-drafts.test.ts",
+      "state": "present",
+      "sha256": "a7e07bba08ff30650f66242fcc5a61e7a3f176e8c41bc314e405767e48c6e649"
+    },
+    {
+      "path": "apps/web/lib/exam-drafts.ts",
+      "state": "present",
+      "sha256": "1939e146f46cc1f168df9ea8826b209ccad4d998af3555b3ac11279628ee26f6"
+    },
+    {
+      "path": "apps/web/lib/exam-limits.ts",
+      "state": "present",
+      "sha256": "902fa17fd7c0001dc92f5f577a6e77d9e80cadcffd8e4190e8971b160fba880c"
+    },
+    {
+      "path": "apps/web/lib/exam.ts",
+      "state": "present",
+      "sha256": "cb5a0638825f6f1ef8fae045f4f0fbf092e98252b04bb11445850ef833277325"
+    },
+    {
+      "path": "apps/web/lib/types.ts",
+      "state": "present",
+      "sha256": "96378b31421a8a79bfae90e43c9973739b017a1dd66e7ea087ce9c97a4f8dba8"
+    },
+    {
+      "path": "apps/web/lib/use-exam-drafts.ts",
+      "state": "present",
+      "sha256": "3642760e31895f02a952cf1ab4759672e74ba02ebe293fd77b5d339b0cc4e610"
+    },
+    {
+      "path": "docs/agents-skills-inventory.md",
+      "state": "present",
+      "sha256": "375d15e4d13f5bff99610dc888b3a87aa0f72d577a0d1edd51e6622b34ff47c8"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "64f41ac7a9b6d97c8610dfdd0e75dce2f12b2f0f33ad89c4eab8479160bc6809"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "6a8c1835a6524d8034fcb32a5f788ea2387219f5f7e71336fc28e18819c08748"
+    },
+    {
+      "path": "docs/instructor-guide.md",
+      "state": "present",
+      "sha256": "8b186f2611818f9b1eebec5707372601e2d8946b834a4c198ffe8f17e94779a4"
+    },
+    {
+      "path": "docs/provider-readiness.md",
+      "state": "present",
+      "sha256": "9f537211e0bca0c68799217694f7c02513941786529fedd3d9e3e618899e50de"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "b9c4ca73e345c1217093c74635570d9d6786f2956326ed1ac4bbc38cfaa1c1e0"
+    },
+    {
+      "path": "docs/student-guide.md",
+      "state": "present",
+      "sha256": "54af0334bbed2fa783c692b19bb2841590e751b2170d05a407e6e2d19963dd09"
+    },
+    {
+      "path": "evaluation/README.md",
+      "state": "present",
+      "sha256": "ed74427fff8f77deb6c7f7bc8269624d10ce243fb70263577e4187e7af4cd57d"
+    },
+    {
+      "path": "evaluation/acceptance/README.md",
+      "state": "present",
+      "sha256": "bed7f53a12adbf887e6f47bd0aa56d50fe45d1cce8f918e9626251cf5c2b552b"
+    },
+    {
+      "path": "evaluation/acceptance/assessment_cases.json",
+      "state": "present",
+      "sha256": "ca0bcf7bd6cbf9b56498d21443fb1b2e3cc0b94bf53f07115681a1294b8bba53"
+    },
+    {
+      "path": "evaluation/acceptance/prepare_packet.py",
+      "state": "present",
+      "sha256": "4489549c85db7b899100149c7ea413384fee74dc4b904fbc79fde7d253f70fc3"
+    },
+    {
+      "path": "evaluation/backends.py",
+      "state": "present",
+      "sha256": "2287aa312bd18c0c09ac5a3456aa86d3b435bfadf675c6379af4d9cbe1dea885"
+    },
+    {
+      "path": "evaluation/build_corpus.py",
+      "state": "present",
+      "sha256": "23d079b50579625dcf6c6862b1f30519257bef6e4e2f3057cad109b3d5fbf4d7"
+    },
+    {
+      "path": "evaluation/evaluate.py",
+      "state": "present",
+      "sha256": "0b71a837da3c25236bd34aa9709499b059dfda12ccb6b058837a21df683fbc2d"
+    },
+    {
+      "path": "evaluation/faithfulness/pull_sample.py",
+      "state": "present",
+      "sha256": "cdbc945c8d35013a5f0ee8dcb4a51bb59eb94912a6659340b399ca48723a4b1c"
+    },
+    {
+      "path": "evaluation/faithfulness/score_labels.py",
+      "state": "present",
+      "sha256": "e1f3da946ebdef18fa830f0119318eba5ba1a6e29e39222078cbb555c21cb5e8"
+    },
+    {
+      "path": "evaluation/injection/run_injection.py",
+      "state": "present",
+      "sha256": "73da8b97c3ce9b6606d453bc65f622e40bb37d0c2e2ecd60d9de3a7704d96270"
+    },
+    {
+      "path": "evaluation/provenance.py",
+      "state": "present",
+      "sha256": "6d7a4850e499400cd744b293d0db383ca05ff94d7cd338e23afa1c74611a1a96"
+    },
+    {
+      "path": "evaluation/runtime_client.py",
+      "state": "present",
+      "sha256": "911ebb07d5673695e317a92971d39193c04ef122c164f900cfc7be7291ef1e9d"
+    },
+    {
+      "path": "scripts/provider_preflight.py",
+      "state": "present",
+      "sha256": "94e7e28c6b7a0c53a725ed4288c667bd271c61781c57d0c8ee88a464d42f4374"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/contracts/openapi.json",
+      "state": "present",
+      "sha256": "5e0305edd9527fcc4d5177fc088ba909bc02878e5758f952f3d904728073b4de"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "4d60e89aa4528f567dd234af7096af0c56080e88f0daab91e0b61bfcab1ca2f2"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "b4bd70075d3b6f8870b5e970e34a4773769b66c57cde57d305ecdae2bdf16e39"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "1d5746d962f788f57575a1cf0ef396d85817934a8a0b0a059896b9827770ea6b"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "0d44368ce8e172d872f00a6fd303e74ecf096ad0c9666a06e8bace29bf190a05"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "4e04ced2ecefca7fe543fa68accdca552de7b20e11350242d3a32024101dcebe"
+    },
+    {
+      "path": "specs/015-completion-program/contracts/api.md",
+      "state": "present",
+      "sha256": "6f1bde943a121b24012d165b2f749f82cc0e1aba5e8560d96f2110263c5eee1a"
+    },
+    {
+      "path": "specs/015-completion-program/data-model.md",
+      "state": "present",
+      "sha256": "1ba96c6768b71c500457efc0c3939ee344bf2777bc7cb2b4ea007ad568f8d1df"
+    },
+    {
+      "path": "specs/015-completion-program/mail-acceptance.md",
+      "state": "present",
+      "sha256": "df945f461ffc923ba9f5abfcd48f57f5753da9471c80d30627aaad4cbb86c7d1"
+    },
+    {
+      "path": "specs/015-completion-program/plan.md",
+      "state": "present",
+      "sha256": "5d289472e0dce5443c51716563a5f6b1612ccf86ffe60c28e255dd8d5ddd5904"
+    },
+    {
+      "path": "specs/015-completion-program/quickstart.md",
+      "state": "present",
+      "sha256": "7a61ed7553b52574a2ad750c2dcaa9e620b8f57230509c88b674206eff72604d"
+    },
+    {
+      "path": "specs/015-completion-program/release-review.md",
+      "state": "present",
+      "sha256": "a994ef60f6f0091600038532c1cc2ee4275c2b33c55097fe5ce7a843c37024a1"
+    },
+    {
+      "path": "specs/015-completion-program/research.md",
+      "state": "present",
+      "sha256": "7dd8e25a301bdd49755b82a0c3f6eae5a6cae16a75bc42a3093a69acf5b36fe5"
+    },
+    {
+      "path": "specs/015-completion-program/skill-evaluation.md",
+      "state": "present",
+      "sha256": "39163a5d02eead5445311d8f78823d1802fdb1adcf007372687e7484e9ebb228"
+    },
+    {
+      "path": "specs/015-completion-program/spec.md",
+      "state": "present",
+      "sha256": "b1819b6cb1448bd6ba9976258d04b19c0a994753b69f87e921efc4e69a631478"
+    },
+    {
+      "path": "specs/015-completion-program/tasks.md",
+      "state": "present",
+      "sha256": "9a653b0976cd59622ba0725da4b78c89225315285f9ec66bcc561128c117e34d"
+    },
+    {
+      "path": "specs/015-completion-program/verification.md",
+      "state": "present",
+      "sha256": "30f4b51275643f142114158c8280aa5ebd5e7bedfaede48b2d2e370618250565"
+    },
+    {
+      "path": "specs/015-completion-program/candidate-correction.md",
+      "state": "present",
+      "sha256": "a32608955efcae6316316ab5cd6a6d0b8af3238f0eab9f2d1c4688b8d934b757"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/015-completion-candidate-r1.json",
+      "report_sha256": "02b4f93f7d3df99e9d276d2cadcbafdf3f91eec26af280189be461f6fb4f7bdf",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "specs/015-completion-program/spec.md",
+    "holdout_ref": "apps/web/e2e/student-assessment.spec.ts",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/acceptance/assessment_cases.json",
+    "metrics": [
+      {
+        "name": "unchanged_tracked_product_files",
+        "baseline": 698,
+        "candidate": 698,
+        "operator": ">=",
+        "threshold": 698,
+        "sample_size": 698
+      }
+    ],
+    "exact_command": "Compare every original non-.ai tracked file byte-for-byte against git show 4f89369a9bcf380d5b671f0ffd323b3ee16396e6:path; fail on any mismatch. New exact commit governance check is recorded separately after commit."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending independent domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending independent security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:015-completion-candidate-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "kill_switch": "Set EVAL_RUNTIME_ENABLED=false, remove eval secret and restart; disable student workspace if needed, retaining source/time/ownership guards and records.",
+    "assignment": "Sticky per synthetic pilot course and consenting internal participant after independent approvals.",
+    "initial_exposure": "None; local synthetic/injected evidence only.",
+    "stop_conditions": [
+      "Any answer/help or draft crosses owner/course or active-exam boundary.",
+      "Any fake/cache/replayed/tampered response receives real quality eligibility.",
+      "Any evaluation request or corpus write leaves the explicitly validated isolated target."
+    ],
+    "expand_conditions": [
+      "Independent engineering/domain/privacy approval of exact combined candidate.",
+      "Real-provider and human grading/source/Socratic acceptance meets predeclared thresholds.",
+      "Combined013+014+015 staging and live operational gates pass."
+    ],
+    "active_exam_policy": "Existing sessions remain closable when the workspace is disabled. Results and practice help stay locked while another same-course student exam is active; deadlines use post-lock database time."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:4e948d5fc5ec42f447838cb1e95e22f5881cb0fa",
+    "procedure": "Disable evaluation runtime/secret and student workspace; preserve source/time guards and stored assessments. No new015 database migration. Prefer forward fix for evaluation provenance.",
+    "max_minutes": 15,
+    "verification": "Offline endpoint closed, workspace capability false/new reads503, owner/source/exam guards retain; live deployment rollback not run.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixtures/evaluation samples only in evidence. Browser unsent drafts are user/course/session scoped sessionStorage, cleared on submit/finish/expiry/logout.",
+    "retention": "Versioned aggregate evidence and hashes; acceptance packet has no filled human labels. No credentials or real student content in repository evidence."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

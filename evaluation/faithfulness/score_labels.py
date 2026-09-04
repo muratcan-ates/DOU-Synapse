@@ -23,7 +23,7 @@ EVALUATION_ROOT = HERE.parent
 if str(EVALUATION_ROOT) not in sys.path:
     sys.path.insert(0, str(EVALUATION_ROOT))
 
-import metrics  # noqa: E402
+import metrics
 
 ALLOWED_LABELS = ("destekleniyor", "kısmen", "desteklenmiyor")
 ITEM_RE = re.compile(r"^##\s+\d+\.\s+([A-Za-z0-9][A-Za-z0-9_-]*)\s+\([^)]+\)\s*$")
@@ -88,15 +88,6 @@ def load_sample(path: Path) -> Sample:
             "(fake_provider_declared tam olarak false olmalı)."
         )
 
-    llm_server_note = payload.get("llm_server_note")
-    if not isinstance(llm_server_note, str) or not llm_server_note.strip():
-        raise EvaluationInputError("Örneklem LLM sağlayıcı notu taşımıyor.")
-    upper_note = llm_server_note.upper().replace(" ", "")
-    if "FAKE_PROVIDER=FALSE" not in upper_note or "FAKE_PROVIDER=TRUE" in upper_note:
-        raise EvaluationInputError(
-            "LLM sağlayıcı notu gerçek koşuyu açıkça doğrulamıyor (FAKE_PROVIDER=false gerekli)."
-        )
-
     records = payload.get("records")
     if not isinstance(records, list):
         raise EvaluationInputError("Örneklem records listesi taşımıyor.")
@@ -137,6 +128,16 @@ def load_sample(path: Path) -> Sample:
         raise EvaluationInputError("Örneklem yeniden üretilebilir bir integer seed taşımıyor.")
     if not isinstance(pulled_at, str) or not pulled_at:
         raise EvaluationInputError("Örneklem pulled_at zaman damgası taşımıyor.")
+
+    # A free-form FAKE_PROVIDER=false note is not a serving-runtime observation.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from provenance import EvidenceError, require_sample_evidence
+
+    try:
+        require_sample_evidence(payload)
+    except EvidenceError as exc:
+        raise EvaluationInputError(str(exc)) from exc
+    llm_server_note = str(payload.get("llm_server_note") or "sunucu yanıt kanıtı doğrulandı")
 
     return Sample(
         file_name=path.name,

@@ -1,0 +1,3 @@
+# Data model — 015
+
+No database migration. Practice feedback projects existing Answer records through existing grounding validation. Question usage reads Question -> ExamItem -> ExamVersion -> ExamBlueprint with explicit course filters. Browser sessionStorage contains only unsent answer strings scoped by user/course/session and validated against current server question IDs/state/deadline; no feedback, keys, citations or bearer tokens. Evaluation artifacts bind run, full SHA, configuration digest, source corpus and actual response provenance. Secrets are runtime-only and excluded from artifacts.

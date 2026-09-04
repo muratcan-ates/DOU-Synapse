@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "kind": "assessment_acceptance_draft",
+  "warning": "Aday insan çıpalarıdır. Kaynaklar ekip üretimi örneklerdir; hoca onayı ve gerçek puanlama koşusu yapılmadı. MCQ/kısa cevap deterministik, diğerleri gerçek LLM ve insan rubriği gerektirir.",
+  "cases": [
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-MCQ-01",
+      "question_type": "mcq",
+      "answer_format": null,
+      "source": {
+        "file_name": "05-deadlock-demo.pdf"
+      },
+      "prompt": "Banker algoritması hangi yaklaşımı kullanır? A: Kaçınma B: Tespit ve kurtarma",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "A",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "B",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-SHORT-01",
+      "question_type": "open",
+      "answer_format": "short_answer",
+      "source": {
+        "file_name": "05-deadlock-demo.pdf"
+      },
+      "prompt": "Kaynak ihtiyacı tablosunda Need hangi iki büyüklüğün farkıdır?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Max - Allocation",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Allocation - Max",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-ESSAY-01",
+      "question_type": "open",
+      "answer_format": "essay",
+      "source": {
+        "file_name": "05-deadlock-demo.pdf"
+      },
+      "prompt": "Deadlock için dört gerekli koşulu açıklayın; bir koşul kırılırsa ne olur?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Karşılıklı dışlama, tut ve bekle, önceliksiz alma ve dairesel bekleme birlikte gereklidir. Biri engellenirse deadlock önlenir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Karşılıklı dışlama ve dairesel bekleme gerekir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Tek başına dairesel bekleme her durumda kilitlenme için yeterlidir.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": [
+        {
+          "point": "Dört koşulu doğru açıklar",
+          "weight": 80
+        },
+        {
+          "point": "Bir koşulu kırmanın etkisini açıklar",
+          "weight": 20
+        }
+      ]
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-TRACE-01",
+      "question_type": "code_trace",
+      "answer_format": null,
+      "source": {
+        "file_name": "fork_example.c"
+      },
+      "prompt": "fork başarılı olduğunda çocuk ve ebeveyn süreçte pid ne olur, hangi süreç waitpid çağırır?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Çocukta pid 0, ebeveynde çocuğun pozitif PID değeridir; ebeveyn waitpid çağırır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Çocukta pid 0 olur.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "İki süreçte de pid 0 olur ve çocuk waitpid çağırır.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-BUG-01",
+      "question_type": "bug_hunt",
+      "answer_format": null,
+      "source": {
+        "file_name": "producer_consumer.py"
+      },
+      "prompt": "Tampon doluyken mutex içinde empty.acquire yapılmasının neden kilitlenme oluşturabileceğini ve düzeltme sırasını açıklayın.",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Üretici boş yuva beklerken mutex tutar; tüketici mutex alamadığı için boş yuva açamaz. Semafor beklemesi mutex alınmadan önce yapılmalıdır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Semafor sırası yüzünden deadlock olabilir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Sorun yalnız tampon taşmasıdır; mutex daha erken alınmalıdır.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    }
+  ]
+}
