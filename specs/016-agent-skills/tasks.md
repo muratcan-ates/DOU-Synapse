@@ -6,4 +6,4 @@
 - [x] Add repeatable package validation and meaningful failing-fixture tests.
 - [x] Exercise skills independently using temporary workspaces.
 - [x] Add CI coverage and reconcile the continuation ledger and inventory.
-- [ ] Commit and verify exact local candidate; export result and remaining inputs.
+- [x] Commit and verify exact local candidate; export result and remaining inputs.

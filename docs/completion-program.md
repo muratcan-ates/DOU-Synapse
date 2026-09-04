@@ -47,3 +47,5 @@ Gerçek Groq/Gemini değerlendirme anahtarı şu an bulunmuyor; anahtar değerle
 ## Ajan/beceri envanteri ek kontrolü
 
 Kullanıcı mevcut 90+ ajan paketini ve repo becerilerini kontrol etmemizi istedi. [Envanter](agents-skills-inventory.md): repo 17 Claude becerisi ve yerel 9 Codex DOU becerisi doğrulandı; 90+ ajan kataloğu incelenen konumlarda bulunamadı. 015 incelemesinde kurulum yapılmamıştı. 016 ile repo içi17 Codex karşılığı eklendi, 3 eski DOU yönergesi güncellendi. Küresel kopya kurulmadı. Kullanım ve doğrulama docs/agent-skills.md içinde; 90+ katalog kaynağı hâlâ takip girdisidir.
+
+016 teslimi: kod adayı `c9f12e168cfb09a8ec96ce4b11ce61e302357cde`, temel `ed6103fbe53be3888252074db0a722cfe1be617c`. Kesin fark denetimi geçti; takip teslim kaydı yalnız belgelerdir. [Teslim ve kalan girdiler](../specs/016-agent-skills/delivery.md).
