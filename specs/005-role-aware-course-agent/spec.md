@@ -4,9 +4,9 @@
 **Base**: `7c1c219` (`004-ai-sdlc-excellence`; yerel governance teslim commit'i)
 **Created**: 2026-08-11
 
-**Status**: Backend, `0015` ve frontend kodlandı; tam API 909/909, mypy 97 dosya, <!-- docs-check: backend.tests = 909 --><!-- docs-check: backend.mypyFiles = 97 -->
-frontend 394/394, typecheck ve production build geçti. <!-- docs-check: frontend.tests = 394 --> Seri gerçek-API tarayıcı
-36/36; manuel VoiceOver+Safari, doğrudan exam/kill-switch browser yolları, <!-- docs-check: e2e.tests = 36 -->
+**Status**: Backend, `0015` ve frontend kodlandı; tam API 946/946, mypy 98 dosya, <!-- docs-check: backend.tests = 946 --><!-- docs-check: backend.mypyFiles = 98 -->
+frontend 406/406, typecheck ve production build geçti. <!-- docs-check: frontend.tests = 406 --> Seri gerçek-API tarayıcı
+37/37; manuel VoiceOver+Safari, doğrudan exam/kill-switch browser yolları, <!-- docs-check: e2e.tests = 37 -->
 real-provider, staging, isimli onay ve canlı rollout kanıtı henüz yok.
 **Risk**: R3 — öğrenci/eğitmen davranışı, kota, kötüye kullanım ve sınav kilidi değişiyor
 

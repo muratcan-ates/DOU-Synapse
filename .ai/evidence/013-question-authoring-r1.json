@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "013-question-authoring-r1",
+  "captured_at": "2026-09-04T12:29:21+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && env -u LLM_FAKE_PROVIDER -u EMBEDDING_WARMUP_ENABLED .venv/bin/pytest -q; cd apps/api && .venv/bin/ruff check app tests/test_question_authoring.py tests/test_blueprint.py && .venv/bin/ruff format --check . && .venv/bin/mypy app; cd apps/web && bun test lib/ && ./node_modules/.bin/tsc --noEmit --incremental false; cd apps/web && E2E_API_URL=http://127.0.0.1:8013 E2E_PORT=3113 E2E_DATABASE_NAME=dou_synapse_e2e_dou013 ./node_modules/.bin/playwright test --workers=1; PGHOST=127.0.0.1 PGPORT=55439 PGUSER=muratates PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_question_authoring_mutation_check.sh dou013_legacy_sql; PGHOST=127.0.0.1 PGPORT=55439 PGUSER=muratates PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_assessment_mutation_check.sh dou013_legacy_sql; node scripts/docs_check.mjs --duzelt; cd apps/web && node scripts/contrast.mjs; cd apps/api && .venv/bin/python ../../evaluation/verify_gold_set.py",
+  "environment": {
+    "os": "macOS",
+    "database": "isolated PostgreSQL 16 + pgvector on loopback port 55439",
+    "api_database": "dou013_full",
+    "browser_database": "dou_synapse_e2e_dou013",
+    "sql_template": "dou013_legacy_sql",
+    "pytest_environment": "Explicit TEST_DB_NAME, TEST_ADMIN_DSN, TEST_APP_DSN and TEST_WORKER_DSN point only to the isolated cluster. Provider keys blank; no .env. Global LLM_FAKE_PROVIDER and EMBEDDING_WARMUP_ENABLED removed so configuration tests exercise defaults. Individual tests control fake/mock providers.",
+    "browser_environment": "Local API8013; web3113 production build; QUESTION_AUTHORING_ENABLED=true, DEV_AUTH_ENABLED=true, LLM_FAKE_PROVIDER=true, EMBEDDING_PROVIDER=hashing, EMBEDDING_WARMUP_ENABLED=false. Synthetic fixture users and Markdown source; no real model call."
+  },
+  "results": {
+    "backend_tests_passed": 946,
+    "authoring_api_tests_passed": 37,
+    "frontend_library_tests_passed": 406,
+    "browser_tests_passed": 37,
+    "browser_tests_skipped": 0,
+    "authoring_sql_checks_passed": 26,
+    "authoring_trigger_privilege_check_passed": 1,
+    "authoring_mutations_detected": 5,
+    "authoring_concurrency_checks_passed": 6,
+    "assessment_sql_checks_passed": 59,
+    "isolation_sql_checks_passed": 115,
+    "assessment_mutations_detected": 24,
+    "ruff_exit": 0,
+    "format_exit": 0,
+    "mypy_exit": 0,
+    "typecheck_exit": 0,
+    "production_web_build_exit": 0,
+    "docs_check_exit": 0,
+    "contrast_exit": 0,
+    "gold_set_integrity_exit": 0,
+    "openapi_paths": 52
+  },
+  "coverage": [
+    "Teacher API and browser: source upload, classified generation, edit answer/source mapping, approve, matching blueprint creation and publish, denied post-approval edit.",
+    "All four payload types, paired/null classification, same-course sources/outcomes, nonmember/student/admin denial, legacy metadata preservation, edit/review race and off-switch behavior.",
+    "Direct SQL and mutation checks prove question identity, review/history immutability, RLS, worker privilege and reference-row locking.",
+    "375px light/dark editing screenshots visually inspected; no horizontal overflow. Existing full browser flows pass."
+  ],
+  "compatibility": "Existing blueprint fixture classifies draft before review; legacy RLS mutation assertion writes review metadata so payload guard cannot mask broken RLS. Sequential old/new SQL mutation gates leave the template dump unchanged.",
+  "limitations": [
+    "No real-provider pedagogical acceptance, independent human approval, staging, canary, production or deployed rollback drill.",
+    "Native browser Back inside App Router does not prompt for unsaved edits; refresh and link navigation do. Save before Back.",
+    "Metadata-bearing legacy rubric lists keep structural/text identity; weights remain editable. Ordinary rubrics can be fully edited.",
+    "Credential scan checks common token/private-key patterns in changed files; it is not an exhaustive secret-scanner certification."
+  ],
+  "privacy": "Only synthetic fixtures, repository-relative paths, command descriptions and aggregate counts are retained. No identifiable student content, raw provider payload or live credential."
+}

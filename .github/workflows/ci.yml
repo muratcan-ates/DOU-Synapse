@@ -117,6 +117,10 @@ jobs:
           if grep -q FAIL /tmp/rls_a.out; then echo "assessment RLS bozuk"; exit 1; fi
           supabase/tests/rls_assessment_mutation_check.sh rls_assessment_template
 
+      - name: Soru taslağı bütünlüğü ve eşzamanlılık mutasyonları
+        working-directory: .
+        run: supabase/tests/rls_question_authoring_mutation_check.sh rls_assessment_template
+
       - name: Rol farkındalıklı ajan RLS ve kota mutasyonları
         working-directory: .
         run: supabase/tests/rls_role_aware_agent_mutation_check.sh
@@ -305,6 +309,7 @@ jobs:
           # ingestion yetki hatasıyla kırılır — rol ayrımı RLS'in parçası.
           WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@localhost/dou_synapse
           CORS_ORIGINS: '["http://localhost:3100"]'
+          QUESTION_AUTHORING_ENABLED: "true"
         run: |
           uv sync --extra dev --frozen
           uv run uvicorn app.main:app --port 8000 &

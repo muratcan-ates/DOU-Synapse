@@ -1,4 +1,5 @@
 /** Backend şemalarıyla birebir sözleşmeler (apps/api/app/schemas). */
+import type { Difficulty } from "@/lib/blueprint";
 
 export interface Page<T> {
   items: T[];
@@ -248,9 +249,20 @@ export interface Question {
   reviewed_at: string | null;
   created_at: string;
   source?: SourceRef | null;
+  source_stale?: boolean;
+  learning_outcome_id?: string | null;
+  difficulty?: Difficulty | null;
+}
+
+export interface QuestionDraftRequest {
+  payload: Record<string, unknown>;
+  learning_outcome_id: string | null;
+  difficulty: Difficulty | null;
 }
 
 export interface QuestionGenerateRequest {
+  learning_outcome_id?: string | null;
+  difficulty?: Difficulty | null;
   topic_id: string;
   question_type?: QuestionType;
   answer_format?: AnswerFormat | null;

@@ -137,8 +137,7 @@ async def make_question(
         source_chunk_id=fixture.chunk_ids[0],
         payload=mcq_payload(fixture.chunk_ids),
         question_type=QuestionType.MCQ,
-        status=status,
-        reviewed_by=fixture.instructor_id if status != "draft" else None,
+        status="draft",
     )
     async with admin_engine.begin() as conn:
         await conn.execute(
@@ -148,6 +147,15 @@ async def make_question(
             ),
             {"outcome": outcome_id, "difficulty": difficulty, "id": question_id},
         )
+        # Sınıflandırma incelemeden önce yapılır; onaylı içerik değişmez (013).
+        if status != "draft":
+            await conn.execute(
+                text(
+                    "UPDATE questions SET status = CAST(:status AS question_status), "
+                    "reviewed_by = :reviewer, reviewed_at = now() WHERE id = :id"
+                ),
+                {"status": status, "reviewer": fixture.instructor_id, "id": question_id},
+            )
     return question_id
 
 

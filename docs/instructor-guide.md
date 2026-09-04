@@ -92,6 +92,18 @@ Ders → **Katılımcılar**. Öğrenciyi e-postasıyla ekleyin ve rolünü seç
    Her soru **hangi parçadan üretildiyse ona bağlıdır.**
 3. **Onaylayın veya reddedin.**
 
+### Taslağı düzenleyip sınava hazırlama
+
+Soru düzenleme özelliği açılmışsa şu akışı kullanın:
+
+1. **Sınavlar** ekranında dersin öğrenme çıktısını tanımlayın. Çıktıyı soruyla aynı konuya veya dersin geneline bağlayın.
+2. **Soru havuzu** ekranında konu, soru tipi, öğrenme çıktısı ve zorluk seçip **Soru üret** düğmesine basın. Çıktı ve zorluk birlikte seçilir; ikisini boş bırakmak da mümkündür.
+3. Üretilen soruda **Taslağı düzenle** düğmesini açın. Metni, seçenekleri, cevap anahtarını veya soru türüne göre değerlendirme ölçütlerini düzeltin. Klasik sorularda ölçütlerin toplamı 100 olmalıdır.
+4. **Taslağı kaydet** ile değişiklikleri saklayın. Kaydetmek onaylamak değildir; soruyu ayrıca inceleyip onaylayın.
+5. **Sınavlar** ekranında aynı çıktı, zorluk ve soru tipini isteyen bir dağılım kurun. Taslak sürüme onaylı soruyu ekleyin, kâğıdı kaydedin ve yayın kapısını denetleyin.
+
+Yalnız henüz kullanılmamış taslakların içeriği düzenlenebilir. Onaylanan, reddedilen veya bir sınava bağlanan soruların metni ve sınıflandırması kilitlenir. Düzeltme gerekiyorsa yeni bir taslak üretin. Kaynak ve soru tipi düzenleme sırasında değiştirilemez. Kaynağın yeni sürümü varsa ekranda uyarı görünür; onaylamadan önce güncel materyalle karşılaştırın.
+
 ### Onay kuralı — en önemli madde
 
 > **Onaylamadığınız hiçbir soru öğrenciye görünmez.**

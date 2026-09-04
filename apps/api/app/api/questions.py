@@ -21,7 +21,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import any_, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,15 +33,32 @@ from app.api.deps import (
     SessionDep,
 )
 from app.core.config import get_settings
-from app.core.errors import ConflictError, NotFoundError, RateLimitError, ValidationError
+from app.core.errors import (
+    ConflictError,
+    NotFoundError,
+    QuestionAuthoringDisabledError,
+    RateLimitError,
+    ValidationError,
+)
 from app.core.pagination import paginate
 from app.core.rate_limit import get_concurrency_gate, get_limiter
-from app.models.assessment import Question, QuestionStatus, QuestionType, Topic
+from app.models.assessment import (
+    Answer,
+    ExamItem,
+    ExamSession,
+    Question,
+    QuestionStatus,
+    QuestionType,
+    Topic,
+)
 from app.models.core import Chunk, Document
 from app.modules.assessment import question_gen
+from app.modules.assessment.authoring import load_classification, validate_draft_payload
 from app.modules.assessment.grading import load_source_refs
 from app.modules.generation.llm import LlmTask
 from app.schemas.assessment import (
+    QuestionAuthoringOut,
+    QuestionDraftRequest,
     QuestionGenerateRequest,
     QuestionGenerationOut,
     QuestionOut,
@@ -159,6 +176,8 @@ def _build_out(
         id=question.id,
         course_id=question.course_id,
         topic_id=question.topic_id,
+        learning_outcome_id=question.learning_outcome_id,
+        difficulty=question.difficulty,
         type=question.type,
         payload=payload,
         status=question.status,
@@ -171,9 +190,14 @@ def _build_out(
     )
 
 
-async def _load_question(session: AsyncSession, question_id: UUID, course_id: UUID) -> Question:
+async def _load_question(
+    session: AsyncSession, question_id: UUID, course_id: UUID, *, for_update: bool = False
+) -> Question:
     """Soruyu yükler; başka dersin sorusu ise varlığını sızdırmadan 404 döner."""
-    question = await session.get(Question, question_id)
+    query = select(Question).where(Question.id == question_id, Question.course_id == course_id)
+    if for_update:
+        query = query.with_for_update().execution_options(populate_existing=True)
+    question = await session.scalar(query)
     if question is None or question.course_id != course_id:
         raise NotFoundError("Soru bulunamadı.")
     return question
@@ -220,6 +244,72 @@ async def list_questions(
     return PageOut(items=items, next_cursor=result.next_cursor)
 
 
+@router.get("/questions/authoring", response_model=QuestionAuthoringOut)
+async def question_authoring_status(context: CourseInstructorDep) -> QuestionAuthoringOut:
+    """Eğitmen ekranı yeni yazma yollarının dağıtım bayrağını buradan öğrenir."""
+    return QuestionAuthoringOut(enabled=get_settings().question_authoring_enabled)
+
+
+def _require_authoring() -> None:
+    if not get_settings().question_authoring_enabled:
+        raise QuestionAuthoringDisabledError(
+            "Soru düzenleme ve sınıflandırma şu anda kullanıma kapalı."
+        )
+
+
+@router.post("/questions/{question_id}/draft", response_model=QuestionOut)
+async def update_question_draft(
+    question_id: UUID,
+    payload: QuestionDraftRequest,
+    context: CourseInstructorDep,
+    session: SessionDep,
+) -> QuestionOut:
+    """Yalnız kullanılmamış taslak içeriğini ve sınıflandırmasını birlikte değiştirir."""
+    _require_authoring()
+    question = await _load_question(session, question_id, context.course_id, for_update=True)
+    if question.status is not QuestionStatus.DRAFT:
+        raise ConflictError("Yalnız taslak sorular düzenlenebilir.")
+    in_use = await session.scalar(
+        select(
+            or_(
+                exists().where(ExamItem.question_id == question.id),
+                exists().where(Answer.question_id == question.id),
+                exists().where(any_(ExamSession.question_ids) == question.id),
+            )
+        )
+    )
+    if in_use:
+        raise ConflictError("Bir sınavda kullanılan soru düzenlenemez.")
+    await load_classification(
+        session,
+        course_id=context.course_id,
+        topic_id=question.topic_id,
+        outcome_id=payload.learning_outcome_id,
+    )
+    cleaned = await validate_draft_payload(
+        session,
+        question_type=question.type,
+        raw=payload.payload,
+        original=question.payload,
+        course_id=context.course_id,
+    )
+    question.payload = cleaned
+    question.learning_outcome_id = payload.learning_outcome_id
+    question.difficulty = payload.difficulty
+    try:
+        await session.flush()
+    except IntegrityError as exc:
+        # RLS bazı öğrenci oturumlarını gizler. Veritabanındaki ikinci kapı bu
+        # referansları da görür; tanınmayan DB hatalarını başarıya çevirmeyiz.
+        constraint = getattr(getattr(exc.orig, "diag", None), "constraint_name", None)
+        if constraint == "questions_authoring_immutable":
+            raise ConflictError("İncelenmiş veya sınavda kullanılan soru düzenlenemez.") from exc
+        if constraint == "questions_authoring_classification":
+            raise ValidationError("Öğrenme çıktısı ve zorluk bu soruyla uyumlu değil.") from exc
+        raise
+    return await _question_out(session, question, context=context)
+
+
 @router.post("/questions/generate", response_model=QuestionGenerationOut)
 async def generate_questions(
     payload: QuestionGenerateRequest, context: CourseInstructorDep, session: SessionDep
@@ -234,6 +324,8 @@ async def generate_questions(
     dönmek, yaratılmamış bir şeyi yaratıldı diye bildirmek olurdu.
     """
     settings = get_settings()
+    if payload.learning_outcome_id is not None:
+        _require_authoring()
 
     # İki kapı da gövdenin İLK işi (FR-222): sınıra takılan bir istek hiçbir iş
     # yapmamalı — ne konu doğrulaması, ne retrieval, ne LLM turu. Kapı üretim
@@ -277,6 +369,13 @@ async def generate_questions(
         if topic is None or topic.course_id != context.course_id:
             raise NotFoundError("Konu bulunamadı.")
 
+        outcome = await load_classification(
+            session,
+            course_id=context.course_id,
+            topic_id=topic.id,
+            outcome_id=payload.learning_outcome_id,
+        )
+
         if payload.answer_format is not None and payload.question_type is not QuestionType.OPEN:
             raise ValidationError("answer_format yalnızca 'open' tipi sorular için verilebilir.")
 
@@ -292,6 +391,8 @@ async def generate_questions(
             answer_format=payload.answer_format,
             example_questions=payload.example_questions,
             retrieval_limit=settings.retrieval_top_k,
+            learning_outcome=outcome,
+            difficulty=payload.difficulty,
         )
 
         refs = await load_source_refs(
@@ -329,7 +430,7 @@ async def _review(
     `questions_reviewed_consistency` CHECK'i `reviewed_by` ve `reviewed_at`'in
     ikisini birden ister; ikisi de burada, tek yerde yazılır.
     """
-    question = await _load_question(session, question_id, context.course_id)
+    question = await _load_question(session, question_id, context.course_id, for_update=True)
     question.status = new_status
     question.reviewed_by = context.user_id
     # Zaman damgası veritabanı saatinden: incelemeler farklı sunucu saatleriyle

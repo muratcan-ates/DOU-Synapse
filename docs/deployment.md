@@ -53,6 +53,7 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 
 | Değişken | Ne işe yarar |
 |---|---|
+| `QUESTION_AUTHORING_ENABLED` | Varsayılan `false`. `true` eğitmen için sınıflandırılmış soru üretimi ve taslak düzenlemeyi açar; yerel örnek yapılandırma açık gelir. |
 | `WORKER_DRAIN_URL` | Worker'ın drain ucunun tam adresi. **Tanımlıysa** tetik HTTP'ye döner; tanımsızsa süreç içinde `drain()` koşar |
 | `CHAT_RATE_LIMIT_REQUESTS`, `CHAT_RATE_LIMIT_WINDOW_SECONDS` | Kullanıcı başına sohbet sınırı. Sayaç **süreç içidir**: birden fazla replikada sınır replika başına uygulanır |
 
@@ -85,6 +86,10 @@ done
 | `0004` | Ölçme ve analitik |
 | `0005` | Ek politikalar |
 | `0006` / `0007` | R4 / R3'e ayrıldı, gerekirse |
+
+`0018_question_authoring.sql`, `0001`–`0015` üzerine uygulanır. `0016` ve `0017` numaraları paralel dallara ayrıldığı için bu dalda boşluk vardır; başka dalın migration dosyalarını yeniden numaralandırmayın. Bu değişiklik tablo eklemez, soru güncelleme yetkilerini daraltır ve onaylanmış/kullanılmış soru içeriklerini korur. Kullanılmamış taslağın öğrenme çıktısı silinirse çıktı ve zorluk birlikte temizlenir; incelenmiş veya kullanılmış sorunun çıktısını silmek reddedilir.
+
+Geri alma: `QUESTION_AUTHORING_ENABLED=false` verip API'yi yeniden başlatın. Yeni düzenleme ve sınıflandırılmış üretim kapanır; eski sınıflandırmasız üretim devam eder. Gerekirse önceki uygulama sürümünü geri yükleyin, `0018` korumalarını ve kaydedilmiş soruları yerinde tutun. Taslak düzenlemeyi yeniden açmadan önce API, SQL ve tarayıcı kanıtlarını aynı sürümde doğrulayın. Bu dalın yerel testleri canlı ortam onayı değildir.
 
 **`main`'e girmiş bir migration yerinde değiştirilmez.** Yeni numara açılır.
 Bir dağıtımda migration'ları uygulamadan önce §6'daki yedeği alın.

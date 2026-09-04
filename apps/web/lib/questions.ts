@@ -14,6 +14,7 @@
  * karşılığı budur: arayüz sunucunun vermediği bir metni ekrana yazamaz.
  */
 
+import type { Difficulty } from "@/lib/blueprint";
 import { toSourceInfo } from "@/lib/source";
 import type {
   AnswerFormat,
@@ -375,6 +376,8 @@ export interface GenerateForm {
   count: number;
   /** Serbest metin: her satır bir örnek soru. */
   examplesText: string;
+  learningOutcomeId?: string;
+  difficulty?: Difficulty | "";
 }
 
 /**
@@ -404,6 +407,10 @@ export function buildGenerateRequest(form: GenerateForm): QuestionGenerateReques
     question_type: form.questionType,
     count: form.count,
   };
+  if (form.learningOutcomeId || form.difficulty) {
+    request.learning_outcome_id = form.learningOutcomeId || null;
+    request.difficulty = form.difficulty || null;
+  }
   if (form.questionType === "open") request.answer_format = form.answerFormat;
   const examples = parseExampleQuestions(form.examplesText);
   if (examples.length > 0) request.example_questions = examples;

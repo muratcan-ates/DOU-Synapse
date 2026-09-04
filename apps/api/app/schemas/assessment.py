@@ -277,7 +277,32 @@ class QuestionOut(BaseModel):
     difficulty: QuestionDifficulty | None = None
 
 
-class QuestionGenerateRequest(BaseModel):
+class QuestionClassification(BaseModel):
+    learning_outcome_id: UUID | None = None
+    difficulty: QuestionDifficulty | None = None
+
+    @model_validator(mode="after")
+    def _classification_pair(self) -> QuestionClassification:
+        if (self.learning_outcome_id is None) != (self.difficulty is None):
+            raise ValueError("Öğrenme çıktısı ve zorluk birlikte seçilmeli veya temizlenmeli.")
+        return self
+
+
+class QuestionDraftRequest(QuestionClassification):
+    """Tam taslak değişimi; kimlik, kaynak ve inceleme alanları düzenlenemez."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    payload: dict[str, Any]
+    learning_outcome_id: UUID | None
+    difficulty: QuestionDifficulty | None
+
+
+class QuestionAuthoringOut(BaseModel):
+    enabled: bool
+
+
+class QuestionGenerateRequest(QuestionClassification):
     """Eğitmenin kurduğu çerçeve (6 Ağustos toplantısı: biçimi eğitmen seçer).
 
     `example_questions` verilirse üretim o üslubu taklit eder; verilmezse yalnız

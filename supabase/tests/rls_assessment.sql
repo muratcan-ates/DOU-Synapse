@@ -341,9 +341,13 @@ FROM changed;
 -- mutasyon testiyle ortaya çıktı: yalnız taslak üzerinden yazılan iddia, UPDATE
 -- politikası tamamen açıldığında bile yeşil kalıyordu — çünkü onu okuma politikası
 -- kurtarıyordu ve test aslında UPDATE'i hiç ölçmüyordu.
+-- 0018 sonrası onaylı payload ayrıca değişmezlik trigger'ıyla korunuyor. RLS'i
+-- tek başına sınamak için bu guard'ın izin verdiği inceleme zamanını kullanırız;
+-- öğrenci bu alanı da değiştiremez. Payload sınırı rls_question_authoring.sql'de
+-- trigger kaldırılarak ayrıca mutasyonla kanıtlanır.
 WITH changed AS (
     UPDATE questions
-    SET payload = '{"stem": "öğrenci değiştirdi", "answer_key": "x"}'
+    SET reviewed_at = now() + interval '1 second'
     WHERE id = '99999999-0000-0000-0000-00000000000a'
     RETURNING 1
 )

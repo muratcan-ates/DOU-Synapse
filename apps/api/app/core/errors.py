@@ -142,6 +142,11 @@ class CourseAgentDisabledError(AppError):
     code = "course_agent_disabled"
 
 
+class QuestionAuthoringDisabledError(AppError):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "question_authoring_disabled"
+
+
 class ConcurrencyLimitError(AppError):
     """Aynı kullanıcının hâlâ süren bir işi var (FR-222).
 

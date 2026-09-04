@@ -1928,6 +1928,118 @@
         }
       }
     },
+    "/courses/{course_id}/questions/authoring": {
+      "get": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Question Authoring Status",
+        "description": "Eğitmen ekranı yeni yazma yollarının dağıtım bayrağını buradan öğrenir.",
+        "operationId": "question_authoring_status_courses__course_id__questions_authoring_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionAuthoringOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/questions/{question_id}/draft": {
+      "post": {
+        "tags": [
+          "assessment"
+        ],
+        "summary": "Update Question Draft",
+        "description": "Yalnız kullanılmamış taslak içeriğini ve sınıflandırmasını birlikte değiştirir.",
+        "operationId": "update_question_draft_courses__course_id__questions__question_id__draft_post",
+        "parameters": [
+          {
+            "name": "question_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Question Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionDraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/courses/{course_id}/questions/generate": {
       "post": {
         "tags": [
@@ -6249,7 +6361,7 @@
           "out_of_scope"
         ],
         "title": "EvidenceLevel",
-        "description": "Kanıt kapısının üç çıktısı."
+        "description": "Kanıt kapısının üç çıktısı.\n\n`retrieval/scope.py`'de doğdu; `schemas/source.py` da tükettiği için\nmodülerizasyon v2'de sözleşme dosyasına taşındı — schemas→modules yönündeki\ntek import buydu. Karar mantığı scope'ta kalır; burada yalnız sözlük var."
       },
       "ExamFinishOut": {
         "properties": {
@@ -7711,6 +7823,19 @@
         ],
         "title": "PublishOut"
       },
+      "QuestionAuthoringOut": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "QuestionAuthoringOut"
+      },
       "QuestionDifficulty": {
         "type": "string",
         "enum": [
@@ -7720,8 +7845,70 @@
         ],
         "title": "QuestionDifficulty"
       },
+      "QuestionDraftRequest": {
+        "properties": {
+          "learning_outcome_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionDifficulty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "learning_outcome_id",
+          "difficulty",
+          "payload"
+        ],
+        "title": "QuestionDraftRequest",
+        "description": "Tam taslak değişimi; kimlik, kaynak ve inceleme alanları düzenlenemez."
+      },
       "QuestionGenerateRequest": {
         "properties": {
+          "learning_outcome_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Learning Outcome Id"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionDifficulty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "topic_id": {
             "type": "string",
             "format": "uuid",

@@ -277,6 +277,9 @@ class Settings(BaseSettings):
     #: Sınırın penceresi (saniye).
     chat_rate_limit_window_seconds: float = Field(default=60.0, gt=0, le=3600)
 
+    #: Yeni taslak düzenleme ve sınıflandırmalı üretim için operasyonel geri alma bayrağı.
+    question_authoring_enabled: bool = False
+
     # --- Soru üretimi sınırları (002 / FR-222, FR-223) ----------------------
     # Adlar lider turunda sabitlendi ki iki şerit aynı ayara iki farklı ad
     # vermesin. Değerler sohbet sınırının KOPYASI DEĞİL: tek çağrı 20 soruya

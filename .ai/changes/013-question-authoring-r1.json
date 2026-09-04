@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "change_id": "013-question-authoring-r1",
+  "lineage_id": "question-authoring",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Eğitmen soru taslağı düzenleme ve sınıflandırılmış sınav hazırlığı",
+  "summary": "Konu/çıktı/zorluk bilgisi mevcut soru üretim servisine taşınır; eğitmen yalnız kullanılmamış taslak içeriğini düzenler. API, RLS, sütun yetkileri ve veritabanı kilitleri incelenmiş/kullanılmış soruları korur. Arayüz dört soru türünü destekler.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-04T12:29:21+00:00",
+  "review_by": "2026-09-18T12:29:21+00:00",
+  "base_sha": "ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-ba69ff9e; local evidence uses fake/mock providers",
+    "model_revision": "unchanged-from-base-ba69ff9e",
+    "prompt_revision": "existing question_gen outcome/difficulty template becomes reachable via instructor request; prompt text unchanged",
+    "tool_schema_revision": "013-authoring-capability-and-draft-post; paired generation classification; OpenAPI52",
+    "guardrail_revision": "013-unused-draft-payload-validation; immutable reviewed/referenced records; migration0018; flag default disabled",
+    "retrieval_revision": "unchanged-from-base-ba69ff9e",
+    "embedding_revision": "unchanged-from-base-ba69ff9e",
+    "evaluator_revision": "authoring-api37; browser37; SQL26-plus-privileges; mutations5; concurrency6"
+  },
+  "data": {
+    "corpus_digest": "bbc909323c017591aeaefdacd4f94956f7c2dbc34c4e204d8e5651d928b6313b",
+    "eval_set_digest": "6ac9e90a08081ca96eb7d19ce8c61f2f93b3bf66278aa7330466364950f732b0",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".env.example",
+      "state": "present",
+      "sha256": "76ab8a0fc71b2a1a997eb5d407bbe6db6e43fc55cf289a9931a74ee0507d39a5"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "592702e356a724b3f141fb7c7bef6df324702447914b0c5ced2d994725a60924"
+    },
+    {
+      "path": ".specify/feature.json",
+      "state": "present",
+      "sha256": "bd5ba3a5e272cc69ea344a4c6e8fe34a7977b3824eb60a5c086957737de385a7"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "state": "present",
+      "sha256": "a665025b057a53896d563ae8c5cbf967d690258217431f79afa02ffcc1eb9c17"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "1ea972636a6dbc8583f89fff6162f962accee4ab2179ea179e87749795e369b5"
+    },
+    {
+      "path": "apps/api/app/api/questions.py",
+      "state": "present",
+      "sha256": "5a8f90f3f9d858d4bb987f61d658a5f854346d6bae451e20fff92d34c3cac5ba"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "533ad09ffc2b9eb4584340a12e20f5ab7a64fa9821d38027543370f89874ccc1"
+    },
+    {
+      "path": "apps/api/app/core/errors.py",
+      "state": "present",
+      "sha256": "717acde62a379f95f5eb5f2caefcab5ed32adc929ca8a6eaa3cadda56149f5ff"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/authoring.py",
+      "state": "present",
+      "sha256": "e7a7018f7f1c133a1f426be904a61b3b7d29970f4481881abaf626409de98cdf"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "eace0866b263b218af9dc1ea28036a0cfa1e4193458e81d077054f7c3a21ef91"
+    },
+    {
+      "path": "apps/api/tests/test_blueprint.py",
+      "state": "present",
+      "sha256": "125a56a26a9d823722d6ed9448c734cb9bdf44427ff26c86627c15d89c330ee3"
+    },
+    {
+      "path": "apps/api/tests/test_error_envelope.py",
+      "state": "present",
+      "sha256": "0102dc56732355e7ccbc4a483815b9f6840fff32f5b11fa94bb2c214ad26dd25"
+    },
+    {
+      "path": "apps/api/tests/test_question_authoring.py",
+      "state": "present",
+      "sha256": "60781643de053c265f353013c2ebb1068d0eac331a2f6b1cfc0d04a44b5a4f6e"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/questions/page.tsx",
+      "state": "present",
+      "sha256": "0bac7c36b0e19938de7d9c7be94df1cd14b2f88cce2fb8afa9f9e05dda7af7af"
+    },
+    {
+      "path": "apps/web/components/question-authoring/classification-fields.tsx",
+      "state": "present",
+      "sha256": "6fa4f6f2bad6d1416f8eecdf73b6bda8dc12f49f5fb8626fd810d87dea1c19d0"
+    },
+    {
+      "path": "apps/web/components/question-authoring/draft-editor.tsx",
+      "state": "present",
+      "sha256": "cc53a4757e03e9f47b2f1a291aeeb1e97c3ece0945c7c9d4a5212348422fbbc8"
+    },
+    {
+      "path": "apps/web/components/question-authoring/generate-panel.tsx",
+      "state": "present",
+      "sha256": "4b25dac5d119fb03fe2c435079bf0a26b4d0c0b5b5e34b88c4be58aae0c053ea"
+    },
+    {
+      "path": "apps/web/components/question-authoring/question-detail.tsx",
+      "state": "present",
+      "sha256": "32a0f07f55e578ac8d81d79daf7f14115c50d47f410fccc5877e61cef41e42da"
+    },
+    {
+      "path": "apps/web/e2e/question-authoring.spec.ts",
+      "state": "present",
+      "sha256": "bbc909323c017591aeaefdacd4f94956f7c2dbc34c4e204d8e5651d928b6313b"
+    },
+    {
+      "path": "apps/web/lib/question-authoring.test.ts",
+      "state": "present",
+      "sha256": "2558f09152418bac664a4d6a3aa0b1e50f9a2c9ba21f5ba5e8eded973be356d2"
+    },
+    {
+      "path": "apps/web/lib/question-authoring.ts",
+      "state": "present",
+      "sha256": "9accff98bf1d1e46fd780c52bae66617a9927f75fed4a25b5a39c6e7873d86f3"
+    },
+    {
+      "path": "apps/web/lib/questions.ts",
+      "state": "present",
+      "sha256": "0dc85b799830b38475fb5adb3b7962e30b913d3e2f9fcd746dbe3a6b2bde6f02"
+    },
+    {
+      "path": "apps/web/lib/types.ts",
+      "state": "present",
+      "sha256": "bc85d68d4f6ce61d53cca6ec8971216dcef57523e0856cc6ca70909c5a50ccb0"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "37a82ca677e22c59cdae06447397bc054a410646ed0f954d67857c571a78760e"
+    },
+    {
+      "path": "docs/instructor-guide.md",
+      "state": "present",
+      "sha256": "b17b6192f18d01f59a411b678626d95cadf40b6723d50ebcb5dbc7f505447c05"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "8389ac97fd2c5d595164ed3215300c89516a7ce96f3a202ab69d2d396dd685eb"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/contracts/openapi.json",
+      "state": "present",
+      "sha256": "23af3d6260e31509fd7c017ca198fd6fdac4f4e26566571a98ca4bbca2af626a"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "858dfe770b1095e420298fee1b9c4951ebe128dcfc5c94962a0d8628480d411e"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "06edf17ea2f2f2ba16b12dec8f4a78ec8b030fd19e5e3f8daa0b8fe1baaa30d1"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "4f63eaf39c15e3c8b09f53330b444ddd3186cd725372963b7baa07fbdbf42c61"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "99f900c584f6d52bb276c0941ea5c30700301b68d468c4f605cf957ca6446538"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "f1355cfae06aeabc6ca173c5b00ccce9d5f94f444470aea51c531f900af549b3"
+    },
+    {
+      "path": "specs/013-question-authoring/contracts/api.md",
+      "state": "present",
+      "sha256": "55ab43e3d610c923c9184c05315b6bc7677449a9ecfba634bc0e9255d04a4443"
+    },
+    {
+      "path": "specs/013-question-authoring/data-model.md",
+      "state": "present",
+      "sha256": "d82a40bd347d97845ef73338a0ec1487336904dde1340b316fdce10992d23ab7"
+    },
+    {
+      "path": "specs/013-question-authoring/plan.md",
+      "state": "present",
+      "sha256": "9598d813530496c580344440f61ce0ab199f787a37d5b3236a6010b11c4bcb8e"
+    },
+    {
+      "path": "specs/013-question-authoring/quickstart.md",
+      "state": "present",
+      "sha256": "107f89bf2ddbc9b5f09177c3a0718018fa5fafc58a335bf7f9462fc9c74f59c7"
+    },
+    {
+      "path": "specs/013-question-authoring/research.md",
+      "state": "present",
+      "sha256": "5bc61951796cc2b0c8ca1d49e62ff4cfbf67ca61b429d7ab6ddec75fa37d89b9"
+    },
+    {
+      "path": "specs/013-question-authoring/spec.md",
+      "state": "present",
+      "sha256": "4b03e95ecf7798c564b23573715a148e20d5d6d821822270fe9ddebdf0a8a0f4"
+    },
+    {
+      "path": "specs/013-question-authoring/tasks.md",
+      "state": "present",
+      "sha256": "30cc0af0307a76acb84235670849cf33d71b86d56eb20d652203b744cad552b7"
+    },
+    {
+      "path": "specs/013-question-authoring/verification.md",
+      "state": "present",
+      "sha256": "270a370fd88170a807b38214812855ef4b99058e07520e8efc747cbd35f12702"
+    },
+    {
+      "path": "supabase/migrations/0018_question_authoring.sql",
+      "state": "present",
+      "sha256": "414ddbe6ddee1e349865ddc9fbc2c7e935ab018f2b92bd7d86c4f669fa30db9d"
+    },
+    {
+      "path": "supabase/tests/question_authoring_concurrency_check.py",
+      "state": "present",
+      "sha256": "9e396d087cdca88a205efb490c654239c6799eb38e0f16d8242f90d8c4498203"
+    },
+    {
+      "path": "supabase/tests/rls_assessment.sql",
+      "state": "present",
+      "sha256": "41d20414cf55a2037f099599712d9fa99f3de985475844d80467c5ac9bab42ca"
+    },
+    {
+      "path": "supabase/tests/rls_question_authoring.sql",
+      "state": "present",
+      "sha256": "eb9ab6f715445a435d5407e2a1f3a4c7d39ec3796e25b714a3274b66b9bef56c"
+    },
+    {
+      "path": "supabase/tests/rls_question_authoring_mutation_check.sh",
+      "state": "present",
+      "sha256": "6811a63da251b794ca68f9d2a396e63e8e1625b5fcb9b352edbbd21d0608fdac"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/013-question-authoring-r1.json",
+      "report_sha256": "df325f69ced5ea37622850a41efca00927656aa44163a02d258422e4127ed9af",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "specs/013-question-authoring/spec.md",
+    "holdout_ref": "apps/web/e2e/question-authoring.spec.ts",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: independent instructor review and real-provider pedagogical acceptance remain pending",
+    "metrics": [
+      {
+        "name": "backend_tests_passed",
+        "baseline": 909,
+        "candidate": 946,
+        "operator": ">=",
+        "threshold": 909,
+        "sample_size": 946
+      },
+      {
+        "name": "frontend_library_tests_passed",
+        "baseline": 394,
+        "candidate": 406,
+        "operator": ">=",
+        "threshold": 394,
+        "sample_size": 406
+      },
+      {
+        "name": "browser_tests_passed",
+        "baseline": 36,
+        "candidate": 37,
+        "operator": ">=",
+        "threshold": 36,
+        "sample_size": 37
+      },
+      {
+        "name": "authoring_mutations_detected",
+        "baseline": 0,
+        "candidate": 5,
+        "operator": "==",
+        "threshold": 5,
+        "sample_size": 5
+      }
+    ],
+    "exact_command": "cd apps/api && env -u LLM_FAKE_PROVIDER -u EMBEDDING_WARMUP_ENABLED .venv/bin/pytest -q; cd apps/api && .venv/bin/ruff check app tests/test_question_authoring.py tests/test_blueprint.py && .venv/bin/ruff format --check . && .venv/bin/mypy app; cd apps/web && bun test lib/ && ./node_modules/.bin/tsc --noEmit --incremental false; cd apps/web && E2E_API_URL=http://127.0.0.1:8013 E2E_PORT=3113 E2E_DATABASE_NAME=dou_synapse_e2e_dou013 ./node_modules/.bin/playwright test --workers=1; PGHOST=127.0.0.1 PGPORT=55439 PGUSER=muratates PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_question_authoring_mutation_check.sh dou013_legacy_sql; PGHOST=127.0.0.1 PGPORT=55439 PGUSER=muratates PG_BIN=/opt/homebrew/opt/postgresql@16/bin supabase/tests/rls_assessment_mutation_check.sh dou013_legacy_sql; node scripts/docs_check.mjs --duzelt; cd apps/web && node scripts/contrast.mjs; cd apps/api && .venv/bin/python ../../evaluation/verify_gold_set.py"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending independent domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending independent security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "QUESTION_AUTHORING_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:013-question-authoring-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "QUESTION_AUTHORING_ENABLED",
+    "kill_switch": "Set QUESTION_AUTHORING_ENABLED=false and restart the API. Classified generation and draft edits return503 before work; old unclassified generation remains available.",
+    "assignment": "Sticky per instructor and course in an internal instructor-only staging pilot; no student rollout in this change.",
+    "initial_exposure": "None; not deployed. Begin with a synthetic staging course and no active assessments.",
+    "stop_conditions": [
+      "Any cross-course source/outcome reference or non-instructor write succeeds.",
+      "Any reviewed or referenced question payload changes, or any answer source is silently reassigned.",
+      "Flag-disabled authoring write succeeds or editing exposes a student answer key."
+    ],
+    "expand_conditions": [
+      "Independent engineering, domain and security/privacy review approve the exact candidate.",
+      "Real-provider classified generation meets instructor-approved outcome/difficulty criteria.",
+      "Staging authorization, migration and rollback rehearsal pass."
+    ],
+    "active_exam_policy": "Only unused drafts are editable. Reviewed questions and all paper/session/answer references are immutable; active-exam student controls are unchanged."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+    "procedure": "Disable QUESTION_AUTHORING_ENABLED and restart API; if needed restore the previous application binary while keeping0018 protections and authored records. Do not rewrite approved content or remove historical data.",
+    "max_minutes": 15,
+    "verification": "Capability reports false; classified generation/edit503; legacy generation/review still work; reviewed/reference SQL guards remain effective. Code compatibility reviewed; deployed rollback drill not run.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixture identities and source text only; retained reports contain aggregate counts, hashes and repository paths.",
+    "retention": "Versioned local evidence; no real student prompts, answers, identifiers, raw provider payloads or credentials."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

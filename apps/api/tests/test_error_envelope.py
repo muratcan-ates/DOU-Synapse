@@ -169,7 +169,13 @@ class TestBlueprintRouter:
         # Kaynak bağlamı, privacy ve ders AI politikasıyla 33 olan sözleşmeye
         # blueprint ailesi yedi, ingestion retry bir, kalite döngüsü iki ve ürün
         # portalı (profil + dashboard + beş admin yolu) yedi path ekler.
-        assert len(yollar) == 50, f"yol sayısı değişmiş: {len(yollar)}"
+        # 013 taslak yazımı iki yol ekler; mevcut üretim/onay yolları korunur.
+        authoring_yolu = "/courses/{course_id}/questions/authoring"
+        draft_yolu = "/courses/{course_id}/questions/{question_id}/draft"
+        assert {authoring_yolu, draft_yolu} <= yollar
+        assert "get" in app.openapi()["paths"][authoring_yolu]
+        assert "post" in app.openapi()["paths"][draft_yolu]
+        assert len(yollar) == 52, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:
