@@ -918,3 +918,5 @@ kanıtlar: [014 gereksinimleri](specs/014-student-assessment/spec.md),
 ## CourseGPT tamamlama programı
 
 Kalan işlerin sırası, tamamlanma ölçütleri ve dış girdiler [tamamlama programında](docs/completion-program.md) tutulur. 015 yerel geliştirmesi için [özellik sözleşmesi](specs/015-completion-program/spec.md), [doğrulama kaydı](specs/015-completion-program/verification.md) ve [entegrasyon/teslim incelemesi](specs/015-completion-program/release-review.md) kaynak alınır. Yerel test ile gerçek model/hoca kabulü ve canlı yayın ayrı aşamalardır.
+
+Repo içi geliştirme becerileri ve Codex/Claude kullanım yolu için [beceri paketine](docs/agent-skills.md) bakın.

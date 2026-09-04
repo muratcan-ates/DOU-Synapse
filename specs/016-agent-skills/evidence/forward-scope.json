@@ -1,0 +1,43 @@
+{
+  "setup_changes": {
+    ".local-test/intended-process.json": "added",
+    "apps/api/.venv/.gitignore": "added",
+    "apps/api/.venv/CACHEDIR.TAG": "added",
+    "apps/api/.venv/bin/activate": "added",
+    "apps/api/.venv/bin/activate.bat": "added",
+    "apps/api/.venv/bin/activate.csh": "added",
+    "apps/api/.venv/bin/activate.fish": "added",
+    "apps/api/.venv/bin/activate.nu": "added",
+    "apps/api/.venv/bin/activate.ps1": "added",
+    "apps/api/.venv/bin/activate_this.py": "added",
+    "apps/api/.venv/bin/deactivate.bat": "added",
+    "apps/api/.venv/bin/pydoc.bat": "added",
+    "apps/api/.venv/bin/python": "added",
+    "apps/api/.venv/bin/python3": "added",
+    "apps/api/.venv/bin/python3.12": "added",
+    "apps/api/.venv/lib/python3.12/site-packages/_virtualenv.pth": "added",
+    "apps/api/.venv/lib/python3.12/site-packages/_virtualenv.py": "added",
+    "apps/api/.venv/pyvenv.cfg": "added",
+    "specs/021-local-guide/plan.md": "modified"
+  },
+  "plan_changes": {
+    "specs/021-local-guide/plan.md": "modified",
+    "specs/021-local-guide/quickstart.md": "added"
+  },
+  "setup_tasks_changes": {},
+  "tasks_changes": {
+    "specs/021-local-guide/tasks.md": "modified"
+  },
+  "analysis_changes": {},
+  "evidence_changes": {},
+  "owner_changes": {},
+  "shared_env_unchanged": true,
+  "user_decision_preserved": true,
+  "complete_task_preserved": true,
+  "pinned_feature_unchanged": true,
+  "highest_feature_unchanged": true,
+  "historical_record_unchanged": true,
+  "document_subprocess_attempts": [],
+  "links_checked": 25,
+  "links_missing": 0
+}

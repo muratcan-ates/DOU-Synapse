@@ -1,0 +1,4 @@
+interface:
+  display_name: "DOU ortam kurulumu"
+  short_description: "İzole çalışma ağacı ve yerel ortam hazırlığı"
+  default_prompt: "$dou-kurulum ile bu DOU-Synapse çalışma ağacının yerel geliştirme ortamını hazırla."

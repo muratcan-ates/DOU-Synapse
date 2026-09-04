@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "kind": "agent_skill_packaging_boundary_recheck",
+  "recorded_at": "2026-09-04T16:30:59.465601+00:00",
+  "repository": "/Users/muratates/code/dou-synapse-016-agent-skills",
+  "base_head": "ed6103fbe53be3888252074db0a722cfe1be617c",
+  "checker_sha256": "89b71b4fd1310615e1dda10b46f1401e2b60d81f8e54c7d6ab379dd1f92ced5f",
+  "scope": "Previous packaging boundary fixtures only; in /private/tmp; no product/API/model/database tests run.",
+  "repository_edits": false,
+  "network_or_model_calls": 0,
+  "previously_failing_cases": 7,
+  "control_cases": 1,
+  "passed": 8,
+  "total": 8,
+  "status": "pass",
+  "cases": [
+    {
+      "case": "valid_baseline",
+      "expected_status": "pass",
+      "observed_status": "pass",
+      "errors": [],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    },
+    {
+      "case": "encoded_nul_path",
+      "expected_status": "fail",
+      "observed_status": "fail",
+      "errors": [
+        "LOCAL_REFERENCE:sample-workflow:%00.md"
+      ],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    },
+    {
+      "case": "reference_style_missing",
+      "expected_status": "fail",
+      "observed_status": "fail",
+      "errors": [
+        "LOCAL_REFERENCE:sample-workflow:references/missing.md"
+      ],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    },
+    {
+      "case": "file_scheme_escape",
+      "expected_status": "fail",
+      "observed_status": "fail",
+      "errors": [
+        "LOCAL_REFERENCE:sample-workflow:file:///private/tmp/outside.md"
+      ],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    },
+    {
+      "case": "malformed_optional_metadata",
+      "expected_status": "fail",
+      "observed_status": "fail",
+      "errors": [
+        "METADATA_TYPE:sample-workflow:allowed-tools",
+        "METADATA_TYPE:sample-workflow:license",
+        "METADATA_TYPE:sample-workflow:metadata"
+      ],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    },
+    {
+      "case": "wrong_invocation_suffix",
+      "expected_status": "fail",
+      "observed_status": "fail",
+      "errors": [
+        "DEFAULT_PROMPT:sample-workflow"
+      ],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    },
+    {
+      "case": "deep_yaml",
+      "expected_status": "fail",
+      "observed_status": "fail",
+      "errors": [
+        "SKILL_PARSE:sample-workflow"
+      ],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    },
+    {
+      "case": "reference_symlink_loop",
+      "expected_status": "fail",
+      "observed_status": "fail",
+      "errors": [
+        "LOCAL_REFERENCE:sample-workflow:loop"
+      ],
+      "crash": null,
+      "files_unchanged": true,
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Tasks"
+  short_description: "Break a feature plan into ordered work"
+  default_prompt: "Use $speckit-tasks to handle the current feature request within its existing scope."

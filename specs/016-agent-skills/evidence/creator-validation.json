@@ -1,0 +1,70 @@
+{
+  "dou-entegrasyon": [
+    true,
+    "Skill is valid!"
+  ],
+  "dou-kanit": [
+    true,
+    "Skill is valid!"
+  ],
+  "dou-kurulum": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-analyze": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-checklist": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-clarify": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-constitution": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-git-commit": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-git-feature": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-git-initialize": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-git-remote": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-git-validate": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-implement": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-plan": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-specify": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-tasks": [
+    true,
+    "Skill is valid!"
+  ],
+  "speckit-taskstoissues": [
+    true,
+    "Skill is valid!"
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Özellik Dalı"
+  short_description: "Başlangıcı doğrulayıp özellik dalını oluştur"
+  default_prompt: "Use $speckit-git-feature to create the next feature branch from the agreed starting state without disturbing other worktrees."

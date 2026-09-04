@@ -4,7 +4,9 @@ Bu belge kullanıcı tarafından istenen sürekli geliştirme programının kald
 
 ## Güncel durum
 
-Aktif dal: `015-completion-program`; çalışma dizini: `/Users/muratates/code/dou-synapse-015-completion-program`; temel: `4e948d5fc5ec42f447838cb1e95e22f5881cb0fa` (yerel014; içinde013 var). Doğrulanmış uzak main: `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac`. 013/014/015 henüz main veya canlı ortamda değildir. Son doğrulama: 015 için 1154 API, 421 web ve 38 tarayıcı testi; bunlar sahte/enjekte sağlayıcıyla yerel doğrulamadır. Kesin aday, bu kaydı içeren commit olarak yeni AI dossier içinde SELF ile bağlıdır.
+Aktif dal: `016-agent-skills`; çalışma dizini: `/Users/muratates/code/dou-synapse-016-agent-skills`; temel: `ed6103fbe53be3888252074db0a722cfe1be617c` (geçerli015 yerel adayı; içinde013/014 var). Uzak main en son `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac` olarak doğrulandı; bu tur yeni uzak sorgu yapılmadı. Hiçbir yerel dilim main'e veya canlıya alınmadı.
+
+Ürün test kanıtı: 1154 API, 421 web, 38 tarayıcı sonucu önceki test edilmiş ürün anlık görüntüsüne aittir; 016 uygulama kodunu değiştirmez. 015 aday düzeltmesi ve devralınan kanıt için specs/015-completion-program/candidate-correction.md okunmalıdır. 016'nın kendi kanıtı beceri paketi, karşı testler ve geçici çalışma akışı denemeleridir; ayrıntı specs/016-agent-skills/verification.md. Kesin güncel SHA çalışma ağacından ve teslim raporundan doğrulanır.
 
 ## İş sırası ve bitirme ölçütleri
 
@@ -20,6 +22,7 @@ Aktif dal: `015-completion-program`; çalışma dizini: `/Users/muratates/code/d
 | 8 | Entegrasyon ve yayıma hazırlık | Yerel aday sonrası | 013+014+015 farkı ve göç sırası incelemesi; gelen dallardaki0016 çakışmasını içeri almama; incelenebilir PR paketi; bağımsız onay kayıtları |
 | 9 | Staging işletim ve geri dönüş doğrulaması | Ortam erişimi bekliyor | Gerçek oturum açma/depolama/işçi akışı; öğrenci/eğitmen/yönetici sınırları; gecikme/maliyet; yedekten geri yükleme ve rollback kanıtı |
 | 10 | Hocaya teslim ve kullanım kabulü | 7–9 sonrası | Çalışan URL, örnek ders, tarihli gerçek başarı raporu, iki rol kılavuzu, canlı senaryo ve öğretmen kabulü |
+| 11 | Repo becerilerinin taşınabilir Codex paketi | Yerelde doğrulandı | 17 eşlenmiş beceri, 3 güncel ortak DOU metni, yapısal/negatif kontroller, bağımsız kullanım denemesi ve CI tanımı |
 | Koşullu | Taranmış materyal OCR | Materyale bağlı | Yalnız gerekli sayfalar için metin çıkarma/kaynak sayfa eşleme testleri; ihtiyaç yoksa gerekçeli kapsam dışı |
 
 ## Çalışma döngüsü
@@ -37,8 +40,10 @@ Gerçek Groq/Gemini değerlendirme anahtarı şu an bulunmuyor; anahtar değerle
 
 ## Kaldığı yer
 
-015 yerel uygulaması ve birleşik doğrulaması tamamlandı. Sağlayıcı: student_api_audit; değerlendirme/paket: mail_requirements; web: student_ui_audit; API okuma uçları, entegrasyon ve kanıt: root. İzole PG port55440; yalnız dou015_* ve dou_synapse_e2e_dou015 DB'leri. API8015/web3115. Yerel hazırlık tamam. Sonraki yürütülebilir adım, gerçek değerlendirme anahtarı ve öğretmen kaynak/etiket girdisi geldiğinde kabul paketini aynı temiz adayla çalıştırmak; ardından bağımsız inceleme ve staging erişimiyle yayın kapılarını doğrulamak. Gerçek model veya insan sonucu olmadan aynı engeli tekrar deneme. Ayrıntılı görevler specs/015-completion-program/tasks.md; sonuçlar verification.md.
+015 yerel uygulaması tamamlandı ve eski adaylar korundu. 016, root koordinasyonunda 3 DOU becerisi/araç/docs, mail_requirements ile 9 Speckit ve student_api_audit ile 5 Git becerisi olarak bölündü. Kalıcı sunucu veya test veritabanı başlatılmadı; davranış denemeleri geçici dosya alanında yapıldı. Kaynak dokümanlara ve eski immutable AI kayıtlarına dokunulmaz.
+
+016 beceri doğrulaması tamamlandı. Sıradaki ürün adımı ayrı gerçek değerlendirme anahtarı ve öğretmen kaynak/etiket girdisiyle kabul paketini çalıştırmaktır. Bu girdiler yokken gerçek model veya insan sonucu üretilmiş sayılmaz. 90+ ajan kataloğunu araştırmaya devam etmek için yeni bir kaynak adı/bağlantısı gerekir. Mevcut engeli aynı sorgularla tekrar denemek yerine hazır paketi ve gereken girdileri koru.
 
 ## Ajan/beceri envanteri ek kontrolü
 
-Kullanıcı mevcut 90+ ajan paketini ve repo becerilerini kontrol etmemizi istedi. [Envanter](agents-skills-inventory.md): repo 17 Claude becerisi ve yerel 9 Codex DOU becerisi doğrulandı; 90+ ajan kataloğu incelenen konumlarda bulunamadı. İnceleme sırasında kurulum yapılmadı. Paket kaynağının belirlenmesi ve seçilecek eski becerilerin Codex'e uyarlanması ayrı takip işidir; ürün kabulü ajan sayısıyla ölçülmez.
+Kullanıcı mevcut 90+ ajan paketini ve repo becerilerini kontrol etmemizi istedi. [Envanter](agents-skills-inventory.md): repo 17 Claude becerisi ve yerel 9 Codex DOU becerisi doğrulandı; 90+ ajan kataloğu incelenen konumlarda bulunamadı. 015 incelemesinde kurulum yapılmamıştı. 016 ile repo içi17 Codex karşılığı eklendi, 3 eski DOU yönergesi güncellendi. Küresel kopya kurulmadı. Kullanım ve doğrulama docs/agent-skills.md içinde; 90+ katalog kaynağı hâlâ takip girdisidir.

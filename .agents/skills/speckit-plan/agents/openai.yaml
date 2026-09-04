@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Plan"
+  short_description: "Design an implementable feature plan"
+  default_prompt: "Use $speckit-plan to handle the current feature request within its existing scope."

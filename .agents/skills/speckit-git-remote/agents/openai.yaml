@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Uzak Depo"
+  short_description: "Uzak depo hedeflerini doğrula ve yapılandır"
+  default_prompt: "Use $speckit-git-remote to inspect this repository’s actual fetch and push destinations and apply only the requested remote change."

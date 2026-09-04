@@ -1,0 +1,11 @@
+{
+  "fixture": "/private/tmp/dou016-speckit-flow-2t6au90b",
+  "passed": [
+    "non-feature branch failure is observable",
+    "pinned feature resolves using scoped override without checkout",
+    "task prerequisite and setup-tasks discovery preserve existing plan/tasks",
+    "resolved plan template read preserves existing plan",
+    "explicit-number new-feature preview creates no files and changes no branch"
+  ],
+  "scope": "Script-contract smoke checks; independent skill decision review is separate."
+}

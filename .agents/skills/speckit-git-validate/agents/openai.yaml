@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Dal Doğrulama"
+  short_description: "Özellik dalını ve spec eşleşmesini denetle"
+  default_prompt: "Use $speckit-git-validate to check the actual feature branch and its specification directory without changing Git state."

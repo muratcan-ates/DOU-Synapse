@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Tasks to Issues"
+  short_description: "Prepare scoped issue drafts from feature tasks"
+  default_prompt: "Use $speckit-taskstoissues to handle the current feature request within its existing scope."

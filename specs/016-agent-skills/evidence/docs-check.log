@@ -1,0 +1,31 @@
+
+ÖLÇÜLEN
+  tables.count         27                       grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql
+  migrations.list      0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0018,0019 ls supabase/migrations/*.sql
+  backend.tests        1154                     cd apps/api && uv run pytest --collect-only -q
+  frontend.tests       421                      cd apps/web && bun test lib/
+  frontend.testFiles   38                       cd apps/web && bun test lib/
+  e2e.tests            38                       cd apps/web && ./node_modules/.bin/playwright test --list
+  migrations.count     17                       ls supabase/migrations/*.sql
+  screens.count        20                       find apps/web/app -name page.tsx
+  sampleData.files     22                       find sample_data/isletim-sistemleri -type f -not -name '*.md' | wc -l
+  backend.mypyFiles    105                      cd apps/api && uv run mypy app
+
+İDDİA  33 canlı · 40 tarihsel · 141 belge tarandı
+
+MUAF   specs/002-production-hardening/tasks.md (entegratör)
+       Görev defteri: sayıları tarihli DONE notlarının içinde ve doğası gereği tarihsel kayıt. Ayrıca hiçbir işçi şeridi bu dosyayı değiştirmez; işaretleri entegratör koyar.
+
+MUAF   specs/001-course-assistant-mvp/tasks.md (entegratör)
+       Aynı sebep: kapanmış 001 şartnamesinin görev defteri, tarihli DONE notlarından ibaret.
+
+ARŞİV  docs/team/** — 30 belge, işaretsiz taramadan muaf
+       Tarihli devir/brifing kayıtları; her dosya kendi gününün durumunu anlatır.
+
+KAPSAM DIŞI
+  · Eşik ifadeleri (`≥15 vaka` gibi) — hedef, ölçüm değil
+  · Dosya başına test sayıları (`test_exams.py (35 test)`) — kaynağı ayrı, sapması gözlenmedi
+  · Gecikme/token/chunk ölçümleri — koşum gerektirir, statik türetilemez
+  · RLS iddia sayıları (98 / 58) — psql koşumundan gelir, CI'nın RLS adımları kanıtlar
+
+✓ Belgelerdeki canlı sayıların tamamı ölçümle uyuşuyor.

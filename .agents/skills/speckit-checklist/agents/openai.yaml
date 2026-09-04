@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Checklist"
+  short_description: "Review requirement clarity and completeness"
+  default_prompt: "Use $speckit-checklist to handle the current feature request within its existing scope."

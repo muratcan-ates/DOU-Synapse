@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Analyze"
+  short_description: "Find specification and task coverage gaps"
+  default_prompt: "Use $speckit-analyze to handle the current feature request within its existing scope."

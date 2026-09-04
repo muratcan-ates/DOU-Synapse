@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Git Başlatma"
+  short_description: "Yeni projede Git durumunu güvenle başlat"
+  default_prompt: "Use $speckit-git-initialize to check this project and initialize Git only if it is not already versioned."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Constitution"
+  short_description: "Maintain project principles and their lineage"
+  default_prompt: "Use $speckit-constitution to handle the current feature request within its existing scope."

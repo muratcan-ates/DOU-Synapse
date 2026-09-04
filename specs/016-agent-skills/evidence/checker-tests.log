@@ -1,0 +1,22 @@
+test_broken_reference_and_outside_path_fail (scripts.test_agent_skills.SkillPackageTests.test_broken_reference_and_outside_path_fail) ... ok
+test_cli_exit_and_json_follow_real_validation (scripts.test_agent_skills.SkillPackageTests.test_cli_exit_and_json_follow_real_validation) ... ok
+test_deep_yaml_and_object_tags_fail_safely (scripts.test_agent_skills.SkillPackageTests.test_deep_yaml_and_object_tags_fail_safely) ... ok
+test_dou_runtime_drift_is_detected (scripts.test_agent_skills.SkillPackageTests.test_dou_runtime_drift_is_detected) ... ok
+test_duplicate_identity_fails (scripts.test_agent_skills.SkillPackageTests.test_duplicate_identity_fails) ... ok
+test_duplicate_yaml_key_fails_instead_of_overriding (scripts.test_agent_skills.SkillPackageTests.test_duplicate_yaml_key_fails_instead_of_overriding) ... ok
+test_empty_description_and_claude_metadata_fail (scripts.test_agent_skills.SkillPackageTests.test_empty_description_and_claude_metadata_fail) ... ok
+test_invalid_path_and_loop_are_reported_without_crashing (scripts.test_agent_skills.SkillPackageTests.test_invalid_path_and_loop_are_reported_without_crashing) ... ok
+test_missing_skill_mapping_fails (scripts.test_agent_skills.SkillPackageTests.test_missing_skill_mapping_fails) ... ok
+test_optional_metadata_types_are_checked (scripts.test_agent_skills.SkillPackageTests.test_optional_metadata_types_are_checked) ... ok
+test_reference_style_and_file_urls_are_checked (scripts.test_agent_skills.SkillPackageTests.test_reference_style_and_file_urls_are_checked) ... ok
+test_skill_name_prefix_is_not_an_invocation (scripts.test_agent_skills.SkillPackageTests.test_skill_name_prefix_is_not_an_invocation) ... ok
+test_symlink_escape_is_not_read (scripts.test_agent_skills.SkillPackageTests.test_symlink_escape_is_not_read) ... ok
+test_template_and_oversized_files_fail (scripts.test_agent_skills.SkillPackageTests.test_template_and_oversized_files_fail) ... ok
+test_ui_yaml_missing_or_wrong_invocation_fails (scripts.test_agent_skills.SkillPackageTests.test_ui_yaml_missing_or_wrong_invocation_fails) ... ok
+test_unicode_ui_and_local_link_pass (scripts.test_agent_skills.SkillPackageTests.test_unicode_ui_and_local_link_pass) ... ok
+test_valid_package_does_not_modify_files (scripts.test_agent_skills.SkillPackageTests.test_valid_package_does_not_modify_files) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.269s
+
+OK

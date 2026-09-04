@@ -1,0 +1,29 @@
+name: Agent skills
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-skills-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
+      - name: Validate the repository skill package
+        run: uv run --project apps/api --frozen --extra dev python scripts/check_agent_skills.py
+      - name: Prove malformed packages fail
+        run: uv run --project apps/api --frozen --extra dev python -m unittest scripts.test_agent_skills -v
+      - name: Check validator style
+        run: uv run --project apps/api --frozen --extra dev ruff check --config apps/api/pyproject.toml scripts/check_agent_skills.py scripts/test_agent_skills.py

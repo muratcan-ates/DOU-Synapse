@@ -1,0 +1,10 @@
+{
+  "package.json": "1a1ed8cf07e4a9672935069a9fa900033ca91f31f53daaf80ae3c6b3a014507d",
+  "creator-validation.json": "ba9e163efea074cabb5a05c17b15089d2f79e695c9ce99a2668bc4db6fccb8d8",
+  "checker-tests.log": "5f55eb763a59979bab4c99859b131f226a5d8c2d9cd3253eb5652e44dc103359",
+  "boundary-review.json": "2480dd40b4a6460701b6cb98a00b5be2a2e8f9582a2acacaa0e0e2eb670f86b8",
+  "forward-trial.md": "3634b7b3ebecc4d400e2f7b889007f80c85e60f797f5dd39b46c2fa90852ecac",
+  "forward-scope.json": "88e77749f6ad011550570b185cf1a99e33cd2b0313e415bcb410e0a398e97ec3",
+  "script-contract-smoke.json": "89ceb5a5bd612d6853e58921d32feed558f9f73431fecbb597dba07e14b17a03",
+  "docs-check.log": "f7c15f56d0da50da9f3a64238e4c27952cf5191f0a7fb4ae626f0aa41b33eb14"
+}

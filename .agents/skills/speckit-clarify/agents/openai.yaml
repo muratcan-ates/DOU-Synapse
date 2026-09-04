@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Clarify"
+  short_description: "Resolve important specification ambiguities"
+  default_prompt: "Use $speckit-clarify to handle the current feature request within its existing scope."

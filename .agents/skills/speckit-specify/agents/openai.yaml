@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Specify"
+  short_description: "Turn a feature request into a clear spec"
+  default_prompt: "Use $speckit-specify to handle the current feature request within its existing scope."

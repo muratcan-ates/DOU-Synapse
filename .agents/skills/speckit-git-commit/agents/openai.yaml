@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec Kit Görev Commit’i"
+  short_description: "İncelenmiş görev değişikliklerini commit et"
+  default_prompt: "Use $speckit-git-commit to inspect and commit only the changes owned by this task."

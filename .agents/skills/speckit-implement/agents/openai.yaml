@@ -1,0 +1,4 @@
+interface:
+  display_name: "Speckit Implement"
+  short_description: "Execute feature tasks with verified progress"
+  default_prompt: "Use $speckit-implement to handle the current feature request within its existing scope."

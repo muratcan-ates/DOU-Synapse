@@ -1,0 +1,4 @@
+interface:
+  display_name: "DOU dal entegrasyonu"
+  short_description: "Dalları sözleşme ve kanıtlarıyla birleştirme"
+  default_prompt: "$dou-entegrasyon ile bu DOU-Synapse değişikliğinin hedef dala entegrasyonunu incele."

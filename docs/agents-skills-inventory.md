@@ -1,8 +1,12 @@
 # DOU-Synapse ajan ve beceri envanteri — 4 Eylül 2026
 
-Kullanıcının “depoya önceden koyduğumuz 90'dan fazla ajan ve beceriler” kontrolü için salt okunur envanter çıkarıldı. Bu inceleme hiçbir ajan paketini kurmadı, silmedi veya yeniden yazmadı.
+Kullanıcının “depoya önceden koyduğumuz 90'dan fazla ajan ve beceriler” kontrolü için salt okunur envanter çıkarıldı. İlk015 incelemesi salt okunurdu. 016 devamında mevcut becerilerin Codex karşılıkları hazırlandı; tarihsel tarama bulguları aşağıda korunur.
 
-## Sonuç
+## 016 güncellemesi
+
+Repo artık `.agents/skills/` altında 17 Codex karşılığı içeriyor; 3 DOU metni `.claude/skills` ile aynı güncel akışı kullanıyor. 14 Claude Speckit kaynağı aynen korundu. Eski uyumsuzluk/kurulum bulguları bu sürümdeki uyarlamanın gerekçesidir. Yeni paket 90+ ajan kütüphanesinin bulunduğu anlamına gelmez; küresel kurulum yapılmadı. [Kullanım ve doğrulama](agent-skills.md).
+
+## İlk tarama sonucu
 
 | Kaynak | Doğrulanan içerik | Durum |
 |---|---|---|
@@ -37,9 +41,8 @@ Codex'te kurulu 9 DOU becerisi: ai-sdlc, completion-loop, engineering-excellence
 
 Claude marketplace dağılımı: feature-dev 3, plugin-dev 3, pr-review-toolkit 6, code-modernization 5, agent-sdk-dev 2, hookify 1, code-simplifier 1. 21 tanımda 19 farklı ad var; code-reviewer ve code-simplifier iki pakette farklı içerikle bulunuyor. Birebir içerik kopyası yok. Ayrıca skill-creator'ın 3 yardımcı yönergesi var. Codex'in 44 openai.yaml dosyasında yalnız interface veya interface+policy metadata bulundu.
 
-## Sonraki somut işler
+## Takip
 
-1. 90+ ajan paketinin kaynağını belirle; rastgele benzer bir paketi mevcut katalogmuş gibi kurma.
-2. Gereken becerileri seçip Claude metadata/komutlarını Codex'e uygun ayrı paket olarak uyarlamayı planla; mevcut kurulumlarla işlev çakışmasını kontrol et.
-3. Eski DOU kurulum/entegrasyon yönergelerini taşınabilir yollar, açık veritabanı izolasyonu ve güncel araçlarla güncelle.
-4. Paylaşılacak beceri paketini ve yerel kurulum durumunu ayrı sürümle. Bir dosyanın depoda durması o ajanın otomatik veya sürekli çalıştığı anlamına gelmez.
+1. 90+ ajan paketinin özgün kaynağı hâlâ bekleniyor.
+2. Codex uyarlaması ve üç DOU yönergesinin taşınabilir hâle gelmesi 016 kapsamında tamamlandı; doğrulama kaydı specs/016-agent-skills/verification.md.
+3. Repo içi paket ile 9 kişisel Codex becerisi ayrı tutuldu; otomatik süreç veya arka plan çalışma iddiası yok.

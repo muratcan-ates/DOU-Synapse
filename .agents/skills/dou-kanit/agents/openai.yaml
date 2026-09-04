@@ -1,0 +1,4 @@
+interface:
+  display_name: "DOU doğrulama ve kanıt"
+  short_description: "Değişikliğe uygun test ve dürüst teslim kanıtı"
+  default_prompt: "$dou-kanit ile bu DOU-Synapse değişikliğinin gerekli doğrulamalarını yap ve sonuçları kaydet."
