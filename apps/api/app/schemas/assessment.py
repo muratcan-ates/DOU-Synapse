@@ -405,6 +405,8 @@ class AnswerFeedbackOut(BaseModel):
 
 
 class ExamFinishOut(BaseModel):
+    #: Oturum kapandı; aynı dersteki başka sınav bitene kadar sonuçlar saklıdır.
+    results_locked: bool = False
     session_id: UUID
     #: Cevaplanan soruların ortalaması. Hiç cevap yoksa None — 0 değil.
     score: float | None

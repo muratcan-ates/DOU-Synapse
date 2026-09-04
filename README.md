@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-946_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 946 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-406_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 406 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1040_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1040 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-411_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 411 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -465,10 +465,10 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **946** <!-- docs-check: backend.tests = 946 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **406** <!-- docs-check: frontend.tests = 406 --> | 37 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 37 --> |
-| Playwright gerçek-API vakaları | **37** <!-- docs-check: e2e.tests = 37 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 37/37; gerçek provider/staging kanıtı değil |
-| Migration | **16** <!-- docs-check: migrations.count = 16 --> | Şema evriminin kaynak dosyası sayısı |
+| Backend testleri | **1040** <!-- docs-check: backend.tests = 1040 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **411** <!-- docs-check: frontend.tests = 411 --> | 37 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 37 --> |
+| Playwright gerçek-API vakaları | **38** <!-- docs-check: e2e.tests = 38 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 38/38; gerçek provider/staging kanıtı değil |
+| Migration | **17** <!-- docs-check: migrations.count = 17 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
@@ -499,7 +499,7 @@ provider/staging kanıtı değildir; bu kapılar geçmeden production iddiası k
 
 ### Migration yolculuğu
 
-<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0018</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0018 -->
+<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0018,0019</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0018,0019 -->
 
 | Migration | Ürüne eklediği katman |
 |---|---|
@@ -784,7 +784,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 946 testtir. <!-- docs-check: backend.tests = 946 -->
+Güncel feature kanıtında backend koleksiyonu 1040 testtir. <!-- docs-check: backend.tests = 1040 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -798,7 +798,7 @@ Güncel feature kanıtında backend koleksiyonu 946 testtir. <!-- docs-check: ba
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 406 testtir. <!-- docs-check: frontend.tests = 406 -->
+Güncel feature kanıtında frontend kütüphane paketi 411 testtir. <!-- docs-check: frontend.tests = 411 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 
@@ -901,3 +901,16 @@ scripts/                   Docs, workflow, eval ve güvenlik kontrolleri
 ## Lisans
 
 Bu proje [MIT Lisansı](LICENSE) ile yayımlanır.
+
+## Öğrenci sınav yolculuğu (014, yerel aday)
+
+013 soru yazımının üstüne konu seçerek alıştırma, açık yayımlanmış sınav kataloğu, kişisel
+oturum geçmişi, devam etme ve kaynaklı sonuçları yeniden açma eklendi. Aktif sınavda eski
+çözümler ve alıştırma yardımı kapalıdır. Giriş penceresi kapanan sınavın kalan süresi
+korunur; kaynağı doğrulanamayan AI değerlendirmeleri puan olarak gösterilmez.
+
+Bayrak: `STUDENT_ASSESSMENT_WORKSPACE_ENABLED=false` varsayılan. Yerel geliştirme ve test
+ortamında açılır. Bu değişiklik main/staging/üretim yayını değildir. Kabul kapsamı ve
+kanıtlar: [014 gereksinimleri](specs/014-student-assessment/spec.md),
+[hocanın mailiyle eşleme](specs/014-student-assessment/mail-acceptance.md),
+[014 doğrulama raporu](specs/014-student-assessment/verification.md).

@@ -144,6 +144,32 @@ soruyu düzeltmeyi deneyin.
   çözmek daha değerlidir.
 - **Gerçek sınav modunda ipucu tamamen kapalıdır** ve geri bildirim sınav bitince gelir.
 
+### Konu seçimi, açık sınavlar ve oturumlar
+
+Öğrenci çalışma alanı açılmış ortamlarda **Çalışma konusu** listesinden bir konu seçip
+**Alıştırma başlat** düğmesine basabilirsiniz. Tüm konular seçimi dersteki onaylı havuzu
+kullanır. **Şu anda açık sınavlar** bölümünde hocanızın yayımladığı sınav, süresi ve kalan
+deneme hakkı görünür. **Sınava katıl** sizi o sınavın yayımlanmış sürümüne alır.
+
+**Oturumlara dön** açık oturumu bitirmeden listeye döner. **Oturumlarım → Devam et** aynı
+oturumu açar; sayfayı yenilemek veya başka cihaz kullanmak süreyi sıfırlamaz. Sınava giriş
+penceresinin kapanması, başlamış oturumun kalan süresini değiştirmez. Süresi dolmuş bir
+oturumu **Oturumu aç** ile açıp bitirin.
+
+Bitirdiğiniz oturumun ayrıntıları **Sonucu gör** ile yeniden açılır. Aynı derste başka bir
+sınavınız sürüyorsa geçmiş puanlar ve çözümler, alıştırma yardımı ve asistan sınav bitene
+veya süresi dolana kadar kapalıdır. Birden fazla açık oturum varsa her birini
+bitirebilirsiniz; sonuçlar son etkin sınav kapandığında açılır.
+
+Açık uçlu ve kod cevaplarında yapay zekâ, ders materyalinden geçerli dayanak gösteremezse
+**Değerlendirilemedi** mesajı gelir. Bu cevap yanlış sayılmaz ve puan ortalamasına girmez.
+Önceden kaydedilmiş değerlendirmenin dayanağı artık okunamıyorsa ayrıntılar da gösterilmez;
+sonuç açmak cevabınızı yeniden puanlamaz. Alıştırmada tek soruya ait geri bildirim sayfa
+yenilenince yeniden yüklenmez; oturumu bitirdikten sonra sonuç geçmişinden görülebilir.
+
+Çalışma alanı bu ortamda açılmadıysa yalnız mevcut alıştırma ve süreli prova başlangıcı
+görünür; ayrıntılı sonuç geçmişi sunulmaz.
+
 ### "Neden yanlış?"
 
 Yanlış cevapladığınızda sistem yalnız "yanlış" demez; **seçtiğiniz şıkkın hangi cümleyle

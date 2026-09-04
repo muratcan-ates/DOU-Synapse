@@ -769,17 +769,8 @@ test.describe("sınav provası", () => {
     await page.getByRole("button", { name: "Alıştırma başlat" }).click();
     await expect(ipucu).toBeVisible();
 
-    /*
-     * Sınav modu için oturumu bırakmak gerekiyor. Açık oturumun kimliği
-     * tarayıcıda saklanıyor ve ekran onu bulduğu sürece başlangıç paneline
-     * dönmüyor; kaydı silmek, "sınavı bitirip yeniden başla" yolunu tekrar
-     * etmeden aynı yere varır ve bu vakanın ölçtüğü şey bitirme akışı değil.
-     */
-    await page.evaluate(
-      (id) => localStorage.removeItem(`dou-synapse-exam-session:${id}`),
-      havuz.course.id,
-    );
-    await page.reload();
+    // Öğrencinin görünür çıkışı kullanılır; oturum sunucu geçmişinde kalır.
+    await page.getByRole("button", { name: "Oturumlara dön", exact: true }).click();
 
     await page.getByRole("button", { name: "Sınav başlat" }).click();
     await expect(page.getByRole("button", { name: "Cevabı gönder" })).toBeVisible();

@@ -2543,7 +2543,7 @@
           "exams"
         ],
         "summary": "List Exams",
-        "description": "Kullanıcının bu dersteki sınav oturumları, en yenisi başta.\n\nNeden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —\ntarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam\neden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci\nyeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin\nhafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak\nda sunucunun işi olmalı.\n\nŞerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`\ndiyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.\n\nRLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile\nkontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).\n\nSorular gövdede TAŞINMAZ. Liste \"hangi oturumlarım var\" sorusunu cevaplar;\nsoru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı\nvermek olurdu ve ekranın bu bilgiye ihtiyacı yok.",
+        "description": "Kullanıcının bu dersteki sınav oturumları, en yenisi başta.\n\nNeden gerekli: oturum kimliği yalnız istemcide tutulduğunda kaybolabiliyordu —\ntarayıcı verisi temizlenince ya da başka bir cihazdan girilince öğrenci devam\neden sınavına DÖNEMİYORDU. Aynı boşluk ters yönde de açıktı: dönemeyen öğrenci\nyeni bir oturum açıp süreyi baştan alabiliyordu, yani süre sınırı istemcinin\nhafızasına bağlı kalıyordu. Süre sunucunun kararıysa (ve öyle), oturumu bulmak\nda sunucunun işi olmalı.\n\nŞerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`\ndiyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.\n\nSahiplik ve ders eşleşmesi açıkça filtrelenir. Eğitmen RLS üzerinden kendi\ndersindeki öğrencileri okuyabilse de bu uç yalnız kendi oturumlarını döndürür.\n\nSorular gövdede TAŞINMAZ. Liste \"hangi oturumlarım var\" sorusunu cevaplar;\nsoru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı\nvermek olurdu ve ekranın bu bilgiye ihtiyacı yok.",
         "operationId": "list_exams_courses__course_id__exams_get",
         "parameters": [
           {
@@ -2570,6 +2570,188 @@
                     "$ref": "#/components/schemas/ExamSessionOut"
                   },
                   "title": "Response List Exams Courses  Course Id  Exams Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/catalog": {
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Exam Catalog",
+        "description": "Only open, published exams; no papers, draft metadata or answer keys.",
+        "operationId": "exam_catalog_courses__course_id__exams_catalog_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamCatalogOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/history": {
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Exam History",
+        "description": "Owner-only server history; bounded, stable pages without question content.",
+        "operationId": "exam_history_courses__course_id__exams_history_get",
+        "parameters": [
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageOut_ExamSessionOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/courses/{course_id}/exams/{session_id}/results": {
+      "get": {
+        "tags": [
+          "exams"
+        ],
+        "summary": "Exam Results",
+        "description": "Reopen finished results without changing session state or grading again.",
+        "operationId": "exam_results_courses__course_id__exams__session_id__results_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "course_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Ders kimliği",
+              "title": "Course Id"
+            },
+            "description": "Ders kimliği"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamFinishOut"
                 }
               }
             }
@@ -6363,8 +6545,34 @@
         "title": "EvidenceLevel",
         "description": "Kanıt kapısının üç çıktısı.\n\n`retrieval/scope.py`'de doğdu; `schemas/source.py` da tükettiği için\nmodülerizasyon v2'de sözleşme dosyasına taşındı — schemas→modules yönündeki\ntek import buydu. Karar mantığı scope'ta kalır; burada yalnız sözlük var."
       },
+      "ExamCatalogOut": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublishedExamSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "items"
+        ],
+        "title": "ExamCatalogOut"
+      },
       "ExamFinishOut": {
         "properties": {
+          "results_locked": {
+            "type": "boolean",
+            "title": "Results Locked",
+            "default": false
+          },
           "session_id": {
             "type": "string",
             "format": "uuid",
@@ -7675,6 +7883,33 @@
         ],
         "title": "PageOut[DocumentOut]"
       },
+      "PageOut_ExamSessionOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExamSessionOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "PageOut[ExamSessionOut]"
+      },
       "PageOut_QuestionOut_": {
         "properties": {
           "items": {
@@ -7822,6 +8057,88 @@
           "message"
         ],
         "title": "PublishOut"
+      },
+      "PublishedExamSummary": {
+        "properties": {
+          "blueprint_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Blueprint Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "title": "Duration Minutes"
+          },
+          "opens_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opens At"
+          },
+          "closes_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closes At"
+          },
+          "max_attempts": {
+            "type": "integer",
+            "title": "Max Attempts"
+          },
+          "used_attempts": {
+            "type": "integer",
+            "title": "Used Attempts"
+          },
+          "remaining_attempts": {
+            "type": "integer",
+            "title": "Remaining Attempts"
+          },
+          "can_start": {
+            "type": "boolean",
+            "title": "Can Start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "blueprint_id",
+          "title",
+          "description",
+          "duration_minutes",
+          "opens_at",
+          "closes_at",
+          "max_attempts",
+          "used_attempts",
+          "remaining_attempts",
+          "can_start"
+        ],
+        "title": "PublishedExamSummary"
       },
       "QuestionAuthoringOut": {
         "properties": {

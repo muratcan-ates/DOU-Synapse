@@ -62,19 +62,26 @@ export const EXAM_MODE: Record<ExamMode, { label: string; description: string }>
  * Oturumun saklanması
  * ---------------------------------------------------------------------- */
 
-/**
- * Açık oturumun kimliği tarayıcıda saklanır.
- *
- * Gerekli, çünkü öğrencinin oturumlarını listeleyen bir uç YOK: sayfa
- * yenilendiğinde kimlik kaybolursa öğrenci başlamış sınavına dönemez ve
- * cevapladığı sorular ona kapalı kalır (soru başına tek deneme; ikincisi 409).
- * Sunucu da bu dönüşü bekliyor: `GET /exams/{id}` docstring'i "bağlantı koparsa
- * öğrenci buraya döner ve kaldığı yerden devam eder" diyor.
- *
- * Anahtar ders başına ayrıdır; iki dersin sınavı birbirini ezmez.
- */
-export function examSessionKey(courseId: string): string {
-  return `dou-synapse-exam-session:${courseId}`;
+/** Son seçimin kısa yolu; oturum listesi sunucudan gelir. İçerik saklanmaz. */
+export function examSessionKey(courseId: string, userId?: string): string {
+  return userId
+    ? `dou-synapse-exam-session:${userId}:${courseId}`
+    : `dou-synapse-exam-session:${courseId}`;
+}
+
+/** Takvim görünümü yalnız sunucu tarihini biçimler; erişim kararı üretmez. */
+export function examDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Tarih gösterilemiyor";
+  return new Intl.DateTimeFormat("tr-TR", {
+    dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Istanbul",
+  }).format(date);
+}
+
+export function examHistoryStatus(session: ExamSession): { label: string; action: string; tone: Tone } {
+  if (session.finished_at !== null) return { label: "Tamamlandı", action: "Sonucu gör", tone: "neutral" };
+  if (session.expired) return { label: "Süre doldu", action: "Oturumu aç", tone: "warning" };
+  return { label: "Devam ediyor", action: "Devam et", tone: "info" };
 }
 
 /* -------------------------------------------------------------------------
@@ -419,9 +426,10 @@ export { toSourceInfo as sourceInfo } from "@/lib/source";
  * yok…"). Kırmızı hata kutusu göstermek öğrenciye sistemin bozulduğunu
  * düşündürür; oysa yapılacak şey bellidir ve mesajı sunucu yazmıştır.
  *
- * Başlatma anında tek `conflict` sebebi budur (`start_exam`'da başka
- * `ConflictError` yok).
+ * Yayın penceresi ve deneme hakkı da 409 dönebilir; yalnız boş havuzun
+ * sunucu mesajı bu nötr duruma çevrilir.
  */
 export function isEmptyPool(error: unknown): boolean {
-  return error instanceof ApiError && error.code === "conflict";
+  return error instanceof ApiError && error.code === "conflict" &&
+    error.message.includes("henüz onaylanmış soru yok");
 }

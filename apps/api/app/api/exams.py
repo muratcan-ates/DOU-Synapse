@@ -15,7 +15,7 @@ gizlemek" ile yetinir; reddi buradan gelir (FR-017):
 
 Üç zaman kuralı, ikisi güvenlik biri tutarlılık:
 
-1. **Saat veritabanınındır.** Kalan süre her istekte `SELECT now()` ile okunur;
+1. **Saat veritabanınındır.** Kalan süre her istekte `SELECT clock_timestamp()` ile okunur;
    ne istemci saati ne uygulama sunucusunun saati kullanılır.
 2. **`expires_at` kırpılır.** Etkin bitiş `min(expires_at, started_at + süre)`'dir,
    yani satırdaki `expires_at` ileri atılsa bile süre uzamaz. Bu kırpma tek başına
@@ -37,20 +37,27 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, status
-from sqlalchemy import func, select
+from pydantic import ValidationError as PydanticValidationError
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import (
     CourseContext,
     CourseMemberDep,
+    PageDep,
     SessionDep,
     SettingsDep,
     load_owned,
 )
 from app.core.config import Settings, get_settings
-from app.core.db import db_now
-from app.core.errors import ConflictError, NotFoundError, PermissionDeniedError
+from app.core.errors import (
+    ConflictError,
+    NotFoundError,
+    PermissionDeniedError,
+    StudentAssessmentWorkspaceDisabledError,
+)
+from app.core.pagination import decode_time_cursor, encode_time_cursor, paginate_keyset
 from app.models.assessment import (
     Answer,
     ExamBlueprint,
@@ -62,9 +69,11 @@ from app.models.assessment import (
     QuestionStatus,
     Topic,
 )
+from app.modules.assessment import exam_state
 from app.modules.assessment.exam_paper import paper_question_ids
 from app.modules.assessment.exam_state import (
     acquire_user_assessment_lock,
+    assessment_now,
     effective_expiry,
     remaining_seconds,
     session_cap_minutes,
@@ -80,6 +89,7 @@ from app.modules.assessment.grading import (
 from app.modules.mastery.service import record_answer
 from app.schemas.assessment import (
     AnswerFeedbackOut,
+    AnswerFormat,
     AnswerSubmitRequest,
     ExamFinishOut,
     ExamQuestionOut,
@@ -87,11 +97,16 @@ from app.schemas.assessment import (
     ExamStartRequest,
     HintOut,
     HintRequest,
+    McqPayload,
+    OpenPayload,
     RubricCriterionScore,
     SourceRefOut,
+    parse_payload,
     public_payload,
     solution_payload,
 )
+from app.schemas.exam_workspace import ExamCatalogOut, PublishedExamSummary
+from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["exams"])
 
@@ -131,8 +146,8 @@ async def _load_questions(session: AsyncSession, question_ids: list[UUID]) -> di
 
     Oturum açılırken sorular sabitlenir, ama sabitlenmiş bir soru sonradan
     reddedilirse RLS onu öğrenciye kapatır ve burada eksik döner. Bu bilinçlidir:
-    puan zaten `answers` satırından gelir, yani kaybolan soru verilmiş bir cevabın
-    puanını değiştirmez; yalnız çözümü gösterilemez.
+    kayıtlı puan `answers` satırında korunur. Okuma projeksiyonu görünmeyen soruya
+    ait puan ve çözümü göstermez; geçmiş cevap kaydı yeniden yazılmaz.
     """
     if not question_ids:
         return {}
@@ -171,7 +186,31 @@ def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
 
 def _chunk_id(feedback: dict[str, object] | None, key: str) -> UUID | None:
     raw = (feedback or {}).get(key)
-    return UUID(str(raw)) if raw else None
+    try:
+        return UUID(str(raw)) if raw else None
+    except ValueError:
+        return None
+
+
+def _answer_is_displayable(
+    answer: Answer, *, question: Question | None, sources: dict[UUID, SourceMaterial]
+) -> bool:
+    """Revalidate saved AI evidence without rewriting historical answer records."""
+    if question is None or (answer.feedback or {}).get("durum") == "tamamlanamadi":
+        return False
+    try:
+        payload = parse_payload(question.type, question.payload)
+    except PydanticValidationError:
+        return False
+    if isinstance(payload, McqPayload) or (
+        isinstance(payload, OpenPayload) and payload.format is AnswerFormat.SHORT_ANSWER
+    ):
+        return True
+    evidence = _chunk_id(answer.feedback, "dayanak_chunk_id")
+    material = sources.get(evidence) if evidence is not None else None
+    return bool(
+        evidence == question.source_chunk_id and material is not None and material.text.strip()
+    )
 
 
 def _answer_feedback(
@@ -192,11 +231,27 @@ def _answer_feedback(
     """
     feedback = answer.feedback or {}
     graded = feedback.get("durum") != "tamamlanamadi"
+    if not graded:
+        return AnswerFeedbackOut(
+            question_id=answer.question_id,
+            graded=False,
+            message=str(feedback.get("mesaj") or "Değerlendirme tamamlanamadı."),
+        )
     if not reveal:
         return AnswerFeedbackOut(
             question_id=answer.question_id,
             graded=graded,
             message=None if graded else str(feedback.get("mesaj") or ""),
+        )
+
+    if not _answer_is_displayable(answer, question=question, sources=sources):
+        return AnswerFeedbackOut(
+            question_id=answer.question_id,
+            graded=False,
+            message=(
+                "Bu değerlendirmenin kaynağı şu anda doğrulanamıyor. "
+                "Puan ve çözüm gösterilmedi; eğitmeninize bildirebilirsiniz."
+            ),
         )
 
     focus = str(feedback["odak"]) if feedback.get("odak") else None
@@ -234,20 +289,34 @@ def _rubric_breakdown(feedback: dict[str, object]) -> list[RubricCriterionScore]
     return [RubricCriterionScore.model_validate(row) for row in raw]
 
 
-def _outcomes_of(answers: Sequence[Answer]) -> list[GradingOutcome]:
-    """Cevap satırlarını puanlama sonuçlarına çevirir — iki uçtaki kopya tekilleşti.
-
-    "tamamlanamadi" sihirli dizesi de artık tek yerde: değerlendirici bir cevabı
-    tamamlayamadığında feedback.durum alanına bu değeri yazar ve o cevap
-    "puanlanmamış" sayılır.
-    """
+async def _saved_feedback(
+    session: AsyncSession,
+    answers: Sequence[Answer],
+    *,
+    questions: dict[UUID, Question] | None = None,
+) -> list[AnswerFeedbackOut]:
+    """One read projection for detail, totals, history and finish-time mastery."""
+    if questions is None:
+        questions = await _load_questions(session, [answer.question_id for answer in answers])
+    sources = await load_source_material(
+        session,
+        [
+            chunk_id
+            for answer in answers
+            for key in ("neden_yanlis_chunk_id", "dayanak_chunk_id")
+            if (chunk_id := _chunk_id(answer.feedback, key)) is not None
+        ],
+    )
     return [
-        GradingOutcome(
-            graded=(answer.feedback or {}).get("durum") != "tamamlanamadi",
-            score=answer.score,
+        _answer_feedback(
+            answer, question=questions.get(answer.question_id), sources=sources, reveal=True
         )
         for answer in answers
     ]
+
+
+def _feedback_score(results: Sequence[AnswerFeedbackOut]) -> float | None:
+    return score_of([GradingOutcome(graded=row.graded, score=row.score) for row in results])
 
 
 async def _session_out(
@@ -257,6 +326,7 @@ async def _session_out(
     settings: Settings,
     now: datetime,
     with_questions: bool = True,
+    reveal_score: bool = True,
 ) -> ExamSessionOut:
     """Oturumu istemci zarfına çevirir.
 
@@ -273,7 +343,9 @@ async def _session_out(
         cap_minutes=await session_cap_minutes(session, exam, settings=settings),
     )
 
-    outcomes = _outcomes_of(answers)
+    score = None
+    if exam.finished_at is not None and reveal_score:
+        score = _feedback_score(await _saved_feedback(session, answers))
 
     return ExamSessionOut(
         id=exam.id,
@@ -284,7 +356,7 @@ async def _session_out(
         remaining_seconds=remaining_seconds(expiry, now),
         expired=expiry is not None and now >= expiry,
         finished_at=exam.finished_at,
-        score=score_of(outcomes) if exam.finished_at else None,
+        score=score,
         question_count=len(paper),
         answered_count=len(answered),
         exam_version_id=exam.exam_version_id,
@@ -300,6 +372,84 @@ async def _session_out(
             for question_id in paper
             if question_id in questions
         ],
+    )
+
+
+async def _results_locked(
+    session: AsyncSession, context: CourseContext, *, settings: Settings
+) -> bool:
+    """Only a same-course student exam locks results.
+
+    Callers exposing scores or answers hold the assessment lock; the content-free
+    catalog uses this only as an advisory availability indicator.
+    """
+    if context.is_instructor:
+        return False
+    return (
+        await exam_state.active_exam_session(
+            session,
+            user_id=context.user_id,
+            course_id=context.course_id,
+            now=await assessment_now(session),
+            settings=settings,
+        )
+        is not None
+    )
+
+
+async def _require_help_unlocked(
+    session: AsyncSession, context: CourseContext, *, settings: Settings
+) -> None:
+    """Serialize answer-bearing help with exam start, then check the course lock."""
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
+    if await _results_locked(session, context, settings=settings):
+        raise exam_state.ExamLockedError(exam_state.EXAM_LOCK_MESSAGE)
+
+
+def _require_workspace_enabled(settings: Settings) -> None:
+    if not settings.student_assessment_workspace_enabled:
+        raise StudentAssessmentWorkspaceDisabledError(
+            "Sınav çalışma alanı şu anda kullanıma kapalı."
+        )
+
+
+async def _completed_results_out(
+    session: AsyncSession,
+    exam: ExamSession,
+    *,
+    results_locked: bool = False,
+    results: list[AnswerFeedbackOut] | None = None,
+) -> ExamFinishOut:
+    """Read saved assessments; never grade again, write answers or update mastery."""
+    if results is None:
+        results = await _saved_feedback(session, await _answers_of(session, exam.id))
+    unanswered = len(await paper_question_ids(session, exam)) - len(results)
+    ungraded = sum(1 for result in results if not result.graded)
+    if results_locked:
+        return ExamFinishOut(
+            session_id=exam.id,
+            score=None,
+            answered_count=len(results),
+            unanswered_count=unanswered,
+            ungraded_count=ungraded,
+            results_locked=True,
+            message=(
+                "Oturum tamamlandı. Bu dersteki diğer sınavın bitince veya süresi dolunca "
+                "sonuçlarını inceleyebilirsin."
+            ),
+        )
+
+    total = _feedback_score(results)
+    return ExamFinishOut(
+        session_id=exam.id,
+        score=total,
+        answered_count=len(results),
+        unanswered_count=unanswered,
+        ungraded_count=ungraded,
+        message=_finish_message(
+            answered=len(results), unanswered=unanswered, ungraded=ungraded, score=total
+        ),
+        results=results,
     )
 
 
@@ -344,7 +494,7 @@ async def _start_blueprint_exam(
     if version is None:
         raise ConflictError("Bu sınav henüz yayınlanmadı.")
 
-    now = await db_now(session)
+    now = await assessment_now(session)
     if blueprint.opens_at is not None and now < blueprint.opens_at:
         raise ConflictError("Bu sınav henüz açılmadı; yayın penceresi başlamadan girilemez.")
     if blueprint.closes_at is not None and now >= blueprint.closes_at:
@@ -409,6 +559,9 @@ async def start_exam(
         await acquire_user_assessment_lock(session, user_id=context.user_id)
         return await _start_blueprint_exam(payload.blueprint_id, context, session, settings)
 
+    if payload.mode is ExamMode.PRACTICE:
+        await _require_help_unlocked(session, context, settings=settings)
+
     if payload.topic_id is not None:
         await load_owned(session, Topic, payload.topic_id, context, message="Konu bulunamadı.")
 
@@ -433,7 +586,7 @@ async def start_exam(
     if payload.mode is ExamMode.EXAM:
         await acquire_user_assessment_lock(session, user_id=context.user_id)
 
-    now = await db_now(session)
+    now = await assessment_now(session)
     exam = ExamSession(
         course_id=context.course_id,
         user_id=context.user_id,
@@ -469,26 +622,148 @@ async def list_exams(
     Şerit 4 bunu görüp bilerek genişletmedi: brief yalnız `GET .../{session_id}`
     diyordu ve şeridin dışına taşmamak doğru karardı. Karar liderindi, bu.
 
-    RLS başkasının oturumunu zaten göstermez; ders eşleşmesi ayrıca `WHERE` ile
-    kontrol edilir — iki katman da bağımsız olarak doğru davranmalı (Anayasa II).
+    Sahiplik ve ders eşleşmesi açıkça filtrelenir. Eğitmen RLS üzerinden kendi
+    dersindeki öğrencileri okuyabilse de bu uç yalnız kendi oturumlarını döndürür.
 
     Sorular gövdede TAŞINMAZ. Liste "hangi oturumlarım var" sorusunu cevaplar;
     soru metinlerini taşımak, bitmemiş bir sınavın sorularını tek listede dışarı
     vermek olurdu ve ekranın bu bilgiye ihtiyacı yok.
     """
     settings = get_settings()
-    now = await db_now(session)
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
+    reveal_score = not await _results_locked(session, context, settings=settings)
+    now = await assessment_now(session)
     rows = (
         await session.execute(
             select(ExamSession)
-            .where(ExamSession.course_id == context.course_id)
-            .order_by(ExamSession.started_at.desc())
+            .where(
+                ExamSession.course_id == context.course_id,
+                ExamSession.user_id == context.user_id,
+            )
+            .order_by(ExamSession.started_at.desc(), ExamSession.id.desc())
         )
     ).scalars()
     return [
-        await _session_out(session, exam, settings=settings, now=now, with_questions=False)
+        await _session_out(
+            session,
+            exam,
+            settings=settings,
+            now=now,
+            with_questions=False,
+            reveal_score=reveal_score,
+        )
         for exam in rows
     ]
+
+
+@router.get("/exams/catalog", response_model=ExamCatalogOut)
+async def exam_catalog(
+    context: CourseMemberDep, session: SessionDep, settings: SettingsDep
+) -> ExamCatalogOut:
+    """Only open, published exams; no papers, draft metadata or answer keys."""
+    if not settings.student_assessment_workspace_enabled:
+        return ExamCatalogOut(enabled=False, items=[])
+    now = await assessment_now(session)
+    attempts = (
+        select(ExamSession.exam_blueprint_id, func.count(ExamSession.id).label("used"))
+        .where(
+            ExamSession.course_id == context.course_id,
+            ExamSession.user_id == context.user_id,
+        )
+        .group_by(ExamSession.exam_blueprint_id)
+        .subquery()
+    )
+    rows = await session.execute(
+        select(ExamBlueprint, func.coalesce(attempts.c.used, 0))
+        .join(
+            ExamVersion,
+            (ExamVersion.blueprint_id == ExamBlueprint.id)
+            & (ExamVersion.course_id == ExamBlueprint.course_id),
+        )
+        .outerjoin(attempts, attempts.c.exam_blueprint_id == ExamBlueprint.id)
+        .where(
+            ExamBlueprint.course_id == context.course_id,
+            ExamVersion.status == ExamVersionStatus.PUBLISHED,
+            or_(ExamBlueprint.opens_at.is_(None), ExamBlueprint.opens_at <= now),
+            or_(ExamBlueprint.closes_at.is_(None), ExamBlueprint.closes_at > now),
+        )
+        .order_by(ExamBlueprint.title, ExamBlueprint.id)
+    )
+    locked = await _results_locked(session, context, settings=settings)
+    return ExamCatalogOut(
+        enabled=True,
+        items=[
+            PublishedExamSummary(
+                blueprint_id=blueprint.id,
+                title=blueprint.title,
+                description=blueprint.description,
+                duration_minutes=blueprint.duration_minutes,
+                opens_at=blueprint.opens_at,
+                closes_at=blueprint.closes_at,
+                max_attempts=blueprint.max_attempts,
+                used_attempts=int(used),
+                remaining_attempts=max(0, blueprint.max_attempts - int(used)),
+                can_start=not locked and int(used) < blueprint.max_attempts,
+            )
+            for blueprint, used in rows.tuples()
+        ],
+    )
+
+
+@router.get("/exams/history", response_model=PageOut[ExamSessionOut])
+async def exam_history(
+    context: CourseMemberDep,
+    session: SessionDep,
+    settings: SettingsDep,
+    page: PageDep,
+) -> PageOut[ExamSessionOut]:
+    """Owner-only server history; bounded, stable pages without question content."""
+    _require_workspace_enabled(settings)
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
+    reveal_score = not await _results_locked(session, context, settings=settings)
+    result = await paginate_keyset(
+        session,
+        select(ExamSession).where(
+            ExamSession.course_id == context.course_id,
+            ExamSession.user_id == context.user_id,
+        ),
+        key_columns=(ExamSession.started_at, ExamSession.id),
+        page=page,
+        decode=decode_time_cursor,
+        encode=lambda exam: encode_time_cursor(exam.started_at, exam.id),
+    )
+    now = await assessment_now(session)
+    return PageOut(
+        items=[
+            await _session_out(
+                session,
+                exam,
+                settings=settings,
+                now=now,
+                with_questions=False,
+                reveal_score=reveal_score,
+            )
+            for exam in result.rows
+        ],
+        next_cursor=result.next_cursor,
+    )
+
+
+@router.get("/exams/{session_id}/results", response_model=ExamFinishOut)
+async def exam_results(
+    session_id: UUID,
+    context: CourseMemberDep,
+    session: SessionDep,
+    settings: SettingsDep,
+) -> ExamFinishOut:
+    """Reopen finished results without changing session state or grading again."""
+    _require_workspace_enabled(settings)
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
+    exam = await _load_exam(session, session_id, context)
+    if exam.finished_at is None:
+        raise ConflictError("Sonuçları görmek için önce oturumu tamamlayın.")
+    await _require_help_unlocked(session, context, settings=settings)
+    return await _completed_results_out(session, exam)
 
 
 @router.get("/exams/{session_id}", response_model=ExamSessionOut)
@@ -501,8 +776,15 @@ async def get_exam(
     istemcide, süre sunucudadır.
     """
     settings = get_settings()
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
     exam = await _load_exam(session, session_id, context)
-    return await _session_out(session, exam, settings=settings, now=await db_now(session))
+    return await _session_out(
+        session,
+        exam,
+        settings=settings,
+        now=await assessment_now(session),
+        reveal_score=not await _results_locked(session, context, settings=settings),
+    )
 
 
 @router.post(
@@ -523,8 +805,11 @@ async def submit_answer(
     anında geri bildirim olarak döner.
     """
     settings = get_settings()
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
     exam = await _load_exam(session, session_id, context)
-    now = await db_now(session)
+    if exam.mode is ExamMode.PRACTICE:
+        await _require_help_unlocked(session, context, settings=settings)
+    now = await assessment_now(session)
 
     if exam.finished_at is not None:
         raise ConflictError("Bu oturum tamamlandı; yeni cevap kabul edilmiyor.")
@@ -620,12 +905,15 @@ async def request_hint(
     dayandığı chunk'tan daha çoğu açılır. Böylece ipucu her zaman gerçek bir
     materyal parçasına dayanır (Anayasa I) ve LLM ayakta olmasa da çalışır.
     """
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
     exam = await _load_exam(session, session_id, context)
 
     if exam.mode is ExamMode.EXAM:
         raise PermissionDeniedError(
             "Sınav modunda ipucu kapalıdır. İpucu almak için alıştırma modunda çalışabilirsiniz."
         )
+
+    await _require_help_unlocked(session, context, settings=settings)
 
     if exam.finished_at is not None:
         raise ConflictError("Bu oturum tamamlandı.")
@@ -681,18 +969,17 @@ async def finish_exam(
     açık bir "değerlendirilemedi" sayısı raporlanır.
     """
     settings = get_settings()
+    await acquire_user_assessment_lock(session, user_id=context.user_id)
     exam = await _load_exam(session, session_id, context)
-    now = await db_now(session)
+    now = await assessment_now(session)
 
     if exam.finished_at is not None:
         raise ConflictError("Bu oturum zaten tamamlandı.")
 
     answers = await _answers_of(session, exam.id)
     questions = await _load_questions(session, [answer.question_id for answer in answers])
-
-    outcomes = _outcomes_of(answers)
-    total = score_of(outcomes)
-    ungraded = sum(1 for outcome in outcomes if not outcome.graded)
+    results = await _saved_feedback(session, answers, questions=questions)
+    visible = {result.question_id: result for result in results}
 
     exam.finished_at = now
     # `exam.score` YAZILMIYOR. Puan `answers`'tan türetiliyor (bu dosyanın
@@ -707,44 +994,24 @@ async def finish_exam(
         # T037: sınav modunda mastery bitişte, tüm cevaplarla işlenir.
         for answer in answers:
             question = questions.get(answer.question_id)
-            if question is None or answer.score is None:
+            projection = visible[answer.question_id]
+            if question is None or not projection.graded or projection.score is None:
                 continue
             await record_answer(
                 session,
                 user_id=context.user_id,
                 topic_id=question.topic_id,
                 course_id=exam.course_id,
-                raw_score=answer.score,
+                raw_score=projection.score,
                 hint_level=answer.hint_level,
                 alpha=settings.mastery_alpha,
             )
 
-    sources = await load_source_material(
+    return await _completed_results_out(
         session,
-        [
-            chunk_id
-            for answer in answers
-            for key in ("neden_yanlis_chunk_id", "dayanak_chunk_id")
-            if (chunk_id := _chunk_id(answer.feedback, key)) is not None
-        ],
-    )
-
-    unanswered = len(await paper_question_ids(session, exam)) - len(answers)
-    return ExamFinishOut(
-        session_id=exam.id,
-        score=total,
-        answered_count=len(answers),
-        unanswered_count=unanswered,
-        ungraded_count=ungraded,
-        message=_finish_message(
-            answered=len(answers), unanswered=unanswered, ungraded=ungraded, score=total
-        ),
-        results=[
-            _answer_feedback(
-                answer, question=questions.get(answer.question_id), sources=sources, reveal=True
-            )
-            for answer in answers
-        ],
+        exam,
+        results_locked=await _results_locked(session, context, settings=settings),
+        results=results,
     )
 
 

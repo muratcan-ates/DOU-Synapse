@@ -281,3 +281,22 @@ Gerçek erişim gerektiren, henüz yapılmamış adımlar:
       gözlenir → geri alınır
 - [ ] Cold start ve p95 gerçek replikada ölçüldü (§8)
 - [ ] İmaj boyutu ve replika RSS ölçüldü (ACA ≤ 2 vCPU / 4 GiB)
+
+## 014 öğrenci çalışma alanı
+
+`STUDENT_ASSESSMENT_WORKSPACE_ENABLED` varsayılan `false`; `.env.example` yalnız yerel
+geliştirme için `true` önerir. API'yi bu değişkenle yeniden başlatmak katalog/geçmiş/sonuç
+arayüzünü açar. Önce sıralı migration'lar, özellikle `0018_question_authoring.sql` ve
+`0019_exam_duration_projection.sql`, uygulanmalıdır. 0019 yalnız sahibine oturum süresini
+açan dar bir fonksiyon ekler, kayıt taşımaz/silmez.
+
+Kapatma: bayrağı `false` yapıp API'yi yeniden başlatın; katalog `enabled:false`, yeni
+geçmiş/sonuç uçları503 verir. Mevcut başlangıç ve bitirme devam eder. Kaynak doğrulama,
+sahiplik ve süre güvenliği düzeltmeleri bayraktan bağımsızdır; geri almada gevşetilmemelidir.
+Gerekirse kapalı çalışma alanıyla ileri düzeltme yayımlayın; önceki uygulamaya dönmek
+bilinen kaynaksız puan/süre hatalarını geri getirir. 0019'u silmeyin, geçmiş kayıtları
+yeniden puanlamayın. Canlı rollback provası bu yerel teslimde yapılmadı.
+
+014, henüz main'e alınmamış yerel013 değişikliğinin üzerine kuruludur. Canlıya geçişten
+önce tam birleşik aday, migration sırası, gerçek sağlayıcı değerlendirmesi ve bağımsız
+mühendislik/eğitim/güvenlik onayı doğrulanmalıdır. Yerel test sonucu yayın onayı değildir.

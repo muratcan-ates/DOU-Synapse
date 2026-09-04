@@ -175,7 +175,15 @@ class TestBlueprintRouter:
         assert {authoring_yolu, draft_yolu} <= yollar
         assert "get" in app.openapi()["paths"][authoring_yolu]
         assert "post" in app.openapi()["paths"][draft_yolu]
-        assert len(yollar) == 52, f"yol sayısı değişmiş: {len(yollar)}"
+        # 014 öğrenci kataloğu, sayfalı kişisel geçmiş ve salt okunur sonuç.
+        workspace_yollari = {
+            "/courses/{course_id}/exams/catalog",
+            "/courses/{course_id}/exams/history",
+            "/courses/{course_id}/exams/{session_id}/results",
+        }
+        assert workspace_yollari <= yollar
+        assert all("get" in app.openapi()["paths"][path] for path in workspace_yollari)
+        assert len(yollar) == 55, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

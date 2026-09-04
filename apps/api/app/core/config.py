@@ -279,6 +279,8 @@ class Settings(BaseSettings):
 
     #: Yeni taslak düzenleme ve sınıflandırmalı üretim için operasyonel geri alma bayrağı.
     question_authoring_enabled: bool = False
+    #: Öğrenci sınav kataloğu ve geçmiş sonuç yüzeyleri için operasyonel bayrak.
+    student_assessment_workspace_enabled: bool = False
 
     # --- Soru üretimi sınırları (002 / FR-222, FR-223) ----------------------
     # Adlar lider turunda sabitlendi ki iki şerit aynı ayara iki farklı ad

@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "014-student-assessment-r1",
+  "captured_at": "2026-09-04T13:48:22+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && env -u LLM_FAKE_PROVIDER -u EMBEDDING_WARMUP_ENABLED PGHOST=127.0.0.1 PGPORT=55440 PGUSER=muratates PG_BIN=/opt/homebrew/opt/postgresql@16/bin TEST_DB_NAME=dou014_full TEST_ADMIN_DSN=postgresql+psycopg://muratates@127.0.0.1:55440/dou014_full TEST_APP_DSN=postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55440/dou014_full TEST_WORKER_DSN=postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55440/dou014_full GROQ_API_KEY='' GEMINI_API_KEY='' EMBEDDING_PROVIDER=hashing .venv/bin/pytest -q; cd apps/api && .venv/bin/ruff check app tests/test_exam_workspace.py tests/test_exam_duration_projection.py tests/test_grading_grounding.py tests/test_error_envelope.py && .venv/bin/ruff format --check . && .venv/bin/mypy app; cd apps/web && bun test lib/ && ./node_modules/.bin/tsc --noEmit --incremental false; cd apps/web && PGHOST=127.0.0.1 PGPORT=55440 PGUSER=muratates E2E_API_URL=http://127.0.0.1:8014 E2E_PORT=3114 E2E_DATABASE_NAME=dou_synapse_e2e_dou014 ./node_modules/.bin/playwright test --workers=1; node scripts/docs_check.mjs --duzelt; cd apps/web && node scripts/contrast.mjs; cd apps/api && .venv/bin/python ../../evaluation/verify_gold_set.py; python3 -m unittest scripts/test_ai_sdlc_check.py",
+  "environment": {
+    "os": "macOS",
+    "database": "isolated PostgreSQL16+pgvector loopback55440",
+    "api_database": "dou014_full",
+    "browser_database": "dou_synapse_e2e_dou014",
+    "pytest_environment": "Unique TEST_* DSNs; no .env; blank live provider keys. No global LLM_FAKE_PROVIDER or EMBEDDING_WARMUP_ENABLED; each fixture controls mocks.",
+    "browser_environment": "API8014/web3114 production build; authoring/workspace enabled; dev auth and fake/hash providers; only synthetic fixtures."
+  },
+  "results": {
+    "backend_tests_passed": 1040,
+    "workspace_tests_passed": 55,
+    "grading_source_tests_passed": 28,
+    "duration_projection_tests_passed": 11,
+    "focused_regression_tests_passed": 168,
+    "frontend_library_tests_passed": 411,
+    "browser_tests_passed": 38,
+    "browser_tests_skipped": 0,
+    "governance_validator_tests_passed": 76,
+    "duration_owner_mutations_detected": 1,
+    "result_lock_mutations_detected": 1,
+    "pre_fix_grading_regressions_detected": 25,
+    "pre_fix_queued_clock_regressions_detected": 3,
+    "ruff_exit": 0,
+    "format_exit": 0,
+    "mypy_exit": 0,
+    "typecheck_exit": 0,
+    "production_web_build_exit": 0,
+    "docs_check_exit": 0,
+    "contrast_exit": 0,
+    "gold_set_integrity_exit": 0,
+    "openapi_paths": 55
+  },
+  "coverage": [
+    "Topic practice, open published catalog, owner history, resume without timer reset, saved results and source cards, mobile light/dark.",
+    "Same-course exam answer/score locks, instructor exemption, owner-only legacy list, finish closes while withholding other active-session results, transaction ordering.",
+    "Narrow duration helper after blueprint visibility closes, revoked-member export lock, real SQL privileges and removed-owner mutation.",
+    "New and saved AI grades require readable matching source; no source means ungraded, no claims or new mastery; deterministic paths preserved.",
+    "Post-lock database wall clock rejects late queued answers/closed admission and dates new sessions after wait."
+  ],
+  "limitations": [
+    "No real-provider semantic/pedagogical calibration, independent human approval or deployment.",
+    "Saved answers and prior mastery are not rewritten; legacy AI grade display may become ungraded when its source is no longer readable.",
+    "Unsubmitted browser drafts are not persisted; individual practice feedback returns in finished results.",
+    "Local014 is stacked on local013; main integration requires whole-diff exact-base verification."
+  ],
+  "privacy": "Only synthetic source/test identities; aggregate counts and repository paths. No real student content, provider payload or credential in evidence."
+}

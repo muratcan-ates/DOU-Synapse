@@ -939,11 +939,8 @@ class TestLlmGrading:
         assert outcome.score is None
         assert "tamamlanamadı" in (outcome.message or "")
 
-    async def test_uydurulmus_dayanak_dusurulur_puan_kalir(self) -> None:
-        """Anayasa I: set-membership'ten geçmeyen dayanak gösterilmez.
-
-        Kaynağı uydurmak cevabı geçersiz kılmaz; yalnız kaynağı geçersiz kılar.
-        """
+    async def test_uydurulmus_dayanak_puani_da_gecersiz_kilar(self) -> None:
+        """Anayasa I: kaynak yoksa modelin puanı ve geri bildirimi de gösterilmez."""
         from app.modules.assessment.grading import grade_with_llm
 
         chunk_id = uuid4()
@@ -955,7 +952,9 @@ class TestLlmGrading:
             sources=[(chunk_id, DEADLOCK_TEXTS[0])],
         )
 
-        assert outcome.score == 90
+        assert outcome.graded is False
+        assert outcome.score is None
+        assert outcome.missing_points == []
         assert outcome.evidence_chunk_id is None
 
     async def test_saglayici_patlarsa_degerlendirme_tamamlanmaz(self) -> None:

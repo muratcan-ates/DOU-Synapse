@@ -1,0 +1,404 @@
+{
+  "schema_version": 1,
+  "change_id": "014-student-assessment-r1",
+  "lineage_id": "student-assessment",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Konuya göre çalışma, kişisel sınav geçmişi ve kaynaklı sonuçlar",
+  "summary": "Yayımlanmış açık sınav kataloğu, kişisel oturum devamı ve kaynakları doğrulanan kalıcı sonuçlar. Aktif sınav kilitleri, kapalı giriş penceresindeki oturum süresi ve kilit sonrası saat denetimi korunur.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-04T13:48:22+00:00",
+  "review_by": "2026-09-18T13:48:22+00:00",
+  "base_sha": "e59fc24a8bd4a838003f6b82d81e561800efb8d5",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-e59fc24a; tests use fake/mock only",
+    "model_revision": "unchanged-from-e59fc24a",
+    "prompt_revision": "grading filters unreadable source blocks; existing two-attempt budget and template preserved",
+    "tool_schema_revision": "014-catalog-history-saved-results; results_locked projection; OpenAPI55",
+    "guardrail_revision": "014-owner-history, active-exam-result-lock, saved-AI-source-validation, duration0019, post-lock-wall-clock",
+    "retrieval_revision": "unchanged-from-e59fc24a",
+    "embedding_revision": "unchanged-from-e59fc24a",
+    "evaluator_revision": "workspace55; grading28; duration11; fullAPI1040; web411; browser38"
+  },
+  "data": {
+    "corpus_digest": "21cd872c21f8a0daa30096461bfc9c9757b0bd1d1532472e48c5d3ae13572ec8",
+    "eval_set_digest": "40c1132c913c108ce30dfb0e7134cb52119e788529b325cf643b1b61abbd52fc",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".env.example",
+      "state": "present",
+      "sha256": "616466e31115703c68c755ca49093d396a17cbdf82d84d3ea69956ac3b701061"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "f2e3c67e30da1c64c052dad1322807c9a459b76a125d9fd3391fe6a83398ff50"
+    },
+    {
+      "path": ".specify/feature.json",
+      "state": "present",
+      "sha256": "92c27e09bb1b3f4d38ddd341100dde978450d2cd4b29e0efaba1c9c73756e749"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "state": "present",
+      "sha256": "16bbc54301914690f0fe8a31ff9057a248f53c09337855210148de2829c5c264"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "e440b894a01b7e8c9507e586af2db2ed504911fd173e944843985cb04ffc3110"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "70dde93271b827a7acced5860c11de709a4802aa5a8e09a461e2cae51a7d36fc"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "877e61f9182bd54ec36bc94d2efefc1c4efd9d099a0ada890afa346f9af615bd"
+    },
+    {
+      "path": "apps/api/app/core/errors.py",
+      "state": "present",
+      "sha256": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/exam_state.py",
+      "state": "present",
+      "sha256": "2a3714e2eaf356c363a6faf151325d7afe0341ccd184b801e73a38d7a4cb51b1"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/grading.py",
+      "state": "present",
+      "sha256": "eb3c393033897fa7c4b0952d1c8209285ec8bbf963e7db1ec78c42d63c1f0f67"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "e5e82f79a68204a67855d851d9c960268b760a1c26a773b5b3bb44d75f80236d"
+    },
+    {
+      "path": "apps/api/app/schemas/exam_workspace.py",
+      "state": "present",
+      "sha256": "39f80980a409de0da6a745a193c19fc0d10c16d30ce9cfcd7e8792b1f09be247"
+    },
+    {
+      "path": "apps/api/tests/test_assessment.py",
+      "state": "present",
+      "sha256": "b7338ffb1ad147ec2ef4104e744d6af8504a13e0d300fcba6b98426c82f9717a"
+    },
+    {
+      "path": "apps/api/tests/test_error_envelope.py",
+      "state": "present",
+      "sha256": "9107b340a9345631caae3ad872ce0a3c4a0982e1a87f2913f7bdb0ebd0db27b4"
+    },
+    {
+      "path": "apps/api/tests/test_exam_duration_projection.py",
+      "state": "present",
+      "sha256": "97cb9464aa501da2c56d8f664afbec277c61983bd6fe4358a5098dd4a6e829f7"
+    },
+    {
+      "path": "apps/api/tests/test_exam_workspace.py",
+      "state": "present",
+      "sha256": "2c8e565bfe0b7d5eccba22ba97b383aba40dd823784862cc32b28d189c1469f8"
+    },
+    {
+      "path": "apps/api/tests/test_grading_grounding.py",
+      "state": "present",
+      "sha256": "a367ff5d7fc9b67860f88e2cce1ca7ba773ad03406ca366747cfa37482901030"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/exam/page.tsx",
+      "state": "present",
+      "sha256": "7df33e01be74959cf8f142d16d053c2a6d07f716d1847e3f2fc21c906d51e2c9"
+    },
+    {
+      "path": "apps/web/components/exam/feedback-panel.tsx",
+      "state": "present",
+      "sha256": "5327f0eed8d3b29d28b39ee1cf588e359cd5f5eb8572acb9c6c28c8f9ce1151a"
+    },
+    {
+      "path": "apps/web/components/exam/finished-exam.tsx",
+      "state": "present",
+      "sha256": "4d6092f12faacb7fdf5cd6bf6e00006023af0c36169964c9546cc5d02df77a64"
+    },
+    {
+      "path": "apps/web/components/exam/question-input.tsx",
+      "state": "present",
+      "sha256": "abbba3204b334b7a7598088f89e3336267fbd65f9834c2f185479af590bf01df"
+    },
+    {
+      "path": "apps/web/components/exam/running-exam.tsx",
+      "state": "present",
+      "sha256": "9a67e63da8d2e10413306caae9ec899dd4ed811e8fcd02bc9ba891f249404ede"
+    },
+    {
+      "path": "apps/web/components/exam/session-history.tsx",
+      "state": "present",
+      "sha256": "ee2d5e48d3081b6463c2de905d739c78715b25b2ad9e7c6c19ad876d7d23c44c"
+    },
+    {
+      "path": "apps/web/components/exam/start-panel.tsx",
+      "state": "present",
+      "sha256": "59ae20106d02ccbb2b52e79902a76fc1583b71b92e4adcaf670d7abf91ebefc0"
+    },
+    {
+      "path": "apps/web/e2e/flows.spec.ts",
+      "state": "present",
+      "sha256": "664770686c991234f357f17fa9260ec6c59eb013d4c83f2711245d42a419cb1b"
+    },
+    {
+      "path": "apps/web/e2e/student-assessment.spec.ts",
+      "state": "present",
+      "sha256": "21cd872c21f8a0daa30096461bfc9c9757b0bd1d1532472e48c5d3ae13572ec8"
+    },
+    {
+      "path": "apps/web/lib/exam.test.ts",
+      "state": "present",
+      "sha256": "f73f593231a03819c38db0bdbd0221ec78bb8fcdd9a80df72414ab11b70de2c5"
+    },
+    {
+      "path": "apps/web/lib/exam.ts",
+      "state": "present",
+      "sha256": "73c9e3a4e8dfd1813d0b60f04266ba141502131f3c3054798834f6c2823f7bde"
+    },
+    {
+      "path": "apps/web/lib/types.ts",
+      "state": "present",
+      "sha256": "eeb6048a6fe1393c0c9204f93db2e9f29d49edd9ffe050e02b9e8a0eca3e61f2"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "8a3dd9dd3a95a525ccc23934b80a708bb18f2e582109463da23fccb24ad68413"
+    },
+    {
+      "path": "docs/instructor-guide.md",
+      "state": "present",
+      "sha256": "2edc4e439364b0de7f309645a253398f2ee34b21829f761d6919a72a160b152c"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "41b9278ca5fc12310e9341b9f44e5f5f6247685ec5efaa4681b4eb59757ff3b1"
+    },
+    {
+      "path": "docs/student-guide.md",
+      "state": "present",
+      "sha256": "e5b38fb4a5565987ba26531c6a0bec1ce22d0356e302f84a2e0c2caf47453b9b"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/contracts/openapi.json",
+      "state": "present",
+      "sha256": "26ae929181742e0a923fe1acff974c589d65b32f8ec9e2245ea9208acc11b961"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "6c1755ee08cf49e98caf5496647c6321f8463f7b07843069c31d591c63ad02bb"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "b6c22f11174b8d40677a4a89787bce09412dd2cc2b11ee9bfdf6a7a29ac868fa"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "dc232d37f28347814edd2e6d07a09766dec6666c8f99a349400adadf234956ef"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "352b4a9a11669845bd2e0635fbe3e8507de52de7cf771bfe42c533569b38db7e"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "48c5f38291465a435032b0d6d595c9e3a3286fd1dec31ed200d7a9ad2a10b1a5"
+    },
+    {
+      "path": "specs/014-student-assessment/contracts/api.md",
+      "state": "present",
+      "sha256": "c93e7a164b393b65be4ea6d4868bd3c700d384ff55b3bccad711e62e789fdc7b"
+    },
+    {
+      "path": "specs/014-student-assessment/data-model.md",
+      "state": "present",
+      "sha256": "9bc2328922eaec46a7c0a7229218b261f7546533a26bf3469f1d4506338ac17b"
+    },
+    {
+      "path": "specs/014-student-assessment/mail-acceptance.md",
+      "state": "present",
+      "sha256": "63fe60cbc5081e980d54a55fb532cd41cedfd6ae8a8db3da351cb363dd06bc93"
+    },
+    {
+      "path": "specs/014-student-assessment/plan.md",
+      "state": "present",
+      "sha256": "3edab6800f4202e3c746cb5e19ba5361596d634645e3c19bfd0981b3b268e9d4"
+    },
+    {
+      "path": "specs/014-student-assessment/quickstart.md",
+      "state": "present",
+      "sha256": "2da1ad6265fa0f3bbb053397e599a4fc49e3fe25c2c08f3120c60058f793c699"
+    },
+    {
+      "path": "specs/014-student-assessment/research.md",
+      "state": "present",
+      "sha256": "d15a72a0e34b2b2962fac9176bf8b140f9fa5b7b6d5dcf5c37725c9ffbf3c479"
+    },
+    {
+      "path": "specs/014-student-assessment/spec.md",
+      "state": "present",
+      "sha256": "043a8605a2fc2c026ba0465dd772c19098e37adfbeedf18b597b4e87f8d7ffe7"
+    },
+    {
+      "path": "specs/014-student-assessment/tasks.md",
+      "state": "present",
+      "sha256": "b5582d4849aaed6e1a22bae0705e24dca7ad46b1653d94a098d4c0d6fee3abfa"
+    },
+    {
+      "path": "specs/014-student-assessment/verification.md",
+      "state": "present",
+      "sha256": "af5981a2426336edc15b7fdbcb89ad1845d57335dd74fe0cd37e6bc701f7e609"
+    },
+    {
+      "path": "supabase/migrations/0019_exam_duration_projection.sql",
+      "state": "present",
+      "sha256": "ee52176e112cb547e25da415562fae61edb1d00bf126be5f9a3b4b71c3ec04b7"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/014-student-assessment-r1.json",
+      "report_sha256": "805b0004d7e1a73f282ee485541eb83e108be62451a3d9f8b490fbc345e55ca1",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "specs/014-student-assessment/spec.md",
+    "holdout_ref": "apps/web/e2e/student-assessment.spec.ts",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: independent instructor review and live-provider source/grade calibration pending",
+    "metrics": [
+      {
+        "name": "backend_tests_passed",
+        "baseline": 946,
+        "candidate": 1040,
+        "operator": ">=",
+        "threshold": 946,
+        "sample_size": 1040
+      },
+      {
+        "name": "frontend_library_tests_passed",
+        "baseline": 406,
+        "candidate": 411,
+        "operator": ">=",
+        "threshold": 406,
+        "sample_size": 411
+      },
+      {
+        "name": "browser_tests_passed",
+        "baseline": 37,
+        "candidate": 38,
+        "operator": ">=",
+        "threshold": 37,
+        "sample_size": 38
+      },
+      {
+        "name": "duration_projection_tests_passed",
+        "baseline": 0,
+        "candidate": 11,
+        "operator": ">=",
+        "threshold": 11,
+        "sample_size": 11
+      }
+    ],
+    "exact_command": "cd apps/api && env -u LLM_FAKE_PROVIDER -u EMBEDDING_WARMUP_ENABLED PGHOST=127.0.0.1 PGPORT=55440 PGUSER=muratates PG_BIN=/opt/homebrew/opt/postgresql@16/bin TEST_DB_NAME=dou014_full TEST_ADMIN_DSN=postgresql+psycopg://muratates@127.0.0.1:55440/dou014_full TEST_APP_DSN=postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55440/dou014_full TEST_WORKER_DSN=postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55440/dou014_full GROQ_API_KEY='' GEMINI_API_KEY='' EMBEDDING_PROVIDER=hashing .venv/bin/pytest -q; cd apps/api && .venv/bin/ruff check app tests/test_exam_workspace.py tests/test_exam_duration_projection.py tests/test_grading_grounding.py tests/test_error_envelope.py && .venv/bin/ruff format --check . && .venv/bin/mypy app; cd apps/web && bun test lib/ && ./node_modules/.bin/tsc --noEmit --incremental false; cd apps/web && PGHOST=127.0.0.1 PGPORT=55440 PGUSER=muratates E2E_API_URL=http://127.0.0.1:8014 E2E_PORT=3114 E2E_DATABASE_NAME=dou_synapse_e2e_dou014 ./node_modules/.bin/playwright test --workers=1; node scripts/docs_check.mjs --duzelt; cd apps/web && node scripts/contrast.mjs; cd apps/api && .venv/bin/python ../../evaluation/verify_gold_set.py; python3 -m unittest scripts/test_ai_sdlc_check.py"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending independent domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending independent security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "STUDENT_ASSESSMENT_WORKSPACE_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:014-student-assessment-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "STUDENT_ASSESSMENT_WORKSPACE_ENABLED",
+    "kill_switch": "Set STUDENT_ASSESSMENT_WORKSPACE_ENABLED=false and restart API. Catalog returns disabled; history/results503. Keep source/time/security fixes enabled; no data deletion.",
+    "assignment": "Sticky per synthetic pilot course and consenting internal participant after independent approvals.",
+    "initial_exposure": "None; local synthetic evidence only. Start staging with no active real assessments.",
+    "stop_conditions": [
+      "Any other-user result, hidden catalog detail or answer-bearing help during a same-course student exam is exposed.",
+      "Any unverifiable AI grade is displayed or added to new mastery.",
+      "Entry-window closure shortens an active exam or a queued late answer is accepted."
+    ],
+    "expand_conditions": [
+      "Independent engineering, domain and security/privacy reviewers approve the exact candidate.",
+      "Real-provider source-faithfulness and grading meet predeclared instructor thresholds.",
+      "Combined013+014 staging migration, owner isolation, active-exam and rollback rehearsal pass."
+    ],
+    "active_exam_policy": "Existing sessions remain closable when the workspace is disabled. Results and practice help stay locked while another same-course student exam is active; deadlines use post-lock database time."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:e59fc24a8bd4a838003f6b82d81e561800efb8d5",
+    "procedure": "Disable workspace and retain0019 and all records; deploy a forward fix if necessary. Do not drop source/time guards or rewrite answers. Restoring the base application would reintroduce known defects and requires separate review.",
+    "max_minutes": 15,
+    "verification": "Capability false and new endpoints503; legacy start/finish available; source validation, result locks and duration remain effective. Live rollback drill not run.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixture identities and source text only; retained reports contain aggregate counts, hashes and repository paths.",
+    "retention": "Versioned local evidence; no real student prompts, answers, identifiers, raw provider payloads or credentials."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

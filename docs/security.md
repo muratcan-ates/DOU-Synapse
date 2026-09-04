@@ -359,8 +359,8 @@ aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 946 test   # docs-check: backend.tests = 946
-cd apps/api && uv run mypy app                  # temiz, 98 dosya   # docs-check: backend.mypyFiles = 98
+cd apps/api && uv run pytest -q                 # 1040 test   # docs-check: backend.tests = 1040
+cd apps/api && uv run mypy app                  # temiz, 99 dosya   # docs-check: backend.mypyFiles = 99
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -370,3 +370,22 @@ supabase/tests/rls_isolation_mutation_check.sh              # 52/52   # docs-che
 psql -d dou_synapse -f supabase/tests/rls_assessment.sql    # 58 iddia   # docs-check: tarihsel 58 · 2026-08-09
 supabase/tests/rls_assessment_mutation_check.sh             # 24/24   # docs-check: tarihsel 24 · 2026-08-09
 ```
+
+## 014 kişisel sınav geçmişi ve süre sınırı
+
+Katalog yalnız ders üyesine şu anda açık yayımlanmış sınavın güvenli alanlarını verir.
+Kişisel geçmiş ve sonuç API'leri, eğitmenin daha geniş RLS okumasına rağmen açık
+`user_id` filtresi uygular. Sonuç okuma, alıştırma yardımı ve sınav başlangıcı mevcut
+kullanıcı bazlı transaction advisory lock üzerinden sıralanır; aynı derste etkin öğrenci
+sınavı varsa cevap taşıyan geçmiş ve puanlar açılmaz. Bitirme önce oturumu kapatır;
+başka etkin oturum varsa `results_locked:true` döndürür, kapanışı geri almaz.
+
+`app.own_exam_duration(uuid)` yalnız sahibi için integer süre döndürür. Sabit search_path,
+PUBLIC/worker EXECUTE reddi ve API üyelik kontrolü ayrı katmanlardır. Üyelik iptali bu dar
+süre bilgisini kaldırmaz; aksi halde devam eden sınavın veri dışa aktarım kilidi erkenden
+açılabilirdi. Sıradan blueprint RLS kapsamı genişletilmez. AI puanlamada kaynağı doğrulanamayan
+sonuçlar hem yeni üretimde hem geçmiş gösteriminde puansız ve çözümsüz kalır.
+
+Süre ve giriş penceresi kontrolleri kilit beklemesinden sonraki veritabanı saatini kullanır.
+PostgreSQL transaction başlangıcına sabitlenen `now()` ile geç gelen cevap kabul edilmez;
+ipucu da kilit alındıktan sonra güncel oturum durumunu yükler.

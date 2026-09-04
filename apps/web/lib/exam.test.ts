@@ -19,6 +19,8 @@ import {
   describeQuestion,
   describeSolution,
   examSessionKey,
+  examHistoryStatus,
+  examDate,
   EXAM_MODE,
   formatClock,
   formatScore,
@@ -412,7 +414,7 @@ describe("çözüm — bug_hunt'ın cevap anahtarı nesnedir", () => {
 });
 
 describe("boş havuz — arıza değil", () => {
-  test("409 conflict boş havuzdur", () => {
+  test("boş havuz mesajı nötr durumdur", () => {
     expect(isEmptyPool(new ApiError("Bu derste henüz onaylanmış soru yok.", "conflict", 409))).toBe(
       true,
     );
@@ -439,5 +441,35 @@ describe("mod açıklamaları", () => {
       expect(spec.description).not.toMatch(/\d/);
       expect(spec.label.trim().length).toBeGreaterThan(0);
     }
+  });
+});
+
+
+describe("öğrenci oturum keşfi", () => {
+  test("aynı cihazdaki farklı kullanıcılar aynı dersin son seçimini paylaşmaz", () => {
+    expect(examSessionKey("c1", "u1")).not.toBe(examSessionKey("c1", "u2"));
+    expect(examSessionKey("c1", "u1")).not.toBe(examSessionKey("c2", "u1"));
+    expect(examSessionKey("c1", "u1")).not.toBe(examSessionKey("c1"));
+  });
+
+  test("deneme ve yayın penceresi çatışmaları boş havuz diye gizlenmez", () => {
+    expect(isEmptyPool(new ApiError("Bu sınav henüz açılmadı.", "conflict", 409))).toBe(false);
+    expect(isEmptyPool(new ApiError("Deneme haklarınızın hepsini kullandınız.", "conflict", 409))).toBe(false);
+  });
+
+  test("süresi dolan açık oturum sonuç varmış gibi etiketlenmez", () => {
+    const state = examHistoryStatus(session({ expired: true }));
+    expect(state.label).toBe("Süre doldu");
+    expect(state.action).toBe("Oturumu aç");
+  });
+
+  test("tamamlanmış oturumda sürenin dolması sonuç eylemini kapatmaz", () => {
+    expect(examHistoryStatus(session({ expired: true, finished_at: "2026-09-04T12:00:00Z" })).action).toBe("Sonucu gör");
+    expect(examHistoryStatus(session()).action).toBe("Devam et");
+  });
+
+  test("tarih sunucunun değerinden Türkiye saatiyle çizilir", () => {
+    expect(examDate("2026-09-04T12:00:00Z")).toContain("15:00");
+    expect(examDate("geçersiz")).toBe("Tarih gösterilemiyor");
   });
 });

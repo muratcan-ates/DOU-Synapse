@@ -305,11 +305,34 @@ export interface ExamSession {
   question_count: number;
   answered_count: number;
   questions?: ExamQuestion[];
+  exam_version_id?: string | null;
+  exam_blueprint_id?: string | null;
+  attempt_no?: number | null;
 }
 
 export interface ExamStartRequest {
   mode?: ExamMode;
   topic_id?: string | null;
+  blueprint_id?: string | null;
+}
+
+/** Öğrenciye açık katalog; soru metni veya cevap anahtarı taşımaz. */
+export interface ExamCatalogItem {
+  blueprint_id: string;
+  title: string;
+  description: string | null;
+  duration_minutes: number;
+  opens_at: string | null;
+  closes_at: string | null;
+  max_attempts: number;
+  used_attempts: number;
+  remaining_attempts: number;
+  can_start: boolean;
+}
+
+export interface ExamCatalog {
+  enabled: boolean;
+  items: ExamCatalogItem[];
 }
 
 export interface AnswerSubmitRequest {
@@ -351,6 +374,8 @@ export interface AnswerFeedback {
 
 export interface ExamFinish {
   session_id: string;
+  /** Başka bir aktif sınav varken sonuçlar sunucu tarafından gizlenir. */
+  results_locked?: boolean;
   score: number | null;
   answered_count: number;
   unanswered_count: number;

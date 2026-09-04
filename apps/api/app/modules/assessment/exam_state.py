@@ -31,12 +31,12 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from fastapi import status
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.errors import AppError
-from app.models.assessment import ExamBlueprint, ExamMode, ExamSession
+from app.models.assessment import ExamMode, ExamSession
 from app.models.core import CourseMembership, MembershipRole
 
 #: Kilit gerekçesi. İKİ yüzeyde birden kullanılır: 403 zarfının `error.code`'u ve
@@ -74,6 +74,21 @@ async def acquire_user_assessment_lock(session: AsyncSession, *, user_id: UUID) 
         text("SELECT pg_advisory_xact_lock(hashtextextended(:identity, 15018))"),
         {"identity": str(user_id)},
     )
+
+
+async def assessment_now(session: AsyncSession) -> datetime:
+    """Read the database wall clock after any assessment lock wait.
+
+    PostgreSQL now() is fixed when the transaction begins, which may be the
+    membership lookup before a lock is acquired. Reusing it after a wait would
+    accept a late answer or admit an exam after its entry window closes. Other
+    application transactions retain db_now() semantics; assessment deadlines
+    intentionally use the current database clock.
+    """
+    value = await session.scalar(select(func.clock_timestamp()))
+    if value is None:  # pragma: no cover - PostgreSQL clock_timestamp is never NULL
+        raise RuntimeError("veritabanı sınav saati okunamadı")
+    return value
 
 
 class AssessmentExportLockedError(AppError):
@@ -115,15 +130,14 @@ async def session_cap_minutes(
 ) -> int:
     """Bu oturumun kırpma sınırı: blueprint sınavında sınavın kendi süresi.
 
-    Prova oturumunda SORGU KOŞMAZ. Blueprint oturumunda `exam_blueprints`'ten tek
-    kolon okunur; satır bulunamazsa (FK RESTRICT sayesinde olamaz) global sınıra
-    düşer — belirsizlikte kural sıkı kalır.
+    Prova oturumunda SORGU KOŞMAZ. Blueprint giriş penceresi kapansa da dar
+    sahiplik projeksiyonu yalnız bu oturumun sahibine süreyi verir. Sıradan
+    blueprint RLS okuması burada kullanılmaz: kapalı pencere satırı gizler ve
+    global sınıra düşmek uzun sınavı erken bitirip asistan kilidini açardı.
     """
     if exam.exam_blueprint_id is None:
         return settings.exam_duration_minutes
-    minutes = await session.scalar(
-        select(ExamBlueprint.duration_minutes).where(ExamBlueprint.id == exam.exam_blueprint_id)
-    )
+    minutes = await session.scalar(select(func.app.own_exam_duration(exam.id)))
     return int(minutes) if minutes is not None else settings.exam_duration_minutes
 
 
@@ -239,8 +253,7 @@ async def active_exam_sessions_by_course(
         return {}
 
     result = await session.execute(
-        select(ExamSession, ExamBlueprint.duration_minutes)
-        .outerjoin(ExamBlueprint, ExamBlueprint.id == ExamSession.exam_blueprint_id)
+        select(ExamSession, func.app.own_exam_duration(ExamSession.id))
         .where(
             ExamSession.user_id == user_id,
             ExamSession.course_id.in_(requested_courses),

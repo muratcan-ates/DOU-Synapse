@@ -15,10 +15,10 @@ sunucunun yetkileriyle sızdırır.
 | `open` + `short_answer` | kabul edilen karşılıklarla normalize eşleştirme | **hayır** |
 | `open` + `essay`, `code_trace`, `bug_hunt` | rubrik + anahtar + kaynakla şemalı | evet |
 
-LLM yolunda çıktı şemaya uymazsa **bir kez** yeniden denenir; yine uymazsa öğrenciye
-uydurma puan gösterilmez, "değerlendirme tamamlanamadı" döner (FR-020). Değerlendirmenin
-dayandığı `dayanak_chunk_id` set-membership kontrolünden geçer; geçmezse dayanak düşer
-ama puan durur — kaynak uydurmak cevabı geçersiz kılmaz, yalnız kaynağı geçersiz kılar.
+LLM yolunda çıktı şemaya uymazsa veya okunabilir kaynaklara dayanmıyorsa **bir kez**
+yeniden denenir. İkinci deneme de doğrulanamazsa puan ve model geri bildirimi
+gösterilmez; "değerlendirme tamamlanamadı" döner (FR-020). `dayanak_chunk_id`, modele
+verilen okunabilir kaynak kümesinde olmalıdır. Kaynak yoksa sağlayıcı çağrılmaz.
 
 Dosya adı ve sayfa numarası her zaman **chunk metadata'sından** üretilir, model
 metninden değil (Anayasa I).
@@ -405,16 +405,20 @@ async def grade_with_llm(
 ) -> GradingOutcome:
     """Rubrik + cevap anahtarı + kaynak parçalarla şemalı değerlendirme.
 
-    Şema bozuksa bir kez yeniden denenir; yine bozuksa uydurma puan gösterilmez.
-    `dayanak_chunk_id` verilen kaynak kümesinde değilse yalnız dayanak düşer.
+    Şema ve kaynak hataları aynı iki deneme bütçesini paylaşır. Geçerli dayanak
+    olmadan puan veya modelin eksik nokta iddiaları gösterilmez. Bu kontrol kaynak
+    kimliğini doğrular; değerlendirme ile kaynak arasındaki anlamı ölçmez.
     """
-    valid_ids = {chunk_id for chunk_id, _ in sources}
+    readable_sources = [(chunk_id, body) for chunk_id, body in sources if body.strip()]
+    if not readable_sources:
+        return _ungraded("okunabilir kaynak parçası yok")
+    valid_ids = {chunk_id for chunk_id, _ in readable_sources}
     user_prompt = "\n\n".join(
         [
             _reference_block(payload),
             f"Öğrencinin cevabı:\n{given}",
             "--- KAYNAK BÖLÜMLER ---",
-            _sources_block(sources),
+            _sources_block(readable_sources),
             "dayanak_chunk_id yukarıdaki kimliklerden biri olmalı.",
         ]
     )
@@ -432,10 +436,9 @@ async def grade_with_llm(
             continue
 
         evidence = verdict.dayanak_chunk_id
-        if evidence is not None and evidence not in valid_ids:
-            # Uydurulmuş dayanak: puan durur, kaynak düşer (Anayasa I).
+        if evidence not in valid_ids:
             logger.info("değerlendirme dayanağı set-membership'ten geçmedi")
-            evidence = None
+            continue
 
         breakdown = _rubric_breakdown(payload, verdict)
         # FR-117: rubrik varsa toplam KIRILIMDAN türetilir. Model kendi `score`'unu
@@ -453,7 +456,7 @@ async def grade_with_llm(
             rubric_breakdown=breakdown,
         )
 
-    return _ungraded("şema iki denemede de tutmadı")
+    return _ungraded("değerlendirme iki denemede de doğrulanamadı")
 
 
 # ---------------------------------------------------------------------------
@@ -492,15 +495,15 @@ async def grade_answer(
     if isinstance(payload, OpenPayload) and payload.format is AnswerFormat.SHORT_ANSWER:
         return grade_short_answer(payload, given, source_chunk_id=question.source_chunk_id)
 
+    chunk = await session.get(Chunk, question.source_chunk_id)
+    if chunk is None or not chunk.text.strip():
+        return _ungraded("sorunun kaynak parçası okunamadı")
+
     if completion is None:
         try:
             completion = resolve_completion()
         except AppError:
             return _ungraded("LLM sağlayıcısı kurulamadı")
-
-    chunk = await session.get(Chunk, question.source_chunk_id)
-    if chunk is None:
-        return _ungraded("sorunun kaynak parçası okunamadı")
 
     return await grade_with_llm(
         completion,

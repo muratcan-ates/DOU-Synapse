@@ -213,3 +213,21 @@ Bu bölümü öğrencilerinize de aktarın; beklentiyi baştan doğru kurmak, so
 - [Öğrenci Kılavuzu](student-guide.md)
 - [KVKK Aydınlatma Metni](kvkk.md) — hangi kişisel veri nasıl işleniyor
 - [Mimari](../ARCHITECTURE.md) — kararlar, gerekçeler ve **uygulanmayanlar**
+
+## Öğrencinin sınava ulaşması ve kaynaklı sonuçlar (014)
+
+Öğrenci çalışma alanı açıldığında yayımlanmış sınavınız giriş penceresi içinde öğrencinin
+**Sınav provası → Şu anda açık sınavlar** listesinde görünür. Katalogda süre ve kalan deneme
+hakkı bulunur; taslak sorular, dağılım hücreleri ve cevap anahtarları bulunmaz. Yayınlamak
+için önce soru taslaklarını gözden geçirin, onaylayın ve sınav sürümünün kâğıdını tamamlayın.
+
+Öğrenci konu seçerek onaylı havuzdan alıştırma yapabilir. Oturum geçmişi kişiye özeldir;
+eğitmenin kendi **Oturumlarım** listesi öğrencilerin oturumlarını içermez. Başlamış sınavın
+süresi, giriş penceresi kapandığı için kısalmaz. Öğrenci aynı derste sınavdayken önceki
+çözümleri ve alıştırma yardımı açılmaz.
+
+Açık uçlu/kod değerlendirmesi okunabilir ders kaynağına bağlanamazsa sistem puan uydurmaz.
+**Değerlendirilemedi**, öğrencinin başarısız olduğu anlamına gelmez. Geçerli kaynak kimliği
+tek başına pedagojik doğruluk kanıtı değildir; gerçek ders materyalinde puan/rubrik ve
+“Neden yanlış?” açıklamalarını örnek cevaplarla ayrıca inceleyin. Yerel sahte sağlayıcı
+testleri gerçek model başarı raporunun yerine geçmez.

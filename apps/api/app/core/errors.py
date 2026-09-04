@@ -147,6 +147,11 @@ class QuestionAuthoringDisabledError(AppError):
     code = "question_authoring_disabled"
 
 
+class StudentAssessmentWorkspaceDisabledError(AppError):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "student_assessment_workspace_disabled"
+
+
 class ConcurrencyLimitError(AppError):
     """Aynı kullanıcının hâlâ süren bir işi var (FR-222).
 
