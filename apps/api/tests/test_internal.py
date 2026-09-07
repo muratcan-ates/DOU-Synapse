@@ -185,6 +185,25 @@ class TestDrainIsGorur:
         assert response.json() == {"processed": 0}
 
 
+def _set_drain_url(monkeypatch: pytest.MonkeyPatch, url: str | None) -> None:
+    """Drain adresini kur ve `Settings` önbelleğini tazele.
+
+    `trigger_drain` adresi artık `os.environ`'dan değil `Settings`'ten okuyor:
+    `pydantic-settings` `.env` dosyasını `Settings`'e okur ama `os.environ`'a
+    yazmaz, yani ortamı doğrudan okuyan eski satır `.env` ile yapılandırılmış
+    dağıtımlarda uzak worker dalını hiç seçmiyordu. `get_settings` `lru_cache`'li
+    olduğu için testin değişkeni koyduktan sonra önbelleği temizlemesi gerekir;
+    üretimde değişken süreç başlamadan önce kurulduğundan böyle bir adım yoktur.
+    """
+    from app.core.config import get_settings
+
+    if url is None:
+        monkeypatch.delenv(internal.WORKER_DRAIN_URL_ENV, raising=False)
+    else:
+        monkeypatch.setenv(internal.WORKER_DRAIN_URL_ENV, url)
+    get_settings.cache_clear()
+
+
 class TestTetikSecimi:
     async def test_url_yoksa_surec_ici_drain_kosar(
         self,
@@ -193,7 +212,7 @@ class TestTetikSecimi:
         admin_engine: AsyncEngine,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.delenv(internal.WORKER_DRAIN_URL_ENV, raising=False)
+        _set_drain_url(monkeypatch, None)
         await _course_with_pending_job(client, users, monkeypatch)
 
         # HTTP yolunun SEÇİLMEDİĞİ de kanıtlanmalı: iş her iki yolda da işlenirdi,
@@ -237,7 +256,7 @@ class TestTetikSecimi:
             return real_client(**kwargs)  # type: ignore[arg-type]
 
         monkeypatch.setattr(internal.httpx, "AsyncClient", factory)
-        monkeypatch.setenv(internal.WORKER_DRAIN_URL_ENV, "http://worker.internal/internal/drain")
+        _set_drain_url(monkeypatch, "http://worker.internal/internal/drain")
 
         await internal.trigger_drain()
 
@@ -252,6 +271,45 @@ class TestTetikSecimi:
         assert status_value == "completed", "HTTP tetiği işi işletmedi"
         assert pending == 0
 
+    async def test_adres_ortamda_degil_yalnizca_ayarda_olsa_da_uzak_dal_secilir(
+        self, monkeypatch: pytest.MonkeyPatch, drain_secret: str
+    ) -> None:
+        """`.env` ile verilen adres de uzak dalı seçmeli — regresyon çivisi.
+
+        Bu testin var olma sebebi ölçülmüş bir kusur: `trigger_drain` adresi
+        `os.environ`'dan okuyordu, ama `pydantic-settings` `.env` dosyasını
+        `Settings`'e okur ve `os.environ`'a YAZMAZ. Sonuç: `.env` ile
+        yapılandırılan her dağıtımda `WORKER_DRAIN_URL` sessizce yok sayılıyor ve
+        tetik her zaman süreç içi dala düşüyordu — `docs/deployment.md` ve
+        `.env.example` çalıştığını söylediği hâlde. Test, adresi ortama HİÇ
+        koymadan yalnız `Settings`'e vererek o yolu kapalı tutar.
+        """
+        monkeypatch.delenv(internal.WORKER_DRAIN_URL_ENV, raising=False)
+
+        from app.core import config as config_module
+
+        gercek = config_module.get_settings()
+        ayar = gercek.model_copy(
+            update={"worker_drain_url": "http://worker.internal/internal/drain"}
+        )
+        monkeypatch.setattr(internal, "get_settings", lambda: ayar)
+
+        istekler: list[str] = []
+
+        def factory(**kwargs: object) -> httpx.AsyncClient:
+            istekler.append("kuruldu")
+            raise RuntimeError("uzak dal seçildi; ağa çıkmaya gerek yok")
+
+        monkeypatch.setattr(internal.httpx, "AsyncClient", factory)
+
+        # Hata yutulur (iş kuyrukta bekler); ölçtüğümüz şey HANGİ DALIN seçildiği.
+        await internal.trigger_drain()
+
+        assert istekler == ["kuruldu"], (
+            "adres yalnız Settings'te olduğunda uzak dal seçilmedi — "
+            "os.environ'a düşen eski davranış geri gelmiş olabilir"
+        )
+
     async def test_url_var_sir_yoksa_istek_yapilmaz(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Sırsız uzak çağrı zaten 404 alır; boşuna istek atılmaz."""
         called = False
@@ -262,7 +320,7 @@ class TestTetikSecimi:
             raise AssertionError("sırsızken HTTP istemcisi kurulmamalı")
 
         monkeypatch.setattr(internal.httpx, "AsyncClient", factory)
-        monkeypatch.setenv(internal.WORKER_DRAIN_URL_ENV, "http://worker.internal/internal/drain")
+        _set_drain_url(monkeypatch, "http://worker.internal/internal/drain")
         monkeypatch.delenv("WORKER_DRAIN_SECRET", raising=False)
 
         from app.core.config import get_settings
@@ -283,6 +341,6 @@ class TestTetikSecimi:
             raise httpx.ConnectError("worker ayakta değil")
 
         monkeypatch.setattr(internal.httpx, "AsyncClient", factory)
-        monkeypatch.setenv(internal.WORKER_DRAIN_URL_ENV, "http://worker.internal/internal/drain")
+        _set_drain_url(monkeypatch, "http://worker.internal/internal/drain")
 
         await internal.trigger_drain()  # istisna dışarı sızmamalı

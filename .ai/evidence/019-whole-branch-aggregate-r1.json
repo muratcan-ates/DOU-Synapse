@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "019-whole-branch-aggregate-r1",
+  "captured_at": "2026-09-07T19:21:45+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && TEST_DB_NAME=dou_017_son .venv/bin/python -m pytest -q; .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app; cd ../web && bun test lib/ && bunx tsc --noEmit && node scripts/contrast.mjs && ./node_modules/.bin/playwright test --list; cd ../.. && node scripts/docs_check.mjs && python3 scripts/migration_check.py --allow-gap 0017 && python3 -m unittest scripts.test_migration_check",
+  "environment": "yerel macOS · PostgreSQL 16 + pgvector · sahte sağlayıcı · izole test veritabanı",
+  "results": {
+    "backend_tests_passed": 1197,
+    "web_unit_tests_passed": 428,
+    "e2e_cases_collected": 42,
+    "e2e_cases_run": 0,
+    "typecheck_errors": 0,
+    "ruff_errors": 0,
+    "mypy_files": 105,
+    "contrast": "pass",
+    "docs_check": "pass",
+    "migration_check": "pass"
+  },
+  "governance_note": "Bu kayıt 013→017 dilimlerinin TAMAMINI main tabanına karşı kapsar. Tek tek dossier'lar (010–016) kendi commit'lerinde geçerlidir ama doğrulayıcı yalnız HEAD'de tanıtılan kaydı uygun sayar; main hedefli bir PR'da bu yüzden 32 hassas dosya kapsamsız kalıyordu. Kapsam boşluğu bu kayıtla kapatılır; önceki dossier'lar SİLİNMEZ ve değiştirilmez (append-only), bu kayıt onların üstüne toplayıcı olarak eklenir. Dilimde düzeltilen dört gerçek kusur specs/017-completion-integration/verification.md'de komutlarıyla yazılıdır: (1) ders silmeyi 0009'dan beri kıran denetim tetikleyicisi, (2) hiçbir kapının görmediği göç numarası çakışması, (3) arayüzde karşılığı olmayan soru silme ucu — belge silmenin 409 mesajı yapılamayan bir çıkışı tarif ediyordu, (4) düzenlenemeyen blueprint — ekran düzenlemenin güvenli olduğunu anlatırken düzenleme yeteneği yoktu. Model, sağlayıcı, prompt ve embedding DEĞİŞMEDİ. Neden ayrı kayıt: `supersedes` yalnız TABAN commit'te bulunan bir dossier'i işaret edebilir; 017-r1 bu daldan sonra doğduğu için zincirlenemez. Depo geleneği de zincir yerine bağımsız kayıt kullanıyor. Gerekçe: toplayıcı kayıt yalnız HEAD'de tanıtıldığı commit'te uygun sayılıyor. Dalın üstüne yeni commit gelince (018 ölü-yol temizliği) kapsam yeniden açıldı; bu revizyon aynı commit'te toplayıcıyı tazeler. Bu, dalın her yeni commit'inde tekrarlanacak yapısal bir adımdır — PR'dan önceki SON commit'te bir kez yapılması yeterlidir.",
+  "limitations": "E2E vakaları SAYILDI (42), koşulmadı; RLS/mutasyon paketi, konteyner derlemesi ve üretim derlemesi bu dilimde koşulmadı — hepsi CI işlerinde. Gerçek sağlayıcı kalitesi, insan kabulü ve staging/production HÂLÂ AÇIK ve bu kayıt onları iddia etmez. dense.py'deki HNSW regresyonu bilinçli olarak açık bırakıldı (018 şeridi).",
+  "privacy": "içerik yok; sayaçlar, dosya yolları ve şema adları"
+}

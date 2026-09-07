@@ -4,14 +4,29 @@
 birebir aynı; bekçi test (`test_role_aware_agent_application_guards`) bu adları
 `app.api.chat` üzerinden import etmeye devam eder — chat re-export eder.
 
-The role-aware path deliberately allows exactly one provider attempt. The
-first configured model is therefore the only tokenizer contract relevant to
-its pre-charge. Current server-owned system prompt variants were measured
-offline with Xenova/llama-3-tokenizer at immutable revision
-72bff9ee09897a16b3b4b2b9995fecb0bfa7dbe6. The largest was 1,021 tokens, so
+The role-aware path deliberately allows exactly one provider attempt, so the
+first configured model is the only tokenizer contract that could matter here.
+Server-owned system prompt variants were measured offline with
+Xenova/llama-3-tokenizer at immutable revision
+72bff9ee09897a16b3b4b2b9995fecb0bfa7dbe6; the largest was 1,021 tokens, so
 1,024 is a conservative content ceiling. Runtime code never loads a tokenizer
 or reaches the network: a changed model or prompt hash retains the original
 UTF-8 byte ceiling until its tokenizer contract is reviewed.
+
+BUGÜNKÜ GERÇEK — ölçüldü, 7 Eylül 2026: yapılandırılmış varsayılan model
+(`groq/openai/gpt-oss-120b`) bu kümede DEĞİL, yedek model de değil. Eski model
+`groq/llama-3.3-70b-versatile` sağlayıcının katmanlarından kaldırıldı
+(`docs/provider-readiness.md`). Yani tam-tokenizer dalı üretimde HİÇ koşmuyor;
+her istek muhafazakâr bayt tavanına düşüyor. Bu fail-safe yöndedir (fazla
+rezerve eder, az değil) ve rezervasyon cevaptan sonra gerçek kullanımla
+uzlaştırılır (`agent/quota.py::reconcile`), dolayısıyla kalıcı kota kaybı yok;
+maliyeti, uçuş sırasındaki rezervasyonun olduğundan büyük olması ve bunun
+eşzamanlılık tavanını gereğinden erken doldurabilmesidir.
+
+Kümeyi canlandırmak isteyen, ölçümü YENİ modelin kendi tokenizer'ıyla yeniden
+koşmalıdır (`scripts/measure_role_agent_prompt_tokens.py`); llama-3 ölçümü
+gpt-oss için geçerli değildir. `tests/test_token_precharge_contract.py` bu
+ayrışmayı sabitler: küme ile yapılandırılmış model sessizce uyuşmaz kalamaz.
 """
 
 from __future__ import annotations

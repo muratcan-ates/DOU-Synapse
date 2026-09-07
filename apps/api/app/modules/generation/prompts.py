@@ -37,8 +37,10 @@ CONTEXT_CLOSE = "</retrieved_context>"
 
 #: Kaçış sonrası metinde kalmaması gereken sınır işaretleri. Sabit nokta denetimi
 #: bunları arar; biri hâlâ duruyorsa temizlik bir tur daha döner.
+#: Bağlam bloğunun sınır işaretleri. Hepsinin `<` ile başlaması bir
+#: TESADÜF DEĞİL, `escape_for_context`'in tek katmanlı olabilmesinin
+#: sebebidir; `test_prompts.py` bu invaryantı doğrular.
 _TAG_MARKERS = ("<source", "</source", CONTEXT_OPEN, CONTEXT_CLOSE)
-_MAX_SANITIZE_PASSES = 8
 
 # Chat-completion providers add a small amount of role/message framing outside
 # the two content strings. The content itself is bounded by UTF-8 bytes below;
@@ -55,33 +57,24 @@ class PromptBudgetExceeded(ValueError):
 def escape_for_context(text: str) -> str:
     """Materyal metnini etiket sınırını kıramayacak hâle getirir.
 
-    Önce `&`, `<`, `>` kaçırılır — bu tek başına etiket forge etmeyi imkânsız
-    kılar. Ardından sabit noktaya kadar denetlenir: kaçışı bir şekilde atlatan bir
-    kalıp kalmışsa (kodlama sürprizleri, tek yönlü normalize eden girdi) sınır
-    işareti sökülür ve metin bir tur daha geçirilir. Döngü, kendi çıktısını
-    değiştirmediği anda durur; üst sınır sonsuz döngüye karşı sigortadır.
+    `&`, `<`, `>` kaçırılır. Koruma TEK katmandır ve tek katman yeter, çünkü
+    invaryant şudur: `_TAG_MARKERS`'ın her elemanı `<` ile başlar ve `<`
+    kaçırıldıktan sonra metinde hiç `<` kalmaz — dolayısıyla hiçbir sınır
+    işareti hayatta kalamaz. `test_prompts.py` bu invaryantı ayrıca çivilar.
+
+    Buradaki eski kod ikinci bir katman iddia ediyordu: kaçıştan SONRA sabit
+    noktaya kadar sınır işareti söken bir döngü. O döngü matematiksel olarak
+    ulaşılamazdı (kaçış zaten `<`'i yok ediyor); 1191 testlik koşumda gövdesi
+    hiç yürütülmedi ve 200.000 girdilik fuzz'da bir kez bile tetiklenmedi.
+    Ulaşılamayan savunma, savunma değildir: bir sonraki okuyucu kaçış satırını
+    değiştirirken "nasıl olsa ikinci katman yakalar" diye düşünürdü. Bu yüzden
+    döngü ve yardımcı silindi, invaryant yazıya ve teste bağlandı.
+
+    Dikkat: işaretleri ham metinden SÖKMEK bilinçli olarak seçilmedi. Ders
+    materyali gerçekten `<source` içerebilir (HTML/XML anlatan bir programlama
+    dersi); kaçırmak metni korur, sökmek içeriği bozardı.
     """
-    escaped = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    for _ in range(_MAX_SANITIZE_PASSES):
-        lowered = escaped.lower()
-        if not any(marker in lowered for marker in _TAG_MARKERS):
-            return escaped
-        previous = escaped
-        for marker in _TAG_MARKERS:
-            escaped = _remove_case_insensitive(escaped, marker)
-        if escaped == previous:
-            break
-    return escaped
-
-
-def _remove_case_insensitive(text: str, marker: str) -> str:
-    lowered_marker = marker.lower()
-    out = text
-    while True:
-        index = out.lower().find(lowered_marker)
-        if index < 0:
-            return out
-        out = out[:index] + out[index + len(marker) :]
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _escape_attribute(value: str) -> str:

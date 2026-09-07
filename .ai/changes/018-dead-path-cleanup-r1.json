@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "change_id": "018-dead-path-cleanup-r1",
+  "lineage_id": "dead-path-cleanup",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Ölü ve yanıltıcı üç yol kapatıldı: worker drain ayarı, tam-tokenizer dalı, ulaşılamaz kaçış katmanı",
+  "summary": "`.env` ile verilen WORKER_DRAIN_URL artık gerçekten okunuyor (uzak worker dalı o biçimde hiç çalışmıyordu). Tam-tokenizer kota yolunun yapılandırmayla uyuşmadığı yazıya ve iki bekçi teste bağlandı. `escape_for_context`'teki ulaşılamaz ikinci temizleme katmanı kaldırıldı; koruma seviyesi değişmedi, yanıltıcı belge düzeltildi.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-07T22:21:05+03:00",
+  "review_by": "2026-10-07T22:21:05+03:00",
+  "base_sha": "a90c35fae5f4c9e8c5f69402b9337ab3e03e233d",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "model_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "prompt_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "tool_schema_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "guardrail_revision": "worker-drain-settings-read · token-precharge-contract-guard · prompt-escape-single-layer-invariant",
+    "retrieval_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "embedding_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "evaluator_revision": "backend-1197 (önce 1191); mutasyon kanıtı kırmızı→yeşil"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "e12f3bdffd10d4c965d52f1c781b8029128f066a375e069d090982340f0f936b",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/api/internal.py",
+      "state": "present",
+      "sha256": "40148c9d397df3dc161ed40794d2f158af47578f0dc3dca923b40f1634800a18"
+    },
+    {
+      "path": "apps/api/app/modules/agent/token_precharge.py",
+      "state": "present",
+      "sha256": "ab1cdd825e87f8130b1dee8345e1398f8d5c52dacc21ebfc2eb0a657f9a66d9f"
+    },
+    {
+      "path": "apps/api/app/modules/generation/prompts.py",
+      "state": "present",
+      "sha256": "6e2638eb11cb2b677917b10ac0d5e94870e3138ddf9ecd251d9a2f34ea4be92d"
+    },
+    {
+      "path": "apps/api/tests/test_internal.py",
+      "state": "present",
+      "sha256": "e12f3bdffd10d4c965d52f1c781b8029128f066a375e069d090982340f0f936b"
+    },
+    {
+      "path": "apps/api/tests/test_prompts.py",
+      "state": "present",
+      "sha256": "1f49f899d45474a4c2d56769368914ecf4f9d0737ecc1e117ca62f211ace1e89"
+    },
+    {
+      "path": "apps/api/tests/test_token_precharge_contract.py",
+      "state": "present",
+      "sha256": "d8248e1ce047837e3a8d0916ad49046a09b12f11c11ba8e2e2afbb71d5fcc5f1"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/018-dead-path-cleanup-r1.json",
+      "report_sha256": "7a2f4689b8430f582dfa0f1a7af227be74abf9d50817cee2c7380c20f4a9862a",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_token_precharge_contract.py",
+    "holdout_ref": "apps/api/tests/test_internal.py",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/acceptance/assessment_cases.json",
+    "metrics": [
+      {
+        "name": "backend_tests_passed",
+        "baseline": 1191,
+        "candidate": 1197,
+        "operator": ">=",
+        "threshold": 1197,
+        "sample_size": 1197
+      },
+      {
+        "name": "unreachable_branches_removed",
+        "baseline": 0,
+        "candidate": 3,
+        "operator": ">=",
+        "threshold": 3,
+        "sample_size": 3
+      }
+    ],
+    "exact_command": "set -euo pipefail; cd apps/api && TEST_DB_NAME=dou_017_v2 .venv/bin/python -m pytest -q && .venv/bin/ruff check . && .venv/bin/mypy app"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending independent domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending independent security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:018-dead-path-cleanup-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "kill_switch": "Set EVAL_RUNTIME_ENABLED=false, remove eval secret and restart; disable student workspace if needed, retaining source/time/ownership guards and records.",
+    "assignment": "Sticky per synthetic pilot course and consenting internal participant after independent approvals.",
+    "initial_exposure": "None; local synthetic/injected evidence only.",
+    "stop_conditions": [
+      "Any answer/help or draft crosses owner/course or active-exam boundary.",
+      "Any fake/cache/replayed/tampered response receives real quality eligibility.",
+      "Any evaluation request or corpus write leaves the explicitly validated isolated target."
+    ],
+    "expand_conditions": [
+      "Independent engineering/domain/privacy approval of exact combined candidate.",
+      "Real-provider and human grading/source/Socratic acceptance meets predeclared thresholds.",
+      "Combined013+014+015 staging and live operational gates pass."
+    ],
+    "active_exam_policy": "Existing sessions remain closable when the workspace is disabled. Results and practice help stay locked while another same-course student exam is active; deadlines use post-lock database time."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:a90c35fae5f4c9e8c5f69402b9337ab3e03e233d",
+    "procedure": "Commit revert edilir; drain yeniden yalnız gerçek süreç ortamında çalışır.",
+    "max_minutes": 15,
+    "verification": "Revert sonrası test_internal.py::...adres_ortamda_degil... kırmızı yanmalı.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixtures/evaluation samples only in evidence. Browser unsent drafts are user/course/session scoped sessionStorage, cleared on submit/finish/expiry/logout.",
+    "retention": "Versioned aggregate evidence and hashes; acceptance packet has no filled human labels. No credentials or real student content in repository evidence."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

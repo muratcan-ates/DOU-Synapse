@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "018-dead-path-cleanup-r1",
+  "captured_at": "2026-09-07T19:21:05+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && TEST_DB_NAME=dou_017_v2 .venv/bin/python -m pytest -q; .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app; mutasyon: internal.py eski os.environ okumasına döndürülüp tests/test_internal.py -k adres_ortamda_degil koşuldu",
+  "environment": "yerel macOS · PostgreSQL 16 + pgvector · sahte sağlayıcı · izole test veritabanı",
+  "results": {
+    "backend_tests_passed": 1197,
+    "backend_tests_before": 1191,
+    "new_tests": 6,
+    "mutation_guard": "kırmızı→yeşil doğrulandı",
+    "ruff_errors": 0,
+    "mypy_files": 105
+  },
+  "governance_note": "Üç ölü/yanıltıcı yol kapatıldı. (1) `Settings.worker_drain_url` alanı hiçbir yerde OKUNMUYORDU: `internal.trigger_drain` adresi `os.environ`'dan alıyordu, ama pydantic-settings `.env` dosyasını Settings'e okur ve os.environ'a YAZMAZ. Sonuç: `.env` ile yapılandırılan her dağıtımda WORKER_DRAIN_URL sessizce yok sayılıyor, uzak worker dalı hiç seçilmiyor ve ingestion API sürecinde koşuyordu — docs/deployment.md ve .env.example çalıştığını söylediği hâlde. Artık Settings'ten okunuyor; regresyon testi adresi ortama HİÇ koymadan yalnız ayara vererek yolu kapalı tutuyor ve mutasyonla (eski davranış geri konularak) kırmızı yandığı doğrulandı. (2) Tam-tokenizer kota yolu yapılandırılmış modellerin hiçbirini kapsamıyor; dal üretimde hiç koşmuyor. Davranış fail-safe (fazla rezerve eder) ve rezervasyon cevaptan sonra uzlaştırılıyor, kalıcı kota kaybı yok; ama modül dokümanı bunun tersini söylüyordu. Gerçek yazıldı ve iki bekçi test eklendi: küme ile yapılandırma sessizce uyuşmaz kalamaz. (3) `escape_for_context`'in 'sabit noktaya kadar temizle' ikinci katmanı ULAŞILAMAZDI (bütün sınır işaretleri `<` ile başlıyor, kaçış zaten `<`'i yok ediyor). Ulaşılamayan savunma yanıltıcıdır; döngü ve yardımcı silindi, invaryant yazıya ve üç teste bağlandı. Güvenlik SEVİYESİ DEĞİŞMEDİ: kaçış katmanı zaten tek başına yeterliydi ve duruyor.",
+  "limitations": "Uzak drain yolu gerçek bir worker servisine karşı koşulmadı; test HTTP istemcisinin kurulduğunu kanıtlar, uçtan uca dağıtım kanıtı değildir. Tokenizer ölçümü yeni model için yenilenmedi (ağ gerektirir); dal bilinçli olarak ölü bırakıldı ve testle işaretlendi.",
+  "privacy": "içerik yok; yapılandırma adları ve sayaçlar"
+}

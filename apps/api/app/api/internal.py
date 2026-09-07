@@ -27,7 +27,6 @@ kullanmaz) ama paylaşılan sırrı ister.
 
 from __future__ import annotations
 
-import os
 from secrets import compare_digest
 from typing import Annotated
 from uuid import UUID
@@ -45,12 +44,17 @@ from app.core.logging import get_logger
 router = APIRouter(prefix="/internal", tags=["internal"], include_in_schema=False)
 logger = get_logger("app.internal")
 
-#: Worker servisinin drain ucunun tam adresi. TANIMSIZSA tetik süreç içi kalır.
+#: Worker drain adresinin bağlandığı ortam değişkeninin adı. TANIMSIZSA tetik
+#: süreç içi kalır.
 #:
-#: Neden `Settings` alanı değil ortam değişkeni: `core/config.py` bu fazda beş
-#: oturuma kapalıdır (10_OKU_ONCE_FAZ2 §3) ve içinde yalnız `worker_drain_secret`
-#: önden açılmıştı. Değişkenin `Settings.worker_drain_url` alanına taşınması
-#: raporda lidere iletildi; taşındığında burası tek satırda değişir.
+#: Değer artık `Settings.worker_drain_url` üzerinden okunur, `os.environ`
+#: üzerinden DEĞİL. Sebebi ölçüldü: `pydantic-settings` `.env` dosyasını
+#: `Settings`'e okur ama `os.environ`'a YAZMAZ. Doğrudan ortamı okuyan eski
+#: satır, `.env` ile yapılandırılmış her dağıtımda değeri bulamıyor ve HER ZAMAN
+#: süreç içi dala düşüyordu — yani `docs/deployment.md`'nin ve `.env.example`'ın
+#: vaat ettiği uzak worker yolu o biçimde hiç çalışmıyordu. Yalnız gerçek süreç
+#: ortamı (docker-compose) doğru davranıyordu. Sabit yalnız değişkenin ADI için
+#: durur; testler de bu adı kullanır.
 WORKER_DRAIN_URL_ENV = "WORKER_DRAIN_URL"
 
 #: Tetik çağrısının zaman aşımı. Kısa tutulur: bu çağrı yükleme yanıtı istemciye
@@ -107,7 +111,8 @@ async def trigger_drain() -> None:
     sonraki tetik ya da worker döngüsü onu alır. Tetiğin başarısızlığı yükleme
     isteğini başarısız saymaz — dosya kaydedilmiştir.
     """
-    url = os.environ.get(WORKER_DRAIN_URL_ENV, "").strip()
+    settings = get_settings()
+    url = (settings.worker_drain_url or "").strip()
     if not url:
         from app import worker
 
@@ -118,7 +123,7 @@ async def trigger_drain() -> None:
             logger.exception("worker tetiklenemedi")
         return
 
-    secret = get_settings().worker_drain_secret
+    secret = settings.worker_drain_secret
     if not secret:
         # Uzak uç sırsız zaten 404 döner; boşuna istek atmak yerine sebebi yazarız.
         logger.error(
