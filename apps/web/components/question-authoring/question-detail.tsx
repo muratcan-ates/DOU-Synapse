@@ -4,7 +4,7 @@ import { ANSWER_FORMAT, toQuestionView, type QuestionView } from "@/lib/question
 import type { Question } from "@/lib/types";
 import { ErrorNote } from "@/components/page-state";
 import { SourceCard } from "@/components/source-card";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, ConfirmAction } from "@/components/ui";
 import { QuestionExamUsage } from "./question-exam-usage";
 import { DraftEditor } from "./draft-editor";
 
@@ -19,6 +19,7 @@ export function QuestionDetail({
   decisionError,
   hasNextDraft,
   onDecide,
+  onDelete,
   onNextDraft,
 }: {
   courseId: string;
@@ -38,6 +39,8 @@ export function QuestionDetail({
   decisionError: string | null;
   hasNextDraft: boolean;
   onDecide: (status: "approved" | "rejected") => void;
+  /** Soruyu havuzdan tamamen siler. Reddetmekten farkı: satır da gider. */
+  onDelete: () => Promise<void>;
   onNextDraft: () => void;
 }) {
   const view = toQuestionView(question);
@@ -134,6 +137,26 @@ export function QuestionDetail({
             Sıradaki taslağa geç
           </Button>
         )}
+        {/*
+          Silme, karar düğmelerinden AYRILIR ve onay ister. Reddetmek pedagojik
+          bir karardır (satır kalır, havuzun neyi elediği ölçülebilir); silmek
+          yapısaldır ve tek gerçek ihtiyaçtan doğar: `questions.source_chunk_id`
+          ON DELETE RESTRICT taşıdığı için, bir belgeden üretilmiş soru havuzda
+          durduğu sürece o BELGE silinemiyor. Bu düğme olmadan belge silmenin
+          409 mesajı ("Önce ilgili soruları kaldırın") yapılamayan bir çıkışı
+          tarif ediyordu — uç ve testi vardı, arayüz yarısı yoktu.
+        */}
+        <span className="ml-auto">
+          <ConfirmAction
+            label="Havuzdan sil"
+            confirmLabel="Kalıcı olarak sil"
+            busyLabel="Siliniyor…"
+            question="Bu soru havuzdan tamamen silinsin mi? Reddetmek istiyorsanız satır kalır, silmek geri alınamaz."
+            ariaLabel="Soruyu havuzdan sil"
+            size="sm"
+            onConfirm={onDelete}
+          />
+        </span>
       </div>
 
       <p className="mt-3 text-xs text-fg-subtle">

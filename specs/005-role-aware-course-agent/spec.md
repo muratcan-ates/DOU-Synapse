@@ -6,7 +6,7 @@
 
 **Status**: Backend, `0015` ve frontend kodlandı; tam API 1191/1191, mypy 105 dosya, <!-- docs-check: backend.tests = 1191 --><!-- docs-check: backend.mypyFiles = 105 -->
 frontend 428/428, typecheck ve production build geçti. <!-- docs-check: frontend.tests = 428 --> Seri gerçek-API tarayıcı
-41/41; manuel VoiceOver+Safari, doğrudan exam/kill-switch browser yolları, <!-- docs-check: e2e.tests = 41 -->
+41/41 <!-- docs-check: tarihsel 41 · 2026-09-04 -->; bugün depoda 42 vaka toplanıyor <!-- docs-check: e2e.tests = 42 -->. Manuel VoiceOver+Safari, doğrudan exam/kill-switch browser yolları,
 real-provider, staging, isimli onay ve canlı rollout kanıtı henüz yok.
 **Risk**: R3 — öğrenci/eğitmen davranışı, kota, kötüye kullanım ve sınav kilidi değişiyor
 

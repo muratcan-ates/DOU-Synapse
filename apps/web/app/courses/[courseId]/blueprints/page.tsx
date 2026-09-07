@@ -3,7 +3,7 @@
 /**
  * Sınav blueprint'i kurma ekranı (T509). Uçlar:
  * `GET/POST /courses/{id}/learning-outcomes`, `GET/POST /courses/{id}/blueprints`,
- * `POST /courses/{id}/blueprints/{bid}` (güncelle),
+ * `POST /courses/{id}/blueprints/{bid}` (güncelle), `DELETE .../blueprints/{bid}` (sil),
  * `GET/POST .../versions`, `POST .../versions/{vid}/items`,
  * `GET .../versions/{vid}/readiness`, `POST .../versions/{vid}/publish`.
  *
@@ -60,7 +60,7 @@ import { Field } from "@/components/field";
 import { PaperPreview } from "@/components/blueprint/paper-preview";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
-import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
+import { Badge, Button, Card, ConfirmAction, EmptyState, Input } from "@/components/ui";
 
 const DEFAULT_TYPE = "mcq" as const;
 
@@ -569,6 +569,124 @@ function CellEditor({
  * Seçili blueprint: sürümler, kapı, yayın (FR-114, FR-115)
  * ---------------------------------------------------------------------- */
 
+/**
+ * Var olan blueprint'in meta verisini ve hücre kümesini günceller.
+ *
+ * Hücreler KÜME OLARAK gönderilir (sil + yaz): `BlueprintUpdate` şeması tek
+ * hücrelik güncellemeyi bilerek dışarıda bırakıyor, çünkü FR-112 doğrulaması
+ * küme üzerinde yapılıyor ve tekil bir UPDATE doğrulamayı atlayıp tutarsız bir
+ * dağılım bırakabilirdi. Veritabanı da aynı kararı taşıyor: `blueprint_cells`
+ * üzerinde UPDATE ne politikası ne yetkisi var.
+ *
+ * Yayınlanmış sürüm varken düzenleme SERBEST: o sürümün dağılım kanıtı kendi
+ * `blueprint_snapshot`'ında dondurulmuştur (data-model.md §8 madde 1). Ekranın
+ * gösterdiği uyarı (`editingNoticeFor`) tam olarak bunu anlatıyor — bu form
+ * gelene kadar o uyarı var olmayan bir yeteneğin tavsiyesiydi.
+ */
+function BlueprintEditor({
+  courseId,
+  blueprint,
+  outcomes,
+  onCancel,
+  onSaved,
+}: {
+  courseId: string;
+  blueprint: Blueprint;
+  outcomes: LearningOutcome[];
+  onCancel: () => void;
+  onSaved: () => void;
+}) {
+  const [title, setTitle] = useState(blueprint.title);
+  const [duration, setDuration] = useState(String(blueprint.duration_minutes));
+  const [attempts, setAttempts] = useState(String(blueprint.max_attempts));
+  const [cells, setCells] = useState<BlueprintCellInput[]>(() =>
+    // `BlueprintCell`, `BlueprintCellInput`'i genişletir; sunucudan gelen
+    // `id`/`label` alanları güncelleme gövdesine girmez, o yüzden alanlar
+    // tek tek seçilir.
+    blueprint.cells.map((cell) => ({
+      learning_outcome_id: cell.learning_outcome_id,
+      difficulty: cell.difficulty,
+      question_type: cell.question_type,
+      question_count: cell.question_count,
+      points_per_question: cell.points_per_question,
+    })),
+  );
+
+  const { busy, error, submit } = useSubmit(async () => {
+    await api.post(`/courses/${courseId}/blueprints/${blueprint.id}`, {
+      title: title.trim(),
+      duration_minutes: Number(duration),
+      max_attempts: Number(attempts),
+      cells,
+      targets: { total_questions: totalQuestions(cells) },
+    });
+    onSaved();
+  }, "Blueprint güncellenemedi.");
+
+  return (
+    <div className="mb-4 rounded-lg border border-border-strong p-4">
+      <h3 className="mb-3 text-sm font-semibold text-fg">Dağılımı düzenle</h3>
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <Field label="Sınav adı">
+          {(control) => (
+            <Input
+              {...control}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              className="w-64"
+            />
+          )}
+        </Field>
+        <Field label="Süre (dakika)">
+          {(control) => (
+            <Input
+              {...control}
+              type="number"
+              min={1}
+              max={600}
+              value={duration}
+              onChange={(event) => setDuration(event.target.value)}
+              className="w-32"
+            />
+          )}
+        </Field>
+        <Field label="Deneme hakkı">
+          {(control) => (
+            <Input
+              {...control}
+              type="number"
+              min={1}
+              max={100}
+              value={attempts}
+              onChange={(event) => setAttempts(event.target.value)}
+              className="w-32"
+            />
+          )}
+        </Field>
+      </div>
+
+      <CellEditor outcomes={outcomes} cells={cells} onChange={setCells} />
+
+      {error && <div className="mt-3">{<ErrorNote message={error} />}</div>}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button
+          onClick={submit}
+          aria-disabled={busy || title.trim() === "" || cells.length === 0}
+        >
+          {busy ? "Kaydediliyor…" : "Değişikliği kaydet"}
+        </Button>
+        <Button variant="ghost" aria-disabled={busy} onClick={onCancel}>
+          Vazgeç
+        </Button>
+        <span className="text-sm text-fg-muted">
+          {totalQuestions(cells)} soru · {totalPoints(cells)} puan
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function BlueprintDetail({
   courseId,
   blueprint,
@@ -582,6 +700,7 @@ function BlueprintDetail({
   onChanged: () => void;
   linkedVersionId: string | null;
 }) {
+  const [editing, setEditing] = useState(false);
   const versions = useResource<ExamVersion[]>(
     () => api.get(`/courses/${courseId}/blueprints/${blueprint.id}/versions`),
     [courseId, blueprint.id],
@@ -596,11 +715,54 @@ function BlueprintDetail({
   return (
     <>
       <Card className="mb-6">
-        <h2 className="mb-1 text-lg font-semibold text-fg">{blueprint.title} · dağılım</h2>
+        <div className="mb-1 flex flex-wrap items-center gap-3">
+          <h2 className="text-lg font-semibold text-fg">{blueprint.title} · dağılım</h2>
+          {/*
+            Düzenleme ve silme, uçları (POST/DELETE .../blueprints/{bid}) zaten
+            varken ekranda yoktu; üstelik aşağıdaki `notice` öğretmene tam da bu
+            düzenlemenin güvenli olduğunu ANLATIYORDU. Yanlış girilen bir dağılım
+            ne düzeltilebiliyor ne silinebiliyordu.
+          */}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-disabled={editing}
+              onClick={() => setEditing(true)}
+            >
+              Dağılımı düzenle
+            </Button>
+            <ConfirmAction
+              label="Sınavı sil"
+              confirmLabel="Kalıcı olarak sil"
+              busyLabel="Siliniyor…"
+              question="Bu blueprint ve tüm taslak sürümleri silinsin mi? Yayınlanmış sürümün oturumu varsa sunucu reddeder."
+              ariaLabel={`${blueprint.title} blueprint'ini sil`}
+              size="sm"
+              onConfirm={async () => {
+                await api.delete(`/courses/${courseId}/blueprints/${blueprint.id}`);
+                onChanged();
+              }}
+            />
+          </div>
+        </div>
         {notice && (
           <p className="prose-tr mb-3 rounded-lg border border-border bg-bg px-3 py-2 text-sm text-fg-muted">
             {notice}
           </p>
+        )}
+
+        {editing && (
+          <BlueprintEditor
+            courseId={courseId}
+            blueprint={blueprint}
+            outcomes={outcomes}
+            onCancel={() => setEditing(false)}
+            onSaved={() => {
+              setEditing(false);
+              onChanged();
+            }}
+          />
         )}
 
         <ul className="mb-4 flex flex-col gap-1">

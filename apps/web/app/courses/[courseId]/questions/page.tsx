@@ -247,6 +247,25 @@ function QuestionPool({ courseId }: { courseId: string }) {
     }
   }
 
+  /**
+   * Soruyu havuzdan siler ve seçimi güvenli bir yere taşır.
+   *
+   * `decide` gibi `busyId` kullanmaz: onay kapısı `ConfirmAction`'ın kendi
+   * `useSubmit`'inde ve hata metni tetikleyicinin yanında gösterilir. Buradaki
+   * tek sorumluluk, silinen sorunun seçili kalmaması: satır artık yok, panel
+   * onu göstermeye çalışırsa boş bir kabuk çizerdi.
+   */
+  async function removeQuestion(question: Question) {
+    await api.delete(`/courses/${courseId}/questions/${question.id}`);
+    const next = nextDraftId(questions, question.id);
+    setSelectedId(next);
+    setNotice(
+      "Soru havuzdan silindi. Bu soruyu üreten belge, başka sorusu kalmadıysa artık silinebilir.",
+    );
+    setDecisionError(null);
+    await reload();
+  }
+
   /** Sıradaki taslağa geçiş KULLANICI eylemidir; odak da onunla taşınır. */
   function goToNextDraft(fromId: string) {
     if (editingId !== null || generating) return;
@@ -392,6 +411,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
               decisionError={decisionError}
               hasNextDraft={nextDraftId(questions, selected.id) !== null}
               onDecide={(status) => decide(selected, status)}
+              onDelete={() => removeQuestion(selected)}
               onNextDraft={() => goToNextDraft(selected.id)}
             />
           )}
