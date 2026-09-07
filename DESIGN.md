@@ -131,6 +131,20 @@ kenarlığın kendi oranı "Karşılanmayan eşikler" başlığında):
 
 Koyu tema **zorunludur**, süs değil: öğrenciler geceleri çalışıyor.
 
+**Tema nasıl seçilir.** İşletim sistemi ayarı tek yol DEĞİLDİR: kullanıcı
+uygulamadan da seçebilir (Sistem / Açık / Koyu). Seçim `data-theme`
+özniteliğine yazılır ve koyu palet tek bir seçicide (`:root[data-theme="dark"]`)
+tanımlanır — medya sorgusu ayrıca yazılsaydı palet iki yerde yaşar ve bir
+sonraki token değişiminde ayrışırdı. "Sistem" tercihi ilk boyamadan önce koşan
+statik betikte (`apps/web/public/theme-boot.js`) çözülür; sonradan çözülseydi
+koyu tema kullanıcısı her açılışta beyaz bir çakma görürdü. Aynı sözlük API
+belge sayfasında da kullanılır (`apps/api/static/docs-theme.js`); `localStorage`
+origin başına ayrı olduğu için tercih ancak iki yüzey tek origin arkasındayken
+ortaktır, bu yüzden her yüzeyin kendi seçicisi vardır.
+
+Kontrol ikon değil **metin** taşır (Sistem / Açık / Koyu) ve `aria-pressed`
+yazar: bu üründe renk ve şekil tek başına bilgi taşımaz.
+
 Ölçülmüş kısıt: ham marka kırmızısı `#c50c1f`, koyu zeminde **2.93:1** (`--bg`) ve
 **2.70:1** (`--surface`) verir — okunmaz. Koyu temada marka rengi mutlaka açılır. Yüzey
 koyu temada **açılarak** yükseldiği için en kötü zemin `--surface`'tır ve eşik ona göre

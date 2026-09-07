@@ -262,6 +262,9 @@ Mevcut feature dalındaki ürün arayüzü:
 - Next.js 16 + React 19 + TypeScript ile gerçek çok sayfalı web uygulaması.
 - Rol farkındalıklı dashboard, ders alanı, profil ve admin portalı.
 - Mobil 375px, masaüstü, açık/koyu tema ve klavye erişimi.
+- Tema **uygulama içinden** seçilir (Sistem / Açık / Koyu): rayda, profilde ve
+  giriş ekranında; API belge sayfasının kendi seçicisi var. Seçim ilk boyamadan
+  önce uygulanır, açılışta beyaz çakma olmaz.
 - Yükleniyor, boş, hata ve kilit durumları için ortak bileşenler.
 - Tasarım token’larıyla yönetilen tutarlı arayüz.
 - Son yerel tasarım çalışmasında tek kırmızı aksanlı, daha editoryal ve insan eliyle

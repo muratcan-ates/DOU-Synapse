@@ -57,18 +57,15 @@ function declarations(block) {
 function readThemes(css) {
   const light = declarations(blockAt(css, css.indexOf(":root")));
 
-  // Koyu tema: ":root" içeren ilk prefers-color-scheme bloğu (.ambient gibi
-  // başka koyu bloklar da olabilir, onlarda :root yoktur).
-  let dark = null;
-  for (const m of css.matchAll(/@media\s*\(prefers-color-scheme:\s*dark\)/g)) {
-    const body = blockAt(css, m.index);
-    const rootIdx = body.indexOf(":root");
-    if (rootIdx !== -1) {
-      dark = { ...light, ...declarations(blockAt(body, rootIdx)) };
-      break;
-    }
+  // Koyu tema artık medya sorgusunda değil `data-theme` özniteliğinde yaşıyor
+  // (uygulama içinden de seçilebiliyor, lib/theme.ts). Kapı paleti oradan
+  // okur; `html[data-theme="dark"]` bloğu yalnız color-scheme taşır, token
+  // taşıyan blok `:root[data-theme="dark"]`dir.
+  const darkIdx = css.indexOf(':root[data-theme="dark"]');
+  if (darkIdx === -1) {
+    throw new Error('koyu tema bloğu bulunamadı (:root[data-theme="dark"])');
   }
-  if (!dark) throw new Error("koyu tema :root bloğu bulunamadı");
+  const dark = { ...light, ...declarations(blockAt(css, darkIdx)) };
   return { light, dark };
 }
 

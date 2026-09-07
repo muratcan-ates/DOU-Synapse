@@ -107,9 +107,16 @@ class TestDrainYetkilendirme:
         )
         assert response.status_code == 403, response.text
 
-    async def test_uc_openapi_semasina_girmez(self, client: AsyncClient) -> None:
-        """Dahili uç istemci sözleşmesinin parçası değildir."""
-        spec = (await client.get("/openapi.json")).json()
+    async def test_uc_openapi_semasina_girmez(self) -> None:
+        """Dahili uç istemci sözleşmesinin parçası değildir.
+
+        Şema HTTP'den değil uygulamadan okunuyor: `/openapi.json` artık platform
+        yöneticisi ister ve bu test yetkiyi değil ŞEMA İÇERİĞİNİ çiviliyor.
+        Kapıyı ayrıca `test_security_headers` sınar.
+        """
+        from app.main import create_app
+
+        spec = create_app().openapi()
         assert not [path for path in spec["paths"] if path.startswith("/internal")]
 
 

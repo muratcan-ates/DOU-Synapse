@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "change_id": "011-admin-only-api-contract-r1",
+  "lineage_id": "admin-only-api-contract",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "API sözleşmesi yalnız platform yöneticisine açık",
+  "summary": "openapi_url kapatıldı ve /openapi.json PlatformAdminDep arkasına alındı; 0016 migration'ı audit beyaz listesini ve tablo CHECK kısıtını yeni yüzey için genişletir. Belge sayfası jeton kapısıyla açılır.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-20T17:40:16+03:00",
+  "review_by": "2026-09-19T17:40:16+03:00",
+  "base_sha": "ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "model_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "prompt_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "tool_schema_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "guardrail_revision": "api-contract-admin-gate-v1: openapi yalnız platform yöneticisi, her deneme audit'te",
+    "retrieval_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "embedding_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "evaluator_revision": "backend-915; contract-gate-tests-3; live-401-403-200"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "9cbd4ed96e0f11bf21054268f75721b38e2e0901abb17dc410a3656e7bc11fca",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "2d2d9f855dbf604c91430b1143089d1bac0397184f0f889d2f9e2792dc4a5ae8"
+    },
+    {
+      "path": "supabase/migrations/0016_api_contract_admin_access.sql",
+      "state": "present",
+      "sha256": "a8ebbce2052c92bba026b189bc870c6fc71d83ec4be83677a6774200b4375b90"
+    },
+    {
+      "path": "apps/api/static/docs.html",
+      "state": "present",
+      "sha256": "7f637c032cf6cb82c79ea20cd142275bd7a04138a962aa454cfd633660e18198"
+    },
+    {
+      "path": "apps/api/static/docs-init.js",
+      "state": "present",
+      "sha256": "940a8f183e5ce797376ae8e62201028899c3a3ffe52e56b8330d9fe1a2085036"
+    },
+    {
+      "path": "apps/api/static/docs.css",
+      "state": "present",
+      "sha256": "a7a5bea8475704c21ab0c89d795a33790a931f7dde8f1cb7578c6a0c4984ab10"
+    },
+    {
+      "path": "apps/api/tests/test_security_headers.py",
+      "state": "present",
+      "sha256": "9cbd4ed96e0f11bf21054268f75721b38e2e0901abb17dc410a3656e7bc11fca"
+    },
+    {
+      "path": "apps/api/tests/test_internal.py",
+      "state": "present",
+      "sha256": "9abb8f319f6219f0f3b146a6bafab26c1f634f6179f01097ab17f8c819769488"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/011-admin-only-api-contract-r1.json",
+      "report_sha256": "5632a3029a089ab28b759e945a9dc8d1350cb8d52d28680b9a9f92fa868ce4bf",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_security_headers.py",
+    "holdout_ref": "canlı kapı: 401 (jetonsuz) · 403 (ders üyesi) · 200 (yönetici) + audit satırları",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: yetki kapısı; kanıt testler ve canlı deneme",
+    "metrics": [
+      {
+        "name": "backend_tests_passed",
+        "baseline": 912,
+        "candidate": 915,
+        "operator": ">=",
+        "threshold": 915,
+        "sample_size": 915
+      },
+      {
+        "name": "contract_with_platform_admin_status",
+        "baseline": 200,
+        "candidate": 200,
+        "operator": "==",
+        "threshold": 200,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "set -euo pipefail; cd apps/api && TEST_DB_NAME=dou_synapse_test_gate .venv/bin/python -m pytest -q && .venv/bin/ruff check . && .venv/bin/mypy app; cd ../.. && node scripts/docs_check.mjs; apps/api/.venv/bin/python scripts/ai_sdlc_check.py --base-sha ba69ff9eec0a2867614dd145eb6e995f6c0af5ac --head-sha \"$(git rev-parse HEAD)\""
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Yasemin Karagül",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending Bilgi İşlem security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:011-admin-only-api-contract-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope, kill-switch or rollback fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and the frozen real-provider holdout passes.",
+      "Staging auth, storage, RLS and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under the shared user assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+    "procedure": "Revert commit; openapi_url varsayılana döner. 0016 additive'dir (yalnız liste genişletir), geri alınması gerekmez.",
+    "max_minutes": 15,
+    "verification": "Tam pytest + kapı testleri eski ağaçta yeşil.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

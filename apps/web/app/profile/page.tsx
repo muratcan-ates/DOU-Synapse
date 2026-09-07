@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Field } from "@/components/field";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
+import { ThemeControl } from "@/components/theme-control";
 import { usePortalProfile } from "@/components/portal/portal-profile-context";
 import { Badge, Button, Input } from "@/components/ui";
 import {
@@ -225,6 +226,24 @@ function ProfileContent({
             ))}
           </ul>
         )}
+      </section>
+
+      {/*
+       * Görünüm tercihi profilde yaşar: ray yalnız masaüstünde görünür, dar
+       * ekranda tercihe ulaşılabilecek tek yer burasıdır. Aynı kontrol iki
+       * yerde de aynı depoyu yazar (lib/theme.ts), iki ayrı durum yoktur.
+       */}
+      <section aria-labelledby="appearance-title">
+        <h2 id="appearance-title" className="text-xl font-medium text-fg">
+          Görünüm
+        </h2>
+        <p className="mt-1 text-sm text-fg-muted">
+          Tema seçiminiz yalnız bu tarayıcıda saklanır. &ldquo;Sistem&rdquo;
+          seçiliyken cihazınızın gece modu ayarını izler.
+        </p>
+        <div className="mt-4 max-w-xs">
+          <ThemeControl tone="canvas" />
+        </div>
       </section>
 
       <section aria-labelledby="privacy-title">

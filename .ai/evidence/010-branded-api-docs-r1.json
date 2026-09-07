@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "010-branded-api-docs-r1",
+  "captured_at": "2026-08-20T14:19:21+00:00",
+  "candidate_sha": "SELF",
+  "command": "TEST_DB_NAME=dou_synapse_test_docs pytest -q apps/api/tests; ruff check .; ruff format --check .; mypy app; curl ile /docs, /static/docs.css, /static/vendor/swagger-ui-bundle.js ve iki yüzeyin CSP başlıkları; tarayıcıda /docs render doğrulaması (66 uç, 15 etiket grubu)",
+  "environment": "local macOS · PostgreSQL 16 · sağlayıcı anahtarları test oturumunda boşaltılmış (hermetik)",
+  "results": {
+    "backend_tests_passed": 912,
+    "typecheck_errors": 0,
+    "ruff_errors": 0,
+    "docs_page_status": 200,
+    "docs_operations_rendered": 66,
+    "docs_tag_groups": 15,
+    "vendored_asset_bytes": 1537767
+  },
+  "governance_note": "Markalı API belge sayfası: FastAPI'nin varsayılan /docs sayfası hem CDN'den script çeker hem inline script kullanır; bu API'nin `default-src 'none'` politikasında ikisi de çalışmaz (boş ekran). Bu yüzden docs_url/redoc_url kapatıldı, Swagger paketi apps/api/static/vendor altına vendor'landı ve belge yüzeyine (yalnız /docs, /static/, /openapi.json) kendi 'self' politikası verildi. JSON uçları eski katı politikada KALIR ve bunu iki test çiviler. Ayrıca test hermetikliği düzeltildi: Settings anahtarı .env DOSYASINDAN da okuduğu için ortam değişkenini silmek yetmiyordu; anahtarlar boş değerle geçersiz kılınıyor, böylece anahtarı olan geliştiricinin makinesinde testler gerçek modele çıkmıyor (20 Ağustos'ta iki test bu yüzden kırmızıydı). Kota bekçi testi de modeli artık açıkça sabitliyor.",
+  "limitations": "Sayfa yalnız yerelde doğrulandı; CI'da render testi yok (statik dosya sunumu ve CSP testle çivili). Vendor'lanan Swagger paketi 1.5 MB'tır ve depo boyutunu artırır.",
+  "privacy": "içerik yok; sayılar ve dosya adları"
+}

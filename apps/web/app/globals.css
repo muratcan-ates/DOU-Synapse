@@ -1,6 +1,15 @@
 @import "tailwindcss";
 
 /*
+ * `dark:` varyantı medya sorgusuna değil `data-theme` özniteliğine bakar:
+ * tema artık işletim sistemi ayarının yanı sıra uygulama içinden de seçilebilir
+ * (lib/theme.ts). Öznitelik her zaman ÇÖZÜLMÜŞ değeri taşır ("system" tercihi
+ * <head>'deki açılış betiğinde light/dark'a çevrilir), bu yüzden koyu palet
+ * tek bir seçicide tanımlanır ve iki kez yazılmaz.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
  * DOU-Synapse tasarım token'ları. Tek otorite DESIGN.md'dir; şekil, gölge ve boşluk
  * kuralları orada yaşar, burada tekrarlanmaz (tekrarlanan kural ayrışır).
  *
@@ -85,53 +94,51 @@
   --brand-on-ink: #ff6b78;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Ham #c50c1f bu zeminlerde 2.93:1 (--bg) ve 2.70:1 (--surface) — okunmaz.
-       Koyu temada marka mutlaka açılır; en kötü zemin --surface'tır. */
-    --brand: #ff6b78;
-    --brand-strong: #ffa1aa;
-    --brand-subtle: #3a1a1e;
+:root[data-theme="dark"] {
+  /* Ham #c50c1f bu zeminlerde 2.93:1 (--bg) ve 2.70:1 (--surface) — okunmaz.
+     Koyu temada marka mutlaka açılır; en kötü zemin --surface'tır. */
+  --brand: #ff6b78;
+  --brand-strong: #ffa1aa;
+  --brand-subtle: #3a1a1e;
 
-    --fg: #f5f4f2;
-    --fg-muted: #b0aaa4;
-    /* #7d7873 idi: --surface üstünde 3.76:1 — AA'nın altı. Koyu temada en
-       kötü zemin --surface'tır (daha açık), eşik ona göre kurulur. */
-    --fg-subtle: #8f8a84;
-    --bg: #191715;
-    --surface: #211f1c;
-    --border: rgba(245, 244, 242, 0.08);
-    /* 0.16 idi: --surface üstünde 1.62:1. Koyu temada en kötü zemin --surface
-       (daha açık), eşik ona göre kurulur. 0.36 ile 3.12:1 (--surface) ve
-       3.15:1 (--bg). Ölçüm: scripts/contrast.mjs. */
-    --border-strong: rgba(245, 244, 242, 0.36);
+  --fg: #f5f4f2;
+  --fg-muted: #b0aaa4;
+  /* #7d7873 idi: --surface üstünde 3.76:1 — AA'nın altı. Koyu temada en
+     kötü zemin --surface'tır (daha açık), eşik ona göre kurulur. */
+  --fg-subtle: #8f8a84;
+  --bg: #191715;
+  --surface: #211f1c;
+  --border: rgba(245, 244, 242, 0.08);
+  /* 0.16 idi: --surface üstünde 1.62:1. Koyu temada en kötü zemin --surface
+     (daha açık), eşik ona göre kurulur. 0.36 ile 3.12:1 (--surface) ve
+     3.15:1 (--bg). Ölçüm: scripts/contrast.mjs. */
+  --border-strong: rgba(245, 244, 242, 0.36);
 
-    --success: #7bc47f;
-    --success-bg: #1d2a1e;
-    --warning: #d9a23d;
-    --warning-bg: #2b2312;
-    --danger: #f08c8a;
-    --danger-bg: #331a1c;
-    --info: #6fb4dd;
-    --info-bg: #14232e;
+  --success: #7bc47f;
+  --success-bg: #1d2a1e;
+  --warning: #d9a23d;
+  --warning-bg: #2b2312;
+  --danger: #f08c8a;
+  --danger-bg: #331a1c;
+  --info: #6fb4dd;
+  --info-bg: #14232e;
 
-    --surface-sunken: #141210;
+  --surface-sunken: #141210;
 
-    /* Koyu zeminde gölge görünmez (DESIGN.md); katmanı üstteki 1px iç
-       aydınlatma taşır — fiziksel kenar refraksiyonu. Gölge yalnız derinlik
-       için altta kalır. */
-    --elev-1: inset 0 1px 0 rgb(245 244 242 / 0.04), 0 1px 2px rgb(0 0 0 / 0.45);
-    --elev-2: inset 0 1px 0 rgb(245 244 242 / 0.05), 0 12px 28px -18px rgb(0 0 0 / 0.75);
-    --elev-3: inset 0 1px 0 rgb(245 244 242 / 0.06), 0 28px 64px -24px rgb(0 0 0 / 0.85);
+  /* Koyu zeminde gölge görünmez (DESIGN.md); katmanı üstteki 1px iç
+     aydınlatma taşır — fiziksel kenar refraksiyonu. Gölge yalnız derinlik
+     için altta kalır. */
+  --elev-1: inset 0 1px 0 rgb(245 244 242 / 0.04), 0 1px 2px rgb(0 0 0 / 0.45);
+  --elev-2: inset 0 1px 0 rgb(245 244 242 / 0.05), 0 12px 28px -18px rgb(0 0 0 / 0.75);
+  --elev-3: inset 0 1px 0 rgb(245 244 242 / 0.06), 0 28px 64px -24px rgb(0 0 0 / 0.85);
 
-    /* Koyu temada ray kanvastan AYRIŞMALI: aynı mürekkep kullanılırsa ray
-       kaybolur. Bir kademe koyu ve kendi kenarlığıyla ayrık. */
-    --ink: #131110;
-    --ink-raised: #1d1a17;
-    --ink-fg: #f5f4f2;
-    --ink-fg-muted: #b0aaa4;
-    --brand-on-ink: #ff6b78;
-  }
+  /* Koyu temada ray kanvastan AYRIŞMALI: aynı mürekkep kullanılırsa ray
+     kaybolur. Bir kademe koyu ve kendi kenarlığıyla ayrık. */
+  --ink: #131110;
+  --ink-raised: #1d1a17;
+  --ink-fg: #f5f4f2;
+  --ink-fg-muted: #b0aaa4;
+  --brand-on-ink: #ff6b78;
 }
 
 @theme inline {
@@ -208,10 +215,15 @@ body {
   color: var(--fg);
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Tarayıcı kendi kontrollerini (kaydırma çubuğu, form öğeleri, otomatik
+   doldurma) temaya göre boyasın; aksi hâlde koyu sayfada beyaz kaydırma
+   çubuğu kalır. */
+html {
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 .prose-tr {

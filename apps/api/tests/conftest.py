@@ -85,6 +85,23 @@ def environment(database: None) -> Iterator[None]:
     os.environ["DEV_AUTH_ENABLED"] = "true"
     os.environ.pop("SUPABASE_JWT_SECRET", None)
 
+    # Testler SAĞLAYICIYA GİTMEZ: anahtarlar ortamdan silinir. `.env`'inde
+    # gerçek anahtar olan geliştiricinin makinesinde paket aksi hâlde gerçek
+    # modele çıkar — yavaşlar, kota harcar, ağsız ortamda düşer ve deterministik
+    # olması gereken testler modelin o günkü çıktısına bağlanır (20 Ağustos'ta
+    # anahtar eklenince iki test kırmızıya döndü). CI'da anahtar yoktur; bu
+    # kural yereli CI ile EŞİTLER.
+    #
+    # `LLM_FAKE_PROVIDER` bilerek zorlanmaz: anahtar yokken uygulama zaten
+    # sahte sağlayıcıya düşer ve "anahtar varsa gerçek istemci kurulur"
+    # sözleşmesini test eden vaka, anahtarı kendi monkeypatch'iyle geri koyup
+    # gerçek dalı ölçebilsin diye kapı açık kalır.
+    # Silmek YETMEZ: `Settings` değeri `.env` DOSYASINDAN da okur, dolayısıyla
+    # ortam değişkenini pop'lamak dosyadaki anahtarı elemez. Boş değer atamak
+    # dosyayı geçersiz kılar ve "anahtar yok" dalını deterministik yapar.
+    for _key in ("GROQ_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"):
+        os.environ[_key] = ""
+
     from app.core.config import get_settings
 
     get_settings.cache_clear()

@@ -17,6 +17,7 @@ import { useSubmit } from "@/lib/use-submit";
 import { ErrorNote } from "@/components/page-state";
 import { Button, Input } from "@/components/ui";
 import { Field } from "@/components/field";
+import { ThemeControl } from "@/components/theme-control";
 import { supabaseConfigured } from "@/lib/supabase";
 
 const DEMO_USERS: DemoUser[] = [
@@ -124,9 +125,16 @@ export default function LoginPage() {
           </section>
         </div>
 
-        <p className="rise rise-3 hidden text-xs text-fg-subtle lg:block">
-          Bilgisayar Mühendisliği · 2026
-        </p>
+        {/*
+         * Tema seçici giriş ekranında da var: kullanıcı ürünün ilk karesinde
+         * karar verebilsin, gece modu için önce giriş yapmak zorunda kalmasın.
+         */}
+        <div className="rise rise-3 hidden items-center gap-4 lg:flex">
+          <p className="text-xs text-fg-subtle">Bilgisayar Mühendisliği · 2026</p>
+          <div className="ml-auto w-48">
+            <ThemeControl tone="canvas" />
+          </div>
+        </div>
       </section>
 
       {/* Sağ: giriş paneli. Panel ayrımı kenarlık + hafif yüzey tonuyla kurulur. */}

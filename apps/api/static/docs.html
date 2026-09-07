@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DOU-Synapse API</title>
+  <!--
+    Kendi barındırılan Swagger UI. FastAPI'nin varsayılan /docs sayfası hem CDN'den
+    script çeker hem de inline script kullanır; bu API'nin politikası
+    `default-src 'none'` olduğu için o sayfa burada ÇALIŞMAZ (boş ekran).
+    Varlıklar static/vendor altında, başlatma betiği ayrı dosyada: belge yüzeyi
+    kendi 'self' politikasıyla servis edilir, JSON uçları katı politikada kalır.
+  -->
+  <!-- Tema, uygulamada seçilen tercihi izler; ilk boyamadan önce koşar. -->
+  <script src="/static/docs-theme.js?v=3"></script>
+  <link rel="stylesheet" href="/static/vendor/swagger-ui.css" />
+  <link rel="stylesheet" href="/static/docs.css?v=5" />
+</head>
+<body>
+  <header class="rail" aria-label="Ürün gezinmesi">
+    <a class="brand" href="/docs" aria-label="DOU-Synapse API">
+      <!-- Marka işareti: üstte dolu kaynak bloğu, altta çerçeveli cevap bloğu,
+           ikisini bağlayan kırmızı atıf çizgisi. Ürünün tek cümlesinin
+           ("kaynak yoksa cevap da yok") en küçük diyagramı. -->
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="mark" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="18" height="7" rx="1.5" fill="var(--ink-fg)" />
+        <rect x="10.5" y="10" width="3" height="4" rx="1" fill="var(--brand-on-ink)" />
+        <rect x="3" y="14" width="18" height="7" rx="1.5" stroke="var(--ink-fg)" stroke-width="1.6" fill="none" />
+      </svg>
+      <span class="wordmark">Synapse</span>
+      <span class="unit">Doğuş Üniversitesi</span>
+    </a>
+
+    <nav class="tags" aria-label="Uç aileleri">
+      <a href="#/chat">Sohbet</a>
+      <a href="#/assessment">Soru havuzu</a>
+      <a href="#/exams">Sınav</a>
+      <a href="#/blueprints">Blueprint</a>
+      <a href="#/analytics">Analitik</a>
+      <a href="#/privacy">KVKK</a>
+      <a href="#/admin">Bilgi İşlem</a>
+    </nav>
+
+    <div class="theme" role="group" aria-label="Tema">
+      <button type="button" data-theme-option="system">Sistem</button>
+      <button type="button" data-theme-option="light">Açık</button>
+      <button type="button" data-theme-option="dark">Koyu</button>
+    </div>
+
+    <span class="here" aria-current="page">API</span>
+  </header>
+
+  <section class="intro">
+    <h1>DOU-Synapse API</h1>
+    <p class="lede">
+      Ders materyaline bağlı, kaynaklı cevap üreten ders asistanının HTTP yüzeyi.
+      Her cevap dayandığı sayfayla döner; dayanak yoksa uç cevap değil gerekçeli
+      ret döndürür. Ders izolasyonu iki katmanda zorlanır: sunucu tarafında üyelik
+      doğrulaması ve aynı oturumda PostgreSQL satır düzeyi güvenlik.
+    </p>
+    <ul class="facts">
+      <li><span>Şema</span><strong>OpenAPI 3.1</strong></li>
+      <li><span>Kimlik</span><strong>Bearer (Supabase JWT)</strong></li>
+      <li><span>Hata zarfı</span><strong>error.code · message · request_id</strong></li>
+      <li><span>Sayfalama</span><strong>items + next_cursor</strong></li>
+    </ul>
+    <p class="spec"><a href="/openapi.json">/openapi.json</a></p>
+  </section>
+
+  <section class="gate" id="gate">
+    <h2>Yönetici erişimi gerekiyor</h2>
+    <p>
+      API sözleşmesi ürünün tüm yüzeyini anlatır; bu yüzden yalnız Bilgi İşlem
+      yöneticilerine açıktır. Erişim jetonunuzu girin. Her deneme, reddedilenler
+      dahil, yönetim erişim kaydına yazılır.
+    </p>
+    <form id="gate-form">
+      <label for="gate-token">Erişim jetonu</label>
+      <input
+        id="gate-token"
+        name="token"
+        type="password"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="Bearer jetonu"
+      />
+      <button type="submit">Sözleşmeyi aç</button>
+    </form>
+    <p id="gate-note" class="note" role="status" data-tone="info">
+      Jeton yalnız bu sekmede tutulur; sekme kapanınca silinir.
+    </p>
+  </section>
+
+  <div id="swagger-ui" class="swagger-host" hidden></div>
+  <script src="/static/vendor/swagger-ui-bundle.js"></script>
+  <script src="/static/docs-init.js?v=1"></script>
+</body>
+</html>

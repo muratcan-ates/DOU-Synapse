@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "change_id": "012-tema-secimi-r1",
+  "lineage_id": "tema-secimi",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Tema uygulama içinden seçilebiliyor",
+  "summary": "Koyu palet data-theme özniteliğine taşındı ve Sistem/Açık/Koyu seçicisi rayda, profilde, giriş ekranında ve API belge sayfasında sunuldu. Yönetici kapısı (011) aynı dalda değişmeden taşınır.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-08-20T18:07:12+03:00",
+  "review_by": "2026-09-19T18:07:12+03:00",
+  "base_sha": "ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "model_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "prompt_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "tool_schema_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "guardrail_revision": "api-contract-admin-gate-v1 (devam) + tema seçimi istemci tarafı",
+    "retrieval_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "embedding_revision": "unchanged-from-base-ba69ff9e (yalnız belge yüzeyi)",
+    "evaluator_revision": "contrast-two-themes; web-398; api-22; e2e-31-of-35-parallel"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "1dd6fd2ddf66d358ccb3fa0790e3d17d6653ab2deca1c775435012e4ce0ecf55",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "2d2d9f855dbf604c91430b1143089d1bac0397184f0f889d2f9e2792dc4a5ae8"
+    },
+    {
+      "path": "supabase/migrations/0016_api_contract_admin_access.sql",
+      "state": "present",
+      "sha256": "a8ebbce2052c92bba026b189bc870c6fc71d83ec4be83677a6774200b4375b90"
+    },
+    {
+      "path": "apps/web/app/globals.css",
+      "state": "present",
+      "sha256": "298a072ae4d5e6c41171f23a81c14fa393843f7f79bd0d0ac8ef2a72e730eb5f"
+    },
+    {
+      "path": "apps/web/lib/theme.ts",
+      "state": "present",
+      "sha256": "9310417beb5b4c6d72c2a516a66f7bc9f957f1efb629378e91812096e673abdc"
+    },
+    {
+      "path": "apps/web/public/theme-boot.js",
+      "state": "present",
+      "sha256": "b0084b0d3ee4c1f203b559353752541912fc6eaf817007c9b32ae5d4ea353104"
+    },
+    {
+      "path": "apps/web/components/theme-control.tsx",
+      "state": "present",
+      "sha256": "0c4e2846e772e37be9edda0b2888db9f4ef1ad120d32fb6b875af767c8c9a0d3"
+    },
+    {
+      "path": "apps/api/static/docs-theme.js",
+      "state": "present",
+      "sha256": "d84cea9e68233486fc2c8ad51bff8ce87916e14eab9672185703e6aadbc78d84"
+    },
+    {
+      "path": "apps/web/scripts/contrast.mjs",
+      "state": "present",
+      "sha256": "cf51dbc4d0cd11c7b936adc0c92360eaf57236790399ef5d95cb41a058f218c4"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "564c8b7b5a346cf7c6a6b2b94e25baf3a9db9e4bdccbfe87fdbffc6ab8a79e83"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/012-tema-secimi-r1.json",
+      "report_sha256": "72dc4cad339410717c8219aa4ce3c737273844d47761fb3b77f07c504b7006fa",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/web/scripts/contrast.mjs (WCAG AA kapısı, iki tema)",
+    "holdout_ref": "tarayıcıda canlı: seçim, yenileme sonrası kalıcılık, belge sayfası kapı + koyu",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-run: görsel tercih; kanıt ölçülmüş kontrast ve ekran görüntüleri",
+    "metrics": [
+      {
+        "name": "web_tests_passed",
+        "baseline": 394,
+        "candidate": 398,
+        "operator": ">=",
+        "threshold": 398,
+        "sample_size": 398
+      },
+      {
+        "name": "contrast_failures",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 42
+      }
+    ],
+    "exact_command": "set -euo pipefail; cd apps/web && node scripts/contrast.mjs && bun test lib/ && bunx tsc --noEmit && bun run build; cd ../api && TEST_DB_NAME=dou_synapse_test_tema .venv/bin/python -m pytest -q tests/test_security_headers.py tests/test_internal.py"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Yasemin Karagül",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending Bilgi İşlem security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:012-tema-secimi-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "COURSE_AGENT_ENABLED",
+    "kill_switch": "Set COURSE_AGENT_ENABLED=false and restart or redeploy the API; chat must fail closed before retrieval, provider calls or new artifacts.",
+    "assignment": "Sticky per user and course after an internal instructor-only staging pilot, then a small sticky student cohort.",
+    "initial_exposure": "None; code is not deployed. First exposure is internal instructor-only staging with active exams excluded.",
+    "stop_conditions": [
+      "Any cross-role, cross-course or student-content disclosure.",
+      "Any active-exam chat or export bypass, quota overshoot or unbounded provider call.",
+      "Any citation, scope, kill-switch or rollback fail-open behavior."
+    ],
+    "expand_conditions": [
+      "Exact provider and model are pinned and the frozen real-provider holdout passes.",
+      "Staging auth, storage, RLS and rollback rehearsal pass.",
+      "Engineering, domain and security or privacy approvals are recorded."
+    ],
+    "active_exam_policy": "No student cohort is exposed during active exams; API and export remain fail-closed under the shared user assessment lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+    "procedure": "Revert commit; tema yeniden yalnız işletim sistemi ayarını izler.",
+    "max_minutes": 15,
+    "verification": "Kontrast kapısı ve web test paketi eski ağaçta yeşil.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes, stable error codes and aggregate counts are retained.",
+    "retention": "Versioned with the repository; raw prompts, answers, chunks, filenames, emails, secrets, operation-row identifiers and provider payloads are excluded."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
