@@ -1185,3 +1185,42 @@ class TestUzayUyusmazligi:
             sonuc = await fts_search(session, course_id=ders, query="deadlock", limit=8)
 
         assert sonuc
+
+
+class TestEsitMesafeliParcalarinSirasi:
+    """dense.py'nin eşitlik bozma alanı (T303, docs/test-report.md §6.4).
+
+    fts.py'de ölçülüp düzeltilen kusurla aynı sınıftan: eşit mesafeli satırların
+    sırası `c.id`'ye (her ingest'te yeniden üretilen `gen_random_uuid()`) değil
+    `(document_id, chunk_index)`'e bağlanmalı, yoksa aynı korpus yeniden
+    yüklendiğinde sıralama nedensiz değişir. `hashing` sağlayıcı deterministik
+    olduğu için birebir aynı metin birebir aynı vektörü, dolayısıyla sorguya
+    birebir aynı mesafeyi üretir — gerçek bir eşitlik burada garanti edilir.
+    """
+
+    async def test_ayni_metinli_parcalar_chunk_index_sirasiyla_doner(
+        self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
+    ) -> None:
+        ayse_id = await users.create("ayse@dogus.edu.tr")
+        ayse = users.auth(ayse_id)
+        ders = await create_course(client, ayse, "COME301")
+
+        tekrar_eden_metin = "deadlock oluşması için dört koşul birden gerekir"
+        seeded = await seed_document(
+            worker_engine,
+            course_id=ders,
+            uploaded_by=ayse_id,
+            passages=[tekrar_eden_metin, tekrar_eden_metin, tekrar_eden_metin],
+            embeddings=True,
+        )
+
+        async with rls_session(ayse_id) as session:
+            sonuc = await dense_search(session, course_id=ders, query="deadlock", limit=3)
+
+        assert len(sonuc) == 3
+        # Üçü de birebir aynı metinden, dolayısıyla birebir aynı mesafeden geliyor.
+        assert len({round(item.dense_score or 0, 9) for item in sonuc}) == 1
+        # Eşitlik bozma chunk_index'e bağlı olduğu için sıra, ekleme sırasıyla
+        # (yani `seeded.chunk_ids` ile) birebir örtüşmeli — `c.id`'ye bağlı
+        # olsaydı bu sıra rastgele olurdu.
+        assert [item.chunk_id for item in sonuc] == seeded.chunk_ids
