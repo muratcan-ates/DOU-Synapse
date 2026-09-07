@@ -108,6 +108,7 @@ RUN apt-get update \
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder --chown=appuser:appuser /opt/models /opt/models
 COPY --chown=appuser:appuser app ./app
+COPY --chown=appuser:appuser static ./static
 
 USER appuser
 

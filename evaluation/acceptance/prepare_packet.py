@@ -19,7 +19,7 @@ REPO_ROOT = EVALUATION.parent
 sys.path.insert(0, str(EVALUATION))
 from _paths import ensure_api_on_path
 from goldset import SourceSpec
-from provenance import require_sample_evidence, utc_now
+from provenance import EvidenceError, require_sample_evidence, utc_now, validate_runtime
 
 
 def sha256_file(path: Path) -> str:
@@ -35,8 +35,16 @@ def prepare(output: Path, *, sample: Path | None = None) -> dict[str, Any]:
     for case in draft["cases"]:
         case["source"] = asdict(SourceSpec(**case["source"]))
         case["rubric"] = [RubricItem.model_validate(item).model_dump() for item in case["rubric"]]
-    payload = json.loads(sample.read_text(encoding="utf-8")) if sample else None
-    if payload is not None:
+    draft_bytes = json.dumps(draft, ensure_ascii=False, indent=2).encode("utf-8")
+    sample_bytes = sample.read_bytes() if sample else None
+    payload = None
+    if sample_bytes is not None:
+        try:
+            payload = json.loads(sample_bytes)
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise EvidenceError("Örneklem geçerli UTF-8 JSON olmalı.") from exc
+        if not isinstance(payload, dict):
+            raise EvidenceError("Örneklem bir JSON nesnesi olmalı.")
         require_sample_evidence(payload)
     material = REPO_ROOT / "sample_data" / "isletim-sistemleri"
     sources = [
@@ -58,6 +66,10 @@ def prepare(output: Path, *, sample: Path | None = None) -> dict[str, Any]:
             text=True,
         ).stdout.strip()
     )
+    if payload is not None:
+        if dirty:
+            raise EvidenceError("Kaydedilmemiş aday değişikliklerine gerçek örneklem bağlanamaz.")
+        validate_runtime(payload.get("runtime_manifest"), candidate_sha=candidate)
     manifest = {
         "schema_version": 1,
         "kind": "acceptance_packet",
@@ -75,25 +87,26 @@ def prepare(output: Path, *, sample: Path | None = None) -> dict[str, Any]:
                 EVALUATION / "injection" / "cases.json",
             ]
         ],
-        "assessment_cases_sha256": sha256_file(HERE / "assessment_cases.json"),
+        "assessment_cases_sha256": hashlib.sha256(draft_bytes).hexdigest(),
+        "assessment_cases_source_sha256": sha256_file(HERE / "assessment_cases.json"),
         "real_provider_quality": "pending",
         "independent_human_review": "pending",
         "grading_run": "not_run",
         "ocr": "not_required_for_current_text_samples",
-        "faithfulness_sample_sha256": sha256_file(sample) if sample else None,
+        "faithfulness_sample_sha256": (
+            hashlib.sha256(sample_bytes).hexdigest() if sample_bytes is not None else None
+        ),
     }
     output.mkdir(parents=True, exist_ok=False)
     (output / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    (output / "assessment_cases.json").write_text(
-        json.dumps(draft, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    (output / "assessment_cases.json").write_bytes(draft_bytes)
     shutil.copyfile(HERE / "README.md", output / "README.md")
-    if payload is not None:
+    if payload is not None and sample_bytes is not None:
         from faithfulness.pull_sample import write_label_file
 
-        shutil.copyfile(sample, output / "sample.json")
+        (output / "sample.json").write_bytes(sample_bytes)
         for labeller in ("1", "2"):
             write_label_file(output / f"labels_etiketleyici_{labeller}.md", payload, labeller)
     return manifest

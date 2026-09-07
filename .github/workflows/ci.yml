@@ -78,6 +78,18 @@ jobs:
       - name: Testler
         run: uv run pytest -q
 
+      # Göç numaraları sıranın TEK kaydı: her yerde `supabase/migrations/*.sql`
+      # dosya adı sırasıyla uygulanıyor. Aynı numarayı iki dal birden
+      # kullandığında (0016 bu depoda gerçekten oldu) git çakışma üretmez,
+      # ikisi de uygulanır ve sıra alfabetik bir tesadüfe düşer. Kapı, birleşme
+      # öncesinde bunu görünür kılar. 0017 `010-api-observability` dalında
+      # rezerve; bilinçli boşluk açıkça bildirilir.
+      - name: Göç numarası sözleşmesi
+        working-directory: .
+        run: |
+          python3 scripts/migration_check.py --allow-gap 0017
+          python3 -m unittest scripts.test_migration_check
+
       - name: RLS izolasyon kanıtı
         working-directory: .
         run: |
@@ -148,6 +160,23 @@ jobs:
 
       - name: İmajı kur
         run: docker build -t dou-synapse-api:ci apps/api
+
+      - name: API belge varlıkları runtime imajında
+        run: |
+          docker run --rm --network none dou-synapse-api:ci python -c '
+          import re
+          from urllib.parse import urlsplit
+          from pathlib import Path
+          import app
+          static_dir = Path(app.__file__).resolve().parent.parent / "static"
+          shell = (static_dir / "docs.html").read_text()
+          paths = set(re.findall(r"(?:src|href)=\"(/static/[^\"]+)\"", shell))
+          assert paths, "belge varlıkları bulunamadı"
+          for url in paths:
+              path = static_dir / urlsplit(url).path.removeprefix("/static/")
+              assert path.is_file() and path.stat().st_size > 0, url
+          print("runtime belge varlıkları doğrulandı:", len(paths))
+          '
 
       - name: İmaj boyutu
         run: |
@@ -319,10 +348,18 @@ jobs:
           # yöneticisi kapısının arkasında (401) ve `curl -sf` onu asla
           # "hazır" saymaz — döngü sessizce 30 saniye harcayıp API hazır
           # olmadan devam ederdi.
+          ready=false
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8000/health/ready >/dev/null && break
+            if curl -sf http://localhost:8000/health/ready >/dev/null; then
+              ready=true
+              break
+            fi
             sleep 1
           done
+          if [ "$ready" != true ]; then
+            echo "API hazır duruma ulaşmadı"
+            exit 1
+          fi
 
       - name: Tarayıcıyı kur ve testleri koştur
         working-directory: apps/web

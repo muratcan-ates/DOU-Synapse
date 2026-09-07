@@ -207,3 +207,67 @@ def test_answered_olmayan_kayit_ornekleme_sizmaz(
 
     assert "gerçek bir answered cevabı" in capsys.readouterr().err
     assert not paths[3].exists()
+
+
+@pytest.mark.parametrize("existing_index", [3, 4])
+def test_existing_report_or_human_adjudication_is_never_overwritten(
+    tmp_path: Path, existing_index: int
+) -> None:
+    paths = _write_inputs(tmp_path)
+    existing = paths[existing_index]
+    original = "İnsan kararı: desteklenmiyor; 7 Eylül.\n".encode()
+    existing.write_bytes(original)
+
+    assert score_labels.main(_argv(paths)) == 2
+    assert existing.read_bytes() == original
+    assert not paths[4 if existing_index == 3 else 3].exists()
+
+
+def test_rerun_preserves_completed_reports_and_human_decision(tmp_path: Path) -> None:
+    paths = _write_inputs(tmp_path)
+    assert score_labels.main(_argv(paths)) == 0
+    original_report = paths[3].read_bytes()
+    human_decision = b"Hakem: kaynak desteklemiyor.\n"
+    paths[4].write_bytes(human_decision)
+
+    assert score_labels.main(_argv(paths)) == 2
+    assert paths[3].read_bytes() == original_report
+    assert paths[4].read_bytes() == human_decision
+
+
+@pytest.mark.parametrize("edit_first", [False, True])
+def test_concurrent_output_creation_preserves_all_published_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, edit_first: bool
+) -> None:
+    import os
+
+    paths = _write_inputs(tmp_path)
+    original_link = os.link
+    human_decision = b"Concurrent human decision"
+
+    def concurrent_link(source: Any, destination: Any, **kwargs: Any) -> None:
+        if Path(destination) == paths[4]:
+            paths[4].write_bytes(human_decision)
+            if edit_first:
+                paths[3].write_bytes(human_decision)
+        original_link(source, destination, **kwargs)
+
+    monkeypatch.setattr(os, "link", concurrent_link)
+    assert score_labels.main(_argv(paths)) == 2
+    assert paths[4].read_bytes() == human_decision
+    if edit_first:
+        assert paths[3].read_bytes() == human_decision
+    else:
+        assert json.loads(paths[3].read_text())["reportable"] is True
+    assert not list(tmp_path.glob(".faithfulness-*"))
+
+
+def test_dangling_output_symlink_is_not_followed(tmp_path: Path) -> None:
+    paths = _write_inputs(tmp_path)
+    outside = tmp_path / "missing-human-decision.md"
+    paths[4].symlink_to(outside)
+
+    assert score_labels.main(_argv(paths)) == 2
+    assert paths[4].is_symlink()
+    assert not outside.exists()
+    assert not paths[3].exists()

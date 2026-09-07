@@ -47,10 +47,15 @@ export function RunningExam({
   const [hints, setHints] = useState<Record<string, ExamHint[]>>({});
   const [finish, setFinish] = useState<ExamFinish | null>(null);
   useEffect(() => {
-    const refresh = () => { void helpLock.reload(); };
+    // Odağa dönüşte eski açık kararını önce geçersizleştir; ağ yanıtını beklerken
+    // başka sekmede başlamış sınavın yanında eski çözüm görünmesin.
+    const refresh = () => {
+      if (session.finished_at !== null) setFinish(null);
+      examStateChanged();
+    };
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
-  }, [helpLock.reload]);
+  }, [session.finished_at]);
   useEffect(() => {
     if (session.mode === "practice" && !helpAvailable) {
       setFeedbacks({});
@@ -85,15 +90,25 @@ export function RunningExam({
         await onReload();
         return;
       }
-      const hint = await api.post<ExamHint>(`/courses/${courseId}/exams/${session.id}/hint`, {
-        question_id: task.questionId,
-        hint_level: task.level,
+      let hint: ExamHint;
+      try {
+        hint = await api.post<ExamHint>(`/courses/${courseId}/exams/${session.id}/hint`, {
+          question_id: task.questionId,
+          hint_level: task.level,
+        });
+      } catch (error) {
+        // Ekran açıkken eğitmen ipuçlarını kapatmış veya sınav başlamış olabilir.
+        await helpLock.reload();
+        throw error;
+      }
+      // Eğitmen sınırı düşürdüyse sunucu önceki kademeyi döndürebilir. Aynı
+      // ipucunu ekleme; yeni politikayı okumadan sonraki isteği açma.
+      setHints((prev) => {
+        const previous = prev[task.questionId] ?? [];
+        if (previous.some((rung) => rung.hint_level >= hint.hint_level)) return prev;
+        return { ...prev, [task.questionId]: [...previous, hint] };
       });
-      // Merdiven silinmez, birikir: öğrenci nereden geldiğini görür (DESIGN.md).
-      setHints((prev) => ({
-        ...prev,
-        [task.questionId]: [...(prev[task.questionId] ?? []), hint],
-      }));
+      if (hint.hint_level < task.level) await helpLock.reload();
     },
   );
 
@@ -140,6 +155,24 @@ export function RunningExam({
     questionRef.current?.focus();
   }, [index]);
 
+  const finishAction = (
+    <ConfirmAction
+      label="Sınavı bitir"
+      confirmLabel="Bitir ve sonucu gör"
+      busyLabel="Bitiriliyor…"
+      question="Sınav kapanır ve yeni cevap kabul edilmez."
+      onConfirm={async () => {
+        const result = await api.post<ExamFinish>(
+          `/courses/${courseId}/exams/${session.id}/finish`,
+        );
+        draftStore.clear();
+        setFinish(result);
+        examStateChanged();
+        await onReload();
+      }}
+    />
+  );
+
   if (finish !== null || session.finished_at !== null) {
     return (
       <FinishedExam
@@ -149,6 +182,7 @@ export function RunningExam({
         onRestart={onLeave}
         courseId={courseId}
         historyEnabled={historyEnabled}
+        helpLock={helpLock}
       />
     );
   }
@@ -161,12 +195,8 @@ export function RunningExam({
      */
     return (
       <EmptyState
-        title="Bu oturumda gösterilebilecek soru kalmadı. Yeni bir sınav başlatabilirsiniz."
-        action={
-          <Button variant="secondary" onClick={onLeave}>
-            Yeni sınav başlat
-          </Button>
-        }
+        title="Bu oturumda gösterilebilecek soru kalmadı. Oturumu bitirerek sonuç özetini görebilirsiniz."
+        action={finishAction}
       />
     );
   }
@@ -178,7 +208,7 @@ export function RunningExam({
   const answered = question.answered || feedback !== undefined;
   const rungs = hints[question.id] ?? [];
   const lastRung = rungs.length > 0 ? rungs[rungs.length - 1].hint_level : 0;
-  const upcomingHint = nextHintLevel(lastRung);
+  const upcomingHint = nextHintLevel(lastRung, helpLock.hintLimit);
 
   const submittable =
     view.kind !== "unsupported" && draftStore.ready && helpAvailable &&
@@ -240,23 +270,7 @@ export function RunningExam({
               {formatClock(remaining)}
             </span>
           )}
-          <ConfirmAction
-            label="Sınavı bitir"
-            confirmLabel="Bitir ve sonucu gör"
-            busyLabel="Bitiriliyor…"
-            question="Sınav kapanır ve yeni cevap kabul edilmez."
-            onConfirm={async () => {
-              const result = await api.post<ExamFinish>(
-                `/courses/${courseId}/exams/${session.id}/finish`,
-              );
-              draftStore.clear();
-              setFinish(result);
-              // Kilit kalkışı da haber verilir: kilitliyken koşan yoklama bunu
-              // 30 saniye içinde görürdü, ama bekletmenin bir sebebi yok.
-              examStateChanged();
-              await onReload();
-            }}
-          />
+          {finishAction}
         </div>
       </div>
 

@@ -34,6 +34,13 @@ uv run python ../../evaluation/faithfulness/score_labels.py \
 `--attest-independent`, iki dosyanın tartışma öncesi bağımsız doldurulduğuna dair
 operatör beyanıdır; aracın bunu teknik olarak gözlemlediği anlamına gelmez.
 
+JSON sonuç ve hakem formu yolları yeni olmalıdır. İkisinden biri mevcutsa araç
+ikisini de değiştirmeden durur; yeniden hesaplama için yeni yollar verin. Başka
+bir işlem aynı anda çıktı oluşturursa mevcut dosyası korunur. Doldurulmuş hakem
+kararları hiçbir zaman yeniden oluşturulan boş form ile değiştirilmez. İkinci
+çıktı yazılamazsa daha önce yayımlanmış birinci çıktı silinmez; hata mesajı
+korunan kısmi çıktının yolunu bildirir. Yeniden denemede iki yeni yol kullanılır.
+
 ## Üretilen kanıt
 
 - JSON sonucu örneklemin ve iki etiket dosyasının SHA-256 özetlerini taşır.

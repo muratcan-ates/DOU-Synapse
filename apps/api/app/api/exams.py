@@ -950,14 +950,17 @@ async def request_hint(
     if question is None:
         raise NotFoundError("Soru bulunamadı.")
 
+    from app.modules.policy.service import resolve_policy
+
+    policy = await resolve_policy(session, course_id=context.course_id, settings=settings)
+    if policy.max_hints <= 0:
+        raise PermissionDeniedError("Bu derste ipuçları eğitmeniniz tarafından kapatıldı.")
+
     refs = await load_source_refs(session, [question.source_chunk_id])
     source = refs.get(question.source_chunk_id)
     if source is None:
         raise NotFoundError("Bu sorunun kaynağı okunamadı; ipucu üretilemiyor.")
 
-    from app.modules.policy.service import resolve_policy
-
-    policy = await resolve_policy(session, course_id=context.course_id, settings=settings)
     level = min(payload.hint_level, policy.max_hints)
     return HintOut(
         question_id=question.id,

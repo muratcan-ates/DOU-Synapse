@@ -143,7 +143,8 @@ async def test_manifest_identity_is_stable_secret_free_and_hidden(eval_client: A
     assert body["config_digest"] == canonical_digest(body["configuration"])
     assert KEY not in first.text and SECRET not in first.text
     assert "postgresql" not in first.text
-    paths = (await eval_client.get("/openapi.json")).json()["paths"]
+    # Schema visibility is independent of the platform-admin HTTP access gate.
+    paths = create_app().openapi()["paths"]
     assert not any(path.startswith("/internal/evaluation") for path in paths)
     chat_operation = paths["/courses/{course_id}/chat"]["post"]
     assert not any(

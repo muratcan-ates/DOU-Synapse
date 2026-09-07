@@ -473,3 +473,21 @@ describe("öğrenci oturum keşfi", () => {
     expect(examDate("geçersiz")).toBe("Tarih gösterilemiyor");
   });
 });
+
+
+describe("dersin ipucu sınırı", () => {
+  test("eğitmen ipuçlarını kapatınca ilk basamak da istenmez", () => {
+    expect(nextHintLevel(0, 0)).toBeNull();
+  });
+  test("bir ila üç basamaklık merdiven son ipucunu tekrarlamaz", () => {
+    for (const limit of [1, 2, 3]) {
+      expect(nextHintLevel(limit - 1, limit)).toBe(limit);
+      expect(nextHintLevel(limit, limit)).toBeNull();
+    }
+  });
+  test("azaltılan veya geçersiz sınır eski basamağı yeniden açmaz", () => {
+    expect(nextHintLevel(3, 1)).toBeNull();
+    expect(nextHintLevel(0, Number.NaN)).toBeNull();
+    expect(nextHintLevel(4, 10)).toBeNull();
+  });
+});

@@ -10,11 +10,11 @@ Danışman: Yasemin Karagül<br>
 Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1154_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1154 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-421_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 421 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1191_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1191 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-428_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 428 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -31,11 +31,14 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 
 | Katman | Durum | Açıklama |
 |---|---|---|
-| **Birleşmiş ürün** | <code>origin/main · 9beafca</code> | AI-SDLC yönetişimi, rol farkındalıklı ders ajanı, ürün portalı ve arayüz yenilemesi PR #5 ile; modülerizasyon PR #16 ile; bağımlılık bakımı, rubrik kırılımı ve belge/ekran tazelemesi PR #18-#20 ile main'de |
-| **Yönetişim zinciri** | <code>.ai/ · dossier 008</code> | Her hassas değişiklik dossier + aynı-commit kanıtla; doğrulayıcı CI'da her push'ta koşar (append-only denetim, kanıt bağlama, metrik eşitliği) |
-| **Arayüz derinleştirmesi** | <code>design/product-ui-depth · PR #22</code> | Yüzey hiyerarşisi, tokenlanmış elevation, kontrast kapısına üçüncü zemin; kapılar yeşil, main'e birleşme bekliyor |
-| **Ürün arayüzü** | <code>design/product-ui-depth · PR #22</code> ve devamı | Mürekkep gezinme rayı, yeni marka işareti (kaynak-atıf-cevap diyagramı), segment sekme şeridi, tokenlanmış elevation; kontrast kapısı üç zemini ve rayı ölçer |
-| **Canlı production** | **Kanıtlanmadı** | Staging URL, canlı Supabase, gerçek LLM değerlendirmesi, canary ve rollback kanıtı açık |
+| **Main'e birleşmiş ürün** | `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac` | GitHub main 7 Eylül'de yeniden doğrulandı; PR #22 dahil önceki ürün ve arayüz çalışmaları burada |
+| **Birleşik geliştirme adayı** | `017-completion-integration` | 013 soru yazımı, 014 öğrenci sınav alanı, düzeltilmiş 015 çalışma sürekliliği, 016 becerileri; PR #23/#25 yerel bütünleştirmesi ve yeni regresyon düzeltmeleri |
+| **Adayın kanıtı** | [017 doğrulaması](specs/017-completion-integration/verification.md) | Yerel API/arayüz/tarayıcı ve izole veritabanı kontrolleri; önceki sürüm kayıtlarından ayrı tutulur |
+| **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
+| **Gerçek model ve insan kabulü** | Bekliyor | [Kabul paketi](evaluation/acceptance/README.md) hazır; öğretmen materyal/rubrik onayı, gerçek yanıtlar ve bağımsız insan değerlendirmesi gerekiyor |
+| **Staging / production** | Kanıtlanmadı | Canlı Auth/Storage/worker, kalite, yedek/geri yükleme ve geri dönüş kabulü tamamlanmadan yayın iddiası yok |
+
+Adayın kesin commit kimliği ve yeni test kayıtları 017 doğrulama/teslim dosyasında bulunur. Aşağıdaki gelişim günlüğü geçmiş aşamaları anlatır; güncel birleşme durumu bu tablodur.
 
 ### Kanıt etiketleri
 
@@ -99,7 +102,7 @@ dönüştü:
 | Yalnız öğretmenin kaynakları | Ders üyeliği + PostgreSQL RLS + seçili kaynak politikası | Yerel RLS ve mutasyon kanıtı |
 | Sokratik mod | Deneme bekleyen, kademeli ve kaynaklı ipucu merdiveni | Deterministik mekanik kanıt; gerçek pedagojik ölçüm açık |
 | Sınav prova modu | Sunucu süreli practice/exam oturumları, puanlama ve geri bildirim | Kodlandı; önceki E2E kanıtı var |
-| AI soru üretimi | Dört soru ailesi, öğrenme çıktısı, zorluk, cevap anahtarı ve kaynak | Fake provider mekanik akışı kanıtlıyor; gerçek model kabul oranı açık |
+| AI soru üretimi | Çoktan seçmeli, açık uçlu, kısa cevap, kod izleme ve hata bulma; öğrenme çıktısı, zorluk, cevap anahtarı ve kaynak | Fake provider mekanik akışı kanıtlıyor; gerçek model kabul oranı açık |
 | Öğretmen onayı | Taslak → onay/red → öğrenciye yayın akışı; RLS yalnız onaylı soruları açar | API, DB ve testlerle zorunlu |
 | “Neden yanlış?” | Yanlış şık/cevap ile çelişen kaynak ve rubric kırılımı | Kodlandı |
 | Kod/senaryo inceleme | <code>code_trace</code> ve <code>bug_hunt</code>; statik değerlendirme | Kod hiçbir zaman çalıştırılmaz |
@@ -468,10 +471,10 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1154** <!-- docs-check: backend.tests = 1154 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **421** <!-- docs-check: frontend.tests = 421 --> | 38 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 38 --> |
-| Playwright gerçek-API vakaları | **38** <!-- docs-check: e2e.tests = 38 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 38/38; gerçek provider/staging kanıtı değil |
-| Migration | **17** <!-- docs-check: migrations.count = 17 --> | Şema evriminin kaynak dosyası sayısı |
+| Backend testleri | **1191** <!-- docs-check: backend.tests = 1191 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **428** <!-- docs-check: frontend.tests = 428 --> | 39 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 39 --> |
+| Playwright gerçek-API vakaları | **41** <!-- docs-check: e2e.tests = 41 --> | Benzersiz PostgreSQL, fake LLM ve tek worker ile 41/41; gerçek provider/staging kanıtı değil |
+| Migration | **19** <!-- docs-check: migrations.count = 19 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
@@ -502,7 +505,7 @@ provider/staging kanıtı değildir; bu kapılar geçmeden production iddiası k
 
 ### Migration yolculuğu
 
-<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0018,0019</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0018,0019 -->
+<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020 -->
 
 | Migration | Ürüne eklediği katman |
 |---|---|
@@ -712,12 +715,11 @@ etiketine taşınmaz.
 
 ### Kod/repo seviyesinde açık kapılar
 
-- 004/005/UI düzeltmelerini taşıyan güncel entegrasyon adayı için review, draft PR,
-  temiz CI ve onaydan sonra `main` birleşmesi.
-- Manuel VoiceOver+Safari turu; doğrudan exam POST ve kill-switch tarayıcı yolları.
-- Yerel exact R4 doğrulamasının gerçek final commit SHA'sı ve PR CI üzerinde yeniden
-  gözlenmesi.
-- OpenAPI ve docs-check’in final aday commit’i üzerinde yeniden üretilmesi.
+- 017 bütünleşmiş adayının main hedefli bağımsız incelemesi ve aynı aday için CI.
+- Öğretmenin izin verdiği kaynak/kapsam ve rubrikle gerçek kabul.
+- Hedef ortamda özellik bayraklarının kontrollü açılması ve gerçek rol yolculukları.
+- Manuel VoiceOver/Safari kabulü; yerel Chromium testi bunun yerine geçmez.
+- Güncel durum ve komutlar: [017 quickstart](specs/017-completion-integration/quickstart.md), [tamamlama programı](docs/completion-program.md).
 
 ### Gerçek model ve ürün kalitesi
 
@@ -787,7 +789,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1154 testtir. <!-- docs-check: backend.tests = 1154 -->
+Güncel feature kanıtında backend koleksiyonu 1191 testtir. <!-- docs-check: backend.tests = 1191 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -801,7 +803,7 @@ Güncel feature kanıtında backend koleksiyonu 1154 testtir. <!-- docs-check: b
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 421 testtir. <!-- docs-check: frontend.tests = 421 -->
+Güncel feature kanıtında frontend kütüphane paketi 428 testtir. <!-- docs-check: frontend.tests = 428 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 

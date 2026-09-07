@@ -294,11 +294,12 @@ export function showsHints(mode: ExamMode): boolean {
 
 /**
  * Bir sonraki ipucu kademesi; merdivenin sonundaysa null (düğme çizilmez).
- * Sunucu da kademeyi `socratic_max_stage` ile kırpar — aynı kademeyi ikinci kez
- * istemek merdivene aynı basamağı iki kez eklerdi.
+ * Dersin sunucudan okunan sınırı uygulanır; kapalı veya tamamlanmış merdiven
+ * aynı basamağı yeniden isteyemez. İstek şemasının üst sınırı da korunur.
  */
-export function nextHintLevel(current: number): number | null {
-  return current >= HINT_MAX_LEVEL ? null : current + 1;
+export function nextHintLevel(current: number, limit = HINT_MAX_LEVEL): number | null {
+  const maximum = Number.isFinite(limit) ? Math.max(0, Math.min(limit, HINT_MAX_LEVEL)) : 0;
+  return current >= maximum ? null : current + 1;
 }
 
 /* -------------------------------------------------------------------------

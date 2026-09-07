@@ -10,8 +10,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
 from collections import Counter
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -380,11 +382,43 @@ def render_adjudication(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _atomic_write(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(content, encoding="utf-8")
-    temporary.replace(path)
+def _write_new_reports(outputs: dict[Path, str]) -> None:
+    """Publish complete new files without replacing an existing human decision.
+
+    Linking a staged file is atomic and fails if another writer won the path.
+    Published paths are never deleted after an error: a human may already have
+    edited them. Only unpublished private staging names are cleaned up.
+    """
+    if any(path.exists() or path.is_symlink() for path in outputs):
+        raise EvaluationInputError(
+            "Var olan sonuç veya hakem formunun üzerine yazılmaz; yeni yollar kullanın."
+        )
+    staged: dict[Path, Path] = {}
+    published: list[Path] = []
+    try:
+        for path, content in outputs.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=path.parent, prefix=".faithfulness-", delete=False
+            ) as handle:
+                staged[path] = Path(handle.name)
+                handle.write(content)
+        for path, temporary in staged.items():
+            os.link(temporary, path)
+            published.append(path)
+    except OSError as exc:
+        saved = ", ".join(str(path) for path in published)
+        detail = (
+            f" Kaydedilmiş kısmi çıktılar korunuyor: {saved}."
+            if published
+            else " Var olan dosyalar korunur."
+        )
+        raise EvaluationInputError(
+            "Sonuç dosyalarının tamamı kaydedilemedi." + detail + " İki yeni çıktı yolu kullanın."
+        ) from exc
+    finally:
+        for temporary in staged.values():
+            temporary.unlink(missing_ok=True)
 
 
 def _require_distinct_paths(paths: list[Path]) -> None:
@@ -434,8 +468,12 @@ def main(argv: list[str] | None = None) -> int:
             first_name=first_name,
             second_name=second_name,
         )
-        _atomic_write(args.json_out, json.dumps(report, ensure_ascii=False, indent=2) + "\n")
-        _atomic_write(args.adjudication_out, render_adjudication(report))
+        _write_new_reports(
+            {
+                args.json_out: json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+                args.adjudication_out: render_adjudication(report),
+            }
+        )
     except EvaluationInputError as exc:
         print(f"HATA: {exc}", file=sys.stderr)
         return 2

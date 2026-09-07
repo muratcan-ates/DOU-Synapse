@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import copy
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -470,3 +471,79 @@ async def test_corpus_document_pagination_keeps_every_source() -> None:
     ) as client:
         documents = await list_corpus_documents(client, uuid4(), {})
     assert [document["file_name"] for document in documents] == ["first.pdf", "second.pdf"]
+
+
+def test_packet_hash_matches_the_delivered_normalized_cases(tmp_path: Path) -> None:
+    output = tmp_path / "packet"
+    manifest = prepare(output)
+    exported = (output / "assessment_cases.json").read_bytes()
+    assert manifest["assessment_cases_sha256"] == hashlib.sha256(exported).hexdigest()
+
+
+@pytest.mark.parametrize("dirty,candidate", [(False, "c" * 40), (True, "a" * 40)])
+def test_packet_rejects_sample_from_another_or_dirty_candidate_before_writing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, dirty: bool, candidate: str
+) -> None:
+    from types import SimpleNamespace
+
+    from acceptance import prepare_packet
+
+    from tests.test_faithfulness_scoring import _sample
+
+    payload = _sample()
+    for record in payload["records"]:
+        record["category"] = "direct"
+    sample = tmp_path / "sample.json"
+    sample.write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(
+        prepare_packet.subprocess,
+        "run",
+        lambda command, **kwargs: SimpleNamespace(
+            stdout=(candidate if command[-1] == "HEAD" else (" M file" if dirty else ""))
+        ),
+    )
+    output = tmp_path / "packet"
+    with pytest.raises(EvidenceError):
+        prepare(output, sample=sample)
+    assert not output.exists()
+
+
+def test_packet_accepts_same_clean_candidate_without_approving_sample(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from types import SimpleNamespace
+
+    from acceptance import prepare_packet
+
+    from tests.test_faithfulness_scoring import _sample
+
+    payload = _sample()
+    for record in payload["records"]:
+        record["category"] = "direct"
+    sample = tmp_path / "sample.json"
+    sample.write_text(json.dumps(payload), encoding="utf-8")
+    monkeypatch.setattr(
+        prepare_packet.subprocess,
+        "run",
+        lambda command, **kwargs: SimpleNamespace(stdout="a" * 40 if command[-1] == "HEAD" else ""),
+    )
+    output = tmp_path / "packet"
+    manifest = prepare(output, sample=sample)
+    assert manifest["candidate_sha"] == payload["runtime_manifest"]["candidate_sha"]
+    assert manifest["candidate_dirty"] is False
+    assert manifest["real_provider_quality"] == "pending"
+    assert manifest["independent_human_review"] == "pending"
+    assert (output / "sample.json").read_bytes() == sample.read_bytes()
+    assert "______________" in (output / "labels_etiketleyici_1.md").read_text()
+
+
+@pytest.mark.parametrize("raw", [b"null", b"[]", b'"text"', b"42", b"true", b"{", b"\xff"])
+def test_packet_rejects_invalid_sample_shape_without_creating_output(
+    tmp_path: Path, raw: bytes
+) -> None:
+    sample = tmp_path / "sample.json"
+    sample.write_bytes(raw)
+    output = tmp_path / "packet"
+    with pytest.raises(EvidenceError):
+        prepare(output, sample=sample)
+    assert not output.exists()

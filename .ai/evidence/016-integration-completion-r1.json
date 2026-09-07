@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "016-integration-completion-r1",
+  "captured_at": "2026-09-07T18:55:51+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && TEST_DB_NAME=dou_017_son .venv/bin/python -m pytest -q; .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app; cd ../web && bun test lib/ && bunx tsc --noEmit; cd ../.. && node scripts/docs_check.mjs; python3 scripts/migration_check.py --allow-gap 0017; python3 -m unittest scripts.test_migration_check",
+  "environment": "yerel macOS · PostgreSQL 16 + pgvector · izole test veritabanı · sahte sağlayıcı",
+  "results": {
+    "backend_tests_passed": 1191,
+    "backend_tests_failed": 0,
+    "web_unit_tests_passed": 428,
+    "typecheck_errors": 0,
+    "ruff_errors": 0,
+    "mypy_files": 105,
+    "docs_check": "pass",
+    "migration_check": "pass",
+    "migration_gate_unit_tests": 10
+  },
+  "governance_note": "Üç iş bir arada: (1) ders silme 0009'dan beri KIRIKTI ve bunu hiçbir test görmüyordu — `app.audit_course_ai_policy()` tetikleyicisi ders CASCADE ile silinirken denetim satırı eklemeye çalışıp yabancı anahtarı ihlal ediyordu; 0020 tetikleyiciyi ders hâlâ varken yazacak şekilde daraltır ve regresyon testi (test_course_policy_cascade.py) kusuru önce kırmızı yakalayıp sonra yeşile döndürdü. Eğitmenin politikayı kendi eliyle silmesi eskisi gibi denetlenir; ders silinirken denetim geçmişi zaten CASCADE ile gider. (2) Göç numarası çakışması ölçüldü: `0016` iki dalda birden kullanılmış (api_contract_admin_access + assessment_integrity). Göçler her yerde dosya adı sırasıyla uygulandığı için numara sıranın tek kaydıdır; git çakışma üretmediğinden bu sessiz kalıyordu. scripts/migration_check.py kapısı çakışmayı, biçim ihlalini ve bildirilmemiş boşluğu yakalar, kendi unittest'i vardır ve ci.yml'de göç uygulayan adımların önünde koşar. 0017 `010-api-observability` dalında rezerve olduğu için bilinçli boşluk olarak bildirilir. (3) 017 entegrasyonunun kaydedilmemiş kalan işleri (sınav ipucu limiti, kabul paketi hash/örneklem bağlama, belge varlıklarının runtime imajında doğrulanması) aynı commit'te kapanır. Gerçek sağlayıcı, staging ve insan kabulü HÂLÂ AÇIK; bu kayıt onları iddia etmez. Değerlendirme referansları depodaki gerçek dosyalara bağlandı: kalibrasyon 017 şartnamesi, holdout kusuru yakalayan regresyon testi, insan çıpası kabul paketinin vaka dosyası (bu commit prepare_packet/score_labels bütünlüğüne dokunduğu için o dosya gerçekten bu işin insan çıpasıdır). İnsan etiketleri HÂLÂ doldurulmadı.",
+  "limitations": "Sahte sağlayıcıyla koşuldu; gerçek Groq/Gemini kalitesi ölçülmedi. Staging/production deploy edilmedi. 0020 yalnız yerel PostgreSQL 16'da doğrulandı. Göç kapısı numaralandırmayı denetler, göçlerin içeriğini denetlemez.",
+  "privacy": "içerik yok; sayaçlar, durum kodları ve şema adları"
+}

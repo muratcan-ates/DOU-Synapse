@@ -12,6 +12,11 @@ ve puanlama onayı henüz alınmadı. Mevcut metinli örnekler için OCR gerekme
 --output-dir /tmp/dou015-kabul-01` çalıştırılır. Kaynak ve goldset SHA256 özeti,
 beş değerlendirme biçiminin insan çıpası taslağı ve açık kabul kapıları hazırlanır.
 Hiçbir sağlayıcı veya API çağrılmaz. Var olan dizinin üzerine yazılmaz.
+`assessment_cases_sha256` paket içindeki normalize edilmiş dosyanın tam baytlarını,
+`assessment_cases_source_sha256` depodaki özgün taslağı doğrular. `--sample` ile
+eklenen gerçek örneklem aynı temiz aday SHA üzerinden üretilmiş olmalıdır; başka
+aday, kaydedilmemiş değişiklik veya nesne olmayan/geçersiz örneklem JSON varsa
+çıktı dizini oluşturulmadan reddedilir.
 
 `assessment_cases.json` mevcut `SourceSpec` ve `RubricItem` tiplerini kullanır.
 Öğretmen doğru/kısmi/yanlış örneklerini, kabul edilen ifadeleri, kaynak bölümünü,
@@ -52,7 +57,11 @@ LLM değerlendirmesi ayrı raporlanır. Bu dilimde gerçek grading runner koşul
 `--labeler-1`, `--labeler-2`, `--attest-independent`, `--json-out` ve
 `--adjudication-out` kullanılır. Araç gerçek runtime/yanıt kanıtını, 20-30 cevap,
 etiket tamlığı ve bağımsız kişi adlarını doğrular; tartışma öncesi ham uyum ve
-Cohen kappa hesaplar. Etiketleri veya insan onayını araç üretmez.
+Cohen kappa hesaplar. Etiketleri veya insan onayını araç üretmez. Var olan JSON
+sonucu veya hakem formu değiştirilmez; yeniden hesaplama için iki yeni çıktı yolu
+verilir. Böylece doldurulmuş hakem kararları boş form ile silinmez. İkinci
+çıktı yazılamazsa kaydedilmiş birinci çıktı korunur ve hata mesajında bildirilir;
+bu kısmi çıktının üzerine yeniden yazılmaz.
 
 Kaynak doğruluğuna ek olarak Sokratik yanıtta doğrudan çözüm sızıntısı,
 puanlamada rubrik uyumu ve “neden yanlış?” alıntısının çelişkiyi gerçekten
