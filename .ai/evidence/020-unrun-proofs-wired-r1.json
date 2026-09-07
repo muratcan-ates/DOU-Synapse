@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "020-unrun-proofs-wired-r1",
+  "captured_at": "2026-09-07T19:28:41+00:00",
+  "candidate_sha": "SELF",
+  "command": "supabase/tests/rls_isolation_mutation_check.sh; psql -f supabase/tests/rls_blueprint.sql; supabase/tests/rls_blueprint_mutation_check.sh rls_blueprint_template; supabase/tests/rls_portal_admin_mutation_check.sh; psql -f supabase/tests/rls_question_authoring.sql; uv run --project apps/api python supabase/tests/question_authoring_concurrency_check.py rls_assessment_template; apps/api/.venv/bin/python scripts/workflow_policy_check.py; node scripts/docs_check.mjs",
+  "environment": "yerel macOS · PostgreSQL 16 + pgvector · her mutasyon şablondan klonlanan geçici veritabanında",
+  "results": {
+    "rls_isolation_assertions": 115,
+    "rls_isolation_mutations_caught": "57/57",
+    "rls_assessment_assertions": 59,
+    "rls_blueprint_assertions": 37,
+    "rls_blueprint_mutations_caught": "23/23",
+    "rls_portal_admin_mutations_caught": "3/3",
+    "rls_question_authoring_assertions": 28,
+    "question_authoring_concurrency": "4 PASS",
+    "workflow_policy": "pass",
+    "docs_check": "pass"
+  },
+  "governance_note": "İki kapı kusuru kapatıldı. (1) `psql … | tee` boru hattı ÇIKIŞ KODUNU yutuyordu: SQL yarıda kesilse bile adım yeşil yanıyordu, yani RLS kapısı yalnız çıktıda FAIL kelimesi arayan bir grep'ti. RLS adımlarına `set -euo pipefail` eklendi. (2) Beş kanıt betiği depoda vardı ama HİÇBİR iş akışı onları çağırmıyordu: çekirdek şema mutasyonu, blueprint iddiaları ve mutasyonu, platform yönetim konsolu sızıntı mutasyonları, soru taslağı iddiaları ve eşzamanlılık kanıtı. Yazılmış, bir kez koşulmuş, sonra rafta bırakılmışlardı; koşmayan kanıt kanıt değildir. Hepsi ci.yml'in `api` işine adım olarak bağlandı — İŞ adı eklenmedi, çünkü .release/verify_checks.py iş adlarını tam sayıyor. Hepsi yerelde koşuldu ve yeşil; sayılar docs/test-report.md §4'e bugünkü ölçümle yazıldı (eski kayıt 8 PASS diyordu, betik büyümüş, bugün 115).",
+  "limitations": "Kanıtlar yerelde koşuldu; CI'da ilk kez bu PR ile koşacak. Üretim kopyasında (T051) hâlâ koşulmadı. Adımların CI süresine etkisi ölçülmedi.",
+  "privacy": "içerik yok; iddia ve mutasyon sayıları"
+}

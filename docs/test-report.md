@@ -126,8 +126,8 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 
 | Metrik | Hedef | Ölçülen | Geçerli mi | Kaynak |
 |---|---:|---|---|---|
-| Dersler arası veri sızıntısı | 0 | **0** (8/8 iddia, v2'de yeniden koşuldu) | evet | `supabase/tests/rls_isolation.sql` |
-| Ölçme + analitik izolasyonu | 0 sızıntı | **0** (58/58 iddia, 24/24 mutasyon, v2'de yeniden) | evet | `rls_assessment.sql` + mutasyon betiği |
+| Dersler arası veri sızıntısı | 0 | **0** (115/115 iddia, 7 Eylül'de yeniden koşuldu) | evet | `supabase/tests/rls_isolation.sql` |
+| Ölçme + analitik izolasyonu | 0 sızıntı | **0** (59/59 iddia, 24/24 mutasyon, 7 Eylül'de yeniden) | evet | `rls_assessment.sql` + mutasyon betiği |
 | Holdout Recall@5 | ≥ %80 | **%97,1** (102/105) hibrit · %96,2 dense | evet | `…1657-holdout-hybrid-fastembed-retrieval.json` |
 | Holdout Recall@8 | ≥ %80 | **%98,1** (103/105) her iki kol | evet | aynı dosya |
 | Holdout MRR | — | **0,854** hibrit · 0,807 dense | evet | aynı + dense koşusu |
@@ -151,27 +151,44 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 
 ## 4. RLS canlılık kanıtı
 
-**KOŞULDU — 9 Ağustos 2026, v2 dalında yeniden.** Sıfırdan kurulan bir veritabanında
-(`rls_check`), bütün migration'lar uygulandıktan sonra. Önceki sürümde bu bölüm
-"devralındı, yeniden koşulmadı" notuyla duruyordu; varsayım yerine ölçüm kondu.
+**KOŞULDU — 7 Eylül 2026 (017 dalı).** Sıfırdan kurulan bir veritabanında, bütün
+migration'lar (0001–0020) uygulandıktan sonra. Aşağıdaki sayılar o koşumdan alındı;
+9 Ağustos'taki v2 kaydı 8 PASS diyordu — o gün doğruydu, bugün betik büyüdü ve sayı
+gerçeği yansıtmıyordu.
 
-| Kanıt | Sayı |
-|---|---|
-| Çekirdek şema iddiaları (`rls_isolation.sql`) | 8 PASS / 0 FAIL |
-| Ölçme + analitik iddiaları (`rls_assessment.sql`) | 58 PASS / 0 FAIL |
-| Kapsanan politika | 0004'ün 15 politikası + 0005'in eğitmen okuma politikası |
-| Mutasyon testi | 24 mutasyon, **24'ü yakalandı** |
+| Kanıt | Sayı (7 Eylül 2026) | Önceki kayıt (9 Ağu) |
+|---|---|---|
+| Çekirdek şema iddiaları (`rls_isolation.sql`) | **115 PASS / 0 FAIL** | 8 PASS |
+| Ölçme + analitik iddiaları (`rls_assessment.sql`) | **59 PASS / 0 FAIL** | 58 PASS |
+| Blueprint iddiaları (`rls_blueprint.sql`) | **37 PASS / 0 FAIL** | kayıt yok |
+| Soru taslağı iddiaları (`rls_question_authoring.sql`) | **28 PASS / 0 FAIL** | kayıt yok |
+| Çekirdek şema mutasyonu | **57 mutasyon, 57'si yakalandı** | kayıt yok |
+| Ölçme katmanı mutasyonu | 24 mutasyon, 24'ü yakalandı | 24/24 |
+| Blueprint mutasyonu | **23 mutasyon, 23'ü yakalandı** | kayıt yok |
+| Platform yönetim konsolu mutasyonu | **3 sızıntı mutasyonu, 3'ü yakalandı** | kayıt yok |
+| Soru taslağı eşzamanlılığı | **4 PASS** (cevap/oturum taslağı dondurur) | kayıt yok |
 
 Mutasyon testi "politika var" demekle yetinmez: her politikayı teker teker bozar ve
 **hangi iddianın** kırmızıya döndüğünü doğrular. Yalnız "bir yerde FAIL çıktı" demek
 yetersiz olurdu, çünkü alakasız bir bozulma da FAIL üretir.
 
+**Bu turda kapatılan boşluk:** yukarıdaki kanıtların beşi depoda vardı ama hiçbir iş
+akışı onları çağırmıyordu — yazılmış, koşulmuş, sonra rafta bırakılmışlardı. Koşmayan
+kanıt kanıt değildir; hepsi `ci.yml`'in `api` işine bağlandı. Ayrıca `psql … | tee`
+boru hattı çıkış kodunu yutuyordu (SQL yarıda kesilse bile adım yeşil yanıyordu);
+RLS adımlarına `set -euo pipefail` eklendi.
+
 ```bash
 createdb rls_check && for f in supabase/migrations/*.sql; do psql -q -d rls_check -f "$f"; done
 psql -q -d rls_check -f supabase/local_dev_setup.sql
-psql -d rls_check -f supabase/tests/rls_isolation.sql    # 8 PASS, 0 FAIL
-psql -d rls_check -f supabase/tests/rls_assessment.sql   # 58 PASS, 0 FAIL
-bash supabase/tests/rls_assessment_mutation_check.sh     # 24/24 yakalandı
+psql -d rls_check -f supabase/tests/rls_isolation.sql          # 115 PASS, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_assessment.sql         # 59 PASS, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_blueprint.sql          # 37 PASS, 0 FAIL
+psql -d rls_check -f supabase/tests/rls_question_authoring.sql # 28 PASS, 0 FAIL
+bash supabase/tests/rls_isolation_mutation_check.sh            # 57/57 yakalandı
+bash supabase/tests/rls_assessment_mutation_check.sh           # 24/24 yakalandı
+bash supabase/tests/rls_blueprint_mutation_check.sh            # 23/23 yakalandı
+bash supabase/tests/rls_portal_admin_mutation_check.sh         # 3/3 yakalandı
 ```
 
 **Henüz yapılmadı:** T051 — aynı kanıtın üretim kopyası üzerinde koşturulması.

@@ -11,7 +11,7 @@ Ortam: yerel macOS · PostgreSQL 16 + pgvector · sahte sağlayıcı · izole te
 
 | Kapı | Komut | Sonuç |
 |---|---|---|
-| Backend testleri | `cd apps/api && TEST_DB_NAME=dou_017_son .venv/bin/python -m pytest -q` | **1191 passed** <!-- docs-check: backend.tests = 1191 -->, 0 failed, 153,77 sn |
+| Backend testleri | `cd apps/api && TEST_DB_NAME=dou_017_v2 .venv/bin/python -m pytest -q` | **1197 passed** <!-- docs-check: backend.tests = 1197 -->, 0 failed, 142,57 sn |
 | Lint | `.venv/bin/ruff check .` | temiz |
 | Biçim | `.venv/bin/ruff format --check .` | 170 dosya biçimli |
 | Tip (backend) | `.venv/bin/mypy app` | 105 dosyada sorun yok <!-- docs-check: backend.mypyFiles = 105 --> |
@@ -47,12 +47,46 @@ Ortam: yerel macOS · PostgreSQL 16 + pgvector · sahte sağlayıcı · izole te
    ne silinebiliyordu. `BlueprintEditor` ve onaylı silme eklendi; hücreler küme olarak
    gönderilir (şema tek hücrelik güncellemeyi bilerek dışarıda bırakıyor).
 
+5. **`.env` ile verilen `WORKER_DRAIN_URL` sessizce yok sayılıyordu.**
+   `trigger_drain` adresi `os.environ`'dan okuyordu; `pydantic-settings` `.env` dosyasını
+   `Settings`'e okur ama `os.environ`'a **yazmaz**. Sonuç: `.env` ile yapılandırılan her
+   dağıtımda uzak worker dalı hiç seçilmiyor, ingestion API sürecinde koşuyordu — oysa
+   `docs/deployment.md` ve `.env.example` çalıştığını söylüyordu. Artık `Settings`'ten
+   okunuyor; regresyon testi adresi ortama hiç koymadan yalnız ayara veriyor ve eski
+   davranış geri konularak kırmızı yandığı doğrulandı.
+6. **Tam-tokenizer kota yolu ölüydü:** küme yalnız sağlayıcının kaldırdığı
+   `groq/llama-3.3-70b-versatile`'ı tanıyor, yapılandırılmış model ise başkası. Dal
+   üretimde hiç koşmuyor. Davranış fail-safe ve rezervasyon sonradan uzlaştırılıyor, ama
+   modül dokümanı tersini söylüyordu. Gerçek yazıldı, iki bekçi test eklendi.
+7. **`escape_for_context`'in ikinci temizleme katmanı ulaşılamazdı** (bütün sınır
+   işaretleri `<` ile başlıyor, kaçış zaten `<`'i yok ediyor). Ulaşılamayan savunma
+   yanıltıcıdır; kaldırıldı, invaryant üç testle çivilendi. Güvenlik seviyesi değişmedi.
+
+## İkinci turda koşulan kanıtlar (daha önce hiçbir iş akışında koşmuyordu)
+
+Beş kanıt betiği depoda vardı ama **hiçbir workflow onları çağırmıyordu** — yani
+"politika bozulduğunda testimiz kırmızı yanar" iddiasının kanıtı yazılıp rafta
+bırakılmıştı. Koşmayan kanıt kanıt değildir; hepsi `ci.yml`'in `api` işine bağlandı ve
+yerelde koşuldu:
+
+| Kanıt | Sonuç |
+|---|---|
+| `rls_isolation_mutation_check.sh` | **57 mutasyon denendi, 57'si yakalandı** (115 iddia) |
+| `rls_blueprint.sql` | 17 iddia, 0 FAIL |
+| `rls_blueprint_mutation_check.sh` | **23 mutasyon, 23'ü yakalandı** |
+| `rls_portal_admin_mutation_check.sh` | **3 sızıntı mutasyonu, 3'ü yakalandı** |
+| `rls_question_authoring.sql` | 0 FAIL |
+| `question_authoring_concurrency_check.py` | 4 PASS (eşzamanlı cevap/oturum taslağı dondurur) |
+
+Ayrıca `psql … | tee` boru hattı çıkış kodunu **yutuyordu**: SQL yarıda kesilse bile adım
+yeşil yanıyordu, yani kapı yalnız FAIL kelimesini arayan bir grep'ti. RLS adımlarına
+`set -euo pipefail` eklendi.
+
 ## KOŞULMADI — dürüst sınır
 
 | Ne | Neden | Nerede koşulur |
 |---|---|---|
-| Playwright E2E koşumu (42 vaka) | Bu dilimde yalnız **sayıldı**; koşum ayrı API+web örneği ve izole veritabanı ister | `ci.yml` `e2e` işi |
-| RLS izolasyon + mutasyon paketi | `psql` üzerinden ayrı veritabanı zinciri gerektirir | `ci.yml` `api` işi |
+| Playwright E2E koşumu | Bu dilimde yalnız **sayıldı**; koşum ayrı API+web örneği ister | `ci.yml` `e2e` işi |
 | Konteyner derlemesi ve runtime belge varlığı kontrolü | Docker gerektirir | `ci.yml` `image` işi |
 | `next build` üretim derlemesi | Bu dilimde koşulmadı | `ci.yml` `web` işi |
 | Gerçek sağlayıcı (Groq/Gemini) kalitesi | Hiç ölçülmedi; `evaluation/results` altındaki 18 dosyanın **hepsi** sahte/hashing | dış girdi bekliyor |

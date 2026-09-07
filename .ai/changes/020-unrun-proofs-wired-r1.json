@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "change_id": "020-unrun-proofs-wired-r1",
+  "lineage_id": "unrun-proofs-wired",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Koşmayan beş kanıt CI'a bağlandı; RLS adımı çıkış kodunu yutmayı bıraktı",
+  "summary": "Depoda var olup hiçbir iş akışında koşmayan beş RLS/eşzamanlılık kanıtı ci.yml'in api işine bağlandı ve yerelde koşuldu. RLS adımlarındaki `psql … | tee` çıkış kodu yutması `set -euo pipefail` ile kapatıldı. test-report §4 bugünkü ölçümlerle güncellendi.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-07T22:28:41+03:00",
+  "review_by": "2026-10-07T22:28:41+03:00",
+  "base_sha": "ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "model_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "prompt_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "tool_schema_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "guardrail_revision": "ci-rls-pipefail · five-unrun-proofs-wired",
+    "retrieval_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "embedding_revision": "unchanged-from-base-88a8097f (şema tetikleyicisi ve kapı)",
+    "evaluator_revision": "rls-115/59/37/28 iddia; mutasyon 57/24/23/3"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "df4bbde2a13b06f1588573edadc06995d73935e80e3142192e96dcac7c18a72a",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "1f7018952112c372256fb1aa0a973ae994ad1ba00295631086aa082e392e7494"
+    },
+    {
+      "path": "docs/test-report.md",
+      "state": "present",
+      "sha256": "d845446e5c5b81388ac6335c9b5dc4bdedc77f3f34d77de1a09f5a1939590002"
+    },
+    {
+      "path": "specs/017-completion-integration/verification.md",
+      "state": "present",
+      "sha256": "2f46b2307a684e46425243602b56d493be23e7f9125d4d288f8078f47ab0550b"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/020-unrun-proofs-wired-r1.json",
+      "report_sha256": "23491d8f820b9ea1e4e9f49e14f004b2bda079b8c304dbf04dc9ca7ef49a3e33",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "supabase/tests/rls_isolation.sql",
+    "holdout_ref": "docs/test-report.md",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/acceptance/assessment_cases.json",
+    "metrics": [
+      {
+        "name": "proof_scripts_run_in_ci",
+        "baseline": 6,
+        "candidate": 11,
+        "operator": ">=",
+        "threshold": 11,
+        "sample_size": 11
+      },
+      {
+        "name": "rls_mutations_caught",
+        "baseline": 24,
+        "candidate": 107,
+        "operator": ">=",
+        "threshold": 107,
+        "sample_size": 107
+      }
+    ],
+    "exact_command": "set -euo pipefail; supabase/tests/rls_isolation_mutation_check.sh && supabase/tests/rls_blueprint_mutation_check.sh rls_blueprint_template"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending independent domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending independent security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:020-unrun-proofs-wired-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "kill_switch": "Set EVAL_RUNTIME_ENABLED=false, remove eval secret and restart; disable student workspace if needed, retaining source/time/ownership guards and records.",
+    "assignment": "Sticky per synthetic pilot course and consenting internal participant after independent approvals.",
+    "initial_exposure": "None; local synthetic/injected evidence only.",
+    "stop_conditions": [
+      "Any answer/help or draft crosses owner/course or active-exam boundary.",
+      "Any fake/cache/replayed/tampered response receives real quality eligibility.",
+      "Any evaluation request or corpus write leaves the explicitly validated isolated target."
+    ],
+    "expand_conditions": [
+      "Independent engineering/domain/privacy approval of exact combined candidate.",
+      "Real-provider and human grading/source/Socratic acceptance meets predeclared thresholds.",
+      "Combined013+014+015 staging and live operational gates pass."
+    ],
+    "active_exam_policy": "Existing sessions remain closable when the workspace is disabled. Results and practice help stay locked while another same-course student exam is active; deadlines use post-lock database time."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:ba69ff9eec0a2867614dd145eb6e995f6c0af5ac",
+    "procedure": "Commit revert edilir; kanıtlar yeniden rafta kalır ve RLS adımı çıkış kodunu yeniden yutar.",
+    "max_minutes": 15,
+    "verification": "Revert sonrası ci.yml'de beş adım kaybolur; workflow_policy_check yine PASS verir (kapı bunu görmez).",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixtures/evaluation samples only in evidence. Browser unsent drafts are user/course/session scoped sessionStorage, cleared on submit/finish/expiry/logout.",
+    "retention": "Versioned aggregate evidence and hashes; acceptance packet has no filled human labels. No credentials or real student content in repository evidence."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

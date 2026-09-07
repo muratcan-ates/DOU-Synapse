@@ -93,6 +93,10 @@ jobs:
       - name: RLS izolasyon kanıtı
         working-directory: .
         run: |
+          # `psql ... | tee` boru hattının ÇIKIŞ KODUNU yutuyordu: SQL yarıda
+          # kesilse bile `tee` 0 döndüğü için adım yeşil yanıyordu. `pipefail`
+          # olmadan bu kapı yalnız FAIL kelimesini arayan bir grep'ti.
+          set -euo pipefail
           psql -d postgres -c 'DROP DATABASE IF EXISTS rls_check'
           psql -d postgres -c 'CREATE DATABASE rls_check'
           for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -d rls_check -f "$f"; done
@@ -120,6 +124,7 @@ jobs:
       - name: Ölçme katmanı RLS kanıtı (rls_assessment)
         working-directory: .
         run: |
+          set -euo pipefail
           psql -d postgres -c 'DROP DATABASE IF EXISTS rls_assessment_template'
           psql -d postgres -c 'CREATE DATABASE rls_assessment_template'
           for f in supabase/migrations/*.sql; do
@@ -136,6 +141,43 @@ jobs:
       - name: Rol farkındalıklı ajan RLS ve kota mutasyonları
         working-directory: .
         run: supabase/tests/rls_role_aware_agent_mutation_check.sh
+
+      # Aşağıdaki beş kanıt depoda VARDI ama hiçbir iş akışı koşturmuyordu: yani
+      # "politika bozulunca testimiz kırmızı yanar" iddiasının kanıtı yazılmış,
+      # sonra rafta bırakılmıştı. Koşmayan kanıt kanıt değildir.
+      - name: Çekirdek şema RLS mutasyon kanıtı
+        working-directory: .
+        run: supabase/tests/rls_isolation_mutation_check.sh
+
+      - name: Blueprint RLS kanıtı ve mutasyonu
+        working-directory: .
+        run: |
+          set -euo pipefail
+          psql -d postgres -c 'DROP DATABASE IF EXISTS rls_blueprint_template'
+          psql -d postgres -c 'CREATE DATABASE rls_blueprint_template'
+          for f in supabase/migrations/*.sql; do
+            psql -v ON_ERROR_STOP=1 -q -d rls_blueprint_template -f "$f"
+          done
+          psql -v ON_ERROR_STOP=1 -d rls_blueprint_template \
+            -f supabase/tests/rls_blueprint.sql 2>&1 | tee /tmp/rls_bp.out
+          if grep -q FAIL /tmp/rls_bp.out; then echo "blueprint RLS bozuk"; exit 1; fi
+          supabase/tests/rls_blueprint_mutation_check.sh rls_blueprint_template
+
+      - name: Soru taslağı RLS kanıtı
+        working-directory: .
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -d rls_assessment_template \
+            -f supabase/tests/rls_question_authoring.sql 2>&1 | tee /tmp/rls_qa.out
+          if grep -q FAIL /tmp/rls_qa.out; then echo "soru taslağı RLS bozuk"; exit 1; fi
+
+      - name: Soru taslağı eşzamanlılık kanıtı
+        working-directory: .
+        run: uv run --project apps/api python supabase/tests/question_authoring_concurrency_check.py rls_assessment_template
+
+      - name: Platform yönetim konsolu yetki mutasyonları
+        working-directory: .
+        run: supabase/tests/rls_portal_admin_mutation_check.sh
 
   image:
     name: API imajı — build + ağsız embedding kanıtı

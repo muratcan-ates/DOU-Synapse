@@ -194,7 +194,7 @@ uv run python -m app.worker
 
 ```bash
 cd apps/api
-uv run pytest          # 1191 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 1191
+uv run pytest          # 1197 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 1197
 uv run mypy app        # temiz
 uv run ruff check .
 uv run ruff format --check .
