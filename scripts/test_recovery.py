@@ -116,9 +116,9 @@ class FakeSourceConnection:
 
 class RecoveryContracts(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix='dou-recovery-offline-', dir='/private/tmp')
+        self.temp = tempfile.TemporaryDirectory(prefix='dou-recovery-offline-')
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.bundle = self.root / 'new-bundle'
         self.source = r.source_metadata(copy.deepcopy(META))
         self.expected = r.identity_digest(self.source['identity'])
