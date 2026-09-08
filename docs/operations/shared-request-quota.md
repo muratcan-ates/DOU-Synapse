@@ -1,7 +1,9 @@
 # Ortak istek kotasının işletimi
 
-8 Eylül 2026:0025 göçü ve uygulama kodu018 dalında yerel geliştirme durumundadır.
-İki gerçek API sürecinde ölçülen kabul [kanıt arşivindedir](../../specs/018-codex-production-line/evidence/d1-http-local/README.md).
+8 Eylül 2026: 0025 ortak kota kodunun iki gerçek API süreci kabulü
+[kendi arşivindedir](../../specs/018-codex-production-line/evidence/d1-http-local/README.md).
+`c45e0e7` için dört hosted iş akışı geçti; daha sonraki worker bakım/Compose
+değişikliği yeni yerel dilimdir. Aşağıdaki gerçek dönem ölçümü bu dilime bağlıdır.
 Bu belge canlıya alım onayı veya saklama süresi taahhüdü vermez.
 
 ## Davranış ve sınırlar
@@ -92,11 +94,24 @@ ancak başarılı bakım gerçekleştiğinde olur. Mantıksal sona erme anı sil
 
 Bağımsız worker başlangıçta ve çalıştığı sürece60 saniyelik beklemeler arasında
 en çok500 satır için bakım çağırır. Bu görev ingestion işleminden ayrıdır; bakım
-hatası mevcut belge işini iptal etmez. Gerçek süreç deneyinde başlangıçta expired
-pencerenin silinmesi ve canlı pencerenin değişmemesi doğrulandı. Tekrar planlama
-birim testinde kontrollü bekleme sınırıyla sınandı; gerçek60 saniyelik dönem veya
-dağıtım hizmet garantisi olarak sunulmaz. `/internal/drain` çağrısı tek başına
+hatası mevcut belge işini iptal etmez. Başarı kaydı yalnız COMMIT sonrasında
+`stage`, `deleted_windows`, `duration_ms` alanlarını içerir; sıfır sonuç bütün
+expired satırların bittiğini kanıtlamaz. `/internal/drain` çağrısı tek başına
 sürekli bakım zamanlayıcısı değildir.
+
+8 Eylül `quota-period-02` gerçek bağımsız süreç deneyinde başlangıç silmesi
+0.544 saniyede gözlendi. Bu COMMIT'ten sonra eklenen yeni expired satır 59.973
+saniyede hâlâ vardı; 60.181 saniyede silinmişti. Canlı pencerenin byte'ları aynı
+kaldı; kendi SIGTERM kapanışı kod 0 ve 0.086 saniyeydi. Saat/60 saniye sabiti
+değiştirilmedi. Ölçülen worker SHA'sı `2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634`;
+bu `c45e0e7` sonrası yerel kaynak deneyidir, o commit'in hosted sonucu değildir.
+İlk koşudaki eksik yerel auth yapılandırması başarısız kayıt olarak korunur.
+Docker, dış zamanlayıcı veya fiziksel retention SLA'sı bu deneyde ölçülmedi.
+
+Yerel Compose HTTP worker'ı korur ve ayrıca HTTP portu olmayan `worker-poller`
+başlatır; yerel auth ayarı açıkça tanımlıdır. Worker Settings doğrulamasını görev
+yaratmadan yapar, bozuk yapılandırmada sabit hata ve çıkış 1 üretir. Bu süreç
+başlangıcının fail-closed kontrolüdür; üretimde dev-auth yine yasaktır.
 
 İşçi uyutulan barındırmada dış zamanlayıcı gereklidir. Barındırma hedefi, zamanlayıcı,
 başarısız bakım uyarısı ve kurumun saklama süresi belirlenmeden fiziksel TTL hizmet

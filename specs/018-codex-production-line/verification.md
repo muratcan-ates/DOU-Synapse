@@ -1,6 +1,6 @@
 # Doğrulama — 018
 
-Tarih: 2026-09-08. Taban: `621815908d5372d8de414aec4ca1dc63da008dca`. Kaynak HEAD bu kaydı içeren commit'te SELF olarak bağlanır. Aşağıdaki sonuçlar bu tur gerçekten koşuldu; eski aday sayıları tekrar kullanılmadı.
+Tarih: 2026-09-08. Taban: `621815908d5372d8de414aec4ca1dc63da008dca`. Her kontrol noktası kendi dossier/commit ve kaynak hashlerine bağlanır. Aşağıdaki A/S/B/C/D bölümleri tarihsel ölçümlerdir; bir bölümün sonucu yeni kaynakta yeniden koşulmuş sayılmaz. Son güncel kabul en sondaki OPS/D6 bölümündedir.
 
 ## Yerel A dilimi
 
@@ -152,7 +152,7 @@ Bu bölüm o ara kontrol noktasını korur; sonraki yerel entegrasyon aşağıda
 D2 kaynakları henüz kök depoya uygulanmadı. Donuk adayın ayrı staging kopyasında91 test (10 yeni gerçek PostgreSQL yarışı dahil) geçti; gerçek süreç kesintisi/devralma ayrıca yürütülür. D3v4 ayrı hedefte24.39s'de kesin COMMIT ile restore oldu; sonraki salt okunur incelemede29 ilişkinin şema/satır hashleri, rol/ACL ve dört gerçek uygulama RLS kimliği eşleşti. Tek restore sorgusundaki ANN recall@8=.875 kaydedildi; bu C1 tam retrieval kabulü değildir. Başarısız03/04 hedefleri kapalı tutulur; D3 gerçek hata tatbikatı ve kaynak entegrasyonu tamamlanmış sayılmaz.
 
 
-## D1/D2/D3 ve S8 yerel entegrasyon — güncel ek, 8 Eylül
+## D1/D2/D3 ve S8 yerel entegrasyon — önceki 9af üstü kontrol noktası, 8 Eylül
 
 Bu ek,9af4122 üzerindeki kirli çalışma ağacını ve ayrı kaynak hashlerine bağlı yerel deneyleri anlatır. Önceki hosted kabulü bu kaynaklara genişletilmez. Arşiv hedefi `evidence/d-final-local/`; önceki [D1 HTTP](evidence/d1-http-local/README.md), [D2](evidence/d2-local/README.md) ve [D3](evidence/d3-local/README.md) makbuzları değiştirilmez.
 
@@ -178,8 +178,32 @@ D3 güncel kaynak deneyinin root makbuzu 1.252 s/exit0; yedek 0.397 s ve restore
 S8 artık kaynakta APIRoute.path_format veya sabit `<unmatched>` yazar ve uygulama log kurulumunda uvicorn.access kanalını kapatır. Kurulu sürüm Uvicorn 0.52.4'tür; ilk donuk nottaki 0.52.3 değeri kurulu manifesti temsil etmez. Gerçek süreç v1 baseline sonrasında fixture kapanışında başarısız oldu; bu kayıt değiştirilmez. V2, aynı bağımlılıklarda iki hash bağlı eski/yeni modül ile gerçek Uvicorn h11 ve app.main yaşam döngüsünü ölçtü: her birinde bilinen rotada401, eşleşmeyen yolda404 ve health/live için200 alındı. Eski kaynakta dört ham canary ve üç uvicorn.access kaydı görülürken adayda bunlar yoktu; uvicorn.error başlangıç/kapanış kayıtları ve kontrollü temiz kapanış korundu. Isınma kapalıydı, psycopg koruyucusu iki süreçte de sıfır bağlantı denemesi kaydetti. Deney genel anonimlik veya hosting/proxy günlüklerinin kabulü değildir. Son birleşik API ve aşağıdaki tarayıcı kabulü geçti; ayrı dossier/commit ve kesin yeni HEAD hosted kapıları ayrıca izlenir. Gerçek LLM/JWT/Storage, üretim ve hukuki uygunluk kabulü bu sonuçlardan türetilmez.
 
 
-## D/S8 son yerel kabul — 8 Eylül
+## D/S8 önceki son yerel kabul — 8 Eylül
 
 [Son kanıt arşivi](evidence/d-final-local/README.md)111 girdiyi ve son API/E2E kaynak hashlerini bağlar.68 gerçek Chromium akışı82.187s'de geçti; run mtsqcmai1b9f kendi65 ders ve8 audit kaydını temizledi. İlk koşuda root ayarı localhost:8018, önceden kurulmuş değişmemiş web ise127.0.0.1:8018 kullanıyordu: trace gerçek201 öğrenme çıktısı yazımını gösterse de tam URL koşulu ve route interception eşleşmedi. İlk koşu durduruldu, ürün/test kodu değiştirilmeden doğru adresle tekrarlandı; ilk koşunun kalan6 sentetik dersi ayrı temizlendi. Bu hata yeni worker'ın işlem başarısızlığı diye sınıflandırılmadı.
 
 Son1561 API testinin yanında555 web testi,52 kurtarma aracı testi,104 retrieval aracı testi,26 release testi ve77 yönetişim testi geçti. Ruff/biçim/mypy, web tip/kontrast,22 migration ve belge sayısı kapıları geçti; dinamik OpenAPI57 yolda sürümlenmiş sözleşmeyle yapısal olarak aynı. Son sekiz import düzenlemesi dışında davranış kodu değişmedi; bu düzenleme sonrası tam API03 ve E2E son hashleri doğruladı. Sonradan yapılan READ ONLY gözlemde güncel D3 source/target sabit OID'leri açık ve0 bağlantılı bulundu; ilk active1 makbuzu korunur. Yeni başın GitHub kabulü bu yerel arşivden türetilmez.
+
+
+## OPS/D6 yerel kabul — c45 üstü yeni kaynaklar, 8 Eylül
+
+Önceki kesin uzak baş `c45e0e7073c92638ced7a3ff523578dd598c350b` üzerinde dört hosted workflow geçti: CI34238925467 (beş iş), AI quality34238925534, agent skills34238925527 ve security34238925449. O kaynaktaki API 1561/38 alt vaka ve E2E 68 sonucu yeni kirli OPS/D6 ağacının hosted kabulü değildir. 030'un Ubuntu geçici-dizin test hazırlığı hatası 031 düzeltmesiyle giderildi; önceki başarısız makbuz korunur.
+
+Yeni dilimin [yerel kanıt arşivi](evidence/ops-local/README.md) kaynak/log/result hashlerini ayrı bağlar. Eski d-final-local arşivi değişmez. Aşağıdaki kabul yerel ve sentetiktir; yeni dossier/commit/PR kapıları ayrıca tamamlanmalıdır.
+
+| Kontrol | Gerçek yeni sonuç ve sınır |
+|---|---|
+| Tam API | 1571 geçti; 38 alt vaka ayrıca; 5 mevcut uyarı; 104.37s pytest/114.755s kurulumla. 215 kaynak hash'i koşu içinde sabitti, geçici DB kaldırıldı. Sonraki internal.py modül docstring’i, admin test literal düzenlemesi ve kota test ifadesinin satır düzenlemesi ayrı AST eşliğiyle bağlı; byte eşliği iddia edilmez.|
+| HTTP/Chromium | 71 geçti; 82.581s. 281 kaynak hash'i aynı; koşu mtstzx3p73fa kendi 65 ders/14 audit kaydını temizledi. Yeni 3 vakanın 1'i gerçek yetkili overview, 2'si gerçek cevaptan türetilmiş kontrollü dependency/eski-alan UI sözleşmesidir. Gerçek kota politika uyuşmazlığı/recovery API/DB testindedir.|
+| Yönetim görünümü/klavye | 375 ve 1440 genişlikte açık/koyu dört gerçek API 200 görünümü; yatay taşma yok, ArrowRight/Home odağı geçti. Reduced-motion açıktı. Dört görsel ayrı smoke gözlemidir; 71 paketine eklenip 75 farklı test sayılmaz. Tüm site axe/VoiceOver/manuel kabulü değildir.|
+| R1 SQL karakterizasyonu |Kontrol ve gerçek SELECT 1/0 olmak üzere iki kalibrasyon; mevcut yedi admin testiyle 9 PASS, 2.18s test/2.845s toplam. 22012 sonrası gerçek HTTP 200 degraded; aynı transaction'da 25P02; bağımsız bağlantıda 1 allowed audit; sonraki public readiness temiz 200 gözlendi. Kalibrasyon testlerinin geçmesi bu HTTP 200 davranışını otomatik ürün onayı yapmaz; gözlem ayrıca değerlendirildi.|
+| D1 gerçek dönem 02 |Başlangıç silmesi 0.544s; sonradan eklenen expired satır 59.973s'de var,60.181s'de yok; canlı satır byte eşit. Saat/60s sabiti değiştirilmedi; SIGTERM 0/0.086s. İlk eksik yerel auth ayarlı koşu başarısız kanıt olarak tutulur.|
+| D3 dört negatif |Source-loss 0.447s; açık yazıcı 0.310s; kapalı yazıcı 0.322s; bakım bağlantısı kaybı 0.501s. Gerçek donuk v4 koruma/fence/COMMIT yolları çalıştı; herhangi bir restore-complete sonucu üretilmedi.|
+
+OPS1 read-only helper veritabanı/pgvector, ortak kota ve embedding durumunu public readiness ile yetkili admin özetinde tutarlı gösterir. Admin kendi mevcut oturumunu kullanır; auth/overview öncesi hatayı boş toplamlarla değiştirmez. R1 karakterizasyonunda uygulama transaction/exception/audit kodu değiştirilmedi. Gerçek SQL hata sonrası aynı transaction'ın 25P02 durumu gözlendi; bağımsız audit ve sonraki ayrı public oturum sağlığı ayrıca ölçüldü. Bu sonuç yazım atomikliği, her DB hatasının başarıya çevrilmesi veya bağlantı kaybının güvenli toparlanması garantisi değildir.
+
+OPS2 başarı olayı helper COMMIT döndükten sonra yalnız stage/deleted_windows/duration_ms taşır; sıfır silme bütün expired satırların bittiği anlamına gelmez. Worker geçersiz Settings'i görev/bağlantı başlamadan sabit hata ve çıkış 1 ile reddeder. Yerel Compose HTTP worker/drain'i korur, ayrı `python -m app.worker` poller HTTP portu açmaz; yerel dev-auth üretim auth kabulü değildir. Docker/Compose çalıştırılmadı; gerçek dönem deneyinden scale-to-zero veya fiziksel saklama SLA'sı çıkarılmaz.
+
+D3 açık yazıcı ilk guard'dan sonra COMMIT edip bağlı kalınca maintenance preflight fence/apply öncesinde reddetti; sentinel aynı bağlantıdan tekrar hashlenip eşleşti. Kapalı yazıcı vakasında fence gerçekten COMMIT oldu; final empty guard SQL 101'de reddetti, dump gövdesi 114 ve final COMMIT 5764'e ulaşılmadı, child 3. Hedef kapalı/oturumsuz kaldı; 07b son sentinel bağımsız readback yapılmadı. Source-loss tamamlanma manifesti üretmedi. Maintenance-loss'ta nonce/xid/binding bağlı COMMIT doğrulandı ama reopen tamamlanmadı; kapalı/oturumsuz hedef korundu. Bu kontrollü istemci kapanışları ağ blackhole/reset veya cross-cluster kabulü değildir. Root makbuzundaki source_unchanged alanı runtime dosya hash'idir, DB satır eşliği değildir; eski 20k ve güncel-mini content/RLS tatbikatı bu turda tekrarlanmadı.
+
+Yeni gerçek LLM/hoca, Supabase JWT/Storage, hosting/proxy günlükleri, dış telemetry/alarmlar, kurumsal saklama ve production promotion kabulleri açık kalır. S9/S9B ayrı geçici aday olarak hazırlandı; bu dilimde uygulanmadı veya kabul edilmedi. Yeni hosted başarı, yalnız yeni kesin commit'in kendi makbuzuyla eklenir.

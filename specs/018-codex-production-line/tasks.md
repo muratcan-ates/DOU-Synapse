@@ -6,7 +6,8 @@
 - [x] A4–A7 — atlanan/zayıf testler, monoton ipuçları ve ölü yollar.
 - [x] A — kendi commit'i, PR26 ve hosted kapılar.
 - [x] S1–S7 — upload/COMMIT/iptal, sekmeler arası gizlilik, dürüst veri hakkı açıklaması, issuer/CSP/depo log sınırları; yerel kontrol noktası71d5ff6.
-- [ ] S8 — rota şablonu ve Uvicorn erişim kanalı sınırı entegre; 21 ASGI ve gerçek Uvicorn v2 deneyi geçti. V1 fixture kapanış hatası korunur; yeni tarayıcı/hosted ve dış proxy günlüklerinin kabulü açık.
+- [x] S8 yerel/kaynak kabulü — 21 ASGI, gerçek Uvicorn v2, D/S8 tarayıcı ve c45 hosted geçti; V1 başarısız kayıt korunur.
+- [ ] S8 dış işletim — hosting/proxy günlüklerinin gerçek kabulü; yeni OPS/D6 hosted kapıları ayrı izlenir.
 - [x] S4 — kurulu rol/gizlilik becerisini güncelle ve doğrula.
 - [x] S/B/C — kesin9af4122 PR adayında dört hosted workflow ve beş CI işi geçti; A sonucu yerine kullanılmadı.
 - [x] B1 — konuya bağlı öğrenme çıktısını gerçek API/UI ile doğrula.
@@ -27,10 +28,15 @@
 - [ ] C — RLS kapalı karşılaştırma ve pgvector0.8.6 ölçüm eşdeğerliği.
 - [ ] C2 — bellek/recall nedenselliğini kontrollü deneyle çöz; gerek yoksa göç eklememe kararını kaydet.
 - [x] C3 — önceki başarısız aday ile son dar kabulü, açık kalan matris hücrelerini ve kaynak hashlerini ayrı raporla.
-- [ ] D1 — yerel ortak kota10 SQL/1519 API ara kabulü ve iki HTTP sürecinde 55 istek geçti; gerçek worker başlangıç expired/live temizliği ve tekrar planlama birimi geçti. Son birleşik 1561 API testi geçti; son68 tarayıcı akışı geçti; dossier/commit/hosted, gerçek dönem ve işletim saklama kabulü açık.
-- [ ] D2 — yerel entegrasyon; stage02'de 98 test, gerçek süreç v2'de 8 senaryo geçti. V1 genel failed korunur. İlk 1560 geçti/1 gözlemci testi başarısız sonucu korunur; dar test düzeltmesinin pozitif/negatif/yeniden pozitif kontrolü ve son 1561 API testi geçti. Son68 tarayıcı akışı geçti; dossier/commit/hosted kabulü PR26 üzerinde izlenir.
-- [ ] D3 — yerel entegrasyon; eski 29 ilişki ve 06/08/09/10/11 deneylerine ek olarak güncel 22 göçlü 30 ilişki/14 satır, rol/RLS ve kota 42501 kabulü geçti. 07/cross-cluster/control-loss, ek rol grafiği, dış Storage ve canlı saklama/imha kabulü açık.
-- [ ] D4–D6 — ölçüm/izleme ve operasyon belgeleri.
+- [x] D1 yerel — 10 SQL, iki HTTP sürecinde 55 istek ve önceki c45 hosted kabulü; yeni gerçek worker dönem 02 expired/live ayrımını değiştirilmemiş 60s turunda doğruladı.
+- [ ] D1 işletim — Docker/scale-to-zero, hedef ortam ve kurumsal saklama/imha kabulü.
+- [x] D2 yerel — stage02’de98 test, süreç v2’de8 senaryo ve önceki c45 hosted geçti; yeni OPS başlangıç/config ve bakım gözlemi 1571 API ve 71 E2E diliminde doğrulandı. V1 genel failed ve 1560/1 eski gözlemci testi sonucu korunur.
+- [ ] D2 işletim — hedef barındırmada süreç kesintisi/devralma ve kapanış sınırları; yeni OPS hosted ayrı.
+- [x] D3 yerel dar kabul — önceki 29 ilişki ve 06/08/09/10/11; güncel 22-göçlü 30 ilişki/14 satır, rol/RLS ve kota 42501; yeni 07a/07b guard ve kaynak/bakım kontrol bağlantısı kapanışı dört gerçek negatif geçti.
+- [ ] D3 kalan kabul — 07b son sentinel readback, cross-cluster/ağ kaybı/ek rol matrisi, dış Storage ve canlı saklama/imha; kapalı/belirsiz hedefler otomatik açılmaz.
+- [x] OPS1/OPS2 yerel — ortak read-only hazırlık/admin durumu, p95 örneklem etiketi, COMMIT sonrası içeriksiz bakım olayı ve görevden önce geçersiz Settings reddi.
+- [x] D6 kaynak/belge — HTTP worker korunurken ayrı portless poller; doğru rol/RLS/migration ve read-only tanı anlatımı entegre.
+- [ ] D4/D5 ve D6 işletim — dış telemetry/gerçek alarm, Docker/Compose ve hedef operasyon kabulü.
 - [ ] E — gerçek embedding/LLM ve bağımsız insan kabulü.
 - [ ] F — gerçek JWT/oturum/private Storage RLS.
 - [ ] G — seçilmiş hedefte dağıtım/göç/rollback ve GitHub korumaları.
@@ -38,4 +44,6 @@
 - [ ] I — güncel kılavuzlar, gerçek başarı raporu ve açık işleri kanıtla kapatma.
 
 - [x] D/S8 yerel birleşik kabul —1561 API,555 web,68 gerçek tarayıcı akışı,57 yol OpenAPI eşliği,22 göç,52 recovery aracı ve77 yönetişim testi; kanıt d-final-local arşivinde.
-- [ ] D/S8 kesin yeni commit ve PR26 hosted kabulü; yerel sonuçlar eski9af4122 GitHub sonucuna eklenmez.
+- [x] Önceki D/S8 kesin commit/PR26 hosted — own029, aggregate030 ve portability düzeltmesi031 sonrası c45 üzerinde dört workflow PASS; 030 Ubuntu başarısız kayıt korunur.
+- [x] OPS/D6 yeni yerel kabul — 1571 API/38 alt vaka; 71 E2E; 375/1440 açık/koyu dört yönetim görünümü ve klavye dumanı; R1 iki SQL kalibrasyonu+yedi admin testi 9 PASS. [Kanıt](evidence/ops-local/README.md).
+- [ ] OPS/D6 yeni dossier, kesin commit ve PR26 hosted kapıları; c45 sonucu yeni kirli kaynakları kapsamaz.

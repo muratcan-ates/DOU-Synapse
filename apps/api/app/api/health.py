@@ -10,16 +10,11 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Response, status
-from sqlalchemy import text
 
 from app.core.config import get_settings
-from app.core.db import get_session_factory
-from app.core.logging import get_logger
-from app.core.request_quota import request_quota_is_ready
-from app.core.warmup import warmup_is_ready, warmup_state
+from app.core.readiness import check_readiness
 
 router = APIRouter(prefix="/health", tags=["health"])
-logger = get_logger("app.health")
 
 
 @router.get("/live")
@@ -34,38 +29,7 @@ async def live() -> dict[str, str]:
 
 @router.get("/ready")
 async def ready(response: Response) -> dict[str, Any]:
-    checks: dict[str, str] = {}
-    try:
-        factory = get_session_factory()
-        async with factory() as session:
-            await session.execute(text("SELECT 1"))
-            vector_ready = await session.scalar(
-                text("SELECT count(*) FROM pg_extension WHERE extname = 'vector'")
-            )
-        checks["database"] = "ok"
-        checks["pgvector"] = "ok" if vector_ready else "missing"
-    except Exception as exc:
-        logger.warning(
-            "hazırlık kontrolü başarısız",
-            extra={"context": {"error_type": type(exc).__name__, "stage": "database_probe"}},
-        )
-        checks["database"] = "error"
-
-    checks["request_quota"] = "ok" if await request_quota_is_ready(get_settings()) else "error"
-
-    # "Süreç ayakta" ile "embedding hazır" ayrı sorular; ikincisi burada, bir
-    # BAĞIMLILIK durumu olarak raporlanır. `/health/live` bundan etkilenmez ve
-    # ısınma sürerken de 200 döner — yoksa orkestratör ısınan bir süreci
-    # ölü sanıp öldürür.
-    embedding_status = warmup_state()
-    checks["embedding"] = embedding_status
-
-    healthy = (
-        checks.get("database") == "ok"
-        and checks.get("pgvector") == "ok"
-        and checks.get("request_quota") == "ok"
-        and warmup_is_ready(embedding_status)
-    )
-    if not healthy:
+    snapshot = await check_readiness()
+    if snapshot["status"] != "ok":
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    return {"status": "ok" if healthy else "degraded", "checks": checks}
+    return {"status": snapshot["status"], "checks": snapshot["checks"]}

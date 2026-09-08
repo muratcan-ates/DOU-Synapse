@@ -1,0 +1,20 @@
+{
+  "false_healthy_negative": {
+    "result": "expected-failure",
+    "actual_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "dou018_ops_false_healthy_v2",
+      "tests/test_admin_readiness.py::test_admin_matches_actual_quota_readiness_failure_and_recovery"
+    ],
+    "correction": "Original negative02 receipt command field was inherited too broadly; exact executed argv and -p plugin are in the archived root runner. Two parametrized false-healthy mutant cases failed at public/private status equality. This is a counterfactual mutation, not the previous production commit. Negative01 failed setup (wrong function name), not security acceptance."
+  },
+  "ui": "Four actual locally built views inspected by root at375/1440 light/dark, no horizontal document overflow, ArrowRight/Home and visible next focus. Internal table/tab scroll remains. First observer used an incorrect CSS-class theme oracle; matrix02 reads the existing data-theme contract. No UI production repair for that harness error.",
+  "openapi": "First generation probe used wrong schema key AdminOverview and failed before any contract write. Correct AdminOverviewOut probe changed only two required dependency fields, paths57 unchanged.",
+  "quality": "quality01 Ruff failed a101-character test line; only expression wrapping changed, AST identical. quality02 all five checks passed.",
+  "r1": "Two measured calibrations plus seven existing admin tests passed. Fault route returned200/degraded, one allowed audit persisted independently, next public readiness200 with cleared principal. Supplied transaction remained aborted25P02; helper is terminal read-only observation, not transaction recovery. No write/socket/COMMIT uncertainty guarantee.",
+  "d3": "Separate projected summary binds original eight hashes; root source_unchanged means runtime file hash, not DB row parity. Raw backup/SQL/capture artifacts remain private and are not part of this archive."
+}

@@ -209,3 +209,70 @@ async def test_quota_maintenance_runs_at_start_and_repeats_after_its_wait_bounda
     await asyncio.wait_for(worker._quota_maintenance(stop), 1)
     assert calls == ["purge", "wait", "purge", "wait"]
     assert purge_count == wait_count == 2
+
+
+@pytest.mark.parametrize("deleted", [0, 3])
+async def test_quota_success_is_observed_only_after_helper_returns(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, deleted: int
+) -> None:
+    """No content/identity labels and no success while COMMIT is still pending."""
+    stop, entered, committed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    factory = object()
+
+    async def purge(actual_factory: object, *, batch_size: int) -> int:
+        assert actual_factory is factory and batch_size == 500
+        entered.set()
+        await committed.wait()
+        return deleted
+
+    async def wait_for_stop(event: asyncio.Event, seconds: float) -> None:
+        assert event is stop and seconds == 60
+        stop.set()
+
+    monkeypatch.setattr(worker, "_get_session_factory", Mock(return_value=factory))
+    monkeypatch.setattr(worker, "purge_expired_request_windows", purge)
+    monkeypatch.setattr(worker, "_wait_for_stop", wait_for_stop)
+    caplog.set_level(logging.INFO, logger="app.worker")
+    task = asyncio.create_task(worker._quota_maintenance(stop))
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        assert not [record for record in caplog.records if record.name == "app.worker"]
+        committed.set()
+        await asyncio.wait_for(task, 1)
+    finally:
+        await _settle_owned_task(task)
+    records = [record for record in caplog.records if record.name == "app.worker"]
+    assert len(records) == 1
+    record = records[0]
+    assert record.getMessage() == "kota bakımı tamamlandı"
+    assert set(record.context) == {"stage", "deleted_windows", "duration_ms"}
+    assert record.context["stage"] == "quota_purge"
+    assert record.context["deleted_windows"] == deleted
+    assert 0 <= record.context["duration_ms"] < float("inf")
+    assert record.exc_info is None
+
+
+async def test_invalid_settings_exit_before_worker_tasks_and_hide_private_error(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    canary = "SYNTHETIC_PRIVATE_CONFIGURATION_831792"
+    monkeypatch.setattr(worker, "configure_logging", Mock())
+    monkeypatch.setattr(worker, "get_settings", Mock(side_effect=ValueError(canary)))
+    factory = Mock(side_effect=AssertionError("unexpected database access"))
+    maintenance, drain = AsyncMock(), AsyncMock()
+    monkeypatch.setattr(worker, "_get_session_factory", factory)
+    monkeypatch.setattr(worker, "_quota_maintenance", maintenance)
+    monkeypatch.setattr(worker, "drain", drain)
+    caplog.set_level(logging.ERROR, logger="app.worker")
+    async with asyncio.timeout(1):
+        with pytest.raises(SystemExit) as caught:
+            await worker.run_forever()
+    assert caught.value.code == 1
+    factory.assert_not_called()
+    maintenance.assert_not_awaited()
+    drain.assert_not_awaited()
+    assert canary not in caplog.text
+    records = [record for record in caplog.records if record.name == "app.worker"]
+    assert len(records) == 1 and records[0].exc_info is None
+    assert records[0].getMessage() == "worker yapılandırması geçersiz"
+    assert records[0].context == {"stage": "configuration"}

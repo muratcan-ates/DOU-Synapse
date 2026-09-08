@@ -19,7 +19,7 @@ Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), 
 | A5 test sağlamlığı | 224 test geçti; 9 mutanttan 8 yakalandı, biri bağımsız RLS ile korundu | Gerçek yardımcı/CLI/export/sonuç kilidi davranışı; aynı test üretim koruması kaldırılınca düşer |
 | A6 erişilmeyen kod | Üç kullanılmayan yardımcı kaldırıldı; kullanılan yollar korundu | Retry sınıf-adı yolu, kapsam reddi ve gerçek sources/inspect çağrısı test edilir |
 | S1–S7 güvenlik/gizlilik | S71d5ff6 kendi kanıtı; son S/B/C9af4122 üzerinde dört GitHub workflow başarılı | Kurumsal kararlar ve kalıcı cleanup/uzlaştırma açık |
-| S8 günlük minimizasyonu | Rota şablonu ve Uvicorn erişim kanalı sınırı entegre; 21 ASGI ve gerçek Uvicorn v2 deneyi geçti | V1 fixture kapanış hatası korunur; yeni tarayıcı/hosted ve dış proxy günlüklerinin kabulü açık |
+| S8 günlük minimizasyonu | Rota şablonu, Uvicorn erişim kanalı sınırı,21 ASGI ve gerçek Uvicorn v2 kabulü; önceki D/S8 c45 hosted kapıları geçti | V1 başarısız kayıt korunur; dış proxy/hosting günlükleri açık. Yeni OPS/D6 hosted kabulü ayrıdır |
 | B1 öğrenme çıktısına konu | Konu seçimi, kaydetme ve yeniden okuma gerçek API/tarayıcıda geçti | İsteğe bağlı konu seçilmezse konusuz dağılım grubu korunur |
 | B2 konu/blueprint ile sınav | 014'te zaten vardı; mevcut gerçek öğrenci akışı tekrar geçti | Yeni özellik olarak sayılmaz |
 | B3 açık/kod değerlendirme | Geçerli kod rubriği, ölçüt puanlama ve kaynaklı eksik ölçüt API/UI sözleşmesi geçti | Gerçek LLM doğruluğu ve insan pedagojik kabulü E'de açık; tarayıcı geri bildirimi kontrollü DB fixture'ı |
@@ -30,12 +30,12 @@ Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), 
 | C1 retrieval adayı | ANN/dense custom plan korunarak FTS hash sıralaması geri çekildi; son hashing ve gerçek E5 karşılaştırmasında non-regression geçti | Hashing 78/105, E5 93/105; iki baseline ile eşit. RLS kapalı deney, CI0.8.6 ölçüm eşdeğerliği ve FTS yeniden yükleme eşitliği açık |
 | C2 indeks yapım göçü | Bellek taşması→recall kaybı nedenselliği henüz gösterilmedi | Kontrollü bellek/build deneyi olmadan 0021 veya 2 GB zorunluluğu eklenmez |
 | C3 rapor | Başarısız birleşik aday, çapraz tanı ve daraltılmış son kaynak ölçümü ayrı arşivlendi | [Son arama kabulü](../specs/018-codex-production-line/evidence/c1-final-acceptance.md); gerçek E5 retrieval ölçümü LLM cevap/puanlama kabulü değildir |
-| D operasyon | D1 iki HTTP sürecinde 55 istek; D2 stage02'de 98 test ve süreç v2'de 8 senaryo geçti. Başlangıç kota temizliği doğrulandı. D3 güncel 22 göçle 30 ilişki/14 satır ve rol/RLS eşliği geçti; kaynaklar yerel checkout'a entegre | Son 1561 API ve 68 gerçek tarayıcı testi geçti; kesin commit/dossier/hosted kabulü, gerçek periyodik ve scale-to-zero işletim; D3 kalan hata matrisi ve kurumsal/canlı kabul açık |
+| D operasyon | D1/D2 ve güncel 22-göçlü D3 önceki kabulleri c45 kontrol noktasında; yeni OPS API 1571/38 alt vaka, tarayıcı 71, gerçek kota dönemi02 ve dört yerel D3 negatif geçti. OPS1/2 kaynakları ve D6 belgeleri/poller entegre | Yeni dossier/commit/hosted; Docker/scale-to-zero, kurumsal saklama, D3 kalan matris ve dış işletim kabulü açık |
 | E gerçek model kabulü | Sahte sağlayıcı sözleşme kanıtları var | Gerçek sağlayıcı bütçesi/erişimi, bağımsız insan etiketleri ve gerçek kalite raporu |
 | F auth/private storage | Yerel issuer/JWT/CSP sınırları doğrulandı | Gerçek kullanıcı oturumu, seçilmiş imza yolu ve kullanıcı JWT'siyle Storage RLS ayrı sınanır |
 | G dağıtım | Canlı hedef seçilmedi | İncelenebilir migrate/deploy/rollback paketi; gerçek hedef ve yetkiyle canlı tatbikat |
-| H erişilebilirlik/E2E | B'nin 68 gerçek HTTP akışı ve dar/koyu görselleri doğrulandı | Tüm sayfaların klavye/axe/manuel kabulü ayrı açık |
-| I belge ve kılavuzlar | Değişen API/OpenAPI ve gizlilik envanteri güncellendi | Güncel öğrenci/eğitmen/admin kılavuzu ve gerçek başarı raporu; bitmemiş işler bitmiş gösterilmez |
+| H erişilebilirlik/E2E | Önceki B68 ve yeni OPS71 tarayıcı kabulü; yönetim375/1440 açık/koyu dört gerçek API görünümü, yatay taşma yokluğu ve ArrowRight/Home klavye dumanı geçti | Yeni 3 E2E vakanın 2’si kontrollü UI yanıtı. Tüm sayfaların axe/manuel/VoiceOver kabulü ayrı açık |
+| I belge ve kılavuzlar | API/OpenAPI ve gizlilik envanteri; D6 servis/rol/migration/tanı belgeleri güncel kaynağa hizalandı | Bütün öğrenci/eğitmen/admin kılavuzları ve gerçek başarı raporu; bitmemiş işler bitmiş gösterilmez |
 
 ## Ortam ve doğrulama sınırları
 
@@ -43,7 +43,11 @@ Bu göreve özel PostgreSQL16 localhost55448; dou018_* test veritabanları; önc
 
 ## Dış girdiler ve devam
 
-Groq/Gemini erişimi, Supabase proje bilgileri, JWT imza tercihi, bulut/staging hedefi ve branch protection henüz verilmedi. İlgili somut paket hazır olduğunda gereken karar sorulur; diğer hazır işler sürer. İnsan etiketleri boş kalır. Yeni bağımlılık önerileri ve migration-runner tablo kararı kendi diliminde gerekçelendirilir. Bu kayıt gelecekte çalışma planıdır; ayrıca bir zamanlayıcı kurulmuş olduğu anlamına gelmez.
+Groq/Gemini erişimi, Supabase proje bilgileri, JWT imza tercihi, bulut/staging hedefi ve branch protection henüz verilmedi. İlgili somut paket hazır olduğunda gereken karar sorulur; diğer hazır işler sürer. İnsan etiketleri boş kalır. Yeni bağımlılık önerileri ve migration-runner tablo kararı kendi diliminde gerekçelendirilir. Bu depo kaydı tek başına zamanlayıcı değildir. Kullanıcının 8 Eylül kesintisiz devam isteği için uygulamada ayrıca 15 dakikalık heartbeat kuruldu; 9 Eylül 2026 03.45 Europe/Istanbul sonuna kadar bu görevin bağlamında sürer. Yerel bilgisayar ve uygulamanın açık kalması gerekir. Bu plan gerçek çalışma süresi veya bitiş garantisi değildir.
+
+## Önceki B/C ve D/S8 kontrol noktaları
+
+Aşağıdaki ara sonuçlar kendi kaynak sürümlerine aittir. Bu bölümlerde o tarihte açık olan işler yeni OPS kabulüne taşınmaz; güncel durum sonraki devam bölümündedir.
 
 B/Cdc7a768 ve aggregate028/9af4122 PR26'ya push edildi; kesin HEAD'in CI, AI quality, agent skills ve security/dependency workflow'ları geçti. [GitHub makbuzu](../specs/018-codex-production-line/evidence/bc-hosted-exact-head-final.json) sonraki yerel D/S8 kaynaklarını kapsamaz.
 
@@ -54,3 +58,21 @@ Kaynaklar yerel çalışma ağacına entegredir. İlk birleşik tam API koşusun
 ## Güvenlik ve gizlilik dilimi
 
 S1: boyutu sınırlı istek gövdesi, depoya yazmadan değiştirme hedefi doğrulama ve kesin geri alma sonrası yeni nesne temizliği. Belirsiz COMMIT sırasında veri kaybı yaratacak silme yapılmaz; uzlaştırma gereksinimi kaydedilir. S2: sekmeler arası çıkış ve geç yanıt yarışları; sonra sınav geçişi ve kaynak okuyucusu. S3: hesap işleminin gerçek kapsamı ve export sözleşmesi, teknik bulgu/kurumsal karar kaydı. S4: mevcut dou-synapse-role-security becerisine veri yaşam döngüsü referansı eklendi, yapı doğrulaması ve bağımsız kullanım denemesi geçti; bu kurulu beceri depo dışında sürdürülür.
+
+
+## 8 Eylül 2026 devam kontrol noktası
+
+Kesin uzak HEAD `c45e0e7073c92638ced7a3ff523578dd598c350b`; PR26 açık taslak, hedef017/6218159. Bu HEAD'in CI34238925467 beş işi ve AIquality34238925534, agent-skills34238925527, security34238925449 başarılı. Hosted API1561/38subtests, E2E68. 030 adayındaki Ubuntu geçici-dizin test hazırlığı hatası iki satırlık test düzeltmesi ve031 kaydıyla giderildi; önceki başarısız kanıt korunur. Bu kabul aşağıdaki yeni dirty kaynakları kapsamaz.
+
+Kullanıcı işler bittikçe yeniden planlayarak yaklaşık10 saat devam edilmesini istedi. Hazır yerel geliştirme/test/özellik dalı akışı sürer; gerçek sağlayıcı harcaması, canlı dağıtım, main birleşimi veya insan onayı uydurulmaz. Ağır DB/API/browser/model işleri root tarafından sırayla çalışır. Ortak dosyalar root'a aittir; ajanlar bağımsız geçici adayları devreder. PR açıklamasının yayımlanması önceki otomatik izin incelemesinde reddedildi; ayrı açık onay henüz yok, bu metaveri işlemi bekler.
+
+Aktif yeni dilim OPS1 yönetim/hazırlık tutarlılığı, OPS2 COMMIT sonrası içeriksiz bakım kaydı ve erken yapılandırma doğrulaması, D6 sürekli Compose poller ve operasyon belgeleridir. Tam API 1571/38 alt vaka ile71 tarayıcı vakası yerelde geçti. API makbuzundan sonraki internal.py modül docstring’i, admin test literal düzenlemesi ve kota test ifadesinin satır düzenlemesi davranış AST eşliğiyle ayrıca bağlıdır; byte farkı gizlenmez. Yeni commit/dossier/hosted kabulü henüz tamamlanmadı. [OPS yerel kanıtı](../specs/018-codex-production-line/evidence/ops-local/README.md).
+
+Sıra: kaynak bağlı yeni dossier/commit/PR kapıları → S9/S9B hata ve yaşam döngüsü günlüklerinde içerik azaltma → C1 eşitlik/yeniden yükleme kontrollü tanısı → C2 nedensellik veya H/I hazır kabulleri. E/F/G dış girdileri beklerken bağımsız hazır işler ilerler; eski test sonucu yeni kaynakta çalışmış gibi sunulmaz.
+
+
+Yeni dönem 02, başlangıç silmesini 0.544s ve sonraki expired satırın yokluğunu 60.181s'de gözledi; canlı pencerenin byte'ları aynı, SIGTERM çıkış 0/0.086s. İlk eksik yerel auth ayarlı dönem deneyi başarısız olarak korunur. Worker süreci ölçüldü; Docker/Compose ve scale-to-zero saklama SLA'sı ölçülmedi.
+
+OPS1 yönetim görünümü 375/1440 genişlikte açık/koyu dört gerçek API akışında ve ArrowRight/Home klavye dumanında geçti. Yeni71 E2E turundaki3 ek vakanın 1'i gerçek yetkili overview, 2'si kontrollü degraded/eski-alan UI yanıtıdır. R1'de iki gerçek SQL kontrol/SELECT 1/0 kalibrasyonu ile yedi admin testi toplam 9 PASS verdi.22012 sonrası gerçek HTTP 200 degraded, aynı transaction'da 25P02, bağımsız bağlantıda bir allowed audit ve sonraki public readiness'te temiz 200 gözlendi. Bu karakterizasyon yazımlarda transaction garantisi veya bağlantı kaybının güvenle toparlandığı kabulü değildir.
+
+D3'ün yeni dört kontrollü negatif deneyi geçti: kaynak bağlantısı kaybı 0.447s, açık yazıcı 0.310s, kapalı yazıcı 0.322s, bakım bağlantısı kaybı 0.501s.07b son sentinel readback'i yapılmadı; bakım kaybında COMMIT doğrulandı ama hedef yeniden açılmadı. Root makbuzundaki source_unchanged yalnız araç kaynak hash'idir, DB satır eşliği değildir. Cross-cluster, ağ blackhole/reset, ek rol matrisi, dış Storage ve kurumsal saklama/imha açık kalır. S9/S9B ayrı geçici aday olarak hazırlandı; bu dilimde uygulanmadı veya kabul edilmedi.

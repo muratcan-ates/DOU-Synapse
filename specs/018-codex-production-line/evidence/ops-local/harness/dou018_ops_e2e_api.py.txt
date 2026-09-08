@@ -1,0 +1,6 @@
+from pathlib import Path
+import os,subprocess
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+env={'PATH':os.environ['PATH'],'LANG':'en_US.UTF-8','PYTHONDONTWRITEBYTECODE':'1','ENVIRONMENT':'local','DEV_AUTH_ENABLED':'true','DATABASE_URL':'postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55448/dou018_d_e2e_01','WORKER_DATABASE_URL':'postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55448/dou018_d_e2e_01','CORS_ORIGINS':'["http://localhost:3118"]','QUESTION_AUTHORING_ENABLED':'true','STUDENT_ASSESSMENT_WORKSPACE_ENABLED':'true','EMBEDDING_PROVIDER':'hashing','LLM_FAKE_PROVIDER':'true','EVAL_RUNTIME_ENABLED':'false','GROQ_API_KEY':'','GEMINI_API_KEY':'','OPENAI_API_KEY':'','STORAGE_BACKEND':'local','STORAGE_ROOT':'/private/tmp/dou018-d-e2e-storage'}
+with Path('/private/tmp/dou018-evidence/ops-e2e-api01.log').open('x') as log:
+    raise SystemExit(subprocess.run([str(repo/'apps/api/.venv/bin/uvicorn'),'app.main:app','--host','127.0.0.1','--port','8018'],cwd=repo/'apps/api',env=env,stdout=log,stderr=subprocess.STDOUT).returncode)

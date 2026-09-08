@@ -1,0 +1,12 @@
+[
+  {
+    "name": "docs",
+    "command": [
+      "node",
+      "scripts/docs_check.mjs"
+    ],
+    "exit_code": 1,
+    "seconds": 4.016,
+    "log_sha256": "91f8081d6465851128762a14142902554f4cdd9e1726df595cec9624878fac68"
+  }
+]

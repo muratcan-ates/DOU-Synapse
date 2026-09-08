@@ -1,0 +1,180 @@
+"""Offline allowlisted projection of already-recorded D3 receipts; no execution."""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import stat
+
+CASES = ("source_loss", "writer_open", "writer_closed", "maintenance_loss")
+FACTS = (
+    "real_dump_returned", "own_source_connection_closed", "real_archive_list_returned",
+    "source_metadata_unchanged", "cluster_unchanged", "completion_manifest_absent",
+    "partial_dump_present", "initial_target_empty", "initial_real_guard_returned",
+    "writer_commit_after_initial_guard", "writer_sentinel_preserved", "writer_closed_before_fence",
+    "writer_backend_exit_barrier_observed", "fence_called", "real_fence_returned", "apply_called",
+    "real_commit_receipt_validated", "reopen_called", "reopen_returned",
+    "own_maintenance_connection_closed_after_fence",
+)
+CODES = {
+    "SOURCE_SNAPSHOT_CONTROL_FAILED", "TARGET_SESSION_BINDING_OR_COUNT_CHANGED",
+    "RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE",
+    "RESTORE_COMMITTED_FENCE_REOPEN_UNCONFIRMED", "TARGET_NOT_EMPTY_OR_UNAUTHORIZED",
+}
+ARTIFACTS = {"target.stderr": "stderr", "target.stdout": "stdout", "target.sql": "sql_script"}
+COMMON_PATHS = {
+    "runtime": Path("/Users/muratates/code/dou-synapse-018-codex-production-line/scripts/recovery.py"),
+    "runner": Path("/private/tmp/dou018-d3-next-candidate/run.py"),
+    "capture_helper": Path("/private/tmp/dou018-d3-negative-runner/runner.py"),
+    "root_wrapper": Path("/private/tmp/dou018_d3_next_root.py"),
+    "candidate_manifest": Path("/private/tmp/dou018-d3-next-candidate/manifest.json"),
+    "referenced_backup_manifest": Path("/private/tmp/dou018-d3-current-parity-result-01/own-backup/manifest.json"),
+    "referenced_backup_dump": Path("/private/tmp/dou018-d3-current-parity-result-01/own-backup/database.dump"),
+    "independent_review": Path("/private/tmp/dou018-d3-next-independent-review.md"),
+}
+KNOWN_HASHES = {
+    "runtime": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+    "runner": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053",
+    "capture_helper": "356a896ab1ed2840ffcf5acb56514afd32967569c0e865bd692e80624a424a9b",
+    "root_wrapper": "886197fb34c119f08d76cdf04913b0d5a9236caf6666fff74e25bb7bb8a6100a",
+    "candidate_manifest": "3c9044963cd8ceba8ec69dd2b617684d48d0a73b0e342069be46ef4896873d07",
+    "referenced_backup_manifest": "38b701e61a8509054bf8a3fc56dcfffb746fdfdab3645ec4c1baec317405fcc7",
+    "referenced_backup_dump": "58465323956b7861df653536b0fa422f5e4488f59f4a97a7a528597308d4a288",
+}
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def sha_value(value: object) -> str:
+    assert isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value)
+    return value
+
+
+def state(value: dict) -> dict:
+    assert type(value["allow_connections"]) is bool
+    assert type(value["connections"]) is int and value["connections"] >= 0
+    return {key: value[key] for key in ("allow_connections", "connections")}
+
+
+def project(case: str, common: dict) -> dict:
+    directory = Path(f"/private/tmp/dou018-d3-next-{case}-01")
+    root_directory = Path(f"/private/tmp/dou018-d3-next-root-{case}-01")
+    runner_path, root_path = directory / "result.json", root_directory / "result.json"
+    runner, root = json.loads(runner_path.read_text()), json.loads(root_path.read_text())
+    assert runner["case"] == root["case"] == case
+    assert runner["status"] == root["status"] == "negative-acceptance-pass"
+    assert runner["safe_code"] == root["safe_code"] and runner["safe_code"] in CODES
+    assert sha_value(root["result_sha256"]) == digest(runner_path)
+    assert runner["runtime_sha256"] == common["runtime"]
+    assert runner["runner_sha256"] == common["runner"]
+    assert type(root["source_unchanged"]) is bool
+    assert root["source_unchanged"] == runner["runtime_unchanged"]
+    assert type(root["runner_unchanged"]) is bool
+    assert type(root["exit_code"]) is int
+    assert type(root["seconds"]) in (int, float) and root["seconds"] >= 0
+    assert runner["child_exit"] is None or type(runner["child_exit"]) is int
+    pins_path = root_directory / "pins.json"
+    assert digest(pins_path) == runner["pins_sha256"]
+    assert json.loads(pins_path.read_text()) == root["pins"]
+    facts = runner["facts"]
+    for key in FACTS:
+        if key in facts:
+            assert type(facts[key]) is bool
+    out = {
+        "case": case,
+        "status": runner["status"],
+        "root_runner_exit_code": root["exit_code"],
+        "root_elapsed_seconds": root["seconds"],
+        "owned_child_exit_code": runner["child_exit"],
+        "safe_code": runner["safe_code"],
+        "original_receipt_sha256": {"runner": digest(runner_path), "root": digest(root_path)},
+        "runtime_sha256": sha_value(runner["runtime_sha256"]),
+        "runner_sha256": sha_value(runner["runner_sha256"]),
+        "pins_sha256": sha_value(runner["pins_sha256"]),
+        "source_identity_sha256": sha_value(root["pins"]["source"]["sha256"]),
+        "runtime_source_unchanged": root["source_unchanged"],
+        "runner_unchanged": root["runner_unchanged"],
+        "recorded_phase_facts": {key: facts[key] for key in FACTS if key in facts},
+        "receipt_and_pin_hash_checks_match": True,
+    }
+    if root["pins"]["target"] is not None:
+        out["target_identity_sha256"] = sha_value(root["pins"]["target"]["sha256"])
+    if "writer_committed_sentinel_sha256" in facts:
+        out["writer_committed_sentinel_sha256"] = sha_value(facts["writer_committed_sentinel_sha256"])
+    error = runner["first_tool_error"]
+    if error is None:
+        out["first_tool_error"] = None
+    else:
+        assert error["safe_code"] in CODES and type(error["script_line"]) is int
+        # The only recorded structured SQLSTATE in these inputs is explicit null.
+        # Do not infer P0001 from the script's RAISE statement.
+        assert error["sqlstate"] is None
+        out["first_tool_error"] = {key: error[key] for key in ("safe_code", "script_line", "sqlstate")}
+    for original, target in (("before", "runner_target_before"), ("after", "runner_target_after")):
+        if original in runner:
+            out[target] = state(runner[original])
+    if "actual_final_target" in root:
+        out["root_target_after"] = state(root["actual_final_target"])
+        out["root_and_runner_final_target_state_matches"] = (
+            out["root_target_after"] == out["runner_target_after"]
+        )
+    out["private_artifact_metadata"] = []
+    for artifact in runner["artifacts"]:
+        name = artifact["file"]
+        assert name in ARTIFACTS
+        actual_path = directory / name
+        actual = actual_path.stat()
+        assert stat.S_ISREG(actual.st_mode)
+        assert type(artifact["bytes"]) is int and type(artifact["source_bytes"]) is int
+        assert type(artifact["truncated"]) is bool
+        assert artifact["bytes"] == actual.st_size
+        assert sha_value(artifact["sha256"]) == digest(actual_path)
+        out["private_artifact_metadata"].append({
+            "kind": ARTIFACTS[name],
+            **{key: artifact[key] for key in ("bytes", "sha256", "source_bytes", "truncated")},
+            "file_mode_at_projection": f"{stat.S_IMODE(actual.st_mode):04o}",
+            "recorded_hash_and_size_match": True,
+        })
+    return out
+
+
+def main() -> None:
+    common = {key: digest(path) for key, path in COMMON_PATHS.items()}
+    assert all(common[key] == value for key, value in KNOWN_HASHES.items())
+    summary = {
+        "schema_version": 1,
+        "kind": "content-free projection of existing local synthetic negative-acceptance receipts",
+        "common_artifact_sha256": common,
+        "projection_script_sha256": digest(Path(__file__)),
+        "field_semantics": {
+            "runtime_source_unchanged": "Projected from root.source_unchanged, verified equal to runner.runtime_unchanged. Only recovery.py byte-hash immutability; not source-database row or byte equality.",
+            "recorded_phase_facts": "Only explicitly present boolean fields under runner.facts. Missing keys are not recorded, never inferred false or true.",
+            "source_metadata_unchanged": "The source-loss receipt's metadata comparison only; not full application-row equality.",
+            "status": "negative-acceptance-pass means the fault produced its intended refusal/state; it is not backup-complete or restore-complete.",
+            "root_elapsed_seconds": "Copied from root.seconds for its runner subprocess interval; not a separately recorded per-phase duration.",
+            "private_artifact_metadata": "Only recorded hash/size/truncation metadata and current offline file-mode verification; no private SQL or protocol body is included.",
+        },
+        "scope_limits": [
+            "Four controlled local synthetic connection/writer scenarios; no new database or process was run during projection.",
+            "Writer-closed final sentinel row was not independently read back after the target remained fenced; no final-row parity claim is made.",
+            "The source-loss partial dump has no completion manifest and is not accepted as a completed backup.",
+            "Maintenance-loss has an explicitly validated commit receipt followed by an unconfirmed reopen; do not relabel it as rollback or an unknown commit receipt.",
+            "No new application-row, RLS, external Storage, 20k corpus, retrieval, cross-cluster, failover or production certification is claimed.",
+            "Original private receipts remain authoritative; the hashes here identify all eight original JSON byte streams and do not equal this projection's hash.",
+        ],
+        "cases": [project(case, common) for case in CASES],
+    }
+    output = Path("/private/tmp/dou018-d3-next-public-summary.json")
+    descriptor = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+        json.dump(summary, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+    print(json.dumps({"case_count": len(summary["cases"]), "summary_sha256": digest(output)}))
+
+
+if __name__ == "__main__":
+    main()

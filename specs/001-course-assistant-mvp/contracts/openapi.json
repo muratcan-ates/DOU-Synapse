@@ -4277,6 +4277,14 @@
             "type": "string",
             "title": "Database Status"
           },
+          "pgvector_status": {
+            "type": "string",
+            "title": "Pgvector Status"
+          },
+          "request_quota_status": {
+            "type": "string",
+            "title": "Request Quota Status"
+          },
           "embedding_status": {
             "type": "string",
             "title": "Embedding Status"
@@ -4334,6 +4342,8 @@
         "required": [
           "status",
           "database_status",
+          "pgvector_status",
+          "request_quota_status",
           "embedding_status",
           "measured_at",
           "users_total",

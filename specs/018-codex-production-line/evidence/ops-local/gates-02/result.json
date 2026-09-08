@@ -1,0 +1,41 @@
+[
+  {
+    "name": "docs",
+    "command": [
+      "node",
+      "scripts/docs_check.mjs"
+    ],
+    "exit_code": 0,
+    "seconds": 2.638,
+    "log_sha256": "c06dc22fd1442b1a0f0a427cafea9731225165a8647ddd28cdbdf417b86d1ecc"
+  },
+  {
+    "name": "migration",
+    "command": [
+      "python3",
+      "scripts/migration_check.py",
+      "--allow-gap",
+      "0017",
+      "--allow-gap",
+      "0021",
+      "--allow-gap",
+      "0022",
+      "--allow-gap",
+      "0023"
+    ],
+    "exit_code": 0,
+    "seconds": 0.091,
+    "log_sha256": "35e88ac0adede31b2409b0ba68df482ea909fd0ef706b754ebb6a6f83aa3700b"
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.045,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

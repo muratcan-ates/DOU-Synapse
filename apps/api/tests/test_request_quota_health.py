@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, Mock, patch
 from fastapi import Response
 
 from app.api import health
+from app.core import readiness
 
 
 class HealthTests(unittest.IsolatedAsyncioTestCase):
@@ -24,11 +25,11 @@ class HealthTests(unittest.IsolatedAsyncioTestCase):
         logger = Mock()
         response = Response()
         with (
-            patch.object(health, "get_session_factory", return_value=broken_session),
-            patch.object(health, "request_quota_is_ready", AsyncMock(return_value=False)),
-            patch.object(health, "get_settings", return_value=SimpleNamespace()),
-            patch.object(health, "warmup_state", return_value="disabled"),
-            patch.object(health, "logger", logger),
+            patch.object(readiness, "get_session_factory", return_value=broken_session),
+            patch.object(readiness, "request_quota_is_ready", AsyncMock(return_value=False)),
+            patch.object(readiness, "get_settings", return_value=SimpleNamespace()),
+            patch.object(readiness, "warmup_state", return_value="disabled"),
+            patch.object(readiness, "logger", logger),
         ):
             result = await health.ready(response)
         self.assertEqual(response.status_code, 503)
@@ -51,9 +52,11 @@ class HealthTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_live_has_no_request_quota_or_database_dependency(self):
         with (
-            patch.object(health, "get_session_factory", side_effect=AssertionError("DB touched")),
             patch.object(
-                health, "request_quota_is_ready", side_effect=AssertionError("quota touched")
+                readiness, "get_session_factory", side_effect=AssertionError("DB touched")
+            ),
+            patch.object(
+                readiness, "request_quota_is_ready", side_effect=AssertionError("quota touched")
             ),
             patch.object(
                 health,

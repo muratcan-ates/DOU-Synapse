@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import signal
+from time import monotonic
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -70,12 +71,26 @@ async def _wait_for_stop(stop: asyncio.Event, seconds: float) -> None:
 async def _quota_maintenance(stop: asyncio.Event) -> None:
     """Separate task; not per request/drain and never on a claim transaction."""
     while not stop.is_set():
+        started = monotonic()
         try:
-            await purge_expired_request_windows(
+            deleted = await purge_expired_request_windows(
                 _get_session_factory(), batch_size=QUOTA_PURGE_BATCH_SIZE
             )
         except Exception:
             logger.warning("kota bakımı başarısız", extra={"context": {"stage": "quota_purge"}})
+        else:
+            # The helper returns only after COMMIT. Zero is a batch result, not
+            # proof that no expired rows remain (locks/another worker may skip).
+            logger.info(
+                "kota bakımı tamamlandı",
+                extra={
+                    "context": {
+                        "stage": "quota_purge",
+                        "deleted_windows": deleted,
+                        "duration_ms": round((monotonic() - started) * 1000, 2),
+                    }
+                },
+            )
         await _wait_for_stop(stop, QUOTA_PURGE_INTERVAL_SECONDS)
 
 
@@ -89,6 +104,15 @@ async def run_forever(
     poll_interval: float = POLL_INTERVAL_SECONDS, *, stop_event: asyncio.Event | None = None
 ) -> None:
     configure_logging()
+    try:
+        get_settings()
+    except Exception:
+        # A bad deployment must exit, not sleep forever while every DB/control
+        # operation fails. Never include validation input or exception chains.
+        logger.error(
+            "worker yapılandırması geçersiz", extra={"context": {"stage": "configuration"}}
+        )
+        raise SystemExit(1) from None
     logger.info("worker başlatıldı")
     stop = stop_event if stop_event is not None else asyncio.Event()
     maintenance = asyncio.create_task(_quota_maintenance(stop))

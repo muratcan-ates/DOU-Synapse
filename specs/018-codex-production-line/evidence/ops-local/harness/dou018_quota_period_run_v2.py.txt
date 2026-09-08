@@ -1,0 +1,96 @@
+"""Actual standalone worker; unchanged 60-second wait, synthetic isolated DB."""
+from pathlib import Path
+import hashlib,json,os,signal,subprocess,time,uuid
+import psycopg
+from psycopg import sql
+
+os.umask(0o077)
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-quota-period-02');out.mkdir(mode=0o700,exist_ok=False)
+db='dou018_quota_period_02'
+passfile=out/'empty.pgpass';passfile.touch(mode=0o600,exist_ok=False)
+route=dict(host='127.0.0.1',hostaddr='127.0.0.1',port=55448,user='muratates',dbname='postgres',connect_timeout=3,passfile=str(passfile),autocommit=True)
+files=sorted((r/'supabase/migrations').glob('*.sql'))
+assert len(files)==22
+source_paths=sorted((r/'apps/api/app').rglob('*.py'))+files
+hashes={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_paths}
+record={'result':'running','base_sha':subprocess.check_output(['git','-C',str(r),'rev-parse','HEAD'],text=True).strip(),'source_sha256':hashes,'runner_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'database':db,'clock':'PostgreSQL clock_timestamp expiry; parent monotonic intervals','period_overrides':False,'cases':[],'scope':'Actual standalone python -m app.worker; no Docker, external scheduler, provider call or retention SLA claim.'}
+def save(): (out/'result.json').write_text(json.dumps(record,indent=2)+'\n')
+save()
+with psycopg.connect(**route) as c:
+    assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0]=='7683042491268153327'
+    assert not c.execute('SELECT 1 FROM pg_database WHERE datname=%s',(db,)).fetchone()
+    c.execute(sql.SQL('CREATE DATABASE {} TEMPLATE template0').format(sql.Identifier(db)))
+    record['oid']=c.execute('SELECT oid::text FROM pg_database WHERE datname=%s',(db,)).fetchone()[0]
+env={'PATH':os.environ['PATH'],'LANG':'en_US.UTF-8','PGHOST':'127.0.0.1','PGHOSTADDR':'127.0.0.1','PGPORT':'55448','PGUSER':'muratates','PGPASSFILE':str(passfile)}
+with (out/'provision.log').open('x') as log:
+    for p in files:
+        subprocess.run(['/opt/homebrew/opt/postgresql@16/bin/psql','-X','-w','-v','ON_ERROR_STOP=1','-d',db,'-f',str(p)],env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=30)
+route['dbname']=db
+actor,course=uuid.uuid4(),uuid.uuid4()
+with psycopg.connect(**route) as c:
+    assert c.execute('SELECT oid::text FROM pg_database WHERE datname=current_database()').fetchone()[0]==record['oid']
+    c.execute(sql.SQL('GRANT CONNECT ON DATABASE {} TO dou_app,dou_worker').format(sql.Identifier(db)))
+    c.execute('INSERT INTO profiles(id,email,full_name) VALUES(%s,%s,%s)',(actor,'period-fixture@example.invalid','Synthetic quota fixture'))
+    c.execute('INSERT INTO courses(id,code,title,created_by) VALUES(%s,%s,%s,%s)',(course,'SYNTHETIC-PERIOD-02','Synthetic quota period',actor))
+    assert c.execute('SELECT count(*) FROM ingestion_jobs').fetchone()[0]==0
+    c.execute("INSERT INTO app.rate_limit_windows(scope,user_id,course_id,policy_fingerprint,accepted_at,expires_at) VALUES ('chat',%s,%s,%s,ARRAY[clock_timestamp()-interval '2 minutes'],clock_timestamp()-interval '1 minute'),('qgen',%s,%s,%s,ARRAY[clock_timestamp()],clock_timestamp()+interval '10 minutes')",(actor,course,'a'*64,actor,course,'b'*64))
+    live_before=c.execute("SELECT row_to_json(w)::text FROM app.rate_limit_windows w WHERE scope='qgen'").fetchone()[0]
+childenv={'PATH':os.environ['PATH'],'LANG':'en_US.UTF-8','PYTHONPATH':str(r/'apps/api'),'PYTHONDONTWRITEBYTECODE':'1','ENVIRONMENT':'local','DEV_AUTH_ENABLED':'true','DATABASE_URL':f'postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55448/{db}','WORKER_DATABASE_URL':f'postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55448/{db}','STORAGE_BACKEND':'local','STORAGE_ROOT':str(out/'storage'),'EMBEDDING_PROVIDER':'hashing','LLM_FAKE_PROVIDER':'true','EVAL_RUNTIME_ENABLED':'false','GROQ_API_KEY':'','GEMINI_API_KEY':'','OPENAI_API_KEY':''}
+process=None
+try:
+    with (out/'worker.log').open('x') as log, psycopg.connect(**route) as c:
+        start=time.monotonic()
+        process=subprocess.Popen([str(r/'apps/api/.venv/bin/python'),'-m','app.worker'],cwd=out,env=childenv,stdout=log,stderr=subprocess.STDOUT)
+        record['worker_pid']=process.pid
+        def present(scope):
+            return c.execute('SELECT count(*) FROM app.rate_limit_windows WHERE scope=%s',(scope,)).fetchone()[0]
+        deadline=start+12
+        while present('chat') and time.monotonic()<deadline:
+            assert process.poll() is None, 'worker exited before startup purge'
+            time.sleep(.1)
+        assert present('chat')==0 and present('qgen')==1
+        first=time.monotonic()
+        record['cases'].append({'name':'startup_expired_removed_live_preserved','result':'pass','observed_after_start_seconds':round(first-start,3)})
+        # Insert already-expired material AFTER independently observing startup
+        # COMMIT. It must remain until the next real period; no clock patch.
+        c.execute("INSERT INTO app.rate_limit_windows(scope,user_id,course_id,policy_fingerprint,accepted_at,expires_at) VALUES ('chat',%s,%s,%s,ARRAY[clock_timestamp()-interval '2 minutes'],clock_timestamp()-interval '1 minute')",(actor,course,'c'*64))
+        assert present('chat')==1
+        save(); print('Startup purge observed; waiting for unchanged real 60-second period.',flush=True)
+        last_present=time.monotonic()
+        deadline=first+75
+        while present('chat') and time.monotonic()<deadline:
+            assert process.poll() is None, 'worker exited before second purge'
+            last_present=time.monotonic()
+            time.sleep(.2)
+        second=time.monotonic()
+        assert present('chat')==0, 'periodic purge not observed within predeclared 75-second budget'
+        assert last_present-first>=58, 'expired row disappeared before scheduled second pass'
+        live_after=c.execute("SELECT row_to_json(w)::text FROM app.rate_limit_windows w WHERE scope='qgen'").fetchone()[0]
+        assert live_after==live_before
+        assert c.execute('SELECT count(*) FROM ingestion_jobs').fetchone()[0]==0
+        record['cases'].append({'name':'actual_next_period','result':'pass','last_present_after_first_seconds':round(last_present-first,3),'absent_after_first_seconds':round(second-first,3),'live_row_sha256':hashlib.sha256(live_after.encode()).hexdigest()})
+        stop=time.monotonic();process.send_signal(signal.SIGTERM);code=process.wait(timeout=12)
+        record['cases'].append({'name':'owned_sigterm_clean_exit','result':'pass' if code==0 else 'fail','exit_code':code,'seconds':round(time.monotonic()-stop,3)})
+        assert code==0
+    raw=(out/'worker.log').read_text()
+    events=[json.loads(line) for line in raw.splitlines() if line.startswith('{')]
+    successes=[e for e in events if e.get('message')=='kota bakımı tamamlandı']
+    assert len(successes)==2 and [e['context']['deleted_windows'] for e in successes]==[1,1]
+    assert all(set(e['context'])=={'stage','deleted_windows','duration_ms'} for e in successes)
+    assert not any(e.get('level') in ('WARNING','ERROR','CRITICAL') for e in events)
+    assert all(canary not in raw for canary in [str(actor),str(course),'period-fixture@example.invalid',db,'dou_app_local','dou_worker_local'])
+    assert all(hashlib.sha256((r/p).read_bytes()).hexdigest()==sha for p,sha in hashes.items()),'runtime source changed during actual process acceptance'
+    record.update(result='pass',maintenance_events=successes,worker_log_sha256=hashlib.sha256(raw.encode()).hexdigest(),source_mismatches=0)
+except BaseException as exc:
+    record.update(result='fail',failure_type=type(exc).__name__)
+    raise
+finally:
+    if process is not None and process.poll() is None:
+        process.send_signal(signal.SIGTERM)
+        try: process.wait(timeout=12)
+        except subprocess.TimeoutExpired:
+            process.kill();process.wait(timeout=3)
+            record['forced_own_child_cleanup']=True
+    save()
+print(json.dumps({k:record[k] for k in ['result','database','oid','cases','source_mismatches']}))

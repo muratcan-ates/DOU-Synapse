@@ -1,0 +1,34 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,sys,time
+import psycopg
+
+os.umask(0o077)
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/ops-admin-negative-02')
+out.mkdir(mode=0o700,exist_ok=False)
+db='dou018_ops_admin_neg02'
+env={k:v for k,v in os.environ.items() if not k.startswith('PG')}
+passfile=out/'empty.pgpass';passfile.touch(mode=0o600,exist_ok=False)
+route=dict(host='127.0.0.1',hostaddr='127.0.0.1',port=55448,user='muratates',dbname='postgres',connect_timeout=3,passfile=str(passfile))
+with psycopg.connect(**route) as c:
+    c.execute('SET TRANSACTION READ ONLY')
+    assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0]=='7683042491268153327'
+    assert not c.execute('SELECT 1 FROM pg_database WHERE datname=%s',(db,)).fetchone()
+env.update(PYTHONDONTWRITEBYTECODE='1',UV_OFFLINE='1',GROQ_API_KEY='',GEMINI_API_KEY='',OPENAI_API_KEY='',PGHOST='127.0.0.1',PGHOSTADDR='127.0.0.1',PGPORT='55448',PGUSER='muratates',PGPASSFILE=str(passfile),PG_BIN='/opt/homebrew/opt/postgresql@16/bin',TEST_DB_NAME=db,TEST_ADMIN_DSN=f'postgresql+psycopg://muratates@127.0.0.1:55448/{db}',TEST_APP_DSN=f'postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55448/{db}',TEST_WORKER_DSN=f'postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55448/{db}')
+env.pop('LLM_FAKE_PROVIDER',None)
+def hashes():
+    files=list((repo/'apps/api/app').rglob('*.py'))+list((repo/'apps/api/tests').rglob('*.py'))+list((repo/'supabase/migrations').glob('*.sql'))
+    return {str(p.relative_to(repo)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(files)}
+env["PYTHONPATH"]="/private/tmp:"+str(repo/"apps/api")
+before=hashes();started=time.monotonic()
+with (out/'tests.log').open('x') as f:
+    result=subprocess.run([sys.executable,'-m','pytest','-q','-p','dou018_ops_false_healthy_v2','tests/test_admin_readiness.py::test_admin_matches_actual_quota_readiness_failure_and_recovery'],cwd=repo/'apps/api',env=env,stdout=f,stderr=subprocess.STDOUT,timeout=240)
+after=hashes()
+with psycopg.connect(**route) as c:
+    c.execute('SET TRANSACTION READ ONLY')
+    assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0]=='7683042491268153327'
+    dropped=not bool(c.execute('SELECT 1 FROM pg_database WHERE datname=%s',(db,)).fetchone())
+record={'database':db,'database_dropped':dropped,'exit_code':result.returncode,'seconds':round(time.monotonic()-started,3),'command':['python','-m','pytest','-q'],'repo_head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'working_tree_dirty':True,'source_unchanged':before==after,'source_hashes':after,'log_sha256':hashlib.sha256((out/'tests.log').read_bytes()).hexdigest()}
+(out/'result.json').write_text(json.dumps(record,indent=2)+'\n')
+print(json.dumps({k:v for k,v in record.items() if k not in ['source_hashes']}))
+raise SystemExit(result.returncode if before==after and dropped else 2)

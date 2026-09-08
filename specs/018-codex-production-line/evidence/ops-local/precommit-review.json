@@ -1,0 +1,215 @@
+{
+  "scope": "changed/new nonignored files only; text and decompressed gzip; explicit token/key/connection patterns; not a universal secret detector",
+  "scanned_text_files": 90,
+  "findings": [
+    {
+      "path": "apps/api/tests/test_request_quota_health.py",
+      "kind": "credentialed_connection",
+      "line": 20,
+      "match_sha256": "cf04593e081d67535621b8dc9c29aab34eca01841e86acc22511f83e9e78dc29",
+      "review": "Synthetic exception-chain redaction test, no connection attempted.",
+      "reviewed_file_sha256": "0bf6d93ef703e1ae841b73761ab2901461c38efdcd260e74a5f1bee00a7bc41a"
+    },
+    {
+      "path": "apps/api/tests/test_worker_lifecycle.py",
+      "kind": "credentialed_connection",
+      "line": 120,
+      "match_sha256": "1dd0d2fb42a1372ea3eeb3716ea3c56e4699d73512defcf2a86e98f8eddf1b01",
+      "review": "Synthetic worker exception-chain redaction test.",
+      "reviewed_file_sha256": "6f204b35080b05d59ff8b1ba9fc435a68d35c6e7c1f4535b09bd10211760ccb7"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 34,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 35,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 66,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 67,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 96,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 97,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 127,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docker-compose.yml",
+      "kind": "credentialed_connection",
+      "line": 128,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 164,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "c6f8a7b2348d4290f6c768c7515907786dffa39bdd375f7fc164153f34006bee"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 165,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "c6f8a7b2348d4290f6c768c7515907786dffa39bdd375f7fc164153f34006bee"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 336,
+      "match_sha256": "3de972c98bf6eb192f31d3cc1403df37662eb200a8a85f5d5594a1c5bf1933a6",
+      "review": "Local docker Compose quickstart example",
+      "reviewed_file_sha256": "c6f8a7b2348d4290f6c768c7515907786dffa39bdd375f7fc164153f34006bee"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_admin_negative_run_v2.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "1b6efc3fd682c3fc16b87cefe46c901e12eddb7c70e8726cd5bb8728b57ee22a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_admin_negative_run_v2.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "1b6efc3fd682c3fc16b87cefe46c901e12eddb7c70e8726cd5bb8728b57ee22a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_e2e_api.py.txt",
+      "kind": "credentialed_connection",
+      "line": 4,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "102bb449a5e2b534896571d37e419db758723ee29a5391deab635505a4a71ce5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_e2e_api.py.txt",
+      "kind": "credentialed_connection",
+      "line": 4,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "102bb449a5e2b534896571d37e419db758723ee29a5391deab635505a4a71ce5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_full_api01.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "639cb4af840c0ccd7183c6c91c4673a00c1e238e7a91760346994cb5376918f2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_full_api01.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "639cb4af840c0ccd7183c6c91c4673a00c1e238e7a91760346994cb5376918f2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_r1_char01.py.txt",
+      "kind": "credentialed_connection",
+      "line": 18,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "bac26337a1a7dffe59898c8f69cdf3e4369e491b718c7d165e93613ea7d69af5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_r1_char01.py.txt",
+      "kind": "credentialed_connection",
+      "line": 18,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "bac26337a1a7dffe59898c8f69cdf3e4369e491b718c7d165e93613ea7d69af5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_quota_period_run_v2.py.txt",
+      "kind": "credentialed_connection",
+      "line": 39,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "6e884c9afafdc92cbab1cf29fa07e9213fe0c38735c158c6751fc9066f9da92d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_quota_period_run_v2.py.txt",
+      "kind": "credentialed_connection",
+      "line": 39,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "6e884c9afafdc92cbab1cf29fa07e9213fe0c38735c158c6751fc9066f9da92d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/web-unit.log.gz",
+      "kind": "credentialed_connection",
+      "line": 220,
+      "match_sha256": "ec25b8fa54a9d7a878a86e6f38233af24d5d27d184b396136d6d7f0251d33c19",
+      "review": "Literal rejected URL fixture in Supabase URL unit-test name, not a real login",
+      "reviewed_file_sha256": "a06f9adffca3284a6562dd84701027a327587ce6b842c70a0035e384734bc6fa"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/web-unit.log.gz",
+      "kind": "credentialed_connection",
+      "line": 243,
+      "match_sha256": "ec25b8fa54a9d7a878a86e6f38233af24d5d27d184b396136d6d7f0251d33c19",
+      "review": "Literal rejected URL fixture in Supabase URL unit-test name, not a real login",
+      "reviewed_file_sha256": "a06f9adffca3284a6562dd84701027a327587ce6b842c70a0035e384734bc6fa"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/source-equivalence/original-test_request_quota_health.py.txt",
+      "kind": "credentialed_connection",
+      "line": 20,
+      "match_sha256": "cf04593e081d67535621b8dc9c29aab34eca01841e86acc22511f83e9e78dc29",
+      "review": "Synthetic exception-chain redaction test, no connection attempted.",
+      "reviewed_file_sha256": "f16559528f3dcd84bca27b34fefcdebc03b6cca0f788a462168417d74000574c"
+    }
+  ],
+  "status": "all_pattern_findings_reviewed_as_synthetic_local_fixtures"
+}

@@ -1,0 +1,157 @@
+{
+  "actual_role": {
+    "application_role": true,
+    "constrained_role": true,
+    "principal_matches": true,
+    "row_security": true
+  },
+  "admin_http_after_function_scoped_session_exit": {
+    "error_code": null,
+    "error_envelope_exact": false,
+    "error_message_nonempty": false,
+    "error_request_id_matches": null,
+    "header_request_id_matches": true,
+    "json_object": true,
+    "overview_aggregate_fields_present": true,
+    "overview_dependency_fields": {
+      "database_status": "error",
+      "embedding_status": "disabled",
+      "pgvector_status": "unknown",
+      "request_quota_status": "ok"
+    },
+    "overview_status": "degraded",
+    "public_shape_exact": false,
+    "public_snapshot": {
+      "checks": {
+        "database": null,
+        "embedding": null,
+        "pgvector": null,
+        "request_quota": null
+      },
+      "mapping": true,
+      "status": "degraded"
+    },
+    "status_code": 200
+  },
+  "admin_supplied_real_async_session": true,
+  "audit_visible_from_independent_connection": {
+    "actor_and_action_match": 1,
+    "allowed": 1,
+    "records": 1
+  },
+  "calibration_valid": true,
+  "case": "division_by_zero",
+  "fault_query_is_read_only": true,
+  "helper_returned": {
+    "checks": {
+      "database": "error",
+      "embedding": "disabled",
+      "pgvector": null,
+      "request_quota": "ok"
+    },
+    "mapping": true,
+    "status": "degraded"
+  },
+  "injected_probe_calls": 1,
+  "injected_query_sqlstate": "22012",
+  "outcome_is_characterization_not_acceptance": true,
+  "post_helper_query_is_read_only": true,
+  "post_helper_select_one": false,
+  "post_helper_sqlstate": "25P02",
+  "production_transaction_and_audit_functions_replaced": false,
+  "public_after": {
+    "error_code": null,
+    "error_envelope_exact": false,
+    "error_message_nonempty": false,
+    "error_request_id_matches": null,
+    "header_request_id_matches": false,
+    "json_object": true,
+    "overview_aggregate_fields_present": false,
+    "overview_dependency_fields": {
+      "database_status": null,
+      "embedding_status": null,
+      "pgvector_status": null,
+      "request_quota_status": null
+    },
+    "overview_status": "ok",
+    "public_shape_exact": true,
+    "public_snapshot": {
+      "checks": {
+        "database": "ok",
+        "embedding": "disabled",
+        "pgvector": "ok",
+        "request_quota": "ok"
+      },
+      "mapping": true,
+      "status": "ok"
+    },
+    "status_code": 200
+  },
+  "public_before": {
+    "error_code": null,
+    "error_envelope_exact": false,
+    "error_message_nonempty": false,
+    "error_request_id_matches": null,
+    "header_request_id_matches": false,
+    "json_object": true,
+    "overview_aggregate_fields_present": false,
+    "overview_dependency_fields": {
+      "database_status": null,
+      "embedding_status": null,
+      "pgvector_status": null,
+      "request_quota_status": null
+    },
+    "overview_status": "ok",
+    "public_shape_exact": true,
+    "public_snapshot": {
+      "checks": {
+        "database": "ok",
+        "embedding": "disabled",
+        "pgvector": "ok",
+        "request_quota": "ok"
+      },
+      "mapping": true,
+      "status": "ok"
+    },
+    "status_code": 200
+  },
+  "public_has_no_prior_principal": true,
+  "public_post_select_one": true,
+  "public_used_distinct_logical_session": true,
+  "runtime_versions": {
+    "fastapi": "0.141.1",
+    "httpx": "0.28.1",
+    "psycopg": "3.3.4",
+    "sqlalchemy": "2.0.52",
+    "starlette": "1.4.1"
+  },
+  "savepoint_or_rollback_added": false,
+  "source_sha256_after": {
+    "apps/api/app/api/admin.py": "fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46",
+    "apps/api/app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+    "apps/api/app/api/health.py": "b11c51dd7f38846bca5f5250dd561a80ed0785c16750f190bdb7dcb376e20f43",
+    "apps/api/app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+    "apps/api/app/core/errors.py": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274",
+    "apps/api/app/core/readiness.py": "9b1d71dd447cad646ec3dadce6307f89547e24384007667b59c455a4f664064e",
+    "apps/api/app/core/request_quota.py": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2",
+    "apps/api/app/core/warmup.py": "d5c81d07be8feeb66aa910b0db4f43ec156f71a6265be24d971cc0a4d1961379",
+    "apps/api/app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+    "apps/api/app/schemas/admin.py": "e476c1e01026e6d185626699413ea1eabd06bbde70f5e011b03ccdcfcd30e698",
+    "apps/api/tests/conftest.py": "53436c76018eee9b5ac0638ce6952cbdd2cc8087096dfba912cb94567203e8d6"
+  },
+  "source_sha256_before": {
+    "apps/api/app/api/admin.py": "fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46",
+    "apps/api/app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+    "apps/api/app/api/health.py": "b11c51dd7f38846bca5f5250dd561a80ed0785c16750f190bdb7dcb376e20f43",
+    "apps/api/app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+    "apps/api/app/core/errors.py": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274",
+    "apps/api/app/core/readiness.py": "9b1d71dd447cad646ec3dadce6307f89547e24384007667b59c455a4f664064e",
+    "apps/api/app/core/request_quota.py": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2",
+    "apps/api/app/core/warmup.py": "d5c81d07be8feeb66aa910b0db4f43ec156f71a6265be24d971cc0a4d1961379",
+    "apps/api/app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+    "apps/api/app/schemas/admin.py": "e476c1e01026e6d185626699413ea1eabd06bbde70f5e011b03ccdcfcd30e698",
+    "apps/api/tests/conftest.py": "53436c76018eee9b5ac0638ce6952cbdd2cc8087096dfba912cb94567203e8d6"
+  },
+  "sources_unchanged": true,
+  "sqlalchemy_transaction_still_open": true
+}

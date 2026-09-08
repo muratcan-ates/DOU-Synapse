@@ -545,7 +545,7 @@ class TestPlatformAdmin:
     ) -> None:
         admin_id = await users.create("admin@dogus.edu.tr")
         await _grant_admin(admin_engine, admin_id)
-        monkeypatch.setattr("app.api.admin.warmup_state", lambda: embedding_state)
+        monkeypatch.setattr("app.core.readiness.warmup_state", lambda: embedding_state)
 
         response = await client.get("/admin/overview", headers=users.auth(admin_id))
 

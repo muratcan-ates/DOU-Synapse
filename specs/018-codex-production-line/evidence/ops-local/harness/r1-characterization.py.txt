@@ -1,0 +1,296 @@
+"""R1 measurement, not an assumed HTTP-200 or transaction-recovery assertion.
+
+Stage this file under apps/api/tests in the root-owned guarded, unique-DB runner.
+The repository conftest DROPS its selected database: never run this independently.
+No production transaction, authorization, audit, or exception handler is replaced.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import importlib.metadata
+import json
+import os
+import stat
+from collections.abc import AsyncIterator
+from pathlib import Path
+from typing import Any
+from uuid import uuid4
+
+import pytest
+from httpx import ASGITransport, AsyncClient, Response
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+
+from app.api import admin
+from app.core import readiness
+from app.core.db import dispose_engine
+from tests.conftest import UserFactory
+
+# Collection-time operator acknowledgement precedes autouse database fixtures.
+# It is NOT a DB identity guard; the parent runner must supply its existing guard.
+if os.environ.get("OPS1_R1_ROOT_GUARDED_RUN") != "yes":
+    raise RuntimeError("R1 requires the root-owned isolated database runner")
+
+SOURCE_FILES = (
+    "apps/api/app/core/readiness.py",
+    "apps/api/app/api/admin.py",
+    "apps/api/app/api/deps.py",
+    "apps/api/app/api/health.py",
+    "apps/api/app/core/db.py",
+    "apps/api/app/core/errors.py",
+    "apps/api/app/core/request_quota.py",
+    "apps/api/app/core/warmup.py",
+    "apps/api/app/main.py",
+    "apps/api/app/schemas/admin.py",
+    "apps/api/tests/conftest.py",
+)
+SAFE_STATES = {"22012", "25P02"}
+SAFE_VALUES = {
+    "ok", "degraded", "error", "missing", "unknown", "disabled", "ready",
+    "loading", "warming", "failed", "pending", "not_started", "internal_error",
+    "unauthenticated", "permission_denied",
+}
+
+
+def _sqlstate(error: Exception) -> str:
+    original = getattr(error, "orig", error)
+    value = getattr(original, "sqlstate", None)
+    return value if value in SAFE_STATES else "other_or_unavailable"
+
+
+def _safe_value(value: object) -> str | None:
+    if value is None:
+        return None
+    return value if isinstance(value, str) and value in SAFE_VALUES else "other"
+
+
+def _snapshot(value: object) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        return {"mapping": False}
+    checks = value.get("checks")
+    return {
+        "mapping": True,
+        "status": _safe_value(value.get("status")),
+        "checks": {
+            name: _safe_value(checks.get(name)) if isinstance(checks, dict) else None
+            for name in ("database", "pgvector", "request_quota", "embedding")
+        },
+    }
+
+
+def _http(response: Response, request_id: str) -> dict[str, Any]:
+    try:
+        body = response.json()
+    except ValueError:
+        body = None
+    mapping = isinstance(body, dict)
+    error = body.get("error") if mapping else None
+    is_error = isinstance(error, dict)
+    return {
+        "status_code": response.status_code,
+        "json_object": mapping,
+        "header_request_id_matches": response.headers.get("X-Request-ID") == request_id,
+        "error_envelope_exact": (
+            set(body) == {"error"} and set(error) == {"code", "message", "request_id"}
+            if mapping and is_error else False
+        ),
+        "error_code": _safe_value(error.get("code")) if is_error else None,
+        "error_message_nonempty": (
+            isinstance(error.get("message"), str) and bool(error["message"])
+            if is_error else False
+        ),
+        "error_request_id_matches": error.get("request_id") == request_id if is_error else None,
+        "overview_status": _safe_value(body.get("status")) if mapping else None,
+        "overview_dependency_fields": {
+            name: _safe_value(body.get(name)) if mapping else None
+            for name in (
+                "database_status", "pgvector_status", "request_quota_status", "embedding_status"
+            )
+        },
+        "overview_aggregate_fields_present": (
+            all(key in body for key in ("users_total", "courses_total", "chat_turns_24h"))
+            if mapping else False
+        ),
+        "public_snapshot": _snapshot(body),
+        "public_shape_exact": (
+            set(body) == {"status", "checks"} if mapping else False
+        ),
+    }
+
+
+def _sources(root: Path) -> dict[str, str]:
+    return {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in SOURCE_FILES}
+
+
+def _write_report(directory: Path, name: str, report: dict[str, Any]) -> None:
+    # Parent supplies a newly created, operator-owned private directory. No raw
+    # response, SQL exception, principal, DSN, request ID, or profile is serialized.
+    metadata = directory.lstat()
+    if not stat.S_ISDIR(metadata.st_mode) or metadata.st_uid != os.getuid():
+        raise RuntimeError("R1 report directory must be a real operator-owned directory")
+    if stat.S_IMODE(metadata.st_mode) & 0o077:
+        raise RuntimeError("R1 report directory must be private")
+    descriptor = os.open(
+        directory / name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600
+    )
+    with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+        json.dump(report, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+
+
+@pytest.fixture
+async def r1_http(clean_tables: None) -> AsyncIterator[AsyncClient]:
+    del clean_tables
+    from app.main import create_app
+
+    # False exposes the application's actual 500 envelope if its handler fails;
+    # it only prevents httpx from re-raising that handled ASGI exception.
+    transport = ASGITransport(app=create_app(), raise_app_exceptions=False)
+    try:
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            yield client
+    finally:
+        await dispose_engine()
+
+
+@pytest.mark.parametrize("fault", [False, True], ids=["control", "division-by-zero"])
+async def test_supplied_session_sql_error_characterization(
+    fault: bool,
+    r1_http: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = Path(__file__).resolve().parents[3]
+    before = _sources(root)
+    expected = json.loads(Path(os.environ["OPS1_R1_EXPECTED_SOURCES"]).read_text())
+    assert isinstance(expected, dict) and all(expected.get(k) == v for k, v in before.items())
+    directory = Path(os.environ["OPS1_R1_REPORT_DIRECTORY"])
+    actor = await users.create("r1-synthetic-operator@example.com", "Synthetic Operator")
+    async with admin_engine.begin() as connection:
+        await connection.execute(
+            text("INSERT INTO platform_admins(user_id) VALUES (:actor)"), {"actor": actor}
+        )
+
+    # No embedding/provider activity is needed to isolate this SQL condition.
+    # Quota readiness remains the real independent-control-session SQL probe.
+    monkeypatch.setattr(readiness, "warmup_state", lambda: "disabled")
+    request_id = f"ops1-r1-{uuid4().hex}"
+    headers = {**users.auth(actor), "X-Request-ID": request_id}
+    observed: dict[str, Any] = {
+        "case": "division_by_zero" if fault else "control",
+        "outcome_is_characterization_not_acceptance": True,
+        "source_sha256_before": before,
+        "runtime_versions": {
+            name: importlib.metadata.version(name)
+            for name in ("fastapi", "starlette", "sqlalchemy", "psycopg", "httpx")
+        },
+        "production_transaction_and_audit_functions_replaced": False,
+        "fault_query_is_read_only": True,
+        "post_helper_query_is_read_only": True,
+        "savepoint_or_rollback_added": False,
+    }
+    baseline = await r1_http.get("/health/ready")
+    observed["public_before"] = _http(baseline, "")
+    original_database_checks = readiness._database_checks
+    original_check_readiness = readiness.check_readiness
+    supplied_sessions: list[AsyncSession] = []
+    probe_calls = 0
+
+    async def database_probe(session: AsyncSession) -> dict[str, str]:
+        nonlocal probe_calls
+        probe_calls += 1
+        row = (await session.execute(text(
+            "SELECT current_user = 'dou_app' AS application_role, "
+            "NOT rolsuper AND NOT rolbypassrls AS constrained_role, "
+            "current_setting('row_security') = 'on' AS row_security, "
+            "current_setting('app.current_user_id', true) = :actor AS principal_matches "
+            "FROM pg_catalog.pg_roles WHERE rolname = current_user"
+        ), {"actor": str(actor)})).mappings().one()
+        observed["actual_role"] = {key: bool(value) for key, value in row.items()}
+        try:
+            await session.scalar(text("SELECT 1 / 0" if fault else "SELECT 1"))
+        except Exception as error:
+            observed["injected_query_sqlstate"] = _sqlstate(error)
+            raise
+        observed["injected_query_sqlstate"] = None
+        return await original_database_checks(session)
+
+    async def observe_supplied_session(
+        session: AsyncSession | None = None,
+    ) -> readiness.ReadinessSnapshot:
+        observed["admin_supplied_real_async_session"] = isinstance(session, AsyncSession)
+        if session is not None:
+            supplied_sessions.append(session)
+        result = await original_check_readiness(session)
+        observed["helper_returned"] = _snapshot(result)
+        observed["sqlalchemy_transaction_still_open"] = (
+            session.in_transaction() if session is not None else None
+        )
+        # Diagnostic read only. It neither repairs nor rolls back an aborted
+        # transaction and does not replace the route's ordinary context exit.
+        try:
+            value = await session.scalar(text("SELECT 1")) if session is not None else None
+            observed["post_helper_select_one"] = value == 1
+            observed["post_helper_sqlstate"] = None
+        except Exception as error:
+            observed["post_helper_select_one"] = False
+            observed["post_helper_sqlstate"] = _sqlstate(error)
+        return result
+
+    with monkeypatch.context() as injected:
+        injected.setattr(readiness, "_database_checks", database_probe)
+        injected.setattr(admin, "check_readiness", observe_supplied_session)
+        response = await r1_http.get("/admin/overview", headers=headers)
+    observed["admin_http_after_function_scoped_session_exit"] = _http(response, request_id)
+    observed["injected_probe_calls"] = probe_calls
+
+    # Separate fresh admin-engine read proves visible committed audit state;
+    # it does not borrow, commit, or repair the overview's supplied session.
+    async with admin_engine.connect() as connection:
+        row = (await connection.execute(text(
+            "SELECT count(*) AS records, "
+            "count(*) FILTER (WHERE result = 'allowed') AS allowed, "
+            "count(*) FILTER (WHERE actor_user_id = :actor "
+            "AND action = 'GET /admin/overview') AS actor_and_action_match "
+            "FROM platform_admin_access_audit WHERE request_id = :request_id"
+        ), {"actor": actor, "request_id": request_id})).mappings().one()
+        observed["audit_visible_from_independent_connection"] = {
+            key: int(value) for key, value in row.items()
+        }
+
+    public_sessions: list[AsyncSession] = []
+
+    async def observe_public_session(session: AsyncSession) -> dict[str, str]:
+        public_sessions.append(session)
+        observed["public_post_select_one"] = await session.scalar(text("SELECT 1")) == 1
+        observed["public_has_no_prior_principal"] = not await session.scalar(
+            text("SELECT current_setting('app.current_user_id', true)")
+        )
+        return await original_database_checks(session)
+
+    with monkeypatch.context() as public_probe:
+        public_probe.setattr(readiness, "_database_checks", observe_public_session)
+        after = await r1_http.get("/health/ready")
+    observed["public_after"] = _http(after, "")
+    observed["public_used_distinct_logical_session"] = (
+        len(public_sessions) == len(supplied_sessions) == 1
+        and public_sessions[0] is not supplied_sessions[0]
+    )
+    # Do not require a distinct physical backend: a correctly reset pooled
+    # connection can serve an independent clean logical session.
+    observed["source_sha256_after"] = _sources(root)
+    observed["sources_unchanged"] = observed["source_sha256_after"] == before
+    observed["calibration_valid"] = (
+        probe_calls == 1
+        and observed.get("admin_supplied_real_async_session") is True
+        and all(observed.get("actual_role", {}).values())
+        and len(observed.get("actual_role", {})) == 4
+        and observed.get("injected_query_sqlstate") == ("22012" if fault else None)
+        and observed["sources_unchanged"]
+    )
+    _write_report(directory, "division-by-zero.json" if fault else "control.json", observed)
+    # Only calibration is asserted. Root evaluates HTTP, 25P02, audit durability,
+    # and next-public-session observations; this cannot auto-approve HTTP 200.
+    assert observed["calibration_valid"], "R1 SQL characterization calibration failed"

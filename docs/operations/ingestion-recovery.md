@@ -1,8 +1,10 @@
 # Belge işleyicisinin kesinti ve sürüm geçişi
 
-8 Eylül2026 yerel018 kodu:0026 göçü, sonlu iş sahipliği ve kaynak revizyonu.
-[Gerçek PostgreSQL ve süreç kanıtları](../../specs/018-codex-production-line/evidence/d2-local/README.md)
-ayrı saklanır; yeni hosted ve canlı barındırma kabulü tamamlanmış sayılmaz.
+8 Eylül 2026: 0026 göçü, sonlu iş sahipliği ve kaynak revizyonunun
+[gerçek PostgreSQL ve süreç kanıtları](../../specs/018-codex-production-line/evidence/d2-local/README.md)
+kendi kaynaklarına bağlıdır. `c45e0e7` hosted kabulü geçti; sonraki yerel startup,
+bakım logu ve Compose poller değişiklikleri bu eski CI sonucuyla kabul edilmiş
+sayılmaz. Canlı barındırma ve Docker Compose çalıştırma kabulü ayrıdır.
 
 ## İşleme ve yetki
 
@@ -46,9 +48,17 @@ exactly-once iddia edilmez. CPU/bellek izolasyonu ve barındırma sonlandırma p
 ayrı işletim işidir. Yeni süreç yoksa lease'in bitmesi kendi başına iş başlatmaz.
 
 Bağımsız worker kotanın süresi dolmuş satırlarını ayrı görevde başlangıçta ve
-60 saniyelik beklemelerle batch500 temizler. Başlangıçta gerçek expired/live
-ayrımı doğrulandı; tekrar planlama kontrollü birim testidir. Scale-to-zero dış
-uyanış/takvim ve saklama SLA'sı canlı kurulumla belirlenmelidir.
+60 saniyelik beklemelerle batch 500 temizler. Yeni gerçek `quota-period-02` ölçümü
+başlangıç silmesini 0.544s, ardından eklenen expired satırın yokluğunu 60.181s'de
+gözledi; canlı satır aynı kaldı ve kendi SIGTERM'i0.086s'de kod 0 ile tamamlandı.
+Bu ölçümün kaynak SHA'sı ve sınırları [kota rehberindedir](shared-request-quota.md).
+
+Compose mevcut HTTP worker/drain'i korur; ayrı worker-poller HTTP açmadan
+`python -m app.worker` çalıştırır. Aynı storage ve 0026 claim sözleşmesi kullanılır.
+Worker yapılandırmayı görev oluşturmadan doğrular; geçersiz ayarda içeriksiz hata
+ve çıkış 1 verir. Yerel dev-auth ayarı yalnız bu geliştirme ortamı içindir.
+Scale-to-zero dış uyanış/takvimi ve saklama SLA'sı canlı kurulumla belirlenmelidir;
+Docker Compose bu yerel süreç deneyinde çalıştırılmadı.
 
 ## İlk geçiş ve geri dönüş
 

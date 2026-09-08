@@ -1,0 +1,25 @@
+from pathlib import Path
+import hashlib, json, os, subprocess, time
+
+os.umask(0o077)
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/ops-final-checks-02');out.mkdir(mode=0o700)
+env={k:v for k,v in os.environ.items() if not k.startswith(('PG','TEST_'))}
+env.update(UV_OFFLINE='1',PYTHONDONTWRITEBYTECODE='1',GROQ_API_KEY='',GEMINI_API_KEY='',OPENAI_API_KEY='')
+api=repo/'apps/api';web=repo/'apps/web'
+commands=[
+ ('ruff', [str(api/'.venv/bin/ruff'),'check','--no-cache','app','tests'],api),
+ ('format',[str(api/'.venv/bin/ruff'),'format','--check','--no-cache','app','tests'],api),
+ ('mypy',[str(api/'.venv/bin/mypy'),'--cache-dir',str(out/'mypy-cache'),'app'],api),
+ ('web-unit',['bun','test','lib/'],web),
+ ('web-types',['bun','x','--no-install','tsc','--noEmit','--incremental','false'],web),
+]
+records=[]
+for name,command,cwd in commands:
+ start=time.monotonic();log=out/(name+'.log')
+ with log.open('x') as f:
+  p=subprocess.run(command,cwd=cwd,env=env,stdout=f,stderr=subprocess.STDOUT,timeout=120)
+ row={'name':name,'command':command,'cwd':str(cwd.relative_to(repo)),'exit_code':p.returncode,'seconds':round(time.monotonic()-start,3),'log_sha256':hashlib.sha256(log.read_bytes()).hexdigest()};records.append(row)
+ print(json.dumps(row),flush=True)
+ (out/'result.json').write_text(json.dumps(records,indent=2)+'\n')
+ if p.returncode:raise SystemExit(p.returncode)

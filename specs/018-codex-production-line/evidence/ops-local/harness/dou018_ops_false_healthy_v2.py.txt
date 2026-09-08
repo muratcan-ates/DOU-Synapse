@@ -1,0 +1,29 @@
+"""Controlled false-healthy mutation; only the existing route function code changes."""
+from __future__ import annotations
+import ast,hashlib,inspect
+
+original=None
+code=None
+
+def pytest_sessionstart(session):
+    global original,code
+    from app.api import admin
+    assert hashlib.sha256(open(admin.__file__,'rb').read()).hexdigest()=='fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46'
+    original=admin.get_admin_overview;code=original.__code__
+    tree=ast.parse(inspect.getsource(original))
+    function=tree.body[0];function.decorator_list=[]
+    changed=0
+    for node in ast.walk(function):
+        if isinstance(node,ast.Dict):
+            for index,key in enumerate(node.keys):
+                if isinstance(key,ast.Constant) and key.value=='status':
+                    assert ast.unparse(node.values[index])=="readiness['status']"
+                    node.values[index]=ast.Constant(value='ok');changed+=1
+    assert changed==1
+    ast.fix_missing_locations(tree);scope={}
+    exec(compile(tree,'<controlled-false-healthy-status>','exec'),admin.__dict__,scope)
+    original.__code__=scope[original.__name__].__code__
+
+def pytest_sessionfinish(session,exitstatus):
+    if original is not None:
+        original.__code__=code
