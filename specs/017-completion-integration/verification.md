@@ -23,7 +23,7 @@ Ortam: yerel macOS · PostgreSQL 16 + pgvector · sahte sağlayıcı · izole te
 | Göç kapısının kendi testi | `python3 -m unittest scripts.test_migration_check` | 10 test OK (hem Python 3.9 hem 3.12) |
 | Yönetişim (son commit) | `python3 scripts/ai_sdlc_check.py --base-sha 88a8097 --head-sha <HEAD>` | PASS |
 | Yönetişim (main tabanı) | `--base-sha $(git merge-base origin/main HEAD)` | PASS — bütün-dal dossier'i (017) eklendikten sonra |
-| E2E vaka sayımı | `cd apps/web && ./node_modules/.bin/playwright test --list` | **42 vaka** <!-- docs-check: e2e.tests = 42 --> / 7 dosya (sayım; koşum değil) |
+| E2E vaka sayımı | `cd apps/web && ./node_modules/.bin/playwright test --list` | **42 vaka** <!-- docs-check: tarihsel 42 · 2026-09-08 --> / 7 dosya (sayım; koşum değil) |
 
 ## Bu dilimde yakalanan ve düzeltilen gerçek kusurlar
 

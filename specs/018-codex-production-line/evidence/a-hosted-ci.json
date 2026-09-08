@@ -1,0 +1,46 @@
+{
+  "observed_at": "2026-09-08",
+  "candidate_sha": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+  "pull_request": "https://github.com/muratcan-ates/DOU-Synapse/pull/26",
+  "base_branch": "017-completion-integration",
+  "draft": true,
+  "runs": [
+    {
+      "id": 34196848188,
+      "name": "AI quality",
+      "status": "completed",
+      "conclusion": "success",
+      "event": "pull_request",
+      "head_sha": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34196848188"
+    },
+    {
+      "id": 34196848361,
+      "name": "Agent skills",
+      "status": "completed",
+      "conclusion": "success",
+      "event": "pull_request",
+      "head_sha": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34196848361"
+    },
+    {
+      "id": 34196848181,
+      "name": "Security and dependency review",
+      "status": "completed",
+      "conclusion": "success",
+      "event": "pull_request",
+      "head_sha": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34196848181"
+    },
+    {
+      "id": 34196848147,
+      "name": "CI",
+      "status": "completed",
+      "conclusion": "success",
+      "event": "pull_request",
+      "head_sha": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34196848147"
+    }
+  ],
+  "scope": "A checkpoint only. These runs do not validate later uncommitted security changes."
+}

@@ -1,0 +1,607 @@
+{
+  "schema_version": 1,
+  "candidate_sha": "SELF",
+  "purpose": "Traceable intermediate slice measurements; their exact source hashes and limitations are retained. Final combined acceptance is in the main 026 report.",
+  "slice_reports": {
+    "s1-s7-final-report.json": {
+      "created_utc": "2026-09-08T07:18:19.883741+00:00",
+      "base_commit": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+      "worktree": "/Users/muratates/code/dou-synapse-018-codex-production-line",
+      "source_bundle_sha256": "7d528eb2387448fe52c4c84d3863e821cc2110e4a4df29c7c1ded543c543f604",
+      "source_files_sha256": {
+        "apps/api/app/api/deps.py": "579735348ab38359e3c45cd518c3fd9a0a4b9fa6687f3950b87174f52730913f",
+        "apps/api/app/api/documents.py": "acb09c77521f2d6f08aaa65c76a7295217edf409f7010cfc908544f8fe9af708",
+        "apps/api/app/core/logging.py": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e",
+        "apps/api/app/core/request_body_limit.py": "0b2fa2dc514366ee2a343670effa8568475ebb1c2e2ec3721f757f1d8f65338b",
+        "apps/api/app/core/upload_cleanup.py": "1d83469e2a83e39dc75f8f000891c73ac0066cefafe8806192b7b5f9e8aa6639",
+        "apps/api/app/main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88",
+        "apps/api/app/modules/ingestion/storage.py": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1",
+        "apps/api/tests/test_request_body_limit.py": "31e16a450437eaecb3b887131583068d928fa5e196bfbc036dba47ae2a5f027a",
+        "apps/api/tests/test_storage_log_privacy.py": "b36a14dc3dfc8ecffa212528b3c6fdb9806b47b4d1737cf124f0e1b43d6cb530",
+        "apps/api/tests/test_upload_safety.py": "0a8ea59d98279c97b0a00360baddbdfba5bf9e99e2af9af94fe758facfaa8299"
+      },
+      "reference_tests_sha256": {
+        "apps/api/tests/test_logging_redaction.py": "74a7a935e66f728e4649839d3915ea1e6c5d581bba7d7418f7f9ae2c334b2502",
+        "apps/api/tests/test_storage.py": "d06bbfc8e9369ae9a7031306cb564fcd8cedb5e04e3b623b1d3ef376b505abf1"
+      },
+      "results": {
+        "focused_no_db": "78 passed, 4 deselected",
+        "real_api_db": "4 passed, 31 deselected; isolated dou018_upload; teardown completed",
+        "ruff": "All checks passed!",
+        "mypy": "Success: no issues found in 7 source files",
+        "negative_controls": {
+          "upload_baseline": "4 failed (unbounded read and pre-validation storage writes)",
+          "session_baseline": "2 failed (missing rollback cleanup)",
+          "body_boundary_bypass": "3 failed (application/parser invoked before cap)",
+          "pre_save_ownership_mutant": "2 failed (existing and partial object deleted)",
+          "storage_baseline": "18 failed, 6 passed (private URL/transport cause logging)",
+          "logging_baseline": "13 failed, 6 passed (HTTP client INFO/DEBUG metadata)"
+        }
+      },
+      "artifact_sha256": {
+        "s1-s7-focused-tests.log": "b1a608588e4edd8af3bd51946e49342e992ba1b1db5bc67c03e44351a5baa052",
+        "s1-real-tests.log": "8106ecba19ceb3d2268fb10c5e00a735636b5a94b8f26585d59df8eb8a1ce0a6",
+        "s1-s7-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "s1-s7-mypy.log": "050c52a2b0c61e8b681ef5c485e0bc03340b8d55148e0acef27d744c8be42033",
+        "s7-before-canary.json": "ea7772a8661041512d04c7f60ddf0b175c37ea7437626189914a494027c91a2a",
+        "s1-negative-upload.log": "f8788d8332830c424515bc65a98bd9c8efc4ba68109cef321a20012df6ad4a9c",
+        "s1-negative-cleanup.log": "94746bda5c01bbff7bb97f74cedb41ae7e7f1d5140c50f23e45c876e6902ae86",
+        "s1-negative-body.log": "fe4a9dfabc229c2aba915f9ecea0f351da84b854ba13d48f024b7a1f2d03651d",
+        "s1-negative-ownership.log": "8d118c216e2ad68e055655c511f6944d808fa5128c03191cec1d8b3485a07a56",
+        "s1-negative-storage_logs.log": "25321fd90b8d278f4a451a2d2746290d4dba157e3d64f5572900050d27f268b0",
+        "s1-negative-transport_logs.log": "2ac53f88c0c01df3f3288a0d65ccfede557867e714c94bda2838fe6455e7964e"
+      },
+      "negative_control_tools_sha256": {
+        "/private/tmp/dou018_s1_negative_plugin.py": "5cadfc90d860b74922522458802c363cb4a60d41ac441e5c399e3556dfc5049f",
+        "/private/tmp/dou018_s1_negative_runner.py": "9727a86afaf5d01c5fef077d879b6f48944b3ccc109b9285837e09ce5cc85e54"
+      },
+      "limits": [
+        "Per-request cap; bounded spool uses temporary disk and is not an aggregate concurrency/rate limit.",
+        "Only successful storage.save objects become cleanup-owned. Rejected/ambiguous writes, canceled saves, unknown COMMIT outcomes and failed cleanup retain objects with non-content reconciliation signal.",
+        "Reconciliation signal is not a durable queue; process crashes require external reconciliation. No distributed storage/database atomicity claimed.",
+        "Storage metadata URL/bucket/object leak was demonstrated; synthetic credentials and file body did not leak in the baseline HTTP status fixture. Transport error message can contain sensitive text; S7 masks the storage exception chain.",
+        "No claim of universal exception text sanitization, KVKK/GDPR legal certification, live Supabase validation, production readiness, or remote CI results."
+      ]
+    },
+    "s1-lifecycle-final-report.json": {
+      "scope": "S lifecycle follow-up: interrupted cleanup signal and post-COMMIT physical document deletion",
+      "files": {
+        "apps/api/app/core/upload_cleanup.py": "f9f353aaffd5aac26389856cabce6d2a35d9aa7a2f1ecd7761a09a750efe94c6",
+        "apps/api/app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+        "apps/api/app/api/documents.py": "cd1d217e187bb52c26e3d434e7b9bf09d0d1253c74d1ce5aefb4b5c1b6f735ea",
+        "apps/api/tests/test_upload_safety.py": "2eca6c312fddd251038934b55ea87ca99e557d6128bb79312a7a35987fd5247f"
+      },
+      "checks": [
+        {
+          "name": "counterfactual-cancel",
+          "exit_code": 1,
+          "expected_exit": 1,
+          "log": "/private/tmp/dou018-evidence/s1-lifecycle-counterfactual-cancel.log",
+          "command": [
+            ".venv/bin/python",
+            "-m",
+            "pytest",
+            "--noconftest",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "dou018_s1_old_cancel",
+            "tests/test_upload_safety.py::test_cleanup_cancellation_reports_all_unfinished_objects_and_preserves_cancel[upload]",
+            "-q"
+          ]
+        },
+        {
+          "name": "counterfactual-delete",
+          "exit_code": 1,
+          "expected_exit": 1,
+          "log": "/private/tmp/dou018-evidence/s1-lifecycle-counterfactual-delete.log",
+          "command": [
+            ".venv/bin/python",
+            "-m",
+            "pytest",
+            "--noconftest",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "dou018_s1_old_delete",
+            "tests/test_upload_safety.py::test_document_delete_waits_for_confirmed_commit",
+            "-q"
+          ]
+        },
+        {
+          "name": "focused",
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-lifecycle-focused-final.log",
+          "command": [
+            ".venv/bin/python",
+            "-m",
+            "pytest",
+            "--noconftest",
+            "-p",
+            "no:cacheprovider",
+            "tests/test_upload_safety.py",
+            "-k",
+            "not real_",
+            "-q"
+          ]
+        },
+        {
+          "name": "ruff",
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-lifecycle-ruff-final.log",
+          "command": [
+            "apps/api/.venv/bin/ruff",
+            "check",
+            "--no-cache",
+            "apps/api/app/core/upload_cleanup.py",
+            "apps/api/app/api/deps.py",
+            "apps/api/app/api/documents.py",
+            "apps/api/tests/test_upload_safety.py"
+          ]
+        },
+        {
+          "name": "format",
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-lifecycle-format-final.log",
+          "command": [
+            "apps/api/.venv/bin/ruff",
+            "format",
+            "--no-cache",
+            "--check",
+            "apps/api/app/core/upload_cleanup.py",
+            "apps/api/app/api/deps.py",
+            "apps/api/app/api/documents.py",
+            "apps/api/tests/test_upload_safety.py"
+          ]
+        },
+        {
+          "name": "mypy",
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-lifecycle-mypy-final.log",
+          "command": [
+            ".venv/bin/mypy",
+            "--cache-dir",
+            "/private/tmp/dou018-mypy-lifecycle",
+            "app/core/upload_cleanup.py",
+            "app/api/deps.py",
+            "app/api/documents.py"
+          ]
+        },
+        {
+          "name": "diff",
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-lifecycle-diff-final.log",
+          "command": [
+            "git",
+            "diff",
+            "--check",
+            "--",
+            "apps/api/app/core/upload_cleanup.py",
+            "apps/api/app/api/deps.py",
+            "apps/api/app/api/documents.py",
+            "apps/api/tests/test_upload_safety.py"
+          ]
+        }
+      ],
+      "db_tests": {
+        "status": "not_run_by_subagent",
+        "reason": "Automatic approval review rejected DB-mutating test invocation; parent owns verification. No DB test process started.",
+        "target": "tests/test_upload_safety.py::test_real_document_deletion_transaction_boundary",
+        "cases": [
+          "success",
+          "deferred_rejection",
+          "cleanup_failure"
+        ],
+        "read_only_check": "dou018_upload absent in pg_database on 127.0.0.1:55448"
+      },
+      "limits": [
+        "In-memory compensation records are not a durable queue.",
+        "Post-commit storage failure returns committed DB deletion result and emits reconciliation count.",
+        "Source changes never contain mutants; counterfactuals used subprocess function code only."
+      ],
+      "evidence_sha256": {
+        "s1-lifecycle-counterfactual-cancel.log": "37a110d2488e050ea6f48010d20e77fc4652caf1acb237e1c5c3012681c5a9e0",
+        "s1-lifecycle-counterfactual-delete.log": "e235763e835cfa9e1d4a6e0b53e0a204e6fa2d7924ff4663e81debfb7963f462",
+        "s1-lifecycle-focused-final.log": "0e5d0241c270e105f159d30fea0f7d59508fc2d3fa6c3741e5aa1209c84820f2",
+        "s1-lifecycle-ruff-final.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "s1-lifecycle-format-final.log": "177f260a5645724013185e4b140c7045cc39e56c0c97b120f5cb23599f85f0de",
+        "s1-lifecycle-mypy-final.log": "8228fcc5ce46d42d01caf3cd941f4e9c5f2bcc372bb5b147a2f0572d2dd675a8",
+        "s1-lifecycle-diff-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "s1-empty-body-final-report.json": {
+      "files": {
+        "apps/api/app/core/request_body_limit.py": "a52572ae4bb4ed02d10211f184ecce3a305ac15be27842adc3ebeb83e5d82712",
+        "apps/api/tests/test_request_body_limit.py": "77f6a968a4d546544adcfdbf6ffeff2db77bd0f45ffc5ddb4f8e5ce3d9749d2d"
+      },
+      "checks": [
+        {
+          "name": "counterfactual",
+          "command": [
+            ".venv/bin/python",
+            "-m",
+            "pytest",
+            "--noconftest",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "dou018_old_empty_body",
+            "tests/test_request_body_limit.py::test_verified_empty_get_never_uses_thread_io",
+            "-q"
+          ],
+          "exit_code": 1,
+          "expected_exit": 1,
+          "log": "/private/tmp/dou018-evidence/s1-empty-body-counterfactual.log"
+        },
+        {
+          "name": "unit",
+          "command": [
+            ".venv/bin/python",
+            "-m",
+            "pytest",
+            "--noconftest",
+            "-p",
+            "no:cacheprovider",
+            "tests/test_request_body_limit.py",
+            "-k",
+            "not real_app_early_rejection_keeps_cors_security_and_request_id",
+            "-q"
+          ],
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-empty-body-unit.log"
+        },
+        {
+          "name": "ruff",
+          "command": [
+            "apps/api/.venv/bin/ruff",
+            "check",
+            "--no-cache",
+            "apps/api/app/core/request_body_limit.py",
+            "apps/api/tests/test_request_body_limit.py"
+          ],
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-empty-body-ruff.log"
+        },
+        {
+          "name": "format",
+          "command": [
+            "apps/api/.venv/bin/ruff",
+            "format",
+            "--no-cache",
+            "--check",
+            "apps/api/app/core/request_body_limit.py",
+            "apps/api/tests/test_request_body_limit.py"
+          ],
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-empty-body-format.log"
+        },
+        {
+          "name": "mypy",
+          "command": [
+            ".venv/bin/mypy",
+            "--cache-dir",
+            "/private/tmp/dou018-mypy-empty-body",
+            "app/core/request_body_limit.py"
+          ],
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-empty-body-mypy.log"
+        },
+        {
+          "name": "diff",
+          "command": [
+            "git",
+            "diff",
+            "--check",
+            "--",
+            "apps/api/app/core/request_body_limit.py",
+            "apps/api/tests/test_request_body_limit.py"
+          ],
+          "exit_code": 0,
+          "expected_exit": 0,
+          "log": "/private/tmp/dou018-evidence/s1-empty-body-diff.log"
+        }
+      ],
+      "real_regression": "Parent reruns existing test_event_loop_blocking.py test; timing threshold unchanged; no DB invocation in this subtask.",
+      "evidence_sha256": {
+        "s1-empty-body-counterfactual.log": "5c3ed3a07adfdaf9a4041822e1c5c22b96dc34c7471a03798f017105f6880098",
+        "s1-empty-body-unit.log": "2a06fdd2829376eb971fb2fe699f216c4a576be93db671843c5630d66c574ffc",
+        "s1-empty-body-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "s1-empty-body-format.log": "3bc53bf3e981a98a34a852e175bf9b77af841edea74fca595d9aedcbaf9a4938",
+        "s1-empty-body-mypy.log": "5d4b6d285b77932e3d08212c3b4974d0a803f98ec60408ac6ccf6a063fa6c19e",
+        "s1-empty-body-diff.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "s5-s6-summary.json": {
+      "baseline": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+      "files": {
+        "apps/api/app/core/config.py": "cac48b6458995bf16f1ea3b6467d565366e5033d45f2e8b557beb035db6f2347",
+        "apps/api/app/core/security.py": "c45d15504163132d08f93f998b941b86965e07e8eb71050287ffdd92ebabfe79",
+        "apps/api/tests/test_config.py": "56a0df4dc174091ffe6de0665f483bfee114967a1724da448e0244696c76b933",
+        "apps/api/tests/test_security.py": "4ae1ab1e72ac836c589eddfa3c7a93fc763a5b5f7a3291b23df1840360c9d6d6",
+        "apps/api/tests/test_storage.py": "d06bbfc8e9369ae9a7031306cb564fcd8cedb5e04e3b623b1d3ef376b505abf1",
+        "apps/api/tests/test_generation.py": "1a29b366aeab541fca912026fb59b4585f4e1f57bdae32e8eecf999137e23f6f",
+        "apps/api/tests/test_provider_readiness.py": "cf720511d6a7d6c2f548d91a2e9a0892445b54c89bd5c29b8399b481cf063d70",
+        "apps/web/lib/security-headers.ts": "5fef135ffbcee807cc833582b02735cada79bb0c2370b207da296cc6a3bc39e0",
+        "apps/web/lib/security-headers.test.ts": "f8594b510c3ee9e6a07f15896d435abb9ed1203b92e8dd3734eddf65d20b3b04"
+      },
+      "checks": [
+        {
+          "name": "s5-api-final",
+          "command": [
+            ".venv/bin/python",
+            "-m",
+            "pytest",
+            "--noconftest",
+            "-p",
+            "no:cacheprovider",
+            "tests/test_config.py",
+            "tests/test_security.py",
+            "tests/test_storage.py::test_production_yerel_diski_reddeder",
+            "tests/test_generation.py::TestSaglayiciSecimi::test_uretimde_sahte_saglayici_ayarlari_reddedilir",
+            "tests/test_provider_readiness.py::test_unsafe_eval_configuration_is_rejected",
+            "-q"
+          ],
+          "exit_code": 0,
+          "log": "/private/tmp/dou018-evidence/s5-api-final.log"
+        },
+        {
+          "name": "s6-csp-final",
+          "command": [
+            "bun",
+            "test",
+            "lib/security-headers.test.ts"
+          ],
+          "exit_code": 0,
+          "log": "/private/tmp/dou018-evidence/s6-csp-final.log"
+        },
+        {
+          "name": "s5-python-lint",
+          "command": [
+            "apps/api/.venv/bin/ruff",
+            "check",
+            "--no-cache",
+            "apps/api/app/core/config.py",
+            "apps/api/app/core/security.py",
+            "apps/api/tests/test_config.py",
+            "apps/api/tests/test_security.py",
+            "apps/api/tests/test_storage.py",
+            "apps/api/tests/test_generation.py",
+            "apps/api/tests/test_provider_readiness.py"
+          ],
+          "exit_code": 0,
+          "log": "/private/tmp/dou018-evidence/s5-python-lint.log"
+        },
+        {
+          "name": "s6-typecheck",
+          "command": [
+            "node_modules/.bin/tsc",
+            "--noEmit",
+            "--incremental",
+            "false"
+          ],
+          "exit_code": 0,
+          "log": "/private/tmp/dou018-evidence/s6-typecheck.log"
+        },
+        {
+          "name": "s5-s6-diff-check",
+          "command": [
+            "git",
+            "diff",
+            "--check",
+            "--",
+            "apps/api/app/core/config.py",
+            "apps/api/app/core/security.py",
+            "apps/api/tests/test_config.py",
+            "apps/api/tests/test_security.py",
+            "apps/api/tests/test_storage.py",
+            "apps/api/tests/test_generation.py",
+            "apps/api/tests/test_provider_readiness.py",
+            "apps/web/lib/security-headers.ts",
+            "apps/web/lib/security-headers.test.ts"
+          ],
+          "exit_code": 0,
+          "log": "/private/tmp/dou018-evidence/s5-s6-diff-check.log"
+        }
+      ],
+      "scope": "Offline unit, configuration and type checks; no DB/live-provider/deployment certification.",
+      "counterfactuals": [
+        {
+          "change": "production issuer startup validation",
+          "method": "original baseline method code in subprocess only; current Settings schema still calls that function",
+          "oracle": "test_production_requires_explicit_https_auth_issuer",
+          "exit_code": 1,
+          "failed": 21,
+          "reason": "DID NOT RAISE ValidationError",
+          "log": "s5-counterfactual-config.log"
+        },
+        {
+          "change": "production issuer consumer defense",
+          "method": "original baseline _expected_issuer code in subprocess only",
+          "oracle": "test_production_consumer_rejects_issuer_removed_after_validation",
+          "exit_code": 1,
+          "failed": 3,
+          "reason": "DID NOT RAISE AuthenticationError",
+          "log": "s5-counterfactual-consumer.log"
+        },
+        {
+          "change": "configured Supabase CSP and URL boundary",
+          "method": "original baseline module with same current test file in isolated temporary directory",
+          "oracle": "security-headers.test.ts",
+          "exit_code": 1,
+          "passed": 14,
+          "failed": 43,
+          "reason": "missing expected Supabase origin or missing URL rejection",
+          "log": "s6-counterfactual-csp.log"
+        }
+      ],
+      "source_files_unchanged_by_counterfactuals": true,
+      "final_tests_rerun_after_counterfactuals": true,
+      "evidence_sha256": {
+        "s5-counterfactual-consumer.log": "40b07eb005d28747bfe514fa6aacb58a0a14ec5439e0cffba7a7dd87a93efcc0",
+        "s6-csp-final.log": "bba6eb1071a7144cd8e4631ff039992bdee6497085801e80a6e7907d31d03104",
+        "s5-api-final.log": "7ac699a67f22d506af930f867f5464f350303872ff09bcd5112b6999ee830249",
+        "s6-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "s6-counterfactual-csp.log": "5582e93fed50c4ff8c3c36bf10ea9d2de210861f3e7e078b54b2dd2fa85e785b",
+        "s5-api-focused.log": "7ac699a67f22d506af930f867f5464f350303872ff09bcd5112b6999ee830249",
+        "s5-counterfactual-config.log": "479bd93502d14eb047efbede33a0e4349a3a0a68c7a3b0fd0f080cbf7e155a3a",
+        "s5-python-lint.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+        "s6-csp-unit.log": "cc870e978d0fd11c37f4960ec04c61b7e6ac6470c94f99b3ec2dff10737453b8",
+        "s5-s6-diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "s3-copy-contract-summary.json": {
+      "base_commit": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+      "scope": "S3: honest account removal wording and export v2 TypeScript contract; no deletion/auth/authorization behavior changes",
+      "wire_compatibility": "AccountAnonymization and anonymized wire field preserved; not a claim of complete anonymization",
+      "tests": {
+        "privacy_unit": "4 passed, 0 failed, 13 expectations",
+        "typecheck": "tsc --noEmit exit 0",
+        "api_ruff": "ruff check --no-cache exit 0",
+        "diff_check": "pass"
+      },
+      "pending": "Full build, browser desktop/375px light/dark and combined S2 auth failure flows are reserved for root integration verification; not claimed run in S3 lane.",
+      "auth_coordination": "Exit failure text makes no promise that private account page remains mounted; S2 owns unmount/identity transition.",
+      "changed_files": {
+        "apps/web/app/account/page.tsx": "2116c74c77f68fd8a767571ccd91dc223a87fbc99ee19540abeff85eed4d4484",
+        "apps/web/app/profile/page.tsx": "316d3a81b4c327ba56f6a4be814ef17482f169e10976b4cab7dc1d52db78c582",
+        "apps/web/lib/privacy.ts": "d772fd9630c68c70cac5577b8720277574b190b1efcf73ab65d1b90feac22899",
+        "apps/web/lib/privacy.test.ts": "7f7ad9f60dd39208f340ccc4ae6d182b1090a20400fc812944ad3d8efab88ffe",
+        "apps/api/app/api/privacy.py": "3e05df0d6ac2887ce145e28bd695481dadd1111863adb8333de238f91fa7a9b4"
+      },
+      "limitations": [
+        "Legacy DELETE/me repeated-request error and Python class/function names still use anonymization wording; assigned API edit scope was success.message only.",
+        "No live provider, storage, legal compliance or deletion certification inferred."
+      ]
+    },
+    "s2-e2e-repair-result.json": {
+      "source_manifest": "/private/tmp/dou018-evidence/s2-e2e-repair-source-sha256.json",
+      "source_manifest_sha256": "6df3431f4208473a2499019b930e41b104785e95a14c962bf28a4a6bca7bfbc4",
+      "changed_since_negative_control_manifest": [
+        "apps/web/e2e/exam-cross-tab-privacy.spec.ts"
+      ],
+      "unit_tests": {
+        "result": "pass",
+        "tests": 122,
+        "assertions": 299,
+        "log": "/private/tmp/dou018-evidence/s2-e2e-repair-unit.log"
+      },
+      "tsc": {
+        "result": "pass",
+        "incremental": false,
+        "log": "/private/tmp/dou018-evidence/s2-e2e-repair-tsc.log"
+      },
+      "diff_check": "pass",
+      "e2e": "not-rerun; root coordinates build and 50-test E2E run",
+      "fixed_files": [
+        "apps/web/e2e/exam-cross-tab-privacy.spec.ts",
+        "apps/web/app/courses/[courseId]/questions/page.tsx",
+        "apps/web/e2e/question-delete-unblocks-document.spec.ts"
+      ],
+      "diagnosis": [
+        "Source E2E alert selector matched both the actual exam-denial paragraph and Next route announcer. Filter now requires the exam denial text, with authorization, stale response, and restore assertions preserved.",
+        "Question deletion success notice was hidden after the final question disappeared because QuestionDetail unmounted. Empty pool now renders the existing notice as role=status; E2E waits for the empty pool before asserting the notice."
+      ]
+    },
+    "s2-e2e-repair-source-sha256.json": {
+      "apps/web/components/app-shell.tsx": "9d04a11f0f2a535e1a298be1649c290c94cdc576fc54600ab8590970394a0304",
+      "apps/web/lib/api.ts": "cb1575a741380402d320d2be93b02d89f034c850433d18e5b63575673a5f1942",
+      "apps/web/lib/auth-events.ts": "1c92d2ca94240c561dfc591d83d539eeea2f26c794d8129473e439b6fea478aa",
+      "apps/web/lib/auth-events.test.ts": "f98d8f54b4f5a3ab8f1befbb8a27253fdb756ec817991938fedaa1d6cf49799e",
+      "apps/web/lib/session.ts": "9d09b20db610246b534d5232d838d17f5610ccf1a71ce37f74e838381a33fe0d",
+      "apps/web/lib/use-chat-turn.ts": "ca1917d261011e700b9c55f549902e2586b1195a6bfa3b01a8f4f25af91a2c69",
+      "apps/web/lib/use-chat-turn.test.ts": "0f29ef869c1b3ad096718cdb1b6579640deb1978bad50a164a9f0aa06894fca9",
+      "apps/web/lib/use-reverse-history.ts": "1d2ba2078cf2fe71add9cfe70fd487eccedfebaf4505817d8b5856b2b06f51bb",
+      "apps/web/lib/use-reverse-history.test.ts": "4df9f212050d85a1bb7066c168453642302a9f77d36c100269e19b388f19f3b7",
+      "apps/web/e2e/privacy-session-guards.spec.ts": "23d4501099bf10310cf48d725cf0b670f0393fa06c597002bd931767e9ff3e15",
+      "apps/web/lib/chat-availability.ts": "9c43a460ddf5f945e6281394b952b7f9f9acdb36afa0b7ca07e11c896aa695a6",
+      "apps/web/lib/chat-availability.test.ts": "5accf9aa9447190acf66f178a0b1569449c17632683cc0a78a81e9f45d31701c",
+      "apps/web/app/courses/[courseId]/sources/[chunkId]/page.tsx": "d29f40261e1c6e4db549a1130579e525821a93ec08bb9bd5a47f46cc689d8fc4",
+      "apps/web/e2e/exam-cross-tab-privacy.spec.ts": "d69cdc4becb4b31cdb5f4339b1942498529c42f30f9d768e976c25cf4bbcc95f",
+      "apps/web/app/courses/[courseId]/questions/page.tsx": "8e6fc00df9a4eda84b1f5b1990d99f4b86707cb8d46efe9ad7d106538bb45c55",
+      "apps/web/e2e/question-delete-unblocks-document.spec.ts": "0dfa1a0a3306f0740b6795f9e7c63b2eff6ff3f12955581e33188b0eb0d3c0b2"
+    }
+  },
+  "browser_negative_controls": [
+    {
+      "case": "auth-await-epoch-removed",
+      "exit_code": 1,
+      "tail": [
+        "",
+        " 6 pass",
+        " 2 fail",
+        " 22 expect() calls",
+        "Ran 8 tests across 1 file. [35.00ms]"
+      ]
+    },
+    {
+      "case": "cross-tab-exam-invalidation-removed",
+      "exit_code": 1,
+      "tail": [
+        "",
+        " 10 pass",
+        " 1 fail",
+        " 42 expect() calls",
+        "Ran 11 tests across 1 file. [31.00ms]"
+      ]
+    },
+    {
+      "case": "history-epoch-removed",
+      "exit_code": 1,
+      "tail": [
+        "",
+        " 9 pass",
+        " 4 fail",
+        " 32 expect() calls",
+        "Ran 13 tests across 1 file. [34.00ms]"
+      ]
+    },
+    {
+      "case": "chat-completion-epoch-removed",
+      "exit_code": 1,
+      "tail": [
+        "",
+        " 6 pass",
+        " 5 fail",
+        " 24 expect() calls",
+        "Ran 11 tests across 1 file. [32.00ms]"
+      ]
+    },
+    {
+      "case": "draft-cleanup-removed",
+      "exit_code": 1,
+      "tail": [
+        "",
+        " 7 pass",
+        " 1 fail",
+        " 17 expect() calls",
+        "Ran 8 tests across 1 file. [28.00ms]"
+      ]
+    }
+  ],
+  "browser_negative_control_source_sha256": {
+    "apps/web/components/app-shell.tsx": "9d04a11f0f2a535e1a298be1649c290c94cdc576fc54600ab8590970394a0304",
+    "apps/web/lib/api.ts": "cb1575a741380402d320d2be93b02d89f034c850433d18e5b63575673a5f1942",
+    "apps/web/lib/auth-events.ts": "1c92d2ca94240c561dfc591d83d539eeea2f26c794d8129473e439b6fea478aa",
+    "apps/web/lib/auth-events.test.ts": "f98d8f54b4f5a3ab8f1befbb8a27253fdb756ec817991938fedaa1d6cf49799e",
+    "apps/web/lib/session.ts": "9d09b20db610246b534d5232d838d17f5610ccf1a71ce37f74e838381a33fe0d",
+    "apps/web/lib/use-chat-turn.ts": "ca1917d261011e700b9c55f549902e2586b1195a6bfa3b01a8f4f25af91a2c69",
+    "apps/web/lib/use-chat-turn.test.ts": "0f29ef869c1b3ad096718cdb1b6579640deb1978bad50a164a9f0aa06894fca9",
+    "apps/web/lib/use-reverse-history.ts": "1d2ba2078cf2fe71add9cfe70fd487eccedfebaf4505817d8b5856b2b06f51bb",
+    "apps/web/lib/use-reverse-history.test.ts": "4df9f212050d85a1bb7066c168453642302a9f77d36c100269e19b388f19f3b7",
+    "apps/web/e2e/privacy-session-guards.spec.ts": "23d4501099bf10310cf48d725cf0b670f0393fa06c597002bd931767e9ff3e15",
+    "apps/web/lib/chat-availability.ts": "9c43a460ddf5f945e6281394b952b7f9f9acdb36afa0b7ca07e11c896aa695a6",
+    "apps/web/lib/chat-availability.test.ts": "5accf9aa9447190acf66f178a0b1569449c17632683cc0a78a81e9f45d31701c",
+    "apps/web/app/courses/[courseId]/sources/[chunkId]/page.tsx": "d29f40261e1c6e4db549a1130579e525821a93ec08bb9bd5a47f46cc689d8fc4",
+    "apps/web/e2e/exam-cross-tab-privacy.spec.ts": "b6f1ef5d61e7cce9bd047ef820e0ddbbdeaf726ecb6629b0f0c847363f45985b"
+  },
+  "note": "Earlier source hashes differ where final review added post-COMMIT cleanup or empty-body handling, or import formatting. Those earlier reports do not claim the later full candidate was measured at that time."
+}

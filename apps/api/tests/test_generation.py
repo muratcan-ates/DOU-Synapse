@@ -252,6 +252,7 @@ class TestSaglayiciSecimi:
         with pytest.raises(ValueError, match="LLM_FAKE_PROVIDER"):
             Settings(
                 environment="production",
+                jwt_issuer="https://issuer-test.example.invalid/auth/v1",
                 supabase_jwt_secret="x",
                 dev_auth_enabled=False,
                 llm_fake_provider=True,

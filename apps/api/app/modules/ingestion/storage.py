@@ -20,6 +20,17 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 
+def _log_storage_failure(operation: str, error: httpx.HTTPError) -> None:
+    # Exception metni/traceback'i URL, nesne anahtarı veya yanıt gövdesi taşıyabilir.
+    context: dict[str, str | int] = {
+        "event": "storage_operation_failed",
+        "operation": operation,
+    }
+    if isinstance(error, httpx.HTTPStatusError):
+        context["status_code"] = error.response.status_code
+    logger.error("Belge depolama işlemi başarısız", extra={"context": context})
+
+
 class DocumentStorage(Protocol):
     async def save(self, key: str, content: bytes) -> None: ...
 
@@ -123,10 +134,10 @@ class SupabaseStorage:
                 )
             response.raise_for_status()
         except (httpx.HTTPError, httpx.TimeoutException) as exc:
-            logger.exception("Supabase Storage yazma hatası", exc_info=exc)
+            _log_storage_failure("save", exc)
             raise StorageUnavailableError(
                 "Belge deposuna şu anda erişilemiyor. Lütfen yeniden deneyin."
-            ) from exc
+            ) from None
 
     async def load(self, key: str) -> bytes:
         try:
@@ -139,10 +150,10 @@ class SupabaseStorage:
         except NotFoundError:
             raise
         except (httpx.HTTPError, httpx.TimeoutException) as exc:
-            logger.exception("Supabase Storage okuma hatası", exc_info=exc)
+            _log_storage_failure("load", exc)
             raise StorageUnavailableError(
                 "Belge deposuna şu anda erişilemiyor. Lütfen yeniden deneyin."
-            ) from exc
+            ) from None
 
     async def delete(self, key: str) -> None:
         try:
@@ -159,10 +170,10 @@ class SupabaseStorage:
                 return
             response.raise_for_status()
         except (httpx.HTTPError, httpx.TimeoutException) as exc:
-            logger.exception("Supabase Storage silme hatası", exc_info=exc)
+            _log_storage_failure("delete", exc)
             raise StorageUnavailableError(
                 "Belge deposuna şu anda erişilemiyor. Lütfen yeniden deneyin."
-            ) from exc
+            ) from None
 
 
 _storage: DocumentStorage | None = None

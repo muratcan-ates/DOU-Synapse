@@ -27,13 +27,14 @@
  * sınayabilsin.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   buildChatRequest,
   canSubmitDraft,
   isSocraticFollowUp,
   type ChatUiMode,
 } from "@/lib/chat";
+import { subscribeAuthChanges } from "@/lib/auth-events";
 import { describeError, type ErrorInfo } from "@/lib/errors";
 import type { ChatAnswer, ChatRequest } from "@/lib/types";
 import { createSubmitGate } from "@/lib/use-submit";
@@ -80,6 +81,8 @@ export interface ChatTurnHandle<C extends ChatTurnContext> {
   submit(context: C): Promise<void>;
   /** Uçuştaki turu geçersizle ve turun ekran izlerini (pending/busy/hata) sil. */
   invalidate(): void;
+  /** Unmount: geç devamları kapatır, ayrılmış bileşene state yazmaz. */
+  cancel(): void;
 }
 
 export function createChatTurn<C extends ChatTurnContext>(
@@ -135,6 +138,10 @@ export function createChatTurn<C extends ChatTurnContext>(
     });
 
   let gate = makeGate(0);
+  const cancel = () => {
+    epoch += 1;
+    gate = makeGate(epoch);
+  };
 
   return {
     submit(context: C): Promise<void> {
@@ -149,9 +156,9 @@ export function createChatTurn<C extends ChatTurnContext>(
       }
       return gate(context);
     },
+    cancel,
     invalidate() {
-      epoch += 1;
-      gate = makeGate(epoch);
+      cancel();
       ports.setPending(null);
       ports.setSending(false);
       ports.setSendError(null);
@@ -219,6 +226,17 @@ export function useChatTurn<C extends ChatTurnContext = ChatTurnContext>(
     });
   }
   const turn = turnRef.current;
+
+  useEffect(() => {
+    const stopAuth = subscribeAuthChanges(() => {
+      turn.invalidate();
+      setDraft("");
+    });
+    return () => {
+      stopAuth();
+      turn.cancel();
+    };
+  }, [turn, setDraft]);
 
   return {
     draft,

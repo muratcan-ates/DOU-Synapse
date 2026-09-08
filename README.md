@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1212_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1212 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-432_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 432 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1332_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1332 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-501_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 501 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -471,9 +471,9 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1212** <!-- docs-check: backend.tests = 1212 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **432** <!-- docs-check: frontend.tests = 432 --> | 39 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 39 --> |
-| Playwright gerçek-API vakaları | **42** <!-- docs-check: e2e.tests = 42 --> | Kapıdan gelen sayı `playwright test --list` ile TOPLANAN vaka sayısıdır; koşum CI'nın `e2e` işindedir (benzersiz PostgreSQL, fake LLM, tek worker). Yerel dilimde koşulmadıysa `specs/017-completion-integration/verification.md` bunu açıkça yazar |
+| Backend testleri | **1332** <!-- docs-check: backend.tests = 1332 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **501** <!-- docs-check: frontend.tests = 501 --> | 40 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 40 --> |
+| Playwright gerçek-API vakaları | **50** <!-- docs-check: e2e.tests = 50 --> | Kapıdan gelen sayı `playwright test --list` ile TOPLANAN vaka sayısıdır; koşum CI'nın `e2e` işindedir (benzersiz PostgreSQL, fake LLM, tek worker). Yerel dilimde koşulmadıysa `specs/017-completion-integration/verification.md` bunu açıkça yazar |
 | Migration | **19** <!-- docs-check: migrations.count = 19 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
@@ -789,7 +789,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1212 testtir. <!-- docs-check: backend.tests = 1212 -->
+Güncel feature kanıtında backend koleksiyonu 1332 testtir. <!-- docs-check: backend.tests = 1332 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -803,7 +803,7 @@ Güncel feature kanıtında backend koleksiyonu 1212 testtir. <!-- docs-check: b
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 432 testtir. <!-- docs-check: frontend.tests = 432 -->
+Güncel feature kanıtında frontend kütüphane paketi 501 testtir. <!-- docs-check: frontend.tests = 501 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 

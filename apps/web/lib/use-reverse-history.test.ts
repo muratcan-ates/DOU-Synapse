@@ -1,21 +1,10 @@
-/**
- * Ters sayfalamanın durum makinesi.
- *
- * Kanca React'e bağlı olduğu için doğrudan koşturulamıyor (bu paket DOM'suz
- * `bun test` ile koşar); karar çekirdeği `reverseHistoryReducer` olarak saf
- * çıkarıldı ve testler onu sınıyor. Buradaki iki çivi bilinçli:
- *
- *  - `reset`/`open-started` uçuştaki devam isteğinin `olderLoading` bayrağına
- *    DOKUNMAZ; bayrağı isteğin kendi bitişi düşürür.
- *  - Geç gelen `older-loaded` o anki listeye eklenir: devam isteği token'la
- *    geçersizlenmez. Bu, ChatScreen'den taşınan ÖLÇÜLMÜŞ davranıştır; kural
- *    değişecekse burada bilerek değiştirilmeli.
- */
+/** Geçmişin görünümü ve üretimdeki asenkron istek/iptal sözleşmesi. */
 
 import { describe, expect, test } from "bun:test";
 
 import type { ErrorInfo } from "./errors";
 import {
+  createReverseHistory,
   initialReverseHistory,
   reverseHistoryReducer,
   type ReverseHistoryState,
@@ -98,25 +87,11 @@ describe("reverseHistoryReducer — devam sayfası (prepend)", () => {
     expect(state.olderLoading).toBe(true);
   });
 
-  test("reset uçuştaki devam bayrağına dokunmaz; bayrağı isteğin bitişi düşürür", () => {
-    let state = loadedState();
-    state = reverseHistoryReducer(state, { type: "older-started" });
-    state = reverseHistoryReducer(state, { type: "reset" });
-
-    expect(state.items).toEqual([]);
-    expect(state.cursor).toBeNull();
-    expect(state.olderLoading).toBe(true);
-
-    state = reverseHistoryReducer(state, {
-      type: "older-loaded",
-      items: ["gecikmiş"],
-      cursor: "eski-imleç",
-    });
-    // Bilinçli korunan davranış: geç gelen devam cevabı o anki listeye yazar.
-    expect(state.items).toEqual(["gecikmiş"]);
-    expect(state.cursor).toBe("eski-imleç");
-    expect(state.olderLoading).toBe(false);
+  test("reset önceki devam isteğinin UI izini siler", () => {
+    const state = reverseHistoryReducer({ ...loadedState(), olderLoading: true }, { type: "reset" });
+    expect(state).toEqual(initialReverseHistory<string>());
   });
+
 });
 
 describe("reverseHistoryReducer — canlı tur eklemeleri", () => {
@@ -137,5 +112,94 @@ describe("reverseHistoryReducer — canlı tur eklemeleri", () => {
     });
     expect(state.items).toEqual(["eski*", "yeni"]);
     expect(state.cursor).toBe("sayfa-2");
+  });
+});
+
+function pending<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej; });
+  return { promise, resolve, reject };
+}
+
+type StringPage = { items: string[]; next_cursor: string | null };
+function historyHarness() {
+  let state = initialReverseHistory<string>();
+  const requests: Array<{ path: string } & ReturnType<typeof pending<StringPage>>> = [];
+  const runner = createReverseHistory<string, string>({
+    load: (path) => { const request = { path, ...pending<StringPage>() }; requests.push(request); return request.promise; },
+    map: (items) => items,
+    dispatch: (action) => { state = reverseHistoryReducer(state, action); },
+  });
+  return { runner, requests, state: () => state };
+}
+
+async function openFirst(h: ReturnType<typeof historyHarness>) {
+  const opening = h.runner.open("/sessions/a");
+  h.requests[0].resolve({ items: ["A son mesaj"], next_cursor: "a-cursor" });
+  expect(await opening).toBe(true);
+}
+
+describe("geçmiş isteği yaşam döngüsü", () => {
+  test("A devamı B açıldıktan sonra dönerse B içeriği ve imleci değişmez", async () => {
+    const h = historyHarness(); await openFirst(h);
+    const older = h.runner.loadOlder();
+    const openingB = h.runner.open("/sessions/b");
+    h.requests[2].resolve({ items: ["B mesaj"], next_cursor: "b-cursor" });
+    await openingB;
+    h.requests[1].resolve({ items: ["A özel eski mesaj"], next_cursor: "a-older" });
+    await older;
+    expect(h.state().items).toEqual(["B mesaj"]);
+    expect(h.state().cursor).toBe("b-cursor");
+    expect(h.state().olderLoading).toBe(false);
+  });
+
+  test("reset sonrası gecikmiş devam başarı/hatası özel geçmişi geri getiremez", async () => {
+    for (const fail of [false, true]) {
+      const h = historyHarness(); await openFirst(h);
+      const older = h.runner.loadOlder(); h.runner.reset();
+      if (fail) h.requests[1].reject(new Error("eski hata"));
+      else h.requests[1].resolve({ items: ["özel eski mesaj"], next_cursor: "a-older" });
+      await older;
+      expect(h.state()).toEqual(initialReverseHistory<string>());
+    }
+  });
+
+  test("eski isteğin bitişi yeni devam isteğinin kapısını açamaz", async () => {
+    const h = historyHarness(); await openFirst(h);
+    const olderA = h.runner.loadOlder();
+    const openingB = h.runner.open("/sessions/b");
+    h.requests[2].resolve({ items: ["B"], next_cursor: "b-cursor" }); await openingB;
+    const olderB = h.runner.loadOlder();
+    h.requests[1].resolve({ items: ["A eski"], next_cursor: null }); await olderA;
+    await h.runner.loadOlder();
+    expect(h.requests).toHaveLength(4);
+    expect(h.state().olderLoading).toBe(true);
+    h.requests[3].resolve({ items: ["B eski"], next_cursor: null }); await olderB;
+    expect(h.state().items).toEqual(["B eski", "B"]);
+  });
+
+  test("unmount sırasında ilk sayfa ve devam sayfasının yan etkisi kapanır", async () => {
+    const first = historyHarness();
+    const opening = first.runner.open("/sessions/a"); first.runner.cancel();
+    const before = first.state();
+    first.requests[0].resolve({ items: ["özel"], next_cursor: null });
+    expect(await opening).toBe(false); expect(first.state()).toBe(before);
+    const older = historyHarness(); await openFirst(older);
+    const request = older.runner.loadOlder(); older.runner.cancel();
+    const olderBefore = older.state();
+    older.requests[1].reject(new Error("geç hata")); await request;
+    expect(older.state()).toBe(olderBefore);
+  });
+
+  test("StrictMode tekrar kurulumunda iptal edilmiş restore yeni istekle okunur", async () => {
+    const h = historyHarness();
+    const old = h.runner.open("/sessions/a"); h.runner.cancel(); h.runner.resume();
+    expect(h.requests).toHaveLength(2);
+    h.requests[0].resolve({ items: ["eski"], next_cursor: null });
+    expect(await old).toBe(false);
+    h.requests[1].resolve({ items: ["yeniden doğrulanan"], next_cursor: null });
+    await Promise.resolve();
+    expect(h.state().items).toEqual(["yeniden doğrulanan"]);
   });
 });

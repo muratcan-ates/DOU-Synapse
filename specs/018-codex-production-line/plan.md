@@ -10,3 +10,7 @@ Root: ortam, ortak ayarlar, .ai kayıtları, spec/defter, git ve PR. gate_audit:
 
 ## Devam
 A1 → A2 → A3, ardından doğrulanmış A/B işleri. Sır veya canlı hedef gerektiren alt adım ayrı beklerken hazır işler devam eder. Her hassas commit yeni dossier alır; eski .ai kayıtları değişmez. 017 hedefli taslak PR, yerel kapılar sonrasında hazırlanır.
+
+## S sahiplik ve inceleme
+
+S1/S7 ilk uygulama gate_audit; iptal ve COMMIT sonrası silme için bağımsız inceleme/düzeltme retrieval_review. S2 tarayıcı kimlik/sınav nesilleri ve E2E product_reconcile. S3 ve S5/S6 sözleşme/ayar uygulaması retrieval_review; ortak rapor, son web/API koşuları, hukuk kaynakları, skill-creator güncellemesi ve yayımlanmamış yönetişim kaydı root. B4 yarış araştırması ayrı izole dou018_delete_race veritabanında; S kabulüne bitmemiş test karıştırılmaz.

@@ -72,17 +72,18 @@ def _verification_algorithms(settings: Settings) -> list[str]:
 
 
 def _expected_issuer(settings: Settings) -> str | None:
-    """Beklenen `iss` değeri; yoksa `iss` yalnız VARLIĞI için sınanır.
+    """Üretimde Settings'in zorunlu tuttuğu issuer, JWT claim'iyle tam eşleşir.
 
-    `Settings`'te `jwt_issuer` alanı HENÜZ YOK: `config.py` bu şeridin sahipliği dışında
-    (10_OKU_ONCE_FAZ2 §3, "yeni ayar gerekiyorsa gruba yaz"). Alan eklendiği an burası
-    ek bir değişiklik olmadan sıkışır ve token'ın hangi Supabase projesinden geldiği
-    sabitlenir. O güne kadarki gerçek koruma imza anahtarıdır: başka bir projenin
-    token'ı bizim `SUPABASE_JWT_SECRET`'imizle doğrulanamaz. Eksik olan derinlik
-    savunmasıdır ve docs/security.md'de "uygulanmadı" olarak yazılıdır.
+    Yerel ve demo testlerinde issuer isteğe bağlıdır; yokken `iss` claim'inin
+    varlığı yine zorunludur. Üretim ayarı doğrulama sonrasında değiştirilmişse de
+    eksik issuer ile token kabul edilmez.
     """
-    issuer = getattr(settings, "jwt_issuer", None)
-    return issuer if isinstance(issuer, str) and issuer.strip() else None
+    issuer = settings.jwt_issuer
+    if issuer is None or not issuer.strip():
+        if settings.is_production:
+            raise _reject("üretimde beklenen issuer tanımsız")
+        return None
+    return issuer
 
 
 def _decode_supabase_token(token: str, settings: Settings) -> Principal:

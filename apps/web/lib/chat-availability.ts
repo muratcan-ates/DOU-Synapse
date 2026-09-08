@@ -16,8 +16,9 @@
  * sekmesinde çalışıyor.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useSyncExternalStore } from "react";
 import { api } from "@/lib/api";
+import { subscribeAuthChanges } from "@/lib/auth-events";
 import { allowedChatUiModes } from "@/lib/course-assistant";
 import { useResource } from "@/lib/use-resource";
 import type { ErrorKind } from "@/lib/errors";
@@ -26,27 +27,77 @@ import type { ChatUiMode } from "@/lib/chat";
 
 const POLL_INTERVAL_MS = 30_000;
 
-/**
- * Kilidi okuyan yüzeyler. `examStateChanged()` hepsini yeniden sordurur.
- *
- * Neden gerekli: `pollWhile` yalnız KİLİTLİYKEN yokluyor ve bu doğru — kilit
- * kalkınca polling kendiliğinden dursun diye. Ama o kural, izlenmesi gereken
- * kenarı ters seçiyor: açık → kilitli geçişini hiçbir şey izlemiyordu. Öğrenci
- * sınavı başlattığında bulunduğu sekmedeki "Asistan" sekmesi açık kalıyor,
- * kilit ancak yeni bir mount'ta (yeni sekme, yenileme) görünüyordu. Sunucu her
- * yolu zaten reddediyordu, yani güvenlik açığı değil; ama etkin görünüp iş
- * yapmayan bir yüzey kusurdur (Anayasa XI).
- *
- * Çözüm sürekli yoklama DEĞİL: kilit yalnız öğrencinin kendi eylemiyle değişir
- * (sınavı o başlatır, o bitirir), dolayısıyla haber verilebilir bir olaydır.
- * Herkesi her sayfada sonsuza kadar yoklatmak, bilinen bir olayı tahmin etmeye
- * çalışmak olurdu.
- */
-const subscribers = new Set<() => void>();
+export const EXAM_EVENT_KEY = "dou-synapse:exam-event:v1";
 
-/** Sınav başladı ya da bitti: kilidi okuyan her yüzey sunucuya yeniden sorsun. */
-export function examStateChanged(): void {
-  for (const notify of [...subscribers]) notify();
+/** Olay yalnız tekrar doğrulama ister; kullanıcı/ders/sınav kimliği taşımaz. */
+export function createExamEventBus(publish: (marker: string) => void) {
+  let epoch = 0;
+  let lastMarker: string | null = null;
+  const listeners = new Set<() => void>();
+  const invalidate = () => {
+    epoch += 1;
+    for (const listener of [...listeners]) listener();
+  };
+  return {
+    snapshot: () => epoch,
+    subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    invalidate,
+    notify() {
+      lastMarker = crypto.randomUUID();
+      publish(lastMarker);
+      invalidate();
+    },
+    receive(marker: string | null) {
+      if (marker === null || marker === lastMarker) return;
+      lastMarker = marker;
+      invalidate(); // Alınan bildirim yeniden yayınlanmaz.
+    },
+  };
+}
+
+const examEvents = createExamEventBus((marker) => {
+  try { window.localStorage.setItem(EXAM_EVENT_KEY, marker); }
+  catch { /* Depo kapalıysa aynı sekmenin koruması yine çalışır. */ }
+});
+let subscriptionCount = 0;
+let stopExamEvents: (() => void) | null = null;
+
+/** Sınav başlatma/bitirme aynı ve diğer sekmedeki eski yardım kararını kapatır. */
+export function examStateChanged(): void { examEvents.notify(); }
+
+function subscribeExamEvents(listener: () => void): () => void {
+  const unsubscribe = examEvents.subscribe(listener);
+  subscriptionCount += 1;
+  if (typeof window !== "undefined" && stopExamEvents === null) {
+    const storage = (event: StorageEvent) => {
+      if (event.key === EXAM_EVENT_KEY) examEvents.receive(event.newValue);
+    };
+    // Odağa dönüş yereldir: diğer sekmelerde gereksiz istek zinciri başlatmaz.
+    const refresh = () => examEvents.invalidate();
+    const visible = () => { if (document.visibilityState === "visible") refresh(); };
+    window.addEventListener("storage", storage);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("pageshow", refresh);
+    document.addEventListener("visibilitychange", visible);
+    const stopAuth = subscribeAuthChanges(refresh);
+    stopExamEvents = () => {
+      window.removeEventListener("storage", storage);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("pageshow", refresh);
+      document.removeEventListener("visibilitychange", visible);
+      stopAuth();
+    };
+  }
+  return () => {
+    unsubscribe(); subscriptionCount -= 1;
+    if (subscriptionCount === 0) { stopExamEvents?.(); stopExamEvents = null; }
+  };
+}
+
+const serverExamEpoch = () => 0;
+/** Kaynak ve sonuç uçları bu sinyali paylaşır; izinlerini kendi API'leri verir. */
+export function useExamAccessEpoch(): number {
+  return useSyncExternalStore(subscribeExamEvents, examEvents.snapshot, serverExamEpoch);
 }
 
 export interface ChatLock {
@@ -96,7 +147,7 @@ const NOOP_RELOAD = async (): Promise<void> => {};
 export function useChatAvailability(courseId: string | null): ChatLock {
   const requestedCourse = useRef<string | null>(null);
   const requestedExamEpoch = useRef<number | null>(null);
-  const [examEpoch, setExamEpoch] = useState(0);
+  const examEpoch = useExamAccessEpoch();
   const resource = useResource<ChatAvailability | null>(
     () => {
       requestedCourse.current = courseId;
@@ -111,20 +162,6 @@ export function useChatAvailability(courseId: string | null): ChatLock {
       intervalMs: POLL_INTERVAL_MS,
     },
   );
-
-  /*
-   * Sınav olayı yalnız yeniden istek açmaz; önce epoch'u değiştirir. Böylece
-   * olay ile ağ cevabı arasındaki render'da eski `available=true` kararı
-   * kullanılamaz. Sunucuya ulaşılamazsa besteci eski kararla açık kalmak yerine
-   * gerçek hata ve yeniden deneme yolunu gösterir.
-   */
-  useEffect(() => {
-    const invalidateForExamTransition = () => setExamEpoch((current) => current + 1);
-    subscribers.add(invalidateForExamTransition);
-    return () => {
-      subscribers.delete(invalidateForExamTransition);
-    };
-  }, []);
 
   /*
    * `useResource` bağımlılık değişimini effect içinde sıfırlar. Açma tıklaması

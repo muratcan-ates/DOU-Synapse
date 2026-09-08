@@ -257,7 +257,7 @@ function ProfileContent({
           >
             Verilerimi indir veya sil
             <span className="mt-1 block text-xs font-normal text-fg-muted">
-              Dışa aktarma, sohbet silme ve anonimleştirme
+              Dışa aktarma, sohbet silme ve profil bilgilerini kaldırma
             </span>
           </Link>
           <Link

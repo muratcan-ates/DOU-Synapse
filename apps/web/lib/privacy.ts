@@ -1,5 +1,5 @@
 export interface UserDataExport {
-  schema_version: "1";
+  schema_version: "2";
   generated_at: string;
   profile: {
     id: string;
@@ -11,12 +11,14 @@ export interface UserDataExport {
   chat_sessions: unknown[];
   exam_sessions: unknown[];
   mastery: unknown[];
+  not_included: string[];
 }
 
 export interface ChatDeletion {
   deleted_sessions: number;
 }
 
+/** Eski API alan adı korunur; bu sonuç tüm verilerin anonimleştiğini belirtmez. */
 export interface AccountAnonymization {
   anonymized: boolean;
   deleted_chat_sessions: number;
@@ -35,7 +37,7 @@ export function exportFilename(generatedAt: string): string {
 
 export function chatDeletionMessage(count: number): string {
   if (count === 0) return "Silinecek sohbet geçmişi bulunamadı.";
-  return String(count) + " sohbet oturumu kalıcı olarak silindi.";
+  return String(count) + " sohbet oturumu uygulama veritabanından silindi.";
 }
 
 export function downloadDataExport(payload: UserDataExport): void {

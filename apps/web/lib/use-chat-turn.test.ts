@@ -265,3 +265,32 @@ describe("createChatTurn — epoch geçersizlemesi", () => {
     expect(state.accepted).toHaveLength(1); // geç yanıt yine de dökülmedi
   });
 });
+
+
+describe("createChatTurn — bileşen kapanışı", () => {
+  test("cancel ayrılmış bileşene yazmaz; geç başarı kalıcılaştırma çağrısını çalıştıramaz", async () => {
+    const request = deferred<ChatAnswer>();
+    const state = harness({ post: () => request.promise });
+    state.type("Özel öğrenci sorusu");
+    const flight = state.turn.submit(QA_CONTEXT);
+    const before = [...state.log];
+    state.turn.cancel();
+    expect(state.log).toEqual(before);
+    request.resolve(ANSWER); await flight;
+    expect(state.log).toEqual(before);
+    expect(state.accepted).toEqual([]);
+  });
+  test("cancel sonrası geç hata öğrenci taslağını geri yükleyemez; tekrar kurulumda yeni tur çalışır", async () => {
+    const request = deferred<ChatAnswer>();
+    const state = harness({ post: () => request.promise });
+    state.type("Eski öğrenci taslağı");
+    const flight = state.turn.submit(QA_CONTEXT); state.turn.cancel();
+    state.setPost(() => Promise.resolve(ANSWER)); state.type("Yeni tur");
+    await state.turn.submit(QA_CONTEXT);
+    const before = [...state.log];
+    request.reject(new Error("geç hata")); await flight;
+    expect(state.log).toEqual(before);
+    expect(state.readDraft()).toBe("");
+    expect(state.accepted.map((item) => item.text)).toEqual(["Yeni tur"]);
+  });
+});

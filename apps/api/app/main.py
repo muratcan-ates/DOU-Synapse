@@ -47,6 +47,7 @@ from app.core.errors import (
     validation_error_handler,
 )
 from app.core.logging import configure_logging, get_logger
+from app.core.request_body_limit import MULTIPART_ENVELOPE_BYTES, RequestBodyLimitMiddleware
 from app.core.warmup import start_warmup
 
 logger = get_logger("app.request")
@@ -129,6 +130,12 @@ def create_app() -> FastAPI:
 
     initialize_evaluation_runtime(app, settings)
 
+    # Son eklenen middleware dışta çalışır: CORS/güvenlik/request-id erken
+    # boyut retlerini de sarar. Ayrıştırıcıya yalnız sınırlanmış gövde ulaşır.
+    app.add_middleware(
+        RequestBodyLimitMiddleware,
+        max_bytes=settings.max_upload_bytes + MULTIPART_ENVELOPE_BYTES,
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

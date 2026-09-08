@@ -1,0 +1,450 @@
+{
+  "schema_version": 1,
+  "change_id": "026-security-lifecycle-r1",
+  "lineage_id": "security-lifecycle",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Dosya işlemleri ve tarayıcı gizliliği sınırlarını güçlendir",
+  "summary": "İstek gövdesini ayrıştırma öncesinde sınırlar; özel dosya telafisini kesin işlem sonucuna bağlar; kimlik/sınav geçişinde eski içerik yarışlarını kapatır; issuer/CSP ve depo loglarını sertleştirir. Profil işleminin gerçek kapsamını açıklar. B4 devam eden sohbet silme yarışı ayrı açık iş olarak korunur.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-08T10:56:52+03:00",
+  "review_by": "2026-10-08T07:56:52+00:00",
+  "base_sha": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-2d1b58a",
+    "model_revision": "unchanged-from-base-2d1b58a",
+    "prompt_revision": "unchanged-from-base-2d1b58a",
+    "tool_schema_revision": "unchanged-from-base-2d1b58a",
+    "guardrail_revision": "bounded-body; confirmed-storage-ownership-and-commit; browser-auth/exam-epochs; explicit-production-issuer; narrow-CSP; content-free-storage-errors",
+    "retrieval_revision": "unchanged-from-base-2d1b58a",
+    "embedding_revision": "unchanged-from-base-2d1b58a",
+    "evaluator_revision": "full-api1332;web501;real-http-browser50; source-bound-negative-controls"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "7a1142db9b609ff81492283dff7b865e98dcda98ca668cda4b996c34f5cfdb4a",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "4b924c37d3be51ae7454b83541d6fa9af99752dc27edfc9830b5bd7259f3d3fc"
+    },
+    {
+      "path": "apps/api/app/api/deps.py",
+      "state": "present",
+      "sha256": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360"
+    },
+    {
+      "path": "apps/api/app/api/documents.py",
+      "state": "present",
+      "sha256": "cd1d217e187bb52c26e3d434e7b9bf09d0d1253c74d1ce5aefb4b5c1b6f735ea"
+    },
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "3e05df0d6ac2887ce145e28bd695481dadd1111863adb8333de238f91fa7a9b4"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "cac48b6458995bf16f1ea3b6467d565366e5033d45f2e8b557beb035db6f2347"
+    },
+    {
+      "path": "apps/api/app/core/logging.py",
+      "state": "present",
+      "sha256": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e"
+    },
+    {
+      "path": "apps/api/app/core/request_body_limit.py",
+      "state": "present",
+      "sha256": "a52572ae4bb4ed02d10211f184ecce3a305ac15be27842adc3ebeb83e5d82712"
+    },
+    {
+      "path": "apps/api/app/core/security.py",
+      "state": "present",
+      "sha256": "c45d15504163132d08f93f998b941b86965e07e8eb71050287ffdd92ebabfe79"
+    },
+    {
+      "path": "apps/api/app/core/upload_cleanup.py",
+      "state": "present",
+      "sha256": "f9f353aaffd5aac26389856cabce6d2a35d9aa7a2f1ecd7761a09a750efe94c6"
+    },
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/storage.py",
+      "state": "present",
+      "sha256": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1"
+    },
+    {
+      "path": "apps/api/tests/test_config.py",
+      "state": "present",
+      "sha256": "56a0df4dc174091ffe6de0665f483bfee114967a1724da448e0244696c76b933"
+    },
+    {
+      "path": "apps/api/tests/test_generation.py",
+      "state": "present",
+      "sha256": "1a29b366aeab541fca912026fb59b4585f4e1f57bdae32e8eecf999137e23f6f"
+    },
+    {
+      "path": "apps/api/tests/test_provider_readiness.py",
+      "state": "present",
+      "sha256": "cf720511d6a7d6c2f548d91a2e9a0892445b54c89bd5c29b8399b481cf063d70"
+    },
+    {
+      "path": "apps/api/tests/test_request_body_limit.py",
+      "state": "present",
+      "sha256": "77f6a968a4d546544adcfdbf6ffeff2db77bd0f45ffc5ddb4f8e5ce3d9749d2d"
+    },
+    {
+      "path": "apps/api/tests/test_security.py",
+      "state": "present",
+      "sha256": "4ae1ab1e72ac836c589eddfa3c7a93fc763a5b5f7a3291b23df1840360c9d6d6"
+    },
+    {
+      "path": "apps/api/tests/test_storage.py",
+      "state": "present",
+      "sha256": "d06bbfc8e9369ae9a7031306cb564fcd8cedb5e04e3b623b1d3ef376b505abf1"
+    },
+    {
+      "path": "apps/api/tests/test_storage_log_privacy.py",
+      "state": "present",
+      "sha256": "3d13f7a33eee3958ba533363401214111c09d6850008a80503e7ce4f8182135c"
+    },
+    {
+      "path": "apps/api/tests/test_upload_safety.py",
+      "state": "present",
+      "sha256": "2eca6c312fddd251038934b55ea87ca99e557d6128bb79312a7a35987fd5247f"
+    },
+    {
+      "path": "apps/web/app/account/page.tsx",
+      "state": "present",
+      "sha256": "2116c74c77f68fd8a767571ccd91dc223a87fbc99ee19540abeff85eed4d4484"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/questions/page.tsx",
+      "state": "present",
+      "sha256": "8e6fc00df9a4eda84b1f5b1990d99f4b86707cb8d46efe9ad7d106538bb45c55"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/sources/[chunkId]/page.tsx",
+      "state": "present",
+      "sha256": "d29f40261e1c6e4db549a1130579e525821a93ec08bb9bd5a47f46cc689d8fc4"
+    },
+    {
+      "path": "apps/web/app/profile/page.tsx",
+      "state": "present",
+      "sha256": "316d3a81b4c327ba56f6a4be814ef17482f169e10976b4cab7dc1d52db78c582"
+    },
+    {
+      "path": "apps/web/components/app-shell.tsx",
+      "state": "present",
+      "sha256": "9d04a11f0f2a535e1a298be1649c290c94cdc576fc54600ab8590970394a0304"
+    },
+    {
+      "path": "apps/web/e2e/exam-cross-tab-privacy.spec.ts",
+      "state": "present",
+      "sha256": "d69cdc4becb4b31cdb5f4339b1942498529c42f30f9d768e976c25cf4bbcc95f"
+    },
+    {
+      "path": "apps/web/e2e/privacy-session-guards.spec.ts",
+      "state": "present",
+      "sha256": "23d4501099bf10310cf48d725cf0b670f0393fa06c597002bd931767e9ff3e15"
+    },
+    {
+      "path": "apps/web/e2e/question-delete-unblocks-document.spec.ts",
+      "state": "present",
+      "sha256": "0dfa1a0a3306f0740b6795f9e7c63b2eff6ff3f12955581e33188b0eb0d3c0b2"
+    },
+    {
+      "path": "apps/web/e2e/screenshots.spec.ts",
+      "state": "present",
+      "sha256": "2d4f688398cde66dee83890b22b5219921f387804f65c77874da91f849543f97"
+    },
+    {
+      "path": "apps/web/lib/api.ts",
+      "state": "present",
+      "sha256": "cb1575a741380402d320d2be93b02d89f034c850433d18e5b63575673a5f1942"
+    },
+    {
+      "path": "apps/web/lib/auth-events.test.ts",
+      "state": "present",
+      "sha256": "f98d8f54b4f5a3ab8f1befbb8a27253fdb756ec817991938fedaa1d6cf49799e"
+    },
+    {
+      "path": "apps/web/lib/auth-events.ts",
+      "state": "present",
+      "sha256": "1c92d2ca94240c561dfc591d83d539eeea2f26c794d8129473e439b6fea478aa"
+    },
+    {
+      "path": "apps/web/lib/chat-availability.test.ts",
+      "state": "present",
+      "sha256": "5accf9aa9447190acf66f178a0b1569449c17632683cc0a78a81e9f45d31701c"
+    },
+    {
+      "path": "apps/web/lib/chat-availability.ts",
+      "state": "present",
+      "sha256": "9c43a460ddf5f945e6281394b952b7f9f9acdb36afa0b7ca07e11c896aa695a6"
+    },
+    {
+      "path": "apps/web/lib/markdown.test.ts",
+      "state": "present",
+      "sha256": "fcc909b66a75d22f56ad8c238a433d1a656aad68f68601bb552dfffae83c8719"
+    },
+    {
+      "path": "apps/web/lib/privacy.test.ts",
+      "state": "present",
+      "sha256": "7f7ad9f60dd39208f340ccc4ae6d182b1090a20400fc812944ad3d8efab88ffe"
+    },
+    {
+      "path": "apps/web/lib/privacy.ts",
+      "state": "present",
+      "sha256": "d772fd9630c68c70cac5577b8720277574b190b1efcf73ab65d1b90feac22899"
+    },
+    {
+      "path": "apps/web/lib/security-headers.test.ts",
+      "state": "present",
+      "sha256": "f8594b510c3ee9e6a07f15896d435abb9ed1203b92e8dd3734eddf65d20b3b04"
+    },
+    {
+      "path": "apps/web/lib/security-headers.ts",
+      "state": "present",
+      "sha256": "5fef135ffbcee807cc833582b02735cada79bb0c2370b207da296cc6a3bc39e0"
+    },
+    {
+      "path": "apps/web/lib/session.ts",
+      "state": "present",
+      "sha256": "9d09b20db610246b534d5232d838d17f5610ccf1a71ce37f74e838381a33fe0d"
+    },
+    {
+      "path": "apps/web/lib/use-chat-turn.test.ts",
+      "state": "present",
+      "sha256": "0f29ef869c1b3ad096718cdb1b6579640deb1978bad50a164a9f0aa06894fca9"
+    },
+    {
+      "path": "apps/web/lib/use-chat-turn.ts",
+      "state": "present",
+      "sha256": "ca1917d261011e700b9c55f549902e2586b1195a6bfa3b01a8f4f25af91a2c69"
+    },
+    {
+      "path": "apps/web/lib/use-reverse-history.test.ts",
+      "state": "present",
+      "sha256": "4df9f212050d85a1bb7066c168453642302a9f77d36c100269e19b388f19f3b7"
+    },
+    {
+      "path": "apps/web/lib/use-reverse-history.ts",
+      "state": "present",
+      "sha256": "1d2ba2078cf2fe71add9cfe70fd487eccedfebaf4505817d8b5856b2b06f51bb"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "95402471fd05a6f5386757d55b43437240b8fc1f9abf852e2923f1415102aa73"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "16282adfcfeebee78798a685ea05dd94005fe49762f3e6fbd85c6d2beef48419"
+    },
+    {
+      "path": "docs/kvkk.md",
+      "state": "present",
+      "sha256": "b39fe965d4307565c4a0cd603d17c8bfc194717274b143f8de56f759ec875bc0"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "a2a8a3803612cf0fa2e1fdb7956a297f82b15fa025b275a63286334e305f753c"
+    },
+    {
+      "path": "docs/security/privacy-review-2026-09-08.md",
+      "state": "present",
+      "sha256": "2b89d745c4b7ffaa2f2289fe517e11878dc730a861f6a0f35a2bdbc9a3706b91"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "50e1455d525ff91294a5524b18b4481034056b19fa5b8856140e093cb16903b0"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "9231e15496b4439f9fd88223af563b9fde83efd1500b442e6995591b00327496"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "d1d11fddda931327d322846fe31bbeab644cc19f6a2b8330edc8993c495c668a"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "180cc744e1c03b6c7ff7016c6481de397f6ecb8093b75cdc822d06ec40165a0b"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "a6c9abb9783b6e8fa4f2adee559851b89298bea4e8f4d5dadda9783c443d1ee4"
+    },
+    {
+      "path": "specs/017-completion-integration/verification.md",
+      "state": "present",
+      "sha256": "8083851bae14ac848b535fab82be6ed79fb846d61e7fabcfa53b129294311a18"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/a-hosted-ci.json",
+      "state": "present",
+      "sha256": "9c567239a7d647276dbd052a8ff4260368288f8fbbf5cbabb55d027c15d435e5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/b4-race-design.md",
+      "state": "present",
+      "sha256": "160409ee79a84fee7abb61f340c5f7bf6a4dc872309d9cb14008a99f05bd0da8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/b4-race-evidence-hashes.json",
+      "state": "present",
+      "sha256": "b7a014e343c8f791246736f0d01de65d0b1f56479d9d8ee1f086c8326764d5fa"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/b4-race-regression.py",
+      "state": "present",
+      "sha256": "aaf45693e190cef66f3671c60f09019a2e93e8a01385933149a34f1fc2c94371"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/security-slices.json",
+      "state": "present",
+      "sha256": "22391845f15ff33582258316de3f595ca7d1d13b8acf640ae20b6857df335aec"
+    },
+    {
+      "path": "specs/018-codex-production-line/plan.md",
+      "state": "present",
+      "sha256": "48c50dcbc177fca24b17cd01c97dd2b918f85cf61b0c2ec3dce9b4c0c5de9dd5"
+    },
+    {
+      "path": "specs/018-codex-production-line/spec.md",
+      "state": "present",
+      "sha256": "f2367ea56d39518c34e5355214aa28a798e7d636718d4b3099cd905c5be31495"
+    },
+    {
+      "path": "specs/018-codex-production-line/tasks.md",
+      "state": "present",
+      "sha256": "5bfa42697c9fc04f91be68aea15a188e9391c099dda1fd7ac7de5699e5d786e7"
+    },
+    {
+      "path": "specs/018-codex-production-line/verification.md",
+      "state": "present",
+      "sha256": "7d31c84bb990ba91d86a9046cffa4accede9d4ea39f8c97fac858acd65eb5ead"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/026-security-lifecycle-r1.json",
+      "report_sha256": "20278f4047a90f6d9c2aeef8b9bf5cc7e4fb6713a5e180897228a226829bbb66",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_request_body_limit.py",
+    "holdout_ref": "apps/web/e2e/privacy-session-guards.spec.ts",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: synthetic safety regressions; no model quality or legal compliance claim",
+    "metrics": [
+      {
+        "name": "real_http_regressions_passed",
+        "baseline": 42,
+        "candidate": 50,
+        "operator": ">=",
+        "threshold": 50,
+        "sample_size": 50
+      }
+    ],
+    "exact_command": "cd apps/web && E2E_API_URL=http://127.0.0.1:8018 E2E_PORT=3118 E2E_DATABASE_NAME=dou_synapse_e2e_dou018 bun run test:e2e --workers=1"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: unconditional safety checks; reviewed release controls deployment",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:026-security-lifecycle-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: unconditional safety checks; reviewed release controls deployment",
+    "kill_switch": "Revert the reviewed release to the previous compatible candidate; do not bypass authorization or erase unknown storage outcomes.",
+    "assignment": "Sticky by reviewed release SHA for the isolated candidate; any future canary must remain course/session scoped under separate promotion review. No user exposure yet.",
+    "initial_exposure": "None; draft PR only.",
+    "stop_conditions": [
+      "Cross-user/course disclosure or stale private content after a tested transition.",
+      "File removed on rejected or unknown DB COMMIT.",
+      "Private storage URL/key or sensitive cause text reaches emitted logs."
+    ],
+    "expand_conditions": [
+      "Exact candidate PR checks pass.",
+      "Independent engineering and privacy reviewers accept the scope.",
+      "Live auth/storage and operational requirements are verified before production."
+    ],
+    "active_exam_policy": "Server exam locks retained; clients invalidate old source/chat/results on exam transitions and recheck authority."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+    "procedure": "Revert this feature-branch commit and rebuild API/web; no schema migration in S. Rerun API/web/browser gates.",
+    "max_minutes": 15,
+    "verification": "Rollback plan only; exact rollback drill not run.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic test identities only; no raw student answers, tokens, private object locations or provider payloads in versioned evidence.",
+    "retention": "Versioned with the repository; no raw prompts, secrets, student answers or provider payloads."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

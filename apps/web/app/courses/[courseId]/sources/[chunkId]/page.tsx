@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback } from "react";
+import { useExamAccessEpoch } from "@/lib/chat-availability";
 import { api } from "@/lib/api";
 import { chunkLocation } from "@/lib/labels";
 import type { SourceContext } from "@/lib/source-quality";
@@ -22,11 +23,18 @@ export default function SourceContextPage() {
 
 function SourceContextView() {
   const { courseId, chunkId } = useParams<{ courseId: string; chunkId: string }>();
+  const accessEpoch = useExamAccessEpoch();
+  // Kaynak pasajı her erişim geçişinde önce kaldırılır. Yeni izin doğrudan
+  // kaynak ucundan gelir; asistanın bakım/mod bayrakları kaynak yetkisi değildir.
+  return <SourceDetails key={`${courseId}:${chunkId}:${accessEpoch}`} courseId={courseId} chunkId={chunkId} />;
+}
+
+function SourceDetails({ courseId, chunkId }: { courseId: string; chunkId: string }) {
   const fetchContext = useCallback(
     () => api.get<SourceContext>(`/courses/${courseId}/sources/${chunkId}`),
     [courseId, chunkId],
   );
-  const { data, error, loading, reload } = useResource(fetchContext, [courseId, chunkId]);
+  const { data, error, refreshError, errorKind, errorRequestId, loading, reload } = useResource(fetchContext, [courseId, chunkId]);
 
   return (
     <div>
@@ -38,8 +46,8 @@ function SourceContextView() {
       </nav>
 
       {loading && <Loading label="Kaynak bağlamı yükleniyor…" />}
-      {error && <ErrorNote message={error} onRetry={reload} />}
-      {data && (
+      {(error || refreshError) && <ErrorNote message={error ?? refreshError ?? ""} kind={errorKind} requestId={errorRequestId} onRetry={reload} />}
+      {data && !error && !refreshError && (
         <>
           <PageHeader
             title={data.file_name}

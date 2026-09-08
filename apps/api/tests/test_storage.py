@@ -85,6 +85,7 @@ def test_production_yerel_diski_reddeder() -> None:
     with pytest.raises(ValueError, match="STORAGE_BACKEND=supabase"):
         Settings(
             environment="production",
+            jwt_issuer="https://issuer-test.example.invalid/auth/v1",
             supabase_jwt_secret="jwt-secret",
             dev_auth_enabled=False,
             llm_fake_provider=False,

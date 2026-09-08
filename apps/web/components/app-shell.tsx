@@ -21,6 +21,7 @@ import { ErrorNote } from "@/components/page-state";
 import { BrandLockup } from "@/components/brand-mark";
 import { ThemeControl } from "@/components/theme-control";
 import { Button } from "@/components/ui";
+import { subscribeAuthChanges } from "@/lib/auth-events";
 import { signOutCurrent } from "@/lib/api";
 import { describeError, type ErrorInfo } from "@/lib/errors";
 import { useSession } from "@/lib/session";
@@ -38,6 +39,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (ready && !user) router.replace("/");
   }, [ready, user, router]);
+
+  useEffect(() => subscribeAuthChanges(() => {
+    // Sayfa hook'ları AppShell dışında da yaşayabilir. Kimlik sınırında rota
+    // kapanır; önceki hesabın sayfa durumu yeni hesaba taşınmaz.
+    router.replace("/");
+  }), [router]);
 
   if (!ready || !user) return null;
 

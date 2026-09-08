@@ -327,7 +327,10 @@ function QuestionPool({ courseId }: { courseId: string }) {
       )}
 
       {questions.length === 0 ? (
-        <EmptyState title="Havuzda henüz soru yok. Yukarıdan bir konu seçip soru üretin; üretilen sorular taslak olarak buraya düşer." />
+        <>
+          {notice && <p role="status" className="mb-4 text-sm text-fg-muted">{notice}</p>}
+          <EmptyState title="Havuzda henüz soru yok. Yukarıdan bir konu seçip soru üretin; üretilen sorular taslak olarak buraya düşer." />
+        </>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
           <Card className="h-fit p-0">

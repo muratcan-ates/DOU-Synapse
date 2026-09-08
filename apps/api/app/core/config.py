@@ -8,6 +8,7 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import AliasChoices, Field, PostgresDsn, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -102,9 +103,10 @@ class Settings(BaseSettings):
     # Supabase JWT'lerini doğrulamak için proje JWT secret'ı (HS256).
     supabase_jwt_secret: str | None = None
     jwt_audience: str = "authenticated"
-    #: Beklenen `iss` claim'i. Tanımlanmazsa issuer DOĞRULANMAZ ve o zaman başka bir
-    #: Supabase projesinin token'ı da kabul edilir. Üretimde MUTLAKA verilmeli;
-    #: değeri Supabase proje URL'sinin `/auth/v1` eki.
+    #: Beklenen `iss` claim'i. Üretimde açık bir HTTPS `/auth/v1` URL'si zorunludur.
+    #: Yerel/demo ortamında verilmezse yalnız imza ve zorunlu claim'ler doğrulanır;
+    #: başka bir projenin farklı anahtarla imzalanmış token'ı yine reddedilir.
+    #: Değer otomatik türetilmez: operatör gerçek token'ın issuer'ını belirtmelidir.
     #:
     #: Ortam değişkeni adı açıkça `SUPABASE_JWT_ISSUER`'a sabitlendi. Alan adı
     #: `jwt_issuer` olduğu için pydantic-settings varsayılan olarak `JWT_ISSUER`
@@ -352,6 +354,30 @@ class Settings(BaseSettings):
             )
         if not self.dev_auth_enabled and not self.supabase_jwt_secret:
             raise ValueError("SUPABASE_JWT_SECRET tanımlı olmalı ya da DEV_AUTH_ENABLED açılmalı.")
+        if self.is_production:
+            issuer = self.jwt_issuer or ""
+            try:
+                parsed = urlsplit(issuer)
+                valid_issuer = (
+                    bool(issuer)
+                    and not any(
+                        char.isspace() or ord(char) < 32 or ord(char) == 127 for char in issuer
+                    )
+                    and not any(char in issuer for char in ("\\", "?", "#"))
+                    and parsed.scheme == "https"
+                    and bool(parsed.hostname)
+                    and not any(char in parsed.netloc for char in ("@", "*", "%"))
+                    and (parsed.port is None or 1 <= parsed.port <= 65535)
+                    and parsed.path == "/auth/v1"
+                )
+            except ValueError:
+                valid_issuer = False
+            if not valid_issuer:
+                raise ValueError(
+                    "ENVIRONMENT=production için SUPABASE_JWT_ISSUER açıkça tanımlı, "
+                    "HTTPS kullanan ve /auth/v1 ile biten bir URL olmalı; "
+                    "kimlik bilgisi, boşluk, sorgu veya fragment içeremez."
+                )
         return self
 
     @model_validator(mode="after")

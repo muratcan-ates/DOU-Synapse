@@ -102,6 +102,11 @@ def configure_logging(level: int = logging.INFO) -> None:
     root.addHandler(handler)
     root.setLevel(level)
 
+    # HTTP istemcilerinin INFO/DEBUG tanıları özel URL ve başlık taşıyabilir.
+    # Uygulama DEBUG çalışsa bile transport tanıları üretim loguna taşınmaz.
+    for name in ("httpx", "httpcore"):
+        logging.getLogger(name).setLevel(logging.WARNING)
+
     # Uvicorn kendi handler'larını kurar; kök handler'a devretmelerini sağlarız.
     for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
         uvicorn_logger = logging.getLogger(name)

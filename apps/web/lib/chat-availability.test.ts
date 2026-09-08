@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  createExamEventBus,
   isAvailabilitySnapshotCurrent,
   toChatLock,
 } from "@/lib/chat-availability";
@@ -162,5 +163,29 @@ describe("availability snapshot sınırı", () => {
   test("sınav olayı sonrası eski açık karar effect beklemeden reddedilir", () => {
     expect(isAvailabilitySnapshotCurrent("course-1", "course-1", 3, 4)).toBe(false);
     expect(isAvailabilitySnapshotCurrent("course-1", "course-2", 4, 4)).toBe(false);
+  });
+});
+
+
+describe("sekmeler arası içeriksiz sınav bildirimi", () => {
+  test("başlatma/bitirme her sekmeyi geçersizler, mesaj kişisel veri taşımaz ve yankılanmaz", () => {
+    const sent: string[] = [];
+    const first = createExamEventBus((marker) => { sent.push(marker); second.receive(marker); });
+    const second = createExamEventBus(() => { throw new Error("Alınan işaret tekrar yayınlanmamalı"); });
+    const observed: number[] = [];
+    const stop = second.subscribe(() => observed.push(second.snapshot()));
+    first.notify(); first.notify();
+    expect(first.snapshot()).toBe(2); expect(second.snapshot()).toBe(2);
+    expect(observed).toEqual([1, 2]);
+    expect(sent).toHaveLength(2); expect(sent[0]).not.toBe(sent[1]);
+    for (const marker of sent) expect(marker).toMatch(/^[a-f0-9-]{36}$/);
+    second.receive(sent[1]); expect(observed).toEqual([1, 2]);
+    stop(); second.invalidate(); expect(observed).toEqual([1, 2]);
+  });
+  test("odak/yeniden görünür olma yalnız yerel doğrulamayı değiştirir", () => {
+    let published = 0;
+    const bus = createExamEventBus(() => { published += 1; });
+    bus.invalidate(); bus.invalidate();
+    expect(bus.snapshot()).toBe(2); expect(published).toBe(0);
   });
 });

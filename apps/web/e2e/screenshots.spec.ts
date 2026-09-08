@@ -138,7 +138,7 @@ test.describe("belge ekran görüntüleri @ekran", () => {
 
   test("KVKK aydınlatma metni", async ({ page }) => {
     await page.goto("/kvkk");
-    await expect(page.getByRole("heading", { name: "KVKK Aydınlatma Metni" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Kişisel Veriler ve Gizlilik" })).toBeVisible();
     await cek(page, "16-kvkk");
   });
 });

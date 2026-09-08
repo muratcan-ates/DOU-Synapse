@@ -312,7 +312,9 @@ async def anonymize_my_account(
         revoked_memberships=revoked_memberships,
         retained_owned_courses=retained_owned_courses,
         message=(
-            "Uygulama profili anonimleştirildi ve üyelikler kapatıldı. "
-            "Üniversite kimlik hesabının kapatılması kimlik sağlayıcısında ayrıca yapılmalıdır."
+            "Uygulama profilinizdeki ad ve e-posta kaldırıldı, sohbetleriniz silindi "
+            "ve ders üyelikleriniz kapatıldı. Sınav, ilerleme ve materyal kayıtları "
+            "mevcut profil kaydıyla bağlantılı kalır. Üniversite giriş hesabınız "
+            "bu işlemle kapanmaz; kapatılması için ayrıca işlem gerekir."
         ),
     )

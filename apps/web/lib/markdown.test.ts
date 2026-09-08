@@ -105,19 +105,22 @@ describe("gerçek belgeye karşı", () => {
   // biçimi değiştiğinde sessizce bozulmasını engeller.
   const kvkk = Bun.file(`${import.meta.dir}/../../../docs/kvkk.md`);
 
-  test("KVKK metni hiçbir bloğu kaybetmeden ayrıştırılır", async () => {
+  test("KVKK açıklaması işlem kapsamını ve açık kurumsal kararları korur", async () => {
     const source = await kvkk.text();
     const blocks = parseMarkdown(source);
 
-    expect(blocks.length).toBeGreaterThan(50);
-    // §8 "henüz uygulanmayanlar" başlığı metnin dürüstlük ayağı — kaybolursa
-    // sayfa, uygulanmamış korumaları sessizce gizlemiş olur.
-    expect(texts(blocks)).toContain("Henüz uygulanmayanlar");
+    // Belgenin boyu bir güvence değildir; işlem kapsamı ve çözülmemiş
+    // kurumsal kararlar gerçek sayfada okunabilir kalmalıdır.
+    expect(texts(blocks)).toContain("Saklama ve silme sınırları");
+    expect(texts(blocks)).toContain("Profil kaydı ile kullanıcı kimliği korunur.");
+    expect(texts(blocks)).toContain("bütün verilerin silinmesi veya geri döndürülemez anonimleştirilmesi değildir.");
+    expect(texts(blocks)).toContain("hukuki sebepler");
+    expect(texts(blocks)).toContain("başvuru kanalı");
     // Tablolar gerçekten tablo olarak ayrıştırılmalı, paragraf olarak değil.
     expect(blocks.some((b) => b.kind === "table")).toBe(true);
     // Ham markdown işaretçisi çıktıda KALMAMALI: kalmışsa bir blok
     // desteklenmiyor demektir ve metin bozuk görünür.
-    expect(texts(blocks)).not.toContain("\\n|");
+    expect(texts(blocks)).not.toContain("\n|");
   });
 
   test("hiçbir başlık kaybolmaz", async () => {

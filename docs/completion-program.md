@@ -14,7 +14,7 @@ Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), 
 
 | İş | Kodla doğrulanan durum | Sonraki kabul |
 |---|---|---|
-| A1–A3 CI ve yönetişim | Yerelde doğrulandı; GitHub CI bekliyor | Release testleri/uygulama mutasyonları CI adımı; hassas kapılar; hata yutma ve izin genişlemesi negatif testte reddedilir |
+| A1–A3 CI ve yönetişim | A commit’i 2d1b58a üzerinde yerel ve GitHub CI doğrulandı | Release testleri/uygulama mutasyonları CI adımı; hassas kapılar; hata yutma ve izin genişlemesi negatif testte reddedilir |
 | A4/A7 sınav testleri | Yerel birim ve gerçek HTTP akışı geçti | Dört koşullu skip yerine gerçek iddia; monoton ipucu geçmişi; sınavdan önceki gecikmiş200 yeni kilidi açamaz |
 | A5 test sağlamlığı | 224 test geçti; 9 mutanttan 8 yakalandı, biri bağımsız RLS ile korundu | Gerçek yardımcı/CLI/export/sonuç kilidi davranışı; aynı test üretim koruması kaldırılınca düşer |
 | A6 erişilmeyen kod | Üç kullanılmayan yardımcı kaldırıldı; kullanılan yollar korundu | Retry sınıf-adı yolu, kapsam reddi ve gerçek sources/inspect çağrısı test edilir |
@@ -23,7 +23,7 @@ Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), 
 | B3 açık/kod değerlendirme | Kaynak doğrulama ve kod testleri zaten var; runbook'un yok/sıfır iddiası yanlış | Ayrı neden-yanlış açıklaması ve kod rubrik kırılımı eksik; kaynak varlığı semantik çelişki kanıtı sayılmaz |
 | B4 kişisel sohbet silme | API var, web yalnız tüm geçmişi siliyor | Üyeye açık sohbet ekranında kendi oturumu/kendi ders geçmişi; yanlış ID ve hata/iptal/yarış testleri |
 | B5 politika geçmişi | API ve0020 cascade testi var, UI yok | Eğitmen salt okunur geçmiş, sayfalama ve hata durumu; kimlikten isim uydurulmaz |
-| B6 blueprint özellik bayrağı | Kapalı authoring ortamında ölü eylemler görünür | Yüklenme/hata/kapalı durumda düzenleme-yayımlama açılmaz; mevcut okuma korunur |
+| B6 blueprint özellik bayrağı | Kapalı authoring yalnız düzenleme/üretimi kısıtlar; önceden sınıflandırılmış havuzdan yayın mümkündür | Kullanılamayan sınıflandırma düzeltmesi açık anlatılır; yayın gerçek readiness sonucuna ve sunucu tekrar denetimine bağlıdır |
 | B7 soru süzgeçleri | Yalnız yüklenmiş satırlar süzülüyor | status/topic sunucuya gönderilir, imleç sıfırlanır, boş sonuçta filtre kalır |
 | C1 retrieval | Dense iç eşitlik sıralaması ANN yolunu bozuyor; belge UUID'si içerikten türemez | İzole gerçekçi korpus/plan/kalite karşılaştırması, içerik hash'iyle son sıralama; yaklaşık aramaya tüm-korpus determinizmi iddia edilmez |
 | C2 indeks yapım göçü | Runbook bellek→recall nedenini gösteren tekrar üretilebilir kanıt bulunamadı | Önce bellek/ef_search çapraz ölçümü; mevcut indeks boş tabloda kurulduğu için yeni göç otomatik eklenmez |
@@ -42,7 +42,7 @@ Bu göreve özel PostgreSQL16 localhost55448; dou018_* test veritabanları; tara
 
 Groq/Gemini erişimi, Supabase proje bilgileri, JWT imza tercihi, bulut/staging hedefi ve branch protection henüz verilmedi. İlgili somut paket hazır olduğunda gereken karar sorulur; diğer hazır işler sürer. İnsan etiketleri boş kalır. Yeni bağımlılık önerileri ve migration-runner tablo kararı kendi diliminde gerekçelendirilir. Bu kayıt gelecekte çalışma planıdır; ayrıca bir zamanlayıcı kurulmuş olduğu anlamına gelmez.
 
-Sonraki yürütülebilir adım: A kaydını ve 017 hedefli taslak PR CI'ını doğrula; kullanıcının ek talebi doğrultusunda S1/S2/S3 güvenlik ve gizlilik dilimini, ardından B1'i uygula. Güncel HEAD, temiz ağaç ve uzak dal durumu her devirde yeniden kontrol edilir.
+Sonraki yürütülebilir adım: A için taslak PR26 ve GitHub kapıları doğrulandı. S güvenlik/gizlilik diliminin bağımsız son incelemesi ve tarayıcı tekrarını tamamla; ardından B1/B4/B5/B6/B7 uygulamasına geç. Güncel HEAD, temiz ağaç ve uzak dal durumu her devirde yeniden kontrol edilir.
 
 ## Güvenlik ve gizlilik dilimi
 

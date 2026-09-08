@@ -26,6 +26,12 @@ from app.core.errors import (
     request_id_of,
 )
 from app.core.security import Principal, authenticate
+from app.core.upload_cleanup import (
+    discard_upload_cleanup,
+    resolve_committed_document_deletions,
+    resolve_failed_uploads,
+    retain_failed_document_deletions,
+)
 from app.models.core import CourseMembership, MembershipRole, MembershipStatus
 from app.modules.assessment import exam_state
 
@@ -64,8 +70,27 @@ PrincipalDep = Annotated[Principal, Depends(get_principal)]
 
 async def get_session(principal: PrincipalDep) -> AsyncIterator[AsyncSession]:
     """Kullanıcı bağlamı ayarlanmış veritabanı oturumu."""
-    async with rls_session(principal.user_id) as session:
-        yield session
+    owned_session: AsyncSession | None = None
+    handler_failed = False
+    try:
+        async with rls_session(principal.user_id) as session:
+            owned_session = session
+            try:
+                yield session
+            except BaseException:
+                handler_failed = True
+                raise
+    except BaseException as error:
+        if owned_session is not None:
+            retain_failed_document_deletions(
+                owned_session, error=error, handler_failed=handler_failed
+            )
+            await resolve_failed_uploads(owned_session, error=error, handler_failed=handler_failed)
+        raise
+    else:
+        if owned_session is not None:
+            discard_upload_cleanup(owned_session)
+            await resolve_committed_document_deletions(owned_session)
 
 
 #: `scope="function"` — commit'in yanıt gönderilmeden ÖNCE olmasını sağlar.

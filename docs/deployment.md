@@ -42,7 +42,7 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 | `DATABASE_URL` | API bağlantısı. **`dou_app` rolüyle**: sahip değildir, `BYPASSRLS` taşımaz, dolayısıyla RLS gerçekten uygulanır |
 | `WORKER_DATABASE_URL` | Worker bağlantısı. `dou_worker` rolü RLS'i atlar; `chunks` tablosuna yalnız o yazabilir |
 | `SUPABASE_JWT_SECRET` | Supabase JWT'lerini doğrular. Yoksa ve dev-auth da kapalıysa uygulama **başlamaz** |
-| `SUPABASE_JWT_ISSUER` | Beklenen `iss` claim'i — Supabase proje URL'sinin `/auth/v1` eki. **Boş bırakılırsa issuer doğrulanmaz** ve başka bir Supabase projesinin token'ı da kabul edilir. İmza doğrulaması etkilenmez; kaybedilen katman issuer sabitlemesidir. Üretimde doldurun |
+| `SUPABASE_JWT_ISSUER` | Üretimde zorunlu beklenen `iss`: seçilmiş Supabase projesinin HTTPS `/auth/v1` adresi. Eksik/bozuk değer başlangıcı durdurur. Kullanıcı bilgisi, query, fragment veya joker hedef kabul edilmez; gerçek proje adresini sağlayıcı ayarıyla eşleştirin. Yerel/demo ortamında isteğe bağlıdır |
 | `CORS_ORIGINS` | JSON dizisi. Üretimde yalnız gerçek Vercel alan adı |
 | `GROQ_API_KEY`, `GEMINI_API_KEY` | Yapılandırılmış hedefin sağlayıcısına ait anahtar gerekir. Genel istemci sınırlı failover uygular; kota korumalı ders sohbeti tek deneme yapar. Varsayılan iki hedef de Groq kullanır ve aynı sağlayıcı/kota arızasını paylaşır. [Sağlayıcı ön kontrolü](provider-readiness.md) |
 | `WORKER_DRAIN_SECRET` | `POST /internal/drain` ucunu korur. **Boşsa uç 404 döner** (fail-closed) |
@@ -64,8 +64,7 @@ Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:
 
 ### Web (Vercel)
 
-`NEXT_PUBLIC_API_URL` ve Supabase anahtarları — bunlar liderin alanı
-(`apps/web/**` hiçbir şeride açık değil).
+`NEXT_PUBLIC_API_URL` gerçek API origin'ine, `NEXT_PUBLIC_SUPABASE_URL` seçilmiş kimlik projesine işaret eder. `NEXT_PUBLIC_SUPABASE_ANON_KEY` tarayıcıya açık istemci anahtarıdır; servis rolü veya JWT imza sırrı bu değişkenlere konmaz. CSP bu iki yapılandırılmış adresin yalnız doğrulanmış origin'lerini kullanır. Üretimde `NEXT_PUBLIC_DEV_AUTH` kapalı olmalıdır. Bu değerler Next derlemesine girer; değiştirilirse web yeniden derlenir.
 
 ## 3. Migration sırası
 
