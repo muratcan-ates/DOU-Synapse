@@ -78,9 +78,19 @@ yerelde koşuldu:
 | `rls_question_authoring.sql` | 0 FAIL |
 | `question_authoring_concurrency_check.py` | 4 PASS (eşzamanlı cevap/oturum taslağı dondurur) |
 
-Ayrıca `psql … | tee` boru hattı çıkış kodunu **yutuyordu**: SQL yarıda kesilse bile adım
-yeşil yanıyordu, yani kapı yalnız FAIL kelimesini arayan bir grep'ti. RLS adımlarına
-`set -euo pipefail` eklendi.
+Ayrıca RLS kapısında **iki ayrı sessizlik** vardı ve ikisi de ölçüldü (boş bir veritabanında
+bilerek bozuk SQL koşturularak):
+
+| Koşum | Çıkış kodu |
+|---|---|
+| `psql -f` (ON_ERROR_STOP yok) | **0** — SQL yarıda kesildi, kapı yeşil |
+| `psql -v ON_ERROR_STOP=1 -f` | 3 ✓ |
+| `ON_ERROR_STOP` + `\| tee` (pipefail yok) | **0** — `tee` her zaman 0 döner, yutuldu |
+| `ON_ERROR_STOP` + `\| tee` + `set -o pipefail` | 3 ✓ |
+
+Yani ekrana `FAIL` yazmak SQL hatası değildir ve tek başına `pipefail` yetmez. RLS
+adımlarına hem `set -euo pipefail` hem `-v ON_ERROR_STOP=1` (ve psqlrc'yi devre dışı bırakan
+`-X`) eklendi. Bu ayrımı `019` şeridini hazırlayan GPT oturumu yakaladı; ölçüm burada.
 
 ## KOŞULMADI — dürüst sınır
 

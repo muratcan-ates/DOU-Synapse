@@ -159,7 +159,10 @@ def main(argv: list[str] | None = None) -> int:
     template.update(
         {
             "change_id": change_id,
-            "lineage_id": "branch-aggregate",
+            # Soy kütüğü kayda özgüdür: aynı lineage + revision ikinci kez
+            # yazılırsa doğrulayıcı LINEAGE_DUPLICATE_REVISION verir ve depo
+            # geleneği zaten `supersedes` zinciri değil bağımsız kayıt kullanıyor.
+            "lineage_id": f"branch-aggregate-{number:03d}",
             "revision": 1,
             "supersedes": None,
             "previous_status": None,

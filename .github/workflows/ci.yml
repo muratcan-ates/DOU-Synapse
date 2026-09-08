@@ -93,20 +93,26 @@ jobs:
       - name: RLS izolasyon kanıtı
         working-directory: .
         run: |
-          # `psql ... | tee` boru hattının ÇIKIŞ KODUNU yutuyordu: SQL yarıda
-          # kesilse bile `tee` 0 döndüğü için adım yeşil yanıyordu. `pipefail`
-          # olmadan bu kapı yalnız FAIL kelimesini arayan bir grep'ti.
+          # İki ayrı sessizlik kaynağı, iki ayrı kalkan:
+          #  - `psql ... | tee` boru hattının ÇIKIŞ KODUNU yutuyordu (tee her zaman
+          #    0 döner) -> `set -o pipefail`.
+          #  - `psql -f` ON_ERROR_STOP olmadan SQL hatasında da 0 döner; betik
+          #    yarıda kesilse bile "FAIL yazmadı" diye yeşil sayılırdı
+          #    -> `-v ON_ERROR_STOP=1`. Ekrana FAIL yazmak SQL hatası DEĞİLDİR;
+          #    ikisi ayrı arızadır ve ikisi de kapatılmalıdır.
+          # `-X` psqlrc'yi devre dışı bırakır: geliştirici makinesindeki kişisel
+          # ayar CI çıktısını değiştirmesin.
           set -euo pipefail
           psql -d postgres -c 'DROP DATABASE IF EXISTS rls_check'
           psql -d postgres -c 'CREATE DATABASE rls_check'
           for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -d rls_check -f "$f"; done
           # Testin gerçekten kırmızı yanabildiğini de doğrularız: politika bozulunca FAIL
           # çıkmalı, aksi halde test hiçbir şey kanıtlamıyor demektir.
-          psql -d rls_check -f supabase/tests/rls_isolation.sql 2>&1 | tee /tmp/rls.out
+          psql -X -v ON_ERROR_STOP=1 -d rls_check -f supabase/tests/rls_isolation.sql 2>&1 | tee /tmp/rls.out
           if grep -q FAIL /tmp/rls.out; then echo "RLS izolasyonu bozuk"; exit 1; fi
           psql -q -d rls_check -c "DROP POLICY chunks_member_read ON chunks;
                                    CREATE POLICY chunks_member_read ON chunks FOR SELECT USING (true);"
-          psql -d rls_check -f supabase/tests/rls_isolation.sql 2>&1 | tee /tmp/rls_broken.out
+          psql -X -v ON_ERROR_STOP=1 -d rls_check -f supabase/tests/rls_isolation.sql 2>&1 | tee /tmp/rls_broken.out
           if ! grep -q FAIL /tmp/rls_broken.out; then
             echo "Politika bilerek bozuldu ama test yeşil kaldı — test bir şey kanıtlamıyor"; exit 1
           fi
@@ -130,7 +136,7 @@ jobs:
           for f in supabase/migrations/*.sql; do
             psql -v ON_ERROR_STOP=1 -q -d rls_assessment_template -f "$f"
           done
-          psql -d rls_assessment_template -f supabase/tests/rls_assessment.sql 2>&1 | tee /tmp/rls_a.out
+          psql -X -v ON_ERROR_STOP=1 -d rls_assessment_template -f supabase/tests/rls_assessment.sql 2>&1 | tee /tmp/rls_a.out
           if grep -q FAIL /tmp/rls_a.out; then echo "assessment RLS bozuk"; exit 1; fi
           supabase/tests/rls_assessment_mutation_check.sh rls_assessment_template
 

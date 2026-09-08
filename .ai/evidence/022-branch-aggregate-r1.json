@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "022-branch-aggregate-r1",
+  "captured_at": "2026-09-08T05:25:40+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && TEST_DB_NAME=dou_final .venv/bin/python -m pytest -q; cd ../web && bun test lib/ && bunx tsc --noEmit; cd ../.. && node scripts/docs_check.mjs; ON_ERROR_STOP ölçümü: bozuk SQL ile psql çıkış kodu 0 -> 3",
+  "environment": "yerel macOS · PostgreSQL 16 + pgvector · sahte sağlayıcı",
+  "results": {
+    "aggregated_files": 34,
+    "backend_tests_passed": 1197,
+    "web_unit_tests_passed": 428,
+    "psql_exit_without_on_error_stop": 0,
+    "psql_exit_with_on_error_stop": 3
+  },
+  "governance_note": "Bu kayıt YENİ bir ölçüm iddia etmez; dalın commit'lerine dağılmış hassas dosyaları hedef dal tabanına karşı tek kapsam altında toplar. Her dilimin kendi kanıtı kendi dossier'inde durur ve değiştirilmez. Doğrulayıcı bir dossier'i yalnız HEAD'de tanıtıldığı commit'te uygun saydığı için, dalın üstüne yeni commit geldikçe bu kayıt yenilenmelidir; PR'dan önceki son commit'te bir kez koşturmak yeterlidir. Bu turda RLS kapısındaki ikinci sessizlik (ON_ERROR_STOP eksikliği) ölçülerek kapatıldı; kanıt specs/017-completion-integration/verification.md'de tablo hâlinde.",
+  "limitations": "Kapsam birleştirmesidir, kalite kanıtı değildir. Gerçek sağlayıcı, staging ve insan kabulü bu kayıtla ilerlemez.",
+  "privacy": "içerik yok; yalnız dosya yolları"
+}
