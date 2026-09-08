@@ -1,0 +1,33 @@
+{
+  "scope": "offline only; no DB/server/worker execution",
+  "checks": [
+    {
+      "name": "offline",
+      "exit_code": 0,
+      "log_sha256": "fc33bd854e0d03845633c1331c888b515821553753aa5c1447528d49c52a32ed"
+    },
+    {
+      "name": "lint",
+      "exit_code": 0,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "name": "format",
+      "exit_code": 0,
+      "log_sha256": "eee76f865de5a9f2456950f710ae5d5f9b5bd0ea02aa54f614c5eed6642a0bfd"
+    },
+    {
+      "name": "plan",
+      "exit_code": 0,
+      "log_sha256": "36745f300c2d87482a308d7534f915b529c64265993fb877c0281a0ae1b8aab9"
+    }
+  ],
+  "offline_test_count": 29,
+  "source_sha256": "09657a8d4c11dde71360573bddd5f786f64789952282fbe6293f391d91dbd825",
+  "stage_source_set_match": true,
+  "stage_files": 134,
+  "v1_manifest_entries_unchanged": true,
+  "worker_Child_class_AST_unchanged": true,
+  "actual_process_run": "not-run; root-only",
+  "negative_controls_caught": 5
+}

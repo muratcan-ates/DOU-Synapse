@@ -11,8 +11,12 @@ kırmızıya çevirebilen tek yerdir.
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
+import sys
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 
 import pytest
 
@@ -64,13 +68,73 @@ class TestMaterialize:
         assert gercek.stat().st_ino == ino, "gereksiz kopya, gereksiz disk"
         assert gercek.read_bytes() == b"zaten-gercek"
 
-    def test_quantize_ve_no_quantize_yollari_cagiriyor(self) -> None:
-        source = (
-            Path(__file__).resolve().parents[1] / "scripts" / "bake_embedding_model.py"
-        ).read_text()
-        assert source.count("_materialize(") >= 4, (
-            "iki yol da model.onnx ve model.onnx_data'yı çevirmeli"
-        )
+    @pytest.mark.parametrize("no_quantize", [False, True], ids=["int8", "fp32"])
+    def test_quantize_ve_no_quantize_yollari_cagiriyor(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, no_quantize: bool
+    ) -> None:
+        """Gerçek CLI dalları ONNX okuyucusuna iki güvenli dosya teslim etmeli."""
+        cache = tmp_path / "cache"
+        snapshot = cache / "models--test" / "snapshots" / "revision"
+        blobs = cache / "models--test" / "blobs"
+        snapshot.mkdir(parents=True)
+        blobs.mkdir()
+        payloads = {"model.onnx": b"model-graph", "model.onnx_data": b"external-weights"}
+        for name, payload in payloads.items():
+            blob = blobs / name
+            blob.write_bytes(payload)
+            (snapshot / name).symlink_to(blob)
+        report = tmp_path / "report.json"
+        arguments = ["bake", "--cache-dir", str(cache), "--skip-download", "--report", str(report)]
+        if no_quantize:
+            arguments.append("--no-quantize")
+        monkeypatch.setattr(sys, "argv", arguments)
+        quantize_calls: list[dict[str, Any]] = []
+        embed_calls: list[bool] = []
+
+        def assert_materialized_inputs() -> None:
+            for name, payload in payloads.items():
+                path = snapshot / name
+                assert _tek_baglantili_gercek(path), f"ONNX için güvenli değil: {name}"
+                assert path.read_bytes() == payload
+
+        def fake_quantize_dynamic(**kwargs: Any) -> None:
+            assert_materialized_inputs()
+            assert kwargs["model_input"] == snapshot / "model.onnx"
+            quantize_calls.append(kwargs)
+            kwargs["model_output"].write_bytes(b"int8")
+
+        def fake_embed(cache_dir: Path, model_name: str) -> list[list[float]]:
+            assert cache_dir == cache
+            assert model_name == "intfloat/multilingual-e5-large"
+            if no_quantize:
+                assert_materialized_inputs()
+            elif embed_calls:
+                assert _tek_baglantili_gercek(snapshot / "model.onnx")
+                assert (snapshot / "model.onnx").read_bytes() == b"int8"
+                assert not (snapshot / "model.onnx_data").exists()
+            embed_calls.append(no_quantize)
+            return [[1.0, float(index + 1)] for index in range(len(_bake.PROBE_TEXTS))]
+
+        def unexpected_download(*args: Any, **kwargs: Any) -> None:
+            pytest.fail("Bu regresyon testi model indirmemeli")
+
+        quantization = ModuleType("onnxruntime.quantization")
+        quantization.QuantType = type("QuantType", (), {"QInt8": "QInt8"})
+        quantization.quantize_dynamic = fake_quantize_dynamic
+        monkeypatch.setitem(sys.modules, "onnxruntime.quantization", quantization)
+        monkeypatch.setattr(_bake, "_embed", fake_embed)
+        monkeypatch.setattr(_bake, "_download", unexpected_download)
+
+        assert _bake.main() == 0
+        assert len(quantize_calls) == (0 if no_quantize else 1)
+        assert len(embed_calls) == (1 if no_quantize else 2)
+        result = json.loads(report.read_text())
+        assert result["fp32_bytes"] == sum(len(payload) for payload in payloads.values())
+        if no_quantize:
+            assert result["quantized"] is False
+        else:
+            assert result["int8_bytes"] == 4
+            assert result["cosine_min"] == 1.0
 
     def test_sozlesme_saglanamazsa_sessizce_gecilmez(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

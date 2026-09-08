@@ -1,0 +1,17 @@
+{
+  "label": "Tek gerçek B4 E2E senaryosu, tema dark uygulandıktan sonra animasyonlar kapatılarak alınmış kararlı görüntü. 1 PASS 2.9s; 2 sentetik ders/0 audit temizlendi.",
+  "run_id": "mtsih4xpb742",
+  "files": {
+    "apps/web/e2e/chat-history-deletion.spec.ts": "33a8837acc2663cd5af8e428979a7b04fcde692992f0eef341de93a4a443669d"
+  },
+  "image": {
+    "source": "apps/web/test-results/chat-history-deletion-öğre-0cfbb-rs-ve-sınav-taslağı-korunur-chromium/delete-confirmation-375-dark.png",
+    "preserved": "/private/tmp/dou018-evidence/b4-theme-stable-final/delete-confirmation-375-dark.png",
+    "sha256": "8f2408637b2aa71e9a16fb1219486039d05456d630efb5184c54c1c7efff0cf0"
+  },
+  "logs": {
+    "b4-theme-screenshot-final.log": "22823dc3f9048bb4dedeaeba359ee4c767dd9656e95905ffbc1e139bd3851b45",
+    "b4-theme-screenshot-selection-miss.log": "508a512e636a6c8fdbdd5c6c19801be7dbc2918ebc2f9aa391d4e114cb1af8f3"
+  },
+  "previous_full_68_visual_manifest_sha256": "280df986f234485ef8490a223dbb1ca4bc7d0b90f49c8fe6606691be5033adb8"
+}

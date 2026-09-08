@@ -1,0 +1,92 @@
+{
+  "status": "negative-acceptance-pass",
+  "case": "precommit",
+  "target": "dou018_recovery_target08",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "source_receipt_sha256": "c97a680d380fad6651a7f948d1e79a4b50762f4f942a805b9786df2ef3f12d1e",
+  "target_identity_sha256": "192a4f7d68afab7886f999ec78228c5bb759c1fbe1950701914f49fcc6b7f581",
+  "scope": "controlled synthetic negative; no general production recovery certification",
+  "before": {
+    "oid": "1060043",
+    "name": "dou018_recovery_target08",
+    "allow_connections": true,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "facts": {
+    "fence_committed": true,
+    "commit_verified_inside_apply": false,
+    "reopen_attempted": false,
+    "reopen_completed": false,
+    "target_binding": {
+      "pid": 30040,
+      "user": "muratates",
+      "superuser": true,
+      "server_port": 55448,
+      "database_oid": "1060043",
+      "backend_start": "1788871466.906222",
+      "database_name": "dou018_recovery_target08",
+      "application_name": "dou-recovery-target-51105616b19a9b0d5ea64db8",
+      "postmaster_start": "1788847729.090584",
+      "system_identifier": "7683042491268153327"
+    },
+    "controlled_script_injection": {
+      "original_sha256": "d78f6e4185096f2f83266bb3907f39814265398f76514853879c6b47f5e082fe",
+      "injected_sha256": "b247e0f4ef46adc5dd4f0a21eb04917860774c19cf14eaf401daaeda490cc0c7",
+      "insertion_offset": 215314588,
+      "injection_sha256": "19b12a2f54438ba608138f8976fbed6e01aa6843899200b2f5cfc21c418ed48b",
+      "position": "after-security-verification-before-final-COMMIT"
+    }
+  },
+  "safe_restore_code": "RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE",
+  "private_restore_code_sha256": "ece4eed3b54a410602b74558f23c3865e4b7fae4fa307078bb0b5a268ec80734",
+  "after": {
+    "oid": "1060043",
+    "name": "dou018_recovery_target08",
+    "allow_connections": false,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "elapsed_seconds": 24.92,
+  "first_tool_error": {
+    "script_line": 25459,
+    "sqlstate": "22012",
+    "safe_code": "DEFINITE_PRECOMMIT_DIVISION_BY_ZERO"
+  },
+  "own_child_exit_code": 3,
+  "events": [
+    {
+      "phase": "fence",
+      "event": "enter"
+    },
+    {
+      "phase": "fence",
+      "event": "return"
+    }
+  ],
+  "private_artifacts": [
+    {
+      "file": "target.stderr",
+      "bytes": 84,
+      "sha256": "159d42502fb76b05df442ef2897158e90f225a94b5db6ff09e60ebf3d4a0ff75",
+      "source_bytes": 84,
+      "truncated": false
+    },
+    {
+      "file": "target.stdout",
+      "bytes": 7690,
+      "sha256": "81c9f29367b0e6efddc6622d7dd44d95b6da9c59a3c6180f5b33838bbfd85e67",
+      "source_bytes": 7690,
+      "truncated": false
+    },
+    {
+      "file": "target.sql",
+      "bytes": 215315451,
+      "sha256": "b247e0f4ef46adc5dd4f0a21eb04917860774c19cf14eaf401daaeda490cc0c7",
+      "source_bytes": 215315451,
+      "truncated": false
+    }
+  ]
+}

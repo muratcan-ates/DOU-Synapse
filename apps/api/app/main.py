@@ -16,6 +16,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
 from app.api import (
@@ -47,11 +48,25 @@ from app.core.errors import (
     validation_error_handler,
 )
 from app.core.logging import configure_logging, get_logger
+from app.core.request_body_limit import MULTIPART_ENVELOPE_BYTES, RequestBodyLimitMiddleware
 from app.core.warmup import start_warmup
 
 logger = get_logger("app.request")
 
 _SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+
+def _request_log_path(request: Request) -> str:
+    """Yalnız eşleşen API rotasının sunucuda tanımlı şablonunu kaydet.
+
+    Parametreler, sorgu dizgesi ve ham adres günlükte yer almaz. Yönlendiriciye
+    ulaşmayan istekler, eşleşmeyen yollar ve rota bildirmeyen statik mount'lar
+    aynı sabit değeri kullanır; ham adrese geri dönüş yapılmaz. Alt FastAPI
+    uygulamasında eşleşme varsa yalnız iç rotanın şablonu kullanılır.
+    """
+    route = request.scope.get("route")
+    return route.path_format if isinstance(route, APIRoute) else "<unmatched>"
+
 
 API_SECURITY_HEADERS: dict[str, str] = {
     "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
@@ -129,6 +144,12 @@ def create_app() -> FastAPI:
 
     initialize_evaluation_runtime(app, settings)
 
+    # Son eklenen middleware dışta çalışır: CORS/güvenlik/request-id erken
+    # boyut retlerini de sarar. Ayrıştırıcıya yalnız sınırlanmış gövde ulaşır.
+    app.add_middleware(
+        RequestBodyLimitMiddleware,
+        max_bytes=settings.max_upload_bytes + MULTIPART_ENVELOPE_BYTES,
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
@@ -181,7 +202,7 @@ def create_app() -> FastAPI:
                 "context": {
                     "request_id": request_id,
                     "method": request.method,
-                    "path": request.url.path,
+                    "path": _request_log_path(request),
                     "status": response.status_code,
                     "duration_ms": duration_ms,
                 }

@@ -1,0 +1,102 @@
+{
+  "status": "negative-acceptance-pass",
+  "case": "reopen",
+  "target": "dou018_recovery_target10",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "source_receipt_sha256": "c97a680d380fad6651a7f948d1e79a4b50762f4f942a805b9786df2ef3f12d1e",
+  "target_identity_sha256": "d1c91517992f385d383b78b48f1ffda7ae5e62bc1526a1d0bdee4959f854c3ef",
+  "scope": "controlled synthetic negative; no general production recovery certification",
+  "before": {
+    "oid": "1114944",
+    "name": "dou018_recovery_target10",
+    "allow_connections": true,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "facts": {
+    "fence_committed": true,
+    "commit_verified_inside_apply": true,
+    "reopen_attempted": true,
+    "reopen_completed": false,
+    "target_binding": {
+      "pid": 30777,
+      "user": "muratates",
+      "superuser": true,
+      "server_port": 55448,
+      "database_oid": "1114944",
+      "backend_start": "1788871823.051122",
+      "database_name": "dou018_recovery_target10",
+      "application_name": "dou-recovery-target-2ba20c9c7083a3f443e8706d",
+      "postmaster_start": "1788847729.090584",
+      "system_identifier": "7683042491268153327"
+    },
+    "commit_wire_receipt": {
+      "xid": "58856",
+      "binding": {
+        "pid": 30777,
+        "user": "muratates",
+        "superuser": true,
+        "server_port": 55448,
+        "database_oid": "1114944",
+        "backend_start": "1788871823.051122",
+        "database_name": "dou018_recovery_target10",
+        "application_name": "dou-recovery-target-2ba20c9c7083a3f443e8706d",
+        "postmaster_start": "1788847729.090584",
+        "system_identifier": "7683042491268153327"
+      },
+      "commit_status": "committed"
+    },
+    "controlled_reopen_failure_before_SQL": true
+  },
+  "safe_restore_code": "RESTORE_COMMITTED_FENCE_REOPEN_UNCONFIRMED",
+  "private_restore_code_sha256": "bb70dc977ad622354c287eff7f81e66a9e8f14a2bb9a25d0f215664edfe99f00",
+  "after": {
+    "oid": "1114944",
+    "name": "dou018_recovery_target10",
+    "allow_connections": false,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "elapsed_seconds": 24.512,
+  "first_tool_error": null,
+  "own_child_exit_code": -15,
+  "events": [
+    {
+      "phase": "fence",
+      "event": "enter"
+    },
+    {
+      "phase": "fence",
+      "event": "return"
+    },
+    {
+      "phase": "reopen",
+      "event": "enter"
+    }
+  ],
+  "private_artifacts": [
+    {
+      "file": "target.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_bytes": 0,
+      "truncated": false
+    },
+    {
+      "file": "target.stdout",
+      "bytes": 8152,
+      "sha256": "e942c4a2af883a55c343f745e5a80e94277efc05c3c7a5c60314b1361f07fbc2",
+      "source_bytes": 8152,
+      "truncated": false
+    },
+    {
+      "file": "target.sql",
+      "bytes": 215315415,
+      "sha256": "2aa9ec3e1954ce63a21fe5532f679bcb72074968953d16169e2874cf336bacf9",
+      "source_bytes": 215315415,
+      "truncated": false
+    }
+  ]
+}

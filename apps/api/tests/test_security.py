@@ -28,28 +28,15 @@ OTHER_SECRET = "baska-bir-supabase-projesinin-secreti-uzun"
 ISSUER = "https://proje.supabase.co/auth/v1"
 
 
-class SettingsWithIssuer(Settings):
-    """`jwt_issuer` alanı eklenmiş ayarlar.
-
-    Alan `config.py`'de HENÜZ YOK (lider dosyası; bkz. security.py::_expected_issuer).
-    Kod alanı `getattr` ile okuduğu için buradaki alt sınıf, alan eklendiğinde ne
-    olacağını bugünden ölçer: rapor "eklenince çalışacak" demiyor, çalıştığını
-    gösteriyor (Anayasa III).
-    """
-
-    jwt_issuer: str | None = None
-
-
 def _settings(**overrides: Any) -> Settings:
     values: dict[str, Any] = {
         "environment": "local",
         "supabase_jwt_secret": SECRET,
         "dev_auth_enabled": False,
+        "jwt_issuer": None,
     }
     values.update(overrides)
-    if "jwt_issuer" in values:
-        return SettingsWithIssuer(**values)
-    return Settings(**values)
+    return Settings(_env_file=None, **values)
 
 
 def _token(secret: str = SECRET, *, algorithm: str = "HS256", **overrides: Any) -> str:
@@ -171,7 +158,7 @@ class TestZorunluClaimler:
 
 
 class TestIssuerSabitleme:
-    """`jwt_issuer` ayarı eklendiğinde davranış — bugün alan yok, kod hazır."""
+    """Gerçek Settings alanı, açık issuer'ı token claim'ine sabitler."""
 
     def test_issuer_ayarlanmissa_yanlis_issuer_reddedilir(self) -> None:
         with pytest.raises(AuthenticationError):
@@ -186,12 +173,7 @@ class TestIssuerSabitleme:
         assert isinstance(principal.user_id, UUID)
 
     def test_issuer_ayarli_degilken_iss_degeri_sabitlenmez(self) -> None:
-        """Bugünkü davranışın dürüst kaydı: `iss` isteniyor ama sabitlenmiyor.
-
-        Bu testin yeşil olması bir güvence değil, bir SINIRIN kaydıdır. Alan eklendiği
-        gün bu test kırmızıya döner ve o an `docs/security.md`'deki "uygulanmadı"
-        satırı da silinir.
-        """
+        """Yerel ortamda issuer seçilmediyse imza ve zorunlu claim'ler korunur."""
         principal = authenticate(_token(iss="https://baska-proje.supabase.co/auth/v1"), _settings())
 
         assert isinstance(principal.user_id, UUID)
@@ -265,3 +247,35 @@ class TestBilgiSizintisi:
         kayit = "\n".join(caplog.messages)
         assert "kimlik doğrulama reddi" in kayit
         assert token not in kayit
+
+
+def _production_auth_settings() -> Settings:
+    return _settings(
+        environment="production",
+        jwt_issuer=ISSUER,
+        llm_fake_provider=False,
+        storage_backend="supabase",
+        supabase_url="https://storage.example.invalid",
+        supabase_service_role_key="synthetic-storage-key",
+    )
+
+
+@pytest.mark.parametrize(
+    "issuer", [None, "", " ", "https://other.supabase.co/auth/v1", ISSUER + "/"]
+)
+def test_production_token_wrong_or_missing_issuer_is_rejected(issuer: str | None) -> None:
+    with pytest.raises(AuthenticationError):
+        authenticate(_token(iss=issuer), _production_auth_settings())
+
+
+def test_production_token_exact_issuer_is_accepted() -> None:
+    user_id = uuid4()
+    principal = authenticate(_token(sub=str(user_id)), _production_auth_settings())
+    assert principal.user_id == user_id
+
+
+@pytest.mark.parametrize("issuer", [None, "", " "])
+def test_production_consumer_rejects_issuer_removed_after_validation(issuer: str | None) -> None:
+    settings = _production_auth_settings().model_copy(update={"jwt_issuer": issuer})
+    with pytest.raises(AuthenticationError):
+        authenticate(_token(), settings)

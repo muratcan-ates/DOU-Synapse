@@ -54,6 +54,7 @@ function deferred<T>() {
 function harness(options?: {
   matchesIdentity?: (answer: ChatAnswer) => boolean;
   post?: (body: ChatRequest) => Promise<ChatAnswer>;
+  onErrorHandled?: (error: unknown, context: ChatTurnContext) => boolean;
 }) {
   const log: string[] = [];
   const bodies: ChatRequest[] = [];
@@ -78,6 +79,7 @@ function harness(options?: {
       return post(body);
     },
     matchesIdentity: options?.matchesIdentity ?? (() => true),
+    onErrorHandled: options?.onErrorHandled,
     onAnswer: (answer, text, context) => {
       accepted.push({ answer, text, context });
       log.push(`answer:${answer.message_id}`);
@@ -263,5 +265,60 @@ describe("createChatTurn — epoch geçersizlemesi", () => {
     first.resolve(ANSWER);
     await staleTurn;
     expect(state.accepted).toHaveLength(1); // geç yanıt yine de dökülmedi
+  });
+});
+
+
+describe("createChatTurn — bileşen kapanışı", () => {
+  test("cancel ayrılmış bileşene yazmaz; geç başarı kalıcılaştırma çağrısını çalıştıramaz", async () => {
+    const request = deferred<ChatAnswer>();
+    const state = harness({ post: () => request.promise });
+    state.type("Özel öğrenci sorusu");
+    const flight = state.turn.submit(QA_CONTEXT);
+    const before = [...state.log];
+    state.turn.cancel();
+    expect(state.log).toEqual(before);
+    request.resolve(ANSWER); await flight;
+    expect(state.log).toEqual(before);
+    expect(state.accepted).toEqual([]);
+  });
+  test("cancel sonrası geç hata öğrenci taslağını geri yükleyemez; tekrar kurulumda yeni tur çalışır", async () => {
+    const request = deferred<ChatAnswer>();
+    const state = harness({ post: () => request.promise });
+    state.type("Eski öğrenci taslağı");
+    const flight = state.turn.submit(QA_CONTEXT); state.turn.cancel();
+    state.setPost(() => Promise.resolve(ANSWER)); state.type("Yeni tur");
+    await state.turn.submit(QA_CONTEXT);
+    const before = [...state.log];
+    request.reject(new Error("geç hata")); await flight;
+    expect(state.log).toEqual(before);
+    expect(state.readDraft()).toBe("");
+    expect(state.accepted.map((item) => item.text)).toEqual(["Yeni tur"]);
+  });
+});
+
+
+describe("silme/üyelik hatası kurtarması eski turun dışına çıkamaz", () => {
+  test("güncel 409 kapatılırken gönderilen özel metin taslağa iade edilmez", async () => {
+    const failure = new ApiError("Geçmiş değişti.", "chat_history_changed", 409, "request-synthetic");
+    const recovered: unknown[] = [];
+    const state = harness({ post: async () => { throw failure; }, onErrorHandled: (error, context) => {
+      recovered.push([error, context]); state.turn.invalidate(); return true;
+    } });
+    state.type("Silinen konuşmanın özel sorusu?");
+    await state.turn.submit(QA_CONTEXT);
+    expect(recovered).toEqual([[failure, QA_CONTEXT]]);
+    expect(state.readDraft()).toBe("");
+    expect(state.log).not.toContain('draft:"Silinen konuşmanın özel sorusu?"');
+    expect(state.accepted).toEqual([]);
+  });
+  test("geç 409 yeni oturumu kapatamaz ve kurtarma callback'ini çalıştıramaz", async () => {
+    const request = deferred<ChatAnswer>(); let recovered = 0;
+    const state = harness({ post: () => request.promise, onErrorHandled: () => { recovered += 1; return true; } });
+    state.type("Eski konuşma sorusu?"); const old = state.turn.submit(QA_CONTEXT);
+    state.turn.invalidate(); state.type("Yeni oturumun taslağı");
+    request.reject(new ApiError("Geçmiş değişti.", "chat_history_changed", 409, "request-old"));
+    await old;
+    expect(recovered).toBe(0); expect(state.readDraft()).toBe("Yeni oturumun taslağı");
   });
 });

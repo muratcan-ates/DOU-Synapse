@@ -1,0 +1,398 @@
+{
+  "course_id": "f49d018d-196e-4faa-aa52-9626a9c4d5f9",
+  "instructor_id": "3097934d-c784-4192-9157-45b219534e50",
+  "student_id": "e76ed7cd-d49e-43ed-aad2-17fa183ab713",
+  "database_identity": {
+    "host": "127.0.0.1",
+    "port": 55448,
+    "database": "dou018_eval_c1holdout01"
+  },
+  "embedding_provider": "hashing",
+  "embedding_model": "intfloat/multilingual-e5-large",
+  "embedding_runtime": {
+    "onnxruntime": "1.28.0",
+    "tokenizers": "0.23.1"
+  },
+  "uploaded": [
+    "01-processes.pdf",
+    "02-cpu-scheduling.pdf",
+    "03-memory-management.pdf",
+    "04-synchronization.pdf",
+    "05-deadlock-demo.pdf",
+    "06-file-systems.pptx",
+    "07-virtual-memory.pdf",
+    "08-io-systems.pdf",
+    "09-disk-and-storage.pdf",
+    "10-security-and-protection.pdf",
+    "11-virtualization-containers.pptx",
+    "12-real-time-scheduling.pptx",
+    "13-ipc.pptx",
+    "14-distributed-os.pptx",
+    "15-boot-and-kernel.pptx",
+    "bankers_algorithm.c",
+    "fork_example.c",
+    "page_replacement.py",
+    "pipe_shell.c",
+    "producer_consumer.py",
+    "reader_writer.py",
+    "thread_pool.py"
+  ],
+  "source_manifest": [
+    {
+      "file_name": "01-processes.pdf",
+      "sha256": "02a75740e3077ac7f13d7c995039dc37100496b97a35f3707583bec201cb27a4"
+    },
+    {
+      "file_name": "02-cpu-scheduling.pdf",
+      "sha256": "3f5e85335437ca2c0d13e8f7e96f15cf71eb648f7b141ef72aaa567a9e59261f"
+    },
+    {
+      "file_name": "03-memory-management.pdf",
+      "sha256": "c065d206810b594d73d10bd171acdd9ca7cfeda5e2cbf67a586e99eb2d7efbce"
+    },
+    {
+      "file_name": "04-synchronization.pdf",
+      "sha256": "3920c48bef0dafc5a77d9059ef40dcda561f98cee4d0d5851bfdbaa5f40b50ef"
+    },
+    {
+      "file_name": "05-deadlock-demo.pdf",
+      "sha256": "16ff292714967e7898e2a91ef927a98e794b5ee9d62da7fd709c7dad8b723442"
+    },
+    {
+      "file_name": "06-file-systems.pptx",
+      "sha256": "f0c0bce6cfba14c5d7e6a5924836d5b4ff4396b3456b5e80098d36bc9002f094"
+    },
+    {
+      "file_name": "07-virtual-memory.pdf",
+      "sha256": "5e98c100208d205e07aca5327d79ba903dec8f7c76dc0797932ad7764de4a3b3"
+    },
+    {
+      "file_name": "08-io-systems.pdf",
+      "sha256": "8a7bb5927c9c4495fb73e3d1a52934aa67ddf5f7a8eff540d39ed9db33573e77"
+    },
+    {
+      "file_name": "09-disk-and-storage.pdf",
+      "sha256": "292536832151b154a842c6be65c19f83459b2a47420c226ba2b9794892766d57"
+    },
+    {
+      "file_name": "10-security-and-protection.pdf",
+      "sha256": "a616f7ffacd5769198b72d078a8648ff4a5f1a08d17e1b42a3c0ff4bb2e0cb0a"
+    },
+    {
+      "file_name": "11-virtualization-containers.pptx",
+      "sha256": "19521e1be90005bc32a78a8e558cb737119d3fa5f76e7c57a618ec3cbb7e9ad1"
+    },
+    {
+      "file_name": "12-real-time-scheduling.pptx",
+      "sha256": "ac73311dd9f5fd8b0aa7efe403a2f56a78def276c60f0494f0bb7fa86cae79db"
+    },
+    {
+      "file_name": "13-ipc.pptx",
+      "sha256": "86bae99faaf01b235b0c228279aeefd0ecf24d0e1e1c0177ea8cbd95b7a27f7e"
+    },
+    {
+      "file_name": "14-distributed-os.pptx",
+      "sha256": "40b086a0a2a8ceaca54dda24fdd1663d23c47b35c04ad0c593c8c4698d7a449e"
+    },
+    {
+      "file_name": "15-boot-and-kernel.pptx",
+      "sha256": "16865db9c74b8c0a3e48546e14d39c8edaa08f372c6268d3d651c8dc78e4c3d4"
+    },
+    {
+      "file_name": "bankers_algorithm.c",
+      "sha256": "524096a926e417a8c65d52a2040ff1db46e04f107241521b534c158dc8055db3"
+    },
+    {
+      "file_name": "fork_example.c",
+      "sha256": "3f7e0d6fd568d1499913440f7d6c928abd8e50b069902b31decdecf802acd519"
+    },
+    {
+      "file_name": "page_replacement.py",
+      "sha256": "bd76649ce50f4e8f37213dddafe276d0cb0be6d61a99dd4fbefb5a37b796403a"
+    },
+    {
+      "file_name": "pipe_shell.c",
+      "sha256": "263ad808cbfef63f99f41dcdd2b3a88e179043ac1b516730f0a61486509b56f5"
+    },
+    {
+      "file_name": "producer_consumer.py",
+      "sha256": "d89fdbe248342e865629eef22f85eec1fed167d0191a84ba541aba2204733ad7"
+    },
+    {
+      "file_name": "reader_writer.py",
+      "sha256": "d8220671dd623a3e76aec30a993d6928efb070190f8d5a2ce864a4499cf202a3"
+    },
+    {
+      "file_name": "thread_pool.py",
+      "sha256": "c6801570afc04d2a91c0999a3c144cf79e2f085a3863965d6917240fba5ab77d"
+    }
+  ],
+  "documents": [
+    {
+      "file_name": "thread_pool.py",
+      "status": "completed",
+      "chunk_count": 6
+    },
+    {
+      "file_name": "reader_writer.py",
+      "status": "completed",
+      "chunk_count": 4
+    },
+    {
+      "file_name": "producer_consumer.py",
+      "status": "completed",
+      "chunk_count": 6
+    },
+    {
+      "file_name": "pipe_shell.c",
+      "status": "completed",
+      "chunk_count": 3
+    },
+    {
+      "file_name": "page_replacement.py",
+      "status": "completed",
+      "chunk_count": 6
+    },
+    {
+      "file_name": "fork_example.c",
+      "status": "completed",
+      "chunk_count": 2
+    },
+    {
+      "file_name": "bankers_algorithm.c",
+      "status": "completed",
+      "chunk_count": 4
+    },
+    {
+      "file_name": "15-boot-and-kernel.pptx",
+      "status": "completed",
+      "chunk_count": 19
+    },
+    {
+      "file_name": "14-distributed-os.pptx",
+      "status": "completed",
+      "chunk_count": 18
+    },
+    {
+      "file_name": "13-ipc.pptx",
+      "status": "completed",
+      "chunk_count": 18
+    },
+    {
+      "file_name": "12-real-time-scheduling.pptx",
+      "status": "completed",
+      "chunk_count": 19
+    },
+    {
+      "file_name": "11-virtualization-containers.pptx",
+      "status": "completed",
+      "chunk_count": 19
+    },
+    {
+      "file_name": "10-security-and-protection.pdf",
+      "status": "completed",
+      "chunk_count": 5
+    },
+    {
+      "file_name": "09-disk-and-storage.pdf",
+      "status": "completed",
+      "chunk_count": 4
+    },
+    {
+      "file_name": "08-io-systems.pdf",
+      "status": "completed",
+      "chunk_count": 4
+    },
+    {
+      "file_name": "07-virtual-memory.pdf",
+      "status": "completed",
+      "chunk_count": 5
+    },
+    {
+      "file_name": "06-file-systems.pptx",
+      "status": "completed",
+      "chunk_count": 7
+    },
+    {
+      "file_name": "05-deadlock-demo.pdf",
+      "status": "completed",
+      "chunk_count": 4
+    },
+    {
+      "file_name": "04-synchronization.pdf",
+      "status": "completed",
+      "chunk_count": 4
+    },
+    {
+      "file_name": "03-memory-management.pdf",
+      "status": "completed",
+      "chunk_count": 3
+    },
+    {
+      "file_name": "02-cpu-scheduling.pdf",
+      "status": "completed",
+      "chunk_count": 4
+    },
+    {
+      "file_name": "01-processes.pdf",
+      "status": "completed",
+      "chunk_count": 3
+    }
+  ],
+  "chunks": [
+    {
+      "file_name": "01-processes.pdf",
+      "chunks": 3,
+      "with_page": 3,
+      "with_slide": 0,
+      "with_embedding": 3
+    },
+    {
+      "file_name": "02-cpu-scheduling.pdf",
+      "chunks": 4,
+      "with_page": 4,
+      "with_slide": 0,
+      "with_embedding": 4
+    },
+    {
+      "file_name": "03-memory-management.pdf",
+      "chunks": 3,
+      "with_page": 3,
+      "with_slide": 0,
+      "with_embedding": 3
+    },
+    {
+      "file_name": "04-synchronization.pdf",
+      "chunks": 4,
+      "with_page": 4,
+      "with_slide": 0,
+      "with_embedding": 4
+    },
+    {
+      "file_name": "05-deadlock-demo.pdf",
+      "chunks": 4,
+      "with_page": 4,
+      "with_slide": 0,
+      "with_embedding": 4
+    },
+    {
+      "file_name": "06-file-systems.pptx",
+      "chunks": 7,
+      "with_page": 0,
+      "with_slide": 7,
+      "with_embedding": 7
+    },
+    {
+      "file_name": "07-virtual-memory.pdf",
+      "chunks": 5,
+      "with_page": 5,
+      "with_slide": 0,
+      "with_embedding": 5
+    },
+    {
+      "file_name": "08-io-systems.pdf",
+      "chunks": 4,
+      "with_page": 4,
+      "with_slide": 0,
+      "with_embedding": 4
+    },
+    {
+      "file_name": "09-disk-and-storage.pdf",
+      "chunks": 4,
+      "with_page": 4,
+      "with_slide": 0,
+      "with_embedding": 4
+    },
+    {
+      "file_name": "10-security-and-protection.pdf",
+      "chunks": 5,
+      "with_page": 5,
+      "with_slide": 0,
+      "with_embedding": 5
+    },
+    {
+      "file_name": "11-virtualization-containers.pptx",
+      "chunks": 19,
+      "with_page": 0,
+      "with_slide": 19,
+      "with_embedding": 19
+    },
+    {
+      "file_name": "12-real-time-scheduling.pptx",
+      "chunks": 19,
+      "with_page": 0,
+      "with_slide": 19,
+      "with_embedding": 19
+    },
+    {
+      "file_name": "13-ipc.pptx",
+      "chunks": 18,
+      "with_page": 0,
+      "with_slide": 18,
+      "with_embedding": 18
+    },
+    {
+      "file_name": "14-distributed-os.pptx",
+      "chunks": 18,
+      "with_page": 0,
+      "with_slide": 18,
+      "with_embedding": 18
+    },
+    {
+      "file_name": "15-boot-and-kernel.pptx",
+      "chunks": 19,
+      "with_page": 0,
+      "with_slide": 19,
+      "with_embedding": 19
+    },
+    {
+      "file_name": "bankers_algorithm.c",
+      "chunks": 4,
+      "with_page": 0,
+      "with_slide": 0,
+      "with_embedding": 4
+    },
+    {
+      "file_name": "fork_example.c",
+      "chunks": 2,
+      "with_page": 0,
+      "with_slide": 0,
+      "with_embedding": 2
+    },
+    {
+      "file_name": "page_replacement.py",
+      "chunks": 6,
+      "with_page": 0,
+      "with_slide": 0,
+      "with_embedding": 6
+    },
+    {
+      "file_name": "pipe_shell.c",
+      "chunks": 3,
+      "with_page": 0,
+      "with_slide": 0,
+      "with_embedding": 3
+    },
+    {
+      "file_name": "producer_consumer.py",
+      "chunks": 6,
+      "with_page": 0,
+      "with_slide": 0,
+      "with_embedding": 6
+    },
+    {
+      "file_name": "reader_writer.py",
+      "chunks": 4,
+      "with_page": 0,
+      "with_slide": 0,
+      "with_embedding": 4
+    },
+    {
+      "file_name": "thread_pool.py",
+      "chunks": 6,
+      "with_page": 0,
+      "with_slide": 0,
+      "with_embedding": 6
+    }
+  ]
+}

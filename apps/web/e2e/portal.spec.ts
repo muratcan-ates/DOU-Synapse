@@ -330,7 +330,7 @@ test.describe("rol bazlı ürün portalı", () => {
       "href",
       "/account",
     );
-    await expect(page.getByRole("link", { name: /KVKK aydınlatma metni/ })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /Kişisel veriler ve gizlilik/ })).toHaveAttribute(
       "href",
       "/kvkk",
     );

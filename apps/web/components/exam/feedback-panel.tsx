@@ -1,15 +1,18 @@
 "use client";
 
 import { answerVerdict, describeSolution, formatScore, SCORE_SCALE, sourceInfo, VERDICT_LABEL } from "@/lib/exam";
+import { groundedMissingCriterion } from "@/lib/assessment-feedback";
+import { sourceContextHref } from "@/lib/source-quality";
 import type { AnswerFeedback } from "@/lib/types";
 import { SourceCard } from "@/components/source-card";
 import { Badge } from "@/components/ui";
 
-export function FeedbackPanel({ feedback }: { feedback: AnswerFeedback }) {
+export function FeedbackPanel({ courseId, feedback }: { courseId: string; feedback: AnswerFeedback }) {
   const verdict = answerVerdict(feedback);
   const spec = VERDICT_LABEL[verdict];
   const score = formatScore(feedback.score);
   const solution = describeSolution(feedback.solution);
+  const missingCriterion = groundedMissingCriterion(feedback);
 
   return (
     <div className="mt-6 rounded-lg border border-border bg-surface p-5">
@@ -74,6 +77,12 @@ export function FeedbackPanel({ feedback }: { feedback: AnswerFeedback }) {
           <SourceCard source={sourceInfo(feedback.why_wrong)} />
         </div>
       )}
+
+      {missingCriterion && <section aria-label="Eksik ölçütün dayanağı" className="mt-4 space-y-2">
+        <h3 className="text-xs font-medium text-fg-muted">Eksik ölçütün dayanağı</h3>
+        <p className="prose-tr text-sm text-fg">{missingCriterion.criterion}</p>
+        <SourceCard source={sourceInfo(missingCriterion.source)} href={sourceContextHref(courseId, missingCriterion.source.chunk_id)} />
+      </section>}
 
       {feedback.evidence && (
         <div className="mt-4">

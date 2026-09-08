@@ -79,8 +79,8 @@ class MigrationCheckTests(unittest.TestCase):
         self.assertNotEqual(check(yok, allowed_gaps=set()), [])
 
     def test_deponun_kendi_goclerini_dogrular(self) -> None:
-        """Bu depo bugün 0017'yi başka dalda tutuyor; kapı bildirimle geçmeli."""
-        self.assertEqual(main(["--allow-gap", "0017"]), 0)
+        """0017 ve runbook paralel işlerinin 0021–0023 rezervasyonu açık bildirilir."""
+        self.assertEqual(main(["--allow-gap", "0017", "--allow-gap", "0021", "--allow-gap", "0022", "--allow-gap", "0023"]), 0)
 
     def test_bildirimsiz_kosumda_depo_kapisi_kirmizi_yanar(self) -> None:
         """Rezerve numara bildirilmezse kapı sessiz kalmaz."""

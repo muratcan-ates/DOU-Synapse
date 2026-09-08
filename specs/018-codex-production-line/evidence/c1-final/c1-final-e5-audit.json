@@ -1,0 +1,269 @@
+{
+  "status": "verified_final_real_e5_retrieval_acceptance",
+  "manifest_sha256": "ea0d9452dd53f50b798403f7b7772e0d6dd50f97c1d6345967afd16d738ef147",
+  "checks": {
+    "baseline_three_real_git_sources_byte_equal": true,
+    "candidate_source_sha256_current_match": true,
+    "common_dependency_source_sha256_current_match": true,
+    "harness_source_sha256_current_match": true,
+    "runner_source_match": true,
+    "corpus_22_sources_completed_167_embeddings_and_file_hashes_match": true,
+    "raw_hashes_complete_127_105_no_provider_and_same_query_order": true,
+    "raw_common_config_and_corpus_identity_equal": true,
+    "recorded_before_after_and_both_arm_rls_state_equal": true,
+    "runner_enforces_readonly_forced_rls_and_before_after_comparison": true,
+    "unaltered_gold_queries_sources_and_scoring_selection_equal": true,
+    "metrics_recomputed_from_all_105_item_ranks_match": true,
+    "existing_paired_bootstrap_recomputed_for_recall5_mrr": true,
+    "model_cache_before_after_full_content_hashes_and_current_stats_match": true,
+    "local_fastembed_library_and_cache_revision_metadata_hashes_match": true,
+    "actual_e5_offline_contract_fixed_081_and_generation_exclusion": true,
+    "candidate_080_and_nondecrease_acceptance_recomputed": true,
+    "original_failed_e5_records_immutable_and_same_final_cache_config_corpus_queries": true,
+    "final_e5_receipt_log_and_all_sourcehashes_match": true
+  },
+  "corpus_state": {
+    "database": "dou018_eval_c1e501",
+    "role": "dou_app",
+    "rolsuper": false,
+    "rolbypassrls": false,
+    "rows": 167,
+    "namespace": "fastembed/intfloat/multilingual-e5-large@0.8.0",
+    "content_vector_metadata_sha256": "1fbff9e89fe71c86f343608c52cea1243cc3dcdeabf7770d94f25082298120c9"
+  },
+  "common_raw_fields": [
+    "set",
+    "set_version",
+    "material",
+    "layer",
+    "mode",
+    "chat_mode",
+    "course_id",
+    "database",
+    "embedding_provider",
+    "embedding_model",
+    "embedding_runtime",
+    "retrieval",
+    "llm",
+    "corpus_digest",
+    "runtime_mismatch_allowed",
+    "config_fingerprint",
+    "corpus_chunks_visible"
+  ],
+  "common_config": {
+    "retrieval_top_k": 8,
+    "retrieval_dense_candidates": 24,
+    "retrieval_dense_candidate_multiplier": 8,
+    "retrieval_fts_candidates": 24,
+    "retrieval_rrf_k": 60,
+    "evidence_threshold": 0.81
+  },
+  "summary": {
+    "baseline": {
+      "n": 105,
+      "hit_at_5_count": 93,
+      "hit_at_8_count": 98,
+      "recall_at_5": 0.8857142857142857,
+      "mrr": 0.7377210884353742
+    },
+    "candidate": {
+      "n": 105,
+      "hit_at_5_count": 93,
+      "hit_at_8_count": 98,
+      "recall_at_5": 0.8857142857142857,
+      "mrr": 0.7377210884353742
+    }
+  },
+  "delta": {
+    "recall_at_5": 0.0,
+    "mrr": 0.0
+  },
+  "rank_changes": [],
+  "changed_first_hit_count": 0,
+  "improved_first_hit_count": 0,
+  "regressed_first_hit_count": 0,
+  "paired": {
+    "kind": "paired_comparison",
+    "set": "holdout",
+    "n_items": 105,
+    "baseline": {
+      "run_id": "2026-09-08T140525329710-holdout-hybrid-fastembed-retrieval",
+      "mode": "hybrid",
+      "embedding_provider": "fastembed",
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "database": "dou018_eval_c1e501"
+    },
+    "candidate": {
+      "run_id": "2026-09-08T140536461701-holdout-hybrid-fastembed-retrieval",
+      "mode": "hybrid",
+      "embedding_provider": "fastembed",
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "database": "dou018_eval_c1e501"
+    },
+    "varied": [],
+    "comparisons": {
+      "hit_at_5": {
+        "n": 105,
+        "baseline_mean": 0.8857142857142857,
+        "candidate_mean": 0.8857142857142857,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 0,
+          "only_b_correct": 0,
+          "discordant": 0,
+          "p_value": 1.0
+        }
+      },
+      "hit_at_8": {
+        "n": 105,
+        "baseline_mean": 0.9333333333333333,
+        "candidate_mean": 0.9333333333333333,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 0,
+          "only_b_correct": 0,
+          "discordant": 0,
+          "p_value": 1.0
+        }
+      },
+      "reciprocal_rank": {
+        "n": 105,
+        "baseline_mean": 0.7377210884353742,
+        "candidate_mean": 0.7377210884353742,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        }
+      },
+      "full_coverage_at_8": {
+        "n": 26,
+        "baseline_mean": 0.8461538461538461,
+        "candidate_mean": 0.8461538461538461,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 0,
+          "only_b_correct": 0,
+          "discordant": 0,
+          "p_value": 1.0
+        }
+      }
+    },
+    "note": "n=105 — yön göstergesi, kesin hüküm değildir. Eşleştirilmiş bootstrap 10.000 yeniden örneklemeli, tohum sabit; McNemar tam (binom) biçimde, yalnız ikili ölçütlerde."
+  },
+  "limitations": [
+    "Real E5 retrieval only; no LLM/pedagogical/human approval or latency acceptance.",
+    "Same current shared environment compares three real historical retrieval sources, not the whole historical app.",
+    "Actual FastEmbedProvider/E5 identity agrees with corpus/query namespace and cached model metadata.",
+    "RLS/readonly before-after data are enforced by the hash-verified runner; analysis did not query DB again.",
+    "Current raw result lacks complete per-lane candidates/scores, so dense vs FTS vs tie cause cannot be separated from these final lists.",
+    "Statistical intervals including zero do not turn strict no-regression acceptance green."
+  ],
+  "cache_identity": {
+    "revision": "66076b8dc6e367337e3e90e6fb309fb0f3addaf6",
+    "content_sha256": {
+      "config.json": "1de8c3be1f344c0eefa4962480a006f8639f416dfafaa95a770e3cf4bceae6a4",
+      "tokenizer.json": "f59925fcb90c92b894cb93e51bb9b4a6105c5c249fe54ce1c704420ac39b81af",
+      "tokenizer_config.json": "f90024142df07163e5e6c5b9a6ad7c8c68b22a9112af11e3db4559a9ff90f737",
+      "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+      "model.onnx": "1c09780c907c8a91a77a6ab1fd231f79e090d2907ca431223703dfebeed3d36c",
+      "model.onnx_data": "0cf1883fee81c63819a44e2ba0efa51d4043d9759685a4ebebbde97e0623d15c"
+    },
+    "versions": {
+      "fastembed": "0.8.0",
+      "onnxruntime": "1.28.0",
+      "tokenizers": "0.23.1",
+      "huggingface_hub": "1.26.0"
+    },
+    "registered_class": "PooledEmbedding",
+    "pooling": "mean",
+    "snapshot_metadata_sha256": {
+      "refs/main": "8bb431c56990552e65a2556df9888983b3f7d653f4a14973d55fb092326e4b71",
+      "trees/66076b8dc6e367337e3e90e6fb309fb0f3addaf6.json": "597831eea1558377f494700aa3e0955251704043dc199c1147d07b9a0d3bcd78",
+      "files_metadata.json": "28fee50af56b7a89ad2387a94d62f42a3499400a5492d4739a96ffe0e78532b9"
+    },
+    "local_library_source_sha256": {
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/fastembed/common/model_management.py": "8f5e95e7641e25cd5591c28db38fa21be9de09ff60d0f58195f0cf5da551db60",
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/fastembed/text/pooled_embedding.py": "a7b62c7eec9d506f457c77ede5cdf297cf0bc89b6df29b8e2f3c2cc138bace57",
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/fastembed/text/text_embedding.py": "de7c6c2bb8b0b05f70b02d0bb62308e1cef50cdb0c618ff74d0d75598ac326a7"
+    }
+  },
+  "acceptance": {
+    "candidate_recall_at_5_at_least_080": true,
+    "baseline_nondecrease": true,
+    "overall": true
+  },
+  "reported_arm_wall_seconds": {
+    "baseline": 11.0,
+    "candidate": 10.1
+  },
+  "overall_wrapper_elapsed_seconds": null,
+  "read_only_cache_analysis_limit": "Full 2.2GB bytes were verified by root wrapper before/after. This independent analysis verified those equal hashes, local metadata/source hashes and unchanged current file stats; no second model load or DB call.",
+  "rank_comparisons": {
+    "baseline_replay": {
+      "first_hit_same_count": 127,
+      "all_source_rank_lists_same_count": 127,
+      "top8_source_locations_same_count": 127,
+      "compared": 127,
+      "scored_first_hit_same_count": 105,
+      "scored": 105
+    },
+    "final_candidate_vs_baseline": {
+      "first_hit_same_count": 127,
+      "all_source_rank_lists_same_count": 127,
+      "top8_source_locations_same_count": 127,
+      "compared": 127,
+      "scored_first_hit_same_count": 105,
+      "scored": 105
+    }
+  },
+  "prior_failed_manifest_sha256": "866c268096b8bfa5ec2ee476b86bffc55050131e8d85d4e467d7ac5f0911fd6e",
+  "receipt": {
+    "sha256": "10dfb7b30ba3c83d69e11ea965f9bb67fefbd1961bae11d665129807c93890c5",
+    "wall_seconds": 28.275,
+    "source_unchanged": true,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "candidate_source_sha256": {
+    "apps/api/app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+    "apps/api/app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+    "apps/api/app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c"
+  },
+  "common_dependency_source_sha256": {
+    "apps/api/app/contracts.py": "53200bfd7bb4db7acfd57a09d7f02d25633ce77d00b43759325705bdbc40ac50",
+    "apps/api/app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+    "apps/api/app/core/config.py": "16e53fb5e5ea30a8fa2a68674abdbd48226d5e1e2c3cefe3e1654e2527528423",
+    "apps/api/app/core/vector_space.py": "9ab48babe00bdabe95a3f7ae5e724e180eae72e010119e68b82fe5a04cb9d838",
+    "apps/api/app/modules/ingestion/embedding.py": "0c1e1d0a89d3374ee9dbe8139929f96d4d5a19f3a7f6977891163e1320ed3099",
+    "apps/api/app/modules/retrieval/fusion.py": "4bd06790f55525055e4e37855da224bdde4d9053540828ae1d83a10c2502a04c",
+    "apps/api/app/modules/retrieval/scope.py": "e86b840a3109fc93e2b2d8a41eda70fc83710e1ed45e7b8b2432b764032c0d49"
+  }
+}

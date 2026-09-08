@@ -1,0 +1,11 @@
+{
+  "scope": "offline only; no DB execution by author",
+  "files": {
+    "README.md": "61628a7c14fc3310663490ca14fbd271dcd7e19c63a519bedf0d8c8ea5c37626",
+    "input-manifest.json": "b2c9999606fef3042034ae8bf35aed12998692352be26605d5af17e9aa48de39",
+    "offline-tests.log": "7289078e80c2b7fb06dddf18ed9093202f977c4536da3ea33a60772efd31f526",
+    "plan-only.json": "8547703d94a577d375725fd0f41a3c83cdeca36177e49a32938b4c851c731da7",
+    "run.py": "b1e4dba6c7c9141718228acb52de55f844d35b40c4dd90a1d6a15dddffbbcf3e",
+    "test_run.py": "9b2def346d8cb58f64bdaab0a140b9f921c67217e4f9cb8b450528bf348cee7a"
+  }
+}

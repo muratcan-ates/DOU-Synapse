@@ -10,7 +10,7 @@ from sqlalchemy import text
 
 from app.api.deps import PlatformAdminDep, SessionDep
 from app.contracts import AnswerStatus
-from app.core.warmup import warmup_is_ready, warmup_state
+from app.core.readiness import check_readiness
 from app.models.core import JobStatus
 from app.schemas.admin import (
     AdminCourseListOut,
@@ -35,12 +35,15 @@ async def get_admin_overview(
     del admin
     value = await session.scalar(text("SELECT app.admin_overview()"))
     overview = dict(value or {})
-    embedding_status = warmup_state()
+    readiness = await check_readiness(session)
+    checks = readiness["checks"]
     overview.update(
         {
-            "status": "ok" if warmup_is_ready(embedding_status) else "degraded",
-            "database_status": "ok",
-            "embedding_status": embedding_status,
+            "status": readiness["status"],
+            "database_status": checks["database"],
+            "pgvector_status": checks.get("pgvector", "unknown"),
+            "request_quota_status": checks["request_quota"],
+            "embedding_status": checks["embedding"],
             "measured_at": datetime.now(UTC),
         }
     )

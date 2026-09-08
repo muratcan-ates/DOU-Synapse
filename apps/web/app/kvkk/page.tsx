@@ -1,18 +1,17 @@
 /**
- * KVKK aydınlatma metni (T060).
+ * Kişisel veriler ve gizlilik bilgileri (T060).
  *
  * Metin bu dosyada DEĞİL, `docs/kvkk.md`'de. Sayfa onu derleme anında okuyup
- * çiziyor. Kopyalansaydı iki nüsha olurdu ve hukuki bir metnin iki nüshası, er
- * geç birinin güncellenip diğerinin unutulacağı bir ayrışma demektir (Anayasa XI).
- * Belgeyi R5 yazdı ve her iddiasının kodda satır karşılığı var; sayfanın işi onu
- * göstermek, yeniden yazmak değil.
+ * çiziyor. Tek kaynak kullanımı sayfa ile belge arasındaki ayrışmayı önler.
+ * Metin uygulamanın teknik davranışını ve henüz belirlenmemiş kurumsal kararları
+ * açıklar; tamamlanmış kurumsal aydınlatma metni olarak sunulmaz.
  *
  * Sunucu bileşeni: dosya okuma derlemede olur, istemciye `fs` gitmez. Çıktı
  * `dangerouslySetInnerHTML` DEĞİL, React düğümleri — çevirici HTML dizesi değil
  * yapı döndürüyor, yani kaçışlama React'ta kalıyor.
  *
  * `AppShell` bilerek KULLANILMADI: o bileşen giriş yapılmamışsa "/"e yönlendirir.
- * Aydınlatma metni giriş yapmadan ÖNCE okunabilmeli — kişisel verisinin nasıl
+ * Gizlilik bilgileri giriş yapmadan ÖNCE okunabilmeli — kişisel verisinin nasıl
  * işleneceğini öğrenmek için hesap açmak zorunda kalmak, metnin amacını tersine
  * çevirirdi.
  */
@@ -26,7 +25,7 @@ import type { Metadata } from "next";
 import { parseMarkdown, type Block, type Inline } from "@/lib/markdown";
 
 export const metadata: Metadata = {
-  title: "KVKK Aydınlatma Metni",
+  title: "Kişisel Veriler ve Gizlilik",
   description:
     "DOU-Synapse'in hangi kişisel verileri işlediği, nerede sakladığı ve kimlerle paylaştığı.",
 };

@@ -19,11 +19,11 @@ test("blueprint onaylı soru havuzunu Page zarfıyla ve devam imleciyle okur", (
   expect(source).toContain("const current = picked ?? (items.data ?? []).map");
 });
 
-test("soru havuzu sayfalı istemci sayımlarını toplam diye sunmaz", () => {
+test("soru havuzu sunucu süzgecini kullanır ve alınmayan toplamları sunmaz", () => {
   const source = readFileSync(join(appRoot, "questions/page.tsx"), "utf8");
-
-  expect(source).toContain('label: "Yüklenen soru"');
-  expect(source).not.toContain('label: "Toplam soru"');
-  expect(source).toContain("yalnız bu ekranda yüklenen soruları kapsar");
-  expect(source).toContain('aria-label="Yüklenen soruların durum süzgeci"');
+  expect(source).toContain("questionPoolPath(courseId, statusFilter, topicFilter)");
+  expect(source).not.toContain("countByStatus(");
+  expect(source).not.toContain("countOf(filter.value)");
+  expect(source).toContain("Bu sonuçtan {visible.length} soru gösteriliyor");
+  expect(source).toContain('aria-label="Soruların durum süzgeci"');
 });

@@ -11,19 +11,19 @@ Ortam: yerel macOS · PostgreSQL 16 + pgvector · sahte sağlayıcı · izole te
 
 | Kapı | Komut | Sonuç |
 |---|---|---|
-| Backend testleri | `cd apps/api && TEST_DB_NAME=dou_017_v2 .venv/bin/python -m pytest -q` | **1197 passed** <!-- docs-check: backend.tests = 1197 -->, 0 failed, 142,57 sn |
+| Backend testleri | `cd apps/api && TEST_DB_NAME=dou_017_v2 .venv/bin/python -m pytest -q` | **1197 passed** <!-- docs-check: tarihsel 1197 · 2026-09-07 -->, 0 failed, 142,57 sn |
 | Lint | `.venv/bin/ruff check .` | temiz |
 | Biçim | `.venv/bin/ruff format --check .` | 170 dosya biçimli |
-| Tip (backend) | `.venv/bin/mypy app` | 105 dosyada sorun yok <!-- docs-check: backend.mypyFiles = 105 --> |
-| Web birim testleri | `cd apps/web && bun test lib/` | **428 passed** <!-- docs-check: frontend.tests = 428 -->, 39 dosya <!-- docs-check: frontend.testFiles = 39 --> |
+| Tip (backend) | `.venv/bin/mypy app` | 105 dosyada sorun yok <!-- docs-check: tarihsel 105 · 2026-09-07 --> |
+| Web birim testleri | `cd apps/web && bun test lib/` | **428 passed** <!-- docs-check: tarihsel 428 · 2026-09-07 -->, 39 dosya <!-- docs-check: tarihsel 39 · 2026-09-07 --> |
 | Tip (web) | `bunx tsc --noEmit` | temiz |
 | Kontrast | `node scripts/contrast.mjs` | metin AA ve 1.4.11 eşikleri geçildi (iki tema) |
 | Belge sayaçları | `node scripts/docs_check.mjs` | tüm canlı sayılar ölçümle uyuşuyor |
-| Göç numarası | `python3 scripts/migration_check.py --allow-gap 0017` | PASS (19 göç <!-- docs-check: migrations.count = 19 -->, bildirilen boşluk 0017) |
+| Göç numarası | `python3 scripts/migration_check.py --allow-gap 0017` | PASS (19 göç <!-- docs-check: tarihsel 19 · 2026-09-07 -->, bildirilen boşluk 0017) |
 | Göç kapısının kendi testi | `python3 -m unittest scripts.test_migration_check` | 10 test OK (hem Python 3.9 hem 3.12) |
 | Yönetişim (son commit) | `python3 scripts/ai_sdlc_check.py --base-sha 88a8097 --head-sha <HEAD>` | PASS |
 | Yönetişim (main tabanı) | `--base-sha $(git merge-base origin/main HEAD)` | PASS — bütün-dal dossier'i (017) eklendikten sonra |
-| E2E vaka sayımı | `cd apps/web && ./node_modules/.bin/playwright test --list` | **42 vaka** <!-- docs-check: e2e.tests = 42 --> / 7 dosya (sayım; koşum değil) |
+| E2E vaka sayımı | `cd apps/web && ./node_modules/.bin/playwright test --list` | **42 vaka** <!-- docs-check: tarihsel 42 · 2026-09-08 --> / 7 dosya (sayım; koşum değil) |
 
 ## Bu dilimde yakalanan ve düzeltilen gerçek kusurlar
 

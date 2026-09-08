@@ -1,0 +1,16 @@
+[
+  {
+    "name": "ruff",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+      "check",
+      "--no-cache",
+      "app",
+      "tests"
+    ],
+    "cwd": "apps/api",
+    "exit_code": 1,
+    "seconds": 0.048,
+    "log_sha256": "90eb914a67a852f7f08701642b6e406206eebb1c6296f5bbf10041cea728ead6"
+  }
+]

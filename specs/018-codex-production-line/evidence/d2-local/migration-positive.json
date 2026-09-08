@@ -1,0 +1,29 @@
+{
+  "status": "pass",
+  "database": "dou018_d2_precondition_valid01",
+  "database_oid": 1157624,
+  "candidate_sha256": "3e15eaa33f8bc8fba2f7a6d6e84692d213cc696ccd8367fad73152e79f2b61d3",
+  "legacy_job_states": [
+    "pending",
+    "failed",
+    "completed"
+  ],
+  "rows_preserved": true,
+  "new_fields_safe_defaults": true,
+  "constraint_validated": true,
+  "active_index_valid_ready": true,
+  "before_sha256": {
+    "profiles": "16f2d090d44a4b33ae9e7f3cd710c1e45b4f9769935379f19b99684a67092b0d",
+    "courses": "0352b9b9b7779a1a8a1f534504afa502faba025e0be3003a6adb83dc588cb8ac",
+    "documents": "3f7ecd668114acbb1499ea013a90e5d446e27154fac27f38ee8d8a66deb360f7",
+    "ingestion_jobs": "9e0ef05fb04a32998476d37facf62da56256dc818446eab9f305ca0acbc15538"
+  },
+  "after_legacy_projection_sha256": {
+    "profiles": "16f2d090d44a4b33ae9e7f3cd710c1e45b4f9769935379f19b99684a67092b0d",
+    "courses": "0352b9b9b7779a1a8a1f534504afa502faba025e0be3003a6adb83dc588cb8ac",
+    "documents": "3f7ecd668114acbb1499ea013a90e5d446e27154fac27f38ee8d8a66deb360f7",
+    "ingestion_jobs": "9e0ef05fb04a32998476d37facf62da56256dc818446eab9f305ca0acbc15538"
+  },
+  "owned_database_dropped": true,
+  "seconds": 1.323
+}

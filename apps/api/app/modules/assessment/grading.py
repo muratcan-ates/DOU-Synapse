@@ -55,9 +55,11 @@ from app.schemas.assessment import (
     AnswerFormat,
     BugHuntPayload,
     CodeTracePayload,
+    GroundedCriterionEvidence,
     McqPayload,
     OpenPayload,
     RubricCriterionScore,
+    RubricItem,
     SourceRefOut,
     normalized_rubric,
     parse_payload,
@@ -187,6 +189,7 @@ class GradingOutcome:
     #: Rubriğe bağlı sorularda ölçüt kırılımı (FR-117). Toplam puan bu satırlardan
     #: türetilir; model ayrı bir toplam verse bile o okunmaz.
     rubric_breakdown: list[RubricCriterionScore] = field(default_factory=list)
+    grounded_missing_criterion: GroundedCriterionEvidence | None = None
 
 
 _UNGRADABLE_MESSAGE = (
@@ -294,6 +297,7 @@ class _LlmVerdict(BaseModel):
     dayanak_chunk_id: UUID | None = None
     #: Rubrik verilmişse ölçüt başına puan. Toplamı biz hesaplarız (FR-117).
     rubrik: list[_RubrikSatiri] = Field(default_factory=list, max_length=12)
+    grounded_missing_criterion: GroundedCriterionEvidence | None = None
 
 
 _SYSTEM_PROMPT = (
@@ -305,7 +309,14 @@ _SYSTEM_PROMPT = (
     "KOD ÇALIŞTIRMA; yalnız metin olarak karşılaştır. "
     "Rubrik verilmişse her ölçüt için ayrıca "
     '"rubrik": [{"olcut": "<ölçütün metni>", "puan": 0-100} ...] yaz; ölçüt metnini '
-    "verildiği gibi kopyala ve AĞIRLIKLARLA ÇARPMA — ağırlığı biz uygularız."
+    "verildiği gibi kopyala ve AĞIRLIKLARLA ÇARPMA — ağırlığı biz uygularız. "
+    "Kod rubriği verilmişse tüm ölçütleri tam bir kez puanla; ölçüt ekleme veya atlama. "
+    "Açıkça puanladığın bir rubrik ölçütü 100'ün altındaysa ve kaynakta bu ölçütle "
+    "ilgili gerçek bir alıntı varsa isteğe bağlı grounded_missing_criterion ver: "
+    '{"criterion":"<rubrikteki ölçütün birebir metni>","chunk_id":"<dayanak_chunk_id>",'
+    '"quote":"<kaynağın birebir, boş olmayan en fazla 320 karakterlik kesiti>"}. '
+    "Bu alanı kaynaksız doldurma, alıntıyı yeniden yazma; uygun alıntı veya puanlanmış "
+    "ölçüt yoksa null ver. Alıntı bir anlam doğrulama sertifikası değildir."
 )
 
 
@@ -318,13 +329,6 @@ def _reference_block(payload: BaseModel) -> str:
         if payload.key_points:
             lines.append("Bulunması gereken noktalar:")
             lines += [f"- {point}" for point in payload.key_points]
-        if payload.rubric:
-            lines.append("Rubrik (ağırlıklar 100 üzerinden):")
-            # Ağırlıklar prompt'a normalize edilmiş hâliyle yazılır; kural tek yerde
-            # (schemas.normalized_rubric, T507) — codex'in kopya yardımcısı alınmadı.
-            lines += [
-                f"- {item.point} ({item.weight:.4g})" for item in normalized_rubric(payload.rubric)
-            ]
     elif isinstance(payload, CodeTracePayload):
         lines.append(f"Soru: {payload.prompt}")
         lines.append(f"Kod:\n{payload.code}")
@@ -337,6 +341,10 @@ def _reference_block(payload: BaseModel) -> str:
             f"satır {payload.answer_key.line}, tür '{payload.answer_key.bug_type}', "
             f"düzeltme: {payload.answer_key.fix_summary}"
         )
+    rubric = payload_rubric(payload)
+    if rubric:
+        lines.append("Rubrik (ağırlıklar 100 üzerinden):")
+        lines += [f"- {item.point} ({item.weight:.4g})" for item in normalized_rubric(rubric)]
     return "\n".join(lines)
 
 
@@ -360,6 +368,59 @@ def _parse_verdict(raw: str) -> _LlmVerdict | None:
         return None
 
 
+def payload_rubric(payload: BaseModel) -> list[RubricItem]:
+    return (
+        payload.rubric
+        if isinstance(payload, (OpenPayload, CodeTracePayload, BugHuntPayload))
+        else []
+    )
+
+
+def _code_rubric_is_complete(payload: BaseModel, verdict: _LlmVerdict) -> bool:
+    if not isinstance(payload, (CodeTracePayload, BugHuntPayload)) or not payload.rubric:
+        return True
+    expected = [item.point for item in payload.rubric]
+    names = [point.strip().casefold() for point in expected]
+    observed = [item.olcut for item in verdict.rubrik]
+    return (
+        all(names)
+        and len(set(names)) == len(names)
+        and len(set(observed)) == len(observed)
+        and len(observed) == len(expected)
+        and set(observed) == set(expected)
+    )
+
+
+def grounded_criterion_is_valid(
+    claim: GroundedCriterionEvidence,
+    *,
+    rubric: list[RubricItem],
+    breakdown: list[RubricCriterionScore],
+    source_text: str,
+) -> bool:
+    """Ölçütün kimliğini, puanlanan eksikliği ve birebir kaynak alıntısını doğrular.
+
+    Bu kontroller kaynak ve ölçüt bağlantısını doğrular. Modelin pedagojik
+    yorumunun anlamsal doğruluğunu ölçmez. Hiçbir kod çalıştırılmaz.
+    """
+    names = [item.point.strip().casefold() for item in rubric]
+    if not rubric or not all(names) or len(set(names)) != len(names):
+        return False
+    matching = [item for item in normalized_rubric(rubric) if item.point == claim.criterion]
+    scored = [row for row in breakdown if row.point == claim.criterion]
+    if len(matching) != 1 or len(scored) != 1:
+        return False
+    criterion, row = matching[0], scored[0]
+    return bool(
+        row.score < 100
+        and row.weight == criterion.weight
+        and row.earned == round(row.weight * row.score / 100)
+        and claim.quote.strip()
+        and source_text.strip()
+        and claim.quote in source_text
+    )
+
+
 def _rubric_breakdown(payload: BaseModel, verdict: _LlmVerdict) -> list[RubricCriterionScore]:
     """Ölçüt puanlarını normalize edilmiş ağırlıklarla birleştirir.
 
@@ -376,14 +437,15 @@ def _rubric_breakdown(payload: BaseModel, verdict: _LlmVerdict) -> list[RubricCr
       fail-closed doğrudur: cevaplanmamış bir kriteri karşılanmış saymak, puanı
       şişirmek olurdu (Anayasa IV).
     """
-    if not isinstance(payload, OpenPayload) or not payload.rubric:
+    rubric = payload_rubric(payload)
+    if not rubric:
         return []
     if not verdict.rubrik:
         return []
 
     puanlar = {row.olcut.strip().casefold(): row.puan for row in verdict.rubrik}
     satirlar: list[RubricCriterionScore] = []
-    for item in normalized_rubric(payload.rubric):
+    for item in normalized_rubric(rubric):
         puan = puanlar.get(item.point.strip().casefold(), 0)
         satirlar.append(
             RubricCriterionScore(
@@ -440,7 +502,30 @@ async def grade_with_llm(
             logger.info("değerlendirme dayanağı set-membership'ten geçmedi")
             continue
 
+        if not _code_rubric_is_complete(payload, verdict):
+            logger.info("kod değerlendirmesi tüm tanımlı ölçütleri tekil olarak kapsamıyor")
+            continue
         breakdown = _rubric_breakdown(payload, verdict)
+        grounded = verdict.grounded_missing_criterion
+        if grounded is not None:
+            explicit = [
+                row
+                for row in verdict.rubrik
+                if row.olcut.strip().casefold() == grounded.criterion.strip().casefold()
+            ]
+            if (
+                grounded.chunk_id != evidence
+                or len(explicit) != 1
+                or explicit[0].olcut != grounded.criterion
+                or not grounded_criterion_is_valid(
+                    grounded,
+                    rubric=payload_rubric(payload),
+                    breakdown=breakdown,
+                    source_text=dict(readable_sources).get(grounded.chunk_id, ""),
+                )
+            ):
+                logger.info("eksik ölçüt açıklaması kaynak ve ölçüt doğrulamasından geçmedi")
+                continue
         # FR-117: rubrik varsa toplam KIRILIMDAN türetilir. Model kendi `score`'unu
         # da verir ama okunmaz — ikisi çelişirse öğrenciye gösterilen tablonun
         # toplamı tutmazdı (Anayasa III).
@@ -454,6 +539,7 @@ async def grade_with_llm(
             evidence_chunk_id=evidence,
             focus=given,
             rubric_breakdown=breakdown,
+            grounded_missing_criterion=grounded,
         )
 
     return _ungraded("değerlendirme iki denemede de doğrulanamadı")

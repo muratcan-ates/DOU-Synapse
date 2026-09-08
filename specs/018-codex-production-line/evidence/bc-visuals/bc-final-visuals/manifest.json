@@ -1,0 +1,93 @@
+{
+  "label": "Root son 68 E2E PASS koşusunun görselleri, B4 screenshot stabilizasyonu öncesi değişmez kopya. B4 koyu seçili satır ara geçiş karesi olabilir; sonraki kararlı görüntü ayrı saklanır.",
+  "source_test_sha256": {
+    "apps/web/e2e/chat-history-deletion.spec.ts": "db43f66b375a715b0a29c0ff0bb3f415d4f23d0be93cf998cf49fd99689c10ca"
+  },
+  "files": [
+    {
+      "source": "apps/web/test-results/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-dark.png",
+      "preserved": "apps/web/test-results/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-dark.png",
+      "sha256": "cc5c30f4d239f9ff17bb3df5fe3c13f6d8803de6940af9efbd3ee62883560a61"
+    },
+    {
+      "source": "apps/web/test-results/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-light.png",
+      "preserved": "apps/web/test-results/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-light.png",
+      "sha256": "d454fdff9850440558bc3075aedb5291a2255750ac0971cdc59b8817685aa3a7"
+    },
+    {
+      "source": "apps/web/test-results/chat-history-deletion-öğre-0cfbb-rs-ve-sınav-taslağı-korunur-chromium/delete-confirmation-375-dark.png",
+      "preserved": "apps/web/test-results/chat-history-deletion-öğre-0cfbb-rs-ve-sınav-taslağı-korunur-chromium/delete-confirmation-375-dark.png",
+      "sha256": "e47d316d442c37bdf2fe12f15d0f5177c281dd0547dd99c4b9dcf9592e15e3d2"
+    },
+    {
+      "source": "apps/web/test-results/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-dark.png",
+      "preserved": "apps/web/test-results/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-dark.png",
+      "sha256": "ddf354c4904a87e741ff1fcaaadd31158b042fa8e1243a2d5d87284dd7d5370f"
+    },
+    {
+      "source": "apps/web/test-results/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-light.png",
+      "preserved": "apps/web/test-results/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-light.png",
+      "sha256": "9a10e008d01379612ddfc8ec51ad8e625f088a3e11c2588caf22720b9157b3c0"
+    },
+    {
+      "source": "apps/web/test-results/exam-completion-guards-gör-0c0d6-ilip-ders-kilidi-kaldırılır-chromium/empty-exam-finish-375.png",
+      "preserved": "apps/web/test-results/exam-completion-guards-gör-0c0d6-ilip-ders-kilidi-kaldırılır-chromium/empty-exam-finish-375.png",
+      "sha256": "26b7447334b58d1234458086ed9395e24b6460d8456fbfcf59d2630e6a563963"
+    },
+    {
+      "source": "apps/web/test-results/exam-cross-tab-privacy-kay-4ecd6-bakımı-kaynak-izni-değildir-chromium/source-independent-access-375-dark.png",
+      "preserved": "apps/web/test-results/exam-cross-tab-privacy-kay-4ecd6-bakımı-kaynak-izni-değildir-chromium/source-independent-access-375-dark.png",
+      "sha256": "018974a009ac6ec705249807f64de4c2b6b1434e789015c9b8b38ed395de18b2"
+    },
+    {
+      "source": "apps/web/test-results/policy-history-politika-ge-2a501--düzenleme-taslağını-silmez-chromium/policy-history-375-dark.png",
+      "preserved": "apps/web/test-results/policy-history-politika-ge-2a501--düzenleme-taslağını-silmez-chromium/policy-history-375-dark.png",
+      "sha256": "f4a4cb1b5da76d9ddc13a050fe9b6b8fe5ad8955af00150a4a4c7dca20cc135e"
+    },
+    {
+      "source": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-dark.png",
+      "preserved": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-dark.png",
+      "sha256": "a3eab726eb2b3df43129bd2ae2060093bcb3d888f9d030cbb4ef8f3763964132"
+    },
+    {
+      "source": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-light.png",
+      "preserved": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-light.png",
+      "sha256": "fdf78237c9c07ee82bd34d73ec979785559d2af31097351ade2859950eebacd9"
+    },
+    {
+      "source": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-dark.png",
+      "preserved": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-dark.png",
+      "sha256": "0b594163a885a91d5c80036a127c2bfab93f07a7e3d6ef44419ad151d1374d51"
+    },
+    {
+      "source": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-light.png",
+      "preserved": "apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-light.png",
+      "sha256": "7ab397d690023052f32f33ae2a7851d06a1dc93c95c4581389a859122eb02d8e"
+    },
+    {
+      "source": "apps/web/test-results/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-dark.png",
+      "preserved": "apps/web/test-results/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-dark.png",
+      "sha256": "1749d204e17cd5da3c7d996692edf59fac46320fe3956bd962f87910637df601"
+    },
+    {
+      "source": "apps/web/test-results/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-light.png",
+      "preserved": "apps/web/test-results/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-light.png",
+      "sha256": "d867c35cdf13bc5b4fe08aafcdf3807635c4f0e78848243298ff4a94dbad6e25"
+    },
+    {
+      "source": "apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-history-375-dark.png",
+      "preserved": "apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-history-375-dark.png",
+      "sha256": "1adc1432c291859df19999cd08aaac72dea3f57c1be9614e47fc2e82cfb75bfe"
+    },
+    {
+      "source": "apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-dark.png",
+      "preserved": "apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-dark.png",
+      "sha256": "e38e827a73fb0d5b862b2e4c9ff1975bc6bded5bb4ad3c25f585f7607d7898df"
+    },
+    {
+      "source": "apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-light.png",
+      "preserved": "apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-light.png",
+      "sha256": "8694f7829d31bcfbef08f2b7b85eb3fde276d955c3601c9cce9a7c7d5004440b"
+    }
+  ]
+}

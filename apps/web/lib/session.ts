@@ -19,6 +19,7 @@
 
 import { useEffect, useState } from "react";
 import { api, getCurrentUser, type DemoUser } from "@/lib/api";
+import { subscribeAuthChanges } from "@/lib/auth-events";
 import type { Course } from "@/lib/types";
 
 type CourseRole = "instructor" | "student";
@@ -219,6 +220,18 @@ export function useSession(courseId?: string): Session {
 
     const handleFocus = () => void refresh(true, courseId !== undefined);
 
+    const stopAuth = subscribeAuthChanges((change) => {
+      generation += 1;
+      resolvedUserId = null;
+      courseRoles.invalidate();
+      setUser(null);
+      setCourseRole(null);
+      setReady(change === "signed-out");
+      // Supabase callback'inin kilidi içinde getSession çağrılmaz.
+      if (change === "identity-changed") window.setTimeout(() => {
+        if (active) void refresh(true);
+      }, 0);
+    });
     void refresh(true);
     // Sekme hiç odağını kaybetmese bile eski rol TTL'den uzun yaşamaz.
     const refreshTimer = courseId
@@ -228,6 +241,7 @@ export function useSession(courseId?: string): Session {
     window.addEventListener(COURSE_ROLE_INVALIDATED_EVENT, handleInvalidation);
     return () => {
       active = false;
+      stopAuth();
       generation += 1;
       if (refreshTimer !== null) window.clearInterval(refreshTimer);
       window.removeEventListener("focus", handleFocus);

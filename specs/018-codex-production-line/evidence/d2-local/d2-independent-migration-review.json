@@ -1,0 +1,76 @@
+{
+  "status": "source_review_one_concrete_liveness_defect_reproduced_in_root_actual_pg",
+  "database_or_server_calls": 0,
+  "inputs_sha256": {
+    "/private/tmp/dou018-d2-implementation-candidate/files/supabase/migrations/0026_ingestion_claim_leases.sql": "d03c7110a60530b683dab3ee1e0db0b686af2de0653f435171291f111ba62a90",
+    "/private/tmp/dou018-d2-stage-01/apps/api/app/modules/ingestion/claims.py": "c9334c1b62913ce03ae24530c9ec7fc6741e2d25a375ed81263c8d66832060ea",
+    "/private/tmp/dou018-d2-stage-01/apps/api/app/modules/ingestion/pipeline.py": "1b0f6c41da687e825b0d1d0ad4009941784782c2f4fd9bb10f39a593235809ff",
+    "/private/tmp/dou018-d2-stage-01/apps/api/app/api/documents.py": "cd1d217e187bb52c26e3d434e7b9bf09d0d1253c74d1ce5aefb4b5c1b6f735ea",
+    "/private/tmp/dou018-d2-stage-01/apps/api/tests/test_worker_recovery.py": "2771e8ca1a78d838b87dec177519b8e732cc42e575d0a258d5eafe29d2d1009d",
+    "/private/tmp/dou018-d2-lineage-regression.py": "75a899a86c97954c4606a6a05ea1e7522a68bfe543fdb2eb413473a4824e6778"
+  },
+  "defects": [
+    {
+      "id": "D2-LINEAGE-01",
+      "priority": "P2",
+      "title": "Deleting predecessor fences unchanged successor source and strands processing document",
+      "migration_lines": [
+        34,
+        38
+      ],
+      "claims_lines": [
+        156,
+        166,
+        250,
+        255
+      ],
+      "api_retry_lines": [
+        193,
+        194
+      ],
+      "precondition": "instructor deletes unreferenced predecessor A while replacement B has a live processing claim; B.supersedes_document_id=A",
+      "cause": "existing 0008 FK ON DELETE SET NULL triggers 0026 source revision increment for B although its actual source identity is unchanged",
+      "outcome": "finalize rejects B; eventual reclaim retires job only, leaves B processing; normal retry returns409",
+      "minimal_fix": "exclude supersedes_document_id from OLD/NEW source revision tuples, keep superseded_at and true source identity fields",
+      "verification": "Root actual PostgreSQL regression reproduced exact revision equality failure2!=1; read-only independent review verified log hash, all frozen stage source hashes and regression byte equality. Narrow v2 same-oracle success pending."
+    }
+  ],
+  "other_source_update_reachability": {
+    "public_in_place_source_update_route_found": false,
+    "public_changes": [
+      "upload creates new document/job",
+      "replacement stamps predecessor superseded_at",
+      "delete cascades jobs/chunks and clears successor supersedes_document_id"
+    ],
+    "direct_sql_source_change": "authorized/operator source mutation fences stale work; intentionally no automatic new source job currently; requires explicit safe replacement/reconciliation if used",
+    "storage_byte_mismatch": "unchanged DB revision lets fail_claim consume ordinary retries and eventually marks document failed, so not the same stranded-source_changed path"
+  },
+  "permission_probe_priorities": [
+    "real dou_app instructor cannot INSERT a fully shaped processing claim and cannot UPDATE job controls; valid fresh pending enqueue succeeds",
+    "actual app sessions student, foreign instructor, missing subject and mixed-course role: pending INSERT refused, retry returnsNULL/no mutation; own instructor failed retry succeeds and is single under concurrent calls",
+    "has_function_privilege retry false for PUBLIC/worker and true for app, fixed pg_catalog/pg_temp searchpath, function owner and actual role membership recorded; direct trigger EXECUTE denied, actual allowed document mutation still fires trigger",
+    "document revision supplied at INSERT forced1, supplied-only UPDATE ignored, real source ABA increments twice, status/count updates no increment, predecessor FK cleanup no increment afterfix",
+    "constraint processing NULL fields or attempt0/4 rejected; pending nonNULLclaim rejected; unique active duplicate rejected, historical completed/failed rows permitted",
+    "record existing app SELECT permits instructor to read claim columns through directSQL, while public API/admin projections exclude them; token is not a credential for app writes"
+  ],
+  "migration_precondition_probes": [
+    "fresh pre0026 DB with exactly one legacy processing job: expected P0001 first message; rollback leaves rows/attempts/due timestamps and schema/function definitions byte/content unchanged",
+    "separate fresh pre0026 DB with two pending jobs same document and no processing: expected P0001 second message; same no-partial-DDL/no-DML assertions",
+    "clean control pre0026 DB containing pending/failed/completed history: migration succeeds; no resets of attempts/times; only expected new columns/index/policy/trigger/function changes"
+  ],
+  "probe_guard": "Root provisions unique fresh dou_synapse_d2_* targets through existing strict numeric endpoint and trusted OID/systemID/version fingerprint guard. No existing DB is reset by this review. Failed migrations must rollback before catalog assertions. Retain each negative receipt.",
+  "scope_limit": "Worker remains trusted BYPASSRLS with existing table writes; fencing guards stale cooperating workers, not a malicious worker credential. Owner/grant correctness still needs actual PostgreSQL permission assertions, not only offline or superuser fixtures.",
+  "root_actual_negative_control": {
+    "result_path": "/private/tmp/dou018-evidence/d2-lineage-red-01/result.json",
+    "result_sha256": "9d46af60cff078a463ea55bc20b40a5ce888730e0ea0f561759e7e5b570257cb",
+    "log_sha256": "fcc9bef9cd245308db4ecc9f2a81ae40f08467dd4a13ecaeb05492128c033724",
+    "exit_code": 1,
+    "seconds": 2.408,
+    "database": "dou018_d2_lineage_red01",
+    "source_unchanged": true,
+    "current_frozen_red_sources_match": true,
+    "regression_byte_equal": true,
+    "oracle": "assert 2 == 1 after actual predecessor DELETE204 and successor lineageNULL",
+    "own_database_calls": 0
+  }
+}

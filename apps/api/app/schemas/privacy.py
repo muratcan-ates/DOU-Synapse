@@ -18,6 +18,10 @@ USER_DATA_EXPORT_NOT_INCLUDED: tuple[str, ...] = (
     "maliyet ve eşzamanlılık operasyon kaydıdır; bu dışa aktarıma dahil edilmez.",
     "ai_guard_events: Soru, cevap veya kaynak metni içermeyen hız, kota, "
     "eşzamanlılık ve kapsam reddi güvenlik kaydıdır; bu dışa aktarıma dahil edilmez.",
+    "chat_privacy_revisions: Soru veya cevap içermeyen hesap/ders kapsamlı silme "
+    "sürüm sayacıdır; bu dışa aktarıma dahil edilmez.",
+    "rate_limit_windows: İçerik taşımayan kullanıcı/ders kimliği ve kabul edilen istek "
+    "zamanlarıdır; kişisel operasyon verisidir ve bu dışa aktarıma dahil edilmez.",
 )
 
 

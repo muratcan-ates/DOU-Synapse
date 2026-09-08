@@ -15,13 +15,13 @@
  * bir POST iki kez gider, bir sohbet isteği 20 saniyede kesilir.
  */
 
-import { clearAllExamDrafts } from "@/lib/exam-drafts";
+import { DEMO_TOKEN_KEY, DEMO_USER_KEY, isAuthLocallySignedOut, notifyAuthChange, readWithinAuthEpoch } from "@/lib/auth-events";
 import { getSupabase } from "@/lib/supabase";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-const TOKEN_KEY = "dou-synapse-token";
-const USER_KEY = "dou-synapse-user";
+const TOKEN_KEY = DEMO_TOKEN_KEY;
+const USER_KEY = DEMO_USER_KEY;
 
 export interface DemoUser {
   id: string;
@@ -67,14 +67,20 @@ function isDemoUser(value: unknown): value is DemoUser {
 }
 
 export function signIn(user: DemoUser): void {
+  const previous = getStoredUser();
   localStorage.setItem(TOKEN_KEY, `dev:${user.id}`);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  if (previous?.id !== user.id || isAuthLocallySignedOut()) notifyAuthChange("identity-changed");
 }
 
 function clearDemoSession(): void {
-  clearAllExamDrafts();
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  } finally {
+    // Depo kapalı olsa bile eski görünüm ve geç yanıtlar kapatılır.
+    notifyAuthChange("signed-out");
+  }
 }
 
 export function signOut(): void {
@@ -88,6 +94,7 @@ export async function signInWithPassword(email: string, password: string): Promi
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
   if (!data.user) throw new Error("Oturum açıldı ancak kullanıcı bilgisi alınamadı.");
+  notifyAuthChange("identity-changed");
   return userFromSupabase(data.user);
 }
 
@@ -118,9 +125,8 @@ export async function signOutWithLocalCleanup(
     const { error } = await providerSignOut();
     if (error) throw error;
   } finally {
-    // Gerçek sağlayıcı hata verse de demo anahtarları bu tarayıcıda açık
-    // bırakılmaz. Sağlayıcı hatası yukarı taşınır ki arayüz yönlendirmeden
-    // önce kullanıcıya tekrar deneme yolu gösterebilsin.
+    // Sağlayıcı hatası çağrı yerine taşınır; buna rağmen bu tarayıcının özel
+    // görünümü, taslakları ve eski istek devamları kapatılır.
     clearLocalSession();
   }
 }
@@ -135,9 +141,12 @@ export async function signOutCurrent(): Promise<void> {
 
 /** Sayfa yenilemesinde gerçek SDK oturumunu geri yükler; demo yolu senkron kalır. */
 export async function getCurrentUser(): Promise<DemoUser | null> {
+  if (isAuthLocallySignedOut()) return null;
   const client = getSupabase();
   if (!client) return getStoredUser();
-  const { data, error } = await client.auth.getSession();
+  const snapshot = await readWithinAuthEpoch(() => client.auth.getSession());
+  if (snapshot === null) return null;
+  const { data, error } = snapshot;
   if (error || !data.session?.user) return null;
   return userFromSupabase(data.session.user);
 }
@@ -163,10 +172,11 @@ function userFromSupabase(user: {
 }
 
 async function accessToken(): Promise<string | null> {
+  if (isAuthLocallySignedOut()) return null;
   const client = getSupabase();
   if (client) {
-    const { data } = await client.auth.getSession();
-    return data.session?.access_token ?? null;
+    const snapshot = await readWithinAuthEpoch(() => client.auth.getSession());
+    return snapshot?.data.session?.access_token ?? null;
   }
   return typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY);
 }

@@ -3,11 +3,17 @@
 Bu belge 9 araştırma raporunun çeliştiği her noktada verilen **nihai** kararları, gerekçelerini
 ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim: [PLAN.md](PLAN.md)
 
+8 Eylül 2026 operasyon hizalaması: aşağıdaki servis ve erişim açıklamaları mevcut
+koda göre güncellendi. `c45e0e7` için dört hosted iş akışı başarılıdır; bu kayıttan
+sonraki yerel worker/poller değişiklikleri o sonuca dahil değildir. Tarihli eski
+model/kalite ölçümleri kendi kaynak sürümlerinin sonucudur. Canlı dağıtım ve yerel
+Compose çalıştırma kabulü ayrıca gerekir.
+
 > **Kodla hizalama — 9 Ağustos 2026 (R5), beş şerit birleştikten sonra tazelendi.**
 > Bu belge 9 Ağustos'tan önce yazıldı ve o gün sistem epey değişti. Kodla satır satır
 > karşılaştırılıp hizalandı; şeritler birleşince §5 ve §10 yeniden ölçülüp güncellendi.
 > Hizalama kuralı: **belge koda uydurulur, kod belgeye değil.** Tasarlanmış ama
-> uygulanmamış her karar, silinmek yerine [§10 Uygulanmayanlar](#10-uygulanmayanlar--tasarlandı-kodda-yok)
+> uygulanmamış her karar, silinmek yerine [§10 Uygulama durumu ve açık işler](#10-uygulanmayanlar--tasarlandı-kodda-yok)
 > bölümünde açıkça "uygulanmadı" olarak listelenir; sessizce duran bir iddia yalandır
 > (Anayasa III).
 
@@ -22,16 +28,16 @@ ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim:
 | Veritabanı + Vektör | **Supabase PostgreSQL + pgvector** (tek veritabanı). Geliştirme de Supabase'in kendisinde (veya `supabase` CLI lokal stack) — Compose'daki düz Postgres yalnızca fallback | Qdrant/FAISS/Chroma (ikinci veri deposu = senkron + yetki sızıntı riski), Azure AI Search ($73+/ay), iki ayrı dev/prod DB (migration/RLS sapması) |
 | Auth + Storage | **Supabase Auth + Storage** | Sıfırdan JWT/upload yazmak |
 | Doküman işleme | **PyMuPDF + python-pptx + düz parser**; Docling sorunlu dosyalara fallback | Docling ana parser (H1 entegrasyon riski) |
-| Embedding | **`intfloat/multilingual-e5-large` (1024 boyut), ONNX/fastembed.** **`EMBEDDING_PROVIDER` ingest-zamanı kararıdır: değiştirmek tam re-index gerektirir, runtime'da çevrilmez.** Modelin imaja gömülmesi **HENÜZ UYGULANMADI** (§10) | bge-m3 (fastembed dense kataloğunda yok — bkz. aşağıdaki not); İngilizce-odaklı embedding (TR materyalde çöker); API-only (per-query maliyet + offline demo imkânsız) |
+| Embedding | **`intfloat/multilingual-e5-large` (1024 boyut), ONNX/fastembed.** **`EMBEDDING_PROVIDER` ingest-zamanı kararıdır: değiştirmek tam re-index gerektirir, runtime'da çevrilmez.** Modeli imaja gömen build kodu ve ağsız imaj kontrolü vardır (§10); ölçüm ilgili adayın CI kanıtına bağlıdır | bge-m3 (fastembed dense kataloğunda yok — bkz. aşağıdaki not); İngilizce-odaklı embedding (TR materyalde çöker); API-only (per-query maliyet + offline demo imkânsız) |
 | Sparse arama | **PostgreSQL FTS, `simple` + `unaccent` konfigürasyonu** (köklendirme yok → `fork()`, `O(n log n)` gibi teknik tokenlar korunur); turkish/english konfigürasyonlarıyla gold set üzerinde karşılaştırılıp raporlanır | turkish snowball (İngilizce terimleri bozar), english (Türkçe ekleri bozar) |
 | Füzyon | **Reciprocal Rank Fusion** (k=60) | Öğrenilmiş fusion (veri yok), skor normalizasyonu (kırılgan) |
 | Reranker | **P1, bayrak arkasında** (bge-reranker-v2-m3) | Ana hatta zorunlu (latency + deployment riski) |
 | LLM | **LiteLLM Router: Groq (Llama) → Gemini Flash OTOMATİK failover + retry/backoff** (kod seviyesinde; manuel anahtar değişimi değil). Failover H2'de bilerek Groq anahtarı bozularak test edilir | Tek sağlayıcı; yerel LLM hosting (GPU/cold-start) |
 | Yapılandırılmış çıktı | **Pydantic şema + server-side validasyon + 1 retry** | Sağlayıcıya özel structured-output'a tam güven |
 | Orkestrasyon | **Düz Python servis kodu + açık state machine** | LangChain/LlamaIndex/LangGraph (debug şeffaflığı) |
-| Arka plan işleri | **Postgres job tablosu (`FOR UPDATE SKIP LOCKED`).** Bugün çalışan tetik **süreç içidir**: upload handler 202 döndükten sonra `BackgroundTasks` ile `worker.drain()` çağrılır (`app/api/documents.py`). HTTP tetiği (`POST /internal/drain`) **UYGULANMADI** — router kayıtlı ama boş (§10) | Sürekli poll eden worker (scale-to-zero ile çelişir: ya hiç sıfıra inmez ve free tier'ı yer, ya iner ve job'lar asılı kalır), Redis+Celery |
+| Arka plan işleri | **PostgreSQL job tablosu, kısa claim işlemi ve lease/token/revision koruması.** BackgroundTasks veya yapılandırılmış HTTP drain tetiği; ayrı sürekli worker mevcut. `/internal/drain` anahtar yoksa kapalıdır | Scale-to-zero için dış uyanış/takvim gerekir; Redis/Celery eklenmedi |
 | Deploy | **Vercel + Azure Container Apps + Supabase** hedeflenir; bugün depoda yalnız `docker-compose.yml` + `apps/api/Dockerfile` var. Bulut dağıtımı **R3'ün açık işi** (§10) | Son haftada ilk deploy (CORS/JWT/cold-start sürprizleri teslime 2 gün kala), tek VM, K8s |
-| CI | **GitHub Actions**: ruff + ruff format + mypy + pytest + RLS izolasyon kanıtı (api) · lint + tsc (web) · Playwright uçtan uca. **Docker build ve "model imaj içinde" assertion'ı henüz YOK** (§10) | — |
+| CI | **GitHub Actions**: ruff + ruff format + mypy + pytest + RLS izolasyon kanıtı (api) · lint + tsc (web) · Playwright uçtan uca. **Docker build ve ağsız model kontrolü** de vardır (§10); başarı yalnız ölçülen commit için geçerlidir | — |
 | Gözlemleme | **Yapılandırılmış JSON log + request/hata tabloları** (redaction'lı) | Langfuse/Sentry (v2) |
 
 ### Embedding modeli: bge-m3'ten multilingual-e5-large'a
@@ -118,7 +124,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
                                   ▼
                      ┌────────────────────────────┐
                      │  Worker (Azure C. Apps)    │
-                     │  /drain ile uyanır         │
+                     │  HTTP drain / ayrı poller │
                      │  parse → chunk → embed     │
                      └─────────────┬──────────────┘
                                    ▼
@@ -130,9 +136,14 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ---
 
+HTTP drain, Uvicorn'un sunduğu `POST /internal/drain` ucudur. Sürekli
+`python -m app.worker` aynı işleme kodunu kullanır fakat HTTP dinlemez. Canlı
+barındırmada bu iki çalışma biçiminin uyanış politikası ayrı seçilir;
+`WORKER_DRAIN_URL` yalnız HTTP yüzeyinin adresini alabilir.
+
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 27 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020`): <!-- docs-check: tables.count = 27 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020 -->
+Kodda gerçekten var olan 30 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026`): <!-- docs-check: tables.count = 30 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -157,6 +168,7 @@ answer_cache        (id, course_id, question_hash, answer jsonb, created_at)
 chat_sessions       (id, course_id, user_id, mode: qa|socratic|exam, state jsonb, title, ...)
 chat_messages       (id, session_id, course_id, role, content, citations jsonb,
                      status, socratic_stage, seq, created_at)
+chat_privacy_revisions (user_id, course_id nullable, revision) -- yalnız silme sürümü
 request_logs        (id, course_id, user_id, route, mode, status, http_status,
                      latency_ms, token_count, cache_hit, created_at)
 ```
@@ -176,9 +188,7 @@ Belgenin eski hâlinden düzeltilen dört ad/alan (kod kaynak alındı):
 | `answer_cache.response` | `answer_cache.answer` | — |
 | `mastery(user_id, topic_id, score)` | `+ course_id, answer_count` | `answer_count` "kaç cevaba dayanıyor" sorusunu cevaplar; tek cevaptan çıkan bir seviye rozetini gösterirken bu bilinmeli |
 
-**Migration numaraları:** `0002` R1'e (Supabase Auth köprüsü), `0006` R4'e, `0007` R3'e
-ayrılmıştır ve bugün depoda yoktur. Bu yüzden numaralar `0001, 0003, 0004, 0005` diye
-atlamalı gider — eksik dosya değil, ayrılmış numaradır.
+**Migration numaraları:** Güncel dosya listesi yukarıda ölçümle üretilir. `0002/0006/0007` artık depodadır. `0017` tarihsel boşluğu ve runbook için ayrılan `0021/0022/0023` açıkça bildirilir; `0024` sohbet yaşam döngüsünü, `0025` ortak istek kotasını, `0026` iş sahipliğini bu numaraları tüketmeden ekler. [Göç kontrolü](scripts/migration_check.py) yalnız bildirilen boşlukları kabul eder.
 
 ---
 
@@ -187,11 +197,12 @@ atlamalı gider — eksik dosya değil, ayrılmış numaradır.
 ```
 Upload (tür+boyut+magic byte, UUID ad, private bucket)
   → documents (uploaded) + ingestion_jobs (pending) → 202 → worker /drain tetiklenir
-Worker: job al (FOR UPDATE SKIP LOCKED) → indir → türe göre parser
+Worker: kısa claim COMMIT (lease+token+revision) → kilitsiz indir/ayrıştır/embedding
   PDF: PyMuPDF (sayfa bazlı) · PPTX: python-pptx (slayt) · MD: başlık hiyerarşili · kod: fonksiyon sınırlı
-  → chunk + metadata → bge-m3 batch embed → pgvector → completed
-Hata: attempt_count++, last_error; 3 denemede failed → UI'da anlaşılır mesaj
-UI: chunk-bazlı ilerleme (n/m) — uzun ingestion "takıldı" gibi görünmez
+  → chunk + metadata → yapılandırılmış embedding → son kaynak/anahtar/süre kontrolü
+  → chunk+belge+job atomik COMMIT → completed
+Hata/iptal: deneme tüketilir; sabit neden, sınırlı tekrar; 3 denemede failed
+Kesinti: DB lease süresi ve geri çekilme sonrası yeni işleyici uyanışıyla devralma
 ```
 
 Demo notu: canlı yükleme gösterimi için 5-10 sayfalık küçük PDF kullanılır (süresi provada
@@ -205,7 +216,7 @@ Sıralama kritiktir; her adım bir güvenlik sınırıdır:
 
 ```
 0. Sınırlar     soru uzunluğu ≤ 2000 karakter · kullanıcı+ders başına 20 istek / 60 sn
-                (süreç içi kayan pencere — çok worker'lı koşuda worker başına uygulanır)
+                (PostgreSQL ortak kayan pencere; bütün yeni API süreçlerinde aynı bütçe)
 1. AuthZ        Bearer token → user_id → course_memberships kontrolü (CourseMemberDep)
                 (course_id İSTEMCİDEN ASLA güvenilmez; backend belirler)
 2. Önbellek     birebir eşleşme, YALNIZ qa modunda: sha256(mode + normalize edilmiş soru).
@@ -410,19 +421,26 @@ yapılan sorular, ret istatistiği (tek sayfa).
 - **İzolasyon çift katman — ama dürüst kurulumla:** backend'de zorunlu üyelik doğrulaması
   (`CourseMemberDep`/`CourseInstructorDep`) + Postgres RLS. Bugünkü kurulumda API,
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
-  başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
+  başına `app.current_user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. 27 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 27 -->
-  tablo sahibi bile politikalara tabidir.
+  yazar. Uygulama şemalarında toplam 30 tablo vardır; RLS ve GRANT sınırları tablo bazındadır. <!-- docs-check: tables.count = 30 -->
+  Çekirdek kullanıcı tablolarında `FORCE ROW LEVEL SECURITY` kullanılır; bütün
+  tabloların FORCE olduğu iddia edilmez. Örneğin 0025'in `app.request_rate_policies`
+  ve `app.rate_limit_windows` tablolarında RLS etkindir, doğrudan PUBLIC/dou_app/
+  dou_worker yetkileri kaldırılmıştır; erişim dar SECURITY DEFINER işlevleriyledir.
+  Platform ve token/guard tablolarının ayrı yetki sözleşmeleri de kendi göçlerinde
+  tanımlıdır. Superuser ve BYPASSRLS roller FORCE'dan bağımsız ayrıcalıklıdır.
   **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
   yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`
   çalıştırır.
   Erişimi olmayan derste **404 döner, 403 değil**: 403, üye olunmayan bir dersin var
   olduğunu sızdırırdı.
-- **Compose yığınında RLS DEVREDE DEĞİLDİR.** `docker-compose.yml` API'yi `postgres`
-  (superuser) rolüyle bağlar; superuser `FORCE` işaretine rağmen RLS'i atlar. Bu yığın
-  yerel/çevrimdışı fallback içindir ve **izolasyon kanıtı bu yığında alınamaz**. Düzeltme
-  R3'e iletildi (§10).
+- **Compose rol ayrımını yapılandırır:** API `dou_app`, HTTP worker'ın kullanıcı
+  yolları `dou_app`, iş yazımları ve ayrı poller `dou_worker` kullanır. PostgreSQL
+  servisinin başlangıç sahibi API rolü değildir. Yerel `DEV_AUTH_ENABLED=true`
+  üretim kimlik doğrulaması sayılmaz. Gerçek bağlantı rolü, GRANT/RLS ve başka ders
+  reddi kurulan hedefte ayrıca doğrulanır; Compose'un çalıştırıldığı veya canlı
+  izolasyonun kabul edildiği bu yapılandırmadan çıkarılamaz.
 - **Upload:** uzantı beyaz listesi + MIME + magic byte; 20 MB; UUID yeniden adlandırma;
   worker'da zaman/bellek sınırı (zip-bomb/dev PDF).
 - **Indirect prompt injection:** belge metni `<retrieved_context>` içinde veri olarak
@@ -433,9 +451,10 @@ yapılan sorular, ret istatistiği (tek sayfa).
 - **Secrets:** yalnızca backend env; repo'da `.env.example`; loglarda key/TCKN/e-posta redaction.
 - **Rate limiting + token sınırı:** kullanıcı başına istek limiti; girdi karakter sınırı;
   günlük token bütçesi loglanır.
-- **Yedekleme/süreklilik:** G14'te pg_dump + storage yedeği ve Compose'a restore provası
-  (offline fallback'in veri kaynağı da budur); teslim-jüri arası **günlük keep-alive ping**
-  (Supabase free-tier pause önlemi); demo sabahı tüm hesaplarla önceden login.
+- **Yedekleme/süreklilik:** [yerel DB kurtarma protokolü](docs/recovery.md) kendi
+  sentetik yedeğinde ölçülmüştür. Dış Storage kopyası, şifreleme/saklama, silme
+  uzlaştırması ve Compose/bulut geri dönüşü ayrı kabul gerektirir. Keepalive
+  yapılandırılmış bir erişim kontrolüdür; backup veya bakım SLA'sı değildir.
 - **KVKK notu:** sohbet kayıtları saklama süresi + aydınlatma metni sayfası; mastery çıktısı
   "öneri"dir (human-in-the-loop).
 
@@ -495,7 +514,7 @@ DOU-Synapse/
 │           ├── modules/        # ingestion/ retrieval/ generation/ guardrails/
 │           │                   # assessment/ mastery/
 │           ├── models/ schemas/ core/
-│           └── worker.py       # /drain ile tetiklenen job consumer
+│           └── worker.py       # ortak drain ve ayrı sürekli poller
 ├── evaluation/                 # gold_set/, calibration.md, evaluate.py, results/
 ├── sample_data/                # İşletim Sistemleri paketi (sayılar README'de)
 ├── docs/                       # runbook, demo-script, instructor-guide, student-guide,
@@ -503,13 +522,17 @@ DOU-Synapse/
 ├── supabase/                   # migrations/ (numaraları §3'te), tests/ (RLS kanıtı),
 │                               # local_dev_setup.sql, seed_demo.sql
 ├── .github/workflows/ci.yml    # api: ruff+format+mypy+pytest+RLS · web: lint+tsc · e2e
-├── docker-compose.yml          # db (pgvector:pg16) + api — fallback profili, web YOK
+├── docker-compose.yml          # db + api + HTTP worker + worker-poller; web ayrı
 └── .env.example
 ```
 
-`docker-compose.yml` bir **iki servisli** yığındır: frontend Compose'da değildir, `bun` ile
-ayrıca çalıştırılır. Worker da ayrı servis değildir; yükleme sonrası tetik API sürecinin
-içinde koşar.
+`docker-compose.yml` varsayılan olarak `db`, `api`, HTTP sunan `worker` ve
+HTTP açmayan `worker-poller` servislerini tanımlar. `api` yükleme tetiğini
+`http://worker:8000/internal/drain` adresine yollar; poller `python -m app.worker`
+ile iş ve kota bakımını sürdürür. Üç uygulama servisi aynı yerel storage volume'unu
+paylaşır. Frontend Compose'da değildir; ayrıca çalıştırılır. `api-fallback` isteğe
+bağlı profildedir ve API ile aynı host portunu kullandığından ikisi birlikte
+başlatılmaz. Bu topoloji kodda tanımlıdır; yerel Docker çalıştırması ölçülmedi.
 
 ---
 
@@ -522,24 +545,26 @@ içinde koşar.
 
 ---
 
-## 10. Uygulanmayanlar — tasarlandı, kodda yok
+<a id="10-uygulanmayanlar--tasarlandı-kodda-yok"></a>
 
-Bu bölüm 9 Ağustos 2026'da kod okunarak çıkarıldı. Bir karar burada listeliyse **bugün
-çalışmıyor** demektir. Silinmiyorlar çünkü karar hâlâ geçerli; yalnız durumları dürüst
-yazılıyor (Anayasa III).
+## 10. Uygulama durumu ve açık işler
+
+Bu liste 9 Ağustos 2026 kararlarından gelir; uygulanmış ve açık maddeler durum
+sütununda ayrılır. Kaynakta bulunmak, yerel test ve canlı işletim kabulü aynı
+anlama gelmez. Tarihli ölçümler daha yeni kaynaklara otomatik taşınmaz.
 
 | # | Tasarlanan | Bugünkü durum | Sahibi |
 |---|---|---|---|
-| 1 | Embedding modeli **Docker imajına gömülü**, runtime'da HuggingFace bağımlılığı yok | **Uygulanmadı.** `apps/api/Dockerfile` yalnız "ileride gömülecek" notu taşıyor. Model çalışma zamanında indiriliyor ve macOS'ta `$TMPDIR/fastembed_cache` altına (2,1 GB) düşüyor — bu dizini işletim sistemi temizler | R3 |
-| 2 | CI'da **"model imaj içinde, konteyner ağsız ayağa kalkıyor"** assertion'ı | **Uygulanmadı.** CI'da docker build işi yok | R3 |
-| 3 | **HTTP-tetiklemeli worker** (`POST /internal/drain`), ACA scale-to-zero ile uyumlu | **Uygulanmadı.** Router kayıtlı ama boş; `worker_drain_secret` ayarı hazır. Bugün çalışan tetik süreç içi `BackgroundTasks` | R3 |
+| 1 | Embedding modeli **Docker imajına gömülü**, runtime'da HuggingFace bağımlılığı yok | **Build kodu var.** Dockerfile modeli `/opt/models` içine gömer, runtime offline ayarlarını taşır; baked modelin doğruluğu ilgili imajın ölçümüne bağlıdır | R3 |
+| 2 | CI'da **"model imaj içinde, konteyner ağsız ayağa kalkıyor"** assertion'ı | **CI işi var.** `ci.yml` image işi build ve `--network none` kontrollerini içerir; yeni kaynak için kendi koşusu gereklidir | R3 |
+| 3 | **HTTP-tetiklemeli worker** (`POST /internal/drain`) | **Uygulandı.** Anahtar ile korunan uç ve yapılandırılmış tetik vardır. Canlı scale-to-zero uyanış/takvim kabulü ayrıdır;0026 iş sahipliği kesintide tekrar alınabilir | R3 |
 | 4 | **Vercel + Azure Container Apps + Supabase** canlı dağıtım | **Uygulanmadı.** Depoda yalnız Compose + Dockerfile var; canlı URL yok | R3 |
 | 5 | **Supabase Auth** ile gerçek kimlik | **Kısmen.** Köprü migration'ı indi (`0002_supabase_auth_bridge.sql`, `auth` şeması varsa koşullu kurulur) ve JWT doğrulama kodu var; ama yerel/demo kurulum hâlâ `DEV_AUTH_ENABLED=true` ve imzasız `Bearer dev:<uuid>` ile koşuyor | R1 |
-| 6 | **Supabase Storage** (private bucket) | **Uygulanmadı.** Yerel dosya sistemi deposu (`STORAGE_ROOT`) kullanılıyor | R3 |
+| 6 | **Supabase Storage** (private bucket) | **Adaptör var.** Yerel Compose `STORAGE_ROOT` kullanır; SupabaseStorage uygulaması ve üretim yapılandırma kontrolleri mevcut, canlı private bucket/kimlik/erişim kabulü ayrıca gerekir | R3 |
 | 7 | Kanıt eşiğinin **holdout'ta hedefi tutturması** (kapsam dışı doğru ret ≥ %90) | **Tutturulmadı.** Ölçülen %80. Eşik holdout'a bakılarak DEĞİŞTİRİLMEDİ; gerekçe `evaluation/calibration.md` §7 | R2 / R4 |
 | 8 | Chunk başına **embedding sağlayıcı + sürüm damgası** | ✅ **KAPANDI** — `0006_embedding_provenance.sql`. `chunks.embedding_space` sütunu; ölçülen değer `fastembed/intfloat/multilingual-e5-large@0.8.0` | R4 |
 | 9 | `AnswerPipeline`'ın **tekilleştirilmesi** — üretim yolu kendi kopyasını koşuyor (§5) | **Uygulanmadı.** İki orkestratör yan yana duruyor | R4 |
-| 10 | Compose yığınında **RLS'in devrede olması** | **Uygulanmadı.** `postgres` superuser'ı ile bağlanılıyor, RLS atlanıyor (§6) | R3 |
+| 10 | Compose yığınında **RLS'in devrede olması** | **Yapılandırıldı.** API dou_app, worker ayrı dou_worker rolünü kullanır. Gerçek testlerde API NOBYPASSRLS doğrulandı; canlı kurulum ayrıca denetlenir | R3 |
 | 11 | Sahte LLM sağlayıcısının **soru üretimini** desteklemesi | ✅ **KAPANDI.** Ölçüldü: anahtarsız ortamda 3 soru istendi, **3'ü de üretildi ve şemadan geçti.** Çevrimdışı demoda soru üretimi artık gösterilebilir | R4 |
 | 12 | Reranker (`ENABLE_RERANKER`), RAGAS, streaming (SSE) | **Uygulanmadı** — P1, bilinçli olarak dondurma sonrasına bırakıldı | — |
 
@@ -558,3 +583,6 @@ Bildirilen **üç bayat yorumdan ikisi düzeltildi**; biri duruyor:
   `student_attempt` alanı imzada var ve uç onu geçiriyor. **Hâlâ yanlış.**
 
 Bu dosya bu şeridin sahipliğinde değil; gruba iletildi.
+
+
+8 Eylül operasyon güncellemesi: [ortak kota](docs/operations/shared-request-quota.md), [işleyici kesinti/geçişi](docs/operations/ingestion-recovery.md), [yedek/restore](docs/recovery.md). Bölüm10'un diğer satırları tarihsel tasarım durumlarıdır; güncel tamamlanma iddiaları [ölçüm defterinden](docs/completion-program.md) okunur.

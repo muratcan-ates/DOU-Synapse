@@ -1,0 +1,92 @@
+{
+  "scope": "Gerçek derlenmiş CSS ve theme-boot; chat/page.tsx seçili satır sınıflarını kullanan sentetik DOM. API/DB çağrısı veya repo değişikliği yok; tam ürün akışının E2E yerine geçmez.",
+  "files": {
+    ".next/static/css/842a39082d2ba5c7.css": "028ea4ee0e81a14308b87f40b35d8e6bd4ad68c01011db7ff543b44a261e8f7f",
+    ".next/static/css/b02aead2497079d4.css": "c9030a9b58d35ed66be92797d0cafe5d0c7ea5b58c8f61640984403333174716",
+    ".next/static/css/d7bd38d525fff371.css": "c8d0d81c941d49cac85f1e77a5dbba7056d1fa7d354fe407d6d3ce9674cbdf7d",
+    "public/theme-boot.js": "b0084b0d3ee4c1f203b559353752541912fc6eaf817007c9b32ae5d4ea353104"
+  },
+  "observations": {
+    "light": {
+      "theme": "light",
+      "reducedMotion": true,
+      "background": "rgb(255, 255, 255)",
+      "foreground": "rgb(28, 25, 23)",
+      "secondaryForeground": "rgb(114, 107, 102)",
+      "transitionDuration": "0.15s",
+      "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "animations": []
+    },
+    "immediatelyAfterMediaChange": {
+      "theme": "light",
+      "reducedMotion": true,
+      "background": "rgb(255, 255, 255)",
+      "foreground": "rgb(28, 25, 23)",
+      "secondaryForeground": "rgb(114, 107, 102)",
+      "transitionDuration": "0.15s",
+      "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "animations": []
+    },
+    "afterDefaultScreenshot": {
+      "theme": "dark",
+      "reducedMotion": true,
+      "background": "rgb(153, 153, 151)",
+      "foreground": "rgb(245, 244, 242)",
+      "secondaryForeground": "rgb(143, 138, 132)",
+      "transitionDuration": "0.15s",
+      "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "animations": [
+        {
+          "playState": "running",
+          "currentTime": 50.002999996859586,
+          "progress": 0.457304228978533
+        },
+        {
+          "playState": "running",
+          "currentTime": 50.002999996859586,
+          "progress": 0.457304228978533
+        },
+        {
+          "playState": "running",
+          "currentTime": 50.002999996859586,
+          "progress": 0.457304228978533
+        },
+        {
+          "playState": "running",
+          "currentTime": 50.002999996859586,
+          "progress": 0.457304228978533
+        },
+        {
+          "playState": "running",
+          "currentTime": 50.002999996859586,
+          "progress": 0.457304228978533
+        },
+        {
+          "playState": "running",
+          "currentTime": 50.002999996859586,
+          "progress": 0.457304228978533
+        }
+      ]
+    },
+    "darkAtRest": {
+      "theme": "dark",
+      "reducedMotion": true,
+      "background": "rgb(33, 31, 28)",
+      "foreground": "rgb(245, 244, 242)",
+      "secondaryForeground": "rgb(143, 138, 132)",
+      "transitionDuration": "0.15s",
+      "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "animations": []
+    },
+    "afterDisabledScreenshot": {
+      "theme": "dark",
+      "reducedMotion": true,
+      "background": "rgb(33, 31, 28)",
+      "foreground": "rgb(245, 244, 242)",
+      "secondaryForeground": "rgb(143, 138, 132)",
+      "transitionDuration": "0.15s",
+      "transitionProperty": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to",
+      "animations": []
+    }
+  }
+}

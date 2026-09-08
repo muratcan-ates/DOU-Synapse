@@ -1,0 +1,21 @@
+{
+  "test_sha256": "aaf45693e190cef66f3671c60f09019a2e93e8a01385933149a34f1fc2c94371",
+  "test_evidence_path": "/private/tmp/dou018-evidence/b4-test_chat_deletion_race.py",
+  "baseline_log_sha256": "d5382b3f009cd905ecff82a2ef9495c1fa83fb9d61daa61e955e1984e2ac8860",
+  "baseline_result": "3 failed, 1 passed in 2.00s",
+  "source_removed_from_repository": true,
+  "source_head": "2d1b58aeeddaa4b862a760fb46773b2ae73ed253",
+  "source_sha256": {
+    "apps/api/app/api/chat.py": "b1735d7d33f5a0c77befaf2ff717b11ef927aebca4022b8c6893b0a1f3940eb9",
+    "apps/api/app/api/chat_history.py": "6f951254aee94954a48f29e3319bccca08854e75798e5fc13f320de260ea031c",
+    "apps/api/app/api/privacy.py": "3e05df0d6ac2887ce145e28bd695481dadd1111863adb8333de238f91fa7a9b4",
+    "apps/api/app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+    "apps/api/app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+    "apps/api/app/models/chat.py": "ec1b198f2eb5282ba3334447ed259e357e0863997f58aa0c1bd760704e71a6d2",
+    "apps/api/app/modules/assessment/exam_state.py": "2a3714e2eaf356c363a6faf151325d7afe0341ccd184b801e73a38d7a4cb51b1",
+    "supabase/migrations/0001_core_schema.sql": "818cd2467fdeef53d43e1ac1ea599461b8993b58630ef592196b2bf4215a12c4",
+    "supabase/migrations/0003_chat.sql": "5404890b60add8812725888354ebbd21a783fd52b04f0ded98d5416e7eff3dcd",
+    "supabase/migrations/0012_privacy_rights.sql": "4b6e8e42d55a1ecc49025baddc72f6a82974a79978dc2dd7d07651e5a94a0b47",
+    "supabase/migrations/0015_role_aware_course_agent.sql": "95d6732a871658ddf24a87417b82074d144428a6add7a83c3e3e2b6c34f2d326"
+  }
+}

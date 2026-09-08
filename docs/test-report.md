@@ -1,5 +1,7 @@
 # Başarı testi raporu (T056)
 
+> 8 Eylül 2026 / 018 notu: Aşağıdaki 9 Ağustos ölçümleri tarihseldir. [Son 018 arama kabulü](../specs/018-codex-production-line/evidence/c1-final-acceptance.md), başarısız ilk adayı ve son kaynak tekrarını ayırır. §6.4'te document_id'nin kalıcı içerik anahtarı olduğu önerisi doğru değildir; UUID yeniden yüklemede değişir. Son dense adayı sınırlı pencerede içerik hash'i kullanır; FTS hash sıralaması kaliteyi düşürdüğü için geri çekilmiştir. Son E5 Recall@5 93/105 ve MRR baseline ile eşittir; bu, eski %97,1 sonucunun devri veya LLM kalite kabulü değildir.
+
 **Sürüm: 2 · 9 Ağustos 2026** — retrieval katmanı ölçüldü, uçtan uca katman
 **sahte LLM sağlayıcısıyla** ölçüldü (cevap kalitesi sayıları geçersiz).
 **Ölçüm dalı:** `feat/eval-runs` · Bu belgedeki her sayı bir koşu dosyasına ya da

@@ -1,0 +1,269 @@
+{
+  "status": "current-schema-parity-pass",
+  "input_manifest_sha256": "b2c9999606fef3042034ae8bf35aed12998692352be26605d5af17e9aa48de39",
+  "recovery_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "migration_count": 22,
+  "prepared_head": "9af41226d456efb7e20d22cec490566fb8c1a01c",
+  "working_tree_lineage": true,
+  "root_provision_sha256": "628c097ce66fa71265c33d19e87734229a400a4bcf57c979a4beca0beeccf0fe",
+  "root_provision_working_tree_dirty": true,
+  "committed_release_claim": false,
+  "scope": "synthetic current-schema parity; no deployment or ANN quality certification",
+  "seed_committed": true,
+  "backup": {
+    "receipt": {
+      "status": "backup-complete",
+      "source_identity_sha256": "a122f54de62714a8c18edfc5a5073a82a6cbefefed465fa52ecc6adf4b714da4"
+    },
+    "artifacts": {
+      "stdout": {
+        "bytes": 124,
+        "sha256": "fea12c3c9bbf80fa04efa031cf6104b2a37625a5df48d0c7b6036097d16126f3"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "seconds": 0.397
+  },
+  "backup_lineage": {
+    "commit": "9af41226d456efb7e20d22cec490566fb8c1a01c",
+    "tracked_schema_dirty": false,
+    "note": "tracked dirty flag excludes untracked migration files; exact22hash manifest and root dirty receipt are separate"
+  },
+  "restore": {
+    "receipt": {
+      "status": "restore-complete",
+      "commit_status": "committed",
+      "target_identity_sha256": "b37b7085aa080a91be6c52d4bb4bbfa33b87d8fe2790923495454d1be88daa55",
+      "scope": "database/security metadata; content and RLS application drill still required"
+    },
+    "artifacts": {
+      "stdout": {
+        "bytes": 244,
+        "sha256": "a12b87d20e0d0b2077749a824d4c2a4120916e4e8b8d5f36c6e3ca586ff386f7"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "seconds": 0.422
+  },
+  "verification": {
+    "tables": {
+      "app.rate_limit_windows": {
+        "rows": 1,
+        "sorted_row_sha256": "156cf9a9d3f2729f10f1fd07cb54b2f3b4add9f45182d54975352338ef183175",
+        "kind": "r",
+        "equal": true
+      },
+      "app.request_rate_policies": {
+        "rows": 2,
+        "sorted_row_sha256": "bee2447c17830ac5fb31a67babc0c4237f287c87bc390937a3137dbb27e8698d",
+        "kind": "r",
+        "equal": true
+      },
+      "public.ai_guard_events": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.ai_token_reservations": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.answer_cache": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.answers": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.blueprint_cells": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.chat_message_feedback": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.chat_messages": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.chat_privacy_revisions": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.chat_sessions": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.chunks": {
+        "rows": 1,
+        "sorted_row_sha256": "fda94c0036398add2f04c449ad8eb213671ec1c2a31c568893959f030cc5f1d4",
+        "kind": "r",
+        "equal": true
+      },
+      "public.course_ai_policies": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.course_ai_policy_audit": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.course_memberships": {
+        "rows": 1,
+        "sorted_row_sha256": "660af5a77280414b1a2301bd8e8f020984335dd76e0f4b576457ca05fc2add89",
+        "kind": "r",
+        "equal": true
+      },
+      "public.courses": {
+        "rows": 1,
+        "sorted_row_sha256": "e89f18f0c4ff82081266c09bcc441fcb49a95f1439701941bd4dfcb07f60464f",
+        "kind": "r",
+        "equal": true
+      },
+      "public.documents": {
+        "rows": 3,
+        "sorted_row_sha256": "a49636849d3d08ea4ee593d0972498266c1c85cd01ee83e4142a2199e12e332a",
+        "kind": "r",
+        "equal": true
+      },
+      "public.exam_blueprints": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.exam_items": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.exam_sessions": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.exam_versions": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.ingestion_jobs": {
+        "rows": 3,
+        "sorted_row_sha256": "497e2020d314804487b1e6f5afafb38faa906bf22975ffd06805c95e5cafc182",
+        "kind": "r",
+        "equal": true
+      },
+      "public.learning_outcomes": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.mastery": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.platform_admin_access_audit": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.platform_admins": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.profiles": {
+        "rows": 2,
+        "sorted_row_sha256": "3f50263f893a3156f13a3360623245e3ff2d2a4b379be9f6488d8ca027c1bf83",
+        "kind": "r",
+        "equal": true
+      },
+      "public.questions": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.request_logs": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      },
+      "public.topics": {
+        "rows": 0,
+        "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "kind": "r",
+        "equal": true
+      }
+    },
+    "rls": {
+      "teacher": {
+        "counts": {
+          "courses": 1,
+          "documents": 3,
+          "chunks": 1,
+          "ingestion_jobs": 3
+        },
+        "quota_direct_denials": {
+          "rate_limit_windows": "42501",
+          "request_rate_policies": "42501"
+        },
+        "vector_count": 1
+      },
+      "outsider": {
+        "counts": {
+          "courses": 0,
+          "documents": 0,
+          "chunks": 0,
+          "ingestion_jobs": 0
+        },
+        "quota_direct_denials": {
+          "rate_limit_windows": "42501",
+          "request_rate_policies": "42501"
+        },
+        "vector_count": 0
+      }
+    },
+    "semantic_or_ann_quality_claim": false,
+    "external_storage_copied": false,
+    "security_catalog_and_role_component_equal": true
+  }
+}

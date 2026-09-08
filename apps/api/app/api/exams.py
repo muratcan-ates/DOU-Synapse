@@ -82,8 +82,10 @@ from app.modules.assessment.grading import (
     GradingOutcome,
     SourceMaterial,
     grade_answer,
+    grounded_criterion_is_valid,
     load_source_material,
     load_source_refs,
+    payload_rubric,
     score_of,
 )
 from app.modules.mastery.service import record_answer
@@ -95,6 +97,8 @@ from app.schemas.assessment import (
     ExamQuestionOut,
     ExamSessionOut,
     ExamStartRequest,
+    GroundedCriterionEvidence,
+    GroundedMissingCriterionOut,
     HintOut,
     HintRequest,
     McqPayload,
@@ -181,6 +185,11 @@ def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
         # FR-117: ölçüt kırılımı. Yeni tablo açılmadı — `answers.feedback` tam bu iş
         # için var (0004:110-112) ve içeriği tek bir yerden üretiliyor.
         "rubrik_kirilimi": [row.model_dump() for row in outcome.rubric_breakdown],
+        "kaynakli_eksik_olcut": (
+            outcome.grounded_missing_criterion.model_dump(mode="json")
+            if outcome.grounded_missing_criterion
+            else None
+        ),
     }
 
 
@@ -271,9 +280,46 @@ def _answer_feedback(
         missing_points=[str(item) for item in missing] if isinstance(missing, list) else [],
         why_wrong=reference(why_wrong),
         evidence=reference(evidence),
+        grounded_missing_criterion=_grounded_missing_criterion(
+            feedback, question=question, sources=sources
+        ),
         solution=solution_payload(question.type, question.payload) if question else None,
         rubric_breakdown=_rubric_breakdown(feedback),
         message=str(feedback.get("mesaj")) if feedback.get("mesaj") else None,
+    )
+
+
+def _grounded_missing_criterion(
+    feedback: dict[str, object], *, question: Question | None, sources: dict[UUID, SourceMaterial]
+) -> GroundedMissingCriterionOut | None:
+    """Kaydedilmiş alıntıyı güncel, okunabilir kaynak metniyle yeniden doğrular."""
+    raw = feedback.get("kaynakli_eksik_olcut")
+    if raw is None or question is None:
+        return None
+    try:
+        claim = GroundedCriterionEvidence.model_validate(raw)
+        payload = parse_payload(question.type, question.payload)
+        breakdown = _rubric_breakdown(feedback)
+    except PydanticValidationError:
+        return None
+    material = sources.get(claim.chunk_id)
+    if (
+        material is None
+        or claim.chunk_id != question.source_chunk_id
+        or claim.chunk_id != _chunk_id(feedback, "dayanak_chunk_id")
+        or not grounded_criterion_is_valid(
+            claim, rubric=payload_rubric(payload), breakdown=breakdown, source_text=material.text
+        )
+    ):
+        return None
+    return GroundedMissingCriterionOut(
+        criterion=claim.criterion,
+        source=SourceRefOut(
+            chunk_id=material.chunk_id,
+            file_name=material.file_name,
+            location=material.location,
+            snippet=claim.quote,
+        ),
     )
 
 

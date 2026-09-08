@@ -1,0 +1,7 @@
+{
+  "status": "interrupted",
+  "wrapper_exit_code": 130,
+  "run_id": "mtsq6ffmf359",
+  "reason": "Root test environment used localhost:8018 but unchanged browser production build uses127.0.0.1:8018. Trace confirms POST learning-outcomes201 at127; exact localhost response predicate and route interception did not match. Four tests failed/interrupted, remaining suite not completed. No product/test source changed.",
+  "log_sha256": "c5a8c7ea91f6d85bad4de299ac422006064c80ad651df7000cda959a40633014"
+}

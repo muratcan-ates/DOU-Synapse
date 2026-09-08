@@ -10,19 +10,13 @@
  * kopya olarak yaşıyordu; kanca onu lib'e indirir ki karar çekirdeği DOM'suz
  * `bun test lib/` ile sınanabilsin (aynı gerekçe `use-resource.ts`'te yazılı).
  *
- * Kasıtlı olarak KORUNAN iki davranış (ChatScreen'in bugünkü semantiği):
- *
- * 1. `open()` yarışı token'la çözülür: hızlı iki açılışta geç dönen ilk cevap
- *    sessizce düşürülür — ekranda A seçiliyken içeriğin B olması engellenir.
- * 2. `loadOlder()` devamı ise token KONTROL ETMEZ: uçuştaki "daha eskiyi yükle"
- *    cevabı, arada `open()`/`reset()` olsa bile o anki listeye prepend edilir.
- *    Bu, taşınan ekranın ölçülen davranışıdır; burada davranış değiştirmek bu
- *    kancanın işi değildir. (Kapı `olderLoading` bayrağıdır: aynı anda ikinci
- *    devam isteği çıkmaz.)
+ * Açılış ve devam sayfaları aynı kaynak nesline bağlıdır. Oturum değişince,
+ * sıfırlanınca veya bileşen kapanınca eski başarı/hata cevabı düşürülür.
  */
 
-import { useCallback, useReducer, useRef } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { api } from "@/lib/api";
+import { subscribeAuthChanges } from "@/lib/auth-events";
 import { describeError, type ErrorInfo } from "@/lib/errors";
 import type { Page } from "@/lib/types";
 import { pagedPath } from "@/lib/use-paged-resource";
@@ -61,21 +55,15 @@ export function initialReverseHistory<U>(): ReverseHistoryState<U> {
   return { items: [], cursor: null, loading: false, olderLoading: false, error: null };
 }
 
-/**
- * `reset` ve `open-started` `olderLoading`'e DOKUNMAZ: uçuştaki devam isteğinin
- * bayrağı, isteğin kendi bitişiyle (older-loaded/older-failed) düşer. Taşınan
- * ekran da böyle davranıyordu; bayrağı erken düşürmek "istek uçuşta ama meşgul
- * görünmüyor" penceresi açardı.
- */
 export function reverseHistoryReducer<U>(
   state: ReverseHistoryState<U>,
   action: ReverseHistoryAction<U>,
 ): ReverseHistoryState<U> {
   switch (action.type) {
     case "reset":
-      return { ...initialReverseHistory<U>(), olderLoading: state.olderLoading };
+      return initialReverseHistory<U>();
     case "open-started":
-      return { ...state, items: [], cursor: null, loading: true, error: null };
+      return { ...initialReverseHistory<U>(), loading: true };
     case "open-loaded":
       return { ...state, items: action.items, cursor: action.cursor, loading: false };
     case "open-failed":
@@ -111,81 +99,111 @@ export interface ReverseHistoryHandle<U> extends ReverseHistoryState<U> {
   open: (path: string) => Promise<boolean>;
   /** Bir sayfa daha eskiyi başa ekle; kapı `olderLoading` bayrağıdır. */
   loadOlder: () => Promise<void>;
-  /** Listeyi boşalt ve uçuştaki `open` cevabını geçersizle. */
+  /** Listeyi boşalt ve tüm uçuştaki cevapları geçersizle. */
   reset: () => void;
   append: (items: U[]) => void;
   update: (apply: (items: U[]) => U[]) => void;
+}
+
+export interface ReverseHistoryPorts<T, U> {
+  load(path: string): Promise<Page<T>>;
+  map(items: T[]): U[];
+  dispatch(action: ReverseHistoryAction<U>): void;
+}
+
+/** Üretimde kullanılan istek koşucusu: kaynak nesli ve tek devam isteği kapısı. */
+export function createReverseHistory<T, U>(ports: ReverseHistoryPorts<T, U>) {
+  let epoch = 0;
+  let path: string | null = null;
+  let cursor: string | null = null;
+  let olderLoading = false;
+  let suspended = false;
+
+  const open = async (nextPath: string): Promise<boolean> => {
+    const requestEpoch = ++epoch;
+    path = nextPath;
+    cursor = null;
+    olderLoading = false;
+    ports.dispatch({ type: "open-started" });
+    try {
+      const page = await ports.load(nextPath);
+      if (epoch !== requestEpoch) return false;
+      cursor = page.next_cursor;
+      ports.dispatch({ type: "open-loaded", items: ports.map(page.items), cursor });
+      return true;
+    } catch (error) {
+      if (epoch !== requestEpoch) return false;
+      ports.dispatch({ type: "open-failed", error: describeError(error) });
+      return false;
+    }
+  };
+
+  return {
+    open,
+    async loadOlder(): Promise<void> {
+      if (path === null || cursor === null || olderLoading || suspended) return;
+      const requestEpoch = epoch;
+      const requestPath = pagedPath(path, cursor);
+      olderLoading = true;
+      ports.dispatch({ type: "older-started" });
+      try {
+        const page = await ports.load(requestPath);
+        if (epoch !== requestEpoch) return;
+        cursor = page.next_cursor;
+        ports.dispatch({ type: "older-loaded", items: ports.map(page.items), cursor });
+      } catch (error) {
+        if (epoch !== requestEpoch) return;
+        ports.dispatch({ type: "older-failed", error: describeError(error) });
+      } finally {
+        if (epoch === requestEpoch) olderLoading = false;
+      }
+    },
+    reset(): void {
+      epoch += 1;
+      path = null;
+      cursor = null;
+      olderLoading = false;
+      ports.dispatch({ type: "reset" });
+    },
+    cancel(): void {
+      epoch += 1;
+      suspended = true;
+      olderLoading = false;
+    },
+    resume(): void {
+      if (!suspended) return;
+      suspended = false;
+      // StrictMode kurulum/temizlik/kurulum provasında iptal edilen restore
+      // tekrar okunur; gerçek unmount'ta resume çağrılmaz, hiçbir state yazılmaz.
+      if (path !== null) void open(path);
+    },
+    append(items: U[]): void { ports.dispatch({ type: "append", items }); },
+    update(apply: (items: U[]) => U[]): void { ports.dispatch({ type: "update", apply }); },
+  };
 }
 
 export function useReverseHistory<T, U>(
   mapItems: (items: T[]) => U[],
 ): ReverseHistoryHandle<U> {
   const [state, dispatch] = useReducer(
-    reverseHistoryReducer<U>,
-    undefined,
-    initialReverseHistory<U>,
+    reverseHistoryReducer<U>, undefined, initialReverseHistory<U>,
   );
-
-  /*
-   * Uçuştaki `open` isteğini geçersizleştiren sayaç (taşınan ekrandaki
-   * `historyToken`). Hızlı iki açılışta birinci kaynağın geç gelen yanıtı
-   * ikincinin listesini eziyordu; sayaç gecikmiş yanıtı sessizce düşürür.
-   */
-  const epochRef = useRef(0);
-  /** Açık kaynağın yolu; devam sayfaları imleci buna ekleyerek ister. */
-  const pathRef = useRef<string | null>(null);
   const mapRef = useRef(mapItems);
   mapRef.current = mapItems;
-
-  const open = useCallback(async (path: string): Promise<boolean> => {
-    const epoch = ++epochRef.current;
-    pathRef.current = path;
-    dispatch({ type: "open-started" });
-    try {
-      const page = await api.get<Page<T>>(path);
-      if (epochRef.current !== epoch) return false;
-      dispatch({
-        type: "open-loaded",
-        items: mapRef.current(page.items),
-        cursor: page.next_cursor,
-      });
-      return true;
-    } catch (error) {
-      if (epochRef.current !== epoch) return false;
-      dispatch({ type: "open-failed", error: describeError(error) });
-      return false;
-    }
-  }, []);
-
-  const loadOlder = useCallback(async () => {
-    const path = pathRef.current;
-    if (path === null || state.cursor === null || state.olderLoading) return;
-    dispatch({ type: "older-started" });
-    try {
-      const older = await api.get<Page<T>>(pagedPath(path, state.cursor));
-      dispatch({
-        type: "older-loaded",
-        items: mapRef.current(older.items),
-        cursor: older.next_cursor,
-      });
-    } catch (error) {
-      dispatch({ type: "older-failed", error: describeError(error) });
-    }
-  }, [state.cursor, state.olderLoading]);
-
-  const reset = useCallback(() => {
-    epochRef.current += 1;
-    pathRef.current = null;
-    dispatch({ type: "reset" });
-  }, []);
-
-  const append = useCallback((items: U[]) => {
-    dispatch({ type: "append", items });
-  }, []);
-
-  const update = useCallback((apply: (items: U[]) => U[]) => {
-    dispatch({ type: "update", apply });
-  }, []);
-
-  return { ...state, open, loadOlder, reset, append, update };
+  const runnerRef = useRef<ReturnType<typeof createReverseHistory<T, U>> | null>(null);
+  if (runnerRef.current === null) {
+    runnerRef.current = createReverseHistory<T, U>({
+      load: (path) => api.get<Page<T>>(path),
+      map: (items) => mapRef.current(items),
+      dispatch,
+    });
+  }
+  const runner = runnerRef.current;
+  useEffect(() => {
+    runner.resume();
+    const stopAuth = subscribeAuthChanges(runner.reset);
+    return () => { stopAuth(); runner.cancel(); };
+  }, [runner]);
+  return { ...state, open: runner.open, loadOlder: runner.loadOlder,
+    reset: runner.reset, append: runner.append, update: runner.update };
 }

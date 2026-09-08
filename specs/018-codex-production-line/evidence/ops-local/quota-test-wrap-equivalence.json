@@ -1,0 +1,7 @@
+{
+  "path": "apps/api/tests/test_request_quota_health.py",
+  "before_sha256": "f16559528f3dcd84bca27b34fefcdebc03b6cca0f788a462168417d74000574c",
+  "after_sha256": "0bf6d93ef703e1ae841b73761ab2901461c38efdcd260e74a5f1bee00a7bc41a",
+  "ast_equal": true,
+  "change": "Only split existing patch.object expression across lines for 100-column Ruff limit."
+}

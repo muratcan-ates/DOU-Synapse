@@ -32,7 +32,7 @@ import { api } from "@/lib/api";
 import type { LearningOutcome } from "@/lib/blueprint";
 import { errorMessage } from "@/lib/errors";
 import { QUESTION_STATUS, QUESTION_TYPE } from "@/lib/labels";
-import { countByStatus, filterQuestions, nextDraftId, toQuestionView, type StatusFilter } from "@/lib/questions";
+import { filterQuestions, nextDraftId, questionPoolPath, toQuestionView, type StatusFilter } from "@/lib/questions";
 import { useSession } from "@/lib/session";
 import type { Question, QuestionStatus, Topic } from "@/lib/types";
 import { usePagedResource } from "@/lib/use-paged-resource";
@@ -41,17 +41,17 @@ import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
 import { InstructorGate } from "@/components/instructor-gate";
-import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
+import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
 import { AUTHORING_CONTROL_CLASS as SELECT_CLASS } from "@/components/question-authoring/classification-fields";
 import { GeneratePanel } from "@/components/question-authoring/generate-panel";
 import { QuestionDetail } from "@/components/question-authoring/question-detail";
 import { Badge, Card, EmptyState } from "@/components/ui";
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "Yüklenenlerin tümü" },
-  { value: "draft", label: QUESTION_STATUS.draft.label },
-  { value: "approved", label: QUESTION_STATUS.approved.label },
-  { value: "rejected", label: QUESTION_STATUS.rejected.label },
+  { value: "all", label: "Tümü" },
+  { value: "draft", label: "Taslaklar" },
+  { value: "approved", label: "Onaylananlar" },
+  { value: "rejected", label: "Reddedilenler" },
 ];
 
 export default function QuestionsPage() {
@@ -132,8 +132,10 @@ function QuestionPool({ courseId }: { courseId: string }) {
     [courseId],
   );
   const topicsResource = useResource(fetchTopics, [courseId]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [topicFilter, setTopicFilter] = useState<string>("all");
   const questionsResource = usePagedResource<Question>(
-    `/courses/${courseId}/questions`,
+    questionPoolPath(courseId, statusFilter, topicFilter),
     [courseId],
   );
 
@@ -148,8 +150,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
   // first page and losing the instructor's place in a large question pool.
   const [savedQuestions, setSavedQuestions] = useState<Record<string, { question: Question; base: Question | undefined }>>({});
 
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [topicFilter, setTopicFilter] = useState<string>("all");
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** Son kararın cümlesi: hem yazılır hem `role="status"` ile duyurulur. */
   const [notice, setNotice] = useState<string | null>(null);
@@ -178,19 +179,12 @@ function QuestionPool({ courseId }: { courseId: string }) {
     await Promise.all([topicsResource.reload(), questionsResource.reload()]);
   }, [topicsResource.reload, questionsResource.reload]);
 
-  if (error)
-    return (
-      <ErrorNote
-        message={error}
-        kind={errorKind}
-        requestId={errorRequestId}
-        onRetry={reload}
-      />
-    );
-  if (!topicsResource.data || !questionsResource.data) return <Loading />;
+  if (!topicsResource.data) return error
+    ? <ErrorNote message={error} kind={errorKind} requestId={errorRequestId} onRetry={reload} />
+    : <Loading />;
 
   const topics = topicsResource.data;
-  const questions = questionsResource.data.map((question) => {
+  const questions = (questionsResource.data ?? []).map((question) => {
     const saved = savedQuestions[question.id];
     // A later server refresh is authoritative; local save responses only
     // replace the exact fetched row from which the edit started.
@@ -201,16 +195,11 @@ function QuestionPool({ courseId }: { courseId: string }) {
       question, base: questionsResource.data?.find((item) => item.id === question.id),
     } }));
   }
-  const counts = countByStatus(questions);
   const visible = filterQuestions(questions, statusFilter, topicFilter);
 
-  /*
-   * Seçim TAM listeden çözülür, süzülmüş listeden değil. Sebebi karar anında
-   * görünür: "Taslak" süzgeciyle çalışan eğitmen bir soruyu onayladığında o
-   * soru süzgecin dışına çıkar; seçim süzülmüş listeye bağlı olsaydı panel
-   * sessizce başka bir soruya kayardı (bulgu 14) ve eğitmen neyi onayladığını
-   * göremezdi. Soru yerinde kalır, süzgeç dışına düştüğü ise ayrıca yazılır.
-   */
+  // Karar kaydı sunucunun yeni süzülmüş listesinden çıkabilir. Kaydetme
+  // yanıtını panelde tutmak, eğitmenin hangi soruyu onayladığını gösterir.
+  // Elle süzgeç değiştirmek ise bu sabit seçimi ve geçici kayıtları temizler.
   const selected =
     (selectedId ? questions.find((q) => q.id === selectedId) ?? savedQuestions[selectedId]?.question : undefined) ??
     visible[0] ??
@@ -219,6 +208,14 @@ function QuestionPool({ courseId }: { courseId: string }) {
 
   const topicName = (topicId: string) =>
     topics.find((topic) => topic.id === topicId)?.name ?? "Konu bulunamadı";
+
+  const filtersBusy = editingId !== null || busyId !== null || generating;
+  function changeFilters(status: StatusFilter, topicId: string) {
+    if (filtersBusy) return;
+    setStatusFilter(status); setTopicFilter(topicId);
+    setSelectedId(null); setSavedQuestions({});
+    setNotice(null); setDecisionError(null);
+  }
 
   async function decide(question: Question, status: Extract<QuestionStatus, "approved" | "rejected">) {
     if (busyId !== null || editingId !== null || generating) return;
@@ -281,19 +278,6 @@ function QuestionPool({ courseId }: { courseId: string }) {
 
   return (
     <>
-      <MetricRow
-        items={[
-          { value: counts.draft, label: "Yüklenen onay bekleyen" },
-          { value: counts.approved, label: "Yüklenen öğrenciye açık" },
-          { value: counts.rejected, label: "Yüklenen reddedilen" },
-          { value: counts.total, label: "Yüklenen soru" },
-        ]}
-      />
-      <p className="prose-tr -mt-4 mb-6 text-xs text-fg-subtle">
-        Sayılar ve süzgeçler yalnız bu ekranda yüklenen soruları kapsar. Daha fazla
-        soru yüklendikçe güncellenir.
-      </p>
-
       {(authoring.error ?? authoring.refreshError) && <ErrorNote
         message={authoring.error ?? authoring.refreshError ?? ""} kind={authoring.errorKind}
         requestId={authoring.errorRequestId} onRetry={authoring.reload} />}
@@ -313,7 +297,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
           // kullanıcının bakmak isteyeceği yere götürür ve sessiz değil:
           // üretim raporu zaten ekranda duruyor.
           const first = report.questions?.[0];
-          if (first) setSelectedId(first.id);
+          if (first) { rememberQuestion(first); setSelectedId(first.id); }
         }}
       />
 
@@ -326,39 +310,34 @@ function QuestionPool({ courseId }: { courseId: string }) {
         />
       )}
 
-      {questions.length === 0 ? (
-        <EmptyState title="Havuzda henüz soru yok. Yukarıdan bir konu seçip soru üretin; üretilen sorular taslak olarak buraya düşer." />
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <StatusTabs value={statusFilter} disabled={filtersBusy}
+          onChange={(status) => changeFilters(status, topicFilter)} />
+        <Field label="Konu süzgeci">
+          {(control) => <select {...control} value={topicFilter} disabled={filtersBusy}
+            onChange={(event) => changeFilters(statusFilter, event.target.value)} className={SELECT_CLASS}>
+            <option value="all">Tüm konular</option>
+            {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
+          </select>}
+        </Field>
+      </div>
+      <p className="mb-4 text-xs text-fg-subtle">
+        Süzgeçler tüm soru havuzunda uygulanır. Bu sonuçtan {visible.length} soru gösteriliyor.
+        {questionsResource.nextCursor && " Devamını aşağıdan yükleyebilirsin."}
+      </p>
+      {error && <ErrorNote message={error} kind={errorKind} requestId={errorRequestId} onRetry={reload} />}
+      {error && !questionsResource.data ? null : questionsResource.loading && !questionsResource.data ? <Loading label="Sorular yükleniyor…" /> :
+        questions.length === 0 && !selected ? (
+        <>
+          {notice && <p role="status" className="mb-4 text-sm text-fg-muted">{notice}</p>}
+          <EmptyState title={statusFilter === "all" && topicFilter === "all"
+            ? "Havuzda henüz soru yok. Yukarıdan bir konu seçip soru üretin; üretilen sorular taslak olarak buraya düşer."
+            : "Bu süzgeçte soru yok. Başka bir durum veya konu seçebilirsin."} />
+        </>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
           <Card className="h-fit p-0">
-            <div className="space-y-3 border-b border-border px-4 py-3">
-              <h2 className="text-sm font-medium text-fg">Üretilen sorular</h2>
-              <StatusTabs
-                value={statusFilter}
-                counts={counts}
-                onChange={setStatusFilter}
-              />
-              {topics.length > 1 && (
-                <Field label="Konu süzgeci">
-                  {(control) => (
-                    <select
-                      {...control}
-                      value={topicFilter}
-                      onChange={(e) => setTopicFilter(e.target.value)}
-                      className={SELECT_CLASS}
-                    >
-                      <option value="all">Tüm konular</option>
-                      {topics.map((topic) => (
-                        <option key={topic.id} value={topic.id}>
-                          {topic.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </Field>
-              )}
-            </div>
-
+            <h2 className="border-b border-border px-4 py-3 text-sm font-medium text-fg">Üretilen sorular</h2>
             {visible.length === 0 ? (
               <p className="px-4 py-6 text-sm text-fg-muted">
                 Bu süzgeçte soru yok.
@@ -427,22 +406,12 @@ function QuestionPool({ courseId }: { courseId: string }) {
   );
 }
 
-/**
- * Durum süzgeci. Sayılar etiketin yanında duruyor: "Taslak" sekmesine basmadan
- * kaç taslak olduğu görünmezse eğitmen her sekmeyi tek tek dener.
- */
-function StatusTabs({
-  value,
-  counts,
-  onChange,
-}: {
+/** Durum sayıları sunucudan gelmediği için sekmeler toplam göstermez. */
+function StatusTabs({ value, disabled, onChange }: {
   value: StatusFilter;
-  counts: { draft: number; approved: number; rejected: number; total: number };
+  disabled: boolean;
   onChange: (next: StatusFilter) => void;
 }) {
-  const countOf = (filter: StatusFilter) =>
-    filter === "all" ? counts.total : counts[filter];
-
   /*
    * Segment düğmesinin dili `chat/page.tsx`'teki mod seçicisiyle BİREBİR aynı:
    * kenarlıklı bir grup, seçili olan `border-strong` + `font-medium` + `--fg`.
@@ -451,22 +420,23 @@ function StatusTabs({
    * üçüncüsü yazılırken ortak bileşene çıkmalı (Anayasa XI, raporda).
    */
   return (
-    <div role="group" aria-label="Yüklenen soruların durum süzgeci" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border p-1">
+    <div role="group" aria-label="Soruların durum süzgeci" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border p-1">
       {STATUS_FILTERS.map((filter) => {
         const active = filter.value === value;
         return (
           <button
             key={filter.value}
             type="button"
-            onClick={() => onChange(filter.value)}
+            onClick={() => { if (!disabled) onChange(filter.value); }}
+            aria-disabled={disabled}
             aria-pressed={active}
-            className={`h-8 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+            className={`min-h-11 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
               active
                 ? "border-border-strong bg-surface font-medium text-fg"
                 : "border-transparent text-fg-muted hover:text-fg"
             }`}
           >
-            {filter.label} ({countOf(filter.value)})
+            {filter.label}
           </button>
         );
       })}

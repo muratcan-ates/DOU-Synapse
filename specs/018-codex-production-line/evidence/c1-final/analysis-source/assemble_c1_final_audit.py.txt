@@ -1,0 +1,23 @@
+"""Üç son kaynak denetimini birleştirir; önceki repo kanıtlarını salt okur."""
+import gzip,hashlib,json
+from pathlib import Path
+R=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');P=Path('/private/tmp/dou018-evidence');E=R/'specs/018-codex-production-line/evidence'
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+a={k:json.loads((P/f'c1-final-{k}-audit.json').read_text()) for k in ['hashing','e5','runtime']}
+index=json.loads((E/'bc-archive.json').read_text());checked=[]
+for record in index['records']:
+ f=R/record['path'];assert sha(f)==record['sha256'];b=f.read_bytes();raw=gzip.decompress(b) if record.get('gzip',False) else b
+ assert hashlib.sha256(raw).hexdigest()==record.get('source_sha256',record['sha256']);checked.append(record['path'])
+plans=json.loads((E/'c1-measurement-archive.json').read_text())
+for record in plans['artifacts']:
+ f=E/record['file'];b=f.read_bytes()
+ if 'gzip_sha256' in record:assert sha(f)==record['gzip_sha256'];b=gzip.decompress(b)
+ assert hashlib.sha256(b).hexdigest()==record['raw_sha256'];checked.append(str(f.relative_to(R)))
+assert str((E/'c1-report.md').relative_to(R)) in checked
+sources=a['hashing']['final_candidate_source_sha256'];assert sources==a['e5']['candidate_source_sha256']
+assert all(a['runtime']['source_sha256'][p]==h for p,h in sources.items())
+report={'status':'local_final_source_technical_acceptance_passed','scope':'Daraltılmış dense ANN/GUC adayı; FTS baseline davranışında. Canlı/CI/genel C1 tamamlama kararı değildir.','candidate_source_sha256':sources,'source_base':'71d5ff640f0d48a08f3967b000485a15035f10c7','candidate_dirty':True,'checks':{'hashing_mechanical_nondecrease':a['hashing']['mechanical_nonregression'],'e5_retrieval_080_and_nondecrease':a['e5']['acceptance']['overall'],'runtime':a['runtime']['status']=='verified_final_local_runtime','all_three_final_sources_equal':True,'api':{'passed':1499,'warnings':5,'pytest_seconds':91.66,'wrapper_seconds':101.604,'source_unchanged':True},'e2e':{'scope':'root_separate_browser_evidence','passed':68,'reported_duration':'1.4m','run_id':'mtskgnz9ac45','cleaned_courses':65,'cleaned_admin_audit_rows':8,'log_sha256':sha(P/'bc-c1-final-e2e.log'),'api_restarted_final_source':'reported_by_root_process_9601'}},'hashing':{'metrics':a['hashing']['summary'],'rank_comparisons':a['hashing']['rank_comparisons']},'e5':{'metrics':a['e5']['summary'],'rank_comparisons':a['e5']['rank_comparisons'],'acceptance':a['e5']['acceptance'],'quality_scope':'actual_embedding_retrieval_only'},'runtime':{k:a['runtime'][k] for k in ['counter_deltas','measured_hybrid_calls','negative_observations','returned_source_checks','same_all_observations_as_v2','backend_pid','probe_elapsed_seconds','root_wrapper_wall_seconds']},'audit_sha256':{f'c1-final-{k}-audit.json':sha(P/f'c1-final-{k}-audit.json') for k in a},'raw_final_manifest_sha256':{'hashing':a['hashing']['manifest_sha256'],'e5':a['e5']['manifest_sha256'],'runtime':a['runtime']['artifacts_sha256']['retrieval-runtime-local-v3-final-20260908.json']},'preserved_historical_archives':{'bc_index_sha256':sha(E/'bc-archive.json'),'plan_runtime_index_sha256':sha(E/'c1-measurement-archive.json'),'first_candidate_report_sha256':sha(E/'c1-report.md'),'verified_records':len(checked),'all_indexed_encoded_and_decoded_hashes_match':True},'still_open':['FTS eşitlik sırasının yeni UUIDlerle yeniden yüklemede içerik bazında kararlılığı','RLS-off karşılaştırma korpusu','Pinned CI pgvector0.8.6 doğal plan ve retrieval matrisi','C2 bellek dökülmesi/indeks kurma parametreleri/recall nedenselliği ve ölçümsüz göç','LLM kaynak sadakati, pedagojik kalite ve insan/eğitmen kabulü','Canlı deploy/üretim terfisi ve genel C1/runbook tamamlama']}
+e2e_log=(P/'bc-c1-final-e2e.log').read_text();assert '68 passed (1.4m)' in e2e_log and 'mtskgnz9ac45' in e2e_log and '65 ders ve 8 audit kaydı temizlendi' in e2e_log
+report['report_sha256']=sha(P/'final-source-acceptance.md')
+(P/'final-source-acceptance.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'status':report['status'],'historical_archive_records_verified':len(checked),'raw_final_manifest_sha256':report['raw_final_manifest_sha256']},indent=2))

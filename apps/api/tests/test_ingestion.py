@@ -164,19 +164,19 @@ class TestChunking:
 class TestRetryBackoff:
     async def test_ilk_hata_veritabanina_gelecek_deneme_zamanini_yazar(self) -> None:
         """Geri çekilme yalnız süreç içi sleep değil, ortak DB kuralıdır."""
-        from app.modules.ingestion import pipeline
+        from app.modules.ingestion import claims
 
         session = AsyncMock()
-        delay = await pipeline._fail_job(
+        delay = await claims._record_failure(
             session,
-            uuid4(),
-            uuid4(),
+            job_id=uuid4(),
+            document_id=uuid4(),
             attempt=1,
-            message="geçici hata",
+            reason=claims.FailureReason.COMPUTE_FAILED,
         )
 
-        assert delay == pipeline.RETRY_BACKOFF_SECONDS[0]
-        params = session.execute.await_args.args[1]
+        assert delay == claims.RETRY_BACKOFF_SECONDS[0]
+        params = session.scalar.await_args.args[1]
         assert params["status"] == "pending"
-        assert params["delay_seconds"] == pipeline.RETRY_BACKOFF_SECONDS[0]
+        assert params["delay_seconds"] == claims.RETRY_BACKOFF_SECONDS[0]
         assert params["exhausted"] is False

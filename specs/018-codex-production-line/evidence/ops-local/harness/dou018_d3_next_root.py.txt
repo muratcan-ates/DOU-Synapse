@@ -1,0 +1,54 @@
+"""Root-only controlled D3 cases; new explicit target only, no automatic reopen."""
+from pathlib import Path
+import hashlib,json,os,subprocess,sys,time
+import psycopg
+from psycopg import sql
+
+os.umask(0o077)
+case=sys.argv[1]
+targets={'source_loss':None,'writer_open':'dou018_recovery_next_07a01','writer_closed':'dou018_recovery_next_07b01','maintenance_loss':'dou018_recovery_next_ctrl01'}
+assert case in targets
+out=Path('/private/tmp/dou018-d3-next-root-'+case+'-01');out.mkdir(mode=0o700,exist_ok=False)
+candidate=Path('/private/tmp/dou018-d3-next-candidate')
+runner=candidate/'run.py';runner_sha='4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053'
+assert hashlib.sha256(runner.read_bytes()).hexdigest()==runner_sha
+passfile=out/'empty.pgpass';passfile.touch(mode=0o600,exist_ok=False)
+route=dict(host='127.0.0.1',hostaddr='127.0.0.1',port=55448,user='muratates',dbname='postgres',connect_timeout=3,passfile=str(passfile),autocommit=True)
+pins=json.loads((candidate/'pins.example.json').read_text());pins['target']=None
+with psycopg.connect(**route) as c:
+    assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0]==pins['cluster']
+    assert c.execute('SELECT oid::text FROM pg_database WHERE datname=current_database()').fetchone()[0]==pins['maintenance']['oid']
+    assert c.execute('SELECT oid::text,datallowconn FROM pg_database WHERE datname=%s',(pins['source']['name'],)).fetchone()==(pins['source']['oid'],True)
+    if targets[case]:
+        db=targets[case]
+        assert not c.execute('SELECT 1 FROM pg_database WHERE datname=%s',(db,)).fetchone()
+        c.execute(sql.SQL('CREATE DATABASE {} TEMPLATE template0').format(sql.Identifier(db)))
+        oid=c.execute('SELECT oid::text FROM pg_database WHERE datname=%s',(db,)).fetchone()[0]
+        fingerprint=hashlib.sha256(json.dumps([pins['cluster'],oid],separators=(',',':')).encode()).hexdigest()
+        pins['target']={'name':db,'oid':oid,'sha256':fingerprint}
+        with psycopg.connect(**{**route,'dbname':db}) as t:
+            assert t.execute("SELECT count(*) FROM pg_class c JOIN pg_namespace n ON c.relnamespace=n.oid WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND n.nspname NOT LIKE 'pg_toast%' AND c.relkind IN ('r','p','v','m','S')").fetchone()[0]==0
+    pins_path=out/'pins.json';pins_path.write_text(json.dumps(pins,indent=2)+'\n')
+    (out/'provision.json').write_text(json.dumps({'case':case,'pins':pins,'new_template0_target':targets[case] is not None,'runner_sha256':runner_sha},indent=2)+'\n')
+env={'PATH':os.environ['PATH'],'LANG':'en_US.UTF-8','PYTHONDONTWRITEBYTECODE':'1','DOU_RECOVERY_PG_BIN':'/opt/homebrew/opt/postgresql@16/bin'}
+for prefix,dbname in [('DOU_BACKUP_',pins['source']['name']),('DOU_MAINTENANCE_','postgres')]+([('DOU_RESTORE_',targets[case])] if targets[case] else []):
+    for key,value in {'PGHOST':'127.0.0.1','PGPORT':'55448','PGDATABASE':dbname,'PGUSER':'muratates','PGPASSFILE':str(passfile)}.items():env[prefix+key]=value
+resultdir=Path('/private/tmp/dou018-d3-next-'+case+'-01')
+command=[sys.executable,str(runner),'--case',case,'--execute','--pins',str(pins_path),'--pins-sha256',hashlib.sha256(pins_path.read_bytes()).hexdigest(),'--output',str(resultdir)]
+start=time.monotonic()
+with (out/'stdout.log').open('x') as stdout,(out/'stderr.log').open('x') as stderr:
+    cp=subprocess.run(command,env=env,stdout=stdout,stderr=stderr,timeout=120)
+result=json.loads((resultdir/'result.json').read_text()) if (resultdir/'result.json').exists() else {}
+record={'case':case,'exit_code':cp.returncode,'seconds':round(time.monotonic()-start,3),'status':result.get('status','no-receipt'),'result_sha256':hashlib.sha256((resultdir/'result.json').read_bytes()).hexdigest() if result else None,'runner_unchanged':hashlib.sha256(runner.read_bytes()).hexdigest()==runner_sha,'pins':pins,'safe_code':result.get('safe_code'),'source_unchanged':result.get('runtime_unchanged')}
+with psycopg.connect(**route) as c:
+    c.execute('BEGIN READ ONLY')
+    assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0]==pins['cluster']
+    c.execute('SELECT pg_stat_clear_snapshot()')
+    if pins['target']:
+        row=c.execute('SELECT oid::text,datallowconn,(SELECT count(*) FROM pg_stat_activity WHERE datid=d.oid) FROM pg_database d WHERE datname=%s',(pins['target']['name'],)).fetchone()
+        assert row[0]==pins['target']['oid']
+        record['actual_final_target']={'oid':row[0],'allow_connections':row[1],'connections':row[2]}
+    c.execute('ROLLBACK')
+(out/'result.json').write_text(json.dumps(record,indent=2)+'\n')
+print(json.dumps({k:v for k,v in record.items() if k!='pins'}))
+raise SystemExit(cp.returncode if record['runner_unchanged'] and record['source_unchanged'] else 3)

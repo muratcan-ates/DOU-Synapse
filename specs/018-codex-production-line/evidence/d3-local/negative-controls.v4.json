@@ -1,0 +1,88 @@
+{
+  "status": "9/9 negative mutants rejected",
+  "scope": "offline protocol only; no PostgreSQL",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "results": [
+    {
+      "mutant": "legacy_session_authorization",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_default_owner_transfer_and_source_restricted_role_remain_in_script",
+      "replacement_before": "['--exit-on-error', '--file=-']",
+      "replacement_after": "['--exit-on-error', '--use-set-session-authorization', '--file=-']",
+      "log_sha256": "d6bb2ee1a7602f53dd5d35535c27e9f8471c09d173673eadce192b7d2a349f78"
+    },
+    {
+      "mutant": "dropped_ownership",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_default_owner_transfer_and_source_restricted_role_remain_in_script",
+      "replacement_before": "['--exit-on-error', '--file=-']",
+      "replacement_after": "['--exit-on-error', '--no-owner', '--file=-']",
+      "log_sha256": "052b7c5516110a6235e7a3b5d946e66e39ce0f5ec55d9ac551a0f333124cb096"
+    },
+    {
+      "mutant": "security_verification_removed",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_default_owner_transfer_and_source_restricted_role_remain_in_script",
+      "replacement_before": "        security_verify(source) + '\\nCOMMIT;\\nSELECT ' + sql_string(marker + ':') +",
+      "replacement_after": "        '' + '\\nCOMMIT;\\nSELECT ' + sql_string(marker + ':') +",
+      "log_sha256": "d7a21c78fce4a4eb16ac2930bbbdb84e0870d5dfe9d7513d44fb27436ff4ec82"
+    },
+    {
+      "mutant": "maintenance_sql_parenthesis",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_generated_maintenance_query_has_balanced_sql_parentheses",
+      "replacement_before": "FROM pg_database d WHERE d.oid={oid}::oid))",
+      "replacement_after": "FROM pg_database d WHERE d.oid={oid}::oid)))",
+      "log_sha256": "e99675d07e890749329514dbcfbd112082bfabb206ec88c691ab0b41ec1eeb3f"
+    },
+    {
+      "mutant": "maintenance_identity",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_identity_session_count_and_fence_negatives_precede_alter",
+      "replacement_before": "if not isinstance(state, dict) or state.get('maintenance') != maintenance_binding:",
+      "replacement_after": "if False:",
+      "log_sha256": "766e9118d76544c427e807180ddfe3ca2cf6585db6e831fa56959554f68f4012"
+    },
+    {
+      "mutant": "target_session_count",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_identity_session_count_and_fence_negatives_precede_alter",
+      "replacement_before": "if target.get('sessions') != [expected_session]:",
+      "replacement_after": "if False:",
+      "log_sha256": "9c5aa5dcb50d0e1cd5ecdc3e8ea4ea3d1943c2ad71be34d56f932d7017902601"
+    },
+    {
+      "mutant": "fenced_target_second_guard",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_real_orchestrator_orders_guard_fence_restore_commit_reopen",
+      "replacement_before": "script.write(('BEGIN;\\n' + restore_guard(source, target, fenced=True) +",
+      "replacement_after": "script.write(('BEGIN;\\n' + restore_guard(source, target, fenced=False) +",
+      "log_sha256": "6a75d84d96dc8440533d0bceb0c116a04604224981d89f5f7496354ffa8ad4c6"
+    },
+    {
+      "mutant": "commit_status",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_commit_receipt_requires_server_committed_xid_and_exact_session_binding",
+      "replacement_before": "or value.get('commit_status') != 'committed'",
+      "replacement_after": "or False",
+      "log_sha256": "502c0f8f0a8be5cb9c5946988f48db6554e63706bd1506f5263ba7a80962185e"
+    },
+    {
+      "mutant": "premature_commit_claim",
+      "status": "killed",
+      "returncode": 1,
+      "test": "test_unknown_commit_cannot_reopen",
+      "replacement_before": "                    target_session.apply(marker, target_binding)\n                    committed = True",
+      "replacement_after": "                    committed = True\n                    target_session.apply(marker, target_binding)",
+      "log_sha256": "44edb470b259e174f5de9a661f336cd8166bf3eae6abaa5ea9443739601fe1bc"
+    }
+  ]
+}

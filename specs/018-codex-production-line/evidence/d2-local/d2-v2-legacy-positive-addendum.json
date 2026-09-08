@@ -1,0 +1,27 @@
+{
+  "status": "local_populated_legacy_upgrade_acceptance_supported",
+  "own_database_calls": 0,
+  "receipt_sha256": "1392568e9f212b41d44819040042f1563db1231f280c0b67e0abc97fe3bfe2d1",
+  "reviewed_root_helper_sha256": "d44a234efd7899b702b6f579bc70c220bfe681e6f147e6767e7726a295c1ad92",
+  "candidate_migration_sha256": "3e15eaa33f8bc8fba2f7a6d6e84692d213cc696ccd8367fad73152e79f2b61d3",
+  "database": "dou018_d2_precondition_valid01",
+  "database_oid": 1157624,
+  "legacy_job_states": [
+    "pending",
+    "failed",
+    "completed"
+  ],
+  "legacy_projection_before_after_equal": true,
+  "new_revision_all_one": true,
+  "new_claim_fields_all_null": true,
+  "claim_constraint_validated": true,
+  "active_index_valid_and_ready": true,
+  "owned_database_dropped": true,
+  "root_seconds": 1.323,
+  "closes_previous_open_item": "positive migration of populated pending/failed/completed history in d2-v2-authority-acceptance-addendum",
+  "limits": [
+    "source-bound root assertions+hash receipt; raw pre/post row snapshots not retained",
+    "single fresh local synthetic database; no deployment/mixed-worker acceptance",
+    "only additive new fields excluded from old-row equality comparison; no claim of whole-catalog equivalence"
+  ]
+}

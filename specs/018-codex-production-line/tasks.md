@@ -1,0 +1,49 @@
+# İşler — 018
+
+- [x] 017 tabanını GitHub ile doğrula ve ayrı çalışma ağacı aç.
+- [x] Runbook, anayasa ve önceki 017 kabulünü kodla uzlaştır.
+- [x] A1–A3 — release/mutasyon CI adımları, hassas kapılar ve workflow izin/hata yutma kontrolleri.
+- [x] A4–A7 — atlanan/zayıf testler, monoton ipuçları ve ölü yollar.
+- [x] A — kendi commit'i, PR26 ve hosted kapılar.
+- [x] S1–S7 — upload/COMMIT/iptal, sekmeler arası gizlilik, dürüst veri hakkı açıklaması, issuer/CSP/depo log sınırları; yerel kontrol noktası71d5ff6.
+- [x] S8 yerel/kaynak kabulü — 21 ASGI, gerçek Uvicorn v2, D/S8 tarayıcı ve c45 hosted geçti; V1 başarısız kayıt korunur.
+- [ ] S8 dış işletim — hosting/proxy günlüklerinin gerçek kabulü; yeni OPS/D6 hosted kapıları ayrı izlenir.
+- [x] S4 — kurulu rol/gizlilik becerisini güncelle ve doğrula.
+- [x] S/B/C — kesin9af4122 PR adayında dört hosted workflow ve beş CI işi geçti; A sonucu yerine kullanılmadı.
+- [x] B1 — konuya bağlı öğrenme çıktısını gerçek API/UI ile doğrula.
+- [x] B2 — 014'teki mevcut konu/blueprint öğrenci akışını tekrar doğrula.
+- [x] B3 — kod rubriği ve kaynaklı eksik ölçüt API/UI sözleşmesini kontrollü sağlayıcı/DB fixture'larıyla doğrula.
+- [ ] B3/E — gerçek model puanlama ve pedagojik kaliteyi bağımsız insan kabulüyle değerlendir.
+- [x] B4 sunucu — silme sırasında başlamış sohbetin geç kayıt üretmesini önle; kapsam/rollback/üyelik/RLS.
+- [x] B4 UI — tekli/ders silme, iptal/hata/geç yanıt/sekme/kaçırılmış olay akışlarını gerçek API ile doğrula.
+- [x] B5 — gerçek politika geçmişi, sayfalama ve kullanıcı/ders kapsamlı RAM taslağı.
+- [x] B6 — kapalı authoring görünümünü açıkla; gerçek readiness/publish ile uygun havuz yayınını koru.
+- [x] B7 — sunucu filtreleri/imleç/boş liste/geç yanıt/silme bildirimi.
+- [x] B yerel — tek koşuda 68 gerçek tarayıcı akışı ve son tema zamanlama testinde ayrı 1 odak tekrar.
+- [x] B/C — 027 değişim kanıtı; dc7a768 kendi commit'i ve S71d5ff6 tabanına karşı kesin commit yönetişim denetimi geçti.
+- [x] C — eş projeksiyon ve gerçek RLS/prepared runtime ölçümünü arşivle.
+- [x] C — eski üç retrieval kaynağıyla aynı hashing holdout'u gerçekten çalıştır; olumsuz sonucu koru.
+- [x] C1 dar kabul — FTS eşitlik sırasından gelen gerilemeyi çapraz deneyle ayır; yalnız FTS değişikliğini geri çek; son hashing/E5 non-regression ve prepared runtime tekrarını doğrula.
+- [ ] C1 FTS — yeniden yüklemede UUID sırasına bağımlılığı kaliteyi düşürmeden çöz; bu kontrol noktasında açık.
+- [ ] C — RLS kapalı karşılaştırma ve pgvector0.8.6 ölçüm eşdeğerliği.
+- [ ] C2 — bellek/recall nedenselliğini kontrollü deneyle çöz; gerek yoksa göç eklememe kararını kaydet.
+- [x] C3 — önceki başarısız aday ile son dar kabulü, açık kalan matris hücrelerini ve kaynak hashlerini ayrı raporla.
+- [x] D1 yerel — 10 SQL, iki HTTP sürecinde 55 istek ve önceki c45 hosted kabulü; yeni gerçek worker dönem 02 expired/live ayrımını değiştirilmemiş 60s turunda doğruladı.
+- [ ] D1 işletim — Docker/scale-to-zero, hedef ortam ve kurumsal saklama/imha kabulü.
+- [x] D2 yerel — stage02’de98 test, süreç v2’de8 senaryo ve önceki c45 hosted geçti; yeni OPS başlangıç/config ve bakım gözlemi 1571 API ve 71 E2E diliminde doğrulandı. V1 genel failed ve 1560/1 eski gözlemci testi sonucu korunur.
+- [ ] D2 işletim — hedef barındırmada süreç kesintisi/devralma ve kapanış sınırları; yeni OPS hosted ayrı.
+- [x] D3 yerel dar kabul — önceki 29 ilişki ve 06/08/09/10/11; güncel 22-göçlü 30 ilişki/14 satır, rol/RLS ve kota 42501; yeni 07a/07b guard ve kaynak/bakım kontrol bağlantısı kapanışı dört gerçek negatif geçti.
+- [ ] D3 kalan kabul — 07b son sentinel readback, cross-cluster/ağ kaybı/ek rol matrisi, dış Storage ve canlı saklama/imha; kapalı/belirsiz hedefler otomatik açılmaz.
+- [x] OPS1/OPS2 yerel — ortak read-only hazırlık/admin durumu, p95 örneklem etiketi, COMMIT sonrası içeriksiz bakım olayı ve görevden önce geçersiz Settings reddi.
+- [x] D6 kaynak/belge — HTTP worker korunurken ayrı portless poller; doğru rol/RLS/migration ve read-only tanı anlatımı entegre.
+- [ ] D4/D5 ve D6 işletim — dış telemetry/gerçek alarm, Docker/Compose ve hedef operasyon kabulü.
+- [ ] E — gerçek embedding/LLM ve bağımsız insan kabulü.
+- [ ] F — gerçek JWT/oturum/private Storage RLS.
+- [ ] G — seçilmiş hedefte dağıtım/göç/rollback ve GitHub korumaları.
+- [ ] H — bütün sayfalarda dar/koyu/klavye/axe ve manuel kabul; B görsellerinden türetilmez.
+- [ ] I — güncel kılavuzlar, gerçek başarı raporu ve açık işleri kanıtla kapatma.
+
+- [x] D/S8 yerel birleşik kabul —1561 API,555 web,68 gerçek tarayıcı akışı,57 yol OpenAPI eşliği,22 göç,52 recovery aracı ve77 yönetişim testi; kanıt d-final-local arşivinde.
+- [x] Önceki D/S8 kesin commit/PR26 hosted — own029, aggregate030 ve portability düzeltmesi031 sonrası c45 üzerinde dört workflow PASS; 030 Ubuntu başarısız kayıt korunur.
+- [x] OPS/D6 yeni yerel kabul — 1571 API/38 alt vaka; 71 E2E; 375/1440 açık/koyu dört yönetim görünümü ve klavye dumanı; R1 iki SQL kalibrasyonu+yedi admin testi 9 PASS. [Kanıt](evidence/ops-local/README.md).
+- [ ] OPS/D6 yeni dossier, kesin commit ve PR26 hosted kapıları; c45 sonucu yeni kirli kaynakları kapsamaz.

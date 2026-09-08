@@ -1,0 +1,7 @@
+{
+  "docs_check": "pass",
+  "raw_sha256": "1fc40e236a64c8308e51270b78930605e6e760735d148a0c0717953b14c6ab51",
+  "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-docs-final-source.log.gz",
+  "sha256": "d0a9fae5f4209ba3edb754cb97f035702ed9824f5287ca2479001869f5eed6d5",
+  "command": "UV_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 MYPY_CACHE_DIR=<local-cache> node scripts/docs_check.mjs --duzelt"
+}

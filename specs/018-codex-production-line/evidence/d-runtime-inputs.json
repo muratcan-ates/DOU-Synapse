@@ -1,0 +1,37 @@
+{
+  "scope": "Versioned synthetic technical test scenarios and harness inputs. Not a student corpus or pedagogical/LLM benchmark. Component contracts and separate real-process acceptance are distinct technical layers, not a statistical model calibration/holdout split.",
+  "inputs": [
+    {
+      "path": "apps/api/tests/test_request_log_privacy.py",
+      "sha256": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota_pg.py",
+      "sha256": "0d70a6e4446351fb5ba2fec480b34ee64c2e2bbad3aa64390bf564129db52c6f"
+    },
+    {
+      "path": "apps/api/tests/test_worker_recovery.py",
+      "sha256": "5d0c6afb7326afb3e4a1f5cd74b044beec74bd48a511309f6390e318858345dd"
+    },
+    {
+      "path": "apps/api/tests/test_d2_ingestion_authority.py",
+      "sha256": "129e185c91d39b1c6abfacf8345d6738302b5643a74782d3640955ff08b84e76"
+    },
+    {
+      "path": "scripts/test_recovery.py",
+      "sha256": "8035f52cc11c71a2e638a948129d3ea00e284184bea77a04d262439bdacfe219"
+    },
+    {
+      "path": "scripts/test_restore_protocol.py",
+      "sha256": "52c3f3f075e691f17daab97f24a9a4b1c92d00ef761e3a3b47eb4af9d0f75f54"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/probe-source.py.txt",
+      "sha256": "d84ec92f2e69c0a181edca7b87a17bf636a9d00a6b74f59181b20a39c63121a8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-helper/input-manifest.json",
+      "sha256": "b2c9999606fef3042034ae8bf35aed12998692352be26605d5af17e9aa48de39"
+    }
+  ]
+}

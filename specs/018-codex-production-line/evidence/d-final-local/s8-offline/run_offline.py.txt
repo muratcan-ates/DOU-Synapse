@@ -1,0 +1,84 @@
+"""Yalnız geçici main.py adayını yükleyip DB'siz ASGI testlerini çalıştır."""
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path("/Users/muratates/code/dou-synapse-018-codex-production-line")
+HERE = Path(__file__).resolve().parent
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--main", type=Path, default=HERE / "files/apps/api/app/main.py")
+    parser.add_argument(
+        "--logging", type=Path, default=HERE / "files/apps/api/app/core/logging.py"
+    )
+    arguments = parser.parse_args()
+    sys.path.insert(0, str(ROOT / "apps/api"))
+    os.environ.update(
+        ENVIRONMENT="local",
+        DEV_AUTH_ENABLED="true",
+        SUPABASE_JWT_SECRET="",
+        LLM_FAKE_PROVIDER="true",
+        EMBEDDING_PROVIDER="hashing",
+        EVAL_RUNTIME_ENABLED="false",
+        GROQ_API_KEY="",
+        GEMINI_API_KEY="",
+        OPENAI_API_KEY="",
+        PYTEST_DISABLE_PLUGIN_AUTOLOAD="1",
+    )
+
+    import psycopg
+    import pytest
+
+    import app
+    import app.core
+
+    attempts = []
+
+    def no_database(*args, **kwargs):
+        attempts.append(True)
+        raise AssertionError("Bu bağımsız test çalıştırıcısında DB bağlantısı yasak.")
+
+    psycopg.Connection.connect = no_database
+    psycopg.AsyncConnection.connect = no_database
+
+    # Üretim dosyaları değişmez: yalnız bu işlemin iki modülü adaydan yüklenir.
+    log_specification = importlib.util.spec_from_file_location("app.core.logging", arguments.logging)
+    assert log_specification is not None and log_specification.loader is not None
+    log_module = importlib.util.module_from_spec(log_specification)
+    sys.modules["app.core.logging"] = log_module
+    app.core.logging = log_module
+    log_specification.loader.exec_module(log_module)
+    specification = importlib.util.spec_from_file_location("app.main", arguments.main)
+    assert specification is not None and specification.loader is not None
+    module = importlib.util.module_from_spec(specification)
+    sys.modules["app.main"] = module
+    app.main = module
+    specification.loader.exec_module(module)
+    result = pytest.main(
+        [
+            "--noconftest",
+            "-p",
+            "no:cacheprovider",
+            "-p",
+            "pytest_asyncio.plugin",
+            "-o",
+            "asyncio_mode=auto",
+            "-o",
+            "asyncio_default_fixture_loop_scope=function",
+            "-q",
+            str(HERE / "files/apps/api/tests/test_request_log_privacy.py"),
+        ]
+    )
+    assert not attempts, "DB çağrısı yapılmamalı; hiçbir bağlantı başlatılmadı."
+    return result
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

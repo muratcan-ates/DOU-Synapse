@@ -78,6 +78,31 @@ jobs:
       - name: Testler
         run: uv run pytest -q
 
+      - name: Retrieval ölçüm araçlarının çevrimdışı sözleşmeleri
+        working-directory: .
+        env:
+          PYTHONPATH: apps/api:.
+        run: |
+          uv run --project apps/api python -m pytest -q -o asyncio_mode=auto \
+            scripts/test_benchmark_retrieval_plan.py scripts/test_probe_retrieval_runtime.py
+
+      - name: Yedek ve geri yükleme araçlarının çevrimdışı sözleşmeleri
+        working-directory: .
+        run: |
+          uv run --project apps/api python scripts/test_recovery.py
+          uv run --project apps/api python scripts/test_restore_protocol.py
+
+      - name: Yayın kanıtı doğrulayıcılarının regresyon testleri
+        working-directory: .
+        run: uv run --project apps/api python -m unittest discover -s .release -p 'test_*.py'
+
+      - name: Rol farkındalıklı ajan uygulama mutasyonları
+        working-directory: .
+        run: |
+          uv run --project apps/api python scripts/role_agent_application_mutation_check.py \
+            --candidate-sha "$(git rev-parse HEAD)" \
+            --evidence /tmp/role-agent-application-mutations.json
+
       # Göç numaraları sıranın TEK kaydı: her yerde `supabase/migrations/*.sql`
       # dosya adı sırasıyla uygulanıyor. Aynı numarayı iki dal birden
       # kullandığında (0016 bu depoda gerçekten oldu) git çakışma üretmez,
@@ -87,7 +112,8 @@ jobs:
       - name: Göç numarası sözleşmesi
         working-directory: .
         run: |
-          python3 scripts/migration_check.py --allow-gap 0017
+          # 0017 ve runbook şeritleri 0021–0023 rezerve; B4 göçü 0024 ile başlar.
+          python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023
           python3 -m unittest scripts.test_migration_check
 
       - name: RLS izolasyon kanıtı

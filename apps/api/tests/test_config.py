@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -94,12 +95,7 @@ def test_issuer_iki_adla_da_okunur(env_name: str, monkeypatch: pytest.MonkeyPatc
 
 
 def test_issuer_verilmezse_none_kalir(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Varsayılan davranış değişmedi: ayar yoksa issuer doğrulanmaz.
-
-    Bu davranış bilinçli (`security.py` issuer yoksa kontrolü atlar) ve alias
-    eklenmesi onu değiştirmemeli — değiştirseydi anahtarsız yerel geliştirme
-    kırılırdı.
-    """
+    """Yerel geliştirmede issuer isteğe bağlı kalır; üretim ayrı doğrulanır."""
     monkeypatch.delenv("SUPABASE_JWT_ISSUER", raising=False)
     monkeypatch.delenv("JWT_ISSUER", raising=False)
     settings = Settings(_env_file=None)  # type: ignore[call-arg]
@@ -144,3 +140,95 @@ def test_course_agent_role_hard_limit_db_tavanini_asamaz(
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None)  # type: ignore[call-arg]
+
+
+def _production_settings(**overrides: Any) -> Settings:
+    values: dict[str, Any] = {
+        "environment": "production",
+        "dev_auth_enabled": False,
+        "supabase_jwt_secret": "synthetic-production-jwt-secret-32-bytes",
+        "llm_fake_provider": False,
+        "storage_backend": "supabase",
+        "supabase_url": "https://storage.example.invalid",
+        "supabase_service_role_key": "synthetic-storage-key",
+        "jwt_issuer": None,
+    }
+    values.update(overrides)
+    return Settings(_env_file=None, **values)
+
+
+@pytest.mark.parametrize(
+    "issuer",
+    [
+        None,
+        "",
+        " ",
+        "\t\n",
+        "http://issuer.example.invalid/auth/v1",
+        "https://issuer.example.invalid",
+        "https://issuer.example.invalid/auth/v1/",
+        "https://issuer.example.invalid/not-auth",
+        "https:///auth/v1",
+        "https://user:password@issuer.example.invalid/auth/v1",
+        "https://@issuer.example.invalid/auth/v1",
+        "https://*.example.invalid/auth/v1",
+        "https://issuer.example.invalid/auth/v1?debug=1",
+        "https://issuer.example.invalid/auth/v1#part",
+        "https://issuer.example.invalid/auth/v1#",
+        "https://issuer.example.invalid/auth/v1?",
+        " https://issuer.example.invalid/auth/v1",
+        "https://issuer.example.invalid/auth/v1 ",
+        "https://issuer.example.invalid:99999/auth/v1",
+        "https://issuer.example.invalid\\evil/auth/v1",
+        "https://issuer.example.invalid\t/auth/v1",
+    ],
+)
+def test_production_requires_explicit_https_auth_issuer(issuer: str | None) -> None:
+    with pytest.raises(ValidationError, match="SUPABASE_JWT_ISSUER"):
+        _production_settings(jwt_issuer=issuer)
+
+
+@pytest.mark.parametrize(
+    "issuer",
+    [
+        "https://project.supabase.co/auth/v1",
+        "https://auth.school.example.invalid/auth/v1",
+        "https://auth.school.example.invalid:8443/auth/v1",
+    ],
+)
+def test_production_keeps_explicit_valid_issuer_unchanged(issuer: str) -> None:
+    assert _production_settings(jwt_issuer=issuer).jwt_issuer == issuer
+
+
+@pytest.mark.parametrize("environment", ["local", "demo"])
+@pytest.mark.parametrize(
+    "issuer", [None, "", "http://localhost:54321/auth/v1", "synthetic-test-issuer"]
+)
+def test_nonproduction_keeps_optional_synthetic_issuers(
+    environment: str, issuer: str | None
+) -> None:
+    settings = Settings(
+        _env_file=None, environment=environment, dev_auth_enabled=True, jwt_issuer=issuer
+    )
+    assert settings.jwt_issuer == issuer
+
+
+@pytest.mark.parametrize("value", [1, 8])
+def test_retrieval_candidate_multiplier_accepts_bounded_values(value: int) -> None:
+    settings = Settings(_env_file=None, retrieval_dense_candidate_multiplier=value)
+    assert settings.retrieval_dense_candidate_multiplier == value
+
+
+@pytest.mark.parametrize("value", [0, 9])
+def test_retrieval_candidate_multiplier_rejects_unbounded_values(value: int) -> None:
+    with pytest.raises(ValidationError, match="retrieval_dense_candidate_multiplier"):
+        Settings(_env_file=None, retrieval_dense_candidate_multiplier=value)
+
+
+def test_retrieval_candidate_multiplier_env_name_and_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("RETRIEVAL_DENSE_CANDIDATE_MULTIPLIER", raising=False)
+    assert Settings(_env_file=None).retrieval_dense_candidate_multiplier == 8
+    monkeypatch.setenv("RETRIEVAL_DENSE_CANDIDATE_MULTIPLIER", "4")
+    assert Settings(_env_file=None).retrieval_dense_candidate_multiplier == 4

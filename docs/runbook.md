@@ -6,7 +6,12 @@
 >
 > Sahne sahne ne anlatılacağı ayrı belgededir: [demo-script.md](demo-script.md).
 
-**Teslim:** 24 Ağustos 2026 · **Bu belge:** 9 Ağustos 2026 · Sahibi: R5
+**Tarihsel demo planı:** 24 Ağustos 2026 · İlk belge: 9 Ağustos 2026 · Sahibi: R5
+
+8 Eylül operasyon güncellemesi: servis/rol ve şema adımları güncel kaynakla
+hizalandı. Aşağıdaki 9 Ağustos ölçümleri tarihsel provadır; yeni dağıtımın sonucu
+değildir. Docker Compose'un kendisi henüz çalıştırılmadı. Yeni dönemsel worker
+ölçümü [bakım rehberinde](operations/shared-request-quota.md) ayrı kayıtlıdır.
 
 ---
 
@@ -68,12 +73,13 @@ Bu plan **kurulu ve prova edilmiş** olmadan sunum gününe girilmez.
 ```bash
 # Sunum makinesinde, ağ kapalıyken:
 cd ~/code/DOU-Synapse
-docker compose up -d          # db (pgvector:pg16) + api
+docker compose up -d          # db + api + HTTP worker + worker-poller
 # Frontend Compose'da YOKTUR, ayrıca:
 cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:8000 bun run dev
 ```
 
-Plan C'nin **bugünkü sınırları** (ölçüldü, 9 Ağustos):
+Plan C'nin sınırları: aşağıdaki eski süre/akış ölçümleri 9 Ağustos'a aittir;
+8 Eylül kaynak düzeltmeleri ayrıca belirtilir.
 
 - **LLM yoktur.** Anahtar tanımlı değilse sistem deterministik sahte sağlayıcıya düşer ve
   logda `llm anahtarı yok — deterministik sahte sağlayıcıya düşülüyor` satırı görünür.
@@ -85,12 +91,15 @@ Plan C'nin **bugünkü sınırları** (ölçüldü, 9 Ağustos):
 - **Sokratik mod önbelleğe girmez** (mod anahtarın parçası, cache yalnız `qa`). Sokratik
   sahne çevrimdışıyken sahte sağlayıcıyla koşar; ölçüldü ve **doğru davranıyor** (merdiven
   ilerliyor, ısrar edince ilerlemiyor), yalnız ipucu metni şablon.
-- **Soru üretimi çevrimdışı ÇALIŞMAZ.** Sahte sağlayıcının soru şeması yoktur; üretim
-  `"yanıtta 'questions' dizisi yok"` diyerek **0 soru** döndürür. Sınav sahnesi için sorular
-  **önceden üretilip onaylanmış** olmalıdır (aşağıdaki T-60 listesi).
-- **Compose yığınında RLS devrede DEĞİLDİR** (API `postgres` superuser'ı ile bağlanıyor).
-  İzolasyon sahnesi bu yığında gösterilirse **yanlış bir şey kanıtlanmış olur**. İzolasyon
-  Plan A/B'de gösterilir; Plan C'ye düşülürse bu sahne **atlanır** ve sebebi söylenir.
+- **Sahte soru üretimi sentetiktir.** Eski sıfır-soru kusuru güncel sağlayıcıda
+  giderildi; soru şemasını doldurabilmesi pedagojik doğruluk kanıtı değildir.
+  Gerçek ders gösterimi için soruları önceden eğitmen incelemesinden geçirin;
+  sentetik üretimi gerçek LLM başarısı olarak sunmayın.
+- **Compose API bağlantısı `dou_app` rolündedir; işleyici `dou_worker` kullanır.**
+  Yerel dev-auth gerçek Supabase Auth kabulü değildir. İzolasyon sahnesi ancak
+  seçilen kurulumda gerçek uygulama rolü ve ikinci kullanıcının ders dışı reddi
+  doğrulandıysa gösterilir. Compose çalıştırma kanıtı mevcut değilse bunu söyleyin;
+  ne süperuser bağlantısı varsayın ne de yalnız ayar dosyasından izolasyon ilan edin.
 
 > **R3'ten alınacak:** `docker compose` fallback profilinin gerçekten ağsız koştuğuna dair
 > ölçüm, cold start süresi ve `fill_answer_cache.py` betiği. Bu belge yazılırken R3'ün
@@ -131,7 +140,8 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
 
 ### T-60 dakika — kurulum
 
-- [ ] `git pull origin main` · `git log --oneline -1` ile sürüm not edilir
+- [ ] Önceden kabul edilmiş commit seçilir ve `git rev-parse HEAD` kaydedilir.
+      Demo sabahı değişmiş bir dalı körlemesine çekip kabul edilmiş sürüm değiştirilmez.
 - [ ] **Model önbelleği kalıcı dizinde mi?** macOS'ta fastembed varsayılan olarak
       `$TMPDIR/fastembed_cache` kullanır ve **işletim sistemi bu dizini temizler.**
       2,1 GB'lık modelin demo sabahı yeniden inmesi hotspot'ta imkânsızdır.
@@ -140,11 +150,15 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
       du -sh "$EMBEDDING_CACHE_DIR"      # 2,1G görmelisin
       ```
       Boşsa: modeli **şimdi**, iyi ağdayken indir (§5.1).
-- [ ] Şema doğrulaması — **27 tablo** görmelisin: <!-- docs-check: tables.count = 27 -->
+- [ ] İncelenen hedefte `public` ve `app` şemaları birlikte doğrulanır:
       ```bash
-      psql -d dou_synapse -tAc "select count(*) from information_schema.tables where table_schema='public' and table_type='BASE TABLE'"
+      psql -X -v ON_ERROR_STOP=1 -d "$DATABASE" -c "SELECT n.nspname, count(*) FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','app') AND c.relkind IN ('r','p') GROUP BY n.nspname ORDER BY n.nspname"
       ```
-      15 değilse migration'lar eksik: `for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -d dou_synapse -f "$f"; done`
+      Güncel şema **30 tablo** içerir: 28 public + 2 app. <!-- docs-check: tables.count = 30 -->
+      Sayı yalnız ilk kontroldür; uygulanan migration kayıtları/dosya hash'leri,
+      sütun/index/policy ve gerçek rol yetkileri de eşleşmelidir. Sapmada bütün
+      migration dosyalarını yeniden çalıştırmayın. [Dağıtım §3](deployment.md#3-migration-sırası)
+      ve 0025/0026 geçiş protokolüyle yalnız eksik, incelenmiş adımları belirleyin.
 - [ ] **Analitik politikası var mı?** (`0005` uygulanmamışsa eğitmen analitiği boş görünür)
       ```bash
       psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"
@@ -152,7 +166,7 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
       ```
 - [ ] Demo dersinin materyali **hazır** mı: `8 materyal · 8 hazır` (Materyaller ekranı)
 - [ ] Sınav sahnesi için **onaylanmış soru var mı** (öğrenci hesabıyla bak, boş olmamalı).
-      Yoksa şimdi üret ve onayla — çevrimdışıyken üretilemez.
+      Yoksa eğitmen incelemesiyle hazırlayın; sentetik üretimi gerçek ders sorusu diye onaylamayın.
 - [ ] `answer_cache` demo soruları **dolduruldu** mu (Plan C sigortası)
 - [ ] **Sahne 5'in iki sorusu denendi mi** — `İtalya'nın başkenti neresidir?` "Dersin
       kapsamı dışında", `Bugünkü dolar kuru ne kadar?` "Materyalde dayanak bulunamadı"
@@ -188,7 +202,7 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
 | 2 | **Model önbelleği silinmiş** | İlk soru dakikalarca sürer, log `embedding modeli yükleniyor`da asılı | Kurtarma yok. T-60'ta kontrol et |
 | 3 | **`answer_cache` birebir eşleşme** | Plan C'de cevap gelmiyor | Soruları kopyala-yapıştır sor |
 | 4 | **Her ders dışı soru "kapsam dışı" demiyor** | Bazıları "Materyalde dayanak bulunamadı" döner | İkisi de doğru davranış, ama sahnede **denenmiş** soruyu kullanın; demo-script sahne 5'te ölçülmüş liste var |
-| 5 | **Soru üretimi anahtarsız çalışmıyor** | "0 soru üretildi" | Soruları T-60'ta üret ve onayla |
+| 5 | **Anahtarsız yerel üretim sentetik olabilir** | Sağlayıcı fake olarak görünür | Gerçek gösterim havuzunu önceden eğitmen incelemesiyle hazırlayın |
 | 6 | **Hız sınırı**: kullanıcı+ders başına 20 istek / 60 sn | 429 ve "Çok sık soru gönderiyorsun" | Prova ile demoyu aynı hesapta arka arkaya yapma; ya 1 dk bekle ya diğer hesaba geç |
 | 7 | **Mod ortada değişmiyor** | "Bu oturum farklı bir modda başlatılmış" | Sokratik'e geçerken **yeni sohbet** aç (arayüz bunu kendi yapıyor) |
 | 8 | **Dev veritabanı test dersleriyle dolu** | Ders listesinde onlarca `E2E Test Dersi` | Demo öncesi temiz bir ders listesi hazırla; jüri çöp listeyi görmemeli |
@@ -218,9 +232,31 @@ du -sh "$EMBEDDING_CACHE_DIR"     # 2,1G
 ### 5.2 Sistem ayakta mı
 
 ```bash
-curl -s localhost:8000/health/live    # süreç
-curl -s localhost:8000/health/ready   # veritabanı + pgvector
+curl -si localhost:8000/health/live    # süreç
+curl -si localhost:8000/health/ready   # bağımlılıkların salt okunur anlık durumu
 ```
+
+Kaynak işleme veya kota sorunu için ilk inceleme sırası:
+
+1. `/health/ready` yanıtındaki `database`, `pgvector`, `request_quota` ve
+   `embedding` alanlarına bakın; toplam durum bozuksa HTTP 503 gelir. Bu gözlem
+   iş kabul etmez, kota tüketmez ve dış model/Storage işlemi çalıştırmaz. Sürecin
+   ayakta olması bütün bağımlılıkların hazır olduğu anlamına gelmez.
+2. Yetkili platform yöneticisi `/admin/overview` durum alanlarını ve gerekirse
+   `/admin/ingestion` listesini inceler. Ders eğitmenliği platform yöneticiliği
+   vermez; yetki veya DB hatasını boş iş listesi gibi yorumlamayın. Bu erişim
+   salt okunurdur; yöneticinin erişim denetim kaydı oluşabilir.
+3. Aynı zaman aralığının sabit olay kodu/aşaması, sayaç ve süre kayıtlarını
+   inceleyin. Kota bakımının COMMIT sonrası `quota_purge`, `deleted_windows`,
+   `duration_ms` kaydı kişisel satır içeriği taşımaz; sıfır silme bütün expired
+   satırların bittiğini kanıtlamaz. Ham sohbet, dosya içeriği, JWT veya DB
+   bağlantı sırrını tanı raporuna kopyalamayın.
+
+`drain`, purge ve migration komutları tanı sorgusu değildir; çalışma/veri
+oluşturabilir veya değiştirebilir. Durum kontrolü yerine tetiklenmezler. Gerekli
+müdahaleyi [kota](operations/shared-request-quota.md) ve
+[işleyici](operations/ingestion-recovery.md) rehberlerindeki kapsamla seçin.
+Sonraki sohbet denemesi de gerçek iş üretir; salt okunur kontrol değildir.
 
 ### 5.3 Bir soru gerçekten cevaplanıyor mu (arayüzsüz)
 
@@ -259,8 +295,8 @@ yarım bir ekranı gösterirsek onu sorar.
   cümle projeyi zayıf değil **savunulabilir** gösterir.
 - **Eğitmen analitiğindeki "kapsam dışı ret oranı" kartı.** Bugün %0 gösteriyor çünkü
   retler `insufficient_context` olarak kaydediliyor. Sayı yanlış okunmaya açık.
-- **Compose yığınında izolasyon kanıtı.** O yığında RLS devrede değil.
-- **Soru üretimi ekranı**, gerçek LLM anahtarı yoksa (0 soru döner).
+- **Doğrulanmamış kurulumda izolasyon iddiası.** Compose rol ayrımı tanımlar; gerçek bağlantı/rol ve ders dışı ret ayrıca ölçülmelidir.
+- **Sentetik soru üretimini gerçek LLM/öğretim kalitesi gibi sunmak.** Fake sağlayıcı soru şemasını doldurabilir; bu ayrı etiketlenir.
 - **Üstünde "Tasarım önizlemesi" şeridi olan hiçbir ekran.** 9 Ağustos akşamı itibarıyla
   böyle bir ekran **kalmadı** (soru havuzu, sınav ve ilerleme o gün bağlandı), ama kural
   duruyor: örnek veri gösteren bir ekranı çalışan ürün diye göstermek, bu listedeki her

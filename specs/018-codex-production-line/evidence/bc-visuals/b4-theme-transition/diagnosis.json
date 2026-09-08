@@ -1,0 +1,24 @@
+{
+  "finding": "Kalıcı seçili sohbet kontrast kusuru saptanmadı; 150ms renk transition ara karesi yeniden üretildi. Tema change olayı emulateMedia dönüşünden sonra da gelebilir.",
+  "source_refs": {
+    "apps/web/app/courses/[courseId]/chat/page.tsx": "627-636: parent transition-colors/background, child text tokens",
+    "apps/web/app/globals.css": "97-126 dark palette;256-260 reduced-motion yalnız rise animation",
+    "apps/web/e2e/chat-history-deletion.spec.ts": "85-86 media change ardından beklenmeyen default screenshot"
+  },
+  "contrast_dark_at_rest": {
+    "title": 14.956,
+    "secondary": 4.804
+  },
+  "minimum_test_only_fix": [
+    "await expect(page.locator(\"html\")).toHaveAttribute(\"data-theme\", \"dark\");",
+    "await page.screenshot({ path: testInfo.outputPath(\"delete-confirmation-375-dark.png\"), fullPage: true, animations: \"disabled\" });"
+  ],
+  "limitations": "Sentetik DOM gerçek derlenmiş CSS ve theme-boot ile ölçüldü. Tam B4 E2E yerine geçmez. Orijinal screenshot ara kare olarak korundu; ürün/test kaynakları değişmedi.",
+  "evidence_sha256": {
+    "dark-animations-disabled.png": "003ea5d0cccd31e9906018e7433c6014c5ab31643caac676d77c3e401cc984fe",
+    "dark-at-rest.png": "003ea5d0cccd31e9906018e7433c6014c5ab31643caac676d77c3e401cc984fe",
+    "immediate-default.png": "ca8824529ad45a8525d5a76ffdc5739d6f51e22e88c1c8ec4c45a1a8256fc48f",
+    "measurements.json": "1a2757352a45a4629a9f05f9d7827d6e280c30fd7d988df0ab85083c47d9f037",
+    "original-b4-e2e-transition-frame.png": "e47d316d442c37bdf2fe12f15d0f5177c281dd0547dd99c4b9dcf9592e15e3d2"
+  }
+}

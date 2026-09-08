@@ -1,0 +1,41 @@
+const {chromium,expect}=require('/Users/muratates/code/dou-synapse-018-codex-production-line/apps/web/node_modules/@playwright/test');
+const fs=require('fs');
+const crypto=require('crypto');
+(async()=>{
+ const dir='/private/tmp/dou018-ops-browser-matrix-02';fs.mkdirSync(dir,{mode:0o700});
+ const browser=await chromium.launch({headless:true,channel:'chrome'});
+ const observations=[];
+ try{
+  for(const width of [375,1440]) for(const theme of ['light','dark']){
+   const context=await browser.newContext({viewport:{width,height:1000},colorScheme:theme,reducedMotion:'reduce'});
+   await context.addInitScript((theme)=>{
+    localStorage.setItem('dou-synapse-theme',theme);
+    localStorage.setItem('dou-synapse-token','dev:11111111-1111-1111-1111-111111111111');
+    localStorage.setItem('dou-synapse-user',JSON.stringify({id:'11111111-1111-1111-1111-111111111111',email:'ayse@dogus.edu.tr',fullName:'Ayşe Hoca',role:'instructor'}));
+   },theme);
+   const page=await context.newPage();
+   const failures=[];page.on('pageerror',()=>failures.push('pageerror'));
+   const responsePromise=page.waitForResponse(r=>new URL(r.url()).pathname==='/admin/overview'&&r.request().method()==='GET');
+   await page.goto('http://localhost:3118/admin');
+   const response=await responsePromise;expect(response.status()).toBe(200);
+   const section=page.locator('section[aria-labelledby="system-overview-title"]');
+   await expect(section.getByText('İstek kotası: Hazır',{exact:true})).toBeVisible();
+   await expect(section.getByText('Vektör veritabanı: Hazır',{exact:true})).toBeVisible();
+   const tabs=page.getByRole('tab');const tabCount=await tabs.count();
+   let keyboard='no-tabs';
+   if(tabCount>1){await tabs.first().focus();await page.keyboard.press('ArrowRight');expect(await tabs.nth(1).evaluate(e=>document.activeElement===e)).toBe(true);await page.keyboard.press('Home');expect(await tabs.first().evaluate(e=>document.activeElement===e)).toBe(true);keyboard='ArrowRight/Home focus passed';}
+   await page.keyboard.press('Tab');
+   const focus=await page.evaluate(()=>{const e=document.activeElement;return {tag:e.tagName,visible:!!(e.getBoundingClientRect().width&&e.getBoundingClientRect().height)};});
+   expect(focus.visible).toBe(true);
+   await page.evaluate(()=>window.scrollTo(0,0));
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);expect(overflow).toBe(false);
+   const dark=await page.evaluate(()=>document.documentElement.getAttribute('data-theme')==='dark');expect(dark).toBe(theme==='dark');
+   const screenshot=`${dir}/admin-${width}-${theme}.png`;await page.screenshot({path:screenshot,fullPage:true});
+   expect(failures).toHaveLength(0);
+   observations.push({width,theme,reducedMotion:'reduce',realOverviewStatus:response.status(),horizontalOverflow:overflow,keyboard,focus,errors:failures,screenshot:screenshot.split('/').pop(),sha256:crypto.createHash('sha256').update(fs.readFileSync(screenshot)).digest('hex')});
+   await context.close();
+  }
+  fs.writeFileSync(dir+'/result.json',JSON.stringify({status:'pass',scope:'Actual current OPS build and local fake-provider API; viewport/theme/keyboard smoke, not accessibility certification',observations},null,2),{mode:0o600});
+  console.log(JSON.stringify({status:'pass',cases:observations.length,directory:dir}));
+ }finally{await browser.close();}
+})().catch(error=>{console.error(error.stack);process.exitCode=1;});

@@ -1,0 +1,164 @@
+{
+  "status": "FAIL",
+  "results": [
+    {
+      "name": "ruff",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "exit_code": 1,
+      "seconds": 0.086,
+      "log_sha256": "209dbddb4de4e6b5cb7f1e1ceea8049484215c99a13d3dd0ab2e7d9a330e6dca"
+    },
+    {
+      "name": "format",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "exit_code": 0,
+      "seconds": 0.021,
+      "log_sha256": "cbf25ae91c68d20f19db932f5e95f200d9f73887d65e4fe6713bac7860b15e79"
+    },
+    {
+      "name": "mypy",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "exit_code": 0,
+      "seconds": 2.084,
+      "log_sha256": "adbe2679a016996b4036b957085d8e2e478f4dfe4d280f71d524bdba164dc01f"
+    },
+    {
+      "name": "web-types",
+      "command": [
+        "bun",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "apps/web",
+      "exit_code": 0,
+      "seconds": 1.56,
+      "log_sha256": "8366207267355d3e3d5bf3bf6e8c94c5f93f6078c34f08973fa2b38cdda6cc92"
+    },
+    {
+      "name": "web-units",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "apps/web",
+      "exit_code": 0,
+      "seconds": 0.317,
+      "log_sha256": "6b425e8de67d766417c143745a9e5cb8e73fec2bf1b26170b91b34b0d05df2aa"
+    },
+    {
+      "name": "contrast",
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "apps/web",
+      "exit_code": 0,
+      "seconds": 0.049,
+      "log_sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca"
+    },
+    {
+      "name": "recovery",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/test_recovery.py"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "seconds": 1.58,
+      "log_sha256": "b6877154ed7cf32d8d8fd1d56d1de9f6fe05e057f814dbc08fda878b3335bc7b"
+    },
+    {
+      "name": "restore-protocol",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/test_restore_protocol.py"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "seconds": 1.042,
+      "log_sha256": "2510eefb3908e7f4623eae374c87b6cfd02aa74972e1fa6cca734cbee7747f87"
+    },
+    {
+      "name": "release",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        ".release",
+        "-p",
+        "test_*.py"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "seconds": 0.086,
+      "log_sha256": "e388a1cd39cea120ba4b0a6a79d13b97a1d5f8c7102d56083b64b57d9c71049d"
+    },
+    {
+      "name": "retrieval-tools",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-o",
+        "asyncio_mode=auto",
+        "scripts/test_benchmark_retrieval_plan.py",
+        "scripts/test_probe_retrieval_runtime.py"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "seconds": 1.436,
+      "log_sha256": "5d95d2b377e7634cdcfddc363995b8e4ce300936389aa52f760788919c03b9b5"
+    },
+    {
+      "name": "migration",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "seconds": 0.049,
+      "log_sha256": "35e88ac0adede31b2409b0ba68df482ea909fd0ef706b754ebb6a6f83aa3700b"
+    },
+    {
+      "name": "migration-units",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "-m",
+        "unittest",
+        "scripts.test_migration_check"
+      ],
+      "cwd": ".",
+      "exit_code": 0,
+      "seconds": 0.081,
+      "log_sha256": "b4cb42ed7ac17640986e89646dc469d24e88f01922ebbb40e170a0188613bd82"
+    }
+  ]
+}

@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1197_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1197 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-428_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 428 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1571_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1571 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-555_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 555 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -32,13 +32,13 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 | Katman | Durum | Açıklama |
 |---|---|---|
 | **Main'e birleşmiş ürün** | `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac` | GitHub main 7 Eylül'de yeniden doğrulandı; PR #22 dahil önceki ürün ve arayüz çalışmaları burada |
-| **Birleşik geliştirme adayı** | `017-completion-integration` | 013 soru yazımı, 014 öğrenci sınav alanı, düzeltilmiş 015 çalışma sürekliliği, 016 becerileri; PR #23/#25 yerel bütünleştirmesi ve yeni regresyon düzeltmeleri |
-| **Adayın kanıtı** | [017 doğrulaması](specs/017-completion-integration/verification.md) | Yerel API/arayüz/tarayıcı ve izole veritabanı kontrolleri; önceki sürüm kayıtlarından ayrı tutulur |
+| **Etkin geliştirme adayı** | `018-codex-production-line` | `017-completion-integration` / `6218159` tabanını korur. Son hosted baş `c45e0e7`; üstündeki OPS/D6 yerel kaynakları yeni commit ve CI kabulü bekler |
+| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Son yerel API 1571, tarayıcı 71; kontrol noktaları ve kaynak hashleri ayrı. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
 | **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
 | **Gerçek model ve insan kabulü** | Bekliyor | [Kabul paketi](evaluation/acceptance/README.md) hazır; öğretmen materyal/rubrik onayı, gerçek yanıtlar ve bağımsız insan değerlendirmesi gerekiyor |
 | **Staging / production** | Kanıtlanmadı | Canlı Auth/Storage/worker, kalite, yedek/geri yükleme ve geri dönüş kabulü tamamlanmadan yayın iddiası yok |
 
-Adayın kesin commit kimliği ve yeni test kayıtları 017 doğrulama/teslim dosyasında bulunur. Aşağıdaki gelişim günlüğü geçmiş aşamaları anlatır; güncel birleşme durumu bu tablodur.
+Adayın kesin commit kimliği, kirli kaynak sınırı ve yeni test kayıtları [018 doğrulamasında](specs/018-codex-production-line/verification.md) ve [tamamlanma defterinde](docs/completion-program.md) bulunur. Aşağıdaki gelişim günlüğü geçmiş aşamaları anlatır; bu tablo yeni main veya canlı dağıtım iddiası taşımaz.
 
 ### Kanıt etiketleri
 
@@ -246,7 +246,7 @@ bu, production öncesi açık işletim sorumluluğudur.
 
 ### 9. Bilgi İşlem admin paneli
 
-- Uygulama, veritabanı ve embedding readiness özeti.
+- Uygulama, veritabanı, pgvector, ortak istek kotası ve embedding hazırlık özeti; eksik alan “Ölçülemedi” gösterilir.
 - Toplam kullanıcı, aktif üyelik, ders ve belge metrikleri.
 - Kullanıcı arama ve maskeli e-posta.
 - Ders metaverisi ve rol dağılımı.
@@ -471,11 +471,11 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1197** <!-- docs-check: backend.tests = 1197 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **428** <!-- docs-check: frontend.tests = 428 --> | 39 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 39 --> |
-| Playwright gerçek-API vakaları | **42** <!-- docs-check: e2e.tests = 42 --> | Kapıdan gelen sayı `playwright test --list` ile TOPLANAN vaka sayısıdır; koşum CI'nın `e2e` işindedir (benzersiz PostgreSQL, fake LLM, tek worker). Yerel dilimde koşulmadıysa `specs/017-completion-integration/verification.md` bunu açıkça yazar |
-| Migration | **19** <!-- docs-check: migrations.count = 19 --> | Şema evriminin kaynak dosyası sayısı |
-| CREATE TABLE | **27** <!-- docs-check: tables.count = 27 --> | Migration’larda kurulan benzersiz tablo sayısı |
+| Backend testleri | **1571** <!-- docs-check: backend.tests = 1571 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **555** <!-- docs-check: frontend.tests = 555 --> | 44 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 44 --> |
+| Playwright tarayıcı vakaları | **71** <!-- docs-check: e2e.tests = 71 --> | Sayı `playwright test --list` ile toplanan vakalardır. Son yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) |
+| Migration | **22** <!-- docs-check: migrations.count = 22 --> | Şema evriminin kaynak dosyası sayısı |
+| CREATE TABLE | **30** <!-- docs-check: tables.count = 30 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
@@ -505,7 +505,7 @@ provider/staging kanıtı değildir; bu kapılar geçmeden production iddiası k
 
 ### Migration yolculuğu
 
-<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020 -->
+<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026 -->
 
 | Migration | Ürüne eklediği katman |
 |---|---|
@@ -524,6 +524,13 @@ provider/staging kanıtı değildir; bu kapılar geçmeden production iddiası k
 | 0013 | AI sohbet geri bildirimi ve paylaşım onayı |
 | 0014 | Platform-admin konsolu ve audit |
 | 0015 | Rol farkındalıklı ajan, audience izolasyonu ve atomik AI kotaları |
+| 0016 | API sözleşmesine platform-admin erişimi |
+| 0018 | Eğitmen soru yazımı ve öğrenme çıktısı sınıflandırması |
+| 0019 | Öğrenci sınav süresi projeksiyonu |
+| 0020 | Ders politikası denetim kaydının cascade yaşam döngüsü |
+| 0024 | Sohbet silme kapsam sürümü ve bekleyen yazımın engellenmesi |
+| 0025 | PostgreSQL ortak istek politikası/kota pencereleri ve dar SQL işlevleri |
+| 0026 | Sonlu iş claim/lease, kaynak revizyonu ve eski writer engeli |
 
 ## Gelişim yolculuğu
 
@@ -715,11 +722,11 @@ etiketine taşınmaz.
 
 ### Kod/repo seviyesinde açık kapılar
 
-- 017 bütünleşmiş adayının main hedefli bağımsız incelemesi ve aynı aday için CI.
+- 018→017 taslak PR26 için yeni OPS/D6 adayının kesin kaynak/commit/CI kabulü; ardından017→main ve terfi ayrı inceleme gerektirir.
 - Öğretmenin izin verdiği kaynak/kapsam ve rubrikle gerçek kabul.
 - Hedef ortamda özellik bayraklarının kontrollü açılması ve gerçek rol yolculukları.
 - Manuel VoiceOver/Safari kabulü; yerel Chromium testi bunun yerine geçmez.
-- Güncel durum ve komutlar: [017 quickstart](specs/017-completion-integration/quickstart.md), [tamamlama programı](docs/completion-program.md).
+- Güncel durum ve komutlar: [018 doğrulaması](specs/018-codex-production-line/verification.md), [tamamlama programı](docs/completion-program.md), taban kurulumu için [017 quickstart](specs/017-completion-integration/quickstart.md).
 
 ### Gerçek model ve ürün kalitesi
 
@@ -735,9 +742,9 @@ etiketine taşınmaz.
 
 - Gerçek Supabase Auth ve Storage.
 - Staging URL ve environment secret’ları.
-- Multi-worker yük ve atomik kota doğrulaması.
+- Hedef staging/production ortamında multi-worker yük ve atomik kota doğrulaması; yerel iki-HTTP kabulü bunun yerine geçmez.
 - OTel/telemetry export ve gerçek alarm teslimi.
-- Backup/restore tatbikatı.
+- Hedef staging/production ortamında Storage/DB ve saklama protokolüyle backup/restore tatbikatı; yerel sentetik DB deneyleri ayrı kanıttır.
 - Veri saklama ve residency kararı.
 - Protected environment ve bağımsız approver.
 - Canary, kill-switch gözlemi ve canlı rollback provası.
@@ -789,7 +796,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1197 testtir. <!-- docs-check: backend.tests = 1197 -->
+Güncel feature kanıtında backend koleksiyonu 1571 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1571 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -803,7 +810,7 @@ Güncel feature kanıtında backend koleksiyonu 1197 testtir. <!-- docs-check: b
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 428 testtir. <!-- docs-check: frontend.tests = 428 -->
+Güncel feature kanıtında frontend kütüphane paketi 555 testtir. <!-- docs-check: frontend.tests = 555 -->
 
 ### 5. Üç servisi ayrı terminallerde başlat
 
@@ -844,7 +851,7 @@ apps/
   api/                     FastAPI, worker, AI/RAG, assessment, admin
   web/                     Next.js ürün arayüzü ve Playwright
 supabase/
-  migrations/              0001–0015 şema, RLS ve SECURITY DEFINER sözleşmeleri
+  migrations/              22 göç; şema, RLS, kota ve claim/lease sözleşmeleri
   tests/                   RLS ve mutasyon betikleri
 specs/
   001-course-assistant-mvp

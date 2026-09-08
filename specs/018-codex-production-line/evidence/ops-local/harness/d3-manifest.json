@@ -1,0 +1,24 @@
+{
+  "status": "prepared-not-executed",
+  "repository_head": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+  "runtime_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "files": {
+    "README.md": "3259bfcaf222256cba92abcb939b41d0c3ee7b370b07303b03b8ccc9f928e683",
+    "pins.example.json": "584c636d00b0b60193ea19f3d4608b3eddde15d65240b4cacc9c38296efc0c31",
+    "run.py": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053",
+    "test_run.py": "2a2017c94d9610fc830fe89c215eae67f8c1bb67f172e2974300dc6b81ca765a"
+  },
+  "checks": {
+    "python_ast_parse": "pass",
+    "offline_tests": "not-run",
+    "real_database_and_processes": "not-run"
+  },
+  "test_cases_prepared": 8,
+  "scenarios_prepared": [
+    "writer_open",
+    "writer_closed",
+    "source_loss",
+    "maintenance_loss"
+  ],
+  "scope": "temporary candidate only; no repo or database changes; no production acceptance"
+}

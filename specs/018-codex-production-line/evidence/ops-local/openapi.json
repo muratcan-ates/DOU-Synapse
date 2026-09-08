@@ -1,0 +1,12 @@
+{
+  "status": "pass",
+  "paths": 57,
+  "added_required_admin_fields": [
+    "pgvector_status",
+    "request_quota_status"
+  ],
+  "other_changes": [],
+  "old_sha256": "4d097948a5e8f5081a1e0e2a66aa3cc188085cd6764336e67a9267de04c01565",
+  "new_sha256": "f9ec208b8700cadc9d3f311b132a7fe7919d3fef817163e9a288ca0662dccc6b",
+  "scope": "Generated from current create_app without lifespan/database/provider calls, isolated empty working directory."
+}

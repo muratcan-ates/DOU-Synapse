@@ -63,7 +63,9 @@ jobs:
             sleep 15
           done
           echo "API /health/ready beş denemede 200 vermedi" >&2
-          cat /tmp/ready.json 2>/dev/null || true
+          if [[ -f /tmp/ready.json ]]; then
+            cat /tmp/ready.json
+          fi
           exit 1
 
       - name: Kanıt sınırını özete yaz

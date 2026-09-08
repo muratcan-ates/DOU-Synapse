@@ -1587,11 +1587,46 @@ class ProductionPolicyCoverageTests(unittest.TestCase):
             "supabase/migrations/0010_ingestion_retry.sql": "R3",
             "supabase/migrations/0013_chat_feedback.sql": "R3",
             "evaluation/gold.json": "R3",
+            ".github/workflows/ci.yml": "R2",
+            ".github/workflows/security.yml": "R2",
+            ".github/workflows/release-candidate.yml": "R2",
+            ".release/validate_evidence.py": "R2",
+            "scripts/migration_check.py": "R2",
+            "scripts/workflow_policy_check.py": "R2",
+            "scripts/test_workflow_policy_check.py": "R2",
         }
         for path, minimum in expected.items():
             with self.subTest(path=path):
                 risk, _ = _risk_for_path(path, policy)
                 self.assertEqual(minimum, risk)
+
+
+    def test_delivery_gates_require_a_dossier_in_real_git_commits(self) -> None:
+        """Gerçek politika ile dosyasız kapı değişikliği kırmızı yanmalıdır."""
+        policy = json.loads(
+            (SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8")
+        )
+        paths = (
+            ".github/workflows/ci.yml",
+            ".github/workflows/security.yml",
+            ".github/workflows/release-candidate.yml",
+            ".release/validate_evidence.py",
+            "scripts/migration_check.py",
+            "scripts/workflow_policy_check.py",
+            "scripts/test_workflow_policy_check.py",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                repo = RepositoryFixture()
+                try:
+                    repo.write_json(".ai/policy.json", policy)
+                    repo.commit("install actual policy as fixture baseline")
+                    repo.base = repo.head
+                    repo.write(path, "# dossier olmadan değiştirilen kapı\n")
+                    repo.commit("change protected gate without dossier")
+                    self.assertIn(f"UNCOVERED:{path}", repo.validate())
+                finally:
+                    repo.close()
 
 
 class WorkflowBindingTests(unittest.TestCase):

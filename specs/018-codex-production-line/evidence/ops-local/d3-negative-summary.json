@@ -1,0 +1,284 @@
+{
+  "cases": [
+    {
+      "case": "source_loss",
+      "first_tool_error": null,
+      "original_receipt_sha256": {
+        "root": "bdc19449419509c5209d0fedfedd1feba1d1253e97e715e10bdfa60ccbad1612",
+        "runner": "41b9206e89114de0c1d1fb5ce78c3888b6227d11316b2d339c1bfceaf60b4533"
+      },
+      "owned_child_exit_code": null,
+      "pins_sha256": "21c2ea64fd9e7cfa0355468095ae3b51abe1dd4897a87845572e93645c20a1f5",
+      "private_artifact_metadata": [],
+      "receipt_and_pin_hash_checks_match": true,
+      "recorded_phase_facts": {
+        "cluster_unchanged": true,
+        "completion_manifest_absent": true,
+        "own_source_connection_closed": true,
+        "partial_dump_present": true,
+        "real_archive_list_returned": true,
+        "real_dump_returned": true,
+        "source_metadata_unchanged": true
+      },
+      "root_elapsed_seconds": 0.447,
+      "root_runner_exit_code": 0,
+      "runner_sha256": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053",
+      "runner_unchanged": true,
+      "runtime_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+      "runtime_source_unchanged": true,
+      "safe_code": "SOURCE_SNAPSHOT_CONTROL_FAILED",
+      "source_identity_sha256": "a122f54de62714a8c18edfc5a5073a82a6cbefefed465fa52ecc6adf4b714da4",
+      "status": "negative-acceptance-pass"
+    },
+    {
+      "case": "writer_open",
+      "first_tool_error": null,
+      "original_receipt_sha256": {
+        "root": "66e43fb2014e6add6738a95beacf88b611d83b31a175637bf2532a79a526dff3",
+        "runner": "cf668f78456a3f0867fa287d917f99f317dd2feffc52f1a7a3f13dff57e53fa5"
+      },
+      "owned_child_exit_code": -15,
+      "pins_sha256": "cfa96fe6270be2b5c269fd1190c2a031dfce0f5ce3dee4d3bb0f5d75d2d402dd",
+      "private_artifact_metadata": [
+        {
+          "bytes": 0,
+          "file_mode_at_projection": "0600",
+          "kind": "stderr",
+          "recorded_hash_and_size_match": true,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source_bytes": 0,
+          "truncated": false
+        },
+        {
+          "bytes": 7693,
+          "file_mode_at_projection": "0600",
+          "kind": "stdout",
+          "recorded_hash_and_size_match": true,
+          "sha256": "5cac7ff7273d5bd4ccf9e9fdb2d1a324b5a2ed5ab7188fedfc6ed583ffbbf658",
+          "source_bytes": 7693,
+          "truncated": false
+        },
+        {
+          "bytes": 222227,
+          "file_mode_at_projection": "0600",
+          "kind": "sql_script",
+          "recorded_hash_and_size_match": true,
+          "sha256": "1e3c69e490eb620225f99124dce9fd80ae83938ac696040e0e60c485fb75c86d",
+          "source_bytes": 222227,
+          "truncated": false
+        }
+      ],
+      "receipt_and_pin_hash_checks_match": true,
+      "recorded_phase_facts": {
+        "initial_real_guard_returned": true,
+        "initial_target_empty": true,
+        "writer_commit_after_initial_guard": true,
+        "writer_sentinel_preserved": true
+      },
+      "root_and_runner_final_target_state_matches": true,
+      "root_elapsed_seconds": 0.31,
+      "root_runner_exit_code": 0,
+      "root_target_after": {
+        "allow_connections": true,
+        "connections": 0
+      },
+      "runner_sha256": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053",
+      "runner_target_after": {
+        "allow_connections": true,
+        "connections": 0
+      },
+      "runner_target_before": {
+        "allow_connections": true,
+        "connections": 0
+      },
+      "runner_unchanged": true,
+      "runtime_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+      "runtime_source_unchanged": true,
+      "safe_code": "TARGET_SESSION_BINDING_OR_COUNT_CHANGED",
+      "source_identity_sha256": "a122f54de62714a8c18edfc5a5073a82a6cbefefed465fa52ecc6adf4b714da4",
+      "status": "negative-acceptance-pass",
+      "target_identity_sha256": "b130bb195973d3c652b860f4465d14fee267aabbb74d008582562fcbc9fd265e",
+      "writer_committed_sentinel_sha256": "31e193af3045bfe712288c2681eaea057b3e16d93df52eb8fad5857cf29922fb"
+    },
+    {
+      "case": "writer_closed",
+      "first_tool_error": {
+        "safe_code": "TARGET_NOT_EMPTY_OR_UNAUTHORIZED",
+        "script_line": 101,
+        "sqlstate": null
+      },
+      "original_receipt_sha256": {
+        "root": "c04e6182b8de51f73572bc41a5b42bbe14cf5b51b812befa30b9c196c79f9301",
+        "runner": "498e393071efcfd2ff4c78f03a40a23a205f7251759ad18a0856bfa345178b42"
+      },
+      "owned_child_exit_code": 3,
+      "pins_sha256": "d0ef33282e5f5637f51e2159a7b8d249d9ba8d3cd36cf66cf5426a86f53c1602",
+      "private_artifact_metadata": [
+        {
+          "bytes": 124,
+          "file_mode_at_projection": "0600",
+          "kind": "stderr",
+          "recorded_hash_and_size_match": true,
+          "sha256": "615f2c11e64092bc13727157fc77e94fd834e00a469ffe52d56913937b2c63fb",
+          "source_bytes": 124,
+          "truncated": false
+        },
+        {
+          "bytes": 7693,
+          "file_mode_at_projection": "0600",
+          "kind": "stdout",
+          "recorded_hash_and_size_match": true,
+          "sha256": "d7c6ebcf76753924400bae141db3d9416cdf2b9b4616b47206293bda34de40d6",
+          "source_bytes": 7693,
+          "truncated": false
+        },
+        {
+          "bytes": 222227,
+          "file_mode_at_projection": "0600",
+          "kind": "sql_script",
+          "recorded_hash_and_size_match": true,
+          "sha256": "58fc8f8e438dc1cb1f462e50b20de669e5405f1f052d034edc6371ca81c35c1a",
+          "source_bytes": 222227,
+          "truncated": false
+        }
+      ],
+      "receipt_and_pin_hash_checks_match": true,
+      "recorded_phase_facts": {
+        "apply_called": true,
+        "fence_called": true,
+        "initial_real_guard_returned": true,
+        "initial_target_empty": true,
+        "real_fence_returned": true,
+        "writer_backend_exit_barrier_observed": true,
+        "writer_closed_before_fence": true,
+        "writer_commit_after_initial_guard": true
+      },
+      "root_and_runner_final_target_state_matches": true,
+      "root_elapsed_seconds": 0.322,
+      "root_runner_exit_code": 0,
+      "root_target_after": {
+        "allow_connections": false,
+        "connections": 0
+      },
+      "runner_sha256": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053",
+      "runner_target_after": {
+        "allow_connections": false,
+        "connections": 0
+      },
+      "runner_target_before": {
+        "allow_connections": true,
+        "connections": 0
+      },
+      "runner_unchanged": true,
+      "runtime_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+      "runtime_source_unchanged": true,
+      "safe_code": "RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE",
+      "source_identity_sha256": "a122f54de62714a8c18edfc5a5073a82a6cbefefed465fa52ecc6adf4b714da4",
+      "status": "negative-acceptance-pass",
+      "target_identity_sha256": "8c7ba5a13fdab4ca274e01fb57a92ceba329a341949faaf69e44a3e88054c0e5",
+      "writer_committed_sentinel_sha256": "31e193af3045bfe712288c2681eaea057b3e16d93df52eb8fad5857cf29922fb"
+    },
+    {
+      "case": "maintenance_loss",
+      "first_tool_error": null,
+      "original_receipt_sha256": {
+        "root": "75ff7a6c3d1d9ebb6545be470502bb8d40c6d495401137641343aaa9a55106ba",
+        "runner": "af57cc3f306427898b9b6ce19042b0cd35e9208dc6376a6d34f9723a0d23f73b"
+      },
+      "owned_child_exit_code": -15,
+      "pins_sha256": "f73ec4d6b92e743c6a75056170f8771430ab0a6a7fdf0c7e46f12bf7db875f8c",
+      "private_artifact_metadata": [
+        {
+          "bytes": 0,
+          "file_mode_at_projection": "0600",
+          "kind": "stderr",
+          "recorded_hash_and_size_match": true,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source_bytes": 0,
+          "truncated": false
+        },
+        {
+          "bytes": 8161,
+          "file_mode_at_projection": "0600",
+          "kind": "stdout",
+          "recorded_hash_and_size_match": true,
+          "sha256": "ec26fa4d4916aacfd07348cc68956efc4f7912e252ba92d81ed2e17518f6307c",
+          "source_bytes": 8161,
+          "truncated": false
+        },
+        {
+          "bytes": 222236,
+          "file_mode_at_projection": "0600",
+          "kind": "sql_script",
+          "recorded_hash_and_size_match": true,
+          "sha256": "1ea5d6b58a7bcee333fe5350add7148f7fff06d476c6e3fa276c63fe94d0f675",
+          "source_bytes": 222236,
+          "truncated": false
+        }
+      ],
+      "receipt_and_pin_hash_checks_match": true,
+      "recorded_phase_facts": {
+        "apply_called": true,
+        "fence_called": true,
+        "initial_real_guard_returned": true,
+        "initial_target_empty": true,
+        "own_maintenance_connection_closed_after_fence": true,
+        "real_commit_receipt_validated": true,
+        "real_fence_returned": true,
+        "reopen_called": true
+      },
+      "root_and_runner_final_target_state_matches": true,
+      "root_elapsed_seconds": 0.501,
+      "root_runner_exit_code": 0,
+      "root_target_after": {
+        "allow_connections": false,
+        "connections": 0
+      },
+      "runner_sha256": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053",
+      "runner_target_after": {
+        "allow_connections": false,
+        "connections": 0
+      },
+      "runner_target_before": {
+        "allow_connections": true,
+        "connections": 0
+      },
+      "runner_unchanged": true,
+      "runtime_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+      "runtime_source_unchanged": true,
+      "safe_code": "RESTORE_COMMITTED_FENCE_REOPEN_UNCONFIRMED",
+      "source_identity_sha256": "a122f54de62714a8c18edfc5a5073a82a6cbefefed465fa52ecc6adf4b714da4",
+      "status": "negative-acceptance-pass",
+      "target_identity_sha256": "096c7c2b817d2bddfcfc2b060dcddf5294a48320b32ee1c26d293e1757655358"
+    }
+  ],
+  "common_artifact_sha256": {
+    "candidate_manifest": "3c9044963cd8ceba8ec69dd2b617684d48d0a73b0e342069be46ef4896873d07",
+    "capture_helper": "356a896ab1ed2840ffcf5acb56514afd32967569c0e865bd692e80624a424a9b",
+    "independent_review": "fab870f91d7febb8d90a842fa1d0db28261282bde1b9abbcfd82cf21aeee609b",
+    "referenced_backup_dump": "58465323956b7861df653536b0fa422f5e4488f59f4a97a7a528597308d4a288",
+    "referenced_backup_manifest": "38b701e61a8509054bf8a3fc56dcfffb746fdfdab3645ec4c1baec317405fcc7",
+    "root_wrapper": "886197fb34c119f08d76cdf04913b0d5a9236caf6666fff74e25bb7bb8a6100a",
+    "runner": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053",
+    "runtime": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b"
+  },
+  "field_semantics": {
+    "private_artifact_metadata": "Only recorded hash/size/truncation metadata and current offline file-mode verification; no private SQL or protocol body is included.",
+    "recorded_phase_facts": "Only explicitly present boolean fields under runner.facts. Missing keys are not recorded, never inferred false or true.",
+    "root_elapsed_seconds": "Copied from root.seconds for its runner subprocess interval; not a separately recorded per-phase duration.",
+    "runtime_source_unchanged": "Projected from root.source_unchanged, verified equal to runner.runtime_unchanged. Only recovery.py byte-hash immutability; not source-database row or byte equality.",
+    "source_metadata_unchanged": "The source-loss receipt's metadata comparison only; not full application-row equality.",
+    "status": "negative-acceptance-pass means the fault produced its intended refusal/state; it is not backup-complete or restore-complete."
+  },
+  "kind": "content-free projection of existing local synthetic negative-acceptance receipts",
+  "projection_script_sha256": "618560764f19a677a62b8fd98f61a933eb036f9232286ecd2d08f7f927e1d81a",
+  "schema_version": 1,
+  "scope_limits": [
+    "Four controlled local synthetic connection/writer scenarios; no new database or process was run during projection.",
+    "Writer-closed final sentinel row was not independently read back after the target remained fenced; no final-row parity claim is made.",
+    "The source-loss partial dump has no completion manifest and is not accepted as a completed backup.",
+    "Maintenance-loss has an explicitly validated commit receipt followed by an unconfirmed reopen; do not relabel it as rollback or an unknown commit receipt.",
+    "No new application-row, RLS, external Storage, 20k corpus, retrieval, cross-cluster, failover or production certification is claimed.",
+    "Original private receipts remain authoritative; the hashes here identify all eight original JSON byte streams and do not equal this projection's hash."
+  ]
+}

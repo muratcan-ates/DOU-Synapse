@@ -14,6 +14,7 @@ import { describe, expect, test } from "bun:test";
 import { ApiError } from "./api";
 import {
   ANSWER_MAX_LENGTH,
+  appendExamHint,
   answerVerdict,
   canSubmitAnswer,
   describeQuestion,
@@ -37,7 +38,7 @@ import {
   timeNotice,
   VERDICT_LABEL,
 } from "./exam";
-import type { AnswerFeedback, ExamQuestion, ExamSession } from "./types";
+import type { AnswerFeedback, ExamHint, ExamQuestion, ExamSession } from "./types";
 
 const session = (overrides: Partial<ExamSession> = {}): ExamSession => ({
   id: "e1",
@@ -489,5 +490,55 @@ describe("dersin ipucu sınırı", () => {
     expect(nextHintLevel(3, 1)).toBeNull();
     expect(nextHintLevel(0, Number.NaN)).toBeNull();
     expect(nextHintLevel(4, 10)).toBeNull();
+  });
+});
+
+
+describe("ipucu geçmişi; tekrar ve geç gelen yanıt", () => {
+  const hint = (level: number, text = `${level}. kaynaklı ipucu`): ExamHint => ({
+    question_id: "q1",
+    hint_level: level,
+    text,
+    source: { chunk_id: `chunk-${level}`, file_name: "ders.pdf", location: `Sayfa ${level}`, snippet: "Ders kaynağı." },
+  });
+
+  test("ilerleyen basamaklar kendi metni ve kaynağıyla korunur; önceki liste değişmez", () => {
+    const first = hint(1);
+    const previous = [first];
+    Object.freeze(previous);
+    const second = hint(2);
+    const result = appendExamHint(previous, second);
+    expect(result).toEqual([first, second]);
+    expect(result[0].source).toBe(first.source);
+    expect(result[1].source).toBe(second.source);
+    expect(previous).toEqual([first]);
+    expect(appendExamHint([], first)).toEqual([first]);
+  });
+
+  test("aynı basamağın yeniden teslimi yeni kart eklemez veya eski kaynağı değiştirmez", () => {
+    const previous = [hint(1), hint(2)];
+    const repeated = { ...hint(2, "Yeniden üretilmiş metin"), source: hint(3).source };
+    const result = appendExamHint(previous, repeated);
+    expect(result).toEqual(previous);
+    expect(result[1].text).toBe("2. kaynaklı ipucu");
+    expect(result[1].source.chunk_id).toBe("chunk-2");
+    expect(nextHintLevel(result.at(-1)!.hint_level, 4)).toBe(3);
+  });
+
+  test("limit dört iken başlayan istek bire kısılınca merdiven tekrar açılmaz", () => {
+    const previous = [hint(1), hint(2), hint(3)];
+    expect(nextHintLevel(3, 4)).toBe(4);
+    const result = appendExamHint(previous, hint(1));
+    expect(result).toHaveLength(3);
+    expect(result.at(-1)?.hint_level).toBe(3);
+    expect(nextHintLevel(result.at(-1)!.hint_level, 1)).toBeNull();
+  });
+
+  test("geç gelen alt basamak sonraki ipucunu geriye götürmez", () => {
+    let history = appendExamHint([], hint(1));
+    history = appendExamHint(history, hint(3));
+    history = appendExamHint(history, hint(2));
+    expect(history.map((item) => item.hint_level)).toEqual([1, 3]);
+    expect(nextHintLevel(history.at(-1)!.hint_level, 4)).toBe(4);
   });
 });

@@ -1,0 +1,108 @@
+{
+  "status": "C1-local-mechanics-verified-hashing-holdout-pending-root",
+  "generated_at": "2026-09-08T10:03:46.578625+00:00",
+  "source_sha256": {
+    "apps/api/app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+    "apps/api/app/modules/retrieval/fts.py": "1cd5bffc04a1e9deb928536e65c5ff31edeef50208e73a0d1e8b5a78cebd4adb",
+    "apps/api/app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c",
+    "apps/api/app/core/config.py": "16e53fb5e5ea30a8fa2a68674abdbd48226d5e1e2c3cefe3e1654e2527528423",
+    "apps/api/tests/test_config.py": "65b693f3efd670c0db26c2838b97094ac61ef3b2a210377c5a5660e7a3a5a72f",
+    "apps/api/tests/test_fts.py": "eeff035fedcd453a488f69bee0caec88476e9655143c57f72acca32e5b8e40d6",
+    "apps/api/tests/test_retrieval.py": "3319d3a48d0599a0891d23be23229b87c1822d7df5092247cab67a1b0072442a",
+    "apps/api/tests/test_retrieval_candidates.py": "9efd436c1c0e47950acb762ed6b71ad92a5e2ac5dd0c96b0d49c06c595b66d74",
+    "scripts/benchmark_retrieval_plan.py": "2f16fcf68ffdc3b72e6a1e48ae685a4efc9ebcbfffe1973b522c68fcd24c3b56",
+    "scripts/test_benchmark_retrieval_plan.py": "4e455e3b9a5c40493ca9177ac8418b17f822fcdb547603a824e07c73eed3dd34",
+    "scripts/fixtures/018_pre_c1_dense.sql": "595cc7bc969da0b415cdd1b62aa1b8cd698534c2052c7c79be92c4075f630fd5",
+    "scripts/probe_retrieval_runtime.py": "38ef1637d0e0bfd90788fcce8093672626be324ad249041ae9f2baeac1ae45db",
+    "scripts/test_probe_retrieval_runtime.py": "8bb5d06b405249522b2b879bc94f4106cbe132bf867483d69a15f3d697b625ff"
+  },
+  "evidence_sha256": {
+    "retrieval-plan-local-20260908b.json": "34beb08b8c3a3bb8d9975147f7d04af5bcfca42c47add1b870819370287c07ca",
+    "retrieval-runtime-local-20260908.json": "52c1c3c2a4ce297e11c96a5b08f26479ae1b9e4afb2cd7a4fae34e1cc875170c",
+    "retrieval-runtime-local-v2-20260908.json": "5c965d4d3b1e67fc4267a77366e4e2f24d8cb6570a46c934534d18d5507c588b",
+    "c1-runtime-clone.json": "cb34010a25d4221aa6c3617c1209a206b201936d2bba4cb31bd4b984e723d4a6",
+    "c1-runtime-analysis.md": "c9c2facd8509248ac4945b8f3b4d2fda80f4b110cba8bd6d09a5e5fb53be45d6",
+    "c1-runtime-analysis.json": "31a0fd0e973e7ed82cabff3a01d2ed0598f83ff9ef907ec9e498bcae56a05afe",
+    "c1-runtime-v2-analysis.md": "66a1598d022fb38cdaa0ece6b75762f16cf010f0acc57d43e09b2b407b8490cb",
+    "c1-runtime-v2-analysis.json": "dc3ad13e4dad19ae6c1aa2296f7af10fbc372fc321e86a8c967dfee3607cf00a",
+    "c1-guc-comments-only-bridge.json": "6eb3a30aa4a9c31d3fa075e867b1662bd5aa1acc723eba7032ce98ecb9fd0675",
+    "c1_holdout_runner.py": "6befccf42c42e26cbf47d8cc0a8339fe30389e5820033cf823f0d8a42b478f58",
+    "test_c1_holdout_runner.py": "fedd15c908f5fe18fdcb326ec23ec21b50cfddbb67554085348866fee2caf21b",
+    "c1-holdout-runbook.md": "2058f3f1929aeff43a1d6b3cafba09deba20eca56c391ae54cea0b8118c5f95b",
+    "c1-holdout-adapter-offline-final/manifest.json": "e3f030f606f46ea51caaf6ed0ea75463b258cf10a0aca0352919a32cc6d092bb"
+  },
+  "checks": {
+    "c1-guc-offline-tests.log": {
+      "sha256": "cc2e1149c7a37d21d8f178a02bd250a7d2502f3fe2cd0606b33e5a6bd96f7e63",
+      "last_lines": [
+        "........................................................................ [ 42%]",
+        "........................................................................ [ 85%]",
+        "........................                                                 [100%]",
+        "168 passed, 12 deselected in 2.22s"
+      ]
+    },
+    "c1-guc-mypy.log": {
+      "sha256": "f9b031e5c45aa702cd4fef028d465551cb20a2c4698e0913c7b00766b20ac4d8",
+      "last_lines": [
+        "Success: no issues found in 2 source files"
+      ]
+    },
+    "c1-guc-ruff.log": {
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "last_lines": [
+        "All checks passed!"
+      ]
+    },
+    "c1-guc-format.log": {
+      "sha256": "177f260a5645724013185e4b140c7045cc39e56c0c97b120f5cb23599f85f0de",
+      "last_lines": [
+        "4 files already formatted"
+      ]
+    },
+    "bc-full-api-second.log": {
+      "sha256": "6538e4cb54a8e5baf93602ace96b4755637496f4e7aafcd87546cff8d2c7f5e3",
+      "last_lines": [
+        "",
+        "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html",
+        "1500 passed, 5 warnings in 91.01s (0:01:31)",
+        "sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute"
+      ]
+    },
+    "c1-holdout-adapter-unit.log": {
+      "sha256": "ab4cb1b368764e974617aa0c90d35666edcbc5ab03ec7fcb0b466d6dd7f85ee5",
+      "last_lines": [
+        "----------------------------------------------------------------------",
+        "Ran 4 tests in 0.532s",
+        "",
+        "OK"
+      ]
+    },
+    "c1-guc-mutation-disable-custom.log": {
+      "sha256": "58a24c4f1deb34582d10c4a8481c9b508b783fa84056a520eb76e666a54a2b52",
+      "last_lines": [
+        "FAILED apps/api/tests/test_retrieval_candidates.py::test_dense_call_retains_metadata_filter_distinction_and_bounded_multiplier[selected2-force_custom_plan]",
+        "FAILED apps/api/tests/test_retrieval_candidates.py::test_dense_call_retains_metadata_filter_distinction_and_bounded_multiplier[selected2-force_generic_plan]",
+        "9 failed, 23 deselected, 1 warning in 0.21s",
+        "EXPECTED_MUTATION_FAILURE_VERIFIED disable_custom"
+      ]
+    },
+    "c1-guc-mutation-leak-custom.log": {
+      "sha256": "4dd52c9ac05660f1fcd468c339d6ae7791440a981fe0e048ed726b897114504c",
+      "last_lines": [
+        "FAILED apps/api/tests/test_retrieval_candidates.py::test_dense_call_retains_metadata_filter_distinction_and_bounded_multiplier[selected2-auto]",
+        "FAILED apps/api/tests/test_retrieval_candidates.py::test_dense_call_retains_metadata_filter_distinction_and_bounded_multiplier[selected2-force_generic_plan]",
+        "6 failed, 3 passed, 23 deselected, 1 warning in 0.18s",
+        "EXPECTED_MUTATION_FAILURE_VERIFIED leak_custom"
+      ]
+    }
+  },
+  "notes": [
+    "Tam API1500 pass, gerçek DB12 vaka içerir; son açıklama/import düzeni davranış değiştirmez.",
+    "Türkçe açıklama düzeni c1-guc-comments-only-bridge.json ile ölçüm kaynaklarına bağlanır.",
+    "Dört testin import düzeni root tarafından apps/api cwd CI lint kuralına göre sonradan değiştirildi; burada güncel hashleri kayıtlı.",
+    "GUC mutation logları beklenen gerçek test başarısızlıklarıdır; değiştirilmiş algoritma ayrı Python sürecine yüklendi, depo dosyasına yazılmadı.",
+    "Runtime v1/v2 aynı C1 SQL ve klonun dar plan politikası karşılaştırmasıdır; pre-C1 tamHybrid holdout henüz bu manifestte çalıştırılmadı.",
+    "Hashing holdout runner yalnız tmp altında hazırlandı; DB kurma/ölçme root tarafından yapılacak.",
+    "C2 migration/gerçek E5 veya LLM anlamsal kalite/pgvector0.8.6 eşdeğerliği iddia edilmez."
+  ]
+}

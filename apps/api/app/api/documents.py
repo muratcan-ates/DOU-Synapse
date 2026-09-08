@@ -20,6 +20,11 @@ from app.core.db import db_now
 from app.core.errors import ConflictError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.core.pagination import paginate
+from app.core.upload_cleanup import (
+    register_document_deletion,
+    register_upload_cleanup,
+    report_unconfirmed_upload,
+)
 from app.models.core import Chunk, Document, DocumentStatus
 from app.modules.ingestion.storage import get_storage
 from app.modules.ingestion.validation import validate_upload
@@ -73,7 +78,7 @@ async def upload_document(
     if not file.filename:
         raise ValidationError("Dosya adı okunamadı.")
 
-    content = await file.read()
+    content = await file.read(settings.max_upload_bytes + 1)
     upload = validate_upload(
         file_name=file.filename,
         content=content,
@@ -94,9 +99,6 @@ async def upload_document(
         # Aynı içerik yeniden embed edilmez; boşuna işlem ve maliyet oluşmaz.
         raise ConflictError(f"Bu dosya derse zaten yüklenmiş: {existing.file_name}")
 
-    storage = get_storage()
-    await storage.save(upload.storage_key, upload.content)
-
     superseded: Document | None = None
     if replaces_document_id is not None:
         superseded = await load_owned(
@@ -111,6 +113,16 @@ async def upload_document(
                 "Bu belge zaten daha yeni bir sürümle değiştirilmiş. "
                 "Güncel sürümün yerine yükleme yapın."
             )
+
+    storage = get_storage()
+    try:
+        await storage.save(upload.storage_key, upload.content)
+    except BaseException:
+        # Upsert reddi mevcut bir nesneyi işaret edebilir; timeout/iptalde kısmi
+        # yazmanın sonucu bilinmez. Sahiplik doğrulanmadan kör silme yapılmaz.
+        report_unconfirmed_upload()
+        raise
+    register_upload_cleanup(session, key=upload.storage_key, delete=storage.delete)
 
     document = Document(
         course_id=context.course_id,
@@ -257,6 +269,7 @@ async def delete_document(
             "Önce ilgili soruları kaldırın."
         ) from exc
 
-    # Depodaki dosya en sona bırakılır: satır silinemezse dosya da durmalı, yoksa
-    # veritabanında kaydı olan ama dosyası olmayan bir belge kalırdı.
-    await get_storage().delete(storage_key)
+    # Flush COMMIT değildir: sonraki işlem hatası satırı geri getirebilir.
+    # Fiziksel silme yalnız bağımlılığın doğruladığı başarılı COMMIT'ten sonra.
+    storage = get_storage()
+    register_document_deletion(session, key=storage_key, delete=storage.delete)

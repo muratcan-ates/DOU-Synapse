@@ -101,10 +101,6 @@ def provider_config_snapshot(settings: Settings) -> dict[str, Any]:
     }
 
 
-def provider_config_digest(settings: Settings) -> str:
-    return canonical_digest(provider_config_snapshot(settings))
-
-
 def evaluation_request_digest(
     *,
     course_id: str,

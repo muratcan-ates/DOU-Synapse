@@ -43,7 +43,7 @@ export default function AccountPage() {
     <AppShell>
       <PageHeader
         title="Verilerim"
-        description="Kişisel verilerinizi indirebilir, sohbet geçmişinizi silebilir veya uygulama profilinizi anonimleştirebilirsiniz."
+        description="Uygulamadaki kayıtlarınızı indirebilir, sohbet geçmişinizi silebilir veya profilinizdeki ad ve e-postayı kaldırabilirsiniz."
       />
 
       {(notice || error) && (
@@ -64,7 +64,8 @@ export default function AccountPage() {
             <p className="prose-tr mt-2 text-sm leading-6 text-fg-muted">
               Profiliniz, ders üyelikleriniz, sohbetleriniz, sınav yanıtlarınız ve
               öğrenme ilerlemeniz tek bir JSON dosyasında hazırlanır. Yalnız size
-              ait satırlar dışa aktarılır.
+              ait kayıtlar dışa aktarılır. Kota ve güvenlik operasyon kayıtları bu
+              dosyaya dahil edilmez; kapsam açıklaması dosyada yer alır.
             </p>
           </div>
           <Button
@@ -80,15 +81,17 @@ export default function AccountPage() {
           <div>
             <h2 className="text-lg font-medium text-fg">Sohbet geçmişi</h2>
             <p className="prose-tr mt-2 text-sm leading-6 text-fg-muted">
-              Tüm derslerdeki sohbet oturumlarınız ve bu oturumlara bağlı mesajlar
-              kalıcı olarak silinir. Sınav ve ilerleme kayıtları etkilenmez.
+              Tüm derslerdeki sohbet oturumlarınız, bağlı mesajlar ve geri
+              bildirimler uygulama veritabanından silinir. Sınav ve ilerleme
+              kayıtları etkilenmez. Daha önce indirdiğiniz dosyalar bu işlemle
+              silinmez.
             </p>
           </div>
           <ConfirmAction
             label="Tüm sohbet geçmişini sil"
             confirmLabel="Evet, geçmişi sil"
             busyLabel="Siliniyor…"
-            question="Tüm sohbet geçmişiniz kalıcı olarak silinecek. Devam edilsin mi?"
+            question="Uygulamadaki tüm sohbet oturumlarınız, mesajlarınız ve geri bildirimleriniz silinecek. Sınav ve ilerleme kayıtlarınız korunacak. Devam edilsin mi?"
             onConfirm={async () => {
               const result = await api.delete<ChatDeletion>("/me/chat-history");
               setError(null);
@@ -100,21 +103,22 @@ export default function AccountPage() {
         <Card className="flex flex-col justify-between gap-5 border-danger/30 lg:col-span-2">
           <div>
             <h2 className="text-lg font-medium text-fg">
-              Uygulama hesabını anonimleştir
+              Profil bilgilerimi kaldır
             </h2>
             <p className="prose-tr mt-2 text-sm leading-6 text-fg-muted">
-              Profil adınız ve e-posta adresiniz anonimleştirilir, ders
-              üyelikleriniz kapatılır ve sohbetleriniz silinir. Akademik sınav
-              kayıtları, bütünlük ve mevzuat yükümlülükleri için anonim profile
-              bağlı kalır. Üniversite kimlik hesabınız bu işlemle kapanmaz; kimlik
-              sağlayıcısında ayrıca işlem gerekir.
+              Uygulama profilinizdeki ad ve e-posta kaldırılır, sohbetleriniz
+              silinir ve ders üyelikleriniz kapatılır. Sınav yanıtları, öğrenme
+              ilerlemesi ve yüklediğiniz ders materyalleri mevcut profil kaydıyla
+              bağlantılı kalır. Bu işlem bütün verilerinizi silmez ve kimliğinizle
+              bağlantıyı tamamen kaldırmaz. Üniversite giriş hesabınız açık kalır;
+              kapatılması için ayrıca işlem gerekir.
             </p>
           </div>
           <ConfirmAction
-            label="Hesabımı anonimleştir"
-            confirmLabel="Evet, hesabı anonimleştir"
-            busyLabel="Anonimleştiriliyor…"
-            question="Bu işlem sohbetleri siler ve tüm ders üyeliklerini kapatır. Devam edilsin mi?"
+            label="Profil bilgilerimi kaldır"
+            confirmLabel="Evet, profil bilgilerimi kaldır"
+            busyLabel="Profil bilgileri kaldırılıyor…"
+            question="Profilinizdeki ad ve e-posta kaldırılacak, sohbetleriniz silinecek ve ders üyelikleriniz kapatılacak. Sınav, ilerleme ve materyal kayıtları ile üniversite giriş hesabınız korunacak. Devam edilsin mi?"
             onConfirm={async () => {
               const result = await api.delete<AccountAnonymization>("/me");
               setNotice(result.message);
@@ -126,7 +130,7 @@ export default function AccountPage() {
                 setError(
                   errorMessage(
                     cause,
-                    "Hesabınız anonimleştirildi ancak oturum kapatılamadı. Üst menüdeki çıkış düğmesini tekrar deneyin.",
+                    "Profil bilgileriniz kaldırıldı. Kimlik sağlayıcısındaki oturumun kapanması doğrulanamadı.",
                   ),
                 );
               }
@@ -141,7 +145,7 @@ export default function AccountPage() {
           href="/kvkk"
           className="font-medium text-brand underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          KVKK aydınlatma metnini
+          kişisel veriler ve gizlilik sayfasını
         </Link>{" "}
         okuyabilirsiniz.
       </p>

@@ -1,0 +1,305 @@
+{
+  "schema_version": 1,
+  "change_id": "025-production-line-gates-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-08T06:24:49.933246+00:00",
+  "command": "PG_BIN=/opt/homebrew/opt/postgresql@16/bin /Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python scripts/role_agent_application_mutation_check.py --evidence /private/tmp/dou018-evidence/application-mutations.json --candidate-sha SELF",
+  "environment": "temporary source copy; existing Python environment; local PostgreSQL 16; synthetic fixtures; deterministic fake provider",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "privacy": "stable mutation labels and aggregate pytest counts only; no prompt/answer text, emails, secrets, raw database rows, request identifiers, or provider payloads retained",
+  "source_sha256": {
+    "apps/api/app/api/chat.py": "b1735d7d33f5a0c77befaf2ff717b11ef927aebca4022b8c6893b0a1f3940eb9",
+    "apps/api/app/api/chat_cache.py": "652a4dab900f93ffb3fd51c227f3b3622ba388b7a46bbc1afd164a5bd2742d95",
+    "apps/api/app/api/chat_history.py": "6f951254aee94954a48f29e3319bccca08854e75798e5fc13f320de260ea031c",
+    "apps/api/app/api/privacy.py": "19ef43cfcba0e759402dd7fb12c05c6ce167dcd0ae816243984fc36c8eac3d6d",
+    "apps/api/app/modules/agent/answers.py": "089c18913e105b2d39f3ed6cc1a7037ae91b00ec149b8f3d5f5690898b99dff3",
+    "apps/api/app/modules/generation/service.py": "66951f646dbf6db4ba9e2580c054789f495a8030a56dd077b64c02a429119752",
+    "apps/api/app/schemas/chat.py": "ffcfca44d9b646b67239c5b925c36035717d5d1ada7d99a0df0cc41ca30f6fd6",
+    "apps/api/tests/test_role_aware_agent_application_guards.py": "1553c1821983f35848d7e72fcc025c69d7643f6d3149a1893c07a11d22f48847",
+    "scripts/role_agent_application_mutation_check.py": "9d753a878de5d30d97cc351aaf71af2b1652e59de146cb325c6c15958099aad8",
+    "supabase/migrations/0015_role_aware_course_agent.sql": "95d6732a871658ddf24a87417b82074d144428a6add7a83c3e3e2b6c34f2d326"
+  },
+  "baseline": {
+    "returncode": 0,
+    "passed": 19,
+    "failed": 0,
+    "summary": "19 passed in 11.40s"
+  },
+  "results": {
+    "mutations_attempted": 12,
+    "mutations_caught": 12,
+    "mutations_missed": 0,
+    "restored_green": 12,
+    "temporary_database_residue": 0,
+    "mutations": [
+      {
+        "id": "persona_payload_forbid",
+        "boundary": "ChatRequest rejects client-selected audience/profile fields",
+        "target_file": "apps/api/app/schemas/chat.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent.py::TestServerDerivedIdentity::test_client_cannot_select_persona"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 2,
+          "summary": "2 failed in 5.80s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 2,
+          "failed": 0,
+          "summary": "2 passed in 6.91s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "membership_to_audience",
+        "boundary": "course membership remains the sole audience projection",
+        "target_file": "apps/api/app/api/chat_cache.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent.py::TestServerDerivedIdentity::test_availability_exposes_only_server_resolved_persona"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 5.33s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 5.22s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "session_audience_mismatch",
+        "boundary": "a role-changed user cannot continue a session from the old audience",
+        "target_file": "apps/api/app/api/chat_history.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent.py::TestServerDerivedIdentity::test_role_change_makes_existing_session_conflict"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 5.28s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 5.01s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "cache_audience_and_revisions",
+        "boundary": "audience plus policy/prompt/corpus revisions partition the cache key",
+        "target_file": "apps/api/app/api/chat_cache.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_cache_identity_changes_with_audience_and_every_revision"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 4,
+          "summary": "4 failed in 4.34s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 4,
+          "failed": 0,
+          "summary": "4 passed in 3.81s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "reservation_before_provider",
+        "boundary": "the durable quota reservation callback runs before provider generation",
+        "target_file": "apps/api/app/modules/agent/answers.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_provider_budget_is_reserved_before_generation"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 2,
+          "summary": "2 failed in 3.93s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 2,
+          "failed": 0,
+          "summary": "2 passed in 3.83s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "process_concurrency_limit",
+        "boundary": "the process-local gate rejects a second same-user provider request",
+        "target_file": "apps/api/app/api/chat.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_process_concurrency_gate_rejects_second_same_user_request"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 5.16s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 4.80s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "provider_output_cap",
+        "boundary": "course policy cannot raise the deployment/provider output ceiling",
+        "target_file": "apps/api/app/modules/generation/service.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_global_output_ceiling_is_sent_to_provider"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 3.96s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 3.73s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "exam_dependency_paths",
+        "boundary": "chat creation and history paths all use the exam-unlocked dependency",
+        "target_file": "apps/api/app/api/chat.py",
+        "replacement_sites": 3,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_exam_dependency_blocks_chat_and_history_before_provider",
+          "tests/test_exam_lock.py::TestKilitYururken::test_qa_modu_reddedilir",
+          "tests/test_exam_lock.py::TestKilitYururken::test_gecmis_okuma_yuzeyleri_de_kapali"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 1,
+          "failed": 2,
+          "summary": "2 failed, 1 passed in 6.32s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 3,
+          "failed": 0,
+          "summary": "3 passed in 6.08s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "guard_event_privacy_schema",
+        "boundary": "guard-event storage has no free-text or request-identity column",
+        "target_file": "supabase/migrations/0015_role_aware_course_agent.sql",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_guard_event_schema_has_no_free_text_or_request_identity"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 4.30s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 4.34s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "operational_kill_switch",
+        "boundary": "the global switch closes both availability and direct chat POST",
+        "target_file": "apps/api/app/api/chat.py",
+        "replacement_sites": 2,
+        "test_nodes": [
+          "tests/test_role_aware_agent.py::TestOperationalKillSwitch::test_disabled_switch_creates_no_agent_artifact"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 5.15s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 4.86s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "chat_finalization_user_lock",
+        "boundary": "chat finalization and exam start serialize on the same user lock",
+        "target_file": "apps/api/app/api/chat.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_chat_finalization_and_exam_start_share_user_lock"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 5.06s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 5.71s"
+        },
+        "result": "pass"
+      },
+      {
+        "id": "export_user_lock",
+        "boundary": "data export and exam start serialize on the same user lock",
+        "target_file": "apps/api/app/api/privacy.py",
+        "replacement_sites": 1,
+        "test_nodes": [
+          "tests/test_role_aware_agent_application_guards.py::test_export_and_exam_start_share_user_lock"
+        ],
+        "red": {
+          "returncode": 1,
+          "passed": 0,
+          "failed": 1,
+          "summary": "1 failed in 5.04s"
+        },
+        "green": {
+          "returncode": 0,
+          "passed": 1,
+          "failed": 0,
+          "summary": "1 passed in 5.73s"
+        },
+        "result": "pass"
+      }
+    ]
+  },
+  "limitations": "This proves deterministic application guard mechanics with a fake provider and a local disposable database. It is not real-model, multi-worker, staging, rollout, pedagogical-quality, or production evidence. Durable quota races remain covered by the separate PostgreSQL/RLS mutation package."
+}

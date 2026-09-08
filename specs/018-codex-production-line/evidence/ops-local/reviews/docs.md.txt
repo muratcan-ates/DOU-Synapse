@@ -1,0 +1,121 @@
+# OPS/D 6 — kaynak ve tamamlanma belgeleri bağımsız uzlaştırma
+
+8 Eylül 2026. Yalnız kaynak/belge/log/JSON/hash okundu; repo düzenleme, Git, DB,
+test, CLI servis veya tarayıcı koşusu yapılmadı. Öneriler bu raporda kaldı.
+Satırlar aşağıdaki belge hash'lerine aittir; kök görev yeni yazımdan sonra kendi
+nihai kaynak/kanıt bağını üretmelidir.
+
+## Geçerli ölçüm tabanı
+
+| Ölçüm | Son geçerli kapsam |
+|---|---|
+| API |1571 geçti;38 alt vaka ayrı;5 mevcut uyarı;104.37s pytest/114.755s kurulumla. `ops-full-api-01/tests.log` gerçek özet ve sonuç log hash'i eşleşti.215 API kaynak hash'inden güncel iki fark yalnız `internal.py` modül docstring'i ve `test_admin_readiness.py` literal satır düzenlemesidir. Kökün AST eşliği makbuzu bu iki farkı ayrıca bağlamalı; eski makbuz byte eşit diye değiştirilmemelidir.|
+| E 2E |71 geçti;82.581s; `ops-e2e-01` log hash'i eşleşti,281 kaynak hash'inde güncel fark 0. Koşu `mtstzx3p73fa`,65 ders/14 admin audit temizliği logda var. Yeni 3 vaka:1 gerçek yetkili overview cevabı;2 gerçek yetkili cevap getirildikten sonra dependency alanı değiştirilmiş UI sözleşmesi.|
+| Frontend birim |555/44 dosya önceki geçerli değerdir. Yeni 3 E 2E vakası bu sayıya eklenmez. Bu denetim yeni Bun birim testi koşturmadı.|
+| Kota dönemi |Gerçek bağımsız süreç 02: başlangıç silmesi 0.544s, sonradan eklenen expired satır 60.181s'de silinmiş, canlı satır aynı, SIGTERM 0/0.086s. Worker SHA `2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634`. İlk bozuk yerel auth ayarlı koşu başarısız olarak korunur.|
+| D 3 |Donuk v 4 ile dört gerçek yerel negatif kabul: source-loss 0.447s; açık yazıcı 0.310s; kapalı yazıcı 0.322s; bakım bağlantısı kaybı 0.501s.07b son sentinel readback yapılmadı. Ağ kara deliği/cross-cluster/Storage/kurumsal saklama kabulü yok.|
+| Hosted |`c45e0e7073c92638ced7a3ff523578dd598c350b` eski kaynak için dört workflow PASS; API 1561/38 alt vaka, E 2E 68. Yeni OPS/D 6 kirli ağacını kapsamaz.|
+| Docker |Compose kaynak yapılandırması güncel; Docker/Compose bu yeni dilimde çalıştırılmadı. Yerel Python süreç dönemi Docker işletim kabulü değildir.|
+
+API sonucu SHA 256 `9c920cb0a0b1515c0fae92e1e989182ef6ed1d07aaf3828e7f992dc7c0b1049d`;
+E 2E sonucu `c1ad81a89f2b8a6efe254366340db6cd2a72197c7f282b805ce4d1ed834255a4`.
+Her ikisi `/private/tmp/dou018-evidence/{ops-full-api-01,ops-e2e-01}/result.json`.
+D 3 bağımsız raporu `/private/tmp/dou018-d3-next-independent-review.md`,
+SHA `fab870f91d7febb8d90a842fa1d0db28261282bde1b9abbcfd82cf21aeee609b`.
+
+## Kesin çelişkiler ve en dar düzeltme
+
+| Yer | Sorun | Önerilen son anlatım |
+|---|---|---|
+| `README.md:16`,`:474`,`:797` | Üç canlı backend sayacı/marker hâlâ1561. | Badge URL, görünür sayı ve `backend.tests` marker'ını birlikte 1571 yap. Alt vakaları toplama ekleyip 1609 yazma. Yerel kaynak bağlı kabul; yeni hosted PASS deme.|
+| `README.md:476` | E 2E canlı marker 68; etiketi bütün vakaları gerçek-API diye sınıflıyor. |71 ve `e2e.tests = 71`; başlık “Playwright tarayıcı vakaları”. Açıklama: toplam kaynak koleksiyonu; son yerel tur 71 PASS; yeni 3'ün 1'i gerçek API,2'si kontrollü UI cevabı. Eski c 45 hosted 68 ayrı.|
+| `README.md:35`,`:36`,`:41` | “Güncel birleşik aday” ve kesin kanıt 017'ye gidiyor; etkin çalışma 018 ve c 45 üstü OPS. |017'yi taban olarak koru. Etkin geliştirme 018; son hosted c 45; üstündeki OPS/D 6 yerel ve yeni commit/CI bekliyor. Kanıt bağlantısını 018 verification+completion defterine taşı. Main satırının tarihsel 7 Eylül ölçümünü yeni doğrulamış gibi değiştirme.|
+| `docs/completion-program.md:65` | “Yeni dilimin API/web/hosted kabulü henüz yapılmadı.” |API 1571 ve tarayıcı 71 yerel geçti; yeni commit/dossier/hosted açık. Web birimi/build ayrıntısını yalnız kökün gerçek ilgili makbuzuyla ekle; bu cümlede üç farklı durumu tek bekliyor yapma.|
+| `docs/completion-program.md:67` | Sıra hâlâ admin tarayıcısını ve D 3 dört olumsuz deneyi gelecekteki iş gösteriyor. |Tamamlanan yerel OPS API/E 2E ve D 3 dörtlüyü ölçüm satırına al; sırayı final kaynak/dossier/commit/PR kapıları→C 1/C 2/H/I hazır işleri olarak güncelle.|
+| `docs/completion-program.md:33`,`:50`,`:52` | Tablo/ara özet “gerçek dönem ölçülmedi”, “son 1561/68”, “D 3 07/control-loss açık” diyor; alttaki dönem 65 ile ve yeni kabulle çelişiyor. |Tabloya yeni yerel 1571/71, gerçek dönem 02 ve D 3 kontrollü dört vaka ekle.50/52 eski D/S 8 anlatımı ya açık “D/S 8 önceki kontrol noktası” bölümüne alınmalı ya “o kontrol noktasında” diliyle tarihlenmeli. Tarihsel 1561/68 ve başarısız ilk 1560/1 makbuzunu koru; sayıları topluca değiştirme.|
+| `docs/completion-program.md:22` ve `specs/018-codex-production-line/tasks.md:9` | S 8 tarayıcı/hosted hâlâ tümüyle açık gösteriliyor; c 45 önceki S 8 içerir. |S 8 yerel ve eski c 45 hosted tamam; dış proxy/hosting günlükleri ayrı açık. Yeni OPS/D 6 için yeni hosted ayrıca bekliyor. S 8'i bütün dış log kabulleriyle tekcheckbox'a sıkıştırma.|
+| `specs/018-codex-production-line/tasks.md:30`,`:31` | D 1 gerçek dönem ve D 1/D 2 dossier/commit/hosted eski aşaması hâlâ açık; “son 1561/68”. |Yerel D 1/D 2 kabulü+eski c 45 hosted'i tarihli kapalı alt iş; yeni dönem 02+OPS 1571/71 ayrı yerel alt iş. Canlı saklama, scale-to-zero ve yeni OPS hosted açık. D 1/D 2 tüm işletim kabulü tamam demek gerekmez.|
+| `specs/018-codex-production-line/tasks.md:32` |07 ve control-loss ayrım yapılmadan açık. |07a açık yazıcı engeli,07b final empty guard, source/maintenance kontrollü bağlantı kapanışı yerel PASS.07b son sentinel readback, ağ blackhole/reset/cross-cluster ve diğer geniş matris açık; dört deney tümD 3 tamam demek değildir.|
+| `specs/018-codex-production-line/tasks.md:33` |D 4–D 6 tek açık madde; D 6 belgeleri+poller artık entegre. |OPS 1 hazırlık/admin durum tutarlılığı, OPS 2 COMMIT sonrası içeriksiz olay/erken config reddi, D 6 kaynak/dokümantasyon hizalaması ayrı yerel kabul işleri. Docker işletimi ve dış telemetry/alarmlar açık kalır; D 4/D 5'in tamamını kapatma.|
+| `specs/018-codex-production-line/tasks.md:41` |D/S 8 kesin commit/hosted bekliyor; c 45 eski dilimde geçti. |Eski D/S 8 own 029+aggregate 030, portability fix 031 ve c 45 hosted kabulünü tamamlandı diye tarih/hash ile bağla. Yeni OPS/D 6 exact commit/hosted için ayrı açık satır. Önceki 30Ubuntu başarısız kanıtını koru.|
+| `specs/018-codex-production-line/verification.md:3`,`:155`,`:157`,`:172`,`:174`,`:178`,`:181`,`:183`,`:185` |Karma tarihsel belge üstü “aşağıdaki sonuçlar bu tur”; son ek “güncel” ama bdd/9af dönemindeki 1561/68 ve açık gerçek dönem/D 3 deneylerini anlatıyor. |Eski bölümleri kaynak kontrol noktaları olarak açıkça tarihle; ham tarihsel sayıları koru. Sonuna yeni “c 45 üstü OPS/D 6 yerel kabul” bölümü:1571/38+AST istisnası,71/3-vaka ayrımı, dönem 02, D 3 dörtlü, Docker yok, yeni hosted açık. Eski “o turda ölçülmedi” doğru kalır; “bugün açık” diye sunulmaz.|
+
+## Tamamlayıcı kaynak/belge uyumu
+
+- `README.md:249` yönetim readiness listesi yalnız uygulama/DB/embedding diyor.
+  `api/admin.py:38–46`, `schemas/admin.py:23–27` ve web admin `:205–209` artık
+  pgvector ve ortak istek kotasını da ayrı gösterir. Liste bu iki bağımlılıkla
+  tamamlanmalı; aynı cevap yanlış “bütün servisler sağlıklı” diye özetlenmemeli.
+- `README.md:723` ve`:727` açık yol 017'ye odaklı.018→017 PR 26 ve sonrasında
+ 017→main/terfi ayrımı yazılmalı. Var olmayan main-target yeni PR/CI sonucu
+  türetilmez. Yeni exact HEAD CI bekleme durumu korunur.
+- `README.md:532` migration açıklama tablosu 0024'te biterken kaynak listesi
+ 0025/0026'yı içeriyor.0025 ortak kota ve 0026 claim/lease/revision satırları
+  eklenmeli. `README.md:852` ağaç açıklamasındaki 0001–0015 de 22 mevcut göçe
+  hizalanmalı. Mevcut 22 migration/30 tablo canlı markerları doğru, değişmez.
+- `README.md:743`,`:745` staging başlığındaki multi-worker kota ve backup/restore
+  açık işleri kendi ortamında hâlâ geçerli. Yerel iki-HTTP 55 istek ve yerel DB
+  restore kabulünü yok saymamak için “hedef staging/production ortamında” diye
+  daraltmak yeterli; bu maddeleri yerel deneyle tamamlandı yapma.
+- D 6 entegre `ARCHITECTURE.md`, `docs/runbook.md`, `docs/deployment.md` ve iki
+  operations rehberi yeni Compose HTTPworker+portless poller ayrımını ve
+  Docker çalıştırılmadığını doğru açıklıyor. “Bütün 30tablo FORCE” iddiası
+  kaldırılmış; public+app sayımı ve yeni 0025/26 geçiş sınırı ayrılmış. Bu
+  düzeltmeler tamamlanma defterinde hâlâ “D 6 yapılacak” diye görünmemeli.
+- OPS 1 p 95 etiketi ölçülen örnek evrenini daraltır: kaydedilmiş başarılı HTTP
+  sohbet turları;200 kapsam reddi teknik başarılı örneğe dahil olabilir.
+  Eksik log/HTTP hata yanıtı/genel hizmet SLO'su/AI kalite puanı değildir.
+  `app/admin/page.tsx` ve yeni E 2E bu sınırı açıklar; D 4 tam observability kabulü
+  buradan türetilmemeli.
+
+## Özellikle değişmeden kalması gerekenler
+
+`verification.md` A/S/B/C eski bölümlerindeki 1212/432/68 ve D/S 8'deki 1561/555/68,
+`tasks.md:21`,`:40` tarihli B ve D/S 8 yerel kabulleri, eski `.ai` dossier/kanıt
+arşivleri yeniden yazılmamalı. Canlı sayaçlar yeni koleksiyona güncellenir,
+geçmiş kayıtlar geçmişte kalır. Sadece güncel summary ve en yeni acceptance
+bölümü yeni sonuçları anlatır. Hosted c 45 kaynak sınırı ve Docker yokluğu da
+korunur. Hukuki uygunluk, gerçek LLM/hoca kabulü, gerçek JWT/Storage, prod
+telemetry, platform yetkisi veya main birleşimi iddiası eklenmez.
+
+D 3 root `source_unchanged` alanının runtime hash anlamı ayrı bağımsız raporda
+belirtildi; DB satır hash eşliği diye tamamlanma defterine geçirilmemeli.
+
+## Okunan belgelerin hash'leri
+
+- README.md: `a8af6f9d1597ee8aaaecf247cf39857d47c1e1ddc7e3f593fe32db859b937501`
+- docs/completion-program.md: `6122412f2a771b121ea93366a80165d100c09389941f2c87b317978c9fdbae52`
+- specs/018-codex-production-line/tasks.md: `238d8dd6f06ef32f1aae4fcb57e0d6ab96865837dd73f27db094912189095b89`
+- specs/018-codex-production-line/verification.md: `3066cedb244f5ab8dad287c5ff38e7605e0d1dda335d1f819b6b5fdbb5551977`
+
+Bu rapor kaynak sayısını yeniden toplamadı ve kabulü yeniden koşmadı; kökün
+mevcut gerçek test loglarını kaynak sözleşmeleriyle karşılaştırdı.
+
+
+## Son devir — yama donduruldu
+
+Uygulanabilir dört dosyalık yama `/private/tmp/dou018-ops-docs-reconcile.patch`;
+aday kopyalar/base-candidate hash manifesti `/private/tmp/dou018-ops-docs-patch/`
+altında. Kök görev yamayı kendi `git apply --check` kontrolünden sonra uyguladığını
+bildirdi. Son base-hash kontrolünde görülen dört kaynak farkı bu uygulamaydı;
+çakışma diye üzerine yeniden yazılmadı veya yeniden tabanlanmadı. Bu ajan repo
+ve Git işlemi yapmadı. İlk adayın saf unified-hunk tekrar kurması dört dosyada
+birebir eşliği doğrulamıştı; son yazım yalnız düzyazı aralıklarını düzenledi.
+
+Yama son ölçülen API1571/E2E71, gerçek375/1440 açık-koyu dört UI/klavye dumanı ve
+R1 iki SQL kalibrasyonu+yedi admin testi9 PASS kabulünü ayrı katmanlarda içerir.
+R1 gerçek22012 sonrası HTTP200 degraded, aynı transaction25P02, bağımsız1 allowed
+audit ve sonraki temiz public200 gözlemi yazım/connection-loss garantisi yapılmaz.
+Yeni kanıt hedefi `specs/018-codex-production-line/evidence/ops-local/README.md`;
+arşiv README'sini kök hazırlıyor. Tarihsel API1561/E2E68 c45 kabulü korunur.
+
+Kökün devir sonrası bilgisi: quality02 Ruff/format,113 mypy dosyası,555 web ve tsc
+PASS; `test_request_quota_health.py` içindeki tek literal satır da AST eşliğiyle
+sarıldı. Böylece eski tam1571 makbuzuna göre fark sayısı3'tür: internal docstring,
+admin-readiness test literal düzeni ve request-quota-health test literal düzeni.
+Bunların özgün byte/hash ve AST makbuzunu kök arşivleyecek; mevcut rapordaki iki
+fark inceleme anındaki doğru gözlemdir. İş sırasının S9/S9B güvenlik→C1 güncellemesi
+kökün sonraki belge düzenlemesidir; donuk geçici yamaya sonradan taşınmadı.
+
+Yama SHA256: `e217539f681603eb739c1d26ff0706e0f44bf2f54e3221654ef9d0bda2685bc1`.
+Manifest SHA256: `3db62e3942976007d276ee1d2cb767cbb68123318ad6d3f7ffc18bd7730bbce9`.

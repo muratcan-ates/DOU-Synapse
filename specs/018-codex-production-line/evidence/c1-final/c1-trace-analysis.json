@@ -1,0 +1,270 @@
+{
+  "status": "verified_fts_tie_order_causal_in_this_hashing_replay",
+  "manifest_sha256": "95a5b8531861552977aba0f8cf2d5157d93483bcd6468edecc6235817486edf4",
+  "trace_sha256": "69d2d2c07fe05a0acb6ebf6e2ca219cfe68fd1812a9dfb196b8ce4e3e67b1f0c",
+  "checks": {
+    "source_and_trace_hashes": true,
+    "all_127_ids_same": true,
+    "all_508_fusions_recomputed_from_real_lane_ids": true,
+    "original_replay_drift_empty": true,
+    "before_after_corpus_equal": true
+  },
+  "metrics": {
+    "baseline_dense__baseline_fts": {
+      "n": 105,
+      "hit5": 78,
+      "hit8": 80,
+      "recall5": 0.7428571428571429,
+      "mrr": 0.6181746031746032
+    },
+    "baseline_dense__candidate_fts": {
+      "n": 105,
+      "hit5": 77,
+      "hit8": 80,
+      "recall5": 0.7333333333333333,
+      "mrr": 0.6344444444444444
+    },
+    "candidate_dense__baseline_fts": {
+      "n": 105,
+      "hit5": 78,
+      "hit8": 80,
+      "recall5": 0.7428571428571429,
+      "mrr": 0.6181746031746032
+    },
+    "candidate_dense__candidate_fts": {
+      "n": 105,
+      "hit5": 77,
+      "hit8": 80,
+      "recall5": 0.7333333333333333,
+      "mrr": 0.6344444444444444
+    }
+  },
+  "lane_summary": {
+    "dense": {
+      "identical_rows": 71,
+      "same_id_set": 117,
+      "same_common_id_scores": 127,
+      "same_rankwise_score_sequence": 127,
+      "changed_set_only_same_boundary_score": 10
+    },
+    "fts": {
+      "identical_rows": 1,
+      "same_id_set": 51,
+      "same_common_id_scores": 127,
+      "same_rankwise_score_sequence": 127,
+      "changed_set_only_same_boundary_score": 76
+    }
+  },
+  "focus": {
+    "H-068": {
+      "ranks": {
+        "baseline_dense__baseline_fts": [
+          [
+            6
+          ]
+        ],
+        "baseline_dense__candidate_fts": [
+          []
+        ],
+        "candidate_dense__baseline_fts": [
+          [
+            6
+          ]
+        ],
+        "candidate_dense__candidate_fts": [
+          []
+        ]
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 12,
+              "chunk_id": "380f3da4-aa0f-4e57-b26b-4b55ea2b1e25",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "dense_score": 0.07784989659188946,
+              "dense_score_hex": "0x1.3edf887dbf110p-4"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 7,
+              "chunk_id": "380f3da4-aa0f-4e57-b26b-4b55ea2b1e25",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "fts_score": 0.01105322,
+              "fts_score_hex": "0x1.6a3121352ee0fp-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 12,
+              "chunk_id": "380f3da4-aa0f-4e57-b26b-4b55ea2b1e25",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "dense_score": 0.07784989659188946,
+              "dense_score_hex": "0x1.3edf887dbf110p-4"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 11,
+              "chunk_id": "380f3da4-aa0f-4e57-b26b-4b55ea2b1e25",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "fts_score": 0.01105322,
+              "fts_score_hex": "0x1.6a3121352ee0fp-7"
+            }
+          ]
+        }
+      }
+    },
+    "H-114": {
+      "ranks": {
+        "baseline_dense__baseline_fts": [
+          []
+        ],
+        "baseline_dense__candidate_fts": [
+          [
+            8
+          ]
+        ],
+        "candidate_dense__baseline_fts": [
+          []
+        ],
+        "candidate_dense__candidate_fts": [
+          [
+            8
+          ]
+        ]
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 9,
+              "chunk_id": "780d66ec-8159-4070-829b-f0a0e932e572",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "dense_score": 0.07601981091558374,
+              "dense_score_hex": "0x1.37608c9bb0468p-4"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 14,
+              "chunk_id": "780d66ec-8159-4070-829b-f0a0e932e572",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "fts_score": 0.008684673,
+              "fts_score_hex": "0x1.1c9451417754ep-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 9,
+              "chunk_id": "780d66ec-8159-4070-829b-f0a0e932e572",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "dense_score": 0.07601981091558374,
+              "dense_score_hex": "0x1.37608c9bb0468p-4"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 13,
+              "chunk_id": "780d66ec-8159-4070-829b-f0a0e932e572",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "fts_score": 0.008684673,
+              "fts_score_hex": "0x1.1c9451417754ep-7"
+            }
+          ]
+        }
+      }
+    },
+    "H-121": {
+      "ranks": {
+        "baseline_dense__baseline_fts": [
+          [
+            3
+          ]
+        ],
+        "baseline_dense__candidate_fts": [
+          [
+            6
+          ]
+        ],
+        "candidate_dense__baseline_fts": [
+          [
+            3
+          ]
+        ],
+        "candidate_dense__candidate_fts": [
+          [
+            6
+          ]
+        ]
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "188f2f70-92d1-40a9-b4de-8ab3c80d0858",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "dense_score": 0.12261345982551575,
+              "dense_score_hex": "0x1.f639880000000p-4"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 14,
+              "chunk_id": "188f2f70-92d1-40a9-b4de-8ab3c80d0858",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "fts_score": 0.008443432,
+              "fts_score_hex": "0x1.14aca4272b010p-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "188f2f70-92d1-40a9-b4de-8ab3c80d0858",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "dense_score": 0.12261345982551575,
+              "dense_score_hex": "0x1.f639880000000p-4"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 15,
+              "chunk_id": "188f2f70-92d1-40a9-b4de-8ab3c80d0858",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "fts_score": 0.008443432,
+              "fts_score_hex": "0x1.14aca4272b010p-7"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "metadata_checks": 11634,
+  "backend_pid": 14145,
+  "limits": [
+    "Aggregate metric equality does not claim every dense row was identical.",
+    "Observed tied-score cutoffs do not enumerate all eligible rows outside the 24-candidate limit.",
+    "Hashing regression is retained. No gold/threshold/runtime change.",
+    "This is controlled local causal attribution between stored lanes, not global semantic equivalence or an HNSW recall guarantee."
+  ]
+}

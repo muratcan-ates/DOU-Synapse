@@ -1,0 +1,47 @@
+{
+  "status": "v1_process_scenarios_supported_but_overall_privacy_gate_failed",
+  "own_database_calls": 0,
+  "source_hashes_verified": 134,
+  "inputs_sha256": {
+    "/private/tmp/dou018-d2-process-acceptance/process_acceptance.py": "7b96333daa669dc60b4f3fe783ef84a01bb08af8679bb274ff733265ae7da7e6",
+    "/private/tmp/dou018-d2-process-measured-01/report.json": "1ca00c92d3b578437fd02564f13516df8be1337c80ec7f301dfdfbdc7fa289eb",
+    "/private/tmp/dou018-evidence/d2-process-provision-01/result.json": "204bfb7eab3e5f0c32717ce94d6e34698005ee62538692a0f4696157ccf14d93",
+    "/private/tmp/dou018-evidence/d2-process-provision-01/before.json": "8ef8f85273061a0d0133e8f66bb34ef023bfcd8dc1f9bdb1af406ee3fc5ff51d",
+    "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88",
+    "/Users/muratates/code/dou-synapse-018-codex-production-line/docs/kvkk.md": "2be75ba2a821967c7495609c7f170e1a34a1feaf90a3d2bca7e3d9c5d526f7af",
+    "/Users/muratates/code/dou-synapse-018-codex-production-line/docs/security.md": "e831520037bf058acdc7754f51420716d5cffab572b282aa4ce6ecb71a9082d3",
+    "/Users/muratates/code/dou-synapse-018-codex-production-line/docs/security/privacy-review-2026-09-08.md": "b0c81e94abb9851dcce149825d67176e8a4ffb0fe87bb8bebb6bd998e574e155"
+  },
+  "signals_and_state": {
+    "scenarios_passed": 8,
+    "distinct_owned_children": 14,
+    "actual_sigkill_exit": -9,
+    "real_worker_main_sigterm_exit": 0,
+    "stale_proof": "actual SIGSTOP/SIGCONT; after new completion same old process calls actual finalize/fail/heartbeat with captured old claim and gets LostClaim; runtime delivery may succeed or cancel",
+    "new_completion_equivalence": "source-bound equality of job/doc selected state and chunk count plus md5(id,text); not every chunk metadata/vector column",
+    "signal_scope": "owned Popen child only; no arbitrary process targeting",
+    "time_scope": "root wrapper19.934s; no per-signal hard-grace duration claim"
+  },
+  "identity_scope": "root-trusted numeric endpoint/OID/systemID/version checked; parent app/worker and each child worker use dedicated identity connections, not an identity dump of every actual runtime pooled connection",
+  "cleanup": "all8 reported owned-child/row cleanup, empty_database assertion after each; private runtime storage directory removed; no independent DB reread",
+  "privacy": {
+    "v1_overall_result": "failed, do not promote or rewrite",
+    "child_scan_count": 14,
+    "child_forbidden_match_reported": 0,
+    "parent_forbidden_match_reported": true,
+    "raw_captures_retained": false,
+    "exact_parent_match_cannot_be_reconstructed": true,
+    "source_diagnosis": "run_scenario includes course/document UUID in all_forbidden; app.main logs concrete request.url.path from real fixture upload. This ordinary route metadata alone can fail final parent scan. Exact observed marker needs v2 diagnostics/new run.",
+    "docs_findings": "kvkk28 expressly permits linkable identity/time possibility and rejects automatic anonymity; privacy-review43 records identity/event metadata, purposes/retention pending; security250 fixed route claim is DB request_logs not stdout app.request",
+    "followup": "v2 exact app.request schema+known path-only metadata classification, strict other fields/secret/content/worker scans; add explicit stdout inventory without anonymous/no-personal-data claim",
+    "credential_scope": "PG environment removed but no private empty PGPASSFILE inserted by v1 runtime; explicit DSN password avoids lookup, no blanket no-OS-passfile discovery guarantee"
+  },
+  "additional_concrete_product_or_destructive_harness_bug_found": false,
+  "limits": [
+    "raw temporary log/DB scalar snapshots are not independently replayable",
+    "no hosted or multi-host recovery/periodic purge SLA",
+    "3-attempt terminal behavior covered separate PG tests, not repeated process kills here",
+    "two process starts not proof both SELECT lock acquisition instructions overlapped",
+    "provider local hashing and real API fixture upload, no real LLM"
+  ]
+}

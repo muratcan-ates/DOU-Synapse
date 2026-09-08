@@ -1,0 +1,179 @@
+{
+  "status": "local_final_source_technical_acceptance_passed",
+  "scope": "Daraltılmış dense ANN/GUC adayı; FTS baseline davranışında. Canlı/CI/genel C1 tamamlama kararı değildir.",
+  "candidate_source_sha256": {
+    "apps/api/app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+    "apps/api/app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+    "apps/api/app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c"
+  },
+  "source_base": "71d5ff640f0d48a08f3967b000485a15035f10c7",
+  "candidate_dirty": true,
+  "checks": {
+    "hashing_mechanical_nondecrease": true,
+    "e5_retrieval_080_and_nondecrease": true,
+    "runtime": true,
+    "all_three_final_sources_equal": true,
+    "api": {
+      "passed": 1499,
+      "warnings": 5,
+      "pytest_seconds": 91.66,
+      "wrapper_seconds": 101.604,
+      "source_unchanged": true
+    },
+    "e2e": {
+      "scope": "root_separate_browser_evidence",
+      "passed": 68,
+      "reported_duration": "1.4m",
+      "run_id": "mtskgnz9ac45",
+      "cleaned_courses": 65,
+      "cleaned_admin_audit_rows": 8,
+      "log_sha256": "0b9b8c36993956e3d3e252ca595733607cde821b1ce914f9e120bfa1d5d72258",
+      "api_restarted_final_source": "reported_by_root_process_9601"
+    }
+  },
+  "hashing": {
+    "metrics": {
+      "baseline": {
+        "n": 105,
+        "hit_at_5_count": 78,
+        "hit_at_8_count": 80,
+        "recall_at_5": 0.7428571428571429,
+        "mrr": 0.6181746031746032
+      },
+      "candidate": {
+        "n": 105,
+        "hit_at_5_count": 78,
+        "hit_at_8_count": 80,
+        "recall_at_5": 0.7428571428571429,
+        "mrr": 0.6181746031746032
+      }
+    },
+    "rank_comparisons": {
+      "baseline_replay": {
+        "first_hit_same_count": 127,
+        "all_source_rank_lists_same_count": 127,
+        "top8_source_locations_same_count": 127,
+        "compared": 127,
+        "scored_first_hit_same_count": 105,
+        "scored": 105
+      },
+      "final_candidate_vs_baseline": {
+        "first_hit_same_count": 127,
+        "all_source_rank_lists_same_count": 127,
+        "top8_source_locations_same_count": 120,
+        "compared": 127,
+        "scored_first_hit_same_count": 105,
+        "scored": 105
+      }
+    }
+  },
+  "e5": {
+    "metrics": {
+      "baseline": {
+        "n": 105,
+        "hit_at_5_count": 93,
+        "hit_at_8_count": 98,
+        "recall_at_5": 0.8857142857142857,
+        "mrr": 0.7377210884353742
+      },
+      "candidate": {
+        "n": 105,
+        "hit_at_5_count": 93,
+        "hit_at_8_count": 98,
+        "recall_at_5": 0.8857142857142857,
+        "mrr": 0.7377210884353742
+      }
+    },
+    "rank_comparisons": {
+      "baseline_replay": {
+        "first_hit_same_count": 127,
+        "all_source_rank_lists_same_count": 127,
+        "top8_source_locations_same_count": 127,
+        "compared": 127,
+        "scored_first_hit_same_count": 105,
+        "scored": 105
+      },
+      "final_candidate_vs_baseline": {
+        "first_hit_same_count": 127,
+        "all_source_rank_lists_same_count": 127,
+        "top8_source_locations_same_count": 127,
+        "compared": 127,
+        "scored_first_hit_same_count": 105,
+        "scored": 105
+      }
+    },
+    "acceptance": {
+      "candidate_recall_at_5_at_least_080": true,
+      "baseline_nondecrease": true,
+      "overall": true
+    },
+    "quality_scope": "actual_embedding_retrieval_only"
+  },
+  "runtime": {
+    "counter_deltas": {
+      "auto": {
+        "dense": {
+          "generic": 0,
+          "custom": 98
+        },
+        "fts": {
+          "generic": 84,
+          "custom": 14
+        }
+      },
+      "force_custom_plan": {
+        "dense": {
+          "generic": 0,
+          "custom": 98
+        },
+        "fts": {
+          "generic": 0,
+          "custom": 98
+        }
+      },
+      "force_generic_plan": {
+        "dense": {
+          "generic": 0,
+          "custom": 98
+        },
+        "fts": {
+          "generic": 98,
+          "custom": 0
+        }
+      }
+    },
+    "measured_hybrid_calls": 294,
+    "negative_observations": 84,
+    "returned_source_checks": 1680,
+    "same_all_observations_as_v2": true,
+    "backend_pid": 18317,
+    "probe_elapsed_seconds": 12.374659583998437,
+    "root_wrapper_wall_seconds": 13.005
+  },
+  "audit_sha256": {
+    "c1-final-hashing-audit.json": "8078df943476bd71b896181ea1d42c5975e30ee1061c574558a6c61e7072b796",
+    "c1-final-e5-audit.json": "4dce002758e71f08a1c35c684af179b975df1b9611e78b876793abe2b6610634",
+    "c1-final-runtime-audit.json": "cec91c06744c1f02918955f8f404fb6e16bbbfa55aac60a848f2b2ccb0d2afbd"
+  },
+  "raw_final_manifest_sha256": {
+    "hashing": "41a045c7a890d86f321bd97a978420f392189bda1b34a41ca2f4d63c3e2fb318",
+    "e5": "ea0d9452dd53f50b798403f7b7772e0d6dd50f97c1d6345967afd16d738ef147",
+    "runtime": "51cbd43e773749df26246ab791cf12fa52eb267b1944e4d1a7238b2664883c84"
+  },
+  "preserved_historical_archives": {
+    "bc_index_sha256": "0cb56e5ec621f6c4968663e83f65e7cf168dfb82b60b88d02460fc5fcd12a6fa",
+    "plan_runtime_index_sha256": "311f7a25b68682884d64cdc9b4ab5d9fd547b5e37dfdf39fc0279cb9d6958fac",
+    "first_candidate_report_sha256": "08389ea820ad4231743a363924c84924265f9ee815e61f982dd5c5b809546d1e",
+    "verified_records": 58,
+    "all_indexed_encoded_and_decoded_hashes_match": true
+  },
+  "still_open": [
+    "FTS eşitlik sırasının yeni UUIDlerle yeniden yüklemede içerik bazında kararlılığı",
+    "RLS-off karşılaştırma korpusu",
+    "Pinned CI pgvector0.8.6 doğal plan ve retrieval matrisi",
+    "C2 bellek dökülmesi/indeks kurma parametreleri/recall nedenselliği ve ölçümsüz göç",
+    "LLM kaynak sadakati, pedagojik kalite ve insan/eğitmen kabulü",
+    "Canlı deploy/üretim terfisi ve genel C1/runbook tamamlama"
+  ],
+  "report_sha256": "2ea822ddfe23158986d528ed12e8fee12559e290318ec557b8299a064778532f"
+}

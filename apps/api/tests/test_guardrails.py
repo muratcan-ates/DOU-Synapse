@@ -15,7 +15,6 @@ kanıtlamazlar — o mitigasyondur ve oranı gold set üzerinde ölçülür (SC-
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -32,6 +31,7 @@ from app.contracts import (
 )
 from app.modules.generation import prompts
 from app.modules.generation.fake import FakeLlmClient, parse_sources
+from app.modules.generation.llm import LlmCompletion
 from app.modules.generation.service import USER_TEXT, GenerationService
 from app.modules.guardrails import leakage, sanitize
 from app.modules.guardrails.chain import AnswerPipeline, screen
@@ -463,12 +463,23 @@ class TestSanitize:
 # ---------------------------------------------------------------------------
 
 
-def test_yardimci_sahte_llm_tekrar_eden_son_yaniti_verir() -> None:
-    """Yardımcının kendisi de sınanır; sessizce yanlış davranan bir test aracı,
-    yeşil yanan ama hiçbir şey kanıtlamayan testler üretir."""
+async def test_yardimci_sahte_llm_tekrar_eden_son_yaniti_verir() -> None:
+    """Gerçek complete yolu sırayı, son yanıtı ve istek kaydını korumalı."""
     scripted = ScriptedLlm("bir", "iki")
-    assert scripted._payloads[min(5, len(scripted._payloads) - 1)] == "iki"
-    assert re.match(r"^bir$", scripted._payloads[0])
+    requests = [object() for _ in range(6)]
+    completions = [await scripted.complete(request) for request in requests]
+
+    assert all(isinstance(completion, LlmCompletion) for completion in completions)
+    assert [completion.text for completion in completions] == [
+        "bir",
+        "iki",
+        "iki",
+        "iki",
+        "iki",
+        "iki",
+    ]
+    assert scripted.calls == len(requests)
+    assert scripted.requests == requests
 
 
 # ---------------------------------------------------------------------------

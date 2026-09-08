@@ -136,9 +136,9 @@ test.describe("belge ekran görüntüleri @ekran", () => {
     await cek(page, "03-egitmen-materyaller");
   });
 
-  test("KVKK aydınlatma metni", async ({ page }) => {
+  test("Kişisel veriler ve gizlilik", async ({ page }) => {
     await page.goto("/kvkk");
-    await expect(page.getByRole("heading", { name: "KVKK Aydınlatma Metni" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Kişisel Veriler ve Gizlilik" })).toBeVisible();
     await cek(page, "16-kvkk");
   });
 });

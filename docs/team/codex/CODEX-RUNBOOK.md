@@ -1,5 +1,7 @@
 # CODEX RUNBOOK — DOU-Synapse'i production seviyesine taşı (tek sohbet, durmaksızın)
 
+> 018 uzlaştırma notu (8 Eylül 2026): Bu runbook 017 tabanındaki iş önerisi olarak korunur. Güncel durum [tamamlama defterinde](../../completion-program.md) ve [018 kabul kaydında](../../../specs/018-codex-production-line/verification.md) izlenir. B2 zaten014'te vardı; B1 konusuz grubu bilinçli destekler; B6 authoring kapalıyken uygun havuz yayını mümkündür; B3 teknik sözleşme ile gerçek model kalitesi ayrı kabullerdir. 0024 sonrasında göç denetimi açık0017/0021/0022/0023 boşluklarını kullanır. Bu tarihsel metindeki eksik/tamam iddiaları yeniden ölçmeden güncel kabul sayılmaz.
+
 > Bu belge tek bir Codex oturumunun **kuyruktan iş çekerek** kesintisiz çalışması için
 > yazıldı. Planı Claude yaptı, ölçümleri Claude aldı; geliştirmeyi sen (Codex) yaparsın.
 > Sıra: **§0 kurallar → §1 durum → §2 çalışma döngüsü → §3 iş kuyruğu.** Kuyruğu yukarıdan

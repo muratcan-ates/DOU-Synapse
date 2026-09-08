@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildDraftRequest, changeCorrectOption, classificationComplete, createDraftForm,
+import { buildDraftRequest, changeCorrectOption, classificationComplete, codeRubricIssue, createDraftForm,
   draftSourceChoices, outcomesForTopic, rubricHasLegacyMetadata } from "@/lib/question-authoring";
 import { buildGenerateRequest } from "@/lib/questions";
 import type { Question } from "@/lib/types";
@@ -111,5 +111,42 @@ describe("question authoring", () => {
     expect(request.learning_outcome_id).toBeNull();
     expect(request.difficulty).toBeNull();
     expect(Object.keys(request).sort()).toEqual(["difficulty", "learning_outcome_id", "payload"]);
+  });
+});
+
+describe("kod sorusu rubrik yazımı", () => {
+  for (const type of ["code_trace", "bug_hunt"] as const) {
+    test(`${type} ölçüt ve puan düzenlemesini API gövdesine taşır; kaynak ve eski alanlar korunur`, () => {
+      const source = question(type, { prompt: "Kilit akışını açıklayın.", language: "pseudocode", code: "lock(A)",
+        answer_key: type === "code_trace" ? "Bekler." : { line: 1, bug_type: "Sıralama", fix_summary: "Sırayı değiştirin." },
+        rubric: [{ point: "Eski ölçüt", weight: 100, context: "keep" }], source_chunk_id: "primary", pedagogy: "preserve" });
+      const before = JSON.stringify(source);
+      const form = createDraftForm(source);
+      form.rubric = [{ ...form.rubric[0], point: "Kilit sırası", weight: "60" }, { point: "Döngüsel bekleme", weight: "40" }];
+      const payload = buildDraftRequest(source, form).payload;
+      expect(payload.rubric).toEqual([{ point: "Kilit sırası", weight: 60, context: "keep" }, { point: "Döngüsel bekleme", weight: 40 }]);
+      expect(payload.source_chunk_id).toBe("primary"); expect(payload.pedagogy).toBe("preserve");
+      expect(payload.answer_key).toEqual(source.payload.answer_key); expect(JSON.stringify(source)).toBe(before);
+    });
+    test(`${type} eski rubriksiz kayıt okunur; yeni yazım öncesi tamamlanması gerekir`, () => {
+      const form = createDraftForm(question(type, { code: "print(1)", prompt: "Çıktıyı açıklayın." }));
+      expect(form.rubric).toEqual([]);
+      expect(codeRubricIssue({ type }, form.rubric)).toBe("Kaydetmek için en az bir puanlama ölçütü ekleyin.");
+      form.rubric = [{ point: "Çıktıyı açıklar", weight: "100" }];
+      expect(codeRubricIssue({ type }, form.rubric)).toBeNull();
+    });
+  }
+  test("eksik/tekrarlı ölçüt, geçersiz puan ve yanlış toplam sessizce düzeltilmez", () => {
+    const source = { type: "code_trace" as const };
+    for (const rubric of [
+      [{ point: " ", weight: "100" }],
+      [{ point: " Output ", weight: "60" }, { point: "output", weight: "40" }],
+      [{ point: "A", weight: "0" }], [{ point: "A", weight: "101" }], [{ point: "A", weight: "NaN" }],
+      [{ point: "A", weight: "50.5" }, { point: "B", weight: "49.5" }],
+      [{ point: "A", weight: "60" }, { point: "B", weight: "20" }],
+      Array.from({ length: 13 }, (_, i) => ({ point: String(i), weight: "1" })),
+    ]) expect(codeRubricIssue(source, rubric)).not.toBeNull();
+    expect(codeRubricIssue(source, [{ point: "Kilit sırası", weight: "60" }, { point: "Döngüsel bekleme", weight: "40" }])).toBeNull();
+    expect(codeRubricIssue({ type: "open" }, [])).toBeNull();
   });
 });

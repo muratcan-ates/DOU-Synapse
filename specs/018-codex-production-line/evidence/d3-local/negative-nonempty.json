@@ -1,0 +1,80 @@
+{
+  "status": "negative-acceptance-pass",
+  "case": "nonempty",
+  "target": "dou018_recovery_target06",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "source_receipt_sha256": "c97a680d380fad6651a7f948d1e79a4b50762f4f942a805b9786df2ef3f12d1e",
+  "target_identity_sha256": "5aaa51b06cbfb22c76dbd930eeae40ce446f5d2e9f22679ea4034386b5cd34ae",
+  "scope": "controlled synthetic negative; no general production recovery certification",
+  "before": {
+    "oid": "1060035",
+    "name": "dou018_recovery_target06",
+    "allow_connections": true,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "facts": {
+    "fence_committed": false,
+    "commit_verified_inside_apply": false,
+    "reopen_attempted": false,
+    "reopen_completed": false,
+    "target_binding": {
+      "pid": 29998,
+      "user": "muratates",
+      "superuser": true,
+      "server_port": 55448,
+      "database_oid": "1060035",
+      "backend_start": "1788871435.257605",
+      "database_name": "dou018_recovery_target06",
+      "application_name": "dou-recovery-target-4ffe1b943271a87eeb5b7098",
+      "postmaster_start": "1788847729.090584",
+      "system_identifier": "7683042491268153327"
+    }
+  },
+  "sentinel_before": {
+    "count": 1,
+    "rows_sha256": "eca976769499798500cefcd48a69c77b4d1c0bd2c84c868e7d25141b07e13681"
+  },
+  "safe_restore_code": "TARGET_NOT_EMPTY",
+  "private_restore_code_sha256": "893249030d0de94fb619d053e62ba7f6aa82c69881f2b041002a38202e67288a",
+  "after": {
+    "oid": "1060035",
+    "name": "dou018_recovery_target06",
+    "allow_connections": true,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "sentinel_after": {
+    "count": 1,
+    "rows_sha256": "eca976769499798500cefcd48a69c77b4d1c0bd2c84c868e7d25141b07e13681"
+  },
+  "elapsed_seconds": 1.441,
+  "first_tool_error": null,
+  "own_child_exit_code": -15,
+  "events": [],
+  "private_artifacts": [
+    {
+      "file": "target.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_bytes": 0,
+      "truncated": false
+    },
+    {
+      "file": "target.stdout",
+      "bytes": 7612,
+      "sha256": "9780c648747c24ee26c3ab888e2645ff1fd12e0a659a09a80628b55a4fe579c0",
+      "source_bytes": 7612,
+      "truncated": false
+    },
+    {
+      "file": "target.sql",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_bytes": 0,
+      "truncated": false
+    }
+  ]
+}

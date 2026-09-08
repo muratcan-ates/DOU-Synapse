@@ -1,0 +1,503 @@
+#!/usr/bin/env python3
+"""Root'un iki yeni DB'sinde güncel22göç: sınırlı seed, gerçek CLI, salt-okunur parite."""
+
+from __future__ import annotations
+
+import argparse
+from contextlib import contextmanager, ExitStack
+import hashlib
+import importlib.util
+import json
+import math
+import os
+from pathlib import Path
+import re
+import secrets
+import subprocess
+import sys
+import time
+from uuid import NAMESPACE_URL, uuid5
+
+ROOT = Path(__file__).resolve().parent
+REPOSITORY = Path("/Users/muratates/code/dou-synapse-018-codex-production-line")
+MANIFEST_SHA = "b2c9999606fef3042034ae8bf35aed12998692352be26605d5af17e9aa48de39"
+RECOVERY_SHA = "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b"
+PROVISION = Path("/private/tmp/dou018-evidence/d3-current-provision-01/result.json")
+PROVISION_SHA = "628c097ce66fa71265c33d19e87734229a400a4bcf57c979a4beca0beeccf0fe"
+SOURCE = "dou018_recovery_current_source01"
+TARGET = "dou018_recovery_current_target01"
+IDENT = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
+HEX = re.compile(r"^[a-f0-9]{64}$")
+IDs = {name: str(uuid5(NAMESPACE_URL, "dou018-d3-current-parity-v1/" + name))
+       for name in ("teacher", "outsider", "course", "completed", "pending", "failed",
+                    "job-completed", "job-pending", "job-failed", "chunk")}
+VECTOR = "[1," + ",".join(["0"] * 1023) + "]"
+POLICIES = [("chat", 20, 60000), ("qgen", 5, 300000)]
+ROLE_SQL = """SELECT jsonb_build_object('database_name',current_database(),
+ 'database_oid',(SELECT oid::text FROM pg_database WHERE datname=current_database()),
+ 'pid',pg_backend_pid(),'backend_start',(SELECT extract(epoch FROM backend_start)::text
+ FROM pg_stat_activity WHERE pid=pg_backend_pid()),
+ 'postmaster_start',extract(epoch FROM pg_postmaster_start_time())::text,
+ 'port',inet_server_port(),'session_user',session_user,'current_user',current_user,
+ 'application_name',current_setting('application_name'),
+ 'read_only',current_setting('transaction_read_only'),
+ 'superuser',(SELECT rolsuper FROM pg_roles WHERE rolname=session_user),
+ 'bypass_rls',(SELECT rolbypassrls FROM pg_roles WHERE rolname=session_user))"""
+
+
+class Refused(Exception):
+    """Yalnız sabit içeriksiz ret kodu."""
+
+
+def require(value, code):
+    if not value:
+        raise Refused(code)
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def fp(cluster, oid):
+    return sha(json.dumps([cluster, str(oid)], separators=(",", ":")).encode())
+
+
+def check_sources():
+    raw = (ROOT / "input-manifest.json").read_bytes()
+    require(sha(raw) == MANIFEST_SHA, "FROZEN_INPUT_MANIFEST_CHANGED")
+    manifest = json.loads(raw)
+    paths = {str(p.relative_to(REPOSITORY)) for p in (REPOSITORY / "supabase/migrations").glob("*.sql")}
+    require(len(paths) == 22 and paths == {p for p in manifest["files"] if p.endswith(".sql")},
+            "EXACT_22_MIGRATION_SET_REQUIRED")
+    for name, expected in manifest["files"].items():
+        require(sha((REPOSITORY / name).read_bytes()) == expected, "FROZEN_WORKING_TREE_SOURCE_CHANGED")
+    return manifest
+
+
+def load_module():
+    manifest = check_sources()
+    path = REPOSITORY / "scripts/recovery.py"
+    source = path.read_bytes()
+    require(sha(source) == RECOVERY_SHA, "FROZEN_RECOVERY_CHANGED")
+    spec = importlib.util.spec_from_file_location("current_parity_recovery", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    exec(compile(source, str(path), "exec"), module.__dict__)  # noqa: S102
+    return module, manifest
+
+
+def validate_args(args):
+    for value in (args.cluster, args.source_oid, args.target_oid, args.maintenance_oid):
+        require(isinstance(value, str) and re.fullmatch(r"[1-9][0-9]*", value), "SIX_ROOT_IDENTITY_PINS_REQUIRED")
+    require(len({args.source_oid, args.target_oid, args.maintenance_oid}) == 3,
+            "THREE_DISTINCT_DATABASE_OIDS_REQUIRED")
+    for oid, fingerprint in ((args.source_oid, args.source_sha), (args.target_oid, args.target_sha)):
+        require(isinstance(fingerprint, str) and HEX.fullmatch(fingerprint)
+                and fp(args.cluster, oid) == fingerprint, "ROOT_FINGERPRINT_MISMATCH")
+    require(args.host in {"127.0.0.1", "::1"} and type(args.port) is int and 0 < args.port < 65536,
+            "EXPLICIT_NUMERIC_ENDPOINT_REQUIRED")
+    for value in (args.dba_role, args.maintenance_role, args.maintenance_database):
+        require(isinstance(value, str) and IDENT.fullmatch(value), "EXPLICIT_ROLE_AND_MAINTENANCE_REQUIRED")
+    require(args.maintenance_database not in {SOURCE, TARGET}
+            and not args.maintenance_database.startswith("dou018_recovery_"), "DEDICATED_MAINTENANCE_ROUTE_REQUIRED")
+    require(args.output is not None and args.output.is_absolute(), "NEW_PRIVATE_OUTPUT_REQUIRED")
+
+
+def provision_receipt(args, manifest):
+    raw = PROVISION.read_bytes()
+    require(len(raw) < 65536 and sha(raw) == PROVISION_SHA, "ROOT_PROVISION_RECEIPT_CHANGED")
+    receipt = json.loads(raw)
+    require(receipt["status"] == "provisioned_only" and receipt["source_seeded"] is False
+            and receipt["restore_executed"] is False, "FRESH_ROOT_PROVISION_REQUIRED")
+    for key in ("cluster", "source_oid", "source_sha", "target_oid", "target_sha", "maintenance_oid",
+                "maintenance_database", "host", "port", "dba_role"):
+        require(receipt["pins"][key] == getattr(args, key), "ROOT_PROVISION_PIN_MISMATCH")
+    require(receipt["pins"]["source_database"] == SOURCE and receipt["pins"]["target_database"] == TARGET,
+            "ROOT_PROVISION_DATABASE_MISMATCH")
+    expected = {Path(name).name:value for name,value in manifest["files"].items() if name.endswith(".sql")}
+    require(receipt["applied_migrations"] == expected, "ROOT_APPLIED_22_MIGRATION_HASHES_DIFFER")
+    return receipt
+
+
+def environments(module, args, supplied):
+    pairs = (("source", "DOU_BACKUP_", SOURCE, args.dba_role),
+             ("target", "DOU_RESTORE_", TARGET, args.dba_role),
+             ("maintenance", "DOU_MAINTENANCE_", args.maintenance_database, args.maintenance_role),
+             ("app", "D3_CURRENT_APP_", TARGET, "dou_app"))
+    envs = {}
+    for label, prefix, name, user in pairs:
+        env = module.connection_env(prefix, supplied)
+        require(env["PGHOSTADDR"] == args.host and env["PGPORT"] == str(args.port)
+                and env["PGDATABASE"] == name and env["PGUSER"] == user, "PINNED_CONNECTION_ROUTE_MISMATCH")
+        env["PGAPPNAME"] = "dou018-current-parity-" + label + "-" + secrets.token_hex(8)
+        env["PGOPTIONS"] += " -c statement_timeout=15000 -c lock_timeout=5000"
+        if label != "source":
+            env["PGOPTIONS"] += " -c default_transaction_read_only=on"
+        envs[label] = env
+    return envs
+
+
+@contextmanager
+def readonly(conn):
+    conn.execute("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY")
+    try:
+        for sql in ("SET LOCAL TIME ZONE 'UTC'", "SET LOCAL DateStyle='ISO, YMD'",
+                    "SET LOCAL IntervalStyle='iso_8601'", "SET LOCAL extra_float_digits=3",
+                    "SET LOCAL bytea_output='hex'", "SET LOCAL row_security=on"):
+            conn.execute(sql)
+        require(conn.execute("SELECT current_setting('transaction_read_only')").fetchone()[0] == "on",
+                "READ_ONLY_TRANSACTION_REQUIRED")
+        yield
+    finally:
+        conn.execute("ROLLBACK")
+
+
+def connect(module, env):
+    return module.control_connection(env, runtime_error="PARITY_PSYCOPG_REQUIRED")
+
+
+def identity(module, conn, env, args, label):
+    meta = conn.execute(module.SNAPSHOT_SQL).fetchone()[0]
+    binding = conn.execute("SELECT " + module.SESSION_BINDING_SQL).fetchone()[0]
+    module.validate_binding(binding, env)
+    oid = getattr(args, label + "_oid")
+    require(meta["identity"] == {"system_identifier": args.cluster, "database_oid": oid,
+                                 "database_name": env["PGDATABASE"]}
+            and binding["system_identifier"] == args.cluster and binding["database_oid"] == oid,
+            "DATABASE_IDENTITY_MISMATCH")
+    require(meta["superuser"] is True and meta["connections_allowed"] is True,
+            "ALREADY_OPEN_DBA_DATABASE_REQUIRED")
+    return meta, binding
+
+
+def relations(conn):
+    rows = conn.execute("""SELECT n.nspname,c.relname,c.relkind::text FROM pg_class c
+        JOIN pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname !~ '^pg_' AND n.nspname<>'information_schema'
+          AND c.relkind IN ('r','p','m','f') AND NOT EXISTS (
+            SELECT 1 FROM pg_depend d WHERE d.classid='pg_class'::regclass
+            AND d.objid=c.oid AND d.deptype='e') ORDER BY n.nspname,c.relname""").fetchall()
+    require(0 < len(rows) <= 64 and all(kind != "f" for _, _, kind in rows), "BOUNDED_LOCAL_RELATIONS_REQUIRED")
+    require(all(IDENT.fullmatch(s) and IDENT.fullmatch(n) for s, n, _ in rows), "RELATION_NAME_NOT_SUPPORTED")
+    return rows
+
+
+def critical_schema(conn):
+    columns = conn.execute("""SELECT table_schema,table_name,column_name,data_type,is_nullable
+        FROM information_schema.columns WHERE (table_schema,table_name) IN
+        (('public','documents'),('public','ingestion_jobs'),('app','rate_limit_windows'))""").fetchall()
+    for expected in (("public", "documents", "ingestion_revision", "bigint", "NO"),
+                     ("public", "ingestion_jobs", "claim_token", "uuid", "YES"),
+                     ("public", "ingestion_jobs", "claim_document_revision", "bigint", "YES"),
+                     ("public", "ingestion_jobs", "lease_expires_at", "timestamp with time zone", "YES"),
+                     ("app", "rate_limit_windows", "accepted_at", "ARRAY", "NO")):
+        require(expected in columns, "LATEST_LEASE_OR_QUOTA_COLUMN_MISSING")
+    require(conn.execute("""SELECT count(*) FROM pg_constraint
+        WHERE conrelid='public.ingestion_jobs'::regclass AND conname='ingestion_claim_shape'
+          AND contype='c' AND convalidated""").fetchone()[0] == 1, "LEASE_CLAIM_CONSTRAINT_REQUIRED")
+    require(conn.execute("""SELECT x.indisvalid AND x.indisready AND x.indisunique
+        FROM pg_index x JOIN pg_class c ON c.oid=x.indexrelid
+        WHERE c.oid=to_regclass('public.ingestion_jobs_one_active_document')""").fetchone() == (True,),
+            "ACTIVE_JOB_UNIQUENESS_REQUIRED")
+    functions = (
+        ("app.take_request_slot(uuid,text,integer,integer,text)", True, True, False),
+        ("app.request_quota_policies()", True, True, False),
+        ("app.purge_expired_request_windows(integer)", True, False, True),
+        ("app.retry_ingestion_job(uuid)", True, True, False),
+        ("app.track_ingestion_revision()", False, False, False),
+    )
+    for name, secdef, app, worker in functions:
+        row = conn.execute("""SELECT p.prosecdef,has_function_privilege('dou_app',p.oid,'EXECUTE'),
+            has_function_privilege('dou_worker',p.oid,'EXECUTE'),p.proconfig
+            FROM pg_proc p WHERE p.oid=to_regprocedure(%s)""", (name,)).fetchone()
+        require(row == (secdef, app, worker, ["search_path=pg_catalog, pg_temp"]),
+                "LATEST_FUNCTION_ROLE_OR_SEARCH_PATH_MISMATCH")
+    require(conn.execute("""SELECT has_table_privilege('dou_app','app.rate_limit_windows','SELECT'),
+        has_table_privilege('dou_worker','app.rate_limit_windows','SELECT'),
+        has_table_privilege('dou_app','public.ingestion_jobs','UPDATE')""").fetchone() == (False, False, False),
+            "DIRECT_QUOTA_OR_JOB_UPDATE_GRANT_PRESENT")
+    policies = conn.execute("SELECT scope,request_limit,window_ms FROM app.request_rate_policies ORDER BY scope").fetchall()
+    require(policies == POLICIES, "CANONICAL_QUOTA_POLICY_REQUIRED")
+
+
+def seed(module, conn, env, args):
+    check_sources()
+    conn.execute("BEGIN")
+    try:
+        meta, _ = identity(module, conn, env, args, "source")
+        require(meta["other_connections"] == 0, "FRESH_QUIESCENT_SOURCE_REQUIRED")
+        tables = relations(conn)
+        # Yalnız root'un boş, yalıtılmış kaynağında kısa seed kilidi; hedefe dokunulmaz.
+        conn.execute("LOCK TABLE " + ",".join(module.sql_ident(s)+"."+module.sql_ident(n)
+                                             for s, n, _ in tables) + " IN EXCLUSIVE MODE")
+        critical_schema(conn)
+        for schema, name, _ in tables:
+            count = conn.execute("SELECT count(*) FROM " + module.sql_ident(schema) + "." + module.sql_ident(name)).fetchone()[0]
+            require(count == (2 if (schema, name) == ("app", "request_rate_policies") else 0),
+                    "SOURCE_NOT_EMPTY_EXCEPT_CANONICAL_POLICIES")
+        for person in ("teacher", "outsider"):
+            conn.execute("INSERT INTO public.profiles(id,email,full_name) VALUES (%s,%s,%s)",
+                         (IDs[person], person + "@synthetic-current-parity.example.com", "Synthetic " + person))
+        conn.execute("INSERT INTO public.courses(id,code,title,created_by) VALUES (%s,%s,%s,%s)",
+                     (IDs["course"], "D3-CURRENT-PARITY", "Synthetic recovery parity", IDs["teacher"]))
+        conn.execute("INSERT INTO public.course_memberships(course_id,user_id,role) VALUES (%s,%s,'instructor')",
+                     (IDs["course"], IDs["teacher"]))
+        for label, doc_status, attempts in (("completed", "completed", 1), ("pending", "uploaded", 0), ("failed", "failed", 3)):
+            conn.execute("""INSERT INTO public.documents(id,course_id,uploaded_by,file_name,file_type,
+                storage_path,file_hash,byte_size,status,chunk_count)
+                VALUES (%s,%s,%s,%s,'txt',%s,%s,24,%s,%s)""",
+                (IDs[label], IDs["course"], IDs["teacher"], "synthetic-" + label + ".txt",
+                 "synthetic-no-external-object/" + IDs[label], sha(label.encode()), doc_status, int(label == "completed")))
+            conn.execute("""INSERT INTO public.ingestion_jobs(id,document_id,status,attempt_count,
+                next_attempt_at,started_at,completed_at,last_error)
+                VALUES (%s,%s,%s,%s,'2100-01-01T00:00:00Z',
+                CASE WHEN %s>0 THEN '2026-09-08T00:00:00Z'::timestamptz END,
+                CASE WHEN %s>0 THEN '2026-09-08T00:01:00Z'::timestamptz END,
+                CASE WHEN %s='failed' THEN 'synthetic_failure_code' END)""",
+                (IDs["job-"+label], IDs[label], label, attempts, attempts, attempts, label))
+        conn.execute("""INSERT INTO public.chunks(id,course_id,document_id,chunk_index,page_number,
+            text,token_count,embedding,embedding_space) VALUES (%s,%s,%s,0,1,%s,5,%s::public.vector,%s)""",
+            (IDs["chunk"], IDs["course"], IDs["completed"], "Synthetic recovery parity chunk.",
+             VECTOR, "synthetic/current-parity@1"))
+        conn.execute("""INSERT INTO app.rate_limit_windows(scope,user_id,course_id,policy_fingerprint,
+            accepted_at,expires_at) VALUES ('chat',%s,%s,%s,
+            ARRAY['2026-09-08T00:00:00Z'::timestamptz],'2026-09-08T00:01:00Z')""",
+            (IDs["teacher"], IDs["course"], sha(b"chat:20:60000")))
+        require(conn.execute("""SELECT count(*) FROM public.documents WHERE ingestion_revision=1""").fetchone()[0] == 3,
+                "NEW_SOURCE_REVISIONS_REQUIRED")
+        require(conn.execute("""SELECT count(*) FROM public.ingestion_jobs WHERE claim_token IS NULL
+            AND claim_document_revision IS NULL AND lease_expires_at IS NULL""").fetchone()[0] == 3,
+                "NONPROCESSING_JOB_CLAIMS_MUST_BE_CLEAR")
+        check_sources()
+        conn.execute("COMMIT")
+    except BaseException:
+        try:
+            conn.execute("ROLLBACK")
+        except Exception:
+            pass
+        raise
+
+
+def save(module, directory, name, data):
+    with module.private_file(directory, name, create=True) as out:
+        out.write(data); out.flush(); os.fsync(out.fileno())
+    return {"bytes": len(data), "sha256": sha(data)}
+
+
+def recovery_cli(module, directory, operation, output, args):
+    check_sources()
+    command = [sys.executable, str(REPOSITORY / "scripts/recovery.py"), operation,
+               "--bundle", str(output / "own-backup"), "--execute"]
+    if operation == "backup":
+        command += ["--repository", str(REPOSITORY)]
+    else:
+        command += ["--expected-source", args.source_sha, "--trust-own-backup", "--fence-empty-target"]
+    started = time.monotonic()
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        stdout, stderr = process.communicate(timeout=180)
+    except subprocess.TimeoutExpired:
+        # Özgün CLI SIGTERM temizliğine fırsat ver; belirsiz sonuçta yeniden açma/tekrar yok.
+        process.terminate()
+        try:
+            stdout, stderr = process.communicate(timeout=8)
+        except subprocess.TimeoutExpired:
+            process.kill(); stdout, stderr = process.communicate()
+        save(module, directory, operation + ".stdout", stdout)
+        save(module, directory, operation + ".stderr", stderr)
+        raise Refused("RECOVERY_TIMEOUT_MANUAL_STATE_REVIEW_REQUIRED") from None
+    artifacts = {"stdout": save(module, directory, operation + ".stdout", stdout),
+                 "stderr": save(module, directory, operation + ".stderr", stderr)}
+    require(process.returncode == 0 and len(stdout) <= 65536 and not stderr,
+            "RECOVERY_CLI_FAILED_MANUAL_STATE_REVIEW_REQUIRED")
+    receipt = json.loads(stdout)
+    expected = "backup-complete" if operation == "backup" else "restore-complete"
+    require(receipt.get("status") == expected, "RECOVERY_SUCCESS_RECEIPT_REQUIRED")
+    if operation == "backup":
+        require(receipt.get("source_identity_sha256") == args.source_sha, "BACKUP_SOURCE_PIN_MISMATCH")
+    else:
+        require(receipt.get("target_identity_sha256") == args.target_sha
+                and receipt.get("commit_status") == "committed", "RESTORE_TARGET_OR_COMMIT_PIN_MISMATCH")
+    check_sources()
+    return {"receipt": receipt, "artifacts": artifacts, "seconds": round(time.monotonic()-started, 3)}
+
+
+def row_digest(conn, module, schema, name):
+    quoted = module.sql_ident(schema) + "." + module.sql_ident(name)
+    values = conn.execute("SELECT sha256(convert_to(to_jsonb(t)::text,'UTF8')) AS h FROM "
+                          + quoted + " t ORDER BY h LIMIT 101").fetchall()
+    require(len(values) <= 100, "MINI_CORPUS_ROW_LIMIT_EXCEEDED")
+    return {"rows": len(values), "sorted_row_sha256": sha(b"".join(bytes(row[0]) for row in values))}
+
+
+def columns(conn, schema, name):
+    return conn.execute("""SELECT a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,
+        a.attidentity::text,a.attgenerated::text FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid
+        JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=%s AND c.relname=%s
+        AND a.attnum>0 AND NOT a.attisdropped ORDER BY a.attnum""", (schema,name)).fetchall()
+
+
+def deny(conn, sql):
+    conn.execute("SAVEPOINT current_parity_denial")
+    code = None
+    try:
+        conn.execute(sql)
+    except Exception as error:
+        code = getattr(error, "sqlstate", None)
+    finally:
+        conn.execute("ROLLBACK TO SAVEPOINT current_parity_denial")
+        conn.execute("RELEASE SAVEPOINT current_parity_denial")
+    require(code == "42501", "ACTUAL_DIRECT_TABLE_PERMISSION_DENIAL_REQUIRED")
+    return code
+
+
+def verify(module, envs, args):
+    result = {"tables": {}, "rls": {}, "semantic_or_ann_quality_claim": False,
+              "external_storage_copied": False}
+    with ExitStack() as stack:
+        source = stack.enter_context(connect(module, envs["source"]))
+        target = stack.enter_context(connect(module, envs["target"]))
+        stack.enter_context(readonly(source)); stack.enter_context(readonly(target))
+        sm, sb = identity(module, source, envs["source"], args, "source")
+        tm, tb = identity(module, target, envs["target"], args, "target")
+        require(sb["postmaster_start"] == tb["postmaster_start"], "SOURCE_TARGET_INSTANCE_MISMATCH")
+        left, right = module.source_metadata(sm), module.source_metadata(tm)
+        require(all(left[k] == right[k] for k in left if k != "identity"), "SECURITY_OR_ROLE_METADATA_DIFFERENT")
+        critical_schema(source); critical_schema(target)
+        tables = relations(source)
+        require(tables == relations(target), "APPLICATION_RELATION_SET_DIFFERENT")
+        for schema, name, kind in tables:
+            require(columns(source,schema,name) == columns(target,schema,name), "TABLE_COLUMNS_DIFFERENT")
+            left, right = [row_digest(c, module, schema, name) for c in (source, target)]
+            require(left == right, "APPLICATION_ROWS_DIFFERENT")
+            result["tables"][schema + "." + name] = left | {"kind": kind, "equal": True}
+        expected = {"public.profiles": 2, "public.courses": 1, "public.course_memberships": 1,
+                    "public.documents": 3, "public.ingestion_jobs": 3, "public.chunks": 1,
+                    "app.rate_limit_windows": 1, "app.request_rate_policies": 2}
+        require(all(result["tables"].get(name, {}).get("rows") == count for name, count in expected.items()),
+                "MINI_CORPUS_COUNTS_DIFFERENT")
+        require(sum(v["rows"] for v in result["tables"].values()) == sum(expected.values()),
+                "UNEXPECTED_MINI_CORPUS_ROWS")
+        result["security_catalog_and_role_component_equal"] = True
+        with connect(module, envs["app"]) as app:
+            for label in ("teacher", "outsider"):
+                with readonly(app):
+                    role = app.execute(ROLE_SQL).fetchone()[0]
+                    require(role["session_user"] == role["current_user"] == "dou_app"
+                            and role["superuser"] is False and role["bypass_rls"] is False
+                            and role["database_oid"] == args.target_oid and role["database_name"] == TARGET
+                            and role["postmaster_start"] == tb["postmaster_start"]
+                            and role["port"] == args.port and role["read_only"] == "on",
+                            "REAL_DOU_APP_TARGET_BINDING_REQUIRED")
+                    target.execute("SELECT pg_stat_clear_snapshot()")
+                    bound = target.execute("""SELECT datid::text,usename,application_name,
+                        extract(epoch FROM backend_start)::text FROM pg_stat_activity WHERE pid=%s""",
+                        (role["pid"],)).fetchone()
+                    require(bound == (args.target_oid, "dou_app", envs["app"]["PGAPPNAME"], role["backend_start"]),
+                            "REAL_APP_BACKEND_NOT_BOUND")
+                    app.execute("SELECT set_config('app.current_user_id',%s,true)", (IDs[label],))
+                    counts = {name: app.execute("SELECT count(*) FROM public."+name).fetchone()[0]
+                              for name in ("courses", "documents", "chunks", "ingestion_jobs")}
+                    wanted = {"courses": 1, "documents": 3, "chunks": 1, "ingestion_jobs": 3} if label == "teacher" else dict.fromkeys(counts, 0)
+                    require(counts == wanted, "TEACHER_OR_OUTSIDER_RLS_MISMATCH")
+                    quota_denials = {name: deny(app, "SELECT count(*) FROM app."+name)
+                                     for name in ("rate_limit_windows", "request_rate_policies")}
+                    require(len(app.execute("SELECT * FROM app.request_quota_policies()").fetchall()) == 2,
+                            "QUOTA_POLICY_FUNCTION_PERMISSION_MISMATCH")
+                    vectors = app.execute("""SELECT id,embedding OPERATOR(public.<=>) %s::public.vector
+                        FROM public.chunks ORDER BY id""", (VECTOR,)).fetchall()
+                    require((len(vectors) == 1 and str(vectors[0][0]) == IDs["chunk"]
+                             and math.isfinite(vectors[0][1]) and abs(vectors[0][1]) < 1e-9)
+                            if label == "teacher" else vectors == [], "RESTORED_VECTOR_OR_RLS_MISMATCH")
+                    result["rls"][label] = {"counts": counts, "quota_direct_denials": quota_denials,
+                                           "vector_count": len(vectors)}
+    return result
+
+
+def execute(args):
+    validate_args(args)
+    module, manifest = load_module()
+    provision = provision_receipt(args, manifest)
+    envs = environments(module, args, dict(os.environ))
+    directory = module.new_bundle(args.output)
+    result = {"status": "incomplete", "input_manifest_sha256": MANIFEST_SHA,
+              "recovery_sha256": RECOVERY_SHA, "migration_count": 22,
+              "prepared_head": manifest["prepared_head"], "working_tree_lineage": True,
+              "root_provision_sha256": PROVISION_SHA,
+              "root_provision_working_tree_dirty": provision["working_tree_dirty"],
+              "committed_release_claim": False,
+              "scope": "synthetic current-schema parity; no deployment or ANN quality certification"}
+    try:
+        save(module, directory, "input-manifest.json", (ROOT / "input-manifest.json").read_bytes())
+        with connect(module, envs["maintenance"]) as maintenance:
+            _, mb = identity(module, maintenance, envs["maintenance"], args, "maintenance")
+        with connect(module, envs["target"]) as target:
+            tm, tb = identity(module, target, envs["target"], args, "target")
+            require(tm["empty"] is True and tm["other_connections"] == 0
+                    and tb["postmaster_start"] == mb["postmaster_start"], "FRESH_EMPTY_TARGET_REQUIRED")
+        with connect(module, envs["source"]) as source:
+            _, sb = identity(module, source, envs["source"], args, "source")
+            require(sb["postmaster_start"] == mb["postmaster_start"], "SOURCE_INSTANCE_MISMATCH")
+            seed(module, source, envs["source"], args)
+            result["seed_committed"] = True
+        # Bütün gözlem/seed oturumları kapanır; orijinal CLI kendi oturum sayısını denetler.
+        result["backup"] = recovery_cli(module, directory, "backup", args.output, args)
+        bundle_fd = module.directory_fd(args.output / "own-backup")
+        try:
+            with module.private_file(bundle_fd, "manifest.json") as data:
+                backup_manifest = json.load(data)
+        finally:
+            os.close(bundle_fd)
+        require(backup_manifest["lineage"]["schema_files_sha256"] == {
+            name:value for name,value in manifest["files"].items() if name.endswith(".sql")},
+            "BACKUP_MANIFEST_22_MIGRATION_HASHES_DIFFER")
+        result["backup_lineage"] = {"commit":backup_manifest["lineage"]["commit"],
+            "tracked_schema_dirty":backup_manifest["lineage"]["tracked_schema_dirty"],
+            "note":"tracked dirty flag excludes untracked migration files; exact22hash manifest and root dirty receipt are separate"}
+        result["restore"] = recovery_cli(module, directory, "restore", args.output, args)
+        result["verification"] = verify(module, envs, args)
+        check_sources()
+        result["status"] = "current-schema-parity-pass"
+    except Refused as error:
+        result.update(status="current-parity-failed", safe_code=str(error))
+    except BaseException as error:  # noqa: BLE001
+        result.update(status="current-parity-failed", exception_class=type(error).__name__)
+    finally:
+        try:
+            save(module, directory, "result.json", (json.dumps(result, indent=2)+"\n").encode())
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    print(json.dumps({k:result[k] for k in ("status", "safe_code", "exception_class", "migration_count") if k in result}))
+    return 0 if result["status"] == "current-schema-parity-pass" else 2
+
+
+class Parser(argparse.ArgumentParser):
+    def error(self, _message):
+        self.exit(2, "CURRENT_PARITY_ARGUMENTS_INVALID\n")
+
+
+def main(argv=None):
+    parser = Parser(description=__doc__)
+    parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--output", type=Path)
+    for name in ("cluster", "source-oid", "source-sha", "target-oid", "target-sha", "maintenance-oid",
+                 "maintenance-database", "maintenance-role", "dba-role", "host"):
+        parser.add_argument("--"+name)
+    parser.add_argument("--port", type=int)
+    args = parser.parse_args(argv)
+    if not args.execute:
+        print(json.dumps({"status":"plan-only", "database_access":False,"files_created":False,
+                          "scope":"two root-provisioned current source/target databases only"}))
+        return 0
+    try:
+        os.umask(0o077)
+        return execute(args)
+    except Refused as error:
+        print(json.dumps({"status":"current-parity-refused","safe_code":str(error)})); return 2
+    except BaseException as error:  # noqa: BLE001
+        print(json.dumps({"status":"current-parity-refused","exception_class":type(error).__name__})); return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

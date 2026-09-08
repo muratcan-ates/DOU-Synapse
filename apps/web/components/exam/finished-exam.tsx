@@ -116,7 +116,7 @@ function ResultDetails({ courseId, session, finish, questions, onRestart, histor
           {(completed.results ?? []).map((feedback, position) => (
             <li key={feedback.question_id}>
               <h2 className="prose-tr text-sm font-medium text-fg">{position + 1}. {prompts.get(feedback.question_id) ?? "Soru metni gösterilemiyor"}</h2>
-              <FeedbackPanel feedback={feedback} />
+              <FeedbackPanel courseId={courseId} feedback={feedback} />
             </li>
           ))}
         </ol>

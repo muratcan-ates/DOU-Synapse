@@ -1,0 +1,44 @@
+from pathlib import Path
+import hashlib, json, os, subprocess, sys, time
+
+repo = Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out = Path('/private/tmp/dou018-evidence')
+python = str(repo / 'apps/api/.venv/bin/python')
+job = sys.argv[1]
+env = dict(os.environ)
+env.update(PYTHONDONTWRITEBYTECODE='1', UV_OFFLINE='1', GROQ_API_KEY='', GEMINI_API_KEY='', OPENAI_API_KEY='', PGHOST='127.0.0.1', PGPORT='55448', PGUSER='muratates', PG_BIN='/opt/homebrew/opt/postgresql@16/bin')
+cwd = repo
+if job == 'api':
+    db = 'dou018_bc_final3'
+    env.update(TEST_DB_NAME=db, TEST_ADMIN_DSN=f'postgresql+psycopg://muratates@127.0.0.1:55448/{db}', TEST_APP_DSN=f'postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55448/{db}', TEST_WORKER_DSN=f'postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55448/{db}')
+    env.pop('LLM_FAKE_PROVIDER', None)
+    cwd = repo / 'apps/api'
+    command = [python, '-m', 'pytest', '-q']
+elif job in {'hashing', 'e5'}:
+    db = 'dou018_eval_c1holdout01' if job == 'hashing' else 'dou018_eval_c1e501'
+    env.update(EVIDENCE_THRESHOLD='0.1' if job == 'hashing' else '0.81', EMBEDDING_MODEL='intfloat/multilingual-e5-large')
+    env.update(EVAL_APP_DSN=f'postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55448/{db}', EVAL_WORKER_DSN=f'postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55448/{db}', PYTHONPATH=str(repo/'apps/api'))
+    prefix = 'c1-holdout' if job == 'hashing' else 'c1-e5'
+    runner = 'c1_holdout_runner.py' if job == 'hashing' else 'c1_e5_holdout_runner.py'
+    command = [python, str(out/runner), '--execute', '--corpus', str(out/(prefix+'-corpus-01.json')), '--output-dir', str(out/(prefix+'-final-02'))]
+elif job == 'runtime':
+    env.update(RETRIEVAL_PROBE_APP_DSN='postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55448/dou018_retrieval_runtime1', PYTHONPATH=str(repo/'apps/api')+':'+str(repo), ENVIRONMENT='local', DEV_AUTH_ENABLED='true')
+    command = [python, 'scripts/probe_retrieval_runtime.py', '--source-report', str(out/'retrieval-plan-local-20260908b.json'), '--output', str(out/'retrieval-runtime-local-v3-final-20260908.json'), '--repeats', '7', '--execute']
+else:
+    raise SystemExit('unknown job')
+def source_hashes():
+    paths = list((repo/'apps/api/app').rglob('*.py')) + list((repo/'apps/api/tests').rglob('*.py')) + list((repo/'supabase/migrations').glob('*.sql'))
+    return {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+before = source_hashes()
+receipt = out/f'bc-c1-final-{job}.json'
+log = out/f'bc-c1-final-{job}.log'
+if receipt.exists() or log.exists():
+    raise SystemExit('refusing to overwrite prior evidence')
+started = time.monotonic()
+with log.open('x') as stream:
+    result = subprocess.run(command, cwd=cwd, env=env, stdout=stream, stderr=subprocess.STDOUT)
+after = source_hashes()
+record = dict(job=job, exit_code=result.returncode, seconds=round(time.monotonic()-started,3), command=command, cwd=str(cwd), log_sha256=hashlib.sha256(log.read_bytes()).hexdigest(), source_unchanged=before==after, source_sha256=after)
+receipt.write_text(json.dumps(record, indent=2)+'\n')
+print(json.dumps({k:v for k,v in record.items() if k not in {'source_sha256','command','cwd'}}), flush=True)
+raise SystemExit(result.returncode or (0 if before==after else 2))

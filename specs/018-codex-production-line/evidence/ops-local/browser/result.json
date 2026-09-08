@@ -1,0 +1,66 @@
+{
+  "status": "pass",
+  "scope": "Actual current OPS build and local fake-provider API; viewport/theme/keyboard smoke, not accessibility certification",
+  "observations": [
+    {
+      "width": 375,
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "realOverviewStatus": 200,
+      "horizontalOverflow": false,
+      "keyboard": "ArrowRight/Home focus passed",
+      "focus": {
+        "tag": "DIV",
+        "visible": true
+      },
+      "errors": [],
+      "screenshot": "admin-375-light.png",
+      "sha256": "5642a98c0f4aa008c920628a77038e33e40e7ccf17ddaec32d050d5cdcdd9b92"
+    },
+    {
+      "width": 375,
+      "theme": "dark",
+      "reducedMotion": "reduce",
+      "realOverviewStatus": 200,
+      "horizontalOverflow": false,
+      "keyboard": "ArrowRight/Home focus passed",
+      "focus": {
+        "tag": "DIV",
+        "visible": true
+      },
+      "errors": [],
+      "screenshot": "admin-375-dark.png",
+      "sha256": "0d12172fa34d6def06599bd51bd0107e0d0ccec2aef5aab43c07a5da97576d09"
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "reducedMotion": "reduce",
+      "realOverviewStatus": 200,
+      "horizontalOverflow": false,
+      "keyboard": "ArrowRight/Home focus passed",
+      "focus": {
+        "tag": "DIV",
+        "visible": true
+      },
+      "errors": [],
+      "screenshot": "admin-1440-light.png",
+      "sha256": "6b29051fd6ff52ba5defbd179d7d4ba517cec1fe9dd5184742896f7932bcb81e"
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "reducedMotion": "reduce",
+      "realOverviewStatus": 200,
+      "horizontalOverflow": false,
+      "keyboard": "ArrowRight/Home focus passed",
+      "focus": {
+        "tag": "DIV",
+        "visible": true
+      },
+      "errors": [],
+      "screenshot": "admin-1440-dark.png",
+      "sha256": "a73df3ff2222653550392a875948e31f6de53077a8dc69fc60bfce1ecf11bb86"
+    }
+  ]
+}

@@ -53,9 +53,10 @@ services:
       timeout: 5s
       retries: 5
 
-  # Ayrı worker yüzeyi aynı imajı kullanır; kullanıcı ucu açmaz. API yüklemeden
-  # sonra paylaşılan sırla `/internal/drain` çağırır. İş yazıları RLS'i bilinçli
-  # olarak atlayan `dou_worker`, kullanıcı istekleri ise `dou_app` rolündedir.
+  # HTTP worker aynı uygulama yüzeyini dahili ağda sunar; host portu yayımlamaz.
+  # API yüklemeden sonra paylaşılan sırla `/internal/drain` çağırır. İş yazıları
+  # dou_worker, kullanıcı istekleri dou_app rolündedir. Bu HTTP servisi kendi
+  # başına dönemsel bakım sağlamaz; sürekli döngü aşağıdaki worker-poller'dadır.
   worker:
     build:
       context: ./apps/api
@@ -79,6 +80,28 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Yeni yükleme olmasa da süresi dolan claim'leri ve kota satırlarını işler.
+  # HTTP drain ile yarışan işler 0026 claim/lease kontrolünü paylaşır.
+  # Ağ ucu veya host portu yoktur; yeniden başlama bir bakım SLA'sı değildir.
+  worker-poller:
+    build:
+      context: ./apps/api
+    command: ["python", "-m", "app.worker"]
+    restart: unless-stopped
+    stop_grace_period: 15s
+    environment:
+      ENVIRONMENT: local
+      DEV_AUTH_ENABLED: "true"
+      DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@db:5432/dou_synapse
+      WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@db:5432/dou_synapse
+      STORAGE_BACKEND: local
+      STORAGE_ROOT: /data/storage
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      db:
+        condition: service_healthy
 
   # --- Çevrimdışı yedek profili (T054, PLAN §6 C planı) --------------------
   #

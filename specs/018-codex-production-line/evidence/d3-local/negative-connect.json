@@ -1,0 +1,121 @@
+{
+  "status": "negative-acceptance-pass",
+  "case": "connect",
+  "target": "dou018_recovery_target11",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "source_receipt_sha256": "c97a680d380fad6651a7f948d1e79a4b50762f4f942a805b9786df2ef3f12d1e",
+  "target_identity_sha256": "639363a7cb641117e730e1ca65bef1c4073cf3a6872de405ea21c1da9eb39de9",
+  "scope": "controlled synthetic negative; no general production recovery certification",
+  "before": {
+    "oid": "1136284",
+    "name": "dou018_recovery_target11",
+    "allow_connections": true,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "facts": {
+    "fence_committed": true,
+    "commit_verified_inside_apply": true,
+    "reopen_attempted": true,
+    "reopen_completed": true,
+    "app_baseline_verified": true,
+    "target_binding": {
+      "pid": 30896,
+      "user": "muratates",
+      "superuser": true,
+      "server_port": 55448,
+      "database_oid": "1136284",
+      "backend_start": "1788871903.926808",
+      "database_name": "dou018_recovery_target11",
+      "application_name": "dou-recovery-target-76c6d8fe3da11bc946219a22",
+      "postmaster_start": "1788847729.090584",
+      "system_identifier": "7683042491268153327"
+    },
+    "new_connect_denial": {
+      "server_denial": "DATABASE_NOT_ACCEPTING_CONNECTIONS",
+      "sqlstate": null,
+      "sqlstate_available": false
+    },
+    "fence_probe_preserved_target_session": true,
+    "commit_wire_receipt": {
+      "xid": "58869",
+      "binding": {
+        "pid": 30896,
+        "user": "muratates",
+        "superuser": true,
+        "server_port": 55448,
+        "database_oid": "1136284",
+        "backend_start": "1788871903.926808",
+        "database_name": "dou018_recovery_target11",
+        "application_name": "dou-recovery-target-76c6d8fe3da11bc946219a22",
+        "postmaster_start": "1788847729.090584",
+        "system_identifier": "7683042491268153327"
+      },
+      "commit_status": "committed"
+    }
+  },
+  "restore_receipt": {
+    "status": "restore-complete",
+    "commit_status": "committed",
+    "target_identity_sha256": "639363a7cb641117e730e1ca65bef1c4073cf3a6872de405ea21c1da9eb39de9",
+    "scope": "database/security metadata; content and RLS application drill still required"
+  },
+  "after": {
+    "oid": "1136284",
+    "name": "dou018_recovery_target11",
+    "allow_connections": true,
+    "connections": 0,
+    "cluster": "7683042491268153327",
+    "postmaster_start": "1788847729.090584"
+  },
+  "elapsed_seconds": 24.789,
+  "first_tool_error": null,
+  "own_child_exit_code": 0,
+  "events": [
+    {
+      "phase": "fence",
+      "event": "enter"
+    },
+    {
+      "phase": "fence",
+      "event": "return"
+    },
+    {
+      "phase": "reopen",
+      "event": "enter"
+    },
+    {
+      "phase": "reopen",
+      "event": "return"
+    }
+  ],
+  "private_artifacts": [
+    {
+      "file": "new-connect.private.stderr",
+      "bytes": 157,
+      "sha256": "c677fae8015ac378c1f75b04b5fe6761df21e95a83c7357f482bad31ba9dafbe"
+    },
+    {
+      "file": "target.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_bytes": 0,
+      "truncated": false
+    },
+    {
+      "file": "target.stdout",
+      "bytes": 8152,
+      "sha256": "75d9aef696362532274a4d8ad3d4cdbf54d4aed639c616c9927a08ecc9bd3f4f",
+      "source_bytes": 8152,
+      "truncated": false
+    },
+    {
+      "file": "target.sql",
+      "bytes": 215315415,
+      "sha256": "ee938ee9fb7f9e07570106331d7cbf9e4d0a985f00a2f383732b6724fb8c114e",
+      "source_bytes": 215315415,
+      "truncated": false
+    }
+  ]
+}

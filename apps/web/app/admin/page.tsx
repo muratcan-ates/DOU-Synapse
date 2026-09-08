@@ -204,6 +204,8 @@ function AdminOverviewSection() {
         <div className="flex flex-wrap gap-2" aria-label="Servis sağlık durumları">
           <HealthBadge label="Uygulama" status={data.status} />
           <HealthBadge label="Veritabanı" status={data.database_status} />
+          <HealthBadge label="Vektör veritabanı" status={data.pgvector_status ?? "unknown"} />
+          <HealthBadge label="İstek kotası" status={data.request_quota_status ?? "unknown"} />
           <HealthBadge label="Embedding" status={data.embedding_status} />
         </div>
         <p className="font-mono text-xs text-fg-subtle">
@@ -222,15 +224,20 @@ function AdminOverviewSection() {
 
       <div>
         <p className="mb-2 text-xs font-medium text-fg-muted">Son 24 saat</p>
+        <p className="mb-3 text-sm text-fg-muted">
+          Sohbet, gecikme ve token ölçümleri kaydedilmiş başarılı HTTP sohbet isteklerini
+          kapsar. HTTP hata yanıtları ve kaydı oluşmayan istekler bu ölçümlere dahil değildir.
+        </p>
         <dl className="grid gap-px border-y border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
           <OverviewDatum
-            label="Sohbet turu"
+            label="Başarılı sohbet turu"
             value={data.chat_turns_24h}
             detail="Son 24 saat"
           />
           <OverviewDatum
             label="P95 gecikme"
             value={data.p95_latency_ms === null ? "-" : `${Math.round(data.p95_latency_ms)} ms`}
+            detail={`${data.chat_turns_24h.toLocaleString("tr-TR")} başarılı sohbet örneği`}
           />
           <OverviewDatum label="Token" value={data.tokens_24h.toLocaleString("tr-TR")} />
           <OverviewDatum label="İşleniyor" value={data.ingestion_processing} />
@@ -246,7 +253,10 @@ function HealthBadge({ label, status }: { label: string; status: string }) {
   const tone =
     normalized === "ok" || normalized === "ready" || normalized === "healthy"
       ? "success"
-      : normalized === "warming" || normalized === "degraded" || normalized === "disabled"
+      : normalized === "warming" ||
+          normalized === "degraded" ||
+          normalized === "disabled" ||
+          normalized === "unknown"
         ? "warning"
         : "danger";
   return (
@@ -265,6 +275,9 @@ function healthStatusLabel(status: string): string {
     degraded: "Kısıtlı",
     disabled: "Kapalı",
     failed: "Hata",
+    error: "Hata",
+    missing: "Eksik",
+    unknown: "Ölçülemedi",
     unavailable: "Ulaşılamıyor",
   };
   return labels[status] ?? status;

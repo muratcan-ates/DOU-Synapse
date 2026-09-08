@@ -3,6 +3,9 @@ import { api } from "@/lib/api";
 export interface AdminOverview {
   status: string;
   database_status: string;
+  // Missing additive fields from an older API must remain unknown in the UI.
+  pgvector_status?: string;
+  request_quota_status?: string;
   embedding_status: string;
   measured_at: string;
   users_total: number;

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "captured_at": "2026-09-08 16:56:36.890435+03",
+  "read_only": true,
+  "rows": [
+    [
+      "1161812",
+      "dou018_recovery_current_source01",
+      true,
+      0
+    ],
+    [
+      "1161813",
+      "dou018_recovery_current_target01",
+      true,
+      0
+    ]
+  ],
+  "note": "Later independent maintenance-DB observation only. Earlier root aftertarget active1 receipt unchanged."
+}

@@ -4,14 +4,19 @@ Router `main.py`'ye ZATEN kayıtlıdır ve `include_in_schema=False` taşır: bu
 istemci sözleşmesinin parçası değildir, OpenAPI'ye girmez ve frontend onu hiç
 görmez.
 
-## Neden bir HTTP tetiği
+## Tetik ile sürekli işleyicinin ayrımı
 
-Bugün yükleme ucu, yanıt gönderildikten sonra süreç içinde `worker.drain()`
-koşturuyor. Bu yalnız API ve worker AYNI süreçte olduğunda çalışır. ACA
-kararında (tasks.md T049) tek imaj iki ayrı Container App olarak koşuyor:
-`api` uvicorn'u, `worker` ise `python -m app.worker`'ı çalıştırıyor ve
-scale-to-zero ile uyuyor. Uyuyan worker'ı uyandırmanın yolu ona bir HTTP isteği
-göndermektir; kuyruğu yoklayan bir döngü scale-to-zero'yu anlamsızlaştırırdı.
+Yükleme yanıtından sonra trigger_drain(), Settings.worker_drain_url tanımlıysa
+korumalı POST /internal/drain ucunu çağırır; tanımsızsa API sürecinde bir drain
+turu çalıştırır. HTTP çağrısının hedefi bu router'ı sunan bir Uvicorn servisidir.
+python -m app.worker HTTP portu açmaz ve WORKER_DRAIN_URL hedefi olamaz.
+
+Yerel Compose API'nin HTTP worker tetiğini korur; ayrı worker-poller aynı imajda
+python -m app.worker çalıştırarak kuyruk yoklaması ve dönemsel kota bakımını
+sağlar. İki tüketici aynı kısa claim/lease/token/revision korumasını kullanır.
+Tek HTTP drain çağrısı sürekli bakım takvimi değildir. Scale-to-zero'da durmuş
+sürecin uyanışı ayrı barındırma veya zamanlayıcı yapılandırması gerektirir;
+yerel süreç kabulü böyle bir canlı uyanışın kanıtı değildir.
 
 ## Neden sırla korunuyor ve sırsızken hiç açılmıyor
 
@@ -120,7 +125,7 @@ async def trigger_drain() -> None:
             await worker.drain()
         except Exception:
             # İş kuyrukta kalır; bir sonraki tetik veya döngü onu alır.
-            logger.exception("worker tetiklenemedi")
+            logger.warning("worker tetiklenemedi", extra={"context": {"stage": "local_drain"}})
         return
 
     secret = settings.worker_drain_secret
@@ -128,7 +133,7 @@ async def trigger_drain() -> None:
         # Uzak uç sırsız zaten 404 döner; boşuna istek atmak yerine sebebi yazarız.
         logger.error(
             "worker URL'i tanımlı ama WORKER_DRAIN_SECRET yok — uzak drain ucu kapalı",
-            extra={"context": {"url": url}},
+            extra={"context": {"stage": "remote_drain_configuration"}},
         )
         return
 
@@ -138,10 +143,10 @@ async def trigger_drain() -> None:
         response.raise_for_status()
         logger.info(
             "uzak worker tetiklendi",
-            extra={"context": {"url": url, "status": response.status_code}},
+            extra={"context": {"status": response.status_code}},
         )
     except Exception:
-        logger.exception("uzak worker tetiklenemedi", extra={"context": {"url": url}})
+        logger.warning("uzak worker tetiklenemedi", extra={"context": {"stage": "remote_drain"}})
 
 
 @router.get("/evaluation/runtime")

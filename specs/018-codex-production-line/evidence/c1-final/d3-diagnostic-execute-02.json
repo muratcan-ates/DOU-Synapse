@@ -1,0 +1,24 @@
+{
+  "diagnostic_exit_code": 0,
+  "diagnostic": {
+    "status": "restore-refused",
+    "safe_restore_code": "RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE",
+    "failures": [
+      {
+        "step": 4,
+        "tool": "psql",
+        "returncode": 3,
+        "safe_code": "CURRENT_DATABASE_FENCE_REJECTED",
+        "script_line": 102
+      }
+    ]
+  },
+  "stderr_bytes": 0,
+  "target_after": {
+    "oid": 812961,
+    "allow_connections": true,
+    "connection_limit": -1,
+    "active_connections": 0
+  },
+  "ordinary_new_relations": 0
+}

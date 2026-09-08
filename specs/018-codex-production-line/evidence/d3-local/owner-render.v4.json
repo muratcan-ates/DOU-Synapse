@@ -1,0 +1,27 @@
+{
+  "scope": "trusted own synthetic archive, selected function only, no database/network access",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "archive_sha256": "4dae2796379f19d203127dd693ff2870acd7b35f459f9a0f07a90ddbe490cd81",
+  "results": {
+    "v3-session-authorization": {
+      "status": "offline SQL render complete; no DB execution",
+      "sql_sha256": "17e82c7322192ddf1ab5533d2006f43afe423298252da66e60948eefaba0f625",
+      "bytes": 1577,
+      "has_target_create_function": true,
+      "has_exact_alter_owner": false,
+      "has_source_session_authorization": true,
+      "has_security_definer": true,
+      "has_create_schema_grant": false
+    },
+    "v4-default-ownership": {
+      "status": "offline SQL render complete; no DB execution",
+      "sql_sha256": "cd46aa1476a9f03e29071cb1e785417097d5d1b8332037893d368f00c43af2e6",
+      "bytes": 1611,
+      "has_target_create_function": true,
+      "has_exact_alter_owner": true,
+      "has_source_session_authorization": false,
+      "has_security_definer": true,
+      "has_create_schema_grant": false
+    }
+  }
+}

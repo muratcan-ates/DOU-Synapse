@@ -2,6 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DOU-Synapse API",
+    "description": "Ders materyaline bağlı, kaynaklı cevap üreten ders asistanının HTTP yüzeyi. Her cevap dayandığı sayfayla döner; dayanak yoksa uç cevap değil gerekçeli ret döndürür. Ders izolasyonu iki katmanda zorlanır: sunucu tarafında üyelik doğrulaması ve aynı oturumda PostgreSQL satır düzeyi güvenlik.",
     "version": "0.1.0"
   },
   "paths": {
@@ -4276,6 +4277,14 @@
             "type": "string",
             "title": "Database Status"
           },
+          "pgvector_status": {
+            "type": "string",
+            "title": "Pgvector Status"
+          },
+          "request_quota_status": {
+            "type": "string",
+            "title": "Request Quota Status"
+          },
           "embedding_status": {
             "type": "string",
             "title": "Embedding Status"
@@ -4333,6 +4342,8 @@
         "required": [
           "status",
           "database_status",
+          "pgvector_status",
+          "request_quota_status",
           "embedding_status",
           "measured_at",
           "users_total",
@@ -4626,6 +4637,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/SourceRefOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "grounded_missing_criterion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroundedMissingCriterionOut"
               },
               {
                 "type": "null"
@@ -7607,6 +7628,24 @@
           "created_at"
         ],
         "title": "ExportProfileOut"
+      },
+      "GroundedMissingCriterionOut": {
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "title": "Criterion"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRefOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "criterion",
+          "source"
+        ],
+        "title": "GroundedMissingCriterionOut",
+        "description": "Puanlanan ölçütün kaynak alıntısı; anlamsal çelişkiyi doğruladığını iddia etmez."
       },
       "HTTPValidationError": {
         "properties": {

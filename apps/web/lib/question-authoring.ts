@@ -96,6 +96,22 @@ export function rubricHasLegacyMetadata(question: Question): boolean {
     Object.keys(record(item)).some((key) => key !== "point" && key !== "weight"));
 }
 
+/** Yeni kod sorusu yazımı için ön kontrol; son doğrulama her zaman API'dedir. */
+export function codeRubricIssue(question: Pick<Question, "type">, rubric: QuestionDraftForm["rubric"]): string | null {
+  if (question.type !== "code_trace" && question.type !== "bug_hunt") return null;
+  if (rubric.length === 0) return "Kaydetmek için en az bir puanlama ölçütü ekleyin.";
+  if (rubric.length > 12) return "En fazla 12 puanlama ölçütü ekleyebilirsiniz.";
+  const points = rubric.map((item) => item.point.trim().toLowerCase());
+  if (points.some((point) => !point)) return "Her ölçütün neyi değerlendirdiğini yazın.";
+  if (new Set(points).size !== points.length) return "Her puanlama ölçütü farklı olmalı.";
+  const weights = rubric.map((item) => Number(item.weight));
+  if (weights.some((weight) => !Number.isInteger(weight) || weight < 1 || weight > 100)) {
+    return "Her ölçüte 1 ile 100 arasında tam sayı puan verin.";
+  }
+  if (weights.reduce((sum, weight) => sum + weight, 0) !== 100) return "Ölçüt puanlarının toplamı 100 olmalı.";
+  return null;
+}
+
 export function changeCorrectOption(
   form: QuestionDraftForm, answerKey: string, sourceId: string | undefined,
 ): QuestionDraftForm {
@@ -125,9 +141,11 @@ export function buildDraftRequest(question: Question, form: QuestionDraftForm): 
   }
   if (question.type === "open") {
     payload.key_points = lines(form.keyPoints);
-    payload.rubric = form.rubric.map((item) => ({ ...item, weight: Number(item.weight) }));
     payload.accepted_answers = lines(form.acceptedAnswers);
   } else payload.explanation = form.explanation || null;
+  if (question.type === "open" || question.type === "code_trace" || question.type === "bug_hunt") {
+    payload.rubric = form.rubric.map((item) => ({ ...item, weight: Number(item.weight) }));
+  }
   if (question.type === "code_trace" || question.type === "bug_hunt") {
     payload.language = form.language;
     payload.code = form.code;

@@ -1,0 +1,5 @@
+{
+  "status": "harness-failed",
+  "reason": "Harness checked a dark CSS class; actual project theme contract uses data-theme. Light screenshot and keyboard checks completed. No product change.",
+  "correction": "matrix02 reads the existing data-theme attribute."
+}

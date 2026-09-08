@@ -1,0 +1,21 @@
+import importlib.util,json,os,socket,sys
+from pathlib import Path
+import psycopg
+attempts=0
+def denied(*args,**kwargs):
+    global attempts
+    attempts+=1
+    raise RuntimeError("S8_DATABASE_CONNECTION_FORBIDDEN")
+psycopg.connect=denied
+psycopg.Connection.connect=denied
+psycopg.AsyncConnection.connect=denied
+if os.environ.get("S8_OLD_SOURCE"):
+    source=Path(os.environ["S8_OLD_SOURCE"])
+    for name,filename in (("app.core.logging","logging.py"),("app.main","main.py")):
+        spec=importlib.util.spec_from_file_location(name,source/filename)
+        module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module)
+import uvicorn
+config=uvicorn.Config("app.main:app",host="127.0.0.1",port=0,http="h11",lifespan="on",access_log=True,log_level="info",proxy_headers=False)
+uvicorn.Server(config).run(sockets=[socket.socket(fileno=int(os.environ["S8_SOCKET_FD"]))])
+print(json.dumps({"probe":"database-connect-guard","attempts":attempts}),flush=True)
+assert attempts==0

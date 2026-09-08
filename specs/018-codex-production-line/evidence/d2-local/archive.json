@@ -1,0 +1,146 @@
+{
+  "stage01-tests.json": {
+    "sha256": "4f2feecb1b7f77d8f60da9eea6f339b32f0be41533a0f797bd191070807a9f29",
+    "uncompressed_sha256": "4f2feecb1b7f77d8f60da9eea6f339b32f0be41533a0f797bd191070807a9f29",
+    "bytes": 23987,
+    "source": "/private/tmp/dou018-evidence/d2-stage-tests-01/result.json"
+  },
+  "stage01-tests.log.gz": {
+    "sha256": "9ddcafd9fb5fe09f4b7f3d57d97518f6a1acda29fb9de2a555ee462e5ad4a7ef",
+    "uncompressed_sha256": "3514fea95bc69e22fe02391f85e2184b4136e0e724cb82a0be1052c7b1385d63",
+    "bytes": 308,
+    "source": "/private/tmp/dou018-evidence/d2-stage-tests-01/tests.log"
+  },
+  "lineage-red.json": {
+    "sha256": "9d46af60cff078a463ea55bc20b40a5ce888730e0ea0f561759e7e5b570257cb",
+    "uncompressed_sha256": "9d46af60cff078a463ea55bc20b40a5ce888730e0ea0f561759e7e5b570257cb",
+    "bytes": 23946,
+    "source": "/private/tmp/dou018-evidence/d2-lineage-red-01/result.json"
+  },
+  "lineage-red.log.gz": {
+    "sha256": "95d9d90375f0492e60ba7f108edd210bc8c594e57b3f46862e1b50f34847447a",
+    "uncompressed_sha256": "fcc9bef9cd245308db4ecc9f2a81ae40f08467dd4a13ecaeb05492128c033724",
+    "bytes": 1169,
+    "source": "/private/tmp/dou018-evidence/d2-lineage-red-01/tests.log"
+  },
+  "stage02-tests.json": {
+    "sha256": "266c0314237cc2e9e10cd04d2d39ad549b8024414ca1534ec8c81280ac2a8c0f",
+    "uncompressed_sha256": "266c0314237cc2e9e10cd04d2d39ad549b8024414ca1534ec8c81280ac2a8c0f",
+    "bytes": 24315,
+    "source": "/private/tmp/dou018-evidence/d2-stage-tests-02/result.json"
+  },
+  "stage02-tests.log.gz": {
+    "sha256": "457c1e3f3ff39501b884b88a720dc9e9b279c8ea5bcc5ef47b5230ecbe585729",
+    "uncompressed_sha256": "3f9aaa699891df284a554587c5ac519c10a0bac714dc4afef9d72732c83aae22",
+    "bytes": 309,
+    "source": "/private/tmp/dou018-evidence/d2-stage-tests-02/tests.log"
+  },
+  "migration-preconditions.json": {
+    "sha256": "dff0a29e0aad33e8475e8d98a4523bb33f002d185ac5a99a6886b5fd735e7774",
+    "uncompressed_sha256": "dff0a29e0aad33e8475e8d98a4523bb33f002d185ac5a99a6886b5fd735e7774",
+    "bytes": 6308,
+    "source": "/private/tmp/dou018-evidence/d2-migration-preconditions-01/result.json"
+  },
+  "migration-positive.json": {
+    "sha256": "1392568e9f212b41d44819040042f1563db1231f280c0b67e0abc97fe3bfe2d1",
+    "uncompressed_sha256": "1392568e9f212b41d44819040042f1563db1231f280c0b67e0abc97fe3bfe2d1",
+    "bytes": 1198,
+    "source": "/private/tmp/dou018-evidence/d2-migration-positive-01/result.json"
+  },
+  "process-v1.json": {
+    "sha256": "1ca00c92d3b578437fd02564f13516df8be1337c80ec7f301dfdfbdc7fa289eb",
+    "uncompressed_sha256": "1ca00c92d3b578437fd02564f13516df8be1337c80ec7f301dfdfbdc7fa289eb",
+    "bytes": 28994,
+    "source": "/private/tmp/dou018-d2-process-measured-01/report.json"
+  },
+  "process-v1-root.json": {
+    "sha256": "204bfb7eab3e5f0c32717ce94d6e34698005ee62538692a0f4696157ccf14d93",
+    "uncompressed_sha256": "204bfb7eab3e5f0c32717ce94d6e34698005ee62538692a0f4696157ccf14d93",
+    "bytes": 757,
+    "source": "/private/tmp/dou018-evidence/d2-process-provision-01/result.json"
+  },
+  "process-v2.json": {
+    "sha256": "02c319b4c16cb08d31ea1e6a550b1b866bf2a7546e980fe17f471345f1b5b257",
+    "uncompressed_sha256": "02c319b4c16cb08d31ea1e6a550b1b866bf2a7546e980fe17f471345f1b5b257",
+    "bytes": 29203,
+    "source": "/private/tmp/dou018-d2-process-measured-02/report.json"
+  },
+  "process-v2-root.json": {
+    "sha256": "9500e593418a7b8e7e60df06f27e764831895d2e3cd62ada5ebcf1b697a5a8c5",
+    "uncompressed_sha256": "9500e593418a7b8e7e60df06f27e764831895d2e3cd62ada5ebcf1b697a5a8c5",
+    "bytes": 722,
+    "source": "/private/tmp/dou018-evidence/d2-process-provision-02/result.json"
+  },
+  "candidate-v2-manifest.sha256": {
+    "sha256": "67755c028f34cfcb3c79b4bd2fd11de310594dda6df98cd84ddee08592060095",
+    "uncompressed_sha256": "67755c028f34cfcb3c79b4bd2fd11de310594dda6df98cd84ddee08592060095",
+    "bytes": 3232,
+    "source": "/private/tmp/dou018-d2-implementation-candidate-v2/MANIFEST.sha256"
+  },
+  "candidate-v2-validation.json": {
+    "sha256": "5eb72355318301a7af502e887ad0f5cf7cda2606cced97ba7961695bd75756f3",
+    "uncompressed_sha256": "5eb72355318301a7af502e887ad0f5cf7cda2606cced97ba7961695bd75756f3",
+    "bytes": 1785,
+    "source": "/private/tmp/dou018-d2-implementation-candidate-v2/evidence/validation-v2.json"
+  },
+  "process-v2-source-manifest.sha256": {
+    "sha256": "9f2ee6c213ee84c1e64dc481284922f20c2c5e4775a77c6950afe0cf1e1b3506",
+    "uncompressed_sha256": "9f2ee6c213ee84c1e64dc481284922f20c2c5e4775a77c6950afe0cf1e1b3506",
+    "bytes": 3633,
+    "source": "/private/tmp/dou018-d2-process-acceptance-v2/MANIFEST.sha256"
+  },
+  "process-v2-offline-validation.json": {
+    "sha256": "ac8a32d2eb100dd0a11df57fe0236ab89c67096f80fed6e9cea1b9ef7826e074",
+    "uncompressed_sha256": "ac8a32d2eb100dd0a11df57fe0236ab89c67096f80fed6e9cea1b9ef7826e074",
+    "bytes": 995,
+    "source": "/private/tmp/dou018-d2-process-acceptance-v2/evidence/validation.json"
+  },
+  "d2-independent-migration-review.md": {
+    "sha256": "7b93e42d59dc94ea69e9785c15464749fda2ee1be3404e041f2d360733342c5b",
+    "uncompressed_sha256": "7b93e42d59dc94ea69e9785c15464749fda2ee1be3404e041f2d360733342c5b",
+    "bytes": 5000,
+    "source": "/private/tmp/dou018-evidence/d2-independent-migration-review.md"
+  },
+  "d2-independent-migration-review.json": {
+    "sha256": "486c48903e9305eb59c16e0d15d8ae11318bf6948e7a9461daaa174941323a98",
+    "uncompressed_sha256": "486c48903e9305eb59c16e0d15d8ae11318bf6948e7a9461daaa174941323a98",
+    "bytes": 5902,
+    "source": "/private/tmp/dou018-evidence/d2-independent-migration-review.json"
+  },
+  "d2-v2-authority-acceptance-addendum.md": {
+    "sha256": "a7961e15af265fe03062a55cc037fc92595de7004a7d74aaf919e569be0fd460",
+    "uncompressed_sha256": "a7961e15af265fe03062a55cc037fc92595de7004a7d74aaf919e569be0fd460",
+    "bytes": 3142,
+    "source": "/private/tmp/dou018-evidence/d2-v2-authority-acceptance-addendum.md"
+  },
+  "d2-v2-authority-acceptance-addendum.json": {
+    "sha256": "dc4769a7236e48ade2fa4ba796f53c655226c6e476d67aa883c5658252213b4d",
+    "uncompressed_sha256": "dc4769a7236e48ade2fa4ba796f53c655226c6e476d67aa883c5658252213b4d",
+    "bytes": 4245,
+    "source": "/private/tmp/dou018-evidence/d2-v2-authority-acceptance-addendum.json"
+  },
+  "d2-v2-legacy-positive-addendum.md": {
+    "sha256": "1dcbc9fce545235a8960572aaae560de73c86c3c4b54c0e4f56aa7c0feb4d43a",
+    "uncompressed_sha256": "1dcbc9fce545235a8960572aaae560de73c86c3c4b54c0e4f56aa7c0feb4d43a",
+    "bytes": 1369,
+    "source": "/private/tmp/dou018-evidence/d2-v2-legacy-positive-addendum.md"
+  },
+  "d2-v2-legacy-positive-addendum.json": {
+    "sha256": "cb2de48d0174fce5d090078ed2f5b7c2b8dd517b6ebb5ac7dd5ee74616404f24",
+    "uncompressed_sha256": "cb2de48d0174fce5d090078ed2f5b7c2b8dd517b6ebb5ac7dd5ee74616404f24",
+    "bytes": 1233,
+    "source": "/private/tmp/dou018-evidence/d2-v2-legacy-positive-addendum.json"
+  },
+  "d2-process-v1-independent-review.md": {
+    "sha256": "04cee58f18995c3d3b431a3b4023a1df5de3befd8a2c6dd27c498528e3023ff6",
+    "uncompressed_sha256": "04cee58f18995c3d3b431a3b4023a1df5de3befd8a2c6dd27c498528e3023ff6",
+    "bytes": 3537,
+    "source": "/private/tmp/dou018-evidence/d2-process-v1-independent-review.md"
+  },
+  "d2-process-v1-independent-review.json": {
+    "sha256": "2223dec41c04d2c7d962944958ebe0059c1377d7f36a45b4294a3881082c1325",
+    "uncompressed_sha256": "2223dec41c04d2c7d962944958ebe0059c1377d7f36a45b4294a3881082c1325",
+    "bytes": 4118,
+    "source": "/private/tmp/dou018-evidence/d2-process-v1-independent-review.json"
+  }
+}

@@ -1,0 +1,43 @@
+--- a/apps/api/tests/test_worker_recovery.py
++++ b/apps/api/tests/test_worker_recovery.py
+@@ -348,21 +348,33 @@
+                 text("SELECT id FROM ingestion_jobs WHERE id = :id FOR UPDATE"),
+                 {"id": claim.job_id},
+             )
++            waiting_query = text(
++                "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_stat_activity a "
++                "WHERE a.datname = current_database() AND a.usename = 'dou_worker' "
++                "AND a.wait_event_type = 'Lock' AND a.query LIKE '%FOR UPDATE%' "
++                "AND pg_catalog.pg_backend_pid() = ANY(pg_catalog.pg_blocking_pids(a.pid)))"
++            )
++            # Prime the observer before the worker starts. Reusing this cached
++            # activity snapshot would otherwise hide a waiter that appears later.
++            assert await blocker.scalar(waiting_query) is False
+             task = asyncio.create_task(
+                 claims.fail_claim(factory, claim, claims.FailureReason.CANCELLED)
+             )
+             async with asyncio.timeout(0.8):
+                 while True:
+-                    waiting = await blocker.scalar(
+-                        text(
+-                            "SELECT EXISTS (SELECT 1 FROM pg_catalog.pg_stat_activity "
+-                            "WHERE datname = current_database() AND usename = 'dou_worker' "
+-                            "AND wait_event_type = 'Lock' AND query LIKE '%FOR UPDATE%')"
+-                        )
+-                    )
++                    # Same transaction retains the job lock; only refresh the
++                    # statistics observer, not the source/job snapshot or clock.
++                    await blocker.execute(text("SELECT pg_catalog.pg_stat_clear_snapshot()"))
++                    waiting = await blocker.scalar(waiting_query)
+                     if waiting:
+                         break
+                     await asyncio.sleep(0.005)
++                assert (
++                    await blocker.scalar(
++                        text("SELECT clock_timestamp() < :deadline"), {"deadline": deadline}
++                    )
++                    is True
++                )
+                 while not await blocker.scalar(  # noqa: ASYNC110 - observing external DB clock
+                     text("SELECT clock_timestamp() > :deadline"), {"deadline": deadline}
+                 ):

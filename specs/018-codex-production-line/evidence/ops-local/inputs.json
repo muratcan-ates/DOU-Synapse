@@ -1,0 +1,33 @@
+{
+  "scope": "Synthetic technical component and real-process experiments; no student corpus, LLM grading or statistical calibration/holdout claim. False-healthy threshold is exact status equality predeclared in the same frozen tests.",
+  "inputs": [
+    {
+      "path": "apps/api/tests/test_admin_readiness.py",
+      "sha256": "d7918834ba68199c59f64dc2d2907a256cb8a293278a05be902201af5bef0b1a"
+    },
+    {
+      "path": "apps/api/tests/test_worker_lifecycle.py",
+      "sha256": "6f204b35080b05d59ff8b1ba9fc435a68d35c6e7c1f4535b09bd10211760ccb7"
+    },
+    {
+      "path": "apps/web/e2e/admin-readiness.spec.ts",
+      "sha256": "b9818492d3dddf65471c467db153a3d9dbf19d69cf7ac9ac33a762915d478de5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/r1-characterization.py.txt",
+      "sha256": "9ffa674f9280e9fa0f43b87122fba5507d57d429de067dad4058534492508a4e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_false_healthy_v2.py.txt",
+      "sha256": "0259fde911acf266488a8c9b4cad2eed7e1e6883ee36d9162a4f0491c34e0f5a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_quota_period_run_v2.py.txt",
+      "sha256": "6e884c9afafdc92cbab1cf29fa07e9213fe0c38735c158c6751fc9066f9da92d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/d3-run.py.txt",
+      "sha256": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053"
+    }
+  ]
+}

@@ -22,6 +22,8 @@ from app.models.core import JobStatus
 class AdminOverviewOut(BaseModel):
     status: str
     database_status: str
+    pgvector_status: str
+    request_quota_status: str
     embedding_status: str
     measured_at: datetime
     users_total: int

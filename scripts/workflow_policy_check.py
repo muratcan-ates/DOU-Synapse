@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,14 @@ from yaml.resolver import BaseResolver
 
 IMMUTABLE_REMOTE_RE = re.compile(r"^[^/@\s]+/[^@\s]+@[0-9a-f]{40}$")
 TRUE_FALSE_RE = re.compile(r"^(?:true|false)$", re.IGNORECASE)
+# Yazma izni yalnız bu dosya ve iş kimliklerinde kullanılabilir. Daha az yetki
+# kabul edilir; yeni kapsam veya iş için politika incelemesi gerekir.
+ALLOWED_WRITE_SCOPES: dict[tuple[str, str], frozenset[str]] = {
+    (".github/workflows/security.yml", "codeql"): frozenset({"security-events"}),
+    (".github/workflows/release-candidate.yml", "candidate"): frozenset(
+        {"attestations", "id-token", "packages"}
+    ),
+}
 
 
 class MarkedDict(dict[Any, Any]):
@@ -159,6 +168,129 @@ def _contains_trigger(value: Any, trigger: str, seen: set[int] | None = None) ->
     return False
 
 
+def _inspect_permissions(
+    mapping: MarkedDict,
+    *,
+    relative: Path,
+    job_id: str | None,
+    violations: list[Violation],
+) -> None:
+    """Dinamik yetki ve genel yazma izni güvenli varsayılamaz."""
+    if "permissions" not in mapping:
+        return
+    permissions = mapping["permissions"]
+    line = mapping.key_lines.get("permissions", 1)
+    if permissions == "read-all":
+        return
+    if not isinstance(permissions, MarkedDict):
+        violations.append(
+            Violation("UNSAFE_PERMISSIONS", relative, line, repr(permissions))
+        )
+        return
+    allowed = ALLOWED_WRITE_SCOPES.get((relative.as_posix(), job_id or ""), frozenset())
+    for scope, access in permissions.items():
+        scope_line = permissions.key_lines.get(scope, line)
+        if access not in ("read", "write", "none"):
+            violations.append(
+                Violation(
+                    "UNSAFE_PERMISSIONS", relative, scope_line, f"{scope}: {access!r}"
+                )
+            )
+        elif access == "write" and scope not in allowed:
+            violations.append(
+                Violation(
+                    "UNEXPECTED_WRITE_PERMISSION",
+                    relative,
+                    scope_line,
+                    f"{job_id or 'workflow'}: {scope}",
+                )
+            )
+
+
+def _swallowed_shell_failure(script: str) -> bool:
+    """Kabukta hata yutan OR kolunu bul; tırnaklı çıktı ve yorumu komut sayma.
+
+    Bu bir genel kabuk doğrulayıcısı değildir. Bilinen ``|| true`` / ``|| :``
+    kaçışını ve ``command true`` eşdeğerini tarar. Dinamik komut üretimini
+    veya tırnak içindeki komut ikamelerini çözümlemez. Asıl doğrulama komutlarının
+    anlamı ve çağrılan betiklerin içeriği ayrıca kod incelemesine tabidir.
+    """
+    lexer = shlex.shlex(
+        script.replace("\\\n", ""), posix=False, punctuation_chars="|&;()"
+    )
+    lexer.whitespace_split = True
+    lexer.commenters = "#"
+    try:
+        tokens = list(lexer)
+    except ValueError:
+        # Heredoc içeriği başka bir dil olabilir; bozuk kabuk gibi yorumlamayız.
+        # Tam metin yerine satırları taramak bu durumda görünür OR kaçışını korur.
+        return any(_swallowed_shell_line(line) for line in script.splitlines())
+    return _contains_swallowed_or(tokens)
+
+
+def _swallowed_shell_line(line: str) -> bool:
+    lexer = shlex.shlex(line, posix=False, punctuation_chars="|&;()")
+    lexer.whitespace_split = True
+    lexer.commenters = "#"
+    try:
+        return _contains_swallowed_or(list(lexer))
+    except ValueError:
+        return False
+
+
+def _contains_swallowed_or(tokens: list[str]) -> bool:
+    for index, token in enumerate(tokens[:-1]):
+        if token != "||":
+            continue
+        next_index = index + 1
+        while next_index < len(tokens) and tokens[next_index] in {
+            "(",
+            "{",
+            "command",
+            "builtin",
+        }:
+            next_index += 1
+        if next_index < len(tokens):
+            fallback = tokens[next_index]
+            if (
+                len(fallback) > 1
+                and fallback[0] in {"'", '"'}
+                and fallback[-1] == fallback[0]
+            ):
+                fallback = fallback[1:-1]
+            if fallback in {"true", ":", "/bin/true", "/usr/bin/true"}:
+                return True
+    return False
+
+
+def _inspect_failure_policy(
+    mapping: MarkedDict,
+    *,
+    relative: Path,
+    violations: list[Violation],
+) -> None:
+    if "continue-on-error" in mapping and mapping["continue-on-error"] is not False:
+        violations.append(
+            Violation(
+                "FAIL_OPEN_CONTINUE",
+                relative,
+                mapping.key_lines.get("continue-on-error", 1),
+                repr(mapping["continue-on-error"]),
+            )
+        )
+    script = mapping.get("run")
+    if isinstance(script, str) and _swallowed_shell_failure(script):
+        violations.append(
+            Violation(
+                "SWALLOWED_COMMAND_FAILURE",
+                relative,
+                mapping.key_lines.get("run", 1),
+                "|| true / || :",
+            )
+        )
+
+
 def _walk_uses(
     value: Any,
     *,
@@ -176,6 +308,7 @@ def _walk_uses(
         seen.add(identity)
 
     if isinstance(value, MarkedDict):
+        _inspect_failure_policy(value, relative=relative, violations=violations)
         if "uses" in value:
             line = value.key_lines.get("uses", 1)
             target = value["uses"]
@@ -259,6 +392,19 @@ def inspect_workflows(root: Path) -> list[Violation]:
             continue
 
         if path.parent == workflow_dir:
+            _inspect_permissions(
+                document, relative=relative, job_id=None, violations=violations
+            )
+            jobs = document.get("jobs", {})
+            if isinstance(jobs, MarkedDict):
+                for job_id, job in jobs.items():
+                    if isinstance(job, MarkedDict):
+                        _inspect_permissions(
+                            job,
+                            relative=relative,
+                            job_id=str(job_id),
+                            violations=violations,
+                        )
             if "on" not in document:
                 violations.append(Violation("MISSING_TRIGGER", relative, 1, "on"))
             elif _contains_trigger(document["on"], "pull_request_target"):

@@ -1,0 +1,23 @@
+{
+  "target": "dou018_recovery_target10",
+  "target_oid": "1114944",
+  "target_identity_sha256": "d1c91517992f385d383b78b48f1ffda7ae5e62bc1526a1d0bdee4959f854c3ef",
+  "maintenance_oid": "5",
+  "cluster": "7683042491268153327",
+  "runner_sha256": "356a896ab1ed2840ffcf5acb56514afd32967569c0e865bd692e80624a424a9b",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "case": "reopen",
+  "exit_code": 0,
+  "seconds": 24.627,
+  "source_unchanged": true,
+  "after": {
+    "oid": "1114944",
+    "allow_connections": false,
+    "active_connections": 0
+  },
+  "stdout.log_sha256": "9522fcb24500d10fbe7b6781dbe2046697ae1392e01cde4e507ee0c5936b0d2a",
+  "stderr.log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "runner_result_sha256": "413a9581e1a6f75541750d1b04c2b6cb7ff12b2b0fa27d69f8e50ecf8a72a03b",
+  "status": "negative-acceptance-pass",
+  "safe_code": null
+}

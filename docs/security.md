@@ -1,11 +1,9 @@
 # Güvenlik
 
-Bu belge, sistemin güvenlik iddialarının tek toplandığı yerdir. Kural: **burada
-yazılan her iddianın kodda karşılığı vardır ve satır numarasıyla gösterilir.**
-Karşılığı olmayan şey "uygulanmadı" başlığı altında yazılıdır (Anayasa III).
+Bu belge kodla doğrulanabilen güvenlik sınırlarını toplar. Yeni bulgular ve veri yaşam döngüsü açıkları [8 Eylül incelemesinde](security/privacy-review-2026-09-08.md), aday test sonuçları [018 doğrulamasında](../specs/018-codex-production-line/verification.md) tutulur. Kodda bulunan kontrol, canlı ortamda uygulanmış veya hukuken yeterli kabul edilmiş sayılmaz.
 
 Tarihsel güvenlik baseline'ı: 9 Ağustos 2026 · Kanıt komutları son
-doğrulama: 11 Ağustos 2026 · Kapsam: güncel repository candidate
+doğrulama: 8 Eylül 2026 · Kapsam: 018 yerel aday; tarihli eski ölçümler ayrıca işaretlenir
 
 ---
 
@@ -30,7 +28,7 @@ Doğrulamada zorunlu tutulanlar (`_REQUIRED_CLAIMS`,
   Supabase projesinin token'ı bu anahtarla doğrulanamaz.
 - **`exp`** — zorunlu ve kontrol ediliyor. Süresi geçmiş token 401.
 - **`aud`** — `authenticated` olmak zorunda.
-- **`iss`** — claim'in **varlığı** zorunlu; değeri henüz sabitlenmiyor (bkz. §8).
+- **`iss`** — varlığı zorunlu; `SUPABASE_JWT_ISSUER` (veya uyumlu `JWT_ISSUER`) tanımlandığında değeri de karşılaştırılır. Üretimde bu ayar açık bir HTTPS `/auth/v1` adresi olmak zorundadır; eksik veya bozuk değer başlangıcı durdurur. Yerel/demo ortamında isteğe bağlıdır.
 - **`sub`** — UUID olmak zorunda; olmayan token 401.
 - **Algoritma** — izin listesinden `none` her koşulda eleniyor
   ([`security.py:59`](../apps/api/app/core/security.py#L59)).
@@ -249,8 +247,8 @@ set-membership bir kontroldür.
 |---|---|
 | Sağlayıcı/model adı | Kullanıcıya dönen zarfta yok; hata mesajları tek şablondan üretilir ([`core/errors.py`](../apps/api/app/core/errors.py)) |
 | Ham yığın izi | `unhandled_error_handler` genel Türkçe mesaj döner, ayrıntı loga gider |
-| Soru metni ölçüm kaydında | `request_logs` şemasında serbest metin sütunu YOK — yapısal önlem, filtre değil ([`0003_chat.sql`](../supabase/migrations/0003_chat.sql)) |
-| API anahtarı / JWT / TCKN / e-posta logda | `RedactionFilter` her log kaydını maskeler ([`core/logging.py`](../apps/api/app/core/logging.py)) |
+| Soru metni ölçüm kaydında | `request_logs` soru/cevap alanı taşımaz; mevcut yazıcı sabit rota ve ölçüm alanlarını kullanır. Text türündeki route sütunu tek başına içerik yazılmasını imkânsız kılmaz ([`0003_chat.sql`](../supabase/migrations/0003_chat.sql)) |
+| API anahtarı / JWT / TCKN / e-posta logda | Uygulamanın handler'ındaki `RedactionFilter` bilinen kalıpları maskeler; her serbest kişisel metin veya dış günlük için tam güvence değildir ([`core/logging.py`](../apps/api/app/core/logging.py)) |
 | Dersin varlığı | Üye olmayana 404; "var ama giremezsin" ile "yok" ayırt edilemez |
 | Taslak sınav sorusu ve cevap anahtarı | `questions_read` politikası öğrenciye yalnız `approved` gösterir (`0004`) |
 | `request_logs` satırları | Öğrenciye tamamen kapalı; eğitmen yalnız kendi dersini okur (`0005`) |
@@ -265,8 +263,7 @@ kullanır — `.inline()` bunu zorlar
 
 ## 7. Yükleme ve istek sınırları
 
-- **Dosya boyutu**: `MAX_UPLOAD_BYTES` (varsayılan 20 MB), aşılırsa 413
-  ([`ingestion/validation.py:86`](../apps/api/app/modules/ingestion/validation.py#L86)).
+- **İstek ve dosya boyutu**: ham gövde, multipart ayrıştırmadan önce `MAX_UPLOAD_BYTES + 64 KiB` ile sınırlandırılır. 64 KiB bellek sonrasında sınırlı geçici disk kullanılır; sınır aşımında 413 döner. Endpoint dosyayı en fazla max+1 bayt okur. Bu istek başına sınırdır; bütün bağlantıların toplam belleği/diski ve yavaş gönderim için ayrıca işletim sınırı gerekir ([gövde sınırı](../apps/api/app/core/request_body_limit.py)).
 - **Uzantı izin listesi**: `allowed_upload_extensions` — izin listesi,
   yasak listesi değil.
 - **Yükleme tekilliği**: `(course_id, file_hash)` üzerinde UNIQUE; aynı dosya
@@ -275,24 +272,15 @@ kullanır — `.inline()` bunu zorlar
   istek / 60 saniye ([`chat.py:567`](../apps/api/app/api/chat.py#L567)).
 - **CORS**: izinli kaynaklar `CORS_ORIGINS`'ten gelir; üretimde yalnız gerçek
   alan adını içerir ([`main.py:48`](../apps/api/app/main.py#L48)).
-- **`POST /internal/drain`**: `WORKER_DRAIN_SECRET` tanımlı değilse uç
-  **kapalıdır** (fail-closed). Gövde Faz G şeridinde yazılır; bugün router boş
-  ([`api/internal.py`](../apps/api/app/api/internal.py)).
+- **`POST /internal/drain`**: `WORKER_DRAIN_SECRET` yoksa kapalıdır; mevcut uç sabit zamanlı anahtar karşılaştırmasıyla korunur. Worker yapılandırması kullanıcıdan gelen genel bir URL değildir ([internal.py](../apps/api/app/api/internal.py)).
 
 ---
 
 ## 8. Sınırlar ve uygulanmayanlar
 
-Bu bölüm eksiksiz tutulur; burada yazmayan bir eksik, gizlenmiş bir eksiktir.
+Bu bölüm bilinen sınırları kaydeder; bütün olası açıkların bulunmuş olduğu iddia edilmez.
 
-**1. `iss` değeri sabitlenmiyor.** `iss` claim'inin varlığı zorunlu ama değeri
-karşılaştırılmıyor, çünkü `Settings`'te `jwt_issuer` alanı yok ve `config.py`
-bu şeridin sahipliği dışında. Kod alanı `getattr` ile okur
-([`security.py:74`](../apps/api/app/core/security.py#L74)); alan eklendiği an
-sabitleme ek bir değişiklik olmadan devreye girer ve testi bugünden yazılı
-(`TestIssuerSabitleme`). **Gerçek koruma imza anahtarıdır**: başka bir Supabase
-projesinin token'ı bizim secret'ımızla doğrulanamaz. Eksik olan derinlik
-savunmasıdır.
+**1. Issuer başlangıçta doğrulanır; canlı kimlik kanıtı ayrıdır.** Üretim ayarları açık HTTPS `/auth/v1` issuer adresini zorunlu tutar. Eksik, bozuk veya kullanıcı bilgisi/sorgu/parça içeren değer reddedilir; JWT tüketicisi ayar sonradan bozulsa da eksik issuer ile devam etmez. Mevcut HS256 yolu korunur. Gerçek Supabase projesinin imza ayarı ve token akışı henüz sınanmadı.
 
 **2. Köprü gerçek Supabase üstünde KOŞULMADI.** Gerçek proje ve anahtar
 olmadığı için `0002` yalnız sahte bir `auth.users` üstünde sınandı. Sınanan
@@ -301,19 +289,11 @@ migration'ın `app.install_auth_user_bridge()` fonksiyonunu çağırır) ama
 Supabase'in `auth.users` şeması, izinleri ve `supabase_auth_admin` rolü birebir
 taklit edilmiştir, gerçek değildir.
 
-**3. İstek sınırı süreç içidir.** Sayaç bellekte tutulur
-([`chat.py:121`](../apps/api/app/api/chat.py#L121)); birden fazla uvicorn
-worker'ı çalıştığında sınır **worker başına** uygulanır. Dağıtık sınır Redis
-ister ve kapsam dışıdır. MVP tek süreçle koşuyor.
+**3. Yeni API süreçleri ortak PostgreSQL istek kotasını kullanır.**0025 bütçeyi kullanıcı+ders+kapsam bazında paylaşır. Kontrol kabulü ayrı COMMIT'tir; başarısız sağlayıcı çağrısı hakkı geri vermez. İki gerçek HTTP sürecinde20 kabul/20 ret ve qgen300s Retry-After doğrulandı. Politika/DB hatasında sağlayıcı çağrısı yapılmadan503 döner. Eski bellek sayacını kullanan sürümle karışık geçiş bu garantiyi vermez. Token rezervasyonları ve aktif iş kontrolleri ayrı katmanlardır; soru üretiminin eşzamanlılık kapısı hâlâ süreç içindedir. [İşletim ve saklama sınırları](operations/shared-request-quota.md).
 
-**4. Güvenlik başlıkları ve TLS uygulama katmanında YOK.** HSTS, CSP,
-`X-Content-Type-Options` gibi başlıklar eklenmiyor; TLS sonlandırma dağıtım
-katmanının işi (R3 şeridi). Bugün yalnız CORS var.
+**4. Güvenlik başlıkları vardır; TLS ayrı katmandır.** API JSON yanıtlarında CSP, nosniff ve referrer başlıkları, belge yüzeyinde ayrı dar politika vardır. Web CSP ve Permissions-Policy mevcuttur. Next'in mevcut üretim politikasında inline script/style izni kalır; nonce tabanlı daraltma uygulanmadı. Web CSP, yapılandırılmış API ve Supabase origin'lerini doğrulayarak `connect-src` listesine ekler; joker hedef açılmaz. Bu bir canlı Supabase giriş testi değildir. HTTPS/HSTS, gerçek dağıtımda doğrulanmalıdır.
 
-**5. CORS `allow_credentials=True`.** Sistem kimliği `Authorization`
-başlığıyla taşıyor, çerezle değil; bu bayrağa ihtiyaç yok. Kaynak listesi
-sabitlendiği için bir açık değil, gereksiz bir genişlik. `main.py` lider
-dosyası olduğu için değiştirilmedi, rapora yazıldı.
+**5. CORS kimlik çerezlerini açmaz.** Güncel API `allow_credentials=False` kullanır; kimlik Bearer başlığıyla taşınır. İzinli origin listesi kurulumda dar tutulmalıdır.
 
 **6. Cevap önbelleğine yazma, uygulama katmanının garantisidir.** RLS
 düzeyinde dersin bir üyesi kendi dersinin `answer_cache`'ine satır yazabilir;
@@ -321,11 +301,9 @@ düzeyinde dersin bir üyesi kendi dersinin `answer_cache`'ine satır yazabilir;
 uygulama uygular. Kabul edilebilir çünkü kullanıcıların doğrudan veritabanı
 kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapalı.
 
-**7. Profil silme akışı yok.** `auth.users`'tan silinen kullanıcının profili
-kalır (§1). Aynı e-postayla yeniden kayıt, köprü tarafından reddedilir ve
-çözüm operatörün bilinçli kararıdır (eski profili silmek ya da e-postasını
-arşiv değerine çevirmek). Otomatik bir onarım yolu bilinçli olarak yazılmadı:
-akademik kaydı yeni bir kimliğe sessizce bağlamak daha kötü bir sonuçtur.
+**7. Silme ile bekleyen sohbet yazımı aynı yaşam döngüsüne bağlıdır.** Ders/tüm geçmiş/profil silme, kapsam sürümünü kayıt silinmese bile ilerletir. Model beklerken yeni oturum geçici kalır; son kısa kilit altında sürüm, taze üyelik ve mevcut oturum tekrar doğrulanır. Başarılı silme sonrası eski POST mesaj/cache yazamaz. Başka ders ve oturum kapsamı korunur; model çağrısının maliyetinin geri alındığı iddia edilmez. Tarayıcı olayını kaçıran sekme yeniden görünür olduğunda gerçek yetki/geçmiş denetimi yapar.
+
+**8. Profil bilgisi kaldırma tam anonimleştirme değildir.** `DELETE /me` ad/e-postayı değiştirir, kendi sohbetlerini siler ve üyeliklerini revoked yapar. Aynı profil UUID'si ve akademik bağlantılar kalır. Auth hesabı, saklanan cevaplar, materyaller, operasyon kayıtları ve dış kopyalar ayrıca ele alınmalıdır. `anonymized` eski API alan adıdır; hukuki/istatistiksel anonimlik kanıtı değildir.
 
 ---
 
@@ -336,31 +314,31 @@ akademik kaydı yeni bir kimliğe sessizce bağlamak daha kötü bir sonuçtur.
 | E-posta, ad soyad | `profiles` | Kişinin kendisi; dersinin eğitmeni |
 | Ders üyeliği ve rolü | `course_memberships` | Kişinin kendisi; dersin eğitmeni |
 | Sohbet soruları ve cevapları | `chat_messages` | **Yalnız oturum sahibi** |
+| Sohbet silme kapsam sürümü | `chat_privacy_revisions` | Sahip RLS; soru/cevap ve silme zamanı içermez |
 | Sınav cevapları ve mastery skoru | `answers`, `mastery` | Yalnız öğrencinin kendisi |
 | Yüklenen belgeler | `documents` + dosya deposu | Dersin üyeleri |
-| Ölçüm kaydı (metin YOK) | `request_logs` | Dersin eğitmeni (`0005`) |
+| Ölçüm kaydı (soru/cevap alanı yok) | `request_logs` | Dersin eğitmeni (`0005`) |
+| Ortak istek kotası kimlik/zaman dizisi | `app.rate_limit_windows` | Uygulamanın doğrudan SELECT yetkisi yok; dar kontrol/bakım işlevleri ve yetkili DB işletimi |
+| Kanonik kota politikası (kişisel kayıt değil) | `app.request_rate_policies` | Uygulama yalnız dar politika görünümünü kullanır |
+| Korelasyon/rota/zaman metadatası | Uygulama stdout'u ve seçilen log toplayıcı | Dağıtımın log erişim yetkileri; SQL RLS bu kopyaya uygulanmaz |
 
-**Serbest metin taşıyan tek kişisel alan `chat_messages.content`'tir** ve
-yalnız oturum sahibine açıktır — eğitmene bile değil.
+`request_logs` ile stdout aynı kayıt değildir. Önceki app.request ölçümü raw path içinde rota UUID'si taşıyordu; D2v2 bu alanı ayrı metadata olarak gözledi. Son S8 kaynakları APIRoute.path_format veya sabit `<unmatched>` kullanır; request_id, method, status, duration_ms ve zaman bilgisi kalır. Uygulama log kurulumu uvicorn.access kanalını kapatır. 21 ASGI kontrolü ve gerçek Uvicorn 0.52.4 v2 deneyi geçti: eski/yeni kaynakların her birine üç HTTP isteğinde adayın dört ham canary ve erişim kanalı kaydı yoktu, başlangıç/kapanış kayıtları korundu; DB bağlantısı denenmedi. V1 fixture kapanış hatası tarihsel kayıtta korunur. Yeni hosted ve dış proxy günlüklerinin kabulü açıktır. Mevcut kimlik/zaman metadatası anonim sayılmaz; log toplayıcının erişimi, saklama ve silme kapsamı canlı ortamda ayrıca doğrulanır. RedactionFilter serbest kişisel metnin tamamını veya dış proxy/sağlayıcı günlüklerini güvenli ilan etmez.
 
-**Saklama süresi:** Tanımlı bir saklama/imha süresi **YOK**. Bugün veriler
-silinene kadar durur. Ders silindiğinde belgeler, chunk'lar, oturumlar ve
-mesajlar `ON DELETE CASCADE` ile gider; kullanıcı silindiğinde profil ve
-akademik kayıt bilinçli olarak KALIR (§8.7). Kurumsal bir saklama politikası
-gerekiyorsa bu bir ürün kararıdır ve yazılmamıştır.
+Serbest metin yalnız `chat_messages.content` değildir: `answers.given`, değerlendirme geri bildirimi, kullanıcı yorumları ve yüklenen belgeler de kişisel bilgi içerebilir. Kullanıcı kimliğine bağlı operasyon kayıtları, ham soru içermese de kişisel veri niteliğini otomatik kaybetmez.
 
-**Yurt dışına aktarım:** LLM sağlayıcılarına (Groq, Gemini) giden istek,
-öğrencinin sorusunu ve ilgili chunk metinlerini içerir. Sağlayıcılar yurt
-dışındadır. Bu, sistemin çalışması için zorunlu bir aktarımdır ve
-aydınlatma metninde belirtilmesi gerekir; bugün böyle bir metin repoda yok.
+Sohbetin özel kalması genel kuraldır; öğrencinin açıkça eğitmen incelemesine paylaştığı soru/cevap alıntısı ve yorumu [feedback API](../apps/api/app/api/feedback.py) üzerinden ders eğitmenine görünür. Paylaşım seçimi ile bütün geçmişin erişim yetkisi karıştırılmaz.
+
+**Saklama:** Onaylanmış bütüncül süre/imha programı yoktur. Veritabanı cascade'i özel dosya deposu, yedek, sağlayıcı veya daha önce indirilmiş kopyaların silindiğini kanıtlamaz. Kategori, sahip, süre, imha tetikleyicisi ve geri yükleme sonrası silme [gizlilik incelemesinde](security/privacy-review-2026-09-08.md) izlenir.
+
+**Dış aktarım:** Sohbet yanında soru üretimi ve kaynak/rubrikli değerlendirme de LLM çağırabilir. Öğrencinin yazdığı veya kaynakta bulunan kişisel bilgi modele gidebilir. [Kamuya açık teknik açıklama](kvkk.md) uygulamanın `/kvkk` sayfasına kaynak olur. Sağlayıcı bölgesi, sözleşme ve geçerli aktarım mekanizması henüz doğrulanmış değildir; yalnız bir API anahtarı bu eksikleri kapatmaz.
 
 ---
 
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 1197 test   # docs-check: backend.tests = 1197
-cd apps/api && uv run mypy app                  # temiz, 105 dosya   # docs-check: backend.mypyFiles = 105
+cd apps/api && uv run pytest -q                 # 1571 test   # docs-check: backend.tests = 1571
+cd apps/api && uv run mypy app                  # temiz, 113 dosya   # docs-check: backend.mypyFiles = 113
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 

@@ -1,0 +1,15 @@
+{
+  "database": "dou_synapse_d1_http02",
+  "root_expected_target": {
+    "database": "dou_synapse_d1_http02",
+    "database_oid": 1048788,
+    "system_identifier": "7683042491268153327",
+    "server_version_num": 160014,
+    "server_address": "127.0.0.1",
+    "server_port": 55448
+  },
+  "exit_code": 0,
+  "seconds": 2.13,
+  "probe_log_sha256": "cf1dce8679fef680a2d4c924acc6b0d49b67696342372871180f14e831428103",
+  "candidate_unchanged": true
+}

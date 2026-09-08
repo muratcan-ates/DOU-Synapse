@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "result": "pass",
+  "change_id": "027-learning-privacy-retrieval-r1",
+  "captured_at": "2026-09-08T11:21:29+00:00",
+  "candidate_sha": "SELF",
+  "evidence_label": "offline-replay",
+  "command": "c1_holdout_runner.py and c1_e5_holdout_runner.py --execute on unchanged synthetic corpora; scripts/probe_retrieval_runtime.py --source-report retrieval-plan-local-20260908b.json --repeats 7 --execute; exact wrappers and receipts in bc-final-archive.json",
+  "environment": "local RLS dou_app; existing cached intfloat/multilingual-e5-large ONNX and hashing in separate synthetic corpora; no model download, live LLM or generation calls",
+  "results": {
+    "hashing_recall_at_5_baseline": 0.7428571428571429,
+    "hashing_recall_at_5_candidate": 0.7428571428571429,
+    "e5_recall_at_5_baseline": 0.8857142857142857,
+    "e5_recall_at_5_candidate": 0.8857142857142857,
+    "e5_mrr_baseline": 0.7377210884353742,
+    "e5_mrr_candidate": 0.7377210884353742,
+    "asked_per_arm": 127,
+    "scored_per_arm": 105,
+    "runtime_samples": 294,
+    "runtime_access_negative_observations": 84,
+    "runtime_metadata_checks": 1680,
+    "nonregression": "pass-final-narrow-source"
+  },
+  "acceptance": {
+    "path": "specs/018-codex-production-line/evidence/c1-final-acceptance.json",
+    "sha256": "2d3a76cfc6d813bfe470d66c390a285be877c2e4daeef2053c5d68ac598ee66a"
+  },
+  "prior_candidate_rejected": {
+    "hashing_recall_at_5": "78/105 -> 77/105",
+    "e5_recall_at_5": "93/105 -> 92/105",
+    "cause": "FTS equal-score hash ordering; withdrawn after crossed dense/FTS diagnosis, then rerun unchanged gold/threshold/corpus/model",
+    "preservation": "original failed bytes and hash manifests retained; not reclassified as passing"
+  },
+  "limitations": [
+    "Current holdout has been inspected diagnostically; not a fresh blind holdout.",
+    "E5 is real embedding retrieval, not LLM response/faithfulness/grading quality.",
+    "Local pgvector0.8.0 differs from pinned CI0.8.6; RLS-off plan matrix and C2 build-memory causality remain open.",
+    "Baseline FTS still depends on document UUID ordering across reingestion.",
+    "Small fixed-order local samples do not certify production latency or general recall."
+  ]
+}

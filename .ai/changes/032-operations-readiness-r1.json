@@ -1,0 +1,656 @@
+{
+  "schema_version": 1,
+  "change_id": "032-operations-readiness-r1",
+  "lineage_id": "operations-readiness",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Yönetim hazırlığını ve sürekli bakım görünürlüğünü doğrula",
+  "summary": "Yetkili yönetim ve public hazırlık aynı bağımlılık denetimini kullanır; p95 başarılı sohbet örneklemini açıklar. Worker yalnız COMMIT sonrası içeriksiz bakım olayı yazar ve geçersiz ayarda erken çıkar. Gerçek dönem ve dört yerel kurtarma hata deneyi ayrı kanıtlarla bağlıdır.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-08T16:13:34.472768+00:00",
+  "review_by": "2026-10-08T16:13:34.472768+00:00",
+  "base_sha": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged fromc45; fake/absent LLM in technical tests.",
+    "model_revision": "Unchanged fromc45; no new download/scoring/provider call.",
+    "prompt_revision": "Unchanged fromc45.",
+    "tool_schema_revision": "AdminOverviewOut adds pgvector_status and request_quota_status; public readiness schema unchanged. No SQL migration or permission expansion.",
+    "guardrail_revision": "Same quota/role/claim enforcement. Shared read-only dependency observation after admin authorization; COMMIT-only content-free maintenance event; invalid worker Settings exits before tasks. Compose adds separate same-role poller.",
+    "retrieval_revision": "Unchanged fromc45; no retrieval quality result newly claimed.",
+    "embedding_revision": "Unchanged fromc45; hashing/disabled technical fixtures only.",
+    "evaluator_revision": "Frozen technical state-equality/SQL/process/UI scenarios and controlled false-healthy mutation; no pedagogical evaluator changed."
+  },
+  "data": {
+    "corpus_digest": "c1c307656e002472df8e95634e1a2e0eb5a08b1803dd8f3663babcbd37d00859",
+    "eval_set_digest": "c1c307656e002472df8e95634e1a2e0eb5a08b1803dd8f3663babcbd37d00859",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "ARCHITECTURE.md",
+      "state": "present",
+      "sha256": "5c6034e5a34ff542d730c8b218b2fe137e65f2e9c9028590a46565ab41838042"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "bf2e702d362b2ef130f669fa045717d8df303432158adb1ec58872a531f3c85b"
+    },
+    {
+      "path": "apps/api/app/api/admin.py",
+      "state": "present",
+      "sha256": "fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46"
+    },
+    {
+      "path": "apps/api/app/api/health.py",
+      "state": "present",
+      "sha256": "b11c51dd7f38846bca5f5250dd561a80ed0785c16750f190bdb7dcb376e20f43"
+    },
+    {
+      "path": "apps/api/app/api/internal.py",
+      "state": "present",
+      "sha256": "6feec72a87a91cef026b7052f0c1f997335319ff6272dfe7c02242f30a11a816"
+    },
+    {
+      "path": "apps/api/app/core/readiness.py",
+      "state": "present",
+      "sha256": "9b1d71dd447cad646ec3dadce6307f89547e24384007667b59c455a4f664064e"
+    },
+    {
+      "path": "apps/api/app/schemas/admin.py",
+      "state": "present",
+      "sha256": "e476c1e01026e6d185626699413ea1eabd06bbde70f5e011b03ccdcfcd30e698"
+    },
+    {
+      "path": "apps/api/app/worker.py",
+      "state": "present",
+      "sha256": "2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634"
+    },
+    {
+      "path": "apps/api/tests/test_admin_readiness.py",
+      "state": "present",
+      "sha256": "d7918834ba68199c59f64dc2d2907a256cb8a293278a05be902201af5bef0b1a"
+    },
+    {
+      "path": "apps/api/tests/test_portal.py",
+      "state": "present",
+      "sha256": "6d2b1571323734b78990761c0aca1dd58f93bf8e3af16cd7cbe06e1c4808b0de"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota_health.py",
+      "state": "present",
+      "sha256": "0bf6d93ef703e1ae841b73761ab2901461c38efdcd260e74a5f1bee00a7bc41a"
+    },
+    {
+      "path": "apps/api/tests/test_worker_lifecycle.py",
+      "state": "present",
+      "sha256": "6f204b35080b05d59ff8b1ba9fc435a68d35c6e7c1f4535b09bd10211760ccb7"
+    },
+    {
+      "path": "apps/web/app/admin/page.tsx",
+      "state": "present",
+      "sha256": "f5cbfeca2871c09c71a6ab1d1d8a8630b17a8943fb14752a5133abbabf255677"
+    },
+    {
+      "path": "apps/web/e2e/admin-readiness.spec.ts",
+      "state": "present",
+      "sha256": "b9818492d3dddf65471c467db153a3d9dbf19d69cf7ac9ac33a762915d478de5"
+    },
+    {
+      "path": "apps/web/lib/admin.test.ts",
+      "state": "present",
+      "sha256": "5dfc8a50856e00f5a78a3d042670f3a249c766ae7e31b40f0d544eb45504ea8c"
+    },
+    {
+      "path": "apps/web/lib/admin.ts",
+      "state": "present",
+      "sha256": "513bc40af301cc4e7ebc69215b164302a14c57df6607e200372dc7102a4476ec"
+    },
+    {
+      "path": "docker-compose.yml",
+      "state": "present",
+      "sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "27a07f1525d59df1216c419efb4daf78f7f5d68f386ede3763d5cea4fd7ef5d0"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "fc6e6b397ecc9b8fe751b4aa1d229bd16f96d16e731a05b4f1a12958cf90a7d9"
+    },
+    {
+      "path": "docs/operations/ingestion-recovery.md",
+      "state": "present",
+      "sha256": "c6ad4a6bd3888ad2c61e98af435856a7d8c9b6c0ed07e05da9d8b31498521d2a"
+    },
+    {
+      "path": "docs/operations/shared-request-quota.md",
+      "state": "present",
+      "sha256": "e5db73c85fcb904e20f07659dc8572c45944a10820a52db3a06cd6a878878bee"
+    },
+    {
+      "path": "docs/runbook.md",
+      "state": "present",
+      "sha256": "7996ea8f6f8277f373ab04fa39f8d63d5ddc21b1e1cb8017727c0bc97415ae8a"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "4a809c8d024bc6ba249031f32573b4a3d1c13514d98dc6063a064f3e26f62632"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/contracts/openapi.json",
+      "state": "present",
+      "sha256": "f9ec208b8700cadc9d3f311b132a7fe7919d3fef817163e9a288ca0662dccc6b"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "c6f8a7b2348d4290f6c768c7515907786dffa39bdd375f7fc164153f34006bee"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "602aaeb8b588d0671d372312e00781354cb48a014f1bf80c3e2907c7c9b1bd1d"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "a336e602f0fa22bddaa11a1a7511b2c0e7c61625d1f2ca64200a830365b973a7"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "78f3252fe46aa4fd36ddc028efda521538c93483c59679a7a176ebda47e158d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/README.md",
+      "state": "present",
+      "sha256": "31f3c03f865ff47cb3e3b8667f50d32b7408410f497052349679e28ee3dcfd0b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/archive.json",
+      "state": "present",
+      "sha256": "2818bee076f374a223c6b48368bffa59a95611ee735c66c52369419e1ebbbad0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/browser/admin-1440-dark.png",
+      "state": "present",
+      "sha256": "a73df3ff2222653550392a875948e31f6de53077a8dc69fc60bfce1ecf11bb86"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/browser/admin-1440-light.png",
+      "state": "present",
+      "sha256": "6b29051fd6ff52ba5defbd179d7d4ba517cec1fe9dd5184742896f7932bcb81e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/browser/admin-375-dark.png",
+      "state": "present",
+      "sha256": "0d12172fa34d6def06599bd51bd0107e0d0ccec2aef5aab43c07a5da97576d09"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/browser/admin-375-light.png",
+      "state": "present",
+      "sha256": "5642a98c0f4aa008c920628a77038e33e40e7ccf17ddaec32d050d5cdcdd9b92"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/browser/first-harness-failure.json",
+      "state": "present",
+      "sha256": "14d99e555a4863c16f2f5731f7a865bed96938256c6e7bfd8a725979e54bd31c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/browser/result.json",
+      "state": "present",
+      "sha256": "491f9ba6ea9f337dfc31a7f855c11f68ec13792713b5af2670fca4c91b887738"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/d3-negative-summary.json",
+      "state": "present",
+      "sha256": "82cb54115e764873bb17488bf92a883873289978da6c3cc8e71014368f1d9567"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/gates-01/docs.log.gz",
+      "state": "present",
+      "sha256": "435cd12add98e9f1857e480ef4eef27aca5b155cd27ed06f8fc4330529ec7e0d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/gates-01/result.json",
+      "state": "present",
+      "sha256": "6f2eb28cbc1b23371dc3d1f87507f505c509fe03b58d5cb9c29a9d3409f56557"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/gates-02/docs.log.gz",
+      "state": "present",
+      "sha256": "a257528b559e2d611a0a40282fa7b7665b4155dcacc9888f5d3612020fa138a7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/gates-02/migration.log.gz",
+      "state": "present",
+      "sha256": "59346c33ce0e5e4e4c06e7a57d177fceb13abf1d0da1f13d6f29a5d9b1b7be49"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/gates-02/result.json",
+      "state": "present",
+      "sha256": "0a0114eaef6f20f842200aae2ce44e568f6d9613fdfb5c0058bea48d34174437"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/gates-02/whitespace.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/d3-README.md",
+      "state": "present",
+      "sha256": "3259bfcaf222256cba92abcb939b41d0c3ee7b370b07303b03b8ccc9f928e683"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/d3-manifest.json",
+      "state": "present",
+      "sha256": "3c9044963cd8ceba8ec69dd2b617684d48d0a73b0e342069be46ef4896873d07"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/d3-run.py.txt",
+      "state": "present",
+      "sha256": "4ba6091124b7ffd98a75157d1578ada7ad07a9be8dc94ed8b1453d8f759c2053"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018-d3-next-project-summary.py.txt",
+      "state": "present",
+      "sha256": "618560764f19a677a62b8fd98f61a933eb036f9232286ecd2d08f7f927e1d81a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_d3_next_root.py.txt",
+      "state": "present",
+      "sha256": "886197fb34c119f08d76cdf04913b0d5a9236caf6666fff74e25bb7bb8a6100a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_admin_negative_run_v2.py.txt",
+      "state": "present",
+      "sha256": "1b6efc3fd682c3fc16b87cefe46c901e12eddb7c70e8726cd5bb8728b57ee22a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_browser_matrix02.cjs.txt",
+      "state": "present",
+      "sha256": "b6c82db53c61967fcc0b5a7ef12909cc52c17e3d5501b0388d171b337614a8ef"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_e2e_api.py.txt",
+      "state": "present",
+      "sha256": "102bb449a5e2b534896571d37e419db758723ee29a5391deab635505a4a71ce5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_e2e_run.py.txt",
+      "state": "present",
+      "sha256": "a59a59514424b79face975d8b657d539c80769342844e1f2510efd3582f85fa6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_false_healthy_v2.py.txt",
+      "state": "present",
+      "sha256": "0259fde911acf266488a8c9b4cad2eed7e1e6883ee36d9162a4f0491c34e0f5a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_final_checks02.py.txt",
+      "state": "present",
+      "sha256": "7a08ea27afa8c3b56a4ae6c6fb48353e5f91cdb7e4bb88dd296a3edc6d0b2a54"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_full_api01.py.txt",
+      "state": "present",
+      "sha256": "639cb4af840c0ccd7183c6c91c4673a00c1e238e7a91760346994cb5376918f2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_openapi02.py.txt",
+      "state": "present",
+      "sha256": "6f0985b07e6ad3797ae82028d7de0d087f19797b0648f482107552e0e4fb3108"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_r1_char01.py.txt",
+      "state": "present",
+      "sha256": "bac26337a1a7dffe59898c8f69cdf3e4369e491b718c7d165e93613ea7d69af5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_quota_period_run_v2.py.txt",
+      "state": "present",
+      "sha256": "6e884c9afafdc92cbab1cf29fa07e9213fe0c38735c158c6751fc9066f9da92d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/r1-README.md",
+      "state": "present",
+      "sha256": "81516767d0e128cc7677cf3fbb363fde75d1cff096e15e4819098414f6e886a6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/harness/r1-characterization.py.txt",
+      "state": "present",
+      "sha256": "9ffa674f9280e9fa0f43b87122fba5507d57d429de067dad4058534492508a4e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/inputs.json",
+      "state": "present",
+      "sha256": "c1c307656e002472df8e95634e1a2e0eb5a08b1803dd8f3663babcbd37d00859"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/openapi.json",
+      "state": "present",
+      "sha256": "46e977c628c22a431d3a4cfe6e06afe409e39a11c8c66cf86f4179c199ebb48f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-admin-negative-01/result.json",
+      "state": "present",
+      "sha256": "5d7f14bea5e67c5a74e72a9785834c0a2343ac8b4625e754dddcff3ff8a9f653"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-admin-negative-01/tests.log.gz",
+      "state": "present",
+      "sha256": "543d240ea104a84c51d2373df0159455a1e42ba4c4901a99df31c5f68c044601"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-admin-negative-02/result.json",
+      "state": "present",
+      "sha256": "5210aa1f5bdb8869324d9fc667a8ea25b2fcae6cd441f0406ef3d504eb2118e1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-admin-negative-02/tests.log.gz",
+      "state": "present",
+      "sha256": "7120afeeff305e2f3c467118210c6ac653df2049400d2b478c124cb7b078dc33"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-e2e-01/result.json",
+      "state": "present",
+      "sha256": "c1ad81a89f2b8a6efe254366340db6cd2a72197c7f282b805ce4d1ed834255a4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-e2e-01/tests.log.gz",
+      "state": "present",
+      "sha256": "e21461e005e130de9783d0ad0641155b87fcb8d2b242ea7e5fed8769f37178e0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-full-api-01/result.json",
+      "state": "present",
+      "sha256": "9c920cb0a0b1515c0fae92e1e989182ef6ed1d07aaf3828e7f992dc7c0b1049d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-full-api-01/tests.log.gz",
+      "state": "present",
+      "sha256": "bf71801a9c32b02c4e82e698e56ee6070ea6b4a7e17a77928abe2c9b7ea79619"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-r1-characterization-01/control.json",
+      "state": "present",
+      "sha256": "3ac3c643e570cea8038cebd93150cc779e27918175454de8c88052690bfd3dc8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-r1-characterization-01/division-by-zero.json",
+      "state": "present",
+      "sha256": "012144812a2d99dc895986ca3e1566a3cb3839c4fe3cdecd5abf00474981d15a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-r1-characterization-01/result.json",
+      "state": "present",
+      "sha256": "8e935b92491449fd908e64e3026c2c28ba790350800ad2651f6e1a09c5bbd400"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/ops-r1-characterization-01/tests.log.gz",
+      "state": "present",
+      "sha256": "af950a5f91c697e818eebfe36b5607fdf2691e2869c6e6e162a6ca9176d5097a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/precommit-review.json",
+      "state": "present",
+      "sha256": "506136ed03a10fe02fa7da90ea0ae1195ad257d4514f1ddf1cc7ad6f757cfe68"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/previous-c45-hosted.json",
+      "state": "present",
+      "sha256": "744e04163d9c98932294d25e0279c7e7bce55ac09ab616520b842feb6d201a94"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-01/result.json",
+      "state": "present",
+      "sha256": "aaf64d2ffb108a1e8bbd82143ced969f3a9136d323a9d7fa4e18151a84986979"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-01/ruff.log.gz",
+      "state": "present",
+      "sha256": "5eb07b6643c37ffbcb3ae0540c589d723dd5e86cd4452a04614cd248a397cf3b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/format.log.gz",
+      "state": "present",
+      "sha256": "5aafdafa05c81fe4bf461b9b545e121f12e1f3ed65447558858d50aa9dd6a858"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/mypy.log.gz",
+      "state": "present",
+      "sha256": "60375ea501bcc4ea8f3df86f806b1e9138cf188302397a687363e9673309748f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/result.json",
+      "state": "present",
+      "sha256": "d81376d8bd3e04a96054151f4d9a977e8c0bd1ed8d50546d12d5f342a19587d3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/ruff.log.gz",
+      "state": "present",
+      "sha256": "f3af4d142827f5aad2eb0c72d556d325488a57fb6219aac10afeb51085667d53"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/web-types.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quality-02/web-unit.log.gz",
+      "state": "present",
+      "sha256": "a06f9adffca3284a6562dd84701027a327587ce6b842c70a0035e384734bc6fa"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quota-period-01/result.json",
+      "state": "present",
+      "sha256": "0ebdd2a65416cfb047045dd62daab3b9cd25e8b8542648cfc723f8942186d742"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quota-period-01/worker.log.gz",
+      "state": "present",
+      "sha256": "6466a567d5729e14ed72dd65b7addedacd93db268f32e5663ea6a713718184e8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quota-period-02/result.json",
+      "state": "present",
+      "sha256": "31bb4bf534a4ddd730682f0f0c23a5ccce35edb32cb62aaf8d11b488654f3d04"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quota-period-02/worker.log.gz",
+      "state": "present",
+      "sha256": "f49f4ce6007aed960652622eb0014e1460f2a44032fb91f51d138db780ce2a52"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/quota-test-wrap-equivalence.json",
+      "state": "present",
+      "sha256": "bfdcb96e2ec4aba59783cbaf4ccd32a87a900729257b1466b90c72072edc731a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/receipt-interpretation.json",
+      "state": "present",
+      "sha256": "cf384032827ae64584c076f6ac2c32f622a93a988da52f598667d28c1a2743ae"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/reviews/d3.md",
+      "state": "present",
+      "sha256": "fab870f91d7febb8d90a842fa1d0db28261282bde1b9abbcfd82cf21aeee609b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/reviews/docs.md.txt",
+      "state": "present",
+      "sha256": "3b7f498b7b14e0a947ed0608049ba3cf7f244a72ecab5839e00c05edb155ab8c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/reviews/ops1.md",
+      "state": "present",
+      "sha256": "6ee10321b410a315bc4bae932f7f1f3127c302f449c56ed50e9f7ac8bbd83ad8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/reviews/r1.md",
+      "state": "present",
+      "sha256": "1f413b2f135ae64f18af0dd45deac7612153d8b004a8a2684849c6a62191c3ea"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/reviews/worker.md",
+      "state": "present",
+      "sha256": "6db4b823f3a1f9647c19addd1a14b625d80a74a080d0bb1f92eb8550484b3118"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/source-equivalence.json",
+      "state": "present",
+      "sha256": "d15cc14e45c0a31b2af61d2af5d735d31e734504e48db553e02e0d0b8e9bdb87"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/source-equivalence/original-internal.py.txt",
+      "state": "present",
+      "sha256": "ba7b1476a2fb17fea648212e2b5a39b6fe2eed6a0e43cc9e69ae381c956d1bf3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/source-equivalence/original-test_admin_readiness.py.txt",
+      "state": "present",
+      "sha256": "afec8d51bb5d878cd6c4496e9f7c237d112fa01cec9b1b8c53b994779ba18e16"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/source-equivalence/original-test_request_quota_health.py.txt",
+      "state": "present",
+      "sha256": "f16559528f3dcd84bca27b34fefcdebc03b6cca0f788a462168417d74000574c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-local/web-build.log.gz",
+      "state": "present",
+      "sha256": "42cd63661a45cad6805c50eaf4bb2c5ad62593608c6437af7dc215054ef77802"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/ops-unpublished-dossier-repair.json",
+      "state": "present",
+      "sha256": "6175a8444de0ed565fe1abca287b025a57050daf7d9bae9c4236bb438f5b9de3"
+    },
+    {
+      "path": "specs/018-codex-production-line/spec.md",
+      "state": "present",
+      "sha256": "2d8e018b202d03428b5c74496ca7f6cc3d62e210e980186af5c888dea33711a1"
+    },
+    {
+      "path": "specs/018-codex-production-line/tasks.md",
+      "state": "present",
+      "sha256": "59f6d3cfbe9b8b829540f4531eb83e8d658a2359ef2c4ad091bd2239ce313317"
+    },
+    {
+      "path": "specs/018-codex-production-line/verification.md",
+      "state": "present",
+      "sha256": "d6c70a7a369e0f4fc9a947096cdbdb91726bc84b75a6d94a7e8f263aabf3206c"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/032-operations-readiness-r1.json",
+      "report_sha256": "f1d8ca7328819fe193a1b55b183c87e5e5a1dfb467e897b407603437d98b8a4f",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_admin_readiness.py",
+    "holdout_ref": "specs/018-codex-production-line/evidence/ops-local/harness/dou018_ops_false_healthy_v2.py.txt",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: technical status contract with controlled mutation, not statistical LLM calibration/holdout; independent human release review pending",
+    "metrics": [
+      {
+        "name": "false_healthy_disagreements",
+        "baseline": 2,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 2
+      }
+    ],
+    "exact_command": "Archived root runner dou018_ops_admin_negative_run_v2.py.txt selects two actual PostgreSQL quota mismatch cases under runtime-only false-healthy plugin; unmutated seven admin cases and full1571 API passed. Threshold is fixed exact state equality."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: release-gated operations change; existing product feature flags unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:032-operations-readiness-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: release-gated operations change; existing product feature flags unchanged",
+    "kill_switch": "Hold release; stop only new poller service if it causes excess work. Keep existing quota/claim fences and SQL state. Revert OPS source only after compatible process drain.",
+    "assignment": "Sticky to the exact reviewed candidate SHA for the whole synthetic session; no real-user exposure. A future cohort needs independent promotion approval and stable version assignment.",
+    "initial_exposure": "None; local synthetic tests and draft feature PR.",
+    "stop_conditions": [
+      "False healthy admin state for known failed dependency.",
+      "Private content or actor/course identifiers in quota maintenance success context.",
+      "Early validation failure starts worker tasks anyway.",
+      "Stale/unauthorized ingestion write or restore uncertainty."
+    ],
+    "expand_conditions": [
+      "Exact candidate PR checks pass.",
+      "Independent engineering/domain/privacy owners approve.",
+      "Target environment worker, auth/storage, retention and operational release gates separately pass."
+    ],
+    "active_exam_policy": "Existing server exam/source/role locks unchanged; no academic record rewrite."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:c45e0e7073c92638ced7a3ff523578dd598c350b",
+    "procedure": "Stop new worker-poller gracefully before restoring previous Compose configuration. Revert only OPS source to c45;0025/0026 schema and claim/quota guards remain. Existing HTTP worker remains. Do not reopen ambiguous restore targets or delete preserved evidence.",
+    "max_minutes": 30,
+    "verification": "Planned operator target, not measured release rollback or shutdown SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixtures/screenshots, source/hash receipts and content-free D3 projection. No raw backup/SQL/captures or live credentials included. New success event contains only batch stage/count/duration. User/course/quota IDs in production remain personal technical metadata; no anonymous-log claim.",
+    "retention": "Real local60s purge measured; bounded batch may leave expired rows and stopped workers do not run. Institutional legal basis, retention schedules, provider transfer, backup erasure reconciliation and live deletion acceptance remain open."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "candidate_sha256": "85c258a242f6591fbdd7849bb1210d8555236092ef744ca43d842d1b3dd46313",
+  "target": "dou018_recovery_target04",
+  "source": "dou018_recovery_source01",
+  "source_backup_capture": "v2 own trusted synthetic snapshot; source preserved",
+  "before": {
+    "oid": 907636,
+    "allow_connections": true,
+    "system_identifier": "7683042491268153327"
+  },
+  "exit_code": 0,
+  "seconds": 1.67,
+  "after": {
+    "oid": 907636,
+    "allow_connections": false,
+    "connection_limit": -1,
+    "active_connections": 0
+  },
+  "restore.stdout_sha256": "dc482777da74e882272e1974ca895d6a398b8a3dd9f876029f5901dd50a0c146",
+  "restore.stdout_receipt": {
+    "status": "restore-refused",
+    "safe_restore_code": "RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE",
+    "first_tool_error": {
+      "safe_code": "SCHEMA_PERMISSION_DENIED",
+      "script_line": 1650
+    }
+  },
+  "restore.stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

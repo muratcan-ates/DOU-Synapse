@@ -1,0 +1,126 @@
+{
+  "runs": [
+    {
+      "label": "combined-candidate-final",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py",
+        "--main",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py",
+        "--logging",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py"
+      ],
+      "source_sha256": {
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/tests/test_request_log_privacy.py": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py": "3d66f83db7c41f9f7bac65692f75d09cbc42ab7ee602ebbe1c348f97890d6f5c"
+      },
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "elapsed_seconds": 2.50252,
+      "source_unchanged": true,
+      "log": "/private/tmp/dou018-request-log-minimization/pytest-combined-candidate-final.log",
+      "log_sha256": "14ad551d99e705e61a27f725c92992d768ccb7663d81b9e8bdd210da64abca24",
+      "tail": "21 passed in 1.18s"
+    },
+    {
+      "label": "combined-baseline-final",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py",
+        "--main",
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/main.py",
+        "--logging",
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/core/logging.py"
+      ],
+      "source_sha256": {
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88",
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/core/logging.py": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/tests/test_request_log_privacy.py": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py": "3d66f83db7c41f9f7bac65692f75d09cbc42ab7ee602ebbe1c348f97890d6f5c"
+      },
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "elapsed_seconds": 2.583509,
+      "source_unchanged": true,
+      "log": "/private/tmp/dou018-request-log-minimization/pytest-combined-baseline-final.log",
+      "log_sha256": "570a95c35e2e25365629dc434ac976bb1dd8b681bb38aff354f9e31e70ee64d4",
+      "tail": "20 failed, 1 passed in 1.33s"
+    },
+    {
+      "label": "combined-raw-fallback-mutant",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py",
+        "--main",
+        "/private/tmp/dou018-request-log-minimization/mutations/main_raw_unmatched_fallback.py",
+        "--logging",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py"
+      ],
+      "source_sha256": {
+        "/private/tmp/dou018-request-log-minimization/mutations/main_raw_unmatched_fallback.py": "71b49f75d45954758ef58766b2e3fd80bac2cda2d53dce053ce2889949a52167",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/tests/test_request_log_privacy.py": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py": "3d66f83db7c41f9f7bac65692f75d09cbc42ab7ee602ebbe1c348f97890d6f5c"
+      },
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "elapsed_seconds": 2.496642,
+      "source_unchanged": true,
+      "log": "/private/tmp/dou018-request-log-minimization/pytest-combined-raw-fallback-mutant.log",
+      "log_sha256": "f857f9e5ad5d923a50a3984f1e13155c2042499786e200f0ec19b4d1355a5f7e",
+      "tail": "9 failed, 12 passed in 1.25s"
+    },
+    {
+      "label": "combined-old-access-control",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py",
+        "--main",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py",
+        "--logging",
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/core/logging.py"
+      ],
+      "source_sha256": {
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/core/logging.py": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/tests/test_request_log_privacy.py": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py": "3d66f83db7c41f9f7bac65692f75d09cbc42ab7ee602ebbe1c348f97890d6f5c"
+      },
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "elapsed_seconds": 2.465447,
+      "source_unchanged": true,
+      "log": "/private/tmp/dou018-request-log-minimization/pytest-combined-old-access-control.log",
+      "log_sha256": "767c63128349d367bb8080e8315693b2dc3ff0b3f186c2b3aab19d88860d287b",
+      "tail": "2 failed, 19 passed in 1.20s"
+    },
+    {
+      "label": "combined-candidate-restored",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py",
+        "--main",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py",
+        "--logging",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py"
+      ],
+      "source_sha256": {
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/tests/test_request_log_privacy.py": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3",
+        "/private/tmp/dou018-request-log-minimization/run_offline.py": "3d66f83db7c41f9f7bac65692f75d09cbc42ab7ee602ebbe1c348f97890d6f5c"
+      },
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "elapsed_seconds": 2.446965,
+      "source_unchanged": true,
+      "log": "/private/tmp/dou018-request-log-minimization/pytest-combined-candidate-restored.log",
+      "log_sha256": "71a602fe86aa4b4c266bee676e88618afdb3665bd9629189a7d83ba9954d7300",
+      "tail": "21 passed in 1.20s"
+    }
+  ],
+  "db_connection_attempts": 0,
+  "db_guard": "Sync/Async psycopg.connect raises and attempts are asserted empty in every run; no lifespan or provider startup"
+}

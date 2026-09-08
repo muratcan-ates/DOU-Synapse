@@ -29,6 +29,11 @@ export interface LearningOutcome {
   created_at: string;
 }
 
+/** Öğrenme çıktısı formunun API sözleşmesi; boş konu ayrı dağılım grubudur. */
+export function buildLearningOutcomeRequest(code: string, description: string, topicId: string) {
+  return { code: code.trim(), description: description.trim(), topic_id: topicId || null };
+}
+
 export interface BlueprintCellInput {
   learning_outcome_id: string;
   difficulty: Difficulty;

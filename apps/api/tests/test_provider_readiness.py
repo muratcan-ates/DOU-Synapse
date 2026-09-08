@@ -114,7 +114,12 @@ async def test_eval_key_reaches_actual_adapter_and_clears_other_quota(provider: 
         {"llm_fallback_model": "gemini/other"},
         {"llm_primary_model": "", "llm_fallback_model": ""},
         {"eval_runtime_secret": "evaluation-secret"},
-        {"environment": "production", "dev_auth_enabled": False, "supabase_jwt_secret": "jwt-test"},
+        {
+            "environment": "production",
+            "dev_auth_enabled": False,
+            "supabase_jwt_secret": "jwt-test",
+            "jwt_issuer": "https://issuer-test.example.invalid/auth/v1",
+        },
     ],
 )
 def test_unsafe_eval_configuration_is_rejected(overrides: dict[str, Any]) -> None:
@@ -125,7 +130,10 @@ def test_unsafe_eval_configuration_is_rejected(overrides: dict[str, Any]) -> Non
         "eval_runtime_secret": "receipt-secret",
     }
     values.update(overrides)
-    with pytest.raises(ValidationError):
+    expected_error = (
+        "EVAL_RUNTIME_ENABLED" if overrides.get("environment") == "production" else None
+    )
+    with pytest.raises(ValidationError, match=expected_error):
         settings_for(**values)
 
 

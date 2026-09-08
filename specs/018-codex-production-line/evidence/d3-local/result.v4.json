@@ -1,0 +1,51 @@
+{
+  "version": "v4",
+  "status": "offline verified; real target05 PostgreSQL restore pending",
+  "runtime_change": "remove only --use-set-session-authorization; default CREATE as DBA + ALTER OWNER",
+  "checks": {
+    "offline_tests": "52 passed in 1.469s",
+    "negative_mutants": "9/9 rejected",
+    "static": "Ruff isolated E9,F63,F7,F82 passed",
+    "owner_render": "actual pg_restore selected source function, no database access; default ALTER OWNER and SECURITY DEFINER preserved; no CREATE schema grant",
+    "dry_run": "zero effect"
+  },
+  "source_files": [
+    {
+      "path": "scripts/recovery.py",
+      "sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b"
+    },
+    {
+      "path": "scripts/test_recovery.py",
+      "sha256": "8035f52cc11c71a2e638a948129d3ea00e284184bea77a04d262439bdacfe219"
+    },
+    {
+      "path": "scripts/test_restore_protocol.py",
+      "sha256": "52c3f3f075e691f17daab97f24a9a4b1c92d00ef761e3a3b47eb4af9d0f75f54"
+    },
+    {
+      "path": "scripts/backup.sh",
+      "sha256": "c230899fd9593e1a43cfc700e85fe76e5f80792c8105f9e66f2c5f68820ab3b7"
+    },
+    {
+      "path": "scripts/restore.sh",
+      "sha256": "9be997296deaf91e196f03c0234c4b04ce986a8ea1b744e08dae6443ed96d065"
+    },
+    {
+      "path": "docs/recovery.md",
+      "sha256": "c3c253a118b26af3418b4086f8833973531a92c34867c0cc3815beba2688811e"
+    }
+  ],
+  "preserved_v3": {
+    "source_sha256": "85c258a242f6591fbdd7849bb1210d8555236092ef744ca43d842d1b3dd46313",
+    "records": [
+      {
+        "path": "/private/tmp/dou018-d3-exercise-03/result.json",
+        "sha256": "8daa8640e9451c10db7bc265c74265761e4408009c5467b1a9832e1e6bc93ba2"
+      },
+      {
+        "path": "/private/tmp/dou018-d3-exercise-04/result.json",
+        "sha256": "733e3fc1ad93b6442250c940fcb97752adb9992ad8d6d1bd91855cca27bc4323"
+      }
+    ]
+  }
+}

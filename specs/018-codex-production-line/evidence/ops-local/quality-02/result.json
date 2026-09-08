@@ -1,0 +1,72 @@
+[
+  {
+    "name": "ruff",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+      "check",
+      "--no-cache",
+      "app",
+      "tests"
+    ],
+    "cwd": "apps/api",
+    "exit_code": 0,
+    "seconds": 0.047,
+    "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  {
+    "name": "format",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+      "format",
+      "--check",
+      "--no-cache",
+      "app",
+      "tests"
+    ],
+    "cwd": "apps/api",
+    "exit_code": 0,
+    "seconds": 0.047,
+    "log_sha256": "4efb24614e1989f8459fcf5942e007e1505a707a6613f549c57c29d48cebc4eb"
+  },
+  {
+    "name": "mypy",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/mypy",
+      "--cache-dir",
+      "/private/tmp/dou018-evidence/ops-final-checks-02/mypy-cache",
+      "app"
+    ],
+    "cwd": "apps/api",
+    "exit_code": 0,
+    "seconds": 18.293,
+    "log_sha256": "d197d6017d587f21ad64746c2d6847a7ecaac183b973fcf4aa19a188a269cd3f"
+  },
+  {
+    "name": "web-unit",
+    "command": [
+      "bun",
+      "test",
+      "lib/"
+    ],
+    "cwd": "apps/web",
+    "exit_code": 0,
+    "seconds": 0.247,
+    "log_sha256": "0f5ee89ee64d3cec783d0e79c6cb766f7a8df9847c7d6d67e739faface5f2e21"
+  },
+  {
+    "name": "web-types",
+    "command": [
+      "bun",
+      "x",
+      "--no-install",
+      "tsc",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "cwd": "apps/web",
+    "exit_code": 0,
+    "seconds": 3.427,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

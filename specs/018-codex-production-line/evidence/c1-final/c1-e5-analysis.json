@@ -1,0 +1,811 @@
+{
+  "status": "verified_real_e5_recall5_regression",
+  "manifest_sha256": "866c268096b8bfa5ec2ee476b86bffc55050131e8d85d4e467d7ac5f0911fd6e",
+  "checks": {
+    "baseline_three_real_git_sources_byte_equal": true,
+    "candidate_source_sha256_current_match": true,
+    "common_dependency_source_sha256_current_match": true,
+    "harness_source_sha256_current_match": true,
+    "runner_source_match": true,
+    "corpus_22_sources_completed_167_embeddings_and_file_hashes_match": true,
+    "raw_hashes_complete_127_105_no_provider_and_same_query_order": true,
+    "raw_common_config_and_corpus_identity_equal": true,
+    "recorded_before_after_and_both_arm_rls_state_equal": true,
+    "runner_enforces_readonly_forced_rls_and_before_after_comparison": true,
+    "unaltered_gold_queries_sources_and_scoring_selection_equal": true,
+    "metrics_recomputed_from_all_105_item_ranks_match": true,
+    "existing_paired_bootstrap_recomputed_for_recall5_mrr": true,
+    "model_cache_before_after_full_content_hashes_and_current_stats_match": true,
+    "local_fastembed_library_and_cache_revision_metadata_hashes_match": true,
+    "actual_e5_offline_contract_fixed_081_and_generation_exclusion": true,
+    "candidate_080_pass_and_nondecrease_fail_recomputed": true
+  },
+  "corpus_state": {
+    "database": "dou018_eval_c1e501",
+    "role": "dou_app",
+    "rolsuper": false,
+    "rolbypassrls": false,
+    "rows": 167,
+    "namespace": "fastembed/intfloat/multilingual-e5-large@0.8.0",
+    "content_vector_metadata_sha256": "1fbff9e89fe71c86f343608c52cea1243cc3dcdeabf7770d94f25082298120c9"
+  },
+  "common_raw_fields": [
+    "set",
+    "set_version",
+    "material",
+    "layer",
+    "mode",
+    "chat_mode",
+    "course_id",
+    "database",
+    "embedding_provider",
+    "embedding_model",
+    "embedding_runtime",
+    "retrieval",
+    "llm",
+    "corpus_digest",
+    "runtime_mismatch_allowed",
+    "config_fingerprint",
+    "corpus_chunks_visible"
+  ],
+  "common_config": {
+    "retrieval_top_k": 8,
+    "retrieval_dense_candidates": 24,
+    "retrieval_dense_candidate_multiplier": 8,
+    "retrieval_fts_candidates": 24,
+    "retrieval_rrf_k": 60,
+    "evidence_threshold": 0.81
+  },
+  "summary": {
+    "baseline": {
+      "n": 105,
+      "hit_at_5_count": 93,
+      "hit_at_8_count": 98,
+      "recall_at_5": 0.8857142857142857,
+      "mrr": 0.7377210884353742
+    },
+    "candidate": {
+      "n": 105,
+      "hit_at_5_count": 92,
+      "hit_at_8_count": 97,
+      "recall_at_5": 0.8761904761904762,
+      "mrr": 0.7395351473922903
+    }
+  },
+  "delta": {
+    "recall_at_5": -0.00952380952380949,
+    "mrr": 0.0018140589569161092
+  },
+  "rank_changes": [
+    {
+      "id": "H-112",
+      "category": "direct",
+      "question": "Kesme birleştirme (interrupt coalescing) neyi çözer?",
+      "expected_sources": [
+        "08-io-systems.pdf#s4"
+      ],
+      "first_hit_before": 8,
+      "first_hit_after": null,
+      "rr_delta": -0.125,
+      "hit5_before": false,
+      "hit5_after": false,
+      "top_results_before": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 17
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 16
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 9
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
+          "slide_number": null
+        }
+      ],
+      "top_results_after": [
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 17
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 5
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 19
+        },
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 9
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "14-distributed-os.pptx",
+          "page_number": null,
+          "slide_number": 18
+        }
+      ]
+    },
+    {
+      "id": "H-116",
+      "category": "direct",
+      "question": "SSD'de neden yerinde güncelleme yapılamaz?",
+      "expected_sources": [
+        "09-disk-and-storage.pdf#s3"
+      ],
+      "first_hit_before": 2,
+      "first_hit_after": 1,
+      "rr_delta": 0.5,
+      "hit5_before": true,
+      "hit5_after": true,
+      "top_results_before": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 6
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 8
+        },
+        {
+          "file_name": "producer_consumer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 11
+        }
+      ],
+      "top_results_after": [
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 6
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 8
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "producer_consumer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        }
+      ]
+    },
+    {
+      "id": "H-118",
+      "category": "direct",
+      "question": "Neden hiçbir RAID seviyesi yedeklemenin yerine geçmez?",
+      "expected_sources": [
+        "09-disk-and-storage.pdf#s4"
+      ],
+      "first_hit_before": 3,
+      "first_hit_after": 2,
+      "rr_delta": 0.16666666666666669,
+      "hit5_before": true,
+      "hit5_after": true,
+      "top_results_before": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 6
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 6
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 3,
+          "slide_number": null
+        }
+      ],
+      "top_results_after": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 6
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "11-virtualization-containers.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "09-disk-and-storage.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "01-processes.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 2
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 10
+        }
+      ]
+    },
+    {
+      "id": "H-119",
+      "category": "direct",
+      "question": "En az ayrıcalık ilkesi ne söyler?",
+      "expected_sources": [
+        "10-security-and-protection.pdf#s1"
+      ],
+      "first_hit_before": null,
+      "first_hit_after": 6,
+      "rr_delta": 0.16666666666666666,
+      "hit5_before": false,
+      "hit5_after": false,
+      "top_results_before": [
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 9
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 6
+        }
+      ],
+      "top_results_after": [
+        {
+          "file_name": "13-ipc.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "bankers_algorithm.c",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "02-cpu-scheduling.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "12-real-time-scheduling.pptx",
+          "page_number": null,
+          "slide_number": 9
+        }
+      ]
+    },
+    {
+      "id": "H-120",
+      "category": "direct",
+      "question": "Kullanıcı modu ile çekirdek modu ayrımı neden yazılımla değil donanımla zorlanır?",
+      "expected_sources": [
+        "10-security-and-protection.pdf#s1"
+      ],
+      "first_hit_before": 7,
+      "first_hit_after": null,
+      "rr_delta": -0.14285714285714285,
+      "hit5_before": false,
+      "hit5_after": false,
+      "top_results_before": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 19
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 9
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 5
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        },
+        {
+          "file_name": "10-security-and-protection.pdf",
+          "page_number": 1,
+          "slide_number": null
+        }
+      ],
+      "top_results_after": [
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 19
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 11
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 5
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 9
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 7
+        },
+        {
+          "file_name": "08-io-systems.pdf",
+          "page_number": 4,
+          "slide_number": null
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 14
+        },
+        {
+          "file_name": "15-boot-and-kernel.pptx",
+          "page_number": null,
+          "slide_number": 16
+        }
+      ]
+    },
+    {
+      "id": "H-154",
+      "category": "code_review",
+      "question": "page_replacement.py içindeki lru fonksiyonu neden yanlış sonuç veriyor?",
+      "expected_sources": [
+        "page_replacement.py"
+      ],
+      "first_hit_before": 2,
+      "first_hit_after": 8,
+      "rr_delta": -0.375,
+      "hit5_before": true,
+      "hit5_after": false,
+      "top_results_before": [
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "reader_writer.py",
+          "page_number": null,
+          "slide_number": null
+        }
+      ],
+      "top_results_after": [
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "03-memory-management.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "04-synchronization.pdf",
+          "page_number": 2,
+          "slide_number": null
+        },
+        {
+          "file_name": "thread_pool.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "07-virtual-memory.pdf",
+          "page_number": 3,
+          "slide_number": null
+        },
+        {
+          "file_name": "reader_writer.py",
+          "page_number": null,
+          "slide_number": null
+        },
+        {
+          "file_name": "page_replacement.py",
+          "page_number": null,
+          "slide_number": null
+        }
+      ]
+    }
+  ],
+  "changed_first_hit_count": 6,
+  "improved_first_hit_count": 3,
+  "regressed_first_hit_count": 3,
+  "paired": {
+    "kind": "paired_comparison",
+    "set": "holdout",
+    "n_items": 105,
+    "baseline": {
+      "run_id": "2026-09-08T133939981753-holdout-hybrid-fastembed-retrieval",
+      "mode": "hybrid",
+      "embedding_provider": "fastembed",
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "database": "dou018_eval_c1e501"
+    },
+    "candidate": {
+      "run_id": "2026-09-08T133950814250-holdout-hybrid-fastembed-retrieval",
+      "mode": "hybrid",
+      "embedding_provider": "fastembed",
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "database": "dou018_eval_c1e501"
+    },
+    "varied": [],
+    "comparisons": {
+      "hit_at_5": {
+        "n": 105,
+        "baseline_mean": 0.8857142857142857,
+        "candidate_mean": 0.8761904761904762,
+        "bootstrap": {
+          "difference": -0.009523809523809525,
+          "ci_lower": -0.02857142857142857,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 1,
+          "only_b_correct": 0,
+          "discordant": 1,
+          "p_value": 1.0
+        }
+      },
+      "hit_at_8": {
+        "n": 105,
+        "baseline_mean": 0.9333333333333333,
+        "candidate_mean": 0.9238095238095239,
+        "bootstrap": {
+          "difference": -0.009523809523809525,
+          "ci_lower": -0.047619047619047616,
+          "ci_upper": 0.01904761904761905,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 2,
+          "only_b_correct": 1,
+          "discordant": 3,
+          "p_value": 1.0
+        }
+      },
+      "reciprocal_rank": {
+        "n": 105,
+        "baseline_mean": 0.7377210884353742,
+        "candidate_mean": 0.7395351473922903,
+        "bootstrap": {
+          "difference": 0.0018140589569160934,
+          "ci_lower": -0.010487528344671202,
+          "ci_upper": 0.015873015873015872,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        }
+      },
+      "full_coverage_at_8": {
+        "n": 26,
+        "baseline_mean": 0.8461538461538461,
+        "candidate_mean": 0.8461538461538461,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 0,
+          "only_b_correct": 0,
+          "discordant": 0,
+          "p_value": 1.0
+        }
+      }
+    },
+    "note": "n=105 — yön göstergesi, kesin hüküm değildir. Eşleştirilmiş bootstrap 10.000 yeniden örneklemeli, tohum sabit; McNemar tam (binom) biçimde, yalnız ikili ölçütlerde."
+  },
+  "limitations": [
+    "Real E5 retrieval only; no LLM/pedagogical/human approval or latency acceptance.",
+    "Same current shared environment compares three real historical retrieval sources, not the whole historical app.",
+    "Actual FastEmbedProvider/E5 identity agrees with corpus/query namespace and cached model metadata.",
+    "RLS/readonly before-after data are enforced by the hash-verified runner; analysis did not query DB again.",
+    "Current raw result lacks complete per-lane candidates/scores, so dense vs FTS vs tie cause cannot be separated from these final lists.",
+    "Statistical intervals including zero do not turn strict no-regression acceptance green."
+  ],
+  "cache_identity": {
+    "revision": "66076b8dc6e367337e3e90e6fb309fb0f3addaf6",
+    "content_sha256": {
+      "config.json": "1de8c3be1f344c0eefa4962480a006f8639f416dfafaa95a770e3cf4bceae6a4",
+      "tokenizer.json": "f59925fcb90c92b894cb93e51bb9b4a6105c5c249fe54ce1c704420ac39b81af",
+      "tokenizer_config.json": "f90024142df07163e5e6c5b9a6ad7c8c68b22a9112af11e3db4559a9ff90f737",
+      "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+      "model.onnx": "1c09780c907c8a91a77a6ab1fd231f79e090d2907ca431223703dfebeed3d36c",
+      "model.onnx_data": "0cf1883fee81c63819a44e2ba0efa51d4043d9759685a4ebebbde97e0623d15c"
+    },
+    "versions": {
+      "fastembed": "0.8.0",
+      "onnxruntime": "1.28.0",
+      "tokenizers": "0.23.1",
+      "huggingface_hub": "1.26.0"
+    },
+    "registered_class": "PooledEmbedding",
+    "pooling": "mean",
+    "snapshot_metadata_sha256": {
+      "refs/main": "8bb431c56990552e65a2556df9888983b3f7d653f4a14973d55fb092326e4b71",
+      "trees/66076b8dc6e367337e3e90e6fb309fb0f3addaf6.json": "597831eea1558377f494700aa3e0955251704043dc199c1147d07b9a0d3bcd78",
+      "files_metadata.json": "28fee50af56b7a89ad2387a94d62f42a3499400a5492d4739a96ffe0e78532b9"
+    },
+    "local_library_source_sha256": {
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/fastembed/common/model_management.py": "8f5e95e7641e25cd5591c28db38fa21be9de09ff60d0f58195f0cf5da551db60",
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/fastembed/text/pooled_embedding.py": "a7b62c7eec9d506f457c77ede5cdf297cf0bc89b6df29b8e2f3c2cc138bace57",
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/fastembed/text/text_embedding.py": "de7c6c2bb8b0b05f70b02d0bb62308e1cef50cdb0c618ff74d0d75598ac326a7"
+    }
+  },
+  "acceptance": {
+    "candidate_recall_at_5_at_least_080": true,
+    "baseline_nondecrease": false,
+    "overall": false
+  },
+  "reported_arm_wall_seconds": {
+    "baseline": 10.7,
+    "candidate": 10.0
+  },
+  "overall_wrapper_elapsed_seconds": null,
+  "read_only_cache_analysis_limit": "Full 2.2GB bytes were verified by root wrapper before/after. This independent analysis verified those equal hashes, local metadata/source hashes and unchanged current file stats; no second model load or DB call."
+}

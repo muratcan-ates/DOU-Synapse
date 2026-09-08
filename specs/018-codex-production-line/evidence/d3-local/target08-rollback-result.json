@@ -1,0 +1,27 @@
+{
+  "status": "rollback-empty-and-metadata-pass",
+  "target": "dou018_recovery_target08",
+  "target_oid": "1060043",
+  "target_identity_sha256": "192a4f7d68afab7886f999ec78228c5bb759c1fbe1950701914f49fcc6b7f581",
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "independent_audit_sha256": "caf866a585d9e202ec487180aca21ddd0666e45843ab298349e91633fa52eeb2",
+  "initial_ready_output_sha256": "81c9f29367b0e6efddc6622d7dd44d95b6da9c59a3c6180f5b33838bbfd85e67",
+  "scope": "post-root-opening read-only rollback verification; no reopen performed",
+  "checks": {
+    "identity": true,
+    "server_version_num": true,
+    "database_format": true,
+    "database_owner": true,
+    "database_acl": true,
+    "extensions": true,
+    "security_catalog_sha256": true,
+    "role_membership_scope": true,
+    "required_role_seeds": true,
+    "roles": true,
+    "memberships": true
+  },
+  "empty": true,
+  "other_connections": 0,
+  "read_only": true,
+  "elapsed_seconds": 0.13
+}

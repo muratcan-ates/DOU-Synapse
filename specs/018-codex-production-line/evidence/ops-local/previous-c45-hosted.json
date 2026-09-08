@@ -1,0 +1,573 @@
+{
+  "schema_version": 1,
+  "candidate": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+  "target": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "all_four_workflows_success": true,
+  "workflows": [
+    {
+      "id": 34238925467,
+      "name": "CI",
+      "head_sha": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34238925467",
+      "updated_at": "2026-09-08T14:41:57Z"
+    },
+    {
+      "id": 34238925527,
+      "name": "Agent skills",
+      "head_sha": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34238925527",
+      "updated_at": "2026-09-08T14:32:46Z"
+    },
+    {
+      "id": 34238925534,
+      "name": "AI quality",
+      "head_sha": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34238925534",
+      "updated_at": "2026-09-08T14:32:55Z"
+    },
+    {
+      "id": 34238925449,
+      "name": "Security and dependency review",
+      "head_sha": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34238925449",
+      "updated_at": "2026-09-08T14:33:54Z"
+    }
+  ],
+  "ci_jobs": [
+    {
+      "id": 102103763922,
+      "name": "Belgeler — canlı sayı kapısı",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Run astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "API bağımlılıkları",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Web bağımlılıkları",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Belgelerdeki canlı sayılar ölçümle uyuşuyor mu",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Post Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        },
+        {
+          "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        }
+      ]
+    },
+    {
+      "id": 102103764090,
+      "name": "API imajı — build + ağsız embedding kanıtı",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Disk aç",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "İmajı kur",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "API belge varlıkları runtime imajında",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "İmaj boyutu",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Ağsız konteynerde embedding üretimi",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "int8 ↔ fp32 denklik raporu",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Replika belleği (RSS)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        }
+      ]
+    },
+    {
+      "id": 102103764115,
+      "name": "API — lint, tip, test",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "PostgreSQL istemcisini kur",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Bağımlılıkları kur",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Lint (ruff)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Biçim kontrolü",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Tip kontrolü (mypy)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Testler",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Retrieval ölçüm araçlarının çevrimdışı sözleşmeleri",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Yedek ve geri yükleme araçlarının çevrimdışı sözleşmeleri",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Yayın kanıtı doğrulayıcılarının regresyon testleri",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        },
+        {
+          "name": "Rol farkındalıklı ajan uygulama mutasyonları",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "Göç numarası sözleşmesi",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "RLS izolasyon kanıtı",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Ölçme katmanı RLS kanıtı (rls_assessment)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Soru taslağı bütünlüğü ve eşzamanlılık mutasyonları",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        },
+        {
+          "name": "Rol farkındalıklı ajan RLS ve kota mutasyonları",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        },
+        {
+          "name": "Çekirdek şema RLS mutasyon kanıtı",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Blueprint RLS kanıtı ve mutasyonu",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        },
+        {
+          "name": "Soru taslağı RLS kanıtı",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 22
+        },
+        {
+          "name": "Soru taslağı eşzamanlılık kanıtı",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 23
+        },
+        {
+          "name": "Platform yönetim konsolu yetki mutasyonları",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 24
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 46
+        },
+        {
+          "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 47
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 48
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 49
+        }
+      ]
+    },
+    {
+      "id": 102103764181,
+      "name": "Web — lint, tip",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run bun install --frozen-lockfile",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run bun run typecheck",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Run bun test lib/",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Run node scripts/contrast.mjs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Run bun run build",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Post Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        }
+      ]
+    },
+    {
+      "id": 102106159059,
+      "name": "Uçtan uca — gerçek API + tarayıcı",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Initialize containers",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "PostgreSQL istemcisini kur",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Veritabanını kur",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "API'yi başlat",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Tarayıcıyı kur ve testleri koştur",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Başarısızlık izlerini yükle",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10
+        },
+        {
+          "name": "Post Run oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Post Run astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        },
+        {
+          "name": "Post Run actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        },
+        {
+          "name": "Stop containers",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        }
+      ]
+    }
+  ],
+  "api_summary": [
+    "2026-09-08T14:36:34.2841120Z 1561 passed, 38 subtests passed in 166.35s (0:02:46)",
+    "2026-09-08T14:36:49.6737139Z 104 passed in 1.45s",
+    "2026-09-08T14:36:50.0619461Z Ran 32 tests in 0.169s",
+    "2026-09-08T14:36:50.2780239Z Ran 20 tests in 0.101s",
+    "2026-09-08T14:36:50.3920303Z Ran 26 tests in 0.010s",
+    "2026-09-08T14:38:14.1618076Z MIGRATION_CHECK=PASS (22 göç, bildirilen boşluk: [17, 21, 22, 23])",
+    "2026-09-08T14:38:14.2178471Z MIGRATION_CHECK=PASS (22 göç, bildirilen boşluk: [17, 21, 22, 23])"
+  ],
+  "browser_summary": [
+    "2026-09-08T14:41:54.4501120Z   68 passed (1.8m)",
+    "2026-09-08T14:41:54.4535123Z ##[notice]  68 passed (1.8m)"
+  ],
+  "pr": {
+    "number": 26,
+    "url": "https://github.com/muratcan-ates/DOU-Synapse/pull/26",
+    "title": "Complete learning flows and harden privacy and retrieval",
+    "draft": true,
+    "merged": false,
+    "maintainer_can_modify": false,
+    "auto_merge": null
+  },
+  "limitations": [
+    "Exact-source repository/CI acceptance; fake model and synthetic fixtures, not production or legal certification.",
+    "Prior030 Linux recovery-test setup failure retained; minimal test-only portability repair and separate031 acceptance pass.",
+    "New PR description not published: explicit user approval pending after automatic review rejection."
+  ]
+}

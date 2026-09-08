@@ -1,0 +1,96 @@
+from pathlib import Path
+import hashlib,json,os,socket,subprocess,sys,time,urllib.request,urllib.error
+
+os.umask(0o077)
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/s8-uvicorn-01');out.mkdir(mode=0o700,exist_ok=False)
+driver=out/'server.py'
+driver.write_text('''import importlib.util,json,os,socket,sys
+from pathlib import Path
+import psycopg
+attempts=0
+def denied(*args,**kwargs):
+    global attempts
+    attempts+=1
+    raise RuntimeError("S8_DATABASE_CONNECTION_FORBIDDEN")
+psycopg.connect=denied
+psycopg.Connection.connect=denied
+psycopg.AsyncConnection.connect=denied
+if os.environ.get("S8_OLD_SOURCE"):
+    source=Path(os.environ["S8_OLD_SOURCE"])
+    for name,filename in (("app.core.logging","logging.py"),("app.main","main.py")):
+        spec=importlib.util.spec_from_file_location(name,source/filename)
+        module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module)
+import uvicorn
+config=uvicorn.Config("app.main:app",host="127.0.0.1",port=0,http="h11",lifespan="on",access_log=True,log_level="info",proxy_headers=False)
+uvicorn.Server(config).run(sockets=[socket.socket(fileno=int(os.environ["S8_SOCKET_FD"]))])
+print(json.dumps({"probe":"database-connect-guard","attempts":attempts}),flush=True)
+assert attempts==0
+''')
+old=out/'baseline';old.mkdir(mode=0o700)
+for short,relative in [('main.py','apps/api/app/main.py'),('logging.py','apps/api/app/core/logging.py')]:
+    (old/short).write_bytes(subprocess.check_output(['git','show',f'9af41226d456efb7e20d22cec490566fb8c1a01c:{relative}'],cwd=repo))
+source_paths=['apps/api/app/main.py','apps/api/app/core/logging.py']
+def hashes():return {p:hashlib.sha256((repo/p).read_bytes()).hexdigest() for p in source_paths}
+before=hashes()
+assert before=={'apps/api/app/main.py':'d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430','apps/api/app/core/logging.py':'1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc'}
+assert {p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in old.iterdir()}=={'main.py':'38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88','logging.py':'8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e'}
+canaries=['b806cf42-769a-48d4-a9ea-88bc409ca5e1','fbdb610a-4a32-4bb8-9d46-9df39a476886','s8-private-path-fixture','s8-private-query-fixture']
+paths=[(f'/courses/{canaries[0]}/documents/{canaries[1]}?note={canaries[3]}',401,'/courses/{course_id}/documents/{document_id}'),(f'/{canaries[2]}?note={canaries[3]}',404,'<unmatched>'),('/health/live',200,'/health/live')]
+env={'PATH':os.environ['PATH'],'LANG':'en_US.UTF-8','PYTHONPATH':str(repo/'apps/api'),'PYTHONDONTWRITEBYTECODE':'1','ENVIRONMENT':'local','DEV_AUTH_ENABLED':'true','DATABASE_URL':'postgresql+psycopg://dou_app:synthetic_probe_only@127.0.0.1:9/s8_never_connect','WORKER_DATABASE_URL':'postgresql+psycopg://dou_worker:synthetic_probe_only@127.0.0.1:9/s8_never_connect','EMBEDDING_PROVIDER':'hashing','EMBEDDING_WARMUP_ENABLED':'false','LLM_FAKE_PROVIDER':'true','GROQ_API_KEY':'','GEMINI_API_KEY':'','OPENAI_API_KEY':'','HTTP_PROXY':'','HTTPS_PROXY':'','ALL_PROXY':'','NO_PROXY':'127.0.0.1'}
+results=[]
+opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+for name in ('baseline','candidate'):
+    logpath=out/f'{name}.log';localenv=env.copy()
+    if name=='baseline':localenv['S8_OLD_SOURCE']=str(old)
+    listener=socket.socket();listener.bind(('127.0.0.1',0));listener.listen(64)
+    localenv['S8_SOCKET_FD']=str(listener.fileno());port=listener.getsockname()[1]
+    proc=None;responses=[];start=time.monotonic()
+    try:
+        with logpath.open('x') as log:
+            proc=subprocess.Popen([sys.executable,str(driver)],cwd=out,env=localenv,pass_fds=(listener.fileno(),),stdout=log,stderr=subprocess.STDOUT)
+            def request(path,request_id,timeout=1):
+                req=urllib.request.Request(f'http://127.0.0.1:{port}'+path,headers={'X-Request-ID':request_id})
+                try: response=opener.open(req,timeout=timeout)
+                except urllib.error.HTTPError as error:response=error
+                with response:return response.status,response.headers.get('X-Request-ID'),response.read()
+            deadline=time.monotonic()+20
+            while True:
+                if proc.poll() is not None:raise AssertionError('owned server exited during startup')
+                try:
+                    status,_,_=request('/health/live','s8-startup',.2)
+                    if status==200:break
+                except (urllib.error.URLError,TimeoutError):pass
+                if time.monotonic()>deadline:raise AssertionError('server startup timed out')
+                time.sleep(.1)
+            for index,(path,expected,template) in enumerate(paths):
+                rid=f's8-{name}-{index}';status,returned_id,body=request(path,rid)
+                assert status==expected and returned_id==rid,(status,expected)
+                responses.append({'request_id':rid,'status':status,'expected_route_template':template,'response_sha256':hashlib.sha256(body).hexdigest()})
+            proc.terminate();proc.wait(timeout=10)
+    finally:
+        listener.close()
+        if proc is not None and proc.poll() is None:proc.kill();proc.wait(timeout=5)
+    raw=logpath.read_text();records=[]
+    for line in raw.splitlines():
+        try:records.append(json.loads(line))
+        except json.JSONDecodeError:pass
+    access=[r for r in records if r.get('logger')=='uvicorn.access']
+    request_records=[r for r in records if r.get('logger')=='app.request' and r.get('message')=='istek tamamlandı']
+    for response in responses:
+        matched=[r for r in request_records if r.get('context',{}).get('request_id')==response['request_id']]
+        assert len(matched)==1
+        response['logged_path']=matched[0]['context']['path']
+        assert matched[0]['context']['status']==response['status']
+        if name=='candidate':assert response['logged_path']==response['expected_route_template']
+    presence={item:item in raw for item in canaries}
+    startup_preserved=any(r.get('logger')=='uvicorn.error' and r.get('message')=='Application startup complete.' for r in records)
+    database_guard=[r for r in records if r.get('probe')=='database-connect-guard']
+    assert database_guard==[{'probe':'database-connect-guard','attempts':0}]
+    assert startup_preserved and proc.returncode==0
+    if name=='baseline':assert all(presence.values()) and access
+    else:assert not any(presence.values()) and not access
+    results.append({'variant':name,'seconds':round(time.monotonic()-start,3),'process_exit_code':proc.returncode,'responses':responses,'raw_canary_presence':presence,'uvicorn_access_records':len(access),'uvicorn_error_startup_preserved':startup_preserved,'log_sha256':hashlib.sha256(logpath.read_bytes()).hexdigest()})
+assert hashes()==before
+record={'status':'PASS','source_unchanged':True,'candidate_source_hashes':before,'baseline_source_hashes':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in old.iterdir()},'probe_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'driver_sha256':hashlib.sha256(driver.read_bytes()).hexdigest(),'results':results,'scope':'Actual Uvicorn h11 + app.main lifespan, no authenticated data flow, no DB/LLM, default access_log enabled; application/error channels retained. Does not cover reverse proxies or arbitrary exception content.'}
+(out/'result.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps({'status':'PASS','result':str(out/'result.json'),'source_unchanged':True}))

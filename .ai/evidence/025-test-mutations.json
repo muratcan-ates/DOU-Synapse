@@ -1,0 +1,93 @@
+{
+  "mutants": [
+    {
+      "mutant": "bake_int8_source",
+      "nodeid": "tests/test_bake_model_materialize.py::TestMaterialize::test_quantize_ve_no_quantize_yollari_cagiriyor[int8]",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    },
+    {
+      "mutant": "bake_int8_external",
+      "nodeid": "tests/test_bake_model_materialize.py::TestMaterialize::test_quantize_ve_no_quantize_yollari_cagiriyor[int8]",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    },
+    {
+      "mutant": "bake_fp32_source",
+      "nodeid": "tests/test_bake_model_materialize.py::TestMaterialize::test_quantize_ve_no_quantize_yollari_cagiriyor[fp32]",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    },
+    {
+      "mutant": "bake_fp32_external",
+      "nodeid": "tests/test_bake_model_materialize.py::TestMaterialize::test_quantize_ve_no_quantize_yollari_cagiriyor[fp32]",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    },
+    {
+      "mutant": "scripted_repeats_first",
+      "nodeid": "tests/test_guardrails.py::test_yardimci_sahte_llm_tekrar_eden_son_yaniti_verir",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    },
+    {
+      "mutant": "export_without_chat_owner",
+      "nodeid": "tests/test_user_rights.py::test_egitmen_sinav_onizlemesinde_kendi_verisini_indirebilir",
+      "exit_code": 0,
+      "failures": 0,
+      "errors": 0,
+      "detected": false,
+      "classification": "survived_due_to_independent_chat_owner_RLS",
+      "limitation": "The teacher cannot see student chat_sessions under the real dou_app RLS even after removal of the explicit query filter. This mutation is not counted as detected."
+    },
+    {
+      "mutant": "export_without_exam_owner",
+      "nodeid": "tests/test_user_rights.py::test_egitmen_sinav_onizlemesinde_kendi_verisini_indirebilir",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    },
+    {
+      "mutant": "export_empty_success",
+      "nodeid": "tests/test_user_rights.py::test_egitmen_sinav_onizlemesinde_kendi_verisini_indirebilir",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    },
+    {
+      "mutant": "removed_results_lock",
+      "nodeid": "tests/test_exam_workspace.py::test_saved_results_are_locked_until_other_exam_finishes",
+      "exit_code": 1,
+      "failures": 1,
+      "errors": 0,
+      "detected": true
+    }
+  ],
+  "source_files": {
+    "apps/api/tests/test_guardrails.py": "c6db762c24c9c9439c38124776518a0abb2c5b9d018f6ef3504c9e1d68da875d",
+    "apps/api/tests/test_user_rights.py": "f9ce71e0bf3309b9e94ca0be21d91381edb2a093946e45dba297b311c6005ed5",
+    "apps/api/tests/test_bake_model_materialize.py": "864d7b33f244b1aa3e09c0da2cd4d8d5e7885c94cc93cf5482da9de8ae7bda3e",
+    "apps/api/tests/test_exam_workspace.py": "9c34bd7eadff562a003559b49cc922b6d125a5bb7c6a19d7864fec4fb16f00b0"
+  },
+  "database": "dou018_testrepair (local PostgreSQL16, 127.0.0.1:55448)",
+  "mutation_method": "Temporary pytest plugin modifies function code objects in process only; no production file is written; each mutant re-runs the same unmodified regression test node.",
+  "measurement": "8 detected / 9 attempted; the one surviving chat-filter mutation remains recorded. All 4 requested test gaps have effective detected mutants.",
+  "transient_harness_issue": "An initial cloned-function globals snapshot bypassed fp32 test stubs. Those test processes were terminated; code-object mutation and offline flags were applied, then all recorded mutants were rerun. No positive evidence is claimed from the interrupted run.",
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "025-production-line-gates-r1",
+  "candidate_sha": "SELF"
+}

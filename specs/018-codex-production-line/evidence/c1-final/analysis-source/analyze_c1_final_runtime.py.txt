@@ -1,0 +1,78 @@
+"""Son runtime JSON'larını kaynak ve önceki ölçümlerle DB kullanmadan denetler."""
+from pathlib import Path
+import hashlib,json,math,statistics,sys
+P=Path('/private/tmp/dou018-evidence');R=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+files={'v1':'retrieval-runtime-local-20260908.json','v2':'retrieval-runtime-local-v2-20260908.json','v3':'retrieval-runtime-local-v3-final-20260908.json'}
+runs={k:json.loads((P/v).read_text()) for k,v in files.items()};m=runs['v3'];checks={}
+assert sha(P/files['v1'])=='52c1c3c2a4ce297e11c96a5b08f26479ae1b9e4afb2cd7a4fae34e1cc875170c'
+assert sha(P/files['v2'])=='5c965d4d3b1e67fc4267a77366e4e2f24d8cb6570a46c934534d18d5507c588b'
+assert m['status']=='measured' and m['phase']=='complete' and m['prepare_threshold']==5
+assert all(sha(R/p)==h for p,h in m['source_sha256'].items())
+assert sha(P/'retrieval-plan-local-20260908b.json')==m['source_report_sha256']
+checks['current_runtime_sources_and_original_reports_immutable']=True
+for old in ['v1','v2']:
+ for k in ['target','source_report_sha256','source_corpus_sha256','query_sha256','namespace','modes','repeats','warmups_per_case','cases','config','libraries','python']:
+  assert m[k]==runs[old][k]
+ for k in m['environment']:
+  if k!='backend_pid':assert m['environment'][k]==runs[old]['environment'][k]
+checks['same_clone_queries_config_environment_except_fresh_connection_pid']=True
+assert m['environment']['role']=='dou_app' and not m['environment']['rolsuper'] and not m['environment']['rolbypassrls']
+assert all(x['relrowsecurity'] and x['relforcerowsecurity'] for x in m['environment']['schema'])
+assert m['environment']['rows']==20000 and m['environment']['vector']=='0.8.0'
+checks['recorded_real_dou_app_forced_rls_and_local_vector_version']=True
+sys.path[:0]=[str(R),str(R/'apps/api')]
+from app.modules.retrieval import dense,fts
+for k,module in [('dense',dense),('fts',fts)]:
+ assert str(module._SQL)==m['runtime_sql'][k]
+ assert hashlib.sha256(m['runtime_sql'][k].encode()).hexdigest()==m['runtime_sql_sha256'][k]
+assert m['runtime_sql']['dense']==runs['v2']['runtime_sql']['dense']
+checks['actual_final_sql_and_hashes_equal_and_dense_sql_unchanged']=True
+counter={mode:{lane:{'generic':0,'custom':0} for lane in ['dense','fts']} for mode in m['modes']};case_summary=[];returned=negative=samples=0;old_rows={ver:{(r['mode'],r['case']):r for r in run['results']} for ver,run in runs.items()};same_v2=0
+for result in m['results']:
+ mode,case=result['mode'],result['case'];assert len(result['latency_ms'])==len(result['observations'])==7
+ assert result['p50_ms']==statistics.median(result['latency_ms']) and result['p95_ms']==max(result['latency_ms'])
+ assert result['caller_mode_after_timed_calls']==mode and result['same_content_order_as_auto']
+ before={x['name']:x for x in result['prepared_before']};delta=[]
+ for row in result['prepared_after']:
+  prior=before[row['name']];assert row['statement']==prior['statement'] and row['lane']==prior['lane']
+  g=row['generic_plans']-prior['generic_plans'];c=row['custom_plans']-prior['custom_plans']
+  assert min(g,c)>=0
+  if g+c:delta.append({'name':row['name'],'lane':row['lane'],'generic_plans':g,'custom_plans':c})
+ assert delta==result['measured_counter_deltas']
+ for lane in ['dense','fts']:
+  rows=[x for x in delta if x['lane']==lane];g=sum(x['generic_plans'] for x in rows);c=sum(x['custom_plans'] for x in rows);assert g+c==7
+  if lane=='dense' or mode=='force_custom_plan':assert c==7
+  if lane=='fts' and mode=='force_generic_plan':assert g==7
+  counter[mode][lane]['generic']+=g;counter[mode][lane]['custom']+=c
+ assert {x['name'] for x in result['prepared_plans']}=={x['name'] for x in delta}
+ for p in result['prepared_plans']:
+  assert p['capture_kind']=='separate execution of same prepared statement under runtime lane policy'
+  assert p['restored_caller_mode']==mode
+  assert p['effective_plan_mode']==('force_custom_plan' if p['lane']=='dense' else mode)
+  def hnsw(node):
+   if isinstance(node,dict):return node.get('Index Name')=='chunks_embedding_idx' or any(hnsw(v) for v in node.values())
+   if isinstance(node,list):return any(hnsw(x) for x in node)
+   return False
+  assert p['hnsw']==hnsw(p['plan'])
+ for obs in result['observations']:
+  assert len(obs['keys'])==obs['count']<=8 and len({tuple(k) for k in obs['keys']})==obs['count'];samples+=1;returned+=obs['count']
+  if case.startswith(('empty_documents','nonmember')):
+   negative+=1;assert obs['count']==0 and obs['lane_counts']=={'dense':0,'fts':0}
+ previous=old_rows['v2'][(mode,case)]
+ same_v2+=sum(x==y for x,y in zip(result['observations'],previous['observations'],strict=True))
+ case_summary.append({'mode':mode,'case':case,'p50_ms':result['p50_ms'],'p95_ms':result['p95_ms'],'p50_delta_vs_v2_ms':result['p50_ms']-previous['p50_ms'],'dense_hnsw':next(p['hnsw'] for p in result['prepared_plans'] if p['lane']=='dense'),'counts':sorted({x['count'] for x in result['observations']})})
+assert samples==294 and negative==84 and returned==1680
+checks['all_counter_deltas_recomputed_and_dense_custom_fts_caller_policy_preserved']=True
+checks['all_294_latency_p50_p95_recomputed_and_modes_restored']=True
+checks['all_84_empty_or_nonmember_observations_returned_zero']=True
+checks['all_saved_plans_consistent_with_separate_execution_lane_policy']=True
+clone=json.loads((P/'c1-runtime-clone.json').read_text());assert clone['target']==m['target']['database'] and clone['source_report_sha256']==m['source_report_sha256']
+assert clone['source_before']==clone['source_after'] and len({clone[k]['content_vector_metadata_sha256'] for k in ['source_before','clone_before','clone_after','source_after']})==1
+checks['historical_clone_lineage_record_unchanged_and_bound']=True
+recpath=P/'bc-c1-final-runtime.json';receipt=json.loads(recpath.read_text());assert receipt['exit_code']==0 and receipt['source_unchanged'] and sha(P/'bc-c1-final-runtime.log')==receipt['log_sha256']
+assert all(sha(R/p)==h for p,h in receipt['source_sha256'].items())
+checks['root_receipt_exit_log_and_current_app_test_migration_source_hashes_match']=True
+out={'status':'verified_final_local_runtime','artifacts_sha256':{f:sha(P/f) for f in [*files.values(),'c1-runtime-clone.json','bc-c1-final-runtime.json']},'checks':checks,'source_sha256':m['source_sha256'],'runtime_sql_sha256':m['runtime_sql_sha256'],'counter_deltas':counter,'measured_hybrid_calls':samples,'warmup_hybrid_calls':len(m['results'])*m['warmups_per_case'],'negative_observations':negative,'returned_source_checks':returned,'same_all_observations_as_v2':same_v2==samples,'same_observations_as_v2_count':same_v2,'backend_pid':m['environment']['backend_pid'],'environment':m['environment'],'libraries':m['libraries'],'prepare_threshold':m['prepare_threshold'],'probe_elapsed_seconds':m['elapsed_seconds'],'root_wrapper_wall_seconds':receipt['seconds'],'cases':case_summary,'limits':['Final actual SQLAlchemy/psycopg runtime on the existing 20k synthetic clone; not real embedding or LLM quality.','Counter deltas describe timed calls; EXPLAIN is a separate execution of the same statement under its runtime lane policy.','Runtime validates metadata and namespace but does not rehash stored vectors; original clone lineage is historical evidence, not a fresh before-after vector digest.','Small seven-repeat p95 is empirical, not a population tail estimate.','Local PostgreSQL16.14/vector0.8.0 is not the pinned CI vector0.8.6 plan matrix; RLS-off comparison remains unrun.','C2 build-memory causality and FTS UUID reingest stability remain open.']}
+(P/'c1-final-runtime-audit.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({k:out[k] for k in ['status','counter_deltas','measured_hybrid_calls','negative_observations','same_all_observations_as_v2','probe_elapsed_seconds','root_wrapper_wall_seconds']},indent=2));print(json.dumps([x for x in case_summary if x['mode']=='auto' and x['case'].startswith('broad')],indent=2))

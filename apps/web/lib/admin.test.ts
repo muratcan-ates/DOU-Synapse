@@ -10,6 +10,8 @@ import type { AdminOverview, AdminRequestLog } from "./admin";
 const overviewFixture = {
   status: "ok",
   database_status: "ok",
+  pgvector_status: "ok",
+  request_quota_status: "ok",
   embedding_status: "ready",
   measured_at: "2026-08-10T12:00:00Z",
   users_total: 12,

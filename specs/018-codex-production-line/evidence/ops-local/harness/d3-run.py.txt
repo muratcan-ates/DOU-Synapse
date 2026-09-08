@@ -1,0 +1,371 @@
+#!/usr/bin/env python3
+"""D3 yeni sentetik hedeflerinde sıralı gerçek bağlantı bariyerleri; varsayılan yalnız plan."""
+from __future__ import annotations
+
+import argparse
+from contextlib import ExitStack
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import time
+from unittest.mock import patch
+
+REPO = Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+RUNTIME = REPO / 'scripts/recovery.py'
+RUNTIME_SHA = 'a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b'
+HELPER = Path('/private/tmp/dou018-d3-negative-runner/runner.py')
+HELPER_SHA = '356a896ab1ed2840ffcf5acb56514afd32967569c0e865bd692e80624a424a9b'
+BUNDLE = Path('/private/tmp/dou018-d3-current-parity-result-01/own-backup')
+MANIFEST_SHA = '38b701e61a8509054bf8a3fc56dcfffb746fdfdab3645ec4c1baec317405fcc7'
+DUMP_SHA = '58465323956b7861df653536b0fa422f5e4488f59f4a97a7a528597308d4a288'
+SOURCE_NAME = 'dou018_recovery_current_source01'
+SOURCE_OID = '1161812'
+SOURCE_SHA = 'a122f54de62714a8c18edfc5a5073a82a6cbefefed465fa52ecc6adf4b714da4'
+CASES = {'writer_open': 'dou018_recovery_next_07a01',
+         'writer_closed': 'dou018_recovery_next_07b01',
+         'maintenance_loss': 'dou018_recovery_next_ctrl01',
+         'source_loss': None}
+SENTINEL = 'dou018_next_writer_sentinel'
+SAFE_CODES = {'TARGET_SESSION_BINDING_OR_COUNT_CHANGED',
+              'RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE',
+              'RESTORE_COMMITTED_FENCE_REOPEN_UNCONFIRMED',
+              'SOURCE_SNAPSHOT_CONTROL_FAILED'}
+
+
+class Refused(Exception):
+    """Dış rapora yalnız önceden tanımlanmış sabit kod taşınır."""
+
+
+def require(value, code):
+    if not value:
+        raise Refused(code)
+
+
+def sha(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def fingerprint(cluster, oid):
+    return sha(json.dumps([cluster, str(oid)], separators=(',', ':')).encode())
+
+
+def load(path, expected, name):
+    data = path.read_bytes()
+    require(sha(data) == expected, 'FROZEN_INPUT_CHANGED')
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    exec(compile(data, str(path), 'exec'), module.__dict__)
+    return module
+
+
+def pins(args):
+    data = args.pins.read_bytes()
+    require(len(data) < 16384 and sha(data) == args.pins_sha256, 'ROOT_PIN_FILE_MISMATCH')
+    p = json.loads(data)
+    require(set(p) == {'cluster', 'host', 'port', 'dba_role', 'maintenance', 'source', 'target'},
+            'EXACT_PIN_SCHEMA_REQUIRED')
+    require(p['host'] in {'127.0.0.1', '::1'} and type(p['port']) is int
+            and 0 < p['port'] < 65536, 'NUMERIC_LOCAL_ENDPOINT_REQUIRED')
+    require(re.fullmatch(r'[1-9][0-9]*', p['cluster'])
+            and re.fullmatch(r'[a-z_][a-z0-9_]{0,62}', p['dba_role']), 'INVALID_ROOT_PINS')
+    require(p['source'] == {'name': SOURCE_NAME, 'oid': SOURCE_OID, 'sha256': SOURCE_SHA}
+            and fingerprint(p['cluster'], SOURCE_OID) == SOURCE_SHA, 'TRUSTED_SYNTHETIC_SOURCE_ONLY')
+    m = p['maintenance']
+    require(set(m) == {'name', 'oid', 'role'} and m['name'] == 'postgres'
+            and m['role'] == p['dba_role'] and re.fullmatch(r'[1-9][0-9]*', m['oid'])
+            and m['oid'] != SOURCE_OID, 'EXPLICIT_MAINTENANCE_PIN_REQUIRED')
+    t = p['target']
+    if args.case == 'source_loss':
+        require(t is None, 'SOURCE_ONLY_CASE_MUST_HAVE_NO_TARGET')
+    else:
+        require(isinstance(t, dict) and set(t) == {'name', 'oid', 'sha256'}
+                and t['name'] == CASES[args.case] and re.fullmatch(r'[1-9][0-9]*', t['oid'])
+                and t['oid'] not in {SOURCE_OID, m['oid']}
+                and fingerprint(p['cluster'], t['oid']) == t['sha256'], 'NEW_TARGET_ROOT_PIN_REQUIRED')
+    return p
+
+
+def routed(r, p, prefix, kind, *, readonly=False):
+    env = r.connection_env(prefix)
+    expected = p[kind]
+    role = expected['role'] if kind == 'maintenance' else p['dba_role']
+    require(env['PGDATABASE'] == expected['name'] and env['PGUSER'] == role
+            and env['PGHOSTADDR'] == p['host'] and env['PGPORT'] == str(p['port']),
+            'ROOT_CONNECTION_ROUTE_MISMATCH')
+    if readonly:
+        env['PGOPTIONS'] += ' -c default_transaction_read_only=on'
+    return env
+
+
+def bound(r, connection, p, kind):
+    b = connection.execute('SELECT ' + r.SESSION_BINDING_SQL).fetchone()[0]
+    expected = p[kind]
+    require(b['system_identifier'] == p['cluster'] and b['database_oid'] == expected['oid']
+            and b['database_name'] == expected['name'] and b['user'] == p['dba_role']
+            and b['superuser'] is True and b['server_port'] == p['port'], 'LIVE_ROOT_PIN_MISMATCH')
+    return b
+
+
+def observe(r, connection, p):
+    binding = bound(r, connection, p, 'maintenance')
+    require(connection.execute("SELECT current_setting('transaction_read_only')").fetchone()[0] == 'on',
+            'OBSERVER_NOT_READ_ONLY')
+    connection.execute('SELECT pg_stat_clear_snapshot()')
+    row = connection.execute('SELECT oid::text,datname,datallowconn,'
+        '(SELECT count(*) FROM pg_stat_activity WHERE datid=d.oid) '
+        'FROM pg_database d WHERE oid=%s::oid', (p['target']['oid'],)).fetchone()
+    require(row and row[:2] == (p['target']['oid'], p['target']['name']), 'TARGET_IDENTITY_CHANGED')
+    return {'oid': row[0], 'allow_connections': row[2], 'connections': row[3],
+            'postmaster_start': binding['postmaster_start']}
+
+
+def settled(r, connection, p, count=0):
+    # Süre yarışı üretmez; yalnız kapanmış kendi bağlantılarımızın katalogdan çıkışını bekler.
+    deadline = time.monotonic() + 3
+    while True:
+        state = observe(r, connection, p)
+        if state['connections'] == count or time.monotonic() >= deadline:
+            return state
+        time.sleep(0.1)
+
+
+def sentinel_hash(connection):
+    rows = connection.execute('SELECT encode(sha256(convert_to(to_jsonb(t)::text,\'UTF8\')),\'hex\') '
+                              'FROM public.' + SENTINEL + ' t ORDER BY 1 LIMIT 2').fetchall()
+    require(len(rows) == 1, 'ONE_SYNTHETIC_SENTINEL_REQUIRED')
+    return sha(bytes.fromhex(rows[0][0]))
+
+
+def source_case(r, p, obs, result):
+    original_connection, original_command = r.control_connection, r.command
+    env = routed(r, p, 'DOU_BACKUP_', 'source', readonly=True)
+    with original_connection(env, runtime_error='PSYCOPG_REQUIRED') as c:
+        initial_binding = bound(r, c, p, 'source')
+        before = r.source_metadata(c.execute(r.SNAPSHOT_SQL).fetchone()[0])
+    actual = {}
+    facts = result['facts']
+
+    def connection(environment, *, runtime_error):
+        require(environment['PGDATABASE'] == SOURCE_NAME, 'UNEXPECTED_SOURCE_ROUTE')
+        c = original_connection(environment, runtime_error=runtime_error)
+        b = bound(r, c, p, 'source')
+        require(b['postmaster_start'] == initial_binding['postmaster_start'], 'CLUSTER_RESTARTED')
+        actual['connection'] = c
+        facts['source_control_binding'] = b
+        return c
+
+    def command(name, arguments, **kwargs):
+        value = original_command(name, arguments, **kwargs)
+        if name == 'pg_dump':
+            require(any(x.startswith('--snapshot=') for x in arguments), 'EXPORTED_SNAPSHOT_REQUIRED')
+            require(not facts.get('real_dump_returned'), 'ONE_REAL_DUMP_REQUIRED')
+            facts['real_dump_returned'] = True
+            actual['connection'].close()
+            facts['own_source_connection_closed'] = actual['connection'].closed
+        if name == 'pg_restore' and arguments == ['--list']:
+            facts['real_archive_list_returned'] = True
+        return value
+
+    partial = Path(result['output']) / 'failed-own-backup'
+    with patch.object(r, 'control_connection', connection), patch.object(r, 'command', command):
+        try:
+            result['unexpected_receipt'] = r.backup(partial, REPO)
+        except r.Refused as error:
+            result['safe_code'] = str(error) if str(error) in SAFE_CODES else 'OTHER_RUNTIME_REFUSAL'
+    with original_connection(env, runtime_error='PSYCOPG_REQUIRED') as c:
+        final_binding = bound(r, c, p, 'source')
+        after = r.source_metadata(c.execute(r.SNAPSHOT_SQL).fetchone()[0])
+    facts['source_metadata_unchanged'] = before == after
+    facts['cluster_unchanged'] = initial_binding['postmaster_start'] == final_binding['postmaster_start']
+    facts['completion_manifest_absent'] = not (partial / r.MANIFEST).exists()
+    facts['partial_dump_present'] = (partial / r.DUMP).is_file()
+    require(result.get('safe_code') == 'SOURCE_SNAPSHOT_CONTROL_FAILED'
+            and all(facts.get(k) is True for k in ('real_dump_returned', 'own_source_connection_closed',
+                'real_archive_list_returned', 'source_metadata_unchanged', 'cluster_unchanged',
+                'completion_manifest_absent', 'partial_dump_present'))
+            and 'unexpected_receipt' not in result, 'SOURCE_CONTROL_LOSS_ORACLE_FAILED')
+
+
+def restore_case(r, p, obs, result, case):
+    original_connection = r.control_connection
+    maintenance_env = routed(r, p, 'DOU_MAINTENANCE_', 'maintenance', readonly=True)
+    target_env = routed(r, p, 'DOU_RESTORE_', 'target')
+    facts = result['facts']
+    writer = None
+    original_guard, original_fence = r.TargetSession.guard, r.set_target_fence
+    original_exit, original_apply = r.TargetSession.__exit__, r.TargetSession.apply
+    original_ready = r.TargetSession.ready
+    with original_connection(maintenance_env, runtime_error='PSYCOPG_REQUIRED') as observer:
+        before = settled(r, observer, p)
+        result['before'] = before
+        require(before['allow_connections'] is True and before['connections'] == 0,
+                'FRESH_OPEN_QUIESCENT_TARGET_REQUIRED')
+
+        def ready(session):
+            meta, binding = original_ready(session)
+            require(binding['database_oid'] == p['target']['oid']
+                    and binding['database_name'] == p['target']['name']
+                    and binding['system_identifier'] == p['cluster']
+                    and binding['postmaster_start'] == before['postmaster_start'], 'TARGET_ROOT_PIN_MISMATCH')
+            facts['initial_target_empty'] = meta['empty']
+            return meta, binding
+
+        def guard(session, source, target):
+            nonlocal writer
+            original_guard(session, source, target)
+            facts['initial_real_guard_returned'] = True
+            if case not in {'writer_open', 'writer_closed'}:
+                return
+            writer = original_connection(target_env, runtime_error='PSYCOPG_REQUIRED')
+            binding = bound(r, writer, p, 'target')
+            require(binding['postmaster_start'] == before['postmaster_start'], 'WRITER_CLUSTER_RESTARTED')
+            facts['writer_binding'] = binding
+            # Var olan tabloya asla dokunulmaz; yeni root hedefinin boşluğu tekrar sınanır.
+            require(writer.execute(r.SNAPSHOT_SQL).fetchone()[0]['empty'] is True,
+                    'WRITER_TARGET_ALREADY_NONEMPTY')
+            writer.execute('BEGIN')
+            writer.execute('CREATE TABLE public.' + SENTINEL + '(marker integer PRIMARY KEY)')
+            writer.execute('INSERT INTO public.' + SENTINEL + ' VALUES (7)')
+            writer.execute('COMMIT')
+            facts['writer_committed_sentinel_sha256'] = sentinel_hash(writer)
+            facts['writer_commit_after_initial_guard'] = True
+            if case == 'writer_closed':
+                writer.close()
+                facts['writer_closed_before_fence'] = writer.closed
+                state = settled(r, observer, p, count=1)
+                require(state['connections'] == 1 and state['allow_connections'] is True,
+                        'WRITER_BACKEND_EXIT_BARRIER_NOT_OBSERVED')
+                facts['writer_backend_exit_barrier_observed'] = True
+
+        def fence(connection, maintenance_binding, target_binding, *, allowed):
+            require(maintenance_binding['database_oid'] == p['maintenance']['oid']
+                    and maintenance_binding['database_name'] == p['maintenance']['name']
+                    and maintenance_binding['system_identifier'] == p['cluster'], 'MAINTENANCE_ROOT_PIN_MISMATCH')
+            facts['reopen_called' if allowed else 'fence_called'] = True
+            value = original_fence(connection, maintenance_binding, target_binding, allowed=allowed)
+            facts['reopen_returned' if allowed else 'real_fence_returned'] = True
+            if not allowed and case == 'maintenance_loss':
+                connection.close()
+                facts['own_maintenance_connection_closed_after_fence'] = connection.closed
+            return value
+
+        def apply(session, marker, binding):
+            facts['apply_called'] = True
+            value = original_apply(session, marker, binding)
+            facts['real_commit_receipt_validated'] = True
+            return value
+
+        def exited(session, *values):
+            try:
+                obs.capture_session(session)
+            finally:
+                value = original_exit(session, *values)
+                obs.child_exit = session.process.returncode if session.process else None
+            return value
+
+        try:
+            with ExitStack() as stack:
+                for owner, name, replacement in ((r.TargetSession, 'ready', ready),
+                    (r.TargetSession, 'guard', guard), (r.TargetSession, 'apply', apply),
+                    (r.TargetSession, '__exit__', exited), (r, 'set_target_fence', fence)):
+                    stack.enter_context(patch.object(owner, name, replacement))
+                try:
+                    result['unexpected_receipt'] = r.restore(BUNDLE, SOURCE_SHA)
+                except r.Refused as error:
+                    result['safe_code'] = str(error) if str(error) in SAFE_CODES else 'OTHER_RUNTIME_REFUSAL'
+            if case == 'writer_open' and writer is not None and not writer.closed:
+                facts['writer_sentinel_preserved'] = sentinel_hash(writer) == facts['writer_committed_sentinel_sha256']
+        finally:
+            if writer is not None:
+                writer.close()
+        after = settled(r, observer, p)
+        result['after'] = after
+    require(after['connections'] == 0 and after['postmaster_start'] == before['postmaster_start']
+            and 'unexpected_receipt' not in result, 'POST_RUN_STATE_OR_RECEIPT_INVALID')
+    if case == 'writer_open':
+        require(result.get('safe_code') == 'TARGET_SESSION_BINDING_OR_COUNT_CHANGED'
+                and after['allow_connections'] is True and facts.get('writer_sentinel_preserved')
+                and not facts.get('fence_called') and not facts.get('apply_called')
+                and facts.get('writer_commit_after_initial_guard'), 'OPEN_WRITER_ORACLE_FAILED')
+    elif case == 'writer_closed':
+        require(result.get('safe_code') == 'RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE'
+                and after['allow_connections'] is False and facts.get('real_fence_returned')
+                and facts.get('writer_closed_before_fence') and facts.get('apply_called')
+                and not facts.get('real_commit_receipt_validated') and not facts.get('reopen_called')
+                and obs.error and obs.error['safe_code'] == 'TARGET_NOT_EMPTY_OR_UNAUTHORIZED'
+                and obs.child_exit == 3, 'CLOSED_WRITER_FINAL_GUARD_ORACLE_FAILED')
+    else:
+        require(result.get('safe_code') == 'RESTORE_COMMITTED_FENCE_REOPEN_UNCONFIRMED'
+                and after['allow_connections'] is False and facts.get('real_fence_returned')
+                and facts.get('own_maintenance_connection_closed_after_fence')
+                and facts.get('real_commit_receipt_validated') and facts.get('reopen_called')
+                and not facts.get('reopen_returned'), 'MAINTENANCE_LOSS_ORACLE_FAILED')
+
+
+def execute(args):
+    p = pins(args)
+    r = load(RUNTIME, RUNTIME_SHA, 'd3_next_frozen_runtime')
+    h = load(HELPER, HELPER_SHA, 'd3_next_private_capture')
+    require(sha((BUNDLE / 'manifest.json').read_bytes()) == MANIFEST_SHA
+            and sha((BUNDLE / 'database.dump').read_bytes()) == DUMP_SHA, 'TRUSTED_OWN_BACKUP_CHANGED')
+    directory = r.new_bundle(args.output)
+    obs = h.Observer(r, directory)
+    result = {'status': 'incomplete', 'case': args.case, 'runtime_sha256': RUNTIME_SHA,
+              'runner_sha256': sha(Path(__file__).read_bytes()), 'pins_sha256': args.pins_sha256,
+              'output': str(args.output), 'facts': {}, 'scope': 'synthetic controlled local connections; no network-loss or production certification'}
+    try:
+        if args.case == 'source_loss':
+            source_case(r, p, obs, result)
+        else:
+            restore_case(r, p, obs, result, args.case)
+        result['status'] = 'negative-acceptance-pass'
+    except Refused as error:
+        result.update(status='negative-acceptance-failed', safe_runner_code=str(error))
+    except BaseException as error:
+        result.update(status='runner-failed', exception_class=type(error).__name__)
+    finally:
+        result.update(first_tool_error=obs.error, child_exit=obs.child_exit, artifacts=obs.artifacts.copy(),
+                      runtime_unchanged=sha(RUNTIME.read_bytes()) == RUNTIME_SHA)
+        obs.save('result.json', (json.dumps(result, indent=2) + '\n').encode())
+        os.fsync(directory)
+        os.close(directory)
+    print(json.dumps({k: result[k] for k in ('status', 'case', 'safe_code', 'safe_runner_code') if k in result}))
+    return 0 if result['status'] == 'negative-acceptance-pass' else 2
+
+
+class Parser(argparse.ArgumentParser):
+    def error(self, _message):
+        self.exit(2, 'D3_NEXT_ARGUMENTS_INVALID\n')
+
+
+def main():
+    parser = Parser(description='Root provisionlu D3 olumsuz deneyleri; varsayılan bağlantısız plan.')
+    parser.add_argument('--case', choices=CASES, required=True)
+    parser.add_argument('--execute', action='store_true')
+    parser.add_argument('--pins', type=Path)
+    parser.add_argument('--pins-sha256')
+    parser.add_argument('--output', type=Path)
+    args = parser.parse_args()
+    if not args.execute:
+        print(json.dumps({'status': 'plan-only', 'case': args.case, 'connections': 0,
+                          'target': CASES[args.case], 'automatic_reopen': False}))
+        return 0
+    require(args.pins and args.pins.is_absolute() and args.output and args.output.is_absolute()
+            and re.fullmatch(r'[a-f0-9]{64}', args.pins_sha256 or ''), 'EXPLICIT_PIN_AND_OUTPUT_REQUIRED')
+    return execute(args)
+
+
+if __name__ == '__main__':
+    try:
+        raise SystemExit(main())
+    except Refused as error:
+        print(json.dumps({'status': 'refused', 'safe_code': str(error)}))
+        raise SystemExit(2) from None
+    except Exception as error:
+        print(json.dumps({'status': 'runner-failed', 'exception_class': type(error).__name__}))
+        raise SystemExit(2) from None

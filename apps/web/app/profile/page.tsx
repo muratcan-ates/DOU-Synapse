@@ -257,14 +257,14 @@ function ProfileContent({
           >
             Verilerimi indir veya sil
             <span className="mt-1 block text-xs font-normal text-fg-muted">
-              Dışa aktarma, sohbet silme ve anonimleştirme
+              Dışa aktarma, sohbet silme ve profil bilgilerini kaldırma
             </span>
           </Link>
           <Link
             href="/kvkk"
             className="flex min-h-20 flex-col justify-center px-1 py-4 text-sm font-medium text-fg hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-3"
           >
-            KVKK aydınlatma metni
+            Kişisel veriler ve gizlilik
             <span className="mt-1 block text-xs font-normal text-fg-muted">
               İşlenen veri, saklama ve haklarınız
             </span>

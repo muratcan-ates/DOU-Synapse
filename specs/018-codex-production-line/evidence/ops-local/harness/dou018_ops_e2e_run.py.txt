@@ -1,0 +1,23 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+import psycopg
+
+os.umask(0o077)
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');out=Path('/private/tmp/dou018-evidence/ops-e2e-01');out.mkdir(mode=0o700,exist_ok=False)
+db='dou018_d_e2e_01'
+provision=json.loads(Path('/private/tmp/dou018-evidence/d-e2e-provision-01/result.json').read_text())
+route=dict(host='127.0.0.1',hostaddr='127.0.0.1',port=55448,user='muratates',dbname='postgres',connect_timeout=3)
+with psycopg.connect(**route) as c:
+    c.execute('SET TRANSACTION READ ONLY')
+    assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0]==provision['cluster']
+    assert c.execute('SELECT oid::text FROM pg_database WHERE datname=%s',(db,)).fetchone()[0]==provision['oid']
+env={k:v for k,v in os.environ.items() if not k.startswith('PG')}
+env.update(PGHOST='127.0.0.1',PGHOSTADDR='127.0.0.1',PGPORT='55448',PGUSER='muratates',PG_BIN='/opt/homebrew/opt/postgresql@16/bin',E2E_API_URL='http://127.0.0.1:8018',E2E_PORT='3118',E2E_DATABASE_NAME=db,CI='',GROQ_API_KEY='',GEMINI_API_KEY='',OPENAI_API_KEY='')
+def hashes():
+    paths=list((repo/'apps/api/app').rglob('*.py'))+list((repo/'supabase/migrations').glob('*.sql'))+list((repo/'apps/web/app').rglob('*.tsx'))+list((repo/'apps/web/lib').rglob('*.ts'))+list((repo/'apps/web/e2e').rglob('*.ts'))
+    return {str(p.relative_to(repo)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+before=hashes();start=time.monotonic();path=out/'tests.log'
+with path.open('x') as log:
+    cp=subprocess.run(['bun','run','test:e2e','--workers=1'],cwd=repo/'apps/web',env=env,stdout=log,stderr=subprocess.STDOUT,timeout=900)
+record={'exit_code':cp.returncode,'seconds':round(time.monotonic()-start,3),'database':db,'database_oid':provision['oid'],'source_unchanged':before==hashes(),'source_hashes':hashes(),'log_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'web_server':'new OPS production webpack build on3118; current OPS API on8018','scope':'real HTTP/browser with local synthetic accounts and fake provider; no production authorization or real model quality claim'}
+(out/'result.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps({k:v for k,v in record.items() if k!='source_hashes'}));raise SystemExit(cp.returncode)

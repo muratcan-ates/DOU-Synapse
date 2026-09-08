@@ -209,6 +209,7 @@ export function toQuestionView(question: Question): QuestionView {
         stem: readString(payload, "prompt"),
         answerKey: readString(payload, "answer_key"),
         code: readCode(payload),
+        rubric: readRubric(payload),
       };
     case "bug_hunt":
       return {
@@ -216,6 +217,7 @@ export function toQuestionView(question: Question): QuestionView {
         stem: readString(payload, "prompt"),
         bugAnswer: readBugAnswer(payload),
         code: readCode(payload),
+        rubric: readRubric(payload),
       };
   }
 }
@@ -243,12 +245,16 @@ export function countByStatus(questions: readonly Question[]): PoolCounts {
 
 export type StatusFilter = QuestionStatus | "all";
 
-/**
- * Süzme istemcide yapılır çünkü liste zaten tam çekildi: her sekme değişiminde
- * aynı veriyi ikinci kez istemek gereksiz iştir (Anayasa XI). Sunucudaki
- * `?status=` süzgeci duruyor ve öğrenci için hâlâ zorunlu; burada onu
- * kullanmamak yetkiyi gevşetmez, yalnız istek sayısını düşürür.
- */
+/** Sunucunun durum/konu süzgeci. Her seçim yeni bir pagination kimliğidir. */
+export function questionPoolPath(courseId: string, status: StatusFilter, topicId: string): string {
+  const query = new URLSearchParams();
+  if (status !== "all") query.set("status", status);
+  if (topicId !== "all") query.set("topic_id", topicId);
+  const suffix = query.toString();
+  return `/courses/${encodeURIComponent(courseId)}/questions${suffix ? `?${suffix}` : ""}`;
+}
+
+/** Sunucudan kaydedilen seçili soru, süzgeçten çıkınca yerinde tutulur. */
 export function filterQuestions(
   questions: readonly Question[],
   status: StatusFilter,

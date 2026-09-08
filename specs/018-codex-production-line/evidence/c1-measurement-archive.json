@@ -1,0 +1,57 @@
+{
+  "scope": "C1 yerel ölçüm arşivi; PostgreSQL16/pgvector0.8.0. CI pgvector0.8.6 eşdeğerliği ve gerçek model kalitesi iddiası yok.",
+  "artifacts": [
+    {
+      "file": "c1-plan-v1-preliminary.json.gz",
+      "source_file": "retrieval-plan-local-20260908a.json",
+      "raw_sha256": "78748275e7d34ace9554f2774f40d185a4616321265698d0bf005075596251d8",
+      "gzip_sha256": "ee6665d27b2e74522afee097b0ecbd6da9fb4d81978f091d83d8808bd7fa1832",
+      "raw_bytes": 3891407,
+      "gzip_bytes": 369286,
+      "scope": "Ön deney; adaylar aynı kaynak metadata sütunlarını döndürmüyordu, adil hız karşılaştırması değildir.",
+      "elapsed_seconds": 50.10992554200493
+    },
+    {
+      "file": "c1-plan-v2-equal-projection.json.gz",
+      "source_file": "retrieval-plan-local-20260908b.json",
+      "raw_sha256": "34beb08b8c3a3bb8d9975147f7d04af5bcfca42c47add1b870819370287c07ca",
+      "gzip_sha256": "de50cb7cf6934bbce8656e6a5fb125d69baf95f8df6b564c5f0b78ca5e811785",
+      "raw_bytes": 3892791,
+      "gzip_bytes": 369567,
+      "scope": "Eşit kaynak metadata sütunları; 20 bin sentetik vektör; plan/ANN mekanikleri, gerçek model kalitesi değildir.",
+      "elapsed_seconds": 49.86870429100236
+    },
+    {
+      "file": "c1-runtime-v1-prepared.json.gz",
+      "source_file": "retrieval-runtime-local-20260908.json",
+      "raw_sha256": "52c1c3c2a4ce297e11c96a5b08f26479ae1b9e4afb2cd7a4fae34e1cc875170c",
+      "gzip_sha256": "13e060716ca1ea0e8b6a13fa5e95d1caadd63b9b6f36e4d48f65dccfc0cf0804",
+      "raw_bytes": 3495140,
+      "gzip_bytes": 311279,
+      "scope": "İlk uygulama deneyi; prepared auto/generic planda HNSW kaybını ortaya çıkardı.",
+      "elapsed_seconds": 18.503435792001255
+    },
+    {
+      "file": "c1-runtime-v2-dense-custom.json.gz",
+      "source_file": "retrieval-runtime-local-v2-20260908.json",
+      "raw_sha256": "5c965d4d3b1e67fc4267a77366e4e2f24d8cb6570a46c934534d18d5507c588b",
+      "gzip_sha256": "9cd11f3b8f14cc968c95329520566b2cb5c381e649ae91055eca2b6c9d2f8393",
+      "raw_bytes": 2408410,
+      "gzip_bytes": 304176,
+      "scope": "Yalnız dense çağrısında custom plan; aynı klonda gerçek prepared sayaçları, RLS ve kaynak denetimleri.",
+      "elapsed_seconds": 12.51062783299858
+    },
+    {
+      "file": "c1-runtime-clone.json",
+      "source_file": "c1-runtime-clone.json",
+      "raw_sha256": "cb34010a25d4221aa6c3617c1209a206b201936d2bba4cb31bd4b984e723d4a6",
+      "raw_bytes": 1394
+    },
+    {
+      "file": "c1-runtime-v1-analysis.json",
+      "source_file": "c1-runtime-analysis.json",
+      "raw_sha256": "31a0fd0e973e7ed82cabff3a01d2ed0598f83ff9ef907ec9e498bcae56a05afe",
+      "raw_bytes": 28383
+    }
+  ]
+}

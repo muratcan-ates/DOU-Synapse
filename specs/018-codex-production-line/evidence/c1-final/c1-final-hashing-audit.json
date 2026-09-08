@@ -1,0 +1,258 @@
+{
+  "status": "verified_final_hashing_mechanical_nondecrease",
+  "manifest_sha256": "41a045c7a890d86f321bd97a978420f392189bda1b34a41ca2f4d63c3e2fb318",
+  "checks": {
+    "baseline_three_real_git_sources_byte_equal": true,
+    "candidate_source_sha256_current_match": true,
+    "common_dependency_source_sha256_current_match": true,
+    "harness_source_sha256_current_match": true,
+    "runner_source_match": true,
+    "corpus_22_sources_completed_167_embeddings_and_file_hashes_match": true,
+    "raw_hashes_complete_127_105_no_provider_and_same_query_order": true,
+    "raw_common_config_and_corpus_identity_equal": true,
+    "recorded_before_after_and_both_arm_rls_state_equal": true,
+    "runner_enforces_readonly_forced_rls_and_before_after_comparison": true,
+    "unaltered_gold_queries_sources_and_scoring_selection_equal": true,
+    "metrics_recomputed_from_all_105_item_ranks_match": true,
+    "existing_paired_bootstrap_recomputed_for_recall5_mrr": true,
+    "original_failed_hashing_and_e5_manifests_and_raw_arms_immutable": true,
+    "final_and_original_hashing_actual_provider_config_corpus_query_shared_sources_equal": true,
+    "only_fts_candidate_source_changed_and_final_sql_equals_baseline_ignoring_comments": true,
+    "final_api_and_hashing_receipts_loghash_all_sourcehashes_match": true,
+    "recorded_acceptance_independently_recomputed": true
+  },
+  "corpus_state": {
+    "database": "dou018_eval_c1holdout01",
+    "role": "dou_app",
+    "rolsuper": false,
+    "rolbypassrls": false,
+    "rows": 167,
+    "namespace": "hashing/hashing-v1@builtin-1",
+    "content_vector_metadata_sha256": "d6132e5287c8bbd2b7660830f251374d3d27a797542842b028c05644ccbfc0f0"
+  },
+  "common_raw_fields": [
+    "set",
+    "set_version",
+    "material",
+    "layer",
+    "mode",
+    "chat_mode",
+    "course_id",
+    "database",
+    "embedding_provider",
+    "embedding_model",
+    "embedding_runtime",
+    "retrieval",
+    "llm",
+    "corpus_digest",
+    "runtime_mismatch_allowed",
+    "config_fingerprint",
+    "corpus_chunks_visible"
+  ],
+  "common_config": {
+    "retrieval_top_k": 8,
+    "retrieval_dense_candidates": 24,
+    "retrieval_dense_candidate_multiplier": 8,
+    "retrieval_fts_candidates": 24,
+    "retrieval_rrf_k": 60,
+    "evidence_threshold": 0.1
+  },
+  "summary": {
+    "baseline": {
+      "n": 105,
+      "hit_at_5_count": 78,
+      "hit_at_8_count": 80,
+      "recall_at_5": 0.7428571428571429,
+      "mrr": 0.6181746031746032
+    },
+    "candidate": {
+      "n": 105,
+      "hit_at_5_count": 78,
+      "hit_at_8_count": 80,
+      "recall_at_5": 0.7428571428571429,
+      "mrr": 0.6181746031746032
+    }
+  },
+  "delta": {
+    "recall_at_5": 0.0,
+    "mrr": 0.0
+  },
+  "rank_changes": [],
+  "changed_first_hit_count": 0,
+  "improved_first_hit_count": 0,
+  "regressed_first_hit_count": 0,
+  "paired": {
+    "kind": "paired_comparison",
+    "set": "holdout",
+    "n_items": 105,
+    "baseline": {
+      "run_id": "2026-09-08T140427992158-holdout-hybrid-hashing-retrieval",
+      "mode": "hybrid",
+      "embedding_provider": "hashing",
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "database": "dou018_eval_c1holdout01"
+    },
+    "candidate": {
+      "run_id": "2026-09-08T140428792298-holdout-hybrid-hashing-retrieval",
+      "mode": "hybrid",
+      "embedding_provider": "hashing",
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "database": "dou018_eval_c1holdout01"
+    },
+    "varied": [],
+    "comparisons": {
+      "hit_at_5": {
+        "n": 105,
+        "baseline_mean": 0.7428571428571429,
+        "candidate_mean": 0.7428571428571429,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 0,
+          "only_b_correct": 0,
+          "discordant": 0,
+          "p_value": 1.0
+        }
+      },
+      "hit_at_8": {
+        "n": 105,
+        "baseline_mean": 0.7619047619047619,
+        "candidate_mean": 0.7619047619047619,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 0,
+          "only_b_correct": 0,
+          "discordant": 0,
+          "p_value": 1.0
+        }
+      },
+      "reciprocal_rank": {
+        "n": 105,
+        "baseline_mean": 0.6181746031746032,
+        "candidate_mean": 0.6181746031746032,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        }
+      },
+      "full_coverage_at_8": {
+        "n": 26,
+        "baseline_mean": 0.6538461538461539,
+        "candidate_mean": 0.6538461538461539,
+        "bootstrap": {
+          "difference": 0.0,
+          "ci_lower": 0.0,
+          "ci_upper": 0.0,
+          "confidence": 0.95,
+          "iterations": 10000,
+          "seed": 20260809,
+          "excludes_zero": false
+        },
+        "mcnemar": {
+          "only_a_correct": 0,
+          "only_b_correct": 0,
+          "discordant": 0,
+          "p_value": 1.0
+        }
+      }
+    },
+    "note": "n=105 — yön göstergesi, kesin hüküm değildir. Eşleştirilmiş bootstrap 10.000 yeniden örneklemeli, tohum sabit; McNemar tam (binom) biçimde, yalnız ikili ölçütlerde."
+  },
+  "limitations": [
+    "Hashing only; no semantic quality or latency acceptance.",
+    "Same current shared environment compares three real historical retrieval sources, not the whole historical app.",
+    "Raw embedding_model=E5 is an inert configured label: actual embedding provider and canonical namespace are hashing.",
+    "RLS/readonly before-after data are enforced by the hash-verified runner; analysis did not query DB again.",
+    "Current raw result lacks complete per-lane candidates/scores, so dense vs FTS vs tie cause cannot be separated from these final lists.",
+    "Statistical intervals including zero do not turn strict no-regression acceptance green."
+  ],
+  "immutable_prior_failures": {
+    "hashing": {
+      "manifest_sha256": "1d3853324845d56bb826d46e9351b8e50aeb55a1daad46a89f5257c6b93da83a",
+      "raw_arm_hashes": {
+        "baseline": "bd9cc994d39c25ba4cb0bb95f0a29e68a31df6a6c8e253f123148fa99b64dc42",
+        "candidate": "a8744db2c973de7e064049b6800878e5e7e5127ef350160b49034dc152e9a1d7"
+      },
+      "prior_recall_loss_preserved": true
+    },
+    "e5": {
+      "manifest_sha256": "866c268096b8bfa5ec2ee476b86bffc55050131e8d85d4e467d7ac5f0911fd6e",
+      "raw_arm_hashes": {
+        "baseline": "842012fd3c3dbf90a3c139837f23e81dffeddd9fbd8550c3a1b8c69408fc8407",
+        "candidate": "d0e4942883fbb63eb8f01642c79bc79e8846004e98cc034d6fe525c77c6bda20"
+      },
+      "prior_recall_loss_preserved": true
+    }
+  },
+  "rank_comparisons": {
+    "baseline_replay": {
+      "first_hit_same_count": 127,
+      "all_source_rank_lists_same_count": 127,
+      "top8_source_locations_same_count": 127,
+      "compared": 127,
+      "scored_first_hit_same_count": 105,
+      "scored": 105
+    },
+    "final_candidate_vs_baseline": {
+      "first_hit_same_count": 127,
+      "all_source_rank_lists_same_count": 127,
+      "top8_source_locations_same_count": 120,
+      "compared": 127,
+      "scored_first_hit_same_count": 105,
+      "scored": 105
+    }
+  },
+  "receipts": {
+    "api": {
+      "receipt_sha256": "204007903e968aa1a3342f577c7f0a46a3e5e7f945d31daa7a2315353e7aebd9",
+      "exit_code": 0,
+      "source_unchanged": true,
+      "wall_seconds": 101.604,
+      "log_sha256": "f8be727b42e048b5408534ead122e9dba5b7dd56733b133896a0a79d434b02c6"
+    },
+    "hashing": {
+      "receipt_sha256": "bde01205c853b86afc5fcc60aacd75cd6cbf1c1ecabeee3fa2128f1743739233",
+      "exit_code": 0,
+      "source_unchanged": true,
+      "wall_seconds": 2.935,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "final_candidate_source_sha256": {
+    "apps/api/app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+    "apps/api/app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+    "apps/api/app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c"
+  },
+  "shared_source_sha256": {
+    "apps/api/app/contracts.py": "53200bfd7bb4db7acfd57a09d7f02d25633ce77d00b43759325705bdbc40ac50",
+    "apps/api/app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+    "apps/api/app/core/config.py": "16e53fb5e5ea30a8fa2a68674abdbd48226d5e1e2c3cefe3e1654e2527528423",
+    "apps/api/app/core/vector_space.py": "9ab48babe00bdabe95a3f7ae5e724e180eae72e010119e68b82fe5a04cb9d838",
+    "apps/api/app/modules/ingestion/embedding.py": "0c1e1d0a89d3374ee9dbe8139929f96d4d5a19f3a7f6977891163e1320ed3099",
+    "apps/api/app/modules/retrieval/fusion.py": "4bd06790f55525055e4e37855da224bdde4d9053540828ae1d83a10c2502a04c",
+    "apps/api/app/modules/retrieval/scope.py": "e86b840a3109fc93e2b2d8a41eda70fc83710e1ed45e7b8b2432b764032c0d49"
+  },
+  "mechanical_nonregression": true,
+  "overall_c1_complete": false,
+  "semantic_quality_reportable": false
+}

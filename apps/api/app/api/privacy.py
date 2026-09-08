@@ -19,6 +19,7 @@ from app.models.assessment import Answer, ExamSession, Mastery
 from app.models.chat import ChatMessage, ChatMessageFeedback, ChatSession
 from app.models.core import Course, CourseMembership, MembershipStatus, Profile
 from app.modules.assessment import exam_state
+from app.modules.chat import lifecycle
 from app.schemas.privacy import (
     USER_DATA_EXPORT_NOT_INCLUDED,
     AccountAnonymizationOut,
@@ -49,6 +50,9 @@ async def _delete_owned_chat_sessions(
     course_id: UUID | None = None,
     session_id: UUID | None = None,
 ) -> int:
+    await lifecycle.acquire_user_chat_lock(session, user_id=user_id)
+    if session_id is None:
+        await lifecycle.advance_revision(session, user_id=user_id, course_id=course_id)
     conditions = [ChatSession.user_id == user_id]
     if course_id is not None:
         conditions.append(ChatSession.course_id == course_id)
@@ -280,7 +284,12 @@ async def anonymize_my_account(
     Gerçek auth hesabı kimlik sağlayıcısında ayrıca kapatılmalıdır.
     """
     user_id = principal.user_id
-    profile = await session.get(Profile, user_id)
+    # Acquire before inspecting the profile: duplicate anonymizations and chat
+    # finalization must observe the same committed lifecycle order.
+    await lifecycle.acquire_user_chat_lock(session, user_id=user_id)
+    profile = await session.scalar(
+        select(Profile).where(Profile.id == user_id).execution_options(populate_existing=True)
+    )
     if profile is None:
         raise NotFoundError("Kullanıcı profili bulunamadı.")
     if profile.email == f"silinmis+{user_id}@dou-synapse.invalid":
@@ -312,7 +321,9 @@ async def anonymize_my_account(
         revoked_memberships=revoked_memberships,
         retained_owned_courses=retained_owned_courses,
         message=(
-            "Uygulama profili anonimleştirildi ve üyelikler kapatıldı. "
-            "Üniversite kimlik hesabının kapatılması kimlik sağlayıcısında ayrıca yapılmalıdır."
+            "Uygulama profilinizdeki ad ve e-posta kaldırıldı, sohbetleriniz silindi "
+            "ve ders üyelikleriniz kapatıldı. Sınav, ilerleme ve materyal kayıtları "
+            "mevcut profil kaydıyla bağlantılı kalır. Üniversite giriş hesabınız "
+            "bu işlemle kapanmaz; kapatılması için ayrıca işlem gerekir."
         ),
     )

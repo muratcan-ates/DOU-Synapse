@@ -92,14 +92,19 @@ test("soru silme, belge silmenin 409 çıkmazını arayüzden açar", async ({ p
 
   // Reddetmek satırı havuzda bırakır: kısıt hâlâ yürürlükte olmalı.
   await page.getByRole("button", { name: "Reddet" }).click();
-  await expect(page.getByRole("button", { name: "Reddedildi" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reddedildi", exact: true })).toBeVisible();
   const stillBlocked = await request.delete(`${base}/documents/${document.id}`, { headers });
   expect(stillBlocked.status()).toBe(409);
 
   // Asıl çıkış: arayüzdeki silme, onaydan sonra satırı gerçekten kaldırır.
   await page.getByRole("button", { name: "Soruyu havuzdan sil" }).click();
   await page.getByRole("button", { name: "Kalıcı olarak sil" }).click();
-  await expect(page.getByText("Soru havuzdan silindi", { exact: false })).toBeVisible();
+  // Son soru kaldırılıp boş havuz çizildikten sonra da başarı duyurusu kalır.
+  await expect(page.getByText(
+    "Havuzda henüz soru yok. Yukarıdan bir konu seçip soru üretin; üretilen sorular taslak olarak buraya düşer.",
+    { exact: true },
+  )).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Soru havuzdan silindi" })).toBeVisible();
 
   await expect
     .poll(

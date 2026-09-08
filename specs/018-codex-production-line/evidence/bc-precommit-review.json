@@ -1,0 +1,148 @@
+{
+  "scope": "changed/new nonignored files only; text and decompressed gzip; explicit token/key/connection patterns; not a universal secret detector",
+  "scanned_text_files": 227,
+  "findings": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 47,
+      "match_sha256": "9585ee6cd34825f4f715b284b6d7055aca56450ae6f9b9b5a24a51160be737c1",
+      "review": "CI ephemeral local postgres fixture",
+      "reviewed_file_sha256": "05408d93fbae0524e4fd89e3076e929cd029e3910ede2437e9cd37523e73cc95"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 48,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "05408d93fbae0524e4fd89e3076e929cd029e3910ede2437e9cd37523e73cc95"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 404,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "05408d93fbae0524e4fd89e3076e929cd029e3910ede2437e9cd37523e73cc95"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 407,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "05408d93fbae0524e4fd89e3076e929cd029e3910ede2437e9cd37523e73cc95"
+    },
+    {
+      "path": "apps/api/tests/test_config.py",
+      "kind": "credentialed_connection",
+      "line": 172,
+      "match_sha256": "093866188144b0216fb125431572e8ac2df8980dfeeb6ebeb3d9f3987d1e4c1d",
+      "review": "Invalid example.invalid issuer URL in rejection parametrization",
+      "reviewed_file_sha256": "65b693f3efd670c0db26c2838b97094ac61ef3b2a210377c5a5660e7a3a5a72f"
+    },
+    {
+      "path": "scripts/test_probe_retrieval_runtime.py",
+      "kind": "credentialed_connection",
+      "line": 93,
+      "match_sha256": "63d11f317e57044b05ada70f0b4f6351d299e34f0764564c1a555553bc992596",
+      "review": "Synthetic unit-secret in target-validation/redaction negative tests",
+      "reviewed_file_sha256": "8bb5d06b405249522b2b879bc94f4106cbe132bf867483d69a15f3d697b625ff"
+    },
+    {
+      "path": "scripts/test_probe_retrieval_runtime.py",
+      "kind": "credentialed_connection",
+      "line": 278,
+      "match_sha256": "63d11f317e57044b05ada70f0b4f6351d299e34f0764564c1a555553bc992596",
+      "review": "Synthetic unit-secret in target-validation/redaction negative tests",
+      "reviewed_file_sha256": "8bb5d06b405249522b2b879bc94f4106cbe132bf867483d69a15f3d697b625ff"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 164,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "ad710bd97cbf39c14be74c5fd38fa01f5b16c06c757904d708217b3d2e662646"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 165,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "ad710bd97cbf39c14be74c5fd38fa01f5b16c06c757904d708217b3d2e662646"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 336,
+      "match_sha256": "3de972c98bf6eb192f31d3cc1403df37662eb200a8a85f5d5594a1c5bf1933a6",
+      "review": "Local docker Compose quickstart example",
+      "reviewed_file_sha256": "ad710bd97cbf39c14be74c5fd38fa01f5b16c06c757904d708217b3d2e662646"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/b3-feedback-web-unit-all.log.gz",
+      "kind": "credentialed_connection",
+      "line": 220,
+      "match_sha256": "ec25b8fa54a9d7a878a86e6f38233af24d5d27d184b396136d6d7f0251d33c19",
+      "review": "Literal rejected URL fixture in Supabase URL unit-test name, not a real login",
+      "reviewed_file_sha256": "5ed63f170a7ba4be300d91838236a10e0afba8d144432e2c37a16d00939c2e42"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/b3-feedback-web-unit-all.log.gz",
+      "kind": "credentialed_connection",
+      "line": 243,
+      "match_sha256": "ec25b8fa54a9d7a878a86e6f38233af24d5d27d184b396136d6d7f0251d33c19",
+      "review": "Literal rejected URL fixture in Supabase URL unit-test name, not a real login",
+      "reviewed_file_sha256": "5ed63f170a7ba4be300d91838236a10e0afba8d144432e2c37a16d00939c2e42"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/root-final-checks.py.txt",
+      "kind": "credentialed_connection",
+      "line": 13,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "70b17b38c6ca2026ebf6ffd36b847bb59a5dffb61d52b3d07c73e83ec7f6ef92"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/root-final-checks.py.txt",
+      "kind": "credentialed_connection",
+      "line": 13,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "70b17b38c6ca2026ebf6ffd36b847bb59a5dffb61d52b3d07c73e83ec7f6ef92"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/root-final-checks.py.txt",
+      "kind": "credentialed_connection",
+      "line": 20,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "70b17b38c6ca2026ebf6ffd36b847bb59a5dffb61d52b3d07c73e83ec7f6ef92"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/root-final-checks.py.txt",
+      "kind": "credentialed_connection",
+      "line": 20,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "70b17b38c6ca2026ebf6ffd36b847bb59a5dffb61d52b3d07c73e83ec7f6ef92"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/root-final-checks.py.txt",
+      "kind": "credentialed_connection",
+      "line": 25,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "70b17b38c6ca2026ebf6ffd36b847bb59a5dffb61d52b3d07c73e83ec7f6ef92"
+    }
+  ],
+  "status": "pattern_findings_reviewed_as_synthetic_local_fixtures",
+  "scanner_sha256": "597ef6202523ecc2eec705ae07f50850db1eb4f8e2faa6d79893ca29f7541a7e",
+  "limitations": [
+    "Limited changed/new text and decoded gzip pattern scan, not a universal secret scanner or external credential validation.",
+    "No live student/provider data used. Existing local fixture passwords are not production secrets."
+  ]
+}
