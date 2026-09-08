@@ -161,6 +161,7 @@ class HybridRetriever:
             course_id=course_id,
             query=query,
             limit=settings.retrieval_dense_candidates,
+            candidate_multiplier=settings.retrieval_dense_candidate_multiplier,
             document_ids=self._document_ids,
         )
         fts_hits = await fts_search(

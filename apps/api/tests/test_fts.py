@@ -302,51 +302,22 @@ class TestFtsSiralamaBilgisi:
             assert parca.fused_score == 0.0
 
 
-class TestSiralamaYenidenUretilebilir:
-    """Eşit `ts_rank`'li parçaların sırası korpus yeniden kurulunca DEĞİŞMEMELİ.
+class TestSabitKorpusSiralama:
+    """Eşit skorları aynı korpusta belge UUID'si ve parça sırası bağlar.
 
-    R2'nin ölçtüğü kusur: eşitlik bozma `c.id`'ye bağlıydı ve o sütun
-    `gen_random_uuid()` ile üretiliyor. Aynı materyal yeniden ingest edildiğinde
-    her parça yeni bir kimlik alıyor, eşit rank'li satırların sırası keyfî olarak
-    değişiyordu — tek bir korpus içinde kararlı, korpuslar ARASINDA değil.
-
-    Etkisi kozmetik değildi: yeniden kurulan indekste Recall@5 0.981 → 0.971'e
-    düştü ve T044'ün MRR güven aralığı sıfırın bir yanından diğerine geçti;
-    "hibrit dense'ten iyidir" hükmü bu yüzden geri çekildi. Ölçüm yeniden
-    üretilemiyorsa ölçtüğü şeyin de anlamı kalmaz.
-
-    ## Bu test neden SQL metnine bakıyor
-
-    Davranışsal kurmak istedim ve iki kez başarısız oldum. İlk yazım kendi
-    SQL'ini yazıyordu, yani `fts.py` bilerek bozulduğunda bile yeşil kaldı —
-    kendi kopyasını sınıyordu. İkinci yazım `fts_search`'ü çağırdı ama parça
-    kimliklerini yeniden atayarak "korpus yeniden kuruldu"yu taklit etmeye
-    çalıştı; o da mutasyonu yakalamadı.
-
-    Kimliğe bağlı sıralamayı davranışla yakalamanın dürüst yolu aynı korpusu iki
-    kez ingest edip sıraları karşılaştırmak; ama bozuk kodda bile üç eleman
-    tesadüfen aynı sırada gelebilir (1/6), yani test kırılgan olurdu ve kırılgan
-    bir nöbetçi, nöbetçi değildir.
-
-    O yüzden iddia yapısal: sıra ifadesi kimliğe DEĞİL içeriğe (`document_id`,
-    `chunk_index`) bağlı olmalı. Sınadığı şey davranışın kaynağının ta kendisi ve
-    `fts.py` bozulduğunda kesinlikle kırmızı yanıyor — doğrulandı.
+    Belge UUID'si içerikten türemez; yeniden yüklenen korpus için aynı sıralama
+    iddia edilmez. İçerik-hash sıralaması C1 holdout'larında gerilettiği için
+    bu teslimde eski sorgu korunur. Korpuslar arası kararlılık ayrı açık iştir.
     """
 
-    def test_esitlik_bozma_icerige_bagli_kimlige_degil(self) -> None:
+    def test_esitlik_bozma_sabit_korpusta_belge_ve_parca_sirasini_korur(self) -> None:
         sql = str(_SQL)
 
-        assert "ORDER BY rank DESC, c.document_id, c.chunk_index" in sql, (
-            "iç sorgunun eşitlik bozması içerikten türemeli"
-        )
-        assert "ORDER BY m.rank DESC, m.document_id, m.chunk_index" in sql, (
-            "dış sorgunun eşitlik bozması içerikten türemeli"
-        )
-        assert "ORDER BY rank DESC, c.id" not in sql, (
-            "eşitlik bozma chunk kimliğine geri döndü — kimlik her ingest'te "
-            "yeniden üretiliyor, ölçüm sonuçları korpus kurulduğunda kayar"
-        )
+        assert "ORDER BY rank DESC, c.document_id, c.chunk_index" in sql
+        assert "ORDER BY m.rank DESC, m.document_id, m.chunk_index" in sql
+        assert "ORDER BY rank DESC, c.id" not in sql
         assert "ORDER BY m.rank DESC, m.id" not in sql
+        assert "file_hash" not in sql
 
     async def test_esit_rankli_parcalar_belge_ici_sirayla_doner(
         self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine

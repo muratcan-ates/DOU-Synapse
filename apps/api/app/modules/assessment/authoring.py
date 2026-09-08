@@ -13,7 +13,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import NotFoundError, ValidationError
 from app.models.assessment import LearningOutcome, QuestionType
 from app.models.core import Chunk
-from app.schemas.assessment import AnswerFormat, McqPayload, OpenPayload, parse_payload
+from app.schemas.assessment import (
+    AnswerFormat,
+    BugHuntPayload,
+    CodeTracePayload,
+    McqPayload,
+    OpenPayload,
+    parse_payload,
+    validate_new_code_rubric,
+)
 
 
 async def load_classification(
@@ -124,4 +132,9 @@ async def validate_draft_payload(
                 raise ValidationError(
                     "Klasik soruda değerlendirme ölçütlerinin toplamı 100 olmalı."
                 )
+    if isinstance(parsed, (CodeTracePayload, BugHuntPayload)):
+        try:
+            validate_new_code_rubric(parsed.rubric)
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
     return _preserve_metadata(parsed, parsed.model_dump(mode="json"), original)

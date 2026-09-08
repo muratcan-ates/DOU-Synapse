@@ -18,7 +18,7 @@
  * Burada yalnız sunum ve yerleşim var.
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
 import {
@@ -41,6 +41,8 @@ import { DOCUMENT_STATUS } from "@/lib/labels";
 import type { ChatSessionSummary, CourseDocument, Page } from "@/lib/types";
 import { useChatAvailability } from "@/lib/chat-availability";
 import { useChatSession } from "@/lib/use-chat-session";
+import { subscribeChatDeletions } from "@/lib/chat-history-deletion";
+import { ChatHistoryDelete } from "@/components/chat-history-delete";
 import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource, type Resource } from "@/lib/use-resource";
 import { sourceContextHref } from "@/lib/source-quality";
@@ -125,6 +127,11 @@ export default function ChatPage() {
           />
         </>
       )}
+      {identity !== null && !lock.error && !lock.refreshError && <section className="mt-8 space-y-3 border-t border-border pt-6">
+        <h2 className="text-sm font-medium text-fg">Kişisel sohbet geçmişin</h2>
+        <p className="prose-tr text-sm text-fg-muted">Silme yalnız senin bu dersteki sohbetlerini kapsar. Sınav kayıtların ve ders materyalleri korunur.</p>
+        <ChatHistoryDelete courseId={courseId} sessionId={null} />
+      </section>}
     </AppShell>
   );
 }
@@ -147,6 +154,19 @@ function ChatScreen({
     [courseId],
   );
 
+  const [hiddenSessions, setHiddenSessions] = useState<Set<string>>(() => new Set());
+  const [listDeletionNotice, setListDeletionNotice] = useState<string | null>(null);
+  const sessionsRef = useRef(sessions); sessionsRef.current = sessions;
+  useEffect(() => subscribeChatDeletions(courseId, (scope) => {
+    const ids = scope.sessionId === null
+      ? (sessionsRef.current.data ?? []).map((session) => session.id) : [scope.sessionId];
+    setHiddenSessions((current) => new Set([...current, ...ids]));
+    if (scope.sessionId !== null) setListDeletionNotice("Sohbet silindi. Diğer sohbetlerin korundu.");
+    // reload invalidates both the first-page request and pending continuation.
+    void sessionsRef.current.reload();
+  }), [courseId]);
+  const visibleSessions = { ...sessions, data: sessions.data?.filter((session) => !hiddenSessions.has(session.id)) ?? null };
+
   const fetchDocuments = useCallback(
     () =>
       api
@@ -161,7 +181,7 @@ function ChatScreen({
     identity,
     allowedModes,
     hintLimit,
-    sessionList: sessions.data,
+    sessionList: visibleSessions.data,
     reloadSessions: sessions.reload,
   });
 
@@ -227,7 +247,11 @@ function ChatScreen({
           />
         )}
 
-        <ChatComposer
+        {chat.deletionNotice && <p role="status" className="text-sm text-fg-muted">{chat.deletionNotice}</p>}
+        {chat.recoveryError ? <div className="space-y-3">
+          <ErrorNote message={chat.recoveryError.message} kind={chat.recoveryError.kind} requestId={chat.recoveryError.requestId} />
+          <Button type="button" variant="secondary" onClick={() => window.location.reload()}>Sohbeti yeniden yükle</Button>
+        </div> : <ChatComposer
           allowedModes={allowedModes}
           mode={chat.mode}
           sending={chat.sending}
@@ -237,18 +261,20 @@ function ChatScreen({
           onDraftChange={chat.setDraft}
           onSelectMode={chat.startNewSession}
           onSend={() => void chat.send()}
-        />
+        />}
       </div>
 
       {/* Kaynak paneli: masaüstünde sabit sütun, mobilde içeriğin altına iner */}
       <aside className="space-y-8">
         <CourseMaterialsSection documents={documents} />
         <SessionListSection
-          sessions={sessions}
+          courseId={courseId}
+          sessions={visibleSessions}
+          deletionNotice={listDeletionNotice}
           sessionId={chat.sessionId}
           allowedModes={allowedModes}
           identity={identity}
-          sending={chat.sending}
+          sending={chat.sending || chat.recoveryError !== null}
           onStartNew={() => chat.startNewSession(chat.mode)}
           onOpenSession={(summary) => void chat.openSession(summary)}
         />
@@ -512,6 +538,8 @@ function CourseMaterialsSection({
 
 /** Oturum listesi: geçmiş sohbetlere dönüş + yeni sohbet. */
 function SessionListSection({
+  courseId,
+  deletionNotice,
   sessions,
   sessionId,
   allowedModes,
@@ -520,6 +548,8 @@ function SessionListSection({
   onStartNew,
   onOpenSession,
 }: {
+  courseId: string;
+  deletionNotice: string | null;
   sessions: ReturnType<typeof usePagedResource<ChatSessionSummary>>;
   sessionId: string | null;
   allowedModes: ChatUiMode[];
@@ -543,6 +573,7 @@ function SessionListSection({
           Yeni sohbet
         </Button>
       </div>
+      {deletionNotice && <p role="status" className="text-sm text-fg-muted">{deletionNotice}</p>}
       {sessions.error && (
         <ErrorNote
           message={sessions.error}
@@ -564,7 +595,7 @@ function SessionListSection({
         <p className="text-xs text-fg-muted">Henüz bir sohbet açmadın.</p>
       )}
       {sessions.data && sessions.data.length > 0 && (
-        <ul className="max-h-72 space-y-1 overflow-y-auto">
+        <ul aria-label="Kişisel sohbetler" className="max-h-96 space-y-3 overflow-y-auto">
           {sessions.data.map((summary) => {
             const active = summary.id === sessionId;
             const summaryMode: ChatUiMode | null =
@@ -613,6 +644,7 @@ function SessionListSection({
                         : ""}
                   </span>
                 </button>
+                <ChatHistoryDelete courseId={courseId} sessionId={summary.id} title={summary.title ?? "Başlıksız"} />
               </li>
             );
           })}

@@ -1,22 +1,37 @@
 # İşler — 018
 
 - [x] 017 tabanını GitHub ile doğrula ve ayrı çalışma ağacı aç.
-- [x] Runbook'u, anayasayı ve önceki 017 kabulünü oku.
-- [x] A1 — release testleri ve uygulama mutasyonlarını CI'a bağla.
-- [x] A2 — doğrulama dosyalarını hassas kapsama al; negatif fixture ile doğrula.
-- [x] A3 — workflow hata yutma ve izin genişlemesini engelle.
-- [x] A4–A7 — gerçek test açıklarını kapat.
-- [ ] B1–B7 — mevcut ürün davranışıyla uzlaştır ve kalan dikey dilimleri tamamla.
-- [ ] C — retrieval planını ölçerek iyileştir.
-- [ ] D–I — operasyon, kalite, auth, dağıtım, erişilebilirlik ve belgeleri hazır iş sırasıyla tamamla.
-- [x] A yerel doğrulama, yönetişim kaydı, 017 hedefli taslak PR26 ve GitHub kapılarını tamamla.
-- [ ] S için temiz commit yönetişimi ve GitHub kapılarını doğrula.
-
-- [x] S1 — geçersiz veya başarısız yüklemede sahipsiz dosyaları ve sınırsız upload okumayı düzelt.
-- [x] S2 — sekmeler arası çıkış/sınav değişiminde hassas içeriği geç yanıt yarışlarına karşı temizle.
-- [x] S3 — bulguları risk/kanıt/durum ile raporla; dış hukuki/kurumsal kararları ayrı kaydet.
-- [x] S4 — mevcut DOU güvenlik becerisini veri yaşam döngüsüyle genişlet ve bağımsız kullanım denemesiyle doğrula.
-
-- [x] S5/S6 — üretimde issuer başlangıç şartı ve dar Supabase/API CSP hedefleri.
-- [x] S7 — özel depo HTTP konumlarını ve istisna zincirini günlüklerden çıkar.
-- [ ] B4 sunucu ek kabulü — silme sırasında devam eden yeni sohbetin sonradan kayıt üretmesini engelle; başka ders/oturumu koru.
+- [x] Runbook, anayasa ve önceki 017 kabulünü kodla uzlaştır.
+- [x] A1–A3 — release/mutasyon CI adımları, hassas kapılar ve workflow izin/hata yutma kontrolleri.
+- [x] A4–A7 — atlanan/zayıf testler, monoton ipuçları ve ölü yollar.
+- [x] A — kendi commit'i, PR26 ve hosted kapılar.
+- [x] S1–S7 — upload/COMMIT/iptal, sekmeler arası gizlilik, dürüst veri hakkı açıklaması, issuer/CSP/depo log sınırları; yerel kontrol noktası71d5ff6.
+- [x] S4 — kurulu rol/gizlilik becerisini güncelle ve doğrula.
+- [ ] S/B/C — yeni kesin PR adayı için hosted kapıları doğrula; A sonucu yerine kullanılmaz.
+- [x] B1 — konuya bağlı öğrenme çıktısını gerçek API/UI ile doğrula.
+- [x] B2 — 014'teki mevcut konu/blueprint öğrenci akışını tekrar doğrula.
+- [x] B3 — kod rubriği ve kaynaklı eksik ölçüt API/UI sözleşmesini kontrollü sağlayıcı/DB fixture'larıyla doğrula.
+- [ ] B3/E — gerçek model puanlama ve pedagojik kaliteyi bağımsız insan kabulüyle değerlendir.
+- [x] B4 sunucu — silme sırasında başlamış sohbetin geç kayıt üretmesini önle; kapsam/rollback/üyelik/RLS.
+- [x] B4 UI — tekli/ders silme, iptal/hata/geç yanıt/sekme/kaçırılmış olay akışlarını gerçek API ile doğrula.
+- [x] B5 — gerçek politika geçmişi, sayfalama ve kullanıcı/ders kapsamlı RAM taslağı.
+- [x] B6 — kapalı authoring görünümünü açıkla; gerçek readiness/publish ile uygun havuz yayınını koru.
+- [x] B7 — sunucu filtreleri/imleç/boş liste/geç yanıt/silme bildirimi.
+- [x] B yerel — tek koşuda 68 gerçek tarayıcı akışı ve son tema zamanlama testinde ayrı 1 odak tekrar.
+- [ ] B/C — değişime özel kanıt/dossier ve kendi temiz commit'i.
+- [x] C — eş projeksiyon ve gerçek RLS/prepared runtime ölçümünü arşivle.
+- [x] C — eski üç retrieval kaynağıyla aynı hashing holdout'u gerçekten çalıştır; olumsuz sonucu koru.
+- [x] C1 dar kabul — FTS eşitlik sırasından gelen gerilemeyi çapraz deneyle ayır; yalnız FTS değişikliğini geri çek; son hashing/E5 non-regression ve prepared runtime tekrarını doğrula.
+- [ ] C1 FTS — yeniden yüklemede UUID sırasına bağımlılığı kaliteyi düşürmeden çöz; bu kontrol noktasında açık.
+- [ ] C — RLS kapalı karşılaştırma ve pgvector0.8.6 ölçüm eşdeğerliği.
+- [ ] C2 — bellek/recall nedenselliğini kontrollü deneyle çöz; gerek yoksa göç eklememe kararını kaydet.
+- [x] C3 — önceki başarısız aday ile son dar kabulü, açık kalan matris hücrelerini ve kaynak hashlerini ayrı raporla.
+- [ ] D1 — çok süreçli ortak istek kotası ve ayrı yaşam döngüsü/TTL kanıtı.
+- [ ] D2 — worker iptal/lease/yeniden deneme ve gerçek süreç dayanıklılığı.
+- [ ] D3 — depo dışı kurtarma adayını incele; yeni sentetik DB'de restore/RLS/GRANT/satır/pgvector tatbikatı ve sonra ayrı entegrasyon.
+- [ ] D4–D6 — ölçüm/izleme ve operasyon belgeleri.
+- [ ] E — gerçek embedding/LLM ve bağımsız insan kabulü.
+- [ ] F — gerçek JWT/oturum/private Storage RLS.
+- [ ] G — seçilmiş hedefte dağıtım/göç/rollback ve GitHub korumaları.
+- [ ] H — bütün sayfalarda dar/koyu/klavye/axe ve manuel kabul; B görsellerinden türetilmez.
+- [ ] I — güncel kılavuzlar, gerçek başarı raporu ve açık işleri kanıtla kapatma.

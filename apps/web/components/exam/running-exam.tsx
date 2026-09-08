@@ -363,7 +363,7 @@ export function RunningExam({
 
       {session.mode === "practice" && historyEnabled ? (
         answered && helpAvailable && <SavedPracticeFeedback key={question.id} courseId={courseId} sessionId={session.id} questionId={question.id} onLocked={helpLock.reload} />
-      ) : helpAvailable && feedback && <FeedbackPanel feedback={feedback} />}
+      ) : helpAvailable && feedback && <FeedbackPanel courseId={courseId} feedback={feedback} />}
 
       <div className="mt-10 flex items-center justify-between gap-4">
         {/*

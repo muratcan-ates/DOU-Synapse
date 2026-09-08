@@ -155,3 +155,16 @@ describe("kaynak değişikliğinden sınav sürümüne geçiş", () => {
     expect(parsed.hash).toBe("");
   });
 });
+
+
+describe("öğrenme çıktısı konu sözleşmesi", () => {
+  test("seçilen konu ve temizlenmiş alanlar istek gövdesinde korunur", async () => {
+    const { buildLearningOutcomeRequest } = await import("./blueprint");
+    expect(buildLearningOutcomeRequest(" CO1 ", " Kilitlenmeyi açıklar ", "topic-1"))
+      .toEqual({ code: "CO1", description: "Kilitlenmeyi açıklar", topic_id: "topic-1" });
+  });
+  test("konu seçilmediğinde null gönderilir, sahte konu üretilmez", async () => {
+    const { buildLearningOutcomeRequest } = await import("./blueprint");
+    expect(buildLearningOutcomeRequest("CO2", "Ders genelindeki kavramları ilişkilendirir", "").topic_id).toBeNull();
+  });
+});

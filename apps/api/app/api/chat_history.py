@@ -8,7 +8,7 @@ bunları hiç görmez.
 
 from __future__ import annotations
 
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,6 +38,7 @@ async def _load_or_create_session(
 ) -> ChatSession:
     if payload.session_id is None:
         chat_session = ChatSession(
+            id=uuid4(),
             course_id=context.course_id,
             user_id=context.user_id,
             mode=payload.mode,
@@ -45,8 +46,8 @@ async def _load_or_create_session(
             state={},
             title=payload.question.strip()[:80],
         )
-        session.add(chat_session)
-        await session.flush()
+        # Keep the new session transient across provider I/O. Finalization
+        # attaches it only after checking deletion revisions and membership.
         return chat_session
 
     # Ayrı ad: yukarıdaki dalda `chat_session` ChatSession, burada `get()`

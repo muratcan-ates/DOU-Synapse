@@ -162,6 +162,7 @@ from app.modules.agent.token_precharge import (
     _quota_input_token_ceiling as _quota_input_token_ceiling,
 )
 from app.modules.assessment import exam_state, socratic
+from app.modules.chat import lifecycle
 from app.modules.policy import service as policy_service
 from app.schemas.chat import (
     MAX_QUESTION_LENGTH,
@@ -332,6 +333,9 @@ async def post_chat(
             "Çok sık soru gönderiyorsun. Biraz bekleyip tekrar dener misin?",
             retry_after=retry_after,
         )
+    started_revision = await lifecycle.read_revision(
+        session, user_id=context.user_id, course_id=context.course_id
+    )
     policy = await policy_service.resolve_policy(
         session, course_id=context.course_id, settings=settings
     )
@@ -514,6 +518,16 @@ async def post_chat(
             course_id=context.course_id,
             event_type="scope_refused",
         )
+
+    chat_session = await lifecycle.finalize_session(
+        session,
+        user_id=context.user_id,
+        course_id=context.course_id,
+        audience=audience,
+        started_revision=started_revision,
+        chat_session=chat_session,
+        is_new=payload.session_id is None,
+    )
 
     # Soru metni hiçbir log satırına yazılmaz (FR-035 redaksiyonu).
     await _record_turn(session, context, chat_session, answer, decision)

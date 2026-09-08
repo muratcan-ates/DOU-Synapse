@@ -1,0 +1,9 @@
+{
+  "phase": "e5_corpus",
+  "database": "dou018_eval_c1e501",
+  "exit_code": 0,
+  "duration_seconds": 143.349,
+  "log": "/private/tmp/dou018-evidence/c1-e5-corpus-01.log",
+  "external_http_downloads": "disabled by offline flags and rejected proxy",
+  "llm_calls": 0
+}

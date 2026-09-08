@@ -211,3 +211,24 @@ def test_nonproduction_keeps_optional_synthetic_issuers(
         _env_file=None, environment=environment, dev_auth_enabled=True, jwt_issuer=issuer
     )
     assert settings.jwt_issuer == issuer
+
+
+@pytest.mark.parametrize("value", [1, 8])
+def test_retrieval_candidate_multiplier_accepts_bounded_values(value: int) -> None:
+    settings = Settings(_env_file=None, retrieval_dense_candidate_multiplier=value)
+    assert settings.retrieval_dense_candidate_multiplier == value
+
+
+@pytest.mark.parametrize("value", [0, 9])
+def test_retrieval_candidate_multiplier_rejects_unbounded_values(value: int) -> None:
+    with pytest.raises(ValidationError, match="retrieval_dense_candidate_multiplier"):
+        Settings(_env_file=None, retrieval_dense_candidate_multiplier=value)
+
+
+def test_retrieval_candidate_multiplier_env_name_and_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("RETRIEVAL_DENSE_CANDIDATE_MULTIPLIER", raising=False)
+    assert Settings(_env_file=None).retrieval_dense_candidate_multiplier == 8
+    monkeypatch.setenv("RETRIEVAL_DENSE_CANDIDATE_MULTIPLIER", "4")
+    assert Settings(_env_file=None).retrieval_dense_candidate_multiplier == 4

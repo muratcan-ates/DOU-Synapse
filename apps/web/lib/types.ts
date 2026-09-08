@@ -367,6 +367,12 @@ export interface RubricCriterionScore {
   earned: number;
 }
 
+/** Eksik bir rubrik ölçütünün kaynak alıntısı; anlamsal çelişki iddiası değildir. */
+export interface GroundedMissingCriterion {
+  criterion: string;
+  source: SourceRef;
+}
+
 export interface AnswerFeedback {
   question_id: string;
   recorded?: boolean;
@@ -376,6 +382,7 @@ export interface AnswerFeedback {
   missing_points?: string[];
   rubric_breakdown?: RubricCriterionScore[];
   why_wrong?: SourceRef | null;
+  grounded_missing_criterion?: GroundedMissingCriterion | null;
   evidence?: SourceRef | null;
   solution?: Record<string, unknown> | null;
   message?: string | null;

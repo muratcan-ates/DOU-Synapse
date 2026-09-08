@@ -74,6 +74,8 @@ export interface ChatTurnPorts<C extends ChatTurnContext> {
   matchesIdentity(answer: ChatAnswer): boolean;
   /** Doğrulanmış cevabın çağrı yerine özgü yan etkileri (döküm, oturum, liste). */
   onAnswer(answer: ChatAnswer, text: string, context: C): void;
+  /** Yalnız güncel turun hatası için; true dönen kurtarma eski metni geri getirmez. */
+  onErrorHandled?(error: unknown, context: C): boolean;
 }
 
 export interface ChatTurnHandle<C extends ChatTurnContext> {
@@ -110,6 +112,7 @@ export function createChatTurn<C extends ChatTurnContext>(
       ports.setPending(null);
     } catch (error) {
       if (epoch !== turnEpoch) return;
+      if (ports.onErrorHandled?.(error, context)) return;
       // Konuşma geçmişi DURUR; yalnız gönderilemeyen tur geri alınır ve metin
       // girdiye iade edilir — yazdığını kaybetmek hatanın cezası olmamalı.
       ports.setPending(null);
@@ -174,6 +177,8 @@ export interface ChatTurnOptions<C extends ChatTurnContext> {
   post(body: ChatRequest): Promise<ChatAnswer>;
   matchesIdentity(answer: ChatAnswer): boolean;
   onAnswer(answer: ChatAnswer, text: string, context: C): void;
+  /** Yalnız güncel turun hatası için; true dönen kurtarma eski metni geri getirmez. */
+  onErrorHandled?(error: unknown, context: C): boolean;
 }
 
 export interface UseChatTurnHandle<C extends ChatTurnContext> {
@@ -221,6 +226,7 @@ export function useChatTurn<C extends ChatTurnContext = ChatTurnContext>(
       setSendError,
       post: (body) => optionsRef.current.post(body),
       matchesIdentity: (answer) => optionsRef.current.matchesIdentity(answer),
+      onErrorHandled: (error, context) => optionsRef.current.onErrorHandled?.(error, context) ?? false,
       onAnswer: (answer, text, context) =>
         optionsRef.current.onAnswer(answer, text, context),
     });

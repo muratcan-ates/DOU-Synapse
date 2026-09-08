@@ -34,7 +34,8 @@ import {
   sessionMatchesAssistant,
   type CourseAssistantIdentity,
 } from "@/lib/course-assistant";
-import type { ErrorInfo } from "@/lib/errors";
+import { describeError, type ErrorInfo } from "@/lib/errors";
+import { deletionAffectsSession, isChatHistoryRecovery, subscribeChatDeletions } from "@/lib/chat-history-deletion";
 import type {
   ChatAnswer,
   ChatMessage,
@@ -127,6 +128,8 @@ export interface ChatSessionHandle {
   pending: string | null;
   sending: boolean;
   sendError: ErrorInfo | null;
+  recoveryError: ErrorInfo | null;
+  deletionNotice: string | null;
   /** Bu tur bir Sokratik devam turu mu (etiket/placeholder bunu okur)? */
   followUp: boolean;
   submittable: boolean;
@@ -147,7 +150,12 @@ export function useChatSession(options: UseChatSessionOptions): ChatSessionHandl
   const [mode, setMode] = useState<ChatUiMode>(
     () => firstAllowedChatMode(allowedModes) ?? "qa",
   );
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionIdState] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const setSessionId = useCallback((id: string | null) => { sessionIdRef.current = id; setSessionIdState(id); }, []);
+  const [recoveryError, setRecoveryError] = useState<ErrorInfo | null>(null);
+  const recoveryErrorRef = useRef<ErrorInfo | null>(null);
+  const [deletionNotice, setDeletionNotice] = useState<string | null>(null);
   const history = useReverseHistory<ChatMessage, TranscriptMessage>(fromHistory);
 
   const optionsRef = useRef(options);
@@ -156,6 +164,14 @@ export function useChatSession(options: UseChatSessionOptions): ChatSessionHandl
   const turn = useChatTurn<ChatSessionTurnContext>({
     post: (body) => api.post<ChatAnswer>(`/courses/${courseId}/chat`, body),
     matchesIdentity: (answer) => answerMatchesAssistant(answer, identity),
+    onErrorHandled: (error) => {
+      if (!isChatHistoryRecovery(error)) return false;
+      clearConversation();
+      const info = describeError(error);
+      recoveryErrorRef.current = info; setRecoveryError(info);
+      void optionsRef.current.reloadSessions();
+      return true;
+    },
     onAnswer: (answer, text, context) => {
       history.append([
         // Kullanıcı mesajının kimliği zarfta yok; asistan kimliğinden türetiliyor.
@@ -179,9 +195,28 @@ export function useChatSession(options: UseChatSessionOptions): ChatSessionHandl
     },
   });
 
+  const clearConversation = useCallback(() => {
+    const closedSessionId = sessionIdRef.current;
+    turn.invalidate(); turn.setDraft(""); history.reset(); setSessionId(null);
+    try {
+      const key = openSessionKey(courseId);
+      if (localStorage.getItem(key) === closedSessionId) localStorage.removeItem(key);
+    } catch { /* Bellek temizliği sürer. */ }
+  }, [courseId, history.reset, setSessionId, turn.invalidate, turn.setDraft]);
+
+  useEffect(() => subscribeChatDeletions(courseId, (scope) => {
+    if (!deletionAffectsSession(scope, sessionIdRef.current)) return;
+    clearConversation();
+    setDeletionNotice(scope.sessionId === null
+      ? "Bu dersteki sohbet geçmişin temizlendi. Yeni bir soru sorabilirsin."
+      : "Açık sohbet silindi. Yeni bir soru sorabilirsin.");
+  }), [courseId, clearConversation]);
+
   /** Yeni oturum: mod değişimi de buradan geçer — mod ortada değiştirilemez. */
   const startNewSession = useCallback(
     (nextMode: ChatUiMode) => {
+      if (recoveryErrorRef.current) return;
+      setDeletionNotice(null);
       turn.invalidate();
       setMode(nextMode);
       setSessionId(null);
@@ -207,6 +242,8 @@ export function useChatSession(options: UseChatSessionOptions): ChatSessionHandl
 
   const openSession = useCallback(
     async (summary: ChatSessionSummary) => {
+      if (recoveryErrorRef.current) return;
+      setDeletionNotice(null);
       const summaryMode = openableSessionMode(summary, allowedModes, identity);
       if (summaryMode === null) return;
       turn.invalidate();
@@ -239,10 +276,10 @@ export function useChatSession(options: UseChatSessionOptions): ChatSessionHandl
   const openingQuestion =
     history.items.find((message) => message.role === "user")?.content ?? null;
   const followUp = isSocraticFollowUp({ mode, sessionId, openingQuestion });
-  const submittable = canSubmitDraft(turn.draft, followUp);
+  const submittable = recoveryError === null && canSubmitDraft(turn.draft, followUp);
 
   // Bilerek useCallback değil: tur, gönderim ANINDAKİ render'ın bağlamını taşır.
-  const send = () => turn.submit({ mode, sessionId, openingQuestion, sessionList });
+  const send = () => recoveryErrorRef.current ? Promise.resolve() : turn.submit({ mode, sessionId, openingQuestion, sessionList });
 
   const saveFeedback = useCallback(
     (messageId: string, feedback: NonNullable<TranscriptMessage["feedback"]>) => {
@@ -268,6 +305,8 @@ export function useChatSession(options: UseChatSessionOptions): ChatSessionHandl
     pending: turn.pending,
     sending: turn.sending,
     sendError: turn.sendError,
+    recoveryError,
+    deletionNotice,
     followUp,
     submittable,
     send,

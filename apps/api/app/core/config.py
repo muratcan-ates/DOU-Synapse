@@ -203,6 +203,9 @@ class Settings(BaseSettings):
     # değerin gerekçesi evaluation/calibration.md'ye yazılacaktır (Anayasa III).
     retrieval_top_k: int = 8
     retrieval_dense_candidates: int = 24
+    #: ANN iç penceresi = dense aday sayısı × çarpan. Düşürmek arama maliyetini
+    #: azaltabilir ama recall kaybı yaratabilir; ×8 sentetik plan deneyinin adayıdır.
+    retrieval_dense_candidate_multiplier: int = Field(default=8, ge=1, le=8)
     retrieval_fts_candidates: int = 24
     #: RRF sabiti: k büyüdükçe sıralama farkları yumuşar (standart başlangıç 60).
     retrieval_rrf_k: int = 60

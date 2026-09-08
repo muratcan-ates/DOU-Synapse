@@ -32,6 +32,8 @@ import {
 } from "@/lib/course-assistant";
 import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
 import { api } from "@/lib/api";
+import { deletionAffectsSession, isChatHistoryRecovery, subscribeChatDeletions } from "@/lib/chat-history-deletion";
+import { describeError, type ErrorInfo } from "@/lib/errors";
 import { useAssistantPolicyReset } from "@/lib/use-assistant-policy";
 import { useChatTurn } from "@/lib/use-chat-turn";
 import { sourceContextHref } from "@/lib/source-quality";
@@ -277,7 +279,11 @@ function AssistantConversation({
   const [mode, setMode] = useState<ChatUiMode | null>(() =>
     firstAllowedChatMode(allowedModes),
   );
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionIdState] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const setSessionId = useCallback((id: string | null) => { sessionIdRef.current = id; setSessionIdState(id); }, []);
+  const [recoveryError, setRecoveryError] = useState<ErrorInfo | null>(null);
+  const [deletionNotice, setDeletionNotice] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -291,6 +297,12 @@ function AssistantConversation({
     useChatTurn({
       post: (body) => api.post<ChatAnswer>(`/courses/${courseId}/chat`, body),
       matchesIdentity: (answer) => answerMatchesAssistant(answer, identity),
+      onErrorHandled: (error) => {
+        if (!isChatHistoryRecovery(error)) return false;
+        resetConversation(mode); setDraft("");
+        setRecoveryError(describeError(error));
+        return true;
+      },
       onAnswer: (answer, text) => {
         setMessages((current) => [
           ...current,
@@ -306,10 +318,16 @@ function AssistantConversation({
       invalidate();
       setMode(nextMode);
       setSessionId(null);
-      setMessages([]);
+      setMessages([]); setDeletionNotice(null);
     },
-    [invalidate],
+    [invalidate, setSessionId],
   );
+
+  useEffect(() => subscribeChatDeletions(courseId, (scope) => {
+    if (!deletionAffectsSession(scope, sessionIdRef.current)) return;
+    resetConversation(mode); setDraft("");
+    setDeletionNotice("Bu sohbet geçmişten silindi. Yeni bir soru sorabilirsin.");
+  }), [courseId, mode, resetConversation, setDraft]);
 
   useAssistantPolicyReset({
     identity,
@@ -340,8 +358,16 @@ function AssistantConversation({
 
   const blocks = mode === null ? [] : toBlocks(messages, { mode, pending });
 
+  if (recoveryError) return <div className="space-y-3 p-5">
+    <ErrorNote message={recoveryError.message} kind={recoveryError.kind} requestId={recoveryError.requestId} />
+    <Button type="button" variant="secondary" onClick={() => window.location.assign(`/courses/${encodeURIComponent(courseId)}/chat`)}>
+      Sohbet sayfasını yeniden aç
+    </Button>
+  </div>;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {deletionNotice && <p role="status" className="px-5 py-3 text-sm text-fg-muted">{deletionNotice}</p>}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
         <AssistantPolicyNote allowedModes={allowedModes} hintLimit={hintLimit} compact />
         <Button

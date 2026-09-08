@@ -1,0 +1,1495 @@
+{
+  "schema_version": 1,
+  "change_id": "027-learning-privacy-retrieval-r1",
+  "lineage_id": "learning-privacy-retrieval",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Öğrenme akışlarını tamamla, sohbet silme yarışını kapat ve ANN yolunu doğrula",
+  "summary": "Konu/blueprint, soru havuzu, politika geçmişi ve ölçütlü kod geri bildirimini tamamlar. Kalıcı kapsam sürümü ve model sonrası kısa kilitle silinen sohbetin yeniden oluşmasını engeller. ANN/dense custom-plan düzeltmesini korur; kaliteyi düşüren FTS sıralama adayını geri çeker ve son kaynakları aynı hashing/E5 korpuslarında yeniden ölçer.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-08T11:21:29+00:00",
+  "review_by": "2026-10-08T11:21:29+00:00",
+  "base_sha": "71d5ff640f0d48a08f3967b000485a15035f10c7",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "production-provider-selection-unchanged; tests fake; offline cached FastEmbed0.8.0",
+    "model_revision": "intfloat/multilingual-e5-large local cached revision66076b8dc6e367337e3e90e6fb309fb0f3addaf6; production LLM unchanged",
+    "prompt_revision": "code_trace/bug_hunt rubric and grounded_missing_criterion protocols; exact question_gen/grading source in artifacts",
+    "tool_schema_revision": "rubric criteria + grounded_missing_criterion + chat_history_changed and policy history UI contracts",
+    "guardrail_revision": "persistent chat privacy revisions; fresh authority and exam/citation validation; atomic rubric checks",
+    "retrieval_revision": "MATERIALIZED bounded dense candidates x8; dense-only force_custom_plan with restore; FTS SQL baseline behavior",
+    "embedding_revision": "production unchanged; measured hashing namespace and cached FastEmbed namespace bound in acceptance manifests",
+    "evaluator_revision": "unchanged holdout and thresholds; source-pinned old retrieval functions; crossed candidate diagnosis; final two-provider retrieval replay plus runtime104 tool tests"
+  },
+  "data": {
+    "corpus_digest": "1acae57b88f71f024a950ed82062e42a2d06a81423100013f74662f80a783c05",
+    "eval_set_digest": "7b20d55902e91c3e1baa45dbd753e93737bfdf66a6e13c9fb0acad8bebef0e74",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "05408d93fbae0524e4fd89e3076e929cd029e3910ede2437e9cd37523e73cc95"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "state": "present",
+      "sha256": "52b06358b074892abe8b498ea2cb121fbbe373db31d0825d7e4f786f54e74aa0"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "0829bd0081f0bf92e6f305e297bd1d71436a947d9d03f1025e679be97e251627"
+    },
+    {
+      "path": "apps/api/app/api/chat.py",
+      "state": "present",
+      "sha256": "b3c8a554b07bd80e948908f91bf61035abd6be30757b222d15d6fe015286b5d4"
+    },
+    {
+      "path": "apps/api/app/api/chat_history.py",
+      "state": "present",
+      "sha256": "ff73c0320ba482db1dfb725c689494cc0e8ad91eb1e20cc774f548d814772272"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071"
+    },
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "16e53fb5e5ea30a8fa2a68674abdbd48226d5e1e2c3cefe3e1654e2527528423"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/authoring.py",
+      "state": "present",
+      "sha256": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/grading.py",
+      "state": "present",
+      "sha256": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/question_gen.py",
+      "state": "present",
+      "sha256": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75"
+    },
+    {
+      "path": "apps/api/app/modules/chat/__init__.py",
+      "state": "present",
+      "sha256": "8c39f729faee5e4d4bea679f55d2a8911daafd681fc7b1880299f759530e793c"
+    },
+    {
+      "path": "apps/api/app/modules/chat/lifecycle.py",
+      "state": "present",
+      "sha256": "ecbf682f02ffc8d3dd2411ea73e11556217286339e048847c61abb312ed6565f"
+    },
+    {
+      "path": "apps/api/app/modules/generation/fake.py",
+      "state": "present",
+      "sha256": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/dense.py",
+      "state": "present",
+      "sha256": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/fts.py",
+      "state": "present",
+      "sha256": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/service.py",
+      "state": "present",
+      "sha256": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202"
+    },
+    {
+      "path": "apps/api/app/schemas/privacy.py",
+      "state": "present",
+      "sha256": "7e02ab554359be40e66a1c1d56e8f3abadd42dfad14daee8d0f12c5746743f15"
+    },
+    {
+      "path": "apps/api/tests/test_chat_deletion_race.py",
+      "state": "present",
+      "sha256": "10e1255fc2e0eac6d0a851f40b320a5964ec5115f3586044f7eaba8348148f84"
+    },
+    {
+      "path": "apps/api/tests/test_chat_lifecycle.py",
+      "state": "present",
+      "sha256": "b8fda7441f2058915e15684c516fbc681863fe53085184d8cb6bc0ccacef043c"
+    },
+    {
+      "path": "apps/api/tests/test_chat_lifecycle_rls.py",
+      "state": "present",
+      "sha256": "0fa6aa0381edec7b65140ae9803f4fa85bd0387af5f2cfa3f59718c360c8ac89"
+    },
+    {
+      "path": "apps/api/tests/test_code_grading_criteria.py",
+      "state": "present",
+      "sha256": "c7a3bd61e00c99b59fa4d28b895136066c96b952dc9dd4168d0f05f9d878192b"
+    },
+    {
+      "path": "apps/api/tests/test_code_grading_criteria_api.py",
+      "state": "present",
+      "sha256": "87a3f6e62462221a54fe25e0a5c78a33b883246b3cc6b55f966654e568282ce2"
+    },
+    {
+      "path": "apps/api/tests/test_config.py",
+      "state": "present",
+      "sha256": "65b693f3efd670c0db26c2838b97094ac61ef3b2a210377c5a5660e7a3a5a72f"
+    },
+    {
+      "path": "apps/api/tests/test_fts.py",
+      "state": "present",
+      "sha256": "de7a9c69246b4d8d4f3a6f52d39d5777b233d99452bfa5cab14c314e62c20a78"
+    },
+    {
+      "path": "apps/api/tests/test_question_authoring.py",
+      "state": "present",
+      "sha256": "ff951ae5e4961e93ca6529228ce437173d5fe7fe00cdbfe30caf7395d3bb5380"
+    },
+    {
+      "path": "apps/api/tests/test_retrieval.py",
+      "state": "present",
+      "sha256": "3319d3a48d0599a0891d23be23229b87c1822d7df5092247cab67a1b0072442a"
+    },
+    {
+      "path": "apps/api/tests/test_retrieval_candidates.py",
+      "state": "present",
+      "sha256": "c93412828972154d181f31d58646a3e847fb80d1b08f05bd16ea21ee494b31e0"
+    },
+    {
+      "path": "apps/api/tests/test_user_rights.py",
+      "state": "present",
+      "sha256": "1a7cf35bfb2310aeaa3bde4d91a9430b9b4308df351d6113bf80758023d5f34a"
+    },
+    {
+      "path": "apps/web/app/account/page.tsx",
+      "state": "present",
+      "sha256": "b91ccb2415ecc65b73402fa712e70a4da22f854e510316f3f7161eaec5f469b3"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/blueprints/page.tsx",
+      "state": "present",
+      "sha256": "05a165ff073666cad25fa9f8e3c3aa1f3def0d88acdcc46070ec72088decf732"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "111b1670cec66efcc472a46ff78beaa7559285fb54142e10889af5766b32c7f7"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/questions/page.tsx",
+      "state": "present",
+      "sha256": "0124f764c098a423064269938a52fdde6cf4fb361793c32121b2dab1b1f1600a"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/settings/page.tsx",
+      "state": "present",
+      "sha256": "f9c344f3f7e8992c326aea3a9ac7d52145d25e6034523e4dd9e7e7bb555acdbd"
+    },
+    {
+      "path": "apps/web/app/kvkk/page.tsx",
+      "state": "present",
+      "sha256": "bd07c0174fafee2504ed180053534dbbb6bafe83a110f64b94fed7231abf3bca"
+    },
+    {
+      "path": "apps/web/app/page.tsx",
+      "state": "present",
+      "sha256": "bba2261233e1b51aebfaed40b2ab96714f5db66572da85bb325d775a7f0c94c7"
+    },
+    {
+      "path": "apps/web/app/profile/page.tsx",
+      "state": "present",
+      "sha256": "6cba098d3295cbd035bbcf7bc4281f4d9271db64aa95255afef6cdbdaa063574"
+    },
+    {
+      "path": "apps/web/components/chat-history-delete.tsx",
+      "state": "present",
+      "sha256": "fce51d09d5681fb3f88509faf80e38b13b1e2f67a1a8014b6441dc176021651c"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "e240e6a1f45de04f753627436d581871148efb02191dafd3cebb50733e1b9cc7"
+    },
+    {
+      "path": "apps/web/components/exam/feedback-panel.tsx",
+      "state": "present",
+      "sha256": "9d1f9d495e91af04fb97902d6ab3bc050a861a14240269976f7952423bc1d393"
+    },
+    {
+      "path": "apps/web/components/exam/finished-exam.tsx",
+      "state": "present",
+      "sha256": "80327c6ffcc1c3ddb1666a40fd97e76c6f348093710749a52553a3e81ebd78c8"
+    },
+    {
+      "path": "apps/web/components/exam/running-exam.tsx",
+      "state": "present",
+      "sha256": "5873999db056120aefb1e471874395588ec85904894f607d79e202a8ecabebdd"
+    },
+    {
+      "path": "apps/web/components/exam/saved-practice-feedback.tsx",
+      "state": "present",
+      "sha256": "ee0dbfad2e47dde233010a8013e323c761c124fa57ae608120a8ec079c7ff8c6"
+    },
+    {
+      "path": "apps/web/components/policy-history.tsx",
+      "state": "present",
+      "sha256": "ca969ead4342ae8d933ae7d39fa3a13688da5a5a32e23b40740a8bbdb345d8af"
+    },
+    {
+      "path": "apps/web/components/question-authoring/draft-editor.tsx",
+      "state": "present",
+      "sha256": "563041b7117c376f64ade67ba569f449ac5564e831905482a5872abe034987fc"
+    },
+    {
+      "path": "apps/web/e2e/blueprint-topic-readiness.spec.ts",
+      "state": "present",
+      "sha256": "c52a46573b178d61ff4d7452a460f60ae5ddf10e0473d5f0f88c6d9196004bab"
+    },
+    {
+      "path": "apps/web/e2e/chat-history-deletion.spec.ts",
+      "state": "present",
+      "sha256": "33a8837acc2663cd5af8e428979a7b04fcde692992f0eef341de93a4a443669d"
+    },
+    {
+      "path": "apps/web/e2e/code-rubric-feedback.spec.ts",
+      "state": "present",
+      "sha256": "b84ff02dbc28cf4a0ad48a64a96b989f7ec865e7d093a2f081af80b8d21d0542"
+    },
+    {
+      "path": "apps/web/e2e/policy-history.spec.ts",
+      "state": "present",
+      "sha256": "3dd6edae66a6d4cc151a20cc2481592d3fbbcca663161f45a2bfdcedccbd68d8"
+    },
+    {
+      "path": "apps/web/e2e/portal.spec.ts",
+      "state": "present",
+      "sha256": "af208f88605f98f06f2efcacec33498e2cbb093e521e8f131d5c0f3deb975053"
+    },
+    {
+      "path": "apps/web/e2e/question-pool-filters.spec.ts",
+      "state": "present",
+      "sha256": "ff243417d3ed0e1080557325f0ba9b56df9664040afee6482c1bdbca8d0f313c"
+    },
+    {
+      "path": "apps/web/e2e/screenshots.spec.ts",
+      "state": "present",
+      "sha256": "e877e89a934d0d76f5abc5c24b942def8977c3f204f64b21cff779f5767b0d56"
+    },
+    {
+      "path": "apps/web/lib/assessment-feedback.test.ts",
+      "state": "present",
+      "sha256": "498692d2c623d6f8a5efa85a81b4a0456a50159fcba9d712e027fe320037e98a"
+    },
+    {
+      "path": "apps/web/lib/assessment-feedback.ts",
+      "state": "present",
+      "sha256": "3cade00b4e651c21d4fd351b353da0fd64644b3cb8584b74311e4f94cebffdc1"
+    },
+    {
+      "path": "apps/web/lib/blueprint.test.ts",
+      "state": "present",
+      "sha256": "41343ff04c79b28a790c07c71bb78548ee7e66b417ca4401fa298623068c52e4"
+    },
+    {
+      "path": "apps/web/lib/blueprint.ts",
+      "state": "present",
+      "sha256": "a388bc6439e224939e3128363a89c70402fa918ee8a940c798603545797c4f19"
+    },
+    {
+      "path": "apps/web/lib/chat-history-deletion.test.ts",
+      "state": "present",
+      "sha256": "7178a942578fe82dfb4c22e59c72922331ef9419b14b80897c074b226f2dac1d"
+    },
+    {
+      "path": "apps/web/lib/chat-history-deletion.ts",
+      "state": "present",
+      "sha256": "f16f2fa838316db156ac9338d0fbe096133b75677ed2726426db60b3189095a0"
+    },
+    {
+      "path": "apps/web/lib/policy-draft-buffer.test.ts",
+      "state": "present",
+      "sha256": "4046d094f0e17bc6c214dc67d915d6512fdf4fd31f38013e616ce7bf22d81487"
+    },
+    {
+      "path": "apps/web/lib/policy-draft-buffer.ts",
+      "state": "present",
+      "sha256": "0d430e1ffa2f801276812ddb4bca2450666ad4c12f88b1284876a2517316166f"
+    },
+    {
+      "path": "apps/web/lib/policy-history.test.ts",
+      "state": "present",
+      "sha256": "db13d1356aa7bbf44ac99a28bd8d7bafc828a5a0831f41eb7364929c32e5a0e5"
+    },
+    {
+      "path": "apps/web/lib/policy-history.ts",
+      "state": "present",
+      "sha256": "cad3da294bf4919e7e7404c8828026ff7bebcc0fd2bcba9eba0b8571a9ed5345"
+    },
+    {
+      "path": "apps/web/lib/question-authoring.test.ts",
+      "state": "present",
+      "sha256": "49b1a4dca8a68df8b40a75f0144f4f257c325bc670d4e6c5abdfd64cc675f52a"
+    },
+    {
+      "path": "apps/web/lib/question-authoring.ts",
+      "state": "present",
+      "sha256": "3945b4e6a13d9ee46857b724bd9c71bd1e5b4ac798a49e77ec1f4786e63d81c3"
+    },
+    {
+      "path": "apps/web/lib/question-page-contracts.test.ts",
+      "state": "present",
+      "sha256": "d7d47e7001b82cc75cc2b5ec4d4bf1546dc3083b82f587b4a91d96f7258d6e40"
+    },
+    {
+      "path": "apps/web/lib/questions.test.ts",
+      "state": "present",
+      "sha256": "87260d523e79f4055a7ca01c2814e6d67b9168bc5e24972d969dbbd1ed8a67ce"
+    },
+    {
+      "path": "apps/web/lib/questions.ts",
+      "state": "present",
+      "sha256": "93e7a1189dce77a7600fa235f3f5df092881e4f52e10d219a15e23f709905426"
+    },
+    {
+      "path": "apps/web/lib/types.ts",
+      "state": "present",
+      "sha256": "ed0d06dfd01a5d12ad8470f639174d9f3a9704e3d8092f2011cc4e1ae1eb5415"
+    },
+    {
+      "path": "apps/web/lib/use-chat-session.ts",
+      "state": "present",
+      "sha256": "9fb721a41f614803593e01e772481dcdc2c7b972cfc8eecf1699f89f0595353f"
+    },
+    {
+      "path": "apps/web/lib/use-chat-turn.test.ts",
+      "state": "present",
+      "sha256": "dea36e7bf7e79572a4225eb9c4bf929dc2267dcfb046133f2a7b2a906e5900af"
+    },
+    {
+      "path": "apps/web/lib/use-chat-turn.ts",
+      "state": "present",
+      "sha256": "7866ff1ed77d930cdbd8b505f9f27da04a841c039dfc07ed12527dc06cacc602"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "b09006d3cefe00d2d2bea7b5c2a5c5a6b040cde57203aa5760cc2ca1dd6a7ed0"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "f1283f2b0cad78b771c4423f57f024cb06843247e6958f04957d2808ec221c04"
+    },
+    {
+      "path": "docs/kvkk.md",
+      "state": "present",
+      "sha256": "e673b7e66b1d8377f6dd21c578e18398f9b1dabd7154730719cbd37591539f86"
+    },
+    {
+      "path": "docs/runbook.md",
+      "state": "present",
+      "sha256": "5e01f906109d66fd8129d0513ae147ed7f93d932742aa540962a000822a98faa"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "e831520037bf058acdc7754f51420716d5cffab572b282aa4ce6ecb71a9082d3"
+    },
+    {
+      "path": "docs/security/privacy-review-2026-09-08.md",
+      "state": "present",
+      "sha256": "487030e5457a1a5390d7fc635e8a96cc982a81d27cc5dee35ef1d3393a71e763"
+    },
+    {
+      "path": "docs/team/codex/CODEX-RUNBOOK.md",
+      "state": "present",
+      "sha256": "cec726b027322d4fd31155a9d23c765ec93a1f7b4c1f669bf8a4e3d62ae913ca"
+    },
+    {
+      "path": "docs/test-report.md",
+      "state": "present",
+      "sha256": "df8122cf6289c2fe44ef84e1999b7cd9807f92fdd3e2b959c143d5c5d2101102"
+    },
+    {
+      "path": "scripts/benchmark_retrieval_plan.py",
+      "state": "present",
+      "sha256": "2f16fcf68ffdc3b72e6a1e48ae685a4efc9ebcbfffe1973b522c68fcd24c3b56"
+    },
+    {
+      "path": "scripts/fixtures/018_pre_c1_dense.sql",
+      "state": "present",
+      "sha256": "595cc7bc969da0b415cdd1b62aa1b8cd698534c2052c7c79be92c4075f630fd5"
+    },
+    {
+      "path": "scripts/probe_retrieval_runtime.py",
+      "state": "present",
+      "sha256": "38ef1637d0e0bfd90788fcce8093672626be324ad249041ae9f2baeac1ae45db"
+    },
+    {
+      "path": "scripts/test_benchmark_retrieval_plan.py",
+      "state": "present",
+      "sha256": "4e455e3b9a5c40493ca9177ac8418b17f822fcdb547603a824e07c73eed3dd34"
+    },
+    {
+      "path": "scripts/test_migration_check.py",
+      "state": "present",
+      "sha256": "796e22d95ffe3fdf007ba54813e57bde8c3562718bf4df0099d6dbeb3fc1aa23"
+    },
+    {
+      "path": "scripts/test_probe_retrieval_runtime.py",
+      "state": "present",
+      "sha256": "8bb5d06b405249522b2b879bc94f4106cbe132bf867483d69a15f3d697b625ff"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/contracts/README.md",
+      "state": "present",
+      "sha256": "2ddb9d054996570fdf4ec371fa3c47082e41fdb77431a9ea004a36f3428b7e4f"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/contracts/openapi.json",
+      "state": "present",
+      "sha256": "4d097948a5e8f5081a1e0e2a66aa3cc188085cd6764336e67a9267de04c01565"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "ad710bd97cbf39c14be74c5fd38fa01f5b16c06c757904d708217b3d2e662646"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "091487b1aa2db0646eb65df7bdb3b02a3a4fb94e72a31a009413f9fc9057a197"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "f023049305c39be347042306bdf8ea8bea1ad5638d7045db3c1690bd46ade6a0"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "fc69ccd2cb42ee163e08454bfb0cc16d12e995f254f44fa038d3230705c365d7"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "d343fdedf593f69443424df7e45bbffa0a03da7161ccaf4f54b93b4df496998c"
+    },
+    {
+      "path": "specs/018-codex-production-line/contracts/api.md",
+      "state": "present",
+      "sha256": "ff837a4bb2e8478d7ff13808fd96e73250387f42faa0083e160bf0f4ec732a76"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/b5-manual-cleanup.json",
+      "state": "present",
+      "sha256": "ff75cdbed7121d2e47892926be984251eaedffa5ce3db64c996664abf4dfbc82"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-archive.json",
+      "state": "present",
+      "sha256": "0cb56e5ec621f6c4968663e83f65e7cf168dfb82b60b88d02460fc5fcd12a6fa"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-archive.json",
+      "state": "present",
+      "sha256": "0f56115f3cf8ce47522ef00c8beaa1050bb81ba58032eae0df257fa80faa8ca4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-docs-check.json",
+      "state": "present",
+      "sha256": "8c2f091db8c4440d519b44bfcae8b5c7e646b1170d8ee9035ef153cfe9c8f2e4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-api.json.gz",
+      "state": "present",
+      "sha256": "f56a7f2a2cbf2ffc08316015b32c5def7cd35d86b3e29d4088180a00ac571a15"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-api.log.gz",
+      "state": "present",
+      "sha256": "5e00b3bcb77045da1fdd0db92ece5a9bf52c3e4ca60ad60f598a86a880b0d37b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-e2e.log.gz",
+      "state": "present",
+      "sha256": "74ed3ea1ff223788591565339b23ef225a15a63206bb9ae5343f9707acd16675"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-e5.json.gz",
+      "state": "present",
+      "sha256": "99c8d2b37d60d85c2ea13e8d4b53f887e58d67bbfa86dd1ab9e80f785503b9f8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-e5.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-format.log.gz",
+      "state": "present",
+      "sha256": "e669d6d1cfe8d907949e3c795413c35efd228afd22c3218cd13354c9898bfa9e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-hashing.json.gz",
+      "state": "present",
+      "sha256": "019b5554ab13876d9ae2548b82e6cc35f190e803c2a4e881b981c27d29b27364"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-hashing.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-mypy.log.gz",
+      "state": "present",
+      "sha256": "93e7cd96b6a60b15e60462d1f6851eec6deeb952faa7af31ee208b0beec7736c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-ruff.log.gz",
+      "state": "present",
+      "sha256": "f3af4d142827f5aad2eb0c72d556d325488a57fb6219aac10afeb51085667d53"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-runtime.json.gz",
+      "state": "present",
+      "sha256": "1305278efe98b77afb5cf2c958bb7386f72f72da84eba59ef1a023e6bf85796c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-c1-final-runtime.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-logs/bc-docs-final-source.log.gz",
+      "state": "present",
+      "sha256": "d0a9fae5f4209ba3edb754cb97f035702ed9824f5287ca2479001869f5eed6d5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-dark.png",
+      "state": "present",
+      "sha256": "9a82a563ca6485af29678c563e323d3f8a5dd29c3d77b91028d7c000436a8240"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-light.png",
+      "state": "present",
+      "sha256": "d454fdff9850440558bc3075aedb5291a2255750ac0971cdc59b8817685aa3a7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/chat-history-deletion-öğre-0cfbb-rs-ve-sınav-taslağı-korunur-chromium/delete-confirmation-375-dark.png",
+      "state": "present",
+      "sha256": "8f2408637b2aa71e9a16fb1219486039d05456d630efb5184c54c1c7efff0cf0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-dark.png",
+      "state": "present",
+      "sha256": "ae0b3a6d496f059265e369ec67176de3d6b62892d92ed5d89678c90021c4966d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-light.png",
+      "state": "present",
+      "sha256": "9a10e008d01379612ddfc8ec51ad8e625f088a3e11c2588caf22720b9157b3c0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/exam-completion-guards-gör-0c0d6-ilip-ders-kilidi-kaldırılır-chromium/empty-exam-finish-375.png",
+      "state": "present",
+      "sha256": "c34fe14b22ed440d4fd7396ac5530e88cfa988adec89fb42495115576139d74d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/exam-cross-tab-privacy-kay-4ecd6-bakımı-kaynak-izni-değildir-chromium/source-independent-access-375-dark.png",
+      "state": "present",
+      "sha256": "018974a009ac6ec705249807f64de4c2b6b1434e789015c9b8b38ed395de18b2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/policy-history-politika-ge-2a501--düzenleme-taslağını-silmez-chromium/policy-history-375-dark.png",
+      "state": "present",
+      "sha256": "0b60446ac7345401a907e11fba6e27a54e5125144b65e36fa50e85ee14ef3d02"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-dark.png",
+      "state": "present",
+      "sha256": "600802fc9cb7330a39afbf468679265038fca8cc2cf34af19a17c76658990b33"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-light.png",
+      "state": "present",
+      "sha256": "8539319963273f67dd403c4d20785bab0f87e2522757a42a9cd59e704dfb32b2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-dark.png",
+      "state": "present",
+      "sha256": "41618d4b9e72d4f479e07d03b905d9ca1526e7b1749bc42247ad807a9a714f0f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-light.png",
+      "state": "present",
+      "sha256": "b7ba8451931d4ae62d19ea792f5625254da62a526525e77bec8e38724d76797f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-dark.png",
+      "state": "present",
+      "sha256": "2150edfb2961074189177080fc5157b89ff179804bf3753624255048ce4831cb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-light.png",
+      "state": "present",
+      "sha256": "ca1fe00581f1ffd18067d006067af2502d76ebca8a5072505a0f4a8e1504b41f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-history-375-dark.png",
+      "state": "present",
+      "sha256": "2ba95069a8ff4762887cf07fe906b7ae56f088ffab53281dd2661ca163513921"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-dark.png",
+      "state": "present",
+      "sha256": "5c190edc3ed2fae0ea8cfe6868f6f9ab85c18d35f4f4cf812fd711622d89c854"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-final-visuals/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-light.png",
+      "state": "present",
+      "sha256": "398f41775593286d4fba8fb77ec30c0c6fd9dae5df953a6b2b809bd865f81c57"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/b3-api-boundary-final.log.gz",
+      "state": "present",
+      "sha256": "2e40b4afb057eacebb533d7da891af82f8332493f766bc51aad77ee8ae3f6b44"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/b3-feedback-tsc.log.gz",
+      "state": "present",
+      "sha256": "f1b651238a58fe290baec6c5e32f3bdb1943dd2bd582f02569231f7a757c7837"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/b3-feedback-web-unit-all.log.gz",
+      "state": "present",
+      "sha256": "5ed63f170a7ba4be300d91838236a10e0afba8d144432e2c37a16d00939c2e42"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/b4-theme-screenshot-final.log.gz",
+      "state": "present",
+      "sha256": "fc0b544938b7725f22a93b50ccc38f7b04850bdc83f28a6e9ded10b6d691f150"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-contrast-final.log.gz",
+      "state": "present",
+      "sha256": "75a5599f27533d8fe6a5ac7ee43098f062f5d9342f93f386f6f1c1009686f02d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-e2e-final.log.gz",
+      "state": "present",
+      "sha256": "7a54f18f1a6c1d920c5dd84a8f7979d5a59f0287584896f0d0902f050cc1a6c7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-full-api-second.log.gz",
+      "state": "present",
+      "sha256": "1e2ee54a327c449f5be1e280096640a2953751a45a923c87d6312543515ac1c7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-migration-final.log.gz",
+      "state": "present",
+      "sha256": "f82a300abaf60257f496035ad3f2f3cd2d95827b1f567a30358791193ce32d56"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-release-final.log.gz",
+      "state": "present",
+      "sha256": "295157d0eb3b7244161545f5e08fe6a2d09132402bd118b29fe9e70dc4e1ddee"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-retrieval-tools-tests.log.gz",
+      "state": "present",
+      "sha256": "22a25c8a9f5e149fc7dc86a4a74671edb14ee63b2c44bf243d8d1abb3e58a6a7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-web-build-final.log.gz",
+      "state": "present",
+      "sha256": "4fbe036ab13646ac7f1a9cbb76d02fe9c97c22ca19f01d1f5f7f8214f88db6ed"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-logs/bc-workflow-final.log.gz",
+      "state": "present",
+      "sha256": "7434b59a7b2eb83e334a2eb3a560924483f800516fb256f4aa1115bfcff712d5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-precommit-review.json",
+      "state": "present",
+      "sha256": "b55f8cfdb26d3d068e676abce143431c61927f2b6c52c1fb740b0a0ea8a6af0b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-stable-final/delete-confirmation-375-dark.png",
+      "state": "present",
+      "sha256": "8f2408637b2aa71e9a16fb1219486039d05456d630efb5184c54c1c7efff0cf0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-stable-final/manifest.json",
+      "state": "present",
+      "sha256": "4be6b5af7253c5d41aa1cc3c1de95ebf398ef6b4503dec6deb59ed860850da4b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-transition/dark-animations-disabled.png",
+      "state": "present",
+      "sha256": "003ea5d0cccd31e9906018e7433c6014c5ab31643caac676d77c3e401cc984fe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-transition/dark-at-rest.png",
+      "state": "present",
+      "sha256": "003ea5d0cccd31e9906018e7433c6014c5ab31643caac676d77c3e401cc984fe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-transition/diagnosis.json",
+      "state": "present",
+      "sha256": "20d37a0f7a77e7750680dd46e5cbb8c2d1dc79c9a1f048b92e2626552bce9e8f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-transition/immediate-default.png",
+      "state": "present",
+      "sha256": "ca8824529ad45a8525d5a76ffdc5739d6f51e22e88c1c8ec4c45a1a8256fc48f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-transition/measurements.json",
+      "state": "present",
+      "sha256": "1a2757352a45a4629a9f05f9d7827d6e280c30fd7d988df0ab85083c47d9f037"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/b4-theme-transition/original-b4-e2e-transition-frame.png",
+      "state": "present",
+      "sha256": "e47d316d442c37bdf2fe12f15d0f5177c281dd0547dd99c4b9dcf9592e15e3d2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-dark.png",
+      "state": "present",
+      "sha256": "cc5c30f4d239f9ff17bb3df5fe3c13f6d8803de6940af9efbd3ee62883560a61"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-light.png",
+      "state": "present",
+      "sha256": "d454fdff9850440558bc3075aedb5291a2255750ac0971cdc59b8817685aa3a7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/chat-history-deletion-öğre-0cfbb-rs-ve-sınav-taslağı-korunur-chromium/delete-confirmation-375-dark.png",
+      "state": "present",
+      "sha256": "e47d316d442c37bdf2fe12f15d0f5177c281dd0547dd99c4b9dcf9592e15e3d2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-dark.png",
+      "state": "present",
+      "sha256": "ddf354c4904a87e741ff1fcaaadd31158b042fa8e1243a2d5d87284dd7d5370f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-light.png",
+      "state": "present",
+      "sha256": "9a10e008d01379612ddfc8ec51ad8e625f088a3e11c2588caf22720b9157b3c0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/exam-completion-guards-gör-0c0d6-ilip-ders-kilidi-kaldırılır-chromium/empty-exam-finish-375.png",
+      "state": "present",
+      "sha256": "26b7447334b58d1234458086ed9395e24b6460d8456fbfcf59d2630e6a563963"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/exam-cross-tab-privacy-kay-4ecd6-bakımı-kaynak-izni-değildir-chromium/source-independent-access-375-dark.png",
+      "state": "present",
+      "sha256": "018974a009ac6ec705249807f64de4c2b6b1434e789015c9b8b38ed395de18b2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/policy-history-politika-ge-2a501--düzenleme-taslağını-silmez-chromium/policy-history-375-dark.png",
+      "state": "present",
+      "sha256": "f4a4cb1b5da76d9ddc13a050fe9b6b8fe5ad8955af00150a4a4c7dca20cc135e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-dark.png",
+      "state": "present",
+      "sha256": "a3eab726eb2b3df43129bd2ae2060093bcb3d888f9d030cbb4ef8f3763964132"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-light.png",
+      "state": "present",
+      "sha256": "fdf78237c9c07ee82bd34d73ec979785559d2af31097351ade2859950eebacd9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-dark.png",
+      "state": "present",
+      "sha256": "0b594163a885a91d5c80036a127c2bfab93f07a7e3d6ef44419ad151d1374d51"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-light.png",
+      "state": "present",
+      "sha256": "7ab397d690023052f32f33ae2a7851d06a1dc93c95c4581389a859122eb02d8e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-dark.png",
+      "state": "present",
+      "sha256": "1749d204e17cd5da3c7d996692edf59fac46320fe3956bd962f87910637df601"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-light.png",
+      "state": "present",
+      "sha256": "d867c35cdf13bc5b4fe08aafcdf3807635c4f0e78848243298ff4a94dbad6e25"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-history-375-dark.png",
+      "state": "present",
+      "sha256": "1adc1432c291859df19999cd08aaac72dea3f57c1be9614e47fc2e82cfb75bfe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-dark.png",
+      "state": "present",
+      "sha256": "e38e827a73fb0d5b862b2e4c9ff1975bc6bded5bb4ad3c25f585f7607d7898df"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/apps/web/test-results/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-light.png",
+      "state": "present",
+      "sha256": "8694f7829d31bcfbef08f2b7b85eb3fde276d955c3601c9cce9a7c7d5004440b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-visuals/bc-final-visuals/manifest.json",
+      "state": "present",
+      "sha256": "280df986f234485ef8490a223dbb1ca4bc7d0b90f49c8fe6606691be5033adb8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final-acceptance.json",
+      "state": "present",
+      "sha256": "2d3a76cfc6d813bfe470d66c390a285be877c2e4daeef2053c5d68ac598ee66a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final-acceptance.md",
+      "state": "present",
+      "sha256": "2ea822ddfe23158986d528ed12e8fee12559e290318ec557b8299a064778532f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final-source-manifest.json",
+      "state": "present",
+      "sha256": "46adbf6f40989e1b76bace472249f27ceff22e4c5d2de2fd1c8c64ffb17d40bb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/analyze_c1_final_e5.py.txt",
+      "state": "present",
+      "sha256": "4fb6698f4826be7f7bc31d54249c63f1d184416f3a065d70c8af9c34d6280dd2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/analyze_c1_final_hashing.py.txt",
+      "state": "present",
+      "sha256": "26e2c9cc5ea287656d6c563ebccc2ce92784c5db87cb27c94196cc4528065847"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/analyze_c1_final_runtime.py.txt",
+      "state": "present",
+      "sha256": "7b16be323fa4b8b6b9e64a35dde332963f71e951906690fb57dbf3a9e8ef2022"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/assemble_c1_final_audit.py.txt",
+      "state": "present",
+      "sha256": "488cd97c7db6c64f6128d4df86c537084ac2119168df3f8cc8d869418537796d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/c1_e5_holdout_runner.py.txt",
+      "state": "present",
+      "sha256": "82b91a0bf3693ad68811172ff794d8c80fd7b18c873e19bf243fc36cd83dd903"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/c1_holdout_runner.py.txt",
+      "state": "present",
+      "sha256": "6befccf42c42e26cbf47d8cc0a8339fe30389e5820033cf823f0d8a42b478f58"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/c1_trace_e5_retrieval.py.txt",
+      "state": "present",
+      "sha256": "706d27528cd5f4bb396200a0fcb5dae0ecb92b0137d73c1485f6620af2ff6d08"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/c1_trace_retrieval.py.txt",
+      "state": "present",
+      "sha256": "e66ec95c162a6a46e77f01dae721b218e43335a1e9b31b2116494da82a813458"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/analysis-source/root-final-checks.py.txt",
+      "state": "present",
+      "sha256": "70b17b38c6ca2026ebf6ffd36b847bb59a5dffb61d52b3d07c73e83ec7f6ef92"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-analysis.json",
+      "state": "present",
+      "sha256": "8107b34a77f06ecd7b934fff73ccf2456062b64b097b902197e74250b287dcb4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-analysis.md",
+      "state": "present",
+      "sha256": "707abf1dc220e88eef5d3a535d3dca5c7618ea76ec325f80b1ee3a9fd2566728"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-corpus-01.json",
+      "state": "present",
+      "sha256": "e325eb8270b97cc1a4f3ede23485d4a58361214fb84727f1de7ae4bb802a1321"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-corpus-run-01.json",
+      "state": "present",
+      "sha256": "0ad73273a6cbc57a23841e1515e4dd05ba46101088dac5cfb5f4cf3b6b8aa1cd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/baseline-source/dense.py.gz",
+      "state": "present",
+      "sha256": "00f0cf41183cf8cfef6c22837c993cc8bf44cac89ed8f7971a42b4ed6dbac796"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/baseline-source/fts.py.gz",
+      "state": "present",
+      "sha256": "7e9b76fe89cfb055087ad324b25b536d8051889d943a583170ab63aacd72354e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/baseline-source/service.py.gz",
+      "state": "present",
+      "sha256": "89fae42f54aee1ab05ac747682de4f44867f06d97d5135203c003c7ddb78f6d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/baseline.log.gz",
+      "state": "present",
+      "sha256": "ef2312887a90f016653f361b6b9e2356323abcc6b4af33b403e76bf449a9e5b0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/baseline/.progress/6e7df24ac07a8282.jsonl.gz",
+      "state": "present",
+      "sha256": "e4191b1e740aa79b5dae186e7c1d55164bc75f4687981b849e0019fd5878fb13"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/baseline/2026-09-08T140525329710-holdout-hybrid-fastembed-retrieval.json.gz",
+      "state": "present",
+      "sha256": "f04a78ad7a6567b7080529e352c0f7e10d119e32a8031a868534dce701faa93a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/candidate.log.gz",
+      "state": "present",
+      "sha256": "507023cc571dfb24bbcba5a492e8c3f3f1574317990e2866c288158352b51098"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/candidate/.progress/6e7df24ac07a8282.jsonl.gz",
+      "state": "present",
+      "sha256": "a1a991a97d77ff00806feb3e7c77aa523212aab766f9a238239d34c84a365a5e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/candidate/2026-09-08T140536461701-holdout-hybrid-fastembed-retrieval.json.gz",
+      "state": "present",
+      "sha256": "21b2b1269973f27349d4bce5ed1c12dc544362822af4564df95fc863621ff4f5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/manifest.json.gz",
+      "state": "present",
+      "sha256": "439069f691d6492c514ef2be6557722c9b08818a842d5e624e23204847685632"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-final-02/paired/holdout-hybrid-fastembed-vs-hybrid-fastembed-comparison.json.gz",
+      "state": "present",
+      "sha256": "3d5b4ca00bf609d665697a0db67b4e36d39f5bb26552f637a68f9ce488f35407"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/baseline-source/dense.py.gz",
+      "state": "present",
+      "sha256": "00f0cf41183cf8cfef6c22837c993cc8bf44cac89ed8f7971a42b4ed6dbac796"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/baseline-source/fts.py.gz",
+      "state": "present",
+      "sha256": "7e9b76fe89cfb055087ad324b25b536d8051889d943a583170ab63aacd72354e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/baseline-source/service.py.gz",
+      "state": "present",
+      "sha256": "89fae42f54aee1ab05ac747682de4f44867f06d97d5135203c003c7ddb78f6d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/baseline.log.gz",
+      "state": "present",
+      "sha256": "0c7eec412c81a948fd66be2941097e10f2242e861e02d530600e5a6fc8a217cd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/baseline/.progress/6e7df24ac07a8282.jsonl.gz",
+      "state": "present",
+      "sha256": "e8cc99b7ab9e3a3adae127183745c4cf4e29dc83c9c7b83f764ebbe1278b1b4d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/baseline/2026-09-08T133939981753-holdout-hybrid-fastembed-retrieval.json.gz",
+      "state": "present",
+      "sha256": "e98edcb7b6e444cda72de1fd73c859836c7664395e5a59cba120c606ed07229c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/candidate.log.gz",
+      "state": "present",
+      "sha256": "021f2c020c8ab7756bb0187e2386f3bcb896da0f7c58141da917864f09b68098"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/candidate/.progress/6e7df24ac07a8282.jsonl.gz",
+      "state": "present",
+      "sha256": "9a681c12c05c63b78bd5ac7395c2cce9a2ab31e243b7f70faa599b22e3fcfb09"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/candidate/2026-09-08T133950814250-holdout-hybrid-fastembed-retrieval.json.gz",
+      "state": "present",
+      "sha256": "d90c25407bdb3677c6a79f2cdc1b8922044fae7907505179f40993c784dd770f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/manifest.json.gz",
+      "state": "present",
+      "sha256": "f6da2d593f0334f013dd972089162bea942d1a9655a577d26e262fc4fab4f1ac"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-measured-01/paired/holdout-hybrid-fastembed-vs-hybrid-fastembed-comparison.json.gz",
+      "state": "present",
+      "sha256": "4712f0b5758c46ca49ddc3c69067000722729b700c1a26fce799814c99511fb2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-analysis.json",
+      "state": "present",
+      "sha256": "563596ab1d56ca4fabb51fb747600e7ed5d7eb2b5de1d03557aa369f9b1610be"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-analysis.md",
+      "state": "present",
+      "sha256": "4d1e1f3e8b60cacc6080b3ec1763c936f663568edc98983ef5a12aaeeeb5f190"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-measured-01/baseline-source/dense.py.gz",
+      "state": "present",
+      "sha256": "00f0cf41183cf8cfef6c22837c993cc8bf44cac89ed8f7971a42b4ed6dbac796"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-measured-01/baseline-source/fts.py.gz",
+      "state": "present",
+      "sha256": "7e9b76fe89cfb055087ad324b25b536d8051889d943a583170ab63aacd72354e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-measured-01/baseline-source/service.py.gz",
+      "state": "present",
+      "sha256": "89fae42f54aee1ab05ac747682de4f44867f06d97d5135203c003c7ddb78f6d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-measured-01/manifest.json.gz",
+      "state": "present",
+      "sha256": "b789e22eec5855c05d464deefa650d170b3c1df3cef1ac33ab33c6ddf4582d2d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-measured-01/trace.jsonl.gz",
+      "state": "present",
+      "sha256": "e695d9af2eb340b7a10e5b0d9fceda93b63455e6e32b74d78540c2b69faaeefc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-final-e5-audit.json",
+      "state": "present",
+      "sha256": "4dce002758e71f08a1c35c684af179b975df1b9611e78b876793abe2b6610634"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-final-hashing-audit.json",
+      "state": "present",
+      "sha256": "8078df943476bd71b896181ea1d42c5975e30ee1061c574558a6c61e7072b796"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-final-runtime-audit.json",
+      "state": "present",
+      "sha256": "cec91c06744c1f02918955f8f404fb6e16bbbfa55aac60a848f2b2ccb0d2afbd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-final-source-rerun-runbook.md",
+      "state": "present",
+      "sha256": "a81ffcb9deeaa6c72c75c31b83398d32c3197bce5305d8de93a0467821796418"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/change.patch.gz",
+      "state": "present",
+      "sha256": "a837d6ff8bec47414bb40d8c1bc212fca8c9b262f44285ca294f0bbc4a6b654f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/fts.py.gz",
+      "state": "present",
+      "sha256": "1b286f1221ffbb1c386d467a483a0890916cda9cace10a0e077a5601abafdef1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/offline-tests-configured.log.gz",
+      "state": "present",
+      "sha256": "c1cb4f0abd03bce7bae0ece6bce84456e5041c6761ed1cce599a511073044057"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/offline-tests.log.gz",
+      "state": "present",
+      "sha256": "077e7d7075b46ebb4bb49f063543b021a8cb8367d615a2e1b85ad86808e7ee61"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/source-manifest.json.gz",
+      "state": "present",
+      "sha256": "fb56e964d359076a0b35b93e7f09f12862d5ffbc0cf01b0321ed968d5c965e9a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/static-checks.json.gz",
+      "state": "present",
+      "sha256": "790e6ae1938736920a5f26d1013dad2bc673a77b00268737bc4d1acbdfa0f6d3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/test_fts.py.gz",
+      "state": "present",
+      "sha256": "48bb4e1f182e9716527eb1f8c63bf42c963b1f9e7919cdf44e2f81a891cde693"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/test_retrieval_candidates.py.gz",
+      "state": "present",
+      "sha256": "6ac1adbdfdfd680f49c3616e1281e1c2f016eaf6b5e3cb6207a38f43f5f661ec"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/baseline-source/dense.py.gz",
+      "state": "present",
+      "sha256": "00f0cf41183cf8cfef6c22837c993cc8bf44cac89ed8f7971a42b4ed6dbac796"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/baseline-source/fts.py.gz",
+      "state": "present",
+      "sha256": "7e9b76fe89cfb055087ad324b25b536d8051889d943a583170ab63aacd72354e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/baseline-source/service.py.gz",
+      "state": "present",
+      "sha256": "89fae42f54aee1ab05ac747682de4f44867f06d97d5135203c003c7ddb78f6d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/baseline.log.gz",
+      "state": "present",
+      "sha256": "bd17231a842d2f1574a03bd9a6d245c9350903c7def0932a4f97822e5c3affe1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/baseline/.progress/a2d6c60b7cd0ca6f.jsonl.gz",
+      "state": "present",
+      "sha256": "53ac6d6625e89f43e25bdd62ad5785cf264849a2478e332238feff200c707a4f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/baseline/2026-09-08T140427992158-holdout-hybrid-hashing-retrieval.json.gz",
+      "state": "present",
+      "sha256": "179adbb69a12fc13cc752b95f0385dff31efefd05e34141cff16f175cd59014e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/candidate.log.gz",
+      "state": "present",
+      "sha256": "3c36113a676404fab70add0985dfc2934ad0cca774bb6dbd9077924dcf0817c1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/candidate/.progress/a2d6c60b7cd0ca6f.jsonl.gz",
+      "state": "present",
+      "sha256": "111784b59219ae90bc91602e1117dea43a2e8d89a57aa9ebc4b90c8900bc93d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/candidate/2026-09-08T140428792298-holdout-hybrid-hashing-retrieval.json.gz",
+      "state": "present",
+      "sha256": "b66d47539e14889344f17a4193845c289b59b20dd5ec350d0820886e90a492ca"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/manifest.json.gz",
+      "state": "present",
+      "sha256": "af79108ce98feaa1f1e2bf214f8134894dc5777dd8f89a5fee3a2aa3fb080b78"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-holdout-final-02/paired/holdout-hybrid-hashing-vs-hybrid-hashing-comparison.json.gz",
+      "state": "present",
+      "sha256": "1e3810d4ecf4bb89798a938729804095ef7f532cca22103adeb25b50a474def1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-trace-analysis.json",
+      "state": "present",
+      "sha256": "780cd8b7043cc526f60bec39221c2deb813811c6ec0a03f1521ad460c967d5c9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-trace-analysis.md",
+      "state": "present",
+      "sha256": "a2487d98ec39eee1cb52c22e8df344c61da92ad357549ea614b3c7f93fb4e09c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-trace-measured-01/baseline-source/dense.py.gz",
+      "state": "present",
+      "sha256": "00f0cf41183cf8cfef6c22837c993cc8bf44cac89ed8f7971a42b4ed6dbac796"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-trace-measured-01/baseline-source/fts.py.gz",
+      "state": "present",
+      "sha256": "7e9b76fe89cfb055087ad324b25b536d8051889d943a583170ab63aacd72354e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-trace-measured-01/baseline-source/service.py.gz",
+      "state": "present",
+      "sha256": "89fae42f54aee1ab05ac747682de4f44867f06d97d5135203c003c7ddb78f6d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-trace-measured-01/manifest.json.gz",
+      "state": "present",
+      "sha256": "9d9bec98d0a60e62e5bde15cedd910d115182e53def317caf8a5ee14e71ebccc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/c1-trace-measured-01/trace.jsonl.gz",
+      "state": "present",
+      "sha256": "ac0db94ce066d6c042a7ea6d0b7231e04f6bd5916e95e6c2ab1baca4ef47b7a8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/d3-diagnostic-execute-02.json",
+      "state": "present",
+      "sha256": "8ae1bcd6af2b9f1e87f48f11117bc997ae62e49890cad5bc64f448d7596f0508"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-final/runtime-v3-final.json.gz",
+      "state": "present",
+      "sha256": "c6f46f569f0d73f62d816b18117bc8ceb171b31ef5456b8ba502e0988f023ffa"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-guc-comments-only-bridge.json",
+      "state": "present",
+      "sha256": "6eb3a30aa4a9c31d3fa075e867b1662bd5aa1acc723eba7032ce98ecb9fd0675"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout-analysis.json",
+      "state": "present",
+      "sha256": "9329c94b06fa6818afcd30d0f7f6895b1508812456b70ae3414e67b708873540"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout-analysis.md",
+      "state": "present",
+      "sha256": "afa1e80826f4df72dcc229bc1f166b5bbbd1e1d9402a3b257bfa0c8c9d9a6819"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout-corpus.json",
+      "state": "present",
+      "sha256": "35da53baa7bbf8fcbb402bd5b0672a0caa3cf3ad12569bd17bab2e6d8edc73fe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout-runbook.md",
+      "state": "present",
+      "sha256": "2058f3f1929aeff43a1d6b3cafba09deba20eca56c391ae54cea0b8118c5f95b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout-runner-snapshot.py",
+      "state": "present",
+      "sha256": "6befccf42c42e26cbf47d8cc0a8339fe30389e5820033cf823f0d8a42b478f58"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout/baseline/2026-09-08T131424740044-holdout-hybrid-hashing-retrieval.json.gz",
+      "state": "present",
+      "sha256": "fe7beda2435ca8612cc0eea5a0e2a516179f12b052994ebabaf53996496019cc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout/candidate/2026-09-08T131425296403-holdout-hybrid-hashing-retrieval.json.gz",
+      "state": "present",
+      "sha256": "e6bacb2e630c8a97b57f5c081d3bf86760d46b5530efbcde400104dab5fd3e9a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout/manifest.json.gz",
+      "state": "present",
+      "sha256": "2655b4375cdf7285799f15c5869d015d776de28f63f2b63cc121d0104eba664b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-holdout/paired/holdout-hybrid-hashing-vs-hybrid-hashing-comparison.json.gz",
+      "state": "present",
+      "sha256": "fee9d30643b8cdd08a28b1f1ce0d2e0b90407efdc0375a75782e19576ed58f91"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-measurement-archive.json",
+      "state": "present",
+      "sha256": "311f7a25b68682884d64cdc9b4ab5d9fd547b5e37dfdf39fc0279cb9d6958fac"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-plan-v1-preliminary.json.gz",
+      "state": "present",
+      "sha256": "ee6665d27b2e74522afee097b0ecbd6da9fb4d81978f091d83d8808bd7fa1832"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-plan-v2-equal-projection.json.gz",
+      "state": "present",
+      "sha256": "de50cb7cf6934bbce8656e6a5fb125d69baf95f8df6b564c5f0b78ca5e811785"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-report.md",
+      "state": "present",
+      "sha256": "08389ea820ad4231743a363924c84924265f9ee815e61f982dd5c5b809546d1e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-runtime-clone.json",
+      "state": "present",
+      "sha256": "cb34010a25d4221aa6c3617c1209a206b201936d2bba4cb31bd4b984e723d4a6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-runtime-v1-analysis.json",
+      "state": "present",
+      "sha256": "31a0fd0e973e7ed82cabff3a01d2ed0598f83ff9ef907ec9e498bcae56a05afe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-runtime-v1-prepared.json.gz",
+      "state": "present",
+      "sha256": "13e060716ca1ea0e8b6a13fa5e95d1caadd63b9b6f36e4d48f65dccfc0cf0804"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-runtime-v2-analysis.json",
+      "state": "present",
+      "sha256": "dc3ad13e4dad19ae6c1aa2296f7af10fbc372fc321e86a8c967dfee3607cf00a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/c1-runtime-v2-dense-custom.json.gz",
+      "state": "present",
+      "sha256": "9cd11f3b8f14cc968c95329520566b2cb5c381e649ae91055eca2b6c9d2f8393"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-recovery-design.md",
+      "state": "present",
+      "sha256": "49c60947a574ae7b44d3a518142bb1243f86f93057e2a5a08e40903ca48107a4"
+    },
+    {
+      "path": "specs/018-codex-production-line/plan.md",
+      "state": "present",
+      "sha256": "0f97043f3801afb971607d85f9db05703519d0f576618156b2d15051ebb45db0"
+    },
+    {
+      "path": "specs/018-codex-production-line/spec.md",
+      "state": "present",
+      "sha256": "0f699c9427d6ef72a42d47224782abaebe38d6f7b6694bbb6229fcf344800b2f"
+    },
+    {
+      "path": "specs/018-codex-production-line/tasks.md",
+      "state": "present",
+      "sha256": "f7b4640e7db5650dd945e9d8222566426898d8a1110f067046878a169342a3ea"
+    },
+    {
+      "path": "specs/018-codex-production-line/verification.md",
+      "state": "present",
+      "sha256": "7931159f213ef158d4f5545da49f54ccdd3b8e47e3041dbdb5e469d9371b5b4d"
+    },
+    {
+      "path": "supabase/migrations/0024_chat_privacy_revisions.sql",
+      "state": "present",
+      "sha256": "9ef6fc55eeff03cef00d1e396694177032acc95ac361394a1e81afecec98d51f"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/027-learning-privacy-retrieval-r1.json",
+      "report_sha256": "23ace3f921cdd25846219a6c859896eda7386585faa7dc763dee70ac3089941e",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/027-learning-privacy-retrieval-r1-retrieval.json",
+      "report_sha256": "34d0cb177e5148a06d275a4f138893fb567e093fd65191acb3f63240bf7119e8",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "evaluation/gold_set/calibration.json",
+    "holdout_ref": "evaluation/gold_set/holdout.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: synthetic technical contract and actual embedding retrieval; independent pedagogical/LLM/legal acceptance still pending",
+    "metrics": [
+      {
+        "name": "e5_recall_at_5_final_vs_baseline",
+        "baseline": 0.8857142857142857,
+        "candidate": 0.8857142857142857,
+        "operator": ">=",
+        "threshold": 0.8857142857142857,
+        "sample_size": 105
+      },
+      {
+        "name": "e5_mrr_final_vs_baseline",
+        "baseline": 0.7377210884353742,
+        "candidate": 0.7377210884353742,
+        "operator": ">=",
+        "threshold": 0.7377210884353742,
+        "sample_size": 105
+      }
+    ],
+    "exact_command": "c1_holdout_runner.py and c1_e5_holdout_runner.py --execute on unchanged synthetic corpora; scripts/probe_retrieval_runtime.py --source-report retrieval-plan-local-20260908b.json --repeats 7 --execute; exact wrappers and receipts in bc-final-archive.json"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: reviewed release controls combined change; existing course-agent/authoring/assessment flags remain separate",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:027-learning-privacy-retrieval-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: reviewed release controls combined change; existing course-agent/authoring/assessment flags remain separate",
+    "kill_switch": "Disable affected course agent or question-authoring exposure via existing feature flags; hold release and revert application to reviewed base while retaining additive0024 schema. Do not bypass locks or silently restore deleted conversations.",
+    "assignment": "Sticky by reviewed release SHA for the isolated candidate; any future canary must remain course/session scoped under separate promotion review. No user exposure yet.",
+    "initial_exposure": "None; draft PR only.",
+    "stop_conditions": [
+      "Deleted chat or personal data resurfaces after confirmed deletion.",
+      "Cross-course/user/exam content disclosure or missing source/rubric authority.",
+      "Recall@5/MRR decreases against unchanged baseline, wrong namespace, or dense prepared plan loses tested custom policy."
+    ],
+    "expand_conditions": [
+      "Exact PR candidate checks pass.",
+      "Independent engineering, domain and privacy review accepts scope.",
+      "Real LLM, live auth/storage and operational gates separately verified before deployment."
+    ],
+    "active_exam_policy": "Existing server exam/source locks preserved; deleting own chat does not remove exam or academic records; assessment lock precedes short final chat lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:71d5ff640f0d48a08f3967b000485a15035f10c7",
+    "procedure": "Disable exposed affected features before reverting application. Keep additive0024 table/trigger intact; do not drop privacy revisions or restore erased messages. Reverting to S reopens the now-fixed in-flight chat gap, so affected chat stays disabled until reviewed repair. Rebuild and rerun privacy/role/exam and retrieval acceptance.",
+    "max_minutes": 15,
+    "verification": "Plan only; no deployed rollback drill or15-minute operational guarantee measured.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic sample course material and test identities only; source hashes, reports and approved source fixtures in repository. Chat privacy counters are personal technical metadata; documented separately from academic/auth retention.",
+    "retention": "Versioned synthetic evidence only. Institutional personal-data retention, backups and transfer/legal decisions remain open; no compliance certification."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

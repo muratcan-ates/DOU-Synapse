@@ -145,7 +145,7 @@ export default function AccountPage() {
           href="/kvkk"
           className="font-medium text-brand underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          KVKK aydınlatma metnini
+          kişisel veriler ve gizlilik sayfasını
         </Link>{" "}
         okuyabilirsiniz.
       </p>

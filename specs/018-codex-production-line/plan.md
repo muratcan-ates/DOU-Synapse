@@ -14,3 +14,12 @@ A1 → A2 → A3, ardından doğrulanmış A/B işleri. Sır veya canlı hedef g
 ## S sahiplik ve inceleme
 
 S1/S7 ilk uygulama gate_audit; iptal ve COMMIT sonrası silme için bağımsız inceleme/düzeltme retrieval_review. S2 tarayıcı kimlik/sınav nesilleri ve E2E product_reconcile. S3 ve S5/S6 sözleşme/ayar uygulaması retrieval_review; ortak rapor, son web/API koşuları, hukuk kaynakları, skill-creator güncellemesi ve yayımlanmamış yönetişim kaydı root. B4 yarış araştırması ayrı izole dou018_delete_race veritabanında; S kabulüne bitmemiş test karıştırılmaz.
+
+
+B/C sahipliği: B4 sunucu ve 0024 göçü gate_audit; B1/B6/B7 ve B4 sohbet UI product_reconcile; B5 ilk uygulama root, bağımsız inceleme ve scoped RAM taslak düzeltmesi gate_audit; C ölçüm harness'i retrieval_review. Root benzersiz DB kurulumu, tüm gerçek API/tarayıcı/benchmark koşuları, belge/mahremiyet envanteri ve yönetişim entegrasyonunu yürütür. Ağır koşular sıralıdır. 0021/0022/0023 rezervasyonu korunur; CI boşlukları tek tek açıktır.
+
+## B/C son sahiplik ve devam sınırı
+
+B3 backend gate_audit; kod rubriği ve geri bildirim web product_reconcile; kısmi puan görünürlüğünün bağımsız incelemesi/düzeltmesi gate_audit. C sorgu/runtime/harness retrieval_review; root ayrı DB'lerde gerçek deneyleri çalıştırır ve kaynak/kanıt bağını yönetir. B4 son koyu ekran düzeltmesi yalnız testte tema geçişinin bitmesini bekler; ürün kaynakları değişmez. Ağır işler aynı anda çalıştırılmaz.
+
+B4 için 0024_chat_privacy_revisions eklendi: 20 göç ve bildirilen 0017/0021/0022/0023 boşlukları. B/C kontrol noktasına D3 araç kodu dahil edilmez. D3 yalnız tasarım ve depo dışı adaydır; gerçek geri yükleme/rol/RLS/pgvector deneyi geçmeden benimsenmez. C1 ilk hashing/E5 adayındaki FTS gerilemesi çapraz tanıyla ayrıldı. Yalnız FTS hash sıralaması geri çekildi; son kaynak iki holdout ve prepared runtime tekrarını geçti. Önceki olumsuz kayıtlar korunur; geliştirme dalı kaydı üretim veya LLM kalite terfisi değildir.

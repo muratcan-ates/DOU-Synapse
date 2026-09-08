@@ -1,129 +1,59 @@
-# API Sözleşmeleri — 001-course-assistant-mvp
+# API sözleşmesi
 
-Bu dizindeki `openapi.json`, FastAPI uygulamasından **export edilmiş** OpenAPI 3.1
-şemasıdır (el yazımı değildir). Kaynak gerçeği kod tarafıdır:
-`apps/api/app/api/*.py` + `apps/api/app/main.py`. Şema ile kod arasında fark
-görülürse şema yeniden üretilir (aşağıdaki komut).
+`openapi.json`, FastAPI uygulamasından üretilir; elle yazılmış şema değildir. Kaynak gerçeği `apps/api/app/api/` ve `apps/api/app/schemas/` altındaki koddur. Bu dizinin numarası ilk ürün diliminden gelir; şema güncel uygulamayı izler.
 
-- API başlığı / sürümü: `DOU-Synapse API` / `0.1.0` (`apps/api/app/core/config.py`)
-- Plan bağlamı: [PLAN.md](../../../PLAN.md) · Mimari: [ARCHITECTURE.md](../../../ARCHITECTURE.md)
+8 Eylül 2026, 018 adayından alınan yerel export: **57 yol, 73 HTTP işlemi**, OpenAPI 3.1, uygulama sürümü 0.1.0. Export veritabanına veya gerçek model sağlayıcısına bağlanmaz; bir çalışma zamanı ya da canlı ortam testi değildir.
 
-> Bu dosyanın önceki sürümü iki teslim geride kalmıştı ("9 yol / 13 işlem" diyor,
-> bugün canlı olan uçları "henüz yok" sayıyordu). 16 Ağustos'ta canlı spec'ten
-> ölçülerek yeniden yazıldı; uç listesi elle değil aşağıdaki export komutunun
-> çıktısından türetilir.
+## Aileler
 
----
+Etiket sayıları otomatik şemadan ölçülmüştür. Bir işlem birden fazla etiket taşıyabildiğinden bu sütun toplamı benzersiz işlem sayısını vermez.
 
-## Mevcut uçlar (50 yol, 66 işlem — canlı spec'ten ölçüldü)
+| Etiket | İşlem etiketi sayısı |
+|---|---:|
+| health | 2 |
+| profile | 2 |
+| dashboard | 1 |
+| admin | 5 |
+| courses | 6 |
+| documents | 6 |
+| sources | 2 |
+| privacy | 5 |
+| chat | 4 |
+| policy | 3 |
+| assessment | 10 |
+| chat-quality | 2 |
+| exams | 10 |
+| blueprints | 13 |
+| analytics | 2 |
 
-Tek tek uçların şeması, parametreleri ve yanıt tipleri `openapi.json`'dadır; burada
-yalnız aile haritası tutulur (etiketler spec'teki `tags` alanından):
+## Yetki ve yanıt sınırları
 
-| Aile | İşlem | Kapsam |
-|---|---|---|
-| health | 2 | `live` (bağımlılıksız) + `ready` (DB/pgvector; ısınma durumunu da taşır) |
-| courses | 4+ | ders CRUD'u, üyelik ekleme/iptal (soft revoke) |
-| documents | 5 | yükleme (202 + durum izleme), listeleme, silme, chunk önizleme, ingestion retry |
-| sources | 2 | kaynak bağlamı: chunk görüntüleme + inspect |
-| chat | 2 | soru sorma (`mode: qa \| socratic`) + kullanılabilirlik |
-| chat/privacy | 4 | oturum listeleme/silme, mesaj geçmişi (keyset sayfalama) |
-| chat-quality | 2 | mesaj geri bildirimi + eğitmen kalite panosu |
-| exams | 6 | oturum başlat/cevapla/bitir/ipucu; blueprint'e bağlı sınav dahil |
-| assessment | 6 | soru üretimi + eğitmen onay akışı + konu yönetimi |
-| blueprints | 7 | sınav planı ailesi: sürümleme, madde, yayınlama, hazırlık kontrolü |
-| policy | 2 | ders AI politikası (GET/PUT) + politika geçmişi |
-| analytics | 2 | sınıf ve kişisel analitik |
-| privacy | 3 | KVKK: veri dışa aktarımı, sohbet geçmişi silme, hesap silme |
-| profile / dashboard / admin | 8 | profil, kullanıcı panosu, Bilgi İşlem salt-okunur admin (5 uç, `total/offset` sayfalama istisnası — bilinçli ve belgeli sınır) |
+Korumalı uçlar `Authorization: Bearer <token>` bekler. Normal yol HS256 Supabase JWT doğrulamasıdır; üretimde issuer açıkça tanımlanır. İmzasız `dev:<uuid>` yalnız geliştirme ayarıyla kullanılabilir; üretim ayarları bunu reddeder. Ders kimliği yetki belgesi değildir: üyelik kontrolü ve aynı oturumda PostgreSQL RLS birlikte çalışır. Üye olmayana ders varlığını açıklamayan 404, üye olup ilgili işlem yetkisi olmayana 403 döner.
 
-**İzolasyon kuralı (tüm `{course_id}` yolları):** yol parametresindeki `course_id` bir
-yetki belgesi değildir; her istekte sunucu tarafında üyelik tablosundan doğrulanır
-(`apps/api/app/api/deps.py`). Üye olmayana ders varlığı sızdırılmaz (**404**), üye ama
-yetkisiz olana **403** döner. İkinci katman olarak aynı oturumda Postgres RLS devrededir.
+Sayfalama tek tip değildir. Kaynak ve soru listelerinde imleç, yönetim uçlarında offset/total, politika geçmişinde limit/offset kullanan düz dizi gibi ayrı mevcut sözleşmeler vardır. Tüketici ilgili uç şemasını esas almalıdır.
 
-**Sayfalama:** liste uçları `{items, next_cursor}` zarfı ve opak keyset imleci kullanır
-(`apps/api/app/core/pagination.py` — `paginate` / `paginate_keyset` tek uygulama).
-Tek istisna, ayrı tüketicisi olan `/admin` uçlarının `total/offset` biçimidir.
+Sınav cevap anahtarı ve ölçüt geri bildirimi açıklanma kuralına bağlıdır. Çalışma cevabı kendi okuma ucundan, tamamlanmış sınav ise sonuç ucundan açılır; tamamlanmış sınavın tek-cevap ucunu çağırmak da izin vermez. 018 ekleri [değişiklik sözleşmesinde](../../018-codex-production-line/contracts/api.md) açıklanır.
 
----
+## Bilinen OpenAPI eksikleri
 
-## Hata zarfı sözleşmesi
-
-Uygulama hataları tek biçimde döner (`apps/api/app/core/errors.py`; üç handler —
-`AppError`, `RequestValidationError`, beklenmeyen istisna — `main.py`'de kayıtlıdır):
+Çalışma zamanı hata zarfı şöyledir:
 
 ```json
-{ "error": { "code": "...", "message": "Anlaşılır Türkçe mesaj.", "request_id": "..." } }
+{"error":{"code":"permission_denied","message":"Kullanıcıya gösterilebilir açıklama","request_id":"destek-kimliği"}}
 ```
 
-- `message` her zaman kullanıcıya gösterilebilir Türkçedir; frontend kendi hata metnini
-  uydurmaz (Anayasa İlke V). Ham stack trace veya sağlayıcı hatası asla sızmaz.
-- `request_id` zorunludur ve destek kodu olarak kullanıcıya gösterilir; middleware
-  atlansa bile handler üretir (`X-Request-ID` başlığıyla aynı değer).
+Bu export hata zarfının bütün yanıt kodlarını henüz şemalamaz; FastAPI'nin `HTTPValidationError` şeması görünür. Ayrıca bearer yetkisinin `securitySchemes` bildirimi eksiktir. Bunlar dokümantasyon/istemci üretim boşluklarıdır; API'nin çalışma zamanı kimlik kontrolünü kaldırmaz. Şemadan otomatik istemci üreten tüketiciler hata ve auth sözleşmelerini yalnız bu exporttan tam olarak çıkaramaz. Eksikler kapatılmadan şemanın eksiksiz olduğu iddia edilmez.
 
-| HTTP | `code` | Ne zaman |
-|---|---|---|
-| 400 | `app_error` | Genel uygulama hatası (taban sınıf varsayılanı) |
-| 401 | `unauthenticated` | Token yok / geçersiz / süresi dolmuş |
-| 403 | `permission_denied` | Üye ama yetki yetersiz (ör. öğrenci eğitmen ucunu çağırdı) |
-| 404 | `not_found` | Kayıt yok **veya** kullanıcı o derse üye değil (varlık sızdırılmaz) |
-| 409 | `conflict` | Mükerrer ders kodu, mükerrer üyelik, aynı dosyanın tekrar yüklenmesi |
-| 413 | `payload_too_large` | Yükleme boyut sınırı aşıldı (varsayılan 20 MB) |
-| 422 | `validation_error` | Doğrulama — uygulama seviyesi VE FastAPI/Pydantic istek doğrulaması. Eski "detail biçimi zarfın dışında" istisnası kapandı: `RequestValidationError` handler'ı da zarfı üretir (`tests/test_error_envelope.py` kanıtı) |
-| 429 | `rate_limited` / `agent_*` | İstek sıklığı veya AI kota sınırları (`retry_after` taşır) |
-| 503 | `pipeline_unavailable` / `course_agent_disabled` | Cevap hattı takılı değil ya da asistan kapalı (fail-closed) |
-| 500 | `internal_error` | Beklenmeyen hata; ayrıntı loga, kullanıcıya genel mesaj |
+## Yeniden üretme
 
-**Bilinen spec boşluğu:** üretilen `openapi.json`, hata yanıtlarında yalnız FastAPI'nin
-`HTTPValidationError` şemasını belgeliyor; zarf şeması (`error.code/message/request_id`)
-spec'te henüz yok. Çalışma zamanı davranışı yukarıdaki gibidir ve testle çivilidir;
-zarfın spec'e eklenmesi (router `responses` ya da openapi post-processing) modülerizasyon
-PR dizisinin 10. adımıdır — spec'ten istemci üretecek biri o adıma kadar hata tiplerini
-bu tablodan almalıdır.
-
----
-
-## Kimlik doğrulama şeması
-
-Tüm korumalı uçlar `Authorization: Bearer <token>` bekler
-(`apps/api/app/core/security.py`):
-
-1. **Üretim / normal yol:** Supabase Auth'un verdiği JWT. Backend, `SUPABASE_JWT_SECRET`
-   ile HS256 doğrular (`aud=authenticated`, `exp` ve `sub` zorunlu); `sub` → `user_id`.
-2. **Geliştirme yolu:** `Bearer dev:<uuid>` biçiminde imzasız kimlik. **Yalnızca**
-   `DEV_AUTH_ENABLED=true` iken kabul edilir; `ENVIRONMENT=production` ile birlikte
-   açılmaya çalışılırsa config doğrulayıcısı ayarların yüklenmesini reddeder — yani bu
-   yol canlıda hiç var olamaz (fail-closed, `config.py::_check_auth_configuration`).
-
-Yetkilendirme (kim hangi derse erişir) token katmanında değil, ders bağımlılıklarında
-(`deps.py`) ve RLS'te yapılır. API veritabanına tablo sahibi olmayan, BYPASSRLS
-taşımayan `dou_app` rolüyle bağlanır.
-
----
-
-## openapi.json nasıl yeniden üretilir
-
-Şema elle düzenlenmez; API kodu değiştikçe `apps/api` içinden yeniden export edilir.
-`create_app()` ayarları yüklerken kimlik konfigürasyonu ister; export için
-`DEV_AUTH_ENABLED=true` yeterlidir (veritabanına bağlanılmaz):
+`apps/api` içinden, yalnız yerel export ayarlarıyla:
 
 ```bash
-cd apps/api
-DEV_AUTH_ENABLED=true uv run python -c "
+ENVIRONMENT=local DEV_AUTH_ENABLED=true EMBEDDING_PROVIDER=hashing GROQ_API_KEY= GEMINI_API_KEY= OPENAI_API_KEY= uv run python -c '
 import json
 from app.main import create_app
 print(json.dumps(create_app().openapi(), ensure_ascii=False, indent=2))
-" > ../../specs/001-course-assistant-mvp/contracts/openapi.json
+' > ../../specs/001-course-assistant-mvp/contracts/openapi.json
 ```
 
-Notlar:
-
-- `ensure_ascii=False` zorunludur: docstring'lerdeki Türkçe metin (ör. "Ders kimliği")
-  escape edilmeden kalmalı.
-- Export'un unutulmasına karşı öneri (modülerizasyon PR dizisi, 3. adım): CI'a
-  "yeniden export et, `git diff --exit-code` boşsa geç" kapısı. Bu kapı henüz ekli
-  değil; o güne kadar PR kontrol listesindeki "sözleşme güncel mi?" maddesi geçerli.
-- Frontend tipleri (`apps/web/lib/types.ts` + `lib/*.ts`) spec'in elle yazılmış
-  aynasıdır; codegen yoktur. Ölçülmüş drift listesi ve kapatma planı için
-  [docs/team/modularization-v2-audit.md](../../../docs/team/modularization-v2-audit.md) §5-7.
+İstemci tipleri hâlâ elle tutulur; yeni alanların web tipleri, gerçek API geri okuma testleri ve ilgili tarayıcı senaryolarıyla birlikte doğrulanması gerekir.

@@ -241,7 +241,7 @@ export default function LoginPage() {
               href="/kvkk"
               className="underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              KVKK aydınlatma metni
+              Kişisel veriler ve gizlilik
             </Link>{" "}
             hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
             paylaşıldığını açıklar.

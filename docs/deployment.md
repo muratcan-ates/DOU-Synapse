@@ -102,7 +102,7 @@ Kurulumdan sonra şemayı doğrulayın:
 psql -d "$DATABASE" -c "\dt"
 ```
 
-Güncel migration setiyle temiz bir kurulumda **27 tablo** görürsünüz. <!-- docs-check: tables.count = 27 -->
+Güncel migration setiyle temiz bir kurulumda **28 tablo** görürsünüz. <!-- docs-check: tables.count = 28 -->
 
 Tarihsel not: 9 Ağustos'ta hem paylaşılan geliştirme veritabanında hem sıfırdan
 kurulan veritabanında **15 tablo** ölçülmüştü. <!-- docs-check: tarihsel 15 · 2026-08-09 -->

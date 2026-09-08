@@ -2,6 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DOU-Synapse API",
+    "description": "Ders materyaline bağlı, kaynaklı cevap üreten ders asistanının HTTP yüzeyi. Her cevap dayandığı sayfayla döner; dayanak yoksa uç cevap değil gerekçeli ret döndürür. Ders izolasyonu iki katmanda zorlanır: sunucu tarafında üyelik doğrulaması ve aynı oturumda PostgreSQL satır düzeyi güvenlik.",
     "version": "0.1.0"
   },
   "paths": {
@@ -4632,6 +4633,16 @@
               }
             ]
           },
+          "grounded_missing_criterion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GroundedMissingCriterionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "solution": {
             "anyOf": [
               {
@@ -7607,6 +7618,24 @@
           "created_at"
         ],
         "title": "ExportProfileOut"
+      },
+      "GroundedMissingCriterionOut": {
+        "properties": {
+          "criterion": {
+            "type": "string",
+            "title": "Criterion"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceRefOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "criterion",
+          "source"
+        ],
+        "title": "GroundedMissingCriterionOut",
+        "description": "Puanlanan ölçütün kaynak alıntısı; anlamsal çelişkiyi doğruladığını iddia etmez."
       },
       "HTTPValidationError": {
         "properties": {

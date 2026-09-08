@@ -1,0 +1,597 @@
+{
+  "status": "verified_final_local_runtime",
+  "artifacts_sha256": {
+    "retrieval-runtime-local-20260908.json": "52c1c3c2a4ce297e11c96a5b08f26479ae1b9e4afb2cd7a4fae34e1cc875170c",
+    "retrieval-runtime-local-v2-20260908.json": "5c965d4d3b1e67fc4267a77366e4e2f24d8cb6570a46c934534d18d5507c588b",
+    "retrieval-runtime-local-v3-final-20260908.json": "51cbd43e773749df26246ab791cf12fa52eb267b1944e4d1a7238b2664883c84",
+    "c1-runtime-clone.json": "cb34010a25d4221aa6c3617c1209a206b201936d2bba4cb31bd4b984e723d4a6",
+    "bc-c1-final-runtime.json": "368934f693cdb20789eb67ada295d5207133b78958a9055b5b9ac72007505955"
+  },
+  "checks": {
+    "current_runtime_sources_and_original_reports_immutable": true,
+    "same_clone_queries_config_environment_except_fresh_connection_pid": true,
+    "recorded_real_dou_app_forced_rls_and_local_vector_version": true,
+    "actual_final_sql_and_hashes_equal_and_dense_sql_unchanged": true,
+    "all_counter_deltas_recomputed_and_dense_custom_fts_caller_policy_preserved": true,
+    "all_294_latency_p50_p95_recomputed_and_modes_restored": true,
+    "all_84_empty_or_nonmember_observations_returned_zero": true,
+    "all_saved_plans_consistent_with_separate_execution_lane_policy": true,
+    "historical_clone_lineage_record_unchanged_and_bound": true,
+    "root_receipt_exit_log_and_current_app_test_migration_source_hashes_match": true
+  },
+  "source_sha256": {
+    "apps/api/app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+    "apps/api/app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+    "apps/api/app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c",
+    "apps/api/app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+    "apps/api/app/core/config.py": "16e53fb5e5ea30a8fa2a68674abdbd48226d5e1e2c3cefe3e1654e2527528423",
+    "scripts/probe_retrieval_runtime.py": "38ef1637d0e0bfd90788fcce8093672626be324ad249041ae9f2baeac1ae45db"
+  },
+  "runtime_sql_sha256": {
+    "dense": "b435c599cb3048a4a4b829692d8010731209744cf58b68f1e4d9cd708789b6fa",
+    "fts": "18c6cbcbe0a338663cb15f6ff13ff29f33e02f0cc7834b6f5c58c4c68579367c"
+  },
+  "counter_deltas": {
+    "auto": {
+      "dense": {
+        "generic": 0,
+        "custom": 98
+      },
+      "fts": {
+        "generic": 84,
+        "custom": 14
+      }
+    },
+    "force_custom_plan": {
+      "dense": {
+        "generic": 0,
+        "custom": 98
+      },
+      "fts": {
+        "generic": 0,
+        "custom": 98
+      }
+    },
+    "force_generic_plan": {
+      "dense": {
+        "generic": 0,
+        "custom": 98
+      },
+      "fts": {
+        "generic": 98,
+        "custom": 0
+      }
+    }
+  },
+  "measured_hybrid_calls": 294,
+  "warmup_hybrid_calls": 504,
+  "negative_observations": 84,
+  "returned_source_checks": 1680,
+  "same_all_observations_as_v2": true,
+  "same_observations_as_v2_count": 294,
+  "backend_pid": 18317,
+  "environment": {
+    "database": "dou018_retrieval_runtime1",
+    "role": "dou_app",
+    "rolsuper": false,
+    "rolbypassrls": false,
+    "backend_pid": 18317,
+    "schema": [
+      {
+        "relname": "documents",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      },
+      {
+        "relname": "chunks",
+        "relrowsecurity": true,
+        "relforcerowsecurity": true
+      }
+    ],
+    "rows": 20000,
+    "metadata_sha256": "fa4dc01b768127a32886851c93cd9eb79e8d9a8cacb5e6c06258385db4663b51",
+    "postgresql": "PostgreSQL 16.14 (Homebrew) on aarch64-apple-darwin25.6.0, compiled by Apple clang version 21.0.0 (clang-2100.1.1.101), 64-bit",
+    "vector": "0.8.0",
+    "gucs": {
+      "work_mem": "4MB",
+      "maintenance_work_mem": "64MB",
+      "shared_buffers": "128MB",
+      "effective_cache_size": "4GB",
+      "random_page_cost": "4",
+      "seq_page_cost": "1",
+      "max_parallel_workers_per_gather": "2",
+      "enable_seqscan": "on",
+      "enable_indexscan": "on",
+      "enable_bitmapscan": "on",
+      "enable_sort": "on",
+      "hnsw.ef_search": "40",
+      "hnsw.iterative_scan": "off",
+      "hnsw.max_scan_tuples": "20000",
+      "hnsw.scan_mem_multiplier": "1",
+      "row_security": "on",
+      "plan_cache_mode": "auto",
+      "jit": "on",
+      "statement_timeout": "2min"
+    }
+  },
+  "libraries": {
+    "sqlalchemy": "2.0.52",
+    "psycopg": "3.3.4",
+    "pgvector": "0.5.0"
+  },
+  "prepare_threshold": 5,
+  "probe_elapsed_seconds": 12.374659583998437,
+  "root_wrapper_wall_seconds": 13.005,
+  "cases": [
+    {
+      "mode": "auto",
+      "case": "broad/q0",
+      "p50_ms": 57.14195800101152,
+      "p95_ms": 58.156417006102856,
+      "p50_delta_vs_v2_ms": 1.0040830020443536,
+      "dense_hnsw": true,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "broad/q1",
+      "p50_ms": 56.64366600103676,
+      "p95_ms": 58.923958997183945,
+      "p50_delta_vs_v2_ms": 0.06199999916134402,
+      "dense_hnsw": true,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "narrow/q0",
+      "p50_ms": 5.161667002539616,
+      "p95_ms": 5.513000003702473,
+      "p50_delta_vs_v2_ms": -0.3620830029831268,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "narrow/q1",
+      "p50_ms": 5.379875001381151,
+      "p95_ms": 5.705915995349642,
+      "p50_delta_vs_v2_ms": -0.8147499975166284,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "allowed_document/q0",
+      "p50_ms": 6.763625002349727,
+      "p95_ms": 7.195833000878338,
+      "p50_delta_vs_v2_ms": 0.02083400613628328,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "allowed_document/q1",
+      "p50_ms": 6.457833005697466,
+      "p95_ms": 6.728583000949584,
+      "p50_delta_vs_v2_ms": -1.180084000225179,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "empty_documents/q0",
+      "p50_ms": 3.779166996537242,
+      "p95_ms": 3.9415829960489646,
+      "p50_delta_vs_v2_ms": 0.3904170007444918,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "empty_documents/q1",
+      "p50_ms": 3.827917003945913,
+      "p95_ms": 3.9972080048755743,
+      "p50_delta_vs_v2_ms": 0.5297090028761886,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "nonmember/q0",
+      "p50_ms": 12.045957999362145,
+      "p95_ms": 12.939749998622574,
+      "p50_delta_vs_v2_ms": -0.06379200203809887,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "nonmember/q1",
+      "p50_ms": 12.020083995594177,
+      "p95_ms": 12.633375001314562,
+      "p50_delta_vs_v2_ms": -1.5692500019213185,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "tie_overflow_1",
+      "p50_ms": 5.713082995498553,
+      "p95_ms": 5.959999994956888,
+      "p50_delta_vs_v2_ms": -0.5936250017839484,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "tie_overflow_0",
+      "p50_ms": 5.653332998917904,
+      "p95_ms": 5.701166999642737,
+      "p50_delta_vs_v2_ms": -0.5111250065965578,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "tie_fit_1",
+      "p50_ms": 2.3238330031745136,
+      "p95_ms": 2.6038750002044253,
+      "p50_delta_vs_v2_ms": -0.06225099787116051,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "auto",
+      "case": "tie_fit_0",
+      "p50_ms": 2.370458001678344,
+      "p95_ms": 2.916458004619926,
+      "p50_delta_vs_v2_ms": 0.05049900209996849,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "broad/q0",
+      "p50_ms": 56.11620800482342,
+      "p95_ms": 57.874250000168104,
+      "p50_delta_vs_v2_ms": -4.1361669937032275,
+      "dense_hnsw": true,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "broad/q1",
+      "p50_ms": 56.56945800001267,
+      "p95_ms": 58.16475000028731,
+      "p50_delta_vs_v2_ms": 0.6034580001141876,
+      "dense_hnsw": true,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "narrow/q0",
+      "p50_ms": 5.651374995068181,
+      "p95_ms": 5.989666999084875,
+      "p50_delta_vs_v2_ms": -0.5675420034094714,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "narrow/q1",
+      "p50_ms": 5.997334003041033,
+      "p95_ms": 6.182375000207685,
+      "p50_delta_vs_v2_ms": -1.342456991551444,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "allowed_document/q0",
+      "p50_ms": 7.033916001091711,
+      "p95_ms": 7.3558750009397045,
+      "p50_delta_vs_v2_ms": 0.3971249971073121,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "allowed_document/q1",
+      "p50_ms": 7.060125004500151,
+      "p95_ms": 7.489333002013154,
+      "p50_delta_vs_v2_ms": -0.47233299119398,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "empty_documents/q0",
+      "p50_ms": 1.6102919980767183,
+      "p95_ms": 1.7579999985173345,
+      "p50_delta_vs_v2_ms": 0.15979199815774336,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "empty_documents/q1",
+      "p50_ms": 1.6049170008045621,
+      "p95_ms": 1.8285839978489093,
+      "p50_delta_vs_v2_ms": 0.13991699961479753,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "nonmember/q0",
+      "p50_ms": 12.188833999971393,
+      "p95_ms": 13.112291999277659,
+      "p50_delta_vs_v2_ms": -0.1422909990651533,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "nonmember/q1",
+      "p50_ms": 12.680750005529262,
+      "p95_ms": 13.187333999667317,
+      "p50_delta_vs_v2_ms": 0.44016700849169865,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "tie_overflow_1",
+      "p50_ms": 6.424874998629093,
+      "p95_ms": 6.492667002021335,
+      "p50_delta_vs_v2_ms": -0.29187499603722245,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "tie_overflow_0",
+      "p50_ms": 6.330500000331085,
+      "p95_ms": 6.34787500166567,
+      "p50_delta_vs_v2_ms": -0.35724999906960875,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "tie_fit_1",
+      "p50_ms": 2.4403749994235113,
+      "p95_ms": 2.750874999037478,
+      "p50_delta_vs_v2_ms": 0.08387499838136137,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_custom_plan",
+      "case": "tie_fit_0",
+      "p50_ms": 2.461584001139272,
+      "p95_ms": 2.964667000924237,
+      "p50_delta_vs_v2_ms": 0.08187600178644061,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "broad/q0",
+      "p50_ms": 56.778874997689854,
+      "p95_ms": 57.84779199893819,
+      "p50_delta_vs_v2_ms": 0.8649159935885109,
+      "dense_hnsw": true,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "broad/q1",
+      "p50_ms": 56.87612499605166,
+      "p95_ms": 57.98066699935589,
+      "p50_delta_vs_v2_ms": 0.6723749975208193,
+      "dense_hnsw": true,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "narrow/q0",
+      "p50_ms": 5.337290996976662,
+      "p95_ms": 6.014874998072628,
+      "p50_delta_vs_v2_ms": 0.0013329990906640887,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "narrow/q1",
+      "p50_ms": 5.208624999795575,
+      "p95_ms": 5.281707999529317,
+      "p50_delta_vs_v2_ms": -0.8297500025946647,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "allowed_document/q0",
+      "p50_ms": 8.331499993801117,
+      "p95_ms": 8.910124997782987,
+      "p50_delta_vs_v2_ms": -0.8429170047747903,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "allowed_document/q1",
+      "p50_ms": 8.51679100014735,
+      "p95_ms": 9.31204199878266,
+      "p50_delta_vs_v2_ms": -0.6932510004844517,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "empty_documents/q0",
+      "p50_ms": 3.281999997852836,
+      "p95_ms": 3.5107090006931685,
+      "p50_delta_vs_v2_ms": -1.082084003428463,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "empty_documents/q1",
+      "p50_ms": 3.456582999206148,
+      "p95_ms": 3.847916996164713,
+      "p50_delta_vs_v2_ms": 0.14925000141374767,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "nonmember/q0",
+      "p50_ms": 12.46549999632407,
+      "p95_ms": 12.897667002107482,
+      "p50_delta_vs_v2_ms": -0.15404200530610979,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "nonmember/q1",
+      "p50_ms": 12.339875000179745,
+      "p95_ms": 12.963583001692314,
+      "p50_delta_vs_v2_ms": -0.5498749960679561,
+      "dense_hnsw": false,
+      "counts": [
+        0
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "tie_overflow_1",
+      "p50_ms": 6.0070409963373095,
+      "p95_ms": 6.223375006811693,
+      "p50_delta_vs_v2_ms": -0.2665010033524595,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "tie_overflow_0",
+      "p50_ms": 6.455041999288369,
+      "p95_ms": 6.911917000252288,
+      "p50_delta_vs_v2_ms": 0.2637919969856739,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "tie_fit_1",
+      "p50_ms": 2.690708002774045,
+      "p95_ms": 2.8832919997512363,
+      "p50_delta_vs_v2_ms": 0.4110410009161569,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    },
+    {
+      "mode": "force_generic_plan",
+      "case": "tie_fit_0",
+      "p50_ms": 2.3732920017209835,
+      "p95_ms": 3.0392919943551533,
+      "p50_delta_vs_v2_ms": 0.09720899834064767,
+      "dense_hnsw": false,
+      "counts": [
+        8
+      ]
+    }
+  ],
+  "limits": [
+    "Final actual SQLAlchemy/psycopg runtime on the existing 20k synthetic clone; not real embedding or LLM quality.",
+    "Counter deltas describe timed calls; EXPLAIN is a separate execution of the same statement under its runtime lane policy.",
+    "Runtime validates metadata and namespace but does not rehash stored vectors; original clone lineage is historical evidence, not a fresh before-after vector digest.",
+    "Small seven-repeat p95 is empirical, not a population tail estimate.",
+    "Local PostgreSQL16.14/vector0.8.0 is not the pinned CI vector0.8.6 plan matrix; RLS-off comparison remains unrun.",
+    "C2 build-memory causality and FTS UUID reingest stability remain open."
+  ]
+}

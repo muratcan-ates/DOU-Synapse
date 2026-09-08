@@ -382,6 +382,7 @@ async def test_session_referenced_draft_cannot_be_edited(
                 "code": "print(1)",
                 "prompt": "Kodun çıktısı nedir?",
                 "answer_key": "1",
+                "rubric": [{"point": "Çıktıyı doğru belirtir", "weight": 100}],
             },
         ),
         (
@@ -391,6 +392,7 @@ async def test_session_referenced_draft_cannot_be_edited(
                 "code": "print(x)",
                 "prompt": "Koddaki hatayı bulun.",
                 "answer_key": {"line": 1, "bug_type": "NameError", "fix_summary": "x tanımlanmalı"},
+                "rubric": [{"point": "Tanımsız değişkeni tespit eder", "weight": 100}],
             },
         ),
     ],

@@ -45,5 +45,5 @@ export function SavedPracticeFeedback({ courseId, sessionId, questionId, onLocke
       <Button variant="secondary" className="mt-3" onClick={() => void saved.reload()}>Tekrar dene</Button>
     </div>
   );
-  return saved.data?.feedback ? <FeedbackPanel feedback={saved.data.feedback} /> : null;
+  return saved.data?.feedback ? <FeedbackPanel courseId={courseId} feedback={saved.data.feedback} /> : null;
 }

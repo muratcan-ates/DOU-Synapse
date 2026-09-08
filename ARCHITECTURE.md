@@ -132,7 +132,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 27 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020`): <!-- docs-check: tables.count = 27 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020 -->
+Kodda gerçekten var olan 28 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024`): <!-- docs-check: tables.count = 28 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -157,6 +157,7 @@ answer_cache        (id, course_id, question_hash, answer jsonb, created_at)
 chat_sessions       (id, course_id, user_id, mode: qa|socratic|exam, state jsonb, title, ...)
 chat_messages       (id, session_id, course_id, role, content, citations jsonb,
                      status, socratic_stage, seq, created_at)
+chat_privacy_revisions (user_id, course_id nullable, revision) -- yalnız silme sürümü
 request_logs        (id, course_id, user_id, route, mode, status, http_status,
                      latency_ms, token_count, cache_hit, created_at)
 ```
@@ -176,9 +177,7 @@ Belgenin eski hâlinden düzeltilen dört ad/alan (kod kaynak alındı):
 | `answer_cache.response` | `answer_cache.answer` | — |
 | `mastery(user_id, topic_id, score)` | `+ course_id, answer_count` | `answer_count` "kaç cevaba dayanıyor" sorusunu cevaplar; tek cevaptan çıkan bir seviye rozetini gösterirken bu bilinmeli |
 
-**Migration numaraları:** `0002` R1'e (Supabase Auth köprüsü), `0006` R4'e, `0007` R3'e
-ayrılmıştır ve bugün depoda yoktur. Bu yüzden numaralar `0001, 0003, 0004, 0005` diye
-atlamalı gider — eksik dosya değil, ayrılmış numaradır.
+**Migration numaraları:** Güncel dosya listesi yukarıda ölçümle üretilir. `0002/0006/0007` artık depodadır. `0017` tarihsel boşluğu ve runbook için ayrılan `0021/0022/0023` açıkça bildirilir; `0024` bunları tüketmeden sohbet yaşam döngüsünü ekler. [Göç kontrolü](scripts/migration_check.py) yalnız bildirilen boşlukları kabul eder.
 
 ---
 
@@ -412,7 +411,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. 27 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 27 -->
+  yazar. 28 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 28 -->
   tablo sahibi bile politikalara tabidir.
   **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
   yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`

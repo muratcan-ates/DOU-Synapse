@@ -18,31 +18,33 @@ Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), 
 | A4/A7 sınav testleri | Yerel birim ve gerçek HTTP akışı geçti | Dört koşullu skip yerine gerçek iddia; monoton ipucu geçmişi; sınavdan önceki gecikmiş200 yeni kilidi açamaz |
 | A5 test sağlamlığı | 224 test geçti; 9 mutanttan 8 yakalandı, biri bağımsız RLS ile korundu | Gerçek yardımcı/CLI/export/sonuç kilidi davranışı; aynı test üretim koruması kaldırılınca düşer |
 | A6 erişilmeyen kod | Üç kullanılmayan yardımcı kaldırıldı; kullanılan yollar korundu | Retry sınıf-adı yolu, kapsam reddi ve gerçek sources/inspect çağrısı test edilir |
-| B1 öğrenme çıktısına konu | Gerçek eksik | UI'dan konu seçilerek kaydedilen çıktı yenilemede korunur |
-| B2 konu/blueprint ile sınav | Zaten014'te uygulanmış; runbook iddiası yanlış | Mevcut student-assessment E2E'si bu adayda tekrar çalıştırılır; yeniden yazılmaz |
-| B3 açık/kod değerlendirme | Kaynak doğrulama ve kod testleri zaten var; runbook'un yok/sıfır iddiası yanlış | Ayrı neden-yanlış açıklaması ve kod rubrik kırılımı eksik; kaynak varlığı semantik çelişki kanıtı sayılmaz |
-| B4 kişisel sohbet silme | API var, web yalnız tüm geçmişi siliyor | Üyeye açık sohbet ekranında kendi oturumu/kendi ders geçmişi; yanlış ID ve hata/iptal/yarış testleri |
-| B5 politika geçmişi | API ve0020 cascade testi var, UI yok | Eğitmen salt okunur geçmiş, sayfalama ve hata durumu; kimlikten isim uydurulmaz |
-| B6 blueprint özellik bayrağı | Kapalı authoring yalnız düzenleme/üretimi kısıtlar; önceden sınıflandırılmış havuzdan yayın mümkündür | Kullanılamayan sınıflandırma düzeltmesi açık anlatılır; yayın gerçek readiness sonucuna ve sunucu tekrar denetimine bağlıdır |
-| B7 soru süzgeçleri | Yalnız yüklenmiş satırlar süzülüyor | status/topic sunucuya gönderilir, imleç sıfırlanır, boş sonuçta filtre kalır |
-| C1 retrieval | Dense iç eşitlik sıralaması ANN yolunu bozuyor; belge UUID'si içerikten türemez | İzole gerçekçi korpus/plan/kalite karşılaştırması, içerik hash'iyle son sıralama; yaklaşık aramaya tüm-korpus determinizmi iddia edilmez |
-| C2 indeks yapım göçü | Runbook bellek→recall nedenini gösteren tekrar üretilebilir kanıt bulunamadı | Önce bellek/ef_search çapraz ölçümü; mevcut indeks boş tabloda kurulduğu için yeni göç otomatik eklenmez |
-| D operasyon | Runbook'taki öneriler henüz tek tek doğrulanmadı | Ortak kota, worker dayanıklılığı, restore ve metrikler; mevcut olanlar tekrar kurulmaz |
-| E gerçek model kabulü | Fake/hashing mekanik testleri var; gerçek/human kabul yok | Sınırlı sağlayıcı erişimi, aday bağı, kör insan etiketleri ve gerçek kalite raporu |
-| F auth/private storage | Yerel doğrulamalar ile gerçek ortam ayrı | JWT negatifleri, seçilmiş imza yolu; API üyelik reddi ve gerçek kullanıcı Storage RLS ayrı sınanır |
-| G dağıtım | Canlı hedef seçilmedi | İncelenebilir migrate/deploy/rollback paketi; dış ortam girdileriyle canlı tatbikat |
-| H erişilebilirlik/E2E | Mevcut kütüphane/gerçek ağ kapıları korunur | Dar/koyu/klavye akışları ve canlı HTTP sınav kilidi; görsel test sonucu ayrıca kaydedilir |
-| I belge ve kılavuzlar | Sayaç düzeltmeleri her doğrulanmış dilimde, kapsamlı kılavuz en sonda | Güncel öğrenci/eğitmen/admin kılavuzu, gerçek başarı raporu, açık işlerin kanıtla kapanışı |
+| S1–S7 güvenlik/gizlilik | S71d5ff6 yerel kontrol noktası; kendi kanıtı var | S/B/C uzak kapıları ayrıca doğrulanır; kurumsal kararlar ve kalıcı cleanup/uzlaştırma açık |
+| B1 öğrenme çıktısına konu | Konu seçimi, kaydetme ve yeniden okuma gerçek API/tarayıcıda geçti | İsteğe bağlı konu seçilmezse konusuz dağılım grubu korunur |
+| B2 konu/blueprint ile sınav | 014'te zaten vardı; mevcut gerçek öğrenci akışı tekrar geçti | Yeni özellik olarak sayılmaz |
+| B3 açık/kod değerlendirme | Geçerli kod rubriği, ölçüt puanlama ve kaynaklı eksik ölçüt API/UI sözleşmesi geçti | Gerçek LLM doğruluğu ve insan pedagojik kabulü E'de açık; tarayıcı geri bildirimi kontrollü DB fixture'ı |
+| B4 kişisel sohbet silme | Tekli/ders UI; kalıcı kapsam sürümü; model sonrası son-yazım kilidi; yarış/RLS/sekme testleri geçti | Bütün veri kopyalarının imhası veya auth hesabının kapanması değildir; aktif sınav yardım kilidi korunur |
+| B5 politika geçmişi | Önce/sonra, sayfalama, hata ve kimlik/rol geçişinde taslak sınırları gerçek API/tarayıcıda geçti | Actor kimliğinden kişi adı uydurulmaz; aynı kullanıcı RAM taslağı kalıcı kayıt değildir |
+| B6 blueprint özellik bayrağı | Kapalı authoring açıklaması ve uygun havuzdan gerçek readiness/publish geçti | False görünümü tarayıcı capability yanıtında simüle edildi; ayrı false-env deployment kanıtı değil |
+| B7 soru süzgeçleri | Sunucu durum/konu filtreleri, imleç/boş liste/geç yanıt ve silme bildirimi doğrulandı | Yüklenmiş sayfa adedi bütün sonuç toplamı gibi sunulmaz |
+| C1 retrieval adayı | ANN/dense custom plan korunarak FTS hash sıralaması geri çekildi; son hashing ve gerçek E5 karşılaştırmasında non-regression geçti | Hashing 78/105, E5 93/105; iki baseline ile eşit. RLS kapalı deney, CI0.8.6 ölçüm eşdeğerliği ve FTS yeniden yükleme eşitliği açık |
+| C2 indeks yapım göçü | Bellek taşması→recall kaybı nedenselliği henüz gösterilmedi | Kontrollü bellek/build deneyi olmadan 0021 veya 2 GB zorunluluğu eklenmez |
+| C3 rapor | Başarısız birleşik aday, çapraz tanı ve daraltılmış son kaynak ölçümü ayrı arşivlendi | [Son arama kabulü](../specs/018-codex-production-line/evidence/c1-final-acceptance.md); gerçek E5 retrieval ölçümü LLM cevap/puanlama kabulü değildir |
+| D operasyon | Ortak kota ve worker probe adayları hazır; D3 gerçek yedek başarılı, ilk restore hedef bağlantı kapatma hatasıyla reddedildi | Boş hedefler değişmedi. Ayrı bakım bağlantısıyla güvenli restore, çok süreçli kota, worker iptal/lease ve metrikler ayrı kabul bekler |
+| E gerçek model kabulü | Sahte sağlayıcı sözleşme kanıtları var | Gerçek sağlayıcı bütçesi/erişimi, bağımsız insan etiketleri ve gerçek kalite raporu |
+| F auth/private storage | Yerel issuer/JWT/CSP sınırları doğrulandı | Gerçek kullanıcı oturumu, seçilmiş imza yolu ve kullanıcı JWT'siyle Storage RLS ayrı sınanır |
+| G dağıtım | Canlı hedef seçilmedi | İncelenebilir migrate/deploy/rollback paketi; gerçek hedef ve yetkiyle canlı tatbikat |
+| H erişilebilirlik/E2E | B'nin 68 gerçek HTTP akışı ve dar/koyu görselleri doğrulandı | Tüm sayfaların klavye/axe/manuel kabulü ayrı açık |
+| I belge ve kılavuzlar | Değişen API/OpenAPI ve gizlilik envanteri güncellendi | Güncel öğrenci/eğitmen/admin kılavuzu ve gerçek başarı raporu; bitmemiş işler bitmiş gösterilmez |
 
 ## Ortam ve doğrulama sınırları
 
-Bu göreve özel PostgreSQL16 localhost55448; dou018_* test veritabanları; tarayıcı için dou_synapse_e2e_dou018, API8018/web3118. Fake LLM ve hashing yalnız mekanik doğrulama içindir. Mevcut sır veya .env kullanılmadı. Yerel pgvector0.8.0 ile CI0.8.6 sürüm farkı retrieval ölçümünde açık tutulur.
+Bu göreve özel PostgreSQL16 localhost55448; dou018_* test veritabanları; tarayıcı için dou_synapse_e2e_dou018, API8018/web3118. Fake LLM ve hashing yalnız mekanik doğrulama içindir. Ayrı sentetik korpusta mevcut yerel E5 önbelleğiyle gerçek embedding retrieval karşılaştırması da yapıldı; model indirilmedi ve LLM çağrılmadı. Mevcut sır veya .env kullanılmadı. Yerel pgvector0.8.0 ile CI0.8.6 sürüm farkı retrieval ölçümünde açık tutulur.
 
 ## Dış girdiler ve devam
 
 Groq/Gemini erişimi, Supabase proje bilgileri, JWT imza tercihi, bulut/staging hedefi ve branch protection henüz verilmedi. İlgili somut paket hazır olduğunda gereken karar sorulur; diğer hazır işler sürer. İnsan etiketleri boş kalır. Yeni bağımlılık önerileri ve migration-runner tablo kararı kendi diliminde gerekçelendirilir. Bu kayıt gelecekte çalışma planıdır; ayrıca bir zamanlayıcı kurulmuş olduğu anlamına gelmez.
 
-Sonraki yürütülebilir adım: A için taslak PR26 ve GitHub kapıları doğrulandı. S güvenlik/gizlilik diliminin bağımsız son incelemesi ve tarayıcı tekrarını tamamla; ardından B1/B4/B5/B6/B7 uygulamasına geç. Güncel HEAD, temiz ağaç ve uzak dal durumu her devirde yeniden kontrol edilir.
+Sonraki yürütülebilir adım: B'nin yerel kabulleri geçti. S sonrası B/C adayının kendi kanıt/dossier ve temiz commit'i ile PR26 uzak kapıları hazırlanır. FTS bileşeni geri çekildikten sonra son hashing/E5 non-regression ve gerçek sürücü kontrolleri geçti; önceki olumsuz kanıtlar değişmedi. C1 matrisinin kalan hücreleri ve üretim terfisi açık. D3 ilk gerçek restore hatasını gideren ayrı bakım bağlantısı tasarımı incelemede; D–I hazır işleri sürer. Her devirde gerçek HEAD ve uzak dal durumu yeniden kontrol edilir.
 
 ## Güvenlik ve gizlilik dilimi
 

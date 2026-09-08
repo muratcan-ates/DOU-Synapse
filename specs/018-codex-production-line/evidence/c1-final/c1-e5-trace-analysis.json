@@ -1,0 +1,1066 @@
+{
+  "status": "verified_e5_cross_lane_diagnostic",
+  "manifest_sha256": "e4a6b7ede5e971e0b5b5af9f3f550b8a1802610175c3cc0f08d9163402962b0c",
+  "trace_sha256": "f5830f3edead58b66ba5a2127dbd90e8558a6c6a16a973ad025e5b90b2847d76",
+  "checks": {
+    "complete_trace_runner_reference_hashes_match": true,
+    "actual_baseline_git_bytes_candidate_common_harness_sources_equal_reference": true,
+    "same_corpus_rls_recorded_before_after_and_reference": true,
+    "same_six_full_cache_hashes_before_after_and_reference": true,
+    "same_fixed_config_and_threshold": true,
+    "same_all_127_queries_105_scored_gold_sources_and_restored_modes": true,
+    "all_508_fusions_recomputed_from_actual_lane_ids": true,
+    "source_ranks_recomputed_where_text_anchor_not_needed": 508,
+    "cross_fusion_metadata_per_chunk_consistent": true,
+    "both_actual_diagonals_replay_original_all_127_results_without_drift": true
+  },
+  "metrics": {
+    "baseline_dense__baseline_fts": {
+      "n": 105,
+      "hit5": 93,
+      "hit8": 98,
+      "recall5": 0.8857142857142857,
+      "recall8": 0.9333333333333333,
+      "mrr": 0.7377210884353742
+    },
+    "baseline_dense__candidate_fts": {
+      "n": 105,
+      "hit5": 92,
+      "hit8": 97,
+      "recall5": 0.8761904761904762,
+      "recall8": 0.9238095238095239,
+      "mrr": 0.7395351473922903
+    },
+    "candidate_dense__baseline_fts": {
+      "n": 105,
+      "hit5": 93,
+      "hit8": 98,
+      "recall5": 0.8857142857142857,
+      "recall8": 0.9333333333333333,
+      "mrr": 0.7377210884353742
+    },
+    "candidate_dense__candidate_fts": {
+      "n": 105,
+      "hit5": 92,
+      "hit8": 97,
+      "recall5": 0.8761904761904762,
+      "recall8": 0.9238095238095239,
+      "mrr": 0.7395351473922903
+    }
+  },
+  "lane_summary": {
+    "dense": {
+      "identical_rows": 127,
+      "same_id_set": 127,
+      "same_common_id_scores": 127,
+      "same_rankwise_score_sequence": 127,
+      "changed_set_only_same_boundary_score": 0,
+      "changed_rows_item_ids": []
+    },
+    "fts": {
+      "identical_rows": 2,
+      "same_id_set": 51,
+      "same_common_id_scores": 127,
+      "same_rankwise_score_sequence": 127,
+      "changed_set_only_same_boundary_score": 76,
+      "changed_rows_item_ids": [
+        "H-001",
+        "H-002",
+        "H-003",
+        "H-004",
+        "H-005",
+        "H-006",
+        "H-007",
+        "H-008",
+        "H-009",
+        "H-010",
+        "H-011",
+        "H-012",
+        "H-013",
+        "H-014",
+        "H-015",
+        "H-016",
+        "H-017",
+        "H-018",
+        "H-019",
+        "H-020",
+        "H-021",
+        "H-022",
+        "H-023",
+        "H-024",
+        "H-025",
+        "H-026",
+        "H-027",
+        "H-029",
+        "H-030",
+        "H-031",
+        "H-032",
+        "H-033",
+        "H-034",
+        "H-035",
+        "H-036",
+        "H-037",
+        "H-038",
+        "H-039",
+        "H-040",
+        "H-041",
+        "H-042",
+        "H-043",
+        "H-044",
+        "H-045",
+        "H-046",
+        "H-047",
+        "H-048",
+        "H-049",
+        "H-050",
+        "H-066",
+        "H-067",
+        "H-068",
+        "H-069",
+        "H-070",
+        "H-101",
+        "H-102",
+        "H-103",
+        "H-104",
+        "H-105",
+        "H-106",
+        "H-107",
+        "H-108",
+        "H-109",
+        "H-110",
+        "H-111",
+        "H-112",
+        "H-113",
+        "H-114",
+        "H-115",
+        "H-116",
+        "H-117",
+        "H-118",
+        "H-119",
+        "H-120",
+        "H-121",
+        "H-122",
+        "H-123",
+        "H-124",
+        "H-125",
+        "H-126",
+        "H-127",
+        "H-129",
+        "H-130",
+        "H-131",
+        "H-132",
+        "H-133",
+        "H-134",
+        "H-135",
+        "H-136",
+        "H-137",
+        "H-138",
+        "H-139",
+        "H-140",
+        "H-141",
+        "H-142",
+        "H-143",
+        "H-144",
+        "H-145",
+        "H-146",
+        "H-147",
+        "H-148",
+        "H-149",
+        "H-150",
+        "H-151",
+        "H-152",
+        "H-153",
+        "H-154",
+        "H-155",
+        "H-156",
+        "H-157",
+        "H-158",
+        "H-159",
+        "H-160",
+        "H-161",
+        "H-162",
+        "H-163",
+        "H-164",
+        "H-165",
+        "H-166",
+        "H-167",
+        "H-168",
+        "H-169",
+        "H-170",
+        "H-171",
+        "H-172"
+      ]
+    }
+  },
+  "focus": {
+    "H-068": {
+      "question": "producer_consumer.py dosyasındaki consume() metodu, produce() ile aynı sıralama hatasını taşıyor mu?",
+      "expected_sources": [
+        "producer_consumer.py"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 3,
+        "baseline_dense__candidate_fts": 3,
+        "candidate_dense__baseline_fts": 3,
+        "candidate_dense__candidate_fts": 3
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 2,
+              "chunk_id": "26f4142b-6c95-4b3c-bd6d-1f915e68ba14",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "page_number": null,
+              "section_title": "consume (satır 40-48)",
+              "dense_score": 0.8622317751405532,
+              "dense_score_hex": "0x1.b976717799f59p-1"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "9da30870-15ac-489d-bd21-7e99e5457ff0",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 0,
+              "page_number": null,
+              "section_title": "Tüketici (satır 1-22)",
+              "dense_score": 0.8609551889637025,
+              "dense_score_hex": "0x1.b8cf1e57d7593p-1"
+            },
+            {
+              "rank": 4,
+              "chunk_id": "53f017cf-a01b-47c2-9e37-9e5afa3848cb",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 2,
+              "page_number": null,
+              "section_title": "produce (satır 32-39)",
+              "dense_score": 0.8481362853584489,
+              "dense_score_hex": "0x1.b23eeb5054b76p-1"
+            },
+            {
+              "rank": 16,
+              "chunk_id": "16bf4f58-70de-4479-a160-8e1363bdf17f",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 5,
+              "page_number": null,
+              "section_title": "consumer (satır 56-68)",
+              "dense_score": 0.8202230810363237,
+              "dense_score_hex": "0x1.a3f44798f3637p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 12,
+              "chunk_id": "26f4142b-6c95-4b3c-bd6d-1f915e68ba14",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "page_number": null,
+              "section_title": "consume (satır 40-48)",
+              "fts_score": 0.01105322,
+              "fts_score_hex": "0x1.6a3121352ee0fp-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 2,
+              "chunk_id": "26f4142b-6c95-4b3c-bd6d-1f915e68ba14",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "page_number": null,
+              "section_title": "consume (satır 40-48)",
+              "dense_score": 0.8622317751405532,
+              "dense_score_hex": "0x1.b976717799f59p-1"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "9da30870-15ac-489d-bd21-7e99e5457ff0",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 0,
+              "page_number": null,
+              "section_title": "Tüketici (satır 1-22)",
+              "dense_score": 0.8609551889637025,
+              "dense_score_hex": "0x1.b8cf1e57d7593p-1"
+            },
+            {
+              "rank": 4,
+              "chunk_id": "53f017cf-a01b-47c2-9e37-9e5afa3848cb",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 2,
+              "page_number": null,
+              "section_title": "produce (satır 32-39)",
+              "dense_score": 0.8481362853584489,
+              "dense_score_hex": "0x1.b23eeb5054b76p-1"
+            },
+            {
+              "rank": 16,
+              "chunk_id": "16bf4f58-70de-4479-a160-8e1363bdf17f",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 5,
+              "page_number": null,
+              "section_title": "consumer (satır 56-68)",
+              "dense_score": 0.8202230810363237,
+              "dense_score_hex": "0x1.a3f44798f3637p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 11,
+              "chunk_id": "26f4142b-6c95-4b3c-bd6d-1f915e68ba14",
+              "file_name": "producer_consumer.py",
+              "chunk_index": 3,
+              "page_number": null,
+              "section_title": "consume (satır 40-48)",
+              "fts_score": 0.01105322,
+              "fts_score_hex": "0x1.6a3121352ee0fp-7"
+            }
+          ]
+        }
+      }
+    },
+    "H-112": {
+      "question": "Kesme birleştirme (interrupt coalescing) neyi çözer?",
+      "expected_sources": [
+        "08-io-systems.pdf#s4"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 8,
+        "baseline_dense__candidate_fts": 0,
+        "candidate_dense__baseline_fts": 8,
+        "candidate_dense__candidate_fts": 0
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 5,
+              "chunk_id": "dac3e437-b757-4fc1-8565-23639c266adf",
+              "file_name": "08-io-systems.pdf",
+              "chunk_index": 3,
+              "page_number": 4,
+              "section_title": null,
+              "dense_score": 0.8227237032941291,
+              "dense_score_hex": "0x1.a53c0a8e95a75p-1"
+            }
+          ],
+          "fts": []
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 5,
+              "chunk_id": "dac3e437-b757-4fc1-8565-23639c266adf",
+              "file_name": "08-io-systems.pdf",
+              "chunk_index": 3,
+              "page_number": 4,
+              "section_title": null,
+              "dense_score": 0.8227237032941291,
+              "dense_score_hex": "0x1.a53c0a8e95a75p-1"
+            }
+          ],
+          "fts": []
+        }
+      }
+    },
+    "H-114": {
+      "question": "SSTF disk zamanlama algoritmasının bilinen sakıncası nedir?",
+      "expected_sources": [
+        "09-disk-and-storage.pdf#s2"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 2,
+        "baseline_dense__candidate_fts": 2,
+        "candidate_dense__baseline_fts": 2,
+        "candidate_dense__candidate_fts": 2
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "c75c703e-ca80-4089-9d1e-df3096ea263f",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "page_number": 2,
+              "section_title": null,
+              "dense_score": 0.8404444784827421,
+              "dense_score_hex": "0x1.ae4ebd1a5fd28p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 17,
+              "chunk_id": "c75c703e-ca80-4089-9d1e-df3096ea263f",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "page_number": 2,
+              "section_title": null,
+              "fts_score": 0.008684673,
+              "fts_score_hex": "0x1.1c9451417754ep-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "c75c703e-ca80-4089-9d1e-df3096ea263f",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "page_number": 2,
+              "section_title": null,
+              "dense_score": 0.8404444784827421,
+              "dense_score_hex": "0x1.ae4ebd1a5fd28p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 13,
+              "chunk_id": "c75c703e-ca80-4089-9d1e-df3096ea263f",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 1,
+              "page_number": 2,
+              "section_title": null,
+              "fts_score": 0.008684673,
+              "fts_score_hex": "0x1.1c9451417754ep-7"
+            }
+          ]
+        }
+      }
+    },
+    "H-116": {
+      "question": "SSD'de neden yerinde güncelleme yapılamaz?",
+      "expected_sources": [
+        "09-disk-and-storage.pdf#s3"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 2,
+        "baseline_dense__candidate_fts": 1,
+        "candidate_dense__baseline_fts": 2,
+        "candidate_dense__candidate_fts": 1
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "2034a6ef-7467-4fa1-ba38-c21ce79a02f3",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 2,
+              "page_number": 3,
+              "section_title": null,
+              "dense_score": 0.8546177249738945,
+              "dense_score_hex": "0x1.b5907456b0899p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 9,
+              "chunk_id": "2034a6ef-7467-4fa1-ba38-c21ce79a02f3",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 2,
+              "page_number": 3,
+              "section_title": null,
+              "fts_score": 0.012665148,
+              "fts_score_hex": "0x1.9f02f63ac0817p-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "2034a6ef-7467-4fa1-ba38-c21ce79a02f3",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 2,
+              "page_number": 3,
+              "section_title": null,
+              "dense_score": 0.8546177249738945,
+              "dense_score_hex": "0x1.b5907456b0899p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 5,
+              "chunk_id": "2034a6ef-7467-4fa1-ba38-c21ce79a02f3",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 2,
+              "page_number": 3,
+              "section_title": null,
+              "fts_score": 0.012665148,
+              "fts_score_hex": "0x1.9f02f63ac0817p-7"
+            }
+          ]
+        }
+      }
+    },
+    "H-118": {
+      "question": "Neden hiçbir RAID seviyesi yedeklemenin yerine geçmez?",
+      "expected_sources": [
+        "09-disk-and-storage.pdf#s4"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 3,
+        "baseline_dense__candidate_fts": 2,
+        "candidate_dense__baseline_fts": 3,
+        "candidate_dense__candidate_fts": 2
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "7c9378fc-4b4c-4f18-9030-43f47137a220",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 3,
+              "page_number": 4,
+              "section_title": null,
+              "dense_score": 0.8622387346366018,
+              "dense_score_hex": "0x1.b9775afd379e0p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 24,
+              "chunk_id": "7c9378fc-4b4c-4f18-9030-43f47137a220",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 3,
+              "page_number": 4,
+              "section_title": null,
+              "fts_score": 0.008684673,
+              "fts_score_hex": "0x1.1c9451417754ep-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "7c9378fc-4b4c-4f18-9030-43f47137a220",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 3,
+              "page_number": 4,
+              "section_title": null,
+              "dense_score": 0.8622387346366018,
+              "dense_score_hex": "0x1.b9775afd379e0p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 12,
+              "chunk_id": "7c9378fc-4b4c-4f18-9030-43f47137a220",
+              "file_name": "09-disk-and-storage.pdf",
+              "chunk_index": 3,
+              "page_number": 4,
+              "section_title": null,
+              "fts_score": 0.008684673,
+              "fts_score_hex": "0x1.1c9451417754ep-7"
+            }
+          ]
+        }
+      }
+    },
+    "H-119": {
+      "question": "En az ayrıcalık ilkesi ne söyler?",
+      "expected_sources": [
+        "10-security-and-protection.pdf#s1"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 0,
+        "baseline_dense__candidate_fts": 6,
+        "candidate_dense__baseline_fts": 0,
+        "candidate_dense__candidate_fts": 6
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "90470fe2-3cb0-4ada-886e-065f7270dde3",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 0,
+              "page_number": 1,
+              "section_title": null,
+              "dense_score": 0.8153632931880264,
+              "dense_score_hex": "0x1.a1774c2d33ef0p-1"
+            }
+          ],
+          "fts": []
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "90470fe2-3cb0-4ada-886e-065f7270dde3",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 0,
+              "page_number": 1,
+              "section_title": null,
+              "dense_score": 0.8153632931880264,
+              "dense_score_hex": "0x1.a1774c2d33ef0p-1"
+            }
+          ],
+          "fts": []
+        }
+      }
+    },
+    "H-120": {
+      "question": "Kullanıcı modu ile çekirdek modu ayrımı neden yazılımla değil donanımla zorlanır?",
+      "expected_sources": [
+        "10-security-and-protection.pdf#s1"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 7,
+        "baseline_dense__candidate_fts": 0,
+        "candidate_dense__baseline_fts": 7,
+        "candidate_dense__candidate_fts": 0
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "4440eae1-23bc-412b-97d2-e791d99ce1e9",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 1,
+              "page_number": 1,
+              "section_title": null,
+              "dense_score": 0.8785726849573466,
+              "dense_score_hex": "0x1.c1d4476a19f75p-1"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "90470fe2-3cb0-4ada-886e-065f7270dde3",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 0,
+              "page_number": 1,
+              "section_title": null,
+              "dense_score": 0.8423006111541071,
+              "dense_score_hex": "0x1.af4206949d8b4p-1"
+            }
+          ],
+          "fts": []
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "4440eae1-23bc-412b-97d2-e791d99ce1e9",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 1,
+              "page_number": 1,
+              "section_title": null,
+              "dense_score": 0.8785726849573466,
+              "dense_score_hex": "0x1.c1d4476a19f75p-1"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "90470fe2-3cb0-4ada-886e-065f7270dde3",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 0,
+              "page_number": 1,
+              "section_title": null,
+              "dense_score": 0.8423006111541071,
+              "dense_score_hex": "0x1.af4206949d8b4p-1"
+            }
+          ],
+          "fts": []
+        }
+      }
+    },
+    "H-121": {
+      "question": "Yetenek (capability) tabanlı erişim denetiminin en zayıf yanı nedir?",
+      "expected_sources": [
+        "10-security-and-protection.pdf#s2"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 1,
+        "baseline_dense__candidate_fts": 1,
+        "candidate_dense__baseline_fts": 1,
+        "candidate_dense__candidate_fts": 1
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "acd1ecbe-d6ec-48c8-9549-ff112c7fa54c",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "page_number": 2,
+              "section_title": null,
+              "dense_score": 0.8447399841722681,
+              "dense_score_hex": "0x1.b081c25b49723p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 16,
+              "chunk_id": "acd1ecbe-d6ec-48c8-9549-ff112c7fa54c",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "page_number": 2,
+              "section_title": null,
+              "fts_score": 0.008443432,
+              "fts_score_hex": "0x1.14aca4272b010p-7"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "acd1ecbe-d6ec-48c8-9549-ff112c7fa54c",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "page_number": 2,
+              "section_title": null,
+              "dense_score": 0.8447399841722681,
+              "dense_score_hex": "0x1.b081c25b49723p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 15,
+              "chunk_id": "acd1ecbe-d6ec-48c8-9549-ff112c7fa54c",
+              "file_name": "10-security-and-protection.pdf",
+              "chunk_index": 2,
+              "page_number": 2,
+              "section_title": null,
+              "fts_score": 0.008443432,
+              "fts_score_hex": "0x1.14aca4272b010p-7"
+            }
+          ]
+        }
+      }
+    },
+    "H-154": {
+      "question": "page_replacement.py içindeki lru fonksiyonu neden yanlış sonuç veriyor?",
+      "expected_sources": [
+        "page_replacement.py"
+      ],
+      "first_ranks": {
+        "baseline_dense__baseline_fts": 2,
+        "baseline_dense__candidate_fts": 8,
+        "candidate_dense__baseline_fts": 2,
+        "candidate_dense__candidate_fts": 8
+      },
+      "lane_targets": {
+        "baseline": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "66515b11-b773-4c58-87f4-d979c06afc48",
+              "file_name": "page_replacement.py",
+              "chunk_index": 0,
+              "page_number": null,
+              "section_title": "HATALI (satır 1-18)",
+              "dense_score": 0.8872554995135353,
+              "dense_score_hex": "0x1.c6465a5336abap-1"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "a686c3ff-9627-4818-8429-f88c959c5700",
+              "file_name": "page_replacement.py",
+              "chunk_index": 2,
+              "page_number": null,
+              "section_title": "lru (satır 41-61)",
+              "dense_score": 0.8775787667375491,
+              "dense_score_hex": "0x1.c152010d9a83bp-1"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "1f5ceedb-5f25-4154-98f6-ea68bc593e51",
+              "file_name": "page_replacement.py",
+              "chunk_index": 3,
+              "page_number": null,
+              "section_title": "clock (satır 62-90)",
+              "dense_score": 0.8504411559661809,
+              "dense_score_hex": "0x1.b36d05f018284p-1"
+            },
+            {
+              "rank": 4,
+              "chunk_id": "d78ebb84-e782-432c-87bc-2c63674eef32",
+              "file_name": "page_replacement.py",
+              "chunk_index": 1,
+              "page_number": null,
+              "section_title": "fifo (satır 19-40)",
+              "dense_score": 0.849791224914653,
+              "dense_score_hex": "0x1.b317d5dedf579p-1"
+            },
+            {
+              "rank": 6,
+              "chunk_id": "be273f2b-4229-4f25-87bd-cb15002b0d46",
+              "file_name": "page_replacement.py",
+              "chunk_index": 4,
+              "page_number": null,
+              "section_title": "optimal (satır 91-123)",
+              "dense_score": 0.8437843552395631,
+              "dense_score_hex": "0x1.b00480c542bfdp-1"
+            },
+            {
+              "rank": 17,
+              "chunk_id": "1ed8fb0e-d280-4e18-8e60-835164d8f81f",
+              "file_name": "page_replacement.py",
+              "chunk_index": 5,
+              "page_number": null,
+              "section_title": "belady_ornegi (satır 124-140)",
+              "dense_score": 0.8163819396174903,
+              "dense_score_hex": "0x1.a1fcd04767828p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 9,
+              "chunk_id": "1ed8fb0e-d280-4e18-8e60-835164d8f81f",
+              "file_name": "page_replacement.py",
+              "chunk_index": 5,
+              "page_number": null,
+              "section_title": "belady_ornegi (satır 124-140)",
+              "fts_score": 0.009498861,
+              "fts_score_hex": "0x1.374238ac10612p-7"
+            },
+            {
+              "rank": 13,
+              "chunk_id": "66515b11-b773-4c58-87f4-d979c06afc48",
+              "file_name": "page_replacement.py",
+              "chunk_index": 0,
+              "page_number": null,
+              "section_title": "HATALI (satır 1-18)",
+              "fts_score": 0.007599089,
+              "fts_score_hex": "0x1.f2038ebc0133cp-8"
+            },
+            {
+              "rank": 14,
+              "chunk_id": "a686c3ff-9627-4818-8429-f88c959c5700",
+              "file_name": "page_replacement.py",
+              "chunk_index": 2,
+              "page_number": null,
+              "section_title": "lru (satır 41-61)",
+              "fts_score": 0.007599089,
+              "fts_score_hex": "0x1.f2038ebc0133cp-8"
+            }
+          ]
+        },
+        "candidate": {
+          "dense": [
+            {
+              "rank": 1,
+              "chunk_id": "66515b11-b773-4c58-87f4-d979c06afc48",
+              "file_name": "page_replacement.py",
+              "chunk_index": 0,
+              "page_number": null,
+              "section_title": "HATALI (satır 1-18)",
+              "dense_score": 0.8872554995135353,
+              "dense_score_hex": "0x1.c6465a5336abap-1"
+            },
+            {
+              "rank": 2,
+              "chunk_id": "a686c3ff-9627-4818-8429-f88c959c5700",
+              "file_name": "page_replacement.py",
+              "chunk_index": 2,
+              "page_number": null,
+              "section_title": "lru (satır 41-61)",
+              "dense_score": 0.8775787667375491,
+              "dense_score_hex": "0x1.c152010d9a83bp-1"
+            },
+            {
+              "rank": 3,
+              "chunk_id": "1f5ceedb-5f25-4154-98f6-ea68bc593e51",
+              "file_name": "page_replacement.py",
+              "chunk_index": 3,
+              "page_number": null,
+              "section_title": "clock (satır 62-90)",
+              "dense_score": 0.8504411559661809,
+              "dense_score_hex": "0x1.b36d05f018284p-1"
+            },
+            {
+              "rank": 4,
+              "chunk_id": "d78ebb84-e782-432c-87bc-2c63674eef32",
+              "file_name": "page_replacement.py",
+              "chunk_index": 1,
+              "page_number": null,
+              "section_title": "fifo (satır 19-40)",
+              "dense_score": 0.849791224914653,
+              "dense_score_hex": "0x1.b317d5dedf579p-1"
+            },
+            {
+              "rank": 6,
+              "chunk_id": "be273f2b-4229-4f25-87bd-cb15002b0d46",
+              "file_name": "page_replacement.py",
+              "chunk_index": 4,
+              "page_number": null,
+              "section_title": "optimal (satır 91-123)",
+              "dense_score": 0.8437843552395631,
+              "dense_score_hex": "0x1.b00480c542bfdp-1"
+            },
+            {
+              "rank": 17,
+              "chunk_id": "1ed8fb0e-d280-4e18-8e60-835164d8f81f",
+              "file_name": "page_replacement.py",
+              "chunk_index": 5,
+              "page_number": null,
+              "section_title": "belady_ornegi (satır 124-140)",
+              "dense_score": 0.8163819396174903,
+              "dense_score_hex": "0x1.a1fcd04767828p-1"
+            }
+          ],
+          "fts": [
+            {
+              "rank": 9,
+              "chunk_id": "1ed8fb0e-d280-4e18-8e60-835164d8f81f",
+              "file_name": "page_replacement.py",
+              "chunk_index": 5,
+              "page_number": null,
+              "section_title": "belady_ornegi (satır 124-140)",
+              "fts_score": 0.009498861,
+              "fts_score_hex": "0x1.374238ac10612p-7"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "changed_scored_source_ranks": {
+    "baseline_dense__baseline_fts": [],
+    "baseline_dense__candidate_fts": [
+      {
+        "item_id": "H-036",
+        "baseline_first": 2,
+        "cross_first": 2
+      },
+      {
+        "item_id": "H-106",
+        "baseline_first": 1,
+        "cross_first": 1
+      },
+      {
+        "item_id": "H-112",
+        "baseline_first": 8,
+        "cross_first": 0
+      },
+      {
+        "item_id": "H-116",
+        "baseline_first": 2,
+        "cross_first": 1
+      },
+      {
+        "item_id": "H-118",
+        "baseline_first": 3,
+        "cross_first": 2
+      },
+      {
+        "item_id": "H-119",
+        "baseline_first": 0,
+        "cross_first": 6
+      },
+      {
+        "item_id": "H-120",
+        "baseline_first": 7,
+        "cross_first": 0
+      },
+      {
+        "item_id": "H-154",
+        "baseline_first": 2,
+        "cross_first": 8
+      },
+      {
+        "item_id": "H-158",
+        "baseline_first": 1,
+        "cross_first": 1
+      },
+      {
+        "item_id": "H-159",
+        "baseline_first": 1,
+        "cross_first": 1
+      }
+    ],
+    "candidate_dense__baseline_fts": [],
+    "candidate_dense__candidate_fts": [
+      {
+        "item_id": "H-036",
+        "baseline_first": 2,
+        "cross_first": 2
+      },
+      {
+        "item_id": "H-106",
+        "baseline_first": 1,
+        "cross_first": 1
+      },
+      {
+        "item_id": "H-112",
+        "baseline_first": 8,
+        "cross_first": 0
+      },
+      {
+        "item_id": "H-116",
+        "baseline_first": 2,
+        "cross_first": 1
+      },
+      {
+        "item_id": "H-118",
+        "baseline_first": 3,
+        "cross_first": 2
+      },
+      {
+        "item_id": "H-119",
+        "baseline_first": 0,
+        "cross_first": 6
+      },
+      {
+        "item_id": "H-120",
+        "baseline_first": 7,
+        "cross_first": 0
+      },
+      {
+        "item_id": "H-154",
+        "baseline_first": 2,
+        "cross_first": 8
+      },
+      {
+        "item_id": "H-158",
+        "baseline_first": 1,
+        "cross_first": 1
+      },
+      {
+        "item_id": "H-159",
+        "baseline_first": 1,
+        "cross_first": 1
+      }
+    ]
+  },
+  "metadata_checks": 11634,
+  "backend_pid": 16030,
+  "narrow_candidate_acceptance": {
+    "recall5_at_least_080": true,
+    "recall5_nondecrease": true,
+    "mrr_nondecrease": true,
+    "same_all_first_ranks": true
+  },
+  "recorded_model_cache_hashes": {
+    "config.json": "1de8c3be1f344c0eefa4962480a006f8639f416dfafaa95a770e3cf4bceae6a4",
+    "tokenizer.json": "f59925fcb90c92b894cb93e51bb9b4a6105c5c249fe54ce1c704420ac39b81af",
+    "tokenizer_config.json": "f90024142df07163e5e6c5b9a6ad7c8c68b22a9112af11e3db4559a9ff90f737",
+    "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+    "model.onnx": "1c09780c907c8a91a77a6ab1fd231f79e090d2907ca431223703dfebeed3d36c",
+    "model.onnx_data": "0cf1883fee81c63819a44e2ba0efa51d4043d9759685a4ebebbde97e0623d15c"
+  },
+  "corpus_state": {
+    "database": "dou018_eval_c1e501",
+    "role": "dou_app",
+    "rolsuper": false,
+    "rolbypassrls": false,
+    "rows": 167,
+    "namespace": "fastembed/intfloat/multilingual-e5-large@0.8.0",
+    "content_vector_metadata_sha256": "1fbff9e89fe71c86f343608c52cea1243cc3dcdeabf7770d94f25082298120c9"
+  },
+  "limitations": [
+    "Controlled stored-lane fusion is diagnostic, not final runtime source acceptance.",
+    "Original hashing and E5 candidate regressions remain valid and immutable.",
+    "Returned 24 candidates do not enumerate all tied-score rows outside cutoff.",
+    "No LLM/pedagogical or performance claim.",
+    "Full model bytes were rehashed by root trace wrapper, not by this independent JSON/source analyzer.",
+    "Recorded source ranks involving text anchors cannot be independently recomputed from text hashes; those remain checked by the real trace runner against DTO text."
+  ]
+}

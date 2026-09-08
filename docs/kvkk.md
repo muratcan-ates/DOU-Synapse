@@ -41,6 +41,8 @@ Hesap ve gizlilik ekranından uygulamada sunulan kişisel kayıtlarınızı JSON
 
 **Profil bilgilerini kaldırma** işlemi uygulama profilindeki ad ve e-postayı kaldırır, sohbetleri siler ve ders üyeliklerini kapatır. Profil kaydı ile kullanıcı kimliği korunur. Sınav cevapları, geri bildirim, öğrenme ilerlemesi ve ders materyalleriyle bağlantılar kalır. Bu işlem bütün verilerin silinmesi veya geri döndürülemez anonimleştirilmesi değildir. Üniversite/kimlik sağlayıcısı hesabınız ayrıca kapatılmalıdır.
 
+Sohbet silindikten sonra, önceden başlamış bir yanıtın geçmişi yeniden oluşturmasını engelleyen hesap ve ders kapsamlı teknik sayaç tutulur. Bu sayaç soru veya cevap içermez; yine de hesap kimliğiyle bağlantılıdır. JSON indirmesinin dışında kalan bu kayıt dosyanın kapsam açıklamasında belirtilir.
+
 Daha önce indirdiğiniz dosyalar, ekran görüntüleri veya başka cihazdaki kopyalar bu işlemlerle geri alınamaz. Paylaşılan cihazda işiniz bitince çıkış yapın ve indirdiğiniz kişisel dosyaları cihazda bırakmayın.
 
 ## Saklama ve silme sınırları

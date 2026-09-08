@@ -1,0 +1,48 @@
+{
+  "status": "verified",
+  "source": "dou018_retrieval_20260908b",
+  "target": "dou018_retrieval_runtime1",
+  "source_report_sha256": "34beb08b8c3a3bb8d9975147f7d04af5bcfca42c47add1b870819370287c07ca",
+  "operation": "new TEMPLATE clone; only embedding_space metadata changed to canonical replay-provider identity; original unchanged",
+  "source_before": {
+    "rows": 20000,
+    "embedding_spaces": [
+      [
+        "dou018-synthetic-plan-v1",
+        20000
+      ]
+    ],
+    "content_vector_metadata_sha256": "045f0e35a394b30618475e01fe4def65e3197e6770a3507a5418bc356540a7a5"
+  },
+  "clone_before": {
+    "rows": 20000,
+    "embedding_spaces": [
+      [
+        "dou018-synthetic-plan-v1",
+        20000
+      ]
+    ],
+    "content_vector_metadata_sha256": "045f0e35a394b30618475e01fe4def65e3197e6770a3507a5418bc356540a7a5"
+  },
+  "clone_after": {
+    "rows": 20000,
+    "embedding_spaces": [
+      [
+        "SyntheticReplayProvider/dou018-synthetic-plan-v1@bilinmiyor",
+        20000
+      ]
+    ],
+    "content_vector_metadata_sha256": "045f0e35a394b30618475e01fe4def65e3197e6770a3507a5418bc356540a7a5"
+  },
+  "source_after": {
+    "rows": 20000,
+    "embedding_spaces": [
+      [
+        "dou018-synthetic-plan-v1",
+        20000
+      ]
+    ],
+    "content_vector_metadata_sha256": "045f0e35a394b30618475e01fe4def65e3197e6770a3507a5418bc356540a7a5"
+  },
+  "elapsed_seconds": 29.818
+}

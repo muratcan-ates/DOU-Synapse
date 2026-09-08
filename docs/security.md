@@ -303,7 +303,9 @@ düzeyinde dersin bir üyesi kendi dersinin `answer_cache`'ine satır yazabilir;
 uygulama uygular. Kabul edilebilir çünkü kullanıcıların doğrudan veritabanı
 kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapalı.
 
-**7. Profil bilgisi kaldırma tam anonimleştirme değildir.** `DELETE /me` ad/e-postayı değiştirir, kendi sohbetlerini siler ve üyeliklerini revoked yapar. Aynı profil UUID'si ve akademik bağlantılar kalır. Auth hesabı, saklanan cevaplar, materyaller, operasyon kayıtları ve dış kopyalar ayrıca ele alınmalıdır. `anonymized` eski API alan adıdır; hukuki/istatistiksel anonimlik kanıtı değildir.
+**7. Silme ile bekleyen sohbet yazımı aynı yaşam döngüsüne bağlıdır.** Ders/tüm geçmiş/profil silme, kapsam sürümünü kayıt silinmese bile ilerletir. Model beklerken yeni oturum geçici kalır; son kısa kilit altında sürüm, taze üyelik ve mevcut oturum tekrar doğrulanır. Başarılı silme sonrası eski POST mesaj/cache yazamaz. Başka ders ve oturum kapsamı korunur; model çağrısının maliyetinin geri alındığı iddia edilmez. Tarayıcı olayını kaçıran sekme yeniden görünür olduğunda gerçek yetki/geçmiş denetimi yapar.
+
+**8. Profil bilgisi kaldırma tam anonimleştirme değildir.** `DELETE /me` ad/e-postayı değiştirir, kendi sohbetlerini siler ve üyeliklerini revoked yapar. Aynı profil UUID'si ve akademik bağlantılar kalır. Auth hesabı, saklanan cevaplar, materyaller, operasyon kayıtları ve dış kopyalar ayrıca ele alınmalıdır. `anonymized` eski API alan adıdır; hukuki/istatistiksel anonimlik kanıtı değildir.
 
 ---
 
@@ -314,6 +316,7 @@ kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapal�
 | E-posta, ad soyad | `profiles` | Kişinin kendisi; dersinin eğitmeni |
 | Ders üyeliği ve rolü | `course_memberships` | Kişinin kendisi; dersin eğitmeni |
 | Sohbet soruları ve cevapları | `chat_messages` | **Yalnız oturum sahibi** |
+| Sohbet silme kapsam sürümü | `chat_privacy_revisions` | Sahip RLS; soru/cevap ve silme zamanı içermez |
 | Sınav cevapları ve mastery skoru | `answers`, `mastery` | Yalnız öğrencinin kendisi |
 | Yüklenen belgeler | `documents` + dosya deposu | Dersin üyeleri |
 | Ölçüm kaydı (metin YOK) | `request_logs` | Dersin eğitmeni (`0005`) |
@@ -331,8 +334,8 @@ Sohbetin özel kalması genel kuraldır; öğrencinin açıkça eğitmen incelem
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 1332 test   # docs-check: backend.tests = 1332
-cd apps/api && uv run mypy app                  # temiz, 107 dosya   # docs-check: backend.mypyFiles = 107
+cd apps/api && uv run pytest -q                 # 1499 test   # docs-check: backend.tests = 1499
+cd apps/api && uv run mypy app                  # temiz, 109 dosya   # docs-check: backend.mypyFiles = 109
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 

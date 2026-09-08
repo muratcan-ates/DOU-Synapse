@@ -1,0 +1,494 @@
+"""Sabit gerçek E5 korpusunda 127 sorunun gerçek retrieval şeritlerini izler.
+
+DB kurmaz/yazmaz; kaynak, altın set, eşik veya önceki raporu değiştirmez.
+Dört RRF birleşimi tanısaldır; yapılandırma seçimi veya kalite terfisi değildir.
+"""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import asyncio
+import hashlib
+import importlib.util
+import inspect
+import json
+import math
+import os
+from pathlib import Path
+from typing import Any
+from uuid import UUID
+
+EVIDENCE = Path("/private/tmp/dou018-evidence")
+HELPER = EVIDENCE / "c1_e5_holdout_runner.py"
+HELPER_SHA = "82b91a0bf3693ad68811172ff794d8c80fd7b18c873e19bf243fc36cd83dd903"
+REFERENCE = EVIDENCE / "c1-e5-measured-01/manifest.json"
+REFERENCE_SHA = "866c268096b8bfa5ec2ee476b86bffc55050131e8d85d4e467d7ac5f0911fd6e"
+TARGET = "dou018_eval_c1e501"
+sha = lambda b: hashlib.sha256(b).hexdigest()
+
+
+def load_helper() -> Any:
+    if sha(HELPER.read_bytes()) != HELPER_SHA:
+        raise ValueError("Önceki doğrulanmış çalıştırıcı değişmiş.")
+    spec = importlib.util.spec_from_file_location("_c1_trace_helper", HELPER)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def score_ties(rows: list[dict[str, Any]], lane: str) -> list[dict[str, Any]]:
+    """Yalnız gerçek float eşitliği; epsilon ile yeni beraberlik icat edilmez."""
+    groups: dict[float, list[dict[str, Any]]] = {}
+    for row in rows:
+        groups.setdefault(row[lane + "_score"], []).append(row)
+    return [
+        {
+            "score_hex": group[0][lane + "_score_hex"],
+            "score": key,
+            "ranks": [r["rank"] for r in group],
+            "chunk_ids": [r["chunk_id"] for r in group],
+        }
+        for key, group in groups.items()
+        if len(group) > 1
+    ]
+
+
+def serialize(
+    rows: list[Any], metadata: dict[str, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Her DTO'yu gerçek kaynak satırıyla denetleyip metin yerine hash saklar."""
+    seen, result = set(), []
+    for rank, row in enumerate(rows, 1):
+        key = str(row.chunk_id)
+        if key in seen or key not in metadata:
+            raise ValueError("Yinelenen veya izinli korpus dışında kaynak.")
+        seen.add(key)
+        original = metadata[key]
+        if str(row.document_id) != str(original["document_id"]):
+            raise ValueError("Kaynak belge kimliği değişti.")
+        for field in (
+            "file_name",
+            "page_number",
+            "slide_number",
+            "section_title",
+            "text",
+        ):
+            if getattr(row, field) != original[field]:
+                raise ValueError("Kaynak metadata veya metni değişti.")
+        item = {
+            "rank": rank,
+            "chunk_id": key,
+            "document_id": str(row.document_id),
+            "file_hash": original["file_hash"],
+            "chunk_index": original["chunk_index"],
+            "file_name": row.file_name,
+            "page_number": row.page_number,
+            "slide_number": row.slide_number,
+            "section_title": row.section_title,
+            "text_sha256": sha(row.text.encode()),
+        }
+        for lane in ("dense", "fts", "fused"):
+            score = float(getattr(row, lane + "_score"))
+            if not math.isfinite(score):
+                raise ValueError("Sonlu olmayan retrieval skoru.")
+            item[lane + "_score"] = score
+            item[lane + "_score_hex"] = score.hex()
+        result.append(item)
+    return result
+
+
+def rank_sources(item: Any, rows: list[Any]) -> list[list[int]]:
+    return [
+        [
+            i
+            for i, row in enumerate(rows, 1)
+            if source.matches(
+                file_name=row.file_name,
+                page_number=row.page_number,
+                slide_number=row.slide_number,
+                section_title=row.section_title,
+                text=row.text,
+            )
+        ]
+        for source in item.expected_sources
+    ]
+
+
+def raw_top(rows: list[Any]) -> list[dict[str, Any]]:
+    return [
+        {k: getattr(row, k) for k in ("file_name", "page_number", "slide_number")}
+        for row in rows[:8]
+    ]
+
+
+def check_fuse_same(baseline: Any, candidate: Any) -> str:
+    """Dört çapraz birleşimde aynı gerçek saf fuse fonksiyonu kullanılabilmeli."""
+    trees = [
+        ast.dump(ast.parse(inspect.getsource(m.fuse)), include_attributes=False)
+        for m in (baseline, candidate)
+    ]
+    if trees[0] != trees[1]:
+        raise ValueError("Eski ve yeni fuse farklı; şerit çaprazlaması ayrıştırılamaz.")
+    return sha(trees[0].encode())
+
+
+def pairs(lanes: dict[str, dict[str, list[Any]]], fuse: Any) -> dict[str, list[Any]]:
+    """Kontrollü 2×2 tanı; yalnız sabit 24 aday, RRF60 ve sonuç sınırı8."""
+    return {
+        d + "_dense__" + f + "_fts": fuse(
+            lanes[d]["dense"], lanes[f]["fts"], limit=8, rrf_k=60
+        )
+        for d in ("baseline", "candidate")
+        for f in ("baseline", "candidate")
+    }
+
+
+def validate_trace_target(helper: Any, raw: str, corpus: Any) -> dict[str, Any]:
+    target = helper.validate_target(raw, corpus)
+    if target["database"] != TARGET:
+        raise ValueError("Yalnız korunan özgün E5 test veritabanı kullanılabilir.")
+    return target
+
+
+def prepare(output: Path) -> tuple[Any, dict[str, Any], dict[str, Any], dict[str, Any]]:
+    helper = load_helper()
+    helper.install_paths()
+    if sha(REFERENCE.read_bytes()) != REFERENCE_SHA:
+        raise ValueError("Özgün ölçüm manifesti değişmiş.")
+    reference = json.loads(REFERENCE.read_text())
+    modules, meta = helper.offline_manifest(output)
+    for field in (
+        "candidate_source_sha256",
+        "common_dependency_source_sha256",
+        "harness_source_sha256",
+    ):
+        if meta[field] != reference[field]:
+            raise ValueError("Tanı kaynağı özgün ölçümle aynı değil.")
+    if meta["query_selection_sha256"] != reference["query_selection_sha256"]:
+        raise ValueError("127 sorunun sırası veya metni değişmiş.")
+    for path, entry in meta["baseline_source"].items():
+        if entry["sha256"] != reference["baseline_source"][path]["sha256"]:
+            raise ValueError("Eski gerçek kaynak farklı.")
+    if sha(Path(reference["corpus_path"]).read_bytes()) != reference["corpus_sha256"]:
+        raise ValueError("Özgün korpus özeti değişmiş.")
+    for arm in ("baseline", "candidate"):
+        rec = reference["arms"][arm]
+        if sha(Path(rec["raw_result"]).read_bytes()) != rec["sha256"]:
+            raise ValueError("Özgün ham sonuç değişmiş.")
+    cache = helper.inspect_cache(verify_content=False)
+    if (
+        cache["files"] != reference["model_cache"]["files"]
+        or cache["revision"] != reference["model_cache"]["revision"]
+    ):
+        raise ValueError("E5 çevrimdışı cache metadata farklı.")
+    from app.modules.retrieval import service
+
+    meta.update(
+        version="c1-e5-lane-trace-v1",
+        status="planned",
+        phase="offline_verified",
+        helper_sha256=HELPER_SHA,
+        reference_manifest_sha256=REFERENCE_SHA,
+        trace_source_sha256=sha(Path(__file__).read_bytes()),
+        fuse_ast_sha256=check_fuse_same(modules["service"], service),
+        target_database=TARGET,
+        quality_reportable=True,
+        quality_scope="real_embedding_retrieval_diagnostic_only",
+        generation_quality_reportable=False,
+        diagnostic_only=True,
+        threshold_changed=False,
+        limits=[
+            "Aynı 127 sorgu; seçilmiş soru üzerinden optimizasyon yok.",
+            "Dört çapraz RRF sonucu tanı koludur, üretim adayı değildir.",
+            "Gerçek dönen 24 aday izlenir; 24 dışında kalan eşitlik kümesi tamamı gözlenmez.",
+            "Skor beraberliği Python float exact equality ile etiketlenir; yakınlık eşitlik sayılmaz.",
+            "Bu gerçek E5 şerit tanısıdır; LLM, pedagojik kalite veya gecikme kabulü değildir.",
+            "Başarılı kod yolu LLM kullanmaz; bağımsız token sayacı eklenmez.",
+        ],
+    )
+    return helper, modules, reference, meta
+
+
+def validate_provider(provider: Any) -> None:
+    if (
+        type(provider).__name__ != "FastEmbedProvider"
+        or provider.name != "intfloat/multilingual-e5-large"
+    ):
+        raise ValueError("Yalnız mevcut gerçek FastEmbedProvider/E5 gerekir.")
+
+
+async def execute(
+    output: Path, helper: Any, modules: Any, reference: Any, meta: Any
+) -> None:
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from app.core.config import get_settings
+    from app.core.db import dispose_engine, set_rls_context
+    from app.modules.ingestion.embedding import get_embedding_provider
+    from app.modules.retrieval import dense, fts, service
+    import evaluate
+    import goldset
+
+    corpus = json.loads(Path(reference["corpus_path"]).read_text())
+    helper.validate_corpus(corpus)
+    target = validate_trace_target(helper, os.environ.get("EVAL_APP_DSN", ""), corpus)
+    os.environ["DATABASE_URL"] = os.environ["EVAL_APP_DSN"]
+    get_settings.cache_clear()
+    settings = get_settings()
+    if {k: getattr(settings, k) for k in reference["common_retrieval"]} != reference[
+        "common_retrieval"
+    ]:
+        raise ValueError("Özgün ortak retrieval ayarı değişmiş.")
+    provider = get_embedding_provider()
+    validate_provider(provider)
+    gold = goldset.load(helper.REPO / "evaluation/gold_set/holdout.json")
+    queries = evaluate.select_items(gold, "retrieval", None)
+    if len(queries) != 127 or sum(x.is_retrieval_scored for x in queries) != 105:
+        raise ValueError("Sabit soru sayıları uyuşmuyor.")
+    old_results = {
+        a: {
+            x["item_id"]: x
+            for x in json.loads(Path(reference["arms"][a]["raw_result"]).read_text())[
+                "per_item"
+            ]
+        }
+        for a in ("baseline", "candidate")
+    }
+    meta["model_cache_before"] = helper.inspect_cache(verify_content=True)
+    if meta["model_cache_before"] != reference["model_cache"]:
+        raise ValueError("E5 model cache özgün ölçümden farklı.")
+    engine = helper.readonly_engine()
+    meta.update(
+        phase="reading_corpus",
+        target=target,
+        common_retrieval=reference["common_retrieval"],
+        actual_embedding=reference["actual_embedding"],
+        query_ids=[x.id for x in queries],
+        source_metadata_checks=0,
+        original_replay_drift=[],
+    )
+    try:
+        before = await helper.corpus_state(engine, corpus)
+        if before != reference["arms"]["baseline"]["corpus_state_before_after"]:
+            raise ValueError("Tanı korpusu özgün korpus durumundan farklı.")
+        meta["corpus_before"] = before
+        async with engine.connect() as connection:
+            async with AsyncSession(bind=connection) as session, session.begin():
+                await session.execute(text("SET TRANSACTION READ ONLY"))
+                await set_rls_context(session, UUID(corpus["student_id"]))
+                pid = (
+                    await session.execute(text("SELECT pg_backend_pid()"))
+                ).scalar_one()
+                rows = (
+                    (
+                        await session.execute(
+                            text("""SELECT c.id,c.document_id,c.chunk_index,c.page_number,
+                 c.slide_number,c.section_title,c.text,d.file_name,d.file_hash FROM chunks c
+                 JOIN documents d ON d.id=c.document_id WHERE c.course_id=:course ORDER BY c.id"""),
+                            {"course": UUID(corpus["course_id"])},
+                        )
+                    )
+                    .mappings()
+                    .all()
+                )
+                metadata = {str(row["id"]): dict(row) for row in rows}
+                if len(metadata) != 167:
+                    raise ValueError("Kaynak metadata kümesi farklı.")
+            meta["backend_pid"] = pid
+            trace_path = output / "trace.jsonl"
+            with trace_path.open("x") as trace:
+                for item in queries:
+                    meta["phase"] = "trace_" + item.id
+                    lanes, verified, arm_modes = {}, {}, {}
+                    # Her gerçek kol ayrı işlem kullanır; hnsw/plan_cache ayarı diğer kola taşınmaz.
+                    for arm in ("baseline", "candidate"):
+                        dense_func = (
+                            modules["dense"].dense_search
+                            if arm == "baseline"
+                            else dense.dense_search
+                        )
+                        fts_func = (
+                            modules["fts"].fts_search
+                            if arm == "baseline"
+                            else fts.fts_search
+                        )
+                        cls = (
+                            modules["service"].HybridRetriever
+                            if arm == "baseline"
+                            else service.HybridRetriever
+                        )
+                        async with (
+                            AsyncSession(bind=connection) as session,
+                            session.begin(),
+                        ):
+                            await session.execute(text("SET TRANSACTION READ ONLY"))
+                            await set_rls_context(session, UUID(corpus["student_id"]))
+                            row = (
+                                await session.execute(
+                                    text(
+                                        "SELECT pg_backend_pid(),current_setting('transaction_read_only'),current_setting('plan_cache_mode')"
+                                    )
+                                )
+                            ).one()
+                            if row[0] != pid or row[1] != "on":
+                                raise ValueError(
+                                    "Bağlantı veya salt okunur işlem sınırı bozuldu."
+                                )
+                            arm_modes[arm] = {"before": row[2]}
+                            kwargs = {
+                                "course_id": UUID(corpus["course_id"]),
+                                "query": item.question,
+                                "limit": 24,
+                                "document_ids": None,
+                            }
+                            if arm == "candidate":
+                                kwargs["candidate_multiplier"] = 8
+                            dense_hits = await dense_func(session, **kwargs)
+                            fts_hits = await fts_func(
+                                session,
+                                course_id=UUID(corpus["course_id"]),
+                                query=item.question,
+                                limit=24,
+                                document_ids=None,
+                            )
+                            actual = await cls(session, settings).search(
+                                course_id=UUID(corpus["course_id"]),
+                                query=item.question,
+                                limit=8,
+                            )
+                            after = (
+                                await session.execute(text("SHOW plan_cache_mode"))
+                            ).scalar_one()
+                            if after != row[2]:
+                                raise ValueError(
+                                    "Plan politikası çağırana geri verilmedi."
+                                )
+                            arm_modes[arm]["after"] = after
+                        if len(dense_hits) > 24 or len(fts_hits) > 24:
+                            raise ValueError("Gerçek aday sınırı aşıldı.")
+                        lanes[arm] = {"dense": dense_hits, "fts": fts_hits}
+                        verified[arm] = actual
+                    fused = pairs(lanes, service.fuse)
+                    record = {
+                        "item_id": item.id,
+                        "category": item.category,
+                        "question": item.question,
+                        "expected_sources": [x.label() for x in item.expected_sources],
+                        "is_scored": item.is_retrieval_scored,
+                        "plan_modes": arm_modes,
+                        "lanes": {},
+                        "cross_fusion": {},
+                    }
+                    for arm in ("baseline", "candidate"):
+                        record["lanes"][arm] = {}
+                        for lane in ("dense", "fts"):
+                            serialized = serialize(lanes[arm][lane], metadata)
+                            record["lanes"][arm][lane] = {
+                                "rows": serialized,
+                                "exact_score_ties": score_ties(serialized, lane),
+                            }
+                            meta["source_metadata_checks"] += len(serialized)
+                        diagonal = fused[arm + "_dense__" + arm + "_fts"]
+                        if serialize(diagonal, metadata) != serialize(
+                            verified[arm], metadata
+                        ):
+                            raise ValueError(
+                                "Şeritlerden hesaplanan diagonal gerçek HybridRetriever ile uyuşmuyor."
+                            )
+                        old = old_results[arm][item.id]
+                        if (
+                            raw_top(diagonal) != old["top_results"]
+                            or rank_sources(item, diagonal) != old["ranks_by_source"]
+                        ):
+                            meta["original_replay_drift"].append(
+                                {"item_id": item.id, "arm": arm}
+                            )
+                    for label, hits in fused.items():
+                        record["cross_fusion"][label] = {
+                            "rows": serialize(hits, metadata),
+                            "ranks_by_source": rank_sources(item, hits),
+                        }
+                    trace.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    trace.flush()
+        meta["model_cache_after"] = helper.inspect_cache(verify_content=True)
+        if meta["model_cache_after"] != meta["model_cache_before"]:
+            raise ValueError("E5 cache tanı sırasında değişti.")
+        after = await helper.corpus_state(engine, corpus)
+        if before != after:
+            raise ValueError("Tanı korpusu değiştirdi.")
+        meta.update(
+            corpus_after=after,
+            status="measured_diagnostic"
+            if not meta["original_replay_drift"]
+            else "measured_diagnostic_with_replay_drift",
+            phase="complete",
+            query_count=127,
+            scored_count=105,
+            trace_sha256=sha(trace_path.read_bytes()),
+        )
+        for field in (
+            "candidate_source_sha256",
+            "common_dependency_source_sha256",
+            "harness_source_sha256",
+        ):
+            if any(
+                sha((helper.REPO / p).read_bytes()) != s for p, s in meta[field].items()
+            ):
+                raise ValueError("Tanı sırasında kaynak değişmiş.")
+        if (
+            sha(HELPER.read_bytes()) != HELPER_SHA
+            or sha(REFERENCE.read_bytes()) != REFERENCE_SHA
+        ):
+            raise ValueError("Özgün kanıt/çalıştırıcı değişmiş.")
+    finally:
+        await dispose_engine()
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--output-dir", required=True, type=Path)
+    p.add_argument("--execute", action="store_true")
+    args = p.parse_args()
+    output = args.output_dir.resolve()
+    if output == EVIDENCE or not output.is_relative_to(EVIDENCE):
+        p.error("Yeni çıktı yalnız /private/tmp/dou018-evidence altında olabilir.")
+    output.mkdir(exist_ok=False)
+    os.environ.update(
+        ENVIRONMENT="local",
+        DEV_AUTH_ENABLED="true",
+        EMBEDDING_PROVIDER="fastembed",
+        EMBEDDING_MODEL="intfloat/multilingual-e5-large",
+        EMBEDDING_CACHE_DIR="/Users/muratates/.cache/dou-synapse/fastembed",
+        HF_HUB_OFFLINE="1",
+        HF_DATASETS_OFFLINE="1",
+        TRANSFORMERS_OFFLINE="1",
+        HTTP_PROXY="http://127.0.0.1:9",
+        HTTPS_PROXY="http://127.0.0.1:9",
+        ALL_PROXY="http://127.0.0.1:9",
+        NO_PROXY="127.0.0.1,localhost",
+        LLM_FAKE_PROVIDER="true",
+        GROQ_API_KEY="",
+        GEMINI_API_KEY="",
+        OPENAI_API_KEY="",
+        RETRIEVAL_TOP_K="8",
+        RETRIEVAL_DENSE_CANDIDATES="24",
+        RETRIEVAL_DENSE_CANDIDATE_MULTIPLIER="8",
+        RETRIEVAL_FTS_CANDIDATES="24",
+        RETRIEVAL_RRF_K="60",
+    )
+    meta = {"status": "planned", "phase": "prepare"}
+    try:
+        helper, modules, reference, meta = prepare(output)
+        if args.execute:
+            asyncio.run(execute(output, helper, modules, reference, meta))
+    except Exception as exc:
+        meta.update(status="failed", error_type=type(exc).__name__)
+    (output / "manifest.json").write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2) + "\n"
+    )
+    return int(meta["status"] == "failed")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

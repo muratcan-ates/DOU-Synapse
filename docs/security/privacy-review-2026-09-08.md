@@ -1,6 +1,6 @@
 # Güvenlik ve kişisel veri incelemesi — 8 Eylül 2026
 
-Kapsam: 017 tabanı `621815908d5372d8de414aec4ca1dc63da008dca`, 018 A kontrol noktası `2d1b58aeeddaa4b862a760fb46773b2ae73ed253` ve bunun üzerindeki S düzeltmeleri. İnceleme yerel kaynak, sentetik veri ve gerçek yerel API/tarayıcı üzerinden yapılır. Canlı öğrenci verisi veya üretim saldırı testi kullanılmadı. Bu belge hukuki uygunluk sertifikası değildir.
+Kapsam: 017 tabanı `621815908d5372d8de414aec4ca1dc63da008dca`, 018 A kontrol noktası `2d1b58aeeddaa4b862a760fb46773b2ae73ed253` ve bunun üzerindeki S/B gizlilik düzeltmeleri ile C arama adayı. İnceleme yerel kaynak, sentetik veri ve gerçek yerel API/tarayıcı üzerinden yapılır. Canlı öğrenci verisi veya üretim saldırı testi kullanılmadı. Bu belge hukuki uygunluk sertifikası değildir.
 
 ## Doğrulanmış bulgular
 
@@ -22,6 +22,9 @@ Kapsam: 017 tabanı `621815908d5372d8de414aec4ca1dc63da008dca`, 018 A kontrol no
 
 B4 devam bulgusu: olay bariyerleri kullanan gerçek async API testinde, henüz commit edilmemiş yeni sohbet ders/tüm geçmiş/profil silme sorgusuna görünmüyor. DELETE 200 sonrasında bekletilen model yanıtı serbest bırakıldığında 1 oturum ve 2 mesaj kalıcılaşıyor. Üç negatif vaka mevcut kodda başarısız; mevcut tekli oturum silinmesi yeniden kayıt oluşturmuyor. Bu S2 arayüz iptaliyle kapanmış sayılmadı; kapsam bazlı kalıcı silme nesli ve model sonrası son kontrol B4 sunucu işine eklendi. [Yeniden üretilebilir test ve tasarım](../../specs/018-codex-production-line/evidence/b4-race-design.md), [kaynak hashleri](../../specs/018-codex-production-line/evidence/b4-race-evidence-hashes.json) ile saklanır. S düzeltmeleri bu yarışın düzeltmesi olarak sunulmaz.
 
+B4 sunucu ve arayüz düzeltmesi artık yerel olarak doğrulandı: silme kapsamı için kalıcı sürüm, kısa son-yazım kilidi ve taze üyelik/oturum denetimi eklendi. Yeni oturum model beklerken veritabanına eklenmez. 34 odaklı yarış/RLS kontrolünün ardından son adayın 1500 API ve 68 gerçek HTTP tarayıcı testi geçti. Tekli/ders silme, hata/iptal, diğer sekme, kaçırılan olay ve geç yanıt senaryoları doğrulandı. Üstteki negatif kayıt tarihsel başlangıçtır; S tek başına bu yarışı kapatmış sayılmaz. Kesin yeni adayın uzak CI kabulü ayrıca kaydedilir.
+
+
 Öncelikler bu kullanım senaryosuna göre değerlendirmedir; CVSS puanı ölçülmedi. İstemcide gizli kalan görüntü, yeni API isteğinin yetkilendirilmesiyle aynı sınır değildir.
 
 Başlangıç kaynakları kesin A commit'ine bağlıdır: [sınırsız upload okuması](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/api/app/api/documents.py#L76), [doğrulamadan önce dosya yazımı](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/api/app/api/documents.py#L98), [yerel sekme temizliği](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/web/lib/api.ts#L74), [geç geçmiş yanıtı](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/web/lib/use-reverse-history.ts#L160), [profil alanı işlemi](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/api/app/api/privacy.py#L272), [eski export tipi](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/web/lib/privacy.ts#L2), [üretim auth ayarı](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/api/app/core/config.py#L347), [CSP bağlantı listesi](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/web/lib/security-headers.ts#L46), [depo istisna logu](https://github.com/muratcan-ates/DOU-Synapse/blob/2d1b58aeeddaa4b862a760fb46773b2ae73ed253/apps/api/app/modules/ingestion/storage.py#L126).
@@ -31,11 +34,12 @@ Başlangıç kaynakları kesin A commit'ine bağlıdır: [sınırsız upload oku
 | Kopya | Mevcut kontrol | Kalan iş |
 |---|---|---|
 | Profil ve üyelik | Sahip/rol kontrolü; profil alanı kaldırma ve üyelik iptali | Aynı UUID geri bağlanabilir; resmi saklama ve kimlik hesabı kapatma süreci |
-| Sohbet ve paylaşılmış inceleme alıntısı | Sahiplik, açık paylaşım tercihi, cascade silme | Silme eyleminin bütün açık sekmelere yansıması; süre bazlı politika |
+| Sohbet ve paylaşılmış inceleme alıntısı | Sahiplik, açık paylaşım tercihi, cascade silme | Sekme olayı ve focus/pageshow yeniden denetimi S/B testleriyle doğrulandı; süre bazlı politika ve dış kopyalar açık |
 | Sınav cevabı, değerlendirme, mastery | Sahip filtreleri, RLS ve aktif sınav kilidi | Serbest metin dahil kategori bazlı saklama/erasure kararı ve uygulaması |
 | Orijinal dosya, chunk ve vektör | Ders üyeliği, özel depo, dosya boyutu/tür sınırı | Dosya/DB işlemi tek atomik işlem değil; belirsiz sonuç, process crash ve cleanup hatası için uzlaştırma |
 | Ders cevap önbelleği | Ders/audience/policy/prompt/corpus kapsamı; guardrail sonrası yazma | Kullanıcı metninden türeyen kişisel içeriğin kalıcılığını ve imha kapsamını ölçme |
-| Tarayıcı taslağı ve bellek | Kullanıcı/ders/oturum kapsamı | Çıkış, kullanıcı değişimi ve geç yanıt testleri; önceden indirilmiş dosyalar geri çağrılamaz |
+| Tarayıcı taslağı ve bellek | Kullanıcı/ders/oturum kapsamı | Çıkış/kullanıcı değişimi/geç yanıt testleri geçti; bütün cihazlar veya önceden indirilmiş dosyalar geri çağrılamaz |
+| Sohbet silme kapsam sürümü | Yalnız hesap/ders kimliği ve artan sayaç; soru/cevap veya silme zamanı yok, sahip RLS | Profil satırı veya ders fiziksel silinince cascade; profil alanı kaldırmak bu sayacı silmez. Onaylı saklama/imha politikası ayrıca gerekir |
 | Ölçüm, quota, güvenlik ve yönetim kayıtları | Ham prompt yerine kimlik/olay verileri; maskeleme | Kimlikli kayıtlar için amaç/süre; exception/proxy/provider günlükleri ayrıca incelenmeli |
 | LLM/kimlik/depo sağlayıcısı | Yapılandırılmış adaptörler, yetki kontrolleri | Sözleşme, bölge, saklama/eğitim ayarı, alt işleyen ve aktarım kanıtı |
 | Yedek ve dışa aktarımlar | Depoda runbook ve yerel mekanik kontroller | Gerçek şifreleme, erişim, restore, süre ve restore sonrası imha tatbikatı |

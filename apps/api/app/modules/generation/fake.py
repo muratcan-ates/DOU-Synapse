@@ -303,6 +303,7 @@ def _draft_for(question_type: str, chunk_id: str, body: str, user_prompt: str) -
             "code": "for i in range(3):\n    print(i)",
             "prompt": f"Bu kodun çıktısı nedir? Kaynak bölüm: {short}",
             "answer_key": "0\n1\n2",
+            "rubric": [{"point": "Beklenen çıktıyı doğru sırada belirtir", "weight": 100}],
             "explanation": "Döngü 0'dan 2'ye kadar sayar ve her adımda değeri basar.",
         }
 
@@ -318,6 +319,10 @@ def _draft_for(question_type: str, chunk_id: str, body: str, user_prompt: str) -
                 "fix_summary": "Fazladan eklenen 1 kaldırılmalı.",
             },
             "explanation": "Ortalama hesabına sabit eklenmiş.",
+            "rubric": [
+                {"point": "Hatalı satırı doğru belirtir", "weight": 30},
+                {"point": "Hata türünü ve düzeltmeyi açıklar", "weight": 70},
+            ],
         }
 
     # open — kısa cevap istendiyse `accepted_answers`, aksi hâlde `key_points`

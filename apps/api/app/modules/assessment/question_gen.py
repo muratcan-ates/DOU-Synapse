@@ -63,6 +63,7 @@ from app.schemas.assessment import (
     McqOption,
     RubricItem,
     parse_payload,
+    validate_new_code_rubric,
 )
 
 logger = get_logger("app.assessment.question_gen")
@@ -260,7 +261,17 @@ class _OpenDraft(_Draft):
         return self
 
 
-class _CodeTraceDraft(_Draft):
+class _CodeRubricDraft(_Draft):
+    # Yeni üretilen kod taslakları incelenebilir puanlama ölçütleri taşımalıdır.
+    rubric: list[RubricItem] = Field(min_length=1, max_length=12)
+
+    @model_validator(mode="after")
+    def _complete_rubric(self) -> _CodeRubricDraft:
+        validate_new_code_rubric(self.rubric)
+        return self
+
+
+class _CodeTraceDraft(_CodeRubricDraft):
     language: str = Field(min_length=1, max_length=40)
     code: str = Field(min_length=1, max_length=8000)
     prompt: str = Field(min_length=5, max_length=2000)
@@ -268,7 +279,7 @@ class _CodeTraceDraft(_Draft):
     explanation: str | None = Field(default=None, max_length=4000)
 
 
-class _BugHuntDraft(_Draft):
+class _BugHuntDraft(_CodeRubricDraft):
     language: str = Field(min_length=1, max_length=40)
     code: str = Field(min_length=1, max_length=8000)
     prompt: str = Field(min_length=5, max_length=2000)
@@ -323,12 +334,16 @@ _TYPE_INSTRUCTIONS: dict[QuestionType, str] = {
         "Her soru için: language (kodun dili), code (izlenecek kod parçası), "
         "prompt ('Bu kodun çıktısı nedir?' gibi), answer_key (beklenen çıktı, "
         "birebir), explanation (adım adım kısa gerekçe). Kod materyaldeki "
-        "örneklerden türetilir; yeni kütüphane uydurma."
+        "örneklerden türetilir; yeni kütüphane uydurma. Ayrıca rubric ver: her satır "
+        "{point, weight}; kaynak ve beklenen çıktıya bağlı benzersiz, boş olmayan "
+        "ölçütlerin ağırlıkları toplamı 100 olsun. Kod çalıştırma."
     ),
     QuestionType.BUG_HUNT: (
         "Her soru için: language, code (içinde TEK bir hata olan kod), prompt, "
         "answer_key ({line: hatalı satır numarası, bug_type: hatanın türü, "
-        "fix_summary: düzeltmenin bir cümlelik özeti}), explanation."
+        "fix_summary: düzeltmenin bir cümlelik özeti}), explanation. Ayrıca rubric ver: "
+        "her satır {point, weight}; kaynak ve beklenen tespite bağlı benzersiz, boş "
+        "olmayan ölçütlerin ağırlıkları toplamı 100 olsun. Kod çalıştırma."
     ),
 }
 

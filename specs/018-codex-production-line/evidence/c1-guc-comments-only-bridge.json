@@ -1,0 +1,26 @@
+{
+  "apps/api/app/modules/retrieval/dense.py": {
+    "before_sha256": "384f3a2ba867489a58e3157ae46b38ae19201db35ec733241302c150ecbe23cb",
+    "after_sha256": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+    "behavioral_ast_sha256": "c0494ebbfd4143ec0d7281aad18cc7efc92db19fefb15b812d3b173bf0d359ae",
+    "behavior_unchanged_excluding_docstrings": true
+  },
+  "apps/api/tests/test_retrieval_candidates.py": {
+    "before_sha256": "430b260e9ac30a865d90fdc6503d951b2ce0b4c184cbb0c2ff6c216d5e8700f7",
+    "after_sha256": "d0505df60f47263190e281f32b0024e0a6a5a7753cc2e82d766473b5b2321bb8",
+    "behavioral_ast_sha256": "3336d9e7ff6260c06930341730f459559011684a84a10b47b854dfe3af8b267c",
+    "behavior_unchanged_excluding_docstrings": true
+  },
+  "scripts/probe_retrieval_runtime.py": {
+    "before_sha256": "0ba647162d6bab563cb35a7d65cc5994ad3562e813c0fa361d990b8249a92118",
+    "after_sha256": "38ef1637d0e0bfd90788fcce8093672626be324ad249041ae9f2baeac1ae45db",
+    "behavioral_ast_sha256": "ec645c014f1619488d1bff041fd45bacae9016fa8cf3234efd5ab99841671992",
+    "behavior_unchanged_excluding_docstrings": true
+  },
+  "scripts/test_probe_retrieval_runtime.py": {
+    "before_sha256": "8bb5d06b405249522b2b879bc94f4106cbe132bf867483d69a15f3d697b625ff",
+    "after_sha256": "8bb5d06b405249522b2b879bc94f4106cbe132bf867483d69a15f3d697b625ff",
+    "behavioral_ast_sha256": "1e37d59a4ded98f6bf9e9d387f143915920e224f4c2f0fa6b86f9aec7cfff05f",
+    "behavior_unchanged_excluding_docstrings": true
+  }
+}

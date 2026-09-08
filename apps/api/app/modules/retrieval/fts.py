@@ -106,17 +106,10 @@ _SQL = text(
               OR c.document_id = ANY(CAST(:document_ids AS uuid[]))
           )
           AND c.fts @@ q.query
-        -- Eşitlik bozma `c.id` DEĞİL: birincil anahtar `gen_random_uuid()` ile
-        -- üretiliyor, yani aynı korpus yeniden ingest edildiğinde aynı parça
-        -- başka bir kimlik alıyor ve eşit rank'li satırların sırası değişiyor.
-        -- Bir korpus içinde kararlıydı, korpuslar ARASINDA değildi (R2 ölçtü:
-        -- yeniden kurulan indekste Recall@5 0.981 → 0.971 ve T044'ün MRR güven
-        -- aralığı sıfırın bir yanından diğerine geçti — "hibrit dense'ten
-        -- iyidir" hükmü bu yüzden geri çekildi).
-        --
-        -- `(document_id, chunk_index)` belgenin içeriğinden türüyor: aynı
-        -- materyal yeniden işlendiğinde aynı sırayı verir. Ölçüm artık yeniden
-        -- üretilebilir.
+        -- Belge UUID'si ve chunk_index, aynı veritabanındaki değişmeyen korpus
+        -- için eşit skorları kararlı sıralar. document_id içerikten türemez;
+        -- yeniden yüklemede UUID değişebileceği için korpuslar arası sıra garantisi yoktur.
+        -- İçerik-hash bağlayıcısı holdout'ta geriletti; bu adayda eski sıra korunur.
         ORDER BY rank DESC, c.document_id, c.chunk_index
         LIMIT :limit
     )

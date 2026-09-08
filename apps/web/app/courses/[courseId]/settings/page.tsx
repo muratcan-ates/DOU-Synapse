@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { PolicyHistory } from "@/components/policy-history";
 import { CourseNav } from "@/components/course-nav";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Button, Card, EmptyState, Input } from "@/components/ui";
 import { api } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
+import { createPolicyDraftBuffer, type PolicyDraftBuffer, type PolicyDraftLease } from "@/lib/policy-draft-buffer";
 import {
   courseHardCapLabel,
   draftFromPolicy,
@@ -23,7 +25,7 @@ import { useSubmit } from "@/lib/use-submit";
 
 export default function AiPolicyPage() {
   const { courseId } = useParams<{ courseId: string }>();
-  const { isInstructor, ready } = useSession(courseId);
+  const { isInstructor, ready, user } = useSession(courseId);
 
   return (
     <AppShell>
@@ -32,26 +34,53 @@ export default function AiPolicyPage() {
         title="Ders AI politikası"
         description="Asistanın modlarını, kaynak sınırını, kanıt eşiğini, ipucu tavanını ve günlük sohbet bütçesini sunucu tarafında yönetin."
       />
-      <InstructorGate
+      <PolicyEditorBoundary
+        key={`${courseId}:${user?.id ?? "signed-out"}`}
+        courseId={courseId}
+        viewerId={user?.id ?? null}
         ready={ready}
         isInstructor={isInstructor}
-        fallback={<EmptyState title="AI politikası yalnızca dersin eğitmenine gösterilir." />}
-      >
-        <PolicyEditor courseId={courseId} />
-      </InstructorGate>
+      />
     </AppShell>
   );
 }
 
-function PolicyEditor({ courseId }: { courseId: string }) {
+function PolicyEditorBoundary({ courseId, viewerId, ready, isInstructor }: {
+  courseId: string; viewerId: string | null; ready: boolean; isInstructor: boolean;
+}) {
+  // The parent key binds this RAM buffer to one user and course. Only a draft
+  // survives temporary role loading; the actual editor/history still unmount.
+  const [draftBuffer] = useState(createPolicyDraftBuffer);
+  useEffect(() => () => draftBuffer.clear(), [draftBuffer]);
+  useEffect(() => {
+    if (ready && !isInstructor) draftBuffer.clear();
+  }, [ready, isInstructor, draftBuffer]);
+  return (
+    <InstructorGate ready={ready} isInstructor={isInstructor}
+      fallback={<EmptyState title="AI politikası yalnızca dersin eğitmenine gösterilir." />}>
+      <PolicyEditor courseId={courseId} viewerId={viewerId} draftBuffer={draftBuffer} />
+    </InstructorGate>
+  );
+}
+
+function PolicyEditor({ courseId, viewerId, draftBuffer }: {
+  courseId: string; viewerId: string | null; draftBuffer: PolicyDraftBuffer;
+}) {
+  const [historyRevision, setHistoryRevision] = useState(0);
   const [policy, setPolicy] = useState<CourseAiPolicy | null>(null);
-  const [draft, setDraft] = useState<PolicyDraft | null>(null);
+  const [draft, setDraftState] = useState<PolicyDraft | null>(null);
+  const leaseRef = useRef<PolicyDraftLease | null>(null);
   const [documents, setDocuments] = useState<CourseDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function load() {
+  function setDraft(next: PolicyDraft) {
+    if (leaseRef.current?.write(next)) setDraftState(next);
+  }
+
+  async function load(lease = leaseRef.current) {
+    if (!lease?.current()) return;
     setLoading(true);
     setError(null);
     try {
@@ -61,19 +90,23 @@ function PolicyEditor({ courseId }: { courseId: string }) {
           .get<Page<CourseDocument>>(`/courses/${courseId}/documents?limit=100`)
           .then((page) => page.items),
       ]);
+      if (!lease.current()) return;
       setPolicy(nextPolicy);
-      setDraft(draftFromPolicy(nextPolicy));
+      setDraft(lease.read() ?? draftFromPolicy(nextPolicy));
       setDocuments(nextDocuments);
     } catch (cause) {
-      setError(errorMessage(cause, "AI politikası yüklenemedi."));
+      if (lease.current()) setError(errorMessage(cause, "AI politikası yüklenemedi."));
     } finally {
-      setLoading(false);
+      if (lease.current()) setLoading(false);
     }
   }
 
   useEffect(() => {
-    void load();
-  }, [courseId]);
+    const lease = draftBuffer.open();
+    leaseRef.current = lease;
+    void load(lease);
+    return () => lease.close();
+  }, [courseId, draftBuffer]);
 
   /*
    * Kayıt hatası yükleme hatasıyla AYNI satırı paylaşır (tek `error` durumu);
@@ -82,18 +115,25 @@ function PolicyEditor({ courseId }: { courseId: string }) {
    */
   const { busy: saving, submit: save } = useSubmit(
     async () => {
-      if (!draft) return;
+      const lease = leaseRef.current;
+      if (!draft || !lease?.current()) return;
+      const submittedDraft = draft;
       setError(null);
       setNotice(null);
       const saved = await api.put<CourseAiPolicy>(
         `/courses/${courseId}/ai-policy`,
         payloadFromDraft(draft),
       );
+      if (!lease.current()) return;
       setPolicy(saved);
-      setDraft(draftFromPolicy(saved));
+      // Preserve edits made while the save response was pending.
+      if (lease.read() === submittedDraft) setDraft(draftFromPolicy(saved));
       setNotice("AI politikası kaydedildi ve ilk yeni istekten itibaren uygulanacak.");
+      setHistoryRevision((value) => value + 1);
     },
-    { onError: (cause) => setError(errorMessage(cause, "AI politikası kaydedilemedi.")) },
+    { onError: (cause) => {
+      if (leaseRef.current?.current()) setError(errorMessage(cause, "AI politikası kaydedilemedi."));
+    } },
   );
 
   if (loading) return <Loading label="AI politikası yükleniyor…" />;
@@ -194,6 +234,7 @@ function PolicyEditor({ courseId }: { courseId: string }) {
         <p className="text-xs text-fg-muted">Son güncelleme: {policy.updated_at ? new Date(policy.updated_at).toLocaleString("tr-TR") : "Henüz özelleştirilmedi"}</p>
         <Button aria-disabled={saving} onClick={() => void save()}>{saving ? "Kaydediliyor…" : "Politikayı kaydet"}</Button>
       </div>
+      <PolicyHistory key={historyRevision} courseId={courseId} viewerId={viewerId} documentNames={new Map(documents.map((document) => [document.id, document.file_name]))} />
     </div>
   );
 }

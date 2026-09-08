@@ -3,7 +3,7 @@ import type { ComponentProps } from "react";
 import { api } from "@/lib/api";
 import type { LearningOutcome } from "@/lib/blueprint";
 import { describeError, type ErrorInfo } from "@/lib/errors";
-import { buildDraftRequest, changeCorrectOption, classificationComplete, createDraftForm,
+import { buildDraftRequest, changeCorrectOption, classificationComplete, codeRubricIssue, createDraftForm,
   draftSourceChoices, rubricHasLegacyMetadata, type QuestionDraftForm } from "@/lib/question-authoring";
 import { useSubmit } from "@/lib/use-submit";
 import type { Question } from "@/lib/types";
@@ -30,6 +30,8 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
   const sources = draftSourceChoices(question);
   const complete = classificationComplete(form);
   const legacyRubric = rubricHasLegacyMetadata(question);
+  const codeQuestion = question.type === "code_trace" || question.type === "bug_hunt";
+  const rubricIssue = codeRubricIssue(question, form.rubric);
   const { busy, submit } = useSubmit(async () => {
     setError(null);
     const updated = await api.post<Question>(`/courses/${courseId}/questions/${question.id}/draft`,
@@ -63,7 +65,7 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
   }
   function save(event: React.FormEvent) {
     event.preventDefault();
-    if (!complete) return;
+    if (!complete || rubricIssue) return;
     void submit();
   }
   return (
@@ -112,8 +114,11 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
             onChange={(value) => change("acceptedAnswers", value)} required /> : <div className="space-y-4">
             <TextArea label="Cevapta aranan noktalar (her satır bir nokta)" value={form.keyPoints}
               onChange={(value) => change("keyPoints", value)} required />
-            <div className="space-y-3">
+          </div>)}
+        {(codeQuestion || (question.type === "open" && !shortAnswer)) && <div className="space-y-3">
               <h4 className="text-sm font-medium text-fg">Puanlama ölçütleri</h4>
+              {codeQuestion && <p className="prose-tr text-xs text-fg-muted">Kaydetmek için en az bir ölçüt tanımlayın. Ölçütler farklı olmalı ve puanlarının toplamı 100 olmalı.</p>}
+              {codeQuestion && original.rubric.length === 0 && <p role="status" className="prose-tr text-sm text-fg-muted">Bu eski kod sorusunda puanlama ölçütü yok. Soruyu kaydetmeden önce ölçüt ekleyin.</p>}
               {legacyRubric && <p className="prose-tr text-xs text-fg-muted">Bu eski sorunun ölçüt kayıtları korunuyor. Ölçüt ekleme, kaldırma ve metin değişikliği kapalı; puanları düzenleyebilirsiniz.</p>}
               {form.rubric.map((criterion, index) => <div key={index} className="space-y-2 border-b border-border pb-3">
                 <TextArea label={`Ölçüt ${index + 1}`} value={criterion.point} rows={2} required maxLength={500} readOnly={legacyRubric}
@@ -129,17 +134,17 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
                   onClick={() => change("rubric", [...form.rubric, { point: "", weight: "" }])}>Ölçüt ekle</Button>
                 <p className="text-xs text-fg-muted">Toplam: {form.rubric.reduce((sum, item) => sum + (Number(item.weight) || 0), 0)} / 100 puan</p>
               </div>
-            </div>
-          </div>)}
+            </div>}
         {question.type !== "open" && <TextArea label="Gerekçe (isteğe bağlı)" value={form.explanation} onChange={(value) => change("explanation", value)} maxLength={4000} />}
         <ClassificationFields courseId={courseId} topicId={question.topic_id} outcomes={outcomes} value={form}
           onChange={(value) => setForm((current) => ({ ...current, ...value }))} />
       </fieldset>
+      {rubricIssue && <p role="status" className="text-sm text-fg-muted">{rubricIssue}</p>}
       {!complete && <p role="status" className="text-sm text-fg-muted">Öğrenme çıktısı ve zorluğu birlikte seçin veya ikisini de sınıflandırılmadı olarak bırakın.</p>}
       {error && <ErrorNote message={error.message} kind={error.kind} requestId={error.requestId} />}
     </form>
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Button type="submit" form={formId} aria-disabled={busy || !complete}>{busy ? "Kaydediliyor…" : "Taslağı kaydet"}</Button>
+        <Button type="submit" form={formId} aria-disabled={busy || !complete || rubricIssue !== null}>{busy ? "Kaydediliyor…" : "Taslağı kaydet"}</Button>
         {dirty && !busy ? <ConfirmAction label="Vazgeç" confirmLabel="Değişiklikleri sil" busyLabel="Kapatılıyor…"
           question="Kaydedilmemiş değişiklikler silinsin mi?" onConfirm={async () => onCancel()} /> :
           <Button type="button" variant="secondary" aria-disabled={busy} onClick={onCancel}>Vazgeç</Button>}

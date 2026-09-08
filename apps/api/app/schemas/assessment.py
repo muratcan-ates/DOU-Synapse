@@ -143,6 +143,15 @@ def normalized_rubric(rubric: list[RubricItem]) -> list[RubricItem]:
     return scaled
 
 
+def validate_new_code_rubric(rubric: list[RubricItem]) -> None:
+    """Yazım ve üretim kısıtı; eski soru kayıtları okunurken uygulanmaz."""
+    names = [item.point.strip().casefold() for item in rubric]
+    if not names or any(not name for name in names) or len(set(names)) != len(names):
+        raise ValueError("Kod ölçütleri boş olamaz ve benzersiz olmalı.")
+    if sum(item.weight for item in rubric) != 100:
+        raise ValueError("Kod ölçütlerinin ağırlıkları toplamı 100 olmalı.")
+
+
 class OpenPayload(BaseModel):
     prompt: str = Field(min_length=5, max_length=4000)
     answer_key: str = Field(min_length=1, max_length=8000)
@@ -164,6 +173,8 @@ class OpenPayload(BaseModel):
 
 
 class CodeTracePayload(BaseModel):
+    # Okumada isteğe bağlıdır: eski onaylı kod sorularının rubriği yoktur.
+    rubric: list[RubricItem] = Field(default_factory=list, max_length=12)
     language: str = Field(min_length=1, max_length=40)
     code: str = Field(min_length=1, max_length=8000)
     prompt: str = Field(min_length=5, max_length=2000)
@@ -178,6 +189,7 @@ class BugHuntAnswerKey(BaseModel):
 
 
 class BugHuntPayload(BaseModel):
+    rubric: list[RubricItem] = Field(default_factory=list, max_length=12)
     language: str = Field(min_length=1, max_length=40)
     code: str = Field(min_length=1, max_length=8000)
     prompt: str = Field(min_length=5, max_length=2000)
@@ -245,6 +257,22 @@ class SourceRefOut(BaseModel):
     file_name: str
     location: str
     snippet: str
+
+
+class GroundedCriterionEvidence(BaseModel):
+    """Modelin veya kaydın iddiası; açık ölçüt ve birebir alıntıyla doğrulanır."""
+
+    model_config = ConfigDict(extra="forbid")
+    criterion: str = Field(min_length=1, max_length=500)
+    chunk_id: UUID
+    quote: str = Field(min_length=1, max_length=320)
+
+
+class GroundedMissingCriterionOut(BaseModel):
+    """Puanlanan ölçütün kaynak alıntısı; anlamsal çelişkiyi doğruladığını iddia etmez."""
+
+    criterion: str
+    source: SourceRefOut
 
 
 # ---------------------------------------------------------------------------
@@ -395,6 +423,8 @@ class AnswerFeedbackOut(BaseModel):
     why_wrong: SourceRefOut | None = None
     #: Açık uçluda değerlendirmenin dayandığı kaynak.
     evidence: SourceRefOut | None = None
+    #: Eksik ölçütün kaynak alıntısı. MCQ why_wrong anlamından ayrı tutulur.
+    grounded_missing_criterion: GroundedMissingCriterionOut | None = None
     #: Sınav bitince açılan cevap anahtarı + açıklama; öncesinde None.
     solution: dict[str, Any] | None = None
     #: Rubriğe bağlı sorularda ölçüt kırılımı (FR-117). Yalnız çözüm açıldığında

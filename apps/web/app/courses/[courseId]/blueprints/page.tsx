@@ -28,10 +28,12 @@
  * (bkz. `lib/blueprint.test.ts`).
  */
 
+import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
+  buildLearningOutcomeRequest,
   DIFFICULTIES,
   DIFFICULTY_LABEL,
   editingNoticeFor,
@@ -51,6 +53,7 @@ import {
 } from "@/lib/blueprint";
 import { QUESTION_TYPE } from "@/lib/labels";
 import { useSession } from "@/lib/session";
+import type { Topic } from "@/lib/types";
 import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { useSubmit } from "@/lib/use-submit";
@@ -83,6 +86,10 @@ function BlueprintScreen() {
   const blueprints = useResource<Blueprint[]>(
     () => api.get(`/courses/${courseId}/blueprints`),
     [courseId],
+  );
+
+  const authoring = useResource<{ enabled: boolean }>(
+    () => api.get(`/courses/${courseId}/questions/authoring`), [courseId],
   );
 
   const [selection, setSelection] = useState<{ queryKey: string; id: string } | null>(null);
@@ -130,6 +137,10 @@ function BlueprintScreen() {
       />
 
       <OutcomesCard courseId={courseId} outcomes={outcomes} />
+      {(authoring.error ?? authoring.refreshError) && <ErrorNote
+        message={authoring.error ?? authoring.refreshError ?? ""} kind={authoring.errorKind}
+        requestId={authoring.errorRequestId} onRetry={authoring.reload} />}
+
 
       <BlueprintListCard
         courseId={courseId}
@@ -146,6 +157,7 @@ function BlueprintScreen() {
         <BlueprintDetail
           courseId={courseId}
           blueprint={selected}
+          authoringEnabled={authoring.data?.enabled ?? null}
           linkedVersionId={selected.id === linkedBlueprintId ? linkedVersionId : null}
           outcomes={outcomes.data ?? []}
           onChanged={blueprints.reload}
@@ -169,12 +181,12 @@ function OutcomesCard({
 }) {
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
+  const [topicId, setTopicId] = useState("");
+  const topics = useResource<Topic[]>(() => api.get(`/courses/${courseId}/topics`), [courseId]);
 
   const { busy, error, submit } = useSubmit(async () => {
-    await api.post(`/courses/${courseId}/learning-outcomes`, {
-      code: code.trim(),
-      description: description.trim(),
-    });
+    await api.post(`/courses/${courseId}/learning-outcomes`,
+      buildLearningOutcomeRequest(code, description, topicId));
     setCode("");
     setDescription("");
     outcomes.reload();
@@ -207,15 +219,26 @@ function OutcomesCard({
             >
               <span className="font-mono text-sm text-fg">{outcome.code}</span>
               <span className="prose-tr text-sm text-fg-muted">{outcome.description}</span>
-              {outcome.topic_id === null && (
-                <Badge tone="neutral">Konusuz — konu dağılımına girmez</Badge>
-              )}
+              <Badge tone="neutral">{outcome.topic_id === null
+                ? "Konu atanmadı; dağılımda ayrı gösterilir"
+                : topics.data?.find((topic) => topic.id === outcome.topic_id)?.name ?? (topics.loading ? "Konu bilgisi yükleniyor…" : "Konu bilgisi bulunamadı")}</Badge>
             </li>
           ))}
         </ul>
       )}
 
+      {(topics.error ?? topics.refreshError) && <ErrorNote
+        message={topics.error ?? topics.refreshError ?? ""} kind={topics.errorKind}
+        requestId={topics.errorRequestId} onRetry={topics.reload} />}
       <div className="flex flex-wrap items-end gap-3">
+        <Field label="Çıktının konusu">
+          {(control) => <select {...control} value={topicId} disabled={busy || !topics.data}
+            onChange={(event) => setTopicId(event.target.value)}
+            className="min-h-11 max-w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-fg">
+            <option value="">Konu atama</option>
+            {(topics.data ?? []).map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
+          </select>}
+        </Field>
         <Field label="Kod">
           {(control) => (
             <Input
@@ -234,7 +257,7 @@ function OutcomesCard({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Kilitlenmenin dört koşulunu sayar"
-              className="w-80"
+              className="w-full sm:w-80"
             />
           )}
         </Field>
@@ -688,6 +711,7 @@ function BlueprintEditor({
 }
 
 function BlueprintDetail({
+  authoringEnabled,
   courseId,
   blueprint,
   outcomes,
@@ -699,6 +723,7 @@ function BlueprintDetail({
   outcomes: LearningOutcome[];
   onChanged: () => void;
   linkedVersionId: string | null;
+  authoringEnabled: boolean | null;
 }) {
   const [editing, setEditing] = useState(false);
   const versions = useResource<ExamVersion[]>(
@@ -822,6 +847,7 @@ function BlueprintDetail({
             <VersionRow
               key={`${version.id}:${version.id === linkedVersionId}`}
               linked={version.id === linkedVersionId}
+              authoringEnabled={authoringEnabled}
               courseId={courseId}
               blueprint={blueprint}
               version={version}
@@ -839,6 +865,7 @@ function BlueprintDetail({
 }
 
 function VersionRow({
+  authoringEnabled,
   courseId,
   blueprint,
   version,
@@ -852,6 +879,7 @@ function VersionRow({
   outcomes: LearningOutcome[];
   onChanged: () => void;
   linked: boolean;
+  authoringEnabled: boolean | null;
 }) {
   const base = `/courses/${courseId}/blueprints/${blueprint.id}/versions/${version.id}`;
   const [readiness, setReadiness] = useState<Readiness | null>(null);
@@ -872,6 +900,10 @@ function VersionRow({
       setReadiness(await api.get<Readiness>(`${base}/readiness`));
       return;
     }
+    // Yeniden denetleme güncel sunucu sonucunu gösterir; publish ucu da doğrular.
+    const latest = await api.get<Readiness>(`${base}/readiness`);
+    setReadiness(latest);
+    if (!latest.ready) return;
     await api.post(`${base}/publish`);
     onChanged();
   });
@@ -909,7 +941,7 @@ function VersionRow({
             Kapıyı denetle
           </Button>
           {version.status === "draft" && (
-            <Button onClick={publish} aria-disabled={busy}>
+            <Button onClick={publish} aria-disabled={busy || readiness?.ready === false}>
               Yayınla
             </Button>
           )}
@@ -957,6 +989,15 @@ function VersionRow({
               <p className="prose-tr mb-1 text-xs text-fg-muted">
                 Bunlar hiçbir hücreye sayılmıyor. Havuzda öğrenme çıktısı ve zorluk
                 atanmadan duran sorulardır.
+              </p>
+              <p className="prose-tr mb-2 text-sm text-fg-muted">
+                {authoringEnabled === false
+                  ? "Soru sınıflandırma şu anda kapalı. Mevcut sınıflandırılmış ve onaylı sorularla sınav yayınlanabilir. Kâğıdı düzenleyerek bu soruları değiştir."
+                  : authoringEnabled === true
+                    ? "Yeni bir taslak soruya öğrenme çıktısı ve zorluk atayıp onayla; ardından kâğıttaki sınıflandırılmamış soruyu değiştir."
+                    : "Sınıflandırma kullanılabilirliği henüz doğrulanmadı. Mevcut sınıflandırılmış ve onaylı sorulardan seçim yapabilirsin."}
+                {authoringEnabled === true && <> <Link href={`/courses/${courseId}/questions`}
+                  className="font-medium text-fg underline underline-offset-4">Soru havuzunu aç</Link></>}
               </p>
               <ul className="flex flex-col gap-1">
                 {readiness.unclassified_items.map((item) => (

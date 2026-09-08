@@ -1192,7 +1192,7 @@ class TestEsitMesafeliParcalarinSirasi:
 
     fts.py'de ölçülüp düzeltilen kusurla aynı sınıftan: eşit mesafeli satırların
     sırası `c.id`'ye (her ingest'te yeniden üretilen `gen_random_uuid()`) değil
-    `(document_id, chunk_index)`'e bağlanmalı, yoksa aynı korpus yeniden
+    `(documents.file_hash, chunk_index)`'e bağlanmalı, yoksa aynı korpus yeniden
     yüklendiğinde sıralama nedensiz değişir. `hashing` sağlayıcı deterministik
     olduğu için birebir aynı metin birebir aynı vektörü, dolayısıyla sorguya
     birebir aynı mesafeyi üretir — gerçek bir eşitlik burada garanti edilir.

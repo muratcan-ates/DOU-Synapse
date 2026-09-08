@@ -37,23 +37,18 @@ retrieval kalitesini kör bir yazı-turaya bırakmak olurdu.
    `<#>` negatif iç çarpım, `<->` sınırsız mesafe döndürür; ikisi de kanıt kapısını
    (service.py) besleyemez.
 
-**Bilinen sınır — filtrelenmiş ANN.** `WHERE course_id = ...` + RLS ile birlikte HNSW,
-`ef_search` kadar aday üretip sonra filtreler; korpus büyüdükçe küçük bir dersin
-sonuçları eksik dönebilir. Bugünkü ölçekte bu risk **gerçekleşmiyor, çünkü HNSW hiç
-kullanılmıyor** — gerçek materyal yüklü veritabanında (33 chunk, 8 belge) alınan plan::
+**Filtreli ANN ve aday penceresi.** İç sorgu yalnız kosinüs operatörüyle
+sıralanır; ek kimlik alanı HNSW yolunu engeller. MATERIALIZED aday kümesi, istenen
+sonuç sayısının yapılandırılmış katıyla sınırlıdır. Aynı işlemde relaxed_order
+iterative scan açılır; dış sorgu mesafe, dosyanın içerik özeti ve chunk_index ile
+sıralayıp istenen sayıya iner. Küçük veya dar filtreli korpusta planlayıcı yine
+kesin bitmap/index + sort yolunu seçebilir; HNSW zorlanmaz.
 
-    Limit
-      ->  Sort  (Sort Key: (embedding <=> '...'))
-            ->  Bitmap Heap Scan on chunks c
-                  Recheck Cond: (course_id = '...')
-                  Filter: app.is_member(course_id)
-                  ->  Bitmap Index Scan on chunks_course_idx
-
-Planlayıcı `course_id` indeksinden gidip tam sıralama yapıyor, yani sonuç kesin.
-(Plandaki `Filter: app.is_member(course_id)` satırı ayrıca RLS'in `dou_app` bağlantısında
-gerçekten devrede olduğunun doğrudan kanıtı.) Korpus büyüyüp planlayıcı HNSW'ye geçtiğinde
-çözüm pgvector 0.8'in `hnsw.iterative_scan` ayarıdır; bugün açılmadı çünkü davranışı
-gerçek ölçekte ölçülmedi (Anayasa III).
+İçerik özeti belge UUID'sinden farklıdır: yeniden yüklemede kimlik değişse de
+aynı kaynak aynı hash'i taşır. Dış sıralama yalnız seçilmiş aday kümesinde
+kararlıdır; eşit mesafeli grup pencereye sığmazsa bütün korpus için aynı alt
+kümenin seçileceği garanti edilmez. ×8 varsayılanı 20 bin sentetik vektörlü
+plan deneyinde sınandı; gerçek model veya genel anlamsal kalite kanıtı değildir.
 
 Yetki notu: `course_id` bir yetki belgesi değildir, arama alanını daraltır. İzolasyonun
 ikinci katmanı `chunks_member_read` RLS politikasıdır ve aynı oturumda zaten devrededir.
@@ -70,6 +65,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts import RetrievedChunk
+from app.core.config import get_settings
 from app.core.errors import AppError
 from app.core.logging import get_logger
 from app.core.vector_space import current_space
@@ -81,7 +77,7 @@ logger = get_logger("app.retrieval.dense")
 # sıralama adımına girerse planlayıcı HNSW indeksinden düşebilir.
 _SQL = text(
     """
-    WITH nearest AS (
+    WITH nearest AS MATERIALIZED (
         SELECT c.id,
                c.document_id,
                c.chunk_index,
@@ -98,14 +94,8 @@ _SQL = text(
               OR c.document_id = ANY(CAST(:document_ids AS uuid[]))
           )
           AND c.embedding IS NOT NULL
-        -- Eşitlik bozma `c.id` DEĞİL: birincil anahtar `gen_random_uuid()` ile
-        -- üretiliyor, aynı korpus yeniden ingest edildiğinde eşit mesafeli
-        -- satırların sırası değişir (fts.py'de ölçülüp docs/test-report.md
-        -- §6.4'te belgelenen kusurla aynı sınıftan — T303). `(document_id,
-        -- chunk_index)` belgenin içeriğinden türüyor: aynı materyal yeniden
-        -- işlendiğinde aynı sırayı verir.
-        ORDER BY distance, c.document_id, c.chunk_index
-        LIMIT :limit
+        ORDER BY c.embedding <=> CAST(:query_vector AS vector)
+        LIMIT :candidate_limit
     )
     SELECT n.id,
            n.document_id,
@@ -118,7 +108,8 @@ _SQL = text(
            1 - n.distance AS similarity
     FROM nearest n
     JOIN documents d ON d.id = n.document_id
-    ORDER BY n.distance, n.document_id, n.chunk_index
+    ORDER BY n.distance + 0, d.file_hash, n.chunk_index
+    LIMIT :limit
     """
 )
 
@@ -177,6 +168,7 @@ async def dense_search(
     query: str,
     limit: int,
     document_ids: tuple[UUID, ...] | None = None,
+    candidate_multiplier: int | None = None,
 ) -> list[RetrievedChunk]:
     """Sorguya anlamsal olarak en yakın `limit` parçayı döndürür.
 
@@ -190,11 +182,28 @@ async def dense_search(
     if limit <= 0 or not query.strip():
         return []
 
+    multiplier = (
+        get_settings().retrieval_dense_candidate_multiplier
+        if candidate_multiplier is None
+        else candidate_multiplier
+    )
+    if not 1 <= multiplier <= 8:
+        raise ValueError("Yoğun arama aday çarpanı 1 ile 8 arasında olmalı.")
+
     # Üç sarmanın en kritiği burası (FR-220): ingestion ayrı bir worker sürecine
     # taşınsa bile sorgu embedding'i HER sohbet isteğinde API sürecinde koşar.
     # fastembed/ONNX çıkarımı senkron ve CPU'ya bağlıdır; doğrudan çağrıldığında
     # o süre boyunca sağlık yoklaması dahil hiçbir istek işlenemez.
     vector = await asyncio.to_thread(get_embedding_provider().embed_query, query)
+    # İşlem-yerel: havuza dönen bağlantının bir sonraki isteğine sızmaz.
+    await session.execute(text("SELECT set_config('hnsw.iterative_scan', 'relaxed_order', true)"))
+    previous_plan_mode = (
+        await session.execute(text("SELECT current_setting('plan_cache_mode')"))
+    ).scalar_one()
+    # Ortak hazırlanan plan ortalama ders büyüklüğünü varsayar; iç sıralama yalnız
+    # uzaklık işleci olsa da HNSW'den vazgeçebilir. Özel plan yalnız bu SELECT için
+    # geçerlidir; FTS ve sonraki sorgular çağıranın önceki politikasını korur.
+    await session.execute(text("SELECT set_config('plan_cache_mode', 'force_custom_plan', true)"))
     rows = (
         await session.execute(
             _SQL,
@@ -202,11 +211,20 @@ async def dense_search(
                 "query_vector": str(vector),
                 "course_id": course_id,
                 "limit": limit,
+                "candidate_limit": limit * multiplier,
                 "filter_documents": document_ids is not None,
                 "document_ids": list(document_ids or ()),
             },
         )
     ).all()
+    # SQL hatası/iptal bu geri yüklemeden önce çağırana aktarılır. İşlemin sahibi
+    # çağırandır (rls_session geri alır); başarısız işlemde geri yükleme sorgusu
+    # göndermek özgün hatayı örter. Bu işlev başka bekleyen işleri geri almaz.
+    # Başarıda ayarı, uzay uyuşmazlığı denetimi ve sonuç nesnesinin oluşturulması
+    # gibi Python işlemleri hata verebilmeden önce geri yükle.
+    await session.execute(
+        text("SELECT set_config('plan_cache_mode', :mode, true)"), {"mode": previous_plan_mode}
+    )
     _assert_same_space(list(rows), current_space())
 
     return [

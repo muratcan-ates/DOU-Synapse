@@ -1,0 +1,148 @@
+"""Ham C1 hashing çıktılarını DB kullanmadan bağımsız denetler."""
+from pathlib import Path
+import hashlib
+import json
+import math
+import subprocess
+import sys
+
+REPO = Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+OUT = Path('/private/tmp/dou018-evidence')
+PAIR = OUT / 'c1-e5-final-02'
+sha = lambda data: hashlib.sha256(data).hexdigest()
+m = json.loads((PAIR / 'manifest.json').read_text())
+assert m['status'] == 'measured_e5_retrieval_only' and m['phase'] == 'complete'
+checks = {}
+for path, rec in m['baseline_source'].items():
+    stored = Path(rec['snapshot']).read_bytes()
+    committed = subprocess.check_output(['git','show',m['baseline_commit'] + ':' + path],cwd=REPO)
+    assert stored == committed and sha(stored) == rec['sha256']
+checks['baseline_three_real_git_sources_byte_equal'] = True
+for key in ('candidate_source_sha256','common_dependency_source_sha256','harness_source_sha256'):
+    assert all(sha((REPO/path).read_bytes()) == expected for path,expected in m[key].items())
+    checks[key + '_current_match'] = True
+assert sha((OUT/'c1_e5_holdout_runner.py').read_bytes()) == m['runner_sha256']
+checks['runner_source_match'] = True
+corpus_path=Path(m['corpus_path']); corpus=json.loads(corpus_path.read_text())
+assert sha(corpus_path.read_bytes()) == m['corpus_sha256']
+assert len(corpus['documents']) == 22 and all(x['status']=='completed' for x in corpus['documents'])
+assert sum(x['chunks'] for x in corpus['chunks']) == 167
+assert sum(x['with_embedding'] for x in corpus['chunks']) == 167
+assert corpus['embedding_provider']=='fastembed'
+for src in corpus['source_manifest']:
+    matches=list((REPO/'sample_data/isletim-sistemleri').rglob(src['file_name']))
+    assert len(matches)==1 and sha(matches[0].read_bytes())==src['sha256']
+checks['corpus_22_sources_completed_167_embeddings_and_file_hashes_match']=True
+runs={}
+for arm,rec in m['arms'].items():
+    path=Path(rec['raw_result']); raw=path.read_bytes(); assert sha(raw)==rec['sha256']
+    runs[arm]=json.loads(raw)
+    r=runs[arm]
+    assert r['n_items']==127 and r['metrics']['n_items']==105 and r['metrics']['n_asked']==127
+    assert r['runner']=={'attempts':127,'retries':0,'rate_limited':0,'failures':0,'concurrency':1}
+    assert r['entry_point']==m['resolver_entries'][arm]
+    assert r['llm']['classification']=='no_provider' and not r['llm']['quality_eligible']
+    assert r['embedding_provider']=='fastembed' and r['layer']=='retrieval'
+    assert r['database']=='dou018_eval_c1e501' and r['corpus_chunks_visible']==167
+    assert sha(json.dumps([(i['item_id'],i['question']) for i in r['per_item']],ensure_ascii=False).encode()) == m['query_selection_sha256']
+checks['raw_hashes_complete_127_105_no_provider_and_same_query_order']=True
+base,cand=runs['baseline'],runs['candidate']
+common=('set','set_version','material','layer','mode','chat_mode','course_id','database','embedding_provider','embedding_model','embedding_runtime','retrieval','llm','corpus_digest','runtime_mismatch_allowed','config_fingerprint','corpus_chunks_visible')
+assert all(base[k]==cand[k] for k in common)
+assert base['config_fingerprint']==m['arms']['baseline']['config_fingerprint']==m['arms']['candidate']['config_fingerprint']
+assert m['common_retrieval']['retrieval_dense_candidate_multiplier']==8
+checks['raw_common_config_and_corpus_identity_equal']=True
+state=m['arms']['baseline']['corpus_state_before_after']
+assert state==m['arms']['candidate']['corpus_state_before_after']
+assert state['role']=='dou_app' and not state['rolsuper'] and not state['rolbypassrls']
+assert state['namespace']=='fastembed/intfloat/multilingual-e5-large@0.8.0' and state['rows']==167
+checks['recorded_before_after_and_both_arm_rls_state_equal']=True
+# Başarılı çalıştırıcının kaynak kontrolü, ölçülen önce/sonra eşitliğini zorunlu tutar.
+runner=(OUT/'c1_e5_holdout_runner.py').read_text()
+assert 'if before != after:' in runner and 'relforcerowsecurity' in runner
+assert 'SET TRANSACTION READ ONLY' in runner and 'default_transaction_read_only=on' in runner
+checks['runner_enforces_readonly_forced_rls_and_before_after_comparison']=True
+sys.path.insert(0,str(REPO/'evaluation'))
+import goldset
+import metrics
+holdout=goldset.load(REPO/'evaluation/gold_set/holdout.json')
+expected={item.id:item for item in holdout.items if item.is_retrieval_scored or item.category=='out_of_scope'}
+assert len(holdout.items)==161 and len(expected)==127
+for r in runs.values():
+    assert set(expected)=={x['item_id'] for x in r['per_item']}
+    for item in r['per_item']:
+        gold=expected[item['item_id']]
+        assert item['question']==gold.question and item['category']==gold.category
+        assert item['expected_sources']==[s.label() for s in gold.expected_sources]
+checks['unaltered_gold_queries_sources_and_scoring_selection_equal']=True
+items={arm:{i['item_id']:i for i in r['per_item'] if expected[i['item_id']].is_retrieval_scored} for arm,r in runs.items()}
+first=lambda i:min((x for rr in i['ranks_by_source'] for x in rr),default=None)
+rr=lambda i:1/first(i) if first(i) else 0.0
+hit=lambda i,k:bool(first(i) and first(i)<=k)
+summary={}
+for arm,di in items.items():
+    summary[arm]={'n':len(di),'hit_at_5_count':sum(hit(i,5) for i in di.values()),'hit_at_8_count':sum(hit(i,8) for i in di.values()),'recall_at_5':sum(hit(i,5) for i in di.values())/len(di),'mrr':sum(rr(i) for i in di.values())/len(di)}
+    for k in ('recall_at_5','mrr'):
+        assert math.isclose(summary[arm][k],runs[arm]['metrics'][k],abs_tol=1e-14)
+changes=[]
+for key,left in items['baseline'].items():
+    right=items['candidate'][key]
+    if first(left)!=first(right):
+        changes.append({'id':key,'category':left['category'],'question':left['question'],'expected_sources':left['expected_sources'],'first_hit_before':first(left),'first_hit_after':first(right),'rr_delta':rr(right)-rr(left),'hit5_before':hit(left,5),'hit5_after':hit(right,5),'top_results_before':left['top_results'],'top_results_after':right['top_results']})
+checks['metrics_recomputed_from_all_105_item_ranks_match']=True
+comp=json.loads((PAIR/'paired/holdout-hybrid-fastembed-vs-hybrid-fastembed-comparison.json').read_text())
+for field,fn in [('hit_at_5',lambda i:float(hit(i,5))),('reciprocal_rank',rr)]:
+    keys=sorted(items['baseline']);result=metrics.paired_bootstrap([fn(items['baseline'][k]) for k in keys],[fn(items['candidate'][k]) for k in keys]).as_dict()
+    assert result==comp['comparisons'][field]['bootstrap']
+checks['existing_paired_bootstrap_recomputed_for_recall5_mrr']=True
+cache=m['model_cache'];assert cache==m['model_cache_after'] and cache['content_hash_verified']
+assert cache['dimension']==1024 and cache['revision']=='66076b8dc6e367337e3e90e6fb309fb0f3addaf6'
+assert set(cache['content_sha256'])=={'config.json','tokenizer.json','tokenizer_config.json','special_tokens_map.json','model.onnx','model.onnx_data'}
+assert cache['content_sha256']['model.onnx_data']=='0cf1883fee81c63819a44e2ba0efa51d4043d9759685a4ebebbde97e0623d15c'
+for path,expected in cache['local_library_source_sha256'].items():assert sha(Path(path).read_bytes())==expected
+root=Path(cache['cache_dir'])/'models--qdrant--multilingual-e5-large-onnx'
+for path,expected in cache['snapshot_metadata_sha256'].items():assert sha((root/path).read_bytes())==expected
+for name,entry in cache['files'].items():
+    st=Path(entry['resolved']).stat();assert st.st_size==entry['size'] and st.st_mtime_ns==entry['mtime_ns']
+checks['model_cache_before_after_full_content_hashes_and_current_stats_match']=True
+checks['local_fastembed_library_and_cache_revision_metadata_hashes_match']=True
+assert m['actual_embedding']=={'class':'FastEmbedProvider','name':'intfloat/multilingual-e5-large'}
+assert m['common_retrieval']['evidence_threshold']==0.81
+assert not m['generation_quality_reportable'] and m['quality_scope']=='real_embedding_retrieval_only'
+assert all(m['offline_contract'][key]=='1' for key in ('HF_HUB_OFFLINE','HF_DATASETS_OFFLINE','TRANSFORMERS_OFFLINE'))
+assert not m['offline_contract']['download_allowed']
+checks['actual_e5_offline_contract_fixed_081_and_generation_exclusion']=True
+assert m['candidate_recall_at_5_at_least_080'] == (summary['candidate']['recall_at_5']>=.80)
+assert m['retrieval_nonregression'] == all(summary['candidate'][k]>=summary['baseline'][k] for k in ['recall_at_5','mrr'])
+assert m['retrieval_acceptance'] == (m['candidate_recall_at_5_at_least_080'] and m['retrieval_nonregression'])
+checks['candidate_080_and_nondecrease_acceptance_recomputed']=True
+
+prior_path=OUT/'c1-e5-measured-01/manifest.json';assert sha(prior_path.read_bytes())=='866c268096b8bfa5ec2ee476b86bffc55050131e8d85d4e467d7ac5f0911fd6e';prior=json.loads(prior_path.read_text())
+assert not prior['retrieval_acceptance'] and prior['arms']['candidate']['recall_at_5']<prior['arms']['baseline']['recall_at_5']
+for arm,rec in prior['arms'].items():assert sha(Path(rec['raw_result']).read_bytes())==rec['sha256']
+assert m['model_cache']==prior['model_cache']==prior['model_cache_after']
+assert m['common_retrieval']==prior['common_retrieval'] and m['actual_embedding']==prior['actual_embedding']
+assert m['corpus_sha256']==prior['corpus_sha256'] and state==prior['arms']['baseline']['corpus_state_before_after']
+assert m['query_selection_sha256']==prior['query_selection_sha256']
+assert m['common_dependency_source_sha256']==prior['common_dependency_source_sha256'] and m['harness_source_sha256']==prior['harness_source_sha256']
+for key in m['candidate_source_sha256']:
+    if not key.endswith('/fts.py'):assert m['candidate_source_sha256'][key]==prior['candidate_source_sha256'][key]
+assert m['candidate_source_sha256']['apps/api/app/modules/retrieval/fts.py']=='eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b'
+checks['original_failed_e5_records_immutable_and_same_final_cache_config_corpus_queries']=True
+oldbase=json.loads(Path(prior['arms']['baseline']['raw_result']).read_text());assert all(base[k]==oldbase[k] for k in common)
+olditems={i['item_id']:i for i in oldbase['per_item']};allitems={a:{i['item_id']:i for i in r['per_item']} for a,r in runs.items()}
+rank_comparisons={}
+for name,left,right in [('baseline_replay',olditems,allitems['baseline']),('final_candidate_vs_baseline',allitems['baseline'],allitems['candidate'])]:
+    rank_comparisons[name]={'first_hit_same_count':sum(first(left[k])==first(right[k]) for k in left),'all_source_rank_lists_same_count':sum(left[k]['ranks_by_source']==right[k]['ranks_by_source'] for k in left),'top8_source_locations_same_count':sum(left[k]['top_results']==right[k]['top_results'] for k in left),'compared':len(left),'scored_first_hit_same_count':sum(first(left[k])==first(right[k]) for k in left if k in items['baseline']),'scored':105}
+receipt_path=OUT/'bc-c1-final-e5.json';receipt=json.loads(receipt_path.read_text());assert receipt['exit_code']==0 and receipt['source_unchanged'] and sha((OUT/'bc-c1-final-e5.log').read_bytes())==receipt['log_sha256']
+assert all(sha((REPO/path).read_bytes())==h for path,h in receipt['source_sha256'].items())
+checks['final_e5_receipt_log_and_all_sourcehashes_match']=True
+out={'status':'verified_final_real_e5_retrieval_acceptance','manifest_sha256':sha((PAIR/'manifest.json').read_bytes()),'checks':checks,'corpus_state':state,'common_raw_fields':list(common),'common_config':m['common_retrieval'],'summary':summary,'delta':{k:summary['candidate'][k]-summary['baseline'][k] for k in ('recall_at_5','mrr')},'rank_changes':changes,'changed_first_hit_count':len(changes),'improved_first_hit_count':sum(x['rr_delta']>0 for x in changes),'regressed_first_hit_count':sum(x['rr_delta']<0 for x in changes),'paired':comp,'limitations':['Real E5 retrieval only; no LLM/pedagogical/human approval or latency acceptance.','Same current shared environment compares three real historical retrieval sources, not the whole historical app.','Actual FastEmbedProvider/E5 identity agrees with corpus/query namespace and cached model metadata.','RLS/readonly before-after data are enforced by the hash-verified runner; analysis did not query DB again.','Current raw result lacks complete per-lane candidates/scores, so dense vs FTS vs tie cause cannot be separated from these final lists.','Statistical intervals including zero do not turn strict no-regression acceptance green.']}
+out['cache_identity']={k:cache[k] for k in ['revision','content_sha256','versions','registered_class','pooling','snapshot_metadata_sha256','local_library_source_sha256']}
+out['acceptance']={'candidate_recall_at_5_at_least_080':m['candidate_recall_at_5_at_least_080'],'baseline_nondecrease':m['retrieval_nonregression'],'overall':m['retrieval_acceptance']}
+out['reported_arm_wall_seconds']={arm:r['wall_seconds'] for arm,r in runs.items()}
+out['overall_wrapper_elapsed_seconds']=None
+out['read_only_cache_analysis_limit']='Full 2.2GB bytes were verified by root wrapper before/after. This independent analysis verified those equal hashes, local metadata/source hashes and unchanged current file stats; no second model load or DB call.'
+out.update(rank_comparisons=rank_comparisons,prior_failed_manifest_sha256=sha(prior_path.read_bytes()),receipt={'sha256':sha(receipt_path.read_bytes()),'wall_seconds':receipt['seconds'],'source_unchanged':True,'log_sha256':receipt['log_sha256']},candidate_source_sha256=m['candidate_source_sha256'],common_dependency_source_sha256=m['common_dependency_source_sha256'])
+(OUT/'c1-final-e5-audit.json').write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n')
+print(json.dumps({'status':out['status'],'checks':len(checks),'summary':summary,'delta':out['delta'],'improved':out['improved_first_hit_count'],'regressed':out['regressed_first_hit_count'],'rank_comparisons':rank_comparisons},ensure_ascii=False,indent=2))

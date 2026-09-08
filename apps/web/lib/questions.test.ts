@@ -459,3 +459,35 @@ describe("buildGenerateRequest", () => {
     expect(request.example_questions).toEqual(["Örnek 1", "Örnek 2"]);
   });
 });
+
+
+describe("sunucuda soru havuzu süzme", () => {
+  test("tümü seçimleri status ve topic parametrelerini göndermez", async () => {
+    const { questionPoolPath } = await import("./questions");
+    expect(questionPoolPath("course-1", "all", "all")).toBe("/courses/course-1/questions");
+  });
+  test("durum ve konu birlikte gönderilir; sorgu imleci eski seçimden taşınmaz", async () => {
+    const { questionPoolPath } = await import("./questions");
+    const { pagedPath } = await import("./use-paged-resource");
+    const first = questionPoolPath("course-1", "draft", "topic-a");
+    const next = new URL(pagedPath(first, "opaque+/=cursor"), "https://example.invalid");
+    expect([...next.searchParams]).toEqual([["status", "draft"], ["topic_id", "topic-a"], ["cursor", "opaque+/=cursor"]]);
+    const changed = new URL(questionPoolPath("course-1", "approved", "topic-b"), "https://example.invalid");
+    expect([...changed.searchParams]).toEqual([["status", "approved"], ["topic_id", "topic-b"]]);
+  });
+  test("kimlikler yol veya ek sorgu parametresine dönüşemez", async () => {
+    const { questionPoolPath } = await import("./questions");
+    const url = new URL(questionPoolPath("course/one", "rejected", "topic&status=draft"), "https://example.invalid");
+    expect(url.pathname).toBe("/courses/course%2Fone/questions");
+    expect([...url.searchParams]).toEqual([["status", "rejected"], ["topic_id", "topic&status=draft"]]);
+  });
+});
+
+for (const type of ["code_trace", "bug_hunt"] as const) {
+  test(`${type} eğitmen detayında kayıtlı rubriği taşır; eski rubriksiz kayıt boş kalır`, () => {
+    const rubric = [{ point: "Kilit sırası", weight: 60 }, { point: "Döngüsel bekleme", weight: 40 }];
+    const view = toQuestionView(question("code-rubric", type, { code: "lock(A)", rubric }));
+    expect(view.rubric).toEqual(rubric);
+    expect(toQuestionView(question("legacy-code", type, { code: "lock(A)" })).rubric).toEqual([]);
+  });
+}
