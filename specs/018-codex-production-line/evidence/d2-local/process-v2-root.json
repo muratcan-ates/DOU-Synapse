@@ -1,0 +1,20 @@
+{
+  "target": {
+    "database": "dou018_d2_process_02",
+    "database_oid": 1160413,
+    "system_identifier": "7683042491268153327",
+    "server_version_num": 160014,
+    "server_address": "127.0.0.1",
+    "server_port": 55448
+  },
+  "harness_sha256": "09657a8d4c11dde71360573bddd5f786f64789952282fbe6293f391d91dbd825",
+  "exit_code": 0,
+  "seconds": 19.919,
+  "source_unchanged": true,
+  "stdout.log_sha256": "a55ce029de3e0ab31125d819ecbb7b5ef11c35b4c92b3e1bfac3f57ab24d2b91",
+  "stderr.log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "report_sha256": "02c319b4c16cb08d31ea1e6a550b1b866bf2a7546e980fe17f471345f1b5b257",
+  "status": "passed",
+  "reason": null,
+  "scenarios_passed": 8
+}

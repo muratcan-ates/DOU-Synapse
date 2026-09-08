@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "scope": "Import ordering/group spacing only; imported bindings and non-import AST equal. Source byte hashes changed and next final API run binds them.",
+  "files": {
+    "app/api/internal.py": {
+      "before_sha256": "62acf092d315dc147bfa1ec08a1fbc42571319e78e499a3e634d5394627cbc8c",
+      "after_sha256": "ba7b1476a2fb17fea648212e2b5a39b6fe2eed6a0e43cc9e69ae381c956d1bf3",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    },
+    "app/core/config.py": {
+      "before_sha256": "a6b5476b10c3ab244d3cad36e1a66268d2a460ee185eaaa623374537fdcfbccd",
+      "after_sha256": "06694c0ca47d281b6584feecadc405558fdbf505be5d240fb2576df7f4e008f0",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    },
+    "app/modules/ingestion/claims.py": {
+      "before_sha256": "c9334c1b62913ce03ae24530c9ec7fc6741e2d25a375ed81263c8d66832060ea",
+      "after_sha256": "31c44cc1b14d232144c41e0ac4c29b0520c63a26a36089d444b9a5e45fadfab9",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    },
+    "app/modules/ingestion/pipeline.py": {
+      "before_sha256": "1b0f6c41da687e825b0d1d0ad4009941784782c2f4fd9bb10f39a593235809ff",
+      "after_sha256": "4cd396f9f5f6712791b4cf4b98dce7c6a89681adf59e56592846f673c19ef14f",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    },
+    "app/worker.py": {
+      "before_sha256": "586260f1bb4a239891bdf1660904fac5b1c3677a176e31f947da56601b5e5a4f",
+      "after_sha256": "9fa5c86ff8de4788aaeb50280246b8a137a28fbeefc64171aacd29526a70e7aa",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    },
+    "tests/test_ingestion.py": {
+      "before_sha256": "a91e5b84cf36bdd3993d7e62f4f5a1d8b039f20f13580ca54adea2c8f2eb6294",
+      "after_sha256": "3f7237a6a3aed4a885cc3293cf2d51f5e72a8005c154200e8dbcb05f2d949eb6",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    },
+    "tests/test_worker_lifecycle.py": {
+      "before_sha256": "6d86cdd789391f626209defbce2361841a28c187c088c876da8641b1c7f4689a",
+      "after_sha256": "a6bf6da75b3f9c61b26a5eb4eafc45b158d1b4107146eaaa241d9228fef22aa9",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    },
+    "tests/test_worker_recovery.py": {
+      "before_sha256": "4c42f615a49b1cc094c6c8eae3bce8b9ec08114891b87fb4381c9d8d75f7915a",
+      "after_sha256": "5d0c6afb7326afb3e4a1f5cd74b044beec74bd48a511309f6390e318858345dd",
+      "import_bindings_equal": true,
+      "non_import_ast_equal": true
+    }
+  }
+}

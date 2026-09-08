@@ -1,0 +1,45 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,sys,time
+import psycopg
+
+os.umask(0o077)
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+target=repo/'apps/api/tests/test_worker_recovery.py'
+candidate=Path('/private/tmp/dou018-d2-waiter-observer-fix/test_worker_recovery.py').read_bytes()
+sha=lambda b:hashlib.sha256(b).hexdigest()
+assert sha(target.read_bytes())=='2771e8ca1a78d838b87dec177519b8e732cc42e575d0a258d5eafe29d2d1009d'
+assert sha(candidate)=='4c42f615a49b1cc094c6c8eae3bce8b9ec08114891b87fb4381c9d8d75f7915a'
+line=b'                    await blocker.execute(text("SELECT pg_catalog.pg_stat_clear_snapshot()"))\n'
+assert candidate.count(line)==1
+mutant=candidate.replace(line,b'')
+out=Path('/private/tmp/dou018-evidence/d2-observer-01');out.mkdir(mode=0o700,exist_ok=False)
+passfile=out/'empty.pgpass';passfile.touch(mode=0o600,exist_ok=False)
+route=dict(host='127.0.0.1',hostaddr='127.0.0.1',port=55448,user='muratates',dbname='postgres',connect_timeout=3,passfile=str(passfile))
+baseenv={k:v for k,v in os.environ.items() if not k.startswith('PG')}
+results=[]
+try:
+    for name,source,expected in [('candidate',candidate,0),('stale_observer',mutant,1),('restored',candidate,0)]:
+        db='dou018_observer_'+name+'01'
+        with psycopg.connect(**route) as c:
+            c.execute('SET TRANSACTION READ ONLY')
+            assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0]=='7683042491268153327'
+            assert not c.execute('SELECT 1 FROM pg_database WHERE datname=%s',(db,)).fetchone()
+        target.write_bytes(source)
+        env=baseenv.copy();env.update(PYTHONDONTWRITEBYTECODE='1',UV_OFFLINE='1',GROQ_API_KEY='',GEMINI_API_KEY='',OPENAI_API_KEY='',PGHOST='127.0.0.1',PGHOSTADDR='127.0.0.1',PGPORT='55448',PGUSER='muratates',PGPASSFILE=str(passfile),PG_BIN='/opt/homebrew/opt/postgresql@16/bin',TEST_DB_NAME=db,TEST_ADMIN_DSN=f'postgresql+psycopg://muratates@127.0.0.1:55448/{db}',TEST_APP_DSN=f'postgresql+psycopg://dou_app:dou_app_local@127.0.0.1:55448/{db}',TEST_WORKER_DSN=f'postgresql+psycopg://dou_worker:dou_worker_local@127.0.0.1:55448/{db}')
+        env.pop('LLM_FAKE_PROVIDER',None)
+        start=time.monotonic();log=out/(name+'.log')
+        with log.open('x') as f:
+            cp=subprocess.run([sys.executable,'-m','pytest','-q','tests/test_worker_recovery.py::test_failure_waiting_for_job_lock_cannot_release_an_expired_claim'],cwd=repo/'apps/api',env=env,stdout=f,stderr=subprocess.STDOUT,timeout=90)
+        assert sha(target.read_bytes())==sha(source)
+        with psycopg.connect(**route) as c:
+            c.execute('SET TRANSACTION READ ONLY')
+            dropped=not bool(c.execute('SELECT 1 FROM pg_database WHERE datname=%s',(db,)).fetchone())
+        record={'variant':name,'database':db,'database_dropped':dropped,'exit_code':cp.returncode,'expected_exit_code':expected,'seconds':round(time.monotonic()-start,3),'test_sha256':sha(source),'log_sha256':sha(log.read_bytes())}
+        results.append(record)
+        (out/'result.json').write_text(json.dumps({'status':'incomplete','results':results},indent=2)+'\n')
+        assert cp.returncode==expected and dropped,record
+        if name=='stale_observer':assert 'TimeoutError' in log.read_text() and 'pg_stat_clear_snapshot' not in source.decode()
+finally:
+    target.write_bytes(candidate)
+record={'status':'PASS','candidate_sha256':sha(candidate),'final_source_restored':sha(target.read_bytes())==sha(candidate),'production_changed':False,'results':results}
+(out/'result.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps(record))

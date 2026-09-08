@@ -151,6 +151,12 @@ class Settings(BaseSettings):
     storage_timeout_seconds: float = 30.0
     # Worker'ın tek turda işleyeceği azami iş sayısı; bir belgenin kuyruğu tıkamaması için.
     worker_batch_size: int = 5
+    ingestion_lease_seconds: float = Field(default=60.0, ge=2.0, le=600.0, allow_inf_nan=False)
+    ingestion_heartbeat_seconds: float = Field(default=10.0, ge=0.1, le=120.0, allow_inf_nan=False)
+    ingestion_control_timeout_seconds: float = Field(
+        default=5.0, ge=0.1, le=30.0, allow_inf_nan=False
+    )
+    worker_shutdown_grace_seconds: float = Field(default=5.0, ge=0.0, le=60.0, allow_inf_nan=False)
 
     # --- Embedding ----------------------------------------------------------
     # DİKKAT: Bu ayar ingest zamanına aittir. Değiştirmek vektör uzayını değiştirir ve
@@ -289,12 +295,15 @@ class Settings(BaseSettings):
     # Bu iki sayı paralel geliştirme süresince `api/chat.py`'de sabit duruyordu:
     # bu dosya beş oturuma açık olmadığı için oraya yazılamamıştı ve borç olarak
     # kayda geçmişti (07_SERIT_RAPORLARI §6). Buraya taşınmalarının pratik faydası,
-    # demo makinesinde yeniden derlemeden gevşetilebilmeleri.
+    # kanonik DB politikasıyla eşleşen dağıtım ayarları olmaları. Değişiklik
+    # canlı trafik boşaltılmadan yapılmaz; farklı worker ayarı 503 ile kapanır.
     #
     #: Kullanıcı başına, pencere başına azami sohbet isteği.
     chat_rate_limit_requests: int = Field(default=20, ge=1, le=100)
     #: Sınırın penceresi (saniye).
-    chat_rate_limit_window_seconds: float = Field(default=60.0, gt=0, le=3600)
+    chat_rate_limit_window_seconds: float = Field(
+        default=60.0, ge=0.001, le=3600, multiple_of=0.001, allow_inf_nan=False
+    )
 
     #: Yeni taslak düzenleme ve sınıflandırmalı üretim için operasyonel geri alma bayrağı.
     question_authoring_enabled: bool = False
@@ -309,9 +318,11 @@ class Settings(BaseSettings):
     # uygulansaydı bir öğretmen dakikada 400 soru üretimi tetikleyebilirdi.
     #
     #: Kullanıcı+ders başına, pencere başına azami soru üretimi isteği.
-    question_gen_rate_limit_requests: int = 5
+    question_gen_rate_limit_requests: int = Field(default=5, ge=1, le=100)
     #: Sınırın penceresi (saniye).
-    question_gen_rate_limit_window_seconds: float = 300.0
+    question_gen_rate_limit_window_seconds: float = Field(
+        default=300.0, ge=0.001, le=3600, multiple_of=0.001, allow_inf_nan=False
+    )
     #: Aynı kullanıcının aynı anda yürütebileceği üretim sayısı. 1 olmasının
     #: sebebi maliyet değil tutarlılık: eşzamanlı iki üretim aynı konuya iki
     #: taslak kümesi yazar ve öğretmen hangisinin hangi istekten geldiğini
@@ -327,6 +338,15 @@ class Settings(BaseSettings):
     #: ONNX modelini yüklerse paket dakikalarca uzar ve ölçtüğü şey model
     #: yükleme süresi olur.
     embedding_warmup_enabled: bool = True
+
+    @model_validator(mode="after")
+    def _validate_ingestion_lease(self) -> Settings:
+        if (
+            self.ingestion_heartbeat_seconds + self.ingestion_control_timeout_seconds
+            >= self.ingestion_lease_seconds
+        ):
+            raise ValueError("Ingestion heartbeat and control budget must fit inside lease")
+        return self
 
     @model_validator(mode="after")
     def _resolve_evidence_threshold(self) -> Settings:

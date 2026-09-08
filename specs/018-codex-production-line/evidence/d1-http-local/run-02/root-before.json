@@ -1,0 +1,56 @@
+{
+  "root_expected_target": {
+    "database": "dou_synapse_d1_http02",
+    "database_oid": 1048788,
+    "system_identifier": "7683042491268153327",
+    "server_version_num": 160014,
+    "server_address": "127.0.0.1",
+    "server_port": 55448
+  },
+  "reviewed_candidate_sha256": {
+    "probe.py": "45f63775b6c0676b6a1127d491c5cd98773809d2ec97f78374e45167cfc61dcf",
+    "common.py": "d62ee2ec8e0b42f9e7e93f3d6a36f2102de3f6ff80fae8db14bbab4275ab437d",
+    "serve.py": "a492948ad39c3886b0b9681a0006981be06f732bc15ebd884cdead8210284d0a",
+    "db_guard.py": "a93945d91e90839965212e21fc67aab04ae2b17fefe27f3172e448a540aec44b"
+  },
+  "runtime_sources": {
+    "apps/api/app/api/chat.py": "6c9ea0d3379efb4d6b1892ae62297306ec6366c0812ac86029fcac15cf916f8d",
+    "apps/api/app/api/questions.py": "985024e2ae55b0ce72e3cf6004a0c3a35ba664e9ad133b0479f3206e78196528",
+    "apps/api/app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+    "apps/api/app/core/request_quota.py": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2",
+    "apps/api/app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+    "apps/api/app/core/security.py": "c45d15504163132d08f93f998b941b86965e07e8eb71050287ffdd92ebabfe79",
+    "apps/api/app/core/config.py": "022c9e7594cceacd2befc47db2a68b776f4672ac5185d887157e015100c8fb27",
+    "apps/api/app/main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88",
+    "apps/api/app/modules/agent/pipeline.py": "8c5e8129d3ee20f803683d3b664b8dde079fd2a7658209e77d6f9bd18d5f6916",
+    "apps/api/app/modules/agent/answers.py": "089c18913e105b2d39f3ed6cc1a7037ae91b00ec149b8f3d5f5690898b99dff3",
+    "apps/api/app/modules/assessment/question_gen.py": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75",
+    "apps/api/app/modules/generation/service.py": "66951f646dbf6db4ba9e2580c054789f495a8030a56dd077b64c02a429119752",
+    "apps/api/app/modules/generation/fake.py": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88",
+    "apps/api/app/api/health.py": "e5b3a084fadc24c50021a64a2bef15349b534b04d5fcb685821aed33e9108625",
+    "supabase/migrations/0025_shared_request_quota.sql": "7ca0606d2bc8f76d67934774968c9f9802e4c204799fda7428760c4fe7de043d"
+  },
+  "source_migrations": {
+    "0001_core_schema.sql": "818cd2467fdeef53d43e1ac1ea599461b8993b58630ef592196b2bf4215a12c4",
+    "0002_supabase_auth_bridge.sql": "8ecab9f26ae1f13d2b40f0811e74423362251f7c77236047f3596820a5faac3c",
+    "0003_chat.sql": "5404890b60add8812725888354ebbd21a783fd52b04f0ded98d5416e7eff3dcd",
+    "0004_assessment.sql": "b30e9e9855a9e5f041def464975e23bc1bd0d5384f5a2981bd8067ddc6b25939",
+    "0005_analytics.sql": "aa156adb408304a58a7d05793cfc21702b17a33615fb5ef4010b0449725ed7a3",
+    "0006_embedding_provenance.sql": "69660e9410c28464f403161c6e823f31a0e895b7ec061b1c3b44c98e67bcde29",
+    "0007_question_delete_and_exam_grants.sql": "f39251dc8e352c57b4dab1861fb8ccc763164b3702e5f8a42abdad6acfc8d6ee",
+    "0008_exam_blueprint.sql": "40f6ef8ceaadb069139c59bc523edffe15dc8dc6dd381e73f88eedb0dbe58ed0",
+    "0009_course_ai_policy.sql": "b6427a3d97f43b2d2324e863a7a5d65f4c4b3274f914f730070001fedbc00e3b",
+    "0010_ingestion_retry.sql": "0b674d76f5d5f27d9c49eba44060306e63ce8945de9a3e75f0e161d4a97425ab",
+    "0011_pagination_indexes.sql": "b8b7121bc6fb35e45bf82a19c14e8113c2deeaa06f1d5bb9f3ecf0fe1ba982f1",
+    "0012_privacy_rights.sql": "4b6e8e42d55a1ecc49025baddc72f6a82974a79978dc2dd7d07651e5a94a0b47",
+    "0013_chat_feedback.sql": "60ee1ec5e72485fc5668a95e4dd01204db56d305575150f2871ae252e08da984",
+    "0014_platform_admin_console.sql": "8b234683593a2f2c2c0c4fc48d47d5b1f4ded9fa4e3d62bf6c152117802479c5",
+    "0015_role_aware_course_agent.sql": "95d6732a871658ddf24a87417b82074d144428a6add7a83c3e3e2b6c34f2d326",
+    "0016_api_contract_admin_access.sql": "a8ebbce2052c92bba026b189bc870c6fc71d83ec4be83677a6774200b4375b90",
+    "0018_question_authoring.sql": "414ddbe6ddee1e349865ddc9fbc2c7e935ab018f2b92bd7d86c4f669fa30db9d",
+    "0019_exam_duration_projection.sql": "ee52176e112cb547e25da415562fae61edb1d00bf126be5f9a3b4b71c3ec04b7",
+    "0020_course_policy_audit_cascade.sql": "d1047c3e757ff43817c1c572e1279eea3e7f349c7c0312c9cc34c7dddadc4fd9",
+    "0024_chat_privacy_revisions.sql": "9ef6fc55eeff03cef00d1e396694177032acc95ac361394a1e81afecec98d51f",
+    "0025_shared_request_quota.sql": "7ca0606d2bc8f76d67934774968c9f9802e4c204799fda7428760c4fe7de043d"
+  }
+}

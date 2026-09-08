@@ -86,6 +86,12 @@ jobs:
           uv run --project apps/api python -m pytest -q -o asyncio_mode=auto \
             scripts/test_benchmark_retrieval_plan.py scripts/test_probe_retrieval_runtime.py
 
+      - name: Yedek ve geri yükleme araçlarının çevrimdışı sözleşmeleri
+        working-directory: .
+        run: |
+          uv run --project apps/api python scripts/test_recovery.py
+          uv run --project apps/api python scripts/test_restore_protocol.py
+
       - name: Yayın kanıtı doğrulayıcılarının regresyon testleri
         working-directory: .
         run: uv run --project apps/api python -m unittest discover -s .release -p 'test_*.py'

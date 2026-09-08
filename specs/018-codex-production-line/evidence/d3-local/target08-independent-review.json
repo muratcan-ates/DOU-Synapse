@@ -1,0 +1,26 @@
+{
+  "status": "pass",
+  "scope": "offline private evidence review only; no DB connection or reopen",
+  "target": "dou018_recovery_target08",
+  "oid": "1060043",
+  "checks": {
+    "runner_receipt_hash_matches_root": true,
+    "exact_target08_identity": true,
+    "closed_no_backend": true,
+    "directory_0700": true,
+    "artifact_target.stderr": true,
+    "artifact_target.stdout": true,
+    "artifact_target.sql": true,
+    "explicit_transaction_begin": true,
+    "exact_fault_and_nonce_bound_final_commit": true,
+    "after_security_verification": true,
+    "reconstructed_original_hash": true,
+    "fault_hash": true,
+    "actual_22012_at_exact_injected_line": true,
+    "no_commit_delivery_or_reopen": true,
+    "fence_return_and_child_failure": true
+  },
+  "error_script_line": 25459,
+  "runner_receipt_sha256": "6208325323c34401790d7f626b21bba59833901a457cde274ab7894d7fe51b16",
+  "recommendation": "Root may separately review and reopen only this definite-pre-COMMIT target08 for read-only empty verification; never extends to03/04/09"
+}

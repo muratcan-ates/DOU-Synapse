@@ -29,7 +29,7 @@ ve 4 mercekli adversaryal denetimden çıkan düzeltmeleri içerir. Plan/takvim:
 | LLM | **LiteLLM Router: Groq (Llama) → Gemini Flash OTOMATİK failover + retry/backoff** (kod seviyesinde; manuel anahtar değişimi değil). Failover H2'de bilerek Groq anahtarı bozularak test edilir | Tek sağlayıcı; yerel LLM hosting (GPU/cold-start) |
 | Yapılandırılmış çıktı | **Pydantic şema + server-side validasyon + 1 retry** | Sağlayıcıya özel structured-output'a tam güven |
 | Orkestrasyon | **Düz Python servis kodu + açık state machine** | LangChain/LlamaIndex/LangGraph (debug şeffaflığı) |
-| Arka plan işleri | **Postgres job tablosu (`FOR UPDATE SKIP LOCKED`).** Bugün çalışan tetik **süreç içidir**: upload handler 202 döndükten sonra `BackgroundTasks` ile `worker.drain()` çağrılır (`app/api/documents.py`). HTTP tetiği (`POST /internal/drain`) **UYGULANMADI** — router kayıtlı ama boş (§10) | Sürekli poll eden worker (scale-to-zero ile çelişir: ya hiç sıfıra inmez ve free tier'ı yer, ya iner ve job'lar asılı kalır), Redis+Celery |
+| Arka plan işleri | **PostgreSQL job tablosu, kısa claim işlemi ve lease/token/revision koruması.** BackgroundTasks veya yapılandırılmış HTTP drain tetiği; ayrı sürekli worker mevcut. `/internal/drain` anahtar yoksa kapalıdır | Scale-to-zero için dış uyanış/takvim gerekir; Redis/Celery eklenmedi |
 | Deploy | **Vercel + Azure Container Apps + Supabase** hedeflenir; bugün depoda yalnız `docker-compose.yml` + `apps/api/Dockerfile` var. Bulut dağıtımı **R3'ün açık işi** (§10) | Son haftada ilk deploy (CORS/JWT/cold-start sürprizleri teslime 2 gün kala), tek VM, K8s |
 | CI | **GitHub Actions**: ruff + ruff format + mypy + pytest + RLS izolasyon kanıtı (api) · lint + tsc (web) · Playwright uçtan uca. **Docker build ve "model imaj içinde" assertion'ı henüz YOK** (§10) | — |
 | Gözlemleme | **Yapılandırılmış JSON log + request/hata tabloları** (redaction'lı) | Langfuse/Sentry (v2) |
@@ -132,7 +132,7 @@ kullanmak zorundadır.** Uyuşmazlık çökmez; sessizce alakasız komşular dö
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 28 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024`): <!-- docs-check: tables.count = 28 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024 -->
+Kodda gerçekten var olan 30 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026`): <!-- docs-check: tables.count = 30 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -177,7 +177,7 @@ Belgenin eski hâlinden düzeltilen dört ad/alan (kod kaynak alındı):
 | `answer_cache.response` | `answer_cache.answer` | — |
 | `mastery(user_id, topic_id, score)` | `+ course_id, answer_count` | `answer_count` "kaç cevaba dayanıyor" sorusunu cevaplar; tek cevaptan çıkan bir seviye rozetini gösterirken bu bilinmeli |
 
-**Migration numaraları:** Güncel dosya listesi yukarıda ölçümle üretilir. `0002/0006/0007` artık depodadır. `0017` tarihsel boşluğu ve runbook için ayrılan `0021/0022/0023` açıkça bildirilir; `0024` bunları tüketmeden sohbet yaşam döngüsünü ekler. [Göç kontrolü](scripts/migration_check.py) yalnız bildirilen boşlukları kabul eder.
+**Migration numaraları:** Güncel dosya listesi yukarıda ölçümle üretilir. `0002/0006/0007` artık depodadır. `0017` tarihsel boşluğu ve runbook için ayrılan `0021/0022/0023` açıkça bildirilir; `0024` sohbet yaşam döngüsünü, `0025` ortak istek kotasını, `0026` iş sahipliğini bu numaraları tüketmeden ekler. [Göç kontrolü](scripts/migration_check.py) yalnız bildirilen boşlukları kabul eder.
 
 ---
 
@@ -186,11 +186,12 @@ Belgenin eski hâlinden düzeltilen dört ad/alan (kod kaynak alındı):
 ```
 Upload (tür+boyut+magic byte, UUID ad, private bucket)
   → documents (uploaded) + ingestion_jobs (pending) → 202 → worker /drain tetiklenir
-Worker: job al (FOR UPDATE SKIP LOCKED) → indir → türe göre parser
+Worker: kısa claim COMMIT (lease+token+revision) → kilitsiz indir/ayrıştır/embedding
   PDF: PyMuPDF (sayfa bazlı) · PPTX: python-pptx (slayt) · MD: başlık hiyerarşili · kod: fonksiyon sınırlı
-  → chunk + metadata → bge-m3 batch embed → pgvector → completed
-Hata: attempt_count++, last_error; 3 denemede failed → UI'da anlaşılır mesaj
-UI: chunk-bazlı ilerleme (n/m) — uzun ingestion "takıldı" gibi görünmez
+  → chunk + metadata → yapılandırılmış embedding → son kaynak/anahtar/süre kontrolü
+  → chunk+belge+job atomik COMMIT → completed
+Hata/iptal: deneme tüketilir; sabit neden, sınırlı tekrar; 3 denemede failed
+Kesinti: DB lease süresi ve geri çekilme sonrası yeni işleyici uyanışıyla devralma
 ```
 
 Demo notu: canlı yükleme gösterimi için 5-10 sayfalık küçük PDF kullanılır (süresi provada
@@ -204,7 +205,7 @@ Sıralama kritiktir; her adım bir güvenlik sınırıdır:
 
 ```
 0. Sınırlar     soru uzunluğu ≤ 2000 karakter · kullanıcı+ders başına 20 istek / 60 sn
-                (süreç içi kayan pencere — çok worker'lı koşuda worker başına uygulanır)
+                (PostgreSQL ortak kayan pencere; bütün yeni API süreçlerinde aynı bütçe)
 1. AuthZ        Bearer token → user_id → course_memberships kontrolü (CourseMemberDep)
                 (course_id İSTEMCİDEN ASLA güvenilmez; backend belirler)
 2. Önbellek     birebir eşleşme, YALNIZ qa modunda: sha256(mode + normalize edilmiş soru).
@@ -411,7 +412,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. 28 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 28 -->
+  yazar. 30 tablonun tamamı `ENABLE` + **`FORCE ROW LEVEL SECURITY`** ile işaretlidir, yani <!-- docs-check: tables.count = 30 -->
   tablo sahibi bile politikalara tabidir.
   **Testler de `dou_app` ile koşar** — superuser ile koşan bir izolasyon testi her zaman
   yeşil yanar ve hiçbir şey kanıtlamaz. CI her koşuda `supabase/tests/rls_isolation.sql`
@@ -531,14 +532,14 @@ yazılıyor (Anayasa III).
 |---|---|---|---|
 | 1 | Embedding modeli **Docker imajına gömülü**, runtime'da HuggingFace bağımlılığı yok | **Uygulanmadı.** `apps/api/Dockerfile` yalnız "ileride gömülecek" notu taşıyor. Model çalışma zamanında indiriliyor ve macOS'ta `$TMPDIR/fastembed_cache` altına (2,1 GB) düşüyor — bu dizini işletim sistemi temizler | R3 |
 | 2 | CI'da **"model imaj içinde, konteyner ağsız ayağa kalkıyor"** assertion'ı | **Uygulanmadı.** CI'da docker build işi yok | R3 |
-| 3 | **HTTP-tetiklemeli worker** (`POST /internal/drain`), ACA scale-to-zero ile uyumlu | **Uygulanmadı.** Router kayıtlı ama boş; `worker_drain_secret` ayarı hazır. Bugün çalışan tetik süreç içi `BackgroundTasks` | R3 |
+| 3 | **HTTP-tetiklemeli worker** (`POST /internal/drain`) | **Uygulandı.** Anahtar ile korunan uç ve yapılandırılmış tetik vardır. Canlı scale-to-zero uyanış/takvim kabulü ayrıdır;0026 iş sahipliği kesintide tekrar alınabilir | R3 |
 | 4 | **Vercel + Azure Container Apps + Supabase** canlı dağıtım | **Uygulanmadı.** Depoda yalnız Compose + Dockerfile var; canlı URL yok | R3 |
 | 5 | **Supabase Auth** ile gerçek kimlik | **Kısmen.** Köprü migration'ı indi (`0002_supabase_auth_bridge.sql`, `auth` şeması varsa koşullu kurulur) ve JWT doğrulama kodu var; ama yerel/demo kurulum hâlâ `DEV_AUTH_ENABLED=true` ve imzasız `Bearer dev:<uuid>` ile koşuyor | R1 |
 | 6 | **Supabase Storage** (private bucket) | **Uygulanmadı.** Yerel dosya sistemi deposu (`STORAGE_ROOT`) kullanılıyor | R3 |
 | 7 | Kanıt eşiğinin **holdout'ta hedefi tutturması** (kapsam dışı doğru ret ≥ %90) | **Tutturulmadı.** Ölçülen %80. Eşik holdout'a bakılarak DEĞİŞTİRİLMEDİ; gerekçe `evaluation/calibration.md` §7 | R2 / R4 |
 | 8 | Chunk başına **embedding sağlayıcı + sürüm damgası** | ✅ **KAPANDI** — `0006_embedding_provenance.sql`. `chunks.embedding_space` sütunu; ölçülen değer `fastembed/intfloat/multilingual-e5-large@0.8.0` | R4 |
 | 9 | `AnswerPipeline`'ın **tekilleştirilmesi** — üretim yolu kendi kopyasını koşuyor (§5) | **Uygulanmadı.** İki orkestratör yan yana duruyor | R4 |
-| 10 | Compose yığınında **RLS'in devrede olması** | **Uygulanmadı.** `postgres` superuser'ı ile bağlanılıyor, RLS atlanıyor (§6) | R3 |
+| 10 | Compose yığınında **RLS'in devrede olması** | **Yapılandırıldı.** API dou_app, worker ayrı dou_worker rolünü kullanır. Gerçek testlerde API NOBYPASSRLS doğrulandı; canlı kurulum ayrıca denetlenir | R3 |
 | 11 | Sahte LLM sağlayıcısının **soru üretimini** desteklemesi | ✅ **KAPANDI.** Ölçüldü: anahtarsız ortamda 3 soru istendi, **3'ü de üretildi ve şemadan geçti.** Çevrimdışı demoda soru üretimi artık gösterilebilir | R4 |
 | 12 | Reranker (`ENABLE_RERANKER`), RAGAS, streaming (SSE) | **Uygulanmadı** — P1, bilinçli olarak dondurma sonrasına bırakıldı | — |
 
@@ -557,3 +558,6 @@ Bildirilen **üç bayat yorumdan ikisi düzeltildi**; biri duruyor:
   `student_attempt` alanı imzada var ve uç onu geçiriyor. **Hâlâ yanlış.**
 
 Bu dosya bu şeridin sahipliğinde değil; gruba iletildi.
+
+
+8 Eylül operasyon güncellemesi: [ortak kota](docs/operations/shared-request-quota.md), [işleyici kesinti/geçişi](docs/operations/ingestion-recovery.md), [yedek/restore](docs/recovery.md). Bölüm10'un diğer satırları tarihsel tasarım durumlarıdır; güncel tamamlanma iddiaları [ölçüm defterinden](docs/completion-program.md) okunur.

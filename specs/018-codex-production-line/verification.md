@@ -126,3 +126,60 @@ Son log/hash/arşiv yolları yeni değişim kanıt kaydına bağlanır. Eski A/S
 
 
 D3 ayrı adayın ilk gerçek yedeği tamamlandı; geri yükleme iki yeni boş hedefte CURRENT_DATABASE_FENCE_REJECTED ile reddedildi. Hedeflerin bağlantıları açık, tabloları boş kaldı; kurtarma başarısı iddia edilmez. Güvenli bakım bağlantısı protokolü ve gerçek restore/rol/RLS/pgvector tatbikatı ayrı D3 diliminde devam eder. D1/D2/D3 araç kodu bu B/C kontrol noktasına dahil değildir.
+
+
+## Kesin S/B/C hosted kabulü ve D1 yerel devam — 8 Eylül
+
+PR26 target017;9af41226d456efb7e20d22cec490566fb8c1a01c üzerinde GitHub CI34220885206 (API,web,belgeler,imaj/ağsız embedding ve gerçek tarayıcı), AI quality34220885195, Agent skills34220885222 ve Security34220885177 başarılı. [Tam durum/zaman makbuzu](evidence/bc-hosted-exact-head-final.json). PR açıklaması sonuçla güncellendi; draft ve maintainer_can_modify=false korunur. Bu kanıt sonraki yerel D kaynaklarını kapsamaz.
+
+D1 ilk yerel aday:0025 ortak kota, ayrı kontrol COMMIT'i, fail-closed503/Retry-After, okuma amaçlı readiness, içeriksiz sağlık hata kaydı ve dürüst export/gizlilik kapsamı. Eski kullanılmayan bellek sayacı kaldırıldı; eski beş sayaç testi yerini yeni kalıcı kota/işlem testlerine bıraktı. Gerçek sohbet kapsamı dolsa da soru üretimi kabul edilir; qgen300sn başlığı gerçek uçta doğrulanır.
+
+Tam API1519 geçti,5 mevcut PyMuPDF uyarısı ve38 alt vaka;92.20s pytest/102.276s kurulumla birlikte. Test veritabanı dou018_d1_api_full01 fixture sonunda kaldırıldı; kaynak hashleri koşu boyunca aynı. [Makbuz](evidence/d1-first-local/full-api.json), [log](evidence/d1-first-local/full-api.log.gz). İlk iki odak turunda yalnız yeni test fixture kullanım hataları vardı (yanlış enroll_student argümanı, yerel worker fixture varsayımı ve geçersiz example.invalid üyelik e-postası); bu kayıtlar arşivde korunur, ürün güvenlik kontrolü gevşetilmedi.
+
+Bağımsız iki süreçli SQL adayı10/10 geçti: dou_synapse_d1_sql01/OID908186,yerel PG160014. Çalışma sonunda profiles/courses/memberships/windows fixture sayıları0. Bu doğrudan SQL deneyi iki HTTP sunucusu kanıtı değildir. [Makbuz](evidence/d1-first-local/pg10.json). SQL aday adı0023'tü; son0025 dosyasında yalnız yorum/numara açıklaması değişti, advisory namespace15023 korunur. Son yerel API gerçek0025 ile kuruldu.
+
+API Ruff temiz;185 kaynak/test dosyası biçim uygun;111 uygulama kaynağında mypy temiz. Bu üç çıktı araç yanıtında gözlendi, yeniden çalışmış log uydurulmadı. OpenAPI57 yoluyla kayıtlı sözleşmeyle nesne olarak eşit. Bu ilk kontrol noktasında iki-HTTP,worker periyodik TTL ve D1'in hosted kabulü henüz yoktu; sonraki HTTP sonucu aşağıda ayrı kaydedilir. D2/D3 kaynakları bu ilk D1 koduna dahil değildir. Arşiv byte/hash listesi [archive.json](evidence/d1-first-local/archive.json).
+
+
+## D1 gerçek iki HTTP süreci ve D2/D3 ara kanıtı — 8 Eylül
+
+Bu bölüm o ara kontrol noktasını korur; sonraki yerel entegrasyon aşağıdaki güncel ekte kayıtlıdır.
+
+[Taşınabilir HTTP arşivi](evidence/d1-http-local/README.md): iki gerçek API sürecinde 55 ürün isteği,40 ortak kota isteğinde20 kabul/20 ret;7 kontrollü sağlayıcı olayı. Politikası uyuşmayan veya kontrol kilidi zaman aşımına uğrayan istek sağlayıcıya ulaşmadan503 alır. Soru üretiminde5 kabul/2 ret ve Retry-After300 doğrulandı; öğrenci403 alır. Dört gerçek dou_app havuzu aynı beklenen DB kimliğini ve RLS etkinliğini gösterir. Sağlayıcı hatası ana sohbet işlemini geri alırken kabul edilmiş kota korunur. Bağımsız salt okunur denetim ham kayıtlar/kaynak hashleriyle uyumlu. Ara SQL skalerleri ayrı ham dosya olarak saklanmamıştır; kaynak bağlı assertion ve exit0 kanıtıdır. Gerçek JWT/LLM veya çok makine kabulü değildir.
+
+İlk HTTPv1 fixture eksikliği sunucu başlamadan hata verdi; arşivde korunur. V2 sadece topics.created_by test verisini tamamladı. D1 worker TTL ve yeni hosted kabulü halen açık.
+
+D2 kaynakları henüz kök depoya uygulanmadı. Donuk adayın ayrı staging kopyasında91 test (10 yeni gerçek PostgreSQL yarışı dahil) geçti; gerçek süreç kesintisi/devralma ayrıca yürütülür. D3v4 ayrı hedefte24.39s'de kesin COMMIT ile restore oldu; sonraki salt okunur incelemede29 ilişkinin şema/satır hashleri, rol/ACL ve dört gerçek uygulama RLS kimliği eşleşti. Tek restore sorgusundaki ANN recall@8=.875 kaydedildi; bu C1 tam retrieval kabulü değildir. Başarısız03/04 hedefleri kapalı tutulur; D3 gerçek hata tatbikatı ve kaynak entegrasyonu tamamlanmış sayılmaz.
+
+
+## D1/D2/D3 ve S8 yerel entegrasyon — güncel ek, 8 Eylül
+
+Bu ek,9af4122 üzerindeki kirli çalışma ağacını ve ayrı kaynak hashlerine bağlı yerel deneyleri anlatır. Önceki hosted kabulü bu kaynaklara genişletilmez. Arşiv hedefi `evidence/d-final-local/`; önceki [D1 HTTP](evidence/d1-http-local/README.md), [D2](evidence/d2-local/README.md) ve [D3](evidence/d3-local/README.md) makbuzları değiştirilmez.
+
+| Kontrol | Sonuç ve kapsam |
+|---|---|
+| D1 gerçek HTTP | İki API sürecinde 55 istek; ortak20 kabul/20 ret, rol/kapsam ve503/Retry-After kapıları geçti |
+| D2 stage02 | 98 test geçti: önceki91, gerçek lineage regresyonu ve6 app/worker yetki testi; kaynaklar değişmedi |
+| D2 gerçek süreç v2 | 8 senaryo,19.919 s, exit0; gerçek iptal/SIGTERM/SIGKILL/devralma, eski token reddi, canary ve başlangıç kota temizliği |
+| D3 güncel şema | 22 göçle 30 ilişki, toplam 14 sentetik satır, güvenlik kataloğu/rol bileşeni eşliği; gerçek eğitmen/dış kullanıcı ve doğrudan kota 42501 kontrolleri geçti |
+| S8 ASGI | 21 kontrol geçti; rota şablonu ve Uvicorn erişim kanalı sınırı entegre |
+| S8 gerçek Uvicorn v2 | Eski/yeni kaynakların her birine üç gerçek HTTP isteği; adayda dört ham canary ve uvicorn.access kaydı yok, başlangıç/kapanış korunuyor; DB bağlantısı denemesi 0 |
+| İlk birleşik tam API | 1560 geçti, 1 başarısız, 5 mevcut PyMuPDF uyarısı, 38 alt vaka; 106.31 s pytest/117.09 s kurulumla birlikte. Genel sonuç failed; tarihsel kayıt korunur |
+| Son birleşik tam API03 | 1561 geçti, 5 mevcut PyMuPDF/Swig uyarısı, 38 alt vaka; 102.75 s pytest/113.344 s kurulumla birlikte. Exit0, kaynak hashleri değişmedi; geçici DB kaldırıldı |
+
+D2'nin ilk süreç koşusu sekiz davranışı geçse de son parent gizlilik denetiminden kaldı. Ham parent log atıldığından tam eşleşme sonradan belirlenemez; v1 genel failed korunur. V2 yalnız bilinen fixture uploadunun app.request rota UUID'sini ayrı metadata olarak gözledi; içerik/auth/DSN/parola yok ve diğer alanlarda kimlik eşleşmesi yoktu. Eski süreçteki üç stale-token yardımcısı aynı eski PID'de ayrıca çağrıldı; hepsinin otomatik pipeline hata dalından geçtiği iddia edilmez. Bu ölçüm S8 rota minimizasyonundan öncedir.
+
+Worker başlangıç bakımı expired quota satırını sildi ve canlı satırı aynen korudu. Dört yaşam döngüsü birimi grace içinde bitiş, grace aşımı, bakım hatasının ingestion'dan ayrılması ve kontrollü bekleme sonrası tekrar planlamayı sınar. Gerçek 60 saniyelik dönem veya scale-to-zero saklama SLA'sı değildir. asyncio.to_thread iptali çalışan parser/model thread'ini öldürmez; süreç kapanışı executor'u bekleyebilir. Kontrollü async depolama bariyeri kesin duvar saati kapanış garantisi vermez.
+
+D3 güncel kaynak deneyinin root makbuzu 1.252 s/exit0; yedek 0.397 s ve restore 0.422 s olarak ölçüldü. 30 ilişkinin 28'i public, 2'si app şemasındadır; toplam 14 satır ve bütün karşılaştırma eşlikleri doğrudur. Kaynakta pending/failed/completed işler ile 0025 kota verisi vardı. Gerçek dou_app eğitmeni 1 ders/3 belge/1 chunk/3 iş gördü, dış kullanıcı bunların hiçbirini görmedi; ikisi de iki quota tablosuna doğrudan erişimde 42501 aldı. Güvenlik kataloğu ve rol bileşeni eşleşti. Tek vektörün görünürlüğü ANN veya semantik kalite kabulü değildir; dış Storage kopyalanmadı. Yedek makbuzundaki tracked_schema_dirty=false alanı untracked 0025/0026 göçlerini dışlar; kesin 22 hash manifesti ve root working_tree_dirty=true makbuzu birlikte değerlendirilir, committed release iddiası yoktur. Eski 20000 vektör/29 ilişki ve hata deneyleri ayrı kalır; 07 yazıcı yarışı, cross-cluster/control-loss ve canlı bulut/saklama/imha kabulü açık.
+
+İlk birleşik tam API koşusu son worker testinin pg_stat_activity kilit gözleminde0.8s zaman aşımına uğradı; LostClaim ve son durum eşliği iddialarına ulaşmadı. Her okumadan önce pg_stat_clear_snapshot çağıran dar gözlemci düzeltmesi gerçek ayrı veritabanlarında geçti; bu çağrı kaldırıldığında test başarısız oldu, geri konduğunda yeniden geçti. Önceden doldurulmuş istatistik görüntüsü bu negatif kontrolü belirginleştirir. 0.8s gözlem sınırı, gerçek satır kilidi, veritabanı saatiyle lease sonunu geçme, LostClaim ve son durum eşliği iddiaları korunur; üretim kodu değişmedi. Ardından sekiz dosyada yalnız import sırası/grup boşluğu düzenlendi; import bağları ve import dışı AST eşliği ayrıca doğrulandı. Son API03 koşusu bu yeni bayt hashlerine bağlıdır; önceki süreç kanıtları kendi kaynak hashlerini korur.
+
+S8 artık kaynakta APIRoute.path_format veya sabit `<unmatched>` yazar ve uygulama log kurulumunda uvicorn.access kanalını kapatır. Kurulu sürüm Uvicorn 0.52.4'tür; ilk donuk nottaki 0.52.3 değeri kurulu manifesti temsil etmez. Gerçek süreç v1 baseline sonrasında fixture kapanışında başarısız oldu; bu kayıt değiştirilmez. V2, aynı bağımlılıklarda iki hash bağlı eski/yeni modül ile gerçek Uvicorn h11 ve app.main yaşam döngüsünü ölçtü: her birinde bilinen rotada401, eşleşmeyen yolda404 ve health/live için200 alındı. Eski kaynakta dört ham canary ve üç uvicorn.access kaydı görülürken adayda bunlar yoktu; uvicorn.error başlangıç/kapanış kayıtları ve kontrollü temiz kapanış korundu. Isınma kapalıydı, psycopg koruyucusu iki süreçte de sıfır bağlantı denemesi kaydetti. Deney genel anonimlik veya hosting/proxy günlüklerinin kabulü değildir. Son birleşik API ve aşağıdaki tarayıcı kabulü geçti; ayrı dossier/commit ve kesin yeni HEAD hosted kapıları ayrıca izlenir. Gerçek LLM/JWT/Storage, üretim ve hukuki uygunluk kabulü bu sonuçlardan türetilmez.
+
+
+## D/S8 son yerel kabul — 8 Eylül
+
+[Son kanıt arşivi](evidence/d-final-local/README.md)111 girdiyi ve son API/E2E kaynak hashlerini bağlar.68 gerçek Chromium akışı82.187s'de geçti; run mtsqcmai1b9f kendi65 ders ve8 audit kaydını temizledi. İlk koşuda root ayarı localhost:8018, önceden kurulmuş değişmemiş web ise127.0.0.1:8018 kullanıyordu: trace gerçek201 öğrenme çıktısı yazımını gösterse de tam URL koşulu ve route interception eşleşmedi. İlk koşu durduruldu, ürün/test kodu değiştirilmeden doğru adresle tekrarlandı; ilk koşunun kalan6 sentetik dersi ayrı temizlendi. Bu hata yeni worker'ın işlem başarısızlığı diye sınıflandırılmadı.
+
+Son1561 API testinin yanında555 web testi,52 kurtarma aracı testi,104 retrieval aracı testi,26 release testi ve77 yönetişim testi geçti. Ruff/biçim/mypy, web tip/kontrast,22 migration ve belge sayısı kapıları geçti; dinamik OpenAPI57 yolda sürümlenmiş sözleşmeyle yapısal olarak aynı. Son sekiz import düzenlemesi dışında davranış kodu değişmedi; bu düzenleme sonrası tam API03 ve E2E son hashleri doğruladı. Sonradan yapılan READ ONLY gözlemde güncel D3 source/target sabit OID'leri açık ve0 bağlantılı bulundu; ilk active1 makbuzu korunur. Yeni başın GitHub kabulü bu yerel arşivden türetilmez.

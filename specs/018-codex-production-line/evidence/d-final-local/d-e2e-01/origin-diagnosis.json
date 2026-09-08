@@ -1,0 +1,27 @@
+{
+  "source_trace_sha256": "ddc88f36b9e0a65f51119894a1619ae091a41b4764ddb632be7193d0d4b70efc",
+  "source_trace_local": "/private/tmp/dou018-evidence/d-e2e-01/browser-artifacts/blueprint-topic-readiness--77afa-r\u0131-da\u011f\u0131l\u0131m-grubunda-g\u00f6r\u00fcn\u00fcr-chromium/trace.zip",
+  "origins": [
+    "127.0.0.1:8018",
+    "localhost:3118",
+    "localhost:8018"
+  ],
+  "observed_learning_outcome_writes": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:8018/courses/550e70dc-5251-4f81-ac7b-82e74b6e5514/learning-outcomes",
+      "status": 201
+    }
+  ],
+  "root_expected_api": "http://localhost:8018",
+  "corrected_api": "http://127.0.0.1:8018",
+  "source_changes": false,
+  "first_run": "mtsq6ffmf359",
+  "later_cleanup_observed_in_tool": {
+    "courses_deleted": 6,
+    "audit_deleted": 0,
+    "command": "bun e2e/cleanup.ts --evet --run mtsq6ffmf359",
+    "database": "dou018_d_e2e_01"
+  },
+  "scope": "Selected synthetic network metadata only; complete trace remains local. Initial wrong CLI flag was rejected before DB access."
+}

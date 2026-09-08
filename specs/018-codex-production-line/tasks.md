@@ -6,8 +6,9 @@
 - [x] A4–A7 — atlanan/zayıf testler, monoton ipuçları ve ölü yollar.
 - [x] A — kendi commit'i, PR26 ve hosted kapılar.
 - [x] S1–S7 — upload/COMMIT/iptal, sekmeler arası gizlilik, dürüst veri hakkı açıklaması, issuer/CSP/depo log sınırları; yerel kontrol noktası71d5ff6.
+- [ ] S8 — rota şablonu ve Uvicorn erişim kanalı sınırı entegre; 21 ASGI ve gerçek Uvicorn v2 deneyi geçti. V1 fixture kapanış hatası korunur; yeni tarayıcı/hosted ve dış proxy günlüklerinin kabulü açık.
 - [x] S4 — kurulu rol/gizlilik becerisini güncelle ve doğrula.
-- [ ] S/B/C — yeni kesin PR adayı için hosted kapıları doğrula; A sonucu yerine kullanılmaz.
+- [x] S/B/C — kesin9af4122 PR adayında dört hosted workflow ve beş CI işi geçti; A sonucu yerine kullanılmadı.
 - [x] B1 — konuya bağlı öğrenme çıktısını gerçek API/UI ile doğrula.
 - [x] B2 — 014'teki mevcut konu/blueprint öğrenci akışını tekrar doğrula.
 - [x] B3 — kod rubriği ve kaynaklı eksik ölçüt API/UI sözleşmesini kontrollü sağlayıcı/DB fixture'larıyla doğrula.
@@ -26,12 +27,15 @@
 - [ ] C — RLS kapalı karşılaştırma ve pgvector0.8.6 ölçüm eşdeğerliği.
 - [ ] C2 — bellek/recall nedenselliğini kontrollü deneyle çöz; gerek yoksa göç eklememe kararını kaydet.
 - [x] C3 — önceki başarısız aday ile son dar kabulü, açık kalan matris hücrelerini ve kaynak hashlerini ayrı raporla.
-- [ ] D1 — çok süreçli ortak istek kotası ve ayrı yaşam döngüsü/TTL kanıtı.
-- [ ] D2 — worker iptal/lease/yeniden deneme ve gerçek süreç dayanıklılığı.
-- [ ] D3 — depo dışı kurtarma adayını incele; yeni sentetik DB'de restore/RLS/GRANT/satır/pgvector tatbikatı ve sonra ayrı entegrasyon.
+- [ ] D1 — yerel ortak kota10 SQL/1519 API ara kabulü ve iki HTTP sürecinde 55 istek geçti; gerçek worker başlangıç expired/live temizliği ve tekrar planlama birimi geçti. Son birleşik 1561 API testi geçti; son68 tarayıcı akışı geçti; dossier/commit/hosted, gerçek dönem ve işletim saklama kabulü açık.
+- [ ] D2 — yerel entegrasyon; stage02'de 98 test, gerçek süreç v2'de 8 senaryo geçti. V1 genel failed korunur. İlk 1560 geçti/1 gözlemci testi başarısız sonucu korunur; dar test düzeltmesinin pozitif/negatif/yeniden pozitif kontrolü ve son 1561 API testi geçti. Son68 tarayıcı akışı geçti; dossier/commit/hosted kabulü PR26 üzerinde izlenir.
+- [ ] D3 — yerel entegrasyon; eski 29 ilişki ve 06/08/09/10/11 deneylerine ek olarak güncel 22 göçlü 30 ilişki/14 satır, rol/RLS ve kota 42501 kabulü geçti. 07/cross-cluster/control-loss, ek rol grafiği, dış Storage ve canlı saklama/imha kabulü açık.
 - [ ] D4–D6 — ölçüm/izleme ve operasyon belgeleri.
 - [ ] E — gerçek embedding/LLM ve bağımsız insan kabulü.
 - [ ] F — gerçek JWT/oturum/private Storage RLS.
 - [ ] G — seçilmiş hedefte dağıtım/göç/rollback ve GitHub korumaları.
 - [ ] H — bütün sayfalarda dar/koyu/klavye/axe ve manuel kabul; B görsellerinden türetilmez.
 - [ ] I — güncel kılavuzlar, gerçek başarı raporu ve açık işleri kanıtla kapatma.
+
+- [x] D/S8 yerel birleşik kabul —1561 API,555 web,68 gerçek tarayıcı akışı,57 yol OpenAPI eşliği,22 göç,52 recovery aracı ve77 yönetişim testi; kanıt d-final-local arşivinde.
+- [ ] D/S8 kesin yeni commit ve PR26 hosted kabulü; yerel sonuçlar eski9af4122 GitHub sonucuna eklenmez.

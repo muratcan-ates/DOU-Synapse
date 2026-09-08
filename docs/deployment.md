@@ -4,9 +4,9 @@ DOU-Synapse'ın kurulumunun tek doğru anlatımı. Değerler burada YOKTUR — y
 değişken adları ve ne işe yaradıkları. Gerçek değerler sağlayıcıların gizli
 değer kasalarında durur ve depoya asla girmez.
 
-> **Durum, 9 Ağustos 2026.** Bu belgedeki bulut adımları **KOŞULMADI**: gerçek
+> **Durum, 8 Eylül 2026.** Bu belgedeki bulut adımları **KOŞULMADI**: gerçek
 > Azure/Vercel/Supabase erişimi olmadan yazıldılar (T050 hâlâ açık). Yerelde
-> ölçülmüş ve koşulmuş olanlar §7'de ayrıca işaretli. Bir adımı ilk kez koşan
+> ölçülmüş olanlar §6/§7 ve 018 doğrulama kaydında ayrı işaretli. D1/D2/D3 ve S8 yerel entegredir; son birleşik 1561 API testi geçti. Yeni tarayıcı/dossier/hosted kabulü bekler. Bir adımı ilk kez koşan
 > kişi, buradaki anlatımla gerçek arasında fark görürse belgeyi düzeltsin —
 > "belgede öyle yazıyordu" bir mazeret değil, bir kusur kaydıdır.
 
@@ -27,8 +27,7 @@ değer kasalarında durur ve depoya asla girmez.
 T049 kararı). Sebebi: embedding modeli imajın içindedir ve iki ayrı imaj, iki
 ayrı 2 GB'lık yapı ve iki ayrı sürüm sapması riski demektir.
 
-Worker scale-to-zero ile uyur. Belge yüklendiğinde API onu `POST /internal/drain`
-ile uyandırır; kuyruğu yoklayan bir döngü scale-to-zero'yu anlamsızlaştırırdı.
+Bağımsız `python -m app.worker` kuyruğu yoklar ve kota bakımını ayrı görevde çalıştırır. API, yükleme sonrası yapılandırılmış `WORKER_DRAIN_URL` varsa korumalı HTTP tetikleyiciyi, yoksa süreç içi tek drain turunu kullanır. Tek drain çağrısı sürekli bakım zamanlayıcısı değildir. Worker scale-to-zero seçilirse lease devralma ve kota temizliği için dış uyandırma gerekir; barındırma hedefi ve zamanlayıcı henüz doğrulanmadı.
 
 ## 2. Ortam değişkenleri
 
@@ -99,14 +98,18 @@ koşturulmaz**: birincisi yerel roller kurar, ikincisi sahte kullanıcı yaratı
 Kurulumdan sonra şemayı doğrulayın:
 
 ```bash
-psql -d "$DATABASE" -c "\dt"
+psql -d "$DATABASE" -c "\dt public.*" -c "\dt app.*"
 ```
 
-Güncel migration setiyle temiz bir kurulumda **28 tablo** görürsünüz. <!-- docs-check: tables.count = 28 -->
+Güncel migration setiyle iki uygulama şemasında toplam **30 tablo** bulunur: 28 public ve 2 app. <!-- docs-check: tables.count = 30 -->
 
 Tarihsel not: 9 Ağustos'ta hem paylaşılan geliştirme veritabanında hem sıfırdan
 kurulan veritabanında **15 tablo** ölçülmüştü. <!-- docs-check: tarihsel 15 · 2026-08-09 -->
 Faz 2 brifingindeki daha yüksek tablo tahmini o gün için de yanlıştı.
+
+### 0025/0026 birlikte geçiş sınırı
+
+[Ortak kota](operations/shared-request-quota.md) ve [iş sahipliği](operations/ingestion-recovery.md) protokollerini uygulayın. 0025 ile eski bellek sayacını kullanan API sürümünü karıştırmak tek ortak bütçe garantisi vermez. 0026 öncesi bütün eski worker ve API içi drain yolları durdurulmalı; processing veya mükerrer aktif işler varsa göç reddedilir. Yeni lease alanlarını tanımayan eski worker'ı yalnız imaj geri alarak yeniden başlatmayın. Kontrolleri atlamak için iş durumlarını topluca sıfırlamak bu protokolün parçası değildir.
 
 ## 4. İlk kurulum
 
@@ -164,25 +167,18 @@ print(len(FastEmbedProvider(cache_dir=os.environ['EMBEDDING_CACHE_DIR']).embed_q
 
 ## 6. Yedek ve geri yükleme
 
-```bash
-# Yedek
-pg_dump -Fc -d "$DATABASE" -f backup/dou_synapse.dump
-tar -czf backup/storage.tar.gz -C "$STORAGE_PARENT" storage
+Yerel yedek/geri yükleme için [kurtarma protokolü](recovery.md) ve varsayılan kuru koşulu araçlar kullanılır. Aşağıdaki komutlar yalnız plan gösterir; bağlantı açmaz, dosya veya hedef oluşturmaz:
 
-# Geri yükleme (TEMİZ bir veritabanına)
-createdb "$TARGET"
-pg_restore -d "$TARGET" --no-owner backup/dou_synapse.dump
-psql -d "$TARGET" -c "GRANT CONNECT ON DATABASE \"$TARGET\" TO dou_app, dou_worker"
-tar -xzf backup/storage.tar.gz -C "$STORAGE_PARENT"
+```sh
+scripts/backup.sh --bundle /absolute/private/backups/new-unique-bundle
+scripts/restore.sh --bundle /absolute/private/backups/new-unique-bundle
 ```
 
-Geri yükleme sonrası **politika sayısını doğrulayın** — sessizce yetki kaybı,
-sessizce açılmış bir veritabanı demektir:
+Gerçek işlem açık `--execute`, geri yüklemede ayrıca bağımsız kaydedilmiş kaynak kimliği, `--trust-own-backup`, `--fence-empty-target` ve önceden hazırlanmış farklı boş hedef gerektirir. Kimlik/sır girdileri ve API Python ortamı recovery rehberindeki sözleşmeyle sağlanır. Araç hedef oluşturmaz, eski arşivin üzerine yazmaz veya belirsiz işlemin ardından hedefi kendiliğinden açmaz. Sahiplik, GRANT/RLS ve tek restore transaction'ı korunur; yalnız politika sayısını karşılaştırmak kabul değildir.
 
-```bash
-psql -d "$TARGET" -tAc "select count(*) from pg_policies where schemaname='public'"
-# kaynakla aynı olmalı (9 Ağustos ölçümü: 40)
-```
+V4 yerel araçları eski kaynakta 29 ilişki/20000 vektör eşliği ve kontrollü hata deneylerini geçti. Güncel 22 göçlü kaynakta ayrıca 30 ilişkinin toplam 14 sentetik satırı, güvenlik kataloğu/rol bileşeni, gerçek eğitmen/dış kullanıcı RLS ayrımı ve quota 42501 reddi doğrulandı. Bu, kirli yerel kaynaklardan alınmış sınırlı kabul; committed release, bulut hesabı veya üretim yedek hizmeti değildir. Arşiv hedefi `specs/018-codex-production-line/evidence/d-final-local/`; [önceki ayrıntılı kanıt](../specs/018-codex-production-line/evidence/d3-local/README.md) korunur.
+
+Dosya deposu bu DB tatbikatında kopyalanmadı. Storage/DB tutarlılığı, şifreleme, korunan dış kopya, saklama/imha ve eski yedekten dönen silinmiş kayıtların uzlaştırması ayrı işletim işidir. 07 eşzamanlı yazıcı ve cross-cluster/control-loss deneyleri açık kalır; herhangi bir hedefi yalnız komut başarılı göründü diye trafiğe açmayın.
 
 ## 7. Demo günü (C planı)
 

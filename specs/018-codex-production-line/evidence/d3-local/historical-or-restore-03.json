@@ -1,0 +1,26 @@
+{
+  "candidate_sha256": "85c258a242f6591fbdd7849bb1210d8555236092ef744ca43d842d1b3dd46313",
+  "target": "dou018_recovery_target03",
+  "source": "dou018_recovery_source01",
+  "source_backup_capture": "v2 own trusted synthetic snapshot; source preserved",
+  "before": {
+    "oid": 904401,
+    "allow_connections": true,
+    "system_identifier": "7683042491268153327"
+  },
+  "exit_code": 2,
+  "seconds": 1.76,
+  "after": {
+    "oid": 904401,
+    "allow_connections": false,
+    "connection_limit": -1,
+    "active_connections": 0
+  },
+  "restore.stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "restore.stderr_sha256": "92d5beb6e87dca8eb776ed6515fa16c637b596af8248b415e4591123daff2065",
+  "restore.stderr_receipt": {
+    "status": "refused",
+    "reason": "RESTORE_FAILED_REVIEW_FENCE_AND_TRANSACTION_STATE",
+    "note": "No database-tool stderr is disclosed. If execution reached fencing, inspect the target from a maintenance DB before reopening."
+  }
+}

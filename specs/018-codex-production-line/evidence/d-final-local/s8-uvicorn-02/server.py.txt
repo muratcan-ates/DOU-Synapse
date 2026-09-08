@@ -1,0 +1,67 @@
+
+import hashlib, importlib, importlib.metadata, importlib.util, json, os, socket, sys, threading, time
+from pathlib import Path
+import psycopg
+
+attempts = 0
+def denied(*args, **kwargs):
+    global attempts
+    attempts += 1
+    raise RuntimeError("S8_DATABASE_CONNECTION_FORBIDDEN")
+psycopg.connect = denied
+psycopg.Connection.connect = denied
+psycopg.AsyncConnection.connect = denied
+
+if os.environ.get("S8_OLD_SOURCE"):
+    source = Path(os.environ["S8_OLD_SOURCE"])
+    for name, filename in (("app.core.logging", "logging.py"), ("app.main", "main.py")):
+        spec = importlib.util.spec_from_file_location(name, source / filename)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+
+import uvicorn
+config = uvicorn.Config("app.main:app", host="127.0.0.1", port=0, http="h11",
+                        lifespan="on", access_log=True, log_level="info", proxy_headers=False)
+config.load()
+expected = json.loads(os.environ["S8_EXPECTED_LOADED_SOURCES"])
+loaded = {}
+for name, filename in (("app.core.logging", "logging.py"), ("app.main", "main.py")):
+    module = importlib.import_module(name)
+    path = Path(module.__file__).resolve()
+    loaded[filename] = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+assert loaded == expected
+main_module = importlib.import_module("app.main")
+assert Path(main_module.configure_logging.__code__.co_filename).resolve() == Path(loaded["logging.py"]["path"])
+print(json.dumps({"probe": "source-binding", "pid": os.getpid(), "loaded": loaded,
+                  "versions": {name: importlib.metadata.version(name) for name in ("fastapi", "starlette", "uvicorn")}}), flush=True)
+
+listener = socket.socket(fileno=int(os.environ["S8_SOCKET_FD"]))
+assert listener.getsockname()[0] == "127.0.0.1"
+control_fd = int(os.environ["S8_CONTROL_FD"])
+server = uvicorn.Server(config)
+stop_state = {"received": False}
+
+def controlled_shutdown():
+    try:
+        # Gerçek listener kurulmadan parent HTTP göndermeyecek.
+        while not server.started:
+            if server.should_exit:
+                return
+            time.sleep(0.01)
+        print(json.dumps({"probe": "server-ready", "pid": os.getpid(),
+                          "address": list(listener.getsockname())}), flush=True)
+        stop_state["received"] = os.read(control_fd, 1) == b"S"
+        # Sinyal yakalayıcısına dokunulmaz; Uvicorn kendi normal kapanışını yapar.
+        server.should_exit = True
+    finally:
+        os.close(control_fd)
+
+control = threading.Thread(target=controlled_shutdown, daemon=True, name="s8-private-stop")
+control.start()
+server.run(sockets=[listener])
+control.join(timeout=1)
+print(json.dumps({"probe": "database-connect-guard", "pid": os.getpid(), "attempts": attempts,
+                  "control_stop_received": stop_state["received"], "control_thread_stopped": not control.is_alive()}), flush=True)
+assert attempts == 0 and stop_state["received"] and not control.is_alive()

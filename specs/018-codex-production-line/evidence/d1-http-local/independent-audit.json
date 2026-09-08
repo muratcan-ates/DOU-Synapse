@@ -1,0 +1,206 @@
+{
+  "status": "local_http_acceptance_supported_with_evidence_limits",
+  "audit_database_or_server_calls": 0,
+  "inputs_sha256": {
+    "/private/tmp/dou018-evidence/d1-http-measured-02/result.json": "d5e46f0da234813076b100e99c9060e7271ee90bb4c32621a3e0337a717e17d8",
+    "/private/tmp/dou018-evidence/d1-http-measured-02/http-results.json": "d10b7d4b71707654ae0e167429f797b8c988032f5eddb6ab3d0dc0c029c45663",
+    "/private/tmp/dou018-evidence/d1-http-provision-02/before.json": "9d70122c34d64c987fbda37716d42fd81b91ee7f752c419c92ccb7eae6232a23",
+    "/private/tmp/dou018-evidence/d1-http-provision-02/result.json": "c5405605f26657a938bfad264f40200a3be6a255d3acccd3626ad5ce3ae87737",
+    "/private/tmp/dou018-evidence/d1-http-measured-02/process-0.log": "79feccff93281537e8ba86cd2dcb037993b57e150c5d415125e9c9c1fae5c00b",
+    "/private/tmp/dou018-evidence/d1-http-measured-02/process-0-events.jsonl": "636a229612e065fcb06beb3db44641907b4f593af3bb5be4ad55cad9ec6e8d20",
+    "/private/tmp/dou018-evidence/d1-http-measured-02/process-1.log": "e8640d4535de719e1672b7818ef7dd5ddaf97b928741fcf42772e2f2c4ef8af2",
+    "/private/tmp/dou018-evidence/d1-http-measured-02/process-1-events.jsonl": "ad2a14bf7baa49e1da5861ff81cab1e9f020a4d0f06ca63b190cfac2234f0654"
+  },
+  "source_binding": {
+    "reviewed_harness_files": {
+      "probe.py": "45f63775b6c0676b6a1127d491c5cd98773809d2ec97f78374e45167cfc61dcf",
+      "common.py": "d62ee2ec8e0b42f9e7e93f3d6a36f2102de3f6ff80fae8db14bbab4275ab437d",
+      "serve.py": "a492948ad39c3886b0b9681a0006981be06f732bc15ebd884cdead8210284d0a",
+      "db_guard.py": "a93945d91e90839965212e21fc67aab04ae2b17fefe27f3172e448a540aec44b"
+    },
+    "named_runtime_files": 15,
+    "full_runtime_python_files": 111,
+    "before_after_equal": true,
+    "root_runtime_manifest_matches": true,
+    "current_named_sources_match": true,
+    "current_runtime_differences": [],
+    "current_runtime_tree_exact_match": true,
+    "migration_sources_verified": 21,
+    "migration_mapping": {
+      "review_candidate": "supabase/migrations/0023_shared_request_quota.sql",
+      "integrated": "supabase/migrations/0025_shared_request_quota.sql",
+      "advisory_namespace": 15023
+    }
+  },
+  "target": {
+    "database": "dou_synapse_d1_http02",
+    "database_oid": 1048788,
+    "system_identifier": "7683042491268153327",
+    "server_version_num": 160014,
+    "server_address": "127.0.0.1",
+    "server_port": 55448
+  },
+  "http": {
+    "unique_product_requests": 55,
+    "all_rows_match_result_and_raw_process_events": true,
+    "all_rows_match_application_logs_after_current_source_redaction": true,
+    "application_log_direct_id_matches": 54,
+    "application_log_redacted_id_matches": 1,
+    "pids": [
+      27764,
+      27765
+    ],
+    "total_http_including_readiness": 57,
+    "cases": {
+      "shared-prefill": 2,
+      "shared": 38,
+      "provider-failure": 1,
+      "policy-mismatch": 2,
+      "control-lock-timeout": 1,
+      "control-lock-recovered": 1,
+      "cache": 2,
+      "student-qgen": 1,
+      "qgen-admitted": 5,
+      "qgen-denied": 2
+    },
+    "shared": {
+      "total": 40,
+      "allowed": 20,
+      "denied": 20,
+      "each_pid_allowed": 10,
+      "each_pid_denied": 10,
+      "retry_after_seconds": 60,
+      "elapsed_seconds": 0.32787608400394674
+    },
+    "cache_cached_flags": [
+      false,
+      true
+    ],
+    "qgen_admitted": 5,
+    "qgen_denied": 2,
+    "qgen_retry_after_seconds": 300,
+    "student_qgen_status": 403,
+    "policy_and_lock_timeout_status": 503,
+    "policy_and_lock_timeout_retry_after_seconds": 1
+  },
+  "provider_events": {
+    "total": 7,
+    "by_case": {
+      "provider-failure": 1,
+      "cache": 1,
+      "qgen-admitted": 5
+    },
+    "controlled_failure_events": 1,
+    "denied_control_failed_student_and_cache_hit_calls": 0,
+    "retrieval_events": 28,
+    "external_llm_provider": false,
+    "external_call_evidence": "source-bound deterministic provider selection and allowlisted child environment; no network-packet capture"
+  },
+  "rls_pool_identities": {
+    "count": 4,
+    "each_child_main_and_control": true,
+    "roles": [
+      "dou_app"
+    ],
+    "superuser": false,
+    "bypassrls": false,
+    "row_security": "on",
+    "endpoint_oid_version_match": true,
+    "cluster_id_checked_by_admin_guard": "source-bound guard plus root fingerprint receipt; application roles have no pg_control_system grant"
+  },
+  "database_function_observations": [
+    {
+      "proname": "purge_expired_request_windows",
+      "prosecdef": true,
+      "provolatile": "v",
+      "proconfig": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "definition_sha256": "96e88e475890c1ef6084186e5c76e9b63c984e63f73df4defbf2786403ae7712"
+    },
+    {
+      "proname": "request_quota_policies",
+      "prosecdef": true,
+      "provolatile": "s",
+      "proconfig": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "definition_sha256": "7a2cf32d1aa9a0e5a0a6df6881f4a0027dde50fd82e30f11ac3d062db6da4326"
+    },
+    {
+      "proname": "take_request_slot",
+      "prosecdef": true,
+      "provolatile": "v",
+      "proconfig": [
+        "search_path=pg_catalog, pg_temp"
+      ],
+      "definition_sha256": "9ad5c186d6e0fd821e6106fac7a91a110306f17cfb8015a28343bfe8bd669f5d"
+    }
+  ],
+  "database_assertion_scope": {
+    "committed_slots": {
+      "shared": 20,
+      "provider_failure": 1,
+      "policy_mismatch": 0,
+      "lock_timeout": 0,
+      "lock_recovered": 1,
+      "cache": 2,
+      "student_qgen": 0,
+      "instructor_qgen": 5
+    },
+    "provider_failure_main_chat_sessions": 0,
+    "basis": "reviewed immutable runner assertions completed successfully; intermediate scalar rows were not separately persisted",
+    "cleanup_counts": {
+      "courses": 0,
+      "profiles": 0,
+      "quota_windows": 0,
+      "chat_sessions": 0
+    },
+    "cleanup_basis": "runner report assertions+successful root receipt; no independent DB reread"
+  },
+  "logs": {
+    "structured_application_lines": 66,
+    "process_event_lines": 155,
+    "scan_files": 4,
+    "logging_source_sha256": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e",
+    "prompt_marker_matches": 0,
+    "authorization_or_dsn_literal_matches": 0,
+    "jwt_like_matches": 0,
+    "forbidden_content_keys": [],
+    "observed_metadata": "timestamps, request IDs, course/topic UUIDs, HTTP paths, counts, local process/DB and source hashes",
+    "redacted_request_id_observation": [
+      {
+        "raw": "d1-shared-15264907b75041209295efdf9bd7d46a",
+        "logged": "d1-shared-15264907b[REDACTED_TCKN]efdf9bd7d46a",
+        "status_code": 429
+      }
+    ],
+    "privacy_canary_limit": "real synthetic prompt markers and dev-token pattern scanned; offline secret canary was not injected in this HTTP run, so its absence is not a redaction challenge"
+  },
+  "timings": {
+    "harness_seconds": 1.9529252499924041,
+    "root_wrapper_seconds": 2.13,
+    "performance_claim": false
+  },
+  "first_failed_fixture_preserved": {
+    "status": "failed",
+    "error_code": "NotNullViolation",
+    "server_started": false,
+    "v1_sources_and_first_receipts_byte_unchanged": true,
+    "preservation_manifest_sha256": "59b4428cbe58a8bf4d7fad8c481f6b99973d1c5901e262c6990c4b0a4af3e136"
+  },
+  "limits": [
+    "single local PostgreSQL16.14 endpoint; no hosted/multi-host assurance",
+    "fixed loopback listener and stable DBA target assumption",
+    "dev auth and synthetic SQL/RLS retrieval; no real JWT/ANN/embedding quality claim",
+    "provider failure is controlled FakeLlm exception; no paid LLM fault/failover/network interruption",
+    "DB failure scenario is advisory lock timeout, not network outage",
+    "intermediate scalar DB assertions are source-bound but raw scalar snapshots absent",
+    "pg_get_functiondef raw text absent; recorded definition hashes cannot be independently recomputed here",
+    "no exact sliding-window equality-boundary proof",
+    "no distributed qgen concurrency or TTL scheduler/retention/export closure",
+    "no blanket privacy/legal compliance certification"
+  ],
+  "concrete_remaining_quota_or_security_blocker_found": false,
+  "observability_followup": "One synthetic request ID contained an 11-digit run; general TCKN masking changed its logged identity. Trace joins need the source redaction transform for that row; no quota/status discrepancy."
+}

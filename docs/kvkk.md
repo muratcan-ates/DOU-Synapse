@@ -43,6 +43,8 @@ Hesap ve gizlilik ekranından uygulamada sunulan kişisel kayıtlarınızı JSON
 
 Sohbet silindikten sonra, önceden başlamış bir yanıtın geçmişi yeniden oluşturmasını engelleyen hesap ve ders kapsamlı teknik sayaç tutulur. Bu sayaç soru veya cevap içermez; yine de hesap kimliğiyle bağlantılıdır. JSON indirmesinin dışında kalan bu kayıt dosyanın kapsam açıklamasında belirtilir.
 
+Aşırı kullanımı sınırlamak için kullanıcı ve ders kimliğiyle bağlantılı kabul edilmiş istek zamanları tutulur. Bu kayıt soru, cevap, kaynak metni veya IP adresi içermez; yine de kişisel işlem verisidir ve JSON indirmesinin kapsam açıklamasında ayrıca belirtilir. Varsayılan kota penceresi sohbet için 60 saniye, soru üretimi için 300 saniyedir. Pencerenin dolması fiziksel silme ile aynı işlem değildir: süresi dolmuş kayıt ancak bakım işlemi başarıyla çalışınca veya ilgili profil/ders satırı fiziksel olarak silinince kaldırılır. Bakımın durduğu ve yedek kopyaların tutulduğu süreler bu sınırlardan ayrı değerlendirilmelidir. Profil alanlarını kaldırmak bu kayıtları hemen silmez.
+
 Daha önce indirdiğiniz dosyalar, ekran görüntüleri veya başka cihazdaki kopyalar bu işlemlerle geri alınamaz. Paylaşılan cihazda işiniz bitince çıkış yapın ve indirdiğiniz kişisel dosyaları cihazda bırakmayın.
 
 ## Saklama ve silme sınırları

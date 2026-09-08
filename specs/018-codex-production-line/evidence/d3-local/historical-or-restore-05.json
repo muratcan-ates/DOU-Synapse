@@ -1,0 +1,27 @@
+{
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "target": "dou018_recovery_target05",
+  "source": "dou018_recovery_source01",
+  "source_backup_capture": "v2 own trusted synthetic snapshot; source preserved",
+  "before": {
+    "oid": 909570,
+    "allow_connections": true,
+    "system_identifier": "7683042491268153327"
+  },
+  "exit_code": 0,
+  "seconds": 24.39,
+  "after": {
+    "oid": 909570,
+    "allow_connections": true,
+    "connection_limit": -1,
+    "active_connections": 0
+  },
+  "restore.stdout_sha256": "b7720d4f6ca52fdb0151ad5b12a7a39277772997ec0b3271105a55768e5437d5",
+  "restore.stdout_receipt": {
+    "status": "restore-complete",
+    "commit_status": "committed",
+    "target_identity_sha256": "6b80c6fe1dc0e552267732032d1b6cf70178db6c7026843f6ba1fd2337646c27",
+    "scope": "database/security metadata; content and RLS application drill still required"
+  },
+  "restore.stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

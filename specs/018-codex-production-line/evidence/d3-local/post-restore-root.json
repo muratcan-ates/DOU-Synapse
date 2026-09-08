@@ -1,0 +1,26 @@
+{
+  "exit_code": 0,
+  "seconds": 3.542,
+  "review_source_sha256": "5be4207b8be2dc59008f6e5ae3dcd819740427a77a948aea531764a26e611ef6",
+  "command": [
+    "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+    "/private/tmp/dou018-d3-post-restore-review/review.py",
+    "--execute",
+    "--candidate",
+    "/private/tmp/dou018-d3-candidate-v4/scripts/recovery.py",
+    "--cluster-id",
+    "7683042491268153327",
+    "--source-oid",
+    "812959",
+    "--target-oid",
+    "909570",
+    "--source-fingerprint",
+    "b7fa3eeec5d0b8d0d84fe1f9f05cf64be73a133b897ad22f985a8a329df6a359",
+    "--target-fingerprint",
+    "6b80c6fe1dc0e552267732032d1b6cf70178db6c7026843f6ba1fd2337646c27",
+    "--output-directory",
+    "/private/tmp/dou018-d3-post-restore-result-01"
+  ],
+  "stdout_sha256": "2a35edf1b06e61ad44b3f7215e0522463aa11a2ee94d6f2ad9029beecb2703e7",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

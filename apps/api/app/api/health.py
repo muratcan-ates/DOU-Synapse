@@ -15,6 +15,7 @@ from sqlalchemy import text
 from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.core.logging import get_logger
+from app.core.request_quota import request_quota_is_ready
 from app.core.warmup import warmup_is_ready, warmup_state
 
 router = APIRouter(prefix="/health", tags=["health"])
@@ -44,8 +45,13 @@ async def ready(response: Response) -> dict[str, Any]:
         checks["database"] = "ok"
         checks["pgvector"] = "ok" if vector_ready else "missing"
     except Exception as exc:
-        logger.warning("hazırlık kontrolü başarısız", extra={"context": {"error": str(exc)}})
+        logger.warning(
+            "hazırlık kontrolü başarısız",
+            extra={"context": {"error_type": type(exc).__name__, "stage": "database_probe"}},
+        )
         checks["database"] = "error"
+
+    checks["request_quota"] = "ok" if await request_quota_is_ready(get_settings()) else "error"
 
     # "Süreç ayakta" ile "embedding hazır" ayrı sorular; ikincisi burada, bir
     # BAĞIMLILIK durumu olarak raporlanır. `/health/live` bundan etkilenmez ve
@@ -57,6 +63,7 @@ async def ready(response: Response) -> dict[str, Any]:
     healthy = (
         checks.get("database") == "ok"
         and checks.get("pgvector") == "ok"
+        and checks.get("request_quota") == "ok"
         and warmup_is_ready(embedding_status)
     )
     if not healthy:

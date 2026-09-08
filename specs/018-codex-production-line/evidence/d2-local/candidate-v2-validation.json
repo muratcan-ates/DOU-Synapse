@@ -1,0 +1,38 @@
+{
+  "checks": [
+    {
+      "name": "offline",
+      "exit_code": 0,
+      "log_sha256": "77f8bd74ea03a39ba2bcccd461afaea9cb552675e372f86b05a925f5cc67063c"
+    },
+    {
+      "name": "ruff",
+      "exit_code": 0,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "name": "format",
+      "exit_code": 0,
+      "log_sha256": "5b9f70ad96522f492ef846065642c069b5627379aff2ab3f74acd2e3b9ecfe34"
+    }
+  ],
+  "offline_tests": 18,
+  "v1_files_still_match_manifest": true,
+  "production_python_same_as_v1": true,
+  "source_hashes": {
+    "apps/api/app/worker.py": "586260f1bb4a239891bdf1660904fac5b1c3677a176e31f947da56601b5e5a4f",
+    "apps/api/tests/test_d2_lineage_regression.py": "6ce7d6953d7559d1bad5b05562800498ac3df2832431ffb5c736a9c0fa9e8489",
+    "apps/api/tests/test_worker_recovery.py": "2771e8ca1a78d838b87dec177519b8e732cc42e575d0a258d5eafe29d2d1009d",
+    "apps/api/tests/test_ingestion.py": "a91e5b84cf36bdd3993d7e62f4f5a1d8b039f20f13580ca54adea2c8f2eb6294",
+    "apps/api/app/core/config.py": "a6b5476b10c3ab244d3cad36e1a66268d2a460ee185eaaa623374537fdcfbccd",
+    "apps/api/app/api/internal.py": "62acf092d315dc147bfa1ec08a1fbc42571319e78e499a3e634d5394627cbc8c",
+    "apps/api/app/modules/ingestion/claims.py": "c9334c1b62913ce03ae24530c9ec7fc6741e2d25a375ed81263c8d66832060ea",
+    "apps/api/app/modules/ingestion/pipeline.py": "1b0f6c41da687e825b0d1d0ad4009941784782c2f4fd9bb10f39a593235809ff",
+    "supabase/migrations/0026_ingestion_claim_leases.sql": "3e15eaa33f8bc8fba2f7a6d6e84692d213cc696ccd8367fad73152e79f2b61d3"
+  },
+  "pending": [
+    "root stage02 real91+lineage regression",
+    "actual OS/process harness"
+  ],
+  "v1_manifest_sha256": "e2f23b53367707553be6920ca923d760ad561b53ffa1ddc96e05f1abb3fcb0c3"
+}

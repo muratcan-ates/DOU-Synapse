@@ -1,0 +1,81 @@
+{
+  "checks": [
+    {
+      "name": "ruff-check",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+        "check",
+        "--no-cache",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/tests/test_request_log_privacy.py"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api",
+      "exit_code": 0,
+      "log": "/private/tmp/dou018-request-log-minimization/ruff-check.log",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "name": "ruff-format-check",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+        "format",
+        "--check",
+        "--no-cache",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/main.py",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/app/core/logging.py",
+        "/private/tmp/dou018-request-log-minimization/files/apps/api/tests/test_request_log_privacy.py"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api",
+      "exit_code": 0,
+      "log": "/private/tmp/dou018-request-log-minimization/ruff-format-check.log",
+      "log_sha256": "eee76f865de5a9f2456950f710ae5d5f9b5bd0ea02aa54f614c5eed6642a0bfd"
+    },
+    {
+      "name": "mypy-check",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/mypy",
+        "--config-file",
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/pyproject.toml",
+        "--explicit-package-bases",
+        "--follow-imports=silent",
+        "--cache-dir",
+        "/private/tmp/dou018-request-log-minimization/mypy-cache-combined",
+        "app/main.py",
+        "app/core/logging.py"
+      ],
+      "cwd": "/private/tmp/dou018-request-log-minimization/files/apps/api",
+      "exit_code": 0,
+      "log": "/private/tmp/dou018-request-log-minimization/mypy-check.log",
+      "log_sha256": "f9b031e5c45aa702cd4fef028d465551cb20a2c4698e0913c7b00766b20ac4d8"
+    },
+    {
+      "name": "patch-check",
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "/private/tmp/dou018-request-log-minimization/source.patch"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-018-codex-production-line",
+      "exit_code": 0,
+      "log": "/private/tmp/dou018-request-log-minimization/patch-check.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "expected_failure_oracle_counts": {
+    "combined-baseline-final": 20,
+    "combined-raw-fallback-mutant": 9,
+    "combined-old-access-control": 2
+  },
+  "candidate_sha256": {
+    "apps/api/app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+    "apps/api/app/core/logging.py": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc",
+    "apps/api/tests/test_request_log_privacy.py": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3"
+  },
+  "baseline_sha256": {
+    "apps/api/app/main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88",
+    "apps/api/app/core/logging.py": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e",
+    "apps/api/tests/test_request_log_privacy.py": null
+  }
+}

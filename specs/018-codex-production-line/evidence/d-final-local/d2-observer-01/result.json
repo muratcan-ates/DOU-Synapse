@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "candidate_sha256": "4c42f615a49b1cc094c6c8eae3bce8b9ec08114891b87fb4381c9d8d75f7915a",
+  "final_source_restored": true,
+  "production_changed": false,
+  "results": [
+    {
+      "variant": "candidate",
+      "database": "dou018_observer_candidate01",
+      "database_dropped": true,
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "seconds": 2.574,
+      "test_sha256": "4c42f615a49b1cc094c6c8eae3bce8b9ec08114891b87fb4381c9d8d75f7915a",
+      "log_sha256": "571224b4c9989e45e77f6090414706d799e33bd8e62b02fc07f880ab74b77724"
+    },
+    {
+      "variant": "stale_observer",
+      "database": "dou018_observer_stale_observer01",
+      "database_dropped": true,
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "seconds": 2.89,
+      "test_sha256": "61cd8c6aa6c0390e988f63416b00051040258eab1c21bf402af65e624e584ea8",
+      "log_sha256": "89aef1eeddf017d265670cabcbec177c2a8fb00605289f9a135e34680e3519ca"
+    },
+    {
+      "variant": "restored",
+      "database": "dou018_observer_restored01",
+      "database_dropped": true,
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "seconds": 2.959,
+      "test_sha256": "4c42f615a49b1cc094c6c8eae3bce8b9ec08114891b87fb4381c9d8d75f7915a",
+      "log_sha256": "b40307e8f303809355413848a6a81c33b612281ff8e50f28e7426da7a0593d34"
+    }
+  ]
+}

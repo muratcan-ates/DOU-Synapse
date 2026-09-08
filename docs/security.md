@@ -289,9 +289,7 @@ migration'ın `app.install_auth_user_bridge()` fonksiyonunu çağırır) ama
 Supabase'in `auth.users` şeması, izinleri ve `supabase_auth_admin` rolü birebir
 taklit edilmiştir, gerçek değildir.
 
-**3. İstek sınırı süreç içidir.** Sayaç bellekte tutulur
-([`chat.py:121`](../apps/api/app/api/chat.py#L121)); birden fazla uvicorn
-worker'ı çalıştığında sınır **worker başına** uygulanır. Genel pencere çok süreçte ortak değildir. Rol farkındalıklı ajan için ayrıca PostgreSQL token/kota rezervasyonları vardır; bunlar her API ucunun ortak hız sınırının yerine geçmez. Ortak sınır için tek bir teknoloji zorunlu değildir.
+**3. Yeni API süreçleri ortak PostgreSQL istek kotasını kullanır.**0025 bütçeyi kullanıcı+ders+kapsam bazında paylaşır. Kontrol kabulü ayrı COMMIT'tir; başarısız sağlayıcı çağrısı hakkı geri vermez. İki gerçek HTTP sürecinde20 kabul/20 ret ve qgen300s Retry-After doğrulandı. Politika/DB hatasında sağlayıcı çağrısı yapılmadan503 döner. Eski bellek sayacını kullanan sürümle karışık geçiş bu garantiyi vermez. Token rezervasyonları ve aktif iş kontrolleri ayrı katmanlardır; soru üretiminin eşzamanlılık kapısı hâlâ süreç içindedir. [İşletim ve saklama sınırları](operations/shared-request-quota.md).
 
 **4. Güvenlik başlıkları vardır; TLS ayrı katmandır.** API JSON yanıtlarında CSP, nosniff ve referrer başlıkları, belge yüzeyinde ayrı dar politika vardır. Web CSP ve Permissions-Policy mevcuttur. Next'in mevcut üretim politikasında inline script/style izni kalır; nonce tabanlı daraltma uygulanmadı. Web CSP, yapılandırılmış API ve Supabase origin'lerini doğrulayarak `connect-src` listesine ekler; joker hedef açılmaz. Bu bir canlı Supabase giriş testi değildir. HTTPS/HSTS, gerçek dağıtımda doğrulanmalıdır.
 
@@ -319,7 +317,12 @@ kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapal�
 | Sohbet silme kapsam sürümü | `chat_privacy_revisions` | Sahip RLS; soru/cevap ve silme zamanı içermez |
 | Sınav cevapları ve mastery skoru | `answers`, `mastery` | Yalnız öğrencinin kendisi |
 | Yüklenen belgeler | `documents` + dosya deposu | Dersin üyeleri |
-| Ölçüm kaydı (metin YOK) | `request_logs` | Dersin eğitmeni (`0005`) |
+| Ölçüm kaydı (soru/cevap alanı yok) | `request_logs` | Dersin eğitmeni (`0005`) |
+| Ortak istek kotası kimlik/zaman dizisi | `app.rate_limit_windows` | Uygulamanın doğrudan SELECT yetkisi yok; dar kontrol/bakım işlevleri ve yetkili DB işletimi |
+| Kanonik kota politikası (kişisel kayıt değil) | `app.request_rate_policies` | Uygulama yalnız dar politika görünümünü kullanır |
+| Korelasyon/rota/zaman metadatası | Uygulama stdout'u ve seçilen log toplayıcı | Dağıtımın log erişim yetkileri; SQL RLS bu kopyaya uygulanmaz |
+
+`request_logs` ile stdout aynı kayıt değildir. Önceki app.request ölçümü raw path içinde rota UUID'si taşıyordu; D2v2 bu alanı ayrı metadata olarak gözledi. Son S8 kaynakları APIRoute.path_format veya sabit `<unmatched>` kullanır; request_id, method, status, duration_ms ve zaman bilgisi kalır. Uygulama log kurulumu uvicorn.access kanalını kapatır. 21 ASGI kontrolü ve gerçek Uvicorn 0.52.4 v2 deneyi geçti: eski/yeni kaynakların her birine üç HTTP isteğinde adayın dört ham canary ve erişim kanalı kaydı yoktu, başlangıç/kapanış kayıtları korundu; DB bağlantısı denenmedi. V1 fixture kapanış hatası tarihsel kayıtta korunur. Yeni hosted ve dış proxy günlüklerinin kabulü açıktır. Mevcut kimlik/zaman metadatası anonim sayılmaz; log toplayıcının erişimi, saklama ve silme kapsamı canlı ortamda ayrıca doğrulanır. RedactionFilter serbest kişisel metnin tamamını veya dış proxy/sağlayıcı günlüklerini güvenli ilan etmez.
 
 Serbest metin yalnız `chat_messages.content` değildir: `answers.given`, değerlendirme geri bildirimi, kullanıcı yorumları ve yüklenen belgeler de kişisel bilgi içerebilir. Kullanıcı kimliğine bağlı operasyon kayıtları, ham soru içermese de kişisel veri niteliğini otomatik kaybetmez.
 
@@ -334,8 +337,8 @@ Sohbetin özel kalması genel kuraldır; öğrencinin açıkça eğitmen incelem
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 1499 test   # docs-check: backend.tests = 1499
-cd apps/api && uv run mypy app                  # temiz, 109 dosya   # docs-check: backend.mypyFiles = 109
+cd apps/api && uv run pytest -q                 # 1561 test   # docs-check: backend.tests = 1561
+cd apps/api && uv run mypy app                  # temiz, 112 dosya   # docs-check: backend.mypyFiles = 112
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 

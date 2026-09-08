@@ -1,0 +1,155 @@
+{
+  "status": "PASS",
+  "candidate_source_hashes": {
+    "main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+    "logging.py": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc"
+  },
+  "baseline_source_hashes": {
+    "main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88",
+    "logging.py": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e"
+  },
+  "baseline_commit": "9af41226d456efb7e20d22cec490566fb8c1a01c",
+  "probe_sha256": "d84ec92f2e69c0a181edca7b87a17bf636a9d00a6b74f59181b20a39c63121a8",
+  "driver_sha256": "df9e4faaadbfc66bf08a6229f5c320ce7933686d06d5dea5b56c7c3283bc0a55",
+  "results": [
+    {
+      "variant": "baseline",
+      "seconds": 1.110146,
+      "pid": 37920,
+      "process_exit_code": 0,
+      "responses": [
+        {
+          "request_id": "s8-baseline-0",
+          "status": 401,
+          "expected_route_template": "/courses/{course_id}/documents/{document_id}",
+          "expected_baseline_path": "/courses/b806cf42-769a-48d4-a9ea-88bc409ca5e1/documents/fbdb610a-4a32-4bb8-9d46-9df39a476886",
+          "response_sha256": "220a69c9169dea86eacca948be0d58d7f4ede83dc6be8ab87a102c074e7ac01b",
+          "logged_path": "/courses/b806cf42-769a-48d4-a9ea-88bc409ca5e1/documents/fbdb610a-4a32-4bb8-9d46-9df39a476886"
+        },
+        {
+          "request_id": "s8-baseline-1",
+          "status": 404,
+          "expected_route_template": "<unmatched>",
+          "expected_baseline_path": "/s8-private-path-fixture",
+          "response_sha256": "37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d",
+          "logged_path": "/s8-private-path-fixture"
+        },
+        {
+          "request_id": "s8-baseline-2",
+          "status": 200,
+          "expected_route_template": "/health/live",
+          "expected_baseline_path": "/health/live",
+          "response_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "logged_path": "/health/live"
+        }
+      ],
+      "raw_canary_presence": {
+        "b806cf42-769a-48d4-a9ea-88bc409ca5e1": true,
+        "fbdb610a-4a32-4bb8-9d46-9df39a476886": true,
+        "s8-private-path-fixture": true,
+        "s8-private-query-fixture": true
+      },
+      "uvicorn_access_records": 3,
+      "uvicorn_error_startup_preserved": true,
+      "uvicorn_error_shutdown_preserved": true,
+      "source_binding": {
+        "probe": "source-binding",
+        "pid": 37920,
+        "loaded": {
+          "logging.py": {
+            "path": "/private/tmp/dou018-evidence/s8-uvicorn-02/baseline/logging.py",
+            "sha256": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e"
+          },
+          "main.py": {
+            "path": "/private/tmp/dou018-evidence/s8-uvicorn-02/baseline/main.py",
+            "sha256": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4"
+        }
+      },
+      "database_guard": {
+        "probe": "database-connect-guard",
+        "pid": 37920,
+        "attempts": 0,
+        "control_stop_received": true,
+        "control_thread_stopped": true
+      },
+      "log_sha256": "905b8970fef8d5df69456e6b7c38e94812e3dc67a70c6c442b645cbe2a97d0d8"
+    },
+    {
+      "variant": "candidate",
+      "seconds": 1.059104,
+      "pid": 37923,
+      "process_exit_code": 0,
+      "responses": [
+        {
+          "request_id": "s8-candidate-0",
+          "status": 401,
+          "expected_route_template": "/courses/{course_id}/documents/{document_id}",
+          "expected_baseline_path": "/courses/b806cf42-769a-48d4-a9ea-88bc409ca5e1/documents/fbdb610a-4a32-4bb8-9d46-9df39a476886",
+          "response_sha256": "c85c0dac26e43c92eee391f04b2573e7ea2e4afed32a915dcd0b4a851edcf9e1",
+          "logged_path": "/courses/{course_id}/documents/{document_id}"
+        },
+        {
+          "request_id": "s8-candidate-1",
+          "status": 404,
+          "expected_route_template": "<unmatched>",
+          "expected_baseline_path": "/s8-private-path-fixture",
+          "response_sha256": "37ec4665a8102d115ffd1ac20dae94c98b4dac64b0c1a68228aa2a531caeb35d",
+          "logged_path": "<unmatched>"
+        },
+        {
+          "request_id": "s8-candidate-2",
+          "status": 200,
+          "expected_route_template": "/health/live",
+          "expected_baseline_path": "/health/live",
+          "response_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "logged_path": "/health/live"
+        }
+      ],
+      "raw_canary_presence": {
+        "b806cf42-769a-48d4-a9ea-88bc409ca5e1": false,
+        "fbdb610a-4a32-4bb8-9d46-9df39a476886": false,
+        "s8-private-path-fixture": false,
+        "s8-private-query-fixture": false
+      },
+      "uvicorn_access_records": 0,
+      "uvicorn_error_startup_preserved": true,
+      "uvicorn_error_shutdown_preserved": true,
+      "source_binding": {
+        "probe": "source-binding",
+        "pid": 37923,
+        "loaded": {
+          "logging.py": {
+            "path": "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/core/logging.py",
+            "sha256": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc"
+          },
+          "main.py": {
+            "path": "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4"
+        }
+      },
+      "database_guard": {
+        "probe": "database-connect-guard",
+        "pid": 37923,
+        "attempts": 0,
+        "control_stop_received": true,
+        "control_thread_stopped": true
+      },
+      "log_sha256": "020c7885ebd20eee17f43e5149e77270a17a4412cb987cae22fd2d76d082bf96"
+    }
+  ],
+  "scope": "Actual Uvicorn h11 + app.main lifespan; same current repository dependencies with two pinned baseline modules vs two pinned candidate modules. Three unauthenticated requests, warmup disabled, psycopg call guard. Private pipe requests normal shutdown; no Uvicorn signal-handler override. No proxy discovery. Does not cover hosting/proxy logs, arbitrary exception content or anonymity. Historical run01 unchanged.",
+  "source_unchanged": true,
+  "seconds": 2.18453
+}

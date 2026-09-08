@@ -13,7 +13,7 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1499_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1499 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1561_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1561 -->
 ![Frontend tests](https://img.shields.io/badge/frontend_tests-555_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 555 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -471,11 +471,11 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1499** <!-- docs-check: backend.tests = 1499 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Backend testleri | **1561** <!-- docs-check: backend.tests = 1561 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
 | Frontend birim testleri | **555** <!-- docs-check: frontend.tests = 555 --> | 44 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 44 --> |
 | Playwright gerçek-API vakaları | **68** <!-- docs-check: e2e.tests = 68 --> | Kapıdan gelen sayı `playwright test --list` ile TOPLANAN vaka sayısıdır; koşum CI'nın `e2e` işindedir (benzersiz PostgreSQL, fake LLM, tek worker). Yerel koşum ve aday sınırları [018 doğrulamasında](specs/018-codex-production-line/verification.md) ayrıca kayıtlıdır |
-| Migration | **20** <!-- docs-check: migrations.count = 20 --> | Şema evriminin kaynak dosyası sayısı |
-| CREATE TABLE | **28** <!-- docs-check: tables.count = 28 --> | Migration’larda kurulan benzersiz tablo sayısı |
+| Migration | **22** <!-- docs-check: migrations.count = 22 --> | Şema evriminin kaynak dosyası sayısı |
+| CREATE TABLE | **30** <!-- docs-check: tables.count = 30 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
@@ -505,7 +505,7 @@ provider/staging kanıtı değildir; bu kapılar geçmeden production iddiası k
 
 ### Migration yolculuğu
 
-<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024 -->
+<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026 -->
 
 | Migration | Ürüne eklediği katman |
 |---|---|
@@ -794,7 +794,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1499 testtir. <!-- docs-check: backend.tests = 1499 -->
+Güncel feature kanıtında backend koleksiyonu 1561 testtir. <!-- docs-check: backend.tests = 1561 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 

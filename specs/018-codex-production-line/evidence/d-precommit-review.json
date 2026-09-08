@@ -1,0 +1,192 @@
+{
+  "scope": "changed/new nonignored files only; text and decompressed gzip; explicit token/key/connection patterns; not a universal secret detector",
+  "scanned_text_files": 237,
+  "findings": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 47,
+      "match_sha256": "9585ee6cd34825f4f715b284b6d7055aca56450ae6f9b9b5a24a51160be737c1",
+      "review": "CI ephemeral local postgres fixture",
+      "reviewed_file_sha256": "acd23f2d071e9bfcd89d776938f6221c0bf383648f32fe1d6def77944f5826fd"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 48,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "acd23f2d071e9bfcd89d776938f6221c0bf383648f32fe1d6def77944f5826fd"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 410,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "acd23f2d071e9bfcd89d776938f6221c0bf383648f32fe1d6def77944f5826fd"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "kind": "credentialed_connection",
+      "line": 413,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "acd23f2d071e9bfcd89d776938f6221c0bf383648f32fe1d6def77944f5826fd"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota.py",
+      "kind": "credentialed_connection",
+      "line": 78,
+      "match_sha256": "cf04593e081d67535621b8dc9c29aab34eca01841e86acc22511f83e9e78dc29",
+      "review": "Synthetic exception-chain redaction test, no connection attempted.",
+      "reviewed_file_sha256": "c10d291cdaad73f69eb7233db8d19bb476ae799b9bd311e11fff7a6cc95543f8"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota_health.py",
+      "kind": "credentialed_connection",
+      "line": 19,
+      "match_sha256": "cf04593e081d67535621b8dc9c29aab34eca01841e86acc22511f83e9e78dc29",
+      "review": "Synthetic exception-chain redaction test, no connection attempted.",
+      "reviewed_file_sha256": "3f3e73658c8d00a370d2c01736e33c359090090b1ff7c293b16ab37d10ef5445"
+    },
+    {
+      "path": "apps/api/tests/test_worker_lifecycle.py",
+      "kind": "credentialed_connection",
+      "line": 120,
+      "match_sha256": "1dd0d2fb42a1372ea3eeb3716ea3c56e4699d73512defcf2a86e98f8eddf1b01",
+      "review": "Synthetic worker exception-chain redaction test.",
+      "reviewed_file_sha256": "a6bf6da75b3f9c61b26a5eb4eafc45b158d1b4107146eaaa241d9228fef22aa9"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 164,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "55aac3eef305f9ac3eed46e2aebe066c9eefe5fc828d54e851d2ce43d27bdb7f"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 165,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "55aac3eef305f9ac3eed46e2aebe066c9eefe5fc828d54e851d2ce43d27bdb7f"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 336,
+      "match_sha256": "3de972c98bf6eb192f31d3cc1403df37662eb200a8a85f5d5594a1c5bf1933a6",
+      "review": "Local docker Compose quickstart example",
+      "reviewed_file_sha256": "55aac3eef305f9ac3eed46e2aebe066c9eefe5fc828d54e851d2ce43d27bdb7f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/tests__test_worker_lifecycle.py.before.txt",
+      "kind": "credentialed_connection",
+      "line": 119,
+      "match_sha256": "1dd0d2fb42a1372ea3eeb3716ea3c56e4699d73512defcf2a86e98f8eddf1b01",
+      "review": "Synthetic worker exception-chain redaction test.",
+      "reviewed_file_sha256": "6d86cdd789391f626209defbce2361841a28c187c088c876da8641b1c7f4689a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/web-units.log.gz",
+      "kind": "credentialed_connection",
+      "line": 220,
+      "match_sha256": "ec25b8fa54a9d7a878a86e6f38233af24d5d27d184b396136d6d7f0251d33c19",
+      "review": "Literal rejected URL fixture in Supabase URL unit-test name, not a real login",
+      "reviewed_file_sha256": "3af8bd175570e00b2fc3605abddeb4fd8b1d677ad27ebfc2947295be6984f5f9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/web-units.log.gz",
+      "kind": "credentialed_connection",
+      "line": 243,
+      "match_sha256": "ec25b8fa54a9d7a878a86e6f38233af24d5d27d184b396136d6d7f0251d33c19",
+      "review": "Literal rejected URL fixture in Supabase URL unit-test name, not a real login",
+      "reviewed_file_sha256": "3af8bd175570e00b2fc3605abddeb4fd8b1d677ad27ebfc2947295be6984f5f9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d2_observer_check.py.txt",
+      "kind": "credentialed_connection",
+      "line": 28,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "3afe430ade133efcba8fb1eafe9aa3980e9a60fb45238528456d6c40c73a59de"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d2_observer_check.py.txt",
+      "kind": "credentialed_connection",
+      "line": 28,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "3afe430ade133efcba8fb1eafe9aa3980e9a60fb45238528456d6c40c73a59de"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d_final_api_v3.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "review": "Documented local-only dou_app fixture password; no hosted credential",
+      "reviewed_file_sha256": "25bbe24dd1859330fe89a216b928dd7a3da905b280e80b3caea25d7cd91892a3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d_final_api_v3.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "review": "Documented local-only dou_worker fixture password; no hosted credential",
+      "reviewed_file_sha256": "25bbe24dd1859330fe89a216b928dd7a3da905b280e80b3caea25d7cd91892a3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-01/probe-source.py.txt",
+      "kind": "credentialed_connection",
+      "line": 40,
+      "match_sha256": "9500a074a845f0991de7b340110eb98cb834ffc72603fb9c0ac800e452f926f3",
+      "review": "Synthetic Uvicorn probe DSN on loopback port9; runtime psycopg guard recorded zero attempts.",
+      "reviewed_file_sha256": "7b8fdb2a6cee4d0cd6e85bb04db7da4a55ffb332b2dfbc7d6bf10496a49c9355"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-01/probe-source.py.txt",
+      "kind": "credentialed_connection",
+      "line": 40,
+      "match_sha256": "caf9cb56f5a6298d4b7db3274a53205d88629e5dd04929a4689b931502321a9f",
+      "review": "Synthetic Uvicorn worker DSN on loopback port9; runtime psycopg guard recorded zero attempts.",
+      "reviewed_file_sha256": "7b8fdb2a6cee4d0cd6e85bb04db7da4a55ffb332b2dfbc7d6bf10496a49c9355"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/probe-source.py.txt",
+      "kind": "credentialed_connection",
+      "line": 151,
+      "match_sha256": "9500a074a845f0991de7b340110eb98cb834ffc72603fb9c0ac800e452f926f3",
+      "review": "Synthetic Uvicorn probe DSN on loopback port9; runtime psycopg guard recorded zero attempts.",
+      "reviewed_file_sha256": "d84ec92f2e69c0a181edca7b87a17bf636a9d00a6b74f59181b20a39c63121a8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/probe-source.py.txt",
+      "kind": "credentialed_connection",
+      "line": 152,
+      "match_sha256": "caf9cb56f5a6298d4b7db3274a53205d88629e5dd04929a4689b931502321a9f",
+      "review": "Synthetic Uvicorn worker DSN on loopback port9; runtime psycopg guard recorded zero attempts.",
+      "reviewed_file_sha256": "d84ec92f2e69c0a181edca7b87a17bf636a9d00a6b74f59181b20a39c63121a8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/test_offline.py",
+      "kind": "credentialed_connection",
+      "line": 36,
+      "match_sha256": "dd3871bf18fcde4ce6d9821e4f16ba021e77048b74f76f632012ea9fc824cc28",
+      "review": "Literal interpolated synthetic CANARY in offline guard fixture, no hosted credential.",
+      "reviewed_file_sha256": "bcc69d099585d3090fc7810db958672d3a9ee46172742103a8889f3447af7086"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/test_offline.py",
+      "kind": "credentialed_connection",
+      "line": 37,
+      "match_sha256": "5d6d04c664e0ff2a864f8446c9e3b8eb64ff0a98f0d135709aa3df4e67aa6a6d",
+      "review": "Literal interpolated synthetic CANARY in offline guard fixture, no hosted credential.",
+      "reviewed_file_sha256": "bcc69d099585d3090fc7810db958672d3a9ee46172742103a8889f3447af7086"
+    }
+  ],
+  "status": "all_pattern_findings_reviewed_as_synthetic_local_fixtures",
+  "scanner_sha256": "d4a55a2031323f9eabfab79de405a59969dddb301c4d5dd94eb5b414b4e5f42a"
+}

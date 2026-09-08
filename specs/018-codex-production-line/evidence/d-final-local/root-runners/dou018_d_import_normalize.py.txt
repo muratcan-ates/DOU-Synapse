@@ -1,0 +1,23 @@
+from pathlib import Path
+import ast,hashlib,json,subprocess
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');api=repo/'apps/api'
+out=Path('/private/tmp/dou018-evidence/d-import-normalize-01');out.mkdir(mode=0o700,exist_ok=False)
+paths=['app/api/internal.py','app/core/config.py','app/modules/ingestion/claims.py','app/modules/ingestion/pipeline.py','app/worker.py','tests/test_ingestion.py','tests/test_worker_lifecycle.py','tests/test_worker_recovery.py']
+before={p:(api/p).read_bytes() for p in paths}
+sha=lambda b:hashlib.sha256(b).hexdigest()
+def shape(b):
+    module=ast.parse(b);imports=[];body=[]
+    for node in module.body:
+        if isinstance(node,(ast.Import,ast.ImportFrom)):
+            imports.extend((type(node).__name__,getattr(node,'module',''),getattr(node,'level',0),name.name,name.asname or '') for name in node.names)
+        else:body.append(ast.dump(node,include_attributes=False))
+    return sorted(imports),body
+with (out/'ruff-fix.log').open('x') as log:
+    cp=subprocess.run([str(api/'.venv/bin/ruff'),'check','--select','I001','--fix',*paths],cwd=api,stdout=log,stderr=subprocess.STDOUT,timeout=20)
+assert cp.returncode==0
+records={}
+for p,old in before.items():
+    current=(api/p).read_bytes();assert shape(old)==shape(current),p
+    name=p.replace('/','__')+'.before.txt';(out/name).write_bytes(old)
+    records[p]={'before_sha256':sha(old),'after_sha256':sha(current),'import_bindings_equal':True,'non_import_ast_equal':True}
+(out/'result.json').write_text(json.dumps({'status':'PASS','scope':'Import ordering/group spacing only; imported bindings and non-import AST equal. Source byte hashes changed and next final API run binds them.','files':records},indent=2)+'\n');print(json.dumps({'status':'PASS','files':len(records)}))

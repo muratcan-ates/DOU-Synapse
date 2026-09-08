@@ -45,7 +45,7 @@ from __future__ import annotations
 
 import math
 import time
-from typing import Any
+from typing import Any, Final
 from uuid import UUID
 
 from fastapi import APIRouter, Request, Response, status
@@ -106,7 +106,8 @@ from app.core.pagination import (
     paginate_keyset,
 )
 from app.core.provider_config import evaluation_request_digest
-from app.core.rate_limit import get_concurrency_gate, get_limiter, reset_rate_limit
+from app.core.rate_limit import get_concurrency_gate, reset_rate_limit
+from app.core.request_quota import take_request_slot
 from app.models.chat import (
     ChatMessage,
     ChatMessageFeedback,
@@ -194,7 +195,7 @@ MAX_QUESTION_CHARS = MAX_QUESTION_LENGTH
 #: Bu ucun sayaç kapsamı. Kapsam adı zorunlu çünkü sayaç `questions.py` ile
 #: PAYLAŞILIYOR ve iki ucun doğal anahtarı da `kullanıcı:ders` — kapsam olmasaydı
 #: sohbet etmek soru üretim kotasını sessizce tüketirdi.
-RATE_LIMIT_SCOPE = "chat"
+RATE_LIMIT_SCOPE: Final = "chat"
 
 
 # ---------------------------------------------------------------------------
@@ -308,22 +309,14 @@ async def post_chat(
             "Sınav modunda asistan ipucu veremez. Sınav soruları sınav ekranından yanıtlanır."
         )
     rate_key = f"{context.user_id}:{context.course_id}"
-    if not get_limiter().allow(
-        RATE_LIMIT_SCOPE,
-        rate_key,
+    admission = await take_request_slot(
+        user_id=context.user_id,
+        course_id=context.course_id,
+        scope=RATE_LIMIT_SCOPE,
         limit=settings.chat_rate_limit_requests,
         window_seconds=settings.chat_rate_limit_window_seconds,
-    ):
-        retry_after = max(
-            1,
-            int(
-                get_limiter().retry_after(
-                    RATE_LIMIT_SCOPE,
-                    rate_key,
-                    window_seconds=settings.chat_rate_limit_window_seconds,
-                )
-            ),
-        )
+    )
+    if not admission.allowed:
         await agent_quota.record_guard_event(
             user_id=context.user_id,
             course_id=context.course_id,
@@ -331,7 +324,7 @@ async def post_chat(
         )
         raise RateLimitError(
             "Çok sık soru gönderiyorsun. Biraz bekleyip tekrar dener misin?",
-            retry_after=retry_after,
+            retry_after=admission.retry_after_seconds,
         )
     started_revision = await lifecycle.read_revision(
         session, user_id=context.user_id, course_id=context.course_id

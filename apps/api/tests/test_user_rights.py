@@ -232,6 +232,8 @@ async def test_export_agent_operasyon_kayitlarini_aciklayarak_disarida_birakir(
         "eşzamanlılık ve kapsam reddi güvenlik kaydıdır; bu dışa aktarıma dahil edilmez.",
         "chat_privacy_revisions: Soru veya cevap içermeyen hesap/ders kapsamlı silme "
         "sürüm sayacıdır; bu dışa aktarıma dahil edilmez.",
+        "rate_limit_windows: İçerik taşımayan kullanıcı/ders kimliği ve kabul edilen istek "
+        "zamanlarıdır; kişisel operasyon verisidir ve bu dışa aktarıma dahil edilmez.",
     ]
     encoded = json.dumps(body)
     assert str(rows.reservation_id) not in encoded

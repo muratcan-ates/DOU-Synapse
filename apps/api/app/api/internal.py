@@ -120,7 +120,7 @@ async def trigger_drain() -> None:
             await worker.drain()
         except Exception:
             # İş kuyrukta kalır; bir sonraki tetik veya döngü onu alır.
-            logger.exception("worker tetiklenemedi")
+            logger.warning("worker tetiklenemedi", extra={"context": {"stage": "local_drain"}})
         return
 
     secret = settings.worker_drain_secret
@@ -128,7 +128,7 @@ async def trigger_drain() -> None:
         # Uzak uç sırsız zaten 404 döner; boşuna istek atmak yerine sebebi yazarız.
         logger.error(
             "worker URL'i tanımlı ama WORKER_DRAIN_SECRET yok — uzak drain ucu kapalı",
-            extra={"context": {"url": url}},
+            extra={"context": {"stage": "remote_drain_configuration"}},
         )
         return
 
@@ -138,10 +138,10 @@ async def trigger_drain() -> None:
         response.raise_for_status()
         logger.info(
             "uzak worker tetiklendi",
-            extra={"context": {"url": url, "status": response.status_code}},
+            extra={"context": {"status": response.status_code}},
         )
     except Exception:
-        logger.exception("uzak worker tetiklenemedi", extra={"context": {"url": url}})
+        logger.warning("uzak worker tetiklenemedi", extra={"context": {"stage": "remote_drain"}})
 
 
 @router.get("/evaluation/runtime")

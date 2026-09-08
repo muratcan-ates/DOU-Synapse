@@ -1,0 +1,381 @@
+"""S8: root'un çalıştıracağı gerçek Uvicorn kıyası; bu modül importta koşmaz."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+REPO = Path("/Users/muratates/code/dou-synapse-018-codex-production-line")
+OUT = Path("/private/tmp/dou018-evidence/s8-uvicorn-02")
+PYTHON = REPO / "apps/api/.venv/bin/python"
+BASELINE_COMMIT = "9af41226d456efb7e20d22cec490566fb8c1a01c"
+MAX_LOG_BYTES = 1024 * 1024
+SOURCES = {
+    "main.py": "apps/api/app/main.py",
+    "logging.py": "apps/api/app/core/logging.py",
+}
+EXPECTED_CANDIDATE = {
+    "main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+    "logging.py": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc",
+}
+EXPECTED_BASELINE = {
+    "main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88",
+    "logging.py": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e",
+}
+CANARIES = (
+    "b806cf42-769a-48d4-a9ea-88bc409ca5e1",
+    "fbdb610a-4a32-4bb8-9d46-9df39a476886",
+    "s8-private-path-fixture",
+    "s8-private-query-fixture",
+)
+REQUESTS = (
+    (
+        f"/courses/{CANARIES[0]}/documents/{CANARIES[1]}?note={CANARIES[3]}",
+        401,
+        "/courses/{course_id}/documents/{document_id}",
+    ),
+    (f"/{CANARIES[2]}?note={CANARIES[3]}", 404, "<unmatched>"),
+    ("/health/live", 200, "/health/live"),
+)
+
+DRIVER = r'''
+import hashlib, importlib, importlib.metadata, importlib.util, json, os, socket, sys, threading, time
+from pathlib import Path
+import psycopg
+
+attempts = 0
+def denied(*args, **kwargs):
+    global attempts
+    attempts += 1
+    raise RuntimeError("S8_DATABASE_CONNECTION_FORBIDDEN")
+psycopg.connect = denied
+psycopg.Connection.connect = denied
+psycopg.AsyncConnection.connect = denied
+
+if os.environ.get("S8_OLD_SOURCE"):
+    source = Path(os.environ["S8_OLD_SOURCE"])
+    for name, filename in (("app.core.logging", "logging.py"), ("app.main", "main.py")):
+        spec = importlib.util.spec_from_file_location(name, source / filename)
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+
+import uvicorn
+config = uvicorn.Config("app.main:app", host="127.0.0.1", port=0, http="h11",
+                        lifespan="on", access_log=True, log_level="info", proxy_headers=False)
+config.load()
+expected = json.loads(os.environ["S8_EXPECTED_LOADED_SOURCES"])
+loaded = {}
+for name, filename in (("app.core.logging", "logging.py"), ("app.main", "main.py")):
+    module = importlib.import_module(name)
+    path = Path(module.__file__).resolve()
+    loaded[filename] = {"path": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+assert loaded == expected
+main_module = importlib.import_module("app.main")
+assert Path(main_module.configure_logging.__code__.co_filename).resolve() == Path(loaded["logging.py"]["path"])
+print(json.dumps({"probe": "source-binding", "pid": os.getpid(), "loaded": loaded,
+                  "versions": {name: importlib.metadata.version(name) for name in ("fastapi", "starlette", "uvicorn")}}), flush=True)
+
+listener = socket.socket(fileno=int(os.environ["S8_SOCKET_FD"]))
+assert listener.getsockname()[0] == "127.0.0.1"
+control_fd = int(os.environ["S8_CONTROL_FD"])
+server = uvicorn.Server(config)
+stop_state = {"received": False}
+
+def controlled_shutdown():
+    try:
+        # Gerçek listener kurulmadan parent HTTP göndermeyecek.
+        while not server.started:
+            if server.should_exit:
+                return
+            time.sleep(0.01)
+        print(json.dumps({"probe": "server-ready", "pid": os.getpid(),
+                          "address": list(listener.getsockname())}), flush=True)
+        stop_state["received"] = os.read(control_fd, 1) == b"S"
+        # Sinyal yakalayıcısına dokunulmaz; Uvicorn kendi normal kapanışını yapar.
+        server.should_exit = True
+    finally:
+        os.close(control_fd)
+
+control = threading.Thread(target=controlled_shutdown, daemon=True, name="s8-private-stop")
+control.start()
+server.run(sockets=[listener])
+control.join(timeout=1)
+print(json.dumps({"probe": "database-connect-guard", "pid": os.getpid(), "attempts": attempts,
+                  "control_stop_received": stop_state["received"], "control_thread_stopped": not control.is_alive()}), flush=True)
+assert attempts == 0 and stop_state["received"] and not control.is_alive()
+'''
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def candidate_hashes() -> dict[str, str]:
+    return {name: digest(REPO / relative) for name, relative in SOURCES.items()}
+
+
+def read_log(path: Path) -> tuple[str, list[dict]]:
+    assert path.stat().st_size <= MAX_LOG_BYTES, "EXCESSIVE_PROCESS_LOG"
+    raw = path.read_text()
+    records = []
+    for line in raw.splitlines():
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(value, dict):
+            records.append(value)
+    return raw, records
+
+
+def child_environment() -> dict[str, str]:
+    # Yeni cwd'de .env yoktur; ambient PG/proxy/kimlik ayarları miras alınmaz.
+    return {
+        "PATH": os.environ["PATH"],
+        "LANG": "en_US.UTF-8",
+        "PYTHONPATH": str(REPO / "apps/api"),
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "ENVIRONMENT": "local",
+        "DEV_AUTH_ENABLED": "true",
+        "SUPABASE_JWT_SECRET": "",
+        "DATABASE_URL": "postgresql+psycopg://dou_app:synthetic_probe_only@127.0.0.1:9/s8_never_connect",
+        "WORKER_DATABASE_URL": "postgresql+psycopg://dou_worker:synthetic_probe_only@127.0.0.1:9/s8_never_connect",
+        "EMBEDDING_PROVIDER": "hashing",
+        "EMBEDDING_WARMUP_ENABLED": "false",
+        "LLM_FAKE_PROVIDER": "true",
+        "GROQ_API_KEY": "",
+        "GEMINI_API_KEY": "",
+        "OPENAI_API_KEY": "",
+        "HTTP_PROXY": "",
+        "HTTPS_PROXY": "",
+        "ALL_PROXY": "",
+        "NO_PROXY": "127.0.0.1",
+    }
+
+
+def run_variant(name: str, driver: Path, old: Path) -> dict:
+    logpath = OUT / f"{name}.log"
+    env = child_environment()
+    expected_hashes = EXPECTED_BASELINE if name == "baseline" else EXPECTED_CANDIDATE
+    expected_loaded = {
+        short: {
+            "path": str((old / short if name == "baseline" else REPO / relative).resolve()),
+            "sha256": expected_hashes[short],
+        }
+        for short, relative in SOURCES.items()
+    }
+    env["S8_EXPECTED_LOADED_SOURCES"] = json.dumps(expected_loaded)
+    if name == "baseline":
+        env["S8_OLD_SOURCE"] = str(old)
+    # Handler boş sözlükle kurulunca parent'ın sistem/ambient proxy keşfi de kapanır.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    responses = []
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(64)
+    port = listener.getsockname()[1]
+    control_read, control_write = os.pipe()
+    env["S8_SOCKET_FD"] = str(listener.fileno())
+    env["S8_CONTROL_FD"] = str(control_read)
+    proc = None
+    started = time.monotonic()
+    try:
+        with logpath.open("x") as stream:
+            proc = subprocess.Popen(
+                [str(PYTHON), str(driver)],
+                cwd=OUT,
+                env=env,
+                pass_fds=(listener.fileno(), control_read),
+                stdout=stream,
+                stderr=subprocess.STDOUT,
+            )
+            os.close(control_read)
+            control_read = -1
+            deadline = time.monotonic() + 20
+            while True:
+                assert proc.poll() is None, "SERVER_EXITED_DURING_STARTUP"
+                _, records = read_log(logpath)
+                completed = any(
+                    r.get("logger") == "uvicorn.error"
+                    and r.get("message") == "Application startup complete."
+                    for r in records
+                )
+                ready = [r for r in records if r.get("probe") == "server-ready"]
+                if completed and ready:
+                    assert ready == [
+                        {"probe": "server-ready", "pid": proc.pid, "address": ["127.0.0.1", port]}
+                    ], "OWNED_LISTENER_IDENTITY_MISMATCH"
+                    break
+                assert time.monotonic() < deadline, "SERVER_STARTUP_TIMEOUT"
+                time.sleep(0.02)
+
+            for index, (path, expected_status, template) in enumerate(REQUESTS):
+                request_id = f"s8-{name}-{index}"
+                request = urllib.request.Request(
+                    f"http://127.0.0.1:{port}{path}", headers={"X-Request-ID": request_id}
+                )
+                try:
+                    response = opener.open(request, timeout=5)
+                except urllib.error.HTTPError as error:
+                    response = error
+                with response:
+                    status, returned_id, body = (
+                        response.status,
+                        response.headers.get("X-Request-ID"),
+                        response.read(),
+                    )
+                assert status == expected_status and returned_id == request_id, "RESPONSE_CONTRACT"
+                if status == 401:
+                    error = json.loads(body)["error"]
+                    assert error["code"] == "unauthenticated" and error["request_id"] == request_id
+                responses.append(
+                    {
+                        "request_id": request_id,
+                        "status": status,
+                        "expected_route_template": template,
+                        "expected_baseline_path": path.partition("?")[0],
+                        "response_sha256": hashlib.sha256(body).hexdigest(),
+                    }
+                )
+            assert os.write(control_write, b"S") == 1
+            os.close(control_write)
+            control_write = -1
+            proc.wait(timeout=10)
+    finally:
+        listener.close()
+        if control_read >= 0:
+            os.close(control_read)
+        if control_write >= 0:
+            os.close(control_write)
+        if proc is not None and proc.poll() is None:
+            # Yalnız sahip olunan süreç; bu hata yolu başarı sayılmaz.
+            proc.kill()
+            proc.wait(timeout=5)
+
+    raw, records = read_log(logpath)
+    source_binding = [r for r in records if r.get("probe") == "source-binding"]
+    assert len(source_binding) == 1 and source_binding[0]["pid"] == proc.pid
+    assert source_binding[0]["loaded"] == expected_loaded
+    guard = [r for r in records if r.get("probe") == "database-connect-guard"]
+    assert guard == [
+        {
+            "probe": "database-connect-guard",
+            "pid": proc.pid,
+            "attempts": 0,
+            "control_stop_received": True,
+            "control_thread_stopped": True,
+        }
+    ], "NORMAL_EXIT_DATABASE_GUARD_MISSING"
+    assert proc.returncode == 0, "ABNORMAL_PROCESS_EXIT"
+    assert not any(r.get("level") in ("ERROR", "CRITICAL") for r in records), "UNEXPECTED_SERVER_ERROR"
+    access = [r for r in records if r.get("logger") == "uvicorn.access"]
+    request_records = [
+        r for r in records
+        if r.get("logger") == "app.request" and r.get("message") == "istek tamamlandı"
+    ]
+    assert len(request_records) == len(REQUESTS)
+    for response in responses:
+        matched = [
+            r for r in request_records
+            if r.get("context", {}).get("request_id") == response["request_id"]
+        ]
+        assert len(matched) == 1
+        context = matched[0]["context"]
+        assert set(context) == {"request_id", "method", "path", "status", "duration_ms"}
+        assert context["status"] == response["status"] and context["method"] == "GET"
+        response["logged_path"] = context["path"]
+        key = "expected_route_template" if name == "candidate" else "expected_baseline_path"
+        assert context["path"] == response[key], "LOGGED_PATH_CONTRACT"
+    presence = {item: item in raw for item in CANARIES}
+    if name == "baseline":
+        assert all(presence.values()) and len(access) == len(REQUESTS), "BASELINE_CONTROL_FAILED"
+    else:
+        assert not any(presence.values()) and not access, "CANDIDATE_PRIVACY_FAILED"
+    startup_preserved = any(
+        r.get("logger") == "uvicorn.error" and r.get("message") == "Application startup complete."
+        for r in records
+    )
+    shutdown_preserved = any(
+        r.get("logger") == "uvicorn.error" and r.get("message") == "Application shutdown complete."
+        for r in records
+    )
+    assert startup_preserved and shutdown_preserved
+    return {
+        "variant": name,
+        "seconds": round(time.monotonic() - started, 6),
+        "pid": proc.pid,
+        "process_exit_code": proc.returncode,
+        "responses": responses,
+        "raw_canary_presence": presence,
+        "uvicorn_access_records": len(access),
+        "uvicorn_error_startup_preserved": startup_preserved,
+        "uvicorn_error_shutdown_preserved": shutdown_preserved,
+        "source_binding": source_binding[0],
+        "database_guard": guard[0],
+        "log_sha256": digest(logpath),
+    }
+
+
+def main() -> int:
+    os.umask(0o077)
+    assert candidate_hashes() == EXPECTED_CANDIDATE, "CANDIDATE_SOURCE_MISMATCH"
+    OUT.mkdir(mode=0o700, exist_ok=False)
+    driver = OUT / "server.py"
+    driver.write_text(DRIVER)
+    old = OUT / "baseline"
+    old.mkdir(mode=0o700)
+    for short, relative in SOURCES.items():
+        (old / short).write_bytes(
+            subprocess.check_output(["git", "show", f"{BASELINE_COMMIT}:{relative}"], cwd=REPO)
+        )
+    assert {name: digest(old / name) for name in SOURCES} == EXPECTED_BASELINE
+    record = {
+        "status": "running",
+        "candidate_source_hashes": EXPECTED_CANDIDATE,
+        "baseline_source_hashes": EXPECTED_BASELINE,
+        "baseline_commit": BASELINE_COMMIT,
+        "probe_sha256": digest(Path(__file__)),
+        "driver_sha256": digest(driver),
+        "results": [],
+        "scope": (
+            "Actual Uvicorn h11 + app.main lifespan; same current repository dependencies with "
+            "two pinned baseline modules vs two pinned candidate modules. Three unauthenticated "
+            "requests, warmup disabled, psycopg call guard. Private pipe requests normal shutdown; "
+            "no Uvicorn signal-handler override. No proxy discovery. Does not cover hosting/proxy "
+            "logs, arbitrary exception content or anonymity. Historical run01 unchanged."
+        ),
+    }
+    started = time.monotonic()
+    try:
+        for name in ("baseline", "candidate"):
+            record["results"].append(run_variant(name, driver, old))
+        assert candidate_hashes() == EXPECTED_CANDIDATE
+        assert {name: digest(old / name) for name in SOURCES} == EXPECTED_BASELINE
+        assert digest(driver) == record["driver_sha256"]
+        record["status"] = "PASS"
+        return 0
+    except Exception as error:
+        record["status"] = "FAIL"
+        record["error_type"] = type(error).__name__
+        # Assertion mesajları bu çalıştırıcıdaki sabit kontrol adlarıdır.
+        record["reason"] = str(error) if isinstance(error, AssertionError) else "RUN_FAILED"
+        return 2
+    finally:
+        record["source_unchanged"] = candidate_hashes() == EXPECTED_CANDIDATE
+        record["seconds"] = round(time.monotonic() - started, 6)
+        (OUT / "result.json").write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n")
+        print(json.dumps({"status": record["status"], "result": str(OUT / "result.json")}))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

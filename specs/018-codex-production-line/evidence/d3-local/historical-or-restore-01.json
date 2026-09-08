@@ -1,0 +1,18 @@
+{
+  "scope": "new local synthetic source clone and new empty target; no production data",
+  "source": "dou018_recovery_source01",
+  "target": "dou018_recovery_target01",
+  "template": "dou018_retrieval_runtime1",
+  "phases": [
+    {
+      "phase": "backup",
+      "exit_code": 0,
+      "seconds": 12.968
+    },
+    {
+      "phase": "restore",
+      "exit_code": 2,
+      "seconds": 1.343
+    }
+  ]
+}

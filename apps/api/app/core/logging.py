@@ -113,6 +113,12 @@ def configure_logging(level: int = logging.INFO) -> None:
         uvicorn_logger.handlers.clear()
         uvicorn_logger.propagate = True
 
+    # Uvicorn erişim kaydı ham yol, sorgu dizgesi ve istemci adresi taşır.
+    # Bu kurulum uygulamanın yaşam döngüsünde Uvicorn yapılandırmasından sonra
+    # çalışır. Yalnız bu kanalı kapat; şablon kullanan app.request ve sunucu
+    # hata kayıtları açık kalır. Kök logger'ın DEBUG olması da kanalı açmaz.
+    logging.getLogger("uvicorn.access").disabled = True
+
 
 def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)

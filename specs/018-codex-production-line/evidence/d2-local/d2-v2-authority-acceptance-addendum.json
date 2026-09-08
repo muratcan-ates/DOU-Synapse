@@ -1,0 +1,90 @@
+{
+  "status": "local_v2_authority_and_negative_migration_acceptance_supported",
+  "own_database_calls": 0,
+  "stage": "/private/tmp/dou018-d2-stage-02",
+  "candidate_migration_sha256": "3e15eaa33f8bc8fba2f7a6d6e84692d213cc696ccd8367fad73152e79f2b61d3",
+  "inputs_sha256": {
+    "/private/tmp/dou018-evidence/d2-stage-tests-02/result.json": "266c0314237cc2e9e10cd04d2d39ad549b8024414ca1534ec8c81280ac2a8c0f",
+    "/private/tmp/dou018-evidence/d2-stage-tests-02/tests.log": "3f9aaa699891df284a554587c5ac519c10a0bac714dc4afef9d72732c83aae22",
+    "/private/tmp/dou018-evidence/d2-migration-preconditions-01/result.json": "dff0a29e0aad33e8475e8d98a4523bb33f002d185ac5a99a6886b5fd735e7774",
+    "/private/tmp/dou018-evidence/d2-lineage-red-01/result.json": "9d46af60cff078a463ea55bc20b40a5ce888730e0ea0f561759e7e5b570257cb",
+    "/private/tmp/dou018-evidence/d2-independent-migration-review.md": "7b93e42d59dc94ea69e9785c15464749fda2ee1be3404e041f2d360733342c5b",
+    "/private/tmp/dou018-evidence/d2-independent-migration-review.json": "486c48903e9305eb59c16e0d15d8ae11318bf6948e7a9461daaa174941323a98",
+    "/private/tmp/dou018_d2_migration_preconditions.py": "eea5d56472881651320b1bfcf2f7f1df9fa67aea646348ffe54365130310d01e"
+  },
+  "source_binding": {
+    "all_211_stage_hashes_match": true,
+    "before_after_unchanged_receipt": true,
+    "six_authority_tests_byte_equal": true,
+    "lineage_regression_same_ast": true,
+    "runtime_python_delta_since_failing_v1": [],
+    "change_that_resolves_regression": "only migration source tuple exclusion of supersedes_document_id, preserving superseded_at and true source fields; test comments/bytes literal split preserve AST",
+    "pre0026_migrations_21_match": true
+  },
+  "actual_stage_tests": {
+    "passed": 98,
+    "warnings": 5,
+    "warning_family": "known PyMuPDF SWIG deprecations; one additional shutdown emission printed outside summary",
+    "pytest_seconds": 19.43,
+    "root_wrapper_seconds": 20.536,
+    "authority_tests": 6,
+    "lineage_test": 1,
+    "database": "dou018_d2_stage02",
+    "record_level": "pytest aggregate+frozen test assertions; no per-assertion SQL row dump"
+  },
+  "preconditions": {
+    "candidate_hash_matches_stage": true,
+    "cluster": "7683042491268153327",
+    "root_seconds": 2.551,
+    "cases": [
+      {
+        "case": "processing",
+        "database": "dou018_d2_precondition_processing01",
+        "database_oid": 1102722,
+        "error": {
+          "sqlstate": "P0001",
+          "expected_message": true
+        },
+        "unchanged": true,
+        "owned_test_database_dropped": true
+      },
+      {
+        "case": "duplicate",
+        "database": "dou018_d2_precondition_duplicate01",
+        "database_oid": 1104106,
+        "error": {
+          "sqlstate": "P0001",
+          "expected_message": true
+        },
+        "unchanged": true,
+        "owned_test_database_dropped": true
+      }
+    ],
+    "snapshot_categories": [
+      "rows:profiles",
+      "rows:courses",
+      "rows:documents",
+      "rows:ingestion_jobs",
+      "columns",
+      "indexes",
+      "policies",
+      "constraints",
+      "retry"
+    ],
+    "equal_snapshots_both": true,
+    "raw_snapshot_rows_saved": false,
+    "record_level": "exact expected SQLSTATE/message flag plus before/after hashes, tied to reviewed root helper; independent reviewer did not reread dropped DBs"
+  },
+  "finding_resolution": {
+    "D2-LINEAGE-01": "v1 red2!=1, v2 same-AST regressionPASS; minimal lineage tuple removal local verified",
+    "new_authorization_defect_found": false
+  },
+  "remaining_limits": [
+    "live worker/API drain shutdown and no mixed old/new runtime is operational precondition",
+    "real OS SIGTERM/SIGKILL processes not certified by this addendum",
+    "no positive migration of populated pending/failed/completed legacy history provided here; successful empty-schema application is exercised by stage fixture",
+    "snapshot hashes cover recorded rows/columns/indexes/policies/constraints/retry definition+ACL; no independent raw snapshot replay or generic whole-catalog equivalence claim",
+    "existing trusted BYPASSRLS worker can write tables; tokens fence stale cooperating workers",
+    "not hosted/release/security compliance certification"
+  ]
+}

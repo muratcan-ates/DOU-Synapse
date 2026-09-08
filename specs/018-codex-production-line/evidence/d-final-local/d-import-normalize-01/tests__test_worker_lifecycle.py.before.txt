@@ -1,0 +1,210 @@
+"""Worker lifecycle unit contracts; OS signals and DB lease evidence are separate.
+
+Imports the normal app.worker module. Events control mocked I/O boundaries;
+no database, subprocess, provider or real 60-second scheduling wait is used.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import contextlib
+import logging
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
+
+import pytest
+from app import worker
+
+pytestmark = pytest.mark.asyncio
+
+
+async def _settle_owned_task(task: asyncio.Task[None]) -> None:
+    """A failed assertion cannot leave this test's background task alive."""
+    if not task.done():
+        task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await asyncio.wait_for(task, 1)
+
+
+@pytest.fixture
+def lifecycle(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    monkeypatch.setattr(worker, "configure_logging", Mock())
+    dispose = AsyncMock()
+    monkeypatch.setattr(worker, "dispose", dispose)
+    monkeypatch.setattr(
+        worker,
+        "get_settings",
+        Mock(return_value=SimpleNamespace(worker_shutdown_grace_seconds=0.5)),
+    )
+    return dispose
+
+
+async def test_stop_finishes_current_batch_within_grace_without_starting_another(
+    monkeypatch: pytest.MonkeyPatch, lifecycle: AsyncMock
+) -> None:
+    stop, entered, release = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    invocations: list[asyncio.Event] = []
+    completed = False
+
+    async def drain(*, stop_event: asyncio.Event) -> int:
+        nonlocal completed
+        invocations.append(stop_event)
+        entered.set()
+        await release.wait()
+        completed = True
+        return 1
+
+    monkeypatch.setattr(worker, "drain", drain)
+    monkeypatch.setattr(worker, "_quota_maintenance", AsyncMock())
+    task = asyncio.create_task(worker.run_forever(stop_event=stop))
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        stop.set()
+        release.set()
+        await asyncio.wait_for(task, 1)
+    finally:
+        await _settle_owned_task(task)
+    assert completed
+    assert invocations == [stop]
+    lifecycle.assert_awaited_once()
+
+
+async def test_grace_timeout_cancels_and_joins_only_current_batch(
+    monkeypatch: pytest.MonkeyPatch, lifecycle: AsyncMock
+) -> None:
+    stop, entered, cancelled = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    invocations = 0
+
+    async def drain(*, stop_event: asyncio.Event) -> int:
+        nonlocal invocations
+        assert stop_event is stop
+        invocations += 1
+        entered.set()
+        try:
+            await asyncio.Event().wait()
+            raise AssertionError("blocked synthetic I/O unexpectedly returned")
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+
+    monkeypatch.setattr(worker, "drain", drain)
+    monkeypatch.setattr(worker, "_quota_maintenance", AsyncMock())
+    monkeypatch.setattr(
+        worker,
+        "get_settings",
+        Mock(return_value=SimpleNamespace(worker_shutdown_grace_seconds=0.01)),
+    )
+    task = asyncio.create_task(worker.run_forever(stop_event=stop))
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        stop.set()
+        await asyncio.wait_for(task, 1)
+    finally:
+        await _settle_owned_task(task)
+    assert cancelled.is_set()
+    assert invocations == 1
+    lifecycle.assert_awaited_once()
+
+
+async def test_quota_failure_does_not_cancel_ingestion_or_log_chained_private_error(
+    monkeypatch: pytest.MonkeyPatch,
+    lifecycle: AsyncMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    stop, entered, release = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    maintenance_waiting = asyncio.Event()
+    cancelled = False
+    completed = False
+    canary = "synthetic-student-answer-private-54832"
+    connection = "postgresql://synthetic:private-password@127.0.0.1/synthetic"
+    try:
+        try:
+            raise ValueError(connection)
+        except ValueError as cause:
+            raise RuntimeError(canary) from cause
+    except RuntimeError as caught:
+        failure = caught
+    factory = object()
+    purge = AsyncMock(side_effect=failure)
+
+    async def wait_for_stop(event: asyncio.Event, seconds: float) -> None:
+        assert event is stop
+        assert seconds == 60
+        maintenance_waiting.set()
+        await event.wait()
+
+    async def drain(*, stop_event: asyncio.Event) -> int:
+        nonlocal cancelled, completed
+        assert stop_event is stop
+        entered.set()
+        try:
+            await release.wait()
+        except asyncio.CancelledError:
+            cancelled = True
+            raise
+        completed = True
+        return 1
+
+    monkeypatch.setattr(worker, "_get_session_factory", Mock(return_value=factory))
+    monkeypatch.setattr(worker, "purge_expired_request_windows", purge)
+    monkeypatch.setattr(worker, "_wait_for_stop", wait_for_stop)
+    monkeypatch.setattr(worker, "drain", drain)
+    caplog.set_level(logging.WARNING, logger="app.worker")
+    task = asyncio.create_task(worker.run_forever(stop_event=stop))
+    try:
+        await asyncio.wait_for(entered.wait(), 1)
+        await asyncio.wait_for(maintenance_waiting.wait(), 1)
+        assert not task.done()
+        assert not cancelled
+        stop.set()
+        release.set()
+        await asyncio.wait_for(task, 1)
+    finally:
+        await _settle_owned_task(task)
+    assert completed and not cancelled
+    purge.assert_awaited_once_with(factory, batch_size=500)
+    warnings = [record for record in caplog.records if record.name == "app.worker"]
+    assert len(warnings) == 1
+    assert warnings[0].getMessage() == "kota bakımı başarısız"
+    assert warnings[0].context == {"stage": "quota_purge"}
+    assert warnings[0].exc_info is None
+    assert canary not in caplog.text and connection not in caplog.text
+    lifecycle.assert_awaited_once()
+
+
+async def test_quota_maintenance_runs_at_start_and_repeats_after_its_wait_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Scheduling contract only: does not assert elapsed 60s or a retention SLA."""
+    stop = asyncio.Event()
+    factory = object()
+    calls: list[str] = []
+    purge_count = 0
+    wait_count = 0
+
+    async def purge(actual_factory: object, *, batch_size: int) -> int:
+        nonlocal purge_count
+        assert actual_factory is factory
+        assert batch_size == 500
+        assert not stop.is_set()
+        purge_count += 1
+        calls.append("purge")
+        return 0
+
+    async def wait_for_stop(event: asyncio.Event, seconds: float) -> None:
+        nonlocal wait_count
+        assert event is stop
+        assert seconds == 60
+        # A new purge must happen before each wait, including initial startup.
+        assert purge_count == wait_count + 1
+        wait_count += 1
+        calls.append("wait")
+        if wait_count == 2:
+            stop.set()
+
+    monkeypatch.setattr(worker, "_get_session_factory", Mock(return_value=factory))
+    monkeypatch.setattr(worker, "purge_expired_request_windows", purge)
+    monkeypatch.setattr(worker, "_wait_for_stop", wait_for_stop)
+    await asyncio.wait_for(worker._quota_maintenance(stop), 1)
+    assert calls == ["purge", "wait", "purge", "wait"]
+    assert purge_count == wait_count == 2

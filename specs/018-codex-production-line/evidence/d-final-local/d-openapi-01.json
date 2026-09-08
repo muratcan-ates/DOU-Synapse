@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "paths": 57,
+  "contract_sha256": "4d097948a5e8f5081a1e0e2a66aa3cc188085cd6764336e67a9267de04c01565",
+  "comparison": "JSON structural equality of current create_app().openapi and committed contract; no DB call"
+}

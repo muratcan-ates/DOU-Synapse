@@ -1,0 +1,14 @@
+{
+  "status": "historical failed orchestration run, baseline only; no candidate result",
+  "original_helper": "/private/tmp/dou018_s8_uvicorn_probe.py",
+  "helper_sha256": "7b8fdb2a6cee4d0cd6e85bb04db7da4a55ffb332b2dfbc7d6bf10496a49c9355",
+  "archived_helper": "probe-source.py",
+  "existing_artifact_sha256": {
+    "server.py": "73ddb24b4f84f746bd42bb4ba6ab283f6324698d56b1ea4523dab13247e22403",
+    "baseline.log": "0fc33030b43071f5c9568374e6601a4065177b87dd006a3bc5d047c130259953",
+    "baseline/logging.py": "8cf8015841ada6589e5ca15c517cd06f315673ab3b993274cb773ae416d3ce8e",
+    "baseline/main.py": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88"
+  },
+  "prior_bytes_unchanged": true,
+  "observed_limit": "baseline raw log has expected401/404/200 and raw path/query canaries, but final database-connect-guard receipt absent; root reported SIGTERM reraised after normal Uvicorn shutdown"
+}

@@ -1,0 +1,35 @@
+{
+  "exit_code": 0,
+  "seconds": 1.252,
+  "pins": {
+    "source_database": "dou018_recovery_current_source01",
+    "source_oid": "1161812",
+    "source_sha": "a122f54de62714a8c18edfc5a5073a82a6cbefefed465fa52ecc6adf4b714da4",
+    "target_database": "dou018_recovery_current_target01",
+    "target_oid": "1161813",
+    "target_sha": "b37b7085aa080a91be6c52d4bb4bbfa33b87d8fe2790923495454d1be88daa55",
+    "cluster": "7683042491268153327",
+    "maintenance_database": "postgres",
+    "maintenance_oid": "5",
+    "host": "127.0.0.1",
+    "port": 55448,
+    "dba_role": "muratates",
+    "app_role": "dou_app"
+  },
+  "runner_sha256": "b1e4dba6c7c9141718228acb52de55f844d35b40c4dd90a1d6a15dddffbbcf3e",
+  "runner_unchanged": true,
+  "status": "current-schema-parity-pass",
+  "result_sha256": "19c901acb6298338e1ee09696a49f0e76d71ac7241468b3ba8d58376a008fbde",
+  "after": {
+    "source": {
+      "oid": "1161812",
+      "allow_connections": true,
+      "active_connections": 0
+    },
+    "target": {
+      "oid": "1161813",
+      "allow_connections": true,
+      "active_connections": 1
+    }
+  }
+}

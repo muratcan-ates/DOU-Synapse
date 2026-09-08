@@ -17,7 +17,7 @@ Yetkilendirme daima `CourseMemberDep` / `CourseInstructorDep` ile yapılır; ken
 from __future__ import annotations
 
 import math
-from typing import Annotated
+from typing import Annotated, Final
 from uuid import UUID
 
 from fastapi import APIRouter, Query, status
@@ -41,7 +41,8 @@ from app.core.errors import (
     ValidationError,
 )
 from app.core.pagination import paginate
-from app.core.rate_limit import get_concurrency_gate, get_limiter
+from app.core.rate_limit import get_concurrency_gate
+from app.core.request_quota import take_request_slot
 from app.models.assessment import (
     Answer,
     ExamBlueprint,
@@ -77,7 +78,7 @@ router = APIRouter(prefix="/courses/{course_id}", tags=["assessment"])
 #: Sayaç kapsamı. Sınırlayıcı `api/chat.py` ile PAYLAŞILIYOR ve iki ucun doğal
 #: anahtarı da `kullanıcı:ders`; kapsam olmasaydı sohbet etmek soru üretim
 #: kotasını sessizce tüketirdi (`core/rate_limit.py`).
-QUESTION_GEN_SCOPE = "qgen"
+QUESTION_GEN_SCOPE: Final = "qgen"
 
 
 def _bekleme_metni(saniye: float) -> str:
@@ -381,8 +382,6 @@ async def generate_questions(
     # Eşzamanlılık yalnız `kullanıcı`: sınırın gerekçesi maliyet değil
     # tutarlılık, ve karışan şey öğretmenin kendi dikkati (`config.py`).
     gate = get_concurrency_gate()
-    limiter = get_limiter()
-    kota_anahtari = f"{context.user_id}:{context.course_id}"
 
     with gate.hold(
         QUESTION_GEN_SCOPE,
@@ -392,19 +391,18 @@ async def generate_questions(
             "Başlattığın bir soru üretimi hâlâ sürüyor. O tamamlandığında yenisini başlatabilirsin."
         ),
     ):
-        if not limiter.allow(
-            QUESTION_GEN_SCOPE,
-            kota_anahtari,
+        admission = await take_request_slot(
+            user_id=context.user_id,
+            course_id=context.course_id,
+            scope=QUESTION_GEN_SCOPE,
             limit=settings.question_gen_rate_limit_requests,
             window_seconds=settings.question_gen_rate_limit_window_seconds,
-        ):
-            bekleme = limiter.retry_after(
-                QUESTION_GEN_SCOPE,
-                kota_anahtari,
-                window_seconds=settings.question_gen_rate_limit_window_seconds,
-            )
+        )
+        if not admission.allowed:
+            bekleme = admission.retry_after_seconds
             raise RateLimitError(
-                f"Soru üretimi kotan doldu. {_bekleme_metni(bekleme)} sonra tekrar deneyebilirsin."
+                f"Soru üretimi kotan doldu. {_bekleme_metni(bekleme)} sonra tekrar deneyebilirsin.",
+                retry_after=bekleme,
             )
 
         topic = await session.get(Topic, payload.topic_id)

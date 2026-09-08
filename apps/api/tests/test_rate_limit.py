@@ -8,14 +8,13 @@ kapanıyor, dolayısıyla gerçek sağlayıcıya hiç ihtiyaç yok:
    "Çağrılmadan" kelimesi burada ölçülüyor: sahte sağlayıcının çağrı sayacı
    reddedilen istekte artmamalı. Kapı üretim başladıktan sonra kapansaydı
    maliyet zaten ödenmiş olurdu ve test yine yeşil yanardı.
-3. Sayaç kullanılmayan anahtarları tahliye eder; bunun karşı kontrolü de var —
-   yaşayan bir anahtar silinmemeli, yoksa "tahliye" fiilen sınırı kaldırırdı.
+3. Sohbetin kalıcı bütçesinin tükenmesi soru üretimi bütçesini tüketmez.
+   PostgreSQL süre sonu ve bakım testleri `test_request_quota_pg.py` içindedir.
 """
 
 from __future__ import annotations
 
 import asyncio
-import time
 from collections.abc import AsyncIterator
 from uuid import UUID
 
@@ -25,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.core.config import get_settings
 from app.core.errors import ConcurrencyLimitError
-from app.core.rate_limit import ConcurrencyGate, SlidingWindowLimiter, reset_rate_limit
+from app.core.rate_limit import ConcurrencyGate, reset_rate_limit
 from app.modules.assessment import question_gen
 from tests.conftest import UserFactory
 
@@ -56,65 +55,6 @@ def temiz_sayaclar() -> AsyncIterator[None]:
 # ---------------------------------------------------------------------------
 # Sınırlayıcının kendisi
 # ---------------------------------------------------------------------------
-
-
-class TestSlidingWindowLimiter:
-    def test_kapsamlar_ayri_sayilir(self) -> None:
-        """Aynı anahtar, iki kapsam: biri diğerinin kotasını tüketmemeli.
-
-        Tek örnek iki uç tarafından paylaşılıyor ve ikisinin de doğal anahtarı
-        `kullanıcı:ders`. Kapsam olmasaydı sohbet etmek soru üretimini sessizce
-        engellerdi ve bunu kimse aramazdı.
-        """
-        limiter = SlidingWindowLimiter()
-        anahtar = "kullanici:ders"
-
-        assert limiter.allow("chat", anahtar, limit=1, window_seconds=60) is True
-        assert limiter.allow("chat", anahtar, limit=1, window_seconds=60) is False
-        # Sohbet kotası dolu; soru üretimi bundan etkilenmemeli.
-        assert limiter.allow("qgen", anahtar, limit=1, window_seconds=60) is True
-
-    def test_retry_after_en_eski_vurustan_hesaplanir(self) -> None:
-        """Yer açacak olan şey en eski vuruşun pencereden düşmesi."""
-        limiter = SlidingWindowLimiter()
-        assert limiter.allow("qgen", "k", limit=1, window_seconds=300) is True
-        assert limiter.allow("qgen", "k", limit=1, window_seconds=300) is False
-
-        kalan = limiter.retry_after("qgen", "k", window_seconds=300)
-
-        assert 299 < kalan <= 300
-
-    def test_hic_vurusu_olmayan_anahtar_icin_bekleme_sifir(self) -> None:
-        limiter = SlidingWindowLimiter()
-        assert limiter.retry_after("qgen", "hic-gorulmemis", window_seconds=300) == 0.0
-
-    def test_kullanilmayan_anahtar_tahliye_edilir(self) -> None:
-        """FR-223: sayaç süreç ömrü boyunca sınırsız büyümemeli.
-
-        Düzeltme öncesi her (kullanıcı, ders) çifti için açılan deque boşalsa
-        bile anahtarı hiç silinmiyordu; `reset()` yalnız testlerden çağrılıyor,
-        üretimde hiç.
-        """
-        limiter = SlidingWindowLimiter()
-        limiter.allow("qgen", "eski-kullanici", limit=5, window_seconds=0.05)
-        assert limiter.tracked_keys() == 1
-
-        time.sleep(0.2)
-        limiter.allow("qgen", "yeni-kullanici", limit=5, window_seconds=0.05)
-
-        assert limiter.tracked_keys() == 1, "eski anahtar hâlâ bellekte"
-
-    def test_yasayan_anahtar_tahliye_edilmez(self) -> None:
-        """Karşı kontrol: her şeyi silen bir 'tahliye' sınırı fiilen kaldırır."""
-        limiter = SlidingWindowLimiter()
-        limiter.allow("qgen", "aktif", limit=5, window_seconds=0.05)
-
-        time.sleep(0.2)
-        # Aynı anahtar yeniden vuruyor: süpürme koşuyor ama bu anahtar taze.
-        limiter.allow("qgen", "aktif", limit=5, window_seconds=0.05)
-        limiter.allow("qgen", "baska", limit=5, window_seconds=0.05)
-
-        assert limiter.tracked_keys() == 2
 
 
 class TestConcurrencyGate:
@@ -230,6 +170,7 @@ class TestGenerationQuota:
         hata = response.json()["error"]
         assert hata["code"] == "rate_limited"
         assert "dakika" in hata["message"], hata["message"]
+        assert 240 < int(response.headers["Retry-After"]) <= 300
         # Kota reddi LLM'e HİÇ gitmedi.
         assert sagliyici.calls == cagri_sayisi
 
@@ -242,8 +183,9 @@ class TestGenerationQuota:
         sohbet turu atan bir öğretmen soru üretemez hâle gelirdi.
         """
         from app.api.chat import RATE_LIMIT_SCOPE as CHAT_SCOPE
+        from app.api.chat import set_pipeline
         from app.api.questions import QUESTION_GEN_SCOPE
-        from app.core.rate_limit import get_limiter
+        from tests.factories import Pipeline, install_pipeline
 
         ayse, course_id, topic_id, chunk_ids = await _uretim_ortami(client, users, admin_engine)
         question_gen.set_providers(
@@ -251,13 +193,26 @@ class TestGenerationQuota:
             completion=FakeCompletion(_mcq_response(chunk_ids[0])),
         )
 
-        # Sohbet kapsamını tıka.
-        limiter = get_limiter()
-        kullanici = ayse["Authorization"].removeprefix("Bearer dev:")
-        anahtar = f"{kullanici}:{course_id}"
-        for _ in range(get_settings().chat_rate_limit_requests):
-            limiter.allow(CHAT_SCOPE, anahtar, limit=999, window_seconds=60)
-        assert limiter.allow(CHAT_SCOPE, anahtar, limit=1, window_seconds=60) is False
+        # Gerçek sohbet ucu kalıcı bütçeyi tüketir. Boş retrieval sağlayıcıya gitmez.
+        fake = Pipeline()
+        install_pipeline(fake)
+        try:
+            for index in range(get_settings().chat_rate_limit_requests):
+                accepted = await client.post(
+                    f"/courses/{course_id}/chat",
+                    json={"question": f"Kota kapsam denemesi {index}"},
+                    headers=ayse,
+                )
+                assert accepted.status_code == 200, accepted.text
+            denied = await client.post(
+                f"/courses/{course_id}/chat",
+                json={"question": "Kota kapsam son deneme"},
+                headers=ayse,
+            )
+            assert denied.status_code == 429
+            assert denied.json()["error"]["code"] == "rate_limited"
+        finally:
+            set_pipeline()
 
         response = await _uret(client, ayse, course_id, topic_id)
 

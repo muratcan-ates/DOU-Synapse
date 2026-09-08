@@ -1,0 +1,25 @@
+{
+  "test_file": "/private/tmp/dou018-d2-worker-lifecycle-tests.py",
+  "sha256": "6d86cdd789391f626209defbce2361841a28c187c088c876da8641b1c7f4689a",
+  "source_import": "normal app.worker from frozen stage02 via external PYTHONPATH; file has no stage path",
+  "checks": [
+    {
+      "check": "pytest",
+      "exit_code": 0,
+      "log_sha256": "364ee67226095f20328ed9d08b9d81815746d90891434ba3cb3a67fbce00f5c9"
+    },
+    {
+      "check": "lint",
+      "exit_code": 0,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "check": "format",
+      "exit_code": 0,
+      "log_sha256": "fd2299c9f1c6dc869070883e281051bfe93aacf66c1a3b0069f45b4aa410ca50"
+    }
+  ],
+  "tests_passed": 4,
+  "database_or_subprocess_worker_executed": false,
+  "scope": "lifecycle unit scheduling boundary only; not real OS signal or elapsed60s evidence"
+}

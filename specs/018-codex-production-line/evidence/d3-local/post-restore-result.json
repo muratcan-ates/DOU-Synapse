@@ -1,0 +1,285 @@
+{
+  "status": "read-only acceptance passed",
+  "tables": {
+    "public.ai_guard_events": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.ai_token_reservations": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.answer_cache": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.answers": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.blueprint_cells": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.chat_message_feedback": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.chat_messages": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.chat_privacy_revisions": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.chat_sessions": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.chunks": {
+      "rows": 20000,
+      "sorted_row_sha256": "a05a7f0be845bde515ecf4e4a885ed633f451108db1733ee1dbfa6a982b3194c",
+      "kind": "r",
+      "equal": true
+    },
+    "public.course_ai_policies": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.course_ai_policy_audit": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.course_memberships": {
+      "rows": 14,
+      "sorted_row_sha256": "b91272742a8e8afc6d516c242510550b989e5fc69a753c20af7fc6b2539501f6",
+      "kind": "r",
+      "equal": true
+    },
+    "public.courses": {
+      "rows": 7,
+      "sorted_row_sha256": "1ee6ebae43808c9f7182549798f726319f79596f0e31d459e4b3edfbaad7a4ad",
+      "kind": "r",
+      "equal": true
+    },
+    "public.documents": {
+      "rows": 48,
+      "sorted_row_sha256": "d24d57bbda4371039fac6bc7641b611caee45d0fd78b3dc6b3c1975c2ec18321",
+      "kind": "r",
+      "equal": true
+    },
+    "public.dou018_retrieval_benchmark_run": {
+      "rows": 1,
+      "sorted_row_sha256": "e0ccc14b6eeb2f7745e13b7eade96c138c95329d4cd2f9bcf823770ec3d5016a",
+      "kind": "r",
+      "equal": true
+    },
+    "public.exam_blueprints": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.exam_items": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.exam_sessions": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.exam_versions": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.ingestion_jobs": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.learning_outcomes": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.mastery": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.platform_admin_access_audit": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.platform_admins": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.profiles": {
+      "rows": 3,
+      "sorted_row_sha256": "9f4777d1ae73cb231a74da4078e2942b646d9f243d8132d4d6e83f1649e86a9b",
+      "kind": "r",
+      "equal": true
+    },
+    "public.questions": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.request_logs": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    },
+    "public.topics": {
+      "rows": 0,
+      "sorted_row_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "r",
+      "equal": true
+    }
+  },
+  "rls": {
+    "student": {
+      "visible_chunks": 18400,
+      "expected_chunks": 18400,
+      "course_checks": {
+        "broad": {
+          "visible_chunks": 17152,
+          "member": true
+        },
+        "unrelated": {
+          "visible_chunks": 0,
+          "member": false
+        }
+      },
+      "denials": {
+        "trigger_execute": "42501",
+        "role_escalation": "42501",
+        "profile_upsert_execute": "42501"
+      },
+      "vector": {
+        "count": 8,
+        "scope_valid": true,
+        "exact_oracle_equal": true,
+        "ann_recall_at_8": 0.875,
+        "query_result_sha256": "dcd32f8fa24edac51553105250341328406c0774d5ee32f8b2dda7e92a360390",
+        "plan": {
+          "indexes": [
+            "chunks_embedding_idx"
+          ],
+          "nodes": [
+            "CTE Scan",
+            "Hash",
+            "Hash Join",
+            "Index Scan",
+            "Limit",
+            "Seq Scan",
+            "Sort",
+            "Subquery Scan"
+          ]
+        },
+        "semantic_quality_claim": false
+      }
+    },
+    "instructor": {
+      "visible_chunks": 20000,
+      "expected_chunks": 20000,
+      "course_checks": {
+        "broad": {
+          "visible_chunks": 17152,
+          "member": true
+        },
+        "unrelated": {
+          "visible_chunks": 1600,
+          "member": true
+        }
+      }
+    },
+    "outsider": {
+      "visible_chunks": 1600,
+      "expected_chunks": 1600,
+      "course_checks": {
+        "broad": {
+          "visible_chunks": 0,
+          "member": false
+        },
+        "unrelated": {
+          "visible_chunks": 1600,
+          "member": true
+        }
+      }
+    },
+    "anonymous": {
+      "visible_chunks": 0,
+      "expected_chunks": 0,
+      "course_checks": {
+        "broad": {
+          "visible_chunks": 0,
+          "member": false
+        },
+        "unrelated": {
+          "visible_chunks": 0,
+          "member": false
+        }
+      }
+    }
+  },
+  "candidate_sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b",
+  "fixture_sha256": "94001170868f28d09896f73f2238b5365e9ef5fde154d015bf1d7e4238bf0c8c",
+  "security_catalog_equal": true,
+  "helper": {
+    "owner_restored": true,
+    "security_definer": true,
+    "create_schema_grant_absent": true,
+    "application_execute_denied": true,
+    "source_metadata_equal": true
+  },
+  "hnsw_indexes": [
+    {
+      "name": "chunks_embedding_idx",
+      "valid": true,
+      "ready": true
+    }
+  ],
+  "source_target_exact_vector_equal": true,
+  "scope": "source01/target05 application rows, metadata, direct dou_app RLS and synthetic vector mechanics",
+  "limits": "not current-repository migration parity, real-model quality, external storage/auth backup or sequence state"
+}

@@ -1,0 +1,15 @@
+{
+  "target": "dou018_recovery_target08",
+  "oid": 1060043,
+  "cluster": "7683042491268153327",
+  "review_basis": "actual definite pre-COMMIT22012; ownchildexit3; zero backends; reconstructed originalscript; independenthashboundreview",
+  "opened_by_root_separate_operation": true,
+  "unknown_targets_03_04_09_10_not_touched": true,
+  "helper_sha256": "3db4dcf9bb3e4feefae05793cfaadd46164ff90d627cf745d5deaf829272a2fb",
+  "exit_code": 0,
+  "seconds": 0.201,
+  "source_unchanged": true,
+  "stdout.log_sha256": "9d1f284bd8712e499825f89131c31f625e19b5a5f52d7633859dd89c981c4077",
+  "stderr.log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "result_sha256": "53f26fd82af459e78f15b8dde9b8b7fe5a614db774ce802cfd230733793d3ac6"
+}

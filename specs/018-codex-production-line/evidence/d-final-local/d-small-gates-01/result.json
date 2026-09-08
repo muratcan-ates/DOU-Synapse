@@ -1,0 +1,102 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "name": "ruff",
+      "exit_code": 0,
+      "seconds": 0.076,
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "cwd": "apps/api"
+    },
+    {
+      "name": "format",
+      "exit_code": 0,
+      "seconds": 0.024,
+      "log_sha256": "cbf25ae91c68d20f19db932f5e95f200d9f73887d65e4fe6713bac7860b15e79",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api"
+    },
+    {
+      "name": "mypy",
+      "exit_code": 0,
+      "seconds": 2.052,
+      "log_sha256": "adbe2679a016996b4036b957085d8e2e478f4dfe4d280f71d524bdba164dc01f",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api"
+    },
+    {
+      "name": "docs-update",
+      "exit_code": 0,
+      "seconds": 3.165,
+      "log_sha256": "4ca58a03aafae39168fb59a670d0778d99236e9beea09a2af71de6aa6fb6c60c",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs",
+        "--duzelt"
+      ],
+      "cwd": "."
+    },
+    {
+      "name": "docs",
+      "exit_code": 0,
+      "seconds": 2.709,
+      "log_sha256": "653c0a7e029e34da81b8174d67a515d2c8885d578bc329427904affe5a628744",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": "."
+    },
+    {
+      "name": "workflow-policy",
+      "exit_code": 0,
+      "seconds": 0.139,
+      "log_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py",
+        "--repo-root",
+        "."
+      ],
+      "cwd": "."
+    },
+    {
+      "name": "governance-units",
+      "exit_code": 0,
+      "seconds": 49.68,
+      "log_sha256": "7abd481209ca8a5cfc8cc8c9e74423420a011e9f432e1093ae87c0e4118dfa3e",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "-m",
+        "unittest",
+        "scripts/test_ai_sdlc_check.py"
+      ],
+      "cwd": "."
+    },
+    {
+      "name": "whitespace",
+      "exit_code": 0,
+      "seconds": 0.049,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "."
+    }
+  ]
+}
