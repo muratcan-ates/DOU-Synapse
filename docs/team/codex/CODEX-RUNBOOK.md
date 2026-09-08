@@ -45,12 +45,26 @@ test içindir; gerçek arama kalitesi için `fastembed`).
    **kullanma** (başka dalda). Yeni ihtiyaç doğarsa 0024'ten devam et ve kuyruğa not düş.
 5. **Yönetişim (`.ai/`)**: `.ai/policy.json`'daki hassas yola dokunan commit **aynı commit'te**
    dossier (`.ai/changes/NNN-*.json`) + kanıt (`.ai/evidence/NNN-*.json`) ister. Kayıtlar
-   append-only: var olanı düzenleme/silme; düzeltme yeni kayıttır. Numara kuyruğu **024**'ten
-   başlar (023'e kadar dolu; 023 bu runbook'un toplayıcı kaydı). Doğrulayıcı bir dossier'i yalnız HEAD'de tanıtıldığı commit'te
-   uygun sayar; bu yüzden her push'tan önce
-   `apps/api/.venv/bin/python scripts/refresh_aggregate_dossier.py --target origin/017-completion-integration`
-   koştur, ürettiği kaydın `evaluation` referanslarını gerçek dosyalara bağla, kanıtı
-   koştuğun komutlarla `pass`e çek, `status: evidence-ready` yap, aynı commit'e ekle.
+   append-only: var olanı düzenleme/silme; düzeltme yeni kayıttır. Numara: `.ai/changes/`
+   altındaki en büyük sayının bir fazlası (`ls .ai/changes | sort | tail -2`); iki kayıt aynı
+   öneki alamaz. Şablon: `.ai/changes/example.json`; `evaluation` referansları gerçek dosya olmalı.
+   **CI gerçeği (ölçüldü):** `ci.yml`, `ai-quality.yml`, `security.yml` yalnız **`main`'e push**
+   ve **`pull_request`** olayında koşar; `018-codex-production-line`'a push **hiçbir şey
+   tetiklemez**. Tek sinyal PR check'idir ve doğrulayıcı orada tabanı **PR hedef dalının ucu**
+   alır; bir dossier yalnız **HEAD'de tanıtıldığı** commit'te ve `base_sha` o tabana eşitse
+   sayılır (`scripts/ai_sdlc_check.py:1795-1823`). Dolayısıyla:
+   - **Her hassas commit** kendi dossier'ini taşır: `base_sha` = üstüne inşa ettiğin commit
+     (commit'ten önce `git rev-parse HEAD`), `candidate_sha: "SELF"`, kanıt dosyasının
+     `report_sha256`'sı gerçek özet. Bu insan inceleme izidir; PR kapısını tek başına yeşile çevirmez.
+   - **Her push'tan önce** `apps/api/.venv/bin/python scripts/refresh_aggregate_dossier.py --target origin/017-completion-integration`
+     koştur. `AGGREGATE=OK` derse dosya yazmaz — geç. `AGGREGATE=WROTE` derse: ürettiği kaydın
+     `evaluation` bloğunu gerçek dosyalara bağla, kanıtı koştuğun komutlarla `pass`e çek — kanıt
+     dosyasında `result`, dossier'de `evidence[0].result` **ve** yeniden hesaplanmış
+     `report_sha256` — `status: evidence-ready` yap ve **push'lanacak son commit'e** ekle
+     (o commit henüz push'lanmadıysa `--amend`, aksi hâlde yeni commit). Toplayıcı yeni ölçüm
+     iddia etmez; kanıt metnini öyle yaz. Doğrulayıcıyı gevşetme, `continue-on-error` ekleme.
+   - Yerel doğrulama commit **sonrası**, temiz ağaçta; `--head-sha`'ya sembolik `HEAD` verme
+     (`HEAD_REF_NOT_IMMUTABLE`), kirli ağaçta koşma (`CHECKOUT_SHA`).
 6. **Dil:** kod/dosya adı İngilizce; yorum, docstring, kullanıcıya dönen metin ve commit gövdesi
    Türkçe. Commit başlığı conventional (`fix(retrieval): …`), gövdede **neden**.
    `Co-Authored-By` satırı **asla**.
@@ -67,6 +81,7 @@ TEST_DB_NAME=dou_codex .venv/bin/python -m pytest -q
 cd "$KOK/apps/web" && bun test lib/ && bunx tsc --noEmit && node scripts/contrast.mjs
 cd "$KOK" && node scripts/docs_check.mjs
 python3 scripts/migration_check.py --allow-gap 0017
+# yönetişim — commit SONRASI, temiz ağaçta; PR check'inin gördüğü taban = 017 ucu:
 python3 scripts/ai_sdlc_check.py --base-sha "$(git merge-base origin/017-completion-integration HEAD)" --head-sha "$(git rev-parse HEAD)"
 ```
 Ağır olanlar (tam pytest, `bun run build`, Playwright, RLS mutasyon betikleri) sıralı koşar.
@@ -126,8 +141,8 @@ HNSW yolunu iptal ediyor — ölçüm: `main` 1,34 ms `Index Scan` ↔ 017 109 m
 2. Dokunacağın dosyaların BUGÜNKÜ hâlini oku (varsayma).
 3. Uygula. Yalnız o işin dosyalarına dokun.
 4. Kapıları koştur (§0). Kırmızıysa düzelt; kapıyı gevşetme.
-5. Hassas yola dokunduysan dossier + kanıt yaz (numara 023+), sonra
-   refresh_aggregate_dossier.py ile toplayıcıyı yenile ve evidence-ready'e çek.
+5. Hassas yola dokunduysan aynı commit'e dossier + kanıt yaz (base_sha = ebeveyn, §0/5).
+   Push'tan önce toplayıcıyı yenile; AGGREGATE=OK ise geç, WROTE ise son commit'e ekle.
 6. Commit (Türkçe gövde, neden). Push. PR açıklamasına tek satır ekle:
    "[Faz X / İş N] <başlık> — kapılar: … — not-run: …"
 7. Sıradakine geç. SORMA — yalnız §4'teki durumlarda dur.

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "024-branch-aggregate-r1",
+  "captured_at": "2026-09-08T05:59:40+00:00",
+  "candidate_sha": "SELF",
+  "command": "node scripts/docs_check.mjs; python3 scripts/migration_check.py --allow-gap 0017; python3 scripts/ai_sdlc_check.py --base-sha \"$(git merge-base origin/main HEAD)\" --head-sha \"$(git rev-parse HEAD)\"",
+  "environment": "yerel macOS · bu HEAD'de yalnız docs/team/codex değişti",
+  "results": {
+    "aggregated_files": 34,
+    "docs_check_exit": 0,
+    "migration_check_exit": 0,
+    "ai_sdlc_check_exit_main_base": 0,
+    "backend_tests_passed_at_b1986792": 1197,
+    "web_unit_tests_passed_at_b1986792": 428
+  },
+  "governance_note": "Bu kayıt YENİ bir ölçüm iddia etmez; 023 ile aynı 34 hassas dosyayı main tabanına karşı yeniden kapsar, çünkü doğrulayıcı bir dossier'i yalnız HEAD'de tanıtıldığı commit'te uygun sayar ve üstüne docs/team/codex commit'i geldi. Backend/web test sayıları b1986792'de ölçüldü; kod değişmediği için yeniden koşulmadı ve öyle etiketlendi.",
+  "limitations": "Kapsam birleştirmesidir, kalite kanıtı değildir. Bu HEAD'de pytest/bun test yeniden koşulmadı (kod değişimi yok).",
+  "privacy": "içerik yok; yalnız dosya yolları"
+}
