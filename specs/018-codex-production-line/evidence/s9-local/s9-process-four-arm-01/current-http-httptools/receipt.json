@@ -1,0 +1,19 @@
+{
+  "pid": 70828,
+  "exit_code": 0,
+  "server_started": true,
+  "control_stop_received": true,
+  "control_thread_stopped": true,
+  "counters": {
+    "database": 0,
+    "outbound_socket": 0,
+    "embedding": 0,
+    "llm": 0
+  },
+  "configured": {
+    "json_formatter": true,
+    "error_enabled": true,
+    "error_handlers": 0,
+    "error_propagates": true
+  }
+}

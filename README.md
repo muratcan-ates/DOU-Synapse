@@ -13,7 +13,7 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1571_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1571 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1655_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1655 -->
 ![Frontend tests](https://img.shields.io/badge/frontend_tests-555_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 555 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -90,7 +90,7 @@ dönüştü:
 - soru üretimi, öğretmen onayı ve sürümlü sınav blueprint’i;
 - süreli practice/exam akışı, değerlendirme ve “Neden yanlış?”;
 - öğrenci ilerlemesi, sınıf analitiği ve AI kalite geri bildirimi;
-- platform yönetimi, içeriksiz teknik loglar ve audit;
+- platform yönetimi, sınırlı teknik ölçüm/hata kayıtları ve audit;
 - sınav kilidi, RLS, KVKK hakları, atomik AI kotaları ve acil kapatma anahtarı;
 - CI, güvenlik kontrolleri, AI değişiklik dosyaları ve kanıt temelli release tasarımı.
 
@@ -343,8 +343,9 @@ grant’i bilinçli zayıflatır; izolasyon testi kırmızıya dönmezse kanıt 
 - Öğretmen öğrencinin özel sohbet metnini varsayılan olarak okuyamaz.
 - AI kalite incelemesinde metin paylaşımı öğrenci onayına bağlıdır.
 - Platform admin akademik içeriğe admin sıfatıyla erişemez.
-- Teknik loglar içeriksizdir; request ID, durum, latency ve aggregate token gibi alanları
-  taşır.
+- Teknik kayıtlar request ID, durum ve süre gibi metadata taşır; genel anonimlik
+  garantisi yoktur. Hata kayıtları sınırlı nesne/sabit olay özetleri kullanır.
+  İstemci destek kimliği/S10 ve dış günlük sınırları [günlük sözleşmesinde](docs/operations/logging-privacy.md) açıktır.
 - KVKK dışa aktarma, sohbet silme ve anonimleştirme akışları vardır.
 
 ### Web ve dosya güvenliği
@@ -471,7 +472,7 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1571** <!-- docs-check: backend.tests = 1571 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Backend testleri | **1655** <!-- docs-check: backend.tests = 1655 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
 | Frontend birim testleri | **555** <!-- docs-check: frontend.tests = 555 --> | 44 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 44 --> |
 | Playwright tarayıcı vakaları | **71** <!-- docs-check: e2e.tests = 71 --> | Sayı `playwright test --list` ile toplanan vakalardır. Son yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) |
 | Migration | **22** <!-- docs-check: migrations.count = 22 --> | Şema evriminin kaynak dosyası sayısı |
@@ -796,7 +797,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1571 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1571 -->
+Güncel feature kanıtında backend koleksiyonu 1655 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1655 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 

@@ -1,0 +1,84 @@
+# S9/S9B — independent static security review
+
+8 September 2026. Scope: frozen S9 `errors.py`, S9B `logging.py`, both prepared test suites, their READMEs, the installed Python logging implementation and the actual Uvicorn/Starlette call sites. No candidate import, pytest, database, server, network or repository/Git mutation was performed. File reads and hash inspection only. The 18 S9 and 35 S9B cases are prepared tests, not passing results in this review.
+
+## Conclusion
+
+One actionable **P2 / Medium confidentiality finding** remains in the logging handler's own failure path. The normal JSON formatter paths do omit arbitrary exception/message/argument data as designed, but a failing output stream or formatter falls back to Python logging's raw stderr diagnostic. That can recreate the exact leak S9B is intended to remove. Fix and measure this narrow boundary before describing stdout and stderr as free of the tested private values.
+
+No student-to-arbitrary-Python-object capability, auth bypass or ordinary request-driven source-file read attack was established. The source-only concerns below are not disguised runtime exploit claims.
+
+## S9-R1 — standard handler failure prints the original raw record to stderr
+
+**Severity:** P2 / Medium. Conditional disclosure when a private error record coincides with a logging sink/formatter failure; not an independently proven unauthenticated remote exploit.
+
+**Affected candidate:** `/private/tmp/dou018-lifespan-next-candidate/files/apps/api/app/core/logging.py:291–294,367–369` (also the frozen S9 handler at its lines 266–268).
+
+The filter intentionally preserves the original record so that the formatter can project it safely:
+
+```python
+if record.exc_info or _plain_server_error(record):
+    return True
+```
+
+The installed handler is still:
+
+```python
+handler = logging.StreamHandler(sys.stdout)
+```
+
+The actual CPython 3.12.13 source at `/opt/homebrew/opt/python@3.12/Frameworks/Python.framework/Versions/3.12/lib/python3.12/logging/__init__.py:1159–1168` invokes `self.handleError(record)` after format/write/flush raises an ordinary exception. Its default `raiseExceptions = True` is at line 65. At lines 1078–1083 and 1096–1100 the fallback prints the logging failure traceback and then:
+
+```python
+sys.stderr.write('Message: %r\n'
+                 'Arguments: %s\n' % (record.msg, record.args))
+```
+
+Therefore a `uvicorn.error` plain lifespan record whose original message contains private traceback text is still present when stdout write/flush fails. The fallback bypasses JsonFormatter and prints that raw message to stderr. This path requires neither a custom exception class nor attacker access to a LogRecord. The actual Uvicorn `lifespan/on.py:121,134` emits the string provided by Starlette `routing.py:646–653`; a private dependency/application error can populate it. A closed/full/broken logging sink is an operational failure condition, not a capability granted to the student. Even if this happens only during failure, stderr may be retained by the same container/host log collector.
+
+Formatter failures can reach the same fallback. For example, the new source-reading/AST path can raise an uncaught MemoryError under memory pressure; a custom record or handler can cause other errors. The sink-failure path alone is sufficient for this finding, so it does not depend on constructing a malicious Python object from HTTP input.
+
+**HTTP implication, stated narrowly:** ordinary write/format exceptions are normally swallowed by standard `emit` after `handleError` returns, so it is incorrect to claim that every sink failure breaks the generic500 response. However, RecursionError is explicitly re-raised by standard `emit`, filter failures occur before `emit`, and the fallback catches OSError but not every possible stderr failure (e.g. a closed Python stream raises ValueError). Because S9 `errors.py:269–279` logs before building the response, an escaping logging error can prevent that generic envelope. No such runtime failure was executed in this review.
+
+**Small fix:** use the project's own narrow stream-handler failure path. It must never call the standard raw `handleError`, stringify/repr the original record/error/args, print a traceback, or log recursively through itself. A fixed ASCII diagnostic written once to a separate fallback stream is sufficient; if that write also fails, swallow that ordinary logging failure. Preserve deliberate process-control semantics for KeyboardInterrupt/SystemExit rather than catching BaseException indiscriminately. Do not globally set `logging.raiseExceptions=False` or disable the server error channel.
+
+**Required focused evidence:** with the same private-message oracle, separately make the owned sink's write fail, its flush fail, and the formatter fail; capture both stdout and stderr. Assert no original canary appears and the handler emits at most a fixed safe fallback. Repeat through the real S9 generic error handler and assert the unchanged500/error-code/support-ID envelope. Make the fallback stream fail too and exercise reentrant logging from the fallback to prove bounded behavior. Compare the current standard-handler candidate against the fixed candidate without weakening any oracle. These cases are absent from both current prepared suites.
+
+## Reviewed paths without a new actionable exposure
+
+### Normal exception and plain-server branches
+
+S9B `logging.py:324–349` selects exception/server projections before generic `record.getMessage()` at line354. Exception records drop message arguments, arbitrary extra/context, exc_text and stack_info; the summary at lines239–259 does not traverse cause/context/notes/ExceptionGroup members or stringify exception values. The error-type map uses exact built-in classes; unknown class names become a fixed Exception label. The prepared tests explicitly cover those channels and a throwing `__str__`, though they have not run here.
+
+The S9B plain Uvicorn branch at lines171–193 preserves only fixed recognized templates, a true int task count in 0..1,000,000, and a known errno from an exact built-in OSError class. Strings, bool task counts, arbitrary mappings and custom OSError subclasses do not gain numeric diagnostic access. INFO/WARNING messages remain outside this new branch by explicit design. No free error message parsing or trace regex is used.
+
+The exact application logger names and fixed templates match the actual four exception call sites (generic error, warmup, grading and question generation) and installed Uvicorn error templates. The generic response text/status is unchanged; S9 assigns one request ID before both log and response. A supplied request ID is intentionally retained only for app.error. Its current client-controlled ASCII contract can itself carry private text, and that pre-existing limit is explicitly disclosed in the README; the canary tests do not establish anonymity or arbitrary-header-content removal.
+
+### Traceback source allowlist and resource cost
+
+At S9B lines196–226 the source path must be an existing absolute `.py` under allowed application packages, have no parent traversal and resolve exactly to itself. Only relative path, an AST-known function name and an in-range line number can be emitted (229–236). User uploads are parsed as content and stored through ingestion storage; no path from uploaded code text into an executed CodeType or application source file was found. A malicious deployed source file, arbitrary `compile()` filename, custom LogRecord/metaclass or source-tree writer is a code/operational trust capability, not something a student receives by submitting JSON or a code answer.
+
+The limits of 64 traceback nodes, 8 output frames and 128 cached filename entries are real, but **do not impose a byte/AST-node bound on each source file**. Lines209–210 read and parse a whole deployed source file synchronously on a cache miss. This is an operational cost/hardening opportunity, not a measured remote DoS: filenames and source sizes in the visible production paths are deployed-code controlled. A bounded read/size cutoff could skip metadata when a file exceeds a chosen operator limit; do not claim such a limit already exists. No benchmark, memory-pressure test or exploit was run.
+
+File membership establishes an allowed source location, not cryptographic attestation of an executing code object. The function name only has to occur somewhere in that source file, and hot code replacement could make the cache stale. The README's process-restart-on-deploy assumption is material. These limits do not introduce a normal student-data channel under the inspected source ownership model.
+
+### Diagnosis and logging failure scope
+
+Fixed event codes, support ID for generic500, bounded source locations, server phase markers, task count and OS errno preserve useful diagnosis. Removing arbitrary provider exception text and collapsing unknown third-party types to Exception is an intentional diagnostic reduction, documented in the READMEs. There is no demonstrated contradiction between this declared scope and ordinary success/known-error templates. Unknown new Uvicorn templates become a generic server-error event; version upgrades require inventory/test review.
+
+The candidate is not a sandbox for arbitrary in-process Python hooks. Standard logging performs record construction and accesses `exc_info.__traceback__` before the formatter; user-defined `__bool__`, attribute hooks, mutated log levels or hostile mapping subclasses may run outside its data projection. The visible HTTP/student paths create ordinary strings/dicts and library exceptions, not attacker-defined classes. Tests of throwing `__str__` prove that particular formatter boundary, not universal immunity to hostile trusted code.
+
+## Evidence requirements still open
+
+Run the original 18 and 35 canary cases with the pinned old/new comparisons, then the new failure-path cases. Preserve exact old failures and failed setup results separately. The S9 outer ASGI test deliberately reproduces the Uvicorn logger call but is not an actual network server. The separate root-controlled process harness still needs to establish normal startup/shutdown, actual HTTP500+health recovery, both error channels, bounded safe stderr behavior and unchanged process-control outcomes. No production, legal-compliance or full-release claim follows from this static review.
+
+## Inspected hashes
+
+| File | SHA-256 |
+| --- | --- |
+| S9 errors.py | `82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f` |
+| S9 logging.py | `40d7aaa9980a39155944bc3cb056c2dea7e365c2692e1e6de36828ae9183c4f5` |
+| S9 exception tests | `d2dfddf4e18df885935cde48835ed37a6eda98e0806fec6611272cd86eeacc34` |
+| S9B logging.py | `f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f` |
+| S9B lifespan tests | `492ea8a6147c0dec595fd556d85f0acf4059aee1cfef26af6e7e4948fa4cb4bb` |
+| Installed Python logging | `43f86bbc08fdd5c7b6e697abffe1381f534a92bb32e1f1aee8360d6a142592a1` |

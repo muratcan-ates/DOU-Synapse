@@ -1,0 +1,68 @@
+[
+  {
+    "name": "web-unit",
+    "command": [
+      "bun",
+      "test",
+      "lib/"
+    ],
+    "exit_code": 0,
+    "seconds": 0.262,
+    "log_sha256": "4b073eb0fe523646b9e4e790dfc19e11d9178280eb8b03b35ecb46bc2dec645d"
+  },
+  {
+    "name": "web-types",
+    "command": [
+      "bun",
+      "x",
+      "--no-install",
+      "tsc",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "exit_code": 0,
+    "seconds": 3.7,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "docs-refresh",
+    "command": [
+      "node",
+      "scripts/docs_check.mjs",
+      "--duzelt"
+    ],
+    "exit_code": 0,
+    "seconds": 4.609,
+    "log_sha256": "dbc97127ec953d1f000cef5bf1fa638613514c07008a866f303141326207c6fc"
+  },
+  {
+    "name": "migration",
+    "command": [
+      "python3",
+      "scripts/migration_check.py",
+      "--allow-gap",
+      "0017",
+      "--allow-gap",
+      "0021",
+      "--allow-gap",
+      "0022",
+      "--allow-gap",
+      "0023"
+    ],
+    "exit_code": 0,
+    "seconds": 0.08,
+    "log_sha256": "35e88ac0adede31b2409b0ba68df482ea909fd0ef706b754ebb6a6f83aa3700b"
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.049,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

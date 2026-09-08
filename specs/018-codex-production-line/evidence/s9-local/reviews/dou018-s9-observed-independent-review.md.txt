@@ -1,0 +1,75 @@
+# S9 / S9B / S9C ölçülmüş sonuçların bağımsız incelemesi
+
+Tarih: 2026-09-08. İnceleme yalnız donmuş kaynakları, mevcut sonuç JSON'larını ve ham günlükleri okudu; test, uygulama, DB veya ağ çalıştırmadı. Depo ve özgün kanıtlar değiştirilmedi.
+
+## Karar
+
+Ölçümler, S9 hata işleyicisi ile son S9C günlük modülünün birlikte entegrasyona alınmasını destekliyor. İncelenen eski kol başarısızlıkları eksik paket/import/DB kurulumu yüzünden oluşmamış; beklenen gizlilik, destek kimliği, günlük olay şeması ve hata işleme sözleşmelerinde oluşmuş. **Başarısız test sayısı sızıntı sayısı değildir.** Kaynak bağlarında veya gerçek süreç sonuçlarında ölçümü geçersiz kılan bir tutarsızlık bulmadım.
+
+Bu kabul, üç ayrı geliştirme aşamasındaki 18 + 35 + 27 başarılı çevrimdışı test ile dört koldaki 16 gerçek süreç senaryosuna aittir. Son S9C modülü üzerinde üç test dosyasının birlikte 80 testi, entegre tam API paketi ve yeni commit'e bağlı hosted CI bu kanıt setinde henüz yoktur. Üretim/KVKK uyumu, gerçek sağlayıcı veya gerçek öğrenci verisi kabulü değildir.
+
+## Çevrimdışı sekiz kol
+
+Kaynak: [root sonuçları](/private/tmp/dou018-evidence/s9-offline-01/result.json). Her kolun stdout/stderr hashini yeniden hesapladım; sekizinde de sonuç kaydıyla eşleşiyor. Donmuş manifest/runner bağları değişmemiş. Her koşu normal pytest sonuç özeti üretmiş; import/collection hatası veya `ERRORS` kurulum bölümü yok. Sekiz runner sonucunda DB ve ağ deneme sayaçları sıfır.
+
+| Test ailesi / yüklenen kol | Ölçülen sonuç | Başarısızlıkların doğru yorumu |
+| --- | --- | --- |
+| S9 / eski iki modül | 18 FAIL | Ham exception zinciri/notu, logger biçimlendirmesi, sınırlandırılmış metadata ve destek kimliği sözleşmeleri; tek tip 18 sızıntı deneyi değil. |
+| S9 / iki aday modül | 18 PASS | S9 adayının aynı sözleşmelerde pozitif karşılığı. |
+| S9 / yalnız errors adayı | 18 FAIL | Eski formatter hâlâ özel exception metnini işler; yalnız handler değişikliği yeterli değil. |
+| S9 / yalnız formatter adayı | 14 PASS, 4 FAIL | Dört hata log context'inde eksik `request_id` yüzünden: iki context eşitlik assertion'ı ve iki `KeyError: request_id`. Bu dört sonuç özel içerik sızıntısı olarak sayılmamalı. |
+| S9B / S9 tabanı | 2 PASS, 33 FAIL | Gerçek LifespanOn hata mesajları ve özel argümanlar yanında yeni sabit olay/context şeması da sınanıyor; güvenli sabit protokol metinleri ve sayısal timeout vakalarının bir kısmı yalnız eksik context nedeniyle kırmızı. |
+| S9B / S9B adayı | 35 PASS | Lifespan hata fazı, sabit protokol nedenleri, sınırlı sayı/errno ve normal durum kayıtları korunuyor. |
+| S9C / S9B tabanı | 8 PASS, 19 FAIL | Ham stdlib fallback, bozuk stderr'den kaçan hata, yeniden giriş, generic 500 sözleşmesi ve `repr` çağrısı farklı failure sınıfları. Altı process-control ve iki normal-operation testi zaten yeşil. |
+| S9C / S9C adayı | 27 PASS | Format/write/flush hatası, bozuk fallback, sınırlı yeniden giriş, genel hata yanıtı ve kontrol istisnaları için aynı oracle'lar yeşil. |
+
+S9C'nin `broken_fallback=False, mode=write` eski-kol generic 500 vakası, yanıtı üretip ardından stderr'deki standart `Logging error` çıktısı nedeniyle düşebiliyor. Diğer vakalarda kapanmış stderr `ValueError` veya formatter kaynaklı `RecursionError` gerçekten handler dışına kaçıyor. Bu yüzden “eski kolda 19 isteğin tamamı 500 yanıtı üretemedi” sonucu da yanlış olur. Kanıtlar [sink testleri](/private/tmp/dou018-log-sink-next-candidate/files/apps/api/tests/test_log_sink_privacy.py:149) ve [eski S9B çıktısı](/private/tmp/dou018-evidence/s9-offline-01/s9c-baseline_s9b/stdout.log) içinde korunuyor.
+
+Çevrimdışı dış stderr dosyalarının boş olması, eski kolun özel içerik yayımlamadığını göstermez: testler çıktıyı içeride yakalıyor; başarısız assertion raporları root stdout dosyalarında. S9C generic 500 testi gerçek `unhandled_error_handler` fonksiyonunu doğrudan çağırıyor; ağ üzerinden bozuk-sink deneyi değildir. S9B gerçek Starlette/Uvicorn LifespanOn kontrolünü kullanıyor; soket açmıyor. Keyfi `__str__`/`__repr__` sınıfları dayanıklılık fixture'larıdır; öğrenciye Python nesnesi yaratma yetkisi atfedilmemeli.
+
+## Gerçek süreçte dört kol
+
+[Gerçek sonuç](/private/tmp/dou018-evidence/s9-process-four-arm-01/result.json): **16/16 senaryo PASS, 17.270648 saniye**, dört kol × h11 hata isteği / httptools hata isteği / startup failure / shutdown failure. On altı ayrı çocuk kimliği ve başlayan 12 sürecin kendisine ait numeric loopback listener kaydı sonuçlarla eşleşiyor. **20 gerçek HTTP alışverişi** var: 12 liveness 200 ve 8 özel sentetik POST'a genel 500. Çocukların DB/outbound-socket/embedding/LLM deneme sayaçları sıfır; bu ifade yerel 20 HTTP alışverişini yok sayan “hiç ağ çalışmadı” iddiasına çevrilmemeli.
+
+Ham stdout/stderr ile decoded JSON olaylarını ayrı ayrı tekrar taradım. Dört bağımsız fixture alanının (body, URL, cause, note) varlığı root'un `canary_presence` alanlarıyla birebir eşleşiyor:
+
+| Kol | h11 / httptools hata kaydı | Startup / shutdown hata kaydı |
+| --- | --- | --- |
+| current | Dört işaret mevcut; her HTTP vakasında hem app.error hem uvicorn.error kanalında | Dört işaret mevcut |
+| S9 | Dört işaret yok | Dört işaret mevcut |
+| S9B | Dört işaret yok | Dört işaret yok |
+| S9C | Dört işaret yok | Dört işaret yok |
+
+Bu karşılaştırma özel içeriğin gerçekten eski kayıt kanalına girdiğini ve son kolun onu kaldırdığını gösteriyor. S9B/S9C karşılaştırmasındaki gerçek süreçlerin sink'i sağlıklı; S9C'nin bozuk sink üstünlüğü bu dört süreç senaryosundan çıkarılamaz, üstteki ayrı 27 testten gelir.
+
+Her senaryoda iki ERROR olayı korunmuş. Aday HTTP olayları `internal_error` + destek kimliği ve `asgi_application_error` ile, allowlist içindeki göreli dosya/fonksiyon/satır metadata'sıyla duruyor. Bu frame'lerin gerçek kopya kaynakta varlığını, satır sınırlarını ve sekiz frame üst sınırını bağımsız AST okumasıyla yeniden doğruladım. S9B/S9C lifespan kayıtları `uvicorn_error` ile ilgili `application_*_failed` fazını tutuyor; raw traceback yerine hata fazı kalıyor.
+
+Startup failure dört kolda da **exit 3**, başlamamış sunucu ve sıfır HTTP ile sonuçlanıyor. Shutdown failure dört kolda da **exit 0** fakat failed olayı var ve shutdown-complete olayı yok. Exit 0 burada başarılı uygulama kapanışı olarak etiketlenmemeli. Sağlıklı HTTP senaryoları startup/shutdown-complete olaylarını koruyor.
+
+Her süreçte yapılandırmadan önce stderr'e iki standart Uvicorn INFO satırı yazılmış: sürecin başlaması ve application startup bekleyişi. Bu 32 satırda fixture işareti yok. `configured_json_boundary=true`, bütün süreç çıktısının JSON olduğu anlamına gelmiyor; özel hatalar gerçek app lifespan'ı günlük yapılandırmasını kurduktan sonra enjekte ediliyor. Import/configuration öncesindeki bütün hata olasılıkları bu deneyle kapsanmıyor.
+
+## Yanıt ve kaynak bütünlüğü
+
+Her senaryoda dört kolun response kaydı tam eşit. Beklenen UTF-8 genel hata/liveness JSON gövdelerini bağımsız yeniden oluşturdum; **20 gövdenin byte uzunluğu ve SHA-256 özeti** kaydedilen değerlerle eşleşti. HTTP 500 gövdesindeki destek kimliği korunuyor; bu hata yolunda `X-Request-ID` yanıt başlığı bütün kollarda yok. Başlık eksikliği S9 kaynaklı yeni bir gerileme değil ve yeni özellik kazanımı olarak gösterilemez. Liveness başlığı korunuyor. HTTP kontrolü hatadan önce yapılmış; hata sonrası ek liveness deneyi yok.
+
+Ham HTTP response body ayrıca dosyaya yazılmamış. Bu nedenle bağımsız kontrol, çalışan `http.client` fetch'in o sırada tam gövde/status/header assertion'ı yapmasına, kaydedilmiş byte hashine ve şimdi yeniden hesaplanan beklenen gövdeye dayanıyor; sonradan yeniden okunan paket yakalaması değildir. [Fetch ve eşleme oracle'ı](/private/tmp/dou018-s9-process-four-arm-candidate/run_processes.py:65), [gerçek app/lifespan bağlama](/private/tmp/dou018-s9-process-four-arm-candidate/child.py:85).
+
+Bağımsız hash kontrolleri: manifestin 484 paket dosyası, 123 mevcut runtime kaynağı, 408 framework kaynağı ve dört donmuş aday manifesti eşleşiyor. On altı vakanın 32 stdout/stderr dosyası, 48 binding/configured/receipt sidecar dosyası, yüklenen üç modül özeti ve ayrı audit JSON'u root sonucu ile eşleşiyor. `source_unchanged` bu bağlanan kaynaklar içindir; bütün deponun belirli commit'te temiz veya hosted CI'da doğrulanmış olduğunu söylemez.
+
+Runtime: Python 3.12; FastAPI 0.141.1, Starlette 1.4.1, Uvicorn **0.52.4**, h11 0.16.0, httptools 0.8.0. Manifestte current kolun iki eski modülü c45e0e7'ye, ortak kaynak snapshot'ı a40a689 hazırlığına bağlanmış. Dört kol aynı ortak kaynak ve framework'ü kullanıyor. Manifestin `run_performed=false` / hazırlık durumu, özgün donma anının kaydıdır; yürütme durumu ayrı gerçek `result.json` ile belgelenmiş, çelişki yaratmak için manifest değiştirilmemeli.
+
+| Özgün bağ | SHA-256 |
+| --- | --- |
+| Offline root result.json | `6148f300a110b377b647dda6aa2095859df6641e99384304660b8ee2444aea85` |
+| Process root result.json | `e28189f9d058bc7dfd07afeb32b4fe61a5af85551bc4971d1ca6ff71b032f3be` |
+| Four-arm frozen manifest | `3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2` |
+| Process run_processes.py | `917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41` |
+| Process child.py | `1abee3e9053452b5a8d20b510317e2be18a08a974f3882ee6584adcf56d8556c` |
+| Son errors.py | `82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f` |
+| Son S9C logging.py | `040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f` |
+
+## Kapanış önerisi ve sınır
+
+S9 errors + S9C logging ve üç test dosyasını, bu ölçülmüş SHA'larla ilişkilendirerek entegre etmek uygun. Son dosya birleşiminde 80 odaklı test, ardından tam API ve ilgili commit'in kapıları ayrı kabul olarak kaydedilmeli. Eski/eksik kolların kırmızı kayıtları korunmalı; başarısızlık sayısı kişisel veri vakası sayısı yapılmamalı.
+
+S9C ordinary format/write/flush/fallback exception'larını güvenli, sabit tek fallback ile sınırlar; `KeyboardInterrupt`/`SystemExit` kasıtlı korunur. Kanıt, işletim sisteminde bloklanan stream'e hard-wall timeout, bütün logger/üçüncü taraf handler'ları için güvence veya günlüklerin tamamen anonim olması anlamına gelmez. Destek kimliği hâlâ operasyon metadata'sıdır. Gerçek deployment, collector/sink arızası, tüm startup sınırları, genel kişisel veri yaşam döngüsü ve hukukî uyum bu dar yerel kabulün dışındadır.

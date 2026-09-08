@@ -1,0 +1,63 @@
+# S9 son ölçülmüş kanıt — bağımsız inceleme
+
+8 Eylül 2026. İnceleme mevcut dosya/çıktıların okunması, SHA-256 karşılaştırması ve JSON sözleşme değerlendirmesiyle yapıldı. Yeni test, DB bağlantısı, Uvicorn süreci veya başka ürün işlemi çalıştırılmadı; repo düzenlenmedi. Önceki `/private/tmp/dou018-s9-final-code-review.md` raporu ve F1'in eski kaynak bağları değiştirilmedi.
+
+**Sonuç: incelenen son kanıtlar kendi dar kabul iddialarını destekliyor; yeni bloklayıcı uyuşmazlık bulunmadı.** Bu sonuç yerel teknik ölçümdür; dağıtım veya genel kişisel veri anonimliği kabulü değildir.
+
+## F1 regresyonu: doğru kırmızı neden, ayrı yeşil kaynak
+
+`/private/tmp/dou018-evidence/s9-id-redaction-01` içindeki iki kol aynı yeni test dosyasını kullanıyor. `child.py.txt`, bağımlılık guard'ları altında gerçek JsonFormatter ve paylaşılan genel500 handler'ını yüklüyor; app.main yüklenmiyor. İki mekanizma × sentetik 11 hane/anahtar biçimi olmak üzere dört vaka var.
+
+- Eski kaynak SHA `209068a3a6ea7436c133c372d732b61ac630485e0ebb855be2adc8c7b71093a9`: exit1, **4 FAIL**. Dört hata da yeni test dosyasının 57. satırındaki ham request_id günlükte bulunmamalı oracle'ında; çıktı bağlamında kimlik gerçekten ham görünüyor. Import/fixture/bağlantı hatası başarısızlığın nedeni değil. Pytest süresi 0.07s; dış koşu 0.609s.
+- Düzeltilmiş kaynak SHA `bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290`: exit0, **4 PASS**. Pytest 0.03s; dış koşu 0.428s. Beklenen maske, normal hata olayı/türü ve genel500 yanıt kimliği aynı testlerde doğrulanıyor.
+- Her iki kolda DB ve ağ girişimi sayaçları 0; app.main_loaded false; stderr boş. İki stdout ve iki stderr özeti yeniden hesaplandı ve sonuç kaydıyla eşit. Adayın donmuş beş paket dosyası da manifest ile eşit.
+- Bu dört vaka gerçek HTTP dinleyicisi çalıştırmıyor. Normal destek kimliklerinin gerçek HTTP davranışı aşağıdaki ayrı süreç deneyinde korunuyor. Daha geniş destek kimliği politikası bu yama tarafından değiştirilmiş sayılmaz.
+
+## Son süreç paketinin değişkeni ve kaynak bağı
+
+Son manifest SHA `aa8eb8f61c3d1a30cf5f6e487855a62b64bb134f9ece32c8d11840033b882758` dosyadan yeniden hesaplandı. 485 paket dosyası, 123 güncel runtime kaynağı, 408 framework/native parser kaynağı ve 6 donmuş aday manifesti: **1022 karşılaştırma, 0 uyuşmazlık**.
+
+Önceki dört kollu paketin listelenen bütün dosyaları tek tek karşılaştırıldı: yalnız `arms/s9c/app/core/logging.py` farklı. Delta eski bilinen-kalıp request-ID maskesinin geri konması ve lint açıklaması; diğer üretim davranışını değiştiren bir delta görülmedi. `current`, `s9`, `s9b` bütün dosyaları ve `common.py`, `child.py`, `run_processes.py` bayt eşit; önceki dosya eksilmemiş. Son pakete yalnız `FINAL-DERIVATION.md` eklenmiş. Aktif S9C errors SHA `82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f`; logging SHA yukarıdaki `bec6…`.
+
+Paket README'si ve `s9c_extension` içindeki eski `040a…` kaynak anlatımı önceki donmuş dört kollu hazırlığın tarihsel kopyasıdır; son aktif kaynağın hashine çevrilmemelidir. `FINAL-DERIVATION.md`, son `selected_modules_sha256`, gerçek loaded-module binding'leri ve son sonuç kaydı final kaynağı ayrı gösteriyor. Arşivde README tek başına final kaynak iddiası olarak sunulmamalı.
+
+## 16 gerçek süreç: kaynak, yanıt ve ham günlük bağı
+
+`/private/tmp/dou018-evidence/s9-process-final-01/result.json` **16.997839s, PASS**. 4 kol × h11 HTTP, httptools HTTP, startup-failure ve shutdown-failure. Bu PASS, eski kontrol kollarında beklenen sızıntının da doğru gözlendiği kontrast deneyinin sonucudur; 16 sürecin tümünde özel içerik yok anlamına gelmez.
+
+| Kol | İki HTTP hata kanalı | Başlangıç/kapanış hata yolları |
+|---|---|---|
+| current | Dört sentetik canary görünür | Dört canary görünür |
+| s9 | Canary yok | Dört canary görünür |
+| s9b | Canary yok | Canary yok; sabit faz olayı var |
+| son s9c | Canary yok | Canary yok; sabit faz olayı var |
+
+Ham stdout ve stderr birlikte bağımsız tarandı; tabloda belirtilen varlık/yokluk her senaryoda sonuçla eşit. Her vaka tam iki ERROR kaydı taşıyor. HTTP'de biri app.error, biri uvicorn.error; son kollarda olaylar `internal_error` ve `asgi_application_error`. Lifespan'de son iki kol `uvicorn_error` ile `application_startup_failed`/`application_shutdown_failed` olayını koruyor. Başarılı HTTP senaryolarında normal startup/shutdown mesajları ve health isteğinin güvenli tamamlanma olayı devam ediyor. Uvicorn access kanalı yeniden açılmamış.
+
+**32 ham log + 48 sidecar hashinde 0 uyuşmazlık**. 16 `audit.json` nesnesi kök sonuçtaki vaka nesnesiyle, embedded receipt/binding nesneleri gerçek sidecar'larla eşit. Her loaded main/errors/logging yolu ve SHA'sı doğru kol dosyalarına bağlı; PID, fixture ve manifest bağları tutarlı. Kaynak/konfigürasyon bilgisi eksik bir vaka başarı kabul edilmemiş.
+
+Her stderr 84 bayt; JSON dışındaki satırlar yalnız yapılandırmadan önceki olağan Uvicorn başlangıç süreci ve uygulama başlangıcını bekleme INFO mesajları. Bu satırlar canary içermiyor. Dolayısıyla bütün stderr'in boş veya bütün süreç loglarının baştan sona JSON olduğu iddia edilmez. JSON olarak yakalanan hatalar gerçek uygulama lifespan'inde projenin yapılandırması kurulduktan sonra oluşuyor.
+
+20 yanıt gövdesinin beklenen JSON'u bağımsız yeniden oluşturuldu; tüm hash ve bayt uzunlukları eşit: 12 health200 ve 8 genel500. Aynı senaryonun dört kolunda yanıt metadata'sı eşit. Health gövdesi 55 bayt/SHA `b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1`; h11 genel500 141 bayt/SHA `c4b6e4a5b6c2aa0ba0c85798ed0648f30c9f94b5eb2c2adcc1bbfc1c22b37d73`; httptools genel500 147 bayt/SHA `5c93cc2c6027c478583566945218bf339c7fb65d80b9a233c60b09e8497052a5`. Fark destek kimliğindeki senaryo adının uzunluğudur. Ham HTTP gövde dosyaları saklanmamış; gerçek socket yanıtını JSON eşitliğiyle denetleyen değişmez `run_processes.py:66–112` ve bu bağımsız yeniden oluşturma birlikte destek verir, ikinci bir HTTP gözlemi yapıldığı iddia edilmez.
+
+Her kolda startup-failure exit3, diğer üç senaryo exit0. Başlangıç hatasında server_started/control_stop_received false; diğerlerinde true; tümünde kontrol thread'i durmuş. Kapanış hatasında exit0 olsa da shutdown başarı mesajı yok ve açık hata olayı var; başarıyla karıştırılmıyor. Dört bağımlılık sayacı tüm 16 receipt'te 0: DB, dış socket, embedding ve LLM. Bunlar bu dar harness kontrol noktalarıdır, bütün native I/O'yu kapsayan OS sandbox garantisi değildir.
+
+## Tam API kabulü
+
+`/private/tmp/dou018-evidence/s9-full-api-02/tests.log`: **1655 PASS, 38 alt test PASS, 5 warning**, pytest103.43s. Kök sonuç: exit0, dış süre113.984s, source_unchanged true, sentetik veritabanı kaldırılmış. Bu inceleme kaldırmayı yeniden DB'den sorgulamadı; kök makbuzunu okudu. Listelenen **219 üretim/test kaynağı güncel dosyayla eşit**, log özeti yeniden hesaplanıp doğrulandı. 1651 eski aday geçişi bu yeni kaynağın yerine kullanılmadı.
+
+## Korunan kabul sınırı
+
+16 süreç normal çalışan çıktı hedefi kullanır. S9C formatter/write/flush/fallback arıza dayanıklılığı bu deneyin sonucu değildir; önceki ayrı arıza testleri kendi kaynak/kanıt bağıyla kalmalıdır. Bu süreçlerin destek kimlikleri sıradandır; F1'in iki hassas biçimini dört yeni odak testi ölçer. Sentetik hata rotası gerçek main/FastAPI/Starlette/Uvicorn yolunu ve iki gerçek parser'ı kullanır; üretimde uzaktan istismar, gerçek sağlayıcı hatası, DB/model eşdeğerliği, hosting kabulü veya KVKK/GDPR hukuki uygunluğu iddiası çıkarılmaz.
+
+## Sabit kanıt özetleri
+
+- `/private/tmp/dou018-s9-final-code-review.md` — `f756e7221d4a3d09b4aa94d4575fb22e760877194525bb6afebbc54ef5055519`
+- `/private/tmp/dou018-s9-request-id-regression-candidate/manifest.json` — `ab4fba184c2a578178b82175c10df90b4a95923baa123c468387ae20c64dbf4a`
+- `/private/tmp/dou018-evidence/s9-id-redaction-01/result.json` — `ce48d16eb96ebada903a590f84ac1cdeabcc69cdc868f2e7a453a7c590d11ac4`
+- `/private/tmp/dou018-evidence/s9-id-redaction-01/baseline/stdout.log` — `d465484a1dca197a5e6bfc25dc9ac7dadc2d3d905ffb262705d09781525592a8`
+- `/private/tmp/dou018-evidence/s9-id-redaction-01/candidate/stdout.log` — `2ca92ce1ec48c6b12753a0073f1143f09be4e29fed1a9e0e8b2e4d0f29f20414`
+- `/private/tmp/dou018-s9-process-final-candidate/manifest.json` — `aa8eb8f61c3d1a30cf5f6e487855a62b64bb134f9ece32c8d11840033b882758`
+- `/private/tmp/dou018-evidence/s9-process-final-01/result.json` — `c75901780f4ce9efc5ea2dc96c71d13d5f368e573ea14f302efe4369953a20bd`
+- `/private/tmp/dou018-evidence/s9-full-api-02/result.json` — `a4ac77313ab2dd6eb5e4b4d9e4aff37d47b8a7fcb656253ce641a0b90ec26f2f`
+- `/private/tmp/dou018-evidence/s9-full-api-02/tests.log` — `fe23fab7ac83ab616a1c700d90893cd08c6f1f0a472d0fde0b1c488d805ee3c7`

@@ -1,0 +1,19 @@
+{
+  "pid": 80396,
+  "exit_code": 3,
+  "server_started": false,
+  "control_stop_received": false,
+  "control_thread_stopped": true,
+  "counters": {
+    "database": 0,
+    "outbound_socket": 0,
+    "embedding": 0,
+    "llm": 0
+  },
+  "configured": {
+    "json_formatter": true,
+    "error_enabled": true,
+    "error_handlers": 0,
+    "error_propagates": true
+  }
+}

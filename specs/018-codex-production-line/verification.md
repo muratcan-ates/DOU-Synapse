@@ -207,3 +207,10 @@ OPS2 başarı olayı helper COMMIT döndükten sonra yalnız stage/deleted_windo
 D3 açık yazıcı ilk guard'dan sonra COMMIT edip bağlı kalınca maintenance preflight fence/apply öncesinde reddetti; sentinel aynı bağlantıdan tekrar hashlenip eşleşti. Kapalı yazıcı vakasında fence gerçekten COMMIT oldu; final empty guard SQL 101'de reddetti, dump gövdesi 114 ve final COMMIT 5764'e ulaşılmadı, child 3. Hedef kapalı/oturumsuz kaldı; 07b son sentinel bağımsız readback yapılmadı. Source-loss tamamlanma manifesti üretmedi. Maintenance-loss'ta nonce/xid/binding bağlı COMMIT doğrulandı ama reopen tamamlanmadı; kapalı/oturumsuz hedef korundu. Bu kontrollü istemci kapanışları ağ blackhole/reset veya cross-cluster kabulü değildir. Root makbuzundaki source_unchanged alanı runtime dosya hash'idir, DB satır eşliği değildir; eski 20k ve güncel-mini content/RLS tatbikatı bu turda tekrarlanmadı.
 
 Yeni gerçek LLM/hoca, Supabase JWT/Storage, hosting/proxy günlükleri, dış telemetry/alarmlar, kurumsal saklama ve production promotion kabulleri açık kalır. S9/S9B ayrı geçici aday olarak hazırlandı; bu dilimde uygulanmadı veya kabul edilmedi. Yeni hosted başarı, yalnız yeni kesin commit'in kendi makbuzuyla eklenir.
+
+
+## S9 hata günlüğü gizliliği — 8 Eylül yerel kabul
+
+Son kaynakta 1655 API/38 alt vaka, bağımsız84 DB/ağsız günlük kontrolü,71 gerçek HTTP/Chromium akışı ve dört kolda16 gerçek sunucu süreci geçti. Önceki18/35/27 aşama sonuçları,1651 ara kabulü, bulunan kimlik maskeleme regresyonu ve4 kırmızı/yeşil vaka ayrı korunur. Kaynak/log/yanıt özetleri bağımsız incelendi. [Kapsam ve başarısız kayıtlar](evidence/s9-local/README.md), [son kaynak eşliği](evidence/s9-local/source-equivalence.json), [işletim sözleşmesi](../../docs/operations/logging-privacy.md).
+
+Önceki OPS f79d8a2 dört workflow/beş CI işi geçmiştir; S9 için yeni kesin commit kapıları ayrıca gerekir. İstemci kimliği/S10, dış collector, kurumsal saklama ve canlı üretim kabulü açık kalır.

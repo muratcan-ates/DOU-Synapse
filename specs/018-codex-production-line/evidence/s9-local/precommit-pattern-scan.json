@@ -1,0 +1,111 @@
+{
+  "scope": "Changed/new nonignored files, gzip text and each safe regular tar member; pattern check only, not universal secret detection. Values intentionally omitted.",
+  "scanned_text_files": 1688,
+  "findings": [
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 164,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "file_sha256": "ecc54d95bc7301b38fbe6bcdcd604c883508e452ec5639fca4b74e1b2e43adf1"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 165,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "file_sha256": "ecc54d95bc7301b38fbe6bcdcd604c883508e452ec5639fca4b74e1b2e43adf1"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "kind": "credentialed_connection",
+      "line": 336,
+      "match_sha256": "3de972c98bf6eb192f31d3cc1403df37662eb200a8a85f5d5594a1c5bf1933a6",
+      "file_sha256": "ecc54d95bc7301b38fbe6bcdcd604c883508e452ec5639fca4b74e1b2e43adf1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_e2e_api.py.txt",
+      "kind": "credentialed_connection",
+      "line": 4,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "file_sha256": "c7e374117573007a097c66926a4441fef69031c31f6c033ba3275570fcfeb503"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_e2e_api.py.txt",
+      "kind": "credentialed_connection",
+      "line": 4,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "file_sha256": "c7e374117573007a097c66926a4441fef69031c31f6c033ba3275570fcfeb503"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api01.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "file_sha256": "9be34601091b156032a8ed2bdfa0523b48fb1b7233810c47a8d853ce0af78001"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api01.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "file_sha256": "9be34601091b156032a8ed2bdfa0523b48fb1b7233810c47a8d853ce0af78001"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api02.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99",
+      "file_sha256": "920c4f48bf83d76dc85796f86b459eda45ef3417f8bd67c64015098fb9d54e94"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api02.py.txt",
+      "kind": "credentialed_connection",
+      "line": 17,
+      "match_sha256": "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4",
+      "file_sha256": "920c4f48bf83d76dc85796f86b459eda45ef3417f8bd67c64015098fb9d54e94"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-candidate.tar.gz!run_processes.py",
+      "kind": "credentialed_connection",
+      "line": 46,
+      "match_sha256": "9500a074a845f0991de7b340110eb98cb834ffc72603fb9c0ac800e452f926f3",
+      "file_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-candidate.tar.gz!run_processes.py",
+      "kind": "credentialed_connection",
+      "line": 47,
+      "match_sha256": "caf9cb56f5a6298d4b7db3274a53205d88629e5dd04929a4689b931502321a9f",
+      "file_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-final-candidate.tar.gz!run_processes.py",
+      "kind": "credentialed_connection",
+      "line": 46,
+      "match_sha256": "9500a074a845f0991de7b340110eb98cb834ffc72603fb9c0ac800e452f926f3",
+      "file_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-final-candidate.tar.gz!run_processes.py",
+      "kind": "credentialed_connection",
+      "line": 47,
+      "match_sha256": "caf9cb56f5a6298d4b7db3274a53205d88629e5dd04929a4689b931502321a9f",
+      "file_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-four-arm-candidate.tar.gz!run_processes.py",
+      "kind": "credentialed_connection",
+      "line": 46,
+      "match_sha256": "9500a074a845f0991de7b340110eb98cb834ffc72603fb9c0ac800e452f926f3",
+      "file_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-four-arm-candidate.tar.gz!run_processes.py",
+      "kind": "credentialed_connection",
+      "line": 47,
+      "match_sha256": "caf9cb56f5a6298d4b7db3274a53205d88629e5dd04929a4689b931502321a9f",
+      "file_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+{
+  "review": "S9 archive privacy and provenance independent bounded review",
+  "date": "2026-09-08",
+  "status": "PASS_WITH_EXPLICIT_FIXTURE_CLASSIFICATIONS",
+  "scope": {
+    "archive_root": "/Users/muratates/code/dou-synapse-018-codex-production-line/specs/018-codex-production-line/evidence/s9-local",
+    "repo_writes": false,
+    "archive_edits_or_extraction": false,
+    "tests_processes_database_network_started": false,
+    "actual_environment_or_secret_files_read": false,
+    "outside_archive_reads": [
+      "Root pattern-scan JSON",
+      "Only three reported lines and surrounding documentation in tracked quickstart.md; no .env or live secret material"
+    ],
+    "not_a_universal_secret_detector_or_legal_certification": true
+  },
+  "snapshot": {
+    "files": 305,
+    "bytes": 8899025,
+    "flat_or_gzip_utf8_items": 298,
+    "tar_regular_utf8_members": 1369,
+    "decoded_text_items": 1667,
+    "sorted_path_sha256_inventory_digest": "0c6b14316a5bb306624c9e350db085a10ddf4080ed68966f8661fd66c0017ef7",
+    "archive_origins_sha256": "a3c697e550fcf06ebc2c13fa6de54ec1cf56db447aba3a0394ee91c18b95068c",
+    "root_pattern_scan_sha256": "aa46b42efe02adb605403b8209172e5249cc2ee66ed845acd30a95399e5f5b50"
+  },
+  "origin_integrity": {
+    "flat_gzip_copies_rechecked": 282,
+    "stored_and_decompressed_original_sha_and_length_mismatches": 0,
+    "tar_bundles_rechecked": 7,
+    "tar_member_origin_hashes_rechecked": 1369,
+    "tar_member_mismatches": 0,
+    "no_original_outcome_rewritten": true
+  },
+  "packages": [
+    {
+      "path": "packages/dou018-exception-next-candidate.tar.gz",
+      "sha256": "82c67bfbc6dd218f3fe10609460174c962c0f8618f06bf64f0edf7b6286bea36",
+      "compressed_bytes": 34934,
+      "regular_members": 13,
+      "decoded_bytes": 106327,
+      "all_members_utf8": true,
+      "ownership_normalized": true,
+      "mode_0644_only": true,
+      "mtime_values": [
+        0
+      ],
+      "pax_headers_empty": true,
+      "symlink_hardlink_device_traversal_or_duplicate_members": false,
+      "credential_environment_database_dump_files": false,
+      "member_origin_hash_mismatches": 0
+    },
+    {
+      "path": "packages/dou018-lifespan-next-candidate.tar.gz",
+      "sha256": "d137351cef31ea3426cf7894186554d7ccaaec18151e676d18fcf85aa96b0996",
+      "compressed_bytes": 23425,
+      "regular_members": 8,
+      "decoded_bytes": 87894,
+      "all_members_utf8": true,
+      "ownership_normalized": true,
+      "mode_0644_only": true,
+      "mtime_values": [
+        0
+      ],
+      "pax_headers_empty": true,
+      "symlink_hardlink_device_traversal_or_duplicate_members": false,
+      "credential_environment_database_dump_files": false,
+      "member_origin_hash_mismatches": 0
+    },
+    {
+      "path": "packages/dou018-log-sink-next-candidate.tar.gz",
+      "sha256": "5cf0f7712a676ff201286044551bc3164c7c3a65368015b78893d1a21699e805",
+      "compressed_bytes": 14717,
+      "regular_members": 7,
+      "decoded_bytes": 60548,
+      "all_members_utf8": true,
+      "ownership_normalized": true,
+      "mode_0644_only": true,
+      "mtime_values": [
+        0
+      ],
+      "pax_headers_empty": true,
+      "symlink_hardlink_device_traversal_or_duplicate_members": false,
+      "credential_environment_database_dump_files": false,
+      "member_origin_hash_mismatches": 0
+    },
+    {
+      "path": "packages/dou018-s9-process-candidate.tar.gz",
+      "sha256": "b5404e70c32ed81fb575282873e96c471eba8882afbc6b1da4c44510e859df29",
+      "compressed_bytes": 2122792,
+      "regular_members": 364,
+      "decoded_bytes": 7830265,
+      "all_members_utf8": true,
+      "ownership_normalized": true,
+      "mode_0644_only": true,
+      "mtime_values": [
+        0
+      ],
+      "pax_headers_empty": true,
+      "symlink_hardlink_device_traversal_or_duplicate_members": false,
+      "credential_environment_database_dump_files": false,
+      "member_origin_hash_mismatches": 0
+    },
+    {
+      "path": "packages/dou018-s9-process-final-candidate.tar.gz",
+      "sha256": "268a242741fa26b18dec413c7482d8e7c0423f19c33a03bacf7d5bdab66ded7e",
+      "compressed_bytes": 2852982,
+      "regular_members": 486,
+      "decoded_bytes": 10554636,
+      "all_members_utf8": true,
+      "ownership_normalized": true,
+      "mode_0644_only": true,
+      "mtime_values": [
+        0
+      ],
+      "pax_headers_empty": true,
+      "symlink_hardlink_device_traversal_or_duplicate_members": false,
+      "credential_environment_database_dump_files": false,
+      "member_origin_hash_mismatches": 0
+    },
+    {
+      "path": "packages/dou018-s9-process-four-arm-candidate.tar.gz",
+      "sha256": "83047cb7a5507dafc0f2792bbea5ea246a96cec51c544c7c9416b893023a6ae4",
+      "compressed_bytes": 2852212,
+      "regular_members": 485,
+      "decoded_bytes": 10553144,
+      "all_members_utf8": true,
+      "ownership_normalized": true,
+      "mode_0644_only": true,
+      "mtime_values": [
+        0
+      ],
+      "pax_headers_empty": true,
+      "symlink_hardlink_device_traversal_or_duplicate_members": false,
+      "credential_environment_database_dump_files": false,
+      "member_origin_hash_mismatches": 0
+    },
+    {
+      "path": "packages/dou018-s9-request-id-regression-candidate.tar.gz",
+      "sha256": "04ff768b52a46f128d772a764afd78d154727c7b8c97258488ca12032e63b6c9",
+      "compressed_bytes": 10165,
+      "regular_members": 6,
+      "decoded_bytes": 49028,
+      "all_members_utf8": true,
+      "ownership_normalized": true,
+      "mode_0644_only": true,
+      "mtime_values": [
+        0
+      ],
+      "pax_headers_empty": true,
+      "symlink_hardlink_device_traversal_or_duplicate_members": false,
+      "credential_environment_database_dump_files": false,
+      "member_origin_hash_mismatches": 0
+    }
+  ],
+  "root_pattern_scan": {
+    "reported_text_files": 1688,
+    "scope_difference": "The root scanner also covers changed files outside s9-local; this reviewer independently decoded 1667 S9 archive items only. Counts are not interchangeable.",
+    "credentialed_connection_occurrences": 15,
+    "unique_matched_prefixes": 5,
+    "reason_map": {
+      "674c80859d85e9248f4a9b6ab198a79faabae3f71fa66a1107e04ee457077a99": {
+        "classification": "expected_existing_local_development_fixture",
+        "occurrences": 4,
+        "reason": "Published local API-role development example matches the harness credential prefix. Quickstart route is localhost:5432; S9 E2E/full-test harness routes are explicitly 127.0.0.1:55448 with named synthetic E2E or run-specific test databases. Full API harness checks its fresh test DB name and records removal. Prior fixture review is also reported by root. This is a real local development credential literal, not a discovered production secret; no claim it is safe to reuse for production.",
+        "locations": [
+          {
+            "path": "specs/001-course-assistant-mvp/quickstart.md",
+            "line": 164,
+            "source_sha256": "ecc54d95bc7301b38fbe6bcdcd604c883508e452ec5639fca4b74e1b2e43adf1"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_e2e_api.py.txt",
+            "line": 4,
+            "source_sha256": "c7e374117573007a097c66926a4441fef69031c31f6c033ba3275570fcfeb503"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api01.py.txt",
+            "line": 17,
+            "source_sha256": "9be34601091b156032a8ed2bdfa0523b48fb1b7233810c47a8d853ce0af78001"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api02.py.txt",
+            "line": 17,
+            "source_sha256": "920c4f48bf83d76dc85796f86b459eda45ef3417f8bd67c64015098fb9d54e94"
+          }
+        ],
+        "source_line_match_digest_verified": true,
+        "scanner_digest_scope_note": "The digest binds the scanner matched credential-bearing prefix. Full route context was reviewed separately without printing the connection value."
+      },
+      "250949317b35e08490089ceb956741b38712f27728a9c923389bd4c9ead872c4": {
+        "classification": "expected_existing_local_development_fixture",
+        "occurrences": 4,
+        "reason": "Published local worker-role development example matches the harness credential prefix. Quickstart route is localhost:5432; S9 E2E/full-test harness routes are explicitly 127.0.0.1:55448 with named synthetic E2E or run-specific test databases. Full API harness checks its fresh test DB name and records removal. Prior fixture review is also reported by root. This is a real local development credential literal, not a discovered production secret; no claim it is safe to reuse for production.",
+        "locations": [
+          {
+            "path": "specs/001-course-assistant-mvp/quickstart.md",
+            "line": 165,
+            "source_sha256": "ecc54d95bc7301b38fbe6bcdcd604c883508e452ec5639fca4b74e1b2e43adf1"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_e2e_api.py.txt",
+            "line": 4,
+            "source_sha256": "c7e374117573007a097c66926a4441fef69031c31f6c033ba3275570fcfeb503"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api01.py.txt",
+            "line": 17,
+            "source_sha256": "9be34601091b156032a8ed2bdfa0523b48fb1b7233810c47a8d853ce0af78001"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api02.py.txt",
+            "line": 17,
+            "source_sha256": "920c4f48bf83d76dc85796f86b459eda45ef3417f8bd67c64015098fb9d54e94"
+          }
+        ],
+        "source_line_match_digest_verified": true,
+        "scanner_digest_scope_note": "The digest binds the scanner matched credential-bearing prefix. Full route context was reviewed separately without printing the connection value."
+      },
+      "3de972c98bf6eb192f31d3cc1403df37662eb200a8a85f5d5594a1c5bf1933a6": {
+        "classification": "expected_local_demo_documentation_outside_s9_archive",
+        "occurrences": 1,
+        "reason": "Only the broader root scanner quickstart demo-seed command contains this default local administrator example. Full source route is localhost:5432 and the command targets the demo seed SQL. It is outside the seven S9 packages and is a documented development default, not material copied from an actual secret store. No production credential or remote endpoint was observed.",
+        "locations": [
+          {
+            "path": "specs/001-course-assistant-mvp/quickstart.md",
+            "line": 336,
+            "source_sha256": "ecc54d95bc7301b38fbe6bcdcd604c883508e452ec5639fca4b74e1b2e43adf1"
+          }
+        ],
+        "source_line_match_digest_verified": true,
+        "scanner_digest_scope_note": "The digest binds the scanner matched credential-bearing prefix. Full route context was reviewed separately without printing the connection value."
+      },
+      "9500a074a845f0991de7b340110eb98cb834ffc72603fb9c0ac800e452f926f3": {
+        "classification": "generated_process_probe_configuration",
+        "occurrences": 3,
+        "reason": "All three occurrences are byte-identical run_processes.py:46 in the three/four/final process packages. The source constructs a new environment with an explicitly synthetic configuration value, a numeric loopback route on port9 and an unused database name. Package child.py:57-65 replaces psycopg connection and outbound socket calls with counted failures; real receipts previously reviewed report zero attempts. It is not a working external credential, nor was any secret file copied into the package.",
+        "locations": [
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-candidate.tar.gz!run_processes.py",
+            "line": 46,
+            "source_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-final-candidate.tar.gz!run_processes.py",
+            "line": 46,
+            "source_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-four-arm-candidate.tar.gz!run_processes.py",
+            "line": 46,
+            "source_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+          }
+        ],
+        "source_line_match_digest_verified": true,
+        "scanner_digest_scope_note": "The digest binds the scanner matched credential-bearing prefix. Full route context was reviewed separately without printing the connection value."
+      },
+      "caf9cb56f5a6298d4b7db3274a53205d88629e5dd04929a4689b931502321a9f": {
+        "classification": "generated_process_probe_configuration",
+        "occurrences": 3,
+        "reason": "All three occurrences are byte-identical run_processes.py:47 in the three/four/final process packages. The source constructs a new environment with an explicitly synthetic configuration value, a numeric loopback route on port9 and an unused database name. Package child.py:57-65 replaces psycopg connection and outbound socket calls with counted failures; real receipts previously reviewed report zero attempts. It is not a working external credential, nor was any secret file copied into the package.",
+        "locations": [
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-candidate.tar.gz!run_processes.py",
+            "line": 47,
+            "source_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-final-candidate.tar.gz!run_processes.py",
+            "line": 47,
+            "source_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+          },
+          {
+            "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-four-arm-candidate.tar.gz!run_processes.py",
+            "line": 47,
+            "source_sha256": "917c2ab6021c28f66d4d22ffc5574c7b1a666556e913f4839d634de5950eac41"
+          }
+        ],
+        "source_line_match_digest_verified": true,
+        "scanner_digest_scope_note": "The digest binds the scanner matched credential-bearing prefix. Full route context was reviewed separately without printing the connection value."
+      }
+    }
+  },
+  "supplemental_content_scan": {
+    "private_key_blocks": 0,
+    "aws_access_key_literals": 0,
+    "github_pat_literals": 0,
+    "jwt_like_literals": 0,
+    "provider_key_shaped_occurrences": {
+      "count": 8,
+      "unique_value_sha256": "aaa7568912a207b5c224860fcea006cd242aa03654cbf352ef3350882bd60b08",
+      "path": "s9-id-redaction-01/baseline/stdout.log.gz",
+      "lines": [
+        44,
+        70,
+        78,
+        79,
+        117,
+        136,
+        144,
+        145
+      ],
+      "classification": "intentional_negative_test_canary",
+      "reason": "Exact value is constructed by the separately frozen request-ID regression test, using a literal service-key prefix plus a repeated synthetic marker. The eight appearances are pytest failure context/assertion output for the expected old-source failures. This is required negative evidence; it was not removed or relabeled as a real provider secret."
+    },
+    "ascii_email_like_occurrences": {
+      "count": 22,
+      "unique_value_sha256": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+      "classification": "vendored_openapi_example_generator",
+      "reason": "Only two literal email sample generators in each of the eleven copied Swagger UI bundle instances. The domain is reserved example.com; source contexts are string_email/email generator functions. The adjacent internationalized sample is also a reserved example-domain generator. These are vendored schema examples, not extracted student identities.",
+      "vendor_source_sha256": "303f48967313bee56f30c651b6b90467482a99d2cf1571cde4e44527912eceea"
+    },
+    "unexpected_binary_or_database_content_items": 0,
+    "unexpected_real_student_content_or_production_secret_observed": false,
+    "detection_limits": "Regex/source-provenance review cannot prove arbitrary natural-language data is anonymous or detect every secret format. This review classified all observed hits within the documented fixture boundaries; it did not inspect secret stores or scan live systems."
+  },
+  "operational_metadata": {
+    "present": true,
+    "categories": [
+      "local filesystem paths and developer account component",
+      "synthetic database names and worker/API roles",
+      "process IDs and numeric local test ports",
+      "source/file/response hashes",
+      "Git and hosted-workflow identifiers"
+    ],
+    "reason": "These are expected execution/provenance metadata in the requested engineering evidence, not a claim the archive is anonymous. No additional personal student dataset file, environment file, DB dump or external symlink target is present."
+  },
+  "findings_requiring_removal_or_secret_rotation": [],
+  "preserved_evidence": [
+    "Raw synthetic canary failures",
+    "Earlier Settings fixture failure and subsequent distinct clean-environment result",
+    "Earlier code-review F1 source hashes",
+    "Historical frozen package manifests and normal-sink process acceptance scope"
+  ],
+  "decision": "No unexpected live credential, private student dataset or external archive member was identified. Keep classified fixture evidence unchanged; final archive publication and governance remain root-owned."
+}

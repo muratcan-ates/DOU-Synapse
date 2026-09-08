@@ -1,7 +1,8 @@
 """Uygulama hataları ve tutarlı hata yanıtları.
 
-Kullanıcıya asla ham istisna metni, yığın izi veya sağlayıcı hata mesajı gösterilmez;
-teknik ayrıntı loglara, anlaşılır Türkçe mesaj kullanıcıya gider.
+Kullanıcıya ham istisna metni, yığın izi veya sağlayıcı hata mesajı gösterilmez.
+Beklenmeyen hatanın günlüğü de içeriksiz tür/kaynak özetiyle sınırlıdır;
+anlaşılır Türkçe mesaj kullanıcıya gider.
 """
 
 from __future__ import annotations
@@ -256,10 +257,20 @@ async def validation_error_handler(request: Request, exc: Exception) -> JSONResp
 
 
 async def unhandled_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Beklenmeyen hatalar: ayrıntı loga, kullanıcıya genel mesaj."""
+    """Beklenmeyen hata: içeriksiz tanı kaydı ve aynı destek kimliğiyle genel yanıt."""
     from app.core.logging import get_logger
 
-    get_logger("app.error").exception("beklenmeyen hata", exc_info=exc)
+    # Middleware'e uğramayan çağrıda da günlük ve yanıt aynı destek kodunu taşır.
+    # İstisna msg/args/context içine konmaz; merkezi biçimleyici exc_info'yu yalnız
+    # izinli tür/kaynak özeti için kullanır. Üst ASGI katmanının yeniden yükseltmesi
+    # değişmez; Uvicorn'un ikinci kaydı da aynı biçimleyiciden geçer.
+    request_id = request_id_of(request)
+    request.state.request_id = request_id
+    get_logger("app.error").error(
+        "beklenmeyen hata",
+        exc_info=exc,
+        extra={"context": {"request_id": request_id, "error_code": "internal_error"}},
+    )
     return error_response(
         request,
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -58,3 +58,13 @@ Prepared runtime karşılaştırması gerçek SQLAlchemy/psycopg otomatik hazır
 - OPS2: kota bakımı yalnız helper COMMIT sonrası içeriksiz batch sayısı/süre olayı yazar. Sıfır, kuyruk boş garantisi değildir. Başarısızlık zinciri loglanmaz. Geçersiz worker ayarı görev/bağlantı başlamadan sabit hatayla çıkar.
 - D6: mevcut HTTP drain korunurken Compose ayrı sürekli worker-poller tanımlar. Yerel auth ayarı yalnız yerel tanımdadır; yeni HTTP ucu veya rol yetkisi yoktur. Docker çalıştırılmadıkça yapılandırma kabulü gerçek container işletim kanıtı sayılmaz. Tarihsel şema/RLS/dağıtım anlatımları gerçek kaynağa göre güncellenir.
 - D3 devam: yalnız yeni root-pinli sentetik hedeflerde açık/kapalı eşzamanlı yazıcı ve kontrol bağlantısı kapanışı; gerçek guard/fence/COMMIT sonuçları birlikte doğrulanır. Belirsiz kapalı hedefler otomatik açılmaz. Ağ kara deliği veya cross-cluster kesintisi bu deneylerden türetilmez.
+
+
+## S9 günlük gizliliği kabulü
+
+- Generic500 yanıtı aynı sabit mesaj/code ve destek kimliğini korur; handler tek kimlik seçer. İstisna/zincir/not/grup/içerik ve keyfi kaynak satırı uygulama veya Uvicorn hata çıktısına taşınmaz.
+- İstisna JSON'u yalnız sabit olay, izinli built-in tür ve sınırlı gerçek uygulama kaynak konumu taşır. Keyfi sınıf adı yerine Exception kullanılır; ayrı güvenli storage olayının operasyon tanısı korunur. Eski serbest traceback string şeması değişir.
+- Yapılandırma sonrasındaki düz Uvicorn ERROR/CRITICAL kayıtları sabit olay ve yalnız güvenli errno/görev sayısı taşır. Başlangıç/kapanış ve HTTP/WS protokol tanıları korunur.
+- Sahip olunan handler format/write/flush arızasında ham record'u standart handleError ile basmaz; tek sabit stderr işareti dener. Fallback da bozulursa ordinary Exception yayılmaz; aynı handler'a tekrar giriş sınırlıdır. Süreç kontrol BaseException sinyalleri ve logger kanalları korunur.
+- Aynı sentetik oracle eski/ara/son kaynaklarda çalışır. DB’siz80 odak sözleşmesi, gerçek h11/httptools ve gerçek lifespan süreç karşılaştırması ile birleşik API kabulü ayrı kanıtlardır. Son adayda dört canary yok, HTTP zarfı aynı, DB/model/ağ çıkış sayaçları sıfır olmalıdır.
+- Bu sınır istemci kontrollü request_id'yi, yapılandırma öncesini, serbest INFO/WARNING veya diğer handler/proxy/hosting kayıtlarını anonim yapmaz. Dış log tüketicilerinin yeni nesne/fallback şemasına uyumu ve kurumsal saklama kabulü ayrı kalır.

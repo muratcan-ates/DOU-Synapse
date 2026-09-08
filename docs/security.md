@@ -241,14 +241,14 @@ set-membership bir kontroldür.
 
 ---
 
-## 6. Sızdırılmayan şeyler
+## 6. Gizlilik kontrolleri ve sınırları
 
 | Ne | Nasıl engelleniyor |
 |---|---|
 | Sağlayıcı/model adı | Kullanıcıya dönen zarfta yok; hata mesajları tek şablondan üretilir ([`core/errors.py`](../apps/api/app/core/errors.py)) |
-| Ham yığın izi | `unhandled_error_handler` genel Türkçe mesaj döner, ayrıntı loga gider |
+| Ham yığın izi | `unhandled_error_handler` genel Türkçe zarf döner. `exc_info` günlüğünde raw metin yerine izinli tür/göreli kaynak özeti nesnesi tutulur; mesaj, zincir, notes ve kaynak satırı yazılmaz ([günlük sözleşmesi](operations/logging-privacy.md)) |
 | Soru metni ölçüm kaydında | `request_logs` soru/cevap alanı taşımaz; mevcut yazıcı sabit rota ve ölçüm alanlarını kullanır. Text türündeki route sütunu tek başına içerik yazılmasını imkânsız kılmaz ([`0003_chat.sql`](../supabase/migrations/0003_chat.sql)) |
-| API anahtarı / JWT / TCKN / e-posta logda | Uygulamanın handler'ındaki `RedactionFilter` bilinen kalıpları maskeler; her serbest kişisel metin veya dış günlük için tam güvence değildir ([`core/logging.py`](../apps/api/app/core/logging.py)) |
+| API anahtarı / JWT / TCKN / e-posta logda | Genel mesaj dalındaki `RedactionFilter` bilinen kalıpları maskeler; exception ve Uvicorn ERROR dalları izinli alanları seçer. İstemci kaynaklı destek kimliği S10'da açıktır; serbest kişisel metin veya dış günlük için tam güvence yoktur ([`core/logging.py`](../apps/api/app/core/logging.py)) |
 | Dersin varlığı | Üye olmayana 404; "var ama giremezsin" ile "yok" ayırt edilemez |
 | Taslak sınav sorusu ve cevap anahtarı | `questions_read` politikası öğrenciye yalnız `approved` gösterir (`0004`) |
 | `request_logs` satırları | Öğrenciye tamamen kapalı; eğitmen yalnız kendi dersini okur (`0005`) |
@@ -320,9 +320,13 @@ kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapal�
 | Ölçüm kaydı (soru/cevap alanı yok) | `request_logs` | Dersin eğitmeni (`0005`) |
 | Ortak istek kotası kimlik/zaman dizisi | `app.rate_limit_windows` | Uygulamanın doğrudan SELECT yetkisi yok; dar kontrol/bakım işlevleri ve yetkili DB işletimi |
 | Kanonik kota politikası (kişisel kayıt değil) | `app.request_rate_policies` | Uygulama yalnız dar politika görünümünü kullanır |
-| Korelasyon/rota/zaman metadatası | Uygulama stdout'u ve seçilen log toplayıcı | Dağıtımın log erişim yetkileri; SQL RLS bu kopyaya uygulanmaz |
+| Korelasyon/rota/zaman ve sınırlı hata tanısı metadatası | Uygulama stdout/stderr'i ve seçilen log toplayıcı | Dağıtımın log erişim yetkileri; SQL RLS bu kopyaya uygulanmaz |
 
 `request_logs` ile stdout aynı kayıt değildir. Önceki app.request ölçümü raw path içinde rota UUID'si taşıyordu; D2v2 bu alanı ayrı metadata olarak gözledi. Son S8 kaynakları APIRoute.path_format veya sabit `<unmatched>` kullanır; request_id, method, status, duration_ms ve zaman bilgisi kalır. Uygulama log kurulumu uvicorn.access kanalını kapatır. 21 ASGI kontrolü ve gerçek Uvicorn 0.52.4 v2 deneyi geçti: eski/yeni kaynakların her birine üç HTTP isteğinde adayın dört ham canary ve erişim kanalı kaydı yoktu, başlangıç/kapanış kayıtları korundu; DB bağlantısı denenmedi. V1 fixture kapanış hatası tarihsel kayıtta korunur. Yeni hosted ve dış proxy günlüklerinin kabulü açıktır. Mevcut kimlik/zaman metadatası anonim sayılmaz; log toplayıcının erişimi, saklama ve silme kapsamı canlı ortamda ayrıca doğrulanır. RedactionFilter serbest kişisel metnin tamamını veya dış proxy/sağlayıcı günlüklerini güvenli ilan etmez.
+
+S9/S9C hata metnini üç ayrı yoldan daraltır: `exc_info` nesne özeti, Uvicorn'un düz ERROR/CRITICAL kayıtlarında sabit olaylar ve çıktı arızasında tek sabit stderr işareti. `exception` alanı string'den nesneye geçmiştir; acil `logging_output_failed` kaydında zaman damgası yoktur. Collector bu biçimleri ayrıca kabul etmelidir. Yapılandırmadan önceki bütün süreç kayıtları JSON değildir. [İşletim sözleşmesi](operations/logging-privacy.md) ve [aşamalı yerel kabul](../specs/018-codex-production-line/evidence/s9-local/README.md), son birleşik test/hosted kabulünden ayrıdır.
+
+`request_id` hâlâ biçimi uygun istemci başlığından gelebilir ve tekrar kullanılabilir. Exception context'indeki değere de bilinen hassas kalıplar için maskeleme uygulanır; bu kalıplara uymayan diğer istemci kimlikleri yine kişisel bilgi taşıyabilir ve ilişkilendirilebilir. S9 bunu anonimleştirmez veya güvenilir kullanıcı/tekil işlem kanıtına dönüştürmez. İstemci kimliği değişikliği S10'da açıktır; erişim, saklama ve silme kararı bu metadata'yı da kapsamalıdır.
 
 Serbest metin yalnız `chat_messages.content` değildir: `answers.given`, değerlendirme geri bildirimi, kullanıcı yorumları ve yüklenen belgeler de kişisel bilgi içerebilir. Kullanıcı kimliğine bağlı operasyon kayıtları, ham soru içermese de kişisel veri niteliğini otomatik kaybetmez.
 
@@ -337,7 +341,7 @@ Sohbetin özel kalması genel kuraldır; öğrencinin açıkça eğitmen incelem
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 1571 test   # docs-check: backend.tests = 1571
+cd apps/api && uv run pytest -q                 # 1655 test   # docs-check: backend.tests = 1655
 cd apps/api && uv run mypy app                  # temiz, 113 dosya   # docs-check: backend.mypyFiles = 113
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```

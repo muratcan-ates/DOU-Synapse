@@ -1,0 +1,29 @@
+{
+  "scope": "Frozen synthetic technical error/privacy oracles, not an LLM statistical calibration/holdout or student corpus. All negative fixtures and failed preparation records retained.",
+  "inputs": [
+    {
+      "path": "apps/api/tests/test_exception_log_privacy.py",
+      "sha256": "fb5f910c48ed93f6596a761cf840fc7a01da84b2d6afa0b842e13460e2ceb1de"
+    },
+    {
+      "path": "apps/api/tests/test_lifespan_log_privacy.py",
+      "sha256": "492ea8a6147c0dec595fd556d85f0acf4059aee1cfef26af6e7e4948fa4cb4bb"
+    },
+    {
+      "path": "apps/api/tests/test_log_sink_privacy.py",
+      "sha256": "d5813c73eb7d28963914524b1ef2d5cdf95cbbccc5318915c2bf8a4d53cfa5e5"
+    },
+    {
+      "path": "apps/api/tests/test_exception_request_id_redaction.py",
+      "sha256": "113332aba20593e37210c23a8b61d0b9e9380005171b9662db6c8d34a5e117b6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/child.py.txt",
+      "sha256": "37603577d8606649c007f22f030ecc838b372b8088bf36f1f740de45c29b9d08"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-final-candidate.tar.gz",
+      "sha256": "268a242741fa26b18dec413c7482d8e7c0423f19c33a03bacf7d5bdab66ded7e"
+    }
+  ]
+}

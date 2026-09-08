@@ -1,0 +1,22 @@
+from pathlib import Path
+import hashlib,json,os,socket,sys
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');out=Path('/private/tmp/dou018-evidence/s9-combined-offline-01');out.mkdir(mode=0o700)
+os.environ['PYTEST_DISABLE_PLUGIN_AUTOLOAD']='1';sys.dont_write_bytecode=True;sys.path.insert(0,str(r/'apps/api'))
+import psycopg,pytest
+attempts={'db':0,'network':0}
+def no_db(*a,**kw):
+ attempts['db']+=1;raise AssertionError('Unexpected offline DB call')
+def no_network(*a,**kw):
+ attempts['network']+=1;raise AssertionError('Unexpected offline socket call')
+psycopg.Connection.connect=no_db;psycopg.AsyncConnection.connect=no_db
+socket.create_connection=no_network;socket.socket.connect=no_network;socket.socket.connect_ex=no_network
+paths=[r/'apps/api/tests'/('test_'+name+'.py') for name in ['exception_log_privacy','lifespan_log_privacy','log_sink_privacy','exception_request_id_redaction']]
+sources=sorted((r/'apps/api/app').rglob('*.py'))+paths
+before={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
+from contextlib import redirect_stdout,redirect_stderr
+with (out/'tests.log').open('x') as log,redirect_stdout(log),redirect_stderr(log):
+ code=pytest.main(['--noconftest','-p','no:cacheprovider','-p','pytest_asyncio.plugin','-o','asyncio_mode=auto','-o','asyncio_default_fixture_loop_scope=function','-q',*[str(p) for p in paths]])
+after={str(p.relative_to(r)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
+record={'exit_code':int(code),'attempts':attempts,'source_unchanged':before==after,'source_sha256':after,'log_sha256':hashlib.sha256((out/'tests.log').read_bytes()).hexdigest()}
+(out/'result.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps({k:v for k,v in record.items() if k!='source_sha256'}))
+assert code==0 and attempts=={'db':0,'network':0} and before==after

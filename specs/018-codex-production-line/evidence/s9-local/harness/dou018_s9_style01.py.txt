@@ -1,0 +1,21 @@
+from pathlib import Path
+import ast,hashlib,json,subprocess
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/s9-style-01');out.mkdir(mode=0o700)
+names=['apps/api/app/core/logging.py','apps/api/tests/test_exception_log_privacy.py','apps/api/tests/test_log_sink_privacy.py']
+before={n:(repo/n).read_bytes() for n in names}
+for n,data in before.items():
+ target=out/'original'/n;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+p=repo/names[0];s=p.read_text();old='        except Exception:\n            # Arızalı fallback sink';new='        except Exception:  # noqa: S110 - logging again would recurse or expose private data\n            # Arızalı fallback sink';assert s.count(old)==1;p.write_text(s.replace(old,new))
+subprocess.run(['.venv/bin/ruff','check','--no-cache','--select','I','--fix','tests/test_exception_log_privacy.py'],cwd=repo/'apps/api',check=True)
+subprocess.run(['.venv/bin/ruff','format','--no-cache','tests/test_log_sink_privacy.py'],cwd=repo/'apps/api',check=True)
+def semantic(data):
+ tree=ast.parse(data)
+ imports=sorted(ast.dump(n,include_attributes=False) for n in tree.body if isinstance(n,(ast.Import,ast.ImportFrom)))
+ tree.body=[n for n in tree.body if not isinstance(n,(ast.Import,ast.ImportFrom))]
+ return imports,ast.dump(tree,include_attributes=False)
+records=[]
+for n,oldbytes in before.items():
+ after=(repo/n).read_bytes();assert semantic(oldbytes)==semantic(after),n
+ records.append({'path':n,'before_sha256':hashlib.sha256(oldbytes).hexdigest(),'after_sha256':hashlib.sha256(after).hexdigest(),'executable_AST_and_import_bindings_equal':True,'only_import_order_comment_or_format_changed':True})
+(out/'result.json').write_text(json.dumps(records,indent=2)+'\n');print(json.dumps(records))

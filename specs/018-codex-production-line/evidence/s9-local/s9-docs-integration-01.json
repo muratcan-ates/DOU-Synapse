@@ -1,0 +1,13 @@
+{
+  "proposal_manifest_sha256": "dd26791bb1603e13e3ed42cdfefce658a3333fc0cf1cf84a1acf12476ddefa53",
+  "integrated": {
+    "docs/security.md": "a33ace70b229b8d192b663796ae218aa59bc8aaac6212904dad4eecca0a2da57",
+    "docs/security/privacy-review-2026-09-08.md": "c474d5e7221ec3bbf3e8533e2423201c75e6d9ad8a52e473c22d6ce5e5c7c341",
+    "docs/kvkk.md": "650bd62d28cc27d91cc009baf4b2bef79d5275331315d1ae8b3c917cd3d21daf",
+    "docs/deployment.md": "cc6b60cc440f4644bf9923764c2b3649d7e8df54d9b70a777ca81a5a37ed721d",
+    "docs/completion-program.md": "970fdda611a9ffceb6a3edcf0be7ed771fa8c066e9b30709004b201b5ae878d5",
+    "README.md": "a074185863921eb4a505016363740285d3a665e9e9777a44591ed7bcc09737a5",
+    "docs/operations/logging-privacy.md": "b7a835933bb914701c7c0f847c34769529f5064a8351d15fbafcfb04e2242ae9"
+  },
+  "root_followup": "Final1655/38 and four red/green request-ID regression observations appended; pending exact hosted separate."
+}

@@ -46,4 +46,8 @@
 - [x] D/S8 yerel birleşik kabul —1561 API,555 web,68 gerçek tarayıcı akışı,57 yol OpenAPI eşliği,22 göç,52 recovery aracı ve77 yönetişim testi; kanıt d-final-local arşivinde.
 - [x] Önceki D/S8 kesin commit/PR26 hosted — own029, aggregate030 ve portability düzeltmesi031 sonrası c45 üzerinde dört workflow PASS; 030 Ubuntu başarısız kayıt korunur.
 - [x] OPS/D6 yeni yerel kabul — 1571 API/38 alt vaka; 71 E2E; 375/1440 açık/koyu dört yönetim görünümü ve klavye dumanı; R1 iki SQL kalibrasyonu+yedi admin testi 9 PASS. [Kanıt](evidence/ops-local/README.md).
-- [ ] OPS/D6 yeni dossier, kesin commit ve PR26 hosted kapıları; c45 sonucu yeni kirli kaynakları kapsamaz.
+- [x] OPS/D6 own032, aggregate033 ve kesin f79d8a2 PR26 hosted: dört workflow/beş CI işi PASS; API1571/38 ve tarayıcı71. Yeni S9 kaynakları ayrı.
+
+- [x] S9/S9B/S9C yerel — hata zinciri, düz sunucu/lifespan mesajı, çıktı arızası ve bilinen destek kimliği maskesi;84 DB/ağsız kontrol,1655 API/38 alt vaka,71 E2E ve son16 gerçek süreç geçti. [Kanıt](evidence/s9-local/README.md).
+- [ ] S9 kendi dossier/commit ve yeni kesin PR26 hosted kabulü.
+- [ ] S10 sunucu kaynaklı destek kimliği ve E2E denetim kaydı sahipliğinin yeni kimliğe uyumu.

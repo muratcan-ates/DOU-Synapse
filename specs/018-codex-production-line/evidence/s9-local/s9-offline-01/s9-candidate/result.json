@@ -1,0 +1,30 @@
+{
+  "package": "s9",
+  "arm": "candidate",
+  "command": [
+    "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+    "/private/tmp/dou018-exception-next-candidate/run_no_db_tests.py",
+    "--arm",
+    "candidate"
+  ],
+  "exit_code": 0,
+  "seconds": 1.02,
+  "binding_before": {
+    "manifest.json": "64a3eceb86c039226288ff8424d1c6c03cdcbfa443e52de9b2c87e97bcdf6ec0",
+    "run_no_db_tests.py": "aad5eeba9309215ac68fc4a6920f11d9754b81da9454be3d280217aa2713420c"
+  },
+  "binding_unchanged": true,
+  "runner_summaries": [
+    {
+      "version": "s9-no-db-01",
+      "arm": "candidate",
+      "pytest_exit": 0,
+      "attempts": {
+        "db": 0,
+        "network": 0
+      }
+    }
+  ],
+  "stdout_sha256": "9905d4d6c43a5e0c1c23176b9aecea38a700d079cf8f32e59c6e274364ac482f",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

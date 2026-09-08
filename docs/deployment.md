@@ -38,6 +38,10 @@ servislerde `DEV_AUTH_ENABLED=true` yalnız sentetik geliştirme içindir.
 
 Bağımsız `python -m app.worker` kuyruğu yoklar ve kota bakımını ayrı görevde çalıştırır. API, yükleme sonrası yapılandırılmış `WORKER_DRAIN_URL` varsa korumalı HTTP tetikleyiciyi, yoksa süreç içi tek drain turunu kullanır. Tek drain çağrısı sürekli bakım zamanlayıcısı değildir. Worker scale-to-zero seçilirse lease devralma ve kota temizliği için dış uyandırma gerekir; barındırma hedefi ve zamanlayıcı henüz doğrulanmadı.
 
+### Günlük toplayıcısı geçişi
+
+S9/S9C, `exception` alanını raw string yerine sınırlı nesne yapar. Çıktı arızasındaki `logging_output_failed` acil kaydı doğrudan stderr’e gider ve `ts` taşımaz. Collector bu iki şemayı kabul etmeli; kendi alma zamanı varsa ayrı tutmalıdır. Günlük yapılandırmasından önce Uvicorn’un standart INFO satırları JSON olmayabilir. Yerel karşılaştırma bu biçimleri ve genel 500 yanıtını doğruladı; gerçek collector, alarm veya bütün startup hata yollarının kabulü değildir. [Günlük işletim sözleşmesi](operations/logging-privacy.md), destek kimliği/S10 sınırı ve [S9 yerel kabulü](../specs/018-codex-production-line/evidence/s9-local/README.md) dağıtım kontrolüne eklenir.
+
 ## 2. Ortam değişkenleri
 
 Tam liste `.env.example`'dadır. Dağıtımda önemli olanlar:

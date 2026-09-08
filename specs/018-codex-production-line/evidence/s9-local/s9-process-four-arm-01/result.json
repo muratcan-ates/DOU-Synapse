@@ -1,0 +1,1530 @@
+{
+  "status": "PASS",
+  "results": [
+    {
+      "arm": "current",
+      "scenario": "http-h11",
+      "mode": "http",
+      "protocol": "h11",
+      "pid": 70823,
+      "port": 52394,
+      "exit_code": 0,
+      "seconds": 1.327839,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-h11",
+          "x_request_id": "s9-health-http-h11",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-h11",
+          "x_request_id": null,
+          "body_sha256": "c4b6e4a5b6c2aa0ba0c85798ed0648f30c9f94b5eb2c2adcc1bbfc1c22b37d73",
+          "body_bytes": 141,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": true,
+        "url": true,
+        "cause": true,
+        "note": true
+      },
+      "expected_private_control": true,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70823,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70823,
+        "arm": "current",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/errors.py",
+            "sha256": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/logging.py",
+            "sha256": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "0cf7c22917e95b14b117c92576649ae708ea2b9ac5dfc976f4488f19f64ebf3b",
+        "stderr.log": "f0d6d756f74defb067fbc754737feae37cfb04f901653c52ae069c6ac2afa16c"
+      },
+      "sidecar_sha256": {
+        "binding.json": "fcfc51c4ff4e198686ee00169a66bbd64e36a724da61b00394c814f4dbb5bbb9",
+        "configured.json": "63704b2bf7a9f0a6e846cbd489fc5e143ce179c5e0c4431c3de1828fb17159c2",
+        "receipt.json": "a39132c83c2d2259f969fb086fe78a6922727c6cc5e40aae9f2a5010eace08e4"
+      }
+    },
+    {
+      "arm": "current",
+      "scenario": "http-httptools",
+      "mode": "http",
+      "protocol": "httptools",
+      "pid": 70828,
+      "port": 52400,
+      "exit_code": 0,
+      "seconds": 1.082582,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-httptools",
+          "x_request_id": "s9-health-http-httptools",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-httptools",
+          "x_request_id": null,
+          "body_sha256": "5c93cc2c6027c478583566945218bf339c7fb65d80b9a233c60b09e8497052a5",
+          "body_bytes": 147,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": true,
+        "url": true,
+        "cause": true,
+        "note": true
+      },
+      "expected_private_control": true,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70828,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70828,
+        "arm": "current",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.httptools_impl.HttpToolsProtocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/errors.py",
+            "sha256": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/logging.py",
+            "sha256": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "0b63b4d788de0f68f086d67fed0a349f86af2771213e4f85cf952db2043c0624",
+        "stderr.log": "55fb19f1c69155de5cb0f5f1be118c2e41ea53fec85a2d6d2c200d321177c76f"
+      },
+      "sidecar_sha256": {
+        "binding.json": "472932e451824f30fb8f01c00d66dcd982661b9d6a5cdfe870746e42ab13a1a6",
+        "configured.json": "f08ea8713fc5d3a3eda9ec5d8c4f86d53285c130dc06e86ac39f218b93945c57",
+        "receipt.json": "c16b0e17e994b484c1c21d1015868459fc17749c42be0db018922e9c1c6f31dc"
+      }
+    },
+    {
+      "arm": "current",
+      "scenario": "startup-failure",
+      "mode": "startup_failure",
+      "protocol": "h11",
+      "pid": 70829,
+      "port": 52403,
+      "exit_code": 3,
+      "seconds": 0.811474,
+      "responses": [],
+      "canary_presence": {
+        "body": true,
+        "url": true,
+        "cause": true,
+        "note": true
+      },
+      "expected_private_control": true,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": false,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70829,
+        "exit_code": 3,
+        "server_started": false,
+        "control_stop_received": false,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70829,
+        "arm": "current",
+        "mode": "startup_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/errors.py",
+            "sha256": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/logging.py",
+            "sha256": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "477633f422594eb653d2466bf81e1dd002ad652b164a36185be70a4d8ca144e9",
+        "stderr.log": "ce6b4d2b787024ddae00beb6b4ea6443ec249e33a150fbf4ad19828f9de0daf1"
+      },
+      "sidecar_sha256": {
+        "binding.json": "20953aa7345d6eeac7ef3ba0840b31312272b9c6697d6e8028789c79862391f3",
+        "configured.json": "720e8a612b2abcd790d58f5fab1955b29fd5f749c19ee8dd237a70fe68e863b7",
+        "receipt.json": "af14813cf4d1dd034598e457c45698ed64c5cfe117af0e56847e5dc158fa1f3d"
+      }
+    },
+    {
+      "arm": "current",
+      "scenario": "shutdown-failure",
+      "mode": "shutdown_failure",
+      "protocol": "h11",
+      "pid": 70831,
+      "port": 52404,
+      "exit_code": 0,
+      "seconds": 1.062606,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-shutdown-failure",
+          "x_request_id": "s9-health-shutdown-failure",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        }
+      ],
+      "canary_presence": {
+        "body": true,
+        "url": true,
+        "cause": true,
+        "note": true
+      },
+      "expected_private_control": true,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70831,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70831,
+        "arm": "current",
+        "mode": "shutdown_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/errors.py",
+            "sha256": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/current/app/core/logging.py",
+            "sha256": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "aa64d549ca67283d92eb3fbfe52c9b82c24bbb0b1c67ce399b2b507f43b98612",
+        "stderr.log": "90d5a8b58fc7bea77769f6cf5733a4172cd7348d02fc7678299261838eccfa31"
+      },
+      "sidecar_sha256": {
+        "binding.json": "3d4787a576d1b0a45f58957379e730845e8b1d6568f5de8c4b6867cae3e203f3",
+        "configured.json": "ecb4de4b63aa936f9cb16d4e386c88e5ff747662d8fcdc7eccb0a2d8af5686b4",
+        "receipt.json": "1b16b12a659ad5d849cf417bee5512650348ba0c095c01f0e2984f06e79f5f71"
+      }
+    },
+    {
+      "arm": "s9",
+      "scenario": "http-h11",
+      "mode": "http",
+      "protocol": "h11",
+      "pid": 70834,
+      "port": 52406,
+      "exit_code": 0,
+      "seconds": 1.048254,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-h11",
+          "x_request_id": "s9-health-http-h11",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-h11",
+          "x_request_id": null,
+          "body_sha256": "c4b6e4a5b6c2aa0ba0c85798ed0648f30c9f94b5eb2c2adcc1bbfc1c22b37d73",
+          "body_bytes": 141,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70834,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70834,
+        "arm": "s9",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/logging.py",
+            "sha256": "40d7aaa9980a39155944bc3cb056c2dea7e365c2692e1e6de36828ae9183c4f5"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "88a35394e4df3c540618f58b457df11ed83f21df671eb9ee28f71f53f335a922",
+        "stderr.log": "2a31d00b2e3c0007a2a9fa410af45068560a2e13b7563ec7e7eeb77548ed98bc"
+      },
+      "sidecar_sha256": {
+        "binding.json": "279d60b4b233b1fa0a02a83d14068859d430d6aa56f37796daa38d056b968376",
+        "configured.json": "81b922e8e90b5758c0374edcf523d2ae44654f6a9f18d661a260e8e3ee3b1d38",
+        "receipt.json": "904f5121d366bf53ac5e14fb7a3a5afe303ec5c3f4e0a57a239ccfb3919776c6"
+      }
+    },
+    {
+      "arm": "s9",
+      "scenario": "http-httptools",
+      "mode": "http",
+      "protocol": "httptools",
+      "pid": 70835,
+      "port": 52409,
+      "exit_code": 0,
+      "seconds": 1.176383,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-httptools",
+          "x_request_id": "s9-health-http-httptools",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-httptools",
+          "x_request_id": null,
+          "body_sha256": "5c93cc2c6027c478583566945218bf339c7fb65d80b9a233c60b09e8497052a5",
+          "body_bytes": 147,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70835,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70835,
+        "arm": "s9",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.httptools_impl.HttpToolsProtocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/logging.py",
+            "sha256": "40d7aaa9980a39155944bc3cb056c2dea7e365c2692e1e6de36828ae9183c4f5"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "5b3dc294a318785a6702e1de53e3233de497b5d7de8f444b65e8a688ed00da00",
+        "stderr.log": "1e902fa9eedbd3daf9d2c3ac5b993c111e4e33c32773dd9e1578729529f0702c"
+      },
+      "sidecar_sha256": {
+        "binding.json": "71cbe6c428e5d8b64db8046c950bb7fc05cd179836178eb5631ed54585653179",
+        "configured.json": "78371dab7fd2eb81cffe5be98e08d0998ef77718647aadb7bc1cd8cab9c9d66c",
+        "receipt.json": "11c0b4ed7943ab2766ada00d55c176e32afcd636d8b4bf2d7dee328431396c89"
+      }
+    },
+    {
+      "arm": "s9",
+      "scenario": "startup-failure",
+      "mode": "startup_failure",
+      "protocol": "h11",
+      "pid": 70837,
+      "port": 52413,
+      "exit_code": 3,
+      "seconds": 0.835719,
+      "responses": [],
+      "canary_presence": {
+        "body": true,
+        "url": true,
+        "cause": true,
+        "note": true
+      },
+      "expected_private_control": true,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": false,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70837,
+        "exit_code": 3,
+        "server_started": false,
+        "control_stop_received": false,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70837,
+        "arm": "s9",
+        "mode": "startup_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/logging.py",
+            "sha256": "40d7aaa9980a39155944bc3cb056c2dea7e365c2692e1e6de36828ae9183c4f5"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "f5be3b5062d6483b486a321f9a2412bfaaf0ae00b844443f5046c9006fd34849",
+        "stderr.log": "18961f172fd29db2a93a2f1c90699728ac2cd0b2e079f832756e957e2f8de80b"
+      },
+      "sidecar_sha256": {
+        "binding.json": "6874d1204bbdb162fbe739388f7e106cc5ecf3a36eedcfa604182cb8e6965845",
+        "configured.json": "cc970d60c55579d31b5d97d12732d1d0f952c3c33fd314b14fa3d23b5d3caa69",
+        "receipt.json": "dbee2ac774ded7e53c8e4b35d7c34a51d78adc7d664edd380df851ccb31e0bcb"
+      }
+    },
+    {
+      "arm": "s9",
+      "scenario": "shutdown-failure",
+      "mode": "shutdown_failure",
+      "protocol": "h11",
+      "pid": 70842,
+      "port": 52416,
+      "exit_code": 0,
+      "seconds": 1.059973,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-shutdown-failure",
+          "x_request_id": "s9-health-shutdown-failure",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        }
+      ],
+      "canary_presence": {
+        "body": true,
+        "url": true,
+        "cause": true,
+        "note": true
+      },
+      "expected_private_control": true,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70842,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70842,
+        "arm": "s9",
+        "mode": "shutdown_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9/app/core/logging.py",
+            "sha256": "40d7aaa9980a39155944bc3cb056c2dea7e365c2692e1e6de36828ae9183c4f5"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "4487c2e6d5a31e48e0ea19f2971678c2276455b71d52ca1401d6757ee43ae428",
+        "stderr.log": "ab4f96c82cca453d05b64dac0de7a591a2e2f086e5834a71aa6460bd5143ee82"
+      },
+      "sidecar_sha256": {
+        "binding.json": "1c4388cb38a7e44b186a4254b1f96e8a72755ae0e775896e1fa6dcaba691aa43",
+        "configured.json": "d7a1156b9f432f945de24729c2642deae3acfcbdf7d598863481cbbfa6edf380",
+        "receipt.json": "a6a51f2e4316a098074c0b6ec17ed55ee7508ad8b1dcaf2236511eb02137418b"
+      }
+    },
+    {
+      "arm": "s9b",
+      "scenario": "http-h11",
+      "mode": "http",
+      "protocol": "h11",
+      "pid": 70845,
+      "port": 52418,
+      "exit_code": 0,
+      "seconds": 1.050803,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-h11",
+          "x_request_id": "s9-health-http-h11",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-h11",
+          "x_request_id": null,
+          "body_sha256": "c4b6e4a5b6c2aa0ba0c85798ed0648f30c9f94b5eb2c2adcc1bbfc1c22b37d73",
+          "body_bytes": 141,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70845,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70845,
+        "arm": "s9b",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/logging.py",
+            "sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "e9a7ed6380d43973a864b00f5ea79b4728e06be1ab7788a335efbb09ed37c382",
+        "stderr.log": "0861a625cf03b8bd2377d6d37af2a187c70c0a521bcbfcb2494ba63f0f180ebb"
+      },
+      "sidecar_sha256": {
+        "binding.json": "94ee460de3067b4d1b6686c50c06a2afe4e995284841485a56455d75dad3bf04",
+        "configured.json": "3cc8f4fd9b92fcd49d0a5878911b097a5e8553ffc5c12c35186a96c272d7fa5b",
+        "receipt.json": "7bdbf01c0f6a57e0979983216ba3bbdd87f5af2870ac6e7512beb260e38291b4"
+      }
+    },
+    {
+      "arm": "s9b",
+      "scenario": "http-httptools",
+      "mode": "http",
+      "protocol": "httptools",
+      "pid": 70848,
+      "port": 52423,
+      "exit_code": 0,
+      "seconds": 1.032811,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-httptools",
+          "x_request_id": "s9-health-http-httptools",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-httptools",
+          "x_request_id": null,
+          "body_sha256": "5c93cc2c6027c478583566945218bf339c7fb65d80b9a233c60b09e8497052a5",
+          "body_bytes": 147,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70848,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70848,
+        "arm": "s9b",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.httptools_impl.HttpToolsProtocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/logging.py",
+            "sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "1f9ef94a492bffd3d45ab7496c3a845983b7d8ab6aca2e7052e479cd9b387059",
+        "stderr.log": "c9edcd918f49484c23112b52e7fa26357a03b79566f463a8a2794b2d9cb1ef68"
+      },
+      "sidecar_sha256": {
+        "binding.json": "8b2bc593466043b5529a40265b59d2ffb4f81ff16edc0237f832f3a7d66aeb1e",
+        "configured.json": "222bfee57249f4cf4edd7a2a02ab645900fcadb2338ef6f07f04bb6ff371bf1c",
+        "receipt.json": "4e8398f9a7caa9b28dc69035c0e1fca7c16d96d166f079d58430bd952874b083"
+      }
+    },
+    {
+      "arm": "s9b",
+      "scenario": "startup-failure",
+      "mode": "startup_failure",
+      "protocol": "h11",
+      "pid": 70849,
+      "port": 52427,
+      "exit_code": 3,
+      "seconds": 0.813581,
+      "responses": [],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": false,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70849,
+        "exit_code": 3,
+        "server_started": false,
+        "control_stop_received": false,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70849,
+        "arm": "s9b",
+        "mode": "startup_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/logging.py",
+            "sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "24a8209fd13d56717a10751fc212c964317db8e8af145400e85ee04f17e7ddb9",
+        "stderr.log": "d3728affabd4a276c801bc2d9bec02cb7ff6e00cf358087afb1c3aa563e572c0"
+      },
+      "sidecar_sha256": {
+        "binding.json": "cb144c47143062674e5d9665e2798a3df2ab95d6ca5c403819112bc8085293fe",
+        "configured.json": "10497dcc6be42754f03daca1d5337887d6f90a51d0b3269c0584b728a3c4199c",
+        "receipt.json": "5a347a4fe1c5695a7df58272ae2597917e63639aeb38a7ca96d445f972a2e099"
+      }
+    },
+    {
+      "arm": "s9b",
+      "scenario": "shutdown-failure",
+      "mode": "shutdown_failure",
+      "protocol": "h11",
+      "pid": 70851,
+      "port": 52428,
+      "exit_code": 0,
+      "seconds": 1.051064,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-shutdown-failure",
+          "x_request_id": "s9-health-shutdown-failure",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70851,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70851,
+        "arm": "s9b",
+        "mode": "shutdown_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/logging.py",
+            "sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "2357c27f15d35d7a51aca9ba9dd84fe93ca543ba1d6a19615646ffa0f16f4b38",
+        "stderr.log": "4c256464e4fdd6551f6ab988d5a47109387c4079870f1f6245ebcf5ff976938d"
+      },
+      "sidecar_sha256": {
+        "binding.json": "9829ebfd074aa54baab871511fd4365ff6a42a61463aa1ffa6c3690bdf58057f",
+        "configured.json": "0ff937a5b3c82fa7f07b11e98ef9aa193667dee3665e45fa38f908c6de8d5adb",
+        "receipt.json": "64b9f3235b9bbc2b6027ef0022bd8d7b4c1c00ef6ec82e7917b7afc4462fd027"
+      }
+    },
+    {
+      "arm": "s9c",
+      "scenario": "http-h11",
+      "mode": "http",
+      "protocol": "h11",
+      "pid": 70852,
+      "port": 52430,
+      "exit_code": 0,
+      "seconds": 1.05946,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-h11",
+          "x_request_id": "s9-health-http-h11",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-h11",
+          "x_request_id": null,
+          "body_sha256": "c4b6e4a5b6c2aa0ba0c85798ed0648f30c9f94b5eb2c2adcc1bbfc1c22b37d73",
+          "body_bytes": 141,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70852,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70852,
+        "arm": "s9c",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/logging.py",
+            "sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "828219d7711a88b107fce5fd0fc174695d7f91ed280675ab3ec9d987338885a9",
+        "stderr.log": "48257f50b552620eb91c189272641dbf0481ed62644e87fd5c4800164f33b19e"
+      },
+      "sidecar_sha256": {
+        "binding.json": "7f8fbebdaaaba0f8ddac0ea52a1a5f40e3faa07f42a213d88a717d9bfd584440",
+        "configured.json": "2b5f6996d0b5511934552f5a9821c28951411738aa2b7c110eabd1707e66207c",
+        "receipt.json": "974c1fc4a12f11ecfd62db3658318f375bb18ea7498bb55857a420d5c5c5e3f1"
+      }
+    },
+    {
+      "arm": "s9c",
+      "scenario": "http-httptools",
+      "mode": "http",
+      "protocol": "httptools",
+      "pid": 70858,
+      "port": 52433,
+      "exit_code": 0,
+      "seconds": 1.045498,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-http-httptools",
+          "x_request_id": "s9-health-http-httptools",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        },
+        {
+          "status": 500,
+          "request_id": "s9-support-http-httptools",
+          "x_request_id": null,
+          "body_sha256": "5c93cc2c6027c478583566945218bf339c7fb65d80b9a233c60b09e8497052a5",
+          "body_bytes": 147,
+          "generic_contract_verified": true
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": true,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70858,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70858,
+        "arm": "s9c",
+        "mode": "http",
+        "transport": "uvicorn.protocols.http.httptools_impl.HttpToolsProtocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/logging.py",
+            "sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "59a29e6d6230aef73d23a9a7c6af4b63c69c7fb4f34244da66e514c86055723d",
+        "stderr.log": "2454725b22ecac8b74151dafa70a43dfac1f3ec2c9bce8ab9cb61d4bc99a56af"
+      },
+      "sidecar_sha256": {
+        "binding.json": "99915637e1f709c37c702a048a5a658624e900fa1e66d004db8804339c6c6a15",
+        "configured.json": "89245b079f52d2a14acd46b69bbf1da8636bdf791a6fa13cec9737693b36471d",
+        "receipt.json": "7171e7b52901752082bf69d6f2090a3c6aa9bbeaa856687a05767e3b1ec74790"
+      }
+    },
+    {
+      "arm": "s9c",
+      "scenario": "startup-failure",
+      "mode": "startup_failure",
+      "protocol": "h11",
+      "pid": 70861,
+      "port": 52437,
+      "exit_code": 3,
+      "seconds": 0.838112,
+      "responses": [],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": false,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70861,
+        "exit_code": 3,
+        "server_started": false,
+        "control_stop_received": false,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70861,
+        "arm": "s9c",
+        "mode": "startup_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/logging.py",
+            "sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "464c0fc8401b535caad29056a0a94c12f188b8b3a4a1cd3680efbf1805161d48",
+        "stderr.log": "876b1a75416a95ae1a83386e87d7fffef92c538fdf166931ecadf624cd32f98f"
+      },
+      "sidecar_sha256": {
+        "binding.json": "8a216b5faaf8c7481c11894cdfc625f8bb3c75ec2c4a151b049ad49599f744db",
+        "configured.json": "fe193e88860f9a28ed04cc27211f5156bc448b774bcc6582b88975776c5f0ed7",
+        "receipt.json": "4c04f69254aa5981e769f28d289c4a3ee36a30b93eab05524c5ccdbfe0ff0804"
+      }
+    },
+    {
+      "arm": "s9c",
+      "scenario": "shutdown-failure",
+      "mode": "shutdown_failure",
+      "protocol": "h11",
+      "pid": 70879,
+      "port": 52439,
+      "exit_code": 0,
+      "seconds": 1.072582,
+      "responses": [
+        {
+          "status": 200,
+          "request_id": "s9-health-shutdown-failure",
+          "x_request_id": "s9-health-shutdown-failure",
+          "body_sha256": "b091a6509ca371a8919c96bd957d7d980a85b7d556d75358daa55c3184ef3db1",
+          "body_bytes": 55,
+          "generic_contract_verified": false
+        }
+      ],
+      "canary_presence": {
+        "body": false,
+        "url": false,
+        "cause": false,
+        "note": false
+      },
+      "expected_private_control": false,
+      "two_error_channels_or_lifespan_events": 2,
+      "startup_success_preserved": true,
+      "shutdown_success_preserved": false,
+      "configured_json_boundary": true,
+      "receipt": {
+        "pid": 70879,
+        "exit_code": 0,
+        "server_started": true,
+        "control_stop_received": true,
+        "control_thread_stopped": true,
+        "counters": {
+          "database": 0,
+          "outbound_socket": 0,
+          "embedding": 0,
+          "llm": 0
+        },
+        "configured": {
+          "json_formatter": true,
+          "error_enabled": true,
+          "error_handlers": 0,
+          "error_propagates": true
+        }
+      },
+      "binding": {
+        "pid": 70879,
+        "arm": "s9c",
+        "mode": "shutdown_failure",
+        "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+        "loaded": {
+          "app.main": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/main.py",
+            "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+          },
+          "app.core.errors": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/errors.py",
+            "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+          },
+          "app.core.logging": {
+            "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9c/app/core/logging.py",
+            "sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f"
+          }
+        },
+        "versions": {
+          "fastapi": "0.141.1",
+          "starlette": "1.4.1",
+          "uvicorn": "0.52.4",
+          "h11": "0.16.0",
+          "httptools": "0.8.0"
+        },
+        "python_major_minor": [
+          3,
+          12
+        ],
+        "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+        "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+        "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+      },
+      "log_sha256": {
+        "stdout.log": "0449137029e9d617bf2362a0a46cbbbddf69d9b579b8f0a84bf43046275d42e2",
+        "stderr.log": "5edc71fae8bfdda3b5b39bf6a739fa8100b48e3b2fed56e3620be491b965c354"
+      },
+      "sidecar_sha256": {
+        "binding.json": "74f16b7f2737446f7147a9833e93279afc87f12c1bc95b09cafde9c31aa540f3",
+        "configured.json": "2d889c4f73055d3f8ba99d72b5dffc33630ed22d47494a643415b47bc362329f",
+        "receipt.json": "cda3d5c63dd894639b241d1a412b47f7e64e657687daa0c9d1b29c63abc373c2"
+      }
+    }
+  ],
+  "manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+  "baseline_two_module_git": "c45e0e7073c92638ced7a3ff523578dd598c350b",
+  "scope": "synthetic exception induction; actual Uvicorn sockets and copied actual app, no DB/model/provider parity",
+  "active_case": {
+    "arm": "s9c",
+    "scenario": "shutdown-failure"
+  },
+  "source_unchanged": true,
+  "seconds": 17.270648
+}

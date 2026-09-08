@@ -1,0 +1,24 @@
+from pathlib import Path
+import hashlib,json,shutil,subprocess
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+old=Path('/private/tmp/dou018-s9-process-four-arm-candidate');new=Path('/private/tmp/dou018-s9-process-final-candidate')
+def h(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+m=json.loads((old/'manifest.json').read_text())
+assert h(old/'manifest.json')=='3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2'
+for p,sha in m['package_files'].items():assert h(old/p)==sha,p
+shutil.copytree(old,new,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+for name in ['logging.py','errors.py']:
+ source=r/'apps/api/app/core'/name;(new/'arms/s9c/app/core'/name).write_bytes(source.read_bytes());m['selected_modules_sha256']['s9c'][name]=h(source)
+changed=[p for p,sha in m['current_runtime_sources'].items() if h(Path(p))!=sha]
+assert set(changed)=={str(r/'apps/api/app/core/logging.py'),str(r/'apps/api/app/core/errors.py')}
+m['current_runtime_sources']={p:h(Path(p)) for p in m['current_runtime_sources']}
+m['prior_four_arm_manifest']={'path':str(old/'manifest.json'),'sha256':h(old/'manifest.json'),'result_path':'/private/tmp/dou018-evidence/s9-process-four-arm-01/result.json','result_sha256':h(Path('/private/tmp/dou018-evidence/s9-process-four-arm-01/result.json'))}
+m['version']='s9-process-final-prepared-01';m['head_at_preparation']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip();m['source_identity_note']='Separate final package after independently detected support-ID redaction regression repair. Current/S9/S9B arms and all helper executable bytes retain prior four-arm sources; final S9C arm matches integrated root source. Previous sixteen-case measurement remains immutable. This preparation performs no runtime experiment.'
+repair=Path('/private/tmp/dou018-s9-request-id-regression-candidate')
+m['s9c_extension'].update(logging_source_manifest_path=str(repair/'manifest.json'),logging_source_manifest_sha256=h(repair/'manifest.json'),logging_source_path=str(repair/'files/apps/api/app/core/logging.py'),logging_source_sha256=h(repair/'files/apps/api/app/core/logging.py'))
+m['frozen_candidate_manifests'][str(repair/'manifest.json')]=h(repair/'manifest.json')
+m['frozen_candidate_manifests'][str(old/'manifest.json')]=h(old/'manifest.json')
+(new/'FINAL-DERIVATION.md').write_text(m['source_identity_note']+'\nOnly final S9C logging changed: lint justification comment plus restoration of prior known-pattern request-ID redaction. The four additional offline regression tests are measured separately; HTTP fixture support IDs are ordinary and the fixed existing contract oracles stay unchanged.\n')
+m['package_files']={str(p.relative_to(new)):h(p) for p in sorted(new.rglob('*')) if p.is_file() and p.name!='manifest.json'}
+(new/'manifest.json').write_text(json.dumps(m,indent=2)+'\n')
+print(json.dumps({'package':str(new),'manifest_sha256':h(new/'manifest.json'),'files':len(m['package_files']),'changed_current_runtime_files':changed,'final_logging_sha256':m['selected_modules_sha256']['s9c']['logging.py']}))

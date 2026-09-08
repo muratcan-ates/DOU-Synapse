@@ -1,0 +1,21 @@
+from pathlib import Path
+import hashlib,json
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');p=Path('/private/tmp/dou018-s9-docs-candidate-v2');m=json.loads((p/'manifest.json').read_text())
+def h(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+for path,sha in m['baselines'].items():assert (not (r/path).exists()) if sha is None else h(r/path)==sha,path
+for path,sha in m['proposed'].items():
+ source=p/'files'/path;assert h(source)==sha,path;(r/path).parent.mkdir(parents=True,exist_ok=True);(r/path).write_bytes(source.read_bytes())
+updates={
+ 'docs/completion-program.md':[
+  ('İlk birleşik 1651 API/38 alt vaka kimlik maskeleme düzeltmesinden önce geçti; ek canary ve son kaynakla kabul/yeni hosted bekler.','İlk 1651/38 sonucu ve sonraki maskeleme regresyonu kaydı korunur. Son kaynakta 1655 API/38 alt vaka, dört kırmızı/yeşil kimlik vakası ve 84 yeni kontrol birlikte geçti; yeni kesin commit hosted kapıları bekler.'),
+  ('Ek sentetik kimlik testleri, son kaynakla birleşik/tam API ve kesin yeni commit’in hosted kabulü ayrı bekler.','Ek dört sentetik kimlik vakası eski kaynakta FAIL, düzeltmede PASS verdi. Son kaynakla tam 1655 API/38 alt vaka geçti; 84 yeni kontrol bu koşuya dahildir. Kesin yeni commit’in hosted kabulü ayrıca bekler.')],
+ 'docs/security/privacy-review-2026-09-08.md':[],
+ 'docs/operations/logging-privacy.md':[]}
+for path,pairs in updates.items():
+ target=r/path;s=target.read_text()
+ for old,new in pairs:assert old in s,(path,old);s=s.replace(old,new)
+ if not pairs:
+  s+='\nSon S9 yerel birleşik doğrulama: takip kimliği maskeleme düzeltmesi dahil 1655 API testi ve 38 alt vaka geçti; yeni 84 kontrol bu tam koşuya dahildir. Ayrı dört kimlik regresyon vakası eski kaynakta başarısız, düzeltmede başarılı oldu. Önceki 1651 sonucu ve aşamalı karşılaştırmalar tarihsel olarak korunur. Kesin yeni commit’in GitHub kabulü ayrıca kaydedilecektir.\n'
+ target.write_text(s)
+out=Path('/private/tmp/dou018-evidence/s9-docs-integration-01.json');assert not out.exists();out.write_text(json.dumps({'proposal_manifest_sha256':h(p/'manifest.json'),'integrated':{path:h(r/path) for path in m['proposed']},'root_followup':'Final1655/38 and four red/green request-ID regression observations appended; pending exact hosted separate.'},indent=2)+'\n')
+print('Seven scoped documentation changes integrated; final API observation added.')

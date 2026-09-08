@@ -1,0 +1,254 @@
+[
+  {
+    "package": "s9",
+    "arm": "baseline",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-exception-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "baseline"
+    ],
+    "exit_code": 1,
+    "seconds": 1.415,
+    "binding_before": {
+      "manifest.json": "64a3eceb86c039226288ff8424d1c6c03cdcbfa443e52de9b2c87e97bcdf6ec0",
+      "run_no_db_tests.py": "aad5eeba9309215ac68fc4a6920f11d9754b81da9454be3d280217aa2713420c"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9-no-db-01",
+        "arm": "baseline",
+        "pytest_exit": 1,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        }
+      }
+    ],
+    "stdout_sha256": "405d4d300eb25d8e7cb02d945e40e488de716dd82fbb960e9194b2eed16a142f",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "package": "s9",
+    "arm": "candidate",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-exception-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "candidate"
+    ],
+    "exit_code": 0,
+    "seconds": 1.02,
+    "binding_before": {
+      "manifest.json": "64a3eceb86c039226288ff8424d1c6c03cdcbfa443e52de9b2c87e97bcdf6ec0",
+      "run_no_db_tests.py": "aad5eeba9309215ac68fc4a6920f11d9754b81da9454be3d280217aa2713420c"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9-no-db-01",
+        "arm": "candidate",
+        "pytest_exit": 0,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        }
+      }
+    ],
+    "stdout_sha256": "9905d4d6c43a5e0c1c23176b9aecea38a700d079cf8f32e59c6e274364ac482f",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "package": "s9",
+    "arm": "errors_only",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-exception-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "errors_only"
+    ],
+    "exit_code": 1,
+    "seconds": 1.155,
+    "binding_before": {
+      "manifest.json": "64a3eceb86c039226288ff8424d1c6c03cdcbfa443e52de9b2c87e97bcdf6ec0",
+      "run_no_db_tests.py": "aad5eeba9309215ac68fc4a6920f11d9754b81da9454be3d280217aa2713420c"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9-no-db-01",
+        "arm": "errors_only",
+        "pytest_exit": 1,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        }
+      }
+    ],
+    "stdout_sha256": "b0cfc7c993c0ced7434db1bdc7f23795aa4474b89e2cc82e11776683b69c66eb",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "package": "s9",
+    "arm": "formatter_only",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-exception-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "formatter_only"
+    ],
+    "exit_code": 1,
+    "seconds": 1.005,
+    "binding_before": {
+      "manifest.json": "64a3eceb86c039226288ff8424d1c6c03cdcbfa443e52de9b2c87e97bcdf6ec0",
+      "run_no_db_tests.py": "aad5eeba9309215ac68fc4a6920f11d9754b81da9454be3d280217aa2713420c"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9-no-db-01",
+        "arm": "formatter_only",
+        "pytest_exit": 1,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        }
+      }
+    ],
+    "stdout_sha256": "03c492061d99a9383de7552feb8200cd0abdc2682d7f00f9d376a401311d9f8f",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "package": "s9b",
+    "arm": "baseline_s9",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-lifespan-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "baseline_s9"
+    ],
+    "exit_code": 1,
+    "seconds": 0.6,
+    "binding_before": {
+      "manifest.json": "8ba4d0b2a7bd29d891efcb4b062d24fa5890ec0b9b7f18467014d7f553b83d3b",
+      "run_no_db_tests.py": "58d39106f944875e0dc06b20cc0dcdcc1d94340b1c54522527158374221cbabe"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9b-no-db-01",
+        "arm": "baseline_s9",
+        "pytest_exit": 1,
+        "selected_logging_sha256": "40d7aaa9980a39155944bc3cb056c2dea7e365c2692e1e6de36828ae9183c4f5",
+        "manifest_sha256": "8ba4d0b2a7bd29d891efcb4b062d24fa5890ec0b9b7f18467014d7f553b83d3b",
+        "attempts": {
+          "db": 0,
+          "network": 0
+        }
+      }
+    ],
+    "stdout_sha256": "8535fe9d368cf87eede4aae148c81e3d3c2a8318de334ba88064599bca178420",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "package": "s9b",
+    "arm": "candidate_s9b",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-lifespan-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "candidate_s9b"
+    ],
+    "exit_code": 0,
+    "seconds": 0.377,
+    "binding_before": {
+      "manifest.json": "8ba4d0b2a7bd29d891efcb4b062d24fa5890ec0b9b7f18467014d7f553b83d3b",
+      "run_no_db_tests.py": "58d39106f944875e0dc06b20cc0dcdcc1d94340b1c54522527158374221cbabe"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9b-no-db-01",
+        "arm": "candidate_s9b",
+        "pytest_exit": 0,
+        "selected_logging_sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f",
+        "manifest_sha256": "8ba4d0b2a7bd29d891efcb4b062d24fa5890ec0b9b7f18467014d7f553b83d3b",
+        "attempts": {
+          "db": 0,
+          "network": 0
+        }
+      }
+    ],
+    "stdout_sha256": "1807f6f09e8eb711bb562dd9c64bf4e9eed419599d6a10f4e9f3076b819dac19",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "package": "s9c",
+    "arm": "baseline_s9b",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-log-sink-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "baseline_s9b"
+    ],
+    "exit_code": 1,
+    "seconds": 0.891,
+    "binding_before": {
+      "manifest.json": "b1c4c265e5ca8981602b44b47ac5c6caee7a81acb4dc16fbc979190808e8e55a",
+      "run_no_db_tests.py": "ef51b558dc8784fdd76a8f55748cd2d1a62c5584fc359060a5a1330f104d91b7"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9c-offline-01",
+        "arm": "baseline_s9b",
+        "pytest_exit": 1,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        },
+        "selected_logging_sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f",
+        "errors_source_sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f",
+        "manifest_sha256": "b1c4c265e5ca8981602b44b47ac5c6caee7a81acb4dc16fbc979190808e8e55a",
+        "application_main_loaded": false
+      }
+    ],
+    "stdout_sha256": "cec9e3fd3eb8428b116f9640c2e49dacd8f76b60c1e94c96022b83a1c73680e4",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "package": "s9c",
+    "arm": "candidate_s9c",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "/private/tmp/dou018-log-sink-next-candidate/run_no_db_tests.py",
+      "--arm",
+      "candidate_s9c"
+    ],
+    "exit_code": 0,
+    "seconds": 0.425,
+    "binding_before": {
+      "manifest.json": "b1c4c265e5ca8981602b44b47ac5c6caee7a81acb4dc16fbc979190808e8e55a",
+      "run_no_db_tests.py": "ef51b558dc8784fdd76a8f55748cd2d1a62c5584fc359060a5a1330f104d91b7"
+    },
+    "binding_unchanged": true,
+    "runner_summaries": [
+      {
+        "version": "s9c-offline-01",
+        "arm": "candidate_s9c",
+        "pytest_exit": 0,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        },
+        "selected_logging_sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f",
+        "errors_source_sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f",
+        "manifest_sha256": "b1c4c265e5ca8981602b44b47ac5c6caee7a81acb4dc16fbc979190808e8e55a",
+        "application_main_loaded": false
+      }
+    ],
+    "stdout_sha256": "c94505981f2034cf5b3ebcf35ef7d018e7a07042c65e23b73dd88bb9fbf7f261",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

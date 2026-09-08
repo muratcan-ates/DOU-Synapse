@@ -1,0 +1,32 @@
+{
+  "package": "s9b",
+  "arm": "baseline_s9",
+  "command": [
+    "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+    "/private/tmp/dou018-lifespan-next-candidate/run_no_db_tests.py",
+    "--arm",
+    "baseline_s9"
+  ],
+  "exit_code": 1,
+  "seconds": 0.6,
+  "binding_before": {
+    "manifest.json": "8ba4d0b2a7bd29d891efcb4b062d24fa5890ec0b9b7f18467014d7f553b83d3b",
+    "run_no_db_tests.py": "58d39106f944875e0dc06b20cc0dcdcc1d94340b1c54522527158374221cbabe"
+  },
+  "binding_unchanged": true,
+  "runner_summaries": [
+    {
+      "version": "s9b-no-db-01",
+      "arm": "baseline_s9",
+      "pytest_exit": 1,
+      "selected_logging_sha256": "40d7aaa9980a39155944bc3cb056c2dea7e365c2692e1e6de36828ae9183c4f5",
+      "manifest_sha256": "8ba4d0b2a7bd29d891efcb4b062d24fa5890ec0b9b7f18467014d7f553b83d3b",
+      "attempts": {
+        "db": 0,
+        "network": 0
+      }
+    }
+  ],
+  "stdout_sha256": "8535fe9d368cf87eede4aae148c81e3d3c2a8318de334ba88064599bca178420",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

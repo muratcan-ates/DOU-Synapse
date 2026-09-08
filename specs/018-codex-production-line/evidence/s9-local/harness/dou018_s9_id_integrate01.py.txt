@@ -1,0 +1,11 @@
+from pathlib import Path
+import hashlib,json,subprocess
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');p=Path('/private/tmp/dou018-s9-request-id-regression-candidate');m=json.loads((p/'manifest.json').read_text())
+def h(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+assert h(r/'apps/api/app/core/logging.py')==m['baseline_logging_sha256']
+for relative in ['apps/api/app/core/logging.py','apps/api/tests/test_exception_request_id_redaction.py']:
+ source=p/'files'/relative;assert h(source)==m['files']['files/'+relative]['sha256'];(r/relative).write_bytes(source.read_bytes())
+out=Path('/private/tmp/dou018-evidence/s9-id-integration-01.json');assert not out.exists();out.write_text(json.dumps({'manifest_sha256':h(p/'manifest.json'),'logging_before':m['baseline_logging_sha256'],'logging_after':h(r/'apps/api/app/core/logging.py'),'new_tests':4},indent=2)+'\n')
+for source,destination,old,new in [('dou018_s9_checks01.py','dou018_s9_checks02.py','s9-checks-01','s9-checks-02'),('dou018_s9_full_api01.py','dou018_s9_full_api02.py','s9-full-api-01','s9-full-api-02')]:
+ s=(Path('/private/tmp')/source).read_text().replace(old,new).replace('dou018_s9_full_api01','dou018_s9_full_api02');(Path('/private/tmp')/destination).write_text(s)
+print('Four red/green regression cases integrated; only log request-ID redaction restored.')

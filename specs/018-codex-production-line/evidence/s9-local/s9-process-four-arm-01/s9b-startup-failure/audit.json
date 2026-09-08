@@ -1,0 +1,84 @@
+{
+  "arm": "s9b",
+  "scenario": "startup-failure",
+  "mode": "startup_failure",
+  "protocol": "h11",
+  "pid": 70849,
+  "port": 52427,
+  "exit_code": 3,
+  "seconds": 0.813581,
+  "responses": [],
+  "canary_presence": {
+    "body": false,
+    "url": false,
+    "cause": false,
+    "note": false
+  },
+  "expected_private_control": false,
+  "two_error_channels_or_lifespan_events": 2,
+  "startup_success_preserved": false,
+  "shutdown_success_preserved": false,
+  "configured_json_boundary": true,
+  "receipt": {
+    "pid": 70849,
+    "exit_code": 3,
+    "server_started": false,
+    "control_stop_received": false,
+    "control_thread_stopped": true,
+    "counters": {
+      "database": 0,
+      "outbound_socket": 0,
+      "embedding": 0,
+      "llm": 0
+    },
+    "configured": {
+      "json_formatter": true,
+      "error_enabled": true,
+      "error_handlers": 0,
+      "error_propagates": true
+    }
+  },
+  "binding": {
+    "pid": 70849,
+    "arm": "s9b",
+    "mode": "startup_failure",
+    "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+    "loaded": {
+      "app.main": {
+        "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/main.py",
+        "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+      },
+      "app.core.errors": {
+        "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/errors.py",
+        "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+      },
+      "app.core.logging": {
+        "path": "/private/tmp/dou018-s9-process-four-arm-candidate/arms/s9b/app/core/logging.py",
+        "sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f"
+      }
+    },
+    "versions": {
+      "fastapi": "0.141.1",
+      "starlette": "1.4.1",
+      "uvicorn": "0.52.4",
+      "h11": "0.16.0",
+      "httptools": "0.8.0"
+    },
+    "python_major_minor": [
+      3,
+      12
+    ],
+    "source_manifest_sha256": "3b72d071111da6661c249352051d7e8ee9a190ada9ed7c0b26162f3fc5ab4df2",
+    "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+    "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+  },
+  "log_sha256": {
+    "stdout.log": "24a8209fd13d56717a10751fc212c964317db8e8af145400e85ee04f17e7ddb9",
+    "stderr.log": "d3728affabd4a276c801bc2d9bec02cb7ff6e00cf358087afb1c3aa563e572c0"
+  },
+  "sidecar_sha256": {
+    "binding.json": "cb144c47143062674e5d9665e2798a3df2ab95d6ca5c403819112bc8085293fe",
+    "configured.json": "10497dcc6be42754f03daca1d5337887d6f90a51d0b3269c0584b728a3c4199c",
+    "receipt.json": "5a347a4fe1c5695a7df58272ae2597917e63639aeb38a7ca96d445f972a2e099"
+  }
+}

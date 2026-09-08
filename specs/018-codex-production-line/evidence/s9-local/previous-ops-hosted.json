@@ -1,0 +1,81 @@
+{
+  "head": "f79d8a208d468be59a0ab4c035af0f6e468826e2",
+  "target": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "pr": 26,
+  "workflow_runs": [
+    {
+      "id": 34252183618,
+      "name": "Agent skills",
+      "head_sha": "f79d8a208d468be59a0ab4c035af0f6e468826e2",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34252183618"
+    },
+    {
+      "id": 34252183598,
+      "name": "AI quality",
+      "head_sha": "f79d8a208d468be59a0ab4c035af0f6e468826e2",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34252183598"
+    },
+    {
+      "id": 34252183636,
+      "name": "Security and dependency review",
+      "head_sha": "f79d8a208d468be59a0ab4c035af0f6e468826e2",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34252183636"
+    },
+    {
+      "id": 34252183662,
+      "name": "CI",
+      "head_sha": "f79d8a208d468be59a0ab4c035af0f6e468826e2",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34252183662"
+    }
+  ],
+  "ci_jobs": [
+    {
+      "id": 102149041071,
+      "name": "Web — lint, tip",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 102149041230,
+      "name": "API — lint, tip, test",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 102149041232,
+      "name": "Belgeler — canlı sayı kapısı",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 102149041303,
+      "name": "API imajı — build + ağsız embedding kanıtı",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 102151376892,
+      "name": "Uçtan uca — gerçek API + tarayıcı",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "observations": {
+    "api": "1571 passed, 38 subtests passed in 178.01s",
+    "browser": "71 passed (1.9m)"
+  },
+  "scope": "OPS/D6 exact f79d8a2 hosted acceptance; does not cover uncommitted S9 work.",
+  "recorded_at": "2026-09-08T16:57:33.552341+00:00"
+}

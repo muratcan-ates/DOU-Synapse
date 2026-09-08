@@ -1,0 +1,29 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+
+os.umask(0o077)
+python='/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python'
+out=Path('/private/tmp/dou018-evidence/s9-offline-01');out.mkdir(mode=0o700)
+env={'PATH':os.environ['PATH'],'PYTHONDONTWRITEBYTECODE':'1','PYTEST_DISABLE_PLUGIN_AUTOLOAD':'1','UV_OFFLINE':'1','GROQ_API_KEY':'','GEMINI_API_KEY':'','OPENAI_API_KEY':''}
+packages=[('s9','dou018-exception-next-candidate',['baseline','candidate','errors_only','formatter_only']),('s9b','dou018-lifespan-next-candidate',['baseline_s9','candidate_s9b']),('s9c','dou018-log-sink-next-candidate',['baseline_s9b','candidate_s9c'])]
+records=[]
+for label,folder,arms in packages:
+ package=Path('/private/tmp')/folder
+ for arm in arms:
+  directory=out/(label+'-'+arm);directory.mkdir(mode=0o700)
+  command=[python,str(package/'run_no_db_tests.py'),'--arm',arm]
+  before={name:hashlib.sha256((package/name).read_bytes()).hexdigest() for name in ['manifest.json','run_no_db_tests.py']}
+  started=time.monotonic()
+  with (directory/'stdout.log').open('x') as stdout,(directory/'stderr.log').open('x') as stderr:
+   run=subprocess.run(command,env=env,cwd=directory,stdout=stdout,stderr=stderr,timeout=120)
+  after={name:hashlib.sha256((package/name).read_bytes()).hexdigest() for name in before}
+  text=(directory/'stdout.log').read_text(); summaries=[]
+  for line in text.splitlines():
+   try:value=json.loads(line)
+   except ValueError:continue
+   if isinstance(value,dict) and value.get('arm')==arm:summaries.append(value)
+  record={'package':label,'arm':arm,'command':command,'exit_code':run.returncode,'seconds':round(time.monotonic()-started,3),'binding_before':before,'binding_unchanged':before==after,'runner_summaries':summaries,'stdout_sha256':hashlib.sha256((directory/'stdout.log').read_bytes()).hexdigest(),'stderr_sha256':hashlib.sha256((directory/'stderr.log').read_bytes()).hexdigest()}
+  (directory/'result.json').write_text(json.dumps(record,indent=2)+'\n');records.append(record)
+  print(json.dumps({k:v for k,v in record.items() if k not in ['command','binding_before','stdout_sha256','stderr_sha256']}),flush=True)
+  (out/'result.json').write_text(json.dumps(records,indent=2)+'\n')
+print('All eight arms recorded; baseline failures and candidate results require oracle review.')

@@ -1,0 +1,47 @@
+# S9/S9B/S9C bağımsız son kaynak incelemesi
+
+8 Eylül 2026. Salt okunur inceleme; repo, süreç veya veritabanı değiştirilmedi. Test/DB/sunucu/sağlayıcı çalıştırılmadı. HEAD f79d8a2 kök görev tarafından bildirilen tabandır; bu raporun gerçek bağlayıcısı aşağıdaki kirli aday dosyalarının SHA-256 değerleridir. İnceleme kapsamı iki üretim dosyası, üç yeni gizlilik testi ve depolama gizlilik testindeki değişen doğrulamalardır. Geçici üç aday paketin kaynak/README sınırları da karşılaştırıldı.
+
+## Sonuç: düzeltilebilir bir P2 gizlilik regresyonu
+
+**F1 — İstisna yolunda destek kimliğinin önceden var olan API anahtarı/11 hane maskelemesi atlanıyor.**
+
+- Üretim: `apps/api/app/core/logging.py:271–276`, özellikle ham atama 276; filtreyi atlayan yeni dal 291–294. Bilinen maskeler 25–26 ve 34; kimlik biçim kuralı 101.
+- Gerçek çağrı: `apps/api/app/core/errors.py:267–272`, `request_id_of` tarafından seçilen kimliği `app.error` context içine koyuyor. `request_id_of:53–54` mevcut dolu metni koruyor.
+- Eski kaynak kanıtı: `/private/tmp/dou018-exception-next-candidate/baseline/logging.py:46–55` tüm context metinlerini `_redact_any` üzerinden maskeliyordu; 59–65 ve 17–32 mevcut kalıpları doğruluyor. Yeni exc_info dalı bu davranışı atlıyor ve izinli biçimdeki kimliği doğrudan yayımlıyor.
+- Önkoşul: handler'a gelen destek kimliği mevcut biçim kuralını geçerken bilinen hassas kalıplardan birini taşıyor. Örneğin yalnız sentetik `"1" * 11` veya `"sk-" + "SYNTHETIC" * 3`. Bu bir kişinin gerçek kimliği/anahtarı değildir; eski maskenin tanıdığı biçimi sınar. Genel opaque kimliklerin önceden de ilişkilendirilebilir olması ayrı ve zaten belgelenmiş sınırdır. Buradaki bulgu, önceden maskelenen biçimin yeni yoldan ham çıkmasıdır.
+- Test açığı: `test_exception_log_privacy.py:30,108–118,132–138` yalnız sıradan sentetik destek kimliklerini kullanıyor. Keyfi context testleri (141–177) hassas `request_id` değerini özel izinli alana koymuyor.
+- En dar düzeltme: doğrulanmış bu tek metin alanını `redact(request_id)` ile kopyala. Normal kimlik log/yanıt eşliği devam eder; eşleşen hassas biçimde günlük maskelenir. HTTP yanıtındaki destek kimliği sözleşmesini bu düzeltmede değiştirmek gerekmez.
+- Önerilen ölçüm: iki sentetik biçim × iki mekanizma (filtre olmadan gerçek JsonFormatter; gerçek `unhandled_error_handler` ve yapılandırılmış handler) = dört yeni negatif. Ham kimlik günlükte bulunmamalı; beklenen maske ve `internal_error` tanısı kalmalı. İkinci mekanizma aynı genel500 zarfı ve yanıt destek kimliğini ayrıca korumalı. Aynı dört oracle önce şu rapora bağlı eski adayı başarısız kılmalı, sonra dar düzeltmede geçmeli. Bu raporda yürütülmüş sonuç iddia edilmiyor.
+
+## İyi korunan davranış ve test sınırları
+
+1. **İstisna içeriği:** `logging.py:239–259,262–277,324–337` sabit tür/olay ve izinli uygulama frame özetini seçiyor; hata metni, cause/context zinciri, notes, grup üyeleri, locals ve kaynak satırını biçimlendirmiyor. `test_exception_log_privacy.py:71–93,141–218,221–289` bu ayrı veri kanallarına sentetik canary yerleştiriyor. Frame kaynağı mevcut uygulama dosyası/AST adı/satır sınırı ile kısıtlı (196–236). 64 traceback düğümünde taramayı durdurmak en içteki nedeni kaybedebilir; `frames_truncated` bunu gösteriyor. Bu tam traceback veya tam kök neden teşhisi değildir ve kodun bilinçli maliyet/gizlilik sınırıyla tutarlıdır.
+2. **Sunucu düz hata yolu:** `logging.py:171–193,338–349` yalnız tam uvicorn.error ERROR/CRITICAL kaydını sabit olaylara çeviriyor. Bilinen errno ve sınırlı tam sayı task_count korunuyor; serbest args/mesaj/extra çıkmıyor. `test_lifespan_log_privacy.py:82–114` gerçek Starlette/LifespanOn protokolünü; 150–203 tanı alanlarını ve diğer serbest alanları; 229–262 hata kanalının ve normal durum mesajlarının devamını kontrol ediyor. Bu testler gerçek ağ sunucusu iddiasında bulunmuyor.
+3. **Çıktı yazıcısı arızası:** `logging.py:385–414` formatter/write/flush içindeki normal Exception'ı yakalıyor ve eski StreamHandler.handleError'ın ham record/trace dökümü yerine tek sabit ASCII hata olayı yazıyor. Fallback ayrıca normal Exception ile bozulursa başka günlük yolu denenmiyor. Tek handler'ın normal Handler kilidi altındaki tekrar girişleri `_emitting`/`_reporting_failure` ile düşürülüyor. `test_log_sink_privacy.py:149–219` gerçek çıktı/fallback arızası ve genel500 zarfını kontrol ediyor. Fallback çıktısı özgün olayın başarılı teslimi değildir; her iki sink bozuksa çıktı garantisi yoktur.
+4. **Süreç kontrolü:** normal Exception yakalama, KeyboardInterrupt/SystemExit/BaseException'ı bilinçli olarak kapsamıyor; iki latch finally ile temizleniyor. `test_log_sink_privacy.py:222–242` write/formatter/fallback aşamalarında aynı kontrol nesnesinin dışarı çıkmasını ve ardından normal olay yazılabilmesini kontrol ediyor. Burada kontrol istisnaları test içinde yakalanıyor; gerçek süreç SIGTERM testi değildir.
+5. **Depolama doğrulamaları:** `test_storage_log_privacy.py:125–142` string traceback yerine yeni sabit nesne şemasını kabul ediyor, ancak yayımlanan canary yokluğu, iki olay, sabit error_code ve dış transport türlerinin çıkmaması korunuyor. Mevcut kaynak sarmalayıcısı ayrıca gerçek işlemlerle çağrılıyor (101–116). Bu değişiklik HTTP/storage hata metnini yeniden izinli kılmıyor.
+
+## Bloklayıcı olmayan, yararlı iki ek test
+
+- `test_log_sink_privacy.py:223` süreç kontrol parametreleri flush aşamasını kapsamıyor. Mevcut `emit` try/finally sınırı flush'ı da içerdiğinden kaynak düzeyinde farklı hata görünmüyor. Gelecekte bu sınır değişirse regresyon yakalamak için aynı iki kontrol sinyaline flush aşaması eklenebilir.
+- Aynı dosyada tekrar giriş testi yalnız fallback sink üzerinden (177–184). Bir kez yeniden loglayan başarılı ana stdout sink'i veya formatter ile tek üst kaydın yazıldığını ve sonraki olayın düşmediğini kontrol etmek, `_emitting` korumasını doğrudan bağlar. Bu eksiklik mevcut kodun çalışmadığı iddiası değildir.
+
+## İddia edilmeyecek kapsam
+
+Mevcut sahip olunan RedactionFilter'in normal exc_info olmayan serbest metin yolu ve sonradan eklenen keyfi filtreler handler.emit yakalama sınırının dışındadır. Üçüncü taraf handler'lar, doğrudan stdout/stderr, yapılandırmadan önceki supervisor/import hataları ve INFO/WARNING özel metinleri bu aday tarafından tümüyle temizlenmiş sayılmaz. Handler sınıfı bunun için bir sandbox değildir. İstemci kaynaklı genel destek kimliği ayrıca kişisel/ilişkilendirilebilir değer taşıyabilir; F1'in dar bilinen-kalıp düzeltmesi bu daha geniş sınırı kapatmaz. Hukuki KVKK/GDPR uygunluğu veya üretim kabulü verilmez.
+
+## Kaynak bağları
+
+Aşağıdaki SHA değerleri F1'in bulunduğu aday içindir; daha sonraki düzeltme bu rapordaki tarihsel kaynakları değiştirmez.
+
+| Depoya göre dosya | SHA-256 |
+|---|---|
+| `apps/api/app/core/logging.py` | `209068a3a6ea7436c133c372d732b61ac630485e0ebb855be2adc8c7b71093a9` |
+| `apps/api/app/core/errors.py` | `82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f` |
+| `apps/api/tests/test_exception_log_privacy.py` | `fb5f910c48ed93f6596a761cf840fc7a01da84b2d6afa0b842e13460e2ceb1de` |
+| `apps/api/tests/test_lifespan_log_privacy.py` | `492ea8a6147c0dec595fd556d85f0acf4059aee1cfef26af6e7e4948fa4cb4bb` |
+| `apps/api/tests/test_log_sink_privacy.py` | `d5813c73eb7d28963914524b1ef2d5cdf95cbbccc5318915c2bf8a4d53cfa5e5` |
+| `apps/api/tests/test_storage_log_privacy.py` | `6501f0f168e510f3c739d0d423a41e8287c0eacd00937e872129d3c511b2c4c1` |
+
+Paket karşılaştırması: `errors.py` S9 paketine ve lifespan testi S9B paketine bayt eşit. Entegre logging.py, S9C paketinden yalnız 410. satırdaki Ruff açıklamasıyla ayrılıyor; test_exception_log_privacy import sıralaması değişmiş; test_log_sink_privacy iki ifade satır sarmasıyla ayrılıyor. Bu rapor paket hashlerini entegre kaynak yerine kullanmıyor ve paket hazırlanma durumunu yeni test başarısı gibi sunmuyor.

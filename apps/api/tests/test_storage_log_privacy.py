@@ -129,9 +129,17 @@ async def test_upper_worker_traceback_does_not_restore_private_transport_cause(
             logging.getLogger("synthetic.worker").exception("worker operation failed")
     records = _assert_private(sink)
     assert len(records) == 2
-    assert "StorageUnavailableError" in records[1]["exception"]
-    assert "ReadTimeout" not in records[1]["exception"]
-    assert "HTTPStatusError" not in records[1]["exception"]
+    # The exception log schema now uses a content-free object. Unknown custom
+    # classes use the fixed Exception type; the real StorageUnavailableError
+    # wrapper above and the storage operation event remain separately checked.
+    summary = records[1]["exception"]
+    assert set(summary) == {"error_type", "frames", "frames_truncated"}
+    assert summary["error_type"] == "Exception"
+    assert records[1]["context"] == {"error_code": "exception_recorded"}
+    assert len(summary["frames"]) <= 8
+    serialized = json.dumps(summary)
+    assert "ReadTimeout" not in serialized
+    assert "HTTPStatusError" not in serialized
 
 
 def test_http_transport_debug_headers_are_suppressed_even_when_app_debug() -> None:

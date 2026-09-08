@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "source_unchanged": true,
+  "manifest_sha256": "ab4fba184c2a578178b82175c10df90b4a95923baa123c468387ae20c64dbf4a",
+  "records": [
+    {
+      "arm": "baseline",
+      "exit_code": 1,
+      "seconds": 0.609,
+      "observation": {
+        "arm": "baseline",
+        "pytest_exit": 1,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        },
+        "application_main_loaded": false,
+        "logging_sha256": "209068a3a6ea7436c133c372d732b61ac630485e0ebb855be2adc8c7b71093a9"
+      },
+      "stdout_sha256": "d465484a1dca197a5e6bfc25dc9ac7dadc2d3d905ffb262705d09781525592a8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "arm": "candidate",
+      "exit_code": 0,
+      "seconds": 0.428,
+      "observation": {
+        "arm": "candidate",
+        "pytest_exit": 0,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        },
+        "application_main_loaded": false,
+        "logging_sha256": "bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290"
+      },
+      "stdout_sha256": "2ca92ce1ec48c6b12753a0073f1143f09be4e29fed1a9e0e8b2e4d0f29f20414",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

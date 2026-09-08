@@ -1,0 +1,1816 @@
+{
+  "schema_version": 1,
+  "change_id": "034-exception-log-privacy-r1",
+  "lineage_id": "exception-log-privacy",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Hata ve sunucu günlüklerinden özel içerik çıkışını daralt",
+  "summary": "İstisna çıktısı sınırlı tür/kaynak özeti, düz Uvicorn hatası sabit olay olur. Sahip olunan handler arızada ham kaydı yeniden yazmaz; bilinen destek kimliği maskesi korunur. Gerçek süreç ve negatif/pozitif kanıtlar ayrı bağlıdır.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-08T17:32:21.297748+00:00",
+  "review_by": "2026-10-08T17:32:21.297748+00:00",
+  "base_sha": "f79d8a208d468be59a0ab4c035af0f6e468826e2",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged from f79; fake/absent provider in technical tests.",
+    "model_revision": "Unchanged from f79; no new model call/download.",
+    "prompt_revision": "Unchanged from f79.",
+    "tool_schema_revision": "HTTP/OpenAPI schema unchanged; operational exception log string becomes bounded object; emergency stderr JSON omits timestamp.",
+    "guardrail_revision": "No role/exam/retrieval relaxation. Fixed exception/lifespan/server log events; bounded source summary; content-free handler-failure fallback; known-pattern request-ID mask preserved.",
+    "retrieval_revision": "Unchanged from f79; no new retrieval claim.",
+    "embedding_revision": "Unchanged from f79; no model-quality result.",
+    "evaluator_revision": "Frozen technical privacy/response/sink oracles plus four explicit red/green ID cases; no pedagogical evaluation changed."
+  },
+  "data": {
+    "corpus_digest": "3f8cb35e8ec39bbd04d25d59bf26696efd6ed88507d9805e2647de6a90da9673",
+    "eval_set_digest": "3f8cb35e8ec39bbd04d25d59bf26696efd6ed88507d9805e2647de6a90da9673",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "f005c523ca15faa6256fa402533cb672fdb8a4b57fe39bcb48ef3dc65cd56714"
+    },
+    {
+      "path": "apps/api/app/core/errors.py",
+      "state": "present",
+      "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+    },
+    {
+      "path": "apps/api/app/core/logging.py",
+      "state": "present",
+      "sha256": "bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290"
+    },
+    {
+      "path": "apps/api/tests/test_exception_log_privacy.py",
+      "state": "present",
+      "sha256": "fb5f910c48ed93f6596a761cf840fc7a01da84b2d6afa0b842e13460e2ceb1de"
+    },
+    {
+      "path": "apps/api/tests/test_exception_request_id_redaction.py",
+      "state": "present",
+      "sha256": "113332aba20593e37210c23a8b61d0b9e9380005171b9662db6c8d34a5e117b6"
+    },
+    {
+      "path": "apps/api/tests/test_lifespan_log_privacy.py",
+      "state": "present",
+      "sha256": "492ea8a6147c0dec595fd556d85f0acf4059aee1cfef26af6e7e4948fa4cb4bb"
+    },
+    {
+      "path": "apps/api/tests/test_log_sink_privacy.py",
+      "state": "present",
+      "sha256": "d5813c73eb7d28963914524b1ef2d5cdf95cbbccc5318915c2bf8a4d53cfa5e5"
+    },
+    {
+      "path": "apps/api/tests/test_storage_log_privacy.py",
+      "state": "present",
+      "sha256": "6501f0f168e510f3c739d0d423a41e8287c0eacd00937e872129d3c511b2c4c1"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "970fdda611a9ffceb6a3edcf0be7ed771fa8c066e9b30709004b201b5ae878d5"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "cc6b60cc440f4644bf9923764c2b3649d7e8df54d9b70a777ca81a5a37ed721d"
+    },
+    {
+      "path": "docs/kvkk.md",
+      "state": "present",
+      "sha256": "650bd62d28cc27d91cc009baf4b2bef79d5275331315d1ae8b3c917cd3d21daf"
+    },
+    {
+      "path": "docs/operations/logging-privacy.md",
+      "state": "present",
+      "sha256": "b7a835933bb914701c7c0f847c34769529f5064a8351d15fbafcfb04e2242ae9"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "df7433275d91f75e1172071759ee98ae5ada2403bfc1d716317d1d584a0efea1"
+    },
+    {
+      "path": "docs/security/privacy-review-2026-09-08.md",
+      "state": "present",
+      "sha256": "c474d5e7221ec3bbf3e8533e2423201c75e6d9ad8a52e473c22d6ce5e5c7c341"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "ecc54d95bc7301b38fbe6bcdcd604c883508e452ec5639fca4b74e1b2e43adf1"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "5aa19eba0ef202146b87a02897a380234f007b4c53fcdd78635496d4b2e89f6e"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "973834d034e8d03978d90e65c93ef270b78856de701b13f8099ce8362c270247"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "4557a36aa60d0c9b76ee7520532203b00c831713e6a27f5e19ba011bbe5c2c4a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/README.md",
+      "state": "present",
+      "sha256": "55b0ce852dd85885176b89b3158df59f7dd02d0ea84cbeb657a69b8f8fce7aa1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/archive-origins-01.json",
+      "state": "present",
+      "sha256": "a3c697e550fcf06ebc2c13fa6de54ec1cf56db447aba3a0394ee91c18b95068c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/archive-privacy-review.json",
+      "state": "present",
+      "sha256": "61346346b4eeefebef441cdb10bd4dc60ca9fbdac315109213ccd965f9bded47"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/archive.json",
+      "state": "present",
+      "sha256": "4c6e62a9985a43de6413bb9645cc5b8ec0531b0183913069559ee5146f376a01"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_archive01.py.txt",
+      "state": "present",
+      "sha256": "97f159c8183522f10e71ea26432b1f446017ec23faaf32b629a580f2b7b432d7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_checks01.py.txt",
+      "state": "present",
+      "sha256": "ca41e7546728184d9b8b7e1f5844fabf32659ffb48e76a30f4c6ac912b4642eb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_checks02.py.txt",
+      "state": "present",
+      "sha256": "388f6ca3997c55d45b3202f1629ca2516a7126add197c602e30582853178a13d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_combined_offline01.py.txt",
+      "state": "present",
+      "sha256": "176f7244c67dd5ecee3e2146e575980ce0dfc768e370725c3c6ee5a2755cc100"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_combined_offline02.py.txt",
+      "state": "present",
+      "sha256": "02246d5cab6d76a2099bb3ce931c5936bcc836774fd5bbf59bf74eb281af3dd1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_docs_integrate01.py.txt",
+      "state": "present",
+      "sha256": "a47587af5be2f148eab57ee6ebe31285e026ae36348cc1e2b7f8fb2d9ed9eac3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_e2e_api.py.txt",
+      "state": "present",
+      "sha256": "c7e374117573007a097c66926a4441fef69031c31f6c033ba3275570fcfeb503"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_e2e_run.py.txt",
+      "state": "present",
+      "sha256": "e13607c8958e00b952aa0caa8205866314d9d9dfa0c7561dcf9558d966a0d2ff"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api01.py.txt",
+      "state": "present",
+      "sha256": "9be34601091b156032a8ed2bdfa0523b48fb1b7233810c47a8d853ce0af78001"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_full_api02.py.txt",
+      "state": "present",
+      "sha256": "920c4f48bf83d76dc85796f86b459eda45ef3417f8bd67c64015098fb9d54e94"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_id_integrate01.py.txt",
+      "state": "present",
+      "sha256": "591dce7283b9055f5d01487475b16baa7086ac48910953c9f10eab9e1860375b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_id_redaction01.py.txt",
+      "state": "present",
+      "sha256": "7e073aab7ce7278efd10e967a030b120a66edb8a22c71cf961cb04f0c6e59e4d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_offline_root01.py.txt",
+      "state": "present",
+      "sha256": "031d0c2f4fc406f6979e41149dc4deb6a3be2a9c1f479dbe6557c9fac9410987"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_process_final_prepare01.py.txt",
+      "state": "present",
+      "sha256": "d68178ba821d859e2813245f101e37b3ee0d83ae9bf2992ca394d2600ffa0cb8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/harness/dou018_s9_style01.py.txt",
+      "state": "present",
+      "sha256": "c44c53e0c37699e07ac3370075504042ff90d5908061fa4e7766883e111ee1aa"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/inputs.json",
+      "state": "present",
+      "sha256": "3f8cb35e8ec39bbd04d25d59bf26696efd6ed88507d9805e2647de6a90da9673"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-exception-next-candidate.tar.gz",
+      "state": "present",
+      "sha256": "82c67bfbc6dd218f3fe10609460174c962c0f8618f06bf64f0edf7b6286bea36"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-lifespan-next-candidate.tar.gz",
+      "state": "present",
+      "sha256": "d137351cef31ea3426cf7894186554d7ccaaec18151e676d18fcf85aa96b0996"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-log-sink-next-candidate.tar.gz",
+      "state": "present",
+      "sha256": "5cf0f7712a676ff201286044551bc3164c7c3a65368015b78893d1a21699e805"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-candidate.tar.gz",
+      "state": "present",
+      "sha256": "b5404e70c32ed81fb575282873e96c471eba8882afbc6b1da4c44510e859df29"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-final-candidate.tar.gz",
+      "state": "present",
+      "sha256": "268a242741fa26b18dec413c7482d8e7c0423f19c33a03bacf7d5bdab66ded7e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-process-four-arm-candidate.tar.gz",
+      "state": "present",
+      "sha256": "83047cb7a5507dafc0f2792bbea5ea246a96cec51c544c7c9416b893023a6ae4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/packages/dou018-s9-request-id-regression-candidate.tar.gz",
+      "state": "present",
+      "sha256": "04ff768b52a46f128d772a764afd78d154727c7b8c97258488ca12032e63b6c9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/precommit-pattern-scan.json",
+      "state": "present",
+      "sha256": "aa46b42efe02adb605403b8209172e5249cc2ee66ed845acd30a95399e5f5b50"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/previous-ops-hosted.json",
+      "state": "present",
+      "sha256": "974f1daf8c8f14e32de377019baa41fa3a0d8170613ced9c4fb29c940d439add"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/reviews/dou018-s9-final-code-review.md.txt",
+      "state": "present",
+      "sha256": "f756e7221d4a3d09b4aa94d4575fb22e760877194525bb6afebbc54ef5055519"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/reviews/dou018-s9-final-observed-review.md.txt",
+      "state": "present",
+      "sha256": "b176b93dcb76d3547ef38517188e392ab47e8f234e9d7509dba8172535b4d21f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/reviews/dou018-s9-independent-review.md.txt",
+      "state": "present",
+      "sha256": "dd1faee79f10b029b1e992b32b7d532b47d2a381518d4b92f265c3384bdfe9f2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/reviews/dou018-s9-observed-independent-review.md.txt",
+      "state": "present",
+      "sha256": "4c137fcccdc52a4dc9951cb2e2073607bf2dd059e9c10af25683ff942ec37171"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-01/format.log.gz",
+      "state": "present",
+      "sha256": "807c25ac9dd6f01cb15e0d2e6d81bfb4eb7913294de7936bca8d3cce854d2664"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-01/mypy.log.gz",
+      "state": "present",
+      "sha256": "60375ea501bcc4ea8f3df86f806b1e9138cf188302397a687363e9673309748f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-01/result.json",
+      "state": "present",
+      "sha256": "ac0530676c58f294bb10a5b487dd4479bd2e8c0adf22d72aa89b12a88c165349"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-01/ruff.log.gz",
+      "state": "present",
+      "sha256": "aed22170fa3e1b80e3a3cb504932b4b1c98afa22e596517c89b1accdc90b039d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-02/format.log.gz",
+      "state": "present",
+      "sha256": "94978ba1456e0acaf82ebf015e199cc52b22176f41bf1f963696db6d5e622e88"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-02/mypy.log.gz",
+      "state": "present",
+      "sha256": "60375ea501bcc4ea8f3df86f806b1e9138cf188302397a687363e9673309748f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-02/result.json",
+      "state": "present",
+      "sha256": "39f5f990d7abf393b6684ef48a9ad8a258bf865bc01009beb52d6fc08ae38703"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-checks-02/ruff.log.gz",
+      "state": "present",
+      "sha256": "f3af4d142827f5aad2eb0c72d556d325488a57fb6219aac10afeb51085667d53"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-combined-offline-01/result.json",
+      "state": "present",
+      "sha256": "8ac3094a27be767ab7c2aa6f3716b99d9a297331388001779ed007a2a5b91151"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-combined-offline-01/tests.log.gz",
+      "state": "present",
+      "sha256": "a21b9be07d3c42e42ef8ded4beaa28eddcb70f8f5296acd5bb68b0123ffea9f4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-combined-offline-02/result.json",
+      "state": "present",
+      "sha256": "5ce467345e46557ed6f04715fe765eecd59e2e0e04e9ab27f8396824740a82d2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-combined-offline-02/tests.log.gz",
+      "state": "present",
+      "sha256": "78d4415a48bdca41f5987fae3ab2dee6749b69d9085924721ba5d1ac2c7e60c6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-docs-integration-01.json",
+      "state": "present",
+      "sha256": "9fece488978090ba98a2a1b3f02814210cd48a7f2d960a44f13f629a2eeaa133"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-e2e-01/result.json",
+      "state": "present",
+      "sha256": "ec22a0a1f7412f0391101984fbca036a8b94d429614fa83d16c3474ac0a6f0b1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-e2e-01/tests.log.gz",
+      "state": "present",
+      "sha256": "3c4757fde87505dd1148614c09181c8ea506a67a2341217dff2f72da559e6ad1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-full-api-01/result.json",
+      "state": "present",
+      "sha256": "abfe1a553e8620f180aaf3cdfc3be2f3ae88b87977cadec7f7af4c6e1e3f7761"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-full-api-01/tests.log.gz",
+      "state": "present",
+      "sha256": "96baf3fae3758a5d1d4b888f55aa34e09f815767266d545e74b7103efdaad80a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-full-api-02/result.json",
+      "state": "present",
+      "sha256": "a4ac77313ab2dd6eb5e4b4d9e4aff37d47b8a7fcb656253ce641a0b90ec26f2f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-full-api-02/tests.log.gz",
+      "state": "present",
+      "sha256": "2c89f0fca6a41fc1b67fd6d689a190d0980259ed442e219f6f59907931f17ced"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-integration-01.json",
+      "state": "present",
+      "sha256": "aec43d2d5bec31057bc99e9649f55ebba6b468e2e5e8deafb548dffbbe20458c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/baseline/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/baseline/stdout.log.gz",
+      "state": "present",
+      "sha256": "1d42e545f95e73fa08a94454b536f2f0d92dd58252e001df581a12f3167bddf4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/candidate/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/candidate/stdout.log.gz",
+      "state": "present",
+      "sha256": "08256ec26c87b89d0dfaea28fa774ecee56db9f0db950545649224dd526a2df0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/child.py.txt",
+      "state": "present",
+      "sha256": "37603577d8606649c007f22f030ecc838b372b8088bf36f1f740de45c29b9d08"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/result.json",
+      "state": "present",
+      "sha256": "ce48d16eb96ebada903a590f84ac1cdeabcc69cdc868f2e7a453a7c590d11ac4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-integration-01.json",
+      "state": "present",
+      "sha256": "a1a6626157febea4239f555046ebccc35734e29449a5e7ba8e02167888ecd410"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/result.json",
+      "state": "present",
+      "sha256": "6148f300a110b377b647dda6aa2095859df6641e99384304660b8ee2444aea85"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-baseline/result.json",
+      "state": "present",
+      "sha256": "45b4cff3f0a39e39f339a34288ab42c4170c76f6f2fe8ae501235bec0ea3b62b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-baseline/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-baseline/stdout.log.gz",
+      "state": "present",
+      "sha256": "67ee2405848d4581f15e06a839fa0d4d9c12f0f9e8b7e940998a9cf87810a5fd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-candidate/result.json",
+      "state": "present",
+      "sha256": "f8fd052151caabcbd4066ecbcc3eabece6a3a3893d5eea377b4c34c20a58d195"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-candidate/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-candidate/stdout.log.gz",
+      "state": "present",
+      "sha256": "e2ecc4aa0880396b4a8b34d8e686451acc1a2f6bcb0678639f10dcb50760767a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-errors_only/result.json",
+      "state": "present",
+      "sha256": "88baa323bc5b86e6bf23f777c362c76248052bb4b4c0718f74575fd892b473be"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-errors_only/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-errors_only/stdout.log.gz",
+      "state": "present",
+      "sha256": "9798f3ca2232323277a02e6294d7cb590f7c2bd3656a0c2328601586882322e0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-formatter_only/result.json",
+      "state": "present",
+      "sha256": "99192bedc762f5e36d40eb332704c76529a0129ace98d6051f0314b69a4d6142"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-formatter_only/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9-formatter_only/stdout.log.gz",
+      "state": "present",
+      "sha256": "d039554e02780ed96566e6685439b991cf2c9830617ffaaeac63b805ec6592fe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9b-baseline_s9/result.json",
+      "state": "present",
+      "sha256": "f22ac68655412b97fa9698960fdf608cae7efc7f2a6996fb7691976509479c1a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9b-baseline_s9/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9b-baseline_s9/stdout.log.gz",
+      "state": "present",
+      "sha256": "10cd7f6a7ce1729ec70a414bb1321ecae33f0aa8ad043294a3c7fa5e98487aa9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9b-candidate_s9b/result.json",
+      "state": "present",
+      "sha256": "d5f9f0d5e9b24406301848938d68d65b50ce9c8d22b2fa45f47cef972a7ba99f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9b-candidate_s9b/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9b-candidate_s9b/stdout.log.gz",
+      "state": "present",
+      "sha256": "1e2c0d38a4018731ad1dbef76f624672edd5a83718ecc2b76123f302091cdbea"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9c-baseline_s9b/result.json",
+      "state": "present",
+      "sha256": "86e79ebeaf58efa96c205ed4febfaac6cf582e4fa30e12ff0d8f16b5a0013de6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9c-baseline_s9b/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9c-baseline_s9b/stdout.log.gz",
+      "state": "present",
+      "sha256": "4d5e94240d6b535403efbf4a8e3e09d878a207705e277a1636c1d2588869a940"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9c-candidate_s9c/result.json",
+      "state": "present",
+      "sha256": "2e5c0a104feef454205475d97c3329e9241fed6d54154e9f00a348d08eb71ad5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9c-candidate_s9c/stderr.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-offline-01/s9c-candidate_s9c/stdout.log.gz",
+      "state": "present",
+      "sha256": "ae75762629f28a80e1b4b35d20a96e38745f61b5b6dc4caeaddd7e78ca25d6ad"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-h11/audit.json",
+      "state": "present",
+      "sha256": "4fce488545118a48ff6f7163e15360e41187a8af63a3633748c9bc1b30f3a7fe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-h11/binding.json",
+      "state": "present",
+      "sha256": "cb9cc081721e4e3241301bb6070f3bf8e5c8791b9da085eaf1cd0748fefd2ec8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-h11/configured.json",
+      "state": "present",
+      "sha256": "145fcff7886ccc67004ba0211fb8430d7babf3d13ff46a63e4d6afe61fb2af24"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-h11/ready.json",
+      "state": "present",
+      "sha256": "2fdc7cf0e0c1980a6245f278dfe48939c68e05fc634c60873c0439d400850f6d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "df69ae196bbbb6555467441b1cf4eb0ddf59fa68129ed888ec71bc5dd64afb1e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "d78c86afbac7e060e10eecf0b4b12811f577a846435e35df24016cec3f3ed3bc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "2de7f92d8eb13214340761c082f18b756eb538decf4f1cace0b1c5bb34fadecb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "4f1a3cbc735c7abc5a9265f429d7206623f9632fa4fec7552da582a0dc9f7f40"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "aa1b2d31f67e94baa40e05de830ca76d8d3998501d78c26a820be9bec9ed9e8d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "37d19b0f3a28e81bd5ab35a4f1d58ed1bac171e07b605e3705009c0295e3b31a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "655780cc573c3ad600fe67e73e81246dfe9e5556ad7424d92ea331c52834857c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "a091fb57a16382f82d04e62a41017a6fa203df30003474c3ec9aa54cdc29f609"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "8fc0a2fdacff242db8e64c4c8beddd93893013705a471c2e14138a63f1870bd7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "d5d6d9ea9db8090fd9b58091370843a3f8e36df472365ecbd19ff9acfc381709"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "db51c206ff9146e9a1035134b6b90f36f5e6d64c2f4d2e03dfc6d74c5a8a0da3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "c484ebee38ed614109673681925d8615c7f998bd46248c52121598559763defb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "e94893ac90618ac7b4d9ee7ffc32f7434386d519de554c870b177c8253f356e5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "b5d966006fa6511e226ddcdda078a6edbb2ba13d2709612be0a27a4bf7cd2d81"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "1d024a028d8d3128d3c5d52413c39a5ecbbae797141559099abfa51f3280537b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "9a2dca6b6777e578dbc153ee38ddfee69dc0e95b1abd18c85434f7e71e2e0ec0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "17edd855730dd22b648ee9a7ccb4ab0ef9f21d98d759c8d90b1b607955eee902"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "0d9862ee57918507ff2af4065d974f3bc0344336eddd77a77927e1d7ce0761a5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "172fcd7fa5c9c1861c51f2439f08ad672817c678aad6a4f42311dc41090a941f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "3446b1ad613cda9c5a3ee4bad7ec9a5b248b2b22e683bd2a9b2c0c7b3e00e151"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "d4e472c4698729fd46e8c24c3b9a47955b4d7c3a531f1ca659675d453409a0f3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "0fc8b94d487b31ef3e0feca7378940af55574346706f2b434f99203a42ebf86a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/current-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "a4ea0c580e927ddf258073db634fe296b7fdb61842c338afc70cdc775653e6f9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/result.json",
+      "state": "present",
+      "sha256": "c75901780f4ce9efc5ea2dc96c71d13d5f368e573ea14f302efe4369953a20bd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-h11/audit.json",
+      "state": "present",
+      "sha256": "03f3577490d5747e8e812a03d12037d4a9c50879d6183fad84ed1d47f68359f5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-h11/binding.json",
+      "state": "present",
+      "sha256": "287a4c06f03bd3532cc706d8ac3688d1d123f733a8ca03e64b11372bf0382ff0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-h11/configured.json",
+      "state": "present",
+      "sha256": "7b85d4b2f6de5c48c8b65073f5e886d022c69cd2e8321e535ab25e23995414c7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-h11/ready.json",
+      "state": "present",
+      "sha256": "396553dbba2d66c63602e8c9cb242664fc8180dd9f15d28c69e031a34b5d72b1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "3a423f2c1ccd3c92c76567fba6bbe68142247a9c97a85af920e7abd42b0279e4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "56c0e3ff091e8a8851d8e99bbbfb30ed1f95541b8143320b682072175113ef11"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "d1dca9de8d409617974f1e93662b4b6e8c7302e540e53c81a489a7cf35315494"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "cd45e8a291c713297446ae66d13f6daf5ffdd8bb720538584e84369f88afebb9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "0ab451e6a92633d97fb4f8335e4f43b42172178fcce7d96542969d950f6761c4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "9503a491933c49d8aacb5135bece06b90ff5843a0e884f6f783e36d571f7b8cb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "46657c8d85e5f873e894227a78d51107b6ed181c755aac710685d082ca906349"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "431f2a747cd750a11a2923e66dcd1d5e714fefd15db3f99f60204ba7f7bb076b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "502ddd2870abbbb5d0287caba2f8c7cf5944782019b85b69a17b4b6e1655256b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "b791ff65422b372df87e6ef6dfe16d830632c8abc72772ce20bf5ac85e3ed9d5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "5a65e99af52934deed9a4078f05fe0e078ad10571d914818f7ae5299fd485566"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "a29d3ed038fa992844a10054d1bba7264297c884585698bf70c6251e4136673d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "807c0d3f7499ed5e9533eb05cbec6ae4636d9ae823573988030a3a937f6fecd4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "82c7dc4cd88fd008b7c445b68d6ef225e20356d92d1f22683d0d5914c7a7f784"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "e256d1f913bf709e3a8479d04f7868cd1d2fced88ea5ca9428d201a27571cfe8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "8d0df088e8f863f038cb1db679bdcaf619acaea2b7c98bd0ceacda6e2c9b2b88"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "e4d2be3819d874847fca98b31b2d4d6c1438927e26263e93f5bfcbad0b628df6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "fa35df37a876dbc2761be17d2b53e5ca121f853d579cd1842d0d26b5c64e5767"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "236f29591c8f905023c92ec81ec9666825305dbb5cddd76d997e63fdf3d5aab8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "b7f7e5315efaa6a170bbd156f321bef59d473ab21e4ae2c0a73941a3329eff82"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "b2579d693a02412f2e41dc88f8e67bbe50b94debb912e0e6f807050bd7ba4082"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "f7d34f859bd2d553566d5227b97ca2cc791a3d70c41454d4f453ef70d179e144"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "75f7a68e373ed9b4731d6b992076e8b184f6a63fc535b661491cdee3186e400c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-h11/audit.json",
+      "state": "present",
+      "sha256": "93e2c09854caa107cd4e1755dd6fdff6fe507a850547f80e2d40f42810bf1b46"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-h11/binding.json",
+      "state": "present",
+      "sha256": "316954b475d15112e320a42e692e180b9b10704a8e3cc6a69c99dbc2efba21fb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-h11/configured.json",
+      "state": "present",
+      "sha256": "3e94216c0a4d1ab665c24f2cea06a8ddd0ba460626997b7b2aa44fe9672b3189"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-h11/ready.json",
+      "state": "present",
+      "sha256": "decedb7e0decf90c3365bcd26ae91da60640bfa09e4385c0b02b06781232129d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "14770ef5dacacba897caa91846ac120e8c2a6cff19905a6816fcf50fe42b5f39"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "04859a0efe876538a2ff0809bf0a64d2d1f2377bb611df943bc4630d544a65ce"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "f5a3c1a1c587d39daa63a95b9ceb406a59d3c6b8b1aea6d2fe8f42ae8c4146bb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "9b84e2fbcb2a1e29a0a2177219cdbb092ee68014f0c96ad9006a23d887d86a06"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "7274f8a6cdb639d9344e2a077541559b039b3a5241fd9f991f3f238611e1e091"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "bbd82850047b87281acced4d5064f86bf19457659cc2222887b669ac00337300"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "c1573a88134557ff430d7a6d64bf4aad026625518e49201cd1886b8a048161e4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "ccc7091134dde61cb9a53d46c4221c732a6e524dac6777e60b312dc7e9bec2b8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "1640194eeb9cceb3deb63e4b50deb9dd998f1d0909ffe7528221056280b21e42"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "2bfb00dd830d27abf77a60a3ceea5de100931539096e8791b8742ed3409080f3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "ed43e4858db22cced1443d8c6a9c3366f9555eeaa493c0e18b49ea217b1cf0dd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "03437beb3b3d4d571977cf1b4369bdd1cb3dd514656bcc147dedb496ab650ce4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "726e7e3db8d596cfeb9c998d0d58f9ff0d6f95535eea0bc8fe6d1b9ee708be1a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "1a0441f94d0a4b40d176d22ac2f755e5469aa45f0d47309177780815b3d21362"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "0b6aa7d98a0ba4edc44b9cc4630575d6767ce758cf65daa376d7a9d2466d7704"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "34361c542489c24a0f8326a9af19916ce20cfb890c77a31787de895d047fcf0f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "19007e12a41334fa633143369adce3b07e631d5e926e54250cc5e263d6034f56"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "d022a09448d01899c682640773e4460cd8eda2ee41f2d816907ae503e9ea444a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "a840dc583354eb89505dfa8ce88800c00899956a766a75f2455f4dc8d8de1028"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "8cacd2428843bb351fbb4b18a4a794b31b7c89ac90b97ce4d82b9196a5447e33"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "ae2b43bbc5a22e3b1949b5fc2ac01a58220f7861059594e23da23a27f2a095ae"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "531be97c444f39e2fd54a9d8a006c2c618a91ec8e529906ce6fca0f179362958"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9b-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "7ccd0247bead71ca98cc1e6091d218c0c7ca24a049751c456b2da6e258f4ae76"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-h11/audit.json",
+      "state": "present",
+      "sha256": "6f7b44ab0f84eb94a2a7f02c926a9743700e59c5f51f35c7b925f53a8c55a62c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-h11/binding.json",
+      "state": "present",
+      "sha256": "49631d5709b3807ef41fd2bee85dfed5d80218968a12e3eb4e18d2e13da24113"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-h11/configured.json",
+      "state": "present",
+      "sha256": "0bcd23d6bd909b6b6f4d45ff18e8c6ab1d341cd3d1bcbb79f3f908fb1f462d20"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-h11/ready.json",
+      "state": "present",
+      "sha256": "5191e3637e852746e03cb86f0552dc79e761dee32d320c3b1fea4b5f31182934"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "7ef619300345caf6b0f806e277296709c397f02174e6086e3b0342bf488c2896"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "1407181c768ba49a2669871f97c2899542e96c9c0090eabb7cfc8f051188e1b7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "79bd0fba4f5fdb2108027a80bab78e7b23a33fcf6158745bb77eb868f7677c6a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "70a6bd861e920fa398e2c562e39bf70a0ca364b0e3c5c5a90a164cb89c406239"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "9670b7c806806d0529df8df4bbd2bebd0fd60603c46286db6d9ed00ed898b6be"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "1596f5b7a74d3bb52e0435ef88c63eddb0a8813e90876dc9eed6baa039e04c00"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "dbd71eab3403c0e5df042a367bbd859ac0300cafc8e783293e518052f95aa90a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "7b97857a7afb6228e2d398e0f7e21878a8fc0c1c404a89772ed38fc2e80fd3f4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "3f9b7afff1a53005936ea80854e4dda3d6b3c980dae19c301abe25a6995c75e6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "60bb768d98ae11ee53c4030a9116ff347a98fd49f6475d860af63978acfccf2e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "1522a2d7dce40bf8e77015f0c1f97e9b568343e7d4222a0c5dca3fbe27708b04"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "5856032b5f56a83187051b398bf5158080bf07a5b47bf5576c4a251f0dd5050a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "01316ea7b7d6f9882710666337bdb17b9c8209929426142fa0119b52b87496c7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "0d2690ce7766bdc51c211238459be7465d144ebfdaa5ccffa8e56802d6126399"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "692adfc58b812562e7f0b1ba5fc95bb6fd98e377b2d5d2f568bf8b5f0689caee"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "492a555326d4d24cc09fe5388dc029ec5efd94e77412d83c6ee0580b3d10ff67"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "f68b6ce29cdc8ed6f7227b214e537b99765a420f9b5969c4da0b9507856e2852"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "144730139b94c3d657c72b6ee91258b734a28a30bb417f31cbfb640feb0fdac8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "a65fa2a279b65e6bc02db5071423658e811f914204be7639fed3093365018767"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "52cf8e1da78a77c6ba36ed3df8cbafd525ca74a98bedc8530572e33b48717408"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "4f4d75e7e826656a969d41a25a961aa5910fd01c29811a89179d68671b9880d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "dc3a5052587ab02b7a3756fb8a7c899df08df99fd0c7f3bcd68af866860f0e33"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-final-01/s9c-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "2edf3abe04059d3df00466d15219b76e10045972dee52a8d3204160ac7bfa40f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-h11/audit.json",
+      "state": "present",
+      "sha256": "80bc7ebbd51cfd400dde2bd6ecb01560876f64b4a10b4b07362542e8b10a6b04"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-h11/binding.json",
+      "state": "present",
+      "sha256": "fcfc51c4ff4e198686ee00169a66bbd64e36a724da61b00394c814f4dbb5bbb9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-h11/configured.json",
+      "state": "present",
+      "sha256": "63704b2bf7a9f0a6e846cbd489fc5e143ce179c5e0c4431c3de1828fb17159c2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-h11/ready.json",
+      "state": "present",
+      "sha256": "103d87db4ad1fb572a6af4ff63f53199a248780211b69b9489ae9be20b1e4fcb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "a39132c83c2d2259f969fb086fe78a6922727c6cc5e40aae9f2a5010eace08e4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "a34008abcc1a970a477a8f8b74c3e528cfc6a6cfd1cd23fa7238144fbf4df7f9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "683a502cd2ad3757bb1f77f105e893fd3905e6b7bffb5b1eee258f36e342a6d4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "eedf1c2f2aa09acd78c12a5023dba5984606a04f9ef372ff318864af092bb2b6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "472932e451824f30fb8f01c00d66dcd982661b9d6a5cdfe870746e42ab13a1a6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "f08ea8713fc5d3a3eda9ec5d8c4f86d53285c130dc06e86ac39f218b93945c57"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "292cd822f0d852dd5e0ce0eeca3aacf07c1b88890bfc1134beba4baefc4fcf29"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "c16b0e17e994b484c1c21d1015868459fc17749c42be0db018922e9c1c6f31dc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "8b4879b844da8c52c9111bef48b25eae04c18bcd2e980f997661903ced928c3d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "8458c5e7eb9bf6c1cd707e364d6dac72aecd6ec27e3780bf2da2636416c6e620"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "3aa7757adcece89828d48f8f9e8b050819b69356ee6e74c8e924f9d719477c6f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "3d4787a576d1b0a45f58957379e730845e8b1d6568f5de8c4b6867cae3e203f3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "ecb4de4b63aa936f9cb16d4e386c88e5ff747662d8fcdc7eccb0a2d8af5686b4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "7976643a605f4fa2f50b45791e9812d11deb2814d88a159f7ae1dec8ce2c8fac"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "1b16b12a659ad5d849cf417bee5512650348ba0c095c01f0e2984f06e79f5f71"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "007ca5becd912da5871f2617c414a634ae827952cb3687337b19c125cb7fe256"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "dd1335265db919c06864f3ccc6f237889c6e161c18fc72f7b37a681934a9a430"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "af4e1c296e514bc9ef268c851087be104ff5357a3b68f9589333a7ae5b3b95e5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "20953aa7345d6eeac7ef3ba0840b31312272b9c6697d6e8028789c79862391f3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "720e8a612b2abcd790d58f5fab1955b29fd5f749c19ee8dd237a70fe68e863b7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "af14813cf4d1dd034598e457c45698ed64c5cfe117af0e56847e5dc158fa1f3d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "d8a26da3266a9c5b34096db267e37f3fc5c9037f7e99b5aa43fe70dc945df9bd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/current-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "988902d39959c40a2f9406892b05854f4b1dc78a3c644d0fb5de0c5926c2859d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/result.json",
+      "state": "present",
+      "sha256": "e28189f9d058bc7dfd07afeb32b4fe61a5af85551bc4971d1ca6ff71b032f3be"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-h11/audit.json",
+      "state": "present",
+      "sha256": "98171c102bbf3e162f2c169e2f5447997ab501cf586515a27a57304b4076ce34"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-h11/binding.json",
+      "state": "present",
+      "sha256": "279d60b4b233b1fa0a02a83d14068859d430d6aa56f37796daa38d056b968376"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-h11/configured.json",
+      "state": "present",
+      "sha256": "81b922e8e90b5758c0374edcf523d2ae44654f6a9f18d661a260e8e3ee3b1d38"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-h11/ready.json",
+      "state": "present",
+      "sha256": "d047b5aae459f35b78e742eeb1a20f2214c9844338c80d01a908a4c70d18e557"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "904f5121d366bf53ac5e14fb7a3a5afe303ec5c3f4e0a57a239ccfb3919776c6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "45270fece1e3d79b9acd020a513a45d5beb1cb7d670cedeecb10bf0815a48741"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "b573625b865770aadfa60fce699acdd17545b305a264359aa8015a2a55208e72"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "f0c5b56d947d316531668f865fdbfe14104bfe19a87b316a0269f2ac0ee5b3f0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "71cbe6c428e5d8b64db8046c950bb7fc05cd179836178eb5631ed54585653179"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "78371dab7fd2eb81cffe5be98e08d0998ef77718647aadb7bc1cd8cab9c9d66c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "b3c1f9f5ac8b2a30382fa341e43cf79defcdae857c688626f0aa4d67f5917e3b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "11c0b4ed7943ab2766ada00d55c176e32afcd636d8b4bf2d7dee328431396c89"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "4b242df7998daa1f5e97bd2306974f2f34da6d443bb8d12eb09c7c00a089a6b5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "f13095c11fd54c8a9a96998f8651c0ed7bc762847cf11836fe206fda4a34132a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "ef61d254f947a58e36f778b1d7c2d7d0b0391344e8dd0ddbe5b434298bebfb9c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "1c4388cb38a7e44b186a4254b1f96e8a72755ae0e775896e1fa6dcaba691aa43"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "d7a1156b9f432f945de24729c2642deae3acfcbdf7d598863481cbbfa6edf380"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "fbc40583a2a5dc0e54b4fb6d9cac047f2d6556f7751d34b5a44dc2fe4df51d76"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "a6a51f2e4316a098074c0b6ec17ed55ee7508ad8b1dcaf2236511eb02137418b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "585ca2b06d73b702e20fb9298a000d85a4737f36649332b637358dab1e16d987"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "d85febc0e3ed1b449878c4ca3ddc5f395a682b5781a3f1d8293d2c0b37384a48"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "8643cd4a91a904374ddcfb19f6ae49746d6f3ae4ced62e89607c2d7b708a23dc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "6874d1204bbdb162fbe739388f7e106cc5ecf3a36eedcfa604182cb8e6965845"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "cc970d60c55579d31b5d97d12732d1d0f952c3c33fd314b14fa3d23b5d3caa69"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "dbee2ac774ded7e53c8e4b35d7c34a51d78adc7d664edd380df851ccb31e0bcb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "dacad73139fefea7038c1b363e294a34acf206036f8c8a0cd885980395202746"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "a56ead9eabc78c54ec70ed7acf0505f2fd84bc5ef8d1d01ec234d92b244a1ea8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-h11/audit.json",
+      "state": "present",
+      "sha256": "939101c7ff1c88222e3a325d3a47ba5a0f88f4bc9ba9e004068e684b76c99cf3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-h11/binding.json",
+      "state": "present",
+      "sha256": "94ee460de3067b4d1b6686c50c06a2afe4e995284841485a56455d75dad3bf04"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-h11/configured.json",
+      "state": "present",
+      "sha256": "3cc8f4fd9b92fcd49d0a5878911b097a5e8553ffc5c12c35186a96c272d7fa5b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-h11/ready.json",
+      "state": "present",
+      "sha256": "7424c32c89cdc0075088c3c47335ed58ab4559d1ea1f1c60198b67821651695d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "7bdbf01c0f6a57e0979983216ba3bbdd87f5af2870ac6e7512beb260e38291b4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "29e00cd0c3dac26ee4d7a4def00e1649b3bcbc418947081ad2f71d0a8a892858"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "ae3eb8575ac52e1aad369473bcb19c2813b162dc3b062fbb2615d88e775dbb43"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "61367087c06ef0d741505affb6922dc6650b63b88e79e84dcbeb6fc1b84c5aa9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "8b2bc593466043b5529a40265b59d2ffb4f81ff16edc0237f832f3a7d66aeb1e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "222bfee57249f4cf4edd7a2a02ab645900fcadb2338ef6f07f04bb6ff371bf1c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "cd9bb50b2fd9ac6f99c7272a1746b740ff87786f1c4ab6d501edd187d60978d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "4e8398f9a7caa9b28dc69035c0e1fca7c16d96d166f079d58430bd952874b083"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "0d60b9cb5852d51501ef32d0df88469427d8ea82ba61b4175f3aff005fdf8146"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "23fe062ea2adf260f27e5d53a4c766b304cc1318365f7e39d666f055a94f4726"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "af3953d6a65d948c25d9387a64f88714fc2b8013898ac6c04d298f8c975b67e9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "9829ebfd074aa54baab871511fd4365ff6a42a61463aa1ffa6c3690bdf58057f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "0ff937a5b3c82fa7f07b11e98ef9aa193667dee3665e45fa38f908c6de8d5adb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "9322dca8b9fef58d747b6338c79362673040c81aaad1e35c7df6f2c0782f449d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "64b9f3235b9bbc2b6027ef0022bd8d7b4c1c00ef6ec82e7917b7afc4462fd027"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "846e2b9333735f152e99a3bed51109de3887108a97a0ff8e0c6dbf120609cdbb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "fa6fd3816b35074bbfcd3edd6788ddfbb2e5f717b5ed5935c5c7c6b8d7378705"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "ccbf323a7ffb7c42b7d2c74c1bd37c2928a7a5bd63e015fda02cd9aeb5f91ec9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "cb144c47143062674e5d9665e2798a3df2ab95d6ca5c403819112bc8085293fe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "10497dcc6be42754f03daca1d5337887d6f90a51d0b3269c0584b728a3c4199c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "5a347a4fe1c5695a7df58272ae2597917e63639aeb38a7ca96d445f972a2e099"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "876828cbebff9e3998f2ec5dff05de2c0cb071736016aa8555ba288e89bdd90e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9b-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "0fd1ec8d59aa4bfa2599b7c3c297c1e77b3d5a1b1aa461f82fb0109aa2710d08"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-h11/audit.json",
+      "state": "present",
+      "sha256": "7c8edf80f921d8db1a27450196ba143be5891115b8bef684bf21c00e326a34dc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-h11/binding.json",
+      "state": "present",
+      "sha256": "7f8fbebdaaaba0f8ddac0ea52a1a5f40e3faa07f42a213d88a717d9bfd584440"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-h11/configured.json",
+      "state": "present",
+      "sha256": "2b5f6996d0b5511934552f5a9821c28951411738aa2b7c110eabd1707e66207c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-h11/ready.json",
+      "state": "present",
+      "sha256": "a6c9305eaf962672bf51b123b38b296959cc5a04c177142f3f36b63dc1525695"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-h11/receipt.json",
+      "state": "present",
+      "sha256": "974c1fc4a12f11ecfd62db3658318f375bb18ea7498bb55857a420d5c5c5e3f1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-h11/stderr.log.gz",
+      "state": "present",
+      "sha256": "aa8ec92f69cc1094995a0f0c66de22d25d0b1b45f7cb0b84f40beeadcc24a878"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-h11/stdout.log.gz",
+      "state": "present",
+      "sha256": "09fc4d0e4a482a276c2529810629a9ed857b872835b970df690c6da93fd350b4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-httptools/audit.json",
+      "state": "present",
+      "sha256": "f5720ead221a2212c29ba9c184bbc73066954da2502a3df85c3ee56c30744b36"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-httptools/binding.json",
+      "state": "present",
+      "sha256": "99915637e1f709c37c702a048a5a658624e900fa1e66d004db8804339c6c6a15"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-httptools/configured.json",
+      "state": "present",
+      "sha256": "89245b079f52d2a14acd46b69bbf1da8636bdf791a6fa13cec9737693b36471d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-httptools/ready.json",
+      "state": "present",
+      "sha256": "a618647c1841a6e37cc45665f2049d1b90a36bec4ddfe2cf078eedaeee8e680a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-httptools/receipt.json",
+      "state": "present",
+      "sha256": "7171e7b52901752082bf69d6f2090a3c6aa9bbeaa856687a05767e3b1ec74790"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-httptools/stderr.log.gz",
+      "state": "present",
+      "sha256": "f3fe6b9139e1d812a9274da26e80893c985078a3ed32801e1d68fde40f79a1b9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-http-httptools/stdout.log.gz",
+      "state": "present",
+      "sha256": "3a7d48d5b3f232acf539351d3f15c961810062c98292dfbce17697c7fa8478c4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-shutdown-failure/audit.json",
+      "state": "present",
+      "sha256": "e6ff20189477e33b25334ce06b7d191b54ccceaa994b58a165d95c2b0eef4177"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-shutdown-failure/binding.json",
+      "state": "present",
+      "sha256": "74f16b7f2737446f7147a9833e93279afc87f12c1bc95b09cafde9c31aa540f3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-shutdown-failure/configured.json",
+      "state": "present",
+      "sha256": "2d889c4f73055d3f8ba99d72b5dffc33630ed22d47494a643415b47bc362329f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-shutdown-failure/ready.json",
+      "state": "present",
+      "sha256": "4e6bf69475079e1c1e959849fcd104c79ac3eca54d2b6c9ca97ac8c829b26edf"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-shutdown-failure/receipt.json",
+      "state": "present",
+      "sha256": "cda3d5c63dd894639b241d1a412b47f7e64e657687daa0c9d1b29c63abc373c2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-shutdown-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "e89490585525352479e9cbce3ed1ec2e42df673b7d0596c10f1d5308e9282a06"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-shutdown-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "c40f93fc7fdedfc19c19cc173701c573107eb83f6ed8ef267cd4ca1a777db7a0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-startup-failure/audit.json",
+      "state": "present",
+      "sha256": "98d65609011be94d8a78271ad2a044921cc28a9c1b0583b896fd06ad96f59db3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-startup-failure/binding.json",
+      "state": "present",
+      "sha256": "8a216b5faaf8c7481c11894cdfc625f8bb3c75ec2c4a151b049ad49599f744db"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-startup-failure/configured.json",
+      "state": "present",
+      "sha256": "fe193e88860f9a28ed04cc27211f5156bc448b774bcc6582b88975776c5f0ed7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-startup-failure/receipt.json",
+      "state": "present",
+      "sha256": "4c04f69254aa5981e769f28d289c4a3ee36a30b93eab05524c5ccdbfe0ff0804"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-startup-failure/stderr.log.gz",
+      "state": "present",
+      "sha256": "c1c6e4cb9bef2fcdfa64cf4c6a8a89524a33bd859e89fbfd8cd561fa9c0faa15"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-process-four-arm-01/s9c-startup-failure/stdout.log.gz",
+      "state": "present",
+      "sha256": "12026c1a19156cf8457756900e6dbe582ad769694720bac02df1fac977185532"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-style-01/original/apps/api/app/core/logging.py.txt",
+      "state": "present",
+      "sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-style-01/original/apps/api/tests/test_exception_log_privacy.py.txt",
+      "state": "present",
+      "sha256": "d2dfddf4e18df885935cde48835ed37a6eda98e0806fec6611272cd86eeacc34"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-style-01/original/apps/api/tests/test_log_sink_privacy.py.txt",
+      "state": "present",
+      "sha256": "311f2b140f874d187483eb1dc6bdb40aae1d6bb4afcb34b7ddbbda14ec18b0a6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/s9-style-01/result.json",
+      "state": "present",
+      "sha256": "70dfd291eb222921fadfb581d89de80a306f26dc5dfe1fcd53d14bb7f07da350"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/source-equivalence.json",
+      "state": "present",
+      "sha256": "c7010c8151a26ad33e0c617fcd6c087dea4ae98be746ca9a3d12830fffe581bd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/web-build.log.gz",
+      "state": "present",
+      "sha256": "1d11b9711ea98964291c5266c55f42c44a56949bed24f5d7ff1cdfaa1960dd25"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/web-docs-checks-01/docs-refresh.log.gz",
+      "state": "present",
+      "sha256": "c76fe7461cbc3a836055ab3a68e3f734c8684f0c4a799e8c5748e3cb2478d7b7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/web-docs-checks-01/migration.log.gz",
+      "state": "present",
+      "sha256": "59346c33ce0e5e4e4c06e7a57d177fceb13abf1d0da1f13d6f29a5d9b1b7be49"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/web-docs-checks-01/result.json",
+      "state": "present",
+      "sha256": "fd43f64f6d5eec469f9d9af841e9c3af7ecb0b3a0ad4e472845053dcbd826a59"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/web-docs-checks-01/web-types.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/web-docs-checks-01/web-unit.log.gz",
+      "state": "present",
+      "sha256": "4e8ced3d82cf94330e61d043903069663455679c3468c4ecf1a4e0738eef81e9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s9-local/web-docs-checks-01/whitespace.log.gz",
+      "state": "present",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "specs/018-codex-production-line/spec.md",
+      "state": "present",
+      "sha256": "f1788788fdc39113b8ec9262158f95a502ed154055f94d0d76d7b1c83386afc5"
+    },
+    {
+      "path": "specs/018-codex-production-line/tasks.md",
+      "state": "present",
+      "sha256": "ed9d70b5acd4039e7b34ac96b1b8323ad470a120c39104d101a4a564e7c18443"
+    },
+    {
+      "path": "specs/018-codex-production-line/verification.md",
+      "state": "present",
+      "sha256": "e15189bb6a69651cbc738b43ad85f82e6eb0c22ef4201773e926fb4cd0d1a77b"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/034-exception-log-privacy-r1.json",
+      "report_sha256": "f14eaa1eeff2c566fed8d8676265336bdeb66d8fe0fb18a454d9263d0fa8c69d",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_exception_request_id_redaction.py",
+    "holdout_ref": "specs/018-codex-production-line/evidence/s9-local/s9-id-redaction-01/child.py.txt",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: fixed synthetic technical log-disclosure counterexamples, not statistical LLM calibration or pedagogical holdout. Independent code/evidence review performed; named human release acceptance pending.",
+    "metrics": [
+      {
+        "name": "known_pattern_request_id_disclosures",
+        "baseline": 4,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 4
+      }
+    ],
+    "exact_command": "Archived dou018_s9_id_redaction01.py.txt loads hash-pinned intermediate/final logging with the same four assertions; old raw-ID presence4 failures, final4 pass. Final84 group and full1655 API separately pass."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: release-gated logging boundary; existing product feature flags unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:034-exception-log-privacy-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: release-gated logging boundary; existing product feature flags unchanged",
+    "kill_switch": "Hold release if new log schema or privacy/response contract fails. Keep safe masking; do not enable raw traceback output to recover diagnostics.",
+    "assignment": "Sticky to the exact reviewed candidate SHA for the entire synthetic session; no real-user exposure. Future stable cohort assignment requires independent promotion approval.",
+    "initial_exposure": "None; local synthetic testing and feature draft PR only.",
+    "stop_conditions": [
+      "Private canary in configured exception/server/fallback log.",
+      "Generic500 response breaks or process-control signals are swallowed.",
+      "Known sensitive-ID mask is bypassed.",
+      "Collector cannot parse object exception or timestamp-free fallback."
+    ],
+    "expand_conditions": [
+      "Exact candidate PR checks pass.",
+      "Independent engineering/domain/privacy owners approve.",
+      "Real collector/access/retention and target auth/storage/operational gates pass separately."
+    ],
+    "active_exam_policy": "No academic record, exam/source lock or role change."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:f79d8a208d468be59a0ab4c035af0f6e468826e2",
+    "procedure": "Hold promotion and stop only the candidate process gracefully. Deploy a reviewed compatible artifact; baseline raw exception/lifespan/sink channels are known weaker and must not be re-enabled as a diagnostic shortcut. No migration or data rollback. Preserve all evidence and role/quota/claim guards.",
+    "max_minutes": 30,
+    "verification": "Planned operator target; no measured production rollback SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic canaries, locally pinned code and measured technical logs. Log source/metadata is operational data, not universal anonymity. Current client support ID remains potentially identifying despite known-pattern masks; server-origin S10 separate.",
+    "retention": "Collector access/storage/deletion, institutional legal basis and provider/backup lifecycle decisions remain separately open. No synthetic acceptance promotes production."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

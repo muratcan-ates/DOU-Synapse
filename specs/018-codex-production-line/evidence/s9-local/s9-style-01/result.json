@@ -1,0 +1,23 @@
+[
+  {
+    "path": "apps/api/app/core/logging.py",
+    "before_sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f",
+    "after_sha256": "209068a3a6ea7436c133c372d732b61ac630485e0ebb855be2adc8c7b71093a9",
+    "executable_AST_and_import_bindings_equal": true,
+    "only_import_order_comment_or_format_changed": true
+  },
+  {
+    "path": "apps/api/tests/test_exception_log_privacy.py",
+    "before_sha256": "d2dfddf4e18df885935cde48835ed37a6eda98e0806fec6611272cd86eeacc34",
+    "after_sha256": "fb5f910c48ed93f6596a761cf840fc7a01da84b2d6afa0b842e13460e2ceb1de",
+    "executable_AST_and_import_bindings_equal": true,
+    "only_import_order_comment_or_format_changed": true
+  },
+  {
+    "path": "apps/api/tests/test_log_sink_privacy.py",
+    "before_sha256": "311f2b140f874d187483eb1dc6bdb40aae1d6bb4afcb34b7ddbbda14ec18b0a6",
+    "after_sha256": "d5813c73eb7d28963914524b1ef2d5cdf95cbbccc5318915c2bf8a4d53cfa5e5",
+    "executable_AST_and_import_bindings_equal": true,
+    "only_import_order_comment_or_format_changed": true
+  }
+]

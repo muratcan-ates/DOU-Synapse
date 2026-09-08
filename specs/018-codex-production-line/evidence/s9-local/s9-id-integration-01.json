@@ -1,0 +1,6 @@
+{
+  "manifest_sha256": "ab4fba184c2a578178b82175c10df90b4a95923baa123c468387ae20c64dbf4a",
+  "logging_before": "209068a3a6ea7436c133c372d732b61ac630485e0ebb855be2adc8c7b71093a9",
+  "logging_after": "bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290",
+  "new_tests": 4
+}

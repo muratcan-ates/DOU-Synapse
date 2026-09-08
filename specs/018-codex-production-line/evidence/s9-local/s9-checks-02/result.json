@@ -1,0 +1,41 @@
+[
+  {
+    "name": "ruff",
+    "command": [
+      ".venv/bin/ruff",
+      "check",
+      "--no-cache",
+      "app",
+      "tests"
+    ],
+    "exit_code": 0,
+    "seconds": 0.089,
+    "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  {
+    "name": "format",
+    "command": [
+      ".venv/bin/ruff",
+      "format",
+      "--check",
+      "--no-cache",
+      "app",
+      "tests"
+    ],
+    "exit_code": 0,
+    "seconds": 0.048,
+    "log_sha256": "82a96897c2e32e25d0c331f67fd0e62f0a1bdf2d0ea1cddaa49079d4f6c6396b"
+  },
+  {
+    "name": "mypy",
+    "command": [
+      ".venv/bin/mypy",
+      "--cache-dir",
+      "/private/tmp/dou018-evidence/s9-checks-02/mypy-cache",
+      "app"
+    ],
+    "exit_code": 0,
+    "seconds": 18.44,
+    "log_sha256": "d197d6017d587f21ad64746c2d6847a7ecaac183b973fcf4aa19a188a269cd3f"
+  }
+]

@@ -1,0 +1,24 @@
+
+import hashlib,importlib.util,json,os,socket,sys
+from pathlib import Path
+sys.dont_write_bytecode=True
+package=Path(sys.argv[1]);arm=sys.argv[2]
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+sys.path.insert(0,str(repo/'apps/api'))
+import psycopg,pytest,app.core
+attempts={'db':0,'network':0}
+def no_db(*a,**kw):
+ attempts['db']+=1;raise AssertionError('Unexpected offline DB call')
+def no_network(*a,**kw):
+ attempts['network']+=1;raise AssertionError('Unexpected offline socket call')
+psycopg.Connection.connect=no_db;psycopg.AsyncConnection.connect=no_db
+socket.create_connection=no_network;socket.socket.connect=no_network;socket.socket.connect_ex=no_network
+def load(name,path):
+ spec=importlib.util.spec_from_file_location(name,path);module=importlib.util.module_from_spec(spec);sys.modules[name]=module;spec.loader.exec_module(module);return module
+selected=package/('baseline/logging.py' if arm=='baseline' else 'files/apps/api/app/core/logging.py')
+app.core.logging=load('app.core.logging',selected)
+app.core.errors=load('app.core.errors',repo/'apps/api/app/core/errors.py')
+code=pytest.main(['--noconftest','-p','no:cacheprovider','-p','pytest_asyncio.plugin','-o','asyncio_mode=auto','-o','asyncio_default_fixture_loop_scope=function','-q',str(package/'files/apps/api/tests/test_exception_request_id_redaction.py')])
+print(json.dumps({'arm':arm,'pytest_exit':int(code),'attempts':attempts,'application_main_loaded':'app.main' in sys.modules,'logging_sha256':hashlib.sha256(selected.read_bytes()).hexdigest()}))
+assert attempts=={'db':0,'network':0} and 'app.main' not in sys.modules
+raise SystemExit(code)

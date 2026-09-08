@@ -1,0 +1,34 @@
+{
+  "pid": 80385,
+  "arm": "s9b",
+  "mode": "http",
+  "transport": "uvicorn.protocols.http.h11_impl.H11Protocol",
+  "loaded": {
+    "app.main": {
+      "path": "/private/tmp/dou018-s9-process-final-candidate/arms/s9b/app/main.py",
+      "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+    },
+    "app.core.errors": {
+      "path": "/private/tmp/dou018-s9-process-final-candidate/arms/s9b/app/core/errors.py",
+      "sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f"
+    },
+    "app.core.logging": {
+      "path": "/private/tmp/dou018-s9-process-final-candidate/arms/s9b/app/core/logging.py",
+      "sha256": "f020c9ae483779f7858259d459c9e47e2e6b751118cedec16aa21b6913a1448f"
+    }
+  },
+  "versions": {
+    "fastapi": "0.141.1",
+    "starlette": "1.4.1",
+    "uvicorn": "0.52.4",
+    "h11": "0.16.0",
+    "httptools": "0.8.0"
+  },
+  "python_major_minor": [
+    3,
+    12
+  ],
+  "source_manifest_sha256": "aa8eb8f61c3d1a30cf5f6e487855a62b64bb134f9ece32c8d11840033b882758",
+  "fixture_sha256": "6af5214ae54602ca23166dfdbf97a647ea1be69f2ee8484fb37ef1b06c820ea2",
+  "adapter": "copied real app + synthetic route + wrapped actual lifespan; dependency guards only"
+}

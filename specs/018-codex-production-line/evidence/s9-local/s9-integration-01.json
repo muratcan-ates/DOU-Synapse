@@ -1,0 +1,42 @@
+{
+  "base": "f79d8a208d468be59a0ab4c035af0f6e468826e2",
+  "files": [
+    {
+      "path": "apps/api/app/core/errors.py",
+      "before_sha256": "1094d57684763c283a5f6efed344e566bf94ecb7e39bd7c9aa1699c7b9524274",
+      "copied_sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f",
+      "source": "/private/tmp/dou018-exception-next-candidate/files/apps/api/app/core/errors.py"
+    },
+    {
+      "path": "apps/api/app/core/logging.py",
+      "before_sha256": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc",
+      "copied_sha256": "040ae8a026022f544d2e731ab202ca678f32c0a8326d9b9b552663277658517f",
+      "source": "/private/tmp/dou018-log-sink-next-candidate/files/apps/api/app/core/logging.py"
+    },
+    {
+      "path": "apps/api/tests/test_exception_log_privacy.py",
+      "before_sha256": null,
+      "copied_sha256": "d2dfddf4e18df885935cde48835ed37a6eda98e0806fec6611272cd86eeacc34",
+      "source": "/private/tmp/dou018-exception-next-candidate/files/apps/api/tests/test_exception_log_privacy.py"
+    },
+    {
+      "path": "apps/api/tests/test_lifespan_log_privacy.py",
+      "before_sha256": null,
+      "copied_sha256": "492ea8a6147c0dec595fd556d85f0acf4059aee1cfef26af6e7e4948fa4cb4bb",
+      "source": "/private/tmp/dou018-lifespan-next-candidate/files/apps/api/tests/test_lifespan_log_privacy.py"
+    },
+    {
+      "path": "apps/api/tests/test_log_sink_privacy.py",
+      "before_sha256": null,
+      "copied_sha256": "311f2b140f874d187483eb1dc6bdb40aae1d6bb4afcb34b7ddbbda14ec18b0a6",
+      "source": "/private/tmp/dou018-log-sink-next-candidate/files/apps/api/tests/test_log_sink_privacy.py"
+    },
+    {
+      "path": "apps/api/tests/test_storage_log_privacy.py",
+      "before_sha256": "3d13f7a33eee3958ba533363401214111c09d6850008a80503e7ce4f8182135c",
+      "after_sha256": "6501f0f168e510f3c739d0d423a41e8287c0eacd00937e872129d3c511b2c4c1",
+      "intent": "Six existing transport-cause privacy cases adopt explicit new exception-object schema; all emitted canary, two-event and typed StorageUnavailableError oracles preserved."
+    }
+  ],
+  "state": "integrated-before-root-full-suite"
+}
