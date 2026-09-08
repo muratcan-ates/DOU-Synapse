@@ -45,8 +45,8 @@ test içindir; gerçek arama kalitesi için `fastembed`).
    **kullanma** (başka dalda). Yeni ihtiyaç doğarsa 0024'ten devam et ve kuyruğa not düş.
 5. **Yönetişim (`.ai/`)**: `.ai/policy.json`'daki hassas yola dokunan commit **aynı commit'te**
    dossier (`.ai/changes/NNN-*.json`) + kanıt (`.ai/evidence/NNN-*.json`) ister. Kayıtlar
-   append-only: var olanı düzenleme/silme; düzeltme yeni kayıttır. Numara kuyruğu **023**'ten
-   başlar (022'ye kadar dolu). Doğrulayıcı bir dossier'i yalnız HEAD'de tanıtıldığı commit'te
+   append-only: var olanı düzenleme/silme; düzeltme yeni kayıttır. Numara kuyruğu **024**'ten
+   başlar (023'e kadar dolu; 023 bu runbook'un toplayıcı kaydı). Doğrulayıcı bir dossier'i yalnız HEAD'de tanıtıldığı commit'te
    uygun sayar; bu yüzden her push'tan önce
    `apps/api/.venv/bin/python scripts/refresh_aggregate_dossier.py --target origin/017-completion-integration`
    koştur, ürettiği kaydın `evaluation` referanslarını gerçek dosyalara bağla, kanıtı
@@ -418,7 +418,8 @@ olarak belgele.
 **I6. `openapi.json` export** (uçlar değiştiyse) + kırık bağlantı taraması (`scripts/check_links.mjs`).
 **I7. Sayaçlar:** web bağımlılıkları + `bunx playwright install chromium` kurulu → `node scripts/docs_check.mjs --duzelt`.
 Rozet dili: `backend.tests` metriği **toplanan** testi sayar; "geçti" yalnız koşulmuş pytest'e
-bağlanır. Tarihsel ölçümü silme: `<!-- docs-check: tarihsel <değer> · <YYYY-AA-GG> -->`.
+bağlanır. Tarihsel ölçümü silme; `scripts/docs_check.mjs` dosyasının başındaki "tarihsel"
+işaret biçimiyle (değer + tarih) etiketle — biçimi oradan kopyala, kendi yazma.
 
 ---
 
