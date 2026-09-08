@@ -1,0 +1,1518 @@
+{
+  "schema_version": 1,
+  "change_id": "030-branch-aggregate-r1",
+  "lineage_id": "branch-aggregate-030",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Runtime ve gizlilik kanıtlarını 017 PR kapsamına bağla",
+  "summary": "Yeni model veya canlı yayın ölçümü iddia etmeden 029 teknik kabulünü önceki değişmez dilimlerle bütünleştirir.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-08T17:18:05+03:00",
+  "review_by": "2026-10-08T17:18:05+03:00",
+  "base_sha": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final production-provider-selection-unchanged; tests fake; offline cached FastEmbed0.8.0. Runtime slice: unchanged from9af; fake or absent LLM in local acceptance",
+    "model_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final intfloat/multilingual-e5-large local cached revision66076b8dc6e367337e3e90e6fb309fb0f3addaf6; production LLM unchanged. Runtime slice: unchanged from9af; no new model download or scoring",
+    "prompt_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final code_trace/bug_hunt rubric and grounded_missing_criterion protocols; exact question_gen/grading source in artifacts. Runtime slice: unchanged from9af",
+    "tool_schema_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final rubric criteria + grounded_missing_criterion + chat_history_changed and policy history UI contracts. Runtime slice: 0025 canonical quota SECURITY DEFINER functions;0026 pending-only app ingestion authority and revision/token/lease worker writes; local privileged restore fences; exact artifacts below",
+    "guardrail_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final persistent chat privacy revisions; fresh authority and exam/citation validation; atomic rubric checks. Runtime slice: Bounded fail-closed shared quota; committed admission before provider; fresh lease clock after locks; stale writer fencing; APIRoute templates and disabled uvicorn.access; no raw URL fallback",
+    "retrieval_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final MATERIALIZED bounded dense candidates x8; dense-only force_custom_plan with restore; FTS SQL baseline behavior. Runtime slice: unchanged from9af; source-bound104 retrieval tooling regression tests only",
+    "embedding_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final production unchanged; measured hashing namespace and cached FastEmbed namespace bound in acceptance manifests. Runtime slice: unchanged from9af; technical hashing/controlled fixtures only",
+    "evaluator_revision": "Combined025/026/027/029 stack. Prior product/retrieval: Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final unchanged holdout and thresholds; source-pinned old retrieval functions; crossed candidate diagnosis; final two-provider retrieval replay plus runtime104 tool tests. Runtime slice: Technical unit/SQL/HTTP/process/restore acceptance scenarios pinned in d-runtime-inputs.json; no pedagogical evaluator changed"
+  },
+  "data": {
+    "corpus_digest": "b2c9999606fef3042034ae8bf35aed12998692352be26605d5af17e9aa48de39",
+    "eval_set_digest": "774c91a94f2e0f7f5f20b2205ec3955f0c36fd9a301b4ff33d5f50bee40c5ad1",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".ai/policy.json",
+      "state": "present",
+      "sha256": "ac2256861601832a6c4f754187d1478b0d61fc5d3cc4f3095808cd6f6af4c26b"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "acd23f2d071e9bfcd89d776938f6221c0bf383648f32fe1d6def77944f5826fd"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "state": "present",
+      "sha256": "bbe2413fa4b1db32936d811a21fe2af8388b4b3a4466f26af4ccb6b0681cae3d"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "a8af6f9d1597ee8aaaecf247cf39857d47c1e1ddc7e3f593fe32db859b937501"
+    },
+    {
+      "path": "apps/api/app/api/chat.py",
+      "state": "present",
+      "sha256": "6c9ea0d3379efb4d6b1892ae62297306ec6366c0812ac86029fcac15cf916f8d"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071"
+    },
+    {
+      "path": "apps/api/app/api/health.py",
+      "state": "present",
+      "sha256": "e5b3a084fadc24c50021a64a2bef15349b534b04d5fcb685821aed33e9108625"
+    },
+    {
+      "path": "apps/api/app/api/internal.py",
+      "state": "present",
+      "sha256": "ba7b1476a2fb17fea648212e2b5a39b6fe2eed6a0e43cc9e69ae381c956d1bf3"
+    },
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421"
+    },
+    {
+      "path": "apps/api/app/api/questions.py",
+      "state": "present",
+      "sha256": "985024e2ae55b0ce72e3cf6004a0c3a35ba664e9ad133b0479f3206e78196528"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "06694c0ca47d281b6584feecadc405558fdbf505be5d240fb2576df7f4e008f0"
+    },
+    {
+      "path": "apps/api/app/core/logging.py",
+      "state": "present",
+      "sha256": "1b55a30e8b96d32f972dd0ff7bde92cb7f0b03f3776e1241589858ef9f02c4dc"
+    },
+    {
+      "path": "apps/api/app/core/rate_limit.py",
+      "state": "present",
+      "sha256": "f269575ec80fdf370d3b224b10fb40920be5c1181e9890fc1bc1c98d8ddee83a"
+    },
+    {
+      "path": "apps/api/app/core/request_quota.py",
+      "state": "present",
+      "sha256": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2"
+    },
+    {
+      "path": "apps/api/app/core/request_quota_maintenance.py",
+      "state": "present",
+      "sha256": "6e3d66a4bcb5605ec36ed9ed28e78afc2c35f40ad96f94fd0558918cc6436479"
+    },
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/authoring.py",
+      "state": "present",
+      "sha256": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/grading.py",
+      "state": "present",
+      "sha256": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/question_gen.py",
+      "state": "present",
+      "sha256": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/socratic.py",
+      "state": "present",
+      "sha256": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e"
+    },
+    {
+      "path": "apps/api/app/modules/generation/fake.py",
+      "state": "present",
+      "sha256": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/claims.py",
+      "state": "present",
+      "sha256": "31c44cc1b14d232144c41e0ac4c29b0520c63a26a36089d444b9a5e45fadfab9"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/pipeline.py",
+      "state": "present",
+      "sha256": "4cd396f9f5f6712791b4cf4b98dce7c6a89681adf59e56592846f673c19ef14f"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/storage.py",
+      "state": "present",
+      "sha256": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/dense.py",
+      "state": "present",
+      "sha256": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/fts.py",
+      "state": "present",
+      "sha256": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/service.py",
+      "state": "present",
+      "sha256": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202"
+    },
+    {
+      "path": "apps/api/app/schemas/privacy.py",
+      "state": "present",
+      "sha256": "1097542ff47cb2c17908b4fb3e307ccdc1b412a459332f922ec68ddaf9dfcd21"
+    },
+    {
+      "path": "apps/api/app/worker.py",
+      "state": "present",
+      "sha256": "9fa5c86ff8de4788aaeb50280246b8a137a28fbeefc64171aacd29526a70e7aa"
+    },
+    {
+      "path": "apps/api/tests/test_d2_ingestion_authority.py",
+      "state": "present",
+      "sha256": "129e185c91d39b1c6abfacf8345d6738302b5643a74782d3640955ff08b84e76"
+    },
+    {
+      "path": "apps/api/tests/test_d2_lineage_regression.py",
+      "state": "present",
+      "sha256": "6ce7d6953d7559d1bad5b05562800498ac3df2832431ffb5c736a9c0fa9e8489"
+    },
+    {
+      "path": "apps/api/tests/test_ingestion.py",
+      "state": "present",
+      "sha256": "3f7237a6a3aed4a885cc3293cf2d51f5e72a8005c154200e8dbcb05f2d949eb6"
+    },
+    {
+      "path": "apps/api/tests/test_rate_limit.py",
+      "state": "present",
+      "sha256": "0dfb935fc887e319ae1b8f612212df1dc41d7493d76b2a4214c912862af1c596"
+    },
+    {
+      "path": "apps/api/tests/test_request_log_privacy.py",
+      "state": "present",
+      "sha256": "662b1a315bc501991d1ff5ba8b9a6c9e5822153cf3a973ee6075c49b763e9df3"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota.py",
+      "state": "present",
+      "sha256": "c10d291cdaad73f69eb7233db8d19bb476ae799b9bd311e11fff7a6cc95543f8"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota_health.py",
+      "state": "present",
+      "sha256": "3f3e73658c8d00a370d2c01736e33c359090090b1ff7c293b16ab37d10ef5445"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota_maintenance.py",
+      "state": "present",
+      "sha256": "846037f8b1afa72674caf3d26858ee62fc132017b4c98cee360f7a432815c600"
+    },
+    {
+      "path": "apps/api/tests/test_request_quota_pg.py",
+      "state": "present",
+      "sha256": "0d70a6e4446351fb5ba2fec480b34ee64c2e2bbad3aa64390bf564129db52c6f"
+    },
+    {
+      "path": "apps/api/tests/test_user_rights.py",
+      "state": "present",
+      "sha256": "22d7cec72f6e9dfbc18e8362d9d4a6c84bc4e258565bdc2bcdd04cf339ce05c6"
+    },
+    {
+      "path": "apps/api/tests/test_worker_lifecycle.py",
+      "state": "present",
+      "sha256": "a6bf6da75b3f9c61b26a5eb4eafc45b158d1b4107146eaaa241d9228fef22aa9"
+    },
+    {
+      "path": "apps/api/tests/test_worker_recovery.py",
+      "state": "present",
+      "sha256": "5d0c6afb7326afb3e4a1f5cd74b044beec74bd48a511309f6390e318858345dd"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "111b1670cec66efcc472a46ff78beaa7559285fb54142e10889af5766b32c7f7"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "e240e6a1f45de04f753627436d581871148efb02191dafd3cebb50733e1b9cc7"
+    },
+    {
+      "path": "apps/web/lib/chat-availability.ts",
+      "state": "present",
+      "sha256": "9c43a460ddf5f945e6281394b952b7f9f9acdb36afa0b7ca07e11c896aa695a6"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "7613129cf0c077e2b6e144e01bb8592de43ca75f3b49c5c487e825ece35591a6"
+    },
+    {
+      "path": "docs/deployment.md",
+      "state": "present",
+      "sha256": "48c78997563a31d7f48d44eee2a24bea85c02cc4cbca846bc172a5f3e5719a0f"
+    },
+    {
+      "path": "docs/kvkk.md",
+      "state": "present",
+      "sha256": "2be75ba2a821967c7495609c7f170e1a34a1feaf90a3d2bca7e3d9c5d526f7af"
+    },
+    {
+      "path": "docs/operations/ingestion-recovery.md",
+      "state": "present",
+      "sha256": "d98b1e7e55521c2c66356ade51441078a94fcffe05ac8a83d8b611f1f92d54f1"
+    },
+    {
+      "path": "docs/operations/shared-request-quota.md",
+      "state": "present",
+      "sha256": "a5c698ceb286e7672bfeaf3a2009ee497b6e59788045c0221d44c5d956e77138"
+    },
+    {
+      "path": "docs/recovery.md",
+      "state": "present",
+      "sha256": "2ada4fb268b6acaff6f3af9615a2e170e6f200cbc7d3cb11c9c44894040ce48d"
+    },
+    {
+      "path": "docs/runbook.md",
+      "state": "present",
+      "sha256": "398bbb74ca9902f843a0df72d2d55e854364415e7b5f68565d863346d9624987"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "b093a83d6c894f0afbed2bad17013cdcddb653cc54bacbfa1ad8ad33b86965c4"
+    },
+    {
+      "path": "docs/security/privacy-review-2026-09-08.md",
+      "state": "present",
+      "sha256": "eef744b983360ed913319a0567e575ff1761fcecc6b7f0d8c22b0ecf05d1f9a6"
+    },
+    {
+      "path": "scripts/backup.sh",
+      "state": "present",
+      "sha256": "c230899fd9593e1a43cfc700e85fe76e5f80792c8105f9e66f2c5f68820ab3b7"
+    },
+    {
+      "path": "scripts/recovery.py",
+      "state": "present",
+      "sha256": "a0bc48077e2fbdcfc904e31d08750b5c0b858cf737f83f35389cde5661f1777b"
+    },
+    {
+      "path": "scripts/restore.sh",
+      "state": "present",
+      "sha256": "9be997296deaf91e196f03c0234c4b04ce986a8ea1b744e08dae6443ed96d065"
+    },
+    {
+      "path": "scripts/test_ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "bdfbea58d0c8dc4a7d86271b0646b744af24cf6cdf0f6667964d1f804301f52c"
+    },
+    {
+      "path": "scripts/test_recovery.py",
+      "state": "present",
+      "sha256": "8035f52cc11c71a2e638a948129d3ea00e284184bea77a04d262439bdacfe219"
+    },
+    {
+      "path": "scripts/test_restore_protocol.py",
+      "state": "present",
+      "sha256": "52c3f3f075e691f17daab97f24a9a4b1c92d00ef761e3a3b47eb4af9d0f75f54"
+    },
+    {
+      "path": "scripts/test_workflow_policy_check.py",
+      "state": "present",
+      "sha256": "8f121aeef7a4fa103e6bcc69ac1b4beeee9268155de26e14780b148b9e2aa4ae"
+    },
+    {
+      "path": "scripts/workflow_policy_check.py",
+      "state": "present",
+      "sha256": "b8dd1d8cc6a910d9e58dff0dddfefb15754c3743797abd7a482e90ca65cc2749"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "55aac3eef305f9ac3eed46e2aebe066c9eefe5fc828d54e851d2ce43d27bdb7f"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "a73ee3d0810f689e6ad541437ae021cb1cc5ebff5c39c566dbd31e349922e63f"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "eb733fc7d1ed06fbb47c844fa8be88b003f14ee4dd04e27cc275f2fe3b941b79"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "4faa22d6e89bbe1dc4b661eae20966be31927263903491758b631c2d9620a61e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-hosted-exact-head-final.json",
+      "state": "present",
+      "sha256": "170cfd900fd2a0a07343acc59fde50ea36c1a48a6f45afa94a2bd2799fbc5fe1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/README.md",
+      "state": "present",
+      "sha256": "887c75adc8208a604a161b0aa8144dd8fa8d4133fe6ca8fed771981b11314834"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/archive.json",
+      "state": "present",
+      "sha256": "eaf2cf1beb600291d82d01d6ddccebeaf092ece9fcd363b6592cca34772f5410"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-dark.png",
+      "state": "present",
+      "sha256": "e26d3eeb86eb8480637f2cfca9b2121596b573e0f5615fb5f24e99c22cfc5dca"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/blueprint-topic-readiness--77afa-rı-dağılım-grubunda-görünür-chromium/outcome-topic-375-light.png",
+      "state": "present",
+      "sha256": "d454fdff9850440558bc3075aedb5291a2255750ac0971cdc59b8817685aa3a7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/chat-history-deletion-öğre-0cfbb-rs-ve-sınav-taslağı-korunur-chromium/delete-confirmation-375-dark.png",
+      "state": "present",
+      "sha256": "8f2408637b2aa71e9a16fb1219486039d05456d630efb5184c54c1c7efff0cf0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-dark.png",
+      "state": "present",
+      "sha256": "8272860bec56960ca9cbebcb9d97b8ba588bf9abe186294435af0da1173e9042"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-light.png",
+      "state": "present",
+      "sha256": "9a10e008d01379612ddfc8ec51ad8e625f088a3e11c2588caf22720b9157b3c0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/exam-completion-guards-gör-0c0d6-ilip-ders-kilidi-kaldırılır-chromium/empty-exam-finish-375.png",
+      "state": "present",
+      "sha256": "63d4b4f0c1a70556591ce4cdaedc0a93b5aeb2f3666278a727e52900cbcd3ab9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/exam-cross-tab-privacy-kay-4ecd6-bakımı-kaynak-izni-değildir-chromium/source-independent-access-375-dark.png",
+      "state": "present",
+      "sha256": "018974a009ac6ec705249807f64de4c2b6b1434e789015c9b8b38ed395de18b2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/policy-history-politika-ge-2a501--düzenleme-taslağını-silmez-chromium/policy-history-375-dark.png",
+      "state": "present",
+      "sha256": "80c11e94b5faf15d336356c90e527538f3d8de5bb2c796c87c0c58f91f78e980"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-dark.png",
+      "state": "present",
+      "sha256": "9c9944cf8c1b6755d6b5591bc38fca12767e4d7775d1a54e2ba02cb56f62587b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/affected-paper-375-light.png",
+      "state": "present",
+      "sha256": "fdf78237c9c07ee82bd34d73ec979785559d2af31097351ade2859950eebacd9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-dark.png",
+      "state": "present",
+      "sha256": "5cca8222e22a9bd251019e1ad81cbd48eb670f5d35fcd421969f980b94b49914"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/question-authoring-eğitmen-406e9-landırılmış-soruyu-yayımlar-chromium/authoring-375-light.png",
+      "state": "present",
+      "sha256": "60cd57a41dfd6c2c9409763007b79ea1e6d7fdf789f32bc81c63bae81cbbe11d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-dark.png",
+      "state": "present",
+      "sha256": "974ff34b30cdb9757f337eeab7e825efb6f2274af8f882ec070fff2f5cff905d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/question-pool-filters-sunu-a9b2c-devam-sayfası-seçimi-bozmaz-chromium/question-filters-375-light.png",
+      "state": "present",
+      "sha256": "d867c35cdf13bc5b4fe08aafcdf3807635c4f0e78848243298ff4a94dbad6e25"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-history-375-dark.png",
+      "state": "present",
+      "sha256": "66aa3092e966543ce88754c2a22adf87b73591e40cab2ff6fcdbe43956ac803b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-dark.png",
+      "state": "present",
+      "sha256": "071370e0a12d53c797ed4821edf129fa2875975077c395735d418953aed3f64b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/browser-final/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-light.png",
+      "state": "present",
+      "sha256": "60ab0b434a088e5475b7141a467c700ed664dd5c5836e5f78e05959b6accabd8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-e2e-01/interruption.json",
+      "state": "present",
+      "sha256": "6f48c38e472d8669f7d7cb308c62432f7c7b8841ee49495707225fca53b95085"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-e2e-01/origin-diagnosis.json",
+      "state": "present",
+      "sha256": "589654bbc1075f7b54e2cc80b0dbaf8b12baf2b6a7e5bf1a46dd8e89a6cb8bf8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-e2e-01/tests.log.gz",
+      "state": "present",
+      "sha256": "f50f38090ca9c57456bc9032d568e95df6afabd3ebd11cfe8429bdcb83d44c89"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-e2e-02/result.json",
+      "state": "present",
+      "sha256": "874bbbe0491eb54b38a1631390ed9a7df0da1a3e74827b432701d3af99d433e5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-e2e-02/tests.log.gz",
+      "state": "present",
+      "sha256": "edf221103e871d5b09231dcd73e63176b76762195e5e0eb175afb98ff5f1263f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-e2e-provision-01/provision.log.gz",
+      "state": "present",
+      "sha256": "7f0c2512f5ec3db9fc62c447ab8ad88a386854e5a75a82c0c7412946ee350fb3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-e2e-provision-01/result.json",
+      "state": "present",
+      "sha256": "8cd0d0fd6bb4689cc914e8cabb6fb1569399d716f6daf45286d79c6b0c025ebf"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-final-api-01/result.json",
+      "state": "present",
+      "sha256": "4809c830368729f263874eafbcdc2a02c91b2044f743bbac8ad4b380be40593a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-final-api-01/tests.log.gz",
+      "state": "present",
+      "sha256": "496ffcbe0f7ff865b9e3368d7a1ddff41735529de4179e3bf21a695a36a36266"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-final-api-02/result.json",
+      "state": "present",
+      "sha256": "589ae93fbbd6be686b78122f94d2e4d429745a7045a54c763c0b92c31639a537"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-final-api-02/tests.log.gz",
+      "state": "present",
+      "sha256": "0d9132d81a2442efe3e86b6ed1f1f6702d32cc7b78596eea27d3c600828f9e54"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-final-api-03/result.json",
+      "state": "present",
+      "sha256": "93e65843cc1538ef5852df7d2979948524056bc41f6bf1c7389980a400b19714"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-final-api-03/tests.log.gz",
+      "state": "present",
+      "sha256": "4f20d69172d966ac590fccc6a8ce7516878f84208336593ea82461b60bb13788"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/app__api__internal.py.before.txt",
+      "state": "present",
+      "sha256": "62acf092d315dc147bfa1ec08a1fbc42571319e78e499a3e634d5394627cbc8c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/app__core__config.py.before.txt",
+      "state": "present",
+      "sha256": "a6b5476b10c3ab244d3cad36e1a66268d2a460ee185eaaa623374537fdcfbccd"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/app__modules__ingestion__claims.py.before.txt",
+      "state": "present",
+      "sha256": "c9334c1b62913ce03ae24530c9ec7fc6741e2d25a375ed81263c8d66832060ea"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/app__modules__ingestion__pipeline.py.before.txt",
+      "state": "present",
+      "sha256": "1b0f6c41da687e825b0d1d0ad4009941784782c2f4fd9bb10f39a593235809ff"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/app__worker.py.before.txt",
+      "state": "present",
+      "sha256": "586260f1bb4a239891bdf1660904fac5b1c3677a176e31f947da56601b5e5a4f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/result.json",
+      "state": "present",
+      "sha256": "22c5c0440504deae2837fe3e0981790d95e5cc0ecacaacf313cb6db36107e1f5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/ruff-fix.log.gz",
+      "state": "present",
+      "sha256": "a0f9c1f1e8f6fe3d231c8a501c6aac1bac78d79f3792d4463b1f503f6669f6c2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/tests__test_ingestion.py.before.txt",
+      "state": "present",
+      "sha256": "a91e5b84cf36bdd3993d7e62f4f5a1d8b039f20f13580ca54adea2c8f2eb6294"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/tests__test_worker_lifecycle.py.before.txt",
+      "state": "present",
+      "sha256": "6d86cdd789391f626209defbce2361841a28c187c088c876da8641b1c7f4689a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-import-normalize-01/tests__test_worker_recovery.py.before.txt",
+      "state": "present",
+      "sha256": "4c42f615a49b1cc094c6c8eae3bce8b9ec08114891b87fb4381c9d8d75f7915a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-openapi-01.json",
+      "state": "present",
+      "sha256": "380467ecef2c893484ea3f02dab4b16fb1e4053772a623951b5eceff3694b89e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/docs-update.log.gz",
+      "state": "present",
+      "sha256": "1c3154e4d88253b7c5d92c0e8a88cbcdfb906aeeb4313acfbaba754dda0a8d42"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/docs.log.gz",
+      "state": "present",
+      "sha256": "59e56ea40ebbbacf02e0c7ac824ecf9bdffd4ff8fe0602f6c150b1542351d071"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/format.log.gz",
+      "state": "present",
+      "sha256": "afd1f8ca4063c7d1cc51315720b04c7b759494bf085df6c1bde5e06f913f668f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/governance-units.log.gz",
+      "state": "present",
+      "sha256": "23ba4e77d3da3ff73dced0d7cd09144dcc03676c752c6349209bac235c38b1ef"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/mypy.log.gz",
+      "state": "present",
+      "sha256": "b47e2f82f87ba0dbe7e4731f512ed819280fd4e45d1ef06508dbfb7704182282"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/result.json",
+      "state": "present",
+      "sha256": "57da1953456d2a9dff37c6da8917922ac9b60c48a1f652fe5ac7e7f5e33a22e8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/ruff.log.gz",
+      "state": "present",
+      "sha256": "7162964741fdb747d7ab27df2d1a1b64fa0636c4b7fe50ea8493de14cb62cbd4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/whitespace.log.gz",
+      "state": "present",
+      "sha256": "f1b651238a58fe290baec6c5e32f3bdb1943dd2bd582f02569231f7a757c7837"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-small-gates-01/workflow-policy.log.gz",
+      "state": "present",
+      "sha256": "7434b59a7b2eb83e334a2eb3a560924483f800516fb256f4aa1115bfcff712d5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/contrast.log.gz",
+      "state": "present",
+      "sha256": "75a5599f27533d8fe6a5ac7ee43098f062f5d9342f93f386f6f1c1009686f02d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/format.log.gz",
+      "state": "present",
+      "sha256": "afd1f8ca4063c7d1cc51315720b04c7b759494bf085df6c1bde5e06f913f668f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/migration-units.log.gz",
+      "state": "present",
+      "sha256": "9be74f5a55b9cd4fa530956a64e31da6e7d05bcebb2cbf92237346021feb5105"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/migration.log.gz",
+      "state": "present",
+      "sha256": "d94504e2aa04554604f51c442718cbd81fa66a757c89476cb4ff89d276003ca1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/mypy.log.gz",
+      "state": "present",
+      "sha256": "b47e2f82f87ba0dbe7e4731f512ed819280fd4e45d1ef06508dbfb7704182282"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/recovery.log.gz",
+      "state": "present",
+      "sha256": "777311c95859d9a93ec5d2d05518a8ebf6d58638a3d1b971508cb201366a02e8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/release.log.gz",
+      "state": "present",
+      "sha256": "295157d0eb3b7244161545f5e08fe6a2d09132402bd118b29fe9e70dc4e1ddee"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/restore-protocol.log.gz",
+      "state": "present",
+      "sha256": "6658c0160c8f39c9679222af0ae168bd90d6fee75ef5f7cd5a5ecbb36e501cb7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/result.json",
+      "state": "present",
+      "sha256": "228809347dd7ba2d9230c697d86ddf2222a026147d72bb764ef8678ea3402707"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/retrieval-tools.log.gz",
+      "state": "present",
+      "sha256": "466f84eaed27c9d01b617b1a0d5704461ec2d3daec727b36018d46b1dfce49c9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/ruff.log.gz",
+      "state": "present",
+      "sha256": "216fe9cbcaf30cae6745955e1c3b10fabdc35cb053b70e5cb224bf097c61c6a6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/web-types.log.gz",
+      "state": "present",
+      "sha256": "65d8fd1041d19e4d6bba4253b80fab1cf36076152f49a2ba1aa0ea35ba3dfe4f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d-static-01/web-units.log.gz",
+      "state": "present",
+      "sha256": "3af8bd175570e00b2fc3605abddeb4fd8b1d677ad27ebfc2947295be6984f5f9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-observer-01/candidate.log.gz",
+      "state": "present",
+      "sha256": "fc18f462bbd7dfbc89873d89699f4d2515d21d686f09ca1b29a5b76cea76f92c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-observer-01/restored.log.gz",
+      "state": "present",
+      "sha256": "d8c2d68b7789c054a71ebca3aed8c51d60e0b7ef2fdffe577f4dee3fb22d4e5d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-observer-01/result.json",
+      "state": "present",
+      "sha256": "e713c8772edf68503e61a6f2d3b481b7e4a6ae78388f71e058f02e03b939b492"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-observer-01/stale_observer.log.gz",
+      "state": "present",
+      "sha256": "14220e24a0316b373ee8586ed48022d859a6a3ed70aafb63bda2235a2c17c830"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-observer-source/README.md",
+      "state": "present",
+      "sha256": "c46935d5181280ebf6364f5fcdf68b61e2c0f7ce39147ae157819ae10563562e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-observer-source/observer-refresh.patch",
+      "state": "present",
+      "sha256": "e40cdf00c47bc42c1a3e447e8732896f716d0303cf8ba4ee9270736eaf772dd0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-observer-source/test_worker_recovery.py.txt",
+      "state": "present",
+      "sha256": "4c42f615a49b1cc094c6c8eae3bce8b9ec08114891b87fb4381c9d8d75f7915a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d2-worker-lifecycle-units.json",
+      "state": "present",
+      "sha256": "f5994328b16a1b0294ed5e605ea9869d3d35c6a0219882617fa82889b85595d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-after-01.json",
+      "state": "present",
+      "sha256": "3e354cb1bc6b8e6feb34ddde09803e164508e20af5159450080e6dc73d037247"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-helper/README.md",
+      "state": "present",
+      "sha256": "61628a7c14fc3310663490ca14fbd271dcd7e19c63a519bedf0d8c8ea5c37626"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-helper/input-manifest.json",
+      "state": "present",
+      "sha256": "b2c9999606fef3042034ae8bf35aed12998692352be26605d5af17e9aa48de39"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-helper/manifest.json",
+      "state": "present",
+      "sha256": "14d02be928b6816e6f817617c7e244b2232adb2dd3ed40b9d89456bfdd11710e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-helper/run.py.txt",
+      "state": "present",
+      "sha256": "b1e4dba6c7c9141718228acb52de55f844d35b40c4dd90a1d6a15dddffbbcf3e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-parity/backup.stdout",
+      "state": "present",
+      "sha256": "fea12c3c9bbf80fa04efa031cf6104b2a37625a5df48d0c7b6036097d16126f3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-parity/input-manifest.json",
+      "state": "present",
+      "sha256": "b2c9999606fef3042034ae8bf35aed12998692352be26605d5af17e9aa48de39"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-parity/restore.stdout",
+      "state": "present",
+      "sha256": "a12b87d20e0d0b2077749a824d4c2a4120916e4e8b8d5f36c6e3ca586ff386f7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-parity/result.json",
+      "state": "present",
+      "sha256": "19c901acb6298338e1ee09696a49f0e76d71ac7241468b3ba8d58376a008fbde"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-provision-01/migrations.log.gz",
+      "state": "present",
+      "sha256": "8b75577f2f9462f2e799f580444714cac56a61f20a8f9a413410e5223aae0bce"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-provision-01/result.json",
+      "state": "present",
+      "sha256": "628c097ce66fa71265c33d19e87734229a400a4bcf57c979a4beca0beeccf0fe"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-run-01/result.json",
+      "state": "present",
+      "sha256": "baab328ca8c911b708bf079e8918a04f2b212db2fff6bc682da1235f99339bb8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-run-01/stderr.log.gz",
+      "state": "present",
+      "sha256": "f1b651238a58fe290baec6c5e32f3bdb1943dd2bd582f02569231f7a757c7837"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/d3-current-run-01/stdout.log.gz",
+      "state": "present",
+      "sha256": "7662cc6bedbb8f1a7d37ea212e73ba55da79d94195ef48cd9d92ccde78dcb43c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d2_observer_check.py.txt",
+      "state": "present",
+      "sha256": "3afe430ade133efcba8fb1eafe9aa3980e9a60fb45238528456d6c40c73a59de"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d3_current_run.py.txt",
+      "state": "present",
+      "sha256": "3ae9dce89012c3e565cfd26ae606b6e3726b4850f9bb927f3bbde3444346e9ad"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d_e2e_run_v2.py.txt",
+      "state": "present",
+      "sha256": "f99d930c49434ced93e00ab361edbd1c7d2525ac4ad7930a4973268c0c361cea"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d_final_api_v3.py.txt",
+      "state": "present",
+      "sha256": "25bbe24dd1859330fe89a216b928dd7a3da905b280e80b3caea25d7cd91892a3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/root-runners/dou018_d_import_normalize.py.txt",
+      "state": "present",
+      "sha256": "d825250621bed3fde4afdf0c8db32ba1b1ea8a7e2c81e52bc43e1289e1ccecd9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-d3-final-independent-audit.json",
+      "state": "present",
+      "sha256": "740ed45b35e15bbafb5da8d10c62887642b720891311ab8aba1ae10ac7ca43ce"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-d3-final-independent-audit.md.txt",
+      "state": "present",
+      "sha256": "241d00b004fafc3af8fda3b1b2b7d7d69ed6e6a6cefd4b3153ac34145b36f55d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/manifest.json",
+      "state": "present",
+      "sha256": "d6c45e35f9839b790d4a5be25bd8e3ce893cf4f91c6bc8f3c20201503fe81745"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/offline-test-results-v2.json",
+      "state": "present",
+      "sha256": "093acbde86644b68f10c3ddf80ce0a81d422eb7917051c9f346a98ca8d86670f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/pytest-combined-baseline-final.log.gz",
+      "state": "present",
+      "sha256": "fe97fc565d812644964f13aef3c594b909e2c311ef61da9ae22999bdac1564ae"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/pytest-combined-candidate-final.log.gz",
+      "state": "present",
+      "sha256": "efc16144dbdf3a42c46a9b2977dde7022be7585160a8270e7585201205c6445e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/pytest-combined-candidate-restored.log.gz",
+      "state": "present",
+      "sha256": "a033719696b90f5d6944b37433fd2a6e8411e2a8cff1605ac2b53fb2345845f1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/pytest-combined-old-access-control.log.gz",
+      "state": "present",
+      "sha256": "f300f76e94e9ebd5a84f182adbac66652d3065d6bd618af58aee2b6adaa4c0ad"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/pytest-combined-raw-fallback-mutant.log.gz",
+      "state": "present",
+      "sha256": "379b303d35f1d8e201e339e28d61157175e87cb06581700e3b6ba68034809730"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/run_offline.py.txt",
+      "state": "present",
+      "sha256": "3d66f83db7c41f9f7bac65692f75d09cbc42ab7ee602ebbe1c348f97890d6f5c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/source.patch.gz",
+      "state": "present",
+      "sha256": "ea6f4086aa10f0f627d9953dfde38f060d2323bf56ee3ec5ecbdfe1c3817a462"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-offline/validation.json",
+      "state": "present",
+      "sha256": "d14ad6004d4eb117094ecf6af1d5b753cb50e396bfa129162a9a5b8720063c3d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-01/baseline.log.gz",
+      "state": "present",
+      "sha256": "76c13e0ed95125ff200a0e00d5f31ce9516e191b042fa394a99ea037e0a19ed5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-01/preservation-index.json",
+      "state": "present",
+      "sha256": "7d43eae9cb53069abb71820de3b1b90f6a9283aa454ccd324345514315640fce"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-01/probe-source.py.txt",
+      "state": "present",
+      "sha256": "7b8fdb2a6cee4d0cd6e85bb04db7da4a55ffb332b2dfbc7d6bf10496a49c9355"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-01/server.py.txt",
+      "state": "present",
+      "sha256": "73ddb24b4f84f746bd42bb4ba6ab283f6324698d56b1ea4523dab13247e22403"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/baseline.log.gz",
+      "state": "present",
+      "sha256": "a9fdff4236c1d58d7099ca85f57a3d5c2958caaad0e49e81d016422672dddb0c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/candidate.log.gz",
+      "state": "present",
+      "sha256": "bfb7b10dc28d3407d1d7d0dd9262f0af9eeb806477f5c230567a5dd24fb96e4a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/probe-source.py.txt",
+      "state": "present",
+      "sha256": "d84ec92f2e69c0a181edca7b87a17bf636a9d00a6b74f59181b20a39c63121a8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/result.json",
+      "state": "present",
+      "sha256": "e82ce912a226716cb25dd3ca9287001a9284bbf2b538fab5634be66f32cf95ae"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/server.py.txt",
+      "state": "present",
+      "sha256": "df9e4faaadbfc66bf08a6229f5c320ce7933686d06d5dea5b56c7c3283bc0a55"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-precommit-review.json",
+      "state": "present",
+      "sha256": "057faacc908692a26483e55b333136e8816dd8a544ff907c15eaf9b157a0c8c1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d-runtime-inputs.json",
+      "state": "present",
+      "sha256": "774c91a94f2e0f7f5f20b2205ec3955f0c36fd9a301b4ff33d5f50bee40c5ad1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/archive.json",
+      "state": "present",
+      "sha256": "bfc47be249edb037935126c33f043b53b9912f088d22640695021cb4d51d5a98"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/focused-first.json",
+      "state": "present",
+      "sha256": "bf179fdcd188fd3cb8fe7fd04b2c5d7f6cba601b9ceaf89a82ad9f0a0f38e3b4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/focused-first.log.gz",
+      "state": "present",
+      "sha256": "78b4e2ce992c4fbe086e5da4caee62c0e72e54fddb72dfa41cc575d2bd2991d0"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/focused-second.json",
+      "state": "present",
+      "sha256": "a907a820376749b0c46296cdd5cafacd488f2715895cf688d6df30a75e67ba39"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/focused-second.log.gz",
+      "state": "present",
+      "sha256": "62cfcb39ab33821fa0266f40218c9234c06bb5a6a77ce077e56ec27a97d4c7bc"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/full-api.json",
+      "state": "present",
+      "sha256": "b2b3cd03f7d4d4c968595b954e9785e0d6ec597563933cfb57641bf581baa734"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/full-api.log.gz",
+      "state": "present",
+      "sha256": "8f8575ffe49165d41142f05c3d63a72eb1ad499cfb6e6de733a57ef638d42dc6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/pg10.json",
+      "state": "present",
+      "sha256": "b14b0786ebe210300450f28b96d01b4c8121e516c5844af13b09b8d24d512f8a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-first-local/pg10.log.gz",
+      "state": "present",
+      "sha256": "e8ba3eec6f40d95c4e2126a8c3e42357d59a185fe47d3aa4fda34be831aff1c5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/README.md",
+      "state": "present",
+      "sha256": "cc4bd0182e9ce609087d37f7653eea1c95a58602348edb57bfc365b82d6c957a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/archive.json",
+      "state": "present",
+      "sha256": "3554ff552ccfd1af5e70e86e96da7ea31b85c4e63f5967acaf2c00f1a55abc68"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/README.md",
+      "state": "present",
+      "sha256": "2c1fb84bb8b465880427942753c2245e895892d74de251aef6028ac320ce67c4"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/common.py",
+      "state": "present",
+      "sha256": "d62ee2ec8e0b42f9e7e93f3d6a36f2102de3f6ff80fae8db14bbab4275ab437d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/db_guard.py",
+      "state": "present",
+      "sha256": "a93945d91e90839965212e21fc67aab04ae2b17fefe27f3172e448a540aec44b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/negative_controls.py",
+      "state": "present",
+      "sha256": "b925cad6ad791e91fd87141d63e185714a34705e223f75df27904bb8205eb8da"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/probe.py",
+      "state": "present",
+      "sha256": "45f63775b6c0676b6a1127d491c5cd98773809d2ec97f78374e45167cfc61dcf"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/serve.py",
+      "state": "present",
+      "sha256": "a492948ad39c3886b0b9681a0006981be06f732bc15ebd884cdead8210284d0a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/test_offline.py",
+      "state": "present",
+      "sha256": "bcc69d099585d3090fc7810db958672d3a9ee46172742103a8889f3447af7086"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.json",
+      "state": "present",
+      "sha256": "1d56dc1e06aba65429f0b1701a04362bb6ea31b34061ef4af27f590b4383388c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+      "state": "present",
+      "sha256": "5d31ef081452c4b9562025025f49bdac6e2b47a7a49ac62e3afe3527aa55589e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/root-approved-source-v2.json",
+      "state": "present",
+      "sha256": "8070e6cbdda17deee4760bcca76016bf6ff959fac5c9d2fdb0712ae8d1803ae1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-01/result.json",
+      "state": "present",
+      "sha256": "cd88482d68a873d9277d82252290b93ca47e9670e3158731aadec985ac5b47e8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-01/root-before.json",
+      "state": "present",
+      "sha256": "ae0ea7eb02c992872284d04ebfd8553a4e5efb860ea98914c9ea6ed4251da6c7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-01/root-probe.log.gz",
+      "state": "present",
+      "sha256": "94e430c1b74cc5792c2e1278b39f430e064ce2bba04b05746fcdbf14570094da"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-01/root-result.json",
+      "state": "present",
+      "sha256": "270c73bdabcbde133818d69c11d14b099348639f8516c58a8a23d6f5118f11db"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-01/root-setup.log.gz",
+      "state": "present",
+      "sha256": "9b9e0b3e3fd81fc897022cc1b12c339244242716fa7f7ccdb2796144ee7c5c8b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/http-results.json",
+      "state": "present",
+      "sha256": "d10b7d4b71707654ae0e167429f797b8c988032f5eddb6ab3d0dc0c029c45663"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/process-0-events.jsonl.gz",
+      "state": "present",
+      "sha256": "32f5b6ac2f85511b1a9d5d43ef9503847929517023a1f9b26e163008d9b1ac46"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/process-0.log.gz",
+      "state": "present",
+      "sha256": "9e9a32ce64992d4feb55c5d663cd8f7b73a4e1a7d356c16fb763f22b97d96048"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/process-1-events.jsonl.gz",
+      "state": "present",
+      "sha256": "1ca8750ca88385bb64ed629995bcd3695cf043d9e464fe7e03397794d78e7d21"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/process-1.log.gz",
+      "state": "present",
+      "sha256": "f56e667a401f7832060f1bd3eb296bd3fd652a9688746f24d1d703751694e63c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/result.json",
+      "state": "present",
+      "sha256": "d5e46f0da234813076b100e99c9060e7271ee90bb4c32621a3e0337a717e17d8"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/root-before.json",
+      "state": "present",
+      "sha256": "9d70122c34d64c987fbda37716d42fd81b91ee7f752c419c92ccb7eae6232a23"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/root-probe.log.gz",
+      "state": "present",
+      "sha256": "a76edda5d6002b329e49a61ed368f9d8f055fa4a1d79f751a44b8b0baf535943"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/root-result.json",
+      "state": "present",
+      "sha256": "c5405605f26657a938bfad264f40200a3be6a255d3acccd3626ad5ce3ae87737"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d1-http-local/run-02/root-setup.log.gz",
+      "state": "present",
+      "sha256": "9b9e0b3e3fd81fc897022cc1b12c339244242716fa7f7ccdb2796144ee7c5c8b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/README.md",
+      "state": "present",
+      "sha256": "536ffb63a42c16dcef1bf464964b2cb366d660a8ed70918730a2f7a213468154"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/archive.json",
+      "state": "present",
+      "sha256": "3073bbad35ce36114702dc9832622099f8503001ea3966da857d8973c6ecd57f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/candidate-v2-manifest.sha256",
+      "state": "present",
+      "sha256": "67755c028f34cfcb3c79b4bd2fd11de310594dda6df98cd84ddee08592060095"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/candidate-v2-validation.json",
+      "state": "present",
+      "sha256": "5eb72355318301a7af502e887ad0f5cf7cda2606cced97ba7961695bd75756f3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.json",
+      "state": "present",
+      "sha256": "486c48903e9305eb59c16e0d15d8ae11318bf6948e7a9461daaa174941323a98"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+      "state": "present",
+      "sha256": "7b93e42d59dc94ea69e9785c15464749fda2ee1be3404e041f2d360733342c5b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.json",
+      "state": "present",
+      "sha256": "2223dec41c04d2c7d962944958ebe0059c1377d7f36a45b4294a3881082c1325"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+      "state": "present",
+      "sha256": "04cee58f18995c3d3b431a3b4023a1df5de3befd8a2c6dd27c498528e3023ff6"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.json",
+      "state": "present",
+      "sha256": "dc4769a7236e48ade2fa4ba796f53c655226c6e476d67aa883c5658252213b4d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+      "state": "present",
+      "sha256": "a7961e15af265fe03062a55cc037fc92595de7004a7d74aaf919e569be0fd460"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.json",
+      "state": "present",
+      "sha256": "cb2de48d0174fce5d090078ed2f5b7c2b8dd517b6ebb5ac7dd5ee74616404f24"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md",
+      "state": "present",
+      "sha256": "1dcbc9fce545235a8960572aaae560de73c86c3c4b54c0e4f56aa7c0feb4d43a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/lineage-red.json",
+      "state": "present",
+      "sha256": "9d46af60cff078a463ea55bc20b40a5ce888730e0ea0f561759e7e5b570257cb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/lineage-red.log.gz",
+      "state": "present",
+      "sha256": "95d9d90375f0492e60ba7f108edd210bc8c594e57b3f46862e1b50f34847447a"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/migration-positive.json",
+      "state": "present",
+      "sha256": "1392568e9f212b41d44819040042f1563db1231f280c0b67e0abc97fe3bfe2d1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/migration-preconditions.json",
+      "state": "present",
+      "sha256": "dff0a29e0aad33e8475e8d98a4523bb33f002d185ac5a99a6886b5fd735e7774"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/process-v1-root.json",
+      "state": "present",
+      "sha256": "204bfb7eab3e5f0c32717ce94d6e34698005ee62538692a0f4696157ccf14d93"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/process-v1.json",
+      "state": "present",
+      "sha256": "1ca00c92d3b578437fd02564f13516df8be1337c80ec7f301dfdfbdc7fa289eb"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/process-v2-offline-validation.json",
+      "state": "present",
+      "sha256": "ac8a32d2eb100dd0a11df57fe0236ab89c67096f80fed6e9cea1b9ef7826e074"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/process-v2-root.json",
+      "state": "present",
+      "sha256": "9500e593418a7b8e7e60df06f27e764831895d2e3cd62ada5ebcf1b697a5a8c5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/process-v2-source-manifest.sha256",
+      "state": "present",
+      "sha256": "9f2ee6c213ee84c1e64dc481284922f20c2c5e4775a77c6950afe0cf1e1b3506"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/process-v2.json",
+      "state": "present",
+      "sha256": "02c319b4c16cb08d31ea1e6a550b1b866bf2a7546e980fe17f471345f1b5b257"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/stage01-tests.json",
+      "state": "present",
+      "sha256": "4f2feecb1b7f77d8f60da9eea6f339b32f0be41533a0f797bd191070807a9f29"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/stage01-tests.log.gz",
+      "state": "present",
+      "sha256": "9ddcafd9fb5fe09f4b7f3d57d97518f6a1acda29fb9de2a555ee462e5ad4a7ef"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/stage02-tests.json",
+      "state": "present",
+      "sha256": "266c0314237cc2e9e10cd04d2d39ad549b8024414ca1534ec8c81280ac2a8c0f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d2-local/stage02-tests.log.gz",
+      "state": "present",
+      "sha256": "457c1e3f3ff39501b884b88a720dc9e9b279c8ea5bcc5ef47b5230ecbe585729"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/README.md",
+      "state": "present",
+      "sha256": "ef5bec081166328bc850da1f405ae2a6f4c27d58fb570d70d2d3b31ebbbb3d2b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/archive.json",
+      "state": "present",
+      "sha256": "f355bf520331e2aded53ced5ae51deb103c39f9ac0176186822159d3766aa43c"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/backup-source-receipt.json",
+      "state": "present",
+      "sha256": "c97a680d380fad6651a7f948d1e79a4b50762f4f942a805b9786df2ef3f12d1e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/candidate-source-manifest.json",
+      "state": "present",
+      "sha256": "35da8373531a694cbed94895b1471f5104374351b7c41d42d413851c31689eb2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/historical-or-restore-01.json",
+      "state": "present",
+      "sha256": "349df81a988e6820c923e6ee24f354c84d0070ca6f954c12f6b2e216b9eb26b1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/historical-or-restore-03.json",
+      "state": "present",
+      "sha256": "8daa8640e9451c10db7bc265c74265761e4408009c5467b1a9832e1e6bc93ba2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/historical-or-restore-04.json",
+      "state": "present",
+      "sha256": "733e3fc1ad93b6442250c940fcb97752adb9992ad8d6d1bd91855cca27bc4323"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/historical-or-restore-05.json",
+      "state": "present",
+      "sha256": "12e860e4078e360b19ae65a009b837e5ccdb121153c0d7ed96b8c10d02cd1b77"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-connect-root.json",
+      "state": "present",
+      "sha256": "7e172b1eccb872bc76a08fd084594c3878824ba8c4a75e900c3aed2923ee1f82"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-connect.json",
+      "state": "present",
+      "sha256": "8709c7e2fc0f356b658f0c5367223c1d11f2cf25c3c35298c1c2fd718c839316"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-controls.v4.json",
+      "state": "present",
+      "sha256": "f86993b47c3e48c8e404e70522899f03fe6530b61f7b1253952e97587a2229c1"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-nonempty-root.json",
+      "state": "present",
+      "sha256": "3e7b2bd761b4c1dedd8b0b0e74b246cdf16ccb42aa168f9ff01e195237262195"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-nonempty.json",
+      "state": "present",
+      "sha256": "12d45b9064dcddf3bc6ff12019b3e0b9e9f9c1ea04144db0c717ebc6d003d805"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-precommit-root.json",
+      "state": "present",
+      "sha256": "28727982be062fd4066062a00a9f561b5b896b562ab945ebb42bdaa0efa89ef5"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-precommit.json",
+      "state": "present",
+      "sha256": "6208325323c34401790d7f626b21bba59833901a457cde274ab7894d7fe51b16"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-receipt_loss-root.json",
+      "state": "present",
+      "sha256": "ee210039049b61da681532dbc27729b6b22062957b746a2883a99b38943d998e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-receipt_loss.json",
+      "state": "present",
+      "sha256": "007d764d43e6bb454d3b9eb329bbdfd3dafa7dcc90c4361b5264cdd54e96ebaf"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-reopen-root.json",
+      "state": "present",
+      "sha256": "8c9400009c3f41dc69c454f7c3c1379e8c6f52ce26efb53f2c93e7b7d6311b39"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/negative-reopen.json",
+      "state": "present",
+      "sha256": "413a9581e1a6f75541750d1b04c2b6cb7ff12b2b0fa27d69f8e50ecf8a72a03b"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/offline-tests.v4.log.gz",
+      "state": "present",
+      "sha256": "2bd59b0a0f20cf0b82afb53867858fc32015097975efa95ad2dfcfea70c72135"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/owner-render.v4.json",
+      "state": "present",
+      "sha256": "e8fe7942a149000196c5aa228c98a2767ee3b177cd2c8f1ed84db7e3c9d5794d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/post-restore-result.json",
+      "state": "present",
+      "sha256": "43d0c29f0693160d7a5c691e40477b6ddfe7aac9322b74047b3d0606cb50857e"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/post-restore-root.json",
+      "state": "present",
+      "sha256": "8f22af052f6e34dcbdc66ad64d1eb84be5e8b76230f1cae8631f9f8fa8f90c45"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/result.v4.json",
+      "state": "present",
+      "sha256": "64b4c98d74aa35e4809ce5e7bb2cb4ec97aaf9e953c2d7de2ada450fd9892ff9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/target08-independent-review.json",
+      "state": "present",
+      "sha256": "caf866a585d9e202ec487180aca21ddd0666e45843ab298349e91633fa52eeb2"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/target08-opening-root.json",
+      "state": "present",
+      "sha256": "1b391c832d4d16e5de96b7d2992346c5bc75b2c815edc4e80d7f93b5ff3b90b9"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/d3-local/target08-rollback-result.json",
+      "state": "present",
+      "sha256": "53f26fd82af459e78f15b8dde9b8b7fe5a614db774ce802cfd230733793d3ac6"
+    },
+    {
+      "path": "specs/018-codex-production-line/tasks.md",
+      "state": "present",
+      "sha256": "238d8dd6f06ef32f1aae4fcb57e0d6ab96865837dd73f27db094912189095b89"
+    },
+    {
+      "path": "specs/018-codex-production-line/verification.md",
+      "state": "present",
+      "sha256": "3066cedb244f5ab8dad287c5ff38e7605e0d1dda335d1f819b6b5fdbb5551977"
+    },
+    {
+      "path": "supabase/migrations/0024_chat_privacy_revisions.sql",
+      "state": "present",
+      "sha256": "9ef6fc55eeff03cef00d1e396694177032acc95ac361394a1e81afecec98d51f"
+    },
+    {
+      "path": "supabase/migrations/0025_shared_request_quota.sql",
+      "state": "present",
+      "sha256": "7ca0606d2bc8f76d67934774968c9f9802e4c204799fda7428760c4fe7de043d"
+    },
+    {
+      "path": "supabase/migrations/0026_ingestion_claim_leases.sql",
+      "state": "present",
+      "sha256": "3e15eaa33f8bc8fba2f7a6d6e84692d213cc696ccd8367fad73152e79f2b61d3"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/030-branch-aggregate-r1.json",
+      "report_sha256": "73b599c19dd1ec87ac70e64b00ba3c23ba2f45c47bb07748a10ca7b2b4ee54ec",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_request_log_privacy.py",
+    "holdout_ref": "specs/018-codex-production-line/evidence/d-final-local/s8-uvicorn-02/probe-source.py.txt",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: this aggregate only compares measured source snapshots; component/process acceptance references remain technical, not a statistical or pedagogical holdout. Human release/security/legal review pending.",
+    "metrics": [
+      {
+        "name": "source_snapshot_mismatches",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 358
+      }
+    ],
+    "exact_command": "Pinned own029 source hashes compared with git show bdd7fba:<path> and current filesystem; zero-mismatch oracle fixed before comparisons; aggregate generator uncovered31 paths then full PR governance gate is run after commit."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: reviewed release gates combined runtime change; existing separate product flags remain unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:030-branch-aggregate-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: reviewed release gates combined runtime change; existing separate product flags remain unchanged",
+    "kill_switch": "Hold release; drain API/worker ingestion and disable affected product exposure. Preserve0025/0026 state. Never run legacy unfenced workers or mixed quota policies during rollback. Isolate uncertain restore target for operator review.",
+    "assignment": "Sticky to exact reviewed candidate SHA; no real-user exposure. A future internal course cohort needs separate promotion review.",
+    "initial_exposure": "None; draft PR only.",
+    "stop_conditions": [
+      "Any quota policy drift accepted or admission fails open.",
+      "Unauthorized, expired-token or stale-source ingestion write.",
+      "Raw private path/query canary in application or Uvicorn output.",
+      "Restore authority/row/RLS mismatch or ambiguous commit result.",
+      "Deleted conversations resurrect or cross-course/exam data is disclosed.",
+      "Retrieval metrics regress on unchanged benchmark inputs."
+    ],
+    "expand_conditions": [
+      "Exact candidate PR checks pass.",
+      "Independent engineering, domain and security/privacy owners approve.",
+      "Live auth/storage, cloud restore, retention and real-provider gates separately proven."
+    ],
+    "active_exam_policy": "Existing server exam/source/role locks preserved; no effect on completed academic records or exam authority."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:621815908d5372d8de414aec4ca1dc63da008dca",
+    "procedure": "Hold release and drain affected API/worker paths.017 lacks018 security fixes; keep those paths disabled until repaired and reviewed. Preserve additive0024 privacy revisions and0025/0026 quota/claim state. Never silently restore erased chats, run legacy unfenced workers, reopen ambiguous restore targets or widen app privileges. Rerun role/privacy/exam/retrieval and operations acceptance before resuming.",
+    "max_minutes": 30,
+    "verification": "Planned operator target only, not a measured deployment SLA. Local D3 transaction rollback evidence is not whole-release rollback.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixtures and content-free/hash summaries only; no private backup archive/SQL or actual credentials committed. Production quota actor/course IDs, admission timestamps and privacy revisions are pseudonymous personal technical metadata. APIRoute templates reduce path metadata but do not anonymize arbitrary exceptions or external logs.",
+    "retention": "Synthetic evidence versioned. Bounded expired-quota purge is implemented, but real scheduler/SLA, personal-data legal basis, institutional retention, provider transfer, backup deletion reconciliation and live lifecycle remain open."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
