@@ -1,0 +1,9 @@
+{
+  "own_commit": "dc7a76842d0098cdb6dc93ecc7c62e7afd946661",
+  "own_base": "71d5ff640f0d48a08f3967b000485a15035f10c7",
+  "pr_target": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "own_governance": "pass-exact-commit",
+  "own_governance_log_sha256": "e4d7cefb71a4a3d5dd8851280345c1842ce4f94e847e895b87d400d2c199cd2d",
+  "application_source_equivalence": "All027 artifact bytes verified unchanged immediately before aggregate metadata update. No test result inherited from unverified application source.",
+  "hosted_ci": "pending-new-PR-head; A hosted result remains historical"
+}

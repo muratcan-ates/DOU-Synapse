@@ -44,7 +44,7 @@ Bu göreve özel PostgreSQL16 localhost55448; dou018_* test veritabanları; tara
 
 Groq/Gemini erişimi, Supabase proje bilgileri, JWT imza tercihi, bulut/staging hedefi ve branch protection henüz verilmedi. İlgili somut paket hazır olduğunda gereken karar sorulur; diğer hazır işler sürer. İnsan etiketleri boş kalır. Yeni bağımlılık önerileri ve migration-runner tablo kararı kendi diliminde gerekçelendirilir. Bu kayıt gelecekte çalışma planıdır; ayrıca bir zamanlayıcı kurulmuş olduğu anlamına gelmez.
 
-Sonraki yürütülebilir adım: B'nin yerel kabulleri geçti. S sonrası B/C adayının kendi kanıt/dossier ve temiz commit'i ile PR26 uzak kapıları hazırlanır. FTS bileşeni geri çekildikten sonra son hashing/E5 non-regression ve gerçek sürücü kontrolleri geçti; önceki olumsuz kanıtlar değişmedi. C1 matrisinin kalan hücreleri ve üretim terfisi açık. D3 ilk gerçek restore hatasını gideren ayrı bakım bağlantısı tasarımı incelemede; D–I hazır işleri sürer. Her devirde gerçek HEAD ve uzak dal durumu yeniden kontrol edilir.
+Sonraki yürütülebilir adım: B'nin yerel kabulleri geçti. S sonrası B/C kontrol noktası dc7a768 ve kendi027 kanıtıyla kaydedildi; kesin commit yönetişim denetimi geçti. PR26 için yeni uzak kapılar hazırlanır. FTS bileşeni geri çekildikten sonra son hashing/E5 non-regression ve gerçek sürücü kontrolleri geçti; önceki olumsuz kanıtlar değişmedi. C1 matrisinin kalan hücreleri ve üretim terfisi açık. D3 ilk gerçek restore hatasını gideren ayrı bakım bağlantısı tasarımı incelemede; D–I hazır işleri sürer. Her devirde gerçek HEAD ve uzak dal durumu yeniden kontrol edilir.
 
 ## Güvenlik ve gizlilik dilimi
 

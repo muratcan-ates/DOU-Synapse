@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "change_id": "028-branch-aggregate-r1",
+  "lineage_id": "branch-aggregate-028",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "018 güvenlik, öğrenme ve arama kontrol noktası",
+  "summary": "A, S ve B/C commitlerinin 017 tabanına karşı kapsamını birleştirir. B/C son yerel API1499 web555 tarayıcı68 ve dar E5 retrieval kabulü kendi027 kaydındadır; önceki başarısız FTS deneyleri korunur. Canlı ortam, hukuki uyumluluk ve insan LLM kabulü iddiası yoktur.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-08T14:24:40+03:00",
+  "review_by": "2026-10-08T14:24:40+03:00",
+  "base_sha": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final production-provider-selection-unchanged; tests fake; offline cached FastEmbed0.8.0",
+    "model_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final intfloat/multilingual-e5-large local cached revision66076b8dc6e367337e3e90e6fb309fb0f3addaf6; production LLM unchanged",
+    "prompt_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final code_trace/bug_hunt rubric and grounded_missing_criterion protocols; exact question_gen/grading source in artifacts",
+    "tool_schema_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final rubric criteria + grounded_missing_criterion + chat_history_changed and policy history UI contracts",
+    "guardrail_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final persistent chat privacy revisions; fresh authority and exam/citation validation; atomic rubric checks",
+    "retrieval_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final MATERIALIZED bounded dense candidates x8; dense-only force_custom_plan with restore; FTS SQL baseline behavior",
+    "embedding_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final production unchanged; measured hashing namespace and cached FastEmbed namespace bound in acceptance manifests",
+    "evaluator_revision": "Aggregated025-gates/026-security/027-learning-privacy-retrieval records; final unchanged holdout and thresholds; source-pinned old retrieval functions; crossed candidate diagnosis; final two-provider retrieval replay plus runtime104 tool tests"
+  },
+  "data": {
+    "corpus_digest": "1acae57b88f71f024a950ed82062e42a2d06a81423100013f74662f80a783c05",
+    "eval_set_digest": "7b20d55902e91c3e1baa45dbd753e93737bfdf66a6e13c9fb0acad8bebef0e74",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".ai/policy.json",
+      "state": "present",
+      "sha256": "ac2256861601832a6c4f754187d1478b0d61fc5d3cc4f3095808cd6f6af4c26b"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "05408d93fbae0524e4fd89e3076e929cd029e3910ede2437e9cd37523e73cc95"
+    },
+    {
+      "path": "apps/api/app/api/chat.py",
+      "state": "present",
+      "sha256": "b3c8a554b07bd80e948908f91bf61035abd6be30757b222d15d6fe015286b5d4"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071"
+    },
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "16e53fb5e5ea30a8fa2a68674abdbd48226d5e1e2c3cefe3e1654e2527528423"
+    },
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "38a6d6f248e63294efeca3c7c1bd60a6293055067db241d5c5e6c14801b50a88"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/authoring.py",
+      "state": "present",
+      "sha256": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/grading.py",
+      "state": "present",
+      "sha256": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/question_gen.py",
+      "state": "present",
+      "sha256": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/socratic.py",
+      "state": "present",
+      "sha256": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e"
+    },
+    {
+      "path": "apps/api/app/modules/generation/fake.py",
+      "state": "present",
+      "sha256": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/pipeline.py",
+      "state": "present",
+      "sha256": "86f39e748b24512a7f34d4212b27a91614457ac2eae1f5ed7041d1fb309d9aef"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/storage.py",
+      "state": "present",
+      "sha256": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/dense.py",
+      "state": "present",
+      "sha256": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/fts.py",
+      "state": "present",
+      "sha256": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/service.py",
+      "state": "present",
+      "sha256": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "111b1670cec66efcc472a46ff78beaa7559285fb54142e10889af5766b32c7f7"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "e240e6a1f45de04f753627436d581871148efb02191dafd3cebb50733e1b9cc7"
+    },
+    {
+      "path": "apps/web/lib/chat-availability.ts",
+      "state": "present",
+      "sha256": "9c43a460ddf5f945e6281394b952b7f9f9acdb36afa0b7ca07e11c896aa695a6"
+    },
+    {
+      "path": "scripts/test_ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "bdfbea58d0c8dc4a7d86271b0646b744af24cf6cdf0f6667964d1f804301f52c"
+    },
+    {
+      "path": "scripts/test_workflow_policy_check.py",
+      "state": "present",
+      "sha256": "8f121aeef7a4fa103e6bcc69ac1b4beeee9268155de26e14780b148b9e2aa4ae"
+    },
+    {
+      "path": "scripts/workflow_policy_check.py",
+      "state": "present",
+      "sha256": "b8dd1d8cc6a910d9e58dff0dddfefb15754c3743797abd7a482e90ca65cc2749"
+    },
+    {
+      "path": "supabase/migrations/0024_chat_privacy_revisions.sql",
+      "state": "present",
+      "sha256": "9ef6fc55eeff03cef00d1e396694177032acc95ac361394a1e81afecec98d51f"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/bc-integration-checkpoint.json",
+      "state": "present",
+      "sha256": "a367f29db8182f2c7e40230b236c0039e826f182c19f8918db6cc7749d1791f7"
+    },
+    {
+      "path": "specs/018-codex-production-line/tasks.md",
+      "state": "present",
+      "sha256": "58300eb9680083df614c2e32ae36c437d707148017444c0ce44ff6a307444bd9"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "b629cea74b2db918994b42f8b14756643c8ee73629cdae44be7032df10a09f8d"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/028-branch-aggregate-r1.json",
+      "report_sha256": "a57f4ee271f2e2ed0b115856d53c8b185fe657fd331120809e44e0cf4841fff0",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "evaluation/gold_set/calibration.json",
+    "holdout_ref": "evaluation/gold_set/holdout.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: synthetic technical contract and actual embedding retrieval; independent pedagogical/LLM/legal acceptance still pending",
+    "metrics": [
+      {
+        "name": "e5_recall_at_5_final_vs_baseline",
+        "baseline": 0.8857142857142857,
+        "candidate": 0.8857142857142857,
+        "operator": ">=",
+        "threshold": 0.8857142857142857,
+        "sample_size": 105
+      },
+      {
+        "name": "e5_mrr_final_vs_baseline",
+        "baseline": 0.7377210884353742,
+        "candidate": 0.7377210884353742,
+        "operator": ">=",
+        "threshold": 0.7377210884353742,
+        "sample_size": 105
+      }
+    ],
+    "exact_command": "c1_holdout_runner.py and c1_e5_holdout_runner.py --execute on unchanged synthetic corpora; scripts/probe_retrieval_runtime.py --source-report retrieval-plan-local-20260908b.json --repeats 7 --execute; exact wrappers and receipts in bc-final-archive.json"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: reviewed release controls combined change; existing course-agent/authoring/assessment flags remain separate",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:028-branch-aggregate-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: reviewed release controls combined change; existing course-agent/authoring/assessment flags remain separate",
+    "kill_switch": "Disable affected course agent or question-authoring exposure via existing feature flags; hold release and revert application to reviewed base while retaining additive0024 schema. Do not bypass locks or silently restore deleted conversations.",
+    "assignment": "Sticky by reviewed release SHA for the isolated candidate; any future canary must remain course/session scoped under separate promotion review. No user exposure yet.",
+    "initial_exposure": "None; draft PR only.",
+    "stop_conditions": [
+      "Deleted chat or personal data resurfaces after confirmed deletion.",
+      "Cross-course/user/exam content disclosure or missing source/rubric authority.",
+      "Recall@5/MRR decreases against unchanged baseline, wrong namespace, or dense prepared plan loses tested custom policy."
+    ],
+    "expand_conditions": [
+      "Exact PR candidate checks pass.",
+      "Independent engineering, domain and privacy review accepts scope.",
+      "Real LLM, live auth/storage and operational gates separately verified before deployment."
+    ],
+    "active_exam_policy": "Existing server exam/source locks preserved; deleting own chat does not remove exam or academic records; assessment lock precedes short final chat lock."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:621815908d5372d8de414aec4ca1dc63da008dca",
+    "procedure": "Hold release and disable affected runtime features before reverting the018 application stack to reviewed017. Keep additive0024 privacy schema; do not erase revision counters or restore deleted chats.017 lacks S/B privacy repairs, so affected exposure remains disabled until repaired. Rerun all security/role/exam/retrieval gates before reopening.",
+    "max_minutes": 15,
+    "verification": "Plan only; no deployed rollback drill or15-minute operational guarantee measured.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic sample course material and test identities only; source hashes, reports and approved source fixtures in repository. Chat privacy counters are personal technical metadata; documented separately from academic/auth retention.",
+    "retention": "Versioned synthetic evidence only. Institutional personal-data retention, backups and transfer/legal decisions remain open; no compliance certification."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

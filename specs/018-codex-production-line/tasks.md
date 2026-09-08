@@ -18,7 +18,7 @@
 - [x] B6 — kapalı authoring görünümünü açıkla; gerçek readiness/publish ile uygun havuz yayınını koru.
 - [x] B7 — sunucu filtreleri/imleç/boş liste/geç yanıt/silme bildirimi.
 - [x] B yerel — tek koşuda 68 gerçek tarayıcı akışı ve son tema zamanlama testinde ayrı 1 odak tekrar.
-- [ ] B/C — değişime özel kanıt/dossier ve kendi temiz commit'i.
+- [x] B/C — 027 değişim kanıtı; dc7a768 kendi commit'i ve S71d5ff6 tabanına karşı kesin commit yönetişim denetimi geçti.
 - [x] C — eş projeksiyon ve gerçek RLS/prepared runtime ölçümünü arşivle.
 - [x] C — eski üç retrieval kaynağıyla aynı hashing holdout'u gerçekten çalıştır; olumsuz sonucu koru.
 - [x] C1 dar kabul — FTS eşitlik sırasından gelen gerilemeyi çapraz deneyle ayır; yalnız FTS değişikliğini geri çek; son hashing/E5 non-regression ve prepared runtime tekrarını doğrula.
