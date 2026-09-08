@@ -109,6 +109,34 @@
       "minimum_risk": "R3"
     },
     {
+      "pattern": ".github/workflows/ci.yml",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": ".github/workflows/security.yml",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": ".github/workflows/release-candidate.yml",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": ".release/**",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "scripts/migration_check.py",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "scripts/workflow_policy_check.py",
+      "minimum_risk": "R2"
+    },
+    {
+      "pattern": "scripts/test_workflow_policy_check.py",
+      "minimum_risk": "R2"
+    },
+    {
       "pattern": "apps/api/app/modules/generation/**",
       "minimum_risk": "R2"
     },

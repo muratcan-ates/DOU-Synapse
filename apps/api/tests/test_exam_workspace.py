@@ -473,25 +473,25 @@ async def test_help_lock_is_course_scoped_and_instructor_exempt(
     assert hint.status_code == 200, hint.text
 
 
-async def test_results_lock_mutation_is_detected(
-    client: AsyncClient, pool: ExamFixture, monkeypatch: pytest.MonkeyPatch
+async def test_saved_results_are_locked_until_other_exam_finishes(
+    client: AsyncClient, pool: ExamFixture
 ) -> None:
+    """Önceden bitmiş çalışmanın sonucu, yeni sınav bitene kadar açılmaz."""
     finished = await start(client, pool, "practice")
     await _answer(client, pool, finished["id"])
     await _finish(client, pool, finished["id"])
-    await start(client, pool, "exam")
+    active = await start(client, pool, "exam")
     url = f"/courses/{pool.course_id}/exams/{finished['id']}/results"
-    assert (await client.get(url, headers=pool.student)).status_code == 403
+    locked = await client.get(url, headers=pool.student)
+    assert locked.status_code == 403, locked.text
+    assert locked.json()["error"]["code"] == "exam_in_progress"
+    assert "solution" not in locked.text and "answer_key" not in locked.text
 
-    async def removed_guard(*args: Any, **kwargs: Any) -> bool:
-        return False
-
-    monkeypatch.setattr(exam_api, "_results_locked", removed_guard)
-    mutated = await client.get(url, headers=pool.student)
-    assert mutated.status_code == 200
-    assert mutated.json()["results"][0]["solution"] is not None
-    with pytest.raises(AssertionError):
-        assert mutated.status_code == 403
+    completed = await _finish(client, pool, active["id"])
+    assert completed.status_code == 200, completed.text
+    unlocked = await client.get(url, headers=pool.student)
+    assert unlocked.status_code == 200, unlocked.text
+    assert unlocked.json()["results"][0]["solution"] is not None
 
 
 async def test_results_read_serializes_with_competing_exam_start(

@@ -484,6 +484,12 @@ async def test_egitmen_sinav_onizlemesinde_kendi_verisini_indirebilir(
     admin_engine: AsyncEngine,
 ) -> None:
     fixture = await build_course(client, users, admin_engine)
+    teacher_rows = await seed_personal_rows(
+        admin_engine, fixture, user_id=fixture.instructor_id, label="Ayşe"
+    )
+    student_rows = await seed_personal_rows(
+        admin_engine, fixture, user_id=fixture.student_id, label="Burak"
+    )
     await _seed_export_exam(
         admin_engine,
         fixture,
@@ -495,6 +501,41 @@ async def test_egitmen_sinav_onizlemesinde_kendi_verisini_indirebilir(
     response = await client.get("/me/export", headers=fixture.instructor)
 
     assert response.status_code == 200, response.text
+
+    body = response.json()
+    assert body["schema_version"] == "2"
+    assert body["profile"]["id"] == str(fixture.instructor_id)
+    assert [item["role"] for item in body["memberships"]] == ["instructor"]
+    assert [item["id"] for item in body["chat_sessions"]] == [str(teacher_rows.chat_id)]
+    messages = body["chat_sessions"][0]["messages"]
+    assert [item["id"] for item in messages] == [
+        str(teacher_rows.message_id),
+        str(teacher_rows.assistant_message_id),
+    ]
+    assert [item["content"] for item in messages] == ["Ayşe kişisel soru", "Ayşe kişisel cevap"]
+    exams = body["exam_sessions"]
+    assert len(exams) == 2
+    finished = next(item for item in exams if item["id"] == str(teacher_rows.exam_id))
+    assert finished["answers"][0]["id"] == str(teacher_rows.answer_id)
+    assert finished["answers"][0]["given"] == "Ayşe cevabı"
+    preview = next(item for item in exams if item["id"] != str(teacher_rows.exam_id))
+    assert preview["mode"] == "exam" and preview["finished_at"] is None
+    assert preview["answers"] == []
+    assert len(body["mastery"]) == 1
+    assert body["mastery"][0]["topic_id"] == str(fixture.topic_id)
+    encoded = json.dumps(body, ensure_ascii=False)
+    for private_value in (
+        fixture.student_id,
+        student_rows.chat_id,
+        student_rows.message_id,
+        student_rows.assistant_message_id,
+        student_rows.exam_id,
+        student_rows.answer_id,
+        "Burak kişisel soru",
+        "Burak kişisel cevap",
+        "Burak cevabı",
+    ):
+        assert str(private_value) not in encoded
 
 
 async def test_ders_sohbet_gecmisi_yalniz_sahibin_satirlarini_siler(

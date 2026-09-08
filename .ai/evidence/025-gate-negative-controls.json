@@ -1,0 +1,42 @@
+{
+  "baseline_sha": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "workflow_policy_red": {
+    "tests": 3,
+    "failures": 17,
+    "errors": 0,
+    "passed": false
+  },
+  "workflow_policy_green": {
+    "tests": 3,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  "sensitive_policy_red": {
+    "tests": 1,
+    "failures": 7,
+    "errors": 0,
+    "passed": false
+  },
+  "sensitive_policy_green": {
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "passed": true
+  },
+  "method": "In-memory baseline function / source-policy substitution; candidate files never mutated. Negative tests use actual independent temporary Git commits.",
+  "source_sha256": {
+    ".github/workflows/ci.yml": "60eded82bd35168cbcda0bdc94ba5875347292c6f75c5a1ebcec3d2c16f2955a",
+    ".github/workflows/keepalive.yml": "227dab211acb5e1f0c44a98afda7f5b85c0aac3095fa04e1212f0b9d964b6013",
+    ".ai/policy.json": "ac2256861601832a6c4f754187d1478b0d61fc5d3cc4f3095808cd6f6af4c26b",
+    "scripts/test_ai_sdlc_check.py": "bdfbea58d0c8dc4a7d86271b0646b744af24cf6cdf0f6667964d1f804301f52c",
+    "scripts/workflow_policy_check.py": "b8dd1d8cc6a910d9e58dff0dddfefb15754c3743797abd7a482e90ca65cc2749",
+    "scripts/test_workflow_policy_check.py": "8f121aeef7a4fa103e6bcc69ac1b4beeee9268155de26e14780b148b9e2aa4ae"
+  },
+  "limitations": "Local policy enforcement, not hosted CI or provider evidence; database mutation runner scheduled separately.",
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "025-production-line-gates-r1",
+  "candidate_sha": "SELF"
+}

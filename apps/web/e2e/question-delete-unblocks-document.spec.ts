@@ -92,7 +92,7 @@ test("soru silme, belge silmenin 409 çıkmazını arayüzden açar", async ({ p
 
   // Reddetmek satırı havuzda bırakır: kısıt hâlâ yürürlükte olmalı.
   await page.getByRole("button", { name: "Reddet" }).click();
-  await expect(page.getByRole("button", { name: "Reddedildi" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reddedildi", exact: true })).toBeVisible();
   const stillBlocked = await request.delete(`${base}/documents/${document.id}`, { headers });
   expect(stillBlocked.status()).toBe(409);
 

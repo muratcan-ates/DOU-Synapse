@@ -123,37 +123,66 @@ test("başka sekmede başlayan sınav eski sonucu doğrulama boyunca ve kilitte 
   expect((await refreshed).status()).toBe(200);
   await expect(page.getByText("Cevap anahtarı", { exact: true })).toBeVisible();
 
-  const second = await context.newPage();
-  await second.goto(`/courses/${course.id}/exam`);
-  await second.getByRole("button", { name: "Yeni sınav başlat", exact: true }).click();
-  await second.getByRole("button", { name: "Sınav başlat", exact: true }).click();
-  await expect(second.getByRole("timer")).toBeVisible();
-
-  let releaseAvailability!: () => void;
-  const availabilityGate = new Promise<void>((resolve) => { releaseAvailability = resolve; });
-  let requestSeen!: () => void;
-  const availabilitySeen = new Promise<void>((resolve) => { requestSeen = resolve; });
-  const holdAvailability = async (route: Route) => {
-    requestSeen();
-    await availabilityGate;
-    await route.fallback();
-  };
-  await page.route(`${base}/chat/availability`, holdAvailability);
-  await page.bringToFront();
+  // Sınav başlamadan sunucunun izin verdiği gerçek 200 yanıtını ağda tut.
+  // Sonraki sınav kilidi doğrulanınca bu eski yanıt çözümleri geri açmamalı.
+  let releaseOldResult!: () => void;
+  const oldResultGate = new Promise<void>((resolve) => { releaseOldResult = resolve; });
+  let oldResultSeen!: () => void;
+  const oldResultReady = new Promise<void>((resolve) => { oldResultSeen = resolve; });
+  let oldResultDelivered!: () => void;
+  const oldResultDone = new Promise<void>((resolve) => { oldResultDelivered = resolve; });
+  await page.route(`${base}/exams/*/results`, async (route) => {
+    const response = await route.fetch();
+    expect(response.status()).toBe(200);
+    oldResultSeen();
+    await oldResultGate;
+    await route.fulfill({ response });
+    oldResultDelivered();
+  }, { times: 1 });
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await availabilitySeen;
+  await oldResultReady;
+
   try {
-    await expect(page.getByText("Cevap anahtarı", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("Sonuç erişimi doğrulanıyor…", { exact: true })).toBeVisible();
-  } finally { releaseAvailability(); }
-  await expect(page.getByRole("button", { name: "Tekrar dene", exact: true })).toBeVisible();
-  await expect(page.getByText("Cevap anahtarı", { exact: true })).toHaveCount(0);
-  await page.unroute(`${base}/chat/availability`, holdAvailability);
+    const second = await context.newPage();
+    await second.goto(`/courses/${course.id}/exam`);
+    await second.getByRole("button", { name: "Yeni sınav başlat", exact: true }).click();
+    await second.getByRole("button", { name: "Sınav başlat", exact: true }).click();
+    await expect(second.getByRole("timer")).toBeVisible();
 
-  await second.bringToFront();
-  await finish(second);
-  await page.bringToFront();
-  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(page.getByText("Cevap anahtarı", { exact: true })).toBeVisible();
-  await second.close();
+    let releaseAvailability!: () => void;
+    const availabilityGate = new Promise<void>((resolve) => { releaseAvailability = resolve; });
+    let requestSeen!: () => void;
+    const availabilitySeen = new Promise<void>((resolve) => { requestSeen = resolve; });
+    const holdAvailability = async (route: Route) => {
+      requestSeen();
+      await availabilityGate;
+      await route.fallback();
+    };
+    await page.route(`${base}/chat/availability`, holdAvailability);
+    await page.bringToFront();
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await availabilitySeen;
+    try {
+      await expect(page.getByText("Cevap anahtarı", { exact: true })).toHaveCount(0);
+      await expect(page.getByText("Sonuç erişimi doğrulanıyor…", { exact: true })).toBeVisible();
+    } finally { releaseAvailability(); }
+    await expect(page.getByRole("button", { name: "Tekrar dene", exact: true })).toBeVisible();
+    await expect(page.getByText("Cevap anahtarı", { exact: true })).toHaveCount(0);
+    await page.unroute(`${base}/chat/availability`, holdAvailability);
+
+    const lateResponse = page.waitForResponse((response) => response.url().endsWith("/results") && response.status() === 200);
+    releaseOldResult();
+    await Promise.all([oldResultDone, lateResponse]);
+    // Ağ teslimi ve React boyaması tamamlandıktan sonra yeni kilit hâlâ görünür.
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+    await expect(page.getByText("Cevap anahtarı", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Tekrar dene", exact: true })).toBeVisible();
+
+    await second.bringToFront();
+    await finish(second);
+    await page.bringToFront();
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await expect(page.getByText("Cevap anahtarı", { exact: true })).toBeVisible();
+    await second.close();
+  } finally { releaseOldResult(); }
 });

@@ -78,6 +78,17 @@ jobs:
       - name: Testler
         run: uv run pytest -q
 
+      - name: Yayın kanıtı doğrulayıcılarının regresyon testleri
+        working-directory: .
+        run: uv run --project apps/api python -m unittest discover -s .release -p 'test_*.py'
+
+      - name: Rol farkındalıklı ajan uygulama mutasyonları
+        working-directory: .
+        run: |
+          uv run --project apps/api python scripts/role_agent_application_mutation_check.py \
+            --candidate-sha "$(git rev-parse HEAD)" \
+            --evidence /tmp/role-agent-application-mutations.json
+
       # Göç numaraları sıranın TEK kaydı: her yerde `supabase/migrations/*.sql`
       # dosya adı sırasıyla uygulanıyor. Aynı numarayı iki dal birden
       # kullandığında (0016 bu depoda gerçekten oldu) git çakışma üretmez,

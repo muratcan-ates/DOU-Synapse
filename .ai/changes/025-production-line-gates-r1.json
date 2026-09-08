@@ -1,0 +1,325 @@
+{
+  "schema_version": 1,
+  "change_id": "025-production-line-gates-r1",
+  "lineage_id": "production-line-gates",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "CI kapıları ve gerçek regresyon kanıtlarını tamamla",
+  "summary": "Release ve uygulama mutasyon kontrollerini CI içine bağlar; kapı dosyalarını yönetişim kapsamına alır; hata yutma/izin genişlemesini reddeder. Testlerde koşullu atlamaları ve davranış kanıtlamayan iddiaları giderir, monoton ipucu geçmişini korur, kullanılan runtime yollarını doğrular.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-08T09:48:21+03:00",
+  "review_by": "2026-10-08T09:48:21+03:00",
+  "base_sha": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-6218159",
+    "model_revision": "unchanged-from-base-6218159",
+    "prompt_revision": "unchanged-from-base-6218159",
+    "tool_schema_revision": "unchanged-from-base-6218159",
+    "guardrail_revision": "workflow-policy-fail-closed-v2; protected-gates; monotonic-exam-hints",
+    "retrieval_revision": "unchanged-from-base-6218159",
+    "embedding_revision": "unchanged-from-base-6218159",
+    "evaluator_revision": "release26/workflow27/governance77; application-mutations12; actual-API-and-browser-regressions"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "4b4b6f411f91a459ad4f9f876c8096d5186310567728f29cd10c8c784cefc0aa",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".ai/policy.json",
+      "state": "present",
+      "sha256": "ac2256861601832a6c4f754187d1478b0d61fc5d3cc4f3095808cd6f6af4c26b"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "60eded82bd35168cbcda0bdc94ba5875347292c6f75c5a1ebcec3d2c16f2955a"
+    },
+    {
+      "path": ".github/workflows/keepalive.yml",
+      "state": "present",
+      "sha256": "227dab211acb5e1f0c44a98afda7f5b85c0aac3095fa04e1212f0b9d964b6013"
+    },
+    {
+      "path": ".specify/feature.json",
+      "state": "present",
+      "sha256": "386c8ff96af439550d0e58edc6c4c593c38d549c03194ffb0fbcfe8ce8691bfa"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "0d7fd26e37b4a7a6850979105b250c22e579ac003ffd9901ede3e12b22064815"
+    },
+    {
+      "path": "apps/api/app/core/provider_config.py",
+      "state": "present",
+      "sha256": "23c527d7ce8f39537a7fc59f591afd7bdb2a0db9650ec9c937545f89df61243b"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/socratic.py",
+      "state": "present",
+      "sha256": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/pipeline.py",
+      "state": "present",
+      "sha256": "86f39e748b24512a7f34d4212b27a91614457ac2eae1f5ed7041d1fb309d9aef"
+    },
+    {
+      "path": "apps/api/tests/test_bake_model_materialize.py",
+      "state": "present",
+      "sha256": "864d7b33f244b1aa3e09c0da2cd4d8d5e7885c94cc93cf5482da9de8ae7bda3e"
+    },
+    {
+      "path": "apps/api/tests/test_exam_workspace.py",
+      "state": "present",
+      "sha256": "9c34bd7eadff562a003559b49cc922b6d125a5bb7c6a19d7864fec4fb16f00b0"
+    },
+    {
+      "path": "apps/api/tests/test_guardrails.py",
+      "state": "present",
+      "sha256": "c6db762c24c9c9439c38124776518a0abb2c5b9d018f6ef3504c9e1d68da875d"
+    },
+    {
+      "path": "apps/api/tests/test_runtime_reachability.py",
+      "state": "present",
+      "sha256": "266d23493e43e0c0f3082c3254aa88c4926bbff2b9a322bab2b8c1ab127bf33d"
+    },
+    {
+      "path": "apps/api/tests/test_user_rights.py",
+      "state": "present",
+      "sha256": "f9ce71e0bf3309b9e94ca0be21d91381edb2a093946e45dba297b311c6005ed5"
+    },
+    {
+      "path": "apps/web/components/exam/running-exam.tsx",
+      "state": "present",
+      "sha256": "476a0eaf5d3a2e2e8a18ff257bb2d40e93cf02aa3b63a51ae57626391c51e380"
+    },
+    {
+      "path": "apps/web/e2e/exam-completion-guards.spec.ts",
+      "state": "present",
+      "sha256": "b2f7d07d4614834b677fd60aca00f59cf697267aacb9c3f3db51969d315948dd"
+    },
+    {
+      "path": "apps/web/e2e/flows.spec.ts",
+      "state": "present",
+      "sha256": "8131f93428ca5f4199d125b1e701fa4d34c12e5ddddf0c003d2faf73392e23f4"
+    },
+    {
+      "path": "apps/web/e2e/question-delete-unblocks-document.spec.ts",
+      "state": "present",
+      "sha256": "2001f1f00882bf13a995c1d241a0709c536fcd1fd38ed741c58660b913107a01"
+    },
+    {
+      "path": "apps/web/lib/exam.test.ts",
+      "state": "present",
+      "sha256": "985048642fad08610b8220c60ced284818d836cb28460468136b6c2ed7e2eb1a"
+    },
+    {
+      "path": "apps/web/lib/exam.ts",
+      "state": "present",
+      "sha256": "8ac6c8e3604d0885a85c81bbea698329e7600a77d47717c358f702697e2b8aad"
+    },
+    {
+      "path": "docs/completion-program.md",
+      "state": "present",
+      "sha256": "3b1f1064b3a21486ee97fdbeca1b50f97b21e0f1843840593e939e84547ed6ad"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "f56db50aaaa477a3f99591ca36929637163ababe39e94af1f2bfdd40502f698a"
+    },
+    {
+      "path": "scripts/test_ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "bdfbea58d0c8dc4a7d86271b0646b744af24cf6cdf0f6667964d1f804301f52c"
+    },
+    {
+      "path": "scripts/test_workflow_policy_check.py",
+      "state": "present",
+      "sha256": "8f121aeef7a4fa103e6bcc69ac1b4beeee9268155de26e14780b148b9e2aa4ae"
+    },
+    {
+      "path": "scripts/workflow_policy_check.py",
+      "state": "present",
+      "sha256": "b8dd1d8cc6a910d9e58dff0dddfefb15754c3743797abd7a482e90ca65cc2749"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "debc71aac1864ca47f6124546e880d2f890fc597e79be046f1b2074a51ee625a"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "725fe84b05ec51a7297ca76cba8822f07943fc7658ea9a001ad0405e34b5d4cf"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "8f747064591f2d65e8060803d05bacaa151a3deb33c96ae7dce2187ed2caa9e8"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "2c94cdfdb214607070695f505d0e0bff701f54d54911bdd3e2dca1d7e595ed3f"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "829365dc3000fff1338b8341190daa8baa4d9e7a2d87665cb3084f080316edb0"
+    },
+    {
+      "path": "specs/017-completion-integration/verification.md",
+      "state": "present",
+      "sha256": "a63ad7215d81575fa10b7e0ca4dc1b0fcabcbd42b71dfd90ced562b6bf04d796"
+    },
+    {
+      "path": "specs/018-codex-production-line/plan.md",
+      "state": "present",
+      "sha256": "5e19230c60283cd38cde4bba2d8f3828a0e99a0f6e6de0e13291ce621456aceb"
+    },
+    {
+      "path": "specs/018-codex-production-line/spec.md",
+      "state": "present",
+      "sha256": "3ea86155ebbfde96a11c2d43b780e81431f996a6310df575ca67a3a33aeba076"
+    },
+    {
+      "path": "specs/018-codex-production-line/tasks.md",
+      "state": "present",
+      "sha256": "582c53837039dbdae50c10f048092be4ffce7233eb8a421ee4031bce13c29949"
+    },
+    {
+      "path": "specs/018-codex-production-line/verification.md",
+      "state": "present",
+      "sha256": "52497dc7f4efff9621ba3cf83b4f54692792add7fb827211fdee9017022e066a"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/025-application-mutations.json",
+      "report_sha256": "fd59e6342cfe95251eaca12089be3f2fb9eb3a1d389b5fbae2273f59f9ba4909",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/025-gate-negative-controls.json",
+      "report_sha256": "435d54309a4a6082250f982b6ed2ab9abb5f728b895393c216c6bead3968e24d",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/025-production-line-gates-r1.json",
+      "report_sha256": "0d175ea67dfa8b2779984c509f476fcb70bd613fb16759912ba5cebb8d92522d",
+      "candidate_sha": "SELF"
+    },
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/025-test-mutations.json",
+      "report_sha256": "2257c30e643792882d24431fb82ae5e8aecf3d5290248435c96ad1dff4cc6fe4",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "scripts/test_workflow_policy_check.py",
+    "holdout_ref": "apps/web/e2e/exam-completion-guards.spec.ts",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: no model quality claim; synthetic regressions",
+    "metrics": [
+      {
+        "name": "application_guards_caught",
+        "baseline": 12,
+        "candidate": 12,
+        "operator": ">=",
+        "threshold": 12,
+        "sample_size": 12
+      }
+    ],
+    "exact_command": "apps/api/.venv/bin/python scripts/role_agent_application_mutation_check.py --candidate-sha SELF --evidence /private/tmp/dou018-evidence/application-mutations.json"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "required-check:AI quality / Govern reviewed AI diff",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:025-production-line-gates-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "required-check:AI quality / Govern reviewed AI diff",
+    "kill_switch": "Repository administrator documents an emergency exception before temporarily removing the required check.",
+    "assignment": "Sticky per pull-request head SHA; reruns inspect the same reviewed commit.",
+    "initial_exposure": "None: local candidate only; PR checks after draft opens.",
+    "stop_conditions": [
+      "The gate exposes secret or student content.",
+      "The gate accepts an uncovered AI-sensitive diff.",
+      "The gate validates a commit other than the reviewed pull-request head."
+    ],
+    "expand_conditions": [
+      "Mutation suite remains green in CI.",
+      "Required reviewers accept the policy and workflow."
+    ],
+    "active_exam_policy": "Existing source and active-exam locks retained; repeated or late hints cannot regress local hint history."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:621815908d5372d8de414aec4ca1dc63da008dca",
+    "procedure": "Revert candidate commit on feature branch; rerun full regression and workflow checks. Do not silently disable required production checks.",
+    "max_minutes": 15,
+    "verification": "Verify reverted source against base and run API/web plus release/workflow/governance checks; rollback not executed.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes and stable error codes are recorded.",
+    "retention": "Versioned with the repository; no raw prompts, secrets, student answers or provider payloads."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

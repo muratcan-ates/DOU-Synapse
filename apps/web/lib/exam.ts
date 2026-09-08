@@ -31,7 +31,7 @@
 import { ANSWER_MAX_LENGTH } from "@/lib/exam-limits";
 import { ApiError } from "@/lib/api";
 import type { Tone } from "@/lib/labels";
-import type { AnswerFeedback, ExamMode, ExamQuestion, ExamSession } from "@/lib/types";
+import type { AnswerFeedback, ExamHint, ExamMode, ExamQuestion, ExamSession } from "@/lib/types";
 
 /* -------------------------------------------------------------------------
  * Sabitler ve sözlükler
@@ -300,6 +300,16 @@ export function showsHints(mode: ExamMode): boolean {
 export function nextHintLevel(current: number, limit = HINT_MAX_LEVEL): number | null {
   const maximum = Number.isFinite(limit) ? Math.max(0, Math.min(limit, HINT_MAX_LEVEL)) : 0;
   return current >= maximum ? null : current + 1;
+}
+
+/**
+ * Aynı sorunun ipucu geçmişi yalnız ileri gider. Eğitmen limiti istek uçuşta
+ * iken düşürünce dönen eski basamak, görülmüş ipucunu veya kaynağını değiştirmez.
+ * İzin ve limit sunucudan okunur; bu işlev yalnız teslim edilen geçmişi birleştirir.
+ */
+export function appendExamHint(current: ExamHint[], received: ExamHint): ExamHint[] {
+  if (current.some((hint) => hint.hint_level >= received.hint_level)) return current;
+  return [...current, received];
 }
 
 /* -------------------------------------------------------------------------

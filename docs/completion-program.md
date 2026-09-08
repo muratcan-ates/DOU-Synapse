@@ -1,51 +1,49 @@
 # CourseGPT tamamlama programı
 
-Bu belge kullanıcı tarafından istenen sürekli geliştirme programının kaldığı yeri tutar. E-posta ürün gereksinimi referansıdır. Hedef: öğretmenin kaynaklarıyla sınırlı, kaynak gösteren, Sokratik çalışmayı ve güvenilir sınav değerlendirmesini destekleyen, teslim kanıtları hazır CourseGPT.
+Kullanıcı 8 Eylül 2026'da Codex ve Claude çalışmalarının birleştirilmesini ve geliştirmeye devam edilmesini istedi. Hocanın e-postası ürün gereksinimi; runbook uygulanmadan önce kodla karşılaştırılan iş önerisidir.
 
-## Güncel durum
+## Güncel çalışma
 
-Aktif dal: `016-agent-skills`; çalışma dizini: `/Users/muratates/code/dou-synapse-016-agent-skills`; temel: `ed6103fbe53be3888252074db0a722cfe1be617c` (geçerli015 yerel adayı; içinde013/014 var). Uzak main en son `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac` olarak doğrulandı; bu tur yeni uzak sorgu yapılmadı. Hiçbir yerel dilim main'e veya canlıya alınmadı.
+Aktif dal `018-codex-production-line`; çalışma ağacı `/Users/muratates/code/dou-synapse-018-codex-production-line`. Kesin taban `621815908d5372d8de414aec4ca1dc63da008dca` (`017-completion-integration`), 8 Eylül'de GitHub ile eşleştirildi. 013/014/015 ürün dilimleri, 016 beceriler, Codex017 düzeltmeleri ve Claude'un0020/CI/runbook katkıları tabanda zaten birleşik. Yeni dal bu geçmişi korur. Ana dal veya canlı ortam birleşimi yapılmadı.
 
-Ürün test kanıtı: 1154 API, 421 web, 38 tarayıcı sonucu önceki test edilmiş ürün anlık görüntüsüne aittir; 016 uygulama kodunu değiştirmez. 015 aday düzeltmesi ve devralınan kanıt için specs/015-completion-program/candidate-correction.md okunmalıdır. 016'nın kendi kanıtı beceri paketi, karşı testler ve geçici çalışma akışı denemeleridir; ayrıntı specs/016-agent-skills/verification.md. Kesin güncel SHA çalışma ağacından ve teslim raporundan doğrulanır.
+Eski defter016'da kalmıştı. Tarihsel kanıtlar [015](../specs/015-completion-program/verification.md), [016](../specs/016-agent-skills/verification.md) ve [017](../specs/017-completion-integration/verification.md) kayıtlarında korunur; bu adayın sonucu sayılmaz. Geçici017 kanıt klasörü artık yok; eski geçici yollar yeni sonuç olarak kullanılmaz.
 
-## İş sırası ve bitirme ölçütleri
+Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), [plan](../specs/018-codex-production-line/plan.md), [iş listesi](../specs/018-codex-production-line/tasks.md), [doğrulama](../specs/018-codex-production-line/verification.md).
 
-| Sıra | İş paketi | Durum | Tamamlanma ölçütü / kanıt |
-|---|---|---|---|
-| 1 | Sağlayıcı ayarları ve erişim ön kontrolü | Yerelde doğrulandı | Tek varsayılan kaynak; sır sızdırmayan çevrimdışı rapor; hedef başına sınırlı gerçek erişim denemesi; sahte/eksik yapılandırmada gerçek değerlendirme reddi |
-| 2 | Değerlendirme kanıt zinciri ve izole veri hazırlığı | Yerelde doğrulandı | Sunucu SHA/yapılandırma/çalışma kimliği ile gerçek cevap üretiminin bağlanması; yanıltıcı notların reddi; üç bağlantının aynı izole veri tabanına gittiğinin yazmadan doğrulanması |
-| 3 | Öğrencinin yarım kalan çalışması | Yerelde doğrulandı | Sekme yenilemede gönderilmemiş cevap korunur; sahiplik/süre önce doğrulanır; çıkış/gönderme/bitirme temizler; kayıtlı alıştırma geri bildirimi güvenle açılır |
-| 4 | Kaynak değişikliğinin sınava etkisi | Yerelde doğrulandı | Eğitmen sorunun kullanıldığı sürümleri sayfalar ve doğru kâğıdı salt okunur açar; öğrenci verisi ve cevap anahtarı yetkisiz sızmaz |
-| 5 | İnsan kabulü ve örnek ders paketi | Çevrimdışı paket hazır; insan kabulü bekliyor | Mevcut materyal/goldset bütünlüğü; soru ve beklenen kaynaklar; bağımsız insan etiketleri için paket; maliyet/çağrı sınırı ve devam yönergeleri |
-| 6 | Birleşik yerel sürüm doğrulaması | Yerel testler geçti | API/web/tarayıcı negatif testleri; OpenAPI/docs; kaynak bütünlüğü; değişikliklere bağlı AI kanıtı; kesin commit |
-| 7 | Gerçek model kalite ölçümü ve düzeltme döngüsü | Dış girdi bekliyor | Gerçek sağlayıcı erişimi + onaylı materyal; kaynak isabeti/ret/Sokratik davranış/puanlama kör değerlendirmesi; yalnız başarısız katmanı düzeltip yeniden ölçme |
-| 8 | Entegrasyon ve yayıma hazırlık | Yerel aday sonrası | 013+014+015 farkı ve göç sırası incelemesi; gelen dallardaki0016 çakışmasını içeri almama; incelenebilir PR paketi; bağımsız onay kayıtları |
-| 9 | Staging işletim ve geri dönüş doğrulaması | Ortam erişimi bekliyor | Gerçek oturum açma/depolama/işçi akışı; öğrenci/eğitmen/yönetici sınırları; gecikme/maliyet; yedekten geri yükleme ve rollback kanıtı |
-| 10 | Hocaya teslim ve kullanım kabulü | 7–9 sonrası | Çalışan URL, örnek ders, tarihli gerçek başarı raporu, iki rol kılavuzu, canlı senaryo ve öğretmen kabulü |
-| 11 | Repo becerilerinin taşınabilir Codex paketi | Yerelde doğrulandı | 17 eşlenmiş beceri, 3 güncel ortak DOU metni, yapısal/negatif kontroller, bağımsız kullanım denemesi ve CI tanımı |
-| Koşullu | Taranmış materyal OCR | Materyale bağlı | Yalnız gerekli sayfalar için metin çıkarma/kaynak sayfa eşleme testleri; ihtiyaç yoksa gerekçeli kapsam dışı |
+## Birleştirilmiş iş kuyruğu
 
-## Çalışma döngüsü
+| İş | Kodla doğrulanan durum | Sonraki kabul |
+|---|---|---|
+| A1–A3 CI ve yönetişim | Yerelde doğrulandı; GitHub CI bekliyor | Release testleri/uygulama mutasyonları CI adımı; hassas kapılar; hata yutma ve izin genişlemesi negatif testte reddedilir |
+| A4/A7 sınav testleri | Yerel birim ve gerçek HTTP akışı geçti | Dört koşullu skip yerine gerçek iddia; monoton ipucu geçmişi; sınavdan önceki gecikmiş200 yeni kilidi açamaz |
+| A5 test sağlamlığı | 224 test geçti; 9 mutanttan 8 yakalandı, biri bağımsız RLS ile korundu | Gerçek yardımcı/CLI/export/sonuç kilidi davranışı; aynı test üretim koruması kaldırılınca düşer |
+| A6 erişilmeyen kod | Üç kullanılmayan yardımcı kaldırıldı; kullanılan yollar korundu | Retry sınıf-adı yolu, kapsam reddi ve gerçek sources/inspect çağrısı test edilir |
+| B1 öğrenme çıktısına konu | Gerçek eksik | UI'dan konu seçilerek kaydedilen çıktı yenilemede korunur |
+| B2 konu/blueprint ile sınav | Zaten014'te uygulanmış; runbook iddiası yanlış | Mevcut student-assessment E2E'si bu adayda tekrar çalıştırılır; yeniden yazılmaz |
+| B3 açık/kod değerlendirme | Kaynak doğrulama ve kod testleri zaten var; runbook'un yok/sıfır iddiası yanlış | Ayrı neden-yanlış açıklaması ve kod rubrik kırılımı eksik; kaynak varlığı semantik çelişki kanıtı sayılmaz |
+| B4 kişisel sohbet silme | API var, web yalnız tüm geçmişi siliyor | Üyeye açık sohbet ekranında kendi oturumu/kendi ders geçmişi; yanlış ID ve hata/iptal/yarış testleri |
+| B5 politika geçmişi | API ve0020 cascade testi var, UI yok | Eğitmen salt okunur geçmiş, sayfalama ve hata durumu; kimlikten isim uydurulmaz |
+| B6 blueprint özellik bayrağı | Kapalı authoring ortamında ölü eylemler görünür | Yüklenme/hata/kapalı durumda düzenleme-yayımlama açılmaz; mevcut okuma korunur |
+| B7 soru süzgeçleri | Yalnız yüklenmiş satırlar süzülüyor | status/topic sunucuya gönderilir, imleç sıfırlanır, boş sonuçta filtre kalır |
+| C1 retrieval | Dense iç eşitlik sıralaması ANN yolunu bozuyor; belge UUID'si içerikten türemez | İzole gerçekçi korpus/plan/kalite karşılaştırması, içerik hash'iyle son sıralama; yaklaşık aramaya tüm-korpus determinizmi iddia edilmez |
+| C2 indeks yapım göçü | Runbook bellek→recall nedenini gösteren tekrar üretilebilir kanıt bulunamadı | Önce bellek/ef_search çapraz ölçümü; mevcut indeks boş tabloda kurulduğu için yeni göç otomatik eklenmez |
+| D operasyon | Runbook'taki öneriler henüz tek tek doğrulanmadı | Ortak kota, worker dayanıklılığı, restore ve metrikler; mevcut olanlar tekrar kurulmaz |
+| E gerçek model kabulü | Fake/hashing mekanik testleri var; gerçek/human kabul yok | Sınırlı sağlayıcı erişimi, aday bağı, kör insan etiketleri ve gerçek kalite raporu |
+| F auth/private storage | Yerel doğrulamalar ile gerçek ortam ayrı | JWT negatifleri, seçilmiş imza yolu; API üyelik reddi ve gerçek kullanıcı Storage RLS ayrı sınanır |
+| G dağıtım | Canlı hedef seçilmedi | İncelenebilir migrate/deploy/rollback paketi; dış ortam girdileriyle canlı tatbikat |
+| H erişilebilirlik/E2E | Mevcut kütüphane/gerçek ağ kapıları korunur | Dar/koyu/klavye akışları ve canlı HTTP sınav kilidi; görsel test sonucu ayrıca kaydedilir |
+| I belge ve kılavuzlar | Sayaç düzeltmeleri her doğrulanmış dilimde, kapsamlı kılavuz en sonda | Güncel öğrenci/eğitmen/admin kılavuzu, gerçek başarı raporu, açık işlerin kanıtla kapanışı |
 
-1. Dalı, son commit'i, çalışma ağacını ve aşağıdaki kaldığı-yeri kaydını doğrula. Başka çalışmanın dosyalarına dokunma.
-2. En yüksek öncelikli hazır iş paketini seç; kabul ölçütünü ve dosya sahipliğini netleştir. Bağımsız işleri paralel yürüt.
-3. Uygula, değişen davranışın anlamlı olumlu/olumsuz testlerini çalıştır, bulguları kaydet. Bir kapı tamamlanınca sıradaki hazır işe geç.
-4. Her teslimde kodda mevcut / yerelde test edildi / main'e birleşti / staging'de doğrulandı / canlıda kabul edildi durumlarını ayrı yaz.
-5. Anahtar veya insan kararı bekleyen iş için somut paket hazırla ve diğer hazır işleri sürdür. Etiket/onay/gerçek model sonucu uydurma. Hazır iş kalmadığında aynı engeli tekrar tekrar deneme; gereken girdiyi tek yerde açık bırak.
-6. Harici mesaj, canlı yayın, main birleşimi veya harici yetki değişikliğinde mevcut açık yetkiyi ve ilgili onay kapısını kontrol et; önce bütün yerel hazırlığı tamamla.
+## Ortam ve doğrulama sınırları
 
-## Dış girdiler
+Bu göreve özel PostgreSQL16 localhost55448; dou018_* test veritabanları; tarayıcı için dou_synapse_e2e_dou018, API8018/web3118. Fake LLM ve hashing yalnız mekanik doğrulama içindir. Mevcut sır veya .env kullanılmadı. Yerel pgvector0.8.0 ile CI0.8.6 sürüm farkı retrieval ölçümünde açık tutulur.
 
-Gerçek Groq/Gemini değerlendirme anahtarı şu an bulunmuyor; anahtar değerleri sohbet veya raporlara konmaz. Öğretmenin örnek ders kapsamını ve bağımsız puanlama etiketlerini onaylaması gerekiyor. Staging/üretim erişimi ve gerçek kullanıcı kabulü bu yerel testlerin yerine geçmez. Yeni sağlayıcı erişim denemesi yalnız açık sınırlı komutla yapılır; otomatik sınırsız ücretli çağrı döngüsü yoktur.
+## Dış girdiler ve devam
 
-## Kaldığı yer
+Groq/Gemini erişimi, Supabase proje bilgileri, JWT imza tercihi, bulut/staging hedefi ve branch protection henüz verilmedi. İlgili somut paket hazır olduğunda gereken karar sorulur; diğer hazır işler sürer. İnsan etiketleri boş kalır. Yeni bağımlılık önerileri ve migration-runner tablo kararı kendi diliminde gerekçelendirilir. Bu kayıt gelecekte çalışma planıdır; ayrıca bir zamanlayıcı kurulmuş olduğu anlamına gelmez.
 
-015 yerel uygulaması tamamlandı ve eski adaylar korundu. 016, root koordinasyonunda 3 DOU becerisi/araç/docs, mail_requirements ile 9 Speckit ve student_api_audit ile 5 Git becerisi olarak bölündü. Kalıcı sunucu veya test veritabanı başlatılmadı; davranış denemeleri geçici dosya alanında yapıldı. Kaynak dokümanlara ve eski immutable AI kayıtlarına dokunulmaz.
+Sonraki yürütülebilir adım: A kaydını ve 017 hedefli taslak PR CI'ını doğrula; kullanıcının ek talebi doğrultusunda S1/S2/S3 güvenlik ve gizlilik dilimini, ardından B1'i uygula. Güncel HEAD, temiz ağaç ve uzak dal durumu her devirde yeniden kontrol edilir.
 
-016 beceri doğrulaması tamamlandı. Sıradaki ürün adımı ayrı gerçek değerlendirme anahtarı ve öğretmen kaynak/etiket girdisiyle kabul paketini çalıştırmaktır. Bu girdiler yokken gerçek model veya insan sonucu üretilmiş sayılmaz. 90+ ajan kataloğunu araştırmaya devam etmek için yeni bir kaynak adı/bağlantısı gerekir. Mevcut engeli aynı sorgularla tekrar denemek yerine hazır paketi ve gereken girdileri koru.
+## Güvenlik ve gizlilik dilimi
 
-## Ajan/beceri envanteri ek kontrolü
-
-Kullanıcı mevcut 90+ ajan paketini ve repo becerilerini kontrol etmemizi istedi. [Envanter](agents-skills-inventory.md): repo 17 Claude becerisi ve yerel 9 Codex DOU becerisi doğrulandı; 90+ ajan kataloğu incelenen konumlarda bulunamadı. 015 incelemesinde kurulum yapılmamıştı. 016 ile repo içi17 Codex karşılığı eklendi, 3 eski DOU yönergesi güncellendi. Küresel kopya kurulmadı. Kullanım ve doğrulama docs/agent-skills.md içinde; 90+ katalog kaynağı hâlâ takip girdisidir.
-
-016 teslimi: kod adayı `c9f12e168cfb09a8ec96ce4b11ce61e302357cde`, temel `ed6103fbe53be3888252074db0a722cfe1be617c`. Kesin fark denetimi geçti; takip teslim kaydı yalnız belgelerdir. [Teslim ve kalan girdiler](../specs/016-agent-skills/delivery.md).
+S1: boyutu sınırlı istek gövdesi, depoya yazmadan değiştirme hedefi doğrulama ve kesin geri alma sonrası yeni nesne temizliği. Belirsiz COMMIT sırasında veri kaybı yaratacak silme yapılmaz; uzlaştırma gereksinimi kaydedilir. S2: sekmeler arası çıkış ve geç yanıt yarışları; sonra sınav geçişi ve kaynak okuyucusu. S3: hesap işleminin gerçek kapsamı ve export sözleşmesi, teknik bulgu/kurumsal karar kaydı. S4: mevcut dou-synapse-role-security becerisine veri yaşam döngüsü referansı eklendi, yapı doğrulaması ve bağımsız kullanım denemesi geçti; bu kurulu beceri depo dışında sürdürülür.

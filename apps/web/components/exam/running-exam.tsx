@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { api } from "@/lib/api";
-import { canSubmitAnswer, describeQuestion, EXAM_MODE, formatClock, isLastMinute,
+import { appendExamHint, canSubmitAnswer, describeQuestion, EXAM_MODE, formatClock, isLastMinute,
   nextHintLevel, shownQuestions, showsHints, sourceInfo, tickRemaining, timeIsUp, timeNotice } from "@/lib/exam";
 import type { AnswerFeedback, ExamFinish, ExamHint, ExamSession } from "@/lib/types";
 import { useSubmit } from "@/lib/use-submit";
@@ -105,8 +105,8 @@ export function RunningExam({
       // ipucunu ekleme; yeni politikayı okumadan sonraki isteği açma.
       setHints((prev) => {
         const previous = prev[task.questionId] ?? [];
-        if (previous.some((rung) => rung.hint_level >= hint.hint_level)) return prev;
-        return { ...prev, [task.questionId]: [...previous, hint] };
+        const updated = appendExamHint(previous, hint);
+        return updated === previous ? prev : { ...prev, [task.questionId]: updated };
       });
       if (hint.hint_level < task.level) await helpLock.reload();
     },

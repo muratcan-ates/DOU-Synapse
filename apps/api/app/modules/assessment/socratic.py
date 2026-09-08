@@ -219,10 +219,6 @@ class SocraticState:
     def stage_index(self) -> int:
         return STAGE_ORDER.index(self.stage)
 
-    @property
-    def is_final_stage(self) -> bool:
-        return self.stage is SocraticStage.EXPLAIN_WITH_SOURCE
-
     def to_json(self) -> dict[str, Any]:
         return {
             "stage": self.stage.value,

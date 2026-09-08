@@ -240,30 +240,13 @@ interface HavuzFiksturu {
    * Üretilen sorular — hepsi `draft`. Onay BİLEREK verilmiyor: eğitmen onayını
    * sınayan vaka, önceden onaylanmış bir soruda "Onayla" düğmesini pasif bulur
    * ve hiçbir şeyi sınayamaz. Sınav vakaları onayı `hepsiniOnayla` ile alır.
-   * Boşsa üretim hiçbir şey döndürmedi (bkz. `HAVUZ_YOK`).
+   * Beklenen sayıda soru üretilemezse aşağıdaki vakalar başarısız olur.
    */
   taslaklar: { id: string }[];
-  /** Üretimin kendi gerekçeleri — atlama sebebini okunur kılar. */
+  /** Üretimin kendi gerekçeleri; başarısız hazırlığın nedenini rapora taşır. */
   gerekce: string[];
 }
 
-/**
- * Soru havuzunun kurulamadığı durumun gerekçesi.
- *
- * Soru üretiminin TEK yolu `POST /questions/generate` ve o uç LLM'e bağlı.
- * Anahtar yokken sunucu deterministik sahte sağlayıcıya düşüyor
- * (`app/modules/generation/fake.py`), o sağlayıcının ise soru üretimi dalı yok:
- * her turda sohbet biçiminde bir gövde dönüyor ve üretim "yanıtta 'questions'
- * dizisi yok" diye eliyor. Yani bu ortamda havuz API'den doldurulamıyor.
- *
- * Bu yüzden havuza dayanan vakalar ZAYIFLATILMADI, koşullu atlandı: fikstür
- * gerçekten kurulmayı deniyor ve üretim bir gün soru döndürdüğünde vakalar
- * kendiliğinden koşmaya başlıyor. Bir sabitle kapatılsalardı, düzelme günü
- * kimse fark etmezdi.
- */
-const HAVUZ_YOK =
-  "Soru havuzu kurulamadı: bu ortamda soru üretimi sahte sağlayıcıya düşüyor ve " +
-  "hiç soru döndürmüyor (bkz. AÇIK KUSUR). Vaka, üretim çalışır çalışmaz koşacak.";
 
 async function soruHavuzuKur(suffix: string): Promise<HavuzFiksturu> {
   const course = await materyalliDers(suffix);
@@ -642,7 +625,7 @@ test.describe("soru havuzu — eğitmen onayı", () => {
     // Kusur: butonlar seçim yapılınca etkinleşiyor ama tıklanınca hiçbir şey
     // olmuyordu. Etkin görünüp iş yapmayan buton kusurdur (Anayasa XI).
     const havuz = await soruHavuzuKur("SORU");
-    test.skip(havuz.taslaklar.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    expect(havuz.taslaklar.length, `En az iki soru bekleniyor. Üretim gerekçeleri: ${havuz.gerekce.join("; ")}`).toBeGreaterThanOrEqual(2);
 
     await signIn(page, AYSE);
     await page.goto(`/courses/${havuz.course.id}/questions`);
@@ -727,7 +710,7 @@ test.describe("soru havuzu — eğitmen onayı", () => {
 test.describe("sınav provası", () => {
   test("ileri-geri gezinme çalışır ve cevap korunur", async ({ page }) => {
     const havuz = await soruHavuzuKur("SINAV");
-    test.skip(havuz.taslaklar.length < 2, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    expect(havuz.taslaklar.length, `En az iki soru bekleniyor. Üretim gerekçeleri: ${havuz.gerekce.join("; ")}`).toBeGreaterThanOrEqual(2);
     await hepsiniOnayla(havuz);
 
     await signIn(page, BURAK);
@@ -758,7 +741,7 @@ test.describe("sınav provası", () => {
      * düğme bırakılsaydı öğrenci sınav sırasında ona basmayı denerdi.
      */
     const havuz = await soruHavuzuKur("IPUCU");
-    test.skip(havuz.taslaklar.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    expect(havuz.taslaklar.length, `En az bir soru bekleniyor. Üretim gerekçeleri: ${havuz.gerekce.join("; ")}`).toBeGreaterThanOrEqual(1);
     await hepsiniOnayla(havuz);
 
     const ipucu = page.getByRole("button", { name: /İpucu al|Sonraki ipucu/ });
@@ -794,7 +777,7 @@ test.describe("sınav provası", () => {
      * bırakırdı.
      */
     const havuz = await soruHavuzuKur("KILIT");
-    test.skip(havuz.taslaklar.length === 0, `${HAVUZ_YOK} Üretim gerekçeleri: ${havuz.gerekce}`);
+    expect(havuz.taslaklar.length, `En az bir soru bekleniyor. Üretim gerekçeleri: ${havuz.gerekce.join("; ")}`).toBeGreaterThanOrEqual(1);
     await hepsiniOnayla(havuz);
 
     const asistanBaglantisi = page.getByRole("link", { name: "Asistan" });

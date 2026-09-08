@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import text
@@ -270,7 +269,3 @@ async def run_pending_jobs(
         processed += 1
 
     return processed
-
-
-def utcnow() -> datetime:
-    return datetime.now(tz=UTC)
