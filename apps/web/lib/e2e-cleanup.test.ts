@@ -1,13 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  assertAuditOwnership,
+  auditCandidateSql,
+  deleteAuditSql,
   parseAuditRows,
   parseCleanupRows,
   resolveE2eDatabaseName,
 } from "../e2e/cleanup";
 import {
   createE2eCourseIdentity,
-  createE2eRequestId,
   isRunScopedE2eCourseCode,
   validateE2eRunId,
 } from "../e2e/fixtures";
@@ -68,33 +70,36 @@ describe("E2E test verisi sınırları", () => {
       .toThrow();
   });
 
-  test("Bilgi İşlem audit izi aynı koşu kimliğine bağlanır", () => {
-    const requestId = createE2eRequestId({ runId: "abc123xy", processId: 42 });
-    const row = [
-      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      requestId,
-      "GET /admin/overview",
-      "allowed",
-    ].join("\t");
-
-    expect(requestId).toMatch(/^e2e-abc123xy-42-[0-9]+$/);
+  test("audit satırı sunucu UUID ve bilinen sentetik aktörle ayrıştırılır", () => {
+    const requestId = "fedcba98765443218fedcba987654321";
+    const actorId = "11111111-1111-1111-1111-111111111111";
+    const id = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const row = [id, requestId, "GET /admin/overview", "allowed", actorId].join("\t");
     expect(parseAuditRows(row)).toEqual([
-      {
-        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-        requestId,
-        action: "GET /admin/overview",
-        result: "allowed",
-      },
+      { id, requestId, actorId, action: "GET /admin/overview", result: "allowed" },
     ]);
-    expect(() =>
-      parseAuditRows(
-        [
-          "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-          "production-request",
-          "GET /admin/overview",
-          "allowed",
-        ].join("\t"),
-      ),
-    ).toThrow();
+    expect(() => parseAuditRows(row.replace(requestId, "e2e-abc123-42-1"))).toThrow();
+  });
+
+  test("başka koşu ve korunan audit aynı aktörde bile silme kümesine giremez", () => {
+    const owned = { requestId: "fedcba98765443218fedcba987654321",
+      actorId: "11111111-1111-1111-1111-111111111111",
+      action: "GET /admin/overview", result: "allowed" as const };
+    const ownRow = { ...owned, id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" };
+    const other = { ...owned, requestId: "12345678123442348234123456789abc" };
+    const protectedRow = { ...other, id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc" };
+    expect(() => assertAuditOwnership([ownRow], [owned])).not.toThrow();
+    expect(() => assertAuditOwnership([protectedRow], [owned])).toThrow();
+    expect(() => deleteAuditSql([ownRow, protectedRow], [owned])).toThrow();
+    expect(() => assertAuditOwnership([], [owned])).toThrow();
+    const sql = deleteAuditSql([ownRow], [owned]);
+    expect(sql).toContain(ownRow.id);
+    expect(sql).toContain(owned.requestId);
+    expect(sql).toContain(owned.actorId);
+    expect(sql).not.toContain(protectedRow.id);
+    expect(sql).not.toContain(other.requestId);
+    expect(sql).not.toContain("created_at");
+    expect(auditCandidateSql([])).toBe("FALSE");
+    expect(() => deleteAuditSql([], [])).toThrow();
   });
 });

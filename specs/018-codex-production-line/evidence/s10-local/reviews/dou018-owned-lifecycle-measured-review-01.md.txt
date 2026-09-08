@@ -1,0 +1,15 @@
+# Owned lifecycle measured01 — oracle calibration note
+
+The original fixture probe and measured output are preserved unchanged. This note follows root's discovery and a read-only verification of `/private/tmp/dou018-owned-lifecycle-measured-01/result.json`; result SHA256 `27ec612d79cf3844f20f2648faa2a00192e3fc848e7600c3b8f0b58e3d6c1b43`. No test, DB, network or child process was run for this note.
+
+The measured JSON reports PASS under the v1 oracle. Its six observed child results include a real controller/runtime failure that the oracle did not distinguish: **both startup-failed cases exited -6 and logged `Fatal Python error` with `_enter_buffered_busy`**. The baseline startup log SHA is `17bc3e71c7efd75679cf60d6990c076836c60785678b0c73be76ef242a4da8b2`; candidate startup log SHA is `1e0d6339339848addbf7a61c59d0d2f8abdaaefa3e13a23de27a92ec60582538`. Both observations have no readiness HTTP, no stop command and `errorCode:null` in the probe result.
+
+The v1 `candidateStartupRejected` check accepted any nonzero code. That was sufficient to establish failure to start serving, but **insufficient to certify controlled interpreter shutdown**. The daemon control thread remained blocked in buffered stdin reading when startup failure ended the interpreter. This is a real error-path defect, not an installation failure and not merely a cosmetic log. A nonzero fail-closed result must not be relabeled a clean lifecycle result.
+
+The old shutdown-failed exit0 / candidate shutdown-failed exit1 observation remains separately useful. It does not erase the startup fatal error. The whole measured01 output must retain its original PASS field and source hashes as historical evidence; documentation should state that its oracle missed the startup abort and that overall clean-lifecycle acceptance was reopened.
+
+Root's new bounded direction is appropriate: unbuffered fd reads with bounded select, a finished event and finally-join for the owned control thread. New candidate startup-failed acceptance should require the deliberately supported exact exit1 and absence of fatal interpreter output; normal ready/stop must still be actual exit0, shutdown-failed actual exit1, with no signal-to-zero normalization. The original baseline may continue to reproduce -6; the new oracle must preserve that raw observation rather than require the broken baseline to behave correctly. Only root's new actual process run can close this gap.
+
+The test ASGI app is a private minimal fixture, replacing the product `app.main` import. Controller and Uvicorn code are real. None of these results prove DOU-Synapse product DB startup/shutdown, provider behavior, full browser flows or hosted CI success.
+
+One minor failure-artifact limitation in the original probe should also be kept narrow: `childProcessesStarted` uses the number of attempted arm observations. On these six measured arms each has an actual owned PID, so the recorded count is accurate. In a future Popen failure the same expression could overstate starts. A new probe revision can derive that field from non-null observed PIDs and record cases attempted separately; no measured01 value needs changing.

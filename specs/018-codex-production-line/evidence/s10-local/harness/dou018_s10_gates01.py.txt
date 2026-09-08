@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,sys,time
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/s10-gates-01');out.mkdir(mode=0o700,exist_ok=False)
+env={k:v for k,v in os.environ.items() if not k.startswith('PG')};env.update(UV_OFFLINE='1',PYTHONDONTWRITEBYTECODE='1',GROQ_API_KEY='',GEMINI_API_KEY='',OPENAI_API_KEY='',PATH='/Users/muratates/.bun/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin')
+checks=[('docs-refresh',['node','scripts/docs_check.mjs','--duzelt']),('migration',[sys.executable,'scripts/migration_check.py','--allow-gap','0017','--allow-gap','0021','--allow-gap','0022','--allow-gap','0023']),('workflow-policy',[sys.executable,'scripts/workflow_policy_check.py']),('workflow-regression',[sys.executable,'-m','unittest','discover','-s','scripts','-p','test_workflow_policy_check.py']),('whitespace',['git','diff','--check'])]
+records=[]
+for name,command in checks:
+ start=time.monotonic();p=out/(name+'.log')
+ with p.open('xb') as f:
+  cp=subprocess.run(command,cwd=r,env=env,stdout=f,stderr=subprocess.STDOUT,timeout=180)
+ record={'name':name,'command':command,'exit_code':cp.returncode,'seconds':round(time.monotonic()-start,3),'log_sha256':hashlib.sha256(p.read_bytes()).hexdigest()};records.append(record);print(json.dumps(record),flush=True)
+ (out/'result.json').write_text(json.dumps(records,indent=2)+'\n')
+ if cp.returncode:raise SystemExit(cp.returncode)

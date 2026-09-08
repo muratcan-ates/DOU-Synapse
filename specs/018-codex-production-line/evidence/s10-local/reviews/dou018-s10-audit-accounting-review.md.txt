@@ -1,0 +1,81 @@
+# S10 audit muhasebesi — bağımsız salt okunur inceleme
+
+Paket: `/private/tmp/dou018-s10-audit-accounting-candidate`. Manifest SHA256: `ae67ac87fa06f292b61fa0b8d0bc17d9e356e8bac9318fff4f0f036c8c654eaf`. Manifestteki beş dosyanın byte hash'i yeniden okundu; ayrışma yok. Repo/paket düzenlenmedi; DB, ağ, süreç, test veya tarayıcı çalıştırılmadı. Önceden bildirilen tam API başarısı bu yeni muhasebe kodunun çalıştırılmış kabulü değildir.
+
+## Sonuç
+
+Guard'ın salt okunur hedef kontrolü ve tam audit satırı muhasebesinde yeni bir geniş silme veya sayıya dayalı sahte temizlik kusuru bulunmadı. Global-setup deltası, birincil S10 ile sonraki pending/receipt düzeltmesine uyumlu. **Yaşam döngüsü adaptörü ve gerçek kabul tamamlanmadan paket entegre ve güvenli işletiliyor diye işaretlenmemeli.** En önemli açıklar, guard/temizlik/API hedeflerinin birlikte bağlanması, mevcut web sunucusunun yeniden kullanılmaması ve gerçekten DB yazabilecek API sürecinin durduğunun gözlenmesidir.
+
+## 1. Güvenilen hedef: guard'ın yaptıkları ve parent'ın tamamlaması gereken bağ
+
+`files/scripts/e2e_audit_guard.py:70–88`, `:91–121`:
+
+- Pin dosyasının beklenen byte hash'i ve exact alan kümesi denetleniyor. Numeric loopback ve açık port, DB adı/OID/cluster, ayrı DBA rolü ve uygulama origin'i sınırlandırılıyor. JSON'a `exclusive-synthetic` yazmak veya dosyanın kendi hash'ini üretmek bir güven çıpası sayılmıyor; README bunu doğru söylüyor.
+- Guard subprocess'indeki PG ortam değişkenleri temizleniyor. Bağlantı host+hostaddr+port+DB+rol+özel passfile ile açık kuruluyor; sistem DB'leri ve uygulama/worker rolleri reddediliyor.
+- Gerçek bağlantıda DB adı/OID/system_identifier, current_user/session_user, mevcut superuser ve primary durum eşitliği aranıyor. Yeni superuser/GRANT verilmez. Bu yalnız root'un zaten sahip olduğu yerel/sentetik DBA yolu; genel production uyumluluğu değildir.
+- Kimlik SQL'i ve audit okuması aynı read-only repeatable-read işleminde, pg_catalog search_path ve UTC zaman bölgesiyle yapılıyor. Statement/lock/connect sınırları var. SQL davranışı bu incelemede çalıştırılmadı.
+
+**Kritik entegrasyon şartı:** Guard child'ının PG env temizliği parent veya Playwright'a taşınmaz. Mevcut `apps/web/e2e/cleanup.ts:80–85` psql'a caller env'ini verir; yeni global-setup ise scope dosyasını kontrol edip mevcut psql/API sentinel'ini çalıştırır. Böylece guard A'ya bağlıyken hem psql hem API yanlış B'ye yönlenirse sentinel kendi içinde B=B diyebilir. A'nın temiz before/after haritası B'ye yapılan yazımları ölçmez.
+
+Root adaptörü temizleme PG ortamını, API'nin `DATABASE_URL` ve `WORKER_DATABASE_URL` değerlerini aynı önceden güvenilmiş pinlerden kurmalı; devralınan PGHOSTADDR/PGSERVICE/PGSERVICEFILE ve diğer yönlendirmeleri kabul etmemeli. Hedef doğrulaması sentinel ve yıkıcı temizleme öncesinde de aynı gerçek bağlantıya bağlanmalı. Guard'ın SHA'sı tek başına bu üçlü bağı kurmaz. README bu işi açık bıraktığı için burada uygulandı sayılmadı.
+
+## 2. Tam satır snapshot'ı ve fail-closed davranış
+
+`e2e_audit_guard.py:122–129`, `:176–218`:
+
+- `to_jsonb(a)` tablonun bütün sütunlarını alıyor; artefakta yalnız row UUID→tam satır SHA haritası çıkıyor. Mevcut tablo id, aktör, action, result, request_id ve created_at alanlarını taşıyor; bunların herhangi bir değişikliği karşılaştırmaya girer.
+- 20.000 satır sınırı aşılınca örneklem alıp devam edilmiyor. Missing baseline, değişmiş baseline ve yeni kalan satırlar ayrı FAIL nedenleri. Başlangıç sıfır varsayılmıyor; aktör veya zaman penceresiyle yeni satırlar gizlenmiyor.
+- İşlem READ ONLY; guard'da DELETE/CREATE/ALTER veya süreç durdurma yok. Beklenmeyen satırlar DB'de kalır. Sahip olunan audit DELETE hâlâ S10 cleanup'ın exact row ID + requestId/actor/action/result sınırındadır.
+- Dosyalar özel izinle, yeni hedefte exclusive-create yazılıyor. Var olan final-accounting tekrar yazılmıyor. Çözümlenemeyen veri, hedef veya bağlantı genel FAIL kodu üretir; ham SQL/DSN/exception metni stdout'a taşınmaz.
+- Playwright nonzero iken audit haritası temiz olsa da sonuç FAIL. API clean-stop makbuzu geçersizse post-snapshot başarıya dönüştürülmez.
+
+**Ölçüm sınırı:** Bu iki snapshot, baştan sona bütün ara yazımları tek tek makbuzlarla eşleştirmez. Yeni ama makbuzsuz bir satır arada başka bir yetkili kod tarafından silinmişse final eşitlik bunu göremez. README bunu kabul ediyor; normal kanıt, fresh/exclusive hedef ve kaynak hash'i sabit exact-receipt cleanup varsayımı içindedir. “Tüm DB yazımları yakalandı” veya “tüm tablolar doğrulandı” diye genişletilmemeli. Collector atlanan satırın **silinmeden kaldığını** gösteren gerçek negatif ve iki koşunun birbirine dokunmaması kabulü bu yüzden gerekli. Daha güçlü bir iddia istenirse cleanup öncesi gerçek yeni-satır kümesi ile makbuz kümesi de ayrıca karşılaştırılmalı; mevcut guard bunu uygulamıyor.
+
+## 3. Quiescence ve gerçekten beklenen süreç
+
+`e2e_audit_guard.py:184–203` yalnız root'un yazdığı JSON'u doğruluyor: run, target, pozitif PID, stopped, exact integer exit0 ve Playwright sonucu. **Guard process wait yapmıyor; bu alanları yazarak gerçek kapanış ispatlanmaz.** Henüz bulunmayan parent adaptörü güven üreticisidir.
+
+Root'un dar sözleşmesi:
+
+1. API'yi aynı parent'ın doğrudan Popen child'ı olarak çalıştır; yalnız shell/`uv run` wrapper'ının bitmesini gerçek sunucu çıkışı sayma. Reload veya birden fazla worker varsa ana PID'nin bitişi yeterli olmayabilir. Bu kabul için doğrudan tek worker, reload kapalı, beklenen kaynak/runtime ve açık process kaydı en dar yoldur.
+2. Ready kapısı yalnız çalışan mevcut bir porta HTTP200 geldiği için geçmemeli. Child'ın yaşadığı ve kendisine ait dinleme noktasını açtığı doğrulanmalı; port çakışmasında başka API'ye bağlanıp testlere devam edilmemeli. Önceden sahip olunan socket veya başarılı bind + child yaşam döngüsü bağı kullanılabilir.
+3. Playwright başarılı veya başarısız bittikten sonra yalnız bu API child'ını durdur; gerçek wait sonucunu al. Başlatma/ready hatası veya timeout varsa üst sonuç başarısız kalmalı. Guard'ın sonradan PASS olması önceki evre hatasını silemez.
+4. Guard şu anda `ownedApiExitCode == 0` istiyor. Gerçek runtime'ın normal SIGTERM dönüşü `-15` veya başka bir kodsa onu 0 diye yeniden etiketleme. Doğrudan uygulanan shutdown yolunu ölç; gerekirse clean shutdown semantiğini ayrı kanıtla ve guard sözleşmesini kontrollü değiştir. SIGKILL, timeout ve belirsiz kapanış clean-stop olmaz.
+5. Guard'ın varsayılan PLAN evresi exit0 döner (`:143–145`). Parent yalnız exit code'a bakmamalı: begin için `BEGIN_RECORDED` ve yeni beklenen dosyalar; finish için yeni final-accounting, doğru scope, `PASS` ve exit0 birlikte şart olmalı. Mevcut veya eski PASS dosyasıyla başarısız yeni çağrıyı kapatma.
+
+API kapanışı sonrası audit commit yapan bağımsız başka API süreçleri varsa bu normal kabulün exclusive hedef varsayımı bozulur. Başka servisi process adı/port taramasıyla öldürmek çözüm değildir.
+
+## 4. Yerel web sunucusu yeniden kullanımı: adaptör tamamlanmadan önemli hedef boşluğu
+
+Mevcut `apps/web/playwright.config.ts:60–65` webServer komutunu derleme+başlatma olarak tanımlar, fakat yerelde `reuseExistingServer: !process.env.CI` etkindir. `NEXT_PUBLIC_API_URL` derlemede gömülür. Hazır eski web sunucusu farklı API B'ye bağlı olabilir; Node tabanlı global sentinel A'yı kontrol ederken tarayıcı B'ye istek gönderebilir. Collector da yalnız A origin'ini saydığı için B'nin auditleri A guard'ında görülmez.
+
+**Root adaptörü bu yolu kapatmalı:** mevcut web sunucusunu yeniden kullanmayı bu owned koşuda açıkça kapat; pinli API origin'iyle yeni derleme ve kendisine ait web süreci/portu kullan. Yalnız yeni E2E_API_URL env'i vermek mevcut build'i değiştirmez. Port çakışması test başlamadan başarısız olmalı, başka servisi durdurmak veya o servisi sessizce kullanmak olmamalı. Bu gereksinim pakette henüz uygulanmış değildir. Root'un önceki S9 koşusunun bilinçli mevcut-build kullanımı yeni fresh hedef kabulüne kanıt olarak aktarılmamalı.
+
+## 5. Global-setup ve S10 review-fix uyumu
+
+- Mevcut root global-setup SHA `e740eee7cc063807056d566d4452a577e97189f0f532329bfe8258c64fea0e6c`; delta tam bu S10 tabanına ait. Yeni dosya SHA `34ee6fa10c99c59a430bab2b0c72e626195496856e77065b522a6018d28531a3`.
+- Root'taki review-fix collector SHA `a5a51968de4456729f8cbe214d4a683665b64514e81f93ffdf8b982dc7ce02b6`. `expectedAuditScope`/`validateAuditDirectory` imzaları ve scope alanları değişmemiş; pending Map, uyuşmayan yanıt reddi ve audit redirect:error davranışları bu global-setup değişikliğiyle geri alınmıyor.
+- Guard target ID'si, yazılan target.json'un canonical byte SHA'sıyla aynı; beş environment alanı collector'ın beklediği run/database/origin/target/directory değerlerine karşılık geliyor. scope.json + sessions/receipts dizinleri aynı ad/alan sözleşmesinde ve özel izinli hazırlanıyor.
+- Yeni global-setup, parent capture dizinini **sentinel yazmadan önce** doğruluyor; kendi rastgele dizinini yaratıp root baseline bağını koparmıyor. API'ye yazma yapılmayan mevcut sentinel yönü korunuyor. Geçerli E2E_AUDIT_DIR artık zorunlu; adaptörsüz manuel veya eski CI komutu setup'ta durur.
+- Mevcut `lib/e2e-identity.test.ts` gerçek helper'ın write/read/delete sırasını ve setup'ın API yazma yöntemi içermemesini sınar; yeni parent-directory doğrulamasının hata sırasını tek başına kanıtlamaz. Root; directory yok/scope yanlış → sentinel write çağrısı0, geçerli parent scope → aynı dizinin korunması negatiflerini ayrıca çalıştırmalı.
+- README'deki source_context, collector'ın eski S10 hash'ini referans olarak taşıyor; bu dosyaya patch uygulanmadığından teknik çakışma yok. Son bütünleşik kaynak manifestine mutlaka review-fix collector ve logging, yeni guard, son setup, parent adaptörü ve CI dosyası birlikte girmeli.
+
+## 6. CI önerisi
+
+`integration/ci-e2e-step.proposal.yml` doğru biçimde uygulanmamış öneri olarak etiketli. Mevcut ayrı background API adımı gerçek parent wait kanıtı veremez. Tek owned orchestration adımına geçiş bu sorunu çözebilecek tasarımdır; bu pakette adaptör kodu yok.
+
+- `${{ job.services.postgres.id }}` bilinen job service'in container kimliğinden, pinli image ile çalışan container içindeki system identifier ve yeni DB'nin successful CREATE/OID sonucundan güven üretme planı uygun. Docker environment/secret dökümü yapılmamalı. Host route aynı kimlikle eşleşmeden migration/seed/test başlamamalı.
+- Kaynakta oluşturma, docker inspect, pins üretme veya owned API/Bun bekleme uygulanmadığı için bu planın gerçekleştiği iddia edilemez. `python scripts/run_owned_e2e.py` henüz önerilen entrypoint'tir.
+- Mevcut eski DB create/background API/test adımlarıyla öneri birlikte çalıştırılmamalı; ikinci kurulum veya mevcut DB'nin sahiplenilmesi kabul değildir. Sequence root'un tek adaptöründe açık olmalı.
+- `always()` artefakt arşivi makbuzu saklamak içindir; başarısızlığı başarıya çeviremez veya temizlik yetkisi vermez. Guard dizininin private olması, yüklenen UUID/hash/target metadata'nın anonim olduğu anlamına gelmez. Yalnız sentetik hedef ve kısıtlı artefakt kapsamı korunmalı.
+
+## Root için en dar gerçek kabul sırası
+
+1. Adaptör hazır olduktan sonra yeni hedef/port ve private passfile/pins ile guard begin gerçek SQL; yanlış cluster/OID/rol/endpoint negatiflerinde sentinel/API/DELETE0.
+2. Doğru targetId olsa bile yanlış cleanup PG veya API DSN yönlendirmesi reddi; eski web server'ın kullanılamaması. Guard A temiz kaldı diye yanlış B yazımı kabul edilmemeli.
+3. Protected baseline satırı + gerçek audited istek → exact receipt cleanup → own API gerçek wait → finish PASS. Kaynak hashleri önce/sonra sabit ve tam zinciri kapsamalı.
+4. Collector atlanan committed istek → finish FAIL ve yeni satır yerinde; baseline içerik değişimi/silinmesi → COUNT aynı veya yeni satır0 olsa da FAIL.
+5. İki interleaved run ile A cleanup sonrası protected+B tam fingerprint eşitliği; normal finish'i B satırlarını yok sayacak biçimde gevşetme.
+6. Yanıt kaybı/incomplete session, Bun nonzero, startup/ready/stop timeout, eksik makbuz ve PLAN-only yanlış çağrı → üst sonuç başarısız. Hiçbir geniş silme veya exit kodunu yeniden etiketleme yok.
+
+Bu inceleme, adayın bütünleşik runtime/SQL/CI kabulü yerine geçmez. Root yaşam döngüsü adaptörü açık iş olarak kalır.

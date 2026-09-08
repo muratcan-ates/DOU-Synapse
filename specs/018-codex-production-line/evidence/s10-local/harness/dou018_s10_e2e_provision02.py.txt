@@ -1,0 +1,57 @@
+from pathlib import Path
+import hashlib, json, os, subprocess
+import psycopg
+from psycopg import sql
+
+os.umask(0o077)
+repo = Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out = Path('/private/tmp/dou018-evidence/s10-e2e-provision-02')
+out.mkdir(mode=0o700, exist_ok=False)
+db = 'dou018_s10_e2e_02'
+cluster = '7683042491268153327'
+passfile = out / 'empty.pgpass'
+passfile.touch(mode=0o600, exist_ok=False)
+env = {k: v for k, v in os.environ.items() if not k.startswith('PG')}
+env.update(PGHOST='127.0.0.1', PGHOSTADDR='127.0.0.1', PGPORT='55448',
+           PGUSER='muratates', PGPASSFILE=str(passfile))
+route = dict(host='127.0.0.1', hostaddr='127.0.0.1', port=55448, user='muratates',
+             dbname='postgres', connect_timeout=3, passfile=str(passfile), autocommit=True)
+with psycopg.connect(**route) as c:
+    assert c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()[0] == cluster
+    assert not c.execute('SELECT 1 FROM pg_database WHERE datname=%s', (db,)).fetchone()
+    c.execute(sql.SQL('CREATE DATABASE {} TEMPLATE template0').format(sql.Identifier(db)))
+    oid = c.execute('SELECT oid::text FROM pg_database WHERE datname=%s', (db,)).fetchone()[0]
+(out / 'owned-create.json').write_text(json.dumps({'database': db, 'oid': oid, 'cluster': cluster,
+    'absent_before': True, 'own_create_completed': True}, indent=2) + '\n')
+files = sorted((repo / 'supabase/migrations').glob('*.sql')) + [repo / 'supabase/seed_demo.sql']
+assert len(files) == 23
+with (out / 'provision.log').open('x') as log:
+    for p in files:
+        cp = subprocess.run(['/opt/homebrew/opt/postgresql@16/bin/psql', '-X', '-w', '-v',
+            'ON_ERROR_STOP=1', '-d', db, '-f', str(p)], env=env, stdout=log,
+            stderr=subprocess.STDOUT, timeout=30)
+        assert cp.returncode == 0, 'S10 synthetic provision failed'
+with psycopg.connect(**{**route, 'dbname': db}) as c:
+    assert c.execute('SELECT oid::text FROM pg_database WHERE datname=current_database()').fetchone()[0] == oid
+    c.execute(sql.SQL('GRANT CONNECT ON DATABASE {} TO dou_app, dou_worker').format(sql.Identifier(db)))
+    assert c.execute('SELECT count(*) FROM public.profiles').fetchone()[0] == 2
+    assert c.execute('SELECT count(*) FROM public.platform_admins').fetchone()[0] == 1
+    # Existing non-E2E-style record is protected even though actor/action match.
+    protected = c.execute("""INSERT INTO public.platform_admin_access_audit
+        (actor_user_id, action, result, request_id) VALUES
+        ('11111111-1111-1111-1111-111111111111', 'GET /admin/overview', 'allowed',
+         's10_protected_non_run_record') RETURNING id::text""").fetchone()[0]
+record = {'database': db, 'oid': oid, 'cluster': cluster, 'status': 'synthetic-e2e-provisioned',
+    'protected_audit_id': protected, 'role_password_changes': False,
+    'files_sha256': {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files},
+    'log_sha256': hashlib.sha256((out / 'provision.log').read_bytes()).hexdigest(),
+    'owned_create_sha256': hashlib.sha256((out / 'owned-create.json').read_bytes()).hexdigest()}
+provision = out / 'result.json'
+provision.write_text(json.dumps(record, indent=2) + '\n')
+pins = {'version': 1, 'issuer': 'root-owned-fresh-database', 'ownership': 'exclusive-synthetic',
+    'provisionSha256': hashlib.sha256(provision.read_bytes()).hexdigest(), 'host': '127.0.0.1',
+    'port': 55448, 'databaseName': db, 'databaseOid': oid, 'cluster': cluster, 'dbaRole': 'muratates',
+    'apiOrigin': 'http://127.0.0.1:8019'}
+(out / 'pins.json').write_text(json.dumps(pins, sort_keys=True, separators=(',', ':')) + '\n')
+print(json.dumps({'status': record['status'], 'database': db, 'oid': oid,
+    'pins_sha256': hashlib.sha256((out / 'pins.json').read_bytes()).hexdigest()}))

@@ -1,0 +1,13 @@
+[
+  {
+    "name": "docs-refresh",
+    "command": [
+      "node",
+      "scripts/docs_check.mjs",
+      "--duzelt"
+    ],
+    "exit_code": 1,
+    "seconds": 1.366,
+    "log_sha256": "0316a1747647260bf9fb4dcd7850c9fc3e469917b5971f47705a9208a415492b"
+  }
+]

@@ -1,0 +1,841 @@
+{
+  "schema": "dou018-s10-archive-privacy-review-v1",
+  "reviewed_at_utc": "2026-09-08T19:34:46.515954+00:00",
+  "staging_directory": "/private/tmp/dou018-s10-archive-staging-v2",
+  "status": "PASS_WITH_DECLARED_SYNTHETIC_CREDENTIALS_AND_OPERATIONAL_METADATA",
+  "summary_tr": "Altı arşivin 900 üyesi ve 60 bağımsız kopyanın tamamı özgün byte kaynaklarıyla doğrulandı; 435 güncel kaynak beş gerçek ölçüm haritasının tam birleşimiyle eşleşiyor. Bilinen anahtar/JWT/private-key biçimlerinde gerçek sır saptanmadı. Görünen bağlantı ve yetkilendirme örnekleri kaynak bağlamında sentetik/public yerel fixture veya şablon; gerçek öğrenci veri dökümü saptanmadı. Bu sonuç genel DLP/anonimlik/hukuki sertifika değildir.",
+  "read_only_execution": {
+    "tests": 0,
+    "database": 0,
+    "network": 0,
+    "model": 0,
+    "server": 0,
+    "archives_extracted_to_filesystem": false,
+    "archive_members_decoded_in_memory": 900
+  },
+  "anchor_files": {
+    "archive-origins.json": "3352300679b9173cc3e67696dbab0597b16bb529356b274827bf69faa105c60e",
+    "source-equivalence.json": "200752a15983e045dcc94618a3812d98aa5f962594a8e9186e30826eb8b85c89"
+  },
+  "anchor_files_unchanged": true,
+  "archive_integrity": {
+    "packages": [
+      {
+        "path": "packages/product-privacy.tar.gz",
+        "sha256": "f9b399d660cdd412b12869546e7615b64c0d95699ff15415992dea70ca97dbf7",
+        "bytes": 640008,
+        "declared_archive_hash_matches": true,
+        "declared_archive_bytes_match": true,
+        "member_count": 306,
+        "all_member_names_unique": true,
+        "unsafe_members": [],
+        "origin_mismatches": [],
+        "text_members": 306,
+        "decoded_content_bytes": 2752136,
+        "declared_member_count_matches": true,
+        "all_members_have_exactly_one_origin": true
+      },
+      {
+        "path": "packages/real-http.tar.gz",
+        "sha256": "5a19a8a934f390e34550e79ba56fb9a51d68fb47f28ca011a52019cd09314e8e",
+        "bytes": 840296,
+        "declared_archive_hash_matches": true,
+        "declared_archive_bytes_match": true,
+        "member_count": 220,
+        "all_member_names_unique": true,
+        "unsafe_members": [],
+        "origin_mismatches": [],
+        "text_members": 220,
+        "decoded_content_bytes": 3411609,
+        "declared_member_count_matches": true,
+        "all_members_have_exactly_one_origin": true
+      },
+      {
+        "path": "packages/audit-ownership.tar.gz",
+        "sha256": "11211cfb9c8bc0f19389ea844b9ddeb0da252406d794352af99d53eb8dee4c0d",
+        "bytes": 353475,
+        "declared_archive_hash_matches": true,
+        "declared_archive_bytes_match": true,
+        "member_count": 188,
+        "all_member_names_unique": true,
+        "unsafe_members": [],
+        "origin_mismatches": [],
+        "text_members": 188,
+        "decoded_content_bytes": 1730212,
+        "declared_member_count_matches": true,
+        "all_members_have_exactly_one_origin": true
+      },
+      {
+        "path": "packages/owned-lifecycle.tar.gz",
+        "sha256": "fb2b8be5d0363016c740ed0a108d891c9c6552f86e596459f913f60b4ecbbbeb",
+        "bytes": 53953,
+        "declared_archive_hash_matches": true,
+        "declared_archive_bytes_match": true,
+        "member_count": 108,
+        "all_member_names_unique": true,
+        "unsafe_members": [],
+        "origin_mismatches": [],
+        "text_members": 108,
+        "decoded_content_bytes": 283435,
+        "declared_member_count_matches": true,
+        "all_members_have_exactly_one_origin": true
+      },
+      {
+        "path": "packages/ci-contracts.tar.gz",
+        "sha256": "3cf4c854d72bf14ebc47067ade7215822fe72daf81c61ca994da4deb6338758b",
+        "bytes": 78763,
+        "declared_archive_hash_matches": true,
+        "declared_archive_bytes_match": true,
+        "member_count": 40,
+        "all_member_names_unique": true,
+        "unsafe_members": [],
+        "origin_mismatches": [],
+        "text_members": 40,
+        "decoded_content_bytes": 284585,
+        "declared_member_count_matches": true,
+        "all_members_have_exactly_one_origin": true
+      },
+      {
+        "path": "packages/web-guides.tar.gz",
+        "sha256": "820ab614f72c4ef45d7564fdb2adb8a46fdb1fd8fcf313abce7f1079eec3f18d",
+        "bytes": 178884,
+        "declared_archive_hash_matches": true,
+        "declared_archive_bytes_match": true,
+        "member_count": 38,
+        "all_member_names_unique": true,
+        "unsafe_members": [],
+        "origin_mismatches": [],
+        "text_members": 38,
+        "decoded_content_bytes": 601312,
+        "declared_member_count_matches": true,
+        "all_members_have_exactly_one_origin": true
+      }
+    ],
+    "all_900_members_checked_not_sampled": true,
+    "total_compressed_bytes": 2145379,
+    "total_member_content_bytes": 9063289,
+    "members": 900,
+    "all_members_regular_utf8_text": true,
+    "member_origin_record_set_sha256": "d853d9318488850a5191ef81426f66abaf1ae71041807bb2529682d2b90f5ae9"
+  },
+  "standalone_copy_integrity": {
+    "copies": [
+      {
+        "path": "harness/dou018_s10_adapter_integrate01.py.txt",
+        "sha256": "04d13be61db4ee8f05cfbce806cfb3705145dc706806cdf537ab13e0cc36b4b7",
+        "decoded_sha256": "04d13be61db4ee8f05cfbce806cfb3705145dc706806cdf537ab13e0cc36b4b7",
+        "source": "/private/tmp/dou018_s10_adapter_integrate01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_adapter_update02.py.txt",
+        "sha256": "ef616071083ff5e01ba3871d8b87e778fd79926a7f24f779d2d0af183a82188f",
+        "decoded_sha256": "ef616071083ff5e01ba3871d8b87e778fd79926a7f24f779d2d0af183a82188f",
+        "source": "/private/tmp/dou018_s10_adapter_update02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_adapter_update03.py.txt",
+        "sha256": "a28f514137c7da9994b0214ad5125b8f753c5764b26af10490971e8e71d46568",
+        "decoded_sha256": "a28f514137c7da9994b0214ad5125b8f753c5764b26af10490971e8e71d46568",
+        "source": "/private/tmp/dou018_s10_adapter_update03.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_adapter_update04.py.txt",
+        "sha256": "fc68e0e2b828270b2e704f428277c87bc990034d2f19c93f407d6138cab631c3",
+        "decoded_sha256": "fc68e0e2b828270b2e704f428277c87bc990034d2f19c93f407d6138cab631c3",
+        "source": "/private/tmp/dou018_s10_adapter_update04.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_archive_prepare01.py.txt",
+        "sha256": "6d4bf7e9f656787e53b855578c3715e7fa7ddf9d1fcce30142ca24cc223658f4",
+        "decoded_sha256": "6d4bf7e9f656787e53b855578c3715e7fa7ddf9d1fcce30142ca24cc223658f4",
+        "source": "/private/tmp/dou018_s10_archive_prepare01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_archive_prepare02.py.txt",
+        "sha256": "989002f50a39f80910ba96df38fcdcc41b5614bb4b2d987f528d9ed45832e09a",
+        "decoded_sha256": "989002f50a39f80910ba96df38fcdcc41b5614bb4b2d987f528d9ed45832e09a",
+        "source": "/private/tmp/dou018_s10_archive_prepare02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_checks01.py.txt",
+        "sha256": "0d122b9c54107d67f5de89f587347a83616aec86a7d6407cf1a330109f4dba6a",
+        "decoded_sha256": "0d122b9c54107d67f5de89f587347a83616aec86a7d6407cf1a330109f4dba6a",
+        "source": "/private/tmp/dou018_s10_checks01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_ci_integrate01.py.txt",
+        "sha256": "22bc1fabedd9697797cc63326fd97ad59f325b4147620fa5ee7c16fcf5fb189a",
+        "decoded_sha256": "22bc1fabedd9697797cc63326fd97ad59f325b4147620fa5ee7c16fcf5fb189a",
+        "source": "/private/tmp/dou018_s10_ci_integrate01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_ci_integrate02.py.txt",
+        "sha256": "f653e05ee0f8a897a244a4f0f4c1b27e00974408292a449a0f1241bba6926cd9",
+        "decoded_sha256": "f653e05ee0f8a897a244a4f0f4c1b27e00974408292a449a0f1241bba6926cd9",
+        "source": "/private/tmp/dou018_s10_ci_integrate02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_ci_unit01.py.txt",
+        "sha256": "20211f8b4c5ff9f00250ec8cb9c0c1e2de540a82a0960ca22d8a27d103adc92e",
+        "decoded_sha256": "20211f8b4c5ff9f00250ec8cb9c0c1e2de540a82a0960ca22d8a27d103adc92e",
+        "source": "/private/tmp/dou018_s10_ci_unit01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_combined_offline01.py.txt",
+        "sha256": "3cf9bb418c8b04714db531a9e19f647feccead5b2d2172f545e065d778386d1c",
+        "decoded_sha256": "3cf9bb418c8b04714db531a9e19f647feccead5b2d2172f545e065d778386d1c",
+        "source": "/private/tmp/dou018_s10_combined_offline01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_docs_integrate01.py.txt",
+        "sha256": "e1dea3ca90d312b83b8ebafd0c0d255d72915e310667442f158b6a9044fcd64f",
+        "decoded_sha256": "e1dea3ca90d312b83b8ebafd0c0d255d72915e310667442f158b6a9044fcd64f",
+        "source": "/private/tmp/dou018_s10_docs_integrate01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_e2e_provision01.py.txt",
+        "sha256": "e305186c056f5b39bddd52561291ced6dbb4b9c4423224e3ea8b76886439e2b1",
+        "decoded_sha256": "e305186c056f5b39bddd52561291ced6dbb4b9c4423224e3ea8b76886439e2b1",
+        "source": "/private/tmp/dou018_s10_e2e_provision01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_e2e_provision02.py.txt",
+        "sha256": "cff03cce541bc495f151dc3ef20fe6ac50f4f27760b524d500d453d39b29ca95",
+        "decoded_sha256": "cff03cce541bc495f151dc3ef20fe6ac50f4f27760b524d500d453d39b29ca95",
+        "source": "/private/tmp/dou018_s10_e2e_provision02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_final_static01.py.txt",
+        "sha256": "ab5d7edb3a50fcc82902cf185f5f48c13933a3011c51853871dceaa7a8a48b02",
+        "decoded_sha256": "ab5d7edb3a50fcc82902cf185f5f48c13933a3011c51853871dceaa7a8a48b02",
+        "source": "/private/tmp/dou018_s10_final_static01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_final_static02.py.txt",
+        "sha256": "d3b881be157699cf79d1afc5d1237072af9a9e917aaacbc438efd041d8675148",
+        "decoded_sha256": "d3b881be157699cf79d1afc5d1237072af9a9e917aaacbc438efd041d8675148",
+        "source": "/private/tmp/dou018_s10_final_static02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_full_api01.py.txt",
+        "sha256": "593637c381fb5aae8c96106138cf8cecea54b76966d7d11f6929752e9f58f5d2",
+        "decoded_sha256": "593637c381fb5aae8c96106138cf8cecea54b76966d7d11f6929752e9f58f5d2",
+        "source": "/private/tmp/dou018_s10_full_api01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_integrate01.py.txt",
+        "sha256": "69116f9b0a423d587cdbb4e4fc6ba2611fc156d7992a6a3200d30cf90a8731b1",
+        "decoded_sha256": "69116f9b0a423d587cdbb4e4fc6ba2611fc156d7992a6a3200d30cf90a8731b1",
+        "source": "/private/tmp/dou018_s10_integrate01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_script_style02.py.txt",
+        "sha256": "22568782eafb663cd51d3dac917a4d3f752f11271771f34e6e824f06b1be3287",
+        "decoded_sha256": "22568782eafb663cd51d3dac917a4d3f752f11271771f34e6e824f06b1be3287",
+        "source": "/private/tmp/dou018_s10_script_style02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_stop_tests01.py.txt",
+        "sha256": "0d9de6046ba010dec9864f3f1d0784f42cafcdcf7b0e90b3d53293743870e067",
+        "decoded_sha256": "0d9de6046ba010dec9864f3f1d0784f42cafcdcf7b0e90b3d53293743870e067",
+        "source": "/private/tmp/dou018_s10_stop_tests01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_style01.py.txt",
+        "sha256": "1010dd8e5ef610c1a649ba9d3983f9b60b5d285edd57582cd3454f8d6ac8958f",
+        "decoded_sha256": "1010dd8e5ef610c1a649ba9d3983f9b60b5d285edd57582cd3454f8d6ac8958f",
+        "source": "/private/tmp/dou018_s10_style01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_web_checks01.py.txt",
+        "sha256": "cc746d35011c5990d69b4fecdf55b14e91bdd9e6f01782a1748d1c91d3def230",
+        "decoded_sha256": "cc746d35011c5990d69b4fecdf55b14e91bdd9e6f01782a1748d1c91d3def230",
+        "source": "/private/tmp/dou018_s10_web_checks01.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_web_checks02.py.txt",
+        "sha256": "c4fd8f4b3f0fc82a5477870183e56e4140c9a60e7f33e9d30565e4b7a2c70734",
+        "decoded_sha256": "c4fd8f4b3f0fc82a5477870183e56e4140c9a60e7f33e9d30565e4b7a2c70734",
+        "source": "/private/tmp/dou018_s10_web_checks02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "harness/dou018_s10_web_types02.py.txt",
+        "sha256": "d56dd073543e81fb824d498bf876d5ced5969966ef1187bd4d5206d29b7804e8",
+        "decoded_sha256": "d56dd073543e81fb824d498bf876d5ced5969966ef1187bd4d5206d29b7804e8",
+        "source": "/private/tmp/dou018_s10_web_types02.py",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-ci-owned-provision-review.md.txt",
+        "sha256": "47303d4ee80e85e7892e1061f93ba118d1b0efa9686c0955d974b04ee3955d47",
+        "decoded_sha256": "47303d4ee80e85e7892e1061f93ba118d1b0efa9686c0955d974b04ee3955d47",
+        "source": "/private/tmp/dou018-ci-owned-provision-review.md",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-owned-adapter-review.md.txt",
+        "sha256": "23631427a818e5a7fad60f45cd42f28639021fee0f12d3c303ccb51150bd4562",
+        "decoded_sha256": "23631427a818e5a7fad60f45cd42f28639021fee0f12d3c303ccb51150bd4562",
+        "source": "/private/tmp/dou018-owned-adapter-review.md",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-owned-lifecycle-measured-review-01.md.txt",
+        "sha256": "66b88e1f7ec282fa86c235684cb4946d51bf9e5fb168877ec34d9e7b919bb27c",
+        "decoded_sha256": "66b88e1f7ec282fa86c235684cb4946d51bf9e5fb168877ec34d9e7b919bb27c",
+        "source": "/private/tmp/dou018-owned-lifecycle-measured-review-01.md",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-s10-audit-accounting-review.md.txt",
+        "sha256": "4eb772f6fb721e3650c08915de69f7c97913524293ec23bae29137671a61e071",
+        "decoded_sha256": "4eb772f6fb721e3650c08915de69f7c97913524293ec23bae29137671a61e071",
+        "source": "/private/tmp/dou018-s10-audit-accounting-review.md",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-s10-ci-wiring-review.md.txt",
+        "sha256": "e70a955e367104fc24f796124e3d778cd2657f369ae20cfb129584ec996504ec",
+        "decoded_sha256": "e70a955e367104fc24f796124e3d778cd2657f369ae20cfb129584ec996504ec",
+        "source": "/private/tmp/dou018-s10-ci-wiring-review.md",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-s10-evidence-inventory-addendum.json",
+        "sha256": "3b16ff419c39bb4a18963c7b87149b0e9c5eddfc62c94e7b1ecdfc95bae8fd82",
+        "decoded_sha256": "3b16ff419c39bb4a18963c7b87149b0e9c5eddfc62c94e7b1ecdfc95bae8fd82",
+        "source": "/private/tmp/dou018-s10-evidence-inventory-addendum.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-s10-evidence-inventory.json",
+        "sha256": "3eb12183056856040632f2ed8126fed6b52c06bc339fa2be89333ef1ec74a0d8",
+        "decoded_sha256": "3eb12183056856040632f2ed8126fed6b52c06bc339fa2be89333ef1ec74a0d8",
+        "source": "/private/tmp/dou018-s10-evidence-inventory.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-s10-evidence-inventory.md.txt",
+        "sha256": "46c787fde10045d3fffe75d876e3f18f27a86665344902df20149f06df10e69a",
+        "decoded_sha256": "46c787fde10045d3fffe75d876e3f18f27a86665344902df20149f06df10e69a",
+        "source": "/private/tmp/dou018-s10-evidence-inventory.md",
+        "source_bytes_match": true
+      },
+      {
+        "path": "reviews/dou018-s10-independent-review.md.txt",
+        "sha256": "3d9c4126739b1b33d8bd69250907d95d52e41a202ee86d15539e258882ecf623",
+        "decoded_sha256": "3d9c4126739b1b33d8bd69250907d95d52e41a202ee86d15539e258882ecf623",
+        "source": "/private/tmp/dou018-s10-independent-review.md",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/dou018-owned-lifecycle-measured-01.json",
+        "sha256": "27ec612d79cf3844f20f2648faa2a00192e3fc848e7600c3b8f0b58e3d6c1b43",
+        "decoded_sha256": "27ec612d79cf3844f20f2648faa2a00192e3fc848e7600c3b8f0b58e3d6c1b43",
+        "source": "/private/tmp/dou018-owned-lifecycle-measured-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/dou018-owned-lifecycle-measured-02.json",
+        "sha256": "c807d8381f4a0fd3c5729cec28323ee25735befe1b6e3c3723cc70f1d38bad1a",
+        "decoded_sha256": "c807d8381f4a0fd3c5729cec28323ee25735befe1b6e3c3723cc70f1d38bad1a",
+        "source": "/private/tmp/dou018-owned-lifecycle-measured-02/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/dou018-owned-lifecycle-measured-03.json",
+        "sha256": "2e7b332f462014daac072b4220fb88c68191c189f86b0fbd3f7bbb16edc68621",
+        "decoded_sha256": "2e7b332f462014daac072b4220fb88c68191c189f86b0fbd3f7bbb16edc68621",
+        "source": "/private/tmp/dou018-owned-lifecycle-measured-03/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/dou018-s10-db-audit-result-01.json",
+        "sha256": "1cb1d21ecf9b24d2161da9364ff8e43cdf71b757c07be58360072ee8d90ddfd5",
+        "decoded_sha256": "1cb1d21ecf9b24d2161da9364ff8e43cdf71b757c07be58360072ee8d90ddfd5",
+        "source": "/private/tmp/dou018-s10-db-audit-result-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/dou018-s10-negative-result-01.json",
+        "sha256": "a8a23e7ff5a8b9148a89166e89ab126224c4d01831a48f558af7a7812f3dab7c",
+        "decoded_sha256": "a8a23e7ff5a8b9148a89166e89ab126224c4d01831a48f558af7a7812f3dab7c",
+        "source": "/private/tmp/dou018-s10-negative-result-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/dou018-s10-negative-result-02.json",
+        "sha256": "c525801efc29f4c8bf9d284e6494340d15d97cf73ee575e9fae065c013202a86",
+        "decoded_sha256": "c525801efc29f4c8bf9d284e6494340d15d97cf73ee575e9fae065c013202a86",
+        "source": "/private/tmp/dou018-s10-negative-result-02/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/dou018-s10-web-focus01.log.gz",
+        "sha256": "20831fdb6da30fe832469f9a3e108f743c06a6e41220a16e32cf2293fc3ef30b",
+        "decoded_sha256": "84a5dca40fb178a247a070446d631c868826404433e477141f82588c4cb25336",
+        "source": "/private/tmp/dou018-s10-web-focus01.log",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-checks-01.json",
+        "sha256": "8b7e3c9ac3614de8d55402ae49afca95dd9cffd1ba500f1c317f104bab61fbf4",
+        "decoded_sha256": "8b7e3c9ac3614de8d55402ae49afca95dd9cffd1ba500f1c317f104bab61fbf4",
+        "source": "/private/tmp/dou018-evidence/s10-checks-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-ci-order-mutant-01.json",
+        "sha256": "04ce4d3dad88e8f326dea7f287c529fa2138eb871392225b1b5c85f3686115e1",
+        "decoded_sha256": "04ce4d3dad88e8f326dea7f287c529fa2138eb871392225b1b5c85f3686115e1",
+        "source": "/private/tmp/dou018-evidence/s10-ci-order-mutant-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-ci-provision-offline-01.json",
+        "sha256": "4e7ad02de0f06794408de7bf527fd5d2fa6859ef5fc9f3485de715e74a282a69",
+        "decoded_sha256": "4e7ad02de0f06794408de7bf527fd5d2fa6859ef5fc9f3485de715e74a282a69",
+        "source": "/private/tmp/dou018-evidence/s10-ci-provision-offline-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-ci-yaml-preflight-01.json",
+        "sha256": "bbba4b434871534f3a16bce73971be24d8951313a7a5b5fe0bf494b0e017fe7a",
+        "decoded_sha256": "bbba4b434871534f3a16bce73971be24d8951313a7a5b5fe0bf494b0e017fe7a",
+        "source": "/private/tmp/dou018-evidence/s10-ci-yaml-preflight-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-combined-offline-01.json",
+        "sha256": "2b7e7f442e2fb42e5a753b9ef205b49ddf9ade02b237b94c52b6f85d82e619d1",
+        "decoded_sha256": "2b7e7f442e2fb42e5a753b9ef205b49ddf9ade02b237b94c52b6f85d82e619d1",
+        "source": "/private/tmp/dou018-evidence/s10-combined-offline-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-controller-style-01.json",
+        "sha256": "2812522300d5b4969b660fca891c095470aae3d2462dec28488b7fddc2e3c8c3",
+        "decoded_sha256": "2812522300d5b4969b660fca891c095470aae3d2462dec28488b7fddc2e3c8c3",
+        "source": "/private/tmp/dou018-evidence/s10-controller-style-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-e2e-owned-01.json",
+        "sha256": "9d30b6dd19bdb4275865abd885ff5cd6b544702f6a8952eb42f9dcb21fd3aa0b",
+        "decoded_sha256": "9d30b6dd19bdb4275865abd885ff5cd6b544702f6a8952eb42f9dcb21fd3aa0b",
+        "source": "/private/tmp/dou018-evidence/s10-e2e-owned-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-e2e-owned-02.json",
+        "sha256": "74870ca60fa6046668aaa69b6a23994982426b838d5f1bbc52ea1a3b9479a154",
+        "decoded_sha256": "74870ca60fa6046668aaa69b6a23994982426b838d5f1bbc52ea1a3b9479a154",
+        "source": "/private/tmp/dou018-evidence/s10-e2e-owned-02/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-e2e-provision-01.json",
+        "sha256": "4e9fc7968b386d7eeb8e6ea0bd9f0af612097531a377d88e40dafe7f0eca49bc",
+        "decoded_sha256": "4e9fc7968b386d7eeb8e6ea0bd9f0af612097531a377d88e40dafe7f0eca49bc",
+        "source": "/private/tmp/dou018-evidence/s10-e2e-provision-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-e2e-provision-02.json",
+        "sha256": "e5a5bb2ec582379a09bbe781dfab5bf97b82a9e14564e1efcf7c8898afc0518d",
+        "decoded_sha256": "e5a5bb2ec582379a09bbe781dfab5bf97b82a9e14564e1efcf7c8898afc0518d",
+        "source": "/private/tmp/dou018-evidence/s10-e2e-provision-02/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-final-static-01.json",
+        "sha256": "55820f57a2860cb4ab8e280dd161f99936e645c8d5163400e98ec1746c4aabd1",
+        "decoded_sha256": "55820f57a2860cb4ab8e280dd161f99936e645c8d5163400e98ec1746c4aabd1",
+        "source": "/private/tmp/dou018-evidence/s10-final-static-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-final-static-02.json",
+        "sha256": "8dc82ef404ef0d0e96236d014a74ba8d66a4ddf0f5be54f15be5e5635d31dc46",
+        "decoded_sha256": "8dc82ef404ef0d0e96236d014a74ba8d66a4ddf0f5be54f15be5e5635d31dc46",
+        "source": "/private/tmp/dou018-evidence/s10-final-static-02/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-full-api-01.json",
+        "sha256": "585022944d0515b925f2d175bdb3f7acfb8d749878ee45e64868601defaf9fe8",
+        "decoded_sha256": "585022944d0515b925f2d175bdb3f7acfb8d749878ee45e64868601defaf9fe8",
+        "source": "/private/tmp/dou018-evidence/s10-full-api-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-integration-01.json",
+        "sha256": "6a4427151a21ac1eda4d77770b4b4647fa64aa66e7bfc9b9d3d4007af426ebe0",
+        "decoded_sha256": "6a4427151a21ac1eda4d77770b4b4647fa64aa66e7bfc9b9d3d4007af426ebe0",
+        "source": "/private/tmp/dou018-evidence/s10-integration-01.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-process-01.json",
+        "sha256": "421a22d5bcdb0ec42b93aa4d2845b495befe9b117f5e03cdbdadeafb508b9871",
+        "decoded_sha256": "421a22d5bcdb0ec42b93aa4d2845b495befe9b117f5e03cdbdadeafb508b9871",
+        "source": "/private/tmp/dou018-evidence/s10-process-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-script-style-02.json",
+        "sha256": "7a5320fe8845357a425da59e1a1873b42b3cf1ada8c99909ed40195516f911e9",
+        "decoded_sha256": "7a5320fe8845357a425da59e1a1873b42b3cf1ada8c99909ed40195516f911e9",
+        "source": "/private/tmp/dou018-evidence/s10-script-style-02/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-stop-contracts-01.json",
+        "sha256": "5d650b35cb29de515aa33dedf385c8e5789e755bc35d241768ad0160e035b3ef",
+        "decoded_sha256": "5d650b35cb29de515aa33dedf385c8e5789e755bc35d241768ad0160e035b3ef",
+        "source": "/private/tmp/dou018-evidence/s10-stop-contracts-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-style-01.json",
+        "sha256": "e2151976634aa78d992456e692399a197ebb9639e7950638f23ea68772137825",
+        "decoded_sha256": "e2151976634aa78d992456e692399a197ebb9639e7950638f23ea68772137825",
+        "source": "/private/tmp/dou018-evidence/s10-style-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-web-checks-01.json",
+        "sha256": "d7d5713804761b571cdc8f571b0b2e87512cd0f0d9998589e8946a9c1b56e6d6",
+        "decoded_sha256": "d7d5713804761b571cdc8f571b0b2e87512cd0f0d9998589e8946a9c1b56e6d6",
+        "source": "/private/tmp/dou018-evidence/s10-web-checks-01/result.json",
+        "source_bytes_match": true
+      },
+      {
+        "path": "measurements/s10-web-checks-02.json",
+        "sha256": "96e1169963c3aa52f8627e7da555ea61fd20a38b0b1c518d76244754aad556e7",
+        "decoded_sha256": "96e1169963c3aa52f8627e7da555ea61fd20a38b0b1c518d76244754aad556e7",
+        "source": "/private/tmp/dou018-evidence/s10-web-checks-02/result.json",
+        "source_bytes_match": true
+      }
+    ],
+    "all_60_compared": true,
+    "gzip_logs_compared_after_decompression": 1,
+    "metadata_files_reviewed_separately": [
+      "archive-origins.json",
+      "source-equivalence.json"
+    ]
+  },
+  "source_equivalence": {
+    "all_current_sources_compared": 435,
+    "bindings": [
+      {
+        "name": "full-api",
+        "measured_source": "/private/tmp/dou018-evidence/s10-full-api-01/result.json",
+        "measured_sha256": "585022944d0515b925f2d175bdb3f7acfb8d749878ee45e64868601defaf9fe8",
+        "declared_measured_hash_matches": true,
+        "compared": 221,
+        "declared_compared_matches": true,
+        "cross_measurement_conflicts": [],
+        "final_map_mismatches": []
+      },
+      {
+        "name": "web",
+        "measured_source": "/private/tmp/dou018-evidence/s10-web-checks-02/result.json",
+        "measured_sha256": "96e1169963c3aa52f8627e7da555ea61fd20a38b0b1c518d76244754aad556e7",
+        "declared_measured_hash_matches": true,
+        "compared": 180,
+        "declared_compared_matches": true,
+        "cross_measurement_conflicts": [],
+        "final_map_mismatches": []
+      },
+      {
+        "name": "offline-privacy",
+        "measured_source": "/private/tmp/dou018-evidence/s10-combined-offline-01/result.json",
+        "measured_sha256": "2b7e7f442e2fb42e5a753b9ef205b49ddf9ade02b237b94c52b6f85d82e619d1",
+        "declared_measured_hash_matches": true,
+        "compared": 120,
+        "declared_compared_matches": true,
+        "cross_measurement_conflicts": [],
+        "final_map_mismatches": []
+      },
+      {
+        "name": "final-static",
+        "measured_source": "/private/tmp/dou018-evidence/s10-final-static-02/result.json",
+        "measured_sha256": "8dc82ef404ef0d0e96236d014a74ba8d66a4ddf0f5be54f15be5e5635d31dc46",
+        "declared_measured_hash_matches": true,
+        "compared": 204,
+        "declared_compared_matches": true,
+        "cross_measurement_conflicts": [],
+        "final_map_mismatches": []
+      },
+      {
+        "name": "final-e2e",
+        "measured_source": "/private/tmp/dou018-evidence/s10-e2e-owned-02/source-after.json",
+        "measured_sha256": "b90023503164e3c5bf181685b9d4661f8a6b7d2a4192f0da58a5bed33f0cdfdc",
+        "declared_measured_hash_matches": true,
+        "compared": 350,
+        "declared_compared_matches": true,
+        "cross_measurement_conflicts": [],
+        "final_map_mismatches": []
+      }
+    ],
+    "full_union_matches_declared_final_source_map": true,
+    "current_source_mismatches": []
+  },
+  "excluded_material": {
+    "actual_forbidden_archive_members": [],
+    "excluded_origin_records": 102,
+    "categories_checked": [
+      ".env and .env.*",
+      "*.pgpass and passfile filename",
+      "storage directory payloads",
+      ".mypy_cache/mypy-cache",
+      "__pycache__/*.pyc",
+      ".pytest_cache/.ruff_cache",
+      "node_modules/.git",
+      "symlink/hardlink/nonregular/absolute/traversal tar members"
+    ],
+    "v1_cache_history": "Parent reported V1 contained mypy cache. V2 was independently checked: no matching cache member. V1 was not altered or claimed safe in this review."
+  },
+  "content_scan": {
+    "text_member_count": 900,
+    "standalone_text_or_decompressed_log_count": 60,
+    "metadata_text_files": 2,
+    "methods": "Decode every payload, scan named credential/PII patterns, then inspect every distinct matching category and source/fixture context; report only path/type, never suspected secret values.",
+    "patterns": {
+      "private_key": {
+        "match_count": 0,
+        "distinct_candidate_count": 0,
+        "locations": [],
+        "values_deliberately_not_reported": true
+      },
+      "api_key_like": {
+        "match_count": 0,
+        "distinct_candidate_count": 0,
+        "locations": [],
+        "values_deliberately_not_reported": true
+      },
+      "jwt_like": {
+        "match_count": 0,
+        "distinct_candidate_count": 0,
+        "locations": [],
+        "values_deliberately_not_reported": true
+      },
+      "postgres_dsn": {
+        "match_count": 18,
+        "distinct_candidate_count": 10,
+        "locations": [
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/run_processes.py",
+            "line": 88
+          },
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/run_processes.py",
+            "line": 89
+          },
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/shared/app/core/config.py",
+            "line": 94
+          },
+          {
+            "path": "packages/owned-lifecycle.tar.gz::dou018-owned-adapter-candidate/files/scripts/run_owned_e2e.py",
+            "line": 49
+          },
+          {
+            "path": "packages/owned-lifecycle.tar.gz::dou018-owned-adapter-candidate/files/scripts/run_owned_e2e.py",
+            "line": 50
+          },
+          {
+            "path": "packages/owned-lifecycle.tar.gz::s10-controller-style-01/run_owned_e2e.py.before",
+            "line": 52
+          },
+          {
+            "path": "packages/owned-lifecycle.tar.gz::s10-controller-style-01/run_owned_e2e.py.before",
+            "line": 53
+          },
+          {
+            "path": "packages/owned-lifecycle.tar.gz::s10-script-style-02/run_owned_e2e.py.before.txt",
+            "line": 67
+          },
+          {
+            "path": "packages/owned-lifecycle.tar.gz::s10-script-style-02/run_owned_e2e.py.before.txt",
+            "line": 68
+          },
+          {
+            "path": "packages/ci-contracts.tar.gz::dou018-s10-ci-integration/files/.github/workflows/ci.yml",
+            "line": 47
+          },
+          {
+            "path": "packages/ci-contracts.tar.gz::dou018-s10-ci-integration/files/.github/workflows/ci.yml",
+            "line": 48
+          },
+          {
+            "path": "packages/ci-contracts.tar.gz::dou018-s10-ci-integration-v2/files/.github/workflows/ci.yml",
+            "line": 47
+          },
+          {
+            "path": "packages/ci-contracts.tar.gz::dou018-s10-ci-integration-v2/files/.github/workflows/ci.yml",
+            "line": 48
+          },
+          {
+            "path": "packages/ci-contracts.tar.gz::s10-ci-yaml-preflight-01/failed-candidate.yml",
+            "line": 47
+          },
+          {
+            "path": "packages/ci-contracts.tar.gz::s10-ci-yaml-preflight-01/failed-candidate.yml",
+            "line": 48
+          },
+          {
+            "path": "harness/dou018_s10_full_api01.py.txt",
+            "line": 17
+          },
+          {
+            "path": "harness/dou018_s10_full_api01.py.txt",
+            "line": 17
+          },
+          {
+            "path": "harness/dou018_s10_full_api01.py.txt",
+            "line": 17
+          }
+        ],
+        "values_deliberately_not_reported": true
+      },
+      "email_like": {
+        "match_count": 262,
+        "distinct_candidate_count": 21,
+        "locations": [],
+        "values_deliberately_not_reported": true
+      },
+      "bearer_literal": {
+        "match_count": 238,
+        "distinct_candidate_count": 6,
+        "locations": [],
+        "values_deliberately_not_reported": true
+      },
+      "credential_assignment": {
+        "match_count": 5,
+        "distinct_candidate_count": 4,
+        "locations": [
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/shared/static/vendor/swagger-ui-bundle.js",
+            "line": 2
+          },
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/shared/static/vendor/swagger-ui-bundle.js",
+            "line": 2
+          },
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/shared/static/vendor/swagger-ui-bundle.js",
+            "line": 2
+          },
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/shared/static/vendor/swagger-ui-bundle.js",
+            "line": 2
+          },
+          {
+            "path": "packages/real-http.tar.gz::dou018-s10-process-candidate/shared/static/vendor/swagger-ui-bundle.js",
+            "line": 2
+          }
+        ],
+        "values_deliberately_not_reported": true
+      }
+    },
+    "confirmed_private_provider_keys_or_credentials": [],
+    "unresolved_credential_suspects": [],
+    "confirmed_real_student_content": [],
+    "public_synthetic_credential_material_present": true,
+    "public_synthetic_credential_classes": [
+      {
+        "type": "public local/demo database passwords",
+        "literal_values_intentionally_declared_public": [
+          "postgres",
+          "dou_app_local",
+          "dou_worker_local"
+        ],
+        "locations": [
+          "packages/owned-lifecycle.tar.gz::*run_owned_e2e.py*",
+          "packages/ci-contracts.tar.gz::*provision_ci_e2e.py*",
+          "packages/ci-contracts.tar.gz::*local_dev_setup.sql*",
+          "packages/ci-contracts.tar.gz::*ci.yml*",
+          "harness/dou018_s10_full_api01.py.txt"
+        ],
+        "context": "Already committed public synthetic fixture constants; not exported live production credentials. They remain credential material and should never be described as password-free source."
+      },
+      {
+        "type": "deliberately invalid synthetic process DSNs",
+        "locations": [
+          "packages/real-http.tar.gz::dou018-s10-process-candidate/run_processes.py"
+        ],
+        "context": "Synthetic-marked credentials; numeric loopback port9, no DB-call process harness. Values omitted."
+      },
+      {
+        "type": "dev auth and rejected bearer fixtures",
+        "locations": [
+          "packages/product-privacy.tar.gz::*test*",
+          "packages/audit-ownership.tar.gz::*exercise.ts",
+          "packages/real-http.tar.gz::*security.py",
+          "packages/real-http.tar.gz::*docs.html"
+        ],
+        "context": "Seeded fixed demo actor tokens, deliberately invalid test string, parser docstring or input placeholder. No live user session/JWT captured."
+      },
+      {
+        "type": "email/name canaries and fixture accounts",
+        "locations": [
+          "packages/product-privacy.tar.gz::*test_portal.py",
+          "packages/product-privacy.tar.gz::*test_error_envelope.py",
+          "packages/product-privacy.tar.gz::*e2e/*",
+          "packages/web-guides.tar.gz::*bun.log"
+        ],
+        "context": "UserFactory-created test inputs and fixed demo identities; several non-reserved-domain literals are still source-defined test data, not evidence of actual student records. Address validity was not queried. One email-like log token comes from an invalid Supabase credential-URL test; decorator syntax and vendor example strings produce other false positives."
+      },
+      {
+        "type": "vendor UI credential-field syntax false positives",
+        "locations": [
+          "packages/real-http.tar.gz::dou018-s10-process-candidate/shared/static/vendor/swagger-ui-bundle.js"
+        ],
+        "context": "Five broad assignment matches are input type/label/React expression syntax; no embedded credential value was found."
+      }
+    ]
+  },
+  "operational_metadata_remaining": {
+    "present": true,
+    "types": [
+      "local operator filesystem paths",
+      "synthetic run/course/user/request identifiers",
+      "process IDs and timestamps",
+      "DB/cluster/container target identity and full-row digest maps",
+      "deliberate synthetic canary strings in baseline negative outputs"
+    ],
+    "scope": "These are controlled local synthetic measurements and source code. Remaining metadata is not anonymous. The archive origin ledger also lists excluded credential file paths but contains no file values."
+  },
+  "publication_boundary": [
+    "No confirmed private secret or actual student payload requiring a new redaction was found in this byte-pinned V2 package.",
+    "Do not replace source/measurement hashes or change original failed records to remove synthetic negative evidence.",
+    "This review applies only to the six declared package bytes and reviewed loose files; later additions or different tar hashes require a new review.",
+    "Credential-pattern scanning and contextual fixture attribution cannot prove absence of every possible unlabelled private string; no production, legal compliance, or anonymity certification is made.",
+    "No upload or remote publication was performed."
+  ]
+}

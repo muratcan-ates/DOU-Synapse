@@ -17,7 +17,7 @@ kimliği üretmektir.
 from __future__ import annotations
 
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi import FastAPI, Request
@@ -96,17 +96,19 @@ class TestUcHandlerAyniZarfiUretir:
 
 
 class TestRequestId:
-    async def test_gonderilen_kimlik_zarfa_ve_basliga_yansir(
+    async def test_istemci_kimligi_yerine_tek_sunucu_kimligi_kullanilir(
         self, client: AsyncClient, users: UserFactory
     ) -> None:
-        """İstemci kimliği verirse sunucu onu korur: uçtan uca izleme bunu ister."""
+        """İstemci verisi yansıtılmaz; gövde ve başlık aynı sunucu kodunu taşır."""
         user_id = await users.create("zarf-rid@dogus.edu.tr")
         headers = {**users.auth(user_id), "X-Request-ID": "izlenebilir-kimlik-42"}
 
         response = await client.get(f"/courses/{uuid4()}/documents", headers=headers)
 
-        assert response.json()["error"]["request_id"] == "izlenebilir-kimlik-42"
-        assert response.headers["X-Request-ID"] == "izlenebilir-kimlik-42"
+        support_id = response.headers["X-Request-ID"]
+        assert UUID(support_id).version == 4
+        assert support_id != "izlenebilir-kimlik-42"
+        assert response.json()["error"]["request_id"] == support_id
 
     async def test_kimlik_verilmezse_uretilir_ve_basligla_ayni_olur(
         self, client: AsyncClient, users: UserFactory
@@ -131,7 +133,10 @@ class TestRequestId:
         second = request_id_of(request)
 
         assert first and second
-        assert first != second, "state yokken her çağrı taze kimlik üretmeli"
+        assert UUID(first).version == 4
+        assert first == second == request.state.request_id
+        another = Request({"type": "http", "method": "GET", "path": "/", "headers": []})
+        assert request_id_of(another) != first
 
     def test_error_response_zarfi_kurar(self) -> None:
         request = Request({"type": "http", "method": "GET", "path": "/", "headers": []})

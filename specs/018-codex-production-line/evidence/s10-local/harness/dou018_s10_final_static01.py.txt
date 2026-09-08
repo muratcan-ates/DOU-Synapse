@@ -1,0 +1,40 @@
+from pathlib import Path
+import hashlib
+import json
+import os
+import subprocess
+import sys
+import time
+
+repo = Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out = Path('/private/tmp/dou018-evidence/s10-final-static-01')
+out.mkdir(mode=0o700, exist_ok=False)
+api = repo / 'apps/api'
+env = {k: os.environ[k] for k in ('PATH', 'LANG', 'TZ') if k in os.environ}
+env.update(PYTHONDONTWRITEBYTECODE='1', UV_OFFLINE='1')
+script_names = ['e2e_audit_guard.py', 'run_owned_e2e.py', 'provision_ci_e2e.py', 'test_provision_ci_e2e.py', 'test_owned_e2e.py']
+sources = [repo / 'scripts' / n for n in script_names] + list((api / 'app').rglob('*.py')) + list((api / 'tests').rglob('*.py'))
+def hashes():
+    return {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(sources)}
+before = hashes()
+checks = [
+    ('ci-provision', [sys.executable, 'scripts/test_provision_ci_e2e.py'], repo),
+    ('owned-lifecycle', [sys.executable, 'scripts/test_owned_e2e.py'], repo),
+    ('api-ruff', [str(api / '.venv/bin/ruff'), 'check', 'app', 'tests'], api),
+    ('api-format', [str(api / '.venv/bin/ruff'), 'format', '--check', 'app', 'tests'], api),
+    ('scripts-ruff', [str(api / '.venv/bin/ruff'), 'check', *['scripts/' + n for n in script_names]], repo),
+    ('scripts-format', [str(api / '.venv/bin/ruff'), 'format', '--check', *['scripts/' + n for n in script_names]], repo),
+]
+records = []
+for name, command, cwd in checks:
+    started = time.monotonic()
+    log = out / (name + '.log')
+    with log.open('xb') as stream:
+        cp = subprocess.run(command, cwd=cwd, env=env, stdout=stream, stderr=subprocess.STDOUT, timeout=90)
+    record = {'name': name, 'command': command, 'exit_code': cp.returncode, 'seconds': round(time.monotonic()-started, 3), 'log_sha256': hashlib.sha256(log.read_bytes()).hexdigest()}
+    records.append(record)
+    print(json.dumps(record), flush=True)
+after = hashes()
+result = {'checks': records, 'source_hashes': after, 'source_unchanged': before == after}
+(out/'result.json').write_text(json.dumps(result, indent=2)+'\n')
+raise SystemExit(0 if all(r['exit_code'] == 0 for r in records) and before == after else 1)

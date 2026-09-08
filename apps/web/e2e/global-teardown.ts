@@ -6,6 +6,7 @@ export default async function globalTeardown() {
   const result = await temizle({ onayli: true, runId });
   console.log(
     `[e2e] ${runId} koşusundan ${result.deleted.length} ders ve ` +
-      `${result.deletedAudits.length} audit kaydı temizlendi.`,
+      `${result.deletedAudits.length} yakalanmış audit makbuzu temizlendi. ` +
+      "Kaybolan yanıtlar için root başlangıç/son kayıt muhasebesi ayrıca gereklidir.",
   );
 }

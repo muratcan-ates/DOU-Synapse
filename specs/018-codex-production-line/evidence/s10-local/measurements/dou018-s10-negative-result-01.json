@@ -1,0 +1,169 @@
+{
+  "schema": "s10-negative-comparison-v1",
+  "status": "FAIL",
+  "runs": {
+    "python-baseline": {
+      "process": {
+        "argv": [
+          "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/dou018-s10-negative-candidate/python_child.py",
+          "--root",
+          "/private/tmp/dou018-s10-negative-result-01/python-baseline/work",
+          "--receipt",
+          "/private/tmp/dou018-s10-negative-result-01/python-baseline/observations.json"
+        ],
+        "cwd": "/private/tmp/dou018-s10-negative-result-01/python-baseline/work",
+        "exit_code": 1,
+        "timeout": false,
+        "duration_seconds": 0.497622,
+        "stdout_sha256": "b1e0c0775c593fe5734533844a14e9ee29599897c77577f8f4a2cbdf707baf9f",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 13412,
+        "stderr_bytes": 0
+      },
+      "source_before": {
+        "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/logging.py": "f715cbd53f17d0e4f3b0ecf6a6d81a2e3948a9c2900ff9ee783035c14d3f5c14",
+        "app/core/request_context.py": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+        "pytest.ini": "8250d20f42b419af40706490ead78aabab9feba93eab09a3f626e3de5256e1f4",
+        "tests/test_server_request_id.py": "2bc590c975e76f0be3dff339f0c5d542cee38eb8a31fcb9ea17b5d3bfb5525ec"
+      },
+      "source_after": {
+        "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/logging.py": "f715cbd53f17d0e4f3b0ecf6a6d81a2e3948a9c2900ff9ee783035c14d3f5c14",
+        "app/core/request_context.py": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+        "pytest.ini": "8250d20f42b419af40706490ead78aabab9feba93eab09a3f626e3de5256e1f4",
+        "tests/test_server_request_id.py": "2bc590c975e76f0be3dff339f0c5d542cee38eb8a31fcb9ea17b5d3bfb5525ec"
+      },
+      "verdict": {
+        "status": "PASS",
+        "checks": {
+          "no_setup_or_collection_failure": true,
+          "exact_six_parameters": true,
+          "one_normal_module_and_class_identity": true,
+          "six_real_calls": true,
+          "setup_teardown_all_pass": true,
+          "expected_call_outcomes": true,
+          "exit_code_matches": true,
+          "no_db_network_process_attempt": true,
+          "only_exact_tuple_leak_assertion": true,
+          "executed_sources_unchanged": true
+        },
+        "test_calls": 6,
+        "observations_sha256": "62bdbb20c8a12fdb8ba0e63e93bf5b16b9f4e960ce7e6b849f7af82505277225"
+      }
+    },
+    "python-candidate": {
+      "process": {
+        "argv": [
+          "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/dou018-s10-negative-candidate/python_child.py",
+          "--root",
+          "/private/tmp/dou018-s10-negative-result-01/python-candidate/work",
+          "--receipt",
+          "/private/tmp/dou018-s10-negative-result-01/python-candidate/observations.json"
+        ],
+        "cwd": "/private/tmp/dou018-s10-negative-result-01/python-candidate/work",
+        "exit_code": 0,
+        "timeout": false,
+        "duration_seconds": 0.386326,
+        "stdout_sha256": "d5be81bbe49b412357ba177be7fae47b32ba70b563d2a01ec6ee15df362cc215",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 98,
+        "stderr_bytes": 0
+      },
+      "source_before": {
+        "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/logging.py": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+        "app/core/request_context.py": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+        "pytest.ini": "8250d20f42b419af40706490ead78aabab9feba93eab09a3f626e3de5256e1f4",
+        "tests/test_server_request_id.py": "2bc590c975e76f0be3dff339f0c5d542cee38eb8a31fcb9ea17b5d3bfb5525ec"
+      },
+      "source_after": {
+        "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "app/core/logging.py": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+        "app/core/request_context.py": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+        "pytest.ini": "8250d20f42b419af40706490ead78aabab9feba93eab09a3f626e3de5256e1f4",
+        "tests/test_server_request_id.py": "2bc590c975e76f0be3dff339f0c5d542cee38eb8a31fcb9ea17b5d3bfb5525ec"
+      },
+      "verdict": {
+        "status": "PASS",
+        "checks": {
+          "no_setup_or_collection_failure": true,
+          "exact_six_parameters": true,
+          "one_normal_module_and_class_identity": true,
+          "six_real_calls": true,
+          "setup_teardown_all_pass": true,
+          "expected_call_outcomes": true,
+          "exit_code_matches": true,
+          "no_db_network_process_attempt": true,
+          "executed_sources_unchanged": true
+        },
+        "test_calls": 6,
+        "observations_sha256": "1ac829b0a31061215909291f83587a186d76b8c43669f5df8d26b301e550d543"
+      }
+    },
+    "web-baseline": {
+      "process": {
+        "argv": [
+          "/Users/muratates/.bun/bin/bun",
+          "test",
+          "--preload",
+          "/private/tmp/dou018-s10-negative-candidate/bun_preload.ts",
+          "--reporter=junit",
+          "--reporter-outfile",
+          "/private/tmp/dou018-s10-negative-result-01/web-baseline/junit.xml",
+          "--timeout",
+          "10000",
+          "./lib/e2e-audit-receipts.test.ts"
+        ],
+        "cwd": "/private/tmp/dou018-s10-negative-result-01/web-baseline/work",
+        "exit_code": 1,
+        "timeout": false,
+        "duration_seconds": 0.090687,
+        "stdout_sha256": "d6684989b8dd63b37d2f1954270826fbe1bd89a8debd12bcacf03ed1c6140ef6",
+        "stderr_sha256": "fd5d9c08fe5c0571a9250a67cccf52ec8111cfcd1a5000baff0993ba7c5cb3cd",
+        "stdout_bytes": 28,
+        "stderr_bytes": 6952
+      },
+      "source_before": {
+        "e2e/admin-readiness.spec.ts": "b346fa4143c26661366f34483ce7c30429bc672839ed300df5398923b1776e72",
+        "e2e/audit-receipts.ts": "e8fc2601d438fb19777f9680c8a2ddb1ae89e1d47dc73c24c5808d29176727c2",
+        "e2e/blueprint-topic-readiness.spec.ts": "c52a46573b178d61ff4d7452a460f60ae5ddf10e0473d5f0f88c6d9196004bab",
+        "e2e/chat-history-deletion.spec.ts": "33a8837acc2663cd5af8e428979a7b04fcde692992f0eef341de93a4a443669d",
+        "e2e/code-rubric-feedback.spec.ts": "b84ff02dbc28cf4a0ad48a64a96b989f7ec865e7d093a2f081af80b8d21d0542",
+        "e2e/exam-completion-guards.spec.ts": "b2f7d07d4614834b677fd60aca00f59cf697267aacb9c3f3db51969d315948dd",
+        "e2e/exam-cross-tab-privacy.spec.ts": "d69cdc4becb4b31cdb5f4339b1942498529c42f30f9d768e976c25cf4bbcc95f",
+        "e2e/fixtures.ts": "cf214e87328a9dd3dac85257731b81b2daeae50c68295d6a76a607000b44a79b",
+        "e2e/flows.spec.ts": "8131f93428ca5f4199d125b1e701fa4d34c12e5ddddf0c003d2faf73392e23f4",
+        "e2e/policy-history.spec.ts": "3dd6edae66a6d4cc151a20cc2481592d3fbbcca663161f45a2bfdcedccbd68d8",
+        "e2e/portal.spec.ts": "e5abcf0194b5511eca3d8bc8e204e37aef1745b5a45d6ef0b0af2a10fb4c55c6",
+        "e2e/privacy-session-guards.spec.ts": "23d4501099bf10310cf48d725cf0b670f0393fa06c597002bd931767e9ff3e15",
+        "e2e/question-authoring.spec.ts": "419c29b0fbe2b616df92eafc23ba49717df18ec480eee53eff552b6a13497ed4",
+        "e2e/question-delete-unblocks-document.spec.ts": "0dfa1a0a3306f0740b6795f9e7c63b2eff6ff3f12955581e33188b0eb0d3c0b2",
+        "e2e/question-pool-filters.spec.ts": "ff243417d3ed0e1080557325f0ba9b56df9664040afee6482c1bdbca8d0f313c",
+        "e2e/role-aware-agent.spec.ts": "ec1114f8065bb86e6ed32258e75e32503ab2e7139732a18f1c6f1e01f54c171e",
+        "e2e/screenshots.spec.ts": "e877e89a934d0d76f5abc5c24b942def8977c3f204f64b21cff779f5767b0d56",
+        "e2e/student-assessment.spec.ts": "3ed019121705b3c140af3f104d2e73b53428ebd9e15fef286b88477a375a5751",
+        "lib/e2e-audit-receipts.test.ts": "06d0005b1aee8193dc764ab2388efcd3e7d8d9d7f564e92509fc3cfa5f255e50",
+        "package.json": "a90fc33418afa2b9cbf4768524b021135b965ecdf993457505bfae3ac44a8428"
+      }
+    }
+  },
+  "package_manifest_sha256": "40846b71138bd79ab593b4af88d8245ccd57757a1e875a3acc4c1951ca2ac1e7",
+  "runtime_sha256": {
+    "python": "1ce7aea77992ab97bb6225339a1d72a79925d5641e461cdfc2584916119a7edb",
+    "bun": "e0c90ec15d33363e6b70713d56bc3b2c7585c17f40a0fe0f8fd9305901d4e233"
+  },
+  "scope": "exact final tests; primary S10 baseline vs review-fixed source; no real HTTP/DB/E2E claim",
+  "harness_failure_type": "RuntimeError",
+  "harness_failure_code": "MISSING_OR_LARGE_RECEIPT"
+}

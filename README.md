@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1655_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1655 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-555_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 555 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1688_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1688 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-573_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 573 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -32,7 +32,7 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 | Katman | Durum | Açıklama |
 |---|---|---|
 | **Main'e birleşmiş ürün** | `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac` | GitHub main 7 Eylül'de yeniden doğrulandı; PR #22 dahil önceki ürün ve arayüz çalışmaları burada |
-| **Etkin geliştirme adayı** | `018-codex-production-line` | `017-completion-integration` / `6218159` tabanını korur. Son hosted baş `c45e0e7`; üstündeki OPS/D6 yerel kaynakları yeni commit ve CI kabulü bekler |
+| **Etkin geliştirme adayı** | `018-codex-production-line` | `017-completion-integration` / `6218159` tabanını korur. Son hosted baş `f79d8a2`; S9/S10 yerel güvenlik kaynaklarının herkese açık gönderimi kullanıcı onayı bekler |
 | **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Son yerel API 1571, tarayıcı 71; kontrol noktaları ve kaynak hashleri ayrı. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
 | **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
 | **Gerçek model ve insan kabulü** | Bekliyor | [Kabul paketi](evaluation/acceptance/README.md) hazır; öğretmen materyal/rubrik onayı, gerçek yanıtlar ve bağımsız insan değerlendirmesi gerekiyor |
@@ -345,7 +345,8 @@ grant’i bilinçli zayıflatır; izolasyon testi kırmızıya dönmezse kanıt 
 - Platform admin akademik içeriğe admin sıfatıyla erişemez.
 - Teknik kayıtlar request ID, durum ve süre gibi metadata taşır; genel anonimlik
   garantisi yoktur. Hata kayıtları sınırlı nesne/sabit olay özetleri kullanır.
-  İstemci destek kimliği/S10 ve dış günlük sınırları [günlük sözleşmesinde](docs/operations/logging-privacy.md) açıktır.
+  Destek kodunu sunucu üretir; istemci değeri kullanılmaz. Dış günlük ve saklama
+  sınırları [günlük sözleşmesinde](docs/operations/logging-privacy.md) açıklanır.
 - KVKK dışa aktarma, sohbet silme ve anonimleştirme akışları vardır.
 
 ### Web ve dosya güvenliği
@@ -472,8 +473,8 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1655** <!-- docs-check: backend.tests = 1655 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **555** <!-- docs-check: frontend.tests = 555 --> | 44 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 44 --> |
+| Backend testleri | **1688** <!-- docs-check: backend.tests = 1688 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **573** <!-- docs-check: frontend.tests = 573 --> | 45 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 45 --> |
 | Playwright tarayıcı vakaları | **71** <!-- docs-check: e2e.tests = 71 --> | Sayı `playwright test --list` ile toplanan vakalardır. Son yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) |
 | Migration | **22** <!-- docs-check: migrations.count = 22 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **30** <!-- docs-check: tables.count = 30 --> | Migration’larda kurulan benzersiz tablo sayısı |
@@ -797,7 +798,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1655 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1655 -->
+Güncel feature kanıtında backend koleksiyonu 1688 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1688 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -811,7 +812,10 @@ Güncel feature kanıtında backend koleksiyonu 1655 testtir; 38 alt vaka ayrıc
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 555 testtir. <!-- docs-check: frontend.tests = 555 -->
+Güncel feature kanıtında frontend kütüphane paketi 573 testtir. <!-- docs-check: frontend.tests = 573 -->
+
+Gerçek tarayıcı testi ayrı sentetik DB ve sahip olunan sunucu gerektirir;
+[E2E çalıştırma sözleşmesini](docs/development/owned-e2e.md) izleyin.
 
 ### 5. Üç servisi ayrı terminallerde başlat
 
@@ -881,6 +885,7 @@ scripts/                   Docs, workflow, eval ve güvenlik kontrolleri
 | [Gereksinim analizi](docs/requirements-analysis.md) | Danışman taslağı → izlenebilir gereksinimler |
 | [Öğrenci kılavuzu](docs/student-guide.md) | Öğrenci akışları |
 | [Eğitmen kılavuzu](docs/instructor-guide.md) | Eğitmen akışları |
+| [Bilgi İşlem kılavuzu](docs/admin-guide.md) | Platform durumu ve teknik kayıtlar |
 | [KVKK](docs/kvkk.md) | Veri işleme ve kullanıcı hakları |
 | [AI-SDLC](docs/engineering/AI_SDLC.md) | AI değişiklik yönetimi |
 | [Engineering Excellence](docs/engineering/ENGINEERING_EXCELLENCE.md) | CI, supply chain ve kalite sistemi |

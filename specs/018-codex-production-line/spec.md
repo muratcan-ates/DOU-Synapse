@@ -68,3 +68,12 @@ Prepared runtime karşılaştırması gerçek SQLAlchemy/psycopg otomatik hazır
 - Sahip olunan handler format/write/flush arızasında ham record'u standart handleError ile basmaz; tek sabit stderr işareti dener. Fallback da bozulursa ordinary Exception yayılmaz; aynı handler'a tekrar giriş sınırlıdır. Süreç kontrol BaseException sinyalleri ve logger kanalları korunur.
 - Aynı sentetik oracle eski/ara/son kaynaklarda çalışır. DB’siz80 odak sözleşmesi, gerçek h11/httptools ve gerçek lifespan süreç karşılaştırması ile birleşik API kabulü ayrı kanıtlardır. Son adayda dört canary yok, HTTP zarfı aynı, DB/model/ağ çıkış sayaçları sıfır olmalıdır.
 - Bu sınır istemci kontrollü request_id'yi, yapılandırma öncesini, serbest INFO/WARNING veya diğer handler/proxy/hosting kayıtlarını anonim yapmaz. Dış log tüketicilerinin yeni nesne/fallback şemasına uyumu ve kurumsal saklama kabulü ayrı kalır.
+
+
+## S10 sunucu destek kimliği ve test kaydı sahipliği
+
+- HTTP başlığı kimlik kaynağı olmaz. Sunucu her HTTP denemesinde tek UUID4 üretir; aynı request state, yanıt, izinli günlük alanı ve gerçek admin audit satırı aynı kodu taşır. Genel500 başlık sınırı ve sabit hata zarfı ayrıca korunur.
+- Yalnız app.request/app.error doğrudan context.request_id alanındaki exact sunucu iç tipi bilinen regex maskesinden muaf olur. Düz UUID/ASCII, alt sınıf, farklı logger/alan, nested dict/list/tuple muaf olmaz. Digit-run UUID için tek RNG çekilişi ve korelasyon ölçülür; kimlikler anonim veya yetki kanıtı sayılmaz.
+- Test makbuzu yönlenen, yanlış aktör/olay veya kaybolan yanıtı sessiz tamamlanmış saymaz. Temizlik yalnız ilgili koşu/hedef makbuzlarının tam audit satırlarını seçer; başka koşu/korunan satır aynı kalır.
+- Root/CI önceden güvenilen hedef kimliğini doğrular, baseline audit içeriğini ölçer ve sahip olunan API sakinleşip kapandıktan sonra son durumla karşılaştırır. Beklenmeyen satır başarısız/açık kalır; geniş silme yapılmaz. Bu eksiksizlik işi olmadan E2E kabulü verilmez.
+- Negatif/pozitif kontroller, gerçek PostgreSQL audit ve süreç/tarayıcı kabulü ayrı kaynak özetlerine bağlanır; canlı kolektör, hukuk ve üretim terfisi açık kalır.

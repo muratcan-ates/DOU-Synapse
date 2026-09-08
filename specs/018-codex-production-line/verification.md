@@ -214,3 +214,22 @@ Yeni gerçek LLM/hoca, Supabase JWT/Storage, hosting/proxy günlükleri, dış t
 Son kaynakta 1655 API/38 alt vaka, bağımsız84 DB/ağsız günlük kontrolü,71 gerçek HTTP/Chromium akışı ve dört kolda16 gerçek sunucu süreci geçti. Önceki18/35/27 aşama sonuçları,1651 ara kabulü, bulunan kimlik maskeleme regresyonu ve4 kırmızı/yeşil vaka ayrı korunur. Kaynak/log/yanıt özetleri bağımsız incelendi. [Kapsam ve başarısız kayıtlar](evidence/s9-local/README.md), [son kaynak eşliği](evidence/s9-local/source-equivalence.json), [işletim sözleşmesi](../../docs/operations/logging-privacy.md).
 
 Önceki OPS f79d8a2 dört workflow/beş CI işi geçmiştir; S9 için yeni kesin commit kapıları ayrıca gerekir. İstemci kimliği/S10, dış collector, kurumsal saklama ve canlı üretim kabulü açık kalır.
+
+
+## S10 destek kimliği ve test sahipliği — 8 Eylül yerel kabul
+
+Sunucu istemci kimliğini yok sayıp her denemede kendi destek kodunu üretir.
+Tam iç tip muafiyeti yalnız izinli doğrudan günlük alanındadır; tuple/yanlış
+makbuz inceleme bulguları ayrı negatif/pozitif testlerle kapandı. 1688 API/38
+alt vaka, 573 web, 134 ayrı DB/ağsız kontrol, 4 süreçte56 gerçek HTTP ve son
+71 E2E geçti. Son E2E92.288s; P02 başlangıç satırı tam hash'iyle aynı,
+65 ders/14 audit temizlendi; gerçek API normal kapanışı ve tam audit muhasebesi
+doğrulandı. 14 CI provisioning ve11 süreç sözleşmesi geçti.
+
+[Arşiv](evidence/s10-local/README.md) 435 kaynak eşliğini, bütün ilk başarısız
+koşuları, oracle düzeltmelerini, ham sonuç özetlerini ve bağımsız gizlilik
+incelemesini korur. 900 tar üyesi ve60 özgün kopya byte-exact karşılaştırıldı;
+public sentetik parolalar ve operasyonel metadata anonimlik gibi sunulmaz.
+Yeni öğrenci/eğitmen/Bilgi İşlem kılavuzları kaynak/link incelemesiyle güncellendi;
+tarihsel görseller değişmedi. S9/S10 GitHub gönderimi kullanıcı paylaşım
+onayı bekler. S10 için gerçek Docker/hosted/LLM/Storage veya hukuki kabul yoktur.

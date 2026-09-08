@@ -14,6 +14,7 @@ from app.core.config import get_settings
 from app.core.db import rls_session
 from app.modules.assessment import exam_state
 from tests.conftest import UserFactory
+from tests.test_request_log_privacy import _emitted_logs, _request_record
 
 
 async def _create_course(
@@ -753,3 +754,55 @@ class TestPlatformAdmin:
         assert item["id"] == str(job_id)
         assert "sinav-cevap-anahtari.pdf" not in response.text
         assert "gizli worker hatası" not in response.text
+
+
+@pytest.mark.parametrize("allowed", [False, True])
+@pytest.mark.parametrize(
+    "supplied",
+    ["SYNTHETIC_AyseYilmaz_Student01234", "fedcba98-7654-4321-8fed-cba987654321"],
+)
+async def test_admin_audit_uses_server_id_shared_with_response_and_emitted_log(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    allowed: bool,
+    supplied: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """İzin ve ret ayrı commit edilen audit'e istemci verisi taşıyamaz."""
+    user_id = await users.create("s10-audit@dogus.edu.tr")
+    if allowed:
+        await _grant_admin(admin_engine, user_id)
+    from app.core import request_context
+
+    # Bu UUID geçerli v4'tür; son bölümün 11 rakamı genel TCKN maskesine uyar.
+    generated = UUID("abcdef12-3456-4abc-8def-12345678901a")
+    monkeypatch.setattr(request_context, "uuid4", lambda: generated)
+    with _emitted_logs() as sink:
+        response = await client.get(
+            "/admin/overview", headers={**users.auth(user_id), "X-Request-ID": supplied}
+        )
+    assert response.status_code == (200 if allowed else 403), response.text
+    support_id = response.headers["X-Request-ID"]
+    assert UUID(support_id).version == 4 and support_id != supplied
+    assert support_id == generated.hex
+    if not allowed:
+        assert response.json()["error"]["request_id"] == support_id
+    _request_record(sink, support_id)
+    assert supplied not in sink.getvalue()
+    async with admin_engine.connect() as connection:
+        rows = (
+            await connection.execute(
+                text(
+                    "SELECT actor_user_id, action, result, request_id "
+                    "FROM public.platform_admin_access_audit WHERE actor_user_id = :actor"
+                ),
+                {"actor": user_id},
+            )
+        ).all()
+    assert len(rows) == 1
+    assert rows[0].actor_user_id == user_id
+    assert rows[0].action == "GET /admin/overview"
+    assert rows[0].result == ("allowed" if allowed else "denied")
+    assert rows[0].request_id == support_id
+    assert rows[0].request_id != supplied

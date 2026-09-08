@@ -1,0 +1,22 @@
+{
+  "scope": "synthetic Popen offline contract, no OS process cleanup proof",
+  "results": [
+    {
+      "arm": "baseline",
+      "exit_code": 1,
+      "seconds": 0.14,
+      "source_sha256": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+      "log_sha256": "3cff5ece8c3ec1a98dc1cdd620419c134961dc1c36ca2f325fc1417eed9d6697",
+      "source_unchanged": true
+    },
+    {
+      "arm": "candidate",
+      "exit_code": 0,
+      "seconds": 0.091,
+      "source_sha256": "d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a",
+      "log_sha256": "756daee297448ab72f02b9eaba6add93e34811c80fe3ebad184bbdf24f0a339c",
+      "source_unchanged": true
+    }
+  ],
+  "test_source": "f3d504ddfd56a87fcd905930696cf4d8a292ef11cdb68e51ef396d43bb9e84cb"
+}

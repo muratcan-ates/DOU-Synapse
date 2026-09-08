@@ -1,0 +1,25 @@
+{
+  "scope": "Fixed synthetic technical privacy/ownership oracles; not LLM calibration or student data.",
+  "inputs": [
+    {
+      "path": "apps/api/tests/test_server_request_id.py",
+      "sha256": "2bc590c975e76f0be3dff339f0c5d542cee38eb8a31fcb9ea17b5d3bfb5525ec"
+    },
+    {
+      "path": "apps/web/lib/e2e-audit-receipts.test.ts",
+      "sha256": "5d7c208b3c2a312d5180a61ded287f525eaabf6a06611ad48be8e7b0d9775ab3"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s10-local/packages/product-privacy.tar.gz",
+      "sha256": "f9b399d660cdd412b12869546e7615b64c0d95699ff15415992dea70ca97dbf7"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s10-local/packages/audit-ownership.tar.gz",
+      "sha256": "11211cfb9c8bc0f19389ea844b9ddeb0da252406d794352af99d53eb8dee4c0d"
+    },
+    {
+      "path": "specs/018-codex-production-line/evidence/s10-local/packages/owned-lifecycle.tar.gz",
+      "sha256": "fb2b8be5d0363016c740ed0a108d891c9c6552f86e596459f913f60b4ecbbbeb"
+    }
+  ]
+}

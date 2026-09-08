@@ -1,0 +1,12 @@
+from pathlib import Path
+import ast,hashlib,json,subprocess
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');out=Path('/private/tmp/dou018-evidence/s10-style-01');out.mkdir(mode=0o700)
+paths=['apps/api/app/core/errors.py','apps/api/tests/test_server_request_id.py'];before={p:(r/p).read_bytes() for p in paths}
+for p,b in before.items():t=out/'original'/p;t.parent.mkdir(parents=True,exist_ok=True);t.write_bytes(b)
+subprocess.run(['.venv/bin/ruff','check','--no-cache','--select','I','--fix',*[str(Path(p).relative_to('apps/api')) for p in paths]],cwd=r/'apps/api',check=True)
+def normalized(b):
+ t=ast.parse(b);imports=sorted(ast.dump(n) for n in t.body if isinstance(n,(ast.Import,ast.ImportFrom)));t.body=[n for n in t.body if not isinstance(n,(ast.Import,ast.ImportFrom))];return imports,ast.dump(t)
+records=[]
+for p,b in before.items():
+ after=(r/p).read_bytes();assert normalized(b)==normalized(after);records.append({'path':p,'before_sha256':hashlib.sha256(b).hexdigest(),'after_sha256':hashlib.sha256(after).hexdigest(),'import_bindings_and_nonimport_AST_equal':True})
+(out/'result.json').write_text(json.dumps(records,indent=2)+'\n');print(json.dumps(records))

@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/s10-checks-01');out.mkdir(mode=0o700)
+api=repo/'apps/api'
+commands=[('ruff',['.venv/bin/ruff','check','--no-cache','app','tests']),('format',['.venv/bin/ruff','format','--check','--no-cache','app','tests']),('mypy',['.venv/bin/mypy','--cache-dir',str(out/'mypy-cache'),'app'])]
+records=[]
+for name,command in commands:
+ started=time.monotonic()
+ with (out/(name+'.log')).open('x') as log:
+  run=subprocess.run(command,cwd=api,stdout=log,stderr=subprocess.STDOUT,timeout=120)
+ record={'name':name,'command':command,'exit_code':run.returncode,'seconds':round(time.monotonic()-started,3),'log_sha256':hashlib.sha256((out/(name+'.log')).read_bytes()).hexdigest()}
+ records.append(record);print(json.dumps(record),flush=True)
+(out/'result.json').write_text(json.dumps(records,indent=2)+'\n')

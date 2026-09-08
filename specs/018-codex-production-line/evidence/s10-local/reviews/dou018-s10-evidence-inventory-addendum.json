@@ -1,0 +1,273 @@
+{
+  "schema": "dou018-s10-evidence-inventory-addendum-v2",
+  "original_inventory": {
+    "markdown_sha256": "46c787fde10045d3fffe75d876e3f18f27a86665344902df20149f06df10e69a",
+    "json_sha256": "3eb12183056856040632f2ed8126fed6b52c06bc339fa2be89333ef1ec74a0d8"
+  },
+  "new_evidence_groups": [
+    {
+      "id": "s10-script-style-02",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-script-style-02/result.json",
+          "sha256": "7a5320fe8845357a425da59e1a1873b42b3cf1ada8c99909ed40195516f911e9",
+          "bytes": 1187,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "e2e_audit_guard.py": {
+          "before_sha256": "eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724",
+          "after_sha256": "b36bfd7f8594e2968d791e85b27989931e6301090377778d4851aec4de283c93",
+          "exact_ast_equal": true
+        },
+        "run_owned_e2e.py": {
+          "before_sha256": "ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7",
+          "after_sha256": "56fc42a6253725ad1447b08da35e911bcbc1aceb8f78d52dd079e0752b315fbf",
+          "exact_ast_equal": true
+        },
+        "provision_ci_e2e.py": {
+          "before_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+          "after_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+          "exact_ast_equal": true
+        },
+        "test_provision_ci_e2e.py": {
+          "before_sha256": "c6fbe5e0fdf6749f0142895e383d0f062105154bb77e1b14037fc2c542195fbb",
+          "after_sha256": "1c45f59aa9a29204dde6da6698d434b29145d9f8d68adea83f9c1208533cadd2",
+          "exact_ast_equal": true
+        },
+        "test_owned_e2e.py": {
+          "before_sha256": "df54c1b165566f14cd0c5103b24908e5494ac08b0079147cd42dc733ca3a5d82",
+          "after_sha256": "3954d3a871dca32e429533069549729347babc19bd122b2b8e74882dad9755b0",
+          "exact_ast_equal": true
+        }
+      },
+      "log_summaries": {},
+      "boundary": "Measured local check; script style bridge proves exact AST equality, not a new real OS or browser run."
+    },
+    {
+      "id": "s10-final-static-02",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-final-static-02/result.json",
+          "sha256": "8dc82ef404ef0d0e96236d014a74ba8d66a4ddf0f5be54f15be5e5635d31dc46",
+          "bytes": 25489,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "checks": [
+          {
+            "name": "ci-provision",
+            "exit_code": 0,
+            "seconds": 0.147,
+            "log_sha256": "c85e44116f14ff1dd26195049beb85bb5d7d7acc141cfd198d549bea399f2258"
+          },
+          {
+            "name": "owned-lifecycle",
+            "exit_code": 0,
+            "seconds": 1.243,
+            "log_sha256": "f1aa02e11cb573a31b20ad69da57e823a1ded05c43581d76c9cd34cdba2eb995"
+          },
+          {
+            "name": "api-ruff",
+            "exit_code": 0,
+            "seconds": 0.083,
+            "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+          },
+          {
+            "name": "api-format",
+            "exit_code": 0,
+            "seconds": 0.024,
+            "log_sha256": "692aa17a66e5a48293d97156d9c8b2690bef0a98514251662ef4832003fb0463"
+          },
+          {
+            "name": "scripts-ruff",
+            "exit_code": 0,
+            "seconds": 0.022,
+            "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+          },
+          {
+            "name": "scripts-format",
+            "exit_code": 0,
+            "seconds": 0.024,
+            "log_sha256": "f114d83b30c5c657ee43a847a45bafccaea255d82673feb87c26d252c61e29c1"
+          }
+        ],
+        "source_unchanged": true,
+        "scripts_explicit_config": "apps/api/pyproject.toml",
+        "scripts_no_cache": true
+      },
+      "log_summaries": {
+        "ci-provision.log": [
+          "Ran 14 tests in 0.012s"
+        ],
+        "owned-lifecycle.log": [
+          "Ran 11 tests in 1.111s"
+        ]
+      },
+      "boundary": "Measured local check; script style bridge proves exact AST equality, not a new real OS or browser run."
+    }
+  ],
+  "new_filesystem_metadata": [
+    {
+      "root": "/private/tmp/dou018-evidence/s10-script-style-02",
+      "file_count": 7,
+      "noncache_file_count": 7,
+      "noncache_bytes": 81419,
+      "extensions": {
+        ".json": 1,
+        ".log": 1,
+        ".txt": 5
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-final-static-02",
+      "file_count": 7,
+      "noncache_file_count": 7,
+      "noncache_bytes": 27270,
+      "extensions": {
+        ".json": 1,
+        ".log": 6
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    }
+  ],
+  "final_e2e02": {
+    "status": "PASS",
+    "scope": "Synthetic local auth, hashing embeddings, fake model; no hosted or real-provider claim",
+    "result": {
+      "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/result.json",
+      "sha256": "74870ca60fa6046668aaa69b6a23994982426b838d5f1bbc52ea1a3b9479a154",
+      "bytes": 423
+    },
+    "seconds": 92.288,
+    "playwright_summary": [
+      "71 passed (1.5m)"
+    ],
+    "controller_sha256": "56fc42a6253725ad1447b08da35e911bcbc1aceb8f78d52dd079e0752b315fbf",
+    "guard_sha256": "b36bfd7f8594e2968d791e85b27989931e6301090377778d4851aec4de283c93",
+    "source_count": 350,
+    "source_maps_equal": true,
+    "source_unchanged_reported": true,
+    "actual_stop": {
+      "ownedApiExitCode": 0,
+      "playwrightExitCode": 0,
+      "auditFinishExitCode": 0,
+      "stopObservation": "graceful-pipe-and-wait",
+      "errorCode": null,
+      "quiescence_state": "stopped",
+      "same_owned_child_pid": true,
+      "same_target_and_run": true
+    },
+    "accounting": {
+      "status": "PASS",
+      "beforeCount": 1,
+      "afterCount": 1,
+      "deleteExecuted": false,
+      "playwrightExitCode": 0,
+      "baseline_complete_row_hash_map_equal_to_final": true,
+      "missingBaselineIdsCount": 0,
+      "changedBaselineIdsCount": 0,
+      "unexpectedNewRowsCount": 0,
+      "receipt_count": 16,
+      "session_count": 15
+    },
+    "fresh_target": {
+      "absent_before": true,
+      "own_create_completed": true,
+      "distinct_database_from_e2e01": true,
+      "distinct_target_from_e2e01": true,
+      "protected_row_ids_disjoint_from_e2e01": true,
+      "production_or_preexisting_db_access_claim": false
+    },
+    "artifact_references": [
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/result.json",
+        "sha256": "74870ca60fa6046668aaa69b6a23994982426b838d5f1bbc52ea1a3b9479a154",
+        "bytes": 423
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/source-before.json",
+        "sha256": "b90023503164e3c5bf181685b9d4661f8a6b7d2a4192f0da58a5bed33f0cdfdc",
+        "bytes": 36809
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/source-after.json",
+        "sha256": "b90023503164e3c5bf181685b9d4661f8a6b7d2a4192f0da58a5bed33f0cdfdc",
+        "bytes": 36809
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/quiescence.json",
+        "sha256": "0fadc5e12adfb26b58727a266c5960ca77e2ad1573d30c694abddb60c754695a",
+        "bytes": 195
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/audit/baseline.json",
+        "sha256": "d40747df86ad6c813083ce584b7de2f4bd8157e96b37cf3afe3d6806efcf2f42",
+        "bytes": 310
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/audit/final-accounting.json",
+        "sha256": "d640438bc2ef6d6e997148a52745c7c0a77b91e48460f7215be69a058bf519c5",
+        "bytes": 649
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/playwright.log",
+        "sha256": "59eae6c991b88275b06413de797f3d3dc6e93fd6c32a3d265ce78fb14c2a9d8f",
+        "bytes": 19413
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/api.log",
+        "sha256": "97b3066ba6a6a48eefcaf75c80e7f71b9fe4e306ce590ab9575821a38bd2f7de",
+        "bytes": 569683
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/guard-begin.log",
+        "sha256": "8f6ba126157a53c97183d4427fba06e525ea139bf7baa5c490451c0b8d0b1f30",
+        "bytes": 129
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-02/guard-finish.log",
+        "sha256": "e1c5793aec10a01cd9ead0a839fced0e6c228ab8d66cff21b420988c703c8ca4",
+        "bytes": 64
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-provision-02/result.json",
+        "sha256": "e5a5bb2ec582379a09bbe781dfab5bf97b82a9e14564e1efcf7c8898afc0518d",
+        "bytes": 3240
+      },
+      {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-provision-02/owned-create.json",
+        "sha256": "d59b92a72bf855e9067543bc07faff25d3c0b72a155db1b4128af6dcdc057a38",
+        "bytes": 151
+      }
+    ],
+    "boundary": "Actual owned local browser71; synthetic local auth/hash embedding/fake model. Audit full-row digest equality and owned process wait verified from original receipts. No real provider/hosted claim; DB01 lack of mutation is root-reported and not directly queried in this read-only review."
+  },
+  "generated_at_utc": "2026-09-08T19:23:31.482493+00:00",
+  "status_reconciliation": {
+    "final_static02": "All six recorded checks exit0; scripts bound to repository config with --no-cache.",
+    "style02": "Five scripts exact AST equality; latest controller56fc42/guardb36b. Original measured lifecycle03 remains bound to ba511/eae.",
+    "e2e02": "Now independently read PASS71 on actual latest controller56fc42/guardb36b; separates and closes the earlier pending full-browser gap.",
+    "hosted_ci": "Not observed here; remains separate.",
+    "original_inventory": "First cutoff stays byte-identical. No earlier status rewritten; use this addendum for later measurements."
+  },
+  "read_only_review": {
+    "tests": 0,
+    "database": 0,
+    "network": 0,
+    "server": 0,
+    "original_inventory_markdown_sha256": "46c787fde10045d3fffe75d876e3f18f27a86665344902df20149f06df10e69a",
+    "original_inventory_json_sha256": "3eb12183056856040632f2ed8126fed6b52c06bc339fa2be89333ef1ec74a0d8"
+  }
+}

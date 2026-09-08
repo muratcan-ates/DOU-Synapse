@@ -1,0 +1,11 @@
+from pathlib import Path
+import json,hashlib,shutil
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+manifest=json.loads(Path('/private/tmp/dou018-s10-ci-integration-v2/manifest.json').read_text())
+for name,value in manifest.items():
+ assert hashlib.sha256(Path(value["source"]).read_bytes()).hexdigest()==value["sha256"]
+ p=repo/name
+ assert (hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None)==value["base"]
+for name,value in manifest.items():
+ p=repo/name;p.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(value["source"],p)
+print(json.dumps({name:value["sha256"] for name,value in manifest.items()}))

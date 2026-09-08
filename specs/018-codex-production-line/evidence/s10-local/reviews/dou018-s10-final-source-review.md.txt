@@ -1,0 +1,54 @@
+# S10 son kaynak — sınırlı bağımsız güvenlik incelemesi
+
+Kesim: 2026-09-08T19:27:10.899014+00:00. Depo `/Users/muratates/code/dou-synapse-018-codex-production-line`. Salt kaynak/önceki inceleme/ölçüm okuması; bu alt görevde test, DB, ağ, model, tarayıcı veya sunucu çalıştırılmadı. Kaynak, `.ai` ve ölçüm dosyaları düzenlenmedi. İncelenen 14 dosyanın tamamı gerçek E2E02 `source-after.json` haritasıyla byte-exact eşleşiyor.
+
+## Sonuç
+
+Bu dar tekrar incelemesinde **önceki raporlarda bulunmayan, somut bir yeni güvenlik kusuru veya S10’a yeni bir yayın engeli saptanmadı**. Bu sonuç genel güvenlik/KVKK/GDPR sertifikası değildir; aşağıdaki kaynak sınırları ve gerçek ölçüm kapsamıyla sınırlıdır. Önceki R1 pending makbuzu, R2 tuple maskeleme, parent stop hatası ve tamponlu daemon başlangıç kusuru tekrar bulgu olarak sayılmadı; son kaynakta ilgili düzeltmeler korunuyor.
+
+## Kaynakta yeniden doğrulanan sınırlar
+
+| Sınır | Güncel kaynak | Bağımsız değerlendirme |
+| --- | --- | --- |
+| İstek kimliğinin kaynağı | `apps/api/app/core/request_context.py:12`, `:22`; `app/main.py:184` | Constructor girdi kabul etmiyor; tek UUID4 çekilişi, yalnız exact iç türü yeniden kullanma ve istek state’i var. Süreç geneli ID cache’i/istemci X-Request-ID okuması yok. Düz ASCII/UUID veya alt sınıf state’i sunucu kökeni kazanmıyor. |
+| Log muafiyeti | `apps/api/app/core/logging.py:264`, `:307`, `:318` | Direct `request_id` alanı + app.request/app.error + exact ServerRequestId üçlüsü aranıyor. Başka logger/alan/nested değer list/tuple/dict dolaşımıyla normal maskeye giriyor. Sırf UUID görünümü muaf değil. Keyfi Python nesnesi oluşturma yetkisi öğrenci HTTP girdisine atfedilmedi. |
+| Yanıt/log/audit korelasyonu | `app/core/errors.py:47`, `:249`; `app/main.py:177`; `app/api/deps.py:219` | Aynı request helper kullanılıyor; ayrı tamamlanan audit transaction’ı ve sunucudaki platform yetki kontrolü korunuyor. Destek kodu yetki anahtarı yapılmamış. Genel 500 için body/app.error aynı kodu taşır; her 500’de header var iddiası yapılmaz. |
+| Geç/yanlış yanıt makbuzu | `apps/web/e2e/audit-receipts.ts:164`, `:174`, `:201`; `audit-fixture.ts:13` | İzlenen actor/action uyuşmazlığı veya receipt=null pending’i silmez; fail/incomplete kalır. Audited fetch redirect:error kullanır. İlgisiz izlenmeyen kaynak olayı yetki vermez; dinleyici hatası açık session’ı complete yapmadan teardown’u düşürür. |
+| Dar silme | `apps/web/e2e/cleanup.ts:227`, `:238`, `:262`, `:294` | Boş makbuz FALSE; doğru requestId+actor+action+result ve önceden listelenmiş UUID kümesi birlikte gerekir. Silme öncesi/sonrası tam sahiplik kümesi denetlenir; audit için tarih/aktör/genel UUID fallback’i yok. |
+| Tam satır muhasebesi | `scripts/e2e_audit_guard.py:133`, `:180`, `:269`, `:304` | Gerçek bağlantıda pinli DB/OID/cluster/rol, read-only repeatable-read; tüm satır JSON’undan hash ve 20k üst sınır. Eksik/değişmiş/beklenmeyen satır fail-closed. Guard DELETE yapmaz; gerçek wait makbuzu olmadan final snapshot başarı sayılmaz. |
+| Sahip olunan süreç | `scripts/run_owned_e2e.py:98`, `:135`, `:171`, `:265`, `:320` | select/os.read + finished/join; gerçek socket parent’ta bind edilip çocuğa aktarılır. Aynı repo helper/guard __file__ bağları, temiz PG/API ortamı, private API cwd, fresh webServer var. Kontrol pipe hatası ortak bounded wait/terminate/kill yolunda; önceden çıkmış/forced süreç normal exit0 diye yeniden etiketlenmez. |
+| CI kaynak/hedef sırası | `scripts/provision_ci_e2e.py:137`, `:443`, `:468`, `:495`; `.github/workflows/ci.yml:405` | Full job-container/image digest kimliği; mevcut DB/rol reddi; host route CREATE öncesinde, yeni DB kimliği her source SQL öncesinde doğrulanıyor. Exact mevcut bootstrap, üyelik0 ve uygulama rolü bağlantı doğrulaması korunuyor. Shell/ortamdan genel hedef yönlendirmesi veya yeni geniş yetki verme yolu eklenmemiş. |
+
+## Doğrulanmış kanıtlarla kalibrasyon
+
+- E2E02 `56fc42` controller / `b36b` guard ile **71 PASS**, 92.288 sn; 350 kaynak haritası aynı. Gerçek graceful pipe + own-child wait exit0, guard finish0. Audit before1/after1 tam-satır hash haritaları byte değerleriyle eşit, missing/changed/extra0. Bu, E2E01’in eski d0 controller kanıtının yerine geçmişe dönük etiketlenmedi.
+- Lifecycle03 gerçek ba511 sürecini ölçer; son 56fc42’ye bağ `s10-script-style-02` exact AST eşitliğidir. Lifecycle01’deki startup -6/Fatal Python ve lifecycle02’deki yanlış exact1 beklentisi korunur; Uvicorn0.52.4 startup3 davranışı ayrı V3 kabulüdür.
+- Gerçek audit A/B interleaving ve omitted-receipt negatifi yerel PG/API deneyiyle ölçülmüş; son temizleme kaynakları E2E02’ye bağlıdır. Yalnız mock sonucunu gerçek DB izolasyonu yerine kullanmadım.
+- CI14 ve tekrar-identity kontrolünü kaldıran iki assertion negatifi mock Docker/PG kapsamındadır. Hosted exact-commit ve gerçek Docker provisioning sonucu bu incelemede bulunmuyor.
+- Son statik02 explicit repo Ruff ayarı/--no-cache ile altı kontrol exit0; global kişisel ayarın ilk kırmızı sonucu korunur.
+
+## Önceden bilinen kapsam sınırları — yeni kusur olarak raporlanmadı
+
+- Normal serbest metin loglarında regex her öğrenci verisini tanımaz. Exception/uvicorn hata kollarındaki sabit şema ve handler’ın sabit acil işareti, bütün olası Python nesnelerinin güvenli serileştirilmesi garantisi değildir. Mevcut HTTP ID akışında saldırganın iç tür üretmesini sağlayan bir dönüşüm bulunmadı.
+- Audit tam-satır before/after eşitliği, arada başka yetkili süreç tarafından silinmiş bütün geçici DB yazımlarını ölçmez. Fresh/exclusive hedef, exact-receipt cleanup ve gerçek omitted negative bağı korunmalı. Aynı OS hesabının private makbuzları keyfi değiştirmesi öğrenci yetkisi değildir.
+- Direct API child’ın beklenmesi başka bağımsız API/worker’ların küresel durduğunu veya tarayıcı lideri çıktıktan sonra bütün olası torun süreçlerin öldüğünü ispatlamaz. Son kabul owned, tek API/fresh yerel hedef sınırındadır.
+- CI artifact seçimi passfile içeriğini ve storage dizinini kapsamıyor; JSON audit kimlikleri, operasyonel ID/zamanlar ve hata trace/screenshot’ları yine otomatik anonim değildir. Yalnız sentetik hedef kapsamı ve arşiv incelemesi geçerlidir.
+
+## Hash bağları
+
+- `apps/api/app/core/request_context.py`: `78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858`
+- `apps/api/app/core/logging.py`: `2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610`
+- `apps/api/app/core/errors.py`: `421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a`
+- `apps/api/app/main.py`: `429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0`
+- `apps/api/app/api/deps.py`: `77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360`
+- `apps/web/e2e/audit-receipts.ts`: `97f719992f59f0641a89a2504b21b5729eeef23cdb8246f3fa8fab6bdd54325e`
+- `apps/web/e2e/audit-fixture.ts`: `0ee1b8246f88e1079845fdcfc89ef918704cb08c75ea171c0bc0d3d4d32552cc`
+- `apps/web/e2e/cleanup.ts`: `f68d51737e3f478b716f8d7419d1f290e62d5fb22dc03ade360c65c26c290577`
+- `apps/web/e2e/global-setup.ts`: `34ee6fa10c99c59a430bab2b0c72e626195496856e77065b522a6018d28531a3`
+- `apps/web/playwright.config.ts`: `dce63c22a174e227560c3cef412059d3e0f4b05f992af0d225dab537375b092d`
+- `scripts/e2e_audit_guard.py`: `b36bfd7f8594e2968d791e85b27989931e6301090377778d4851aec4de283c93`
+- `scripts/run_owned_e2e.py`: `56fc42a6253725ad1447b08da35e911bcbc1aceb8f78d52dd079e0752b315fbf`
+- `scripts/provision_ci_e2e.py`: `21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f`
+- `.github/workflows/ci.yml`: `ef54c70840dbac72f7e09b01c4dd3b26566d5f02b585fbda54ffa24ab7c42c15`
+
+Özgün envanter dondurulmuştur; daha sonraki statik02/style02/E2E02 sonuçları yalnız `/private/tmp/dou018-s10-evidence-inventory-addendum.json` içindedir.

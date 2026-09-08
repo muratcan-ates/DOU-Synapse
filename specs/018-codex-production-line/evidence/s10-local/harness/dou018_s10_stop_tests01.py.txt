@@ -1,0 +1,12 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+out=Path('/private/tmp/dou018-evidence/s10-stop-contracts-01');out.mkdir(mode=0o700,exist_ok=False)
+runner=Path('/private/tmp/dou018-owned-lifecycle-acceptance/test_stop_contracts.py');python='/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python'
+rows=[]
+for arm,path,expected in [('baseline','/private/tmp/dou018-owned-adapter-candidate/files/scripts/run_owned_e2e.py','180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920'),('candidate','/Users/muratates/code/dou-synapse-018-codex-production-line/scripts/run_owned_e2e.py','d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a')]:
+ assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==expected
+ env={k:v for k,v in os.environ.items() if not k.startswith('PG')};env.update(OWNED_CONTROLLER_PATH=path,OWNED_CONTROLLER_SHA256=expected,OWNED_GUARD_SHA256='68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4',PYTHONDONTWRITEBYTECODE='1')
+ log=out/(arm+'.log');start=time.monotonic()
+ with log.open('x') as f:r=subprocess.run([python,str(runner)],env=env,stdout=f,stderr=subprocess.STDOUT,timeout=30)
+ rows.append({'arm':arm,'exit_code':r.returncode,'seconds':round(time.monotonic()-start,3),'source_sha256':expected,'log_sha256':hashlib.sha256(log.read_bytes()).hexdigest(),'source_unchanged':hashlib.sha256(Path(path).read_bytes()).hexdigest()==expected})
+(out/'result.json').write_text(json.dumps({'scope':'synthetic Popen offline contract, no OS process cleanup proof','results':rows,'test_source':hashlib.sha256(runner.read_bytes()).hexdigest()},indent=2)+'\n');print(json.dumps(rows))

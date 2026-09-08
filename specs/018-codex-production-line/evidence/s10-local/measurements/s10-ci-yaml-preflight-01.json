@@ -1,0 +1,6 @@
+{
+  "initial_sha256": "596586c90d0888700a6771342f1a2ad73e49ce71cd42d26c3b870b9a1da78885",
+  "corrected_sha256": "d0e7a9d8e48b2ab906b7ee4060811d10b8f766e3c2af22ab0a2dd0b1953bbde8",
+  "finding": "Unapplied generator matched nested service env instead of job env; required PostgreSQL service configuration restored from exact original source.",
+  "repository_changed": false
+}

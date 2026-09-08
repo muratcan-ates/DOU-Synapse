@@ -1,0 +1,27 @@
+{
+  "e2e_audit_guard.py": {
+    "before_sha256": "eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724",
+    "after_sha256": "b36bfd7f8594e2968d791e85b27989931e6301090377778d4851aec4de283c93",
+    "exact_ast_equal": true
+  },
+  "run_owned_e2e.py": {
+    "before_sha256": "ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7",
+    "after_sha256": "56fc42a6253725ad1447b08da35e911bcbc1aceb8f78d52dd079e0752b315fbf",
+    "exact_ast_equal": true
+  },
+  "provision_ci_e2e.py": {
+    "before_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+    "after_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+    "exact_ast_equal": true
+  },
+  "test_provision_ci_e2e.py": {
+    "before_sha256": "c6fbe5e0fdf6749f0142895e383d0f062105154bb77e1b14037fc2c542195fbb",
+    "after_sha256": "1c45f59aa9a29204dde6da6698d434b29145d9f8d68adea83f9c1208533cadd2",
+    "exact_ast_equal": true
+  },
+  "test_owned_e2e.py": {
+    "before_sha256": "df54c1b165566f14cd0c5103b24908e5494ac08b0079147cd42dc733ca3a5d82",
+    "after_sha256": "3954d3a871dca32e429533069549729347babc19bd122b2b8e74882dad9755b0",
+    "exact_ast_equal": true
+  }
+}

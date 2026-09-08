@@ -41,7 +41,8 @@
 - [ ] F — gerçek JWT/oturum/private Storage RLS.
 - [ ] G — seçilmiş hedefte dağıtım/göç/rollback ve GitHub korumaları.
 - [ ] H — bütün sayfalarda dar/koyu/klavye/axe ve manuel kabul; B görsellerinden türetilmez.
-- [ ] I — güncel kılavuzlar, gerçek başarı raporu ve açık işleri kanıtla kapatma.
+- [x] I kılavuz — öğrenci/eğitmen/Bilgi İşlem belgeleri mevcut B1–B7 ve S10 destek koduyla hizalı; kaynak/link denetimi. Tarihsel ekranlar yenilenmiş sayılmaz.
+- [ ] I kalan — gerçek model başarı raporu, yeni görseller/manuel kabul ve dış açık işleri kanıtla kapatma.
 
 - [x] D/S8 yerel birleşik kabul —1561 API,555 web,68 gerçek tarayıcı akışı,57 yol OpenAPI eşliği,22 göç,52 recovery aracı ve77 yönetişim testi; kanıt d-final-local arşivinde.
 - [x] Önceki D/S8 kesin commit/PR26 hosted — own029, aggregate030 ve portability düzeltmesi031 sonrası c45 üzerinde dört workflow PASS; 030 Ubuntu başarısız kayıt korunur.
@@ -49,5 +50,8 @@
 - [x] OPS/D6 own032, aggregate033 ve kesin f79d8a2 PR26 hosted: dört workflow/beş CI işi PASS; API1571/38 ve tarayıcı71. Yeni S9 kaynakları ayrı.
 
 - [x] S9/S9B/S9C yerel — hata zinciri, düz sunucu/lifespan mesajı, çıktı arızası ve bilinen destek kimliği maskesi;84 DB/ağsız kontrol,1655 API/38 alt vaka,71 E2E ve son16 gerçek süreç geçti. [Kanıt](evidence/s9-local/README.md).
-- [ ] S9 kendi dossier/commit ve yeni kesin PR26 hosted kabulü.
-- [ ] S10 sunucu kaynaklı destek kimliği ve E2E denetim kaydı sahipliğinin yeni kimliğe uyumu.
+- [x] S9 own034 e19dc8c ve aggregate035 deb83e1 kesin commit kapıları PASS.
+- [ ] S9 GitHub gönderimi: otomatik inceleme kod+sentetik arşiv için açık paylaşım onayı istedi; iki commit için kullanıcı yanıtı bekleniyor. Bu içerikleri taşıyan sonraki commitler de onaysız gönderilmez.
+- [x] S10 yerel — sunucu kaynaklı destek kimliği, makbuz/aynı-kayıt sahipliği, tam audit muhasebesi ve owned süreç kapanışı;1688 API/38,573 web,134 DB/ağsız kontrol,56 gerçek HTTP ve son71 E2E. [Kanıt](evidence/s10-local/README.md).
+- [ ] S10 kesin yerel commit ve yönetişim kaydı; yeni hosted kabul paylaşım onayından sonra.
+- [ ] S11 — kesin belge silmesi için kalıcı kuyruk, anahtar yeniden kullanım engeli ve hedefi doğrulanmış yeniden deneme. Hazır TMP aday gerçek SQL/işlem kabulü bekler.

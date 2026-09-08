@@ -1,0 +1,7 @@
+{
+  "scope": "Uncommitted archive packaging fix only; staged whitespace gate found the intentionally preserved pre-fix EOF in a plaintext evidence copy. Original bytes now preserved in gzip; no source or test result changed. No commit was created by the failed attempt.",
+  "path": "specs/018-codex-production-line/evidence/s10-local/s10-whitespace-01/before.ts.txt.gz",
+  "original_sha256": "cf214e87328a9dd3dac85257731b81b2daeae50c68295d6a76a607000b44a79b",
+  "gzip_sha256": "905dd92a8a8b6b6b3b10e1cc66aa3a4e94292101cb02472af28b056615a23fb3",
+  "original_draft": "/private/tmp/dou018-evidence/s10-record-draft-01"
+}

@@ -1,0 +1,7 @@
+import {readFileSync,writeFileSync} from "node:fs";
+const transformer=new Bun.Transpiler({loader:"ts"});
+const a=transformer.transformSync(readFileSync(process.argv[2],"utf8"));
+const b=transformer.transformSync(readFileSync(process.argv[3],"utf8"));
+if(a!==b)throw new Error("EMITTED_JS_CHANGED");
+writeFileSync(process.argv[4],a);
+console.log("BUN_EMITTED_JS_EQUAL");

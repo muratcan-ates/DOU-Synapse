@@ -1,0 +1,59 @@
+# S10 bağımsız kaynak ve E2E temizlik incelemesi
+
+İncelenen donmuş paket: `/private/tmp/dou018-s10-next-candidate`; manifest SHA256 `e1a52aa25b4e8f25764ee2541c46610f50963dc4ce7ef5f17c0f31681f6af114`. 23 staged dosyanın ve bulunan base kopyalarının hash'leri manifestle yeniden karşılaştırıldı; ayrışma yok. Bu yalnız dosya bütünlüğü kontrolüdür. Test/DB/tarayıcı/sunucu/ağ çalıştırılmadı; paket veya repo değiştirilmedi.
+
+## Sonuç
+
+Dört ürün dosyasının HTTP kimliği tasarımında istemci başlığından iç `ServerRequestId` türüne geçiş veya süreç genelinde kimlik önbelleği bulunmadı. İki dar kontrat kusuru var: tracked audit isteği ilgisiz yanıtla sessizce tamamlanabiliyor; normal log context'indeki tuple değerleri genel maskelemeyi atlayabiliyor. Bunlar aşağıdaki önkoşul ve kapsamlarla değerlendirilmelidir. Root/CI hedef makbuzu ve audit başlangıç/son muhasebesi ayrıca tamamlanmadan gerçek E2E temizlik kabulü verilemez.
+
+## R1 — Tracked audit isteğinin ilgisiz yanıtı pending kaydını siliyor (P2, test altyapısı)
+
+**Kaynak:** `files/apps/web/e2e/audit-receipts.ts:157`, `:164–176`, `:187–199`.
+
+`pending`, yalnız nesne anahtarı tutuyor. `record()` satır 169'da `receiptFromResponse()` sonucunu alıp, sonuç `null` olsa bile satır 173'te anahtarı siliyor. Somut kaynak düzeyi akış:
+
+1. `begin(key, API + '/admin/overview', 'GET', bilinenSentetikAktör)` pending ekler.
+2. Aynı key ile başka origin veya audit dışı `/courses` yanıtı `record()` edilir.
+3. `receiptFromResponse()` satır 108'de `null` döner; yazılan makbuz yoktur, pending ise silinir.
+4. `finish()` satır 183'te `complete:true` yazar. Makbuz listesi boşsa mevcut cleanup yalnız bu boş kümeyi değerlendirip 0/0 dönebilir.
+
+`AuditCapture.fetch()` yerleşik fetch yönlendirmesini kapatmadığı ve son `response.url` değerini kullandığı için, bu yalnız teorik bir API kullanım dizisi değildir: takip edilen yönlendirme wrapper'da bu şekli oluşturabilir. Mevcut gerçek admin rotalarının 200/403 yolunda yönlendirme ölçülmüş değildir; bunu üretim admin rolünü aşan bir HTTP saldırısı veya mevcut DB kalıntısı olarak sunmuyorum. Ayrıca yanlış ama izinli bir başka action/actor yanıtı da anahtarla eşleştirilmiyor.
+
+**Dar düzeltme:** pending anahtarına beklenen action ve sentetik actor bilgisini bağla. Tracked key için makbuz yoksa veya origin/action/actor eşleşmiyorsa hata ver ve session'ı incomplete bırak. İlgisiz, hiç izlenmemiş normal kaynak olayları `null` olarak yok sayılmaya devam etsin. Audit fetch'i için yönlendirme takibini reddet; başka kaynakların fetch davranışını değiştirme. Üst katmanda hata yakalansa bile collector'ın başarısız durumu korunmalı.
+
+**Önerilen negatifler:** tracked `/admin/overview` → başka origin, audit dışı rota, farklı izinli action ve farklı sentetik actor; her biri `record`/`finish`/loader reddi. Normal bir `/courses` olayı incomplete üretmemeli. Fetch'in redirect/error kaybı incomplete kalmalı; doğru yanıt ve route.fetch/browser tekilleşmesi korunmalı. Bunlar henüz çalıştırılmadı.
+
+## R2 — Tuple içindeki normal günlük değerleri maskelenmiyor (P3, mevcut container kontratı)
+
+**Kaynak:** `files/apps/api/app/core/logging.py:312–319`, `:322–330`, `:373–379`; mevcut test sınırı `files/apps/api/tests/test_server_request_id.py:99–123`.
+
+`_redact_any()` string/dict/list dolaşıyor, tuple için değeri olduğu gibi döndürüyor. `json.dumps` tuple'ı JSON dizisi olarak kendisi dolaştığı için normal bir `context={'nested': ({'request_id': value},)}` içindeki digit-run UUID veya string alt türü ham serileşir. Aynı şey başka alanın doğrudan tuple değeri için geçerli. `RedactionFilter` çağrılması bunu gidermiyor; o da aynı helper'ı kullanıyor. Dolayısıyla README'nin “başka/nested alan ve alt sınıf maskelenmeye devam eder” cümlesi bütün JSON'a çevrilebilir container'lar için doğru değil.
+
+**Kapsam:** Bu tuple eksikliği S9 tabanında da var. S10'un başlık sınırı yeni bir HTTP yolu açmıyor. Mevcut `app.request` context alanları sabit düz değerler; kullanıcı başlığının tuple'a çevrilerek bu alanlara girdiği çağrı bulunmadı. `ServerRequestId` üretmek veya `str.__new__(ServerRequestId, ...)` ile nesne kurmak keyfi Python çalıştırma yetkisi ister; bunu öğrencinin sahip olduğu bir yetenek gibi göstermemek gerekir. Bulgu, yeni dar muafiyet kontratı ve diğer normal log değerleri içindir; `exc_info` kolu keyfi nested context'i zaten dışarı atar.
+
+**Dar düzeltme:** list ve tuple değerlerini aynı recursive maskelemeden geçir. JSON'da tuple zaten dizi olur; değişiklik keyfi nesnelerin `repr/str` davranışı için genel bir güvenlik garantisi değildir. Tuple içinde düz digit-run UUID, tam iç tür ve alt sınıf; nested dict/list/tuple ve normal ekstra alanı filtreli/yalnız formatter yollarıyla sınanmalı. Doğrudan izinli `context.request_id` iç türünün pozitif korelasyonu korunmalı.
+
+## Ürün kimliği ve korelasyonda incelenen sınırlar
+
+- `request_context.py:18–29`: constructor metin argümanı almaz; bir UUID4 çekilişi yapar. Helper yalnız exact type'a güvenir ve aynı request state'e bir kez kaydeder. Düz string ve alt sınıf yeni iç nesneye dönüşür; süreç-geneli cache/ContextVar/global request ID yok.
+- `main.py:181–207`: istemci `X-Request-ID` okunmaz; call_next öncesinde oluşturulan nesne başlık ve app.request loguna taşınır.
+- `errors.py:47–58`, `:247–269`: hata zarfı ve genel hata logu aynı helper'ı kullanır. Genel 500 için başlığın bulunmadığı mevcut sınır korunmuştur; “bütün yanıtlarda header/body eşitliği” iddiası yapılmamalı. Genel 500'de body/app.error eşitliği doğru oracledır.
+- `logging.py:264–282`, `:322–330`: dar muafiyet direct field + iki logger + exact type ile sınırlıdır. String görünümüne göre UUID muafiyeti yok. Bilinmeyen ASCII metnin genel masker'dan değişmeden geçebilmesi zaten maskenin sınırlı kapsamıdır; esas S10 garantisi istemcinin bu metni HTTP destek kimliğine seçememesidir.
+- Repo referansı `apps/api/app/api/deps.py:203–227`: gerçek audit işlemi aynı helper'ı ayrı tamamlanan işlemde çağırır. 23 dosyalı pakette audit SQL/rol davranışı değiştirilmemiştir.
+- `test_request_log_privacy.py:452–493`: sekiz bariyerli istek, değişmeyen istek içi ve farklı istekler arası kimliği, body/header/log kümesini sınamak üzere yazılmıştır. `test_portal.py:760–815` allowed/denied gerçek PG audit/header/log ve ret gövdesi eşitliğini sınamak üzere hazırlanmıştır. Bunlar hazırlanan testlerdir; çalıştırılmış kanıt olarak sayılmadı. Str alt türünün gerçek DB adaptasyonu root ölçümünü bekler.
+
+## Temizlikte doğru olan ve hâlâ dışarıda kalan
+
+`cleanup.ts:222–275`, `:294–345`: boş makbuz SQL'i FALSE, izinli action/actor + tam server request ID araması ve önceden listelenmiş audit row ID ile DELETE var. Eksik/çift bilinen makbuz satırı silme öncesinde, silinen küme sonrasında denetleniyor. Tarih/aktör veya bütün UUID'lere yayılan fallback yok. Aynı gerçek DB üzerinde A'nın doğru makbuz kümesi B'nin farklı ID'li satırını seçmez; gerçek iki-run PG kanıtı ayrıca gerekir.
+
+Özel dizin ve dosya izinleri, exact scope alanları, tamamlanmamış session ve yarım yazım dosyası reddi yerinde. Bunlar aynı OS hesabının keyfi dosya değiştirme yetkisine karşı kriptografik sahiplik kanıtı değildir. Sırf 64-hex `targetId` vermek hedefi güvenilir yapmaz.
+
+**Root/CI'nin uygulanabilir son katkısı:**
+
+1. `expectedAuditScope()` yalnız env'deki target hash'ini biçim olarak kabul eder. `cleanup.ts:80–85` psql'a aktarılan env'i kendisi temizlemez; gerçek cluster/OID doğrulamaz. Root'un güvenilir hedef makbuzunun tam dosyasını ve hash'ini archive/runner'a bağlaması; numeric host/port, database adı/OID, cluster system identifier ve gerekli sürüm/rol alanlarını gerçek bağlantıda doğrulaması gerekir. PGHOSTADDR/PGSERVICE/PGSERVICEFILE gibi yönlendirmeleri kaldırma veya reddetme ve bilinen binary/PG bağlantı ortamı korunmalı. Yetkili hedef doğrulaması sentinel yazısından ve her yıkıcı temizlikten önce gerçekleşmeli; yalnız bitiş kontrolüne bırakılmamalı.
+2. Fresh/exclusive hedefte başlangıç audit row ID + içerik fingerprint kümesini al. Testler bittikten sonra collector kayıtları ile başlangıç dışı gerçek DB satırlarını karşılaştır. Collector tamamen atlandıysa yeni satır, makbuz olmadan görünmeli ve koşu başarısız olmalı; bu satır geniş filtreyle silinmemeli.
+3. Teardown sonrası başlangıçtaki korunan satırlar içerikleriyle aynı kalmalı; yakalanmış yeni satırlar sıfırlanmalı. İki interleaved run kabulünde A temizliği ardından B'nin makbuzları ve aynı aktörlü korunan non-E2E satırları aynen kalmalı. B temizliğinden sonra başlangıç kümesine dönülmeli.
+4. Root helper/CI başarı kodu, Playwright exit0 ve “yakalanmış makbuzlar temizlendi” mesajına ek olarak bu muhasebe sonucuna bağlanmalı. Global teardown'un kendi metni zaten tam eksiksizlik iddiasını dışarıda tutuyor; bunu son raporda sessizce küresel sıfır kalıntıya çevirmeyin.
+5. Mevcut global setup hedef hash'i yoksa sentinel yazmadan durur. Katkı yapılmadan yeni candidate'ı mevcut CI'ya doğrudan geçirmek kurulumu başarısız yapar. R1 düzeltmesi, root muhasebesinin yerini tutmaz.
+
+Bu rapor orijinal donmuş paket için geçerlidir. Root'un onayladığı iki dar düzeltme ayrı `/private/tmp/dou018-s10-review-fixes-candidate` adayı olarak hazırlanacaktır; orijinal paket ve eski kanıtlar korunur.

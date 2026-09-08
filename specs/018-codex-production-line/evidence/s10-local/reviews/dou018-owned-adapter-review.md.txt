@@ -1,0 +1,71 @@
+# Owned E2E yaşam döngüsü — bağımsız statik inceleme
+
+İncelenen aday: `/private/tmp/dou018-owned-adapter-candidate`. Manifest SHA256 `c8bb75010d714497f9ca4db040c54704f8bf4e541be64978617328218fc23584`; dört dosyanın byte hash'i manifestle aynı. Adaptör SHA256 `180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920`. Repo, paket ve testler değiştirilmedi; DB, test, ağ, sunucu veya tarayıcı çalıştırılmadı. Bu rapor gerçek negatiflerin yerine geçmez.
+
+## Sonuç
+
+Önceki guard incelemesindeki normal hedef/lifecycle açıklıklarını aday büyük ölçüde kapatıyor: parent gerçek dinleme soketini bağlayıp doğrudan API child'ına geçiriyor; uygulama ve worker DSN'leri aynı pinlerden kuruluyor; API boş özel cwd ile başlıyor; web yeniden derleniyor ve mevcut sunucu kabul edilmiyor; parent gerçek Popen.wait sonucunu kullanıyor. Geniş audit DELETE eklenmemiş. **Temiz kapanışın yanlış başarıya çevrilmesi ve başarısız boru yolunun eksik süreç temizliği düzeltilmeli.** Kaynak kapsamı ve web ortamı sınırları da aşağıdaki gibi tamamlanmadan genel “tam kaynak sabit / ortamdan bağımsız sentetik koşu” iddiası kurulmasın.
+
+## R1 — P2: `server.started`, başarılı lifespan kapanışı anlamına gelmiyor
+
+`files/scripts/run_owned_e2e.py:69–80`, `:192–208`.
+
+`serve_owned()` yalnız `server.started` doğruysa 0 döndürüyor. Kurulu Uvicorn 0.52.4'te `lifespan/on.py:64–76` shutdown hatasını `shutdown_failed`/`error_occurred` durumuna kaydedip günlük yazar; `server.py:96–104,300–302` bu kapanıştan normal dönebilir. `started` kapanışta false yapılmıyor. Dolayısıyla parent borusuyla istenmiş bir kapanışta uygulama `lifespan.shutdown.failed` ürettiğinde bu child yine exit0 verebilir; adaptör bunu `graceful-pipe-and-wait` ve koşulların geri kalanı yeşilse genel PASS sayar.
+
+Bu, gerçek process wait gözlemini geçersiz kılmaz: süreç gerçekten bittiyse o süreç artık DB'ye yazamaz. Kusur, uygulamanın başarısız shutdown davranışının **temiz lifecycle kabulüne** dönüştürülmesidir; bu inceleme çalışan bir sürecin audit snapshot'ı geçtiğini kanıtlamıyor.
+
+Dar düzeltme: desteklenen gerçek Uvicorn runtime'ında startup ve shutdown başarısını ayrıca denetle; `shutdown_failed`, `error_occurred` ve tamamlanmamış lifespan kapanışını nonzero yap. Runtime alanı yoksa sessizce başarı varsayma. Daha geniş ASGI wrapper veya uygulama monkeypatch'i gerekmiyor.
+
+Kabul: aynı owned socket/pipe/wait yolunda normal lifespan → gerçek exit0; gerçek startup-failed ve shutdown-failed ASGI uygulaması → nonzero/overall FAIL; dış SIGTERM/SIGKILL ve parent grace timeout → gerçek kod korunarak FAIL. Shutdown-failed kolunu yalnız fake `Server.started` değerini değiştirerek ispatlanmış sayma.
+
+## R2 — P2: Kontrol borusu hatasında timeout ortak sonlandırma yolunu atlıyor
+
+`files/scripts/run_owned_e2e.py:83–100`, `:174–191`.
+
+`stdin.write/flush/close` OSError verdiğinde satır 91'deki `wait(timeout)` kendi `except` kolunda; satır 94'teki timeout/fallback bloğuna girmez. Pipe'ın okunur ucu kapanmış fakat child başka işte canlı kalmışsa bu wait TimeoutExpired atar. `run()` yalnız genel FAIL kaydeder; dış finally dinleme socket nesnesini kapatır, child'ı yeniden sonlandırıp beklemez. Böylece üst sonuç yeşile dönmese de sahip olunan API canlı bırakılabilir ve yeni hedefin quiescent olduğu söylenemez.
+
+Dar düzeltme: kontrol gönderiminin sonucunu kaydet, fakat bütün wait timeout'larını tek bounded terminate → wait → kill → wait temizleme yoluna götür. Boru hatası sonrası çocuk sonunda exit0 verse bile clean-stop etiketi verme. Kapanış sonunda hâlâ canlı durum varsa bunu ayrı içeriksiz hata alanında koru; başka PID/porttaki servise dokunma.
+
+Kabul: failing write ve failing flush + başlangıçta canlı/yanıt vermeyen owned child; fallback gerçek child'ı sonlandırıp beklemeli, genel sonuç FAIL kalmalı ve quiescence/PASS makbuzu yazılmamalı. Önce bitmiş child, normal boru yolu ve timeout kolları ayrı kalmalı.
+
+İlgili dar açık: browser cleanup `browser.poll() is None` koşuluna bağlı (`:176`). Bun lideri hata ile çıktıktan sonra Next/Chromium alt süreçlerinin yaşamadığını tek başına bu PID'nin wait'i ispatlamaz. Normal Playwright teardown ayrı bir davranıştır. Root'un hata kabulünde lider erken çıkışı + sahip olunan grubun kalan çocuğu senaryosunu ölçmesi gerekir; şimdilik “bütün süreç ağacı temizlendi” denmemeli. Süreç adı/port taramasıyla ilgisiz süreç öldürmek çözüm değildir.
+
+## R3 — P2 kanıt kapsamı: `sourceUnchanged` çalışma kaynaklarının tamamını kapsamıyor
+
+`files/scripts/run_owned_e2e.py:26–39`, `:126–127`, `:205–215`.
+
+Kaynak haritasında `apps/web/components` hiç yok. Örneğin sınav kilidi, sohbet, source preview ve feedback bileşenleri bu ağacın altında; koşu sırasında bu dosyalardan biri değişse `sourceUnchanged` yine true olabilir. `apps/web/next.config.ts`, API/web bağımlılık lock dosyaları da seçili haritanın dışında. Adaptör `/private/tmp/.../files/scripts` içinden repo dışından çalıştırılırsa `source_hashes(repo)` çalıştırılan `__file__` veya kardeş `guard.__file__` yerine repo altındaki scripts ağacını hash'ler.
+
+Dar düzeltme: en az bütün web uygulama/bileşen/lib/config kaynaklarını ve gerçek çalıştırılan adaptör/guard dosyalarını manifest kapsamına al; root'un dondurduğu expected-source haritasına başlangıç eşitliğini de bağla veya root receipt'in bu eşitliği bağımsız doğruladığını açık kaydet. Before=after, yalnız seçilmiş dosyaların iki anda aynı olduğunu söyler; onaylı sürüm eşitliğini veya kötü niyetli arada-değiştir-geri-al durumunu kanıtlamaz. Runtime/lock hash'leri release kapsamı için ayrıca kaydedilebilir; bu rapor paket imzalama sistemi önermiyor.
+
+Kabul: disposable staging ağacında gerçek kullanılan bir component, Next config ve repo dışından çağrılan helper/guard değişince ilgili kaynak kapısı FAIL olmalı. Ürün dosyalarına test sırasında kontrollü mutasyon yapılacaksa yalnız root'un geçici kopyasında yapılıp ham başarısız kanıt korunmalı.
+
+## R4 — P2 koşullu işletme sınırı: Temiz parent env, web cwd'nin dotenv yüklemesini engellemiyor
+
+`files/scripts/run_owned_e2e.py:142–148,170–172`; `files/apps/web/playwright.config.ts:50–55`; repo `apps/web/lib/supabase.ts:5–9`.
+
+API tarafında özel boş cwd + açık environment iyi bir sınır. Web ise doğrudan `repo/apps/web` içinde Bun ve Next çalıştırır. Next'in kurulu `@next/env/dist/index.js` `loadEnvConfig()` yolu `.env.production.local`, `.env.local`, `.env.production`, `.env` dosyalarını okuyarak ortamda olmayan değerleri ekliyor. Adaptör `NEXT_PUBLIC_SUPABASE_URL` ve `NEXT_PUBLIC_SUPABASE_ANON_KEY` değerlerini açıkça boşlamıyor. Böyle bir dosya varsa mevcut uygulama iki dolu değerde gerçek Supabase auth client'ını etkinleştirir; “sentetik auth” etiketi bu durumda başlangıçtan garantili değildir. Bu çoğunlukla demo oturumu testlerini kırar; sırf bu ihtimalden audit sahte-PASS iddiası çıkarılmamalı.
+
+İnceleme anında yalnız **dosya adları** kontrol edildi: root altında `.env.example` var, `apps/web` altında `.env*` dosyası yok. Dolayısıyla burada güncel checkout'ta gözlenmiş bir yabancı bağlantı veya gerçek secret sızıntısı iddia edilmiyor. Ancak yeniden kullanılabilir adaptörün sözleşmesi eksik: Bun/Next ortam dosyası yüklemesi, parent'taki PG temizliğinden sonra ek PGSERVICE/PGOPTIONS gibi değişkenler de ortaya çıkarabilir; cleanup psql'a `process.env` veriyor (`apps/web/e2e/cleanup.ts:80–85`). Bu ikinci yolun gerçek yönlendirme etkisi root'un sentetik negatifinde ölçülmeli; mevcut guard'ın kendi PG scrub'ı web process'e uygulanmış sayılmaz.
+
+Dar seçenek: yalnız `.env` içermediği doğrulanmış özel checkout'ta koşmayı enforce et veya her runtime'ın dosya yüklemesini doğrulanmış mekanizmayla kapat; sentetik frontend için iki Supabase public değerini açıkça boş tut. Psql çalıştırıldığı anda yalnız pinlerden gelen PG alanları kalmalı. Sadece Bun dotenv kapatma bayrağı, Next'in kendi `loadEnvConfig()` davranışını otomatik kapatıyor diye varsayılmamalı. Devralınan NODE_OPTIONS da hook çalıştırabilen bir operatör girdisidir; ihtiyaç yoksa taşıma, taşınıyorsa “keyfi host konfigürasyonundan bağımsız” iddiasını dar tut.
+
+Kabul: yalnız yeni geçici fixture checkout'ta zararsız `.env` canary değerleri, Supabase uç noktası ve PG service yönlendirme girdisi; ya DB/browser başlamadan açık ret ya da gerçek child env/connection doğru pinlerde, dış istek0. Hiçbir canlı `.env` içeriğini loglama.
+
+## Normal akışta uygun bulunan bağlar
+
+- Parent'ın `bind(127.0.0.1, apiPort)` + `pass_fds` ile **aynı gerçek socket'i** geçirmesi, önceden var olan servisin readiness'i taklit etmesini normal akışta önler. Uvicorn tek direct child'dır; reload/workers wrapper'ı yok.
+- Parent wait edilen child, Python sunucusunun kendisidir. Normal timeout sonrası terminate/kill dönüşleri 0 diye normalize edilmiyor ve genel PASS bu stop türlerini kabul etmiyor.
+- API DSN'leri explicit numeric host/port/DB ve farklı `dou_app`/`dou_worker` rolleriyle aynı pinlerden kuruluyor; provider anahtarları boş, model fake, embedding hashing, local storage yeni özel çıktı altında. Root'un fresh local role/password provisioning'i hâlâ ön koşuldur.
+- Yeni webServer `reuseExistingServer:false`; `NEXT_PUBLIC_API_URL` build sürecine açık geçirilmiş. Mevcut bir web portunu kullanmak veya eski build'i seçmek fallback değil.
+- Guard begin fresh private directory yaratır; çağrı `--execute` sabit içerir. Begin ortamının beş alan kümesi doğrulanır; setup parent scope dizinini sentinel yazmadan önce doğrular. Bu stage global-setup ve guard, önceki muhasebe paketinin aynı byte hash'lerini koruyor.
+- Finish yalnız gözlenmiş API exit0 ve normal boru stop türünden sonra çağrılıyor; Playwright nonzero iken snapshot temiz olsa da üst PASS yok. Source haritası eşitliği ek şarttır. SQL guard tam audit satırlarının hash'lerini karşılaştırmaya devam ediyor.
+
+## Küçük entegrasyon notları / açık kabul
+
+1. Parent bugün begin/finish için yalnız subprocess exit code'a bakıyor. Donuk aynı guard kodunda `--execute` sabit olduğu için PLAN yolu çağrılmıyor; bu kaynakta kendiliğinden PLAN→PASS ispatı yok. Yine de final kabul makbuzunu root arşivlerken yeni `final-accounting.json` scope/status/hash'i ile gerçek exit'i birlikte bağlasın. Şema değişiminde sessiz boş başarıya karşı dar contract testi yararlı.
+2. `web_env` CI'ı koruyor, GITHUB_ACTIONS'ı korumuyor. Cleanup'ın eski `dou_synapse` istisnası her ikisini ister. Yeni CI provision aracı zaten run-scoped `...e2e...` DB adı üretirse bu sorun oluşmaz; eski CI adını aynen taşımak setup'ta reddedilir. CI provisioning henüz uygulanmış/çalışmış kabul değil.
+3. Playwright config'in ilk açıklaması hâlâ sunucuları testin başlatmadığını söylüyor; aşağıdaki gerçek webServer davranışıyla çelişir. Dar yorum düzeltmesi yeterli.
+4. Mevcut manifest ve bu okuma tam bir lifecycle veya muhasebe kabulü değildir. Root'un gerçek yeni DB/owned process koşusunda başarılı receipt cleanup, collector omission kalıntısı, baseline mutate/delete, yanlış pin/origin ve normal/hatalı kapanış negatifleri ayrı kanıtlanmalı. Başarısız ilk denemeler yeni başarılı sonuçla silinmemeli.
+
+İnceleme, öğrenci girdisinin keyfi Python/Node dosyası yazabildiğini varsaymaz. Ortam dosyası ve süreç kontrolü bulguları yerel operatör/CI çalışma sınırlarıdır; ürün yetkilendirme açığı veya production/legal sertifikası olarak sunulmaz.

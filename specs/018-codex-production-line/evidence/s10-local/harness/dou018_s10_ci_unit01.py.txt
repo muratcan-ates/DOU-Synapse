@@ -1,0 +1,11 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+out=Path('/private/tmp/dou018-evidence/s10-ci-provision-offline-01');out.mkdir(mode=0o700,exist_ok=False)
+helper=Path('/private/tmp/dou018-ci-owned-provision-candidate/files/scripts/provision_ci_e2e.py');h=hashlib.sha256(helper.read_bytes()).hexdigest();rows=[]
+for arm,test in [('original13',Path('/private/tmp/dou018-ci-owned-provision-candidate/files/scripts/test_provision_ci_e2e.py')),('review14',Path('/private/tmp/dou018-ci-provision-tests-followup/files/scripts/test_provision_ci_e2e.py'))]:
+ env={k:v for k,v in os.environ.items() if not k.startswith('PG')};env.update(PYTHONPATH=str(helper.parent),PYTHONDONTWRITEBYTECODE='1')
+ start=time.monotonic();log=out/(arm+'.log')
+ with log.open('x') as f:r=subprocess.run(['/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python',str(test)],env=env,stdout=f,stderr=subprocess.STDOUT,timeout=60)
+ rows.append({'arm':arm,'exit_code':r.returncode,'seconds':round(time.monotonic()-start,3),'test_sha256':hashlib.sha256(test.read_bytes()).hexdigest(),'helper_sha256':h,'log_sha256':hashlib.sha256(log.read_bytes()).hexdigest()})
+assert hashlib.sha256(helper.read_bytes()).hexdigest()==h
+(out/'result.json').write_text(json.dumps({'scope':'offline Docker/PG transport doubles; no actual container or PG acceptance','results':rows},indent=2)+'\n');print(json.dumps(rows));raise SystemExit(int(any(r['exit_code'] for r in rows)))

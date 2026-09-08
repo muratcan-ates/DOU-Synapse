@@ -1,0 +1,155 @@
+{
+  "status": "PASS",
+  "package_manifest_sha256": "99719ea5e46420093190b86f0e7e155968a0e5e3476d0bd8d0ca1054d8529ec5",
+  "target": {
+    "databaseOid": "1878520",
+    "cluster": "7683042491268153327"
+  },
+  "protected_audit_id": "9b395d62-87b4-4fa1-870f-fea5b5fd4255",
+  "phases": {
+    "interleaved": {
+      "status": "PASS",
+      "driver": "controlled-real-API-Bun-exercise",
+      "mode": "interleaved",
+      "experiment": {
+        "status": "PASS",
+        "observedRequestCount": 4,
+        "capturedRows": {
+          "A": {
+            "e6f77f85-1570-4c7b-b14c-bcb6f7eb501f": "04193da190156948d0225797b5c9ff7b2e7add4f1540536d7f6d5551ed52eab2",
+            "280a358c-ca72-433e-943f-812371aed489": "b69aaa4eff1aeab2f5102cfce3cecd15de818e4e73ca7a40454aa23238ad4422"
+          },
+          "B": {
+            "c59ad075-7a0b-4242-8b5e-118139e52d70": "92cf3a67f9e1e66127929cd19cf73b8bfd35397ffa7ca03d87549de5e642cabc",
+            "c00a73d4-f68a-41e7-9820-0429f55ea977": "8e0418c7865e6da596cb3ab58c234a532b8dce3d1b491152960643bb085a607e"
+          }
+        },
+        "protectedRows": {
+          "9b395d62-87b4-4fa1-870f-fea5b5fd4255": "2073b3ca3b84c5cedd4973df9ccc56652164e5049111364f96e2839b2735dae8"
+        },
+        "incompleteRejectedRowsUnchanged": true,
+        "wrongScopeRejectedRowsUnchanged": true,
+        "interleaving": [
+          "A1",
+          "B1",
+          "A2",
+          "B2"
+        ]
+      },
+      "ownedApiPid": 1541,
+      "ownedApiExitCode": 0,
+      "stopObservation": "graceful-pipe-and-wait",
+      "driverExitCode": 0,
+      "guardOutcomes": {
+        "A": {
+          "exitCode": 0,
+          "status": "PASS",
+          "accountingSha256": "d120ca7d35cfc49f0b1da4f3d90615e942196f8c01a658c967b601745f61de39"
+        },
+        "B": {
+          "exitCode": 0,
+          "status": "PASS",
+          "accountingSha256": "21caa155d8fa2d8cf3fe3aeb64e4d67ad2ded7eeca878ade643a4a2edcb5b40a"
+        }
+      }
+    },
+    "omitted": {
+      "status": "PASS",
+      "driver": "controlled-real-API-Bun-exercise",
+      "mode": "omitted",
+      "experiment": {
+        "omittedRows": {
+          "17d910dc-8640-414b-85e5-790215f2c99a": "096e2e0f839db75ab5a2a1ddb7a4774484ccc8388996de2f89afce9bd543b498"
+        },
+        "HTTPStatus": 200,
+        "captureReceiptCount": 0,
+        "requestId": "ec099caccb7c4c1d846a3ac1ec3c3fe9",
+        "bodySha256": "5f3037a7eea36956a5ab4539528eee43503b0cb259e4085ca8f3ceca4fad8c42"
+      },
+      "ownedApiPid": 1582,
+      "ownedApiExitCode": 0,
+      "stopObservation": "graceful-pipe-and-wait",
+      "driverExitCode": 0,
+      "guardOutcomes": {
+        "O": {
+          "exitCode": 1,
+          "status": "FAIL",
+          "accountingSha256": "0a8ebe8a71259f06b33c0470382c158422dfa57505a2e2ca5073779fd7c3fef7"
+        }
+      }
+    }
+  },
+  "scope": "actual local PG/API + original collector/cleanup; no Playwright, provider, hosting or legal-compliance claim",
+  "automatic_omitted_row_delete": false,
+  "sourceUnchanged": true,
+  "filesSha256": {
+    "initial-protected.json": "36e10d0b3f0ce25b2630b9035c23a5eb664e04790bcc6a189bfe12593e4e7ba3",
+    "interleaved/00-before-requests.json": "36e10d0b3f0ce25b2630b9035c23a5eb664e04790bcc6a189bfe12593e4e7ba3",
+    "interleaved/01-after-A1.json": "c12be70774905a7741ef5c4b637b22a1c49cce0d5542b96c419efd67b4ddd80b",
+    "interleaved/02-after-B1.json": "098ce44c7d93f3c77c119eb649c957f9c60a1d55f7de64b5ffd3e176451cf84c",
+    "interleaved/03-after-A2.json": "858f7ad9feab6a15a94d4252c4e87da2a4045d1e2c99a28e8ea6d26fee4ff9a2",
+    "interleaved/04-after-B2.json": "2eaa085552f1bc146bf4705780111a26427bd103620f27480ba2ff46b8bce31d",
+    "interleaved/05-after-incomplete.json": "2eaa085552f1bc146bf4705780111a26427bd103620f27480ba2ff46b8bce31d",
+    "interleaved/06-after-wrongscope.json": "2eaa085552f1bc146bf4705780111a26427bd103620f27480ba2ff46b8bce31d",
+    "interleaved/after-cleanA.json": "4e6842b4e607bc48cc035a3f295c911ee8b765f63e9294874ed5b561bbd11b30",
+    "interleaved/after-cleanB.json": "36e10d0b3f0ce25b2630b9035c23a5eb664e04790bcc6a189bfe12593e4e7ba3",
+    "interleaved/api.log": "996884aa15e30e93399cc338b525404a8a746787d007c64772e2a85e399b99ee",
+    "interleaved/audit-A/baseline.json": "1a425887fbf8f122955e9475d0a078cb8a56a1b5702bfd7856ee3e82e21400a4",
+    "interleaved/audit-A/capture/receipts/1545-215ab3b6-fc3d-4e02-9a8c-bb85eeacd5d4.json": "e3cb1e0c0463d74a8c8a7198521825769e47ab93ab7abcad635670df4cd95ee3",
+    "interleaved/audit-A/capture/receipts/1545-64ccfcb7-061c-4ce9-9242-371e062b342f.json": "192e10f94f7255d1c6db3722f125a233a482c76d765990f639e2402785176f32",
+    "interleaved/audit-A/capture/scope.json": "7523f53a3af2e22c4d46af590beea9c106ab01c6c8c59c8bd61724d1cf6cb094",
+    "interleaved/audit-A/capture/sessions/eb00659e-c366-4a20-a798-aca8dd9a9d24.json": "79090167129a91dac6a3363514658b06ae0d3c83f26172fea2a42474b991d6b3",
+    "interleaved/audit-A/environment.json": "7a84b25c7016aade1ab1ea4c39deb83780b7bc7f313c196de752deafa1b6be37",
+    "interleaved/audit-A/final-accounting.json": "d120ca7d35cfc49f0b1da4f3d90615e942196f8c01a658c967b601745f61de39",
+    "interleaved/audit-A/target.json": "6e30804213317b513542f57db34bfe2a40d8790c1587ce1bda0dc4bec9465ad9",
+    "interleaved/audit-A-begin.log": "eeeecb920d0e30219c1cc7aae3c9a413e8a041a9e688830075210a6421b1342c",
+    "interleaved/audit-A-finish.log": "e1c5793aec10a01cd9ead0a839fced0e6c228ab8d66cff21b420988c703c8ca4",
+    "interleaved/audit-B/baseline.json": "973f4b2289724acb25631a32e592fc712b1cfdc957e27ad3d97f4ee3106dfcc3",
+    "interleaved/audit-B/capture/receipts/1545-69c25473-1515-4d84-bdc5-b97f7b8a4852.json": "9d4c44a4c23e7035d7c908adb50ef0453c5638c9a93d7f3041e20b4fc600b156",
+    "interleaved/audit-B/capture/receipts/1545-f1d0c77d-566d-4a27-ac5b-895da40165e8.json": "72a342789f36802eb6fa8dceb7660807d09fd61ad699ebf515dd98feb42270c4",
+    "interleaved/audit-B/capture/scope.json": "0df4d94a70a07acd80266a817ed232afcc263d2cf1ef9e6240b696fa3c9124e8",
+    "interleaved/audit-B/capture/sessions/34f67790-299d-4b01-a381-a54d6bf55053.json": "79090167129a91dac6a3363514658b06ae0d3c83f26172fea2a42474b991d6b3",
+    "interleaved/audit-B/environment.json": "fbe0f665bdd6adedefb4f57485f97f5931c2dea87506725a15089cfed009e472",
+    "interleaved/audit-B/final-accounting.json": "21caa155d8fa2d8cf3fe3aeb64e4d67ad2ded7eeca878ade643a4a2edcb5b40a",
+    "interleaved/audit-B/target.json": "6e30804213317b513542f57db34bfe2a40d8790c1587ce1bda0dc4bec9465ad9",
+    "interleaved/audit-B-begin.log": "eeeecb920d0e30219c1cc7aae3c9a413e8a041a9e688830075210a6421b1342c",
+    "interleaved/audit-B-finish.log": "e1c5793aec10a01cd9ead0a839fced0e6c228ab8d66cff21b420988c703c8ca4",
+    "interleaved/bun-result.json": "80f4aab984caa707262085a85ca748af63d13eec6c40d864ed425d3a2ea2f279",
+    "interleaved/bun.stderr.txt": "c8650c81f5c68f28155114bc7eec8456287cbcffdb162dc3a3e9e6694b43d5e4",
+    "interleaved/control.jsonl": "6a155fba702578950796ca864bc54f56f3347a17fce64af64db02e719f1cbc0d",
+    "interleaved/exercise-config.json": "5fd1c27e33186173a0d6d88cf6dd829a475caa75561ea0c30cbf8af7b2436221",
+    "interleaved/own-process-stop.json": "de89ef2f143287dbb5129c8849079b0edb0d1b2ae9f93bc22da69bc72c8411c9",
+    "interleaved/phase-result.json": "f05ef064ad70ecbb5738894a4154617c5bb512b67b7edee040470b3ba1a4c979",
+    "interleaved/quiescence-A.json": "96ebcd54807b76091640881387e9f22d24f2302e1d4984e7263085a73a8ecb00",
+    "interleaved/quiescence-B.json": "24f846ee6c3fd82ae6979234d9849423bb47ba78ddfa65098138cbd3ed26333d",
+    "interleaved/work/exercise.ts": "390b25e61ed8af41041a36a5a98cc4d0ec4a63f603b557abf9811e097ad72bc5",
+    "interleaved/work/support/audit-receipts.ts": "97f719992f59f0641a89a2504b21b5729eeef23cdb8246f3fa8fab6bdd54325e",
+    "interleaved/work/support/cleanup.ts": "f68d51737e3f478b716f8d7419d1f290e62d5fb22dc03ade360c65c26c290577",
+    "interleaved/work/support/fixtures.ts": "cf214e87328a9dd3dac85257731b81b2daeae50c68295d6a76a607000b44a79b",
+    "omitted/00-before-omitted.json": "36e10d0b3f0ce25b2630b9035c23a5eb664e04790bcc6a189bfe12593e4e7ba3",
+    "omitted/01-after-omitted-empty-cleanup.json": "5099620db1ba223c0b4c35b0225226d075045115496b696d21b18393f8ac2781",
+    "omitted/api.log": "e3f03bf15050b5c7c2bda3ae687766a3105a09da496c2291d3a70f595a2002a7",
+    "omitted/audit-O/baseline.json": "7456fe8a1f8093b2dafac2d7c7f19f2be66565462b78a36fab58f36670796d90",
+    "omitted/audit-O/capture/scope.json": "4c84e4e456416566b8910c2a8dc5909c3ae0e75052ce2e8572c751de1adf366e",
+    "omitted/audit-O/capture/sessions/a236a8ab-1e47-43c5-a581-ea38ae41484a.json": "79090167129a91dac6a3363514658b06ae0d3c83f26172fea2a42474b991d6b3",
+    "omitted/audit-O/environment.json": "3d565d436303a5e477d6d8f6418fb81cc9afddd6e843f2e2b4b3d34c5ef5457e",
+    "omitted/audit-O/final-accounting.json": "0a8ebe8a71259f06b33c0470382c158422dfa57505a2e2ca5073779fd7c3fef7",
+    "omitted/audit-O/target.json": "6e30804213317b513542f57db34bfe2a40d8790c1587ce1bda0dc4bec9465ad9",
+    "omitted/audit-O-begin.log": "eeeecb920d0e30219c1cc7aae3c9a413e8a041a9e688830075210a6421b1342c",
+    "omitted/audit-O-finish.log": "f0c31d5e1d3f29e3d40e2f5be455ba177b362c2395cc80653748181e86ee59f3",
+    "omitted/bun-result.json": "d00e2e0f2bc02fc2fceea74385438f7b94747286df401c89ce357f97d0657079",
+    "omitted/bun.stderr.txt": "df77d086f3c5e1032edad1b8d9892ddd86d5ba06ecf2f0015815f7a24f67458f",
+    "omitted/control.jsonl": "25610b6f6a31d09ea81dee28ba4867a3aeeef9e2af1394b35bbd36ff684109c4",
+    "omitted/exercise-config.json": "eb740cf331bb4be935966ca9c7e382f7b767acdcd5c99f1cd3e038b3d3523dbb",
+    "omitted/own-process-stop.json": "024f2bfa01e01ade1810b04a501771fbc2aa870ff31eb816b976ad28e06715d0",
+    "omitted/phase-result.json": "83233ae1bfef64fc8e822b80293fdb4f55d6619d51308ae92597e22a2f76f8d8",
+    "omitted/quiescence-O.json": "eb1bc54a60a2c68dffefea96aac5274d985c4d3c7200fa26c37c40d6c97727c1",
+    "omitted/retained-after-guard.json": "5099620db1ba223c0b4c35b0225226d075045115496b696d21b18393f8ac2781",
+    "omitted/work/exercise.ts": "390b25e61ed8af41041a36a5a98cc4d0ec4a63f603b557abf9811e097ad72bc5",
+    "omitted/work/support/audit-receipts.ts": "97f719992f59f0641a89a2504b21b5729eeef23cdb8246f3fa8fab6bdd54325e",
+    "omitted/work/support/cleanup.ts": "f68d51737e3f478b716f8d7419d1f290e62d5fb22dc03ade360c65c26c290577",
+    "omitted/work/support/fixtures.ts": "cf214e87328a9dd3dac85257731b81b2daeae50c68295d6a76a607000b44a79b",
+    "source-after.json": "3e346d0acdae23256045ad36c16a1cf572051e65a73cbb5ade2a7d1a2e3b3784",
+    "source-before.json": "3e346d0acdae23256045ad36c16a1cf572051e65a73cbb5ade2a7d1a2e3b3784"
+  }
+}

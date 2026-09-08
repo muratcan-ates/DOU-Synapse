@@ -190,7 +190,7 @@ async def test_generic_500_response_survives_owned_logging_failure(
     mode: str, broken_fallback: bool
 ) -> None:
     request = Request({"type": "http", "method": "GET", "path": "/synthetic", "headers": []})
-    request.state.request_id = SUPPORT_ID
+    support_id = errors.request_id_of(request)
     stdout = OutputSink(mode)
     stderr = FailingFallback() if broken_fallback else io.StringIO()
     formatter: logging.Formatter | None = None
@@ -208,7 +208,7 @@ async def test_generic_500_response_survives_owned_logging_failure(
         "error": {
             "code": "internal_error",
             "message": "İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
-            "request_id": SUPPORT_ID,
+            "request_id": support_id,
         }
     }
     assert_private_absent(stdout.getvalue(), response.body.decode())

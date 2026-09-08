@@ -1,0 +1,131 @@
+# S10 ürün kanıt envanteri
+
+Salt okunur kesim: 2026-09-08T19:17:58.712686+00:00. İnceleme sırasında test, DB, ağ, model veya sunucu çalıştırılmadı; kaynak ve özgün kanıt değiştirilmedi. 24 özgün sonuç dosyasının başta/sonda hash karşılaştırması: **aynı**. Sayılar aynı test türünün toplamıdır; farklı deneylerin PASS sayıları tek başarı puanına toplanmadı.
+
+## Ölçülmüş durum
+
+| Grup | Gerçek sonuç | Kanıtın sınırı |
+| --- | --- | --- |
+| Tam API | **1688 PASS + 38 alt test**, pytest 103.17 sn, root 113.427 sn; kaynak sabit, kendi DB’si düşürülmüş | Yerel kirli ağaç; `deb83e1` üstündeki byte kaynaklarına bağlı, bu durumun hosted CI kaydı değil |
+| Birleşik offline | **134 PASS**, 2.27 sn, DB/ağ girişimi 0 | Saf/test double kapsamı |
+| Web | Hedefli **573 PASS**, TypeScript exit0 | İlk geniş keşifteki 16 Playwright/runner hatası ve önceki tip hataları ayrıca korunur |
+| HTTP süreç | **4 süreç / 56 gerçek HTTP**, h11 + httptools, 5.760984 sn, tüm protokol eşleşmeleri PASS | Gerçek uygulama + sentetik hata rotası; DB/audit/embedding/LLM girişimleri 0. Audit satırı kanıtı bu deneyde yok |
+| Review-fix negatif | Python eski 6 assertion FAIL → aday 6 PASS; web eski 6 FAIL/11 PASS → aday 17 PASS | Eski kol, iki dar inceleme düzeltmesinden önceki S10’dur; ilk istemci-ID ürün baseline’ı değildir. Fetch mock, gerçek ağ yok |
+| E2E01 | **71 PASS**, 99.477 sn; API gerçek graceful pipe + wait exit0, source maps eşit | Controller **d0db75**, guard **68196f**. Bu koşu sonraki **ba511** controller’a devredilemez |
+| Yaşam döngüsü03 | **6 gerçek süreç kolu PASS**; aday normal0 / startup3 / shutdown1; aday Fatal Python yok | Controller **ba511**, guard **eae662**, Uvicorn 0.52.4; özel minimal ASGI fixture, ürün uygulaması/DB/browser değil |
+| Gerçek audit DB | A1→B1→A2→B2 dört istek; iki koşu ayrı temizlenmiş, korunan satır hash’i değişmemiş | Ayrı gerçek API/Bun/PG deneyidir; Playwright yok. Eksik makbuz negatifinde guard exit1/FAIL beklenir |
+| CI provisioning | Özgün13 + güçlendirilmiş14 mock test PASS; tekrar-kimlik kontrolü kaldırılınca iki assertion FAIL | **Gerçek Docker veya hosted CI değildir** |
+| Son statik kayıt01 | API lint/format, CI14 ve owned11 PASS; **scripts lint/format exit1** | Sonraki ayrı yeşil kayıt görülmeden tüm statik kapılar geçti denemez |
+
+Kesim anında `s10-e2e-owned-02/result.json` **yoktu**. Final E2E02, son statik düzeltme ve S10 exact-commit hosted sonuçları açık tutulmalıdır. Yerel tarayıcı koşusu sentetik dev auth, fake model ve hashing embedding kullanır. Gerçek kullanıcı auth’ı, gerçek model kalitesi, üretim/bulut veya hukuki uygunluk sonucuna genişletilemez.
+
+## Kaynak sürümü ayrımı
+
+- E2E01 controller: `d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a`.
+- Lifecycle02/03 controller: `ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7`; kod ikisinde aynıdır.
+- Lifecycle03 probe: `3560bce07c36a79cb5c4e3e7c83344fc6d5aa1bdd0f3ed96a74dfb9b2fcba5e8`.
+- Dört ürün modülünün tam API, iki aday HTTP parser kolu ve E2E01 hash’leri aynıdır; ayrıntılar JSON’daki `four_product_source_bindings` alanında. Controller/test/CI değişiklikleri ürün modülüyle karıştırılmadı.
+- `s10-style-01` import/nonimport AST eşitliği; `s10-web-types-01` aynı üretilen JS; `s10-controller-style-01` import/nonimport AST eşitliği taşıyor. Bu makbuzlar byte değişikliğini gizlemez; ölçümden güncel kaynağa bağın gerekçesidir.
+
+## Korunacak başarısız kayıtlar ve düzeltilmiş ölçütler
+
+- **negative-01 — FAIL:** MISSING_OR_LARGE_RECEIPT: Bun 1.3.14 did not write process-exit listener observation after expected test failures. Python negative/positive completed; web candidate was not reached. V2 uses bun:test afterAll; same 17 JUnit cases and exact failure assertions retained. Not a proven new product leak or a passed full four-arm comparison.
+- **lifecycle-01 — PASS in original oracle; insufficient clean-startup acceptance:** Startup baseline and d0 candidate both exited -6 and emitted Fatal Python from buffered daemon stdin reader. Broad nonzero check was too weak. Baseline shutdown false-success 0 versus d0 shutdown 1 remains a separate valid observation. Do not relabel this original receipt FAIL on disk, or claim all clean lifecycle behavior passed.
+- **lifecycle-02 — FAIL:** Candidate ba511 fixed buffered-reader shutdown and exited 3 without Fatal Python; test assumed exact 1. Installed Uvicorn 0.52.4 defines STARTUP_FAILURE=3. V3 changed that single expected exit to 3 and actual child-start accounting, with same ba511 runtime. No product code change between lifecycle02 and lifecycle03; do not count oracle correction as a second product fix.
+- **s10-web-checks-01 — bun exit1 / tsc exit2:** Broad Bun discovery collected 16 Playwright files under unit runner (573 pass +16 fail). TSC also found ProcessEnv and mock fetch typing mismatches. Targeted lib suite02 is 573 pass; type-only changes have identical emitted JS receipts. Do not call the 16 runner-discovery failures browser product failures; keep genuine type diagnostics and corrected source bindings.
+- **s10-checks-01 — ruff exit1:** Two I001 import ordering failures; import bindings and nonimport AST equality preserved in s10-style-01. Final API Ruff later passed. Initial static checks were not all green.
+- **s10-ci-order-mutant-01 — exit1; 2 assertion failures:** Expected negative control removing only repeated per-source identity checks; original14 correct helper passes. This mock transport regression check is not a real Docker/PG target-route test.
+- **s10-ci-yaml-preflight-01 — Unapplied bad generated candidate retained:** Generator matched nested service env instead of job env; PostgreSQL service configuration restored from original. repository_changed=false in receipt. No CI event was executed by this YAML check.
+- **s10-stop-contracts-01 — baseline exit1; 1 failure +2 errors / candidate 8 pass:** Expected synthetic Popen negative demonstrates old write/flush/unreapable fallback failure; 2 errors must stay distinguished from 1 assertion failure. Does not prove OS process cleanup by itself.
+- **s10-final-static-01 — scripts Ruff and format exit1 at recorded snapshot:** API Ruff/format, 14 CI contracts and 11 owned-lifecycle tests passed; script static checks failed and must remain pending until a separate successful bound receipt. Do not infer all final static gates are green from the API-only results.
+- **actual-db-accounting/omitted — phase PASS with guard FAIL/exit1:** Intentional receipt omission leaves one extra audit row (before1/after2), guard detects it, deleteExecuted=false. Other protected row unchanged. Do not erase the negative guard receipt or call it a product acceptance failure.
+
+## Audit ve hedef kanıtının minimum kapsamı
+
+E2E01 ve A/B son muhasebede before1/after1; eski satır eksik/değişmiş0, beklenmeyen yeni satır0. Eksik makbuz kolunda before1/after2, beklenmeyen yeni satır1; guard `deleteExecuted=false` ve özgün ek satır tutulmuş. Guard’ın satır silmemesi, test collector/cleanup’ın kendi yetkili satırlarını temizlemesiyle ayrı davranışlardır. Sadece sayaç değil, özgün tam-satır digest haritaları, ara A/B snapshot’ları ve gerçek süreç kapanış makbuzları birlikte korunmalıdır.
+
+Root provision kaydı hedefin önceden bulunmadığını ve oluşturmayı kendisinin tamamladığını gösteriyor; 22 göç ve seed bağları mevcut, rol parolası değişimi yok. Bu provision makbuzunda E2E DB’nin düşürüldüğü sonucu bulunmuyor; API-test DB’nin temizlenmesini buna taşımamak gerekir. Pins dosyası tek başına sahiplik kanıtı değildir.
+
+## Asgari bağımsız arşiv grupları
+
+### A — Product identity + exact negative sensitivity
+
+- S10 original and review-fixed candidate manifests/source diff
+- negative-result-01 result and completed arm observations/verdicts
+- negative-result-02 result, all four process/observation/verdict/JUnit files
+- matching v1/v2 negative harness source and manifest
+
+Separates client-controlled ID behavior from the later tuple/pending fixes; preserves the failed observation harness.
+
+### B — Real protocol process observations
+
+- s10-process-01 whitelisted result projection
+- four arm source/runtime bindings + lifecycle/counter receipts
+- response/wire/log artifact hashes
+- frozen process harness manifest and independent review
+
+56 actual HTTP requests across 4 processes and two parsers; private raw captures remain separately controlled. No DB/audit/model claim.
+
+### C — Controller lifecycle and cleanup fault controls
+
+- all three lifecycle measured result/source-before + 6 observation files per run
+- candidate/baseline fixture and controller/guard/probe hashes
+- v1-v3 harness manifests and Uvicorn STARTUP_FAILURE source binding
+- s10-stop-contracts-01 result + baseline/candidate logs or reviewed summary
+
+Retains original oracle hole, assumed-exit error and actual final ba511 process proof. Does not reuse E2E01 as evidence for ba511.
+
+### D — Actual audit isolation/accounting + trusted target
+
+- root owned-create/provision receipt projection and private pins hash provenance
+- db-audit result/source-before/source-after
+- interleaved four request phase snapshots + after-cleanA/B full-row hash snapshots
+- A/B baseline/final accounting + original collector receipt hashes + real own-process-stop/quiescence
+- omitted before/retained/final accounting negative receipt
+
+Independent real PG/API exercise proves scoped cleanup and missing-receipt rejection; preserve full-row digest equality, not just row counts.
+
+### E — Full browser integration and lifecycle version
+
+- E2E01 result + actual 71-case log
+- E2E01 source-before/after, trusted target/baseline and final accounting
+- E2E01 real process quiescence/stop receipt
+- E2E02 separate new bound result/71-case log/source maps/accounting once available
+
+Current E2E01 is d0 and passes; final ba511 full browser evidence is still absent at cutoff.
+
+### F — Local regression/static and semantic-equivalence lineage
+
+- full-api result + log and source map
+- combined-offline134 result + log
+- web-checks01/02 and type/transpile-equivalence receipts
+- API/style and controller-style before/after + AST/import equality receipts
+- final-static result with failed script checks retained and later replacement receipt if measured
+
+Avoids attaching earlier results to changed byte sources without stated equivalence; dirty local evidence is not hosted CI.
+
+### G — CI provisioning mock coverage and generation preflight
+
+- original13 and review14 contract results/logs + immutable helper/test hashes
+- repeated-identity mutant result/log and diff
+- YAML preflight original failure/corrected hashes
+- final CI YAML/helper review and frozen source binding
+
+Mock Docker/PG, not actual Docker, cloud deployment or GitHub-hosted checks. Hosted acceptance must be a later exact-commit record.
+
+## Hassas olabilecek dosyalar
+
+Dosya türü sınıflandırmasıdır; bu inceleme gerçek sır tespiti veya tüm ham dosyaların yayın onayı değildir. Özgünler değiştirilmemeli; gerekirse yayınlanacak türev, özgünün hash’ine bağlanan açık bir whitelist projeksiyonu olmalıdır.
+
+- **credentials** (*.pgpass, *passfile*, .env*): May contain reusable DB/app credentials; never bulk-copy or print. These measured empty.pgpass files are classified by size only. Exclude raw credential inputs; document empty-file size/hash only if separately approved and truly necessary.
+- **raw_http_and_config** (wire/*.json, responses.json, configured.json, exercise-config.json, result.json containing responses/configuration): May embed response headers, bodies, supplied IDs, auth or connection configuration. JSON extension does not make it content-free. Use explicit safe field projection and original artifact hashes; retain originals privately. Synthetic canary alone is not a general secret scan.
+- **logs_and_test_reports** (*.log, stdout.txt, stderr.txt, *.xml, observations.json): Can hold exception messages, embedded source/assertion values, connection URLs, auth/token or request/user/content canaries; baseline negatives deliberately retain leaking behavior. Review/redact a derivative without mutating the original; keep measured exit counts distinct from leak counts.
+- **target_and_audit_metadata** (pins.json, target.json, environment.json, baseline.json, final-accounting.json, capture/receipts/*.json, quiescence.json, owned-create.json): Contains target identity, pseudonymous actor/request IDs, timestamps, PIDs and full-row digests; some environments may include connection inputs. Pseudonymous data is not anonymous. Safe counts/booleans/source hashes in public summary; original identity receipts remain restricted with hash provenance.
+- **user_content_or_ui_capture** (storage/**/*, *.pdf, screenshots, trace*.zip, *.png): Uploaded content or rendered student/teacher data may be present. This scope contains generated storage fixtures; no claim that arbitrary future files are synthetic. Exclude storage/cache/raw UI artifacts unless individually necessary and reviewed.
+- **cache_and_copied_runtime** (mypy-cache/**, __pycache__/**, work/**, .pytest_cache/**): Caches and copied execution trees add bulk and may duplicate private paths or fixture material. Exclude generated caches; archive only exact required source/harness subset under source hashes.
+
+Özellikle `s10-process-01/result.json` ham HTTP body/header alanlarını içerir; yalnız `.json` uzantısı taşıması içeriksiz olduğu anlamına gelmez. `pins`, audit makbuzları, request/user ID’leri ve zamanlar takma adlı operasyonel kişisel veri olabilir. Bunları “anonim” diye nitelemeyin. Parola dosyalarının içeriği okunup bu rapora taşınmadı; dosya sayısı ve boş/nonempty boyut ayrımı JSON’da bulunur. Ham negatif loglarında sentetik canary’nin görünmesi, aynı dosya türünde gelecekte gerçek sır bulunamayacağını ispatlamaz.
+
+## Bütünlük ve kullanım
+
+JSON her ölçümün özgün `result.json` hash’ini, seçili makbuz/JUnit/snapshot referanslarını, içeriksiz sonuç projeksiyonunu ve dosya türü envanterini taşır. Özgün sonuçlardaki PASS/FAIL alanları değiştirilmedi. Hassas ham log/HTTP/credential/target dosyalarını recursive arşive doğrudan eklemek yerine yukarıdaki gruplardaki gerekli kanıtlar seçilmelidir. Caches ve gereksiz kopyalanmış runtime ağaçları minimum arşive dahil değildir.

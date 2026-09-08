@@ -1,0 +1,2902 @@
+{
+  "schema": "dou018-s10-evidence-inventory-v1",
+  "generated_at_utc": "2026-09-08T19:17:58.712686+00:00",
+  "read_only_review": true,
+  "repo": "/Users/muratates/code/dou-synapse-018-codex-production-line",
+  "executed_during_review": {
+    "tests": 0,
+    "database": 0,
+    "network": 0,
+    "model": 0,
+    "server": 0
+  },
+  "original_result_hashes_unchanged_during_review": true,
+  "cutoff": {
+    "final_e2e02_result_exists": false,
+    "final_e2e02_not_yet_inspected": true,
+    "hosted_ci_for_s10_measured_here": false,
+    "actual_docker_provision_measured_here": false
+  },
+  "four_product_source_bindings": {
+    "apps/api/app/core/errors.py": {
+      "full_api": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a",
+      "e2e01": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a",
+      "current_read_only_sha256": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a",
+      "process_candidate": {
+        "h11": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a",
+        "httptools": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a"
+      }
+    },
+    "apps/api/app/core/logging.py": {
+      "full_api": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+      "e2e01": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+      "current_read_only_sha256": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+      "process_candidate": {
+        "h11": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+        "httptools": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610"
+      }
+    },
+    "apps/api/app/core/request_context.py": {
+      "full_api": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+      "e2e01": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+      "current_read_only_sha256": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+      "process_candidate": {
+        "h11": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+        "httptools": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858"
+      }
+    },
+    "apps/api/app/main.py": {
+      "full_api": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0",
+      "e2e01": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0",
+      "current_read_only_sha256": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0",
+      "process_candidate": {
+        "h11": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0",
+        "httptools": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0"
+      }
+    }
+  },
+  "evidence_groups": [
+    {
+      "id": "negative-01",
+      "result": {
+        "path": "/private/tmp/dou018-s10-negative-result-01/result.json",
+        "sha256": "a8a23e7ff5a8b9148a89166e89ab126224c4d01831a48f558af7a7812f3dab7c",
+        "bytes": 9259,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "FAIL",
+        "scope": "exact final tests; primary S10 baseline vs review-fixed source; no real HTTP/DB/E2E claim",
+        "package_manifest_sha256": "40846b71138bd79ab593b4af88d8245ccd57757a1e875a3acc4c1951ca2ac1e7",
+        "runtime_sha256": {
+          "python": "1ce7aea77992ab97bb6225339a1d72a79925d5641e461cdfc2584916119a7edb",
+          "bun": "e0c90ec15d33363e6b70713d56bc3b2c7585c17f40a0fe0f8fd9305901d4e233"
+        },
+        "harness_failure_type": "RuntimeError",
+        "harness_failure_code": "MISSING_OR_LARGE_RECEIPT"
+      },
+      "arms": [
+        {
+          "arm": "python-baseline",
+          "process": {
+            "exit_code": 1
+          },
+          "verdict": {
+            "status": "PASS",
+            "checks": {
+              "no_setup_or_collection_failure": true,
+              "exact_six_parameters": true,
+              "one_normal_module_and_class_identity": true,
+              "six_real_calls": true,
+              "setup_teardown_all_pass": true,
+              "expected_call_outcomes": true,
+              "exit_code_matches": true,
+              "no_db_network_process_attempt": true,
+              "only_exact_tuple_leak_assertion": true,
+              "executed_sources_unchanged": true
+            },
+            "test_calls": 6
+          },
+          "phase_counts": {
+            "setup:passed": 6,
+            "call:failed": 6,
+            "teardown:passed": 6
+          },
+          "transport_guards": {
+            "network_attempts": 0,
+            "database_import_attempts": 0,
+            "process_attempts": 0
+          },
+          "artifacts": [
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/python-baseline/process.json",
+              "sha256": "13feab9af50d81c0f95c96e64f96f154631a2325033ee5b440d09d15993fb6bf",
+              "bytes": 750,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/python-baseline/observations.json",
+              "sha256": "62bdbb20c8a12fdb8ba0e63e93bf5b16b9f4e960ce7e6b849f7af82505277225",
+              "bytes": 9334,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/python-baseline/verdict.json",
+              "sha256": "e3ea079efe4fc6dba14dadd6c5a694617940f13c263098599aa5f0c5a26bc59d",
+              "bytes": 541,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            }
+          ]
+        },
+        {
+          "arm": "python-candidate",
+          "process": {
+            "exit_code": 0
+          },
+          "verdict": {
+            "status": "PASS",
+            "checks": {
+              "no_setup_or_collection_failure": true,
+              "exact_six_parameters": true,
+              "one_normal_module_and_class_identity": true,
+              "six_real_calls": true,
+              "setup_teardown_all_pass": true,
+              "expected_call_outcomes": true,
+              "exit_code_matches": true,
+              "no_db_network_process_attempt": true,
+              "executed_sources_unchanged": true
+            },
+            "test_calls": 6
+          },
+          "phase_counts": {
+            "setup:passed": 6,
+            "call:passed": 6,
+            "teardown:passed": 6
+          },
+          "transport_guards": {
+            "network_attempts": 0,
+            "database_import_attempts": 0,
+            "process_attempts": 0
+          },
+          "artifacts": [
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/python-candidate/process.json",
+              "sha256": "ccfdccbc070f366c9528434401d30b2b60aec06e8256541ffc10d92cac7679c5",
+              "bytes": 750,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/python-candidate/observations.json",
+              "sha256": "1ac829b0a31061215909291f83587a186d76b8c43669f5df8d26b301e550d543",
+              "bytes": 8713,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/python-candidate/verdict.json",
+              "sha256": "de3ea19c556b64a4ce2da62b2351783f27018f9e3b85c6ef0ae55f67c1a5b8bc",
+              "bytes": 496,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            }
+          ]
+        },
+        {
+          "arm": "web-baseline",
+          "process": {
+            "exit_code": 1
+          },
+          "artifacts": [
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/web-baseline/process.json",
+              "sha256": "2c800d0a11c03a5f5108f36a8f29c8455804085bdad224a26d0591519b09470e",
+              "bytes": 706,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-01/web-baseline/junit.xml",
+              "sha256": "4fb03064f24237bf0e4cfc79a5868082b508fe1db000dad4a71894ce37f6146d",
+              "bytes": 4332,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            }
+          ]
+        }
+      ],
+      "boundary": "Baseline means primary S10 before the two review fixes, not the earlier client-ID product. Offline fixed tests; no real HTTP/PG/browser."
+    },
+    {
+      "id": "negative-02",
+      "result": {
+        "path": "/private/tmp/dou018-s10-negative-result-02/result.json",
+        "sha256": "c525801efc29f4c8bf9d284e6494340d15d97cf73ee575e9fae065c013202a86",
+        "bytes": 19819,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "PASS",
+        "scope": "exact final tests; primary S10 baseline vs review-fixed source; no real HTTP/DB/E2E claim",
+        "package_sources_unchanged": true,
+        "package_manifest_sha256": "bb5100c1a899927b3606a815485d86d115e48241cfb2c21bdc51b4d60f47f884",
+        "runtime_sha256": {
+          "python": "1ce7aea77992ab97bb6225339a1d72a79925d5641e461cdfc2584916119a7edb",
+          "bun": "e0c90ec15d33363e6b70713d56bc3b2c7585c17f40a0fe0f8fd9305901d4e233"
+        }
+      },
+      "arms": [
+        {
+          "arm": "python-baseline",
+          "process": {
+            "exit_code": 1
+          },
+          "verdict": {
+            "status": "PASS",
+            "checks": {
+              "no_setup_or_collection_failure": true,
+              "exact_six_parameters": true,
+              "one_normal_module_and_class_identity": true,
+              "six_real_calls": true,
+              "setup_teardown_all_pass": true,
+              "expected_call_outcomes": true,
+              "exit_code_matches": true,
+              "no_db_network_process_attempt": true,
+              "only_exact_tuple_leak_assertion": true,
+              "executed_sources_unchanged": true
+            },
+            "test_calls": 6
+          },
+          "phase_counts": {
+            "setup:passed": 6,
+            "call:failed": 6,
+            "teardown:passed": 6
+          },
+          "transport_guards": {
+            "network_attempts": 0,
+            "database_import_attempts": 0,
+            "process_attempts": 0
+          },
+          "artifacts": [
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/python-baseline/process.json",
+              "sha256": "e37c7cc862610e2de66d3a50b89f0c4b466ab27494efcf43f2bc97ea96a07841",
+              "bytes": 753,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/python-baseline/observations.json",
+              "sha256": "195c03618a2cf8b7d7bc4ea6ae9077df2e688353f14f6e74f1e7cc6d88f435d2",
+              "bytes": 9334,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/python-baseline/verdict.json",
+              "sha256": "54e444907ab205bbc53c9e9f43322e2177f7cf1847ba5fa253b6cb838668bd56",
+              "bytes": 541,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            }
+          ]
+        },
+        {
+          "arm": "python-candidate",
+          "process": {
+            "exit_code": 0
+          },
+          "verdict": {
+            "status": "PASS",
+            "checks": {
+              "no_setup_or_collection_failure": true,
+              "exact_six_parameters": true,
+              "one_normal_module_and_class_identity": true,
+              "six_real_calls": true,
+              "setup_teardown_all_pass": true,
+              "expected_call_outcomes": true,
+              "exit_code_matches": true,
+              "no_db_network_process_attempt": true,
+              "executed_sources_unchanged": true
+            },
+            "test_calls": 6
+          },
+          "phase_counts": {
+            "setup:passed": 6,
+            "call:passed": 6,
+            "teardown:passed": 6
+          },
+          "transport_guards": {
+            "network_attempts": 0,
+            "database_import_attempts": 0,
+            "process_attempts": 0
+          },
+          "artifacts": [
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/python-candidate/process.json",
+              "sha256": "8cc32a062d07d13dfeefd217cd95e041b0e08529c44778a3eecc53cca50fa153",
+              "bytes": 753,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/python-candidate/observations.json",
+              "sha256": "5c491c85737d8498d6b43576d6b7b04cb7750ad4108bbb23bbda9df6113e8454",
+              "bytes": 8713,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/python-candidate/verdict.json",
+              "sha256": "8a9af1bff8a2111d90dee5b38730f49e8eb3d05eb3287a4e642b47ceb4b34d71",
+              "bytes": 496,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            }
+          ]
+        },
+        {
+          "arm": "web-baseline",
+          "process": {
+            "exit_code": 1
+          },
+          "verdict": {
+            "status": "PASS",
+            "checks": {
+              "exact_seventeen_unique_cases": true,
+              "no_error_or_skip": true,
+              "expected_failures": true,
+              "failure_is_test_assertion": true,
+              "expected_exit": true,
+              "no_real_fetch": true,
+              "four_mock_fetch_calls": true,
+              "executed_sources_unchanged": true
+            },
+            "total": 17,
+            "failed": 6,
+            "passed": 11
+          },
+          "fetch_observations": {
+            "unmockedFetchAttempts": 0,
+            "mockAssignments": 4,
+            "mockCalls": 4,
+            "actualFetchReferenceExposed": false
+          },
+          "artifacts": [
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-baseline/process.json",
+              "sha256": "b5223ee95658e11bfd26213f29078e5c1e4a8bee195c974ba727e6f5411377ce",
+              "bytes": 708,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-baseline/observations.json",
+              "sha256": "1e90b3501a236e4e9d90603cf6c0ab86a605aa7f06b03cc6f003b9244bb24f18",
+              "bytes": 160,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-baseline/verdict.json",
+              "sha256": "864d68108db7c4f21ed337960392e0d000e86d42cfe205ef03ac7bfc957022fa",
+              "bytes": 2124,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-baseline/junit.xml",
+              "sha256": "405840b5701cba825988c43804fc73cc8ae30f6ea90ae1e14b7b16231ef79c8f",
+              "bytes": 4331,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            }
+          ]
+        },
+        {
+          "arm": "web-candidate",
+          "process": {
+            "exit_code": 0
+          },
+          "verdict": {
+            "status": "PASS",
+            "checks": {
+              "exact_seventeen_unique_cases": true,
+              "no_error_or_skip": true,
+              "expected_failures": true,
+              "failure_is_test_assertion": true,
+              "expected_exit": true,
+              "no_real_fetch": true,
+              "four_mock_fetch_calls": true,
+              "executed_sources_unchanged": true
+            },
+            "total": 17,
+            "failed": 0,
+            "passed": 17
+          },
+          "fetch_observations": {
+            "unmockedFetchAttempts": 0,
+            "mockAssignments": 4,
+            "mockCalls": 4,
+            "actualFetchReferenceExposed": false
+          },
+          "artifacts": [
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-candidate/process.json",
+              "sha256": "e8386d331ab2dec822b5a62f2e823f38a76eaad0af77f5ba0f2e1818021c5914",
+              "bytes": 711,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-candidate/observations.json",
+              "sha256": "1e90b3501a236e4e9d90603cf6c0ab86a605aa7f06b03cc6f003b9244bb24f18",
+              "bytes": 160,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-candidate/verdict.json",
+              "sha256": "80a3438005ed735ff978c2f1e7fda5ab615b5a67f31a49f98a32228cd91650fe",
+              "bytes": 555,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            },
+            {
+              "path": "/private/tmp/dou018-s10-negative-result-02/web-candidate/junit.xml",
+              "sha256": "f752e707a81d5cf88515e08dcffb08d752d4a36f1c222cace0d874846f1370ad",
+              "bytes": 4009,
+              "note": "Original bytes; publication requires the archive review stated in this inventory."
+            }
+          ]
+        }
+      ],
+      "boundary": "Baseline means primary S10 before the two review fixes, not the earlier client-ID product. Offline fixed tests; no real HTTP/PG/browser."
+    },
+    {
+      "id": "actual-http-process",
+      "result": {
+        "path": "/private/tmp/dou018-evidence/s10-process-01/result.json",
+        "sha256": "421a22d5bcdb0ec42b93aa4d2845b495befe9b117f5e03cdbdadeafb508b9871",
+        "bytes": 244011,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "PASS",
+        "scope": "actual source-pinned Uvicorn h11/httptools synthetic HTTP; no DB/audit/model or hosted parity",
+        "manifest_sha256": "3c68b56cdb1317c6653d4d1870003c1b1f6277b47bedf040135dd53cf957fef9",
+        "baseline_commit": "deb83e1c0c4553e00072ea6797bd48b6ab53f330",
+        "processes": 4,
+        "http_requests": 56,
+        "normalized_pair_contracts_equal": true,
+        "source_unchanged": true,
+        "seconds": 5.760984
+      },
+      "arms": [
+        {
+          "arm": "baseline",
+          "protocol": "h11",
+          "exit_code": 0,
+          "seconds": 1.374575,
+          "client_id_log_presence": {
+            "ordinary": true,
+            "ascii": true,
+            "uuid": true,
+            "first": true,
+            "second": false,
+            "reuse": true,
+            "concurrent": true
+          },
+          "all_exact_support_correlations": true,
+          "request_completion_events": 12,
+          "app_error_events": 2,
+          "uvicorn_second_error_events": 2,
+          "uvicorn_second_error_has_request_id": false,
+          "own_runtime_removed_after_hash_check": true,
+          "response_count": 14,
+          "distinct_support_id_count": 7,
+          "concurrent_request_count": 4,
+          "concurrent_distinct_support_id_count": 1,
+          "dependency_guards": {
+            "database": 0,
+            "outbound_socket": 0,
+            "embedding": 0,
+            "llm": 0
+          },
+          "lifecycle": {
+            "exit_code": 0,
+            "server_started": true,
+            "control_stop_received": true,
+            "control_thread_stopped": true
+          },
+          "runtime_source_hashes": {
+            "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/admin.py": "fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46",
+            "app/api/analytics.py": "ac17b8b426c2f4b7cfa4683483f0320db64a57c24c2a8bad5c7a4ba08d39e9de",
+            "app/api/blueprints.py": "2a363b065a58584edbe9cb07e25282d1afa47cc0e8d773432c6f4bbc0c567bec",
+            "app/api/chat.py": "6c9ea0d3379efb4d6b1892ae62297306ec6366c0812ac86029fcac15cf916f8d",
+            "app/api/chat_cache.py": "652a4dab900f93ffb3fd51c227f3b3622ba388b7a46bbc1afd164a5bd2742d95",
+            "app/api/chat_history.py": "ff73c0320ba482db1dfb725c689494cc0e8ad91eb1e20cc774f548d814772272",
+            "app/api/courses.py": "7cfc1ba73eab5bfbbf1edf3db5696a805964ddef959a814447e350b91cd71f2a",
+            "app/api/dashboard.py": "dba4d1e04147ca2ae829ca2c39662372d8ae9dab4e96b9e4f9f3a3aded917e4a",
+            "app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+            "app/api/documents.py": "cd1d217e187bb52c26e3d434e7b9bf09d0d1253c74d1ce5aefb4b5c1b6f735ea",
+            "app/api/evaluation_runtime.py": "379bb536b59ca758fc724bdf6f3860774d1f6f26536547fb19587c5e1368ad0b",
+            "app/api/exams.py": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071",
+            "app/api/feedback.py": "63b7134cf225832add9d76db40459a4e98976a0642a772b122861a76ee4473d9",
+            "app/api/health.py": "b11c51dd7f38846bca5f5250dd561a80ed0785c16750f190bdb7dcb376e20f43",
+            "app/api/internal.py": "6feec72a87a91cef026b7052f0c1f997335319ff6272dfe7c02242f30a11a816",
+            "app/api/policy.py": "d01e8a2c0a542d6957dfde33d1463306f5989ef862359adac137e032d5cb22c6",
+            "app/api/privacy.py": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421",
+            "app/api/profile.py": "22f96ca35eacedcc5661f5b90c26098d9e66acc7ba2f92a958a4a85c88f991e2",
+            "app/api/questions.py": "985024e2ae55b0ce72e3cf6004a0c3a35ba664e9ad133b0479f3206e78196528",
+            "app/api/sources.py": "5c03c5a9f6d60ff6929c223977670ef2e687680a976ad52498e3c049909bed46",
+            "app/contracts.py": "53200bfd7bb4db7acfd57a09d7f02d25633ce77d00b43759325705bdbc40ac50",
+            "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/core/candidate_identity.py": "568c744a7bd3d8248ce661a50563ac9f3aca1e1db59de79a75ed2373246cc034",
+            "app/core/config.py": "06694c0ca47d281b6584feecadc405558fdbf505be5d240fb2576df7f4e008f0",
+            "app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+            "app/core/errors.py": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f",
+            "app/core/llm_json.py": "148d1754694ed4553c3e92a1bf0ed2c681da8e7329b1962af93cc7b09e68f14c",
+            "app/core/logging.py": "bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290",
+            "app/core/pagination.py": "5a8bdb0ed508da3dc5e26076681c88508c655e3a5d72b6607f4951d8f4e8575d",
+            "app/core/provider_config.py": "23c527d7ce8f39537a7fc59f591afd7bdb2a0db9650ec9c937545f89df61243b",
+            "app/core/provider_evidence.py": "d551aec0661cd2b4eea8e0b8bb4800faf8a25e11a815a01c8ba8e29213f83b94",
+            "app/core/rate_limit.py": "f269575ec80fdf370d3b224b10fb40920be5c1181e9890fc1bc1c98d8ddee83a",
+            "app/core/readiness.py": "9b1d71dd447cad646ec3dadce6307f89547e24384007667b59c455a4f664064e",
+            "app/core/request_body_limit.py": "a52572ae4bb4ed02d10211f184ecce3a305ac15be27842adc3ebeb83e5d82712",
+            "app/core/request_quota.py": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2",
+            "app/core/request_quota_maintenance.py": "6e3d66a4bcb5605ec36ed9ed28e78afc2c35f40ad96f94fd0558918cc6436479",
+            "app/core/security.py": "c45d15504163132d08f93f998b941b86965e07e8eb71050287ffdd92ebabfe79",
+            "app/core/text_tr.py": "5dc85a79fcb93ecfd5c0000b4db8c0bc00a4392102234bae83fc4eb605d87b5e",
+            "app/core/upload_cleanup.py": "f9f353aaffd5aac26389856cabce6d2a35d9aa7a2f1ecd7761a09a750efe94c6",
+            "app/core/vector_space.py": "9ab48babe00bdabe95a3f7ae5e724e180eae72e010119e68b82fe5a04cb9d838",
+            "app/core/warmup.py": "d5c81d07be8feeb66aa910b0db4f43ec156f71a6265be24d971cc0a4d1961379",
+            "app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+            "app/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/models/assessment.py": "94e9b76b8483c0b8090c9ced000fb4a099733e886889e3cd288b014acfc3cd6d",
+            "app/models/base.py": "08a8c0788d6d78c86d409a477c4d54edee1f8d8dc726b98a8fffa88c3f4184d4",
+            "app/models/chat.py": "ec1b198f2eb5282ba3334447ed259e357e0863997f58aa0c1bd760704e71a6d2",
+            "app/models/core.py": "7345358d6053c5f8942331512db4abb7c1c8726f251bb32a3c91a9eb97442cd3",
+            "app/models/policy.py": "e89a99510c3a95e75801ae085df48420a8a287c3de0a3c0954657b14ada24f0f",
+            "app/modules/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/agent/__init__.py": "1d6adaac5c597cc7dd3c02a7ae8e53056c671e23d142e0c0b48dc15bdfb51828",
+            "app/modules/agent/answers.py": "089c18913e105b2d39f3ed6cc1a7037ae91b00ec149b8f3d5f5690898b99dff3",
+            "app/modules/agent/pipeline.py": "8c5e8129d3ee20f803683d3b664b8dde079fd2a7658209e77d6f9bd18d5f6916",
+            "app/modules/agent/quota.py": "d593d0ab1aab5cfcd4e0b4eaf4ada1d5439d1577c36728f8986a8f37875d7b43",
+            "app/modules/agent/token_precharge.py": "ab1cdd825e87f8130b1dee8345e1398f8d5c52dacc21ebfc2eb0a657f9a66d9f",
+            "app/modules/assessment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/assessment/authoring.py": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954",
+            "app/modules/assessment/blueprint.py": "98cb233a7366295aa4606678bf67912c6109333c0d26894c636fd48fc686f9f6",
+            "app/modules/assessment/exam_paper.py": "6864dba481fc047671feb961069a6dfba0b48dcaa05abb6cc0fafe3fc19ae061",
+            "app/modules/assessment/exam_state.py": "2a3714e2eaf356c363a6faf151325d7afe0341ccd184b801e73a38d7a4cb51b1",
+            "app/modules/assessment/grading.py": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3",
+            "app/modules/assessment/question_gen.py": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75",
+            "app/modules/assessment/socratic.py": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e",
+            "app/modules/chat/__init__.py": "8c39f729faee5e4d4bea679f55d2a8911daafd681fc7b1880299f759530e793c",
+            "app/modules/chat/lifecycle.py": "ecbf682f02ffc8d3dd2411ea73e11556217286339e048847c61abb312ed6565f",
+            "app/modules/generation/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/generation/fake.py": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88",
+            "app/modules/generation/llm.py": "1254be9c025e8caafbf1fa378bf884ca186a3b63fccaee58fa9155d7efdb7d23",
+            "app/modules/generation/preflight.py": "94da9a417907ffa2f42a7c201abd36b179e230c0f59239b6e07a2863c56ff7e0",
+            "app/modules/generation/prompts.py": "6e2638eb11cb2b677917b10ac0d5e94870e3138ddf9ecd251d9a2f34ea4be92d",
+            "app/modules/generation/service.py": "66951f646dbf6db4ba9e2580c054789f495a8030a56dd077b64c02a429119752",
+            "app/modules/guardrails/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/guardrails/chain.py": "3099258e237fe8de676bb3eb2b5e691095dbcf8a2d8cb34aaf9a28af34f4c380",
+            "app/modules/guardrails/citation.py": "7a5e0e5960ab84198ef8e6d85b0dea21f87f254c5fc0e2e167a073b4633837aa",
+            "app/modules/guardrails/leakage.py": "a6e93786e1c632d35b4eda3080a25473d2c8c4be7d527f0b1db5c56c6ccbba50",
+            "app/modules/guardrails/sanitize.py": "0d2010d2fbaebf68a6c4e5a0c189991cc7fe3fe59de5801dc4709db3df1663f0",
+            "app/modules/ingestion/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/ingestion/chunking.py": "fe676251fb2e17177b05a7819d912774f26cb8f053e28f3346edb53aab027c30",
+            "app/modules/ingestion/claims.py": "31c44cc1b14d232144c41e0ac4c29b0520c63a26a36089d444b9a5e45fadfab9",
+            "app/modules/ingestion/embedding.py": "0c1e1d0a89d3374ee9dbe8139929f96d4d5a19f3a7f6977891163e1320ed3099",
+            "app/modules/ingestion/parsers.py": "1b97770816453a5f95ce397c6232ea6c97f031ff757556745894dfc9be65d85f",
+            "app/modules/ingestion/pipeline.py": "4cd396f9f5f6712791b4cf4b98dce7c6a89681adf59e56592846f673c19ef14f",
+            "app/modules/ingestion/storage.py": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1",
+            "app/modules/ingestion/validation.py": "7bbcbce699a2e4f26647f1d73f1f4e9a167a09f10a0a7b684145e2b860389ba7",
+            "app/modules/mastery/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/mastery/service.py": "71b950bd27d3cab695838be68e67cae2d052c90810bee0da204c6c131cc67dd5",
+            "app/modules/policy/__init__.py": "751725d15da446fa9d02205ce479722463475db9f67fcc260b9a7e1a756411de",
+            "app/modules/policy/service.py": "167ec5292d96b1e396b450742011cc9fa6d9a3c3e541f9767a7a593851023700",
+            "app/modules/retrieval/__init__.py": "a10ae625eaeaca98d29ecb4b0753565ed1368231bf0f030c37425c66d65b7ca8",
+            "app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+            "app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+            "app/modules/retrieval/fusion.py": "4bd06790f55525055e4e37855da224bdde4d9053540828ae1d83a10c2502a04c",
+            "app/modules/retrieval/inspection.py": "df584b7fc24139ad794f68d33200cbde1ebae834bd54e9e8c71d664bc54d8109",
+            "app/modules/retrieval/scope.py": "e86b840a3109fc93e2b2d8a41eda70fc83710e1ed45e7b8b2432b764032c0d49",
+            "app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c",
+            "app/schemas/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/schemas/admin.py": "e476c1e01026e6d185626699413ea1eabd06bbde70f5e011b03ccdcfcd30e698",
+            "app/schemas/assessment.py": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202",
+            "app/schemas/blueprint.py": "dc514943bb8e3eb8bdcd3d87c1db8a3d9b5bdf36f69719f5b09115c05b333440",
+            "app/schemas/chat.py": "ffcfca44d9b646b67239c5b925c36035717d5d1ada7d99a0df0cc41ca30f6fd6",
+            "app/schemas/course.py": "96994423ca2bf7e47c73e139fd2791ccd8986c8c7c59ce2c42aec63870b9e2c8",
+            "app/schemas/dashboard.py": "64f1c45cb77944f45ab1c731a40e8615820ced6b31e87bfafb6a18af07018208",
+            "app/schemas/document.py": "95a3fc7bcc94b3e1a67cd1f3db15ebfad9484d9c10d26ac1cf46a1dd1b8311f6",
+            "app/schemas/exam_workspace.py": "39f80980a409de0da6a745a193c19fc0d10c16d30ce9cfcd7e8792b1f09be247",
+            "app/schemas/feedback.py": "1a354edabe943bd31774b8345b6927aa1ae861327c9dba7cfcedcec00a7391cf",
+            "app/schemas/page.py": "2be487a8c4cdd99672c6deaa266c6995271b26e91491cb91616916c50a692cb3",
+            "app/schemas/policy.py": "48bcef5ec31f6613062d48cdeb9f7f44f187d95a4166ba13ad91c0f39093df7e",
+            "app/schemas/privacy.py": "1097542ff47cb2c17908b4fb3e307ccdc1b412a459332f922ec68ddaf9dfcd21",
+            "app/schemas/profile.py": "8b206ccc54d2269e330291c1aee96ad0562c23c5379fdbcf16ad07e0ac746687",
+            "app/schemas/question_usage.py": "f065963b150184886bcb4a2daec023a268a2ce3da8313c93fc43a5212fe4d5ce",
+            "app/schemas/source.py": "5908a184c0ac1e1e150ec122dae026667f85693b7a5a992b559d7270d81e57f1",
+            "app/worker.py": "2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634",
+            "static/docs-init.js": "940a8f183e5ce797376ae8e62201028899c3a3ffe52e56b8330d9fe1a2085036",
+            "static/docs-theme.js": "d84cea9e68233486fc2c8ad51bff8ce87916e14eab9672185703e6aadbc78d84",
+            "static/docs.css": "a66f4eb6fcf6fb2952af94bae1f8eab08c58e7150f38a83324ed7271bd463d3a",
+            "static/docs.html": "6e2fcc62e07aa246047b6f65007b4e86c98aff8f2ea02795315f7f767d17faa4",
+            "static/vendor/swagger-ui-bundle.js": "303f48967313bee56f30c651b6b90467482a99d2cf1571cde4e44527912eceea",
+            "static/vendor/swagger-ui.css": "ca238f7d7c2cf4480c1e77a9c3b9da915ab216e96ffd354e69076560c650c6de"
+          },
+          "log_hashes": {
+            "stdout.log": "e94406e2085964c04813c333f633b9c088d749946fab26b56e7d34bf26fdfb57",
+            "stderr.log": "d5dbd949d2d0d3b04fc238105b85638bcbe4ef2354f2b887d12adb4715202ea7"
+          },
+          "wire_count": 14,
+          "wire_hashes_map_sha256": "51c2ca7dedcda515ffcc9bcf6c809139bd0e91b2c15ccc6fef7f26053777ea9a"
+        },
+        {
+          "arm": "baseline",
+          "protocol": "httptools",
+          "exit_code": 0,
+          "seconds": 1.237271,
+          "client_id_log_presence": {
+            "ordinary": true,
+            "ascii": true,
+            "uuid": true,
+            "first": true,
+            "second": false,
+            "reuse": true,
+            "concurrent": true
+          },
+          "all_exact_support_correlations": true,
+          "request_completion_events": 12,
+          "app_error_events": 2,
+          "uvicorn_second_error_events": 2,
+          "uvicorn_second_error_has_request_id": false,
+          "own_runtime_removed_after_hash_check": true,
+          "response_count": 14,
+          "distinct_support_id_count": 7,
+          "concurrent_request_count": 4,
+          "concurrent_distinct_support_id_count": 1,
+          "dependency_guards": {
+            "database": 0,
+            "outbound_socket": 0,
+            "embedding": 0,
+            "llm": 0
+          },
+          "lifecycle": {
+            "exit_code": 0,
+            "server_started": true,
+            "control_stop_received": true,
+            "control_thread_stopped": true
+          },
+          "runtime_source_hashes": {
+            "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/admin.py": "fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46",
+            "app/api/analytics.py": "ac17b8b426c2f4b7cfa4683483f0320db64a57c24c2a8bad5c7a4ba08d39e9de",
+            "app/api/blueprints.py": "2a363b065a58584edbe9cb07e25282d1afa47cc0e8d773432c6f4bbc0c567bec",
+            "app/api/chat.py": "6c9ea0d3379efb4d6b1892ae62297306ec6366c0812ac86029fcac15cf916f8d",
+            "app/api/chat_cache.py": "652a4dab900f93ffb3fd51c227f3b3622ba388b7a46bbc1afd164a5bd2742d95",
+            "app/api/chat_history.py": "ff73c0320ba482db1dfb725c689494cc0e8ad91eb1e20cc774f548d814772272",
+            "app/api/courses.py": "7cfc1ba73eab5bfbbf1edf3db5696a805964ddef959a814447e350b91cd71f2a",
+            "app/api/dashboard.py": "dba4d1e04147ca2ae829ca2c39662372d8ae9dab4e96b9e4f9f3a3aded917e4a",
+            "app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+            "app/api/documents.py": "cd1d217e187bb52c26e3d434e7b9bf09d0d1253c74d1ce5aefb4b5c1b6f735ea",
+            "app/api/evaluation_runtime.py": "379bb536b59ca758fc724bdf6f3860774d1f6f26536547fb19587c5e1368ad0b",
+            "app/api/exams.py": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071",
+            "app/api/feedback.py": "63b7134cf225832add9d76db40459a4e98976a0642a772b122861a76ee4473d9",
+            "app/api/health.py": "b11c51dd7f38846bca5f5250dd561a80ed0785c16750f190bdb7dcb376e20f43",
+            "app/api/internal.py": "6feec72a87a91cef026b7052f0c1f997335319ff6272dfe7c02242f30a11a816",
+            "app/api/policy.py": "d01e8a2c0a542d6957dfde33d1463306f5989ef862359adac137e032d5cb22c6",
+            "app/api/privacy.py": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421",
+            "app/api/profile.py": "22f96ca35eacedcc5661f5b90c26098d9e66acc7ba2f92a958a4a85c88f991e2",
+            "app/api/questions.py": "985024e2ae55b0ce72e3cf6004a0c3a35ba664e9ad133b0479f3206e78196528",
+            "app/api/sources.py": "5c03c5a9f6d60ff6929c223977670ef2e687680a976ad52498e3c049909bed46",
+            "app/contracts.py": "53200bfd7bb4db7acfd57a09d7f02d25633ce77d00b43759325705bdbc40ac50",
+            "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/core/candidate_identity.py": "568c744a7bd3d8248ce661a50563ac9f3aca1e1db59de79a75ed2373246cc034",
+            "app/core/config.py": "06694c0ca47d281b6584feecadc405558fdbf505be5d240fb2576df7f4e008f0",
+            "app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+            "app/core/errors.py": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f",
+            "app/core/llm_json.py": "148d1754694ed4553c3e92a1bf0ed2c681da8e7329b1962af93cc7b09e68f14c",
+            "app/core/logging.py": "bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290",
+            "app/core/pagination.py": "5a8bdb0ed508da3dc5e26076681c88508c655e3a5d72b6607f4951d8f4e8575d",
+            "app/core/provider_config.py": "23c527d7ce8f39537a7fc59f591afd7bdb2a0db9650ec9c937545f89df61243b",
+            "app/core/provider_evidence.py": "d551aec0661cd2b4eea8e0b8bb4800faf8a25e11a815a01c8ba8e29213f83b94",
+            "app/core/rate_limit.py": "f269575ec80fdf370d3b224b10fb40920be5c1181e9890fc1bc1c98d8ddee83a",
+            "app/core/readiness.py": "9b1d71dd447cad646ec3dadce6307f89547e24384007667b59c455a4f664064e",
+            "app/core/request_body_limit.py": "a52572ae4bb4ed02d10211f184ecce3a305ac15be27842adc3ebeb83e5d82712",
+            "app/core/request_quota.py": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2",
+            "app/core/request_quota_maintenance.py": "6e3d66a4bcb5605ec36ed9ed28e78afc2c35f40ad96f94fd0558918cc6436479",
+            "app/core/security.py": "c45d15504163132d08f93f998b941b86965e07e8eb71050287ffdd92ebabfe79",
+            "app/core/text_tr.py": "5dc85a79fcb93ecfd5c0000b4db8c0bc00a4392102234bae83fc4eb605d87b5e",
+            "app/core/upload_cleanup.py": "f9f353aaffd5aac26389856cabce6d2a35d9aa7a2f1ecd7761a09a750efe94c6",
+            "app/core/vector_space.py": "9ab48babe00bdabe95a3f7ae5e724e180eae72e010119e68b82fe5a04cb9d838",
+            "app/core/warmup.py": "d5c81d07be8feeb66aa910b0db4f43ec156f71a6265be24d971cc0a4d1961379",
+            "app/main.py": "d9147e910465dc152a377c2eda58438256f1dbd590463635b5582872631dd430",
+            "app/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/models/assessment.py": "94e9b76b8483c0b8090c9ced000fb4a099733e886889e3cd288b014acfc3cd6d",
+            "app/models/base.py": "08a8c0788d6d78c86d409a477c4d54edee1f8d8dc726b98a8fffa88c3f4184d4",
+            "app/models/chat.py": "ec1b198f2eb5282ba3334447ed259e357e0863997f58aa0c1bd760704e71a6d2",
+            "app/models/core.py": "7345358d6053c5f8942331512db4abb7c1c8726f251bb32a3c91a9eb97442cd3",
+            "app/models/policy.py": "e89a99510c3a95e75801ae085df48420a8a287c3de0a3c0954657b14ada24f0f",
+            "app/modules/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/agent/__init__.py": "1d6adaac5c597cc7dd3c02a7ae8e53056c671e23d142e0c0b48dc15bdfb51828",
+            "app/modules/agent/answers.py": "089c18913e105b2d39f3ed6cc1a7037ae91b00ec149b8f3d5f5690898b99dff3",
+            "app/modules/agent/pipeline.py": "8c5e8129d3ee20f803683d3b664b8dde079fd2a7658209e77d6f9bd18d5f6916",
+            "app/modules/agent/quota.py": "d593d0ab1aab5cfcd4e0b4eaf4ada1d5439d1577c36728f8986a8f37875d7b43",
+            "app/modules/agent/token_precharge.py": "ab1cdd825e87f8130b1dee8345e1398f8d5c52dacc21ebfc2eb0a657f9a66d9f",
+            "app/modules/assessment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/assessment/authoring.py": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954",
+            "app/modules/assessment/blueprint.py": "98cb233a7366295aa4606678bf67912c6109333c0d26894c636fd48fc686f9f6",
+            "app/modules/assessment/exam_paper.py": "6864dba481fc047671feb961069a6dfba0b48dcaa05abb6cc0fafe3fc19ae061",
+            "app/modules/assessment/exam_state.py": "2a3714e2eaf356c363a6faf151325d7afe0341ccd184b801e73a38d7a4cb51b1",
+            "app/modules/assessment/grading.py": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3",
+            "app/modules/assessment/question_gen.py": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75",
+            "app/modules/assessment/socratic.py": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e",
+            "app/modules/chat/__init__.py": "8c39f729faee5e4d4bea679f55d2a8911daafd681fc7b1880299f759530e793c",
+            "app/modules/chat/lifecycle.py": "ecbf682f02ffc8d3dd2411ea73e11556217286339e048847c61abb312ed6565f",
+            "app/modules/generation/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/generation/fake.py": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88",
+            "app/modules/generation/llm.py": "1254be9c025e8caafbf1fa378bf884ca186a3b63fccaee58fa9155d7efdb7d23",
+            "app/modules/generation/preflight.py": "94da9a417907ffa2f42a7c201abd36b179e230c0f59239b6e07a2863c56ff7e0",
+            "app/modules/generation/prompts.py": "6e2638eb11cb2b677917b10ac0d5e94870e3138ddf9ecd251d9a2f34ea4be92d",
+            "app/modules/generation/service.py": "66951f646dbf6db4ba9e2580c054789f495a8030a56dd077b64c02a429119752",
+            "app/modules/guardrails/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/guardrails/chain.py": "3099258e237fe8de676bb3eb2b5e691095dbcf8a2d8cb34aaf9a28af34f4c380",
+            "app/modules/guardrails/citation.py": "7a5e0e5960ab84198ef8e6d85b0dea21f87f254c5fc0e2e167a073b4633837aa",
+            "app/modules/guardrails/leakage.py": "a6e93786e1c632d35b4eda3080a25473d2c8c4be7d527f0b1db5c56c6ccbba50",
+            "app/modules/guardrails/sanitize.py": "0d2010d2fbaebf68a6c4e5a0c189991cc7fe3fe59de5801dc4709db3df1663f0",
+            "app/modules/ingestion/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/ingestion/chunking.py": "fe676251fb2e17177b05a7819d912774f26cb8f053e28f3346edb53aab027c30",
+            "app/modules/ingestion/claims.py": "31c44cc1b14d232144c41e0ac4c29b0520c63a26a36089d444b9a5e45fadfab9",
+            "app/modules/ingestion/embedding.py": "0c1e1d0a89d3374ee9dbe8139929f96d4d5a19f3a7f6977891163e1320ed3099",
+            "app/modules/ingestion/parsers.py": "1b97770816453a5f95ce397c6232ea6c97f031ff757556745894dfc9be65d85f",
+            "app/modules/ingestion/pipeline.py": "4cd396f9f5f6712791b4cf4b98dce7c6a89681adf59e56592846f673c19ef14f",
+            "app/modules/ingestion/storage.py": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1",
+            "app/modules/ingestion/validation.py": "7bbcbce699a2e4f26647f1d73f1f4e9a167a09f10a0a7b684145e2b860389ba7",
+            "app/modules/mastery/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/mastery/service.py": "71b950bd27d3cab695838be68e67cae2d052c90810bee0da204c6c131cc67dd5",
+            "app/modules/policy/__init__.py": "751725d15da446fa9d02205ce479722463475db9f67fcc260b9a7e1a756411de",
+            "app/modules/policy/service.py": "167ec5292d96b1e396b450742011cc9fa6d9a3c3e541f9767a7a593851023700",
+            "app/modules/retrieval/__init__.py": "a10ae625eaeaca98d29ecb4b0753565ed1368231bf0f030c37425c66d65b7ca8",
+            "app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+            "app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+            "app/modules/retrieval/fusion.py": "4bd06790f55525055e4e37855da224bdde4d9053540828ae1d83a10c2502a04c",
+            "app/modules/retrieval/inspection.py": "df584b7fc24139ad794f68d33200cbde1ebae834bd54e9e8c71d664bc54d8109",
+            "app/modules/retrieval/scope.py": "e86b840a3109fc93e2b2d8a41eda70fc83710e1ed45e7b8b2432b764032c0d49",
+            "app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c",
+            "app/schemas/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/schemas/admin.py": "e476c1e01026e6d185626699413ea1eabd06bbde70f5e011b03ccdcfcd30e698",
+            "app/schemas/assessment.py": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202",
+            "app/schemas/blueprint.py": "dc514943bb8e3eb8bdcd3d87c1db8a3d9b5bdf36f69719f5b09115c05b333440",
+            "app/schemas/chat.py": "ffcfca44d9b646b67239c5b925c36035717d5d1ada7d99a0df0cc41ca30f6fd6",
+            "app/schemas/course.py": "96994423ca2bf7e47c73e139fd2791ccd8986c8c7c59ce2c42aec63870b9e2c8",
+            "app/schemas/dashboard.py": "64f1c45cb77944f45ab1c731a40e8615820ced6b31e87bfafb6a18af07018208",
+            "app/schemas/document.py": "95a3fc7bcc94b3e1a67cd1f3db15ebfad9484d9c10d26ac1cf46a1dd1b8311f6",
+            "app/schemas/exam_workspace.py": "39f80980a409de0da6a745a193c19fc0d10c16d30ce9cfcd7e8792b1f09be247",
+            "app/schemas/feedback.py": "1a354edabe943bd31774b8345b6927aa1ae861327c9dba7cfcedcec00a7391cf",
+            "app/schemas/page.py": "2be487a8c4cdd99672c6deaa266c6995271b26e91491cb91616916c50a692cb3",
+            "app/schemas/policy.py": "48bcef5ec31f6613062d48cdeb9f7f44f187d95a4166ba13ad91c0f39093df7e",
+            "app/schemas/privacy.py": "1097542ff47cb2c17908b4fb3e307ccdc1b412a459332f922ec68ddaf9dfcd21",
+            "app/schemas/profile.py": "8b206ccc54d2269e330291c1aee96ad0562c23c5379fdbcf16ad07e0ac746687",
+            "app/schemas/question_usage.py": "f065963b150184886bcb4a2daec023a268a2ce3da8313c93fc43a5212fe4d5ce",
+            "app/schemas/source.py": "5908a184c0ac1e1e150ec122dae026667f85693b7a5a992b559d7270d81e57f1",
+            "app/worker.py": "2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634",
+            "static/docs-init.js": "940a8f183e5ce797376ae8e62201028899c3a3ffe52e56b8330d9fe1a2085036",
+            "static/docs-theme.js": "d84cea9e68233486fc2c8ad51bff8ce87916e14eab9672185703e6aadbc78d84",
+            "static/docs.css": "a66f4eb6fcf6fb2952af94bae1f8eab08c58e7150f38a83324ed7271bd463d3a",
+            "static/docs.html": "6e2fcc62e07aa246047b6f65007b4e86c98aff8f2ea02795315f7f767d17faa4",
+            "static/vendor/swagger-ui-bundle.js": "303f48967313bee56f30c651b6b90467482a99d2cf1571cde4e44527912eceea",
+            "static/vendor/swagger-ui.css": "ca238f7d7c2cf4480c1e77a9c3b9da915ab216e96ffd354e69076560c650c6de"
+          },
+          "log_hashes": {
+            "stdout.log": "0bcb0f9f9f6965b1d57daa32c779c48518957598e884841d83171bd922aacdd9",
+            "stderr.log": "557bd5953e756587de9c581d5500751439a8bbc8bc0a4dd26d24a3996414deca"
+          },
+          "wire_count": 14,
+          "wire_hashes_map_sha256": "da3b6956765434d298941d8df70d2f97257564ba479ee8ac629fc8cc6b2138c0"
+        },
+        {
+          "arm": "candidate",
+          "protocol": "h11",
+          "exit_code": 0,
+          "seconds": 1.21702,
+          "client_id_log_presence": {
+            "ordinary": false,
+            "ascii": false,
+            "uuid": false,
+            "first": false,
+            "second": false,
+            "reuse": false,
+            "concurrent": false
+          },
+          "all_exact_support_correlations": true,
+          "request_completion_events": 12,
+          "app_error_events": 2,
+          "uvicorn_second_error_events": 2,
+          "uvicorn_second_error_has_request_id": false,
+          "own_runtime_removed_after_hash_check": true,
+          "response_count": 14,
+          "distinct_support_id_count": 14,
+          "concurrent_request_count": 4,
+          "concurrent_distinct_support_id_count": 4,
+          "dependency_guards": {
+            "database": 0,
+            "outbound_socket": 0,
+            "embedding": 0,
+            "llm": 0
+          },
+          "lifecycle": {
+            "exit_code": 0,
+            "server_started": true,
+            "control_stop_received": true,
+            "control_thread_stopped": true
+          },
+          "runtime_source_hashes": {
+            "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/admin.py": "fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46",
+            "app/api/analytics.py": "ac17b8b426c2f4b7cfa4683483f0320db64a57c24c2a8bad5c7a4ba08d39e9de",
+            "app/api/blueprints.py": "2a363b065a58584edbe9cb07e25282d1afa47cc0e8d773432c6f4bbc0c567bec",
+            "app/api/chat.py": "6c9ea0d3379efb4d6b1892ae62297306ec6366c0812ac86029fcac15cf916f8d",
+            "app/api/chat_cache.py": "652a4dab900f93ffb3fd51c227f3b3622ba388b7a46bbc1afd164a5bd2742d95",
+            "app/api/chat_history.py": "ff73c0320ba482db1dfb725c689494cc0e8ad91eb1e20cc774f548d814772272",
+            "app/api/courses.py": "7cfc1ba73eab5bfbbf1edf3db5696a805964ddef959a814447e350b91cd71f2a",
+            "app/api/dashboard.py": "dba4d1e04147ca2ae829ca2c39662372d8ae9dab4e96b9e4f9f3a3aded917e4a",
+            "app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+            "app/api/documents.py": "cd1d217e187bb52c26e3d434e7b9bf09d0d1253c74d1ce5aefb4b5c1b6f735ea",
+            "app/api/evaluation_runtime.py": "379bb536b59ca758fc724bdf6f3860774d1f6f26536547fb19587c5e1368ad0b",
+            "app/api/exams.py": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071",
+            "app/api/feedback.py": "63b7134cf225832add9d76db40459a4e98976a0642a772b122861a76ee4473d9",
+            "app/api/health.py": "b11c51dd7f38846bca5f5250dd561a80ed0785c16750f190bdb7dcb376e20f43",
+            "app/api/internal.py": "6feec72a87a91cef026b7052f0c1f997335319ff6272dfe7c02242f30a11a816",
+            "app/api/policy.py": "d01e8a2c0a542d6957dfde33d1463306f5989ef862359adac137e032d5cb22c6",
+            "app/api/privacy.py": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421",
+            "app/api/profile.py": "22f96ca35eacedcc5661f5b90c26098d9e66acc7ba2f92a958a4a85c88f991e2",
+            "app/api/questions.py": "985024e2ae55b0ce72e3cf6004a0c3a35ba664e9ad133b0479f3206e78196528",
+            "app/api/sources.py": "5c03c5a9f6d60ff6929c223977670ef2e687680a976ad52498e3c049909bed46",
+            "app/contracts.py": "53200bfd7bb4db7acfd57a09d7f02d25633ce77d00b43759325705bdbc40ac50",
+            "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/core/candidate_identity.py": "568c744a7bd3d8248ce661a50563ac9f3aca1e1db59de79a75ed2373246cc034",
+            "app/core/config.py": "06694c0ca47d281b6584feecadc405558fdbf505be5d240fb2576df7f4e008f0",
+            "app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+            "app/core/errors.py": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a",
+            "app/core/llm_json.py": "148d1754694ed4553c3e92a1bf0ed2c681da8e7329b1962af93cc7b09e68f14c",
+            "app/core/logging.py": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+            "app/core/pagination.py": "5a8bdb0ed508da3dc5e26076681c88508c655e3a5d72b6607f4951d8f4e8575d",
+            "app/core/provider_config.py": "23c527d7ce8f39537a7fc59f591afd7bdb2a0db9650ec9c937545f89df61243b",
+            "app/core/provider_evidence.py": "d551aec0661cd2b4eea8e0b8bb4800faf8a25e11a815a01c8ba8e29213f83b94",
+            "app/core/rate_limit.py": "f269575ec80fdf370d3b224b10fb40920be5c1181e9890fc1bc1c98d8ddee83a",
+            "app/core/readiness.py": "9b1d71dd447cad646ec3dadce6307f89547e24384007667b59c455a4f664064e",
+            "app/core/request_body_limit.py": "a52572ae4bb4ed02d10211f184ecce3a305ac15be27842adc3ebeb83e5d82712",
+            "app/core/request_quota.py": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2",
+            "app/core/request_quota_maintenance.py": "6e3d66a4bcb5605ec36ed9ed28e78afc2c35f40ad96f94fd0558918cc6436479",
+            "app/core/security.py": "c45d15504163132d08f93f998b941b86965e07e8eb71050287ffdd92ebabfe79",
+            "app/core/text_tr.py": "5dc85a79fcb93ecfd5c0000b4db8c0bc00a4392102234bae83fc4eb605d87b5e",
+            "app/core/upload_cleanup.py": "f9f353aaffd5aac26389856cabce6d2a35d9aa7a2f1ecd7761a09a750efe94c6",
+            "app/core/vector_space.py": "9ab48babe00bdabe95a3f7ae5e724e180eae72e010119e68b82fe5a04cb9d838",
+            "app/core/warmup.py": "d5c81d07be8feeb66aa910b0db4f43ec156f71a6265be24d971cc0a4d1961379",
+            "app/main.py": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0",
+            "app/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/models/assessment.py": "94e9b76b8483c0b8090c9ced000fb4a099733e886889e3cd288b014acfc3cd6d",
+            "app/models/base.py": "08a8c0788d6d78c86d409a477c4d54edee1f8d8dc726b98a8fffa88c3f4184d4",
+            "app/models/chat.py": "ec1b198f2eb5282ba3334447ed259e357e0863997f58aa0c1bd760704e71a6d2",
+            "app/models/core.py": "7345358d6053c5f8942331512db4abb7c1c8726f251bb32a3c91a9eb97442cd3",
+            "app/models/policy.py": "e89a99510c3a95e75801ae085df48420a8a287c3de0a3c0954657b14ada24f0f",
+            "app/modules/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/agent/__init__.py": "1d6adaac5c597cc7dd3c02a7ae8e53056c671e23d142e0c0b48dc15bdfb51828",
+            "app/modules/agent/answers.py": "089c18913e105b2d39f3ed6cc1a7037ae91b00ec149b8f3d5f5690898b99dff3",
+            "app/modules/agent/pipeline.py": "8c5e8129d3ee20f803683d3b664b8dde079fd2a7658209e77d6f9bd18d5f6916",
+            "app/modules/agent/quota.py": "d593d0ab1aab5cfcd4e0b4eaf4ada1d5439d1577c36728f8986a8f37875d7b43",
+            "app/modules/agent/token_precharge.py": "ab1cdd825e87f8130b1dee8345e1398f8d5c52dacc21ebfc2eb0a657f9a66d9f",
+            "app/modules/assessment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/assessment/authoring.py": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954",
+            "app/modules/assessment/blueprint.py": "98cb233a7366295aa4606678bf67912c6109333c0d26894c636fd48fc686f9f6",
+            "app/modules/assessment/exam_paper.py": "6864dba481fc047671feb961069a6dfba0b48dcaa05abb6cc0fafe3fc19ae061",
+            "app/modules/assessment/exam_state.py": "2a3714e2eaf356c363a6faf151325d7afe0341ccd184b801e73a38d7a4cb51b1",
+            "app/modules/assessment/grading.py": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3",
+            "app/modules/assessment/question_gen.py": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75",
+            "app/modules/assessment/socratic.py": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e",
+            "app/modules/chat/__init__.py": "8c39f729faee5e4d4bea679f55d2a8911daafd681fc7b1880299f759530e793c",
+            "app/modules/chat/lifecycle.py": "ecbf682f02ffc8d3dd2411ea73e11556217286339e048847c61abb312ed6565f",
+            "app/modules/generation/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/generation/fake.py": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88",
+            "app/modules/generation/llm.py": "1254be9c025e8caafbf1fa378bf884ca186a3b63fccaee58fa9155d7efdb7d23",
+            "app/modules/generation/preflight.py": "94da9a417907ffa2f42a7c201abd36b179e230c0f59239b6e07a2863c56ff7e0",
+            "app/modules/generation/prompts.py": "6e2638eb11cb2b677917b10ac0d5e94870e3138ddf9ecd251d9a2f34ea4be92d",
+            "app/modules/generation/service.py": "66951f646dbf6db4ba9e2580c054789f495a8030a56dd077b64c02a429119752",
+            "app/modules/guardrails/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/guardrails/chain.py": "3099258e237fe8de676bb3eb2b5e691095dbcf8a2d8cb34aaf9a28af34f4c380",
+            "app/modules/guardrails/citation.py": "7a5e0e5960ab84198ef8e6d85b0dea21f87f254c5fc0e2e167a073b4633837aa",
+            "app/modules/guardrails/leakage.py": "a6e93786e1c632d35b4eda3080a25473d2c8c4be7d527f0b1db5c56c6ccbba50",
+            "app/modules/guardrails/sanitize.py": "0d2010d2fbaebf68a6c4e5a0c189991cc7fe3fe59de5801dc4709db3df1663f0",
+            "app/modules/ingestion/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/ingestion/chunking.py": "fe676251fb2e17177b05a7819d912774f26cb8f053e28f3346edb53aab027c30",
+            "app/modules/ingestion/claims.py": "31c44cc1b14d232144c41e0ac4c29b0520c63a26a36089d444b9a5e45fadfab9",
+            "app/modules/ingestion/embedding.py": "0c1e1d0a89d3374ee9dbe8139929f96d4d5a19f3a7f6977891163e1320ed3099",
+            "app/modules/ingestion/parsers.py": "1b97770816453a5f95ce397c6232ea6c97f031ff757556745894dfc9be65d85f",
+            "app/modules/ingestion/pipeline.py": "4cd396f9f5f6712791b4cf4b98dce7c6a89681adf59e56592846f673c19ef14f",
+            "app/modules/ingestion/storage.py": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1",
+            "app/modules/ingestion/validation.py": "7bbcbce699a2e4f26647f1d73f1f4e9a167a09f10a0a7b684145e2b860389ba7",
+            "app/modules/mastery/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/mastery/service.py": "71b950bd27d3cab695838be68e67cae2d052c90810bee0da204c6c131cc67dd5",
+            "app/modules/policy/__init__.py": "751725d15da446fa9d02205ce479722463475db9f67fcc260b9a7e1a756411de",
+            "app/modules/policy/service.py": "167ec5292d96b1e396b450742011cc9fa6d9a3c3e541f9767a7a593851023700",
+            "app/modules/retrieval/__init__.py": "a10ae625eaeaca98d29ecb4b0753565ed1368231bf0f030c37425c66d65b7ca8",
+            "app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+            "app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+            "app/modules/retrieval/fusion.py": "4bd06790f55525055e4e37855da224bdde4d9053540828ae1d83a10c2502a04c",
+            "app/modules/retrieval/inspection.py": "df584b7fc24139ad794f68d33200cbde1ebae834bd54e9e8c71d664bc54d8109",
+            "app/modules/retrieval/scope.py": "e86b840a3109fc93e2b2d8a41eda70fc83710e1ed45e7b8b2432b764032c0d49",
+            "app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c",
+            "app/schemas/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/schemas/admin.py": "e476c1e01026e6d185626699413ea1eabd06bbde70f5e011b03ccdcfcd30e698",
+            "app/schemas/assessment.py": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202",
+            "app/schemas/blueprint.py": "dc514943bb8e3eb8bdcd3d87c1db8a3d9b5bdf36f69719f5b09115c05b333440",
+            "app/schemas/chat.py": "ffcfca44d9b646b67239c5b925c36035717d5d1ada7d99a0df0cc41ca30f6fd6",
+            "app/schemas/course.py": "96994423ca2bf7e47c73e139fd2791ccd8986c8c7c59ce2c42aec63870b9e2c8",
+            "app/schemas/dashboard.py": "64f1c45cb77944f45ab1c731a40e8615820ced6b31e87bfafb6a18af07018208",
+            "app/schemas/document.py": "95a3fc7bcc94b3e1a67cd1f3db15ebfad9484d9c10d26ac1cf46a1dd1b8311f6",
+            "app/schemas/exam_workspace.py": "39f80980a409de0da6a745a193c19fc0d10c16d30ce9cfcd7e8792b1f09be247",
+            "app/schemas/feedback.py": "1a354edabe943bd31774b8345b6927aa1ae861327c9dba7cfcedcec00a7391cf",
+            "app/schemas/page.py": "2be487a8c4cdd99672c6deaa266c6995271b26e91491cb91616916c50a692cb3",
+            "app/schemas/policy.py": "48bcef5ec31f6613062d48cdeb9f7f44f187d95a4166ba13ad91c0f39093df7e",
+            "app/schemas/privacy.py": "1097542ff47cb2c17908b4fb3e307ccdc1b412a459332f922ec68ddaf9dfcd21",
+            "app/schemas/profile.py": "8b206ccc54d2269e330291c1aee96ad0562c23c5379fdbcf16ad07e0ac746687",
+            "app/schemas/question_usage.py": "f065963b150184886bcb4a2daec023a268a2ce3da8313c93fc43a5212fe4d5ce",
+            "app/schemas/source.py": "5908a184c0ac1e1e150ec122dae026667f85693b7a5a992b559d7270d81e57f1",
+            "app/worker.py": "2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634",
+            "static/docs-init.js": "940a8f183e5ce797376ae8e62201028899c3a3ffe52e56b8330d9fe1a2085036",
+            "static/docs-theme.js": "d84cea9e68233486fc2c8ad51bff8ce87916e14eab9672185703e6aadbc78d84",
+            "static/docs.css": "a66f4eb6fcf6fb2952af94bae1f8eab08c58e7150f38a83324ed7271bd463d3a",
+            "static/docs.html": "6e2fcc62e07aa246047b6f65007b4e86c98aff8f2ea02795315f7f767d17faa4",
+            "static/vendor/swagger-ui-bundle.js": "303f48967313bee56f30c651b6b90467482a99d2cf1571cde4e44527912eceea",
+            "static/vendor/swagger-ui.css": "ca238f7d7c2cf4480c1e77a9c3b9da915ab216e96ffd354e69076560c650c6de",
+            "app/core/request_context.py": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858"
+          },
+          "log_hashes": {
+            "stdout.log": "54e048fff5484d13069d861fe7e8aea57bffcd9de7621cc6103a13892dacd15b",
+            "stderr.log": "b742124423d972f390786338d04f8d417c92a58b70cefe57c6a70f373d02c761"
+          },
+          "wire_count": 14,
+          "wire_hashes_map_sha256": "b7554b46d7950efb7485ca45c3c3cf7ffbf459b44acce59a2e9724859fb470ca"
+        },
+        {
+          "arm": "candidate",
+          "protocol": "httptools",
+          "exit_code": 0,
+          "seconds": 1.222326,
+          "client_id_log_presence": {
+            "ordinary": false,
+            "ascii": false,
+            "uuid": false,
+            "first": false,
+            "second": false,
+            "reuse": false,
+            "concurrent": false
+          },
+          "all_exact_support_correlations": true,
+          "request_completion_events": 12,
+          "app_error_events": 2,
+          "uvicorn_second_error_events": 2,
+          "uvicorn_second_error_has_request_id": false,
+          "own_runtime_removed_after_hash_check": true,
+          "response_count": 14,
+          "distinct_support_id_count": 14,
+          "concurrent_request_count": 4,
+          "concurrent_distinct_support_id_count": 4,
+          "dependency_guards": {
+            "database": 0,
+            "outbound_socket": 0,
+            "embedding": 0,
+            "llm": 0
+          },
+          "lifecycle": {
+            "exit_code": 0,
+            "server_started": true,
+            "control_stop_received": true,
+            "control_thread_stopped": true
+          },
+          "runtime_source_hashes": {
+            "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/api/admin.py": "fdf679b526046e41cfc78d266a91bbef5bebc4f8a0a27338a192e8b702a53a46",
+            "app/api/analytics.py": "ac17b8b426c2f4b7cfa4683483f0320db64a57c24c2a8bad5c7a4ba08d39e9de",
+            "app/api/blueprints.py": "2a363b065a58584edbe9cb07e25282d1afa47cc0e8d773432c6f4bbc0c567bec",
+            "app/api/chat.py": "6c9ea0d3379efb4d6b1892ae62297306ec6366c0812ac86029fcac15cf916f8d",
+            "app/api/chat_cache.py": "652a4dab900f93ffb3fd51c227f3b3622ba388b7a46bbc1afd164a5bd2742d95",
+            "app/api/chat_history.py": "ff73c0320ba482db1dfb725c689494cc0e8ad91eb1e20cc774f548d814772272",
+            "app/api/courses.py": "7cfc1ba73eab5bfbbf1edf3db5696a805964ddef959a814447e350b91cd71f2a",
+            "app/api/dashboard.py": "dba4d1e04147ca2ae829ca2c39662372d8ae9dab4e96b9e4f9f3a3aded917e4a",
+            "app/api/deps.py": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+            "app/api/documents.py": "cd1d217e187bb52c26e3d434e7b9bf09d0d1253c74d1ce5aefb4b5c1b6f735ea",
+            "app/api/evaluation_runtime.py": "379bb536b59ca758fc724bdf6f3860774d1f6f26536547fb19587c5e1368ad0b",
+            "app/api/exams.py": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071",
+            "app/api/feedback.py": "63b7134cf225832add9d76db40459a4e98976a0642a772b122861a76ee4473d9",
+            "app/api/health.py": "b11c51dd7f38846bca5f5250dd561a80ed0785c16750f190bdb7dcb376e20f43",
+            "app/api/internal.py": "6feec72a87a91cef026b7052f0c1f997335319ff6272dfe7c02242f30a11a816",
+            "app/api/policy.py": "d01e8a2c0a542d6957dfde33d1463306f5989ef862359adac137e032d5cb22c6",
+            "app/api/privacy.py": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421",
+            "app/api/profile.py": "22f96ca35eacedcc5661f5b90c26098d9e66acc7ba2f92a958a4a85c88f991e2",
+            "app/api/questions.py": "985024e2ae55b0ce72e3cf6004a0c3a35ba664e9ad133b0479f3206e78196528",
+            "app/api/sources.py": "5c03c5a9f6d60ff6929c223977670ef2e687680a976ad52498e3c049909bed46",
+            "app/contracts.py": "53200bfd7bb4db7acfd57a09d7f02d25633ce77d00b43759325705bdbc40ac50",
+            "app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/core/candidate_identity.py": "568c744a7bd3d8248ce661a50563ac9f3aca1e1db59de79a75ed2373246cc034",
+            "app/core/config.py": "06694c0ca47d281b6584feecadc405558fdbf505be5d240fb2576df7f4e008f0",
+            "app/core/db.py": "31eb66fa632d00ff62b3ff3cde80020b47d6b2c64c2190ff120035a8f321083c",
+            "app/core/errors.py": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a",
+            "app/core/llm_json.py": "148d1754694ed4553c3e92a1bf0ed2c681da8e7329b1962af93cc7b09e68f14c",
+            "app/core/logging.py": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+            "app/core/pagination.py": "5a8bdb0ed508da3dc5e26076681c88508c655e3a5d72b6607f4951d8f4e8575d",
+            "app/core/provider_config.py": "23c527d7ce8f39537a7fc59f591afd7bdb2a0db9650ec9c937545f89df61243b",
+            "app/core/provider_evidence.py": "d551aec0661cd2b4eea8e0b8bb4800faf8a25e11a815a01c8ba8e29213f83b94",
+            "app/core/rate_limit.py": "f269575ec80fdf370d3b224b10fb40920be5c1181e9890fc1bc1c98d8ddee83a",
+            "app/core/readiness.py": "9b1d71dd447cad646ec3dadce6307f89547e24384007667b59c455a4f664064e",
+            "app/core/request_body_limit.py": "a52572ae4bb4ed02d10211f184ecce3a305ac15be27842adc3ebeb83e5d82712",
+            "app/core/request_quota.py": "52b94b45ace0d02cb69e39567b7675ae66ef3eda01b5b40459b08fe910a49cd2",
+            "app/core/request_quota_maintenance.py": "6e3d66a4bcb5605ec36ed9ed28e78afc2c35f40ad96f94fd0558918cc6436479",
+            "app/core/security.py": "c45d15504163132d08f93f998b941b86965e07e8eb71050287ffdd92ebabfe79",
+            "app/core/text_tr.py": "5dc85a79fcb93ecfd5c0000b4db8c0bc00a4392102234bae83fc4eb605d87b5e",
+            "app/core/upload_cleanup.py": "f9f353aaffd5aac26389856cabce6d2a35d9aa7a2f1ecd7761a09a750efe94c6",
+            "app/core/vector_space.py": "9ab48babe00bdabe95a3f7ae5e724e180eae72e010119e68b82fe5a04cb9d838",
+            "app/core/warmup.py": "d5c81d07be8feeb66aa910b0db4f43ec156f71a6265be24d971cc0a4d1961379",
+            "app/main.py": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0",
+            "app/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/models/assessment.py": "94e9b76b8483c0b8090c9ced000fb4a099733e886889e3cd288b014acfc3cd6d",
+            "app/models/base.py": "08a8c0788d6d78c86d409a477c4d54edee1f8d8dc726b98a8fffa88c3f4184d4",
+            "app/models/chat.py": "ec1b198f2eb5282ba3334447ed259e357e0863997f58aa0c1bd760704e71a6d2",
+            "app/models/core.py": "7345358d6053c5f8942331512db4abb7c1c8726f251bb32a3c91a9eb97442cd3",
+            "app/models/policy.py": "e89a99510c3a95e75801ae085df48420a8a287c3de0a3c0954657b14ada24f0f",
+            "app/modules/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/agent/__init__.py": "1d6adaac5c597cc7dd3c02a7ae8e53056c671e23d142e0c0b48dc15bdfb51828",
+            "app/modules/agent/answers.py": "089c18913e105b2d39f3ed6cc1a7037ae91b00ec149b8f3d5f5690898b99dff3",
+            "app/modules/agent/pipeline.py": "8c5e8129d3ee20f803683d3b664b8dde079fd2a7658209e77d6f9bd18d5f6916",
+            "app/modules/agent/quota.py": "d593d0ab1aab5cfcd4e0b4eaf4ada1d5439d1577c36728f8986a8f37875d7b43",
+            "app/modules/agent/token_precharge.py": "ab1cdd825e87f8130b1dee8345e1398f8d5c52dacc21ebfc2eb0a657f9a66d9f",
+            "app/modules/assessment/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/assessment/authoring.py": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954",
+            "app/modules/assessment/blueprint.py": "98cb233a7366295aa4606678bf67912c6109333c0d26894c636fd48fc686f9f6",
+            "app/modules/assessment/exam_paper.py": "6864dba481fc047671feb961069a6dfba0b48dcaa05abb6cc0fafe3fc19ae061",
+            "app/modules/assessment/exam_state.py": "2a3714e2eaf356c363a6faf151325d7afe0341ccd184b801e73a38d7a4cb51b1",
+            "app/modules/assessment/grading.py": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3",
+            "app/modules/assessment/question_gen.py": "864ff6249ed3bec13bf8ff1485d185e023f96953615bfcdc6732320abddd6d75",
+            "app/modules/assessment/socratic.py": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e",
+            "app/modules/chat/__init__.py": "8c39f729faee5e4d4bea679f55d2a8911daafd681fc7b1880299f759530e793c",
+            "app/modules/chat/lifecycle.py": "ecbf682f02ffc8d3dd2411ea73e11556217286339e048847c61abb312ed6565f",
+            "app/modules/generation/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/generation/fake.py": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88",
+            "app/modules/generation/llm.py": "1254be9c025e8caafbf1fa378bf884ca186a3b63fccaee58fa9155d7efdb7d23",
+            "app/modules/generation/preflight.py": "94da9a417907ffa2f42a7c201abd36b179e230c0f59239b6e07a2863c56ff7e0",
+            "app/modules/generation/prompts.py": "6e2638eb11cb2b677917b10ac0d5e94870e3138ddf9ecd251d9a2f34ea4be92d",
+            "app/modules/generation/service.py": "66951f646dbf6db4ba9e2580c054789f495a8030a56dd077b64c02a429119752",
+            "app/modules/guardrails/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/guardrails/chain.py": "3099258e237fe8de676bb3eb2b5e691095dbcf8a2d8cb34aaf9a28af34f4c380",
+            "app/modules/guardrails/citation.py": "7a5e0e5960ab84198ef8e6d85b0dea21f87f254c5fc0e2e167a073b4633837aa",
+            "app/modules/guardrails/leakage.py": "a6e93786e1c632d35b4eda3080a25473d2c8c4be7d527f0b1db5c56c6ccbba50",
+            "app/modules/guardrails/sanitize.py": "0d2010d2fbaebf68a6c4e5a0c189991cc7fe3fe59de5801dc4709db3df1663f0",
+            "app/modules/ingestion/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/ingestion/chunking.py": "fe676251fb2e17177b05a7819d912774f26cb8f053e28f3346edb53aab027c30",
+            "app/modules/ingestion/claims.py": "31c44cc1b14d232144c41e0ac4c29b0520c63a26a36089d444b9a5e45fadfab9",
+            "app/modules/ingestion/embedding.py": "0c1e1d0a89d3374ee9dbe8139929f96d4d5a19f3a7f6977891163e1320ed3099",
+            "app/modules/ingestion/parsers.py": "1b97770816453a5f95ce397c6232ea6c97f031ff757556745894dfc9be65d85f",
+            "app/modules/ingestion/pipeline.py": "4cd396f9f5f6712791b4cf4b98dce7c6a89681adf59e56592846f673c19ef14f",
+            "app/modules/ingestion/storage.py": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1",
+            "app/modules/ingestion/validation.py": "7bbcbce699a2e4f26647f1d73f1f4e9a167a09f10a0a7b684145e2b860389ba7",
+            "app/modules/mastery/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/modules/mastery/service.py": "71b950bd27d3cab695838be68e67cae2d052c90810bee0da204c6c131cc67dd5",
+            "app/modules/policy/__init__.py": "751725d15da446fa9d02205ce479722463475db9f67fcc260b9a7e1a756411de",
+            "app/modules/policy/service.py": "167ec5292d96b1e396b450742011cc9fa6d9a3c3e541f9767a7a593851023700",
+            "app/modules/retrieval/__init__.py": "a10ae625eaeaca98d29ecb4b0753565ed1368231bf0f030c37425c66d65b7ca8",
+            "app/modules/retrieval/dense.py": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d",
+            "app/modules/retrieval/fts.py": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b",
+            "app/modules/retrieval/fusion.py": "4bd06790f55525055e4e37855da224bdde4d9053540828ae1d83a10c2502a04c",
+            "app/modules/retrieval/inspection.py": "df584b7fc24139ad794f68d33200cbde1ebae834bd54e9e8c71d664bc54d8109",
+            "app/modules/retrieval/scope.py": "e86b840a3109fc93e2b2d8a41eda70fc83710e1ed45e7b8b2432b764032c0d49",
+            "app/modules/retrieval/service.py": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c",
+            "app/schemas/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "app/schemas/admin.py": "e476c1e01026e6d185626699413ea1eabd06bbde70f5e011b03ccdcfcd30e698",
+            "app/schemas/assessment.py": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202",
+            "app/schemas/blueprint.py": "dc514943bb8e3eb8bdcd3d87c1db8a3d9b5bdf36f69719f5b09115c05b333440",
+            "app/schemas/chat.py": "ffcfca44d9b646b67239c5b925c36035717d5d1ada7d99a0df0cc41ca30f6fd6",
+            "app/schemas/course.py": "96994423ca2bf7e47c73e139fd2791ccd8986c8c7c59ce2c42aec63870b9e2c8",
+            "app/schemas/dashboard.py": "64f1c45cb77944f45ab1c731a40e8615820ced6b31e87bfafb6a18af07018208",
+            "app/schemas/document.py": "95a3fc7bcc94b3e1a67cd1f3db15ebfad9484d9c10d26ac1cf46a1dd1b8311f6",
+            "app/schemas/exam_workspace.py": "39f80980a409de0da6a745a193c19fc0d10c16d30ce9cfcd7e8792b1f09be247",
+            "app/schemas/feedback.py": "1a354edabe943bd31774b8345b6927aa1ae861327c9dba7cfcedcec00a7391cf",
+            "app/schemas/page.py": "2be487a8c4cdd99672c6deaa266c6995271b26e91491cb91616916c50a692cb3",
+            "app/schemas/policy.py": "48bcef5ec31f6613062d48cdeb9f7f44f187d95a4166ba13ad91c0f39093df7e",
+            "app/schemas/privacy.py": "1097542ff47cb2c17908b4fb3e307ccdc1b412a459332f922ec68ddaf9dfcd21",
+            "app/schemas/profile.py": "8b206ccc54d2269e330291c1aee96ad0562c23c5379fdbcf16ad07e0ac746687",
+            "app/schemas/question_usage.py": "f065963b150184886bcb4a2daec023a268a2ce3da8313c93fc43a5212fe4d5ce",
+            "app/schemas/source.py": "5908a184c0ac1e1e150ec122dae026667f85693b7a5a992b559d7270d81e57f1",
+            "app/worker.py": "2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634",
+            "static/docs-init.js": "940a8f183e5ce797376ae8e62201028899c3a3ffe52e56b8330d9fe1a2085036",
+            "static/docs-theme.js": "d84cea9e68233486fc2c8ad51bff8ce87916e14eab9672185703e6aadbc78d84",
+            "static/docs.css": "a66f4eb6fcf6fb2952af94bae1f8eab08c58e7150f38a83324ed7271bd463d3a",
+            "static/docs.html": "6e2fcc62e07aa246047b6f65007b4e86c98aff8f2ea02795315f7f767d17faa4",
+            "static/vendor/swagger-ui-bundle.js": "303f48967313bee56f30c651b6b90467482a99d2cf1571cde4e44527912eceea",
+            "static/vendor/swagger-ui.css": "ca238f7d7c2cf4480c1e77a9c3b9da915ab216e96ffd354e69076560c650c6de",
+            "app/core/request_context.py": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858"
+          },
+          "log_hashes": {
+            "stdout.log": "c83311be2ff2ded79615f08eff70da7a0b30f8e3f8170030903019848f8a17ff",
+            "stderr.log": "965fc65040559814ee4d1a9ea3a34e9d17f8501e4c195d737c1fb927f174e65a"
+          },
+          "wire_count": 14,
+          "wire_hashes_map_sha256": "5262196bfaedf2703b13f300fb72c658f46395d85514785af7ea40dcb2cf30e3"
+        }
+      ],
+      "boundary": "Real source-pinned Uvicorn h11/httptools, synthetic error route; no database/audit row/model/hosted parity. Uvicorn second error intentionally lacks request ID; application error event supplies correlation."
+    },
+    {
+      "id": "lifecycle-01",
+      "result": {
+        "path": "/private/tmp/dou018-owned-lifecycle-measured-01/result.json",
+        "sha256": "27ec612d79cf3844f20f2648faa2a00192e3fc848e7600c3b8f0b58e3d6c1b43",
+        "bytes": 4934,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "PASS",
+        "scope": "Unmodified owned-controller + real Uvicorn + private minimal ASGI fixture; not product app, DB, browser, provider or hosted acceptance",
+        "checks": {
+          "allChildrenReaped": true,
+          "baselineNormalExit0": true,
+          "baselineShutdownFalseSuccessReproduced": true,
+          "baselineShutdownObservedAfterReady": true,
+          "baselineStartupBeforeHttp": true,
+          "baselineStartupRejected": true,
+          "candidateNormalExit0": true,
+          "candidateShutdownFailureExit1": true,
+          "candidateShutdownObservedAfterReady": true,
+          "candidateStartupBeforeHttp": true,
+          "candidateStartupRejected": true,
+          "noProbeErrorOrForcedCleanup": true,
+          "sourceUnchanged": true
+        },
+        "childProcessesStarted": 6,
+        "databaseCalls": 0,
+        "externalHttpCalls": 0,
+        "pythonVersion": [
+          3,
+          12,
+          13
+        ],
+        "uvicornVersion": "0.52.4",
+        "sourcesBefore": {
+          "baseline": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+          "baselineGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "candidate": "d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a",
+          "candidateGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "probe": "9c3c9bea543aa9d706130a0b504f28fcef169aa9058c7e46ff06543b50396445"
+        },
+        "sourcesAfter": {
+          "baseline": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+          "baselineGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "candidate": "d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a",
+          "candidateGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "probe": "9c3c9bea543aa9d706130a0b504f28fcef169aa9058c7e46ff06543b50396445"
+        }
+      },
+      "arms": [
+        {
+          "arm": "baseline-normal",
+          "case": "normal",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.420108,
+          "logSha256": "3cd591e39c3638e0b43fd754b9b1b9f9f4e2f338624c2d1acb8eb262dccdf376",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "baseline-shutdown-failed",
+          "case": "shutdown-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.376962,
+          "logSha256": "222ca9dc2fac77634426fa00b92d0a31eccc68e259f1e2f49837dcef7c386fbe",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "baseline-startup-failed",
+          "case": "startup-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": false,
+          "errorCode": null,
+          "exitCode": -6,
+          "httpAttempts": 0,
+          "httpResponses": 0,
+          "ownedChildReaped": true,
+          "readyObserved": false,
+          "seconds": 1.351371,
+          "logSha256": "17bc3e71c7efd75679cf60d6990c076836c60785678b0c73be76ef242a4da8b2",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-normal",
+          "case": "normal",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.410439,
+          "logSha256": "a886118e17efa1b2eb35483d434b48c7c41e285f46772d50aca5b5c4a6f408ca",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-shutdown-failed",
+          "case": "shutdown-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 1,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.399017,
+          "logSha256": "2c6dedc032db0bd3989eef01bbcb5f72067a55fb59ba70e4e140ab86852c0c1c",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-startup-failed",
+          "case": "startup-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": false,
+          "errorCode": null,
+          "exitCode": -6,
+          "httpAttempts": 0,
+          "httpResponses": 0,
+          "ownedChildReaped": true,
+          "readyObserved": false,
+          "seconds": 1.307289,
+          "logSha256": "1e0d6339339848addbf7a61c59d0d2f8abdaaefa3e13a23de27a92ec60582538",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        }
+      ],
+      "boundary": "Actual controller and Uvicorn processes, private minimal ASGI fixture. Not product application startup, Playwright or database proof."
+    },
+    {
+      "id": "lifecycle-02",
+      "result": {
+        "path": "/private/tmp/dou018-owned-lifecycle-measured-02/result.json",
+        "sha256": "c807d8381f4a0fd3c5729cec28323ee25735befe1b6e3c3723cc70f1d38bad1a",
+        "bytes": 5243,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "FAIL",
+        "scope": "Unmodified owned-controller + real Uvicorn + private minimal ASGI fixture; not product app, DB, browser, provider or hosted acceptance",
+        "checks": {
+          "allChildrenReaped": true,
+          "baselineNormalExit0": true,
+          "baselineShutdownFalseSuccessReproduced": true,
+          "baselineShutdownObservedAfterReady": true,
+          "baselineStartupBeforeHttp": true,
+          "baselineStartupRejected": true,
+          "candidateNoFatalPythonDiagnostic": true,
+          "candidateNormalExit0": true,
+          "candidateShutdownFailureExit1": true,
+          "candidateShutdownObservedAfterReady": true,
+          "candidateStartupBeforeHttp": true,
+          "candidateStartupFailureExit1": false,
+          "candidateStartupRejected": true,
+          "noProbeErrorOrForcedCleanup": true,
+          "sourceUnchanged": true
+        },
+        "childProcessesStarted": 6,
+        "databaseCalls": 0,
+        "externalHttpCalls": 0,
+        "pythonVersion": [
+          3,
+          12,
+          13
+        ],
+        "uvicornVersion": "0.52.4",
+        "sourcesBefore": {
+          "baseline": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+          "baselineGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "candidate": "ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7",
+          "candidateGuard": "eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724",
+          "probe": "e881f3e82b8ab5030e4f867e448a49281959063d9bab01d260bfab928f9554b3"
+        },
+        "sourcesAfter": {
+          "baseline": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+          "baselineGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "candidate": "ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7",
+          "candidateGuard": "eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724",
+          "probe": "e881f3e82b8ab5030e4f867e448a49281959063d9bab01d260bfab928f9554b3"
+        }
+      },
+      "arms": [
+        {
+          "arm": "baseline-normal",
+          "case": "normal",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.409004,
+          "logSha256": "938b2ecf96ee2ae4f29365ffa930575cc7cc5aff989026580ad4b5ab249117d7",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "baseline-shutdown-failed",
+          "case": "shutdown-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.397306,
+          "logSha256": "782dae68062a636a79893244529056315f371de1694f4a7a2a462665e0c43662",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "baseline-startup-failed",
+          "case": "startup-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": false,
+          "errorCode": null,
+          "exitCode": -6,
+          "fatalPythonDiagnostic": true,
+          "httpAttempts": 0,
+          "httpResponses": 0,
+          "ownedChildReaped": true,
+          "readyObserved": false,
+          "seconds": 1.290731,
+          "logSha256": "16985c01dd964cb557940f875898c65e3cc86e51316fef699b709ea3ce6a58d7",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-normal",
+          "case": "normal",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.392743,
+          "logSha256": "c1a4323fed20c4a9fb192082aa29ce7e9b86ffdbdc4be47fde2db2ddf8ae712f",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-shutdown-failed",
+          "case": "shutdown-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 1,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.406866,
+          "logSha256": "b2d8c13ba4645b9ec0515de8522237e9df106e03b26d6cd750469c3c1242bae6",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-startup-failed",
+          "case": "startup-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": false,
+          "errorCode": null,
+          "exitCode": 3,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 0,
+          "httpResponses": 0,
+          "ownedChildReaped": true,
+          "readyObserved": false,
+          "seconds": 0.318173,
+          "logSha256": "63011b5e9934706ed95c33b1dfe56bc96687e97481ad14e74f205775ad022f21",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        }
+      ],
+      "boundary": "Actual controller and Uvicorn processes, private minimal ASGI fixture. Not product application startup, Playwright or database proof."
+    },
+    {
+      "id": "lifecycle-03",
+      "result": {
+        "path": "/private/tmp/dou018-owned-lifecycle-measured-03/result.json",
+        "sha256": "2e7b332f462014daac072b4220fb88c68191c189f86b0fbd3f7bbb16edc68621",
+        "bytes": 5242,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "PASS",
+        "scope": "Unmodified owned-controller + real Uvicorn + private minimal ASGI fixture; not product app, DB, browser, provider or hosted acceptance",
+        "checks": {
+          "allChildrenReaped": true,
+          "baselineNormalExit0": true,
+          "baselineShutdownFalseSuccessReproduced": true,
+          "baselineShutdownObservedAfterReady": true,
+          "baselineStartupBeforeHttp": true,
+          "baselineStartupRejected": true,
+          "candidateNoFatalPythonDiagnostic": true,
+          "candidateNormalExit0": true,
+          "candidateShutdownFailureExit1": true,
+          "candidateShutdownObservedAfterReady": true,
+          "candidateStartupBeforeHttp": true,
+          "candidateStartupFailureExit3": true,
+          "candidateStartupRejected": true,
+          "noProbeErrorOrForcedCleanup": true,
+          "sourceUnchanged": true
+        },
+        "childProcessesStarted": 6,
+        "databaseCalls": 0,
+        "externalHttpCalls": 0,
+        "pythonVersion": [
+          3,
+          12,
+          13
+        ],
+        "uvicornVersion": "0.52.4",
+        "sourcesBefore": {
+          "baseline": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+          "baselineGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "candidate": "ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7",
+          "candidateGuard": "eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724",
+          "probe": "3560bce07c36a79cb5c4e3e7c83344fc6d5aa1bdd0f3ed96a74dfb9b2fcba5e8"
+        },
+        "sourcesAfter": {
+          "baseline": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+          "baselineGuard": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "candidate": "ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7",
+          "candidateGuard": "eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724",
+          "probe": "3560bce07c36a79cb5c4e3e7c83344fc6d5aa1bdd0f3ed96a74dfb9b2fcba5e8"
+        }
+      },
+      "arms": [
+        {
+          "arm": "baseline-normal",
+          "case": "normal",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.459422,
+          "logSha256": "0fa3aa73f75f82000d502b7300381d8aac63a0c0fd316dc622f9b2c642b7d40a",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "baseline-shutdown-failed",
+          "case": "shutdown-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.387962,
+          "logSha256": "9e06a96f1bc9841568c1053f4bc7b2ca07a4f3c3ec225c3628a1b4d5b64bffca",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "baseline-startup-failed",
+          "case": "startup-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": false,
+          "errorCode": null,
+          "exitCode": -6,
+          "fatalPythonDiagnostic": true,
+          "httpAttempts": 0,
+          "httpResponses": 0,
+          "ownedChildReaped": true,
+          "readyObserved": false,
+          "seconds": 1.294416,
+          "logSha256": "89cd32eb6c554287c242f4328616b6cad5ce8225cddbdcaef00a832c0246c687",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-normal",
+          "case": "normal",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 0,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.409707,
+          "logSha256": "f7fe6b7a526482445df6f2abbe4139d6a8fdc87dc2780eb21d1f5c6e4e7e267e",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-shutdown-failed",
+          "case": "shutdown-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": true,
+          "errorCode": null,
+          "exitCode": 1,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 1,
+          "httpResponses": 1,
+          "ownedChildReaped": true,
+          "readyObserved": true,
+          "seconds": 0.390843,
+          "logSha256": "ca93d880e63dff029beccccac192e6c587b311751993405713723cdde2fc82b8",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        },
+        {
+          "arm": "candidate-startup-failed",
+          "case": "startup-failed",
+          "cleanup": "not-needed",
+          "controlStopSent": false,
+          "errorCode": null,
+          "exitCode": 3,
+          "fatalPythonDiagnostic": false,
+          "httpAttempts": 0,
+          "httpResponses": 0,
+          "ownedChildReaped": true,
+          "readyObserved": false,
+          "seconds": 0.264278,
+          "logSha256": "e20466421f71c4a1014042f6b0c1c173623fd294f9bb959ef3a57c0f15850d78",
+          "fixtureSourceSha256": "f0ed989e39dcba60a4f4b4908b90ed5c78d287de9a33bbf52d51ca20cbecb96d"
+        }
+      ],
+      "boundary": "Actual controller and Uvicorn processes, private minimal ASGI fixture. Not product application startup, Playwright or database proof."
+    },
+    {
+      "id": "actual-db-accounting",
+      "result": {
+        "path": "/private/tmp/dou018-s10-db-audit-result-01/result.json",
+        "sha256": "1cb1d21ecf9b24d2161da9364ff8e43cdf71b757c07be58360072ee8d90ddfd5",
+        "bytes": 10588,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "PASS",
+        "package_manifest_sha256": "99719ea5e46420093190b86f0e7e155968a0e5e3476d0bd8d0ca1054d8529ec5",
+        "scope": "actual local PG/API + original collector/cleanup; no Playwright, provider, hosting or legal-compliance claim",
+        "automatic_omitted_row_delete": false,
+        "sourceUnchanged": true
+      },
+      "phases": [
+        {
+          "phase": "interleaved",
+          "status": "PASS",
+          "driver": "controlled-real-API-Bun-exercise",
+          "mode": "interleaved",
+          "ownedApiExitCode": 0,
+          "stopObservation": "graceful-pipe-and-wait",
+          "driverExitCode": 0,
+          "guardOutcomes": {
+            "A": {
+              "exitCode": 0,
+              "status": "PASS",
+              "accountingSha256": "d120ca7d35cfc49f0b1da4f3d90615e942196f8c01a658c967b601745f61de39"
+            },
+            "B": {
+              "exitCode": 0,
+              "status": "PASS",
+              "accountingSha256": "21caa155d8fa2d8cf3fe3aeb64e4d67ad2ded7eeca878ade643a4a2edcb5b40a"
+            }
+          },
+          "experiment": {
+            "status": "PASS",
+            "observedRequestCount": 4,
+            "incompleteRejectedRowsUnchanged": true,
+            "wrongScopeRejectedRowsUnchanged": true,
+            "interleaving": [
+              "A1",
+              "B1",
+              "A2",
+              "B2"
+            ],
+            "captured_row_counts": {
+              "A": 2,
+              "B": 2
+            },
+            "protectedRowsCount": 1
+          },
+          "accounting": [
+            {
+              "status": "PASS",
+              "beforeCount": 1,
+              "afterCount": 1,
+              "deleteExecuted": false,
+              "playwrightExitCode": 0,
+              "changedBaselineIdsCount": 0,
+              "missingBaselineIdsCount": 0,
+              "unexpectedNewRowsCount": 0,
+              "reference": {
+                "path": "/private/tmp/dou018-s10-db-audit-result-01/interleaved/audit-A/final-accounting.json",
+                "sha256": "d120ca7d35cfc49f0b1da4f3d90615e942196f8c01a658c967b601745f61de39",
+                "bytes": 654,
+                "note": "Original bytes; publication requires the archive review stated in this inventory."
+              }
+            },
+            {
+              "status": "PASS",
+              "beforeCount": 1,
+              "afterCount": 1,
+              "deleteExecuted": false,
+              "playwrightExitCode": 0,
+              "changedBaselineIdsCount": 0,
+              "missingBaselineIdsCount": 0,
+              "unexpectedNewRowsCount": 0,
+              "reference": {
+                "path": "/private/tmp/dou018-s10-db-audit-result-01/interleaved/audit-B/final-accounting.json",
+                "sha256": "21caa155d8fa2d8cf3fe3aeb64e4d67ad2ded7eeca878ade643a4a2edcb5b40a",
+                "bytes": 654,
+                "note": "Original bytes; publication requires the archive review stated in this inventory."
+              }
+            }
+          ]
+        },
+        {
+          "phase": "omitted",
+          "status": "PASS",
+          "driver": "controlled-real-API-Bun-exercise",
+          "mode": "omitted",
+          "ownedApiExitCode": 0,
+          "stopObservation": "graceful-pipe-and-wait",
+          "driverExitCode": 0,
+          "guardOutcomes": {
+            "O": {
+              "exitCode": 1,
+              "status": "FAIL",
+              "accountingSha256": "0a8ebe8a71259f06b33c0470382c158422dfa57505a2e2ca5073779fd7c3fef7"
+            }
+          },
+          "experiment": {
+            "HTTPStatus": 200,
+            "captureReceiptCount": 0,
+            "omittedRowsCount": 1
+          },
+          "accounting": [
+            {
+              "status": "FAIL",
+              "beforeCount": 1,
+              "afterCount": 2,
+              "deleteExecuted": false,
+              "playwrightExitCode": 0,
+              "changedBaselineIdsCount": 0,
+              "missingBaselineIdsCount": 0,
+              "unexpectedNewRowsCount": 1,
+              "reference": {
+                "path": "/private/tmp/dou018-s10-db-audit-result-01/omitted/audit-O/final-accounting.json",
+                "sha256": "0a8ebe8a71259f06b33c0470382c158422dfa57505a2e2ca5073779fd7c3fef7",
+                "bytes": 865,
+                "note": "Original bytes; publication requires the archive review stated in this inventory."
+              }
+            }
+          ]
+        }
+      ],
+      "source_map_equal": true,
+      "boundary": "Real API/Bun/PG exercise using original collector and cleanup; does not execute Playwright. Protected preexisting row and independent interleaved runs stay intact. Omitted-row negative intentionally ends guard FAIL and preserves that row; it is not an overall acceptance failure."
+    },
+    {
+      "id": "owned-e2e-01",
+      "result": {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-owned-01/result.json",
+        "sha256": "9d30b6dd19bdb4275865abd885ff5cd6b544702f6a8952eb42f9dcb21fd3aa0b",
+        "bytes": 424,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "PASS",
+        "scope": "Synthetic local auth, hashing embeddings, fake model; no hosted or real-provider claim",
+        "auditFinishExitCode": 0,
+        "errorCode": null,
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "seconds": 99.477,
+        "sourceUnchanged": true,
+        "stopObservation": "graceful-pipe-and-wait",
+        "webBuild": "webpack"
+      },
+      "test_summary": [
+        "71 passed (1.6m)"
+      ],
+      "source_count": 347,
+      "source_map_equal": true,
+      "controller_sha256": "d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a",
+      "guard_sha256": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+      "accounting": {
+        "status": "PASS",
+        "beforeCount": 1,
+        "afterCount": 1,
+        "deleteExecuted": false,
+        "playwrightExitCode": 0,
+        "changedBaselineIdsCount": 0,
+        "missingBaselineIdsCount": 0,
+        "unexpectedNewRowsCount": 0,
+        "reference": {
+          "path": "/private/tmp/dou018-evidence/s10-e2e-owned-01/audit/final-accounting.json",
+          "sha256": "9514b7b4762ab39125615036705a7fcd3be5f8c2d510f17264797434a3403460",
+          "bytes": 649,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      },
+      "proof_files": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-e2e-owned-01/source-before.json",
+          "sha256": "f4f2b50532c73b8fe0da3be96ab6f21ed17560674edbbf80674b59070077d15a",
+          "bytes": 36515,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        },
+        {
+          "path": "/private/tmp/dou018-evidence/s10-e2e-owned-01/source-after.json",
+          "sha256": "f4f2b50532c73b8fe0da3be96ab6f21ed17560674edbbf80674b59070077d15a",
+          "bytes": 36515,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        },
+        {
+          "path": "/private/tmp/dou018-evidence/s10-e2e-owned-01/quiescence.json",
+          "sha256": "03489eac3daa452d5b23e3f6073ceb3c25dc639ade9eadbfb93f311ca4877776",
+          "bytes": 196,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "boundary": "Actual 71 local browser cases bound to d0 controller. It does not validate later ba511 controller. Synthetic local auth/fake model/hashing embedding; root-provisioned isolated PG. Final E2E02 was absent at inventory cutoff."
+    },
+    {
+      "id": "e2e-target-provision",
+      "result": {
+        "path": "/private/tmp/dou018-evidence/s10-e2e-provision-01/result.json",
+        "sha256": "4e9fc7968b386d7eeb8e6ea0bd9f0af612097531a377d88e40dafe7f0eca49bc",
+        "bytes": 3240,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "status": "synthetic-e2e-provisioned",
+        "role_password_changes": false
+      },
+      "owned_create": {
+        "absent_before": true,
+        "own_create_completed": true
+      },
+      "migration_count": 22,
+      "target_pins_and_password_files": "Restricted local operational inputs; do not publish wholesale. Preserve private original hash provenance separately from a public whitelisted result.",
+      "proof_files": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-e2e-provision-01/owned-create.json",
+          "sha256": "42f230aea0435a59c7d9a12acef0395e30cb26f6f2f6702866ea36948adf3f45",
+          "bytes": 151,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "boundary": "This result proves local root provisioning; it is not Docker/CI provisioning. It contains no teardown-complete field: do not infer that this E2E DB was dropped from this receipt."
+    },
+    {
+      "id": "full-api",
+      "result": {
+        "path": "/private/tmp/dou018-evidence/s10-full-api-01/result.json",
+        "sha256": "585022944d0515b925f2d175bdb3f7acfb8d749878ee45e64868601defaf9fe8",
+        "bytes": 25306,
+        "note": "Original bytes; publication requires the archive review stated in this inventory."
+      },
+      "summary": {
+        "database_dropped": true,
+        "exit_code": 0,
+        "seconds": 113.427,
+        "repo_head": "deb83e1c0c4553e00072ea6797bd48b6ab53f330",
+        "working_tree_dirty": true,
+        "source_unchanged": true,
+        "log_sha256": "2339cd0680c434c4103229fdfdabef291cc617f7de0f5b552e4b0cd7ae0041ec"
+      },
+      "source_count": 221,
+      "test_summary": [
+        "1688 passed, 5 warnings, 38 subtests passed in 103.17s (0:01:43)"
+      ],
+      "boundary": "1688 pytest cases plus 38 subtests, not 1726 top-level cases; local dirty-source evidence at deb83e1, not hosted CI for that dirty state."
+    },
+    {
+      "id": "s10-combined-offline-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-combined-offline-01/result.json",
+          "sha256": "2b7e7f442e2fb42e5a753b9ef205b49ddf9ade02b237b94c52b6f85d82e619d1",
+          "bytes": 13512,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "exit_code": 0,
+        "attempts": {
+          "db": 0,
+          "network": 0
+        },
+        "source_unchanged": true,
+        "log_sha256": "8decbe09dbc2192790877e750c8b5d4a4c2387c8a442c0d039a3501094365283"
+      },
+      "log_summaries": {
+        "tests.log": [
+          "134 passed in 2.27s"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-checks-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-checks-01/result.json",
+          "sha256": "8b7e3c9ac3614de8d55402ae49afca95dd9cffd1ba500f1c317f104bab61fbf4",
+          "bytes": 856,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": [
+        {
+          "name": "ruff",
+          "command": [
+            ".venv/bin/ruff",
+            "check",
+            "--no-cache",
+            "app",
+            "tests"
+          ],
+          "exit_code": 1,
+          "seconds": 0.081,
+          "log_sha256": "c60732a589d441b334108d274ffab13ee537af4850d1a2d5f0b7be4425235fbe"
+        },
+        {
+          "name": "format",
+          "command": [
+            ".venv/bin/ruff",
+            "format",
+            "--check",
+            "--no-cache",
+            "app",
+            "tests"
+          ],
+          "exit_code": 0,
+          "seconds": 0.049,
+          "log_sha256": "692aa17a66e5a48293d97156d9c8b2690bef0a98514251662ef4832003fb0463"
+        },
+        {
+          "name": "mypy",
+          "command": [
+            ".venv/bin/mypy",
+            "--cache-dir",
+            "/private/tmp/dou018-evidence/s10-checks-01/mypy-cache",
+            "app"
+          ],
+          "exit_code": 0,
+          "seconds": 18.229,
+          "log_sha256": "0d9882f1f6dd71fa523924801fe936e3519a4e0c1d8ed1d296b549cc336dbcbc"
+        }
+      ],
+      "log_summaries": {
+        "mypy.log": [
+          "Success: no issues found in 114 source files"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-style-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-style-01/result.json",
+          "sha256": "e2151976634aa78d992456e692399a197ebb9639e7950638f23ea68772137825",
+          "bytes": 578,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": [
+        {
+          "path": "apps/api/app/core/errors.py",
+          "before_sha256": "e2178a870c3e18566f0c92ead65f6aa5be5d71c57f2ab751aa8781f3940eeb61",
+          "after_sha256": "421ec8a6c217d8215bc0fa3b3ca2b7e67faa9f02eb0fb4dc9e38f53c37d9ad4a",
+          "import_bindings_and_nonimport_AST_equal": true
+        },
+        {
+          "path": "apps/api/tests/test_server_request_id.py",
+          "before_sha256": "4018f90b19458d39cc04d2cf3c46045eb877e797d84af1ae65d1fbf7ec4c98d1",
+          "after_sha256": "2bc590c975e76f0be3dff339f0c5d542cee38eb8a31fcb9ea17b5d3bfb5525ec",
+          "import_bindings_and_nonimport_AST_equal": true
+        }
+      ],
+      "log_summaries": {},
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-web-checks-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-web-checks-01/result.json",
+          "sha256": "d7d5713804761b571cdc8f571b0b2e87512cd0f0d9998589e8946a9c1b56e6d6",
+          "bytes": 20425,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "results": [
+          {
+            "name": "bun",
+            "exit_code": 1,
+            "seconds": 0.671,
+            "log_sha256": "01b169452b75818a383d09fd2aca444854a68f53264cb2336a00a5795c353478"
+          },
+          {
+            "name": "tsc",
+            "exit_code": 2,
+            "seconds": 3.483,
+            "log_sha256": "e7ea1912f51431956467a33bae0fc3ac271503c7e591a68e2276760e47ed9cab"
+          }
+        ],
+        "source_unchanged": true
+      },
+      "log_summaries": {
+        "bun.log": [
+          "Ran 589 tests across 61 files. [604.00ms]",
+          "573 pass",
+          "16 fail"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-web-checks-02",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-web-checks-02/result.json",
+          "sha256": "96e1169963c3aa52f8627e7da555ea61fd20a38b0b1c518d76244754aad556e7",
+          "bytes": 20425,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "results": [
+          {
+            "name": "bun",
+            "exit_code": 0,
+            "seconds": 0.262,
+            "log_sha256": "11849d5e94940a7a86fc580aae2f9a8c66dd055740c031cc53886131afe3df73"
+          },
+          {
+            "name": "tsc",
+            "exit_code": 0,
+            "seconds": 3.417,
+            "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ],
+        "source_unchanged": true
+      },
+      "log_summaries": {
+        "bun.log": [
+          "Ran 573 tests across 45 files. [200.00ms]",
+          "573 pass",
+          "0 fail"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-web-types-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-web-types-01/changes.json",
+          "sha256": "4814483ff2d05df751fc81479258dc5e1ad76c64943b268c099b1b46d1622ef3",
+          "bytes": 446,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        },
+        {
+          "path": "/private/tmp/dou018-evidence/s10-web-types-01/transpile-equivalence.json",
+          "sha256": "1879fede48d414d2506844651f8b6b1fccf640d3a7827c1ef6c46008ddca4fbe",
+          "bytes": 760,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "transpile_equivalence": {
+          "bun": "1.3.14",
+          "results": [
+            {
+              "path": "apps/web/e2e/audit-receipts.ts",
+              "before": "a5a51968de4456729f8cbe214d4a683665b64514e81f93ffdf8b982dc7ce02b6",
+              "after": "97f719992f59f0641a89a2504b21b5729eeef23cdb8246f3fa8fab6bdd54325e",
+              "emitted_js_identical": true,
+              "emitted_sha256": "eacec6686e0808fb99d1ae264d2313b8023334217adbd25221cf32b2dc0037ce"
+            },
+            {
+              "path": "apps/web/lib/e2e-audit-receipts.test.ts",
+              "before": "06d0005b1aee8193dc764ab2388efcd3e7d8d9d7f564e92509fc3cfa5f255e50",
+              "after": "5d7c208b3c2a312d5180a61ded287f525eaabf6a06611ad48be8e7b0d9775ab3",
+              "emitted_js_identical": true,
+              "emitted_sha256": "64b43fd0ea3e07c7d3a9af6331ddd8a4b2ac3d84e7340e844e2627e957a1ea81"
+            }
+          ]
+        },
+        "changes": [
+          {
+            "path": "apps/web/e2e/audit-receipts.ts",
+            "before": "a5a51968de4456729f8cbe214d4a683665b64514e81f93ffdf8b982dc7ce02b6",
+            "after": "97f719992f59f0641a89a2504b21b5729eeef23cdb8246f3fa8fab6bdd54325e"
+          },
+          {
+            "path": "apps/web/lib/e2e-audit-receipts.test.ts",
+            "before": "06d0005b1aee8193dc764ab2388efcd3e7d8d9d7f564e92509fc3cfa5f255e50",
+            "after": "5d7c208b3c2a312d5180a61ded287f525eaabf6a06611ad48be8e7b0d9775ab3"
+          }
+        ]
+      },
+      "log_summaries": {},
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-controller-style-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-controller-style-01/result.json",
+          "sha256": "2812522300d5b4969b660fca891c095470aae3d2462dec28488b7fddc2e3c8c3",
+          "bytes": 531,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": [
+        {
+          "path": "run_owned_e2e.py",
+          "before": "3efe4bcf4eca6c14f93e8a4160c03c60edaeddb4bd41d21b6884021ff9dc1d34",
+          "after": "ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7",
+          "nonimport_ast_equal": true,
+          "imports_equal": true
+        },
+        {
+          "path": "e2e_audit_guard.py",
+          "before": "68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4",
+          "after": "eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724",
+          "nonimport_ast_equal": true,
+          "imports_equal": true
+        }
+      ],
+      "log_summaries": {},
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-stop-contracts-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-stop-contracts-01/result.json",
+          "sha256": "5d650b35cb29de515aa33dedf385c8e5789e755bc35d241768ad0160e035b3ef",
+          "bytes": 771,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "scope": "synthetic Popen offline contract, no OS process cleanup proof",
+        "results": [
+          {
+            "arm": "baseline",
+            "exit_code": 1,
+            "seconds": 0.14,
+            "source_sha256": "180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920",
+            "log_sha256": "3cff5ece8c3ec1a98dc1cdd620419c134961dc1c36ca2f325fc1417eed9d6697",
+            "source_unchanged": true
+          },
+          {
+            "arm": "candidate",
+            "exit_code": 0,
+            "seconds": 0.091,
+            "source_sha256": "d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a",
+            "log_sha256": "756daee297448ab72f02b9eaba6add93e34811c80fe3ebad184bbdf24f0a339c",
+            "source_unchanged": true
+          }
+        ],
+        "test_source": "f3d504ddfd56a87fcd905930696cf4d8a292ef11cdb68e51ef396d43bb9e84cb"
+      },
+      "log_summaries": {
+        "candidate.log": [
+          "Ran 8 tests in 0.023s"
+        ],
+        "baseline.log": [
+          "Ran 8 tests in 0.028s",
+          "FAILED (failures=1, errors=2)"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-ci-provision-offline-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-ci-provision-offline-01/result.json",
+          "sha256": "4e7ad02de0f06794408de7bf527fd5d2fa6859ef5fc9f3485de715e74a282a69",
+          "bytes": 814,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "scope": "offline Docker/PG transport doubles; no actual container or PG acceptance",
+        "results": [
+          {
+            "arm": "original13",
+            "exit_code": 0,
+            "seconds": 0.144,
+            "test_sha256": "023e13690a32a6417d1ba4583ce5e2ae759d160ef98c5337e3fecc86f54b11f7",
+            "helper_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+            "log_sha256": "0d5f8346517fbbc9f8c76001a173ca4ace78dc0d43bc08446621d0299d7dcd04"
+          },
+          {
+            "arm": "review14",
+            "exit_code": 0,
+            "seconds": 0.147,
+            "test_sha256": "c6fbe5e0fdf6749f0142895e383d0f062105154bb77e1b14037fc2c542195fbb",
+            "helper_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+            "log_sha256": "2688e3aac5879831defab5e5f231a6f331e395be82e99f6caef62e863a873ffe"
+          }
+        ]
+      },
+      "log_summaries": {
+        "original13.log": [
+          "Ran 13 tests in 0.012s"
+        ],
+        "review14.log": [
+          "Ran 14 tests in 0.013s"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-ci-order-mutant-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-ci-order-mutant-01/result.json",
+          "sha256": "04ce4d3dad88e8f326dea7f287c529fa2138eb871392225b1b5c85f3686115e1",
+          "bytes": 467,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "exit_code": 1,
+        "seconds": 0.148,
+        "scope": "offline regression sensitivity; Docker/PG are doubles",
+        "mutation": "remove only repeated per-source identity check; first/final identity checks retained",
+        "helper_sha256": "4d270abc20c189fb432c7f9fea81eb19d9d3cb150c14738fd46b6a21e03d6028",
+        "test_sha256": "c6fbe5e0fdf6749f0142895e383d0f062105154bb77e1b14037fc2c542195fbb",
+        "log_sha256": "302d1bf36be5b4cfd2bfed609e305be67addae2fc015afd9692cd4a3393778bf"
+      },
+      "log_summaries": {
+        "tests.log": [
+          "Ran 2 tests in 0.004s",
+          "FAILED (failures=2)"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-ci-yaml-preflight-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-ci-yaml-preflight-01/result.json",
+          "sha256": "bbba4b434871534f3a16bce73971be24d8951313a7a5b5fe0bf494b0e017fe7a",
+          "bytes": 374,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "initial_sha256": "596586c90d0888700a6771342f1a2ad73e49ce71cd42d26c3b870b9a1da78885",
+        "corrected_sha256": "d0e7a9d8e48b2ab906b7ee4060811d10b8f766e3c2af22ab0a2dd0b1953bbde8",
+        "finding": "Unapplied generator matched nested service env instead of job env; required PostgreSQL service configuration restored from exact original source.",
+        "repository_changed": false
+      },
+      "log_summaries": {},
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    },
+    {
+      "id": "s10-final-static-01",
+      "references": [
+        {
+          "path": "/private/tmp/dou018-evidence/s10-final-static-01/result.json",
+          "sha256": "55820f57a2860cb4ab8e280dd161f99936e645c8d5163400e98ec1746c4aabd1",
+          "bytes": 25213,
+          "note": "Original bytes; publication requires the archive review stated in this inventory."
+        }
+      ],
+      "summary": {
+        "checks": [
+          {
+            "name": "ci-provision",
+            "exit_code": 0,
+            "seconds": 0.15,
+            "log_sha256": "c85e44116f14ff1dd26195049beb85bb5d7d7acc141cfd198d549bea399f2258"
+          },
+          {
+            "name": "owned-lifecycle",
+            "exit_code": 0,
+            "seconds": 1.21,
+            "log_sha256": "df6b2df1b230bcb1df1e1bc00044cfc743f729bbf9611326ae285584d915a6c2"
+          },
+          {
+            "name": "api-ruff",
+            "exit_code": 0,
+            "seconds": 0.091,
+            "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+          },
+          {
+            "name": "api-format",
+            "exit_code": 0,
+            "seconds": 0.024,
+            "log_sha256": "692aa17a66e5a48293d97156d9c8b2690bef0a98514251662ef4832003fb0463"
+          },
+          {
+            "name": "scripts-ruff",
+            "exit_code": 1,
+            "seconds": 0.024,
+            "log_sha256": "f06965a332114600c52085544d0c1b8be8f5324bcb3bcaa1d6978162a857ab97"
+          },
+          {
+            "name": "scripts-format",
+            "exit_code": 1,
+            "seconds": 0.023,
+            "log_sha256": "b2c5373e2d6c64278a923056c46e62ce1c90a5792534bd5f25baa2577cee1bab"
+          }
+        ],
+        "source_unchanged": true
+      },
+      "log_summaries": {
+        "ci-provision.log": [
+          "Ran 14 tests in 0.012s"
+        ],
+        "owned-lifecycle.log": [
+          "Ran 11 tests in 1.104s"
+        ]
+      },
+      "boundary": "Recorded local static/offline check only; no new execution during inventory."
+    }
+  ],
+  "preserved_failures_and_corrected_oracles": [
+    {
+      "record": "negative-01",
+      "preserve_status": "FAIL",
+      "reason": "MISSING_OR_LARGE_RECEIPT: Bun 1.3.14 did not write process-exit listener observation after expected test failures. Python negative/positive completed; web candidate was not reached. V2 uses bun:test afterAll; same 17 JUnit cases and exact failure assertions retained.",
+      "not_claim": "Not a proven new product leak or a passed full four-arm comparison."
+    },
+    {
+      "record": "lifecycle-01",
+      "preserve_status": "PASS in original oracle; insufficient clean-startup acceptance",
+      "reason": "Startup baseline and d0 candidate both exited -6 and emitted Fatal Python from buffered daemon stdin reader. Broad nonzero check was too weak. Baseline shutdown false-success 0 versus d0 shutdown 1 remains a separate valid observation.",
+      "not_claim": "Do not relabel this original receipt FAIL on disk, or claim all clean lifecycle behavior passed."
+    },
+    {
+      "record": "lifecycle-02",
+      "preserve_status": "FAIL",
+      "reason": "Candidate ba511 fixed buffered-reader shutdown and exited 3 without Fatal Python; test assumed exact 1. Installed Uvicorn 0.52.4 defines STARTUP_FAILURE=3. V3 changed that single expected exit to 3 and actual child-start accounting, with same ba511 runtime.",
+      "not_claim": "No product code change between lifecycle02 and lifecycle03; do not count oracle correction as a second product fix."
+    },
+    {
+      "record": "s10-web-checks-01",
+      "preserve_status": "bun exit1 / tsc exit2",
+      "reason": "Broad Bun discovery collected 16 Playwright files under unit runner (573 pass +16 fail). TSC also found ProcessEnv and mock fetch typing mismatches. Targeted lib suite02 is 573 pass; type-only changes have identical emitted JS receipts.",
+      "not_claim": "Do not call the 16 runner-discovery failures browser product failures; keep genuine type diagnostics and corrected source bindings."
+    },
+    {
+      "record": "s10-checks-01",
+      "preserve_status": "ruff exit1",
+      "reason": "Two I001 import ordering failures; import bindings and nonimport AST equality preserved in s10-style-01. Final API Ruff later passed.",
+      "not_claim": "Initial static checks were not all green."
+    },
+    {
+      "record": "s10-ci-order-mutant-01",
+      "preserve_status": "exit1; 2 assertion failures",
+      "reason": "Expected negative control removing only repeated per-source identity checks; original14 correct helper passes.",
+      "not_claim": "This mock transport regression check is not a real Docker/PG target-route test."
+    },
+    {
+      "record": "s10-ci-yaml-preflight-01",
+      "preserve_status": "Unapplied bad generated candidate retained",
+      "reason": "Generator matched nested service env instead of job env; PostgreSQL service configuration restored from original. repository_changed=false in receipt.",
+      "not_claim": "No CI event was executed by this YAML check."
+    },
+    {
+      "record": "s10-stop-contracts-01",
+      "preserve_status": "baseline exit1; 1 failure +2 errors / candidate 8 pass",
+      "reason": "Expected synthetic Popen negative demonstrates old write/flush/unreapable fallback failure; 2 errors must stay distinguished from 1 assertion failure.",
+      "not_claim": "Does not prove OS process cleanup by itself."
+    },
+    {
+      "record": "s10-final-static-01",
+      "preserve_status": "scripts Ruff and format exit1 at recorded snapshot",
+      "reason": "API Ruff/format, 14 CI contracts and 11 owned-lifecycle tests passed; script static checks failed and must remain pending until a separate successful bound receipt.",
+      "not_claim": "Do not infer all final static gates are green from the API-only results."
+    },
+    {
+      "record": "actual-db-accounting/omitted",
+      "preserve_status": "phase PASS with guard FAIL/exit1",
+      "reason": "Intentional receipt omission leaves one extra audit row (before1/after2), guard detects it, deleteExecuted=false. Other protected row unchanged.",
+      "not_claim": "Do not erase the negative guard receipt or call it a product acceptance failure."
+    }
+  ],
+  "minimum_independent_archive_groups": [
+    {
+      "group": "A — Product identity + exact negative sensitivity",
+      "minimum": [
+        "S10 original and review-fixed candidate manifests/source diff",
+        "negative-result-01 result and completed arm observations/verdicts",
+        "negative-result-02 result, all four process/observation/verdict/JUnit files",
+        "matching v1/v2 negative harness source and manifest"
+      ],
+      "reason": "Separates client-controlled ID behavior from the later tuple/pending fixes; preserves the failed observation harness."
+    },
+    {
+      "group": "B — Real protocol process observations",
+      "minimum": [
+        "s10-process-01 whitelisted result projection",
+        "four arm source/runtime bindings + lifecycle/counter receipts",
+        "response/wire/log artifact hashes",
+        "frozen process harness manifest and independent review"
+      ],
+      "reason": "56 actual HTTP requests across 4 processes and two parsers; private raw captures remain separately controlled. No DB/audit/model claim."
+    },
+    {
+      "group": "C — Controller lifecycle and cleanup fault controls",
+      "minimum": [
+        "all three lifecycle measured result/source-before + 6 observation files per run",
+        "candidate/baseline fixture and controller/guard/probe hashes",
+        "v1-v3 harness manifests and Uvicorn STARTUP_FAILURE source binding",
+        "s10-stop-contracts-01 result + baseline/candidate logs or reviewed summary"
+      ],
+      "reason": "Retains original oracle hole, assumed-exit error and actual final ba511 process proof. Does not reuse E2E01 as evidence for ba511."
+    },
+    {
+      "group": "D — Actual audit isolation/accounting + trusted target",
+      "minimum": [
+        "root owned-create/provision receipt projection and private pins hash provenance",
+        "db-audit result/source-before/source-after",
+        "interleaved four request phase snapshots + after-cleanA/B full-row hash snapshots",
+        "A/B baseline/final accounting + original collector receipt hashes + real own-process-stop/quiescence",
+        "omitted before/retained/final accounting negative receipt"
+      ],
+      "reason": "Independent real PG/API exercise proves scoped cleanup and missing-receipt rejection; preserve full-row digest equality, not just row counts."
+    },
+    {
+      "group": "E — Full browser integration and lifecycle version",
+      "minimum": [
+        "E2E01 result + actual 71-case log",
+        "E2E01 source-before/after, trusted target/baseline and final accounting",
+        "E2E01 real process quiescence/stop receipt",
+        "E2E02 separate new bound result/71-case log/source maps/accounting once available"
+      ],
+      "reason": "Current E2E01 is d0 and passes; final ba511 full browser evidence is still absent at cutoff."
+    },
+    {
+      "group": "F — Local regression/static and semantic-equivalence lineage",
+      "minimum": [
+        "full-api result + log and source map",
+        "combined-offline134 result + log",
+        "web-checks01/02 and type/transpile-equivalence receipts",
+        "API/style and controller-style before/after + AST/import equality receipts",
+        "final-static result with failed script checks retained and later replacement receipt if measured"
+      ],
+      "reason": "Avoids attaching earlier results to changed byte sources without stated equivalence; dirty local evidence is not hosted CI."
+    },
+    {
+      "group": "G — CI provisioning mock coverage and generation preflight",
+      "minimum": [
+        "original13 and review14 contract results/logs + immutable helper/test hashes",
+        "repeated-identity mutant result/log and diff",
+        "YAML preflight original failure/corrected hashes",
+        "final CI YAML/helper review and frozen source binding"
+      ],
+      "reason": "Mock Docker/PG, not actual Docker, cloud deployment or GitHub-hosted checks. Hosted acceptance must be a later exact-commit record."
+    }
+  ],
+  "sensitive_artifact_categories": [
+    {
+      "category": "credentials",
+      "patterns": [
+        "*.pgpass",
+        "*passfile*",
+        ".env*"
+      ],
+      "risk": "May contain reusable DB/app credentials; never bulk-copy or print. These measured empty.pgpass files are classified by size only.",
+      "public_action": "Exclude raw credential inputs; document empty-file size/hash only if separately approved and truly necessary."
+    },
+    {
+      "category": "raw_http_and_config",
+      "patterns": [
+        "wire/*.json",
+        "responses.json",
+        "configured.json",
+        "exercise-config.json",
+        "result.json containing responses/configuration"
+      ],
+      "risk": "May embed response headers, bodies, supplied IDs, auth or connection configuration. JSON extension does not make it content-free.",
+      "public_action": "Use explicit safe field projection and original artifact hashes; retain originals privately. Synthetic canary alone is not a general secret scan."
+    },
+    {
+      "category": "logs_and_test_reports",
+      "patterns": [
+        "*.log",
+        "stdout.txt",
+        "stderr.txt",
+        "*.xml",
+        "observations.json"
+      ],
+      "risk": "Can hold exception messages, embedded source/assertion values, connection URLs, auth/token or request/user/content canaries; baseline negatives deliberately retain leaking behavior.",
+      "public_action": "Review/redact a derivative without mutating the original; keep measured exit counts distinct from leak counts."
+    },
+    {
+      "category": "target_and_audit_metadata",
+      "patterns": [
+        "pins.json",
+        "target.json",
+        "environment.json",
+        "baseline.json",
+        "final-accounting.json",
+        "capture/receipts/*.json",
+        "quiescence.json",
+        "owned-create.json"
+      ],
+      "risk": "Contains target identity, pseudonymous actor/request IDs, timestamps, PIDs and full-row digests; some environments may include connection inputs. Pseudonymous data is not anonymous.",
+      "public_action": "Safe counts/booleans/source hashes in public summary; original identity receipts remain restricted with hash provenance."
+    },
+    {
+      "category": "user_content_or_ui_capture",
+      "patterns": [
+        "storage/**/*",
+        "*.pdf",
+        "screenshots",
+        "trace*.zip",
+        "*.png"
+      ],
+      "risk": "Uploaded content or rendered student/teacher data may be present. This scope contains generated storage fixtures; no claim that arbitrary future files are synthetic.",
+      "public_action": "Exclude storage/cache/raw UI artifacts unless individually necessary and reviewed."
+    },
+    {
+      "category": "cache_and_copied_runtime",
+      "patterns": [
+        "mypy-cache/**",
+        "__pycache__/**",
+        "work/**",
+        ".pytest_cache/**"
+      ],
+      "risk": "Caches and copied execution trees add bulk and may duplicate private paths or fixture material.",
+      "public_action": "Exclude generated caches; archive only exact required source/harness subset under source hashes."
+    }
+  ],
+  "filesystem_metadata_only": [
+    {
+      "root": "/private/tmp/dou018-evidence/s10-checks-01",
+      "file_count": 23,
+      "noncache_file_count": 4,
+      "noncache_bytes": 2769,
+      "extensions": {
+        ".json": 1,
+        ".log": 3
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-ci-order-mutant-01",
+      "file_count": 5,
+      "noncache_file_count": 5,
+      "noncache_bytes": 45563,
+      "extensions": {
+        ".json": 1,
+        ".log": 1,
+        ".py": 2,
+        ".sql": 1
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-ci-provision-offline-01",
+      "file_count": 3,
+      "noncache_file_count": 3,
+      "noncache_bytes": 1039,
+      "extensions": {
+        ".json": 1,
+        ".log": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-ci-yaml-preflight-01",
+      "file_count": 2,
+      "noncache_file_count": 2,
+      "noncache_bytes": 19988,
+      "extensions": {
+        ".json": 1,
+        ".yml": 1
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-combined-offline-01",
+      "file_count": 2,
+      "noncache_file_count": 2,
+      "noncache_bytes": 13692,
+      "extensions": {
+        ".json": 1,
+        ".log": 1
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-controller-style-01",
+      "file_count": 3,
+      "noncache_file_count": 3,
+      "noncache_bytes": 25677,
+      "extensions": {
+        ".before": 2,
+        ".json": 1
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-e2e-owned-01",
+      "file_count": 82,
+      "noncache_file_count": 82,
+      "noncache_bytes": 683802,
+      "extensions": {
+        ".json": 40,
+        ".log": 4,
+        ".md": 28,
+        ".pdf": 10
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 38,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-e2e-owned-02",
+      "file_count": 19,
+      "noncache_file_count": 19,
+      "noncache_bytes": 51094,
+      "extensions": {
+        ".json": 16,
+        ".log": 3
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-e2e-provision-01",
+      "file_count": 5,
+      "noncache_file_count": 5,
+      "noncache_bytes": 9422,
+      "extensions": {
+        ".json": 3,
+        ".log": 1,
+        ".pgpass": 1
+      },
+      "credential_file_count": 1,
+      "credential_zero_byte_count": 1,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-e2e-provision-02",
+      "file_count": 5,
+      "noncache_file_count": 5,
+      "noncache_bytes": 9422,
+      "extensions": {
+        ".json": 3,
+        ".log": 1,
+        ".pgpass": 1
+      },
+      "credential_file_count": 1,
+      "credential_zero_byte_count": 1,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-final-static-01",
+      "file_count": 7,
+      "noncache_file_count": 7,
+      "noncache_bytes": 66178,
+      "extensions": {
+        ".json": 1,
+        ".log": 6
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-final-static-02",
+      "file_count": 7,
+      "noncache_file_count": 7,
+      "noncache_bytes": 27270,
+      "extensions": {
+        ".json": 1,
+        ".log": 6
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-full-api-01",
+      "file_count": 3,
+      "noncache_file_count": 3,
+      "noncache_bytes": 28163,
+      "extensions": {
+        ".json": 1,
+        ".log": 1,
+        ".pgpass": 1
+      },
+      "credential_file_count": 1,
+      "credential_zero_byte_count": 1,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-process-01",
+      "file_count": 93,
+      "noncache_file_count": 93,
+      "noncache_bytes": 692388,
+      "extensions": {
+        ".json": 81,
+        ".log": 8,
+        ".pgpass": 4
+      },
+      "credential_file_count": 4,
+      "credential_zero_byte_count": 4,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-script-style-02",
+      "file_count": 7,
+      "noncache_file_count": 7,
+      "noncache_bytes": 81419,
+      "extensions": {
+        ".json": 1,
+        ".log": 1,
+        ".txt": 5
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-stop-contracts-01",
+      "file_count": 3,
+      "noncache_file_count": 3,
+      "noncache_bytes": 7057,
+      "extensions": {
+        ".json": 1,
+        ".log": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-style-01",
+      "file_count": 3,
+      "noncache_file_count": 3,
+      "noncache_bytes": 16147,
+      "extensions": {
+        ".json": 1,
+        ".py": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-web-checks-01",
+      "file_count": 3,
+      "noncache_file_count": 3,
+      "noncache_bytes": 106081,
+      "extensions": {
+        ".json": 1,
+        ".log": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-web-checks-02",
+      "file_count": 3,
+      "noncache_file_count": 3,
+      "noncache_bytes": 84327,
+      "extensions": {
+        ".json": 1,
+        ".log": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-evidence/s10-web-types-01",
+      "file_count": 4,
+      "noncache_file_count": 4,
+      "noncache_bytes": 23714,
+      "extensions": {
+        ".json": 2,
+        ".ts": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-s10-negative-result-01",
+      "file_count": 47,
+      "noncache_file_count": 47,
+      "noncache_bytes": 338359,
+      "extensions": {
+        ".ini": 2,
+        ".json": 9,
+        ".py": 10,
+        ".ts": 19,
+        ".txt": 6,
+        ".xml": 1
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-s10-negative-result-02",
+      "file_count": 75,
+      "noncache_file_count": 75,
+      "noncache_bytes": 591662,
+      "extensions": {
+        ".ini": 2,
+        ".json": 15,
+        ".py": 10,
+        ".ts": 38,
+        ".txt": 8,
+        ".xml": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-owned-lifecycle-measured-01",
+      "file_count": 26,
+      "noncache_file_count": 26,
+      "noncache_bytes": 19828,
+      "extensions": {
+        ".json": 8,
+        ".log": 6,
+        ".py": 12
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-owned-lifecycle-measured-02",
+      "file_count": 26,
+      "noncache_file_count": 26,
+      "noncache_bytes": 20020,
+      "extensions": {
+        ".json": 8,
+        ".log": 6,
+        ".py": 12
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-owned-lifecycle-measured-03",
+      "file_count": 26,
+      "noncache_file_count": 26,
+      "noncache_bytes": 20019,
+      "extensions": {
+        ".json": 8,
+        ".log": 6,
+        ".py": 12
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    },
+    {
+      "root": "/private/tmp/dou018-s10-db-audit-result-01",
+      "file_count": 69,
+      "noncache_file_count": 69,
+      "noncache_bytes": 178901,
+      "extensions": {
+        ".json": 49,
+        ".jsonl": 2,
+        ".log": 8,
+        ".ts": 8,
+        ".txt": 2
+      },
+      "credential_file_count": 0,
+      "credential_zero_byte_count": 0,
+      "credential_nonempty_count": 0,
+      "storage_file_count": 0,
+      "content_inspection_for_secrets_performed": false
+    }
+  ],
+  "global_limits": [
+    "All evidence is local/synthetic within stated scopes; no legal compliance, anonymity, cloud readiness, genuine user auth or real LLM quality certification.",
+    "The whole raw result JSON is not automatically public-safe; process result embeds HTTP bodies/headers and raw identity metadata. This inventory uses explicit projection.",
+    "A source hash proves byte identity, not target ownership or source trust. Target provenance, process wait, phase accounting and independent negative controls must be kept together.",
+    "Row counts alone are insufficient: actual original full-row hash snapshots are part of the private proof.",
+    "No final current-source complete-acceptance claim until missing E2E02 and final static/hosted receipts are independently observed."
+  ]
+}

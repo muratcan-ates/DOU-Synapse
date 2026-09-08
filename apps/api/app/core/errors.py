@@ -7,12 +7,12 @@ anlaşılır Türkçe mesaj kullanıcıya gider.
 
 from __future__ import annotations
 
-import uuid
-
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+from app.core.request_context import request_id_of
 
 
 class ErrorDetail(BaseModel):
@@ -42,16 +42,6 @@ class ErrorEnvelope(BaseModel):
     """
 
     error: ErrorDetail
-
-
-def request_id_of(request: Request) -> str:
-    """İsteğin kimliği; middleware koymadıysa üretir.
-
-    Üretme dalı bir kaçış değil, fail-closed bir varsayılan: kimliksiz bir hata
-    yanıtı, kullanıcıya gösterilecek destek kodunun olmadığı anlamına gelir.
-    """
-    existing = getattr(request.state, "request_id", None)
-    return existing if isinstance(existing, str) and existing else uuid.uuid4().hex
 
 
 def error_response(
@@ -265,7 +255,6 @@ async def unhandled_error_handler(request: Request, exc: Exception) -> JSONRespo
     # izinli tür/kaynak özeti için kullanır. Üst ASGI katmanının yeniden yükseltmesi
     # değişmez; Uvicorn'un ikinci kaydı da aynı biçimleyiciden geçer.
     request_id = request_id_of(request)
-    request.state.request_id = request_id
     get_logger("app.error").error(
         "beklenmeyen hata",
         exc_info=exc,

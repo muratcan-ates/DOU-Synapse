@@ -1,0 +1,21 @@
+from pathlib import Path
+import gzip,hashlib,json,shutil,subprocess
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');root=Path('specs/018-codex-production-line/evidence/s10-local');name='036-server-request-ownership-r1';dp=Path('.ai/changes')/(name+'.json');ep=Path('.ai/evidence')/(name+'.json')
+d=json.loads((r/dp).read_text());e=json.loads((r/ep).read_text());out=Path('/private/tmp/dou018-evidence/s10-record-draft-01');out.mkdir(mode=0o700,exist_ok=False)
+for p in [dp,ep,root/'archive.json']:
+ shutil.copyfile(r/p,out/p.name)
+def git(*args):return subprocess.check_output(['git',*args],cwd=r,text=True).strip()
+assert git('rev-parse','HEAD')==d['base_sha']
+paths=[a['path'] for a in d['artifacts']]+[str(dp),str(ep)]
+assert set(git('diff','--cached','--name-only').splitlines())==set(paths)
+subprocess.run(['git','restore','--staged','--',*paths],cwd=r,check=True)
+p=r/root/'s10-whitespace-01/before.ts.txt';raw=p.read_bytes();target=p.with_suffix(p.suffix+'.gz');assert not target.exists();target.write_bytes(gzip.compress(raw,mtime=0));assert gzip.decompress(target.read_bytes())==raw;p.unlink()
+correction={'scope':'Uncommitted archive packaging fix only; staged whitespace gate found the intentionally preserved pre-fix EOF in a plaintext evidence copy. Original bytes now preserved in gzip; no source or test result changed. No commit was created by the failed attempt.','path':str(target.relative_to(r)),'original_sha256':hashlib.sha256(raw).hexdigest(),'gzip_sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'original_draft':str(out)}
+(r/root/'archive-packaging-correction.json').write_text(json.dumps(correction,indent=2)+'\n')
+shutil.copyfile('/private/tmp/dou018_s10_record_archive_fix01.py',r/root/'harness/dou018_s10_record_archive_fix01.py.txt')
+def h(p):return hashlib.sha256((r/p).read_bytes()).hexdigest()
+archive=json.loads((r/root/'archive.json').read_text());archive['records']=[{'path':str(p.relative_to(r)),'bytes':p.stat().st_size,'sha256':h(p.relative_to(r))} for p in sorted((r/root).rglob('*')) if p.is_file() and p!=r/root/'archive.json'];(r/root/'archive.json').write_text(json.dumps(archive,ensure_ascii=False,indent=2)+'\n')
+e['archive_sha256']=h(root/'archive.json');(r/ep).write_text(json.dumps(e,ensure_ascii=False,indent=2)+'\n');d['evidence'][0]['report_sha256']=h(ep)
+paths=set(git('diff','--name-only','HEAD').splitlines())|set(git('ls-files','--others','--exclude-standard').splitlines());paths-={str(dp),str(ep)}
+d['artifacts']=[{'path':p,'state':'present','sha256':h(p)} for p in sorted(paths) if (r/p).is_file()]
+(r/dp).write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n');print(json.dumps({'artifacts':len(d['artifacts']),'report_sha256':h(ep),'source_changed':False}))

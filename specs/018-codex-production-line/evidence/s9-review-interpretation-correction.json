@@ -1,0 +1,34 @@
+{
+  "type": "append-only independent-review interpretation erratum",
+  "date": "2026-09-08",
+  "original_report": {
+    "path": "/private/tmp/dou018-s9-final-observed-review.md",
+    "sha256": "b176b93dcb76d3547ef38517188e392ab47e8f234e9d7509dba8172535b4d21f",
+    "unchanged": true
+  },
+  "incorrect_statement": "Paket README’si ve s9c_extension içindeki eski 040a… kaynak anlatımı önceki donmuş dört kollu hazırlığın tarihsel kopyasıdır.",
+  "correction": "Yalnız bayt-korunmuş README eski 040a… hazırlık kaynağını anlatır. Final manifestteki s9c_extension.logging_source_* alanları zaten request-ID düzeltme paketine ve bec6… kaynağına günceldir. Önceki raporda s9c_extension ifadesi bu tarihsel README kapsamına yanlışlıkla katılmıştır.",
+  "verified_manifest": {
+    "path": "/private/tmp/dou018-s9-process-final-candidate/manifest.json",
+    "sha256": "aa8eb8f61c3d1a30cf5f6e487855a62b64bb134f9ece32c8d11840033b882758",
+    "s9c_extension": {
+      "prior_three_arm_manifest_path": "/private/tmp/dou018-s9-process-candidate/manifest.json",
+      "prior_three_arm_manifest_sha256": "b83dcde2a99d2a1544a97cd85a66e92c12ef6974c4741fd34501b63861f42154",
+      "logging_source_manifest_path": "/private/tmp/dou018-s9-request-id-regression-candidate/manifest.json",
+      "logging_source_manifest_sha256": "ab4fba184c2a578178b82175c10df90b4a95923baa123c468387ae20c64dbf4a",
+      "logging_source_path": "/private/tmp/dou018-s9-request-id-regression-candidate/files/apps/api/app/core/logging.py",
+      "logging_source_sha256": "bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290",
+      "errors_source_path": "/private/tmp/dou018-exception-next-candidate/files/apps/api/app/core/errors.py",
+      "errors_source_sha256": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f",
+      "all_three_original_arms_byte_equal": true,
+      "three_arm_measurement_was_run": false,
+      "new_helper_source_edits": false
+    },
+    "selected_modules_s9c": {
+      "errors.py": "82d90cf7f1501e4af51c27f1252a425540224a6e2407883fb77f4ae88499b72f",
+      "logging.py": "bec6f0b48569abb61f11a403fd59e1aeb21c07fd63d95ed2ac87f56bc7031290"
+    }
+  },
+  "impact": "Aktif kaynak bağına veya 16 süreç kabulüne etkisi yok. Önceki denetimin 1022 dosya/hash karşılaştırması, gerçek loaded-module bağları ve final logging bec6… sonucu doğru kalır. Bu yalnız açıklama cümlesinin kapsam düzeltmesidir.",
+  "execution": "Yalnız mevcut JSON/metin ve SHA okundu; repo/eski rapor/kanıt değişmedi, test/DB/ağ/süreç çalıştırılmadı."
+}

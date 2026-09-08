@@ -1,0 +1,20 @@
+from pathlib import Path
+import hashlib,json,subprocess
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/s10-whitespace-01');out.mkdir(mode=0o700,exist_ok=False)
+p=repo/'apps/web/e2e/fixtures.ts';before=p.read_bytes();assert hashlib.sha256(before).hexdigest()=='cf214e87328a9dd3dac85257731b81b2daeae50c68295d6a76a607000b44a79b'
+after=before.rstrip(b'\n')+b'\n';assert after!=before
+(out/'before.ts').write_bytes(before);(out/'after.ts').write_bytes(after)
+script=out/'compare.ts';script.write_text('''import {readFileSync,writeFileSync} from "node:fs";
+const transformer=new Bun.Transpiler({loader:"ts"});
+const a=transformer.transformSync(readFileSync(process.argv[2],"utf8"));
+const b=transformer.transformSync(readFileSync(process.argv[3],"utf8"));
+if(a!==b)throw new Error("EMITTED_JS_CHANGED");
+writeFileSync(process.argv[4],a);
+console.log("BUN_EMITTED_JS_EQUAL");
+''')
+cp=subprocess.run(['/Users/muratates/.bun/bin/bun',str(script),str(out/'before.ts'),str(out/'after.ts'),str(out/'emitted.js')],capture_output=True,timeout=10)
+(out/'compare.log').write_bytes(cp.stdout+cp.stderr);assert cp.returncode==0
+p.write_bytes(after)
+record={'path':'apps/web/e2e/fixtures.ts','before_sha256':hashlib.sha256(before).hexdigest(),'after_sha256':hashlib.sha256(after).hexdigest(),'emitted_javascript_sha256':hashlib.sha256((out/'emitted.js').read_bytes()).hexdigest(),'exact_emitted_javascript_equal':True,'scope':'Only redundant trailing newline removed; no test or browser re-execution claimed.'}
+(out/'result.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps(record))

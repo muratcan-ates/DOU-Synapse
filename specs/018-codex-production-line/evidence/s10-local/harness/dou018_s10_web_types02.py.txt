@@ -1,0 +1,12 @@
+from pathlib import Path
+import hashlib,json
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=Path('/private/tmp/dou018-evidence/s10-web-types-01');out.mkdir(mode=0o700,exist_ok=False)
+items=[('apps/web/e2e/audit-receipts.ts','a5a51968de4456729f8cbe214d4a683665b64514e81f93ffdf8b982dc7ce02b6','env: NodeJS.ProcessEnv = process.env','env: Readonly<Record<string, string | undefined>> = process.env'),('apps/web/lib/e2e-audit-receipts.test.ts','06d0005b1aee8193dc764ab2388efcd3e7d8d9d7f564e92509fc3cfa5f255e50',') as typeof fetch;',') as unknown as typeof fetch;')]
+result=[]
+for name,sha,old,new in items:
+ p=repo/name;before=p.read_bytes();assert hashlib.sha256(before).hexdigest()==sha
+ target=out/p.name;target.write_bytes(before)
+ after=before.decode().replace(old,new);assert after!=before.decode();p.write_text(after)
+ result.append({'path':name,'before':sha,'after':hashlib.sha256(p.read_bytes()).hexdigest()})
+(out/'changes.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))

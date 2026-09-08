@@ -48,9 +48,9 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   webServer: {
-    command: `bun run next build && bun run next start --port ${PORT}`,
+    command: `bun run next build ${process.env.E2E_WEBPACK_BUILD === "1" ? "--webpack" : ""} && bun run next start --hostname 127.0.0.1 --port ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 180_000,
     env: { NEXT_PUBLIC_API_URL: API_URL },
   },

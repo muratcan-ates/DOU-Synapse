@@ -1,0 +1,65 @@
+# CI owned provisioning — bağımsız salt okunur inceleme
+
+Paket: `/private/tmp/dou018-ci-owned-provision-candidate`. Manifest SHA256 `4d0fe7c583a163335c9894e1be387d35fbb75389db847f78dc42e78c59fb0a25`; helper SHA256 `21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f`. Manifestteki altı dosya ve 28 referans kaynak hash'i yeniden okundu: ayrışma yok. Test dosyasında 13 unittest yöntemi statik olarak sayıldı. Bu inceleme sırasında test, DB, Docker, ağ, tarayıcı veya sunucu çalıştırılmadı; repo/adayı değiştirmedim.
+
+## Sonuç
+
+**Bu donuk kaynakta yeni bir somut yanlış hedef benimseme, geniş DROP/temizlik veya ek uygulama ayrıcalığı verme kusuru bulmadım.** Root'un bağımsız kontrollerine ve yeni GitHub-owned service üzerinde gerçek kabulüne ilerlenebilir. Bu sonuç, gerçek Docker image/port varsayımlarının çalıştığını veya CI'nin yeşil olduğunu söylemez. Bir dar test güvenilirliği açığı ve birkaç doğru etiketlenmesi gereken ölçüm sınırı aşağıda belirtilmiştir.
+
+## Güvenilen hedef ve etki sırası
+
+`files/scripts/provision_ci_e2e.py:112–210,443–497`:
+
+- Tam 64 karakter container ID'si, GitHub e2e job/run bağlamı, yeni canonical çıktı yolu ve açık portlar istenir. Bunlar yetkiyi kendiliğinden üretmez; asıl güven kökü root'un `${{ job.services.postgres.id }}` girdisi ve bu yeni runner'ın Docker daemon'ıdır. README, ortam işaretlerini veya hash'i tek başına sahiplik saymıyor.
+- Docker istemcisi `/usr/bin/docker`, daemon `unix:///var/run/docker.sock`, ortam PATH/LANG ile açık seçilir. Ortam DOCKER_HOST/context/TLS yönlendirmeleri aktarılmaz. Container inspect yalnız gerekli alanları alır; `.Config.Env` okunmaz. Exact image reference + gerçek immutable image ID + beklenen RepoDigest, çalışan container ID'si ve published 5432/tcp eşlemesi birlikte aranır.
+- Tek numeric private IPv4 ve tek network kabul edilir. Container içindeki psql bağlantısı loopback'e değil bu bridge IP/5432'ye gider; host bağlantısı explicit `127.0.0.1` ve `hostaddr=127.0.0.1` kullanır. Böylece iki transport'un `inet_server_addr()` değerini aynı container IP'si olarak karşılaştırma tasarımı tutarlıdır. **GitHub'daki gerçek Docker DNAT davranışı bu statik okumada ölçülmedi.**
+- İlk container TCP bağlantısında DB adı/OID, cluster system identifier, server version/address/port, current/session user, superuser ve recovery durumu okunur. Başlangıç envanteri yalnız postgres/template0/template1 ve postgres/yerleşik pg_* rollerini kabul eder. Mevcut `dou_synapse` veya uygulama rolü varken CREATE'e geçilmez.
+- Aynı privileged kimlik ve fresh envanter host yolunda da **CREATE öncesinde** doğrulanır. CREATE sahip olunan container bağlantısında, `IF NOT EXISTS`/DROP olmadan yapılır. Çakışma başarıya çevrilmez. Yeni DB'nin aynı cluster/sürüm ve farklı OID ile içerden okunması, ardından host'ta exact aynı kimliğin görülmesi, göç/seed/parola ayarlarından önce gerçekleşir.
+- Göçler yeni DB'nin doğrulanmış aynı host bağlantısında uygulanır. Her kaynak öncesi tekrar kimlik ve kaynak baytları kontrol edilir. `created.json` yalnız CREATE başarı gözlemi; son pins yalnız bütün kontrollerden sonra üretilir. CREATE sonrası host mismatch durumunda yeni DB'nin bırakılması bilinçli fail-closed davranıştır, eski hedefin silinmesi değildir.
+
+Doğrulamalar arasında yetkili Docker/DBA aktörünün cluster/port/DB'yi değiştirmediği varsayımı README'de açıktır. İki transport bu aktörlere karşı atomik fencing değildir. Bu tespit, öğrenci girdisinin Docker daemon'ını değiştirebildiğini varsayan bir ürün açığına dönüştürülmemeli.
+
+## SQL ve rol sınırları
+
+`provision_ci_e2e.py:262–301,407–440,499–531`; mevcut `supabase/local_dev_setup.sql:10–13`:
+
+- SQL kaynakları sıralı dosya adlarıyla belleğe alınır; yinelenen sıra, symlink, psql meta-command ve boyut ihlali reddedilir. Gerçekte yürütülen baytların hash'leri kaydedilir ve kaynaklar her evrede yeniden karşılaştırılır. Başlangıçta doğru commit/review edilen SQL'in verilmesi root/CI kaynak güveninin parçası olarak kalır; arbitrary initial SQL, sırf helper hash üretiyor diye onaylanmış olmaz.
+- `local_dev_setup.sql` sabit SHA ile byte-exact korunur. Mevcut dosyadaki `GRANT CONNECT ON DATABASE dou_synapse` nedeniyle sabit DB adı seçimi gereklidir. İzolasyon benzersiz isimden değil fresh job service/cluster ve CREATE/OID gözleminden gelir. Burada shared local cluster'a aynı adı dayatma yoktur.
+- Helper ek GRANT/ALTER ROLE SQL'i üretmez. Uygulama rollerine LOGIN/parola ayarı mevcut local SQL'in kendisidir; önce NOLOGIN beklenen üç rol ve onlara dokunan membership sayısı0 aranır. Sonrasında app BYPASSRLS=false; worker ve auth bridge BYPASSRLS=true, ikisi de tasarlanmış mevcut rol sınırlarıdır. App/worker superuser/CREATEDB/CREATEROLE/REPLICATION değildir. Kaynakta olmayan rol üyeliği de reddedilir.
+- Gerçek app/worker password bağlantıları aynı yeni DB OID/address/version ve beklenen role flags ile sınanacak şekilde yazılmıştır. Düşük yetkili rollere sırf bu kontrol için `pg_control_system()` izni verilmez. Bu bağlantıların çalıştığını offline Backend stub'ı ispatlamaz; root'un gerçek hizmet kabulü gerekir.
+- `apply_source()` bütün result set'leri tüketir. Son statement hatası veya açık kalan transaction başarıya çevrilmez. Mevcut migration BEGIN/COMMIT sınırları korunur; source failure sonrası başka DB/rolleri geri almaya çalışan SQL yoktur.
+
+## Pins, parolalar ve hata çıktısı
+
+`provision_ci_e2e.py:304–401,453–466,533–608`:
+
+- Yeni çıktı dizini0700; dosyalar exclusive-create/no-follow0600. Passfile yalnız açık localhost/port/database/user eşleşmelerini taşır; wildcard yok. Python/libpq ortamındaki bütün PG* değerleri explicit connect öncesinde silinir. Bağlantı host, hostaddr, port, dbname, user, passfile ile açık kurulur; connect/statement/lock süre sınırları vardır.
+- Docker psql tarafı `env -i`, `-X`, `-w`, `ON_ERROR_STOP=1` ve stdin SQL kullanır. Shell command interpolation yoktur. **`PGPASSWORD=postgres` literal'i docker exec argv'sinde bulunur (`:358`).** Bu pakette canlı operatör sırrı değildir; mevcut ephemeral CI'nin repoda açık bulunan sentetik parolasıdır. Dolayısıyla gerçek secret aktarımı tespit edilmedi, ancak “argv'de hiçbir parola yok” diye bir genel iddia da kurulamaz. Araç gerçek sırlarla/production'a genellenmemelidir.
+- `provision.json` created receipt hash'ini, SQL hash'lerini ve identity/role özetlerini taşır. `pins.json` guard'ın exact alan kümesine uyumlu; provisionSha256 gerçek provision makbuzunu bağlar. Handoff yolu/hash/passfile/runId alanları adaptörün parametreleriyle uyumludur.
+- Hata durumunda captured Docker stderr, SQL ve exception string'i stdout'a taşınmaz. Beklenen retler sabit kod; beklenmeyen hata genel `CI_PROVISION_FAILED` üretir. `postgres.pgpass` hiçbir artifact'a alınmamalı. Kimlik/OID/IP/hash/run metadata'sı operasyon verisidir; anonimlik veya kişisel veri bulunmadığı garantisi verilmemelidir.
+- Başarısızlıkta otomatik DROP/rol geri alma yapılmaz. Önceden mevcut bir çıktı dizinine hata makbuzu yazılmaz; sabit hata stdout'ta kalır. İşin own service yaşam döngüsü temizlik sahibidir. Belirsiz CREATE sonucunu uydurulmuş successful rollback ile kapatma yoktur.
+
+## R1 — P3: “Her source öncesi” testi sonraki kimlik kontrollerinin kaldırılmasını ayırt etmeyebilir
+
+`files/scripts/test_provision_ci_e2e.py:176–188`.
+
+Pozitif test her source event'i için `backend.events[created:index]` içindeki **herhangi bir** geçmiş host identity event'ini arıyor. İlk source öncesi kontrol yerinde kalıp sonraki tekrarlar silinirse ilk identity kaydı bütün sonraki assertion'ları sağlayabilir. Helper şu anda doğru biçimde her loop'ta tekrar kontrol ediyor; bulgu bugünkü yanlış DB yazımı değil, testin ileri sürülen regression korumasının zayıflığıdır.
+
+Dar düzeltme: birinci source uygulandıktan sonra fake host identity'yi değiştir; ikinci source'a geçişin reddedildiğini, bootstrap/seed'in çalışmadığını ve pins üretilmediğini sınayan davranış testi ekle. Ayrıca iki source arasındaki event aralığını kullanarak bir önceki kimlik kaydının o aralıkta bulunduğunu kontrol etmek mümkündür. Gerçek DB/provider taklidi yapmaya gerek yok. Root isterse kaynak manifest yenilenerek ayrı negatif kontrol koşturmalı; mevcut 13 yöntemin kapsamı genişletilmiş sayılmamalı.
+
+## Testlerin mevcut kanıt gücü ve root kabulü
+
+- 13 yöntem gerçek `validate_container`, `validate_identity`, `read_sql`, `apply_source` ve üst sıralama kodunu çağırır; wrong host öncesi/sonrası CREATE sınırı, existing DB/role, membership ve source drift negatifleri anlamlıdır.
+- Pozitif Backend, `read_sql()` yerine üç küçük fixture statement döndürür; roles cevaplarını helper'ın `expected_roles()` fonksiyonundan üretir. Bu olumlu koşu gerçek migration/NOLOGIN/password/Docker bağlantısı kanıtı değildir. Byte-exact local bootstrap ayrı read testinde kontrol edilir; gerçek22 migration kabulü henüz yoktur.
+- “Real psql and Docker arguments” adlı test gerçek subprocess'i çağırmaz, onun argv/env/stdin sınırını kaydeder. Driver testinde psycopg de stub'dır. README bu ayrımı doğru yapıyor; test adı gerçek DB yürütmesi olarak raporlanmamalı.
+- Genel failure stdout'unda sentetik exception/DSN canary'sinin yer almadığını yakalayan dar bir test eklenebilir. Kaynak bugün ham metni basmıyor; bu statik okuma canary kabulü değildir.
+- Gerçek root/CI kabulünde exact image reference/RepoDigest/bridgeIP/DNAT varsayımları,22 migration/seed, app ve worker login'leri, yeni pins hash'leri ve aynı service'e ikinci çağrıda **CREATE/ALTER0** ile ret ayrı ölçülmeli. Yanlış mapped host portu/başka service route negatiflerinde başka hedefe kurulum başlamadığı görülmeli.
+
+## Adaptör ve iş akışı uyumu
+
+- Referans `run_owned_e2e.py` SHA `d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a`, guard SHA `68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4` aynı kaldı. GitHub pins için parent CI/GITHUB_ACTIONS şartı ve kontrollü child aktarımı var; böylece sabit dou_synapse cleanup istisnası kaynak düzeyinde uyumlu.
+- Örnek workflow eski createdb/background API/test adımlarının **yerini** alacak taslaktır. İkisi birden çalıştırılırsa fresh service kontrolü haklı olarak reddeder. Mevcut servis/checkout/uv/bun kurulumunu korur; mevcut psycopg kullanılır, yeni bağımlılık gerekmez.
+- Örnekte handoff'u alan parent, aynı Python executable ile owned adaptörü doğrudan çağırır; `check=True` başarısızlığı sonraki yeşille örtmez. Yeni provision/measured çıktı yolları RUNNER_TEMP altında ayrıdır. Artifact'ın passfile'ı dışarıda bırakması entegrasyonda gerçekten uygulanmalıdır; yorum tek başına artifact filtresi değildir.
+- Manifestin baseline_git_sha alanı dirty kaynakları temsil etmiyor; bu doğru biçimde işaretlenmiş. Bu statik sonuç veya root'un başka yerel E2E koşusu bu yeni CI provision hash'i üzerinde hosted PASS olarak yazılmamalı.
+
+Yalnız fresh GitHub Linux service kapsamı kabul edilmiştir: shared/self-hosted runner, uzak/rootless daemon, macOS Docker Desktop, production, canlı Supabase auth, gerçek model ve hukuki uyumluluk bu paketin kanıtı değildir.

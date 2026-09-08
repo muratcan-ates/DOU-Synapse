@@ -1,0 +1,68 @@
+[
+  {
+    "name": "docs-refresh",
+    "command": [
+      "node",
+      "scripts/docs_check.mjs",
+      "--duzelt"
+    ],
+    "exit_code": 0,
+    "seconds": 4.854,
+    "log_sha256": "13600da1bea75423067c7a0394884b38688d3301e80cd25ca5e2c07bbf792a3a"
+  },
+  {
+    "name": "migration",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "scripts/migration_check.py",
+      "--allow-gap",
+      "0017",
+      "--allow-gap",
+      "0021",
+      "--allow-gap",
+      "0022",
+      "--allow-gap",
+      "0023"
+    ],
+    "exit_code": 0,
+    "seconds": 0.049,
+    "log_sha256": "35e88ac0adede31b2409b0ba68df482ea909fd0ef706b754ebb6a6f83aa3700b"
+  },
+  {
+    "name": "workflow-policy",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "scripts/workflow_policy_check.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.149,
+    "log_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+  },
+  {
+    "name": "workflow-regression",
+    "command": [
+      "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "scripts",
+      "-p",
+      "test_workflow_policy_check.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.206,
+    "log_sha256": "4a5679aabf6337d82eff767a76764e1179459de97b052656f65490067e99f2c2"
+  },
+  {
+    "name": "whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 2,
+    "seconds": 0.049,
+    "log_sha256": "582b009a22f2dfb91d1b3cebb6f38008c552fb27e1fcc7bfc6f99dc7aade4c5e"
+  }
+]

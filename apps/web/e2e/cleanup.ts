@@ -2,6 +2,11 @@ import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 
 import {
+  expectedAuditScope, loadAuditReceipts, receiptKey, validateReceipt,
+  type AuditReceipt,
+} from "./audit-receipts";
+
+import {
   PROTECTED_COURSE_CODES,
   PROTECTED_COURSE_IDS,
   isRunScopedE2eCourseCode,
@@ -14,9 +19,10 @@ interface CleanupCourse {
   title: string;
 }
 
-interface CleanupAudit {
+export interface CleanupAudit {
   id: string;
   requestId: string;
+  actorId: string;
   action: string;
   result: "allowed" | "denied";
 }
@@ -158,19 +164,18 @@ export function parseCleanupRows(output: string): CleanupCourse[] {
 export function parseAuditRows(output: string): CleanupAudit[] {
   if (!output.trim()) return [];
   return output.split("\n").map((line) => {
-    const [id, requestId, action, result, ...extra] = line.split("\t");
+    const [id, requestId, action, result, actorId, ...extra] = line.split("\t");
     if (
       !id ||
       !requestId ||
       !action ||
       (result !== "allowed" && result !== "denied") ||
       extra.length > 0 ||
-      !UUID_PATTERN.test(id) ||
-      !/^e2e-[a-z0-9]{6,20}-[A-Za-z0-9_-]+$/.test(requestId)
+      !UUID_PATTERN.test(id)
     ) {
       throw new Error(`Beklenmeyen admin audit temizlik satırı: ${line}`);
     }
-    return { id, requestId, action, result };
+    return { id, ...validateReceipt({ requestId, action, result, actorId }) };
   });
 }
 
@@ -219,38 +224,52 @@ ORDER BY code;
 `.trim();
 }
 
-function auditCandidateSql(runId?: string): string {
-  const pattern = runId
-    ? `^e2e-${validateE2eRunId(runId)}-[A-Za-z0-9_-]+$`
-    : "^e2e-[a-z0-9]{6,20}-[A-Za-z0-9_-]+$";
-  return `request_id ~ ${sqlLiteral(pattern)}`;
+export function auditCandidateSql(receipts: AuditReceipt[]): string {
+  // Boş makbuz kümesi bütün UUID'lere veya aktör/zaman penceresine genişlemez.
+  if (receipts.length === 0) return "FALSE";
+  return receipts.map((value) => {
+    const row = validateReceipt(value);
+    return `(request_id = ${sqlLiteral(row.requestId)} ` +
+      `AND actor_user_id = ${sqlLiteral(row.actorId)}::uuid ` +
+      `AND action = ${sqlLiteral(row.action)} AND result = ${sqlLiteral(row.result)})`;
+  }).join(" OR ");
 }
 
-function listAuditSql(runId?: string): string {
+export function assertAuditOwnership(audits: CleanupAudit[], receipts: AuditReceipt[]): void {
+  const owned = new Set(receipts.map(receiptKey));
+  const seen = new Set<string>();
+  for (const { id, requestId, actorId, action, result } of audits) {
+    const key = receiptKey({ requestId, actorId, action, result });
+    if (!UUID_PATTERN.test(id) || !owned.has(key) || seen.has(key)) {
+      throw new Error("Audit satırı bu koşunun tekil yanıt makbuzuna ait değil.");
+    }
+    seen.add(key);
+  }
+  if (seen.size !== owned.size) {
+    throw new Error("Yakalanan audit makbuzu sayısı veritabanı satırlarıyla uyuşmuyor.");
+  }
+}
+
+function listAuditSql(receipts: AuditReceipt[]): string {
   return `
-SELECT id::text,
-       request_id,
-       action,
-       result
+SELECT id::text, request_id, action, result, actor_user_id::text
 FROM public.platform_admin_access_audit
-WHERE ${auditCandidateSql(runId)}
+WHERE (${auditCandidateSql(receipts)})
 ORDER BY created_at, id;
 `.trim();
 }
 
-function deleteAuditSql(audits: CleanupAudit[], runId?: string): string {
+export function deleteAuditSql(audits: CleanupAudit[], receipts: AuditReceipt[]): string {
+  assertAuditOwnership(audits, receipts);
+  if (audits.length === 0) throw new Error("Boş audit silme sorgusu yürütülmez.");
   const ids = audits.map((audit) => `${sqlLiteral(audit.id)}::uuid`).join(", ");
   return `
 WITH removed AS (
   DELETE FROM public.platform_admin_access_audit
-  WHERE id IN (${ids})
-    AND ${auditCandidateSql(runId)}
-  RETURNING id, request_id, action, result
+  WHERE id IN (${ids}) AND (${auditCandidateSql(receipts)})
+  RETURNING id, request_id, action, result, actor_user_id
 )
-SELECT id::text,
-       request_id,
-       action,
-       result
+SELECT id::text, request_id, action, result, actor_user_id::text
 FROM removed
 ORDER BY request_id, id;
 `.trim();
@@ -276,8 +295,17 @@ export async function temizle(options: CleanupOptions): Promise<CleanupResult> {
   const env = options.env ?? process.env;
   const runId = options.runId ? validateE2eRunId(options.runId) : undefined;
   const databaseName = resolveE2eDatabaseName(options.databaseName, env);
+  if (!runId || !env.E2E_AUDIT_DIR) {
+    throw new Error("Audit temizliği açık koşu ve o koşunun özel makbuz dizinini gerektirir.");
+  }
+  const receipts = loadAuditReceipts(
+    env.E2E_AUDIT_DIR, expectedAuditScope(runId, databaseName, env),
+  );
   const listed = parseCleanupRows(runPsql(databaseName, listSql(runId), env));
-  const listedAudits = parseAuditRows(runPsql(databaseName, listAuditSql(runId), env));
+  const listedAudits = parseAuditRows(runPsql(databaseName, listAuditSql(receipts), env));
+  // Silme öncesinde bütün bilinen makbuzlar bulunmalı; audit silindikten sonra
+  // eski makbuzla tekrar temizliğin 0/0 başarılı sayılması da engellenir.
+  assertAuditOwnership(listedAudits, receipts);
 
   for (const course of listed) {
     if (!isRunScopedE2eCourseCode(course.code, runId)) {
@@ -302,16 +330,17 @@ export async function temizle(options: CleanupOptions): Promise<CleanupResult> {
   const deletedAudits =
     listedAudits.length === 0
       ? []
-      : parseAuditRows(runPsql(databaseName, deleteAuditSql(listedAudits, runId), env));
+      : parseAuditRows(runPsql(databaseName, deleteAuditSql(listedAudits, receipts), env));
   if (deletedAudits.length !== listedAudits.length) {
     throw new Error(
       `Audit temizliği eksik kaldı: ${listedAudits.length} adaydan ` +
         `${deletedAudits.length} kayıt silindi.`,
     );
   }
+  assertAuditOwnership(deletedAudits, receipts);
   console.log(
     `[e2e:clean] ${deleted.length} ders ve ${deletedAudits.length} ` +
-      "Bilgi İşlem audit kaydı silindi.",
+      "yakalanmış Bilgi İşlem audit makbuzu silindi; küresel eksiksizlik iddiası yok.",
   );
   return { listed, deleted, listedAudits, deletedAudits };
 }

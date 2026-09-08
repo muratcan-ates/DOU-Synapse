@@ -1,0 +1,83 @@
+from pathlib import Path
+import gzip,hashlib,io,json,tarfile
+
+tmp=Path('/private/tmp');evidence=tmp/'dou018-evidence'
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out=tmp/'dou018-s10-archive-staging';out.mkdir(mode=0o700,exist_ok=False)
+(out/'packages').mkdir()
+groups={
+ 'product-privacy': [tmp/n for n in ['dou018-s10-next-candidate','dou018-s10-review-fixes-candidate','dou018-s10-negative-candidate','dou018-s10-negative-candidate-v2','dou018-s10-negative-result-01','dou018-s10-negative-result-02']] + [evidence/n for n in ['s10-full-api-01','s10-combined-offline-01','s10-style-01']],
+ 'real-http': [tmp/'dou018-s10-process-candidate',evidence/'s10-process-01'],
+ 'audit-ownership': [tmp/n for n in ['dou018-s10-audit-accounting-candidate','dou018-s10-db-audit-candidate','dou018-s10-db-audit-candidate-v2','dou018-s10-db-audit-result-01']] + [evidence/n for n in ['s10-e2e-provision-01','s10-e2e-provision-02','s10-e2e-owned-01','s10-e2e-owned-02']],
+ 'owned-lifecycle': [tmp/n for n in ['dou018-owned-adapter-candidate','dou018-owned-lifecycle-acceptance','dou018-owned-lifecycle-acceptance-v2','dou018-owned-lifecycle-acceptance-v3','dou018-owned-lifecycle-measured-01','dou018-owned-lifecycle-measured-02','dou018-owned-lifecycle-measured-03']] + [evidence/n for n in ['s10-stop-contracts-01','s10-controller-style-01','s10-script-style-02']],
+ 'ci-contracts': [tmp/n for n in ['dou018-ci-owned-provision-candidate','dou018-ci-provision-tests-followup','dou018-s10-ci-integration','dou018-s10-ci-integration-v2']] + [evidence/n for n in ['s10-ci-provision-offline-01','s10-ci-order-mutant-01','s10-ci-yaml-preflight-01','s10-final-static-01','s10-final-static-02']],
+ 'web-guides': [tmp/n for n in ['dou018-guides-next-candidate','dou018-guides-final-candidate','dou018-s10-docs-draft']] + [evidence/n for n in ['s10-web-checks-01','s10-web-checks-02','s10-web-types-01','s10-checks-01']],
+}
+origins=[];excluded=[];packages=[]
+def safe_files(directory):
+ for p in sorted(directory.rglob('*')):
+  relative=p.relative_to(directory)
+  if p.is_symlink():
+   excluded.append({'path':str(p),'reason':'symlink not followed'});continue
+  if not p.is_file():continue
+  if set(relative.parts)&{'storage','__pycache__','.ruff_cache','.pytest_cache','node_modules','.git'} or p.suffix in {'.pgpass','.pyc'} or p.name=='.env' or p.name.startswith('.env.'):
+   excluded.append({'path':str(p),'reason':'storage, private credential or runtime cache excluded'});continue
+  yield p
+def pack(name,inputs):
+ raw=io.BytesIO();members=[]
+ with tarfile.open(fileobj=raw,mode='w') as tar:
+  for directory in inputs:
+   assert directory.is_dir(),directory
+   for p in safe_files(directory):
+    member=directory.name+'/'+str(p.relative_to(directory));data=p.read_bytes()
+    info=tarfile.TarInfo(member);info.size=len(data);info.mode=0o644;info.mtime=0
+    tar.addfile(info,io.BytesIO(data))
+    rec={'source':str(p),'member':member,'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+    members.append(rec)
+ target=out/'packages'/(name+'.tar.gz');target.write_bytes(gzip.compress(raw.getvalue(),mtime=0))
+ with tarfile.open(target,'r:gz') as tar:
+  for rec in members:
+   assert hashlib.sha256(tar.extractfile(rec['member']).read()).hexdigest()==rec['sha256']
+ packages.append({'path':str(target.relative_to(out)),'sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'bytes':target.stat().st_size,'members':len(members)})
+ origins.append({'package':str(target.relative_to(out)),'records':members})
+for name,inputs in groups.items():pack(name,inputs)
+
+# Root wrappers and reviews remain inert text in the repository archive.
+harness=out/'harness';harness.mkdir()
+for p in sorted(tmp.glob('dou018_s10_*.py')):
+ (harness/(p.name+'.txt')).write_bytes(p.read_bytes())
+reviews=out/'reviews';reviews.mkdir()
+for name in ['dou018-s10-independent-review.md','dou018-s10-audit-accounting-review.md','dou018-owned-adapter-review.md','dou018-owned-lifecycle-measured-review-01.md','dou018-ci-owned-provision-review.md','dou018-s10-ci-wiring-review.md','dou018-s10-evidence-inventory.md','dou018-s10-evidence-inventory.json']:
+ p=tmp/name;assert p.is_file(),p;(reviews/(name+('.txt' if p.suffix=='.md' else ''))).write_bytes(p.read_bytes())
+measured=out/'measurements';measured.mkdir()
+for name,inputs in groups.items():
+ for directory in inputs:
+  p=directory/'result.json'
+  if p.exists():(measured/(directory.name+'.json')).write_bytes(p.read_bytes())
+for name in ['s10-integration-01.json']:
+ p=evidence/name
+ (measured/name).write_bytes(p.read_bytes())
+focus=tmp/'dou018-s10-web-focus01.log'
+if focus.exists():(measured/(focus.name+'.gz')).write_bytes(gzip.compress(focus.read_bytes(),mtime=0))
+(out/'archive-origins.json').write_text(json.dumps({'packages':packages,'origins':origins,'excluded':excluded},indent=2)+'\n')
+
+# Final relevant runtime/test sources are independently compared to measured
+# full suites. Earlier controller/type-only differences have separate bridges.
+bindings={};union={}
+for label,file,key in [
+ ('full-api',evidence/'s10-full-api-01/result.json','source_hashes'),
+ ('web',evidence/'s10-web-checks-02/result.json','sources'),
+ ('offline-privacy',evidence/'s10-combined-offline-01/result.json','source_sha256'),
+ ('final-static',evidence/'s10-final-static-02/result.json','source_hashes'),
+ ('final-e2e',evidence/'s10-e2e-owned-02/source-after.json',None),
+]:
+ value=json.loads(file.read_text());sources=value[key] if key else value
+ mismatches=[]
+ for name,sha in sources.items():
+  p=repo/name
+  if not p.is_file() or hashlib.sha256(p.read_bytes()).hexdigest()!=sha:mismatches.append(name)
+  union[name]=sha
+ bindings[label]={'measured_source':str(file),'measured_sha256':hashlib.sha256(file.read_bytes()).hexdigest(),'compared':len(sources),'mismatches':mismatches}
+ assert not mismatches,(label,mismatches)
+(out/'source-equivalence.json').write_text(json.dumps({'bindings':bindings,'final_source_sha256':union,'scope':'Exact relevant source equality; no new execution or hosted acceptance inferred. Historical AST/Bun emitted-JS bridges remain separately archived.'},indent=2)+'\n')
+print(json.dumps({'packages':packages,'source_files':len(union),'mismatches':0,'excluded_files':len(excluded)}))

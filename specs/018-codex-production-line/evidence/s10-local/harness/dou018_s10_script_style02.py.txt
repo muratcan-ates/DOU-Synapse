@@ -1,0 +1,60 @@
+from pathlib import Path
+import ast
+import hashlib
+import json
+import subprocess
+
+repo = Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+out = Path('/private/tmp/dou018-evidence/s10-script-style-02')
+out.mkdir(mode=0o700, exist_ok=False)
+names = ['e2e_audit_guard.py', 'run_owned_e2e.py', 'provision_ci_e2e.py', 'test_provision_ci_e2e.py', 'test_owned_e2e.py']
+before = {n: (repo/'scripts'/n).read_bytes() for n in names}
+for n, data in before.items():
+    (out / (n + '.before.txt')).write_bytes(data)
+
+controller = repo/'scripts/run_owned_e2e.py'
+s = controller.read_text()
+s = s.replace('with opener.open(Request(origin + "/health/ready"), timeout=1) as response:', 'with opener.open(Request(origin + "/health/ready"), timeout=1) as response:  # noqa: S310 — pinned numeric HTTP origin.')
+s = s.replace('begin = subprocess.run([*guard_command, "--phase", "begin"], capture_output=True, check=False)', 'begin = subprocess.run([*guard_command, "--phase", "begin"], capture_output=True, check=False)  # noqa: S603 — fixed colocated guard, validated pins.')
+s = s.replace('api = subprocess.Popen(', 'api = subprocess.Popen(  # noqa: S603 — current interpreter and verified controller.')
+s = s.replace('["bun", "run", "test:e2e", "--workers=1"],', '["bun", "run", "test:e2e", "--workers=1"],  # noqa: S607 — CI-provisioned Bun on explicit runtime PATH.')
+s = s.replace('finish = subprocess.run(', 'finish = subprocess.run(  # noqa: S603 — fixed colocated guard, validated pins.')
+controller.write_text(s)
+p = repo/'scripts/e2e_audit_guard.py'
+s = p.read_text().replace('options="-c statement_timeout=5000 -c lock_timeout=2000 -c default_transaction_read_only=on",', 'options=("-c statement_timeout=5000 -c lock_timeout=2000 "\n                 "-c default_transaction_read_only=on"),')
+p.write_text(s)
+s = controller.read_text().replace('"scope": "Synthetic local auth, hashing embeddings, fake model; no hosted or real-provider claim",', '"scope": ("Synthetic local auth, hashing embeddings, fake model; "\n                  "no hosted or real-provider claim"),')
+controller.write_text(s)
+p = repo/'scripts/test_owned_e2e.py';s=p.read_text().replace('child = subprocess.Popen(', 'child = subprocess.Popen(  # noqa: S603 — test-owned interpreter, controller and socket.')
+s=s.replace('FIXTURE_SOURCE = ', 'FIXTURE_SOURCE = ', 1)
+lines=s.splitlines()
+for i,line in enumerate(lines):
+    if line.startswith('FIXTURE_SOURCE = '):
+        lines[i]=line+'  # noqa: E501 — byte-exact synthetic fixture shared with measured probe.'
+p.write_text('\n'.join(lines)+'\n')
+
+# Overlong privacy comments are prose, not executable code. Wrap all remaining
+# single comments; line-level suppressions explicitly document bounded controls.
+for name in ['e2e_audit_guard.py','run_owned_e2e.py']:
+    p=repo/'scripts'/name
+    lines=p.read_text().splitlines()
+    import textwrap
+    result=[]
+    for line in lines:
+        if len(line)>100 and line.lstrip().startswith('#'):
+            indent=line[:len(line)-len(line.lstrip())]+'# '
+            result.extend(textwrap.wrap(line.lstrip()[2:],width=100,initial_indent=indent,subsequent_indent=indent))
+        else:
+            result.append(line)
+    p.write_text('\n'.join(result)+'\n')
+cp=subprocess.run([str(repo/'apps/api/.venv/bin/ruff'),'format','--no-cache','--config',str(repo/'apps/api/pyproject.toml'),*[str(repo/'scripts'/n) for n in names]],capture_output=True)
+(out/'format.log').write_bytes(cp.stdout+cp.stderr)
+assert cp.returncode==0
+records={}
+for n,data in before.items():
+    after=(repo/'scripts'/n).read_bytes()
+    same=ast.dump(ast.parse(data),include_attributes=False)==ast.dump(ast.parse(after),include_attributes=False)
+    records[n]={'before_sha256':hashlib.sha256(data).hexdigest(),'after_sha256':hashlib.sha256(after).hexdigest(),'exact_ast_equal':same}
+    assert same,n
+(out/'result.json').write_text(json.dumps(records,indent=2)+'\n')
+print(json.dumps(records))

@@ -1,0 +1,11 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,time
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');out=Path('/private/tmp/dou018-evidence/s10-web-checks-01');out.mkdir(mode=0o700,exist_ok=False)
+def hashes():
+ return {str(p.relative_to(repo)):hashlib.sha256(p.read_bytes()).hexdigest() for root in ['apps/web/lib','apps/web/e2e','apps/web/components','apps/web/app'] for p in sorted((repo/root).rglob('*')) if p.suffix in {'.ts','.tsx'}}
+before=hashes(); results=[]
+for label,cmd in [('bun',['bun','test']),('tsc',['./node_modules/.bin/tsc','--noEmit','--incremental','false'])]:
+ start=time.monotonic();log=out/(label+'.log')
+ with log.open('x') as f: r=subprocess.run(cmd,cwd=repo/'apps/web',stdout=f,stderr=subprocess.STDOUT,timeout=180)
+ results.append({'name':label,'exit_code':r.returncode,'seconds':round(time.monotonic()-start,3),'log_sha256':hashlib.sha256(log.read_bytes()).hexdigest()})
+record={'results':results,'source_unchanged':before==hashes(),'sources':before};(out/'result.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps({k:v for k,v in record.items() if k!='sources'}));raise SystemExit(int(any(r['exit_code'] for r in results) or not record['source_unchanged']))

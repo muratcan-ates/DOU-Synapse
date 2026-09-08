@@ -1,0 +1,24 @@
+from pathlib import Path
+import json
+import hashlib
+import shutil
+
+repo = Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+draft = Path('/private/tmp/dou018-s10-docs-draft')
+guides = Path('/private/tmp/dou018-guides-final-candidate')
+manifest = json.loads((draft / 'manifest.json').read_text())
+copy = []
+for name, values in manifest.items():
+    copy.append((name, draft / 'files' / name, values['base'], values['candidate']))
+for values in json.loads((guides / 'manifest.json').read_text())['staged_files']:
+    name = values['path']
+    copy.append((name, guides / 'files' / name, values['baseline_sha256'], values['candidate_sha256']))
+for name, src, base, candidate in copy:
+    target = repo / name
+    assert (hashlib.sha256(target.read_bytes()).hexdigest() if target.exists() else None) == base, name
+    assert hashlib.sha256(src.read_bytes()).hexdigest() == candidate, name
+for name, src, base, candidate in copy:
+    target = repo / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, target)
+print(json.dumps({'status': 'integrated', 'files': {name: candidate for name, _, _, candidate in copy}}))

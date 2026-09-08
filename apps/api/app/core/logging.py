@@ -20,6 +20,8 @@ from pathlib import Path
 from types import CodeType, TracebackType
 from typing import Any, ClassVar, cast
 
+from app.core.request_context import ServerRequestId
+
 _REDACTION_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     # LLM / servis anahtarları
     (re.compile(r"\b(?:sk|gsk|rk)[-_][A-Za-z0-9_-]{16,}\b"), "[REDACTED_API_KEY]"),
@@ -271,8 +273,11 @@ def _exception_record(record: logging.LogRecord) -> tuple[str, str, dict[str, st
     supplied = getattr(record, "context", None)
     if record.name == "app.error" and isinstance(supplied, dict):
         request_id = supplied.get("request_id")
-        if type(request_id) is str and _REQUEST_ID.fullmatch(request_id):
-            # Bu kimlik bugün istemciden gelebilir; anonimlik/kişisel veri yokluğu iddia edilmez.
+        if type(request_id) is ServerRequestId:
+            # Sunucunun tek UUID çekilişi; rastlantısal 11 rakam destek kodunu bozmaz.
+            context["request_id"] = request_id
+        elif type(request_id) is str and _REQUEST_ID.fullmatch(request_id):
+            # Aynı UUID görünümündeki sıradan metin iç kaynak kanıtı taşımaz.
             context["request_id"] = redact(request_id)
     return logger_name, message, context
 
@@ -300,7 +305,7 @@ class RedactionFilter(logging.Filter):
                 record.args = tuple(_redact_any(a) for a in record.args)
         context = getattr(record, "context", None)
         if isinstance(context, dict):
-            record.context = {k: _redact_any(v) for k, v in context.items()}
+            record.context = _redact_context(record.name, context)
         return True
 
 
@@ -309,9 +314,22 @@ def _redact_any(value: Any) -> Any:
         return redact(value)
     if isinstance(value, dict):
         return {k: _redact_any(v) for k, v in value.items()}
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple)):
+        # JSON her ikisini de diziye çevirir; tuple içindeki metin muaf değildir.
         return [_redact_any(v) for v in value]
     return value
+
+
+def _redact_context(logger_name: str, context: dict[str, Any]) -> dict[str, Any]:
+    """Muafiyet yalnız iki logger'ın doğrudan alanındaki tam iç türe aittir."""
+    return {
+        key: value
+        if logger_name in {"app.request", "app.error"}
+        and key == "request_id"
+        and type(value) is ServerRequestId
+        else _redact_any(value)
+        for key, value in context.items()
+    }
 
 
 class JsonFormatter(logging.Formatter):
@@ -355,7 +373,7 @@ class JsonFormatter(logging.Formatter):
         }
         context = getattr(record, "context", None)
         if isinstance(context, dict):
-            payload["context"] = context
+            payload["context"] = _redact_context(record.name, context)
         for key, value in record.__dict__.items():
             if key not in self._RESERVED and key != "context":
                 payload[key] = _redact_any(value)

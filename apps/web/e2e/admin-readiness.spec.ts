@@ -1,13 +1,13 @@
+import { test } from "./audit-fixture";
 /**
  * OPS1 overview: first test uses the actual authorized API response.
  * Degraded/legacy cases exercise UI response-contract rendering only: an actual
  * authorized overview response is fetched, then its dependency fields are changed.
  * Real SQL policy disagreement/recovery is tested in test_admin_readiness.py.
  */
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import type { AdminOverview } from "../lib/admin";
-import { createE2eRequestId } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 const ADMIN = {
@@ -18,7 +18,6 @@ const ADMIN = {
 };
 
 async function signIn(page: Page) {
-  await page.setExtraHTTPHeaders({ "X-Request-ID": createE2eRequestId() });
   await page.addInitScript((user) => {
     localStorage.setItem("dou-synapse-token", `dev:${user.id}`);
     localStorage.setItem("dou-synapse-user", JSON.stringify(user));
@@ -58,10 +57,15 @@ test("yönetim sağlığı gerçek API durumlarını ve başarılı sohbet örne
 });
 
 for (const variant of ["degraded", "legacy"] as const) {
-  test(`yönetim bağımlılık alanları ${variant} UI sözleşmesiyle dürüst görünür`, async ({ page }) => {
+  test(`yönetim bağımlılık alanları ${variant} UI sözleşmesiyle dürüst görünür`, async ({ page, auditCapture }) => {
     await signIn(page);
     await page.route(`${API}/admin/overview`, async (route) => {
       const response = await route.fetch();
+      // route.fetch gerçek upstream yanıtı: fulfill/browser olayı kaybolsa da
+      // server-ID makbuzu korunur. Browser olayındaki aynı makbuz tekilleştirilir.
+      auditCapture.record({ url: response.url(), method: route.request().method(),
+        authorization: route.request().headers().authorization, status: response.status(),
+        requestId: response.headers()["x-request-id"] });
       expect(response.status()).toBe(200);
       const body = await response.json() as AdminOverview;
       if (variant === "degraded") {

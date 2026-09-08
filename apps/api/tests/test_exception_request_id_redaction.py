@@ -1,4 +1,4 @@
-"""S9: destek kimliğinde önceden var olan bilinen-kalıp maskesi korunur.
+"""S10: sıradan metnin bilinen-kalıp maskesi ve iç destek kimliği sınırı korunur.
 
 Yalnız sentetik değerler kullanılır. Gerçek formatter ve paylaşılan genel500
 handler çağrılır; ağ sunucusu, DB, Settings veya sağlayıcı başlatılmaz.
@@ -87,7 +87,7 @@ def test_formatter_masks_known_sensitive_request_id_without_filter(
 
 
 @pytest.mark.parametrize(("request_id", "expected_mask"), SENSITIVE_IDS)
-async def test_real_unhandled_handler_masks_log_and_preserves_response_support_id(
+async def test_real_unhandled_handler_replaces_plain_state_with_server_support_id(
     request_id: str, expected_mask: str
 ) -> None:
     request = Request({"type": "http", "method": "GET", "path": "/synthetic", "headers": []})
@@ -96,14 +96,19 @@ async def test_real_unhandled_handler_masks_log_and_preserves_response_support_i
         response = await errors.unhandled_error_handler(
             request, RuntimeError("synthetic request-id regression")
         )
-    assert_masked_log(stdout.getvalue(), request_id, expected_mask)
+    output = stdout.getvalue()
+    assert request_id not in output
+    support_id = json.loads(response.body)["error"]["request_id"]
+    assert support_id != request_id and expected_mask not in support_id
+    record = json.loads(output)
+    assert record["context"] == {"error_code": "internal_error", "request_id": support_id}
     assert stderr.getvalue() == "", "Normal tanı yerine günlük arızası işareti kabul edilmez."
     assert response.status_code == 500
-    # Bu dar yama HTTP kimliğini değiştirmez; yalnız logdaki bilinen kalıbı maskeler.
+    # İç tür olmayan state değeri günlük ve yanıt için birlikte yenilenir.
     assert json.loads(response.body) == {
         "error": {
             "code": "internal_error",
             "message": "İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
-            "request_id": request_id,
+            "request_id": support_id,
         }
     }

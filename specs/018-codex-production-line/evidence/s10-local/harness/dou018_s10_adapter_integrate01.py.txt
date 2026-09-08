@@ -1,0 +1,12 @@
+from pathlib import Path
+import hashlib,json,shutil
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');candidate=Path('/private/tmp/dou018-owned-adapter-candidate')
+expected={'files/apps/web/e2e/global-setup.ts': '34ee6fa10c99c59a430bab2b0c72e626195496856e77065b522a6018d28531a3', 'files/apps/web/playwright.config.ts': 'dce63c22a174e227560c3cef412059d3e0f4b05f992af0d225dab537375b092d', 'files/scripts/e2e_audit_guard.py': '68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4', 'files/scripts/run_owned_e2e.py': '180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920'}
+base={'apps/web/e2e/global-setup.ts': 'e740eee7cc063807056d566d4452a577e97189f0f532329bfe8258c64fea0e6c', 'apps/web/playwright.config.ts': '8e991b1841ba64d660b5b543642854877d2d17cdf557c0c050edf922db007442', 'scripts/e2e_audit_guard.py': None, 'scripts/run_owned_e2e.py': None}
+for name,sha in expected.items():
+ p=candidate/name;dest=repo/Path(name).relative_to("files")
+ assert hashlib.sha256(p.read_bytes()).hexdigest()==sha
+ assert (hashlib.sha256(dest.read_bytes()).hexdigest() if dest.exists() else None)==base[str(Path(name).relative_to("files"))]
+for name in expected:
+ dest=repo/Path(name).relative_to("files");shutil.copyfile(candidate/name,dest)
+print(json.dumps({"status":"integrated","files":expected,"base":base}))

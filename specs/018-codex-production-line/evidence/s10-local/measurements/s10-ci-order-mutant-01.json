@@ -1,0 +1,9 @@
+{
+  "exit_code": 1,
+  "seconds": 0.148,
+  "scope": "offline regression sensitivity; Docker/PG are doubles",
+  "mutation": "remove only repeated per-source identity check; first/final identity checks retained",
+  "helper_sha256": "4d270abc20c189fb432c7f9fea81eb19d9d3cb150c14738fd46b6a21e03d6028",
+  "test_sha256": "c6fbe5e0fdf6749f0142895e383d0f062105154bb77e1b14037fc2c542195fbb",
+  "log_sha256": "302d1bf36be5b4cfd2bfed609e305be67addae2fc015afd9692cd4a3393778bf"
+}

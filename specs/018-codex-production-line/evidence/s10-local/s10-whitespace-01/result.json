@@ -1,0 +1,8 @@
+{
+  "path": "apps/web/e2e/fixtures.ts",
+  "before_sha256": "cf214e87328a9dd3dac85257731b81b2daeae50c68295d6a76a607000b44a79b",
+  "after_sha256": "61ce0dc4ec427f1830a2a0746c985d4c510f06c320c5498c2794c2f9d20dd6c2",
+  "emitted_javascript_sha256": "f3974af873d43df716e0b340cea53103d6c1486e533645632566a5be42f8f906",
+  "exact_emitted_javascript_equal": true,
+  "scope": "Only redundant trailing newline removed; no test or browser re-execution claimed."
+}

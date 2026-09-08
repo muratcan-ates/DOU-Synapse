@@ -21,6 +21,7 @@ Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), 
 | S1–S7 güvenlik/gizlilik | S71d5ff6 kendi kanıtı; son S/B/C9af4122 üzerinde dört GitHub workflow başarılı | Kurumsal kararlar ve kalıcı cleanup/uzlaştırma açık |
 | S8 günlük minimizasyonu | Rota şablonu, Uvicorn erişim kanalı sınırı,21 ASGI ve gerçek Uvicorn v2 kabulü; önceki D/S8 c45 hosted kapıları geçti | V1 başarısız kayıt korunur; dış proxy/hosting günlükleri açık. OPS/D6 kendi f79d8a2 hosted kabulünde; yeni S9 kaynakları ayrı |
 | S9/S9B/S9C hata günlükleri | Son errors + güvenli handler entegre; ayrı aşamalarda 18/35/27 PASS, sekiz karşılaştırma kolu ve gerçek dört kolda 16 süreç/20 HTTP kabulü | İlk 1651/38 sonucu ve sonraki maskeleme regresyonu kaydı korunur. Son kaynakta 1655 API/38 alt vaka, dört kırmızı/yeşil kimlik vakası ve 84 yeni kontrol birlikte geçti; yeni kesin commit hosted kapıları bekler. İstemci kimliği/S10, collector ve kurumsal saklama açık |
+| S10 destek kimliği ve test sahipliği | Sunucu UUID4, dar iç-tip maskeleme, eksiksiz audit muhasebesi ve owned süreç kapanışı;1688 API/38,573 web,134 izole,56 HTTP ve son71 E2E geçti | Yerel435 kaynak bağlı; gerçek CI Docker/hosted ve dış collector kabulü ayrı; kamuya gönderim onay bekler |
 | B1 öğrenme çıktısına konu | Konu seçimi, kaydetme ve yeniden okuma gerçek API/tarayıcıda geçti | İsteğe bağlı konu seçilmezse konusuz dağılım grubu korunur |
 | B2 konu/blueprint ile sınav | 014'te zaten vardı; mevcut gerçek öğrenci akışı tekrar geçti | Yeni özellik olarak sayılmaz |
 | B3 açık/kod değerlendirme | Geçerli kod rubriği, ölçüt puanlama ve kaynaklı eksik ölçüt API/UI sözleşmesi geçti | Gerçek LLM doğruluğu ve insan pedagojik kabulü E'de açık; tarayıcı geri bildirimi kontrollü DB fixture'ı |
@@ -36,7 +37,7 @@ Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), 
 | F auth/private storage | Yerel issuer/JWT/CSP sınırları doğrulandı | Gerçek kullanıcı oturumu, seçilmiş imza yolu ve kullanıcı JWT'siyle Storage RLS ayrı sınanır |
 | G dağıtım | Canlı hedef seçilmedi | İncelenebilir migrate/deploy/rollback paketi; gerçek hedef ve yetkiyle canlı tatbikat |
 | H erişilebilirlik/E2E | Önceki B68 ve yeni OPS71 tarayıcı kabulü; yönetim375/1440 açık/koyu dört gerçek API görünümü, yatay taşma yokluğu ve ArrowRight/Home klavye dumanı geçti | Yeni 3 E2E vakanın 2’si kontrollü UI yanıtı. Tüm sayfaların axe/manuel/VoiceOver kabulü ayrı açık |
-| I belge ve kılavuzlar | API/OpenAPI ve gizlilik envanteri; D6 servis/rol/migration/tanı belgeleri güncel kaynağa hizalandı | Bütün öğrenci/eğitmen/admin kılavuzları ve gerçek başarı raporu; bitmemiş işler bitmiş gösterilmez |
+| I belge ve kılavuzlar | Öğrenci/eğitmen/Bilgi İşlem kılavuzları B1–B7 ve S10 ile güncel; kaynak/link denetimi; API/OpenAPI ve gizlilik envanteri hizalı | Tarihsel ekranlar yenilenmedi; gerçek model başarı raporu ve dış kabul açık |
 
 ## Ortam ve doğrulama sınırları
 

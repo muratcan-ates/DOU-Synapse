@@ -1,0 +1,20 @@
+from pathlib import Path
+import hashlib,json,subprocess
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line');p=Path('/private/tmp/dou018-s10-next-candidate');fix=Path('/private/tmp/dou018-s10-review-fixes-candidate')
+def h(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=r,text=True).strip()=='deb83e1c0c4553e00072ea6797bd48b6ab53f330'
+assert not subprocess.check_output(['git','status','--porcelain'],cwd=r,text=True).strip()
+assert h(p/'manifest.json')=='e1a52aa25b4e8f25764ee2541c46610f50963dc4ce7ef5f17c0f31681f6af114';assert h(fix/'manifest.json')=='10141e27ad0a8ade2b75d9ccdcfc6e996ec2dbe1673e724e53b3e5971af5f688'
+m=json.loads((p/'manifest.json').read_text());f=json.loads((fix/'manifest.json').read_text())
+for x in m['staged_files']:
+ target=r/x['path'];assert (h(target) if target.exists() else None)==x['base_sha256'],x['path'];assert h(p/'files'/x['path'])==x['candidate_sha256']
+for x in f['staged_files']:
+ assert h(p/'files'/x['path'])==x['base_s10_candidate_sha256'];assert h(fix/'files'/x['path'])==x['candidate_sha256']
+for package,rows in [(p,m['staged_files']),(fix,f['staged_files'])]:
+ for x in rows:
+  target=r/x['path'];target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes((package/'files'/x['path']).read_bytes())
+source=Path('/private/tmp/dou018-s9-review-interpretation-correction.json');assert h(source)=='094dc01a7fa4bcd514e30eb673a7116f716e121fdd3cf9294f2cff8c2990be1c';target=r/'specs/018-codex-production-line/evidence/s9-review-interpretation-correction.json';assert not target.exists();target.write_bytes(source.read_bytes())
+spec=r/'specs/018-codex-production-line/spec.md';s=spec.read_text();s+='''\n\n## S10 sunucu destek kimliği ve test kaydı sahipliği\n\n- HTTP başlığı kimlik kaynağı olmaz. Sunucu her HTTP denemesinde tek UUID4 üretir; aynı request state, yanıt, izinli günlük alanı ve gerçek admin audit satırı aynı kodu taşır. Genel500 başlık sınırı ve sabit hata zarfı ayrıca korunur.\n- Yalnız app.request/app.error doğrudan context.request_id alanındaki exact sunucu iç tipi bilinen regex maskesinden muaf olur. Düz UUID/ASCII, alt sınıf, farklı logger/alan, nested dict/list/tuple muaf olmaz. Digit-run UUID için tek RNG çekilişi ve korelasyon ölçülür; kimlikler anonim veya yetki kanıtı sayılmaz.\n- Test makbuzu yönlenen, yanlış aktör/olay veya kaybolan yanıtı sessiz tamamlanmış saymaz. Temizlik yalnız ilgili koşu/hedef makbuzlarının tam audit satırlarını seçer; başka koşu/korunan satır aynı kalır.\n- Root/CI önceden güvenilen hedef kimliğini doğrular, baseline audit içeriğini ölçer ve sahip olunan API sakinleşip kapandıktan sonra son durumla karşılaştırır. Beklenmeyen satır başarısız/açık kalır; geniş silme yapılmaz. Bu eksiksizlik işi olmadan E2E kabulü verilmez.\n- Negatif/pozitif kontroller, gerçek PostgreSQL audit ve süreç/tarayıcı kabulü ayrı kaynak özetlerine bağlanır; canlı kolektör, hukuk ve üretim terfisi açık kalır.\n''';spec.write_text(s)
+tasks=r/'specs/018-codex-production-line/tasks.md';s=tasks.read_text().replace('- [ ] S9 kendi dossier/commit ve yeni kesin PR26 hosted kabulü.','- [x] S9 own034 e19dc8c ve aggregate035 deb83e1 kesin commit kapıları PASS.\n- [ ] S9 GitHub gönderimi: otomatik inceleme kod+sentetik arşiv için açık paylaşım onayı istedi; iki commit için kullanıcı yanıtı bekleniyor. Bu içerikleri taşıyan sonraki commitler de onaysız gönderilmez.');tasks.write_text(s)
+record={'base_commit':'deb83e1c0c4553e00072ea6797bd48b6ab53f330','candidate_manifest_sha256':h(p/'manifest.json'),'review_fixes_manifest_sha256':h(fix/'manifest.json'),'applied_files':{x['path']:h(r/x['path']) for x in m['staged_files']},'status':'integrated_not_runtime_verified','pending':'root/CI trusted target receipt, quiescent audit baseline/post comparison and all runtime acceptance; no push authorized yet'}
+out=Path('/private/tmp/dou018-evidence/s10-integration-01.json');assert not out.exists();out.write_text(json.dumps(record,indent=2)+'\n');print(json.dumps({'files':len(record['applied_files']),'production_files':4,'tests_not_run':True}))

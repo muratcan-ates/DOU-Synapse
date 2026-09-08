@@ -1,247 +1,223 @@
 # Öğrenci Kılavuzu
 
-DOU-Synapse, hocanın derse yüklediği materyallerden — **ve yalnız onlardan** — cevap veren
-bir çalışma asistanıdır. Her cevabın altında hangi dosyanın hangi sayfasından geldiği yazar.
+DOU-Synapse, derse yüklenen materyallerle çalışmanıza, soru çözmenize ve konu eksiklerinizi
+izlemenize yardımcı olur. Asistanın kullanabildiği kaynakları ve çalışma modlarını hocanız
+belirler. Yanıtları ve değerlendirmeleri kaynaklarıyla birlikte inceleyin; bir kaynak
+bağlantısı, açıklamanın veya puanın mutlaka doğru olduğu anlamına gelmez.
 
-> Bu kılavuzdaki ekran görüntüleri gerçek sistemden alınmıştır ve beş şerit birleştikten
-> sonra yeniden çekilmiştir; **hiçbiri örnek veri değildir.**
-
----
+> Görseller önceki sürümden örnek ekranlardır. Aşağıdaki adımlar mevcut ekran adlarına
+> göre düzenlenmiştir; bazı özellikler kullandığınız ortamda açılmamış olabilir.
 
 ## 1. Giriş ve derse katılım
 
 ![Giriş](images/01-giris.png)
 
-Üniversite hesabınızla girersiniz. Karşınıza **yalnız kayıtlı olduğunuz dersler** çıkar.
+Giriş ekranında hesabınız için sunulan yöntemi kullanın. E-posta ve parola isteniyorsa
+kurumunuzun bu uygulama için verdiği giriş bilgilerini kullanın. Örnek ortamda hazır
+kimlik kartları gösterilebilir; bunlar kişisel hesabınızın yerine geçmez.
 
 ![Derslerim](images/07-ogrenci-ders-listesi.png)
 
-Dersi listede göremiyorsanız hocanız sizi henüz eklememiştir — sistemde kendinizi bir derse
-ekleyemezsiniz.
+**Derslerim** yalnız erişiminiz olan dersleri gösterir. Bir ders görünmüyorsa doğru hesapla
+giriş yaptığınızı kontrol edin ve hocanızdan üyeliğinizi doğrulamasını isteyin. Bu ekranda
+kendinizi bir derse ekleyemezsiniz.
 
----
+## 2. Asistanla çalışma
 
-## 2. Asistanla çalışma (Soru-cevap modu)
+Dersi açıp **Asistan** sekmesine geçin. Hocanızın izin verdiği modlar arasından seçim yapın:
 
-Ders → **Asistan**. İki mod var; üstteki düğmeden seçilir.
-
-| Mod | Ne zaman |
+| Mod | Kullanım |
 |---|---|
-| **Soru-cevap** | Bir şeyi öğrenmek/hatırlamak istediğinizde |
-| **Sokratik** | Bir soruyu **kendiniz çözmek** istediğinizde (ödev, alıştırma) |
+| Soru-cevap | Bir kavramı açıklatmak veya hatırlamak |
+| Sokratik | Çözüm denemenizi paylaşarak adım adım ipucu almak |
 
-### Kaynaklı cevap nasıl görünür
+### Kaynakları inceleme
 
 ![Kaynaklı cevap](images/09-sohbet-kaynakli-cevap.png)
 
-Cevabın altında **kaynak kartları** var: dosya adı, sayfa/slayt numarası ve materyalden
-birebir alıntı.
+Kaynak kartlarında dosya adı, varsa sayfa veya slayt konumu ve materyalden alıntı bulunur.
+Yanıtı bu bölümle karşılaştırın. Kaynak bağlantısını açtığınızda erişiminiz yeniden
+kontrol edilir; eski bir konuşmada görünmüş olması kaynağın hâlâ açılabileceği anlamına
+gelmez. **Bu dersin kaynakları** paneli de ders materyallerini incelemenizi sağlar.
+Hocanızın kaynak seçimi, hangi materyallerin yanıt için kullanılabileceğini sınırlayabilir.
 
-**Bu kartlar neden önemli:** sayfa numarasını model yazmıyor. Model yalnızca "hangi parçaya
-dayandım" diyor; dosya adını ve sayfayı sistem o parçanın kaydından üretiyor. Yani
-**kartta gördüğünüz sayfayı açtığınızda oradaki cümleyi bulursunuz.** Sınava çalışırken
-cevabı okumakla yetinmeyin — kaynağa gidin.
+### Konuşmalara dönme ve silme
 
-Sağdaki **"Bu dersin kaynakları"** paneli asistanın erişebildiği her şeyi listeler. Orada
-olmayan bir konuda cevap alamazsınız.
+**Sohbetlerin** listesinden önceki konuşmanızı açın. **Yeni sohbet**, ayrı bir konuşma başlatır;
+eskisini silmez. Bir sohbetin ortasında mod değişmez.
 
-### Konuşmalarınız kayıtlı
+- Tek konuşmayı silmek için listedeki konuşmanın **Sohbeti sil** düğmesini kullanın.
+- Bu dersin tamamındaki kendi konuşmalarınız için **Kişisel sohbet geçmişin → Bu dersteki
+  sohbetlerimi sil** düğmesini kullanın.
+- Kapsamı okuyup **Kalıcı olarak sil** ile onaylayın veya **Vazgeç** ile kapatın. İşlem geri
+  alınamaz. Diğer kullanıcıların sohbetleri, sınav kayıtlarınız ve ders materyalleri silinmez.
 
-Sağ alttaki **Sohbetlerin** listesinden eski konuşmalara dönebilirsiniz. **Yeni sohbet**
-düğmesi temiz bir konuşma açar.
+Silme sonrası açık konuşma kapanabilir. Geçmişin değiştiğine ilişkin bir uyarı görürseniz
+**Sohbeti yeniden yükle** düğmesini kullanın. Sınav sırasında kişisel geçmişi silebilmeniz,
+asistanı veya eski yanıtları yeniden kullanıma açmaz.
 
----
+### Yanıta geri bildirim verme
 
-## 3. Sokratik mod — cevabı almazsınız, cevaba yürürsünüz
+Yanıtın altındaki **Yararlı** veya **Sorun var** düğmesini kullanın. Sorun bildirirken türünü
+seçebilir ve isteğe bağlı açıklama yazabilirsiniz.
 
-Ödev sorusu sorduğunuzda asistanın cevabı vermesini beklemeyin. Sokratik modda beş
-kademeli bir merdiven vardır ve **her kademe sizin bir deneme yapmanızla açılır**:
+**“Bu soru-cevap çiftini ve açıklamamı öğretmen incelemesine aç.”** kutusunu işaretlerseniz
+ilgili soru-cevap içeriği ve açıklamanız, hesabınızda görünen adınız veya e-postanızla
+birlikte hocanızın inceleme alanında görülebilir. Bu tercih bütün sohbet geçmişinizi paylaşmaz. Paylaşım kutusunu işaretlemeden
+değerlendirme gönderebilirsiniz; bu durumda hocanız bu bildirim üzerinden soru-cevap
+metnini ve açıklamanızı okuyamaz. **Geri bildirimi kaydet** ile gönderin veya **Vazgeç** deyin.
 
-```
-Tanı → Yönlendirme → Kavram ipucu → Benzer örnek → Kaynakla açıklama
-```
+## 3. Sokratik mod
 
-Sağ üstteki beş nokta hangi kademede olduğunuzu gösterir.
+Sokratik modda soruyla birlikte ne denediğinizi ve nerede takıldığınızı yazın. Örneğin,
+“Karşılıklı dışlama koşulunu buldum ama döngüsel beklemeyi ayırt edemiyorum” ifadesi,
+sadece “Cevabı söyle” demekten daha kullanışlıdır. Yanlış bir deneme de çözümünüzü
+incelemeye yardımcı olur; her kısa mesajın yeni ipucu açacağı garanti edilmez.
 
-### Nasıl işliyor
+![Sokratik başlangıç](images/11-sokratik-kademe-1.png)
 
-**1. Soruyu sorarsınız** → asistan cevap vermez, **sizi tanır**:
+![Çözüm denemesinden sonra](images/12-sokratik-kademe-2.png)
 
-> "Bu konuda şimdiye kadar ne denedin? 05-deadlock-demo.pdf, Sayfa 1 bölümündeki hangi
-> adımda takıldığını yazar mısın?"
+İpucu sayısı hocanızın belirlediği sınıra bağlıdır. Ekrandaki aşamayı ve yönlendirmeyi
+izleyin; basamak göstergesini sınırsız ipucu hakkı olarak yorumlamayın. Doğrudan yanıt istemeyi
+tekrarlamak yerine denemenizi açıklayın. Başka bir soruya geçerken **Yeni sohbet** açın.
 
-![Sokratik, ilk kademe](images/11-sokratik-kademe-1.png)
+## 4. Kaynak yetersizliği veya kapsam dışı uyarısı
 
-**2. Gerçekten denersiniz** → merdiven bir kademe ilerler ve ipucu kişiselleşir:
+![Kapsam dışı uyarısı](images/10-sohbet-kapsam-disi-ret.png)
 
-> "Sanırım karşılıklı dışlama ve döngüsel bekleme var, diğerlerini bilmiyorum"
+![Dayanak bulunamadı](images/10-sohbet-nazik-ret.png)
 
-![Sokratik, ikinci kademe](images/12-sokratik-kademe-2.png)
-
-**3. "Sadece söyle" derseniz** → merdiven **ilerlemez**:
-
-![Israr edince ilerlemiyor](images/13-sokratik-israr-ilerlemiyor.png)
-
-> "Cevabı doğrudan veremem; bu modun amacı çözümü birlikte kurmak. Aklına gelen ilk adımı
-> ya da bir tahminini yazar mısın? En küçük deneme bile bir sonraki ipucunu açar."
-
-Israr etmek işe yaramaz — bu bir ton tercihi değil, sistemin kuralı. Ama **en küçük
-deneme bile yeter**: yanlış bir tahmin de bir denemedir ve merdiveni ilerletir. Sistem
-sizi doğru cevap verdiğiniz için değil, **denediğiniz için** ilerletir.
-
-**İpucu:** takıldığınızda "hiçbir fikrim yok" yazmak yerine *"bence şununla ilgili ama
-emin değilim"* yazın. İkincisi hem merdiveni açar hem daha isabetli bir ipucu getirir —
-neyi yanlış anladığınızı görmeden verilen ipucu yönlendirme değil, tahmindir.
-
-**Not:** Sokratik konuşma tek bir sorunun etrafında ilerler. Başka bir soruya geçmek için
-**yeni sohbet** açın. Mod da bir sohbetin ortasında değiştirilemez.
-
----
-
-## 4. Asistan "bilmiyorum" derse
-
-Asistanın **iki farklı reddi** vardır ve ikisi farklı şey söyler.
-
-**1. "Dersin kapsamı dışında"** — soru bu dersin konusu değil:
-
-![Kapsam dışı ret](images/10-sohbet-kapsam-disi-ret.png)
-
-> "Bu soru dersin kapsamı dışında görünüyor. Yalnızca bu derse yüklenmiş materyallerden
-> cevap verebiliyorum; ders dışı konularda bilerek sessiz kalıyorum."
-
-**2. "Materyalde dayanak bulunamadı"** — konu dersle ilgili olabilir ama materyalde
-yeterli dayanak yok:
-
-![Dayanak yok](images/10-sohbet-nazik-ret.png)
-
-> "Bu soruya ders materyalinde yeterli dayanak bulamadım, bu yüzden cevap vermiyorum..."
-
-**İkisi de hata değildir.** Asistan yeterince güçlü bir dayanak bulamadığında cevap
-üretmeyi reddeder — çünkü üretseydi uydurma riski olurdu ve siz onu ders bilgisi
-sanardınız. Ayrım işinize yarar: birincisinde soruyu başka yere sorun, ikincisinde
-soruyu düzeltmeyi deneyin.
-
-| Sebep | Ne yapmalı |
+| Uyarı veya durum | Yapılacak işlem |
 |---|---|
-| "Dersin kapsamı dışında" | Doğru davranış. Genel bir arama motoruna sorun |
-| Soru çok genel ("her şeyi anlat") | Somutlaştırın: kavram adı ya da haftanın konusunu ekleyin |
-| Konu materyalde yok | Hocanıza söyleyin — ilgili materyal yüklenmemiş olabilir |
-| Yazım hatası / çok kısa soru | Soruyu tam cümleyle yeniden yazın |
+| Dersin kapsamı dışında | Doğru derste olduğunuzu kontrol edin; soruyu ders konusuyla ilişkilendirin |
+| Materyalde yeterli dayanak bulunamadı | Kavramı veya haftayı belirtip soruyu somutlaştırın; ilgili materyali hocanızla kontrol edin |
+| Soru çok genel veya belirsiz | “Bu nasıl oluyor?” yerine kavram adını ve takıldığınız adımı yazın |
+| Kaynak artık açılamıyor | Uyarıyı izleyin; eski alıntıyı güncel ve erişilebilir kaynakla aynı kabul etmeyin |
 
-**En işe yarayan düzeltme:** konunun adını sorunun içine koymak.
-"Bu nasıl oluyor?" yerine *"Semafor ile mutex arasındaki fark nedir?"*
-
----
+Bu uyarılar tek başına teknik arıza anlamına gelmez. Asistanın cevap vermiş olması da
+kaynak kontrolü yapma gereğini kaldırmaz.
 
 ## 5. Sınav provası
 
 ![Sınav provası](images/14-ogrenci-sinav-provasi.png)
 
-- Sınav yalnız **hocanın onayladığı** sorulardan oluşur. Onaylanmış soru yoksa sistem
-  *"Bu derste henüz onaylanmış soru yok"* der.
-- **Prova modunda ipucu isteyebilirsiniz.** İpucu size sorunun dayandığı bölümü gösterir
-  (dosya + sayfa). Aldığınız ipucu kademesi puanınızı düşürür — bu bilinçlidir; ipuçsuz
-  çözmek daha değerlidir.
-- **Gerçek sınav modunda ipucu tamamen kapalıdır** ve geri bildirim sınav bitince gelir.
+Ders → **Sınav provası**. Sorular hocanızın onayladığı havuzdan gelir.
 
-### Konu seçimi, açık sınavlar ve oturumlar
+| Çalışma biçimi | İpucu ve geri bildirim |
+|---|---|
+| **Alıştırma** | Süre sınırı olmadan çalışma; her yanıttan sonra geri bildirim ve kullanılabilir ipuçları |
+| **Sınav** | Süreli çalışma; ipucu kapalı, yanıt ayrıntıları sınav bittikten sonra |
 
-Öğrenci çalışma alanı açılmış ortamlarda **Çalışma konusu** listesinden bir konu seçip
-**Alıştırma başlat** düğmesine basabilirsiniz. Tüm konular seçimi dersteki onaylı havuzu
-kullanır. **Şu anda açık sınavlar** bölümünde hocanızın yayımladığı sınav, süresi ve kalan
-deneme hakkı görünür. **Sınava katıl** sizi o sınavın yayımlanmış sürümüne alır.
+Alıştırmada **İpucu al** veya **Sonraki ipucu** kullanılabilir. Aldığınız ipuçları puanı
+etkiler; ipuçsuz çözümle aynı değerlendirmeyi beklemeyin.
 
-**Oturumlara dön** açık oturumu bitirmeden listeye döner. **Oturumlarım → Devam et** aynı
-oturumu açar; sayfayı yenilemek veya başka cihaz kullanmak süreyi sıfırlamaz. Sınava giriş
-penceresinin kapanması, başlamış oturumun kalan süresini değiştirmez. Süresi dolmuş bir
-oturumu **Oturumu aç** ile açıp bitirin.
+### Başlama ve geri dönme
 
-Bitirdiğiniz oturumun ayrıntıları **Sonucu gör** ile yeniden açılır. Aynı derste başka bir
-sınavınız sürüyorsa geçmiş puanlar ve çözümler, alıştırma yardımı ve asistan sınav bitene
-veya süresi dolana kadar kapalıdır. Birden fazla açık oturum varsa her birini
-bitirebilirsiniz; sonuçlar son etkin sınav kapandığında açılır.
+Öğrenci çalışma alanı açılmışsa **Çalışma konusu** listesinden konu seçip **Alıştırma başlat**
+deyin. Tüm konular seçimi, dersteki onaylı havuzu kullanır. **Şu anda açık sınavlar**
+bölümünde yayımlanan sınavın süresini ve kalan deneme hakkını inceleyip **Sınava katıl**
+düğmesini kullanın. Katılım engellenirse ekranda belirtilen nedeni izleyin.
 
-Açık uçlu ve kod cevaplarında yapay zekâ, ders materyalinden geçerli dayanak gösteremezse
-**Değerlendirilemedi** mesajı gelir. Bu cevap yanlış sayılmaz ve puan ortalamasına girmez.
-Önceden kaydedilmiş değerlendirmenin dayanağı artık okunamıyorsa ayrıntılar da gösterilmez;
-sonuç açmak cevabınızı yeniden puanlamaz. Alıştırmada tek soruya ait geri bildirim sayfa
-yenilenince yeniden yüklenmez; oturumu bitirdikten sonra sonuç geçmişinden görülebilir.
+**Oturumlara dön**, oturumu bitirmeden listeye döner. **Oturumlarım → Devam et** aynı oturumu
+açar. Sayfayı yenilemek veya başka cihazdan giriş yapmak süreyi ve deneme hakkını
+sıfırlamaz. Katılım penceresinin kapanması başlamış oturumun kalan süresini değiştirmez.
+Süresi dolmuş oturumu **Oturumu aç** ile açıp bitirin.
 
-Çalışma alanı bu ortamda açılmadıysa yalnız mevcut alıştırma ve süreli prova başlangıcı
-görünür; ayrıntılı sonuç geçmişi sunulmaz.
+Sınavı tamamlamak için **Sınavı bitir** ve ardından **Bitir ve sonucu gör** adımını izleyin.
+Bundan sonra o oturuma yeni yanıt gönderemezsiniz. Bitmiş oturumu listeden **Sonucu gör**
+ile yeniden açabilirsiniz. Ayrıntılı çalışma alanı açılmamışsa konu, sınav kataloğu ve
+sonuç geçmişi yerine temel başlangıç ekranını görürsünüz.
 
-### "Neden yanlış?"
+### Yarım kalan yanıt ve kayıtlı geri bildirim
 
-Yanlış cevapladığınızda sistem yalnız "yanlış" demez; **seçtiğiniz şıkkın hangi cümleyle
-çeliştiğini** gösterir — dosya adı, sayfa ve materyalden alıntıyla.
+Henüz göndermediğiniz metin veya işaretlediğiniz şık, aynı sekmede sayfayı yenilediğinizde
+korunabilir. **Cevabı gönder** demeden teslim edilmiş sayılmaz. Taslak sekmeye özeldir;
+sekme kapanınca veya çıkış yapınca silinir ve başka cihaza taşınmaz. Tarayıcı saklamayı
+engelliyorsa uyarı görürsünüz; yanıtı yine gönderebilirsiniz.
 
-Ölçülen bir örnek: "Mutex ile semafor arasındaki temel amaç farkı nedir?" sorusunda yanlış
-şık işaretlendiğinde sistem `04-synchronization.pdf · Sayfa 3`'ü ve o sayfadaki
-karşılaştırma tablosunu gösterdi.
+Gönderilmiş alıştırma sorusuna geri döndüğünüzde kayıtlı geri bildirim ve erişilebilen
+kaynak tekrar yüklenir; yanıt yeniden puanlanmaz. Kaynak artık okunamıyorsa ilgili
+ayrıntılar gösterilmez. Süreli sınavın yanıtları ise bitmiş sonuç ekranında açılır.
 
-Bu eşleme modelden gelmez; her çeldirici, soru üretilirken hangi parçaya karşı yazıldıysa
-ona bağlıdır. **Yanlış cevabınız size doğrudan çalışılacak sayfayı verir** — sınav
-provasının en değerli tarafı budur.
+### Sonucu okuma
 
----
+Açık uçlu veya kod yanıtı geçerli ders kaynağıyla değerlendirilemiyorsa
+**Değerlendirilemedi** bilgisi gösterilir. Bu, yanlış yanıt demek değildir; o değerlendirme
+puan ortalamasına alınmaz.
 
-## 6. İlerlemem
+- **Neden yanlış?**, çoktan seçmeli soruda yanlış seçeneğe bağlı kaynak bölümünü gösterir.
+- **Eksik kalan noktalar** ve varsa **Rubrik ölçütleri**, açık uçlu veya kod yanıtında
+  hangi değerlendirme ölçütlerinin eksik kaldığını incelemenizi sağlar.
+- **Eksik ölçütün dayanağı**, eksik ölçüt için gösterilen kaynak alıntısıdır. Yanıtınızla
+  kanıtlanmış bir çelişki anlamına gelmez. Kaynağı açıp ölçütle birlikte okuyun.
+
+Puan veya açıklama ders materyaliyle uyuşmuyorsa hocanızla değerlendirin. Bu ekranlar
+resmî not yerine çalışma geri bildirimi sunar.
+
+### Sınav sırasında kapanan alanlar
+
+Öğrenci olarak aynı derste süreli sınavınız sürerken asistan, kaynak yardımı, önceki
+sonuçların ayrıntıları ve alıştırma geri bildirimi kilitlenir. Başka sekme açmak veya
+eski bağlantıyı kullanmak bu sınırı kaldırmaz. Birden fazla etkin sınav oturumu varsa
+her birini bitirebilirsiniz; ayrıntılar son etkin sınav da bittiğinde veya süresi
+dolduğunda açılır. Açık bir ekranın kilitlenmesi hâlinde mesajı izleyin.
+
+**Verilerim** ekranındaki kişisel veri indirme, herhangi bir derste öğrenci olarak etkin
+süreli sınavınız varsa geçici olarak kapanır. Sınav bittikten veya süresi dolduktan sonra
+tekrar deneyin. Alıştırma bu indirme kilidini oluşturmaz.
+
+## 6. İlerleme
 
 ![İlerleme](images/15-ogrenci-ilerleme.png)
 
-Konu bazlı bir puan ve seviye görürsünüz:
+**İlerleme** ekranı konu bazında puan, seviye ve ölçümün kaç yanıta dayandığını gösterir:
 
 | Seviye | Puan |
 |---|---|
-| Geliştirilmeli | < 0,40 |
-| Orta | 0,40 – 0,74 |
-| İyi | ≥ 0,75 |
+| Geliştirilmeli | 0,40'ın altında |
+| Orta | 0,40 ile 0,75 arasında; 0,75 hariç |
+| İyi | 0,75 ve üzeri |
 
-Puan, son cevaplarınıza daha çok ağırlık verir: eski bir hatanın etkisi zamanla azalır,
-son performansınız öne çıkar. Aldığınız ipuçları puanı düşürür.
+Son yanıtlar daha ağırlıklıdır; alınan ipuçları puanı etkiler. Az sayıda yanıta dayanan
+sonucu genel başarı yargısı olarak kullanmayın. Bu bir resmî not değildir.
 
-**Bu bir not değildir.** Resmî değerlendirme hocanızındır; buradaki puan yalnız
-*"hangi konuya çalışmalıyım"* sorusunun cevabıdır. Yanında **kaç cevaba dayandığı** yazar
-— 3 cevaba dayanan bir "Geliştirilmeli" sizin hakkınızda pek bir şey söylemez.
+## 7. Profil ve kişisel veriler
 
----
+**Profil** ekranında adınızı düzenleyip **Profili kaydet** diyebilirsiniz. E-posta alanı
+bu ekranda düzenlenmez. **Verilerimi indir veya sil** bağlantısı **Verilerim** alanını açar.
 
-## 7. Asistan ne yapmaz
+| İşlem | Adımlar ve kapsam |
+|---|---|
+| Kayıtlarımı indirme | **Verilerimi indir → JSON olarak indir**. Size ait profil, üyelik, sohbet, sınav yanıtı ve ilerleme kayıtlarını indirir. Kota ve güvenlik operasyon kayıtları bu dosyanın dışında kalır; dosyadaki kapsam açıklamasını okuyun |
+| Tüm sohbetlerimi silme | **Tüm sohbet geçmişini sil → Evet, geçmişi sil**. Bütün derslerdeki kendi sohbetlerinizi, bağlı mesajları ve geri bildirimleri siler. Sınav ve ilerleme kayıtları korunur |
+| Profil bilgilerimi kaldırma | **Profil bilgilerimi kaldır → Evet, profil bilgilerimi kaldır**. Ad ve e-postayı kaldırır, sohbetleri siler ve üyelikleri kapatır. Sınav, ilerleme ve materyal kayıtları mevcut profil kaydıyla bağlantılı kalır |
 
-- **İnternetten bilgi getirmez.** Yalnız hocanızın yüklediği materyali bilir.
-- **Başka dersin materyaline bakamaz.** Kayıtlı olmadığınız bir dersin içeriğine
-  erişemezsiniz; o dersin varlığını bile göremezsiniz.
-- **Kaynaksız cevap göstermez.** Kaynağını gösteremediği bir cevabı hiç göstermez.
-- **Ödevinizi çözmez.** Sokratik modda ısrar cevabı getirmez.
-- **Sınav sırasında yardım etmez.** Gerçek sınav modunda ipucu kapalıdır.
-- **Not vermez.** İlerleme ekranı bir çalışma göstergesidir.
-- **Bilmediğinde uydurmaz.** "Dayanak bulamadım" demesi sistemin çalıştığının işaretidir.
-- **Hocanız sorularınızı okuyamaz.** Sohbet mesajlarınız eğitmene kapalıdır; hoca yalnız
-  sınıf düzeyinde sayısal özet görür, kimin ne sorduğunu göremez.
-  Ayrıntı: [KVKK Aydınlatma Metni](kvkk.md).
+**Profil bilgilerini kaldırmak bütün verileri silmez ve kimliğinizle bağlantıyı tamamen
+kaldırmaz.** Kurumun giriş hesabını da kapatmaz; bunun için kurumunuzun ayrı sürecini izleyin.
+Sohbet silme, daha önce indirdiğiniz dosyaları cihazınızdan kaldırmaz. Silmeden önce
+onaydaki kapsamı okuyun; vazgeçerseniz onaylamadan kapatın.
 
----
+Ortak cihazda işiniz bitince **Çıkış** yapın. Ayrıntılı kapsam için
+[Kişisel Veriler ve Gizlilik](kvkk.md) sayfasını okuyun.
 
 ## 8. Sık karşılaşılanlar
 
-| Durum | Ne yapmalı |
+| Durum | Yapılacak işlem |
 |---|---|
-| "Çok sık soru gönderiyorsun" | Dakikada 20 istek sınırı var; bir dakika bekleyin |
-| Sokratik modda ilerlemiyorum | Bir deneme yazın — yanlış olması sorun değil |
-| Modu değiştiremiyorum | Mod sohbet ortasında değişmez; yeni sohbet açın |
-| Cevap geldi ama kaynak yok | Bu olmamalı; hocanıza bildirin |
-| Ders listemde ders yok | Hocanız sizi eklememiş |
-| İlk soru çok yavaş geldi | İlk soruda model belleğe yükleniyor (~12 sn), sonrakiler saniyenin altında |
+| Çok sık istek veya bütçe uyarısı | Ekranda gösterilen bekleme süresini veya sınırı izleyin; yenilemek kotayı sıfırlamaz |
+| Asistan modu görünmüyor | Dersin modları hocanız tarafından sınırlandırılmış olabilir |
+| Sokratik modda ilerlemiyorum | Denediğiniz çözümü ve takıldığınız adımı açıklayın; ipucu sınırına bakın |
+| Ders listemde ders yok | Doğru hesabı ve ders üyeliğini hocanızla kontrol edin |
+| Yanıt veya yükleme gecikiyor | İşlemin durumunu izleyin; süre içerik ve hizmet yoğunluğuna bağlıdır |
+| Eski sonuç veya kaynak açılmıyor | Etkin sınav, değişmiş kaynak veya erişim uyarısını okuyun; yetki gerektiren içeriği eski ekranla kullanmaya çalışmayın |
 
----
+Sorun sürerse etkilenen ekranı, yaklaşık zamanı ve varsa **Destek kodu**nu yetkili
+destek ekibine iletin. Bu kod sunucu tarafından ilgili istek için oluşturulur;
+yeniden denemede değişebilir. Kodu paylaşırken soru-cevap metnini, öğrenci notunu,
+parolanızı veya giriş bilgilerinizi eklemeyin.
 
 ## İlgili belgeler
 
 - [Eğitmen Kılavuzu](instructor-guide.md)
-- [KVKK Aydınlatma Metni](kvkk.md)
-
-## Yarım kalan yanıt ve önceki alıştırma geri bildirimi (015)
-
-Bir yanıtı yazıp henüz göndermediğinizde aynı sekmede sayfayı yenilemeniz metni veya seçtiğiniz şıkkı korur. **Cevabı gönder** düğmesine basmadan yanıt sunucuya teslim edilmiş sayılmaz. Taslak yalnız bu tarayıcı sekmesindedir; sekme kapanınca veya çıkış yapınca silinir ve başka cihaza taşınmaz. Tarayıcı saklamayı engelliyorsa uyarı görürsünüz; yine de yanıtınızı gönderebilirsiniz.
-
-Gönderdiğiniz alıştırma sorusuna geri döndüğünüzde kayıtlı geri bildirim ve okunabilir kaynak tekrar açılır. Sistem yeniden puanlama yapmaz. Kaynak artık okunamıyorsa eski yapay zekâ puanı güvenilir bir değerlendirme gibi sunulmaz. Aynı derste süreli sınavınız sürüyorsa eski alıştırma geri bildirimi kilitlenir. Süreli sınavın cevapları yalnız bitmiş sonuç ekranında açılır.
+- [Kişisel Veriler ve Gizlilik](kvkk.md)

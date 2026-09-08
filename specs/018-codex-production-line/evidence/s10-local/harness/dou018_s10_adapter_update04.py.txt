@@ -1,0 +1,8 @@
+from pathlib import Path
+import hashlib,shutil
+repo=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+for name,sha in [("run_owned_e2e.py","d0db75dce445efc26a1d77944bcd680e023c3750597f1420bfeee2938f1ffd6a"),("e2e_audit_guard.py","68196f59ff4da42378cc7b310c0bc4ccd95c5acb97ca3b3928dc8e2546b495b4")]:
+ assert hashlib.sha256((repo/"scripts"/name).read_bytes()).hexdigest()==sha
+for name in ["run_owned_e2e.py","e2e_audit_guard.py"]:
+ shutil.copyfile(Path("/private/tmp/dou018-owned-controller-v4")/name,repo/"scripts"/name)
+ print(name,hashlib.sha256((repo/"scripts"/name).read_bytes()).hexdigest())

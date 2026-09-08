@@ -1,0 +1,41 @@
+# S10 CI bağlantılarının bağımsız son incelemesi
+
+Karar: incelenen d0e7a9d8 taslağının hedef sahipliği, servis tanımı, yetki veya CLI bağlantısında entegrasyonu engelleyen somut bir kusur bulmadım. Bir küçük kanıt toplama eksiği aşağıda açık: Playwright hata dosyaları artifact listesinde yok. Bu inceleme yerel kaynak okuma ve SHA-256 hesabıdır; iş akışı, gömülü Python, test, Docker, sunucu, DB veya ağ çağrısı çalıştırılmadı. İnceleme anında repo CI dosyası hâlâ acd23f2d tabanındadır; taslak uygulanmamıştır.
+
+## Kaynak bağı
+
+| Kaynak | SHA-256 |
+|---|---|
+| Taslak .github/workflows/ci.yml | d0e7a9d8e48b2ab906b7ee4060811d10b8f766e3c2af22ab0a2dd0b1953bbde8 |
+| Mevcut repo .github/workflows/ci.yml | acd23f2d071e9bfcd89d776938f6221c0bf383648f32fe1d6def77944f5826fd |
+| provision_ci_e2e.py | 21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f |
+| test_provision_ci_e2e.py | c6fbe5e0fdf6749f0142895e383d0f062105154bb77e1b14037fc2c542195fbb |
+| fixtures/ci_local_dev_setup.sql | 6a50858baac0137b2c403435e9372d8bb66bc1ad24950d9a78d38c48511cef16 |
+| test_owned_e2e.py | df54c1b165566f14cd0c5103b24908e5494ac08b0079147cd42dc733ca3a5d82 |
+| Güncel repo run_owned_e2e.py | ba51199d64876a9838ae31b9ffb345d518247be0fe45cdfee4b2192254dd1fb7 |
+| Güncel repo e2e_audit_guard.py | eae6627688f5918ffaaadfb5541f859346e7f26b4cc22eb06f77cdcea1522724 |
+
+İlk beş aday dosyanın gerçek byte hash'i /private/tmp/dou018-s10-ci-integration/manifest.json ile tek tek eşleşti. Kontrol betiği ve guard için eski d0/180b sürümleri değil, yukarıdaki mevcut repo kaynakları okundu. Yeni test_owned_e2e kaynağı 237 içerik satırı ve 11 test yöntemidir: sekiz sahte süreç sözleşmesi, üç gerçek yalnız yerel ASGI süreç fikstürü.
+
+## Doğrulanan bağlantılar
+
+- CI 14–15: genel yetki contents: read; e2e işi bunu genişletmiyor. Checkout 386–388 kimlik bilgisini kalıcı bırakmıyor.
+- CI 363–380: e2e işi ubuntu-latest, needs=[api, web], 30 dakika; PostgreSQL image digest'i sabit, başlangıç DB postgres, parola yalnız bu sentetik servise ait. Sağlık kontrolü ve 5432:5432 eşlemesi korunmuş. Mevcut CI ile taslağın e2e services bloğu **byte-exact aynı**; önceki iç içe env kaybı son taslakta yok.
+- CI 405–408: güven kökü GitHub job.services.postgres.id; host port 5432, aynı işin açık 5432:5432 eşlemesiyle tutarlı. Helper 112–134 GITHUB_ACTIONS=true, GITHUB_JOB=e2e ve sayısal run/attempt ister; CI adımının bu değerleri sahte yerel değerlerle aşması yok. Helper 151–180 image/container/host portu tekrar doğrular; yanlış rota DB kurulumundan önce reddedilir.
+- CI 398–403: aynı runner üzerinde API venv kurulumu, Bun kilitli kurulum ve Chromium/sistem bağımlılıkları, E2E başlamadan tamamlanır. API işi 66–67 de dev bağımlılıklarını kurar; 95–99 yeni testleri repo kökünden aynı API Python ortamında çalıştırır. uvicorn[standard] ve psycopg proje bağımlılıklarında vardır (apps/api/pyproject.toml 9–15). test_owned_e2e yalnız kardeş controller/guard import eder; API pytest conftest'i veya ürün app'ini içeri almaz. Üç süreç testi kendi geçici app fikstürünü PYTHONPATH ile seçer (154–185), kendi loopback listener'ını geçirir ve kendi çocuklarını bekler (209–224).
+- CI 410–438 gömülü Python'da GITHUB_WORKSPACE ve RUNNER_TEMP kanonik mutlak Path'e çevrilir. İki betik yolu tam repo yoludur, aynı sys.executable kullanılır, tüm argümanlar argv listesiyle ve check=True geçirilir. Gömülü içeriği çalıştırmadım; satır girintisi ve heredoc sınırını kaynak üzerinden okudum.
+- Kurulum CLI'sinin --repo/--container-id/--port/--api-port/--run-id/--output/--execute alanları helper 571–579 ile eşleşir. Sonraki --pins/--pins-sha256/--passfile/--run-id/--output/--web-port alanları ba511 controller 370–382 ile eşleşir. Eski olmayan --mode argümanı yok. Handoff yalnız başarılı kurulumdan sonra yazılır (helper 545–567); başarısız ilk subprocess ikinci işlemi başlatmaz.
+- ba511 178–183, GitHub pinlerini CI=true ve GITHUB_ACTIONS=true olmadan kabul etmez. GitHub runner'ın CI değeri web çocuğuna izinli env listesinde aktarılır (225–239); GITHUB_ACTIONS yalnız github-owned-service pininde eklenir (241–242). Bu, cleanup.ts 65–67'de dou_synapse için gereken iki işaretle uyumludur. API tarafı numeric 127.0.0.1, açık app/worker kullanıcıları, fake/hash ve anahtarsız sentetik ayarlarla başlar (57–81). Web PGHOST/PGHOSTADDR/PGPORT/PGUSER ve özel passfile açık pinlere bağlıdır (243–257).
+- Controller kendi gerçek socket'ini API çocuğuna verir (265–289), önceki yaşayan bir servis readiness'i karşılayamaz. API sağlıklı olduktan sonra Playwright başlar. Browser süre sınırı ve own process-group temizliği korunur; yalnız gözlenmiş başarılı graceful-pipe-and-wait sonrasında audit finish yapılır (313–348). Testte startup/shutdown olumsuzları bulunduğu gibi korunmuş; bu inceleme onları yeniden çalıştırmadı.
+- Provision testindeki eski her-kaynak kontrol açığı düzeltildi: 182–190 artık önceki kaynaktan sonraki aralıkta yeni identity okumasını ister. Yeni 243–271 olumsuz testi ilk SQL'den sonraki cluster sapmasında bootstrap ve seed uygulanmadığını, başarı/pin/handoff dosyalarının oluşmadığını doğrular. Bu testlerin CI'ya bağlanması yeni davranışlı regression kontrolüdür; yalnız test sayısı artışı değildir.
+- Artifact 440–451 always() ve 7 günlük saklama kullanır. Yalnız provision kökü *.json, measured kökü *.json/*.log, audit altı JSON ve Playwright raporu seçilir. postgres.pgpass, measured/storage, api-cwd ve tüm RUNNER_TEMP ağacı bu globlara girmez. handoff.json içindeki passfile **yolu** dosyanın parola içeriğini yüklemez. Audit makbuzları izinli sentetik actor/action/result/requestId ile sınırlıdır; ham authorization yalnız bellekte okunur (audit-receipts.ts 75–84, 91–118). Bu sentetik kanıtları anonim veri olarak nitelemiyorum.
+
+## Kalan küçük kanıt eksiği
+
+**P3 — Başarısız Playwright trace/screenshot dosyaları artifact dışında.** CI 450 yalnız apps/web/playwright-report/ ekliyor. Mevcut playwright.config.ts 49, CI için github reporter kullanıyor; 62–63 retain-on-failure trace ve only-on-failure screenshot açık. outputDir özel ayarı yok. Kurulu Playwright'ın types/test.d.ts:391 ve 1493 sözleşmesi varsayılanı package.json dizini altındaki test-results olarak tanımlar. Bu yüzden başarısızlıkta üretilen apps/web/test-results dosyaları mevcut artifact globlarının hiçbirine girmez; sahiplik JSON ve konsol logları yine toplanır. En küçük düzeltme aynı listeye apps/web/test-results/ eklemektir. Bu, parola dosyası veya storage ağacını kapsama almaz; yalnız mevcut sentetik E2E hata çıktısını saklar. Düzeltme için kaynak yazmadım. Bu eksik hedef/yetki güvenliği veya testlerin kırmızı yanması açısından entegrasyon engeli değildir; tarayıcı hatasının sonradan incelenebilirliğini azaltır.
+
+## Tarihsel kayıt ve kabul sınırı
+
+/private/tmp/dou018-evidence/s10-ci-yaml-preflight-01/failed-candidate.yml gerçek SHA-256 = 596586c90d0888700a6771342f1a2ad73e49ce71cd42d26c3b870b9a1da78885. Aynı dizindeki result.json SHA-256 = bbba4b434871534f3a16bce73971be24d8951313a7a5b5fe0bf494b0e017fe7a. İlk taslak uygulanmamış başarısız kaynak olarak kaldı; bu rapor onu veya d0e7 son taslağı değiştirmedi.
+
+Bu statik bağlantı kabulüdür. GitHub'ın gerçek Linux Docker servisi, image inspect biçimi, bridge/host kimlik eşliği, fresh CREATE ve bütün göç/seed akışı bu incelemede çalıştırılmadı. Fiziksel GitHub koşusunun yeşil olduğu veya 0.8.6'da retrieval kalitesinin geçtiği iddia edilmez. Daha önceki yerel süreç/DB sonuçları bu adımın yerine geçmez. Root'ın uygulama sonrası CI koşusu ayrı kanıt olmalıdır; kaynak hash'i değişirse bu raporun kaynak bağı açık bir ek kayıtla güncellenmelidir.

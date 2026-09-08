@@ -1,0 +1,21 @@
+{
+  "scope": "offline Docker/PG transport doubles; no actual container or PG acceptance",
+  "results": [
+    {
+      "arm": "original13",
+      "exit_code": 0,
+      "seconds": 0.144,
+      "test_sha256": "023e13690a32a6417d1ba4583ce5e2ae759d160ef98c5337e3fecc86f54b11f7",
+      "helper_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+      "log_sha256": "0d5f8346517fbbc9f8c76001a173ca4ace78dc0d43bc08446621d0299d7dcd04"
+    },
+    {
+      "arm": "review14",
+      "exit_code": 0,
+      "seconds": 0.147,
+      "test_sha256": "c6fbe5e0fdf6749f0142895e383d0f062105154bb77e1b14037fc2c542195fbb",
+      "helper_sha256": "21f9aaa93c80bb378b3f7a395465d932e00b2ad1b447b46db750ff055ecad18f",
+      "log_sha256": "2688e3aac5879831defab5e5f231a6f331e395be82e99f6caef62e863a873ffe"
+    }
+  ]
+}

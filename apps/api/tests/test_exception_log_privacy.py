@@ -105,7 +105,7 @@ async def test_generic_handler_omits_exception_chain_notes_and_group_content(
             "headers": [],
         }
     )
-    request.state.request_id = SUPPORT_ID
+    support_id = errors.request_id_of(request)
     exc = private_exception(group=group)
     with emitted() as sink:
         response = await errors.unhandled_error_handler(request, exc)
@@ -114,7 +114,7 @@ async def test_generic_handler_omits_exception_chain_notes_and_group_content(
     assert record["level"] == "ERROR"
     assert record["context"] == {
         "error_code": "internal_error",
-        "request_id": SUPPORT_ID,
+        "request_id": support_id,
     }
     assert record["exception"]["error_type"] == ("ExceptionGroup" if group else "RuntimeError")
     assert set(record["exception"]) == {"error_type", "frames", "frames_truncated"}
@@ -124,7 +124,7 @@ async def test_generic_handler_omits_exception_chain_notes_and_group_content(
         "error": {
             "code": "internal_error",
             "message": "İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
-            "request_id": SUPPORT_ID,
+            "request_id": support_id,
         }
     }
 
@@ -365,13 +365,16 @@ async def test_actual_main_500_and_outer_asgi_rethrow_both_use_safe_output(
     records = no_private_output(sink)
     assert boundary.errors == 1, "Gerçek Starlette 500 sonrası yeniden yükseltmesi gözlenmedi."
     assert response.status_code == 500
+    support_id = response.json()["error"]["request_id"]
+    assert support_id and support_id != SUPPORT_ID
+    assert SUPPORT_ID not in sink.getvalue()
     assert response.json()["error"] == {
         "code": "internal_error",
         "message": "İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
-        "request_id": SUPPORT_ID,
+        "request_id": support_id,
     }
     app_errors = [record for record in records if record["logger"] == "app.error"]
     server_errors = [record for record in records if record["logger"] == "uvicorn.error"]
     assert len(app_errors) == len(server_errors) == 1
-    assert app_errors[0]["context"]["request_id"] == SUPPORT_ID
+    assert app_errors[0]["context"]["request_id"] == support_id
     assert not any(record["message"] == "istek tamamlandı" for record in records)

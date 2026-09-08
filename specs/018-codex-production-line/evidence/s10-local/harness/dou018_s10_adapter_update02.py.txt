@@ -1,0 +1,6 @@
+from pathlib import Path
+import hashlib,shutil
+p=Path("/Users/muratates/code/dou-synapse-018-codex-production-line/scripts/run_owned_e2e.py")
+assert hashlib.sha256(p.read_bytes()).hexdigest()=="180b5e5e0191451b5bbe053ff7a93d4cd397e87eebe3e5cc49a0a8516c989920"
+shutil.copyfile("/private/tmp/dou018_run_owned_e2e.py",p)
+print(hashlib.sha256(p.read_bytes()).hexdigest())

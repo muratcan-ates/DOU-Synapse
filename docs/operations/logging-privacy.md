@@ -1,10 +1,11 @@
 # Uygulama günlükleri ve hata tanısı
 
-Bu sözleşme S9 hata işleyicisi ile S9C günlük handler'ının birleşik kaynak
-davranışını anlatır. Kod yerel çalışma ağacına entegredir; aşamalı çevrimdışı
-ve gerçek süreç kanıtları vardır. Son birleşik test ve kesin commit'in uzak
-kapıları [S9 kabul kaydından](../../specs/018-codex-production-line/evidence/s9-local/README.md)
-izlenir. Üretim log toplayıcısı, alarm teslimi ve saklama/imha kabulü değildir.
+Bu sözleşme S9 hata/günlük korumalarını ve S10 sunucu destek kimliğini birlikte
+anlatır. S9'un tarihsel ölçümleri [kendi kabul kaydında](../../specs/018-codex-production-line/evidence/s9-local/README.md),
+S10'un yerel ölçümleri [S10 kaydında](../../specs/018-codex-production-line/evidence/s10-local/README.md)
+tutulur. Son uzak kabul f79d8a2'ye aittir; yeni S9/S10 kodunun GitHub'a gönderimi
+kullanıcının paylaşım onayını bekler. Bu yerel kanıt üretim log toplayıcısı, alarm
+teslimi, kurumsal saklama/imha veya hukuki uygunluk kabulü değildir.
 
 ## Akışlar ve alanlar
 
@@ -33,23 +34,30 @@ koşullarda sabit süreli olduğu iddia edilmez.
 
 ## Destek kimliği ve istemci yanıtı
 
-Beklenmeyen hata istemciye 500 ve genel Türkçe
-`{error: {code, message, request_id}}` zarfıyla döner. Destek kimliği bilinen
-hassas kalıplar maskelenerek `app.error` context'ine konur; maskelenen bir
-istemci değeri logda yanıt gövdesiyle birebir aynı olmayabilir. Şu an middleware, istemcinin
-`X-Request-ID` başlığındaki 1–128 ASCII harf/rakam/alt çizgi/tire değerini
-kabul eder; uygun değilse yeni kimlik üretir. Kabul edilen değer tekrar
-kullanılabilir ve bir kişiyi/istek grubunu ilişkilendirebilir. Sözdizimi
-sınırı, değerin kişisel bilgi veya sır taşımadığını garanti etmez. Exception
-context'indeki destek kimliğine de bilinen hassas kalıplar için maskeleme
-uygulanır; kalıplara uymayan istemci değerleri yine ilişkilendirilebilir. Kimlik,
-yetkilendirme ya da işlemin tekilliği için kanıt değildir.
+Sunucu her HTTP isteğinde bir UUID4 destek kodu üretir; istemcinin `X-Request-ID`
+başlığı kimlik kaynağı olarak kullanılmaz. Tek istek içinde request state,
+normal yanıt başlığı, hata zarfı ve ilgili denetim kaydı aynı kodu kullanır.
+Yeni bir HTTP denemesinin kodu değişebilir. Bu kod kullanıcı kimliği,
+yetkilendirme veya işlemi yalnız bir kez uygulama garantisi değildir.
 
-İstemci kaynaklı kimliğin değiştirilmesi **S10'da açıktır**; S9/S9C bunu
-çözmüş sayılmaz. Genel 500 yolunda `X-Request-ID` yanıt başlığı mevcut
-middleware akışında bulunmayabilir; destek için zarfın alanı kullanılır.
-Gerçek karşılaştırmada bu başlık bütün kollarda yoktu, gövdedeki kimlik aynı
-kaldı. Yeni bir başlık sözleşmesi veya benzersizlik garantisi çıkarılmamalı.
+Beklenmeyen hata mevcut 500 durumuyla genel Türkçe
+`{error: {code, message, request_id}}` zarfını korur. Bu middleware dışı genel
+500 yolunda `X-Request-ID` yanıt başlığı bulunmayabilir; destek kodu gövdede ve
+`app.error` kaydındadır. 200/401 yollarının başlıkları ayrıca doğrulanmıştır.
+
+İç `ServerRequestId` tipi yalnız sunucunun UUID4 üretimiyle oluşur. Genel
+maskeleme yalnız `app.request`/`app.error` kayıtlarının doğrudan
+`context.request_id` alanında ve tam bu iç tipte atlanır. Düz UUID biçimli
+metin, alt sınıf, başka logger/alan ve iç içe dict/list/tuple değerleri bu
+muafiyeti almaz. Böylece UUID içindeki tesadüfi 11 rakam dizisi destek
+korelasyonunu bozmaz; rastgele sayı üretimi tekrar tekrar denenmez.
+Bu tip ayrımı keyfi Python çalıştırmaya karşı bir güvenlik sınırı değildir.
+
+İstemci artık bu alana serbest kişisel metin yerleştiremez; fakat destek kodu
+aktör, zaman ve yönetim işlemiyle ilişkilendirilebilir. Anonim veri sayılmaz.
+Geçmiş platform denetim kayıtları değiştirilmez; `request_logs` tablosuna yeni
+bir kimlik sütunu eklenmez. Log tüketicileri yeni kodun istekler arasında tekrar
+kullanılmadığını ve geçmiş kodların eski biçimde kalabileceğini hesaba katmalıdır.
 
 ## Günlük çıktısı çalışmıyorsa
 
@@ -113,3 +121,33 @@ collector/sink arızası, gerçek sağlayıcı veya hukukî uygunluk bu dar yere
 kanıtın dışındadır.
 
 Son S9 yerel birleşik doğrulama: takip kimliği maskeleme düzeltmesi dahil 1655 API testi ve 38 alt vaka geçti; yeni 84 kontrol bu tam koşuya dahildir. Ayrı dört kimlik regresyon vakası eski kaynakta başarısız, düzeltmede başarılı oldu. Önceki 1651 sonucu ve aşamalı karşılaştırmalar tarihsel olarak korunur. Kesin yeni commit’in GitHub kabulü ayrıca kaydedilecektir.
+
+## Test kayıtlarının sahipliği
+
+Tarayıcı testleri yalnız izinli API origin'i, sentetik aktör ve sabit yönetim
+işlemleri için sunucudan dönen kodları özel koşu makbuzlarına kaydeder.
+Yönlendirme, yanlış aktör/işlem veya eksik yanıt tamamlanmış sayılmaz. Temizlik
+her makbuzun request ID, aktör, işlem, sonuç ve önceden listelenmiş satır
+kimliğini birlikte doğrular; boş küme bütün kayıtlara genişlemez.
+
+`run_owned_e2e.py` önceden provision edilmiş özel test hedefini doğrular,
+bütün audit satırlarının başlangıç özetini alır ve kendi API/tarayıcı sürecini
+başlatır. Web sunucusu yeniden kullanılmaz; yeni derleme açık API adresiyle
+çalışır. API gerçek normal kapanışını tamamlamadan son muhasebe yapılmaz.
+Eksilen, değişen veya beklenmeyen yeni satır başarısız sonuç üretir ve geniş
+silme denenmez. API başlangıç/kapanış hatası test başarısına dönüşmez.
+
+Yerel PostgreSQL ve özel GitHub servisinin provisioning yolları ayrıdır.
+GitHub yolu job'un container kimliğini, pinli imajı ve container/host DB
+kimliğini karşılaştırır; yalnız kendi yeni sentetik hedefinde mevcut yerel
+rol kurulumunu uygular. Yerel sözleşme testleri gerçek Docker/hosted kabulü
+sayılmaz. Parola dosyaları arşiv yükleme kapsamının dışındadır.
+
+S10'da 1688 API testi/38 alt vaka, 573 web testi ve ayrı 134 DB/ağsız günlük
+kontrolü geçti. Dört gerçek Uvicorn sürecindeki 56 HTTP karşılaştırması ve
+iki koşulu gerçek PostgreSQL deneyi ayrı kanıtlardır. İlk tam tarayıcı
+koşusunda 71 test geçti; 65 ders/14 audit satırı temizlendi ve korunmuş bir
+başlangıç satırı tam özetiyle aynı kaldı. Son controller ve güncel KVKK metniyle
+ayrı fresh hedefte 71 test yeniden geçti (92.288 s); korunmuş satırın tam
+özeti aynı kaldı ve API normal kapanışı doğrulandı. Sürekli testlerde 14 CI
+provisioning ve 11 süreç sözleşmesi de geçti. Son kaynaklar S10 kaydında bağlıdır.

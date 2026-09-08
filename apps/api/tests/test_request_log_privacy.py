@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 import logging
@@ -12,14 +13,14 @@ from typing import Any
 from uuid import UUID
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from httpx import ASGITransport, AsyncClient
 from uvicorn import Config
 from uvicorn.protocols.utils import get_path_with_query_string
 
 from app.core.config import Settings, get_settings
-from app.core.errors import NotFoundError, StorageUnavailableError
+from app.core.errors import NotFoundError, StorageUnavailableError, request_id_of
 from app.core.logging import configure_logging
 
 COURSE_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -28,7 +29,7 @@ PATH_CANARY = "SYNTHETIC_PRIVATE_PATH_CANARY"
 QUERY_CANARY = "SYNTHETIC_PRIVATE_QUERY_CANARY"
 HEADER_CANARY = "SYNTHETIC_PRIVATE_HEADER_CANARY"
 REQUEST_ID = "synthetic-support-id"
-CANARIES = (COURSE_ID, DOCUMENT_ID, PATH_CANARY, QUERY_CANARY, HEADER_CANARY)
+CANARIES = (COURSE_ID, DOCUMENT_ID, PATH_CANARY, QUERY_CANARY, HEADER_CANARY, REQUEST_ID)
 
 
 @contextmanager
@@ -131,7 +132,7 @@ def logging_app(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> FastAPI:
     return app
 
 
-def _request_record(sink: io.StringIO) -> dict[str, Any]:
+def _request_record(sink: io.StringIO, support_id: str) -> dict[str, Any]:
     output = sink.getvalue()
     for canary in CANARIES:
         assert canary not in output, f"Özel canary JSON günlüğüne taşındı: {canary}"
@@ -144,7 +145,9 @@ def _request_record(sink: io.StringIO) -> dict[str, Any]:
     assert len(completed) == 1
     context = completed[0]["context"]
     assert set(context) == {"request_id", "method", "path", "status", "duration_ms"}
-    assert context["request_id"] == REQUEST_ID
+    assert UUID(support_id).version == 4
+    assert UUID(support_id).hex == support_id
+    assert context["request_id"] == support_id
     assert isinstance(context["duration_ms"], (int, float)) and context["duration_ms"] >= 0
     return context
 
@@ -222,18 +225,18 @@ async def test_matched_route_logs_template_preserving_response_contract(
                 headers={"X-Request-ID": REQUEST_ID, "X-Synthetic-Private": HEADER_CANARY},
             )
     assert response.status_code == status
-    assert response.headers["X-Request-ID"] == REQUEST_ID
+    assert response.headers["X-Request-ID"] != REQUEST_ID
     assert response.headers["X-Content-Type-Options"] == "nosniff"
     if error_code:
         assert response.json()["error"]["code"] == error_code
-        assert response.json()["error"]["request_id"] == REQUEST_ID
+        assert response.json()["error"]["request_id"] == response.headers["X-Request-ID"]
     if status == 200:
         assert response.json()["item_id"] == COURSE_ID
         if "children" in path:
             assert response.json()["child_id"] == DOCUMENT_ID
     if status == 405:
         assert "GET" in response.headers["Allow"]
-    record = _request_record(sink)
+    record = _request_record(sink, response.headers["X-Request-ID"])
     assert record["path"] == template
     assert record["status"] == status
     assert record["method"] == method
@@ -262,12 +265,12 @@ async def test_unmatched_redirect_and_static_paths_have_no_raw_fallback(
                 path, params={"private": QUERY_CANARY}, headers={"X-Request-ID": REQUEST_ID}
             )
     assert response.status_code == status
-    assert response.headers["X-Request-ID"] == REQUEST_ID
+    assert response.headers["X-Request-ID"] != REQUEST_ID
     if status == 307:
         assert COURSE_ID in response.headers["Location"]
     if status == 200:
         assert response.text == "sentetik herkese açık dosya"
-    record = _request_record(sink)
+    record = _request_record(sink, response.headers["X-Request-ID"])
     assert record["path"] == "<unmatched>"
     assert record["status"] == status
 
@@ -285,7 +288,7 @@ async def test_mounted_api_uses_inner_template_without_concrete_mount_path(
             )
     assert response.status_code == 200
     assert response.json() == {"item_id": DOCUMENT_ID}
-    assert _request_record(sink)["path"] == "/items/{item_id}"
+    assert _request_record(sink, response.headers["X-Request-ID"])["path"] == "/items/{item_id}"
 
 
 async def test_proxy_root_path_does_not_enter_matched_template(logging_app: FastAPI) -> None:
@@ -299,7 +302,10 @@ async def test_proxy_root_path_does_not_enter_matched_template(logging_app: Fast
                 headers={"X-Request-ID": REQUEST_ID},
             )
     assert response.status_code == 200
-    assert _request_record(sink)["path"] == "/__log_probe/items/{item_id}"
+    assert (
+        _request_record(sink, response.headers["X-Request-ID"])["path"]
+        == "/__log_probe/items/{item_id}"
+    )
 
 
 @pytest.mark.parametrize("early_response", ["body_limit", "cors"])
@@ -323,11 +329,11 @@ async def test_early_middleware_response_uses_constant_without_route(
         ) as client:
             response = await client.request(method, path, headers=headers)
     assert response.status_code == status
-    assert response.headers["X-Request-ID"] == REQUEST_ID
+    assert response.headers["X-Request-ID"] != REQUEST_ID
     assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
     if status == 413:
-        assert response.json()["error"]["request_id"] == REQUEST_ID
-    record = _request_record(sink)
+        assert response.json()["error"]["request_id"] == response.headers["X-Request-ID"]
+    record = _request_record(sink, response.headers["X-Request-ID"])
     assert record["path"] == "<unmatched>"
     assert record["status"] == status
     assert record["method"] == method
@@ -346,17 +352,23 @@ async def test_unhandled_error_keeps_existing_error_envelope_without_completion_
                 f"/__log_probe/crash/{COURSE_ID}", headers={"X-Request-ID": REQUEST_ID}
             )
     assert response.status_code == 500
+    support_id = response.json()["error"]["request_id"]
+    assert UUID(support_id).version == 4
+    assert support_id != REQUEST_ID
+    assert "X-Request-ID" not in response.headers  # Mevcut genel 500 başlık sözleşmesi.
     assert response.json()["error"] == {
         "code": "internal_error",
         "message": "İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyin.",
-        "request_id": REQUEST_ID,
+        "request_id": support_id,
     }
     output = sink.getvalue()
     for canary in CANARIES:
         assert canary not in output
     records = [json.loads(line) for line in output.splitlines()]
     assert not any(record["message"] == "istek tamamlandı" for record in records)
-    assert any(record["logger"] == "app.error" for record in records)
+    errors = [record for record in records if record["logger"] == "app.error"]
+    assert len(errors) == 1
+    assert errors[0]["context"]["request_id"] == support_id
 
 
 @pytest.mark.parametrize("level", [logging.INFO, logging.DEBUG])
@@ -383,10 +395,130 @@ async def test_uvicorn_access_suppressed_after_server_setup_but_errors_and_route
         access.debug("sentetik erişim tanısı %s", PATH_CANARY)
         logging.getLogger("uvicorn.error").warning("sentetik sunucu hatası")
     assert response.status_code == 401
-    context = _request_record(sink)
+    context = _request_record(sink, response.headers["X-Request-ID"])
     assert context["path"] == "/courses/{course_id}/documents/{document_id}"
     records = [json.loads(line) for line in sink.getvalue().splitlines()]
     assert not any(record["logger"] == "uvicorn.access" for record in records)
     errors = [record for record in records if record["logger"] == "uvicorn.error"]
     assert len(errors) == 1
     assert errors[0]["message"] == "sentetik sunucu hatası"
+
+
+@pytest.mark.parametrize(
+    "supplied",
+    [
+        "SYNTHETIC_AyseYilmaz_Student01234",
+        "fedcba98-7654-4321-8fed-cba987654321",
+        "fedcba98765443218fedcba987654321",
+        "",
+        "x" * 129,
+        "student@example.invalid/private",
+    ],
+)
+async def test_client_request_id_never_reaches_emitted_json_or_response(
+    logging_app: FastAPI, supplied: str
+) -> None:
+    with _emitted_logs() as sink:
+        async with AsyncClient(
+            transport=ASGITransport(app=logging_app), base_url="http://test"
+        ) as client:
+            response = await client.get("/courses", headers={"X-Request-ID": supplied})
+    assert response.status_code == 401
+    support_id = response.headers["X-Request-ID"]
+    assert response.json()["error"]["request_id"] == support_id
+    assert support_id != supplied
+    _request_record(sink, support_id)
+    if supplied:
+        assert supplied not in sink.getvalue()
+        assert supplied not in response.text
+
+
+async def test_duplicate_client_headers_cannot_choose_support_id(logging_app: FastAPI) -> None:
+    supplied = ["SYNTHETIC_Name_One", "12345678-1234-4234-8234-123456789abc"]
+    with _emitted_logs() as sink:
+        async with AsyncClient(
+            transport=ASGITransport(app=logging_app), base_url="http://test"
+        ) as client:
+            response = await client.get(
+                "/courses", headers=[("X-Request-ID", value) for value in supplied]
+            )
+    assert response.status_code == 401
+    support_id = response.headers["X-Request-ID"]
+    assert response.json()["error"]["request_id"] == support_id
+    _request_record(sink, support_id)
+    assert all(value not in sink.getvalue() + response.text for value in supplied)
+
+
+async def test_overlapping_requests_keep_distinct_stable_log_and_error_ids(
+    logging_app: FastAPI,
+) -> None:
+    """Aynı başlığı taşıyan sekiz gerçek ASGI isteği bariyerde birlikte bekler."""
+    arrived = 0
+    barrier = asyncio.Event()
+    observations: list[tuple[str, str]] = []
+
+    @logging_app.get("/__id_probe/overlap")
+    async def overlap(request: Request) -> None:
+        nonlocal arrived
+        before = request_id_of(request)
+        arrived += 1
+        if arrived == 8:
+            barrier.set()
+        await asyncio.wait_for(barrier.wait(), timeout=3)
+        observations.append((before, request_id_of(request)))
+        raise NotFoundError("Sentetik ortak hata.")
+
+    with _emitted_logs() as sink:
+        async with AsyncClient(
+            transport=ASGITransport(app=logging_app), base_url="http://test"
+        ) as client:
+            responses = await asyncio.gather(
+                *[
+                    client.get("/__id_probe/overlap", headers={"X-Request-ID": REQUEST_ID})
+                    for _ in range(8)
+                ]
+            )
+    assert arrived == 8
+    support_ids = [response.headers["X-Request-ID"] for response in responses]
+    assert len(set(support_ids)) == 8
+    assert all(UUID(value).version == 4 for value in support_ids)
+    assert {before for before, _ in observations} == set(support_ids)
+    assert all(before == after for before, after in observations)
+    for response in responses:
+        assert response.status_code == 404
+        assert response.json()["error"]["request_id"] == response.headers["X-Request-ID"]
+    records = [json.loads(line) for line in sink.getvalue().splitlines()]
+    completed = [record["context"] for record in records if record["logger"] == "app.request"]
+    assert len(completed) == 8
+    assert {record["request_id"] for record in completed} == set(support_ids)
+    assert all(record["path"] == "/__id_probe/overlap" for record in completed)
+    assert all(record["status"] == 404 for record in completed)
+    assert REQUEST_ID not in sink.getvalue()
+
+
+@pytest.mark.parametrize("crash", [False, True])
+async def test_digit_run_server_uuid_stays_equal_in_real_http_body_and_json_log(
+    logging_app: FastAPI,
+    monkeypatch: pytest.MonkeyPatch,
+    crash: bool,
+) -> None:
+    from app.core import request_context
+
+    generated = UUID("abcdef12-3456-4abc-8def-12345678901a")
+    monkeypatch.setattr(request_context, "uuid4", lambda: generated)
+    path = f"/__log_probe/crash/{COURSE_ID}" if crash else "/courses"
+    with _emitted_logs() as sink:
+        async with AsyncClient(
+            transport=ASGITransport(app=logging_app, raise_app_exceptions=False),
+            base_url="http://test",
+        ) as client:
+            response = await client.get(path, headers={"X-Request-ID": REQUEST_ID})
+    assert response.status_code == (500 if crash else 401)
+    assert response.json()["error"]["request_id"] == generated.hex
+    records = [json.loads(line) for line in sink.getvalue().splitlines()]
+    selected = [r for r in records if r["logger"] == ("app.error" if crash else "app.request")]
+    assert len(selected) == 1
+    assert selected[0]["context"]["request_id"] == generated.hex
+    if not crash:
+        assert response.headers["X-Request-ID"] == generated.hex
+    assert REQUEST_ID not in sink.getvalue()

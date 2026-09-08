@@ -1,0 +1,32 @@
+{
+  "base_commit": "deb83e1c0c4553e00072ea6797bd48b6ab53f330",
+  "candidate_manifest_sha256": "e1a52aa25b4e8f25764ee2541c46610f50963dc4ce7ef5f17c0f31681f6af114",
+  "review_fixes_manifest_sha256": "10141e27ad0a8ade2b75d9ccdcfc6e996ec2dbe1673e724e53b3e5971af5f688",
+  "applied_files": {
+    "apps/api/app/core/errors.py": "e2178a870c3e18566f0c92ead65f6aa5be5d71c57f2ab751aa8781f3940eeb61",
+    "apps/api/app/core/logging.py": "2d6c0368b20ae7634452438581921b409725bbcae7be9e69df302be0093a5610",
+    "apps/api/app/core/request_context.py": "78be6a5d5c38a1af56b7cfaa7227da068880ada1745385df302b876bfcf9d858",
+    "apps/api/app/main.py": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0",
+    "apps/api/tests/test_error_envelope.py": "862a763c7ae00c15d6cefed3c1491a62df5d37581220264af8146766ca6d64ed",
+    "apps/api/tests/test_exception_log_privacy.py": "8b76fa684202e9700ef04f37153fe571d64cd440926e125993b77b15c57f87c4",
+    "apps/api/tests/test_exception_request_id_redaction.py": "618bd263c964fd82db379c9948c916dcb98e51adf71ac2fa3adc2a015cee75b3",
+    "apps/api/tests/test_log_sink_privacy.py": "d5f68b1f0447418e060af6581d0119140a457bfb7e355fb3317f1a7d0280f71c",
+    "apps/api/tests/test_portal.py": "dae04bbe48a3d3dfb299f69c4fcf7df3c294904eae5845f15334c61be6b051ab",
+    "apps/api/tests/test_request_body_limit.py": "5c0466d95ba051a0c432861505728cdaae8b3d5b60946c1865570cae46f22f2e",
+    "apps/api/tests/test_request_log_privacy.py": "1ca0dfa5c9608bc5c296dc031c0ebdb2637210a07dedcf3726220472d9b0990f",
+    "apps/api/tests/test_server_request_id.py": "4018f90b19458d39cc04d2cf3c46045eb877e797d84af1ae65d1fbf7ec4c98d1",
+    "apps/web/e2e/admin-readiness.spec.ts": "b346fa4143c26661366f34483ce7c30429bc672839ed300df5398923b1776e72",
+    "apps/web/e2e/audit-fixture.ts": "0ee1b8246f88e1079845fdcfc89ef918704cb08c75ea171c0bc0d3d4d32552cc",
+    "apps/web/e2e/audit-receipts.ts": "a5a51968de4456729f8cbe214d4a683665b64514e81f93ffdf8b982dc7ce02b6",
+    "apps/web/e2e/cleanup.ts": "f68d51737e3f478b716f8d7419d1f290e62d5fb22dc03ade360c65c26c290577",
+    "apps/web/e2e/fixtures.ts": "cf214e87328a9dd3dac85257731b81b2daeae50c68295d6a76a607000b44a79b",
+    "apps/web/e2e/global-setup.ts": "e740eee7cc063807056d566d4452a577e97189f0f532329bfe8258c64fea0e6c",
+    "apps/web/e2e/global-teardown.ts": "cc03f328222821e4237527aa132474c57d2fb396de13b57bc92f57c16b0bff30",
+    "apps/web/e2e/portal.spec.ts": "e5abcf0194b5511eca3d8bc8e204e37aef1745b5a45d6ef0b0af2a10fb4c55c6",
+    "apps/web/e2e/role-aware-agent.spec.ts": "ec1114f8065bb86e6ed32258e75e32503ab2e7139732a18f1c6f1e01f54c171e",
+    "apps/web/lib/e2e-audit-receipts.test.ts": "06d0005b1aee8193dc764ab2388efcd3e7d8d9d7f564e92509fc3cfa5f255e50",
+    "apps/web/lib/e2e-cleanup.test.ts": "9722d6178c6863fbcda8b7b02049c2d341c65c7f3e495943105c230f37e52271"
+  },
+  "status": "integrated_not_runtime_verified",
+  "pending": "root/CI trusted target receipt, quiescent audit baseline/post comparison and all runtime acceptance; no push authorized yet"
+}

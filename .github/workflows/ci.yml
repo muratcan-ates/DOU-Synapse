@@ -92,6 +92,12 @@ jobs:
           uv run --project apps/api python scripts/test_recovery.py
           uv run --project apps/api python scripts/test_restore_protocol.py
 
+      - name: E2E hedef ve süreç sahipliği sözleşmeleri
+        working-directory: .
+        run: |
+          uv run --project apps/api python scripts/test_provision_ci_e2e.py
+          uv run --project apps/api python scripts/test_owned_e2e.py
+
       - name: Yayın kanıtı doğrulayıcılarının regresyon testleri
         working-directory: .
         run: uv run --project apps/api python -m unittest discover -s .release -p 'test_*.py'
@@ -374,13 +380,7 @@ jobs:
           --health-retries 10
 
     env:
-      PGHOST: localhost
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      # E2E kendi web sunucusunu 3100'de ayağa kaldırır; API 8000'de koşar.
-      E2E_API_URL: http://localhost:8000
-      E2E_PORT: 3100
-      E2E_DATABASE_NAME: dou_synapse
+      NEXT_TELEMETRY_DISABLED: "1"
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -395,57 +395,58 @@ jobs:
           enable-cache: true
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
-      - name: Veritabanını kur
+      - name: API ve web bağımlılıkları
         run: |
-          createdb dou_synapse
-          for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -d dou_synapse -f "$f"; done
-          psql -q -d dou_synapse -f supabase/local_dev_setup.sql
-          psql -q -d dou_synapse -f supabase/seed_demo.sql
-
-      - name: API'yi başlat
-        working-directory: apps/api
-        env:
-          ENVIRONMENT: local
-          DEV_AUTH_ENABLED: "true"
-          DATABASE_URL: postgresql+psycopg://dou_app:dou_app_local@localhost/dou_synapse
-          # Worker DSN'siz drain dou_app'e düşer (app/worker.py) ve temiz DB'de
-          # ingestion yetki hatasıyla kırılır — rol ayrımı RLS'in parçası.
-          WORKER_DATABASE_URL: postgresql+psycopg://dou_worker:dou_worker_local@localhost/dou_synapse
-          CORS_ORIGINS: '["http://localhost:3100"]'
-          QUESTION_AUTHORING_ENABLED: "true"
-          STUDENT_ASSESSMENT_WORKSPACE_ENABLED: "true"
-        run: |
-          uv sync --extra dev --frozen
-          uv run uvicorn app.main:app --port 8000 &
-          # Hazır olana kadar bekle: uyku yerine yoklama, yavaş makinede de doğru.
-          # Yoklama /health/ready'ye yapılır: /openapi.json artık platform
-          # yöneticisi kapısının arkasında (401) ve `curl -sf` onu asla
-          # "hazır" saymaz — döngü sessizce 30 saniye harcayıp API hazır
-          # olmadan devam ederdi.
-          ready=false
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:8000/health/ready >/dev/null; then
-              ready=true
-              break
-            fi
-            sleep 1
-          done
-          if [ "$ready" != true ]; then
-            echo "API hazır duruma ulaşmadı"
-            exit 1
-          fi
-
-      - name: Tarayıcıyı kur ve testleri koştur
-        working-directory: apps/web
-        run: |
+          uv sync --project apps/api --extra dev --frozen
+          cd apps/web
           bun install --frozen-lockfile
           bunx playwright install --with-deps chromium
-          bun run test:e2e
 
-      - name: Başarısızlık izlerini yükle
-        if: failure()
+      - name: İşe ait fresh PostgreSQL ve kontrollü E2E
+        env:
+          CI_SERVICE_CONTAINER_ID: ${{ job.services.postgres.id }}
+          CI_SERVICE_HOST_PORT: "5432"
+        run: |
+          uv run --project apps/api python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          repo = Path(os.environ['GITHUB_WORKSPACE']).resolve()
+          temporary = Path(os.environ['RUNNER_TEMP']).resolve()
+          run_id = 'ci' + hashlib.sha256(
+              (os.environ['GITHUB_RUN_ID'] + ':' + os.environ['GITHUB_RUN_ATTEMPT']).encode()
+          ).hexdigest()[:16]
+          provision_output = temporary / 'dou-e2e-owned-provision'
+          measured_output = temporary / 'dou-e2e-owned-measured'
+          subprocess.run([
+              sys.executable, str(repo / 'scripts/provision_ci_e2e.py'),
+              '--repo', str(repo), '--container-id', os.environ['CI_SERVICE_CONTAINER_ID'],
+              '--port', os.environ['CI_SERVICE_HOST_PORT'], '--api-port', '8000',
+              '--run-id', run_id, '--output', str(provision_output), '--execute',
+          ], check=True)
+          handoff = json.loads((provision_output / 'handoff.json').read_bytes())
+          subprocess.run([
+              sys.executable, str(repo / 'scripts/run_owned_e2e.py'), '--repo', str(repo),
+              '--pins', handoff['pins'], '--pins-sha256', handoff['pinsSha256'],
+              '--passfile', handoff['passfile'], '--run-id', handoff['runId'],
+              '--output', str(measured_output), '--web-port', '3100',
+          ], check=True)
+          PY
+
+      - name: E2E sahiplik ve test kanıtları
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: playwright-report
-          path: apps/web/playwright-report/
+          name: e2e-ownership-and-playwright
+          path: |
+            ${{ runner.temp }}/dou-e2e-owned-provision/*.json
+            ${{ runner.temp }}/dou-e2e-owned-measured/*.json
+            ${{ runner.temp }}/dou-e2e-owned-measured/*.log
+            ${{ runner.temp }}/dou-e2e-owned-measured/audit/**/*.json
+            apps/web/playwright-report/
+            apps/web/test-results/
           retention-days: 7

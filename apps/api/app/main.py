@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import re
 import time
-import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -44,6 +42,7 @@ from app.core.db import dispose_engine
 from app.core.errors import (
     AppError,
     app_error_handler,
+    request_id_of,
     unhandled_error_handler,
     validation_error_handler,
 )
@@ -52,8 +51,6 @@ from app.core.request_body_limit import MULTIPART_ENVELOPE_BYTES, RequestBodyLim
 from app.core.warmup import start_warmup
 
 logger = get_logger("app.request")
-
-_SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
 
 
 def _request_log_path(request: Request) -> str:
@@ -181,17 +178,10 @@ def create_app() -> FastAPI:
     async def request_logging(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        supplied_request_id = request.headers.get("X-Request-ID", "")
-        request_id = (
-            supplied_request_id
-            if _SAFE_REQUEST_ID.fullmatch(supplied_request_id)
-            else uuid.uuid4().hex
-        )
-        # `call_next`'ten ÖNCE yazılır: hata handler'ları kimliği buradan okuyor
-        # ve zarfa koyuyor (`core/errors.py::request_id_of`). Sonra yazılsaydı
-        # yanıt başlığı kimliği taşırdı ama gövde taşımazdı — kullanıcıya
-        # gösterilen destek kodu ile logdaki kayıt ayrı düşerdi.
-        request.state.request_id = request_id
+        # İstemci başlığı kimlik/veri taşıma kanalı değildir. Sunucunun bu HTTP
+        # isteği için ürettiği kod state'te bir kez saklanır; hata zarfı, audit
+        # ve günlük aynı kodu okur. Yeni HTTP denemesi yeni destek kodu alır.
+        request_id = request_id_of(request)
         started = time.perf_counter()
         response = await call_next(request)
         duration_ms = round((time.perf_counter() - started) * 1000, 1)

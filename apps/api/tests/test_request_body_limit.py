@@ -6,6 +6,7 @@ import json
 from collections import deque
 from tempfile import SpooledTemporaryFile
 from typing import Any
+from uuid import UUID
 
 import pytest
 from fastapi import FastAPI, File, UploadFile
@@ -86,10 +87,12 @@ async def test_streamed_actual_bytes_exceed_limit_before_app(
     )
     assert not called, "boyut sınırı aşılırken uygulama çağrılmamalı"
     assert sent[0]["status"] == 413
+    support_id = _payload(sent)["error"]["request_id"]
+    assert UUID(support_id).version == 4 and support_id != "synthetic-request"
     assert _payload(sent)["error"] == {
         "code": "payload_too_large",
         "message": "İstek gövdesi izin verilen boyutu aşıyor.",
-        "request_id": "synthetic-request",
+        "request_id": support_id,
     }
     assert not called
     assert len(pending) == 1
@@ -265,11 +268,8 @@ async def test_real_app_early_rejection_keeps_cors_security_and_request_id(
         assert response.status_code == 413
         assert response.headers["access-control-allow-origin"] == get_settings().cors_origins[0]
         assert response.headers["x-content-type-options"] == "nosniff"
-        assert (
-            response.headers["x-request-id"]
-            == response.json()["error"]["request_id"]
-            == "synthetic-body-limit"
-        )
+        assert response.headers["x-request-id"] == response.json()["error"]["request_id"]
+        assert response.headers["x-request-id"] != "synthetic-body-limit"
         assert (await scoped.get("/health/live")).status_code == 200
 
 

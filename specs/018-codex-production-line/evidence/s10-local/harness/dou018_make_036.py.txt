@@ -1,0 +1,65 @@
+from pathlib import Path
+import datetime,gzip,hashlib,json,shutil,subprocess
+
+r=Path('/Users/muratates/code/dou-synapse-018-codex-production-line')
+root=Path('specs/018-codex-production-line/evidence/s10-local')
+base='deb83e1c0c4553e00072ea6797bd48b6ab53f330';change='036-server-request-ownership-r1'
+def git(*args):return subprocess.check_output(['git','-C',str(r),*args]).decode().strip()
+def h(p):return hashlib.sha256((r/p).read_bytes()).hexdigest()
+def load(p):return json.loads((r/p).read_text())
+def save(p,j):
+ assert not (r/p).exists(),p
+ (r/p).parent.mkdir(parents=True,exist_ok=True)
+ (r/p).write_text(json.dumps(j,ensure_ascii=False,indent=2)+'\n')
+assert git('rev-parse','HEAD')==base
+for name in ['s10-gates-01','s10-gates-02','s10-whitespace-01']:
+ src=Path('/private/tmp/dou018-evidence')/name;target=r/root/name;assert not target.exists();target.mkdir()
+ for p in src.iterdir():
+  if not p.is_file():continue
+  name=p.name+('.gz' if p.suffix=='.log' else '.txt' if p.suffix in ['.ts','.js'] else '')
+  (target/name).write_bytes(gzip.compress(p.read_bytes(),mtime=0) if p.suffix=='.log' else p.read_bytes())
+for name in ['dou018_s10_repo_record01.py','dou018_s10_gates01.py','dou018_s10_gates02.py','dou018_s10_whitespace01.py','dou018_make_036.py']:
+ shutil.copyfile(Path('/private/tmp')/name,r/root/'harness'/(name+'.txt'))
+assert all(x['exit_code']==0 for x in load(root/'s10-gates-02/result.json') if x['name']!='whitespace')
+cp=subprocess.run(['git','diff','--check'],cwd=r,capture_output=True)
+assert cp.returncode==0,cp.stdout.decode()
+save(root/'final-whitespace-check.json',{'command':['git','diff','--check'],'exit_code':cp.returncode,'output_sha256':hashlib.sha256(cp.stdout+cp.stderr).hexdigest()})
+sources=load(root/'source-equivalence.json')['final_source_sha256']
+bridge=load(root/'s10-whitespace-01/result.json');differences=[]
+for p,sha in sources.items():
+ if h(p)!=sha:
+  assert p==bridge['path'] and sha==bridge['before_sha256'] and h(p)==bridge['after_sha256']
+  differences.append(p)
+assert differences==[bridge['path']]
+final=sources.copy();final[bridge['path']]=bridge['after_sha256']
+save(root/'final-source-binding.json',{'final_source_sha256':final,'measured_exact_matches':len(final)-1,'equivalent_trailing_newline_files':1,'bridge_path':str(root/'s10-whitespace-01/result.json'),'bridge_sha256':h(root/'s10-whitespace-01/result.json'),'scope':'434 exact final bytes; one fixture trailing newline removal emits byte-identical Bun JavaScript. No new runtime test claimed for that formatting-only edit.'})
+readme=r/root/'README.md';s=readme.read_text();s=s.replace('adayın kesin kaynakları\n[kaynak eşliğinde](source-equivalence.json) bağlıdır. 435 ilgili dosyada ölçülen\nkaynak ile arşiv hazırlığı sırasında mevcut kaynak arasında fark yoktur.','adayın kaynakları\n[son kaynak bağında](final-source-binding.json) bağlıdır. Arşiv hazırlığında\n435 dosya byte-exact aynıydı; son kapıdaki tek gereksiz EOF satırı düzeltmesinden\nsonra 434 dosya byte-exact, bir fixture ise aynı Bun JavaScript çıktısıyla bağlıdır.\n[Özgün ölçüm eşliği](source-equivalence.json) değişmeden korunur.')
+s+='\nBelge/göç/workflow kapıları son ölçümde geçti; workflow negatif paketi27 PASS.\nİlk belge ölçümü PATH içinde uv bulamadı; ilk whitespace kapısı tek EOF boşluğunu\nbuldu. Bu kayıtlar korunur; düzeltmeler ve son bağımsız kontrol aynı arşivdedir.\n'
+readme.write_text(s)
+inputs=['apps/api/tests/test_server_request_id.py','apps/web/lib/e2e-audit-receipts.test.ts',str(root/'packages/product-privacy.tar.gz'),str(root/'packages/audit-ownership.tar.gz'),str(root/'packages/owned-lifecycle.tar.gz')]
+save(root/'inputs.json',{'scope':'Fixed synthetic technical privacy/ownership oracles; not LLM calibration or student data.','inputs':[{'path':p,'sha256':h(p)} for p in inputs]})
+records=[{'path':str(p.relative_to(r)),'bytes':p.stat().st_size,'sha256':h(p.relative_to(r))} for p in sorted((r/root).rglob('*')) if p.is_file()]
+save(root/'archive.json',{'scope':'S10 source/HTTP/audit/owned-lifecycle/CI contract evidence and updated guides; prior failures and oracle corrections preserved.','records':records,'final_source_sha256':final})
+now=datetime.datetime.now(datetime.timezone.utc);epath=Path('.ai/evidence')/(change+'.json')
+report={'schema_version':1,'change_id':change,'candidate_sha':'SELF','captured_at':now.isoformat(),'evidence_label':'fake-provider','result':'pass','scope':'Server-generated support identity and controlled E2E ownership. Local synthetic/privacy/lifecycle tests; CI helper validated offline, not Docker/hosted. No new model/provider/retrieval acceptance.',
+ 'results':{'tuple_privacy_assertion_failures':0,'tuple_privacy_cases':6,'api_tests_passed':1688,'api_subtests':38,'web_tests_passed':573,'isolated_privacy_tests':134,'browser_tests_passed':71,'actual_http_responses':56,'actual_http_processes':4,'lifecycle_comparison_processes':6,'owned_lifecycle_contracts':11,'ci_provision_contracts':14,'workflow_policy_tests':27,'migration_files':22,'mypy_files':114},
+ 'comparison':{'tuple_privacy_assertion_failures':{'baseline':6,'candidate':0,'sample_size':6,'baseline_kind':'Initial S10 source before independently discovered tuple-recursion fix, not the prior released product.','oracle':'Same six source-pinned test calls, actual assertion failures only; all setup/teardown pass and offline transport attempt counters remain zero. Not six distinct privacy incidents.'}},
+ 'commands':['Archived full API wrapper in fresh root-owned PostgreSQL target, full web unit/type checks and134 isolated privacy checks.','Frozen four-arm negative suite, actual4-process56HTTP comparison, actual A/B interleaved audit cleanup and omitted-response failure experiment.','Owned E2E02 with final controller and freshDB02; actual71 browser tests and full before/after audit row hashes after observed API graceful shutdown.','Permanent11 lifecycle and14 offline CI provisioning tests; independent actual6-process lifecycle comparison; docs/migration/workflow/static checks.'],
+ 'archive_path':str(root/'archive.json'),'archive_sha256':h(root/'archive.json'),'final_source_sha256':final,
+ 'limitations':['Final source map:434 exact measured byte matches; one EOF-only fixture edit has byte-identical Bun emitted JavaScript. Earlier typed edits and controller formatting have separate immutable source bridges.','First lifecycle PASS missed a Python abort; original observed logs retained with erratum. Candidate corrected; second oracle expected1 incorrectly, final Uvicorn startup3 verified.','CI provisioning contracts are mock transport only. No actual Docker0.8.6/hosted run after f79; public push approval pending for S9 and descendants.','Support IDs are linkable operational metadata, not anonymous data, auth or idempotency. Generic500 may lack response header while body/app.error correlate.','No existing audit rewrite, schema migration, role expansion, model call, provider spending, real JWT/Storage, collector/retention/legal or human promotion acceptance.']}
+save(epath,report)
+d=load('.ai/changes/034-exception-log-privacy-r1.json')
+d.update(change_id=change,lineage_id='server-request-ownership',revision=1,supersedes=None,previous_status=None,title='Sunucu destek kimliği ve test kaydı sahipliğini doğrula',summary='İstemci serbest kimliği yerine tek sunucu UUID4; dar iç-tip günlük muafiyeti ve nested redaction. Test makbuzları gerçek yanıta bağlıdır; owned API kapanışı sonrası tam audit muhasebesi kayıp/ek kaydı reddeder. CI hedef hazırlığı ve güncel kılavuzlar ayrı kanıtla bağlı.',created_at=now.isoformat(),review_by=(now+datetime.timedelta(days=30)).isoformat(),base_sha=base,candidate_sha='SELF',risk_tier='R3',status='evidence-ready')
+d['behavior']={'provider_revision':'Unchanged from deb83; synthetic/no-provider technical tests.','model_revision':'Unchanged; no model call or download for S10.','prompt_revision':'Unchanged.','tool_schema_revision':'HTTP shape remains; request support identity is now server-generated per attempt. Controlled E2E entry point requires trusted target and private capture.','guardrail_revision':'No role/exam/retrieval relaxation. Exact server identity type exempted only in direct permitted log fields; tuple recursion preserved. Incomplete/mismatched test receipts fail closed; audit final full-row accounting and owned normal shutdown required.','retrieval_revision':'Unchanged; separate C1 experiments are not this record.','embedding_revision':'Unchanged; hashing only in synthetic HTTP/browser tests.','evaluator_revision':'Technical privacy/ownership/CI-process oracles; no pedagogical/LLM quality evaluator change.'}
+d['data']={'corpus_digest':h(root/'inputs.json'),'eval_set_digest':h(root/'inputs.json'),'privacy_classification':'synthetic-non-personal'}
+d['evidence']=[{'label':'fake-provider','result':'pass','report_path':str(epath),'report_sha256':h(epath),'candidate_sha':'SELF'}]
+d['evaluation']={'calibration_ref':'apps/api/tests/test_server_request_id.py','holdout_ref':str(root/'packages/product-privacy.tar.gz'),'thresholds_declared_before_scoring':True,'human_anchor_ref':'not-applicable: fixed technical privacy/receipt counterexamples, not statistical or pedagogical holdout. Independent source and archive privacy review done; human promotion pending.','metrics':[{'name':'tuple_privacy_assertion_failures','baseline':6,'candidate':0,'operator':'==','threshold':0,'sample_size':6}],'exact_command':'Frozen negative v2 runner in product-privacy archive executes identical six test calls against initial/final S10 logging; old6 assertion FAIL, final6 PASS; no setup failure or DB/network attempt.'}
+flag='not-applicable: release-gated support identity and test-runner boundary; product feature flags unchanged'
+d['deployment']={'feature_flag':flag,'flag_state':'disabled','candidate_sha':'SELF','deployment_id':'not-deployed:'+change,'environment':'not-deployed'}
+d['rollout']={'feature_flag':flag,'kill_switch':'Hold release if support correlation/privacy or owned-run audit accounting fails. Do not bypass target/pending/cleanup checks to make a test pass.','assignment':'Sticky to the exact reviewed candidate SHA for each synthetic session; no real-user exposure.','initial_exposure':'None; local synthetic testing only; public branch publication awaiting explicit approval.','stop_conditions':['Raw client identity or nested sensitive canary enters permitted logs.','Missing or extra audit row is erased or ignored.','Unexpected process shutdown becomes test success.','CI service/DB identity mismatch permits SQL or role setup.'],'expand_conditions':['Exact candidate hosted checks pass after publication approval.','Named engineering/domain/privacy owners approve separately.','Real target auth/storage/collector/retention and deployment acceptance completed.'],'active_exam_policy':'No academic record, active-exam lock, help scope or role change.'}
+d['rollback']={'previous_compatible_artifact':'base:'+base,'procedure':'Stop only owned candidate children, hold promotion and preserve private audit evidence. Review an explicit forward correction if correlation/runner fails; do not reinstate client-controlled identity or broad cleanup as a shortcut. No schema/data rollback.','max_minutes':30,'verification':'Planned operator response, not measured production SLA.','state':'planned','evidence_report_path':None,'evidence_report_sha256':None,'evidence_candidate_sha':None,'evidence_deployment_id':None}
+d['privacy']={'contains_identifiable_student_content':False,'handling':'Only synthetic fixtures/canaries and controlled local DB/API/browser runs. Public demo passwords/dev tokens and operational path/time/identity metadata are explicitly classified; not a password-free or anonymous archive. No real private/provider keys or student payload found in independent900-member review. Private passfiles/storage/cache excluded.','retention':'Institutional retention, collector access and real provider/backup lifecycle remain open. Public push awaits user approval; no production promotion.'}
+paths=set(git('diff','--name-only','HEAD').splitlines())|set(git('ls-files','--others','--exclude-standard').splitlines());paths.discard(str(epath))
+d['artifacts']=[{'path':p,'state':'present','sha256':h(p)} for p in sorted(paths) if (r/p).is_file()]
+save(Path('.ai/changes')/(change+'.json'),d)
+print(json.dumps({'change':change,'artifacts':len(d['artifacts']),'archive_files':len(records),'source_files':len(final),'report_sha256':h(epath)}))

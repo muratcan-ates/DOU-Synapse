@@ -8,7 +8,7 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { createE2eCourseIdentity, createE2eRequestId } from "./fixtures";
+import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 
@@ -44,7 +44,6 @@ function authorization(user: DemoUser) {
 }
 
 async function signIn(page: Page, user: DemoUser) {
-  await page.setExtraHTTPHeaders({ "X-Request-ID": createE2eRequestId() });
   await page.addInitScript(
     ([token, payload]) => {
       localStorage.setItem("dou-synapse-token", token as string);
