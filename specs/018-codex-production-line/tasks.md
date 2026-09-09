@@ -53,5 +53,7 @@
 - [x] S9 own034 e19dc8c ve aggregate035 deb83e1 kesin commit kapıları PASS.
 - [ ] S9 GitHub gönderimi: otomatik inceleme kod+sentetik arşiv için açık paylaşım onayı istedi; iki commit için kullanıcı yanıtı bekleniyor. Bu içerikleri taşıyan sonraki commitler de onaysız gönderilmez.
 - [x] S10 yerel — sunucu kaynaklı destek kimliği, makbuz/aynı-kayıt sahipliği, tam audit muhasebesi ve owned süreç kapanışı;1688 API/38,573 web,134 DB/ağsız kontrol,56 gerçek HTTP ve son71 E2E. [Kanıt](evidence/s10-local/README.md).
-- [ ] S10 kesin yerel commit ve yönetişim kaydı; yeni hosted kabul paylaşım onayından sonra.
-- [ ] S11 — kesin belge silmesi için kalıcı kuyruk, anahtar yeniden kullanım engeli ve hedefi doğrulanmış yeniden deneme. Hazır TMP aday gerçek SQL/işlem kabulü bekler.
+- [x] S10 kesin yerel commit d870c261 / own036; deb83→d870 yönetişim denetimi 9 Eylül yeniden PASS. Yeni hosted kabul paylaşım onayı bekler.
+- [ ] S11 — aday PG/izole kontrolleri görevde geçti; son kaynak entegrasyonu, tam API ve gerçek CLI kabulü tamamlanmadı. 9 Eylül geçici paketler bulunamadı; kurtarılan kaynak/kanıt durumunu [kapanış kaydıyla](../../docs/team/codex/2026-09-09-window-checkpoint.md) uzlaştır.
+
+- [x] Süre sonu kontrol noktası — 9 Eylül 00:45 UTC çalışma penceresi kapandı; geç gelen heartbeat sonrası otomasyon duraklatıldı. C1 yeni aday reddi ve C2 INCONCLUSIVE sonucu final ürün kabulü sayılmadı.
