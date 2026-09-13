@@ -780,3 +780,10 @@ Yerel kurulu fastembed **0.8.0** kayıt dosyası, `jinaai/jina-reranker-v2-base-
 DOU-Synapse, L4 runtime, fastembed ve Hugging Face için incelenen yerel cache köklerinde Jina/reranker adlı bir model paketi bulunmadı; bu, makinenin bütün özel yollarına ilişkin yokluk iddiası değildir. Model indirilmedi/yüklenmedi; 50 gold sorgu ve sabit top-24 adayla karşılaştırma **not-run**. NDCG@5, MRR@5, Recall@8, p50/p95 ve peak RSS için yeni sonuç üretilmedi. Önceki C4 kaydındaki bellek baskısı reranker için yüzde 20 bellek payını doğrulamaz.
 
 **ENGEL:** revizyonu, model/tokenizer dosya özetleri ve lisans kaydı sabitlenmiş yerel reranker paketi ile hedef bellek bütçesi/uygun koşu ortamı eksik. Bu girdiler sağlandığında aynı 50 sorgu ve aynı 24 aday iki kolda korunarak deney yapılır. Kabul eşikleri birlikte sağlanmalıdır: NDCG@5 en az yüzde 5 göreli artış, en az yüzde 20 bellek payı ve p95 en fazla 500 ms. Üretim varsayılanı değiştirilmedi.
+
+
+## 2026-09-13 — L4 D6 belge/kaynak uzlaştırması
+
+D6 planındaki iki eski iddia mevcut belgelerde zaten düzeltilmiştir. `ARCHITECTURE.md` §6 ve §8, Compose API rolünü `dou_app`, iş yazımı/poller rolünü `dou_worker` olarak ayırır; §10, `POST /internal/drain` ucunu uygulanmış olarak kaydeder. `docs/security.md` §7, sır tanımlı değilken ucun kapalı olduğunu ve sabit zamanlı anahtar karşılaştırmasını açıklar. Bu ifadeler `docker-compose.yml` ile `apps/api/app/api/internal.py` kaynaklarıyla karşılaştırılmıştır; aynı düzeltme tekrar uygulanmamıştır.
+
+**Kapsam:** kaynak ve belge tutarlılığı incelemesi. Bu işte Docker/Compose, canlı bağlantı rolü, RLS veya scale-to-zero uyanışı çalıştırılmadı (`not-run`); kodda yapılandırılmış olmak canlı kabul değildir. D6'nın bu iki eski iddiası için yeni engel bulunmadı.
