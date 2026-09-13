@@ -771,3 +771,12 @@ Başlatıcıya eklenen gözetici, pytest lideri erken bitse bile sahip olunan s�
 Ham public kabul kaydı, yalnız test adı/zamanı/sonucunu içeren JUnit izdüşümü ve komut makbuzları `evaluation/results/20260913-l4-d3/evidence.tar.gz` içinde; üyelerin SHA256 değerleri `inventory.json` içinde. Özel DB ayarı, ham özel log/XML ve model dosyaları arşivlenmedi. Kabulün dört worker/başlatıcı kaynağı önce/sonra aynıydı; beşinci mekanik test kaynağı ayrıca statik kaynak kaydı ve kendi test koşusuyla bağlandı. API dizini ve ayarlarıyla Ruff ile beş dosyanın biçim kontrolü geçti. İlk repo-kökü Ruff çağrısındaki import sınıflandırma hatası ayrı başarısız makbuz olarak korunur.
 
 Bu script testleri varsayılan API test toplamasına dahil değildir; CI workflow'una ekleme L4 kapsamı dışındadır. API'nin güncel toplama sayısı değişmedi. D3 hedefli kabulü; tam API paketi, canlı pooler, E5 kapasitesi veya üretime çıkış onayı yerine geçmez.
+
+
+## 2026-09-13 — L4 C3 reranker deneyinin önkoşulları
+
+Yerel kurulu fastembed **0.8.0** kayıt dosyası, `jinaai/jina-reranker-v2-base-multilingual` desteğini doğrular: kayıt lisansı `cc-by-nc-4.0`, kayıt büyüklüğü **1,11 GB**, model yolu `onnx/model.onnx`. Bunlar yerel kütüphane kayıt bilgileridir; modelin bu makinede yüklendiği, gerçek RSS tüketimi veya kullanım senaryosuna ilişkin lisans uygunluğu sonucu değildir. Kütüphane paketinin Apache lisansı model lisansının yerine geçmez. Yerel yerleşik kayıtta `BAAI/bge-reranker-v2-m3` bulunmaz.
+
+DOU-Synapse, L4 runtime, fastembed ve Hugging Face için incelenen yerel cache köklerinde Jina/reranker adlı bir model paketi bulunmadı; bu, makinenin bütün özel yollarına ilişkin yokluk iddiası değildir. Model indirilmedi/yüklenmedi; 50 gold sorgu ve sabit top-24 adayla karşılaştırma **not-run**. NDCG@5, MRR@5, Recall@8, p50/p95 ve peak RSS için yeni sonuç üretilmedi. Önceki C4 kaydındaki bellek baskısı reranker için yüzde 20 bellek payını doğrulamaz.
+
+**ENGEL:** revizyonu, model/tokenizer dosya özetleri ve lisans kaydı sabitlenmiş yerel reranker paketi ile hedef bellek bütçesi/uygun koşu ortamı eksik. Bu girdiler sağlandığında aynı 50 sorgu ve aynı 24 aday iki kolda korunarak deney yapılır. Kabul eşikleri birlikte sağlanmalıdır: NDCG@5 en az yüzde 5 göreli artış, en az yüzde 20 bellek payı ve p95 en fazla 500 ms. Üretim varsayılanı değiştirilmedi.
