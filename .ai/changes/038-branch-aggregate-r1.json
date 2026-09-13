@@ -1,0 +1,294 @@
+{
+  "schema_version": 1,
+  "change_id": "038-branch-aggregate-r1",
+  "lineage_id": "branch-aggregate-038",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Dal toplayıcı kaydı — PR #26 HEAD (CodeQL düzeltmesi + runbook v2 sonrası)",
+  "summary": "018-codex-production-line dalının 017 tabanına göre kapsamsız kalan hassas dosyalarını HEAD'de yeniden kapsar (035 toplayıcısı deb83e1'de kaldı; üstüne d870c26, 8f2d324, CodeQL düzeltmesi ve runbook v2 commit'i geldi). Yeni ölçüm iddia etmez; dilimlerin kanıtı 025–037 kayıtlarında.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:17:09+03:00",
+  "review_by": "2026-10-13T15:17:09+03:00",
+  "base_sha": "621815908d5372d8de414aec4ca1dc63da008dca",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)",
+    "model_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)",
+    "prompt_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)",
+    "tool_schema_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)",
+    "guardrail_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)",
+    "retrieval_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)",
+    "embedding_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)",
+    "evaluator_revision": "unchanged-from-base-62181590 (toplayıcı kapsam kaydı)"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".ai/policy.json",
+      "state": "present",
+      "sha256": "ac2256861601832a6c4f754187d1478b0d61fc5d3cc4f3095808cd6f6af4c26b"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "ef54c70840dbac72f7e09b01c4dd3b26566d5f02b585fbda54ffa24ab7c42c15"
+    },
+    {
+      "path": "apps/api/app/api/chat.py",
+      "state": "present",
+      "sha256": "6c9ea0d3379efb4d6b1892ae62297306ec6366c0812ac86029fcac15cf916f8d"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "24a239e7c0ed0887e88ce3fd5cd3f50c92f0f25442406159bf19e02a79de4071"
+    },
+    {
+      "path": "apps/api/app/api/privacy.py",
+      "state": "present",
+      "sha256": "b59402ed566d7b0887f7f7562313fb9bf21402291b1214d86f6db933fa6ee421"
+    },
+    {
+      "path": "apps/api/app/api/questions.py",
+      "state": "present",
+      "sha256": "985024e2ae55b0ce72e3cf6004a0c3a35ba664e9ad133b0479f3206e78196528"
+    },
+    {
+      "path": "apps/api/app/core/config.py",
+      "state": "present",
+      "sha256": "06694c0ca47d281b6584feecadc405558fdbf505be5d240fb2576df7f4e008f0"
+    },
+    {
+      "path": "apps/api/app/core/rate_limit.py",
+      "state": "present",
+      "sha256": "f269575ec80fdf370d3b224b10fb40920be5c1181e9890fc1bc1c98d8ddee83a"
+    },
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "429994118397a91b5502c3afddf3d2f9f7e6f5b471943f4443ebfaf9534031d0"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/authoring.py",
+      "state": "present",
+      "sha256": "3bce1fbf0cea6e3d5f7feba076caca5879488991d60a384d18ac682d8f12d954"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/grading.py",
+      "state": "present",
+      "sha256": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/question_gen.py",
+      "state": "present",
+      "sha256": "5e31490bc40a367692061388b0c83f1517ebe197c1b14e01fa32ee02c3861fe4"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/socratic.py",
+      "state": "present",
+      "sha256": "fe9378d00573b9111d2c851c46f3660797831d6ecde0178edc5282434dc6552e"
+    },
+    {
+      "path": "apps/api/app/modules/generation/fake.py",
+      "state": "present",
+      "sha256": "0114a08a678c1c0e9be462b23dce09c2ebc43721572bc71a0f8fa1ccce97da88"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/claims.py",
+      "state": "present",
+      "sha256": "31c44cc1b14d232144c41e0ac4c29b0520c63a26a36089d444b9a5e45fadfab9"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/pipeline.py",
+      "state": "present",
+      "sha256": "4cd396f9f5f6712791b4cf4b98dce7c6a89681adf59e56592846f673c19ef14f"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/storage.py",
+      "state": "present",
+      "sha256": "adf22e4d56517f1fabff32a269e70d6853e2aaa06e96c09bac7207d35b36e2a1"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/dense.py",
+      "state": "present",
+      "sha256": "020820a4b60307c956b87d609c49f634845a38ea16fb79a96606ea49178e639d"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/fts.py",
+      "state": "present",
+      "sha256": "eceb7954bb865f0b8776db467aaf490ae316f10985de3abc881349705fe6c94b"
+    },
+    {
+      "path": "apps/api/app/modules/retrieval/service.py",
+      "state": "present",
+      "sha256": "dc09fbe8003598c3bf5364a69d3aead299d64c7a17a824c4fc047ab3b092be4c"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202"
+    },
+    {
+      "path": "apps/api/app/worker.py",
+      "state": "present",
+      "sha256": "2cdbea27191cadd0bd2d73f88857b3e461122bdde0f4bdebc98f606771b7a634"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "111b1670cec66efcc472a46ff78beaa7559285fb54142e10889af5766b32c7f7"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "e240e6a1f45de04f753627436d581871148efb02191dafd3cebb50733e1b9cc7"
+    },
+    {
+      "path": "apps/web/lib/chat-availability.ts",
+      "state": "present",
+      "sha256": "9c43a460ddf5f945e6281394b952b7f9f9acdb36afa0b7ca07e11c896aa695a6"
+    },
+    {
+      "path": "docker-compose.yml",
+      "state": "present",
+      "sha256": "0d9b5a0975b4b15ccba0207875b010caf2bc4577df0846f3013ae5571e7cf705"
+    },
+    {
+      "path": "scripts/test_ai_sdlc_check.py",
+      "state": "present",
+      "sha256": "bdfbea58d0c8dc4a7d86271b0646b744af24cf6cdf0f6667964d1f804301f52c"
+    },
+    {
+      "path": "scripts/test_workflow_policy_check.py",
+      "state": "present",
+      "sha256": "8f121aeef7a4fa103e6bcc69ac1b4beeee9268155de26e14780b148b9e2aa4ae"
+    },
+    {
+      "path": "scripts/workflow_policy_check.py",
+      "state": "present",
+      "sha256": "b8dd1d8cc6a910d9e58dff0dddfefb15754c3743797abd7a482e90ca65cc2749"
+    },
+    {
+      "path": "supabase/migrations/0024_chat_privacy_revisions.sql",
+      "state": "present",
+      "sha256": "9ef6fc55eeff03cef00d1e396694177032acc95ac361394a1e81afecec98d51f"
+    },
+    {
+      "path": "supabase/migrations/0025_shared_request_quota.sql",
+      "state": "present",
+      "sha256": "7ca0606d2bc8f76d67934774968c9f9802e4c204799fda7428760c4fe7de043d"
+    },
+    {
+      "path": "supabase/migrations/0026_ingestion_claim_leases.sql",
+      "state": "present",
+      "sha256": "3e15eaa33f8bc8fba2f7a6d6e84692d213cc696ccd8367fad73152e79f2b61d3"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/038-branch-aggregate-r1.json",
+      "report_sha256": "dd551feadc8cda627895b4cff0fbbab8b7adf2aeae8448742c699cfd8fc8d9e0",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "specs/018-codex-production-line/evidence/s9-local/source-equivalence.json",
+    "holdout_ref": "specs/018-codex-production-line/evidence/s9-local/archive.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: exact aggregate source integrity; real-process and technical evidence remains in immutable slice. No statistical/pedagogical holdout claim; independent human release review pending.",
+    "metrics": [
+      {
+        "name": "source_snapshot_mismatches",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 366
+      }
+    ],
+    "exact_command": "Fresh SHA256 comparison of366 final source files from measured034 to owne19dc8c commit and current tree; no API/browser/model test newly executed by aggregation."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "required-check:AI quality / Govern reviewed AI diff",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:ai-sdlc-bootstrap",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "required-check:AI quality / Govern reviewed AI diff",
+    "kill_switch": "Repository administrator documents an emergency exception before temporarily removing the required check.",
+    "assignment": "Sticky per pull-request head SHA; reruns inspect the same reviewed commit.",
+    "initial_exposure": "All pull requests after branch-protection activation.",
+    "stop_conditions": [
+      "The gate exposes secret or student content.",
+      "The gate accepts an uncovered AI-sensitive diff.",
+      "The gate validates a commit other than the reviewed pull-request head."
+    ],
+    "expand_conditions": [
+      "Mutation suite remains green in CI.",
+      "Required reviewers accept the policy and workflow."
+    ],
+    "active_exam_policy": "No runtime or active-exam behaviour changes; this is a repository control."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2c178861a3e484af8643f999f210db040eb84e68",
+    "procedure": "Disable the required AI-quality check if active, revert this governance change, and rerun the pre-existing core CI gates.",
+    "max_minutes": 15,
+    "verification": "Confirm core CI still runs and no AI-quality check is reported as required after the documented rollback.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic fixture identities, repository paths, hashes and stable error codes are recorded.",
+    "retention": "Versioned with the repository; no raw prompts, secrets, student answers or provider payloads."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

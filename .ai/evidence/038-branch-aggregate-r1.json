@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "038-branch-aggregate-r1",
+  "captured_at": "2026-09-13T12:17:10+00:00",
+  "candidate_sha": "SELF",
+  "command": "node scripts/docs_check.mjs; python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023; apps/api/.venv/bin/python scripts/workflow_policy_check.py; apps/api/.venv/bin/ruff check . && .venv/bin/mypy app; TEST_DB_NAME=dou_codex_full2 .venv/bin/python -m pytest -q; bun test lib/; bunx tsc --noEmit; python3 scripts/ai_sdlc_check.py --base-sha $(git merge-base origin/017-completion-integration HEAD) --head-sha $(git rev-parse HEAD)",
+  "environment": "yerel macOS · 018 worktree · 13 Eylül 2026",
+  "results": {
+    "aggregated_files": 32,
+    "docs_check_exit": 0,
+    "migration_check_with_ci_flags": "PASS (22 göç)",
+    "workflow_policy_check": "PASS",
+    "ruff": "pass",
+    "mypy": "pass",
+    "pytest_full_after_fix": "1689 passed, 38 subtests, 187.81s",
+    "bun_test_lib": "573 passed",
+    "tsc": "0 hata"
+  },
+  "governance_note": "Yeni ölçüm iddia etmez; doğrulayıcı toplayıcıyı yalnız HEAD'de tanıtıldığı commit'te sayar. Dilimlerin kanıtı 025–037'de. PR #26'daki 'Govern reviewed AI diff' kırmızısının nedeni toplayıcının 8f2d324'te olmamasıydı.",
+  "limitations": "Kapsam birleştirmesidir, kalite kanıtı değildir. Gerçek sağlayıcı, staging, insan kabulü bu kayıtla ilerlemez.",
+  "privacy": "içerik yok; yalnız dosya yolları"
+}
