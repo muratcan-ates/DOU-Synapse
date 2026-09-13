@@ -1,0 +1,250 @@
+{
+  "schema_version": 1,
+  "change_id": "083-storage-rls-evaluation-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T16:18:22.540052+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "Sentetik Storage üzerinde gerçek PostgreSQL üyelik/rol/JWT politikası ve dört tek-politika negatif kontrolü; canlı ve entegrasyon sırası kabulü açık.",
+  "commands": [
+    {
+      "name": "ruff",
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:13:44.332937+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.092,
+      "output_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "name": "format",
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:13:44.426407+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.024,
+      "output_sha256": "feca25aea532c5d75686bc968f8f8cc0dac429b2ade14ae92e7fd62276ef2992"
+    },
+    {
+      "name": "mypy",
+      "command": [
+        ".venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:13:44.450656+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 1.999,
+      "output_sha256": "0d9882f1f6dd71fa523924801fe936e3519a4e0c1d8ed1d296b549cc336dbcbc"
+    },
+    {
+      "name": "pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:13:46.450803+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 237.861,
+      "output_sha256": "6fb69e999ed68af079b6f1f04fc14502658b3f97d9d961368e28a537da361c10"
+    },
+    {
+      "name": "bun",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T16:17:44.322111+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 1.0,
+      "output_sha256": "c879b3b97db78c83eca5f8e337bbf89fc62f14bf38eda676b72bf92a0df822a8"
+    },
+    {
+      "name": "tsc",
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T16:17:45.323174+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 2.217,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "contrast",
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T16:17:47.541411+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.091,
+      "output_sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca"
+    },
+    {
+      "name": "docs_refresh",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs",
+        "--duzelt"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:17:47.633645+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 8.581,
+      "output_sha256": "f4ae53162ecf00196c6336bb503b29dc339e08b45c8d1e3377afcaa26e50a630"
+    },
+    {
+      "name": "docs_check",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:17:56.216124+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 6.691,
+      "output_sha256": "032f4f813a78a97bf8ce7cb037a2103ddb77432ec5eb61ac68944ae49addfe2e"
+    },
+    {
+      "name": "migration_check",
+      "command": [
+        "python3",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:18:02.908092+00:00",
+      "status": "finished",
+      "exit_code": 1,
+      "seconds": 0.092,
+      "output_sha256": "0b61bf1920bc30ab292cede34ef55856503c54328a551da912e26183d51420d3"
+    },
+    {
+      "name": "workflow_policy",
+      "command": [
+        "apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:18:03.000897+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.259,
+      "output_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+    },
+    {
+      "name": "diff_check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:18:03.261248+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.05,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "sql_storage_baseline",
+      "command": [
+        "/opt/homebrew/opt/postgresql@16/bin/psql",
+        "-X",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-d",
+        "dou_l5_storage",
+        "-v",
+        "storage_mutation=none",
+        "-f",
+        "supabase/tests/rls_storage.sql"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:13:35.669743+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.191,
+      "output_sha256": "78a0a20aa1cd194711ff6ca8ce9c1988e258a2311214f040606026eba2b14c2b"
+    },
+    {
+      "name": "sql_storage_mutations",
+      "command": [
+        "bash",
+        "supabase/tests/rls_storage_mutation_check.sh",
+        "dou_l5_storage"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:13:35.937850+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 1.05,
+      "output_sha256": "a232448e80d76739e1ac5f1b5b24564e384e470c32f9112f62cc828cd2cf3c92"
+    }
+  ],
+  "results": {
+    "ruff_rc": 0,
+    "format_rc": 0,
+    "mypy_rc": 0,
+    "pytest_rc": 0,
+    "bun_rc": 0,
+    "tsc_rc": 0,
+    "contrast_rc": 0,
+    "docs_refresh_rc": 0,
+    "docs_check_rc": 0,
+    "migration_check_rc": 1,
+    "workflow_policy_rc": 0,
+    "diff_check_rc": 0,
+    "sql_storage_baseline_rc": 0,
+    "sql_storage_mutations_rc": 0,
+    "storage_policy_violation_cases": 0
+  },
+  "notes": {
+    "evaluation_command": "PGHOST=127.0.0.1 PGPORT=55459 PGUSER=postgres PG_BIN=/opt/homebrew/opt/postgresql@16/bin bash supabase/tests/rls_storage_mutation_check.sh dou_l5_storage",
+    "metric_definition": "Baseline dört tek-politika gevşetmesinin read_nonmember, insert_student, delete_nonowner ve update_student ihlallerini üretmesidir; candidate aynı fikstürde normal politikanın sıfır ihlalidir. Eski release kalite karşılaştırması değildir.",
+    "baseline": "Gerçek PostgreSQL16 çekirdek göçleri/FORCE RLS + sentetik storage şeması. 0029 CREATEROLE+BYPASSRLS, NOSUPERUSER kurucuda iki kez kuruldu. Modern/legacy/malformed JWT claims, üyelik/iptal/karma ders rolü/platformadmin, sahiplik fallback, anon/service_role ve aktif/bitmiş/süresi dolmuş sınav kontrolleri.",
+    "mutation_oracle": "Her mutant rc!=0 ve tam beklenen L5_ASSERT etiketi zorunlu; rastgele SQL/bağlantı hatası kabul edilmez. Normal baseline önce ve her mutant sonrasında rc0 ve L5_STORAGE_BASELINE_PASS olmalı. Dört L5_STORAGE_MUTATION_KILLED etiketi ve finalPASS ölçüldü.",
+    "isolation": "Yalnız localhost ve ayrı dou_l5* test veritabanı; mevcut storage şeması varsa ret. Gerçek Supabase projesine uygulanmadı. Fikstür, rol/yetki/göç kurulumu ve mutasyonlar transaction/ROLLBACK içinde; shell yalnız kendi mktemp dizinini temizler.",
+    "migration_order": "ENGEL: kullanıcıya ait izinli boşluk listesiyle migration_check rc1; taban dalda0027/0028 yok. Yalnız0029 korunur; entegrasyon sırası tam kabulü açık.",
+    "live": "Gerçek Supabase ve Entra not-run; proje/anahtar yok. Yerel sentetik şema gerçek Storage HTTP/SDK ve hosted kurulum kanıtı değildir. service_role RLS bypass API üyelik kontrolünün yerini almaz.",
+    "ci": "Storage SQL CI adımını L1 ekleyecek; workflow değişmedi. F3 uzak E2E başarısız: scripts/run_owned_e2e.py web_env izin listesi NEXT_PUBLIC_DEV_AUTH bayrağını taşımıyor; giriş sayfasında provider kapalı ekranı ölçüldü. L1 sentetik çalıştırıcı ortamına true eklemeli; yalnız workflow env yeterli değil.",
+    "ci_e2e_job": "https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34766528658/job/103749261497",
+    "ci_e2e_artifact": 10321250051,
+    "ci_e2e_observed": "OWNED_E2E_FAILED /902.943s; admin-readiness waitForResponse30000ms, diğer giriş düğmesi timeouts. Yerel manuel dev tarayıcı smoke bu tam E2E başarısızlığını geçersiz kılmaz."
+  },
+  "limitations": "Yerel/sentetik kanıt. Gerçek Supabase/Entra, gerçek sağlayıcı ve üretim kabulü değildir; insan onayları bekliyor."
+}

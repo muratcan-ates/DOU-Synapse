@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "change_id": "083-storage-rls-evaluation-r1",
+  "lineage_id": "storage-rls-evaluation",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Verify JWT-scoped Storage policies with mutations",
+  "summary": "Sentetik Storage üzerinde gerçek PostgreSQL üyelik/rol/JWT politikası ve dört tek-politika negatif kontrolü; canlı ve entegrasyon sırası kabulü açık.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T16:18:22.540052+00:00",
+  "review_by": "2026-10-13T16:18:22.540052+00:00",
+  "base_sha": "bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "model_revision": "unchanged:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "prompt_revision": "unchanged:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "tool_schema_revision": "unchanged:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "guardrail_revision": "unchanged:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "retrieval_revision": "unchanged:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "embedding_revision": "unchanged:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "evaluator_revision": "l5:083-storage-rls-evaluation-r1"
+  },
+  "data": {
+    "corpus_digest": "eab4f4630eac5821ee5e62000a58147afa21cc6ca71c41d8ebcbe1772baffbd3",
+    "eval_set_digest": "eab4f4630eac5821ee5e62000a58147afa21cc6ca71c41d8ebcbe1772baffbd3",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "supabase/tests/rls_storage.sql",
+      "state": "present",
+      "sha256": "eab4f4630eac5821ee5e62000a58147afa21cc6ca71c41d8ebcbe1772baffbd3"
+    },
+    {
+      "path": "supabase/tests/rls_storage_mutation_check.sh",
+      "state": "present",
+      "sha256": "290586d2a9c42e86558a2972559d6a3070e20146706c06c6db8fdefd0291c4ba"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/083-storage-rls-evaluation-r1.json",
+      "report_sha256": "b8250ebe0820a31dd7894ec4345601f3000daf60ce9db099accaa8dce07278f4",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "supabase/tests/rls_storage.sql",
+    "holdout_ref": "apps/api/tests/test_security.py",
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "storage_policy_violation_cases",
+        "baseline": 4,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 4
+      }
+    ],
+    "exact_command": "PGHOST=127.0.0.1 PGPORT=55459 PGUSER=postgres PG_BIN=/opt/homebrew/opt/postgresql@16/bin bash supabase/tests/rls_storage_mutation_check.sh dou_l5_storage"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "release-gate:083-storage-rls-evaluation-r1",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:083-storage-rls-evaluation-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "release-gate:083-storage-rls-evaluation-r1",
+    "kill_switch": "İhlalde sürümü terfi ettirme; indirme/giriş yüzeyini kapat ve önceki uyumlu sürüme dön.",
+    "assignment": "Sticky atama: sentetik oturum incelenen commit SHA değerine sabitlenir.",
+    "initial_exposure": "Canlı kullanıcı yok; yerel ve sentetik test.",
+    "stop_conditions": [
+      "Yetkisiz kullanıcıya kimlik veya ders belgesi açılması.",
+      "Geçersiz JWT veya gecikmiş yanıtın eski özel oturumu geri açması."
+    ],
+    "expand_conditions": [
+      "Aynı aday kapıları ve gerçek Supabase/Entra kabulü geçer.",
+      "Mühendislik, alan ve güvenlik sorumluları aynı adayı onaylar."
+    ],
+    "active_exam_policy": "Ders ve sınav kilitleri korunur; aktif sınavda öğrenci kaynak erişimi açılmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:bf967cc7ed12bbadefbbe0484bbf7fa85d244978",
+    "procedure": "SQL değerlendirme dosyalarını önceki commit sürümüne geri al; 0029 politikalarını veya geçmiş kanıtları değiştirme.",
+    "max_minutes": 30,
+    "verification": "Negatif auth/Storage/üyelik testlerini tekrar çalıştır; canlı geri alma henüz ölçülmedi.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik kimlikler, komutlar, çıkış kodları ve hashler; gerçek anahtar veya öğrenci içeriği yok.",
+    "retention": "Kanıt özetleri depo geçmişinde korunur; gerçek sağlayıcı saklama politikası yerel kabulün dışındadır."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
