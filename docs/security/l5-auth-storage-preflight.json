@@ -1,0 +1,66 @@
+{
+  "kind": "local-prerequisite-check",
+  "source_head": "a9c50e1e2d3e9c5b975798b7d4eeeadef847fb83",
+  "observed_at": "2026-09-13T16:23:47.630659+00:00",
+  "F6_local_supabase": "not-run",
+  "F3_F6_live_supabase": "not-run",
+  "reasons": [
+    "Docker ve Supabase CLI komutları bulunamadı; ikisi de rc127.",
+    "supabase/config.toml ve /Applications/Docker.app yok.",
+    "Kullanıcı gerçek Supabase proje/anahtarlarının henüz bulunmadığını bildirdi; sır aranmadı/yazılmadı."
+  ],
+  "commands": [
+    {
+      "name": "docker",
+      "command": [
+        "zsh",
+        "-c",
+        "docker --version"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:23:47.630659+00:00",
+      "status": "finished",
+      "exit_code": 127,
+      "seconds": 0.014,
+      "output_sha256": "5c2d7b52f6686ff65689ab6f64c6a3b25fd48060ef34a85943f60b97f68a7e84"
+    },
+    {
+      "name": "supabase",
+      "command": [
+        "zsh",
+        "-c",
+        "supabase --version"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:23:47.697754+00:00",
+      "status": "finished",
+      "exit_code": 127,
+      "seconds": 0.012,
+      "output_sha256": "cc3a50a22938309470b32d20ea2e87e0eda1dbc0c0e506d0c66058f587b859ba"
+    },
+    {
+      "name": "config",
+      "command": [
+        "python3",
+        "-c",
+        "from pathlib import Path; import json; print(json.dumps({\"supabase_config_present\":Path(\"supabase/config.toml\").is_file(),\"docker_app_present\":Path(\"/Applications/Docker.app\").exists()}))"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:23:47.761876+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.048,
+      "output_sha256": "1f28e88f21ff7a4ccbe6fef609c37d7aef04b93ead08fd185a2eeea371f44383"
+    }
+  ],
+  "configuration_observation": {
+    "supabase_config_present": false,
+    "docker_app_present": false
+  },
+  "not_executed": [
+    "supabase start",
+    "Yerel Supabase Auth/Storage E2E",
+    "Gerçek Supabase/Entra kabulü"
+  ],
+  "scope": "Yalnız ön koşul denetimi; çalışan Supabase yığını veya canlı kabul kanıtı değildir."
+}
