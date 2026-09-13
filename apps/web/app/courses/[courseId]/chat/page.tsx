@@ -230,6 +230,7 @@ function ChatScreen({
         )}
 
         <ChatTranscript
+          sessionId={chat.sessionId}
           courseId={courseId}
           canGiveFeedback={canGiveFeedback}
           blocks={blocks}
@@ -287,6 +288,7 @@ function ChatScreen({
 /** Döküm blokları: soru balonu, kaynaklı cevap, abstention, Sokratik merdiven. */
 function ChatTranscript({
   courseId,
+  sessionId,
   canGiveFeedback,
   blocks,
   feedbackByMessage,
@@ -294,6 +296,7 @@ function ChatTranscript({
 }: {
   courseId: string;
   canGiveFeedback: boolean;
+  sessionId: string | null;
   blocks: ChatBlock[];
   feedbackByMessage: Map<string, TranscriptMessage["feedback"]>;
   onSaveFeedback: (
@@ -334,6 +337,7 @@ function ChatTranscript({
                     key={`${citation.chunk_id}:${index}`}
                     source={citationSource(citation)}
                     href={sourceContextHref(courseId, citation.chunk_id)}
+                    learningContext={{ courseId, chunkId: citation.chunk_id, sessionId }}
                   />
                 ))}
                 {canGiveFeedback && (

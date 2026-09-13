@@ -448,6 +448,7 @@ function AssistantConversation({
                           key={`${citation.chunk_id}:${index}`}
                           source={citationSource(citation)}
                           href={sourceContextHref(courseId, citation.chunk_id)}
+                          learningContext={{ courseId, chunkId: citation.chunk_id, sessionId }}
                         />
                       ))}
                     </div>

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Kaynak kartı — ürünün imza bileşeni (DESIGN.md §Components).
  *
@@ -7,6 +9,7 @@
  */
 
 import Link from "next/link";
+import { recordCitationOpened, type CitationLearningContext } from "@/lib/learning-events";
 import { ABSTENTION_LABEL, type AbstentionStatus } from "@/lib/chat";
 import type { SourceInfo } from "@/lib/types";
 
@@ -18,7 +21,14 @@ import type { SourceInfo } from "@/lib/types";
  */
 export type { SourceInfo } from "@/lib/types";
 
-export function SourceCard({ source, href }: { source: SourceInfo; href?: string }) {
+export function SourceCard({ source, href, learningContext }: {
+  source: SourceInfo; href?: string; learningContext?: CitationLearningContext;
+}) {
+  function recordOpen() {
+    // Ön yükleme olay üretmez; yalnız kullanıcı kaynak bağlantısını açınca yazılır.
+    // Ölçüm hatası kaynağa erişimi kesmez, sunucu kendi yetki kapısını uygular.
+    if (learningContext) void recordCitationOpened(learningContext).catch(() => undefined);
+  }
   const card = (
     <div className="rounded-lg border border-border bg-bg">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
@@ -42,6 +52,8 @@ export function SourceCard({ source, href }: { source: SourceInfo; href?: string
   return (
     <Link
       href={href}
+      onClick={recordOpen}
+      onAuxClick={(event) => { if (event.button === 1) recordOpen(); }}
       aria-label={`${source.fileName}, ${source.location} kaynak bağlamını aç`}
       className="block rounded-lg transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >

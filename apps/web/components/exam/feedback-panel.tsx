@@ -7,7 +7,7 @@ import type { AnswerFeedback } from "@/lib/types";
 import { SourceCard } from "@/components/source-card";
 import { Badge } from "@/components/ui";
 
-export function FeedbackPanel({ courseId, feedback }: { courseId: string; feedback: AnswerFeedback }) {
+export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: string; sessionId: string; feedback: AnswerFeedback }) {
   const verdict = answerVerdict(feedback);
   const spec = VERDICT_LABEL[verdict];
   const score = formatScore(feedback.score);
@@ -74,20 +74,20 @@ export function FeedbackPanel({ courseId, feedback }: { courseId: string; feedba
       {feedback.why_wrong && (
         <div className="mt-4">
           <h3 className="mb-2 text-xs font-medium text-fg-muted">Neden yanlış?</h3>
-          <SourceCard source={sourceInfo(feedback.why_wrong)} />
+          <SourceCard source={sourceInfo(feedback.why_wrong)} href={sourceContextHref(courseId, feedback.why_wrong.chunk_id)} learningContext={{ courseId, sessionId, chunkId: feedback.why_wrong.chunk_id }} />
         </div>
       )}
 
       {missingCriterion && <section aria-label="Eksik ölçütün dayanağı" className="mt-4 space-y-2">
         <h3 className="text-xs font-medium text-fg-muted">Eksik ölçütün dayanağı</h3>
         <p className="prose-tr text-sm text-fg">{missingCriterion.criterion}</p>
-        <SourceCard source={sourceInfo(missingCriterion.source)} href={sourceContextHref(courseId, missingCriterion.source.chunk_id)} />
+        <SourceCard source={sourceInfo(missingCriterion.source)} href={sourceContextHref(courseId, missingCriterion.source.chunk_id)} learningContext={{ courseId, sessionId, chunkId: missingCriterion.source.chunk_id }} />
       </section>}
 
       {feedback.evidence && (
         <div className="mt-4">
           <h3 className="mb-2 text-xs font-medium text-fg-muted">Değerlendirmenin dayanağı</h3>
-          <SourceCard source={sourceInfo(feedback.evidence)} />
+          <SourceCard source={sourceInfo(feedback.evidence)} href={sourceContextHref(courseId, feedback.evidence.chunk_id)} learningContext={{ courseId, sessionId, chunkId: feedback.evidence.chunk_id }} />
         </div>
       )}
 

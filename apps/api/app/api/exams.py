@@ -44,10 +44,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import (
     CourseContext,
+    CourseInstructorDep,
     CourseMemberDep,
     PageDep,
     SessionDep,
     SettingsDep,
+    UnlockedCourseMemberDep,
     load_owned,
 )
 from app.core.config import Settings, get_settings
@@ -56,6 +58,7 @@ from app.core.errors import (
     NotFoundError,
     PermissionDeniedError,
     StudentAssessmentWorkspaceDisabledError,
+    ValidationError,
 )
 from app.core.pagination import decode_time_cursor, encode_time_cursor, paginate_keyset
 from app.models.assessment import (
@@ -69,6 +72,9 @@ from app.models.assessment import (
     QuestionStatus,
     Topic,
 )
+from app.models.chat import ChatMessage, ChatRole, ChatSession
+from app.models.core import Chunk
+from app.models.learning_event import LearningEvent
 from app.modules.assessment import exam_state
 from app.modules.assessment.exam_paper import paper_question_ids
 from app.modules.assessment.exam_state import (
@@ -88,6 +94,7 @@ from app.modules.assessment.grading import (
     payload_rubric,
     score_of,
 )
+from app.modules.assessment.learning_events import get_learning_summary, record_learning_event
 from app.modules.mastery.service import record_answer
 from app.schemas.assessment import (
     AnswerFeedbackOut,
@@ -110,6 +117,13 @@ from app.schemas.assessment import (
     solution_payload,
 )
 from app.schemas.exam_workspace import ExamCatalogOut, PublishedExamSummary
+from app.schemas.learning_events import (
+    CitationOpenedRequest,
+    LearningEventOut,
+    LearningEventReceipt,
+    LearningEventsOut,
+    LearningSummaryOut,
+)
 from app.schemas.page import PageOut
 
 router = APIRouter(prefix="/courses/{course_id}", tags=["exams"])
@@ -504,6 +518,134 @@ async def _completed_results_out(
 # ---------------------------------------------------------------------------
 
 
+async def _record_presented_questions(session: AsyncSession, exam: ExamSession) -> None:
+    """İlk sunumu kaydeder; geçmiş okumaları sunum sayısını artırmaz."""
+    questions = await _load_questions(session, await paper_question_ids(session, exam))
+    for question in questions.values():
+        await record_learning_event(
+            session,
+            course_id=exam.course_id,
+            event_type="question_presented",
+            topic_id=question.topic_id,
+            session_id=exam.id,
+            object_type="question",
+            object_id=str(question.id),
+            metadata_json={"source": "exam"},
+        )
+
+
+@router.get("/learning-summary", response_model=LearningSummaryOut)
+async def learning_summary(
+    context: CourseInstructorDep,
+    session: SessionDep,
+    days: int = 7,
+) -> LearningSummaryOut:
+    """Eğitmenin kendi dersinde yalnız toplulaştırılmış içeriksiz sayıları gösterir."""
+    if days not in (7, 30):
+        raise ValidationError("Özet penceresi 7 veya 30 gün olmalı.")
+    result = await get_learning_summary(session, course_id=context.course_id, days=days)
+    return LearningSummaryOut.model_validate(result)
+
+
+@router.get("/learning-events", response_model=LearningEventsOut)
+async def learning_events(
+    context: CourseMemberDep,
+    session: SessionDep,
+    session_id: UUID | None = None,
+) -> LearningEventsOut:
+    """Öğrenci kendi olay türlerini görür; puan/kanıt alanı sınavdan sızmaz."""
+    query = select(
+        LearningEvent.id,
+        LearningEvent.event_type,
+        LearningEvent.occurred_at,
+        LearningEvent.session_id,
+        LearningEvent.topic_id,
+    ).where(LearningEvent.course_id == context.course_id)
+    if session_id is not None:
+        query = query.where(LearningEvent.session_id == session_id)
+    total = int(await session.scalar(select(func.count()).select_from(query.subquery())) or 0)
+    rows = (
+        await session.execute(
+            query.order_by(LearningEvent.occurred_at.desc(), LearningEvent.id.desc()).limit(100)
+        )
+    ).all()
+    return LearningEventsOut(
+        items=[LearningEventOut.model_validate(row) for row in rows], total=total
+    )
+
+
+@router.post(
+    "/learning-events/citation-opened",
+    response_model=LearningEventReceipt,
+    status_code=status.HTTP_201_CREATED,
+)
+async def citation_opened(
+    payload: CitationOpenedRequest,
+    context: UnlockedCourseMemberDep,
+    session: SessionDep,
+) -> LearningEventReceipt:
+    """Kaynak açılışını doğrular; istemci olay türü veya kullanıcı kimliği seçemez."""
+    chunk = await load_owned(
+        session, Chunk, payload.chunk_id, context, message="Kaynak parça bulunamadı."
+    )
+    topic_id = None
+    if payload.session_id is not None:
+        exam = await session.get(ExamSession, payload.session_id)
+        if exam is not None:
+            exam = await _load_exam(session, payload.session_id, context)
+            questions = await _load_questions(session, await paper_question_ids(session, exam))
+            matching = [q for q in questions.values() if q.source_chunk_id == chunk.id]
+            # Yanlış seçeneğin çelişen pasajı sorunun ana kaynağından farklı
+            # olabilir. Yalnız yeniden doğrulanan, kendi kayıtlı geri bildirimi
+            # bu ek kaynağı oturuma bağlayabilir.
+            if not matching:
+                feedback = await _saved_feedback(
+                    session, await _answers_of(session, exam.id), questions=questions
+                )
+                for result in feedback:
+                    references = [result.why_wrong, result.evidence]
+                    if result.grounded_missing_criterion is not None:
+                        references.append(result.grounded_missing_criterion.source)
+                    if any(ref is not None and ref.chunk_id == chunk.id for ref in references):
+                        question = questions.get(result.question_id)
+                        if question is not None:
+                            matching.append(question)
+            if not matching:
+                raise NotFoundError("Bu kaynak oturumda sunulmadı.")
+            topic_id = matching[0].topic_id
+        else:
+            chat = await session.get(ChatSession, payload.session_id)
+            if (
+                chat is None
+                or chat.course_id != context.course_id
+                or chat.user_id != context.user_id
+            ):
+                raise NotFoundError("Sohbet oturumu bulunamadı.")
+            cited = await session.scalar(
+                select(ChatMessage.id)
+                .where(
+                    ChatMessage.session_id == chat.id,
+                    ChatMessage.role == ChatRole.ASSISTANT,
+                    ChatMessage.citations.contains([{"chunk_id": str(chunk.id)}]),
+                )
+                .limit(1)
+            )
+            if cited is None:
+                raise NotFoundError("Bu kaynak oturumda sunulmadı.")
+    event_id = await record_learning_event(
+        session,
+        course_id=context.course_id,
+        event_type="citation_opened",
+        topic_id=topic_id,
+        session_id=payload.session_id,
+        object_type="chunk",
+        object_id=str(chunk.id),
+        evidence_chunk_ids=[chunk.id],
+        metadata_json={"source": "citation"},
+    )
+    return LearningEventReceipt(id=event_id)
+
+
 async def _start_blueprint_exam(
     blueprint_id: UUID,
     context: CourseContext,
@@ -578,6 +720,7 @@ async def _start_blueprint_exam(
             "Bu sınav için başka bir oturum aynı anda başlatıldı; sayfayı yenileyin."
         ) from exc
 
+    await _record_presented_questions(session, exam)
     return await _session_out(session, exam, settings=settings, now=now)
 
 
@@ -648,6 +791,7 @@ async def start_exam(
     session.add(exam)
     await session.flush()
 
+    await _record_presented_questions(session, exam)
     return await _session_out(session, exam, settings=settings, now=now)
 
 
@@ -944,6 +1088,18 @@ async def submit_answer(
             alpha=settings.mastery_alpha,
         )
 
+    await record_learning_event(
+        session,
+        course_id=exam.course_id,
+        event_type="answer_submitted",
+        topic_id=question.topic_id,
+        session_id=exam.id,
+        object_type="question",
+        object_id=str(question.id),
+        outcome_json={"is_correct": outcome.is_correct, "score": outcome.score},
+        metadata_json={"source": "exam"},
+    )
+
     reveal = exam.mode is ExamMode.PRACTICE
     sources = (
         await load_source_material(
@@ -1008,6 +1164,18 @@ async def request_hint(
         raise NotFoundError("Bu sorunun kaynağı okunamadı; ipucu üretilemiyor.")
 
     level = min(payload.hint_level, policy.max_hints)
+    await record_learning_event(
+        session,
+        course_id=exam.course_id,
+        event_type="hint_requested",
+        topic_id=question.topic_id,
+        session_id=exam.id,
+        object_type="question",
+        object_id=str(question.id),
+        outcome_json={"hint_level": level},
+        evidence_chunk_ids=[question.source_chunk_id],
+        metadata_json={"source": "exam"},
+    )
     return HintOut(
         question_id=question.id,
         hint_level=level,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { sourceContextHref } from "@/lib/source-quality";
 import { api } from "@/lib/api";
 import { appendExamHint, canSubmitAnswer, describeQuestion, EXAM_MODE, formatClock, isLastMinute,
   nextHintLevel, shownQuestions, showsHints, sourceInfo, tickRemaining, timeIsUp, timeNotice } from "@/lib/exam";
@@ -359,11 +360,11 @@ export function RunningExam({
         </div>
       )}
 
-      {helpAvailable && rungs.length > 0 && <HintLadder rungs={rungs} />}
+      {helpAvailable && rungs.length > 0 && <HintLadder courseId={courseId} sessionId={session.id} rungs={rungs} />}
 
       {session.mode === "practice" && historyEnabled ? (
         answered && helpAvailable && <SavedPracticeFeedback key={question.id} courseId={courseId} sessionId={session.id} questionId={question.id} onLocked={helpLock.reload} />
-      ) : helpAvailable && feedback && <FeedbackPanel courseId={courseId} feedback={feedback} />}
+      ) : helpAvailable && feedback && <FeedbackPanel sessionId={session.id} courseId={courseId} feedback={feedback} />}
 
       <div className="mt-10 flex items-center justify-between gap-4">
         {/*
@@ -390,7 +391,7 @@ export function RunningExam({
   );
 }
 
-function HintLadder({ rungs }: { rungs: ExamHint[] }) {
+function HintLadder({ courseId, sessionId, rungs }: { courseId: string; sessionId: string; rungs: ExamHint[] }) {
   return (
     <div className="mt-6 rounded-lg border border-border bg-surface">
       <p className="border-b border-border px-5 py-3 text-sm font-medium text-fg">
@@ -404,7 +405,7 @@ function HintLadder({ rungs }: { rungs: ExamHint[] }) {
               {rung.text}
             </p>
             <div className="mt-3">
-              <SourceCard source={sourceInfo(rung.source)} />
+              <SourceCard source={sourceInfo(rung.source)} href={sourceContextHref(courseId, rung.source.chunk_id)} learningContext={{ courseId, sessionId, chunkId: rung.source.chunk_id }} />
             </div>
           </li>
         ))}

@@ -194,7 +194,16 @@ class TestBlueprintRouter:
         }
         assert continuity_yollari <= yollar
         assert all("get" in app.openapi()["paths"][path] for path in continuity_yollari)
-        assert len(yollar) == 57, f"yol sayısı değişmiş: {len(yollar)}"
+        learning_paths = {
+            "/courses/{course_id}/learning-summary": "get",
+            "/courses/{course_id}/learning-events": "get",
+            "/courses/{course_id}/learning-events/citation-opened": "post",
+        }
+        assert learning_paths.keys() <= yollar
+        assert all(
+            method in app.openapi()["paths"][path] for path, method in learning_paths.items()
+        )
+        assert len(yollar) == 60, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:
