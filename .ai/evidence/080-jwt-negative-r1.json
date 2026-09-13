@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "change_id": "080-jwt-negative-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T14:43:30.179097+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "Gün-1 HS256 sınırı ayar listesiyle genişletilemez; gerçek HTTP negatif JWT ve create_app ayar retleriyle ölçüldü.",
+  "commands": [
+    {
+      "name": "ruff",
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T14:29:29.835274+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.104,
+      "output_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "format",
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T14:29:29.941610+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.03,
+      "output_sha256": "8f485afdff0bd8ee2565c955dd978868c94d264cb548bb6ebcfa0d7a6c6ec864",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "mypy",
+      "command": [
+        ".venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T14:29:29.973650+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 2.785,
+      "output_sha256": "0d9882f1f6dd71fa523924801fe936e3519a4e0c1d8ed1d296b549cc336dbcbc",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "bun",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T14:33:28.481256+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 1.959,
+      "output_sha256": "ab79fe99a8c5b58e732767b9f52e9514ebbecdad6a2755cf18347dc3c31134c2",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "tsc",
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T14:33:30.441881+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 21.774,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "contrast",
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T14:33:52.223318+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.076,
+      "output_sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "docs_refresh",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs",
+        "--duzelt"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T14:33:52.301585+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 13.135,
+      "output_sha256": "d3c99361af652f206550a316d24ba4abe9255b88539a18b522ccfef3232aeef8",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "docs_check",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T14:34:05.438038+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 13.725,
+      "output_sha256": "d6b525c132fd09a0511f32bc6e12ff03fc05e6de082e8ee1692ead3203df8f31",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "migration_check",
+      "command": [
+        "python3",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T14:34:19.164602+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.139,
+      "output_sha256": "35e88ac0adede31b2409b0ba68df482ea909fd0ef706b754ebb6a6f83aa3700b",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "workflow_policy",
+      "command": [
+        "apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T14:34:19.304972+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.993,
+      "output_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "diff_check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T14:34:20.300708+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.077,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_run": "F1-resumed-01"
+    },
+    {
+      "name": "pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T14:34:44.482140+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 452.255,
+      "output_sha256": "fb29b59e53a9538bd376174303e5fd824bfede4b90d20a889543a9992e6e8d91",
+      "source_run": "F1-resumed-02"
+    },
+    {
+      "name": "algorithm_candidate",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_auth_negative.py",
+        "-k",
+        "algorithm_setting"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T14:42:32.954610+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 11.556,
+      "output_sha256": "6608dbcf5c4fd94d92d50fbde8ee865539c7f592f67112dde3807915bc5ed4b9",
+      "source_run": "F1-focus"
+    },
+    {
+      "name": "algorithm_baseline",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "auth_mutant",
+        "tests/test_auth_negative.py",
+        "-k",
+        "algorithm_setting"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T14:42:44.513507+00:00",
+      "status": "finished",
+      "exit_code": 1,
+      "seconds": 11.726,
+      "output_sha256": "3bb26fb6008dddb233403289f4b7eb77cb248194488e7f6c34ad896c623adf3e",
+      "source_run": "F1-focus"
+    }
+  ],
+  "results": {
+    "ruff_rc": 0,
+    "format_rc": 0,
+    "mypy_rc": 0,
+    "bun_rc": 0,
+    "tsc_rc": 0,
+    "contrast_rc": 0,
+    "docs_refresh_rc": 0,
+    "docs_check_rc": 0,
+    "migration_check_rc": 0,
+    "workflow_policy_rc": 0,
+    "diff_check_rc": 0,
+    "pytest_rc": 0,
+    "algorithm_candidate_rc": 0,
+    "algorithm_baseline_rc": 1,
+    "jwt_algorithm_matrix_failures": 0
+  },
+  "notes": {
+    "evaluation_command": ".venv/bin/python -m pytest -q tests/test_auth_negative.py -k algorithm_setting",
+    "full_api": "1718 passed, 5 warnings, 38 subtests passed; exit 0",
+    "web": "573 pass, 0 fail; 45 files",
+    "baseline": "Same 5 algorithm-setting HTTP assertions, but _verification_algorithms replaced at pytest_configure with exact function from 22a85d390f759a77265e624d4d2acdf9b7c3d143 via git show. HS384-only and HS256/HS512 widened settings return 200 instead of 401: expected negative-control exit 1, 2 failures. No repository source modified by plugin.",
+    "baseline_plugin": "import subprocess\n\ndef pytest_configure(config):\n    import app.core.security as security\n    original = subprocess.check_output(['git', 'show', '22a85d390f759a77265e624d4d2acdf9b7c3d143:apps/api/app/core/security.py'], text=True)\n    scope = dict(security.__dict__)\n    exec(compile(original, '<baseline-security>', 'exec'), scope)\n    security._verification_algorithms = scope['_verification_algorithms']\n",
+    "baseline_environment": "PYTHONPATH=<local runtime>/scripts:. plus same isolated PostgreSQL env as candidate.",
+    "environment": {
+      "postgres": "16.14; own loopback port 55459",
+      "TEST_DB_NAME": "dou_l5",
+      "EMBEDDING_PROVIDER": "hashing",
+      "NEXT_PUBLIC_DEV_AUTH": "true",
+      "EMBEDDING_WARMUP_ENABLED": "unset at runner level; individual fixtures own settings",
+      "secrets": "Synthetic JWT fixtures only; no real Supabase/Entra keys"
+    },
+    "provenance": "Passed static commands from resumed-01 retained with original timestamps and output hashes, combined with corrected full API resumed-02 on unchanged source. Prior interrupted pytest is not a passed gate.",
+    "interrupted_run": "resumed-01 injected EMBEDDING_WARMUP_ENABLED=false and failed the default-setting assertion (1 failed, 695 passed before interrupt); SIGINT then SIGTERM during teardown. Fixed external runner env, no product workaround. Pre-crash /private/tmp logs lost and are not counted.",
+    "not_run": [
+      "Real Supabase JWT project acceptance",
+      "Real Supabase/Entra login and tenant boundary",
+      "Live Storage; F4/F5 pending",
+      "Chromium download failed with TLS ECONNRESET before crash; local installed Chrome will be used for F3"
+    ],
+    "shared_files": "docs_check --duzelt updated only required numeric counters in README/security/spec docs.",
+    "governance": "Development evidence only, no human approval or promotion; parent-only check will run on clean commit. Aggregate dossier deliberately not regenerated."
+  },
+  "limitations": "Yerel/sentetik kanıt. Gerçek Supabase/Entra, gerçek sağlayıcı ve üretim kabulü değildir; insan onayları bekliyor."
+}
