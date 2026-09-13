@@ -1,6 +1,7 @@
 "use client";
 
 import { clearAllExamDrafts, type DraftStorage } from "@/lib/exam-drafts";
+import { isDevAuthEnabled } from "@/lib/auth-config";
 import { getSupabase } from "@/lib/supabase";
 
 export const AUTH_EVENT_KEY = "dou-synapse:auth-event:v1";
@@ -57,14 +58,21 @@ export function isAuthLocallySignedOut(): boolean {
   return locallySignedOut || authChangeFromMarker(readMarker()) === "signed-out";
 }
 
+export interface AuthEpochSnapshot { epoch: number; marker: string | null }
+export function captureAuthEpoch(): AuthEpochSnapshot {
+  return { epoch: authEpoch, marker: readMarker() };
+}
+export function isAuthEpochCurrent(snapshot: AuthEpochSnapshot): boolean {
+  return snapshot.epoch === authEpoch && snapshot.marker === readMarker();
+}
+
 /** SDK kilidi/yenilemesi beklenirken değişen kimliğin eski cevabı kullanılamaz. */
 export async function readWithinAuthEpoch<T>(read: () => Promise<T>): Promise<T | null> {
   if (isAuthLocallySignedOut()) return null;
-  const requestedEpoch = authEpoch;
-  const requestedMarker = readMarker();
+  const requestedEpoch = captureAuthEpoch();
   const result = await read();
   // storage olayı bu sekmede henüz çalışmamış olsa da ortak işaret değişmiştir.
-  if (authEpoch !== requestedEpoch || readMarker() !== requestedMarker || isAuthLocallySignedOut()) return null;
+  if (!isAuthEpochCurrent(requestedEpoch) || isAuthLocallySignedOut()) return null;
   return result;
 }
 
@@ -78,6 +86,7 @@ function applyChange(change: AuthChange): void {
 }
 
 export function notifyAuthChange(change: AuthChange): void {
+  if (change === "signed-out" && locallySignedOut && readMarker() === lastMarker) return;
   const marker = `${change}:${crypto.randomUUID()}`;
   lastMarker = marker;
   saveTabMarker(marker);
@@ -138,8 +147,39 @@ export function subscribeAuthChanges(listener: Listener): () => void {
     window.addEventListener("storage", storage);
     window.addEventListener("focus", syncMarker);
     window.addEventListener("pageshow", syncMarker);
-    const observe = createProviderAuthObserver(notifyAuthChange);
-    const subscription = getSupabase()?.auth.onAuthStateChange((event, session) => {
+    const provider = getSupabase();
+    const observe = createProviderAuthObserver((change) => {
+      if (change === "identity-changed") {
+        // SDK depodan oturum kurtarırken de SIGNED_IN üretir. Yerel çıkışı
+        // yalnız açık giriş/callback kabulü kaldırabilir; pasif olay kaldıramaz.
+        if (!isAuthLocallySignedOut()) notifyAuthChange(change);
+        return;
+      }
+      if (isAuthLocallySignedOut() || !provider) return;
+      const requestedEpoch = captureAuthEpoch();
+      // Diğer sekmenin eski SIGNED_OUT yayını yeni girişten sonra gelebilir.
+      // SDK callback'i içinde oturum okumak kilitlenebilir; ayrı görevde güncel
+      // depoyu doğrularız. Yeni kimlik veya hâlâ açık oturum varsa çıkış yoktur.
+      window.setTimeout(() => {
+        void provider.auth.getSession().then(({ data, error }) => {
+          if (error || !isAuthEpochCurrent(requestedEpoch)) return;
+          if (data.session) {
+            // Geç yayın gözlemcinin kimlik belleğini de geriye götürmemeli.
+            observe("INITIAL_SESSION", data.session.user.id);
+            return;
+          }
+          notifyAuthChange("signed-out");
+        }).catch(() => {
+          // Okunamayan depo eski olayın doğruluğunu kanıtlamaz. API 401 kapısı
+          // bundan bağımsız olarak yerel özel görünümü hemen kapatır.
+        });
+      }, 0);
+    });
+    const subscription = provider?.auth.onAuthStateChange((event, session) => {
+      // Açıkça seçilen geliştirme kimliği arka plandaki SDK olayından etkilenmez.
+      try {
+        if (isDevAuthEnabled() && browserLocalStorage()?.getItem(DEMO_TOKEN_KEY)?.startsWith("dev:")) return;
+      } catch { /* Depo yoksa normal sağlayıcı olayı uygulanır. */ }
       observe(event, session?.user.id ?? null);
     }).data.subscription;
     stopListening = () => {

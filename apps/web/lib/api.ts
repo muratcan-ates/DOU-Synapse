@@ -15,171 +15,12 @@
  * bir POST iki kez gider, bir sohbet isteği 20 saniyede kesilir.
  */
 
-import { DEMO_TOKEN_KEY, DEMO_USER_KEY, isAuthLocallySignedOut, notifyAuthChange, readWithinAuthEpoch } from "@/lib/auth-events";
-import { getSupabase } from "@/lib/supabase";
+import { captureAuthEpoch, isAuthEpochCurrent, type AuthEpochSnapshot } from "@/lib/auth-events";
+import { accessToken, expireAuthSession } from "@/lib/auth-session";
+
+export { getStoredUser, signIn, signOut, signInWithPassword, requestPasswordReset, updateCurrentPassword, signOutWithLocalCleanup, signOutCurrent, getCurrentUser, type DemoUser } from "@/lib/auth-session";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-const TOKEN_KEY = DEMO_TOKEN_KEY;
-const USER_KEY = DEMO_USER_KEY;
-
-export interface DemoUser {
-  id: string;
-  email: string;
-  fullName: string;
-  role: "instructor" | "student";
-}
-
-/**
- * Depodaki oturumu okur.
- *
- * Bozuk değer uygulamayı ÇÖKERTMEMELİ: `JSON.parse` doğrudan çağrıldığında
- * hatalı bir localStorage kaydı bütün sayfayı düşürüyordu ve yenilemek de
- * kurtarmıyordu — kayıt hâlâ bozuk olduğu için kullanıcı kalıcı olarak kilitli
- * kalıyordu. Artık bozuk kayıt temizlenir ve giriş ekranına düşülür.
- *
- * Biçim de doğrulanır: eksik alanlı bir nesne daha sonra `user.role` okunurken
- * patlamak yerine burada reddedilir.
- */
-export function getStoredUser(): DemoUser | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(USER_KEY);
-  if (!raw) return null;
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (isDemoUser(parsed)) return parsed;
-  } catch {
-    // düşülecek: aşağıda temizlenir
-  }
-  signOut();
-  return null;
-}
-
-function isDemoUser(value: unknown): value is DemoUser {
-  if (typeof value !== "object" || value === null) return false;
-  const u = value as Record<string, unknown>;
-  return (
-    typeof u.id === "string" &&
-    typeof u.email === "string" &&
-    typeof u.fullName === "string" &&
-    (u.role === "instructor" || u.role === "student")
-  );
-}
-
-export function signIn(user: DemoUser): void {
-  const previous = getStoredUser();
-  localStorage.setItem(TOKEN_KEY, `dev:${user.id}`);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
-  if (previous?.id !== user.id || isAuthLocallySignedOut()) notifyAuthChange("identity-changed");
-}
-
-function clearDemoSession(): void {
-  try {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-  } finally {
-    // Depo kapalı olsa bile eski görünüm ve geç yanıtlar kapatılır.
-    notifyAuthChange("signed-out");
-  }
-}
-
-export function signOut(): void {
-  clearDemoSession();
-}
-
-/** Gerçek sağlayıcı yapılandırıldıysa parola oturumu açar; token'ı SDK saklar. */
-export async function signInWithPassword(email: string, password: string): Promise<DemoUser> {
-  const client = getSupabase();
-  if (!client) throw new Error("Supabase oturumu yapılandırılmadı.");
-  const { data, error } = await client.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  if (!data.user) throw new Error("Oturum açıldı ancak kullanıcı bilgisi alınamadı.");
-  notifyAuthChange("identity-changed");
-  return userFromSupabase(data.user);
-}
-
-/** Parola yenileme bağlantısını gerçek Supabase Auth üzerinden gönderir. */
-export async function requestPasswordReset(email: string): Promise<void> {
-  const client = getSupabase();
-  if (!client) throw new Error("Supabase oturumu yapılandırılmadı.");
-  const redirectTo = `${window.location.origin}/reset-password`;
-  const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) throw error;
-}
-
-/** Kurtarma bağlantısının açtığı geçici oturumda yeni parolayı kaydeder. */
-export async function updateCurrentPassword(password: string): Promise<void> {
-  const client = getSupabase();
-  if (!client) throw new Error("Supabase oturumu yapılandırılmadı.");
-  const { error } = await client.auth.updateUser({ password });
-  if (error) throw error;
-}
-
-/** SDK oturumunu ya da yerel demo oturumunu tek noktadan kapatır. */
-export async function signOutWithLocalCleanup(
-  providerSignOut: (() => Promise<{ error: unknown }>) | null,
-  clearLocalSession: () => void,
-): Promise<void> {
-  try {
-    if (!providerSignOut) return;
-    const { error } = await providerSignOut();
-    if (error) throw error;
-  } finally {
-    // Sağlayıcı hatası çağrı yerine taşınır; buna rağmen bu tarayıcının özel
-    // görünümü, taslakları ve eski istek devamları kapatılır.
-    clearLocalSession();
-  }
-}
-
-export async function signOutCurrent(): Promise<void> {
-  const client = getSupabase();
-  await signOutWithLocalCleanup(
-    client ? () => client.auth.signOut() : null,
-    clearDemoSession,
-  );
-}
-
-/** Sayfa yenilemesinde gerçek SDK oturumunu geri yükler; demo yolu senkron kalır. */
-export async function getCurrentUser(): Promise<DemoUser | null> {
-  if (isAuthLocallySignedOut()) return null;
-  const client = getSupabase();
-  if (!client) return getStoredUser();
-  const snapshot = await readWithinAuthEpoch(() => client.auth.getSession());
-  if (snapshot === null) return null;
-  const { data, error } = snapshot;
-  if (error || !data.session?.user) return null;
-  return userFromSupabase(data.session.user);
-}
-
-function userFromSupabase(user: {
-  id: string;
-  email?: string;
-  user_metadata?: Record<string, unknown>;
-}): DemoUser {
-  const metadataName = user.user_metadata?.full_name;
-  const email = user.email ?? "";
-  return {
-    id: user.id,
-    email,
-    fullName:
-      typeof metadataName === "string" && metadataName.trim()
-        ? metadataName.trim()
-        : email.split("@")[0] || "Kullanıcı",
-    // Rol bir auth claim'i değildir; ders sayfasında `/courses/{id}` yanıtından
-    // yeniden çözülür. Bu değer yalnız ders dışı başlıkların geriye uyumlu alanıdır.
-    role: "student",
-  };
-}
-
-async function accessToken(): Promise<string | null> {
-  if (isAuthLocallySignedOut()) return null;
-  const client = getSupabase();
-  if (client) {
-    const snapshot = await readWithinAuthEpoch(() => client.auth.getSession());
-    return snapshot?.data.session?.access_token ?? null;
-  }
-  return typeof window === "undefined" ? null : localStorage.getItem(TOKEN_KEY);
-}
 
 export class ApiError extends Error {
   constructor(
@@ -407,17 +248,21 @@ const TIMEOUT_MESSAGE = "Sunucu zamanında yanıt vermedi. Lütfen tekrar deneyi
  * Zamanlayıcı gövde okunana kadar yaşar: yanıt başlıkları hızlı gelip gövdesi
  * asılı kalan bir sunucu da bütçeyi aşmış sayılır.
  */
-async function attempt<T>(path: string, init: RequestInit | undefined, budgetMs: number): Promise<T> {
+async function attempt<T>(path: string, init: RequestInit | undefined, budgetMs: number, requestedEpoch: AuthEpochSnapshot): Promise<T> {
   const token = await accessToken();
+  if (!isAuthEpochCurrent(requestedEpoch)) throw new ApiError("Oturum değişti. Yeniden deneyin.", "unauthenticated", 401);
   const headers = new Headers(init?.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), budgetMs);
   try {
-    return await readResponse<T>(
-      await fetch(`${API_URL}${path}`, { ...init, headers, signal: controller.signal }),
-    );
+    const response = await fetch(`${API_URL}${path}`, { ...init, headers, signal: controller.signal });
+    // Gövde gecikse/bozulsa da 401 özel görünümü hemen kapatır; 403 kapatmaz.
+    if (response.status === 401) expireAuthSession(requestedEpoch);
+    const result = await readResponse<T>(response);
+    if (!isAuthEpochCurrent(requestedEpoch)) throw new ApiError("Oturum değişti. Yeniden deneyin.", "unauthenticated", 401);
+    return result;
   } catch (e) {
     // Bütçe dolduysa `fetch` bir iptal hatasıyla düşer; kullanıcıya gösterilecek
     // olan o düşük seviyeli metin değil, ne olduğunu söyleyen cümledir.
@@ -484,7 +329,8 @@ async function readResponse<T>(response: Response): Promise<T> {
  */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const budgetMs = BUDGET_MS[budgetFor(path, init)];
-  return withRetry(() => attempt<T>(path, init, budgetMs), {
+  const requestedEpoch = captureAuthEpoch();
+  return withRetry(() => attempt<T>(path, init, budgetMs, requestedEpoch), {
     retries: retriesFor(init),
     sleep,
     random: Math.random,
