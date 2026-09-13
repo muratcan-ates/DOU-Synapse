@@ -1,11 +1,9 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { test, student, teacherHeaders, studentHeaders, signIn } from "./worker-fixture";
+import { expect, type APIRequestContext } from "@playwright/test";
 
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const teacherHeaders = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
-const student = { id: "22222222-2222-2222-2222-222222222222", email: "burak@dogus.edu.tr", fullName: "Burak Yılmaz", role: "student" };
-const studentHeaders = { Authorization: `Bearer dev:${student.id}` };
 
 // Synthetic preparation goes through the same instructor API as the UI.
 async function prepareCourse(request: APIRequestContext) {
@@ -44,10 +42,7 @@ async function prepareCourse(request: APIRequestContext) {
 test("öğrenci konu seçer, yayımlanan sınava döner ve kaynaklı sonucunu yeniden açar", async ({ page, request }, testInfo) => {
   test.setTimeout(120_000);
   const { course, topic, question, blueprint, base } = await prepareCourse(request);
-  await page.addInitScript((user) => {
-    localStorage.setItem("dou-synapse-token", `dev:${user.id}`);
-    localStorage.setItem("dou-synapse-user", JSON.stringify(user));
-  }, student);
+  await signIn(page, student);
   await page.goto(`/courses/${course.id}/exam`);
   await expect(page.getByRole("heading", { name: "Şu anda açık sınavlar" })).toBeVisible();
   await page.getByLabel("Çalışma konusu").selectOption(topic.id);

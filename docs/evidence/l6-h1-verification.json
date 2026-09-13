@@ -1,0 +1,236 @@
+{
+  "captured_at": "2026-09-13T15:29:47.607656+00:00",
+  "status": "partial",
+  "scope": "H1 sentetik kimlik izolasyonu ve düzeltilen yarış vakaları; üç ardışık tam paket kabulü açık.",
+  "provider": "fake-provider / hashing",
+  "runs": [
+    {
+      "label": "h1-01",
+      "result": {
+        "auditFinishExitCode": 1,
+        "database": "dou_l6_e2e_h1_01",
+        "error": null,
+        "harnessSha256": "7523869a76128db5aaa38edc1b9d99d09b99c089810273f37bf4b95ee01883d9",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 130,
+        "runId": "l6dcd2c376375aac",
+        "sourceUnchanged": true,
+        "status": "FAIL",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "summary": [
+        "5 failed",
+        "1 interrupted",
+        "44 did not run",
+        "21 passed (5.4m)"
+      ],
+      "playwright_log_sha256": "faaf65f7219ceeb3c9343a5585db8358b4d970a780b0635579c7798c4198f610",
+      "source_before_sha256": "ff236a756421a2b9fcebd2c99a3a3eef6894b88bee4ffd7ef11aaa0eabc03506",
+      "local_evidence_directory": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-01"
+    },
+    {
+      "label": "h1-email-check",
+      "result": {
+        "auditFinishExitCode": 0,
+        "database": "dou_l6_e2e_h1_email_check",
+        "error": null,
+        "harnessSha256": "c00de82cc44ec8aaca11a6665da841dc6c60ef047639a011ddc35ee8dd9ca29a",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l6fa94f4c3a59ba6",
+        "sourceUnchanged": true,
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "portal.spec.ts",
+          "chat-history-deletion.spec.ts",
+          "--grep",
+          "profil PATCH|öğrenci tek"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "summary": [
+        "2 passed (3.8m)"
+      ],
+      "playwright_log_sha256": "ee78f34e3288a16e8004e50b6ced663c9157337404b5eb7b4458b4108d83868f",
+      "source_before_sha256": "bbd18ea590c326bf0a414336813ca67ada77a5c7e71998ad9a5654e0b4b61e70",
+      "local_evidence_directory": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-email-check"
+    },
+    {
+      "label": "h1-02",
+      "result": {
+        "auditFinishExitCode": 1,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_02",
+        "error": null,
+        "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 130,
+        "runId": "l6e7f219f4117957",
+        "sourceUnchanged": true,
+        "status": "FAIL",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "--config",
+          "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "summary": [
+        "4 failed",
+        "1 interrupted",
+        "35 did not run",
+        "31 passed (15.0m)"
+      ],
+      "playwright_log_sha256": "fc878c3b80ffea814d76d0977fe1accf2d8e0c2bb087dde272305d26f9b9d03e",
+      "source_before_sha256": "963b22550b3210612eeca5dffa3ab58326b68e3347199f2b7df8a007e3d312e1",
+      "local_evidence_directory": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-02"
+    },
+    {
+      "label": "h1-race-check",
+      "result": {
+        "auditFinishExitCode": 0,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_race_check",
+        "error": null,
+        "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l611e7f1c386e262",
+        "sourceUnchanged": true,
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "--config",
+          "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts",
+          "chat-history-deletion.spec.ts",
+          "code-rubric-feedback.spec.ts",
+          "exam-completion-guards.spec.ts",
+          "--grep",
+          "ders silmesi bekleyen|code_trace:|bir ve sıfır|başka sekmede başlayan sınav eski"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "summary": [
+        "4 passed (3.4m)"
+      ],
+      "playwright_log_sha256": "dbc2844cfb0d6e063219650036463f1d04f3988dc2cda69ce9dd3b7e855032d4",
+      "source_before_sha256": "14b6d2d54bea6a65ebdf01d3a96b9346103f209311a4c4bd1f0fafa8760d4d7a",
+      "local_evidence_directory": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-race-check"
+    },
+    {
+      "label": "h1-03",
+      "result": {
+        "auditFinishExitCode": 1,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_03",
+        "error": null,
+        "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 1,
+        "runId": "l67599b79399348b",
+        "sourceUnchanged": true,
+        "status": "FAIL",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "--config",
+          "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts",
+          "--max-failures=1"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "summary": [
+        "1 failed",
+        "1 interrupted",
+        "66 did not run",
+        "3 passed (2.7m)"
+      ],
+      "playwright_log_sha256": "eeecd833067255d77f8253ffdb29ced2d19e28a4406822406c6a5cc7ee59b821",
+      "source_before_sha256": "14b6d2d54bea6a65ebdf01d3a96b9346103f209311a4c4bd1f0fafa8760d4d7a",
+      "local_evidence_directory": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-03"
+    },
+    {
+      "label": "h1-04",
+      "result": {
+        "auditFinishExitCode": 1,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_04",
+        "error": null,
+        "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 1,
+        "runId": "l68598cd613508ed",
+        "sourceUnchanged": true,
+        "status": "FAIL",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "--config",
+          "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts",
+          "--max-failures=1"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "summary": [
+        "1 failed",
+        "1 interrupted",
+        "50 did not run",
+        "19 passed (5.3m)"
+      ],
+      "playwright_log_sha256": "9f9db5f1429ac048440818afb5a3f430fb264d2bde5253575f453a80a618c0e1",
+      "source_before_sha256": "93984f7efc5ac32d2bcb08e1f6c5a55bfe132e64eb8a8265d86ed1397fe3b758",
+      "local_evidence_directory": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-04"
+    }
+  ],
+  "blocked_acceptance": [
+    "Üç ardışık tam iki-worker koşusu yok. Son tam koşuda web sunucusu143 ile çıktı; bağlantı reddi kaydedildi, sinyalin kaynağı belirlenmedi.",
+    "Genel sahipli çalıştırıcı --workers=1 zorlaması ve gecelik workflow L6 sahipliği dışındadır."
+  ],
+  "limits": [
+    "Yerel macOS Chrome koşuları Linux CI baseline değildir.",
+    "Dar başarılı yarış koşusu son bekleme bütçesi değişiminden önceki konfigürasyondadır; bütün son adayın kabulü sayılmaz.",
+    "Kayıtlar gerçek LLM kalitesi, üretim kapasitesi veya canlı kimlik sağlayıcısı kanıtı değildir."
+  ]
+}

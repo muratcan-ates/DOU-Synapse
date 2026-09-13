@@ -1,8 +1,9 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { test, teacher as workerTeacher, teacherHeaders, signIn } from "./worker-fixture";
+import { expect, type APIRequestContext } from "@playwright/test";
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const headers = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
+const headers = teacherHeaders;
 async function post(request: APIRequestContext, path: string, data: unknown = {}) {
   const response = await request.post(`${API}${path}`, { headers, data });
   expect(response.ok(), await response.text()).toBeTruthy(); return response.json();
@@ -63,8 +64,7 @@ test("sunucu süzgeci ilk sayfa dışını bulur; boş sonuç ve geç devam sayf
     }
     await route.fulfill({ response });
   });
-  await page.goto("/"); await page.getByRole("button", { name: /Ayşe/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await signIn(page, workerTeacher);
   await page.goto(`${path}/questions`);
   const filters = page.getByRole("group", { name: "Soruların durum süzgeci", exact: true });
   const list = page.getByRole("list", { name: "Soru havuzu", exact: true });

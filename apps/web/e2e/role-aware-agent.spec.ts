@@ -1,3 +1,4 @@
+import { test, teacher as AYSE, student as BURAK, signIn, type WorkerUser as DemoUser } from "./worker-fixture";
 /**
  * Ders kapsamlı asistanın rolünü istemcinin değil sunucunun belirlediğini
  * gerçek API ve gerçek portal üzerinden kanıtlar.
@@ -6,26 +7,12 @@
  * eklenmez; availability ve chat yanıtındaki zarf ders üyeliğinden gelir.
  */
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 
-const AYSE = {
-  id: "11111111-1111-1111-1111-111111111111",
-  email: "ayse@dogus.edu.tr",
-  fullName: "Ayşe Hoca",
-  role: "instructor" as const,
-};
-const BURAK = {
-  id: "22222222-2222-2222-2222-222222222222",
-  email: "burak@dogus.edu.tr",
-  fullName: "Burak Yılmaz",
-  role: "student" as const,
-};
-
-type DemoUser = typeof AYSE | typeof BURAK;
 
 interface Course {
   id: string;
@@ -43,15 +30,6 @@ function authorization(user: DemoUser) {
   return `Bearer dev:${user.id}`;
 }
 
-async function signIn(page: Page, user: DemoUser) {
-  await page.addInitScript(
-    ([token, payload]) => {
-      localStorage.setItem("dou-synapse-token", token as string);
-      localStorage.setItem("dou-synapse-user", payload as string);
-    },
-    [`dev:${user.id}`, JSON.stringify(user)],
-  );
-}
 
 async function apiPost<T>(path: string, body: unknown, user: DemoUser): Promise<T> {
   const response = await fetch(`${API}${path}`, {
@@ -123,7 +101,6 @@ function requestsFor(calls: BrowserApiCall[], method: string, path: string) {
 }
 
 test.describe("rolü sunucudan gelen ders asistanı", () => {
-  test.describe.configure({ mode: "serial" });
 
   test("öğrenci dashboard'unda Ders Koçu kimliği üyelikten gelir", async ({ page }) => {
     const course = await createCourse("AGENTOGR");
