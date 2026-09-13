@@ -41,7 +41,7 @@ koşu bu kabulü kapatmaz. Yeniden denemede geçen vaka kararlı sayılmaz.
 **ENGEL:** `scripts/run_owned_e2e.py` genel komutu hâlâ `--workers=1` ile çağırıyor.
 Bu dosya L6 yüzeyi dışında; yapılandırmadaki iki worker değeri CLI zorlamasını
 aşmaz. Çalıştırıcı sahibi bu zorlamayı kaldırmadan genel hattın paralel olduğu
-iddia edilmez. Üç ardışık iki-worker kabulü **tamamlanmadı**; başarısız/kesilmiş koşular başarılı sayılmaz.
+iddia edilmez. Aşağıdaki üçlü yerel tekrar kabulü tamamlandı; genel hat için bu engel sürer. Başarısız/kesilmiş koşular başarılı sayılmaz.
 
 ## Yerel doğrulama — 13 Eylül 2026
 
@@ -53,9 +53,9 @@ profil ve sohbet silme dar koşusu başarılıdır. Gecikmiş sohbet yanıtı, k
 rubrik, değişen ipucu sınırı ve ikinci sekmenin başlangıcı için dört vaka iki
 worker ile geçti; gerçek API kapanışı ve audit muhasebesi de başarılıydı.
 
-Tam paketin son denemesinde web sunucusu 143 çıkış koduyla sonlandı ve ardından
-bağlantı reddi alındı. Sinyalin kaynağı belirlenmedi. Bu **ENGEL** nedeniyle H1
-kararlılık kabulü açık; ortak kapılar veya dar koşular bu eksik kabulü kapatmaz.
+İlk hazırlığın son tam denemesinde (`h1-04`) web sunucusu 143 çıkış koduyla sonlandı
+ve ardından bağlantı reddi alındı. Sinyalin kaynağı belirlenmedi; o aşamada H1
+kararlılık kabulü açık kaldı. Ortak kapılar veya dar koşular bu eksik kabulü kapatmadı.
 Başarısız koşuların audit kayıtlarında kayıp/değişmiş/beklenmeyen satır yoktu,
 ama test başarısızlığı nedeniyle genel audit sonucu da başarılı sayılmadı.
 
@@ -63,6 +63,43 @@ Yerel tekrarlar API adresi gömülü aynı üretim derlemesini kullanır. Yerel
 `repeat.config.ts`, depo projelerini/testlerini koruyup yalnız web başlatmayı
 hazır derlemeye yönlendirir; kaynak ve derleme özetleri koşu öncesi/sonrası
 karşılaştırılır. Yeni bir kaynak değişiminde üç ardışık kabul yeniden başlar.
+
+## Üç ardışık yerel koşu — 13 Eylül 2026
+
+`1fd438e8f3e2d84405f74c3e1c85cbe885b42717` adayı için normal paket, aynı üretim derlemesiyle
+iki worker kullanarak üç kez art arda ve yeniden denemesiz tamamlandı. Her koşuda
+71 test geçti. <!-- docs-check: tarihsel 71 · 2026-09-13 -->
+Başarısız, kesilen, atlanan veya çalıştırılmayan vaka kalmadı. Ayrı koşu kimlikleri
+ve veritabanları kullanıldı; `chromium` ve `llm` projeleri tamamlandı.
+[Gerçek koşu kaydı](evidence/l6-h1-stability.json), komutları, ham kanıt özetlerini
+ve API kapanışı sonrası audit sonuçlarını içerir.
+
+| Koşu | Geçen vaka / worker | Playwright süre kaydı | Playwright / API / audit rc | Kaynak ve derleme |
+|---|---|---|---|---|
+| `h1-stable-01` | 71 / 2 | 1.1m | 0 / 0 / 0 | Aynı |
+| `h1-stable-02` | 71 / 2 | 1.3m | 0 / 0 / 0 | Aynı |
+| `h1-stable-03` | 71 / 2 | 1.2m | 0 / 0 / 0 | Aynı |
+
+Kaynak ve üretim derlemesi özetleri hem koşu içinde hem üç koşu arasında aynıydı.
+Runtime çalıştırıcı ve `repeat.config.ts` özetleri ayrıca karşılaştırıldı. Bu,
+yalnız yerel macOS Chrome, sahte sağlayıcı ve hashing kapsamındaki paralel tekrar
+kabulüdür. Linux CI, gerçek LLM kalitesi veya canlı ortam kabulü değildir.
+Normal paket `@ekran` üretimini, opt-in görsel projeyi ve yayımlanmamış H3/H4
+aday testlerini içermez. Genel çalıştırıcının tek-worker zorlaması ve aşağıdaki
+gecelik hat engeli açık kalır.
+
+### Önceki yeniden başlatma denemesi
+
+`h1-final-01` tam paketi geçirdi; hemen sonraki `h1-final-02`, API ve tarayıcı
+başlamadan `OSError` ile durdu. Bu ikinci denemenin API/son audit çıkışı yoktur;
+başlangıçtaki Playwright çıkış alanı, çalıştırılmış bir test sonucu değildir.
+Kopyalanmış eski `test-results` görselleri bu denemenin yeni kanıtı sayılmadı.
+
+Yerel çalıştırıcıya `SO_REUSEADDR` ve hata ayrıntısı kaydı eklendi; mevcut dinleyici
+paylaşılmadı ve ürün kaynakları değişmedi. İlk hatanın errno değeri kaydedilmediği
+için kesin neden ölçülmüş değildir. Sonraki port sondalarının geçmesi geriye dönük
+neden kanıtı sayılmadı. Çalıştırıcı değiştikten sonra üçlü seri baştan başlatıldı;
+yukarıdaki kabul yalnız `h1-stable-01/02/03` sonuçlarına dayanır.
 
 ## Kararsız test karantinası
 

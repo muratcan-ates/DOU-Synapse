@@ -1,0 +1,262 @@
+{
+  "captured_at": "2026-09-13T17:58:00.411829+00:00",
+  "task": "H1 consecutive local two-worker verification",
+  "status": "passed-local-scope; shared runner and nightly lane blockers remain",
+  "source_parent_sha": "1fd438e8f3e2d84405f74c3e1c85cbe885b42717",
+  "series": {
+    "created_at": "2026-09-13T17:52:20.570740+00:00",
+    "head": "1fd438e8f3e2d84405f74c3e1c85cbe885b42717",
+    "runtime_and_config": {
+      "/Users/muratates/code/dou-synapse-l6-runtime/run_e2e.py": "ba65973b005f66a9f4e3a98546358be15f9850e83c4e5b4c62cab23f0ee3ba99",
+      "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts": "1022d49ce85ee22dc41918841a0d24a38fbb28484aecc99261b10110ae829ed5",
+      "/Users/muratates/code/dou-synapse-l6-frontend-docs/apps/web/playwright.config.ts": "54f39ca0a1422b0ed381e2865467018c227b4a53242f88ebbc0309f02d38b979",
+      "/Users/muratates/code/dou-synapse-l6-frontend-docs/apps/web/.next/BUILD_ID": "25a148e39024820dce6c86fbe9e24fc4e2a8ae8f5782f314494fd9353e6da02f"
+    },
+    "production_build_id": "Wz_rzo7Y7mCpgchi73D63",
+    "series": "h1-stable",
+    "acceptance": "Three sequential complete normal suite runs; two workers, no CLI test filter, retries 0, no source/runtime/build changes; PW/API/audit all0."
+  },
+  "series_pin_sha256": "cc6e9da7c84670ddba091f79fbebff21fd618d6da0ce8fbd066990b28afe9721",
+  "runs": [
+    {
+      "label": "h1-stable-01",
+      "tests_run": 71,
+      "tests_passed": 71,
+      "workers_used": 2,
+      "elapsed_as_reported": "1.1m",
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "--config",
+          "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "result": {
+        "auditFinishExitCode": 0,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_stable_01",
+        "error": null,
+        "harnessSha256": "ba65973b005f66a9f4e3a98546358be15f9850e83c4e5b4c62cab23f0ee3ba99",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l633dde3f480e31b",
+        "sourceUnchanged": true,
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "source_parent_sha": "1fd438e8f3e2d84405f74c3e1c85cbe885b42717",
+      "file_sha256": {
+        "command.json": "095fe3dd43b57d029f014622d9df626d4ee2b91fc2bc0cb58ff8dd2edeb65e85",
+        "result.json": "0580585bd4a4f3d8a5a41f8d33b18f26bce788164b7484e3811aef6c4711c68d",
+        "provision.json": "e058fe951c5ea63a95b3823f33c2d596b825f9bea4a287a72b9b09e02fd63eae",
+        "playwright.log": "a5b60543577b3f2ae0179518a1f207a0feab74cfcdcbde979c56d887c71a0474",
+        "source-before.json": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+        "source-after.json": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+        "build-before.json": "3af315a7d17c3d47d35e997fb46bb168af734e42d8f07cd988d0fb3f7704488a",
+        "build-after.json": "3af315a7d17c3d47d35e997fb46bb168af734e42d8f07cd988d0fb3f7704488a",
+        "audit/final-accounting.json": "a10b193e4d4968c2fc9b47576b1998f9d82a84ba34976e04370cfc237a0c7f31",
+        "quiescence.json": "5020d4e6f130c904229c9d5b05c7aa2932019817d93e2a587624e14a9e499a4b"
+      },
+      "audit": {
+        "status": "PASS",
+        "before_count": 0,
+        "after_count": 0,
+        "missing_baseline_count": 0,
+        "changed_baseline_count": 0,
+        "unexpected_new_count": 0
+      },
+      "raw_evidence": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-stable-01"
+    },
+    {
+      "label": "h1-stable-02",
+      "tests_run": 71,
+      "tests_passed": 71,
+      "workers_used": 2,
+      "elapsed_as_reported": "1.3m",
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "--config",
+          "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "result": {
+        "auditFinishExitCode": 0,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_stable_02",
+        "error": null,
+        "harnessSha256": "ba65973b005f66a9f4e3a98546358be15f9850e83c4e5b4c62cab23f0ee3ba99",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l643550ee8f3a5c6",
+        "sourceUnchanged": true,
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "source_parent_sha": "1fd438e8f3e2d84405f74c3e1c85cbe885b42717",
+      "file_sha256": {
+        "command.json": "095fe3dd43b57d029f014622d9df626d4ee2b91fc2bc0cb58ff8dd2edeb65e85",
+        "result.json": "c9743b39cbba28f20e378ed72d3d0d76561f0a24386d7be23ec02b133ce544a7",
+        "provision.json": "8bb785501dc651abf6e5fa0353d25121d23f8d876595af4f27578727e8f5ac35",
+        "playwright.log": "050117cb5fa4fa00cadcccfdc63c238838c863b951971910a7aaa51503dd8ea6",
+        "source-before.json": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+        "source-after.json": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+        "build-before.json": "3af315a7d17c3d47d35e997fb46bb168af734e42d8f07cd988d0fb3f7704488a",
+        "build-after.json": "3af315a7d17c3d47d35e997fb46bb168af734e42d8f07cd988d0fb3f7704488a",
+        "audit/final-accounting.json": "e7be43f3f015bbc6b96c4dab76bde47e5d33bd54899921345e6992260377a04a",
+        "quiescence.json": "b5369a7a9f93ab47b792f0cfae5daa4b302e9e834beee19fd16dd98947576c6d"
+      },
+      "audit": {
+        "status": "PASS",
+        "before_count": 0,
+        "after_count": 0,
+        "missing_baseline_count": 0,
+        "changed_baseline_count": 0,
+        "unexpected_new_count": 0
+      },
+      "raw_evidence": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-stable-02"
+    },
+    {
+      "label": "h1-stable-03",
+      "tests_run": 71,
+      "tests_passed": 71,
+      "workers_used": 2,
+      "elapsed_as_reported": "1.2m",
+      "command": {
+        "command": [
+          "./node_modules/.bin/playwright",
+          "test",
+          "--workers=2",
+          "--config",
+          "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts"
+        ],
+        "provider": "fake-provider",
+        "webPort": 3146
+      },
+      "result": {
+        "auditFinishExitCode": 0,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_stable_03",
+        "error": null,
+        "harnessSha256": "ba65973b005f66a9f4e3a98546358be15f9850e83c4e5b4c62cab23f0ee3ba99",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l6f0ba053c8dd462",
+        "sourceUnchanged": true,
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "source_parent_sha": "1fd438e8f3e2d84405f74c3e1c85cbe885b42717",
+      "file_sha256": {
+        "command.json": "095fe3dd43b57d029f014622d9df626d4ee2b91fc2bc0cb58ff8dd2edeb65e85",
+        "result.json": "3f1d0d883bfe7e272b6c277476db1c2c3988c5ca1168c969412e03b67c94cc2f",
+        "provision.json": "90fb054b13360738ac1ef5d8e02d0b28cc880025c85d8c99bce4eedb94fa47ce",
+        "playwright.log": "0ce5135af003e8230b97f6fa6adc7702779598cfdffbea1ce6f6e2eb4d31ba2b",
+        "source-before.json": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+        "source-after.json": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+        "build-before.json": "3af315a7d17c3d47d35e997fb46bb168af734e42d8f07cd988d0fb3f7704488a",
+        "build-after.json": "3af315a7d17c3d47d35e997fb46bb168af734e42d8f07cd988d0fb3f7704488a",
+        "audit/final-accounting.json": "28f4451a9f73896c65e59c3c78859a1620568272e5467888f36790534fc1e101",
+        "quiescence.json": "f1cad5094bc0ddbe3828d7d279a07788bf72b34b4724f9cff648a150a798be45"
+      },
+      "audit": {
+        "status": "PASS",
+        "before_count": 0,
+        "after_count": 0,
+        "missing_baseline_count": 0,
+        "changed_baseline_count": 0,
+        "unexpected_new_count": 0
+      },
+      "raw_evidence": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-stable-03"
+    }
+  ],
+  "cross_run_checks": {
+    "source_hashes_identical": true,
+    "production_build_hashes_identical": true,
+    "runtime_and_config_hashes_identical": true,
+    "distinct_run_ids": true,
+    "distinct_databases": true,
+    "full_normal_projects": [
+      "chromium",
+      "llm"
+    ],
+    "no_test_selection_filter": true,
+    "retries_configured": 0,
+    "no_failed_skipped_flaky_interrupted_or_unrun_summary": true
+  },
+  "prior_attempts": [
+    {
+      "label": "h1-final-01",
+      "result": {
+        "auditFinishExitCode": 0,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_final_01",
+        "error": null,
+        "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l649b8175387987a",
+        "sourceUnchanged": true,
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "result_sha256": "138e8bacc4d40dc46999f7acb3562200d5514bd565ed7d24831feccc7558917d",
+      "raw_evidence": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-final-01",
+      "playwright_log_sha256": "4c9dbe291dd9985b5e36aa4f70dde203cbab4300647c7fc5e54379d4edc42ccf",
+      "summary": [
+        "71 passed (1.5m)"
+      ]
+    },
+    {
+      "label": "h1-final-02",
+      "result": {
+        "auditFinishExitCode": null,
+        "buildReused": true,
+        "buildUnchanged": true,
+        "database": "dou_l6_e2e_h1_final_02",
+        "error": "OSError",
+        "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+        "ownedApiExitCode": null,
+        "playwrightExitCode": 1,
+        "runId": "l69a5b67521545b6",
+        "sourceUnchanged": true,
+        "status": "FAIL",
+        "stopObservation": "not-started"
+      },
+      "result_sha256": "f63fe300d5eabd5b042d1490b34cbec9a2ee880411fa6e6ae1c8f5102710730a",
+      "raw_evidence": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/h1-final-02",
+      "execution_status": "not-started; stored Playwright rc1 is initializer, not executed test result",
+      "test_results": "Copied prior test-results excluded; no command or Playwright log from this attempt.",
+      "diagnostic_sha256": "f2fcd960bb932bde1fa20d3c1093fe60d88a8c018a653dbb4a2f7add2977fd92"
+    }
+  ],
+  "runtime_recovery": {
+    "original_harness_sha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+    "current_harness_sha256": "ba65973b005f66a9f4e3a98546358be15f9850e83c4e5b4c62cab23f0ee3ba99",
+    "changes": [
+      "SO_REUSEADDR before exclusive bind/listen; no SO_REUSEPORT or reuseExistingServer",
+      "Write exception type/errno/message on future failures"
+    ],
+    "cause_limit": "Original pre-start OSError errno was not recorded; TIME_WAIT is not a measured root cause. Later bind probes succeeded with and without reuse; no LISTEN owner remained.",
+    "repository_source_modified": false
+  },
+  "limits": [
+    "Local macOS Chrome, fake-provider and hashing; not real-provider quality or Linux CI acceptance.",
+    "Normal suite excludes @ekran and opt-in visual project; unpublished H3/H4 candidate tests are absent.",
+    "scripts/run_owned_e2e.py still forces --workers=1; outside L6 ownership, general pipeline parallelism remains open.",
+    "Nightly quarantine workflow absent; outside L6 ownership.",
+    "Earlier failed runs and tests-not-started attempt remain failures; no skipped/quarantined/retried test was counted as stable."
+  ]
+}
