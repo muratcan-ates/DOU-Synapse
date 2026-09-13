@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "change_id": "060-migration-runner-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T14:38:17.791457+00:00",
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "scope": "G2: yeni scripts/migrate.sh ve scripts/test_migrate.sh. Tek oturum kilidi aynı göçün eşzamanlı uygulanmasını engeller; hash defteri geçmiş dosya değişikliğini reddeder.",
+  "commands": [
+    "PATH=/opt/homebrew/opt/postgresql@16/bin:$PATH PGHOST=127.0.0.1 PGPORT=55463 PGUSER=muratates scripts/test_migrate.sh",
+    "sh -n scripts/migrate.sh scripts/test_migrate.sh"
+  ],
+  "results": {
+    "migration_acceptance_rc": 0,
+    "shell_syntax_rc": 0,
+    "output": "PASS: Temiz veritabanında kuru koşu salt okunur ve yalnız bekleyen dosyaları listeler.\nPASS: Temiz veritabanına depodaki tüm göçler uygulanır ve gerçek özetleri kaydedilir.\nPASS: İkinci koşum no-op; güncel kuru koşu boş ve defter değişmez.\nPASS: N-1 → N yükseltmesi ve bekleyen tek göç için salt okunur kuru koşu.\nPASS: Uygulanmış dosyanın değişmesi veya kaybolması normal ve kuru koşuyu durdurur.\nPASS: Bozuk SQL rc≠0 döndürür, başarı kaydı oluşturmaz ve kilidi bırakır.\nPASS: CREATE INDEX CONCURRENTLY tek işlem sarmalı olmadan çalışır.\nPASS: İki gerçek runner tek oturum advisory kilidiyle seri çalışır.\nPASS: Göç runner kabul kontrolleri tamamlandı.\n"
+  },
+  "required_gates": {
+    "ruff": {
+      "command": ".venv/bin/ruff check .",
+      "cwd": "apps/api",
+      "rc": 0,
+      "seconds": 0.21,
+      "tail": "All checks passed!\n"
+    },
+    "format": {
+      "command": ".venv/bin/ruff format --check .",
+      "cwd": "apps/api",
+      "rc": 0,
+      "seconds": 0.03,
+      "tail": "206 files already formatted\n"
+    },
+    "mypy": {
+      "command": ".venv/bin/mypy app",
+      "cwd": "apps/api",
+      "rc": 0,
+      "seconds": 2.81,
+      "tail": "Success: no issues found in 114 source files\n"
+    },
+    "pytest": {
+      "command": ".venv/bin/python -m pytest -q",
+      "cwd": "apps/api",
+      "rc": 0,
+      "seconds": 434.42,
+      "tail": "........................................................................ [  4%]\n........................................................................ [  8%]\n........................................................................ [ 12%]\n........................................................................ [ 17%]\n........................................................................ [ 21%]\n........................................................................ [ 25%]\n........................................................................ [ 29%]\n........................................................................ [ 34%]\n........................................................................ [ 38%]\n........................................................................ [ 42%]\n........................................................................ [ 46%]\n........................................................................ [ 51%]\n........................................................................ [ 55%]\n........................................................................ [ 59%]\n........................................................................ [ 63%]\n........................................................................ [ 68%]\n........................................................................ [ 72%]\n.......................................................................................................... [ 78%]\n........................................................................ [ 83%]\n........................................................................ [ 87%]\n........................................................................ [ 91%]\n........................................................................ [ 95%]\n.......................................................................  [100%]\n=============================== warnings summary ===============================\ntests/test_documents_api.py::TestUpload::test_pdf_yuklenir_ve_islenir\ntests/test_documents_api.py::TestUpload::test_pdf_yuklenir_ve_islenir\n  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyPacked has no __module__ attribute\n\ntests/test_documents_api.py::TestUpload::test_pdf_yuklenir_ve_islenir\ntests/test_documents_api.py::TestUpload::test_pdf_yuklenir_ve_islenir\n  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type SwigPyObject has no __module__ attribute\n\ntests/test_documents_api.py::TestUpload::test_pdf_yuklenir_ve_islenir\n  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n1689 passed, 5 warnings, 38 subtests passed in 386.28s (0:06:26)\nsys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute\n"
+    },
+    "bun": {
+      "command": "bun test lib/",
+      "cwd": "apps/web",
+      "rc": 0,
+      "seconds": 1.62,
+      "tail": "eski cevap taze veriyi ezmez > geç dönen eski HATA taze veriyi bozmaz [0.20ms]\n(pass) istek sıra kapısı — geç dönen eski cevap taze veriyi ezmez > sıra dışı dönüş olmadığında normal akış bozulmaz [0.11ms]\n(pass) istek sıra kapısı — geç dönen eski cevap taze veriyi ezmez > deps değişimi (reset) uçuştaki cevabı geçersizler [1.29ms]\n(pass) istek sıra kapısı — geç dönen eski cevap taze veriyi ezmez > reset sonrası yeni istek yine yazabilir [0.17ms]\n(pass) istek sıra kapısı — geç dönen eski cevap taze veriyi ezmez > kapı kimlikleri tekrar etmez [0.05ms]\n(pass) durum makinesi — geçici hata sayfayı silmez > elde veri YOKKEN hata ekranı kapatan hatadır [0.07ms]\n(pass) durum makinesi — geçici hata sayfayı silmez > elde veri VARKEN hata `data`'yı silmez, `error`'ı doldurmaz [0.04ms]\n(pass) durum makinesi — geçici hata sayfayı silmez > üst üste başarısız tazeleme de veriyi silmez [0.04ms]\n(pass) durum makinesi — geçici hata sayfayı silmez > başarılı tur her iki hatayı da temizler [0.05ms]\n(pass) durum makinesi — geçici hata sayfayı silmez > reset her şeyi sıfırlar (deps değişimi) [0.05ms]\n(pass) durum makinesi — geçici hata sayfayı silmez > hiçbir alan değişmiyorsa ESKİ nesne döner (boşuna render yok) [0.05ms]\n(pass) durum makinesi — geçici hata sayfayı silmez > `loading` yalnız ilk yüklemede doğrudur [0.07ms]\n(pass) yoklama aralığı — başarısızlıkta yavaşlar (T404, FR-156) > her şey yolundayken taban aralık kullanılır [0.06ms]\n(pass) yoklama aralığı — başarısızlıkta yavaşlar (T404, FR-156) > ardışık başarısızlıkta aralık ikişer katlanır [0.04ms]\n(pass) yoklama aralığı — başarısızlıkta yavaşlar (T404, FR-156) > tavan var: yoklama seyrekleşir ama BÜSBÜTÜN durmaz [0.04ms]\n(pass) yoklama aralığı — başarısızlıkta yavaşlar (T404, FR-156) > taban tavandan büyükse aralık SESSİZCE kısalmaz [0.03ms]\n(pass) yoklama aralığı — başarısızlıkta yavaşlar (T404, FR-156) > başarılı tek tur sayacı sıfırlar [0.36ms]\n(pass) yoklama aralığı — başarısızlıkta yavaşlar (T404, FR-156) > deps değişimi de sayacı sıfırlar: yeni dersin suçu yok [0.03ms]\n(pass) hata sınıfı ve destek kodu kancadan çıkar (T403/T406) > sunucu hatası sınıfını ve destek kodunu taşır [0.23ms]\n(pass) hata sınıfı ve destek kodu kancadan çıkar (T403/T406) > ağ hatası geçicidir ve destek kodu taşımaz [0.18ms]\n(pass) hata sınıfı ve destek kodu kancadan çıkar (T403/T406) > başarılı tur sınıfı ve kodu temizler: ekranda eskimiş uyarı kalmaz [0.97ms]\n(pass) hata sınıfı ve destek kodu kancadan çıkar (T403/T406) > geç dönen eski hata taze verinin sınıfını da bozmaz [2.23ms]\n\nlib/route-metadata.test.ts:\n(pass) yaprak rotalar kendi ayırt edici sekme başlığını taşır [0.06ms]\n\nlib/use-chat-session.test.ts:\n(pass) openableSessionMode — liste satırından oturum açma kapısı > izinli mod + eşleşen zarf: oturum kendi moduyla açılır [0.12ms]\n(pass) openableSessionMode — liste satırından oturum açma kapısı > sınav oturumu sohbet ekranında AÇILMAZ (uç `exam` kabul etmez) [0.04ms]\n(pass) openableSessionMode — liste satırından oturum açma kapısı > politika modu kapattıysa eski oturum açılmaz [0.06ms]\n(pass) openableSessionMode — liste satırından oturum açma kapısı > farklı üyelik profiliyle açılmış oturum mevcut persona ile açılmaz [0.03ms]\n(pass) sessionListNeedsReload — liste yalnız gerçekten değiştiyse tazelenir > yeni oturum listeye satır ekler: tazele [0.06ms]\n(pass) sessionListNeedsReload — liste yalnız gerçekten değiştiyse tazelenir > Sokratik kademe ilerledi: aktif satır merdivenle çelişmesin, tazele [0.02ms]\n(pass) sessionListNeedsReload — liste yalnız gerçekten değiştiyse tazelenir > aynı kademede ikinci ipucu: istek atılmaz [0.02ms]\n(pass) sessionListNeedsReload — liste yalnız gerçekten değiştiyse tazelenir > QA oturumunda kademe yok: mevcut oturumda tazeleme yok [0.02ms]\n\nlib/course-assistant-dialog.test.ts:\n(pass) ders asistanı dialog klavye sözleşmesi > Escape açıkça kapatılır ve kapanış odağı tetikleyiciye döndürür [5.46ms]\n\n 573 pass\n 0 fail\n 1362 expect() calls\nRan 573 tests across 45 files. [1.58s]\n"
+    },
+    "tsc": {
+      "command": "bunx tsc --noEmit",
+      "cwd": "apps/web",
+      "rc": 0,
+      "seconds": 4.95,
+      "tail": ""
+    },
+    "contrast": {
+      "command": "node scripts/contrast.mjs",
+      "cwd": "apps/web",
+      "rc": 0,
+      "seconds": 0.18,
+      "tail": "\nAÇIK TEMA\n  ✓ --fg                         #1c1917                bg 16.89  surface 17.49  çukur 15.49\n  ✓ --fg-muted                   #57534e                bg 7.37  surface 7.63  çukur 6.76\n  ✓ --fg-subtle                  #726b66                bg 5.06  surface 5.24  çukur 4.64\n  ✓ --brand                      #c50c1f                bg 5.88  surface 6.09  çukur 5.40\n  ✓ --brand-strong               #a00a19                bg 7.95  surface 8.23  çukur 7.29\n  ✓ --success                    #346538                bg 6.62  surface 6.85  çukur 6.07\n  ✓ --warning                    #956400                bg 4.95  surface 5.12  çukur 4.54\n  ✓ --danger                     #9f2f2d                bg 6.95  surface 7.20  çukur 6.37\n  ✓ --info                       #1f6c9f                bg 5.48  surface 5.67  çukur 5.02\n  ✓ --ink-fg / --ink             #f2efe9 / #1a1613      15.67\n  ✓ --ink-fg-muted / --ink       #a8a099 / #1a1613      6.98\n  ✓ --ink-fg / --ink-raised      #f2efe9 / #241f1a      14.23\n  ✓ --brand-on-ink / --ink       #ff6b78 / #1a1613      6.53\n  ✓ --success / --success-bg     #346538 / #edf3ec      6.08\n  ✓ --warning / --warning-bg     #956400 / #fbf3db      4.62\n  ✓ --danger / --danger-bg       #9f2f2d / #fdebec      6.26\n  ✓ --info / --info-bg           #1f6c9f / #e1f3fe      4.98\n  ✓ --brand / --brand-subtle     #c50c1f / #fdebec      5.30\n  ✓ #ffffff / --brand            birincil buton metni   6.09\n  -- metin dışı arayüz öğesi (WCAG 1.4.11, 3:1) — kapı --\n  ✓ --border-strong / --surface  girdi/ikincil buton kenarlığı (kontrolün içi) 3.16\n  ✓ --border-strong / --bg       girdi/ikincil buton kenarlığı (sayfa zemini) 3.13\n  ✓ --fg-subtle / --surface      ilerleme çubuğu dolgusu (bg-fg-subtle) 5.24\n\nKOYU TEMA\n  ✓ --fg                         #f5f4f2                bg 16.26  surface 14.96  çukur 17.00\n  ✓ --fg-muted                   #b0aaa4                bg 7.77  surface 7.15  çukur 8.13\n  ✓ --fg-subtle                  #8f8a84                bg 5.22  surface 4.80  çukur 5.46\n  ✓ --brand                      #ff6b78                bg 6.49  surface 5.97  çukur 6.79\n  ✓ --brand-strong               #ffa1aa                bg 9.30  surface 8.56  çukur 9.73\n  ✓ --success                    #7bc47f                bg 8.55  surface 7.86  çukur 8.94\n  ✓ --warning                    #d9a23d                bg 7.82  surface 7.19  çukur 8.17\n  ✓ --danger                     #f08c8a                bg 7.51  surface 6.91  çukur 7.85\n  ✓ --info                       #6fb4dd                bg 7.87  surface 7.24  çukur 8.23\n  ✓ --ink-fg / --ink             #f5f4f2 / #131110      17.13\n  ✓ --ink-fg-muted / --ink       #b0aaa4 / #131110      8.19\n  ✓ --ink-fg / --ink-raised      #f5f4f2 / #1d1a17      15.76\n  ✓ --brand-on-ink / --ink       #ff6b78 / #131110      6.84\n  ✓ --success / --success-bg     #7bc47f / #1d2a1e      7.16\n  ✓ --warning / --warning-bg     #d9a23d / #2b2312      6.79\n  ✓ --danger / --danger-bg       #f08c8a / #331a1c      6.76\n  ✓ --info / --info-bg           #6fb4dd / #14232e      7.06\n  ✓ --brand / --brand-subtle     #ff6b78 / #3a1a1e      5.66\n  ✓ #191715 / --brand            birincil buton metni   6.49\n  -- metin dışı arayüz öğesi (WCAG 1.4.11, 3:1) — kapı --\n  ✓ --border-strong / --surface  girdi/ikincil buton kenarlığı (kontrolün içi) 3.12\n  ✓ --border-strong / --bg       girdi/ikincil buton kenarlığı (sayfa zemini) 3.15\n  ✓ --fg-subtle / --surface      ilerleme çubuğu dolgusu (bg-fg-subtle) 4.80\n\nMetin: tüm çiftler AA 4.5:1 eşiğini geçti.\nMetin dışı arayüz öğesi: tüm çiftler WCAG 1.4.11 3:1 eşiğini geçti.\n"
+    },
+    "docs_check": {
+      "command": "node scripts/docs_check.mjs",
+      "cwd": ".",
+      "rc": 0,
+      "seconds": 14.71,
+      "tail": "\nÖLÇÜLEN\n  tables.count         30                       grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql\n  migrations.list      0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026 ls supabase/migrations/*.sql\n  backend.tests        1689                     cd apps/api && uv run pytest --collect-only -q\n  frontend.tests       573                      cd apps/web && bun test lib/\n  frontend.testFiles   45                       cd apps/web && bun test lib/\n  e2e.tests            71                       cd apps/web && ./node_modules/.bin/playwright test --list\n  migrations.count     22                       ls supabase/migrations/*.sql\n  screens.count        20                       find apps/web/app -name page.tsx\n  sampleData.files     22                       find sample_data/isletim-sistemleri -type f -not -name '*.md' | wc -l\n  backend.mypyFiles    114                      cd apps/api && uv run mypy app\n\nİDDİA  33 canlı · 50 tarihsel · 196 belge tarandı\n\nMUAF   specs/002-production-hardening/tasks.md (entegratör)\n       Görev defteri: sayıları tarihli DONE notlarının içinde ve doğası gereği tarihsel kayıt. Ayrıca hiçbir işçi şeridi bu dosyayı değiştirmez; işaretleri entegratör koyar.\n\nMUAF   specs/001-course-assistant-mvp/tasks.md (entegratör)\n       Aynı sebep: kapanmış 001 şartnamesinin görev defteri, tarihli DONE notlarından ibaret.\n\nARŞİV  docs/team/** — 34 belge, işaretsiz taramadan muaf\n       Tarihli devir/brifing kayıtları; her dosya kendi gününün durumunu anlatır.\n\nKAPSAM DIŞI\n  · Eşik ifadeleri (`≥15 vaka` gibi) — hedef, ölçüm değil\n  · Dosya başına test sayıları (`test_exams.py (35 test)`) — kaynağı ayrı, sapması gözlenmedi\n  · Gecikme/token/chunk ölçümleri — koşum gerektirir, statik türetilemez\n  · RLS iddia sayıları (98 / 58) — psql koşumundan gelir, CI'nın RLS adımları kanıtlar\n\n✓ Belgelerdeki canlı sayıların tamamı ölçümle uyuşuyor.\n"
+    },
+    "migration_check": {
+      "command": "python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023",
+      "cwd": ".",
+      "rc": 0,
+      "seconds": 0.14,
+      "tail": "MIGRATION_CHECK=PASS (22 göç, bildirilen boşluk: [17, 21, 22, 23])\n"
+    },
+    "workflow_policy": {
+      "command": "apps/api/.venv/bin/python scripts/workflow_policy_check.py",
+      "cwd": ".",
+      "rc": 0,
+      "seconds": 0.47,
+      "tail": "WORKFLOW_POLICY_CHECK=PASS\n"
+    }
+  },
+  "not_run": [
+    "Canlı Supabase göçü ve dağıtım: sırlar yok."
+  ],
+  "blockers": [],
+  "review_limits": [
+    "Transaction dışı SQL kısmen kalıcı olabilir; SQL COMMIT ile ledger INSERT arasındaki kesintide otomatik yeniden deneme yerine şema/ledger uzlaştırması gerekir.",
+    "Yeni göç kaynağı güvenilirdir; session değiştiren psql metakomutları kullanılmamalı."
+  ],
+  "limitations": "Pass yalnız scope içindeki çalıştırılmış yerel kontroller içindir. required_gates, engeller ve not-run alanları ayrı değerlendirilir; canlı kabul yoktur.",
+  "privacy": "Yalnız sentetik kontroller, komut sonuçları ve kaynak özetleri; sır veya öğrenci içeriği yok."
+}
