@@ -734,3 +734,14 @@ Aşağıdaki **8 Eylül tarihli** sonuçların Recall@5 ve MRR değerleri arşiv
 Belirli kurulum koşulunda recall anomalisi gözlendi; indeks kurma belleğinin veya taşmanın buna neden olduğu **kanıtlanmadı**. [Tarihsel kapanış kaydının](team/codex/2026-09-09-window-checkpoint.md) C2 sonucu **INCONCLUSIVE** olarak korunur. Filtrelenmiş konsol özetinde fark görülmemesi, bütün vakaların sıfır farkla ölçüldüğünü kanıtlamaz. Bugün yeni indeks kurma/DB deneyi yapılmadı.
 
 Karar: yeni bellek zorunluluğu veya göç eklenmez; `0021` boş kalır. Mevcut [dense plan/pencere regresyonları](../apps/api/tests/test_retrieval_candidates.py) ve [recall/exact-oracle kontrolleri](../scripts/test_benchmark_retrieval_plan.py) korunur. Bunlar bellek taşmasının recall kaybına neden olduğunu kanıtlayan özel bir test olarak sunulmaz. C4 süreç RSS ölçümü de bu nedensellik açığını kapatmaz.
+
+
+## 13 Eylül 2026 — L4 D1: gerçek işlemlerde kota yarışı ve iptal
+
+`apps/api/tests/test_token_quota_concurrency.py` izole PostgreSQL 16 kümesinde **4 test geçti**, rc 0, 40.93 s. Test boyunca uygulama/göç/test kaynakları değişmedi. Komut: `cd apps/api && .venv/bin/python -m pytest -q tests/test_token_quota_concurrency.py`; küme kimliği, yeni test DB adı ve ham makbuz `evaluation/results/20260913-l4-d1/evidence.tar.gz` içinde korunur. <!-- docs-check: tarihsel 4 · 2026-09-13 -->
+
+Ders, genel kullanıcı ve platform bütçeleri ayrı vakalarda sınandı. İki farklı `dou_app` bağlantısının farklı PostgreSQL süreçleri ve transaction kimlikleri doğrulandı; üçüncü bağlantı gerçekten advisory lock üzerinde bekleyen işlemi gözledi. Limit 5.000 iken örtüşen iki 3.000 token isteğinden tam biri kabul edildi, diğeri `quota_exhausted` aldı; audit tablosu bir satır ve toplam 3.000 token gösterdi. Rol superuser veya BYPASSRLS değildi.
+
+İptal vakasında ilk SQL kabulünden sonra, **COMMIT öncesinde** işlem iptal edildi. Satır ve kilitler geri alındı; farklı bağlantıda yeni rezervasyon kabul edildi ve yalnız yeni satır kaldı. Bu sonuç, sağlayıcıya gönderilmiş ve gerçek tüketimi bilinmeyen isteğe sıfır ücret/iade uygulanması anlamına gelmez.
+
+Mevcut `ai_token_reservations` ve işlem kilitleri kabulü geçti; yeni kota göçü eklenmedi, `0028` kullanılmadı. Ruff ve biçim kontrolü geçti. Bu yeni testler tek başına tam API, canlı pooler veya üretim kapasitesi kabulü değildir; C4 bölümündeki tam API zamanlama hatası ayrıca açık kalır.

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "candidate_sha": "SELF",
+  "base_sha": "5b2f18f279b6b224c3623c976691fd7f73cb3151",
+  "assembled_at": "2026-09-13T15:36:57.926161+00:00",
+  "job": "L4 D1",
+  "status": "targeted-pass",
+  "scope": "Four real isolated-local PostgreSQL synthetic quota-contract tests: course, global_user and platform races plus cancellation before COMMIT. No provider call, new runtime behavior, migration, hosted staging or production acceptance.",
+  "source_test_sha256": "e3c902332853a3d1c4d55f6fb3d5c5f0dceaeb7900ebbab363cd60e05b033dd5",
+  "source_report_sha256": "1be2a2fdbe9e209b6d26d95c7da45729062e09827cb6f1b0c2badff04b81a4b8",
+  "runtime_changed": false,
+  "migration_changed": false,
+  "migration_0028_added": false,
+  "targeted": {
+    "passed": 4,
+    "failed": 0,
+    "duration_seconds": 40.93,
+    "exit_code": 0,
+    "started_at": "2026-09-13T15:28:15.058404+00:00",
+    "finished_at": "2026-09-13T15:29:08.077604+00:00",
+    "sources_unchanged": true,
+    "source_files_rechecked_at_assembly": 223,
+    "scopes": [
+      "course",
+      "global_user",
+      "platform"
+    ],
+    "race": {
+      "physical_transactions": 2,
+      "requests": [
+        3000,
+        3000
+      ],
+      "limit": 5000,
+      "accepted": 1,
+      "rejected_reason": "quota_exhausted",
+      "ledger_rows": 1,
+      "ledger_tokens": 3000,
+      "observer": "separate connection observes advisory-lock wait"
+    },
+    "cancel": "Cancel after SQL acceptance but before COMMIT; rollback then a new 3000-token reservation succeeds.",
+    "cancel_limit": "No claim of refund or zero charging after an unknown provider outcome."
+  },
+  "commands": [
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_token_quota_concurrency.py"
+      ],
+      "receipt": "d1-targeted/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "receipt": "d1-ruff/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "receipt": "d1-format/result.json"
+    }
+  ],
+  "static_checks": {
+    "d1-ruff": {
+      "exit_code": 0,
+      "status": "passed"
+    },
+    "d1-format": {
+      "exit_code": 0,
+      "status": "passed"
+    }
+  },
+  "inherited_full_api_gate": "Inherited C4 full API run failed: 1688 passed, 1 failed at the unchanged 100 ms lag threshold. D1 runs only its four targeted tests; the full API suite was not rerun for this delivery and the inherited failure is not closed by this pass.",
+  "not_run": [
+    "full API suite on D1 delivery",
+    "live transaction pooler",
+    "provider calls",
+    "hosted deployment",
+    "production capacity",
+    "new mutation run"
+  ],
+  "baseline_semantics": "Numeric baseline 0 is the predeclared absolute acceptance reference of zero failing D1 quota-contract tests, not a measured historical baseline. These four tests are new. No comparative quality, performance or non-regression improvement is claimed.",
+  "privacy": "Synthetic records and operational paths/process/cluster metadata. Private administrator secret bytes checked absent from every selected archive member; secret file not archived. Not an anonymous operational archive."
+}

@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "change_id": "071-l4-token-quota-concurrency-r1",
+  "lineage_id": "l4-token-quota-concurrency",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "L4 D1: gerçek işlemlerde token kotası yarışı ve iptal kanıtı",
+  "summary": "Ders, genel kullanıcı ve platform kotasında iki gerçek işlemden tam biri kabul edildi; COMMIT öncesi iptal geri alındı ve yeni rezervasyon geçti. Dört hedefli test geçti; mevcut kota kodu ve göçler değişmedi, 0028 eklenmedi. Önceki tam API zamanlama hatası açık.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:36:57.926161+00:00",
+  "review_by": "2026-10-13T15:36:57.926161+00:00",
+  "base_sha": "5b2f18f279b6b224c3623c976691fd7f73cb3151",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Production unchanged from 5b2f18f279b6b224c3623c976691fd7f73cb3151; only quota-contract tests and evidence added.",
+    "model_revision": "Production unchanged from 5b2f18f279b6b224c3623c976691fd7f73cb3151; only quota-contract tests and evidence added.",
+    "prompt_revision": "Production unchanged from 5b2f18f279b6b224c3623c976691fd7f73cb3151; only quota-contract tests and evidence added.",
+    "tool_schema_revision": "Production unchanged from 5b2f18f279b6b224c3623c976691fd7f73cb3151; only quota-contract tests and evidence added.",
+    "guardrail_revision": "Production unchanged from 5b2f18f279b6b224c3623c976691fd7f73cb3151; only quota-contract tests and evidence added.",
+    "retrieval_revision": "Production unchanged from 5b2f18f279b6b224c3623c976691fd7f73cb3151; only quota-contract tests and evidence added.",
+    "embedding_revision": "Production unchanged from 5b2f18f279b6b224c3623c976691fd7f73cb3151; only quota-contract tests and evidence added.",
+    "evaluator_revision": "apps/api/tests/test_token_quota_concurrency.py SHA256 e3c902332853a3d1c4d55f6fb3d5c5f0dceaeb7900ebbab363cd60e05b033dd5; four local synthetic real-PG quota contract cases; no model-quality evaluator change."
+  },
+  "data": {
+    "corpus_digest": "e3c902332853a3d1c4d55f6fb3d5c5f0dceaeb7900ebbab363cd60e05b033dd5",
+    "eval_set_digest": "e3c902332853a3d1c4d55f6fb3d5c5f0dceaeb7900ebbab363cd60e05b033dd5",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "b7364170a6461ea1279da9fda5700e983d13305624981ea406c48574f0cae6c5"
+    },
+    {
+      "path": "apps/api/tests/test_token_quota_concurrency.py",
+      "state": "present",
+      "sha256": "e3c902332853a3d1c4d55f6fb3d5c5f0dceaeb7900ebbab363cd60e05b033dd5"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "02f77aac2cedc52871f4c82474d9295b906c9044463fbbd048c08562410fb561"
+    },
+    {
+      "path": "docs/test-report.md",
+      "state": "present",
+      "sha256": "1be2a2fdbe9e209b6d26d95c7da45729062e09827cb6f1b0c2badff04b81a4b8"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d1/evidence.tar.gz",
+      "state": "present",
+      "sha256": "74bb043d9b6c31e4450c540007ae7048c438748efb039c744a580b37f26e9e36"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d1/inventory.json",
+      "state": "present",
+      "sha256": "d1bf9de398106f5134d00ca6fc81500a1a5bae694f4acb34e24089d5f2f8ff87"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d1/summary.json",
+      "state": "present",
+      "sha256": "6fbdcb4eb77aece8378ded9491531d4a9cf7ad647cfeb5ab39f47cc7a9e6b445"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "d03331d0b0ad00401721bd5f604ffff00b563ceaf798bf04222bab84ea483bbd"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "caa2ef8e108c8110350223ab3e8e7428e0d169614b6b055fcbf8155b618d6873"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "0a392cb74440669a063f27e3897e6cc524c487104cd9d6e1a02a993a8cb0901d"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "ee442606f481efd2209c424ab82721714eb349d4ad0ae9639849ea0427a0938d"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/071-l4-token-quota-concurrency-r1.json",
+      "report_sha256": "883c72e929d0abdd7a02916d348a98231074301147de437b98b17c2a22f3b2f6",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_token_quota_concurrency.py",
+    "holdout_ref": "evaluation/results/20260913-l4-d1/summary.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "metrics": [
+      {
+        "name": "absolute_d1_contract_failures_reference_only",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 4
+      }
+    ],
+    "exact_command": "cd apps/api && .venv/bin/python -m pytest -q tests/test_token_quota_concurrency.py. Numeric baseline 0 is the predeclared absolute acceptance reference of zero failing D1 quota-contract tests, not a measured historical baseline. These four tests are new. No comparative quality, performance or non-regression improvement is claimed. References denote test definition and run report, not statistical RAG calibration/holdout splits."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: test and evidence only; production configuration unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:071-l4-token-quota-concurrency-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: test and evidence only; production configuration unchanged",
+    "kill_switch": "Stop the owned isolated test run on target mismatch, fixture failure or source drift; no production exposure.",
+    "assignment": "Sticky synthetic fixture assignment by exact test source digest and pinned isolated database identity; no user cohort.",
+    "initial_exposure": "None; synthetic source/evidence publication only, no deployment.",
+    "stop_conditions": [
+      "Wrong database or role, runtime/source drift, quota over-admission or incomplete cleanup."
+    ],
+    "expand_conditions": [
+      "Resolve inherited full API timing failure before whole-release acceptance.",
+      "Any later runtime or production change requires its own evidence and applicable named approvals."
+    ],
+    "active_exam_policy": "No active exam, academic record, course role, charging/refund policy or answer behavior changes."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:5b2f18f279b6b224c3623c976691fd7f73cb3151",
+    "procedure": "Revert this test/evidence commit; no production runtime or database migration rollback is required.",
+    "max_minutes": 30,
+    "verification": "Planned operator action; not a measured production rollback SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic records and operational paths/process/cluster metadata. Private administrator secret bytes checked absent from every selected archive member; secret file not archived. Not an anonymous operational archive.",
+    "retention": "Synthetic evidence retained publicly for traceability. Institutional production retention and compliance are outside this local contract test."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
