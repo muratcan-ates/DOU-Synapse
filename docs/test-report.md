@@ -711,3 +711,19 @@ python scripts/measure_embedding_rss.py --profiles qint8 --qint8-model <pinned-m
 ```
 
 **ENGEL:** Son qint8 süreç çıkışı kabulü başarısız. Eşzamanlı E5 ve büyük ingest kapasitesi için bellek baskısı olmayan, hedef barındırmayı temsil eden ayrı kabul koşusu gerekli. Tam API zamanlama kapısı henüz doğrulanmadı. Bu dilim barındırma, güvenlik veya üretime hazır olma sertifikası taşımaz.
+
+
+## 13 Eylül 2026 — L4 C1-FTS: reddedilen adayın uzlaştırılması
+
+Bu adım salt okunur kanıt uzlaştırmasıdır; bugün yeni DB/model/holdout koşusu yapılmadı. Önerilen `documents.file_hash, chunk_index` sırası, [önceki geri çekme yamasındaki](../specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/change.patch.gz) reddedilmiş adayın aynı davranışıdır. Güncel dense/FTS/service dosyalarının SHA256 değerleri [8 Eylül son kabulündeki](../specs/018-codex-production-line/evidence/c1-final-acceptance.md) kaynaklarla aynıdır.
+
+Aşağıdaki **8 Eylül tarihli** sonuçların Recall@5 ve MRR değerleri arşivlenmiş soru bazlı sıralardan yeniden hesaplanarak doğrulandı; yeni ölçüm sonucu değildir:
+
+| Tarihsel holdout | UUID sırası Recall@5 | Hash sırası Recall@5 | UUID sırası MRR | Hash sırası MRR |
+|---|---:|---:|---:|---:|
+| Hashing | 78/105 | 77/105 | 0.618175 | 0.634444 |
+| E5 | 93/105 | 92/105 | 0.737721 | 0.739535 |
+
+[Hashing tanısı](../specs/018-codex-production-line/evidence/c1-final/c1-trace-analysis.md) ve [E5 tanısı](../specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-analysis.md), aynı dense koluyla FTS sırasının bu gerilemeyi ürettiğini ayırır. MRR artışı Recall@5 düşüşünü kapatmaz. Aynı aday yeniden eklenmedi veya körlemesine tekrar çalıştırılmadı; eşik, RRF, aday sayısı ve altın set değiştirilmedi.
+
+**ENGEL:** Yeni UUID'lerle tekrar yüklenen aynı içeriğin FTS sırası için kararlılık açığı sürüyor. Mevcut ters UUID testi yalnız dense kolunda etkin ve doğrudan DB tohumlaması kullanıyor; gerçek upload/worker yeniden ingestion kabulü sayılmıyor. C1-FTS tamamlanmış değildir. Farklı bir sıralama politikası önce genel sentetik/kalibrasyon örnekleriyle tasarlanmalı, ardından iki holdout ve gerçek yeniden yükleme kabulünden geçmelidir.
