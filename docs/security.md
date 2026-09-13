@@ -11,8 +11,10 @@ doğrulama: 8 Eylül 2026 · Kapsam: 018 yerel aday; tarihli eski ölçümler ay
 
 ### Üretim yolu
 
-Kullanıcı Supabase Auth ile giriş yapar, Supabase HS256 imzalı bir JWT üretir,
-istemci bunu her istekte `Authorization: Bearer <jwt>` başlığında gönderir.
+Kullanıcı Supabase Auth ile giriş yapar; uygulamanın Gün-1 sözleşmesi HS256
+imzalı kullanıcı JWT'sidir. Gerçek projenin imzalama ayarı canlı kabulde ayrıca
+doğrulanmalıdır; bütün Supabase projelerinin HS256 kullandığı varsayılmaz.
+İstemci token'ı her istekte `Authorization: Bearer <jwt>` başlığında gönderir.
 Backend token'ı doğrular ve tek bir çıktı üretir: `Principal(user_id, email)`.
 
 | Adım | Kod |
@@ -30,7 +32,9 @@ Doğrulamada zorunlu tutulanlar (`_REQUIRED_CLAIMS`,
 - **`aud`** — `authenticated` olmak zorunda.
 - **`iss`** — varlığı zorunlu; `SUPABASE_JWT_ISSUER` (veya uyumlu `JWT_ISSUER`) tanımlandığında değeri de karşılaştırılır. Üretimde bu ayar açık bir HTTPS `/auth/v1` adresi olmak zorundadır; eksik veya bozuk değer başlangıcı durdurur. Yerel/demo ortamında isteğe bağlıdır.
 - **`sub`** — UUID olmak zorunda; olmayan token 401.
-- **Algoritma** — izin listesinden `none` her koşulda eleniyor
+- **Algoritma** — izin listesi tam olarak `["HS256"]` olmalıdır. Boş, farklı veya
+  karma liste sessizce daraltılmaz; istek bütünüyle reddedilir. `none`, imzasız
+  token ve diğer algoritmalar kabul edilmez
   ([`security.py:59`](../apps/api/app/core/security.py#L59)).
 
 `exp`/`aud`/`iss`'in **zorunlu claim listesinde** olması ayrıca önemli: PyJWT,
@@ -379,3 +383,53 @@ Kayıtlı alıştırma geri bildirimi, üye olmanın yanında açık oturum sahi
 Gönderilmemiş tarayıcı taslakları sessionStorage içinde kullanıcı/ders/oturum kapsamında tutulur; anahtar, kaynak, geri bildirim veya kimlik belirteci içermez. Geri yükleme sunucunun doğruladığı oturumdan sonra yapılır; gönderme, bitirme, süre dolması, kayıp oturum ve çıkış temizliği vardır. Bu depolama XSS için ayrı bir güvenlik sınırı değildir ve cihazlar arası eşitleme sağlamaz.
 
 Değerlendirme kanıt uçları varsayılan kapalı ayrı runtime moduna ve ayrı sırra bağlıdır; üretimde bu mod reddedilir. Gerçek sağlayıcıya ulaşılmadığını belirten sonuçlar gerçek cevap kalite kanıtı sayılmaz. Anahtar değerleri/ham bağlantı dizeleri raporlanmaz. Değerlendirme verileri yalnız izole, sentetik veri tabanında hazırlanır.
+
+## 018 L5 kimlik ve private Storage işletim sınırları
+
+Web geliştirme girişi yalnız derleme ortamındaki `NEXT_PUBLIC_DEV_AUTH=true` ile görünür ve kullanılabilir; API tarafında bağımsız `DEV_AUTH_ENABLED` kapısı korunur. Supabase istemcisi için mevcut `NEXT_PUBLIC_SUPABASE_URL` ve `NEXT_PUBLIC_SUPABASE_ANON_KEY` yapılandırması kullanılır. Entra düğmesi ayrıca somut bir `NEXT_PUBLIC_ENTRA_TENANT_ID` UUID'si ister. Bu istemci kontrolü tenant izolasyonu kanıtı değildir: Supabase Azure Tenant URL'si ilgili tenant'a, Entra uygulaması da tek tenant kabulüne bağlanmalıdır. Supabase redirect izin listesi uygulamanın `/auth/callback` adresini ve parola kurtarmada kullanılan `?next=reset-password` dönüşünü kapsamalıdır; gerçek proje üzerinde kabul henüz yapılmadı.
+
+Sağlayıcı giriş/çıkışı aynı origin Web Lock'u ile sıralanır; destek yoksa sağlayıcı yazımı reddedilir. Auth epoch kontrolü eski HTTP yanıtlarını ayırır; test edilen gecikmiş SDK giriş/çıkış olayları yeni oturumu geri açmaz veya kapatmaz. Merkezi 401 temizliği özel görünümü kapatır; 403 ders yetkisi reddidir ve oturumu kapatmaz. Kullanıcı metadata'sı veya e-posta alan adı ders rolü üretmez; yetki sunucudaki `course_memberships` kaydından gelir. Geçerli provider oturumu istemcide pedagojik yetki belgesi sayılmaz.
+
+`GET /courses/{course_id}/documents/{document_id}/download` sırasıyla üyelik/sınav kilidi, belge-ders eşleşmesi ve kanonik nesne yolunu doğrular. `STORAGE_BACKEND=supabase` yalnız `course-materials` bucket'ını kullanır; sunucunun `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` değerleri istemciye taşınmaz. Storage imza isteği `expiresIn=60` gönderir; yanıtın aynı proje/nesneye ait tek token içeren signed URL olması gerekir. Public veya başka origin/nesne URL'si kabul edilmez. Uzak yanıt `307`, `Cache-Control: no-store` ve `Referrer-Policy: no-referrer` taşır. Yerel backend dosyayı `200` attachment olarak verir. Bu başlıklar daha önce indirilmiş kopyaları silmez.
+
+`service_role` Storage RLS'i atlar; bu nedenle imzalama öncesi API kontrolü asıl katmandır. Verilmiş URL süreli bearer yetkisidir: üyelik iptali veya yeni sınavdan sonra TTL dolana kadar kullanılabilir. Anlık iptal/edge cache temizliği ölçülmedi. SQL sınav kilidi saklanan `expires_at` değerini kullanır; API'nin global süre tavanına göre daha uzun süre kapalı kalabilir.
+
+[`0029_private_storage.sql`](../supabase/migrations/0029_private_storage.sql) yerel PostgreSQL'de `storage.objects` yoksa işlem yapmadan geçer. Şema varsa modern `owner_id` metin alanı ve gerekli yetkileri doğrular; uyumsuz kurulumda kapalı kalır. Kurucu, süper kullanıcı veya gerekli sahiplik/GRANT yetkileriyle `CREATEROLE+BYPASSRLS` taşımalıdır. Ayrı `storage_private` şemasındaki dar yardımcı rol uygulama/istemci rolüne verilmez. Aktif üyelik okuma, eğitmen yazma, aktif üye sahip/eğitmen silme koşuludur; update/upsert kapalıdır. Öğrencinin aktif sınavı okumayı kapatır, eğitmen bu kilitten muaftır. Geniş eski permissive politika restrictive sınırları aşamaz. Hosted Supabase yönetim yetkileri henüz doğrulanmadı.
+
+F5 SQL kanıtı gerçek çekirdek göçleri ve `FORCE ROW LEVEL SECURITY` tablolarını kullanır; yalnız Supabase `storage` şeması sentetiktir. JWT claim GUC'leri `authenticated` rolü altında kurulur. Test mevcut Storage şemasını kabul etmez; ayrı yerel `dou_l5*` veritabanı ister ve bütün fikstürü işlem sonunda geri alır. Bu nedenle gerçek projede çalıştırılmaz. Önce çekirdek göçlerin uygulanmış olduğu ayrı test veritabanı hazırlanır, ardından depo kökünde aşağıdaki komutlar kullanılır; `PGHOST`, `PGPORT`, `PGUSER` yerel test bağlantısını göstermelidir:
+
+```bash
+psql -X -v ON_ERROR_STOP=1 -d dou_l5_storage -v storage_mutation=none -f supabase/tests/rls_storage.sql
+bash supabase/tests/rls_storage_mutation_check.sh dou_l5_storage
+```
+
+Mutasyon betiği read/insert/delete/update politikalarını tek tek gevşetir. Her bozuk koşuda sıfır dışı çıkış yanında ilgili `L5_ASSERT` etiketini arar; yalnız sözdizimi veya bağlantı hatasını güvenlik başarısı saymaz. Önce ve her mutasyondan sonra normal politika koşusunun geçmesi zorunludur. GitHub CI adımını L1 ekler; L5 workflow dosyasını değiştirmez. Güncel entegrasyon engeli: taban dalda 0027/0028 yoktur; izinli boşlukları genişletmeden çalışan göç sırası kapısı 0029 nedeniyle rc1 döner. Başka numara veya boş göç eklenmemiştir.
+
+## JWKS geçiş hazırlığı (F2; uygulama yok)
+
+**Gün-1 yalnız HS256 ile devam eder.** Bu bölüm gelecekteki asimetrik doğrulama için önerilen kabul ve işletim planıdır; JWKS istemcisi, algoritma değişimi veya yeni bağımlılık eklemez. Gerçek Supabase projesi ve anahtarları bulunmadığından canlı imza, rotasyon, kesinti ve iptal denemeleri `not-run` durumundadır.
+
+### Güvenilen kaynak ve `kid` çözümü
+
+Doğrulayıcı, dağıtımda onaylanan tam issuer ve ona bağlı tek HTTPS JWKS adresini kullanır. Supabase'in keşif yolu `https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json` biçimindedir; gerçek adres proje oluşturulduğunda kaydedilir. Token'ın `iss`, `jku`, `x5u` veya gömülü `jwk` alanı ağ hedefi ya da güvenilen anahtar olamaz. Yönlendirmeler ve izin listesi dışındaki hedefler reddedilir. Asimetrik anahtarların keşif uçlarında yayımlanması, ortak HS256 sırrının buradan alınabileceği anlamına gelmez. [Supabase imza anahtarları](https://supabase.com/docs/guides/auth/signing-keys#public-key-discovery-and-caching).
+
+Asimetrik yolda `kid` zorunlu, boş olmayan ve uzunluğu sınırlı bir metindir; yalnız onaylı issuer'ın doğrulanmış JWKS kümesinde tam eşleşme arar. Eksik, bilinmeyen veya aynı `kid` ile birden fazla aday bulunan anahtar reddedilir. Bilinmeyen `kid`, toplam istek bütçesi içinde en fazla bir zorunlu yenileme tetikleyebilir; sonuç yine yoksa kabul yoktur. `kid` kimliği doğrulamaz. İmza ardından zorunlu `exp`, tam issuer, `aud=authenticated` ve UUID `sub` denetlenir. E-posta alan adı veya kullanıcı metadata'sı ders rolü vermez; rol sunucuda `course_memberships` kaydından çözülür.
+
+Algoritma ve anahtar türü izin listeleri dağıtım kararıyla sabittir. Geçiş adayı için **tek asimetrik eşleşme** seçilip sınanır: örneğin `ES256` → `EC/P-256`; `RS256` → `RSA` ayrı bir karardır. Doğrulayıcı `alg`, `kty`, eğri, anahtar kullanım amacı ve varsa `key_ops` uyumunu kontrol eder. HS256 yalnız ayrı legacy doğrulayıcı ve ayrı ortak sır ile kullanılabilir. `HS256` ve asimetrik algoritmalar aynı decode çağrısında/anahtar parametresinde birleştirilmez; açık anahtar HMAC sırrına çevrilmez. Token'ın bildirdiği `alg` izin listesini oluşturamaz. Asimetrik doğrulama başarısız olunca HS256'ya veya dev kimliğine dönüş yoktur. [PyJWT algoritma uyarısı](https://pyjwt.readthedocs.io/en/stable/api.html#jwt.decode).
+
+### JWKS kesintisinde kabul yok
+
+**Geçiş etkinleştirildikten sonra JWKS erişim kontrolü her kullanıcı isteğinin kabul ön koşuludur; önbellekte anahtar bulunsa da erişim başarısızsa istek kabul edilmez.** Pencere içindeki legacy HS256 kabulü de bu kesinti kapısını atlayamaz. Devreye alınmadan önceki Gün-1 HS256 yolu JWKS'ye bağlanmaz.
+
+Önerilen başlangıç sınırları: kullanıcı isteği başına toplam 3 saniyelik JWKS bütçesi, en çok 64 KiB yanıt, 16 anahtar ve 128 karakter `kid`; ayrıştırılmış küme için en çok 60 saniyelik TTL. Bunlar uygulanmış veya ölçülmüş değerler değildir; adayın yük ve hata testlerinde değerlendirilir. Önceden tamamlanmış önbellek okuması tek başına erişilebilirlik kanıtı olmaz: kabul için o isteğin yeni, başarılı ve doğrulanmış JWKS yanıtına katılması gerekir. Eşzamanlı istekler devam eden tek ağ çağrısını paylaşabilir. Zaman aşımı, TLS/DNS/ağ hatası, başarısız HTTP, boş/bozuk/aşırı büyük küme veya bütçe aşımı reddir; süresi geçmiş anahtarla devam edilmez. İçeriksiz işletim sinyali ve alarm üretilir, token/anahtar/kişisel veri loglanmaz.
+
+PyJWT'nin küme ve anahtar önbellekleri bu uygulama kararının yerine geçmez; varsayılan önbellek davranışı kesinti kabul kapısını sağlamış sayılmaz. [PyJWT JWKS istemcisi](https://pyjwt.readthedocs.io/en/stable/api.html#jwt.PyJWKClient). Supabase'in edge önbelleği nedeniyle başarılı keşif yanıtı bile iptalin bütün tüketicilerde aynı anda görüldüğünü kanıtlamaz. Acil iptal için bütün API süreçlerinde uygulanabilen anahtar ret listesi ve önbellek temizleme yolu önceden sınanmalıdır. [Supabase önbellek ve iptal sınırları](https://supabase.com/docs/guides/auth/signing-keys#public-key-discovery-and-caching).
+
+### Önerilen 14 günlük pencere ve eski anahtarın iptali
+
+1. **T0 öncesi hazırlık:** Gerçek issuer/JWKS, seçilen algoritma ve anahtar türü, token ömürleri, saat toleransı, tüm doğrulayıcılar, SDK sürümleri ve gerekli kriptografi bağımlılıkları doğrulanır. Gerekli bağımlılık değişimi ayrıca onaylanmadan yapılmaz. API, web, Storage/worker ve varsa Edge Functions, otomasyon, mobil/CLI gibi eski tüketiciler envantere alınır; legacy `anon`/`service_role` kullanım yerleri ve sahibi kaydedilir. Negatif JWT, bilinmeyen/çift `kid`, anahtar türü karışması, sıcak/soğuk önbellek kesintisi, rotasyon, iptal ve geri dönüş denemeleri geçmeden terfi yoktur.
+2. **T0 ve pencere:** Önerilen 14 gün, **onaylı rollout kaydındaki kontrollü asimetrik imzalama başlangıcından** itibaren başlar; bu belgenin yazıldığı gün başlamaz. Önce yeni standby anahtarın tüm tüketicilerce görüldüğü doğrulanır. Pencere boyunca yalnız açıkça izin verilen eski HS256 yolu ile yeni asimetrik yol ayrı doğrulayıcılarda yaşar; issuer/audience ve kesinti kapıları aynıdır. Son tarih sessizce uzatılamaz. Terfi koşulları sağlanmazsa yeni karara kadar kapanış ya da kayıtlı güvenli geri dönüş uygulanır.
+3. **T0 + 14 gün kapanışı:** Kullanıcı token ömürleri/saat toleransı dolmuş, eski doğrulama tüketicileri ve legacy API anahtarı kullanımı kapanmış olmalıdır. Legacy `anon` ve `service_role`, JWT secret ile bağlı JWT'lerdir; eski sırrı iptal etmeden önce bunların tüketicileri uygun publishable/server secret anahtarlara geçirilip legacy anahtarlar devre dışı bırakılır. İmza rotasyonu tek başına eski anahtarın güvenini kaldırmaz; eski anahtar ayrıca iptal edilir. [Supabase anahtar yaşam döngüsü ve legacy API anahtarları](https://supabase.com/docs/guides/auth/signing-keys#lifetime-of-a-signing-key).
+4. **İptalin doğrulanması:** Backend'in HS256 kabul yolu kapatılır, eski sır çalışan süreçlerden/dağıtım ayarlarından kaldırılır ve yerel anahtar önbellekleri temizlenir. Eski anahtarla imzalı, süresi henüz dolmamış token bütün tüketicilerde reddedilmelidir; yeni anahtarın pozitif kontrolü sürmelidir. Sızıntı şüphesinde 14 gün beklenmez; acil ret/iptal yolu kullanılır ve tehlikeye girmiş anahtar geri açılmaz. Geri dönüş yalnız kayıtlı, iptal edilmemiş ve güvenilir anahtarla yapılabilir.
+
+Canlı ön koşullar ayrıca korunur: Entra için Supabase Azure Tenant URL'si somut tenant'a bağlanır ve Entra uygulaması tek tenant kabul eder; `NEXT_PUBLIC_ENTRA_TENANT_ID` yalnız istemci biçim kapısıdır. [Supabase Azure yapılandırması](https://supabase.com/docs/guides/auth/social-login/auth-azure). Storage'da `service_role` RLS'i atlar; anahtar veya imza geçişi, sunucunun dosya işleminden **önceki ders üyeliği kontrolünü** kaldırmaz. [Supabase Storage erişim kontrolü](https://supabase.com/docs/guides/storage/security/access-control#bypassing-access-controls). Bu canlı yapılandırmalar da henüz `not-run` durumundadır.
