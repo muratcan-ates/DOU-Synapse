@@ -26,7 +26,11 @@ cd apps/api && uv sync --extra dev --frozen && cd ../web && bun install && cd ..
    Sayı/SHA/dosya adı uydurma; beklenen çıktı sayısı yazma, kontrol koşulu yaz (`rc=0`; plan `Index Scan using chunks_embedding_idx` içerir).
 2. **Kaynak yoksa cevap yok.** Kanıt eşiği altındaki sorgu LLM'e gitmeden ret döner; gevşetme.
 3. **İki katmanlı yetki:** sunucu üyelik kontrolü **ve** aynı işlemde PostgreSQL RLS; mutasyon betikleri kırmızı yanabilmeli.
-4. **Göçler:** düz SQL, dosya adı sırası; **0021–0023 boş kalır** (CI `--allow-gap`), 0024–0026 kullanıldı, **yeni göç 0027'den**.
+4. **Göçler:** düz SQL, dosya adı sırası; **0017 ve 0021–0023 boş kalır** (CI `--allow-gap`), 0024–0026 kullanıldı.
+   **Rezervasyon (13 Eylül 16:50 güncellendi):** `0027` kurtarma/gözlemlenebilirlik · `0028` kurtarma/değerlendirme bütünlüğü ·
+   **L2 → 0029** (learning_events) · **L4 → 0030** · **L5 → 0031**. Şerit dosyalarındaki eski numarayı (L2 0027, L4 0028, L5 0029)
+   kullanma; yedek daldan kurtarılan iki göç o numaraları aldı. Numarayı 0030'un ötesine taşımak CI'daki `--allow-gap`
+   bayraklarını değiştirmeyi gerektirirdi ve orası L1'in yüzeyi.
    Geçmiş göç değişmez (dbmate yok). `python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023`.
 5. **Yönetişim (`.ai/`)**: hassas yola dokunan commit aynı commit'te dossier + kanıt; append-only; numara = en büyük + 1 (bugün **037** dolu).
    CI yalnız **main'e push ve pull_request**'te koşar; PR'da doğrulayıcı tabanı **017 ucu** alır ve dossier yalnız HEAD'de
