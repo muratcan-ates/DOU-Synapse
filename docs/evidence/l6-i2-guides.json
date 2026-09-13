@@ -1,0 +1,2055 @@
+{
+  "task": "I2",
+  "source_parent_sha": "5cce5eaab734c05722f161ef986f4a54e5d87682",
+  "run": {
+    "auditFinishExitCode": 0,
+    "buildReused": false,
+    "buildUnchanged": null,
+    "database": "dou_l6_e2e_i2_browser_02",
+    "error": null,
+    "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+    "ownedApiExitCode": 0,
+    "playwrightExitCode": 0,
+    "runId": "l6dfdc14deca22c3",
+    "sourceUnchanged": true,
+    "status": "PASS",
+    "stopObservation": "graceful-pipe-and-wait"
+  },
+  "runtime_inputs": {
+    "before": {
+      "/Users/muratates/code/dou-synapse-l6-runtime/run_e2e.py": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/evidence.ts": "5837d8d96ec482dc836467795172f78308a934528d42c6a9a4342e86fb651a42",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/guides.spec.ts": "461f612e68d0533abe69f59128ba201aaaddeccac5ff4ab112b31760ce614194",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/playwright.config.ts": "263a462f55d44c5a72feec568f5dd35790505ef13e7b5df44bf918f3fe61ffa7",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/public-admin.spec.ts": "5c050c34821e20be5869617f76bd8a42e8ed9dfd22ec672a8769deacdce3e5a9"
+    },
+    "after": {
+      "/Users/muratates/code/dou-synapse-l6-runtime/run_e2e.py": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/evidence.ts": "5837d8d96ec482dc836467795172f78308a934528d42c6a9a4342e86fb651a42",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/guides.spec.ts": "461f612e68d0533abe69f59128ba201aaaddeccac5ff4ab112b31760ce614194",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/playwright.config.ts": "263a462f55d44c5a72feec568f5dd35790505ef13e7b5df44bf918f3fe61ffa7",
+      "/Users/muratates/code/dou-synapse-l6-runtime/i2-browser/public-admin.spec.ts": "5c050c34821e20be5869617f76bd8a42e8ed9dfd22ec672a8769deacdce3e5a9"
+    },
+    "unchanged": true
+  },
+  "production_build_id_observed_after_run": "Wz_rzo7Y7mCpgchi73D63",
+  "reports": [
+    {
+      "path": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/guide-evidence.json",
+      "sha256": "4952d329747cd0f54eb41c5a54c976d14737c1ab5def820bb6427fe5e891e90d",
+      "test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "observed_at": "2026-09-13T17:35:21.628Z",
+      "limits": [
+        "UI görünürlük/rol kontrolleri ürünün bütün iş akışlarını doğrulamaz.",
+        "Sağlayıcı türü owned koşunun ayrı kaydından doğrulanmalıdır; burada gerçek LLM kalite ölçümü yok.",
+        "Ekran görüntüleri özel yerel kanıttır; kılavuz görseli veya H7 teslimi olarak yayımlanmaz.",
+        "Taslak düzenleme formu açılır; düzenlenmiş sorunun kaydı/onayı ve blueprint yayın kapısı bu pakette tamamlanmış sayılmaz. Politika ve katılımcı silme işlemleri yapılmaz."
+      ]
+    },
+    {
+      "path": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/guide-evidence.json",
+      "sha256": "c7c227ce1e6d97d5d91344923abc2407d956039ffb402557c45c1b2ffeff00ab",
+      "test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "observed_at": "2026-09-13T17:35:21.755Z",
+      "limits": [
+        "UI görünürlük/rol kontrolleri ürünün bütün iş akışlarını doğrulamaz.",
+        "Sağlayıcı türü owned koşunun ayrı kaydından doğrulanmalıdır; burada gerçek LLM kalite ölçümü yok.",
+        "Ekran görüntüleri özel yerel kanıttır; kılavuz görseli veya H7 teslimi olarak yayımlanmaz.",
+        "Süreli yayımlanmış sınava katılım, tüm soru türleri, sohbet silme, profil düzenleme/kaldırma ve veri dışa aktarma bu pakette çalıştırılmaz."
+      ]
+    },
+    {
+      "path": "i2-browser-output/public-admin-I2-Bilgi-İşle-8881d-isteler-filtreler-ve-klavye-i2-guides/guide-evidence.json",
+      "sha256": "6bc70c871c0e45a7aa6015804ddfb177239f3c358e5be44360f18d13f4c49cc3",
+      "test": "I2 Bilgi İşlem rehberi: maskeli listeler, filtreler ve klavye",
+      "observed_at": "2026-09-13T17:35:29.172Z",
+      "limits": [
+        "UI görünürlük/rol kontrolleri ürünün bütün iş akışlarını doğrulamaz.",
+        "Sağlayıcı türü owned koşunun ayrı kaydından doğrulanmalıdır; burada gerçek LLM kalite ölçümü yok.",
+        "Ekran görüntüleri özel yerel kanıttır; kılavuz görseli veya H7 teslimi olarak yayımlanmaz.",
+        "BİM ekranındaki sayılar bu özel koşunun kayıtlarıdır; dokümana performans/kalite ölçümü olarak aktarılmaz. Filtre etiketleri ve gerçek listeler gözlenir; tüm veri aralıkları veya sayfalama kapsamı iddia edilmez."
+      ]
+    },
+    {
+      "path": "i2-browser-output/public-admin-I2-ortak-sayf-596ac-gerçek-parola-akışı-ve-KVKK-i2-guides/guide-evidence.json",
+      "sha256": "4c8e47d1deae7b7a7d59ac6e4fbac2f96344c16e112c82b6c0daf8426255c07b",
+      "test": "I2 ortak sayfalar: demo giriş, kapalı gerçek parola akışı ve KVKK",
+      "observed_at": "2026-09-13T17:35:28.121Z",
+      "limits": [
+        "UI görünürlük/rol kontrolleri ürünün bütün iş akışlarını doğrulamaz.",
+        "Sağlayıcı türü owned koşunun ayrı kaydından doğrulanmalıdır; burada gerçek LLM kalite ölçümü yok.",
+        "Ekran görüntüleri özel yerel kanıttır; kılavuz görseli veya H7 teslimi olarak yayımlanmaz.",
+        "ENGEL: Gerçek Supabase giriş, e-posta teslimi, kurtarma oturumu ve parola güncellemesi koşulmadı. Owned koşu bu sağlayıcıyı yapılandırmaz; yalnız kapalı durum UI kanıtı üretilir."
+      ]
+    },
+    {
+      "path": "i2-browser-output/public-admin-I2-platform-r-2e2be-an-API-kapısında-reddedilir-i2-guides/guide-evidence.json",
+      "sha256": "f73950d4a3598ba8281cdd6b2a1491abc4e15158241e0f46e5af7d6b610aa0e3",
+      "test": "I2 platform rolü: öğrenci admin UI ve doğrudan API kapısında reddedilir",
+      "observed_at": "2026-09-13T17:35:29.186Z",
+      "limits": [
+        "UI görünürlük/rol kontrolleri ürünün bütün iş akışlarını doğrulamaz.",
+        "Sağlayıcı türü owned koşunun ayrı kaydından doğrulanmalıdır; burada gerçek LLM kalite ölçümü yok.",
+        "Ekran görüntüleri özel yerel kanıttır; kılavuz görseli veya H7 teslimi olarak yayımlanmaz."
+      ]
+    }
+  ],
+  "records": [
+    {
+      "key": "teacher-dashboard",
+      "checklist": [
+        4,
+        5
+      ],
+      "scope": "Eğitmen sonraki eylemi ve yönetim araçları",
+      "status": "passed",
+      "assertions": [
+        "Merhaba/Genel bakış",
+        "Dersi yönet",
+        "Soru havuzu ve Sınav planı"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/dashboard",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-dashboard.png",
+      "screenshot_sha256": "069c1f664608947e4706da674454f5eefd5ce608196f0b3877106e6f3f80680d",
+      "png_width": 1440,
+      "png_height": 1144,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Merhaba, E2E başlığı; Dersi yönet ve ders satırındaki Kaynaklar/Soru havuzu/Sınav planı/Analitik bağlantıları okunur. Rol Eğitmen olarak görünüyor; bekleyen iş olmayan sentetik durum gösteriliyor."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-new-course",
+      "checklist": [
+        6,
+        7
+      ],
+      "scope": "Gerçek UI ile yeni ders ve eğitmen üyeliği",
+      "status": "passed",
+      "assertions": [
+        "Derslerim/Yeni ders",
+        "Ders kodu/Ders adı/Oluştur",
+        "Yeni ders gerçek API yanıtı",
+        "Profilde instructor üyeliği"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-new-course.png",
+      "screenshot_sha256": "4de0c9cd7fea72e28d5539c6e84b62b0ab6c5b860030ca6e8207a076ae59236a",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Derslerim ekranında Yeni ders düğmesi ve yeni I2-REHBER dersi dahil iki ders kartı var; ikisi de Eğitmen etiketli. Oluşturma sonrası form kapalıdır; bu PNG tek başına giriş alanlarının açık görünümü değildir."
+        ],
+        "limitations": [
+          "Ders kodu/Ders adı/Oluştur alanları ve gerçek oluşturma yanıtı koşu makbuzunun etkileşim iddialarıdır; son PNG oluşturulmuş listeyi gösterir."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-course",
+      "checklist": [
+        8,
+        12
+      ],
+      "scope": "Yükleme ve önizleme araçları",
+      "status": "passed",
+      "assertions": [
+        "Gerçek ders başlığı",
+        "Dosya seç",
+        "İçerik önizle",
+        "Eğitmen Asistanı"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-course.png",
+      "screenshot_sha256": "4b383a2743bf8c95dc139454b50ffabacac1dcccee5a1875695738c032b1cafb",
+      "png_width": 1440,
+      "png_height": 1074,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Materyaller sekmesi, ders başlığı, Retrieval testi, Bu derste çalışma yolları, Dosya seç ve hazır network-guards.md satırı görünür. Yerine geçtiği belge seçimi Yeni, bağımsız materyal durumundadır."
+        ],
+        "limitations": [
+          "Sabit Eğitmen Asistanı düğmesi İçerik önizle/Sil düğmelerinin alt kenarıyla kısmen çakışıyor. Bu I2 özel kanıtı kusursuz görsel yerleşim veya H7 yenilenmiş 03 görselinin yerine geçmez."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-members",
+      "checklist": [
+        9
+      ],
+      "scope": "Katılımcı e-postası ve rol",
+      "status": "passed",
+      "assertions": [
+        "Katılımcılar",
+        "Katılımcı e-postası/Rol/Derse ekle",
+        "Worker öğrenci satırı"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/members",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-members.png",
+      "screenshot_sha256": "23fea3d863e225813c60a194e3c6f25118e15ee9181518b0aa2a68c5f8afca38",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Katılımcılar ekranında Katılımcı e-postası, Rol ve Derse ekle alanları okunur. Sentetik eğitmen (siz) ve öğrenci satırları, rol rozetleri ve öğrenci Çıkar düğmesi var; onay diyaloğu açık değil."
+        ],
+        "limitations": [
+          "Bu görsel üyelik kaldırma işleminin yapıldığını kanıtlamaz."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-chat",
+      "checklist": [
+        10,
+        12
+      ],
+      "scope": "Eğitmen Asistanı kimliği",
+      "status": "passed",
+      "assertions": [
+        "Eğitmen Asistanı",
+        "Sohbetlerin/Yeni sohbet/Sorun",
+        "API audience=instructor"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/chat",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-chat.png",
+      "screenshot_sha256": "0e2f6fa393007f9db75e5d0b93cc90a36e72b2c35d5956f7ff731ad5c990bd76",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Eğitmen Asistanı başlığı, eğitmen çalışma alanı açıklaması, soru-cevap/Sokratik seçimleri, boş besteci ve devre dışı Gönder görünür. Kaynak panelinde hazır network-guards.md, boş Sohbetlerin ve Yeni sohbet düğmesi var."
+        ],
+        "limitations": [
+          "Görsel yeni/boş sohbet durumunu gösterir; eğitmen yanıt üretimi veya silme tamamlandı iddiası yok."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-sources",
+      "checklist": [
+        14
+      ],
+      "scope": "Gerçek retrieval isteği ve form",
+      "status": "passed",
+      "assertions": [
+        "Retrieval laboratuvarı",
+        "Öğrenci sorusu/Parçaları getir",
+        "Gerçek kaynak inceleme isteği"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/sources",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-sources.png",
+      "screenshot_sha256": "7c8ddbc8ed8c8fdf3bab45c5e2f50abf3ee63a148c1a4bd28c39ab532241ad1d",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Retrieval laboratuvarında gönderilmiş Deadlock sorusu, Yanıt üretilebilir etiketi, kaynak getirme göstergeleri ve network-guards.md alıntısı ile Bağlamı aç bağlantısı görünür. Parçaları getir düğmesinin metni iki satıra bölünmüş ama okunur."
+        ],
+        "limitations": [
+          "Görünen sayılar yalnız bu yerel hashing sorgusuna ait; genellenmiş retrieval veya gerçek LLM kalite ölçümü değil."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-context",
+      "checklist": [
+        13
+      ],
+      "scope": "Gerçek kaynak bağlamı",
+      "status": "passed",
+      "assertions": [
+        "Atıfta kullanılan pasaj",
+        "Retrieval laboratuvarı bağlantısı"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/sources/e44713fb-6ef3-4cb3-9f8e-8729c2bc9b0b",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-context.png",
+      "screenshot_sha256": "ce24041ed79ffd06c81b81f647fa22b31169a5cbebb68f7af25e95540391a579",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "network-guards.md başlığı, Retrieval laboratuvarı breadcrumb bağlantısı ve Atıfta kullanılan pasaj rozetiyle Deadlock/Coffman metni okunur. Bu tek parçalı materyalde ek önceki/sonraki kart görünmüyor."
+        ],
+        "limitations": [
+          "Görsel tek parça örneğidir; çok parçalı bağlam gezinmesini doğrulamaz."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-questions",
+      "checklist": [
+        15
+      ],
+      "scope": "Soru havuzu ve filtreler",
+      "status": "passed",
+      "assertions": [
+        "Soru havuzu",
+        "Soruların durum süzgeci",
+        "Konu süzgeci",
+        "Soru havuzu listesi"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/questions",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-questions.png",
+      "screenshot_sha256": "91afd2c1687a3fcd9c5f825bcb56f3e470bd0132e67837473bfd3093e31d0a13",
+      "png_width": 1440,
+      "png_height": 1930,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Soru havuzunda konu/tip/adet/sınıflandırma alanları, örnek soru alanı, durum ve konu süzgeçleri görünür. Onaylı sentetik MCQ ayrıntısı; doğru şık, gerekçe ve Üretimde kullanılan kaynak kartı okunur."
+        ],
+        "limitations": [
+          "Tam sayfa uzundur; görselde onaylı soru bulunması bu I2 etkileşiminin UI onayı yaptığı anlamına gelmez, başlangıç verisi onaylı soruyu içerir."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-draft",
+      "checklist": [
+        16
+      ],
+      "scope": "Gerçek üretilen taslağın düzenleme formu",
+      "status": "passed",
+      "assertions": [
+        "Gerçek UI Soru üret çağrısı",
+        "Taslağı düzenle",
+        "Taslak soru düzenleme formu",
+        "Soru metni/Doğru şık/Taslağı kaydet"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/questions",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-draft.png",
+      "screenshot_sha256": "fe59e368708525ed551f5fe1e12a5f17e9a88b8f78d0a7812cc80d89edcebbce",
+      "png_width": 1440,
+      "png_height": 3102,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Uzun sayfada Taslak rozeti ve düzenleme açık uyarısı; Soru metni, A–D şıkları, Doğru şık, yanlış şıkların kaynak seçimleri, gerekçe ve sınıflandırma alanları görünür. Altta Taslağı kaydet, Vazgeç ve Henüz değişiklik yapılmadı metni var."
+        ],
+        "limitations": [
+          "Form açık görünümü ve düğme/form ilişkisi kontrol edildi; düzenlenmiş soruyu kaydetme veya onaylama yapılmadı.",
+          "Tam sayfa görüntüsünde sabit yan menü ve asistan düğmesi yakalama anındaki kaydırma konumuna göre ortalarda kalıyor; küçük önizleme tam boy form okunurluğunun yerini tutmaz."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-blueprint",
+      "checklist": [
+        17
+      ],
+      "scope": "Öğrenme çıktısı ve sınav kurma formu",
+      "status": "passed",
+      "assertions": [
+        "Sınav blueprint'i",
+        "Çıktının konusu/Kod/Açıklama",
+        "Yeni sınav kur → Sınav adı/Soru sayısı"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/blueprints",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-blueprint.png",
+      "screenshot_sha256": "0aef5d0e8688bfd6a766e97a02558b9bf774f99cdd3d387dcfc3ae7ff3be218a",
+      "png_width": 1440,
+      "png_height": 1295,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Öğrenme çıktısı listesi ile Çıktının konusu/Kod/Açıklama formu görünür. Yeni sınav kur açıldıktan sonraki Sınav adı, Süre, Deneme hakkı, dağılım yüzdeleri, Hücrelere aç ve henüz hücre olmayan durumda pasif Sınavı kur görünür."
+        ],
+        "limitations": [
+          "Yalnız açık kurma formu; sınav oluşturma, kağıt düzenleme, kapı denetimi ve yayın bu görüntüyle tamamlanmış sayılmaz."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-policy",
+      "checklist": [
+        21
+      ],
+      "scope": "AI politika formu",
+      "status": "passed",
+      "assertions": [
+        "Ders AI politikası/Asistan modları",
+        "Global üst sınırı kullan",
+        "Politikayı kaydet"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/settings",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-policy.png",
+      "screenshot_sha256": "1cd51c1ff6f1431ab02e63ec5569e620a18add872caf4a7c3b2d19cd902f749f",
+      "png_width": 1440,
+      "png_height": 1824,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Asistan modları, global varsayılan seçimleri, ders günlük bütçesi, öğrenci/öğretim elemanı günlük sınırları, yanıt ve eşzamanlı tavanlar görünür. Tüm ders materyallerini kullan seçili; Politikayı kaydet ve boş Politika geçmişi var."
+        ],
+        "limitations": [
+          "Ekrandaki etkin sayısal değerler ortama ait; kılavuza kalıcı varsayılan olarak taşınmadı.",
+          "Sabit asistan düğmesi öğretim elemanı günlük sınırı kartının sağ kenarı/alan sınırı önünde duruyor; etiket ve sayı okunur olsa da bu görüntü görsel regresyon veya AA kabulü değildir."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-quality",
+      "checklist": [
+        22
+      ],
+      "scope": "Paylaşılan inceleme kuyruğu ve gizlilik açıklaması",
+      "status": "passed",
+      "assertions": [
+        "AI kalite",
+        "Yenile",
+        "Paylaşılan inceleme kuyruğu",
+        "Sohbetler varsayılan olarak özeldir açıklaması"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/quality",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-quality.png",
+      "screenshot_sha256": "5d1d58d99cf2afe67e2a532485e101005355ee2e4630c97538fc93a2f924e169",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "AI kalite başlığı, Yenile, sohbetlerin varsayılan olarak özel olduğunu açıklayan metin, toplu sayaçlar ve Paylaşılan inceleme kuyruğunun boş durumu okunur."
+        ],
+        "limitations": [
+          "İzin verilmiş gerçek bir öğrenci paylaşımı bu sentetik boş kuyrukta incelenmedi."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-analytics",
+      "checklist": [
+        23
+      ],
+      "scope": "Toplu sınıf analitiği",
+      "status": "passed",
+      "assertions": [
+        "Sınıf analitiği",
+        "Yenile",
+        "İlerlemem başlığı yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/7a218220-ace9-4955-a317-7b4c3d3b6c8e/analytics",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-analytics.png",
+      "screenshot_sha256": "c9e0323be8ae1af2c1f758a50ab8f02990ca9282b123e1e587a3eea98ab558a2",
+      "png_width": 1440,
+      "png_height": 1304,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Sınıf analitiği başlığı ve Yenile görünür; resmî not olmadığı açıklanıyor. Sınıf ortalaması ile kapsam dışı ret oranında Ölçüm yok; konu ve yanlış soru bölümlerinde boş durum açıklamaları var."
+        ],
+        "limitations": [
+          "Bu I2 görüntüsü hesaplanmış öğrenme başarısı veya sınıf performansı ölçmez; H7 analitik örneğinin farklı sentetik durumuyla karıştırılmamalı."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "teacher-profile",
+      "checklist": [
+        24
+      ],
+      "scope": "Ders eğitmeni platform admin değildir",
+      "status": "passed",
+      "assertions": [
+        "Worker e-postası",
+        "Sunucu is_platform_admin=false",
+        "Bilgi İşlem bağlantısı yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/profile",
+      "runtime_screenshot": "i2-browser-output/guides-I2-eğitmen-rehberi--e145f-s-araçları-ve-taslak-ekranı-i2-guides/teacher-profile.png",
+      "screenshot_sha256": "eb2f9a914940f7cb275a25a3e873f00883c05a324607cf731a92b77cd11e5b5f",
+      "png_width": 1440,
+      "png_height": 1285,
+      "browser_test": "I2 eğitmen rehberi: gerçek ders araçları ve taslak ekranı",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Profilde sentetik eğitmen adı/e-postası, Ad soyad/E-posta alanları ve Profili kaydet görülüyor. İki dersin Eğitmen rolü, görünüm seçenekleri, gizlilik bağlantıları var; Bilgi İşlem bağlantısı görünmüyor."
+        ],
+        "limitations": [
+          "E-posta soldaki özet kartında kısaltılmış; sağdaki alanda tam gösteriliyor. Profil kaydı, tema değişikliği veya veri silme bu görselle gerçekleştirilmiş sayılmaz."
+        ],
+        "visual_limitation_flag": null,
+        "review_receipt": "instructor-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-dashboard",
+      "checklist": [
+        4,
+        5
+      ],
+      "scope": "Öğrenci menüsü ve dersin sonraki eylemi",
+      "status": "passed",
+      "assertions": [
+        "Merhaba/Genel bakış başlığı",
+        "Genel bakış/Dersler/Profil menüsü",
+        "Bu derste Çalışmaya devam et"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/dashboard",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-dashboard.png",
+      "screenshot_sha256": "5d1c3aabf9f8bd6af3556c87242ba833f599f9a5513c5aeb1e327cac96bd1a18",
+      "png_width": 1440,
+      "png_height": 1088,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Genel bakış seçili; Merhaba, E2E başlığı ve öğrenci rolündeki sentetik ders görünüyor.",
+          "Çalışmaya devam et, Tüm dersler ve Ders asistanı bağlantıları okunur; Henüz ölçülmedi ifadesi var. Bilgi İşlem bağlantısı görünmüyor."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-courses",
+      "checklist": [
+        6,
+        7
+      ],
+      "scope": "Aktif öğrenci üyeliğinin listesi",
+      "status": "passed",
+      "assertions": [
+        "Derslerim başlığı",
+        "API aktif üyelik listesinde kurulan ders öğrenci rolünde"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-courses.png",
+      "screenshot_sha256": "105d25e4d4141ee4f83841034326a74540bf5b177878184e968f3540c3f9e101",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Derslerim başlığı, tek sentetik ders kartı ve Öğrenci etiketi görünüyor.",
+          "Yeni ders düğmesi öğrenci görünümünde de var; kılavuzun bunun üyelik yolu olmadığını söylemesi yerinde."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-course",
+      "checklist": [
+        8,
+        12
+      ],
+      "scope": "Materyallerde öğrenci görünümü",
+      "status": "passed",
+      "assertions": [
+        "Gerçek ders başlığı",
+        "Ders Koçu",
+        "Dosya seç ve Soru havuzu araçları yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-course.png",
+      "screenshot_sha256": "782bbf621ff55264f6b7de305f5ce106bc6afb40777bb556bdc64880e747ea37",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Materyaller, Asistan, Sınav provası ve İlerleme sekmeleri; Ders Koçu çalışma alanı ve network-guards.md için Hazır rozeti görünüyor.",
+          "Öğrenci görünümünde yükleme düğmesi veya eğitmen sekmeleri yok; sabit Ders Koçu düğmesi materyal satırını örtmüyor."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-assistant",
+      "checklist": [
+        11,
+        12
+      ],
+      "scope": "Kısa panel kimliği, alanı, kapatma",
+      "status": "passed",
+      "assertions": [
+        "Ders Koçu dialog başlığı",
+        "Yeni konuşma/Sorun/Gönder",
+        "Kapat düğmesi dialogu kapatır; tekrar açılır"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-assistant.png",
+      "screenshot_sha256": "a211a38554df1efa1c792663cbae5938852bcd900790a332bcafbf6aae360cc9",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Sağdaki Ders Koçu paneli arka planı karartıyor; Kapat, Yeni konuşma, öneri düğmeleri, Soru-cevap/Sokratik ve Gönder görünür.",
+          "Boş giriş nedeniyle Gönder soluk; panelde gerçek sohbet yanıtı yok. Kapat etiketinin kılavuzdaki anlatımıyla uyumu görüldü."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-chat",
+      "checklist": [
+        10,
+        12
+      ],
+      "scope": "Tam sohbet başlığı, geçmiş ve yeni sohbet",
+      "status": "passed",
+      "assertions": [
+        "Ders Koçu",
+        "Sohbetlerin/Yeni sohbet",
+        "Sorun/Gönder görünür"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/chat",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-chat.png",
+      "screenshot_sha256": "ed40cb3753398c198a763938c97a530ce4f6e8685cdea594f24b99265368426f",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Ders Koçu başlığı, hazır network-guards.md materyali, boş Sohbetlerin listesi ve Yeni sohbet düğmesi birlikte görünüyor.",
+          "Soru-cevap/Sokratik seçimi, boş giriş ve Bu dersteki sohbetlerimi sil düğmesi okunur; yükleme veya hata paneli görünmüyor. Bu görüntüde yanıt üretilmiş değil."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-context",
+      "checklist": [
+        13
+      ],
+      "scope": "Gerçek sorunun kaynak parçası",
+      "status": "passed",
+      "assertions": [
+        "Gerçek kaynak dosyası başlığı",
+        "Atıfta kullanılan pasaj",
+        "Kaynak metni görünür"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/sources/81aaaa51-6eb7-48b0-ac63-f8b92b3d667b",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-context.png",
+      "screenshot_sha256": "123c61680d926adbf324f7e8ba656998a04ec7a62af9650dcdc8978366f2bcf9",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "network-guards.md başlığı altında Deadlock bölümündeki metin ve Atıfta kullanılan pasaj rozeti görünüyor.",
+          "Kaynak konumu bölüm adı; sayfa numarası görünmüyor. Retrieval laboratuvarı bağlantısı öğrenciye de çiziliyor; kılavuzun eğitmen aracı sınırı doğru."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-exam-start",
+      "checklist": [
+        18
+      ],
+      "scope": "Alıştırma ve konu seçimi",
+      "status": "passed",
+      "assertions": [
+        "Sınav provası",
+        "Çalışma konusu",
+        "Alıştırma başlat",
+        "Şu anda açık sınavlar"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/exam",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-exam-start.png",
+      "screenshot_sha256": "afbfce1e2b28df9c5dfb94e540278bbe717836fe7eac5ca3a6800270e287c712",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Sınav provası ekranında Alıştırma ve Sınav kartları, Çalışma konusu/Tüm konular ve iki başlatma düğmesi okunur.",
+          "Şu anda açık sınavlar ve Oturumlarım bölümlerinin boş durumları yüklenmiş; yayımlanmış sınav ve mevcut oturum görünmüyor."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-exam-running",
+      "checklist": [
+        19
+      ],
+      "scope": "Gerçek alıştırma yanıtı ve bitirme onayı",
+      "status": "passed",
+      "assertions": [
+        "Gerçek API'de practice oturumu",
+        "Soru seçimi ve Cevabı gönder",
+        "Bitir ve sonucu gör onayı"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/exam",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-exam-running.png",
+      "screenshot_sha256": "143e1f79a205263a69b70a14fcfae8b935add46ca30922de69c6535135bff199",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Alıştırma sorusu Cevaplandı durumunda; gönderilen A cevabı, Doğru geri bildirimi ve cevap açıklaması görünüyor.",
+          "Bitir ve sonucu gör ile Vazgeç bitirme onayı açık; Oturumlara dön bağlantısı görünür. Görünen puan sentetik örneğe ait, kalite ölçümü olarak kullanılmaz."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-exam-result",
+      "checklist": [
+        20
+      ],
+      "scope": "Kalıcı sonuç ve oturum geçmişi",
+      "status": "passed",
+      "assertions": [
+        "Sınav sonucu ve Cevaplanan alanı",
+        "Gerçek kayıtlı sonuç uç noktası",
+        "Oturumlarım ve Sonucu gör sonrası yeniden yüklenen sonuç alanı"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/exam",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-exam-result.png",
+      "screenshot_sha256": "1454bea9e351bb446f50863d36e6b3e71867062adf7b7d6f05da8259b4e99c12",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Sınav sonucu başlığı altında Cevaplanan, Boş bırakılan ve Değerlendirilemeyen alanları ile cevap anahtarı/açıklama tamamen yüklenmiş.",
+          "Yeni sınav başlat düğmesi görünüyor; yükleme veya kilit paneli yok. Puan tek sentetik MCQ kaydına ait."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-analytics",
+      "checklist": [
+        23
+      ],
+      "scope": "Kişisel ilerleme ekranı",
+      "status": "passed",
+      "assertions": [
+        "İlerlemem başlığı",
+        "Yenile",
+        "Sınıf analitiği başlığı yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/analytics",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-analytics.png",
+      "screenshot_sha256": "7f43d4e518cea44612557a081e4ddb3d2e4567309a3b2afb3fd42ba35124f6f8",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "İlerlemem başlığı, Yenile düğmesi, resmî not olmadığı açıklaması ve Deadlock konu satırı görünüyor.",
+          "Tek sentetik cevaptan oluşan konu göstergesi yüklenmiş; Sınıf analitiği ekranı değil."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-profile",
+      "checklist": [
+        24
+      ],
+      "scope": "Sunucudan e-posta, rol ve veri hakkı bağlantısı",
+      "status": "passed",
+      "assertions": [
+        "Profil/Ders rolleri",
+        "Worker e-postası salt okunur",
+        "Profili kaydet",
+        "Verilerimi indir veya sil"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/profile",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-profile.png",
+      "screenshot_sha256": "0e7325e301d19cdd6f58ccba035ee51d298861ac3e318dff22ca4c19cca47199",
+      "png_width": 1440,
+      "png_height": 1208,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Profilde sentetik E2E Öğrenci hesabı, hesap alanları, Profili kaydet, öğrenci ders rolü ve Dersi aç görünür.",
+          "Görünüm ve Gizlilik ve hesap bölümleri tam sayfa görüntüsünde okunur; e-posta düzenlenmediği açıklanır."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-profile-dark-mobile",
+      "checklist": [
+        25
+      ],
+      "scope": "Mobil koyu tema düğmeleri",
+      "status": "passed",
+      "assertions": [
+        "375 px viewport",
+        "Sistem/Açık/Koyu",
+        "Koyu seçili",
+        "Yatay taşma yok",
+        "Ad soyad odaklanabilir"
+      ],
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "url_observed": "http://localhost:3146/profile",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-profile-dark-mobile.png",
+      "screenshot_sha256": "db32da71e518346569380d9d8f26edb1d10a5dd66467b21f2891b421c2337753",
+      "png_width": 375,
+      "png_height": 1729,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Koyu tema seçili, Ad soyad alanında odak çerçevesi, alt kısımda Ders rolleri, Görünüm ve veri bağlantıları görünür.",
+          "Görsel sınırlama: sabit mobil menü tam sayfa yakalamada profil özetinin üzerine, görüntünün ortasına yerleşmiş; sağdaki Öğrenci özet etiketi ve bazı form metinleri kenarda kesiliyor. Bu PNG tüm mobil yerleşimin sorunsuz olduğu kanıtı değildir.",
+          "Yatay taşma otomatik assertionının geçtiği JSON'da kayıtlı olsa da bu görsel gözlem ondan ayrı tutuldu."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": true,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-account",
+      "checklist": [
+        26
+      ],
+      "scope": "Veri işlemi girişleri; işlemler çalıştırılmaz",
+      "status": "passed",
+      "assertions": [
+        "Verilerim",
+        "JSON olarak indir",
+        "Tüm sohbet geçmişini sil",
+        "Profil bilgilerimi kaldır girişleri"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/account",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-account.png",
+      "screenshot_sha256": "d223da5aae40ac981e36778b8ca826d5ef56e5d9a8a957f6a1794c871c977e7b",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Koyu temada Verilerim başlığı, JSON olarak indir, Tüm sohbet geçmişini sil ve Profil bilgilerimi kaldır düğmeleri okunur.",
+          "Profil kaldırmanın tüm verileri/kurum hesabını silmediği açıklaması görünür. Görüntü bu işlemlerden herhangi birinin çalıştırıldığını göstermez."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-denied-questions",
+      "checklist": [
+        15
+      ],
+      "scope": "Öğrencinin /questions eğitmen yüzeyi engeli",
+      "status": "passed",
+      "assertions": [
+        "Eğitmen erişim açıklaması",
+        "Soru üret eylemi yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/questions",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-denied-questions.png",
+      "screenshot_sha256": "d3bb777b4247a636c5e98356c89383517bb16590c7e165ee4d427b8516ede5db",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Koyu temada Soru havuzu başlığı ve yalnız eğitmenin erişebileceği açıklaması görünür.",
+          "Soru üret formu yok; Sınav provasına git yönlendirmesi var."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-denied-blueprints",
+      "checklist": [
+        17
+      ],
+      "scope": "Öğrencinin /blueprints eğitmen yüzeyi engeli",
+      "status": "passed",
+      "assertions": [
+        "Eğitmen erişim açıklaması",
+        "Yeni sınav kur eylemi yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/blueprints",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-denied-blueprints.png",
+      "screenshot_sha256": "5cc034335e8ca4f3176a918a0eaaf91615bf81b9f78910a836aa6d4067ee059c",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Koyu temada Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı açıklaması görünür.",
+          "Yeni sınav kur düğmesi ve blueprint içeriği görünmüyor; öğrenci ders sekmeleri korunuyor."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-denied-members",
+      "checklist": [
+        9
+      ],
+      "scope": "Öğrencinin /members eğitmen yüzeyi engeli",
+      "status": "passed",
+      "assertions": [
+        "Eğitmen erişim açıklaması",
+        "Derse ekle eylemi yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/members",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-denied-members.png",
+      "screenshot_sha256": "1802c5c2fef5b5f147285335b11f0452efaa330a31c7db9cd4d3019ed0d7af14",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Katılımcılar başlığı ve listenin yalnız eğitmene gösterildiği açıklaması okunur.",
+          "Katılımcı tablosu/ekleme formu yok; Ders sayfasına dön bağlantısı görünür."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-denied-settings",
+      "checklist": [
+        21
+      ],
+      "scope": "Öğrencinin /settings eğitmen yüzeyi engeli",
+      "status": "passed",
+      "assertions": [
+        "Eğitmen erişim açıklaması",
+        "Politikayı kaydet eylemi yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/settings",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-denied-settings.png",
+      "screenshot_sha256": "55baded13fa2e41a51dd30e52149c73e8c288d1f9ffd2a28e251179099184bb6",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Ders AI politikası başlığı ve alanın yalnız eğitmene gösterildiği açıklaması görünür.",
+          "Politika düzenleme alanları ve kaydetme düğmesi yok; öğrenci sekmeleri korunuyor."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-denied-quality",
+      "checklist": [
+        22
+      ],
+      "scope": "Öğrencinin /quality eğitmen yüzeyi engeli",
+      "status": "passed",
+      "assertions": [
+        "Eğitmen erişim açıklaması",
+        "Yenile eylemi yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/quality",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-denied-quality.png",
+      "screenshot_sha256": "415eedcbaac80b046a1d242e5c36676bc3ef6f4ad862a8edbb22066b414aca71",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Bu kalite görünümü yalnız dersin eğitmenine açıktır açıklaması koyu temada okunur.",
+          "İnceleme kuyruğu ve Yenile eylemi görünmüyor; bu erişim reddi beklenen öğrenci durumu."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "student-denied-sources",
+      "checklist": [
+        14
+      ],
+      "scope": "Öğrencinin /sources eğitmen yüzeyi engeli",
+      "status": "passed",
+      "assertions": [
+        "Eğitmen erişim açıklaması",
+        "Parçaları getir eylemi yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/courses/a0c54a05-9d87-4332-9e8e-50da365197e4/sources",
+      "runtime_screenshot": "i2-browser-output/guides-I2-öğrenci-rehberi-gerçek-rol-sayfalar-ve-alıştırma-i2-guides/student-denied-sources.png",
+      "screenshot_sha256": "f554b668d64672d9a6e376c148cb9fbaf0293b3051ceb055bf86dc219d112f20",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 öğrenci rehberi: gerçek rol, sayfalar ve alıştırma",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Retrieval laboratuvarı başlığı altında eğitmen erişim açıklaması ve Ders sayfasına dön bağlantısı görünüyor.",
+          "Soru inceleme formu/Parçaları getir düğmesi yok. Kaynak ayrıntısındaki görünür bağlantının öğrenciye bu aracı açmadığı doğrulanıyor."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": false,
+        "review_receipt": "student-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "admin-overview",
+      "checklist": [
+        27,
+        30
+      ],
+      "scope": "Sunucu profil kapısından sonra Bilgi İşlem",
+      "status": "passed",
+      "assertions": [
+        "Bilgi İşlem/Platform durumu",
+        "Uygulama ve veritabanı durum etiketleri",
+        "Profil yanıtı ilk admin isteğinden önce"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/admin",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-Bilgi-İşle-8881d-isteler-filtreler-ve-klavye-i2-guides/admin-overview.png",
+      "screenshot_sha256": "8b00881e77d529d449d051e1f0fd86aac8e8d68c2ba0b7ae631942c4e8cf12e4",
+      "png_width": 1440,
+      "png_height": 1560,
+      "browser_test": "I2 Bilgi İşlem rehberi: maskeli listeler, filtreler ve klavye",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Bilgi İşlem başlığı ve salt okunur operasyon alanı açıklaması görünür.",
+          "Platform durumu satırında Uygulama, Veritabanı, Vektör veritabanı, İstek kotası ve Embedding Hazır etiketleri ile ölçüm zamanı var.",
+          "Son 24 saat açıklaması yalnız kaydedilmiş başarılı HTTP sohbet isteklerini kapsadığını açıklar; P95 alanında tire bulunur.",
+          "Kullanıcılar sekmesi seçili; salt okunur kullanıcı tablosu ve maskeli e-postalar görünür."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "admin-users",
+      "checklist": [
+        28
+      ],
+      "scope": "Maskeli kullanıcı listesi ve arama alanı",
+      "status": "passed",
+      "assertions": [
+        "Kullanıcılar sekmesi ve başlığı",
+        "Kullanıcı ara",
+        "Maskeli seed e-postası",
+        "Tam seed e-postası yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/admin",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-Bilgi-İşle-8881d-isteler-filtreler-ve-klavye-i2-guides/admin-users.png",
+      "screenshot_sha256": "8b00881e77d529d449d051e1f0fd86aac8e8d68c2ba0b7ae631942c4e8cf12e4",
+      "png_width": 1440,
+      "png_height": 1560,
+      "browser_test": "I2 Bilgi İşlem rehberi: maskeli listeler, filtreler ve klavye",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Kullanıcılar sekmesi, Kullanıcı ara alanı, Ad veya maskeli e-posta yer tutucusu ve Uygula düğmesi görünür.",
+          "Tabloda ad, maskeli e-posta, Yetki, Aktif ders ve Oluşturma alanları bulunur; Ayşe Hoca satırında Bilgi İşlem yöneticisi etiketi vardır.",
+          "Düzenleme veya silme kontrolü görünmez; Önceki ve Sonraki bu görüntüde devre dışıdır.",
+          "PNG baytları admin-overview ile aynıdır; iki farklı assertion kaydı aynı görsel durumu yakalamıştır."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "admin-courses",
+      "checklist": [
+        28
+      ],
+      "scope": "Ders listesi ve arama alanı",
+      "status": "passed",
+      "assertions": [
+        "Dersler sekmesi ve başlığı",
+        "Ders ara"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/admin",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-Bilgi-İşle-8881d-isteler-filtreler-ve-klavye-i2-guides/admin-courses.png",
+      "screenshot_sha256": "b51399c6ac8409824a4667cbea8ff06ea5b23899a60c677472acfb59ff340d0a",
+      "png_width": 1440,
+      "png_height": 1377,
+      "browser_test": "I2 Bilgi İşlem rehberi: maskeli listeler, filtreler ve klavye",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Dersler sekmesi seçili; Ders ara alanı ve Uygula düğmesi görünür.",
+          "Dersler tablosunda ders kodu/adı, Oluşturan, Aktif üye, Kaynak ve Oluşturma sütunları bulunur.",
+          "Yalnız işletim metaverisi gösterildiği ve akademik yanıtların açılmadığı açıklaması vardır; akademik içeriği açan kontrol görünmez."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "admin-ai-records",
+      "checklist": [
+        28
+      ],
+      "scope": "AI kayıtları durum/uç filtreleri",
+      "status": "passed",
+      "assertions": [
+        "AI kullanım kayıtları",
+        "Yanıt durumu",
+        "Uç filtresi"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/admin",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-Bilgi-İşle-8881d-isteler-filtreler-ve-klavye-i2-guides/admin-ai-records.png",
+      "screenshot_sha256": "48654bc65d39ce85a4c55c40977c18e925636d84abebfcdca759294083fed3cd",
+      "png_width": 1440,
+      "png_height": 1295,
+      "browser_test": "I2 Bilgi İşlem rehberi: maskeli listeler, filtreler ve klavye",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "AI kullanım kayıtları sekmesi seçili; Yanıt durumu listesi, Uç filtresi alanı ve Uygula düğmesi görünür.",
+          "Tablo Zaman, Uç, Bağlam, Sonuç, Performans ve Önbellek sütunlarını gösterir.",
+          "Bu filtreye uyan AI kullanım kaydı bulunamadı boş durum metni vardır; dolu AI kayıt satırları bu PNG ile doğrulanamaz."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "admin-ingestion",
+      "checklist": [
+        28
+      ],
+      "scope": "İşleme işleri durum filtresi",
+      "status": "passed",
+      "assertions": [
+        "İşleme işleri",
+        "Kaynak işleme işleri başlığı",
+        "İşleme durumu"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/admin",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-Bilgi-İşle-8881d-isteler-filtreler-ve-klavye-i2-guides/admin-ingestion.png",
+      "screenshot_sha256": "de2e2653f7bb72dd87224ca3e7bed6ec7c01942947f0361ef68c96c184c18a04",
+      "png_width": 1440,
+      "png_height": 1316,
+      "browser_test": "I2 Bilgi İşlem rehberi: maskeli listeler, filtreler ve klavye",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "İşleme işleri sekmesi seçili; İşleme durumu listesi ve Kaynak işleme işleri başlığı görünür.",
+          "Belge teknik kimliği ve ders kodu ile Durum, Deneme, Başlama, Bitiş sütunları vardır; görünen işler Tamamlandı durumundadır.",
+          "Dosya adı veya içeriği gösterilmez; yeniden işleme düğmesi görünmez."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "admin-keyboard",
+      "checklist": [
+        29
+      ],
+      "scope": "Home/End/sol/sağ sekme klavye davranışı",
+      "status": "passed",
+      "assertions": [
+        "Home→Kullanıcılar",
+        "End→İşleme işleri",
+        "ArrowLeft→AI kayıtları",
+        "ArrowRight→İşleme işleri",
+        "Odak ve seçili sekme birlikte değişir"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/admin",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-Bilgi-İşle-8881d-isteler-filtreler-ve-klavye-i2-guides/admin-keyboard.png",
+      "screenshot_sha256": "2dc0a66cf50d368615b5689b03cc2688afac3bdc210e0b3cc17b187b4b96ffbe",
+      "png_width": 1440,
+      "png_height": 1316,
+      "browser_test": "I2 Bilgi İşlem rehberi: maskeli listeler, filtreler ve klavye",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "İşleme işleri sekmesi seçili ve kırmızı klavye odak çerçevesi görünür.",
+          "Kaynak işleme işleri paneli açıktır.",
+          "PNG yalnız son odak durumunu gösterir; Home/End/sol/sağ olay sırasının kanıtı passed assertion kaydıdır."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "public-login",
+      "checklist": [
+        1
+      ],
+      "scope": "Yalnız owned demo giriş ekranı",
+      "status": "passed",
+      "assertions": [
+        "DOU-Synapse/Oturum aç",
+        "Ayşe Hoca/Burak Yılmaz demo düğmeleri",
+        "Geliştirme ortamı açıklaması",
+        "Gerçek parola formu yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-ortak-sayf-596ac-gerçek-parola-akışı-ve-KVKK-i2-guides/public-login.png",
+      "screenshot_sha256": "54081a98e30a0564281382860e99c02957efa41f8e9059312a59a7094fa1991e",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 ortak sayfalar: demo giriş, kapalı gerçek parola akışı ve KVKK",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "DOU-Synapse ve Oturum aç başlıkları görünür; Ayşe Hoca ve Burak Yılmaz demo hesap düğmeleri bulunur.",
+          "Geliştirme ortamı girişi açıklaması ve Kişisel veriler ve gizlilik bağlantısı görünür.",
+          "Gerçek parola giriş alanı görünmez; gerçek dış kimlik sağlayıcısı kabulü değildir."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "public-forgot-password",
+      "checklist": [
+        2
+      ],
+      "scope": "Gerçek auth yapılandırılmadığında açıklama",
+      "status": "passed",
+      "assertions": [
+        "Parolanı yenile",
+        "Gerçek Supabase Auth yapılandırılınca etkinleşir açıklaması",
+        "Oturum açmaya dön",
+        "Yenileme bağlantısı gönder yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/forgot-password",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-ortak-sayf-596ac-gerçek-parola-akışı-ve-KVKK-i2-guides/public-forgot-password.png",
+      "screenshot_sha256": "ed6e19f4d3bcd8c65885d4d5123f6cd617f3705d69bcc74f42fd4aa56533803a",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 ortak sayfalar: demo giriş, kapalı gerçek parola akışı ve KVKK",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Parolanı yenile başlığı ve Oturum açmaya dön bağlantısı görünür.",
+          "Yerel demo girişinde parola kullanılmadığı, akışın gerçek Supabase Auth yapılandırıldığında etkinleştiği yazılıdır.",
+          "E-posta alanı veya yenileme bağlantısı gönder düğmesi görünmez; bu yalnız kapalı yapılandırma durumudur."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "public-reset-password",
+      "checklist": [
+        3
+      ],
+      "scope": "Gerçek auth yapılandırılmadığında açıklama",
+      "status": "passed",
+      "assertions": [
+        "Yeni parola belirle",
+        "Gerçek Supabase Auth etkinleşme açıklaması",
+        "Yeni bağlantı iste",
+        "Parolayı güncelle yok"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/reset-password",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-ortak-sayf-596ac-gerçek-parola-akışı-ve-KVKK-i2-guides/public-reset-password.png",
+      "screenshot_sha256": "d50053d9bd88654922b61df9d2cbb243a3f975ed305696ea11f8ca51c9c48f91",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 ortak sayfalar: demo giriş, kapalı gerçek parola akışı ve KVKK",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Yeni parola belirle başlığı ve Yeni bağlantı iste bağlantısı görünür.",
+          "Ekranın gerçek Supabase Auth yapılandırıldığında etkinleştiği yazılıdır.",
+          "Yeni parola alanı veya Parolayı güncelle düğmesi görünmez; gerçek parola değiştirme işlemi doğrulanmaz."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "public-kvkk",
+      "checklist": [
+        31
+      ],
+      "scope": "Mevcut kişisel veri açıklaması",
+      "status": "passed",
+      "assertions": [
+        "Kişisel Veriler ve Gizlilik",
+        "Hangi bilgiler kullanılır?"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/kvkk",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-ortak-sayf-596ac-gerçek-parola-akışı-ve-KVKK-i2-guides/public-kvkk.png",
+      "screenshot_sha256": "f611751c395206b4c5db71ce30fbac10e16900c7f6e73fb993a46d7e918ebc26",
+      "png_width": 1440,
+      "png_height": 3181,
+      "browser_test": "I2 ortak sayfalar: demo giriş, kapalı gerçek parola akışı ve KVKK",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Kişisel Veriler ve Gizlilik başlığı ve Hangi bilgiler kullanılır? tablosu görünür.",
+          "Bilgileri kim görebilir?, Yapay zekâ ve diğer hizmet sağlayıcıları, Hesabınızdan yapabileceğiniz işler, Saklama ve silme sınırları ve Hak talepleri ve kurumsal kullanım bölümleri görünür.",
+          "Metin tamamlanmış KVKK/GDPR uygunluk beyanı sayılmaması gerektiğini açıklar; yalnız açıklama ekranı gözlenmiştir."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    },
+    {
+      "key": "nonadmin-denied",
+      "checklist": [
+        30
+      ],
+      "scope": "Seed öğrenciyle UI engeli ve makbuzlu gerçek 403",
+      "status": "passed",
+      "assertions": [
+        "Bu alana erişiminiz yok",
+        "Bilgi İşlem menüsü yok",
+        "auditCapture.fetch /admin/overview → 403"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "url_observed": "http://localhost:3146/admin",
+      "runtime_screenshot": "i2-browser-output/public-admin-I2-platform-r-2e2be-an-API-kapısında-reddedilir-i2-guides/nonadmin-denied.png",
+      "screenshot_sha256": "c936840167394542a05c507f7ae90e21941765aa86c87aac7c639ccaa8da79f0",
+      "png_width": 1440,
+      "png_height": 1000,
+      "browser_test": "I2 platform rolü: öğrenci admin UI ve doğrudan API kapısında reddedilir",
+      "visual_review": {
+        "opened_and_reviewed": true,
+        "observations": [
+          "Öğrenci oturumunda Bu alana erişiminiz yok başlığı görünür.",
+          "Açıklama yalnız platform yöneticilerinin erişebildiğini ve ders eğitmenliğinin Bilgi İşlem yetkisi vermediğini söylüyor.",
+          "Soldaki menüde Bilgi İşlem bağlantısı yok; doğrudan API 403 sonucunun kaynağı PNG değil manifest assertion ve owned audit kaydıdır."
+        ],
+        "limitations": [],
+        "visual_limitation_flag": null,
+        "review_receipt": "admin-i2-visual-review.json"
+      }
+    }
+  ],
+  "checklist": [
+    {
+      "id": 1,
+      "screen": "Ortak giriş",
+      "route": "/",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/page.tsx",
+      "source_sha256": "bba2261233e1b51aebfaed40b2ab96714f5db66572da85bb325d775a7f0c94c7",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "public-login"
+      ]
+    },
+    {
+      "id": 2,
+      "screen": "Parola bağlantısı",
+      "route": "/forgot-password",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/forgot-password/page.tsx",
+      "source_sha256": "a40ae233144e45e3656f818e5a96821755dd3a8d0bddfc19e5c7aaf204234cb4",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "public-forgot-password"
+      ]
+    },
+    {
+      "id": 3,
+      "screen": "Yeni parola",
+      "route": "/reset-password",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/reset-password/page.tsx",
+      "source_sha256": "75a89a1594dd7ec897834fbf51d4ea9016168feb6e3addbd68fda4671d879e57",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "public-reset-password"
+      ]
+    },
+    {
+      "id": 4,
+      "screen": "Gezinme",
+      "route": "Ortak menü",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/components/app-shell.tsx",
+      "source_sha256": "9d04a11f0f2a535e1a298be1649c290c94cdc576fc54600ab8590970394a0304",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-dashboard",
+        "student-dashboard"
+      ]
+    },
+    {
+      "id": 5,
+      "screen": "Genel bakış",
+      "route": "/dashboard",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/lib/dashboard.ts",
+      "source_sha256": "c6c22b91ed114d53dc33c76711cccc0470293cecfb37b02720b57c11674eae94",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-dashboard",
+        "student-dashboard"
+      ]
+    },
+    {
+      "id": 6,
+      "screen": "Derslerim",
+      "route": "/courses",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/page.tsx",
+      "source_sha256": "0b57b953fc83d14c48ac351be9b3a7460db53069964bd25e12114816a6144fff",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-new-course",
+        "student-courses"
+      ]
+    },
+    {
+      "id": 7,
+      "screen": "Ders rolü",
+      "route": "/courses",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/api/app/api/courses.py",
+      "source_sha256": "7cfc1ba73eab5bfbbf1edf3db5696a805964ddef959a814447e350b91cd71f2a",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-new-course",
+        "student-courses"
+      ]
+    },
+    {
+      "id": 8,
+      "screen": "Materyaller",
+      "route": "/courses/[courseId]",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/[courseId]/page.tsx",
+      "source_sha256": "0d6b71e04adab698ce32f1750d05b1aa09918a60f47b7e0998c0d04a79156eb6",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-course",
+        "student-course"
+      ]
+    },
+    {
+      "id": 9,
+      "screen": "Katılımcılar",
+      "route": "/courses/[courseId]/members",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/[courseId]/members/page.tsx",
+      "source_sha256": "232c33be22d1cf76cfa6498e19ba65e8b18bb28b75ff1477d0437d688b050fcd",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-members",
+        "student-denied-members"
+      ]
+    },
+    {
+      "id": 10,
+      "screen": "Tam asistan",
+      "route": "/courses/[courseId]/chat",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "source_sha256": "111b1670cec66efcc472a46ff78beaa7559285fb54142e10889af5766b32c7f7",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-chat",
+        "student-chat"
+      ]
+    },
+    {
+      "id": 11,
+      "screen": "Kısa asistan",
+      "route": "Genel bakış ve ders sayfaları",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/components/course-assistant/course-assistant.tsx",
+      "source_sha256": "e240e6a1f45de04f753627436d581871148efb02191dafd3cebb50733e1b9cc7",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "student-assistant"
+      ]
+    },
+    {
+      "id": 12,
+      "screen": "Asistan kimliği",
+      "route": "Ders paneli",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/lib/course-assistant.ts",
+      "source_sha256": "1bfbe2986517db2ab6c2e7141a3ec0ac5651fb2b398f3aba7008c42edebadc95",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-course",
+        "teacher-chat",
+        "student-course",
+        "student-assistant",
+        "student-chat"
+      ]
+    },
+    {
+      "id": 13,
+      "screen": "Kaynak bağlamı",
+      "route": "/courses/[courseId]/sources/[chunkId]",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/courses/[courseId]/sources/[chunkId]/page.tsx",
+      "source_sha256": "d29f40261e1c6e4db549a1130579e525821a93ec08bb9bd5a47f46cc689d8fc4",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-context",
+        "student-context"
+      ]
+    },
+    {
+      "id": 14,
+      "screen": "Retrieval laboratuvarı",
+      "route": "/courses/[courseId]/sources",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/[courseId]/sources/page.tsx",
+      "source_sha256": "c92d1919c562a39344e25577b5c26006febc48aa66572b92583bc3861bf62300",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-sources",
+        "student-denied-sources"
+      ]
+    },
+    {
+      "id": 15,
+      "screen": "Soru havuzu",
+      "route": "/courses/[courseId]/questions",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/[courseId]/questions/page.tsx",
+      "source_sha256": "0124f764c098a423064269938a52fdde6cf4fb361793c32121b2dab1b1f1600a",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-questions",
+        "student-denied-questions"
+      ]
+    },
+    {
+      "id": 16,
+      "screen": "Soru taslağı",
+      "route": "Soru havuzu ayrıntısı",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/components/question-authoring/draft-editor.tsx",
+      "source_sha256": "563041b7117c376f64ade67ba569f449ac5564e831905482a5872abe034987fc",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-draft"
+      ]
+    },
+    {
+      "id": 17,
+      "screen": "Blueprint",
+      "route": "/courses/[courseId]/blueprints",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/[courseId]/blueprints/page.tsx",
+      "source_sha256": "05a165ff073666cad25fa9f8e3c3aa1f3def0d88acdcc46070ec72088decf732",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-blueprint",
+        "student-denied-blueprints"
+      ]
+    },
+    {
+      "id": 18,
+      "screen": "Sınav başlangıcı",
+      "route": "/courses/[courseId]/exam",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/components/exam/start-panel.tsx",
+      "source_sha256": "59ae20106d02ccbb2b52e79902a76fc1583b71b92e4adcaf670d7abf91ebefc0",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "student-exam-start"
+      ]
+    },
+    {
+      "id": 19,
+      "screen": "Etkin sınav",
+      "route": "/courses/[courseId]/exam",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/components/exam/running-exam.tsx",
+      "source_sha256": "5873999db056120aefb1e471874395588ec85904894f607d79e202a8ecabebdd",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "student-exam-running"
+      ]
+    },
+    {
+      "id": 20,
+      "screen": "Sonuç ve geçmiş",
+      "route": "/courses/[courseId]/exam",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/lib/exam.ts",
+      "source_sha256": "8ac6c8e3604d0885a85c81bbea698329e7600a77d47717c358f702697e2b8aad",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "student-exam-result"
+      ]
+    },
+    {
+      "id": 21,
+      "screen": "AI politikası",
+      "route": "/courses/[courseId]/settings",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/[courseId]/settings/page.tsx",
+      "source_sha256": "f9c344f3f7e8992c326aea3a9ac7d52145d25e6034523e4dd9e7e7bb555acdbd",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-policy",
+        "student-denied-settings"
+      ]
+    },
+    {
+      "id": 22,
+      "screen": "AI kalite",
+      "route": "/courses/[courseId]/quality",
+      "guide": "docs/instructor-guide.md",
+      "source": "apps/web/app/courses/[courseId]/quality/page.tsx",
+      "source_sha256": "e27b38e7e7f68c4cbed7278ffff76dd485b27bf827926029c292eabe85729d90",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-quality",
+        "student-denied-quality"
+      ]
+    },
+    {
+      "id": 23,
+      "screen": "İlerleme ve analitik",
+      "route": "/courses/[courseId]/analytics",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/courses/[courseId]/analytics/page.tsx",
+      "source_sha256": "44015a4a92afbaaf46f3d62f07137e507a9f88c7eb2c78f0d9f89e64449fd8e8",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-analytics",
+        "student-analytics"
+      ]
+    },
+    {
+      "id": 24,
+      "screen": "Profil",
+      "route": "/profile",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/profile/page.tsx",
+      "source_sha256": "6cba098d3295cbd035bbcf7bc4281f4d9271db64aa95255afef6cdbdaa063574",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "teacher-profile",
+        "student-profile"
+      ]
+    },
+    {
+      "id": 25,
+      "screen": "Tema",
+      "route": "Profil ve ortak menü",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/lib/theme.ts",
+      "source_sha256": "9310417beb5b4c6d72c2a516a66f7bc9f957f1efb629378e91812096e673abdc",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "student-profile-dark-mobile"
+      ]
+    },
+    {
+      "id": 26,
+      "screen": "Verilerim",
+      "route": "/account",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/account/page.tsx",
+      "source_sha256": "b91ccb2415ecc65b73402fa712e70a4da22f854e510316f3f7161eaec5f469b3",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "student-account"
+      ]
+    },
+    {
+      "id": 27,
+      "screen": "Bilgi İşlem genel görünüm",
+      "route": "/admin",
+      "guide": "docs/admin-guide.md",
+      "source": "apps/web/app/admin/page.tsx",
+      "source_sha256": "f5cbfeca2871c09c71a6ab1d1d8a8630b17a8943fb14752a5133abbabf255677",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "admin-overview"
+      ]
+    },
+    {
+      "id": 28,
+      "screen": "Bilgi İşlem listeleri",
+      "route": "/admin sekmeleri",
+      "guide": "docs/admin-guide.md",
+      "source": "apps/web/app/admin/page.tsx",
+      "source_sha256": "f5cbfeca2871c09c71a6ab1d1d8a8630b17a8943fb14752a5133abbabf255677",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "admin-users",
+        "admin-courses",
+        "admin-ai-records",
+        "admin-ingestion"
+      ]
+    },
+    {
+      "id": 29,
+      "screen": "Bilgi İşlem klavye sözleşmesi",
+      "route": "/admin sekmeleri",
+      "guide": "docs/admin-guide.md",
+      "source": "apps/web/lib/admin.ts",
+      "source_sha256": "513bc40af301cc4e7ebc69215b164302a14c57df6607e200372dc7102a4476ec",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "admin-keyboard"
+      ]
+    },
+    {
+      "id": 30,
+      "screen": "Platform rolü",
+      "route": "Bilgi İşlem sunucu yetkisi",
+      "guide": "docs/admin-guide.md",
+      "source": "apps/api/app/api/deps.py",
+      "source_sha256": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "admin-overview",
+        "nonadmin-denied"
+      ]
+    },
+    {
+      "id": 31,
+      "screen": "Kişisel veri kapsamı",
+      "route": "/kvkk",
+      "guide": "docs/student-guide.md",
+      "source": "apps/web/app/kvkk/page.tsx",
+      "source_sha256": "bd07c0174fafee2504ed180053534dbbb6bafe83a110f64b94fed7231abf3bca",
+      "status": "passed-local-ui-scope",
+      "record_keys": [
+        "public-kvkk"
+      ]
+    }
+  ],
+  "measured_record_count": 44,
+  "measured_checklist_count": 31,
+  "browser_environment": "macOS Chrome, fake provider/hashing, external Supabase config empty",
+  "visual_review": {
+    "status": "completed-with-observations",
+    "reviewer": "Codex agents; not human acceptance or WCAG certification",
+    "record_count": 44,
+    "unique_png_sha256_count": 43,
+    "receipts": [
+      {
+        "runtime_path": "student-i2-visual-review.json",
+        "sha256": "6c131c2ff6e859a5c0f72576d0199237bb463268dd79b4ed3cdbbf1ae58a9128",
+        "record_count": 19,
+        "reviewed_at": "2026-09-13T17:39:21.328896+00:00"
+      },
+      {
+        "runtime_path": "instructor-i2-visual-review.json",
+        "sha256": "207738119f9326f1492efab972de97b4341233fb9708304efa79fcb15515d69b",
+        "record_count": 14,
+        "reviewed_at": "2026-09-13T17:40:39.865587+00:00"
+      },
+      {
+        "runtime_path": "admin-i2-visual-review.json",
+        "sha256": "3191020097203a82302c6565e56f94999f829f3d54024cdc3d4fedce7eee3db9",
+        "record_count": 11,
+        "reviewed_at": "2026-09-13T17:39:34.715273+00:00"
+      }
+    ],
+    "open_findings": [
+      {
+        "key": "student-profile-dark-mobile",
+        "observation": "375px koyu profil tam sayfa görüntüsünde sabit menü profil özetiyle örtüşüyor; sağ tarafta rol etiketi ve bazı metinler kesiliyor. Yatay taşma assertionının geçmesi kusursuz yerleşim veya AA kabulü değildir."
+      },
+      {
+        "key": "teacher-course",
+        "observation": "1440x1000 viewport ile çekilen I2 materyal görüntüsünde sabit Eğitmen Asistanı düğmesi İçerik önizle/Sil düğmelerinin alt kenarını kısmen örtüyor. H7 ayrı görüntüsünün yerine geçirilmedi."
+      }
+    ],
+    "capture_limit": "Uzun tam sayfa görüntülerinde sabit menü/asistan yakalama anındaki kaydırma konumunda görünür; bu kayıt her kaydırma konumunda genel bir hata iddiası değildir.",
+    "duplicate_capture": "admin-overview ve admin-users ayrı assertion kayıtlarıdır; aynı görsel baytları içerir."
+  },
+  "limits": [
+    "UI-visible state checks do not certify all workflows or accessibility.",
+    "Real Supabase login/password mail/recovery and production providers not tested.",
+    "No delete/export/anonymize/policy-save/member-removal actions performed.",
+    "Draft editor and blueprint forms viewed; save/approve/publish not tested.",
+    "Private evidence PNGs are not H7 documentation images or Linux CI baselines.",
+    "Fresh build identity recorded; full build before/after hash equality not claimed."
+  ],
+  "prior_attempt": {
+    "run": "i2-browser-01",
+    "status": "FAIL",
+    "failed_screens": [
+      "student-dashboard",
+      "student-profile",
+      "teacher-dashboard",
+      "teacher-draft",
+      "admin-ai-records",
+      "admin-ingestion"
+    ],
+    "reason": "Observed duplicate dashboard links, composed link names, native select labels and out-of-form associated submit button required selector corrections; no product code was changed."
+  },
+  "raw_evidence": "runtime/evidence/i2-browser-02"
+}
