@@ -20,7 +20,7 @@ const llmFiles = [
   "flows", "role-aware-agent", "question-authoring", "question-delete-unblocks-document",
   "question-pool-filters", "blueprint-topic-readiness", "student-assessment",
   "exam-completion-guards", "code-rubric-feedback", "chat-history-deletion",
-  "privacy-session-guards", "exam-cross-tab-privacy",
+  "privacy-session-guards", "exam-cross-tab-privacy", "screenshots",
 ].map((name) => `**/${name}.spec.ts`);
 const browser = { ...devices["Desktop Chrome"], channel: process.env.CI ? undefined : "chrome" };
 
