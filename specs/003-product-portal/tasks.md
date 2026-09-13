@@ -1,5 +1,8 @@
 # Tasks: 003 Rol Bazlı Ürün Portalı
 
+> **Kutu incelemesi — 13 Eylül 2026:** başlangıçtaki 10 açık görev yeniden sayıldı; 0 görev mevcut kod/belge kanıtıyla kapatıldı, 10 görev açık kaldı. Özgün görev metinleri korundu, her açık kutuya tarihli karar ve kaynak eklendi. Bu çalışma yeni test, gerçek sağlayıcı, insan değerlendirmesi veya canlı dağıtım ölçümü değildir; tarihsel kabul kendi kaynak sürümüyle sınırlıdır. specs/001–005 toplam sayımı ayrı raporlanır.
+
+
 **Branch**: `003-product-portal`
 **Base**: `3b707ca`
 **Migration**: `0014_platform_admin_console.sql`
@@ -299,24 +302,44 @@ entegrasyon sahibi tarafından ayrıca yürütülecektir.
 
 - [ ] T701 Gerçek Supabase Auth ile öğrenci/eğitmen/admin hesaplarını doğrula;
   production'da `dev:` kimliğinin başlamadığını kanıtla.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Gerçek Supabase ile üç rol oturumu ve production dev-token reddi ölçülmedi. Kanıt: [supabase.ts](../../apps/web/lib/supabase.ts). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T702 Gerçek Supabase Storage ile upload → worker → source/citation zincirini
   staging'de doğrula; yerel filesystem sonucunu production kanıtı sayma.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Hedef staging private Storage upload/worker/citation zinciri ölçülmedi. Kanıt: [storage.py](../../apps/api/app/modules/ingestion/storage.py). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T703 Gerçek Groq/Gemini ile grounded cevap, Sokratik ipucu, soru üretimi ve
   grading eval setini çalıştır; fake provider sonucunu gerçek kalite sayma.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Gerçek Groq/Gemini kalite koşusu yok; fake sağlayıcı kabulü yeterli değil. Kanıt: [test-report.md](../../docs/test-report.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T704 OpenTelemetry trace/metric/log export'unu içerik allowlist'iyle kur;
   prompt, cevap, chunk, token ve tam e-posta sızıntı testi ekle.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Hedef OpenTelemetry export ve uçtan uca içerik sızıntısı kabulü yok; yerel log redaksiyonu bunun yerine geçmez. Kanıt: [logging-privacy.md](../../docs/operations/logging-privacy.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T705 API 5xx, readiness, latency, ingestion aging, provider failure ve DB
   pool sinyalleri için staging ölçümünden türetilmiş alarm eşikleri yaz.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Staging sinyallerinden türetilmiş alarm ve teslim kanıtı yok. Kanıt: [SLO.md](../../docs/engineering/SLO.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T706 Supabase production checklist'inde RLS, SSL, network restriction,
   MFA, backup/PITR ve yük maddelerini kanıt bağlantılarıyla kapat.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Canlı Supabase RLS/SSL/network/MFA/backup/yük checklist kabulü yok. Kanıt: [deployment.md](../../docs/deployment.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T707 Vercel web ve ACA API/worker staging smoke ile rollback prova et;
   deploy commit/SHA'yı kayıt altına al.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: İstenen hosting üzerinde gerçek staging smoke/rollback ve deploy SHA kabulü yok; hosting hedefi kararı da güncel planla uzlaştırılmalı. Kanıt: [deployment.md](../../docs/deployment.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T708 Backup/restore tatbikatını ayrı staging verisinde yap; production
   verisini silme ve yalnız “backup açık” ekran görüntüsünü restore kanıtı sayma.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: 018 yerel sentetik restore kanıtı var; hedef staging veri/Storage sözleşmesinde tatbikat yerine geçmez. Kanıt: [README.md](../../specs/018-codex-production-line/evidence/d3-local/README.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T709 Öğrenci ve eğitmen insan eval'ini çok turlu senaryolarla tamamla;
   citation support, pedagojik yardım, abstention ve öğretmen kabul oranını raporla.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Çok turlu bağımsız insan/eğitmen değerlendirmesi tamamlanmadı. Kanıt: [README.md](../../evaluation/faithfulness/README.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T710 Production URL'de üç rol yolculuğunu, sağlık/telemetry alarmını ve
   destek runbook'unu doğrula; ancak bundan sonra “production'da kanıtlandı” yaz.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Production URL üzerinde üç rol, alarm ve destek yolculuğu kabulü yok. Kanıt: [runbook.md](../../docs/runbook.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 
 ---
 

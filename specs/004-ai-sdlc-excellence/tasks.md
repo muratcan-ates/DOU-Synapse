@@ -1,5 +1,8 @@
 # Tasks: AI SDLC and Engineering Excellence
 
+> **Kutu incelemesi — 13 Eylül 2026:** başlangıçtaki 7 açık görev yeniden sayıldı; 0 görev mevcut kod/belge kanıtıyla kapatıldı, 7 görev açık kaldı. Özgün görev metinleri korundu, her açık kutuya tarihli karar ve kaynak eklendi. Bu çalışma yeni test, gerçek sağlayıcı, insan değerlendirmesi veya canlı dağıtım ölçümü değildir; tarihsel kabul kendi kaynak sürümüyle sınırlıdır. specs/001–005 toplam sayımı ayrı raporlanır.
+
+
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [research.md](research.md), [data-model.md](data-model.md)
 
 ## Phase 1 — Specification and boundaries
@@ -29,6 +32,8 @@
   exact-digest product gates before admission, fail-closed schema validation,
   verifiable supply-chain evidence, and no deployment claim.
 - [ ] T302 Require protected environment input and same-digest promotion contract for staging/production.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Aynı digest sözleşmesi belgeyle mevcut; protected staging/production ortam yaptırımı bu incelemede doğrulanmadı. Kanıt: [release-candidate.yml](../../.github/workflows/release-candidate.yml). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [x] T303 Add release/rollback evidence format and post-deploy smoke contract.
 
 T302 stays open: the same-digest contract is documented, but protected staging
@@ -71,10 +76,22 @@ observation. GitHub CI and release-candidate execution are not implied.
 ## Phase 7 — External enablement (not repository-completable)
 
 - [ ] T601 Configure and verify `main` branch protection/ruleset.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Gerçek main branch protection/ruleset ayarı ve etkinlik kanıtı incelenmedi. Kanıt: [CODEOWNERS](../../.github/CODEOWNERS). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T602 Configure protected staging/production environments and independent production approval.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Protected environment ve bağımsız gerçek production approval kaydı yok. Kanıt: [tasks.md](../../specs/004-ai-sdlc-excellence/tasks.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T603 Configure GHCR and cloud OIDC/deployment credentials.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: GHCR/cloud OIDC credential kullanılabilirliği ve hedef yetki kabulü doğrulanmadı. Kanıt: [release-candidate.yml](../../.github/workflows/release-candidate.yml). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T604 Prove real staging deployment, migration, Supabase Auth/Storage, real LLM, smoke, and alerts.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Gerçek staging/Auth/Storage/LLM/smoke/alarm uçtan uca kabulü yok. Kanıt: [deployment.md](../../docs/deployment.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T605 Perform backup-restore and rollback exercise against a non-production target.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Yerel sentetik restore var; hedef non-production staging üzerinde rollback ile birlikte tatbikat kabulü yok. Kanıt: [README.md](../../specs/018-codex-production-line/evidence/d3-local/README.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] T606 Promote the exact staging digest to production and verify post-deploy SLO telemetry.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Stagingden aynı digest ile production terfisi ve SLO telemetry kabulü yok. Kanıt: [SLO.md](../../docs/engineering/SLO.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 
 No Phase 7 item may be marked complete from documentation or a dry run.
