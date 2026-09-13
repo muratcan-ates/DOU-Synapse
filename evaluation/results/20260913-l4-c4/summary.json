@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T15:02:26.739710+00:00",
+  "source_script_sha256": "3b19c4ba3d5eff09155e1e5216e2b40d876da907558c45e84ab0e265bb016f9a",
+  "overall_c4": "partial",
+  "passing_selected_profiles": [
+    "query",
+    "ingest (one synthetic chunk)"
+  ],
+  "qint8_final": "Inference phase completed with finite vectors; interpreter exit exceeded fixed 5 s grace, process terminated/reaped, overall rc 1. Earlier b9bb8 source run exited 0; both preserved.",
+  "not_run": {
+    "combined": "Host pressure level 2 with 16 GiB physical RAM and 6875.94 MiB swap observed after the single E5 query; no simultaneous E5 processes started.",
+    "large_ingest": "Only one synthetic paragraph/chunk measured; batch-size setting 32 was not an actual batch of 32."
+  },
+  "unresolved_gate": "Full API 1688 passed/1 failed; unchanged 100 ms lag threshold failed at 131.3197 ms and again at 220.8156 ms. One instrumented warm-control diagnosis passed; it is not a full/cold replacement.",
+  "measurements": [
+    {
+      "run": "e5-query",
+      "run_status": "measured",
+      "run_error": null,
+      "phase": "cold_query",
+      "rss_before_bytes": 47267840,
+      "rss_after_bytes": 728186880,
+      "sampled_peak_rss_bytes": 801751040,
+      "duration_seconds": 42.039823833,
+      "max_sample_gap_ms": 326.150417,
+      "detail": {
+        "vector_dimension": 1024,
+        "started_monotonic_ns": 2289671553500,
+        "finished_monotonic_ns": 2331711377333
+      },
+      "blocked_local_ipv6_probe": 1
+    },
+    {
+      "run": "e5-query",
+      "run_status": "measured",
+      "run_error": null,
+      "phase": "warm_query",
+      "rss_before_bytes": 712769536,
+      "rss_after_bytes": 370491392,
+      "sampled_peak_rss_bytes": 879460352,
+      "duration_seconds": 2.980480209,
+      "max_sample_gap_ms": 326.150417,
+      "detail": {
+        "vector_dimension": 1024,
+        "started_monotonic_ns": 2331814222916,
+        "finished_monotonic_ns": 2334794703125
+      },
+      "blocked_local_ipv6_probe": 1
+    },
+    {
+      "run": "e5-ingest",
+      "run_status": "measured",
+      "run_error": null,
+      "phase": "ingest",
+      "rss_before_bytes": 72220672,
+      "rss_after_bytes": 114229248,
+      "sampled_peak_rss_bytes": 634126336,
+      "duration_seconds": 33.692368291,
+      "max_sample_gap_ms": 267.153916,
+      "detail": {
+        "chunks": 1,
+        "vectors": 1,
+        "batch_size": 32,
+        "started_monotonic_ns": 2395048037125,
+        "finished_monotonic_ns": 2428740405416
+      },
+      "blocked_local_ipv6_probe": 1
+    },
+    {
+      "run": "qint8",
+      "run_status": "failed",
+      "run_error": "CHILD_EXIT_TIMEOUT",
+      "phase": "qint8_smoke",
+      "rss_before_bytes": 43220992,
+      "rss_after_bytes": 63799296,
+      "sampled_peak_rss_bytes": 332496896,
+      "duration_seconds": 43.133256917,
+      "max_sample_gap_ms": 683.268542,
+      "detail": {
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "output_shapes": [
+          [
+            2,
+            17,
+            1024
+          ]
+        ],
+        "pooled_dimension": 1024,
+        "finite": true,
+        "production_provider_changed": false,
+        "semantic_equivalence_evaluated": false,
+        "started_monotonic_ns": 2486755699958,
+        "finished_monotonic_ns": 2529888956875
+      },
+      "blocked_local_ipv6_probe": 0
+    }
+  ],
+  "limits": [
+    "RSS measures resident pages only; compressed/swapped memory makes these numbers unsuitable for total memory sizing.",
+    "Nominal 50 ms sampling can miss peaks; actual maximum gaps are in each row.",
+    "Cold means fresh process/model session, not purged OS file cache.",
+    "No DB/HTTP/claim loop in component profiles; no container/Linux/hosting acceptance.",
+    "No embedding-quality or semantic-equivalence conclusion; production provider unchanged.",
+    "Every Python socket operation observed by the guard was blocked; the exact local IPv6 probe has a separate counter. Native network activity is not measured by an OS firewall."
+  ]
+}

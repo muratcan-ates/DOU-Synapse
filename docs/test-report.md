@@ -673,3 +673,41 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 
 **Kural:** her sayının yanında hangi koşu dosyasından geldiği yazılır. Kaynağı
 gösterilemeyen sayı rapordan çıkarılır.
+
+
+## 13 Eylül 2026 — L4 C4/1: yerel embedding RSS ölçümü
+
+C4 ölçücü, E5 sorgu ve küçük ingest profilleri doğrulandı; **C4 bütünü kısmi**. API + worker eşzamanlı E5 ölçümü kaynak engeli nedeniyle çalıştırılmadı. Üretim sağlayıcısı, model seçimi ve embedding davranışı değişmedi.
+
+Kaynak: `scripts/measure_embedding_rss.py`; komut makbuzları, ham gözlemler ve başarısız önceki denemeler `evaluation/results/20260913-l4-c4/evidence.tar.gz` içinde. Her üyenin gerçek SHA256 değeri `inventory.json`, özet değerler `summary.json` içinde.
+
+Darwin ARM64, Python 3.12.13, FastEmbed 0.8.0, ONNX Runtime 1.28.0. Soğuk sorgu yeni süreç/model oturumudur; OS dosya önbelleği temizlenmedi. RSS yalnız yerleşik sayfaları gösterir. Tek E5 sorgusundan sonra 16 GiB fiziksel RAM, 6875.94 MiB takas ve bellek baskısı düzeyi 2 kaydedildi. **Aşağıdaki düşük RSS değerleri E5’in bu kadar toplam bellekle çalışabileceğini veya qint8’den az bellek istediğini kanıtlamaz.**
+
+| Profil | Başlangıç RSS (MiB) | Son RSS (MiB) | Örneklenen tepe (MiB) | İşlem süresi (s) | En büyük örnek aralığı (ms) |
+|---|---:|---:|---:|---:|---:|
+| cold_query | 45.078 | 694.453 | 764.609 | 42.040 | 326.150 |
+| warm_query | 679.750 | 353.328 | 838.719 | 2.980 | 326.150 |
+| ingest | 68.875 | 108.938 | 604.750 | 33.692 | 267.154 |
+| qint8_smoke | 41.219 | 60.844 | 317.094 | 43.133 | 683.269 |
+
+Ingest yalnız bir sentetik Markdown bölümü, bir chunk ve bir vektör içerir. Ayardaki batch size 32, bu koşuda 32 öğelik batch işlendiği anlamına gelmez. API/worker bileşenleri gerçek uygulama lifecycle ve `process_document` yollarını kullanır; bu koşular HTTP, DB claim döngüsü veya barındırma kabulü değildir.
+
+Son qint8 koşusu sonlu vektörleri ürettikten sonra 5 saniyelik süreç çıkış sınırını aştı; `CHILD_EXIT_TIMEOUT`, rc 1 ve sonlandırma kaydı korunur. Bu koşu geçmiş sayılmaz. Önceki `b9bb8bfd` ölçücü sürümündeki qint8 koşusu rc 0 ve 1022.359 MiB tepe RSS ile tamamlanmıştı; eski sonuç yeni kaynak sonucu gibi sunulmaz. Qint8 yükleme fazı, upstream `intfloat/multilingual-e5-large` revizyonu `3d7cfbdacd47fdda877c5cd8a79fbcc4f2a574f3`, SHA256 `46f5d13dba7ade0160c67d346087d870162950882be17ff9319f873cf6fedff1` üzerinde CPUExecutionProvider ile sonlu `(2, 17, 1024)` çıktı üretti. AVX512-VNNI adlı dosyanın bu ARM makinede yüklenebilirliği ölçüldü; anlamsal kalite/eşdeğerlik ve varsayılan model değişimi değerlendirilmedi.
+
+İlk E5 denemelerindeki hata, `urllib3` importunun `::1:0` IPv6 yetenek yoklamasının ölçücüde yanlış sınıflanmasıydı. Ayrı import tanısı bunu gösterdi. Bu bind hâlâ engellenir ve ayrı sayaçta görünür; diğer Python socket girişimleri ölçümü başarısız yapar. Bu, işletim sistemi düzeyinde ağ trafiği sertifikası değildir. Çıktı dosyası ölçüm öncesi özel oluşturulur; çakışmada model başlamaz, son yazma arızasında tam rapor stdout üzerinde korunur.
+
+Son ölçücü paketi: **90 test geçti**, Ruff ve biçim kontrolü geçti. Önceki başarısız taklit/hashing denemeleri arşivde korunur; bu sonuç yalnız son kaynak için geçerlidir. <!-- docs-check: tarihsel 90 · 2026-09-13 -->
+
+Tam API: **1688 başarılı, 1 başarısız**; sağlık gecikmesi 131.3197 ms ile sabit 100 ms sınırını aştı. Tek cold tekrar 220.8156 ms ile başarısızdı. Bir defalık tanıda ön/işlem/son sağlık maksimumları 92.899 / 62.182 / 82.979 ms oldu; bu geçiş önceki cold/tam kapıyı kapatmaz. Kök neden INCONCLUSIVE, eşik değiştirilmedi. <!-- docs-check: tarihsel 1688 · 2026-09-13 -->
+
+Ruff, format, mypy, Bun, TypeScript, karşıtlık, göç sırası ve workflow policy makbuzları arşivdedir. Doküman kontrolü ve ebeveyn tabanlı yönetişim kontrolü teslim makbuzunda ayrıca tutulur.
+
+Komutların ortak kökü repo; mevcut API venv Python’ı kullanılır. Cache/model/tokenizer yolları yereldeki doğrulanmış dosyalara işaret etmelidir; her çıktı yeni bir dosya olmalıdır. Tam mutlak komutlar arşivdeki ilgili `result.json` dosyalarındadır:
+
+```text
+python scripts/measure_embedding_rss.py --profiles query --cache-dir <cache> --timeout-seconds 180 --rss-budget-mib 2560 --interval-ms 50 --output <new-query.json>
+python scripts/measure_embedding_rss.py --profiles ingest --paragraphs 1 --cache-dir <cache> --timeout-seconds 180 --rss-budget-mib 2560 --interval-ms 50 --output <new-ingest.json>
+python scripts/measure_embedding_rss.py --profiles qint8 --qint8-model <pinned-model> --qint8-tokenizer <pinned-tokenizer> --timeout-seconds 180 --rss-budget-mib 1536 --interval-ms 50 --output <new-qint8.json>
+```
+
+**ENGEL:** Son qint8 süreç çıkışı kabulü başarısız. Eşzamanlı E5 ve büyük ingest kapasitesi için bellek baskısı olmayan, hedef barındırmayı temsil eden ayrı kabul koşusu gerekli. Tam API zamanlama kapısı henüz doğrulanmadı. Bu dilim barındırma, güvenlik veya üretime hazır olma sertifikası taşımaz.
