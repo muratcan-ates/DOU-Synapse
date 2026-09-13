@@ -377,6 +377,12 @@ export interface GroundedMissingCriterion {
   source: SourceRef;
 }
 
+/** Sunucunun doğruladığı sonraki çalışma adımı ve gerçek kaynak alıntısı. */
+export interface GroundedNextHint {
+  text: string;
+  source: SourceRef;
+}
+
 export interface AnswerFeedback {
   question_id: string;
   recorded?: boolean;
@@ -386,6 +392,7 @@ export interface AnswerFeedback {
   missing_points?: string[];
   rubric_breakdown?: RubricCriterionScore[];
   why_wrong?: SourceRef | null;
+  next_hint?: GroundedNextHint | null;
   grounded_missing_criterion?: GroundedMissingCriterion | null;
   evidence?: SourceRef | null;
   solution?: Record<string, unknown> | null;

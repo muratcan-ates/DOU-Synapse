@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -188,6 +188,29 @@ class BugHuntAnswerKey(BaseModel):
     fix_summary: str = Field(min_length=1, max_length=2000)
 
 
+class BugHuntSubmission(BaseModel):
+    """Öğrencinin açık sürümlü cevabı; metinden satır/tür çıkarımı yapılmaz."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    version: Literal[1]
+    line: int = Field(ge=1)
+    bug_type: str = Field(min_length=1, max_length=200)
+    fix_summary: str = Field(min_length=1, max_length=2000)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _literal_version(cls, value: Any) -> Any:
+        if isinstance(value, dict) and type(value.get("version")) is not int:
+            raise ValueError("Cevap sürümü tam sayı 1 olmalı.")
+        return value
+
+    @model_validator(mode="after")
+    def _nonblank_details(self) -> BugHuntSubmission:
+        if not self.bug_type.strip() or not self.fix_summary.strip():
+            raise ValueError("Hata türü ve düzeltme özeti boş olamaz.")
+        return self
+
+
 class BugHuntPayload(BaseModel):
     rubric: list[RubricItem] = Field(default_factory=list, max_length=12)
     language: str = Field(min_length=1, max_length=40)
@@ -266,6 +289,28 @@ class GroundedCriterionEvidence(BaseModel):
     criterion: str = Field(min_length=1, max_length=500)
     chunk_id: UUID
     quote: str = Field(min_length=1, max_length=320)
+
+
+class GroundedFeedbackEvidence(BaseModel):
+    """Kaynak parçasına bağlı alıntı ve yanıt sonrası sonraki çalışma adımı."""
+
+    model_config = ConfigDict(extra="forbid")
+    chunk_id: UUID
+    quote: str = Field(strict=True, min_length=1, max_length=320)
+    next_hint: str = Field(strict=True, min_length=1, max_length=1000)
+
+    @model_validator(mode="after")
+    def _nonblank_text(self) -> GroundedFeedbackEvidence:
+        if not self.quote.strip() or not self.next_hint.strip():
+            raise ValueError("Kaynak alıntısı ve sonraki ipucu boş olamaz.")
+        return self
+
+
+class NextHintOut(BaseModel):
+    """Yanıt sonrası ipucu; sınav öncesi ipucu bütçesini değiştirmez."""
+
+    text: str
+    source: SourceRefOut
 
 
 class GroundedMissingCriterionOut(BaseModel):
@@ -425,6 +470,7 @@ class AnswerFeedbackOut(BaseModel):
     evidence: SourceRefOut | None = None
     #: Eksik ölçütün kaynak alıntısı. MCQ why_wrong anlamından ayrı tutulur.
     grounded_missing_criterion: GroundedMissingCriterionOut | None = None
+    next_hint: NextHintOut | None = None
     #: Sınav bitince açılan cevap anahtarı + açıklama; öncesinde None.
     solution: dict[str, Any] | None = None
     #: Rubriğe bağlı sorularda ölçüt kırılımı (FR-117). Yalnız çözüm açıldığında

@@ -89,6 +89,7 @@ from app.modules.assessment.grading import (
     SourceMaterial,
     grade_answer,
     grounded_criterion_is_valid,
+    grounded_feedback_is_valid,
     load_source_material,
     load_source_refs,
     payload_rubric,
@@ -105,10 +106,12 @@ from app.schemas.assessment import (
     ExamSessionOut,
     ExamStartRequest,
     GroundedCriterionEvidence,
+    GroundedFeedbackEvidence,
     GroundedMissingCriterionOut,
     HintOut,
     HintRequest,
     McqPayload,
+    NextHintOut,
     OpenPayload,
     RubricCriterionScore,
     SourceRefOut,
@@ -187,7 +190,7 @@ async def _answers_of(session: AsyncSession, session_id: UUID) -> list[Answer]:
 
 def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
     """`answers.feedback` jsonb'si. Puan kendi sütununda; burada tekrarlanmaz."""
-    return {
+    feedback: dict[str, object] = {
         "durum": "degerlendirildi" if outcome.graded else "tamamlanamadi",
         "eksik_noktalar": outcome.missing_points,
         "dayanak_chunk_id": str(outcome.evidence_chunk_id) if outcome.evidence_chunk_id else None,
@@ -205,6 +208,12 @@ def _feedback_payload(outcome: GradingOutcome) -> dict[str, object]:
             else None
         ),
     }
+    if outcome.feedback_version is not None:
+        feedback["feedback_version"] = outcome.feedback_version
+        feedback["grounded_feedback"] = (
+            outcome.grounded_feedback.model_dump(mode="json") if outcome.grounded_feedback else None
+        )
+    return feedback
 
 
 def _chunk_id(feedback: dict[str, object] | None, key: str) -> UUID | None:
@@ -215,25 +224,67 @@ def _chunk_id(feedback: dict[str, object] | None, key: str) -> UUID | None:
         return None
 
 
+def _grounded_feedback_evidence(
+    feedback: dict[str, object], *, question: Question, sources: dict[UUID, SourceMaterial]
+) -> GroundedFeedbackEvidence | None:
+    """Kayıtlı B9 dayanağını yeniden puanlamadan dersin güncel kaynağıyla doğrular."""
+    try:
+        claim = GroundedFeedbackEvidence.model_validate(feedback.get("grounded_feedback"))
+    except PydanticValidationError:
+        return None
+    material = sources.get(claim.chunk_id)
+    if (
+        material is None
+        or material.course_id != question.course_id
+        or claim.chunk_id != question.source_chunk_id
+        or claim.chunk_id != _chunk_id(feedback, "dayanak_chunk_id")
+        or not grounded_feedback_is_valid(claim, source_text=material.text)
+    ):
+        return None
+    return claim
+
+
 def _answer_is_displayable(
     answer: Answer, *, question: Question | None, sources: dict[UUID, SourceMaterial]
 ) -> bool:
-    """Revalidate saved AI evidence without rewriting historical answer records."""
-    if question is None or (answer.feedback or {}).get("durum") == "tamamlanamadi":
+    """Kayıtlı dayanağı, tarihsel cevabı değiştirmeden ve yeniden puanlamadan doğrular."""
+    feedback = answer.feedback or {}
+    if question is None or feedback.get("durum") == "tamamlanamadi":
         return False
     try:
         payload = parse_payload(question.type, question.payload)
     except PydanticValidationError:
         return False
-    if isinstance(payload, McqPayload) or (
-        isinstance(payload, OpenPayload) and payload.format is AnswerFormat.SHORT_ANSWER
+    versioned = "feedback_version" in feedback or "grounded_feedback" in feedback
+    if not versioned and (
+        isinstance(payload, McqPayload)
+        or (isinstance(payload, OpenPayload) and payload.format is AnswerFormat.SHORT_ANSWER)
     ):
         return True
-    evidence = _chunk_id(answer.feedback, "dayanak_chunk_id")
+    evidence = _chunk_id(feedback, "dayanak_chunk_id")
     material = sources.get(evidence) if evidence is not None else None
-    return bool(
-        evidence == question.source_chunk_id and material is not None and material.text.strip()
-    )
+    if evidence != question.source_chunk_id or material is None or not material.text.strip():
+        return False
+    if not versioned:
+        return True
+    # Gelecek veya bozuk sürüm işareti eski kayıt gösterimine düşemez.
+    version = feedback.get("feedback_version")
+    if (
+        type(version) is not int
+        or version != 1
+        or isinstance(payload, McqPayload)
+        or material.course_id != question.course_id
+        or answer.score is None
+        or answer.is_correct is None
+    ):
+        return False
+    try:
+        _rubric_breakdown(feedback)
+    except PydanticValidationError:
+        return False
+    if answer.score == 100 and feedback.get("grounded_feedback") is None:
+        return True
+    return _grounded_feedback_evidence(feedback, question=question, sources=sources) is not None
 
 
 def _answer_feedback(
@@ -286,14 +337,36 @@ def _answer_feedback(
         material = sources.get(chunk_id) if chunk_id else None
         return material.reference(focus=focus) if material else None
 
+    # Yeni yanlış/kısmi geri bildirim doğrulanmış birebir alıntıyı kullanır;
+    # odakla kesit tahmin etmez. Kaynak bilgileri yalnız veritabanından gelir.
+    claim = (
+        _grounded_feedback_evidence(feedback, question=question, sources=sources)
+        if question is not None and feedback.get("feedback_version") == 1 and answer.score != 100
+        else None
+    )
+    grounded_source = None
+    if claim is not None:
+        material = sources[claim.chunk_id]
+        grounded_source = SourceRefOut(
+            chunk_id=material.chunk_id,
+            file_name=material.file_name,
+            location=material.location,
+            snippet=claim.quote,
+        )
+
     return AnswerFeedbackOut(
         question_id=answer.question_id,
         graded=graded,
         is_correct=answer.is_correct,
         score=answer.score,
         missing_points=[str(item) for item in missing] if isinstance(missing, list) else [],
-        why_wrong=reference(why_wrong),
-        evidence=reference(evidence),
+        why_wrong=grounded_source or reference(why_wrong),
+        evidence=grounded_source or reference(evidence),
+        next_hint=(
+            NextHintOut(text=claim.next_hint, source=grounded_source)
+            if claim is not None and grounded_source is not None
+            else None
+        ),
         grounded_missing_criterion=_grounded_missing_criterion(
             feedback, question=question, sources=sources
         ),

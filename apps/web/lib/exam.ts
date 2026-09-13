@@ -29,6 +29,7 @@
  */
 
 import { ANSWER_MAX_LENGTH } from "@/lib/exam-limits";
+import { examAnswerValue } from "@/lib/exam-answer";
 import { ApiError } from "@/lib/api";
 import type { Tone } from "@/lib/labels";
 import type { AnswerFeedback, ExamHint, ExamMode, ExamQuestion, ExamSession } from "@/lib/types";
@@ -272,8 +273,7 @@ export function canSubmitAnswer({
 }): boolean {
   if (isClosed(session, localRemaining)) return false;
   if (question.answered) return false;
-  const trimmed = draft.trim();
-  return trimmed.length > 0 && trimmed.length <= ANSWER_MAX_LENGTH;
+  return examAnswerValue(question.type, draft) !== null;
 }
 
 /* -------------------------------------------------------------------------

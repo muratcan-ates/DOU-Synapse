@@ -35,6 +35,7 @@ from app.models.assessment import QuestionType
 from app.modules.assessment import question_gen
 from tests.conftest import UserFactory
 from tests.factories import (
+    DEADLOCK_TEXTS,
     ESSAY_PAYLOAD,
     EXAM_DURATION_SECONDS,
     ExamFixture,
@@ -727,6 +728,11 @@ class TestMasteryIntegration:
                         "score": 75,
                         "eksik_noktalar": ["kesilemezlik"],
                         "dayanak_chunk_id": str(fixture.chunk_ids[0]),
+                        "grounded_feedback": {
+                            "chunk_id": str(fixture.chunk_ids[0]),
+                            "quote": DEADLOCK_TEXTS[0][:300],
+                            "next_hint": "Kaynakta belirtilen koşulları yanıtınla karşılaştır.",
+                        },
                     }
                 )
             )

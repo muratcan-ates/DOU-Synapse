@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { sourceContextHref } from "@/lib/source-quality";
 import { api } from "@/lib/api";
+import { examAnswerValue, submittedAnswerText } from "@/lib/exam-answer";
 import { appendExamHint, canSubmitAnswer, describeQuestion, EXAM_MODE, formatClock, isLastMinute,
   nextHintLevel, shownQuestions, showsHints, sourceInfo, tickRemaining, timeIsUp, timeNotice } from "@/lib/exam";
 import type { AnswerFeedback, ExamFinish, ExamHint, ExamSession } from "@/lib/types";
@@ -227,10 +228,12 @@ export function RunningExam({
 
   const submit = () => {
     if (!submittable) return;
+    const given = examAnswerValue(question.type, draft);
+    if (given === null) return;
     return act({
       kind: "answer",
       questionId: question.id,
-      given: draft.trim(),
+      given,
       hintLevel: lastRung,
     });
   };
@@ -317,13 +320,21 @@ export function RunningExam({
       ) : answered ? (
         <div className="mt-6 rounded-lg border border-border bg-surface p-4">
           <p className="text-sm text-fg-muted">Bu soruyu cevapladınız.</p>
-          {(submitted[question.id] ?? "").trim() !== "" && (
-            <p className="prose-tr mt-2 text-sm text-fg">Gönderdiğiniz cevap: {submitted[question.id]}</p>
+          {submitted[question.id] !== undefined && (
+            question.type === "code_trace" ? (
+              <div className="mt-2">
+                <p className="text-sm text-fg-muted">Gönderdiğiniz cevap:</p>
+                <pre className="mt-1 overflow-x-auto whitespace-pre-wrap font-mono text-sm text-fg"><code>{submitted[question.id]}</code></pre>
+              </div>
+            ) : (
+              <p className="prose-tr mt-2 text-sm whitespace-pre-line text-fg">Gönderdiğiniz cevap: {submittedAnswerText(question.type, submitted[question.id])}</p>
+            )
           )}
         </div>
       ) : (
         <AnswerInput
           view={view}
+          questionType={question.type}
           questionId={question.id}
           draft={draft}
           disabled={timeUp || !draftStore.ready || !helpAvailable}

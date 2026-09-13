@@ -1,4 +1,4 @@
-import { ANSWER_MAX_LENGTH } from "@/lib/exam-limits";
+import { isStorableExamDraft } from "@/lib/exam-answer";
 import type { ExamSession } from "@/lib/types";
 
 export interface DraftScope { userId: string; courseId: string; sessionId: string }
@@ -24,7 +24,7 @@ export function validExamDrafts(scope: DraftScope, session: ExamSession, raw: un
   const values = raw as Record<string, unknown>;
   return Object.fromEntries((session.questions ?? []).flatMap((question) => {
     const value = values[question.id];
-    return !question.answered && typeof value === "string" && value.length > 0 && value.length <= ANSWER_MAX_LENGTH
+    return !question.answered && typeof value === "string" && isStorableExamDraft(question.type, value)
       ? [[question.id, value]] : [];
   }));
 }

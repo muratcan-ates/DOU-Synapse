@@ -1,7 +1,7 @@
 "use client";
 
 import { answerVerdict, describeSolution, formatScore, SCORE_SCALE, sourceInfo, VERDICT_LABEL } from "@/lib/exam";
-import { groundedMissingCriterion } from "@/lib/assessment-feedback";
+import { groundedMissingCriterion, groundedNextHint, sameSourceRef } from "@/lib/assessment-feedback";
 import { sourceContextHref } from "@/lib/source-quality";
 import type { AnswerFeedback } from "@/lib/types";
 import { SourceCard } from "@/components/source-card";
@@ -13,6 +13,13 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
   const score = formatScore(feedback.score);
   const solution = describeSolution(feedback.solution);
   const missingCriterion = groundedMissingCriterion(feedback);
+  const nextHint = groundedNextHint(feedback);
+  const whyWrongTitle = nextHint && feedback.is_correct === true
+    ? "Yanıtını geliştirmek için kaynak" : "Neden yanlış?";
+  const hintSharesSource = nextHint && sameSourceRef(nextHint.source, feedback.why_wrong);
+  // Yeni ipucunun aynı alıntısını bir kez göster; eski kanıt alanlarının sunumu korunur.
+  const evidenceSharesSource = nextHint && (sameSourceRef(feedback.evidence, feedback.why_wrong) ||
+    sameSourceRef(feedback.evidence, nextHint.source));
 
   return (
     <div className="mt-6 rounded-lg border border-border bg-surface p-5">
@@ -72,10 +79,18 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
 
       {/* Açıklama kaynaklıdır: "neden yanlış" gerçek bir chunk'a dayanır. */}
       {feedback.why_wrong && (
-        <div className="mt-4">
-          <h3 className="mb-2 text-xs font-medium text-fg-muted">Neden yanlış?</h3>
+        <section aria-label={whyWrongTitle} className="mt-4">
+          <h3 className="mb-2 text-xs font-medium text-fg-muted">{whyWrongTitle}</h3>
           <SourceCard source={sourceInfo(feedback.why_wrong)} href={sourceContextHref(courseId, feedback.why_wrong.chunk_id)} learningContext={{ courseId, sessionId, chunkId: feedback.why_wrong.chunk_id }} />
-        </div>
+        </section>
+      )}
+
+      {nextHint && (
+        <section aria-label="Sonraki adım için ipucu" className="mt-4 space-y-2">
+          <h3 className="text-xs font-medium text-fg-muted">Sonraki adım için ipucu</h3>
+          <p className="prose-tr text-sm whitespace-pre-line text-fg">{nextHint.text}</p>
+          {!hintSharesSource && <SourceCard source={sourceInfo(nextHint.source)} href={sourceContextHref(courseId, nextHint.source.chunk_id)} learningContext={{ courseId, sessionId, chunkId: nextHint.source.chunk_id }} />}
+        </section>
       )}
 
       {missingCriterion && <section aria-label="Eksik ölçütün dayanağı" className="mt-4 space-y-2">
@@ -84,7 +99,7 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
         <SourceCard source={sourceInfo(missingCriterion.source)} href={sourceContextHref(courseId, missingCriterion.source.chunk_id)} learningContext={{ courseId, sessionId, chunkId: missingCriterion.source.chunk_id }} />
       </section>}
 
-      {feedback.evidence && (
+      {feedback.evidence && !evidenceSharesSource && (
         <div className="mt-4">
           <h3 className="mb-2 text-xs font-medium text-fg-muted">Değerlendirmenin dayanağı</h3>
           <SourceCard source={sourceInfo(feedback.evidence)} href={sourceContextHref(courseId, feedback.evidence.chunk_id)} learningContext={{ courseId, sessionId, chunkId: feedback.evidence.chunk_id }} />
