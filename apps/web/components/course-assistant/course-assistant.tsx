@@ -39,6 +39,8 @@ import { useChatTurn } from "@/lib/use-chat-turn";
 import { sourceContextHref } from "@/lib/source-quality";
 import type { ChatAnswer } from "@/lib/types";
 import { ErrorNote, Loading } from "@/components/page-state";
+import { demoResponseText } from "@/lib/demo-response";
+import { DemoResponseNotice } from "@/components/demo-response-notice";
 import { SocraticLadder } from "@/components/socratic-ladder";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
 import { Button, Input } from "@/components/ui";
@@ -433,7 +435,10 @@ function AssistantConversation({
           if (block.kind === "answer") {
             return (
               <div key={block.id} className="space-y-3">
-                <p className="prose-tr text-sm whitespace-pre-line text-fg">{block.text}</p>
+                <DemoResponseNotice fixture={block.fixture} />
+                <p className="prose-tr text-sm whitespace-pre-line text-fg">
+                  {demoResponseText(block.text, block.fixture)}
+                </p>
                 {block.cached && (
                   <p className="text-xs text-fg-subtle">{CACHED_ANSWER_NOTE}</p>
                 )}
@@ -459,7 +464,10 @@ function AssistantConversation({
           }
           if (block.kind === "abstention") {
             return (
-              <AbstentionNotice key={block.id} status={block.status} message={block.text} />
+              <div key={block.id} className="space-y-3">
+                <DemoResponseNotice fixture={block.fixture} />
+                <AbstentionNotice status={block.status} message={demoResponseText(block.text, block.fixture)} />
+              </div>
             );
           }
           return <SocraticLadder key={block.id} rungs={block.rungs} />;

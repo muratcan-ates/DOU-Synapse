@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1728_toplanan-blue) <!-- docs-check: backend.tests = 1728 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-573_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 573 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1757_toplanan-blue) <!-- docs-check: backend.tests = 1757 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-580_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 580 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -473,9 +473,9 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1728** <!-- docs-check: backend.tests = 1728 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **573** <!-- docs-check: frontend.tests = 573 --> | 45 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 45 --> |
-| Playwright tarayıcı vakaları | **72** <!-- docs-check: e2e.tests = 72 --> | Sayı `playwright test --list` ile toplanan vakalardır. |
+| Backend testleri | **1757** <!-- docs-check: backend.tests = 1757 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **580** <!-- docs-check: frontend.tests = 580 --> | 46 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 46 --> |
+| Playwright tarayıcı vakaları | **75** <!-- docs-check: e2e.tests = 75 --> | Sayı `playwright test --list` ile toplanan vakalardır. |
 | Migration | **23** <!-- docs-check: migrations.count = 23 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **32** <!-- docs-check: tables.count = 32 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
@@ -800,7 +800,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1728 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1728 -->
+Güncel feature kanıtında backend koleksiyonu 1757 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1757 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -814,7 +814,7 @@ Güncel feature kanıtında backend koleksiyonu 1728 testtir; 38 alt vaka ayrıc
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 573 testtir. <!-- docs-check: frontend.tests = 573 -->
+Güncel feature kanıtında frontend kütüphane paketi 580 testtir. <!-- docs-check: frontend.tests = 580 -->
 
 Gerçek tarayıcı testi ayrı sentetik DB ve sahip olunan sunucu gerektirir;
 [E2E çalıştırma sözleşmesini](docs/development/owned-e2e.md) izleyin.

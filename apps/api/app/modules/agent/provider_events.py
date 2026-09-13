@@ -1,5 +1,7 @@
 """Sağlayıcı 429 olayını ham hata/metin taşımadan kaydeder."""
 
+import asyncio
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -66,12 +68,17 @@ class LearningEventLlmClient(LiteLlmClient):
         budget: float,
         attempt: int,
     ) -> LlmCompletion:
+        started = time.monotonic()
         try:
             return await super()._attempt(model, request, budget=budget, attempt=attempt)
         except Exception as exc:
             if getattr(exc, "status_code", None) == 429:
                 try:
-                    await record_provider_rate_limit()
+                    remaining = max(0.0, budget - (time.monotonic() - started))
+                    # Olay kaydı sağlayıcının mevcut süre bütçesini paylaşır;
+                    # yavaş DB, 429 tekrarını sınırsız bekletemez.
+                    async with asyncio.timeout(remaining):
+                        await record_provider_rate_limit()
                 except Exception:
                     # Ölçüm kesintisi özgün 429 sınıflandırmasını ve kontrollü
                     # tekrarı değiştirmez. Süreç iptali BaseException olarak geçer.

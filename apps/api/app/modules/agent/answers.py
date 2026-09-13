@@ -30,6 +30,12 @@ from app.core.config import Settings
 from app.core.errors import ValidationError
 from app.modules.agent.pipeline import LearningEventRetriever
 from app.modules.agent.provider_events import learning_provider_context
+from app.modules.agent.provider_fallback import (
+    ProviderRateLimitExhausted,
+    attach_provider_attempts,
+    demo_fixture_answer,
+    provider_attempt_context,
+)
 from app.modules.agent.token_precharge import _quota_input_token_ceiling
 from app.modules.assessment import socratic
 from app.modules.assessment.learning_events import record_learning_event
@@ -156,6 +162,36 @@ async def _generate(
     audience: AssistantAudience,
     max_output_tokens: int,
 ) -> tuple[GeneratedAnswer, dict[UUID, str]]:
+    try:
+        return await _generate_once(
+            generator,
+            question=question,
+            chunks=chunks,
+            mode=mode,
+            stage=stage,
+            student_attempt=student_attempt,
+            audience=audience,
+            max_output_tokens=max_output_tokens,
+        )
+    except ProviderRateLimitExhausted:
+        if mode is ChatMode.EXAM:
+            raise
+        # Bu metin sağlayıcı çıktısı değildir. Aynı kanıt kümesiyle olağan
+        # citation/leakage/sanitize zincirinden geçer; model değişmez.
+        return demo_fixture_answer(chunks, mode=mode, stage=stage), {}
+
+
+async def _generate_once(
+    generator: Generator,
+    *,
+    question: str,
+    chunks: list[RetrievedChunk],
+    mode: ChatMode,
+    stage: SocraticStage | None,
+    student_attempt: str | None,
+    audience: AssistantAudience,
+    max_output_tokens: int,
+) -> tuple[GeneratedAnswer, dict[UUID, str]]:
     """Üreteci çağırır ve varsa iddia metinlerini de alır.
 
     `ClaimingGenerator` uygulayan bir üreteç `generate_with_claims` sunar; sunmayan
@@ -213,7 +249,10 @@ async def produce_answer(
 ) -> AnswerOutcome:
     """Cevabı ve içeriksiz olayını aynı ders/RLS işlemi içinde üretir."""
     event_session = retriever.session if isinstance(retriever, LearningEventRetriever) else None
-    with learning_provider_context(event_session, course_id):
+    with (
+        learning_provider_context(event_session, course_id),
+        provider_attempt_context(settings) as provider_counter,
+    ):
         outcome = await _produce_answer(
             question=question,
             course_id=course_id,
@@ -245,7 +284,7 @@ async def produce_answer(
                 event_type="hint_requested",
                 metadata_json={"source": "chat"},
             )
-    return outcome
+    return AnswerOutcome(attach_provider_attempts(outcome.answer, provider_counter), outcome.claims)
 
 
 async def _produce_answer(

@@ -102,6 +102,10 @@ export interface ChatAnswer {
   socratic_stage: SocraticStage | null;
   /** Cevap birebir eşleşmeli önbellekten geldi mi (FR-034). */
   cached: boolean;
+  /** Yalnız doğrulanmış demo yedeğinde true; geçmiş/önbellek bunu bildirmeyebilir. */
+  fixture?: true | null;
+  /** Yalnız yerel 429 simülasyonunda bu isteğin gerçek sağlayıcı deneme sayısı. */
+  provider_attempts?: number | null;
   /** İstek gövdesinden değil, sunucunun ders üyeliğinden türetilir. */
   audience: ChatAudience;
   /** Kullanıcının seçebileceği bir rol değildir; audience ile eşleşmelidir. */

@@ -51,6 +51,8 @@ import { ChatFeedbackControls } from "@/components/chat-feedback";
 import { AssistantIdentitySummary } from "@/components/course-assistant/course-assistant";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore } from "@/components/page-state";
+import { demoResponseText } from "@/lib/demo-response";
+import { DemoResponseNotice } from "@/components/demo-response-notice";
 import { SocraticLadder } from "@/components/socratic-ladder";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
 import { Badge, Button, EmptyState, Input } from "@/components/ui";
@@ -319,8 +321,9 @@ function ChatTranscript({
           case "answer":
             return (
               <div key={block.id} className="space-y-3">
+                <DemoResponseNotice fixture={block.fixture} />
                 <p className="prose-tr text-base whitespace-pre-line text-fg">
-                  {block.text}
+                  {demoResponseText(block.text, block.fixture)}
                 </p>
                 {/*
                   Önbellek dipnotu: rozet değil, satır içi soluk bir not.
@@ -353,7 +356,8 @@ function ChatTranscript({
           case "abstention":
             return (
               <div key={block.id} className="space-y-3">
-                <AbstentionNotice status={block.status} message={block.text} />
+                <DemoResponseNotice fixture={block.fixture} />
+                <AbstentionNotice status={block.status} message={demoResponseText(block.text, block.fixture)} />
                 {canGiveFeedback && (
                   <ChatFeedbackControls
                     courseId={courseId}

@@ -109,9 +109,9 @@ def get_generator() -> Generator:
         raise PipelineUnavailableError(
             "Cevap üretimi henüz hazır değil. Lütfen daha sonra tekrar deneyin."
         ) from exc
-    from app.modules.agent.provider_events import build_learning_event_client
+    from app.modules.agent.provider_fallback import build_chat_provider_client
 
-    return GenerationService(llm=build_learning_event_client())
+    return GenerationService(llm=build_chat_provider_client())
 
 
 def get_guardrails() -> Sequence[Guardrail]:

@@ -11,6 +11,8 @@
  */
 
 import type { ReactNode } from "react";
+import { demoResponseText } from "@/lib/demo-response";
+import { DemoResponseNotice } from "@/components/demo-response-notice";
 import { SOCRATIC_STAGES, stageIndex, stageLabel, type LadderRung } from "@/lib/chat";
 
 export function SocraticLadder({
@@ -56,7 +58,12 @@ export function SocraticLadder({
               </p>
             )}
             <p className="text-xs font-medium text-fg-subtle">{stageLabel(rung.stage)}</p>
-            <p className="prose-tr mt-1 text-sm leading-6 text-fg">{rung.text}</p>
+            {rung.fixture === true && (
+              <div className="mt-2"><DemoResponseNotice fixture={rung.fixture} /></div>
+            )}
+            <p className="prose-tr mt-1 text-sm whitespace-pre-line leading-6 text-fg">
+              {demoResponseText(rung.text, rung.fixture)}
+            </p>
             {/* Kaynak konumu her ipucunda görünür (Anayasa I). */}
             <p className="mt-2 font-mono text-xs text-fg-subtle">
               {rung.source.fileName} · {rung.source.location}
