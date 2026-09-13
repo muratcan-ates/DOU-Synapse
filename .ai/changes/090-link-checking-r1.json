@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "change_id": "090-link-checking-r1",
+  "lineage_id": "link-checking",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "I6: Yerel belge bağlantısı denetleyicisi ve sınırlı CLI kanıtı",
+  "summary": "Ağ ve yeni bağımlılık kullanmadan yerel Markdown hedef, başlık, referans ve satır bağlantılarını denetleyen CLI. Kanıt yalnız sentetik fixture/CLI sözleşmesidir. Ön taramadaki 30 tarihsel bozuk bağlantı ENGEL; tam depo, insan kalite kabulü ve üretim kabulü iddiası yoktur.",
+  "owner": "muratcan-ates",
+  "created_at": "2026-09-13T16:55:10.419725+00:00",
+  "review_by": "2026-09-20T16:55:10.246918+00:00",
+  "base_sha": "92bd8bc6ad593c53911f414b7c2913a9c783548f",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged from parent 92bd8bc6ad593c53911f414b7c2913a9c783548f; deterministic documentation-checking CLI only.",
+    "model_revision": "Unchanged from parent 92bd8bc6ad593c53911f414b7c2913a9c783548f; deterministic documentation-checking CLI only.",
+    "prompt_revision": "Unchanged from parent 92bd8bc6ad593c53911f414b7c2913a9c783548f; deterministic documentation-checking CLI only.",
+    "guardrail_revision": "Unchanged from parent 92bd8bc6ad593c53911f414b7c2913a9c783548f; deterministic documentation-checking CLI only.",
+    "retrieval_revision": "Unchanged from parent 92bd8bc6ad593c53911f414b7c2913a9c783548f; deterministic documentation-checking CLI only.",
+    "embedding_revision": "Unchanged from parent 92bd8bc6ad593c53911f414b7c2913a9c783548f; deterministic documentation-checking CLI only.",
+    "tool_schema_revision": "check_links CLI contract sha256:513aa20915269befa02821c51baccc4a10dbcc5392372ca7e3ab569e886c96d1; no product AI tool permission changed.",
+    "evaluator_revision": "Local Markdown checker sha256:513aa20915269befa02821c51baccc4a10dbcc5392372ca7e3ab569e886c96d1; no LLM judge or academic evaluator change."
+  },
+  "data": {
+    "corpus_digest": "823a500eee7eb8e10791d14d5bae9ff3d1ee0c3ad6d2052bc7b82249338031e2",
+    "eval_set_digest": "658c9c3252787657e8f7dd1190d0f0283ddddec1705fb1718eb6c12a0ff78b7e",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "scripts/check_links.mjs",
+      "state": "present",
+      "sha256": "513aa20915269befa02821c51baccc4a10dbcc5392372ca7e3ab569e886c96d1"
+    },
+    {
+      "path": "docs/link-checking.md",
+      "state": "present",
+      "sha256": "aff6111459979017d7786d668ee6f68c326cf66649e7a473f14411601b97f1db"
+    },
+    {
+      "path": ".specify/memory/constitution.md",
+      "state": "present",
+      "sha256": "92001361aedc1073d4ddbb019bbd37305b552a23e1807ca80530b63ef091edd0"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/090-link-checking-r1.json",
+      "report_sha256": "a169ff7ea09cd7b2f95ce25d28a014afd97a50d6277e30a3612bfad6421d1c51",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": ".ai/evidence/090-link-checking-r1.json",
+    "holdout_ref": "docs/link-checking.md",
+    "human_anchor_ref": ".specify/memory/constitution.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "plain_output_rc",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 1
+      },
+      {
+        "name": "syntax_rc",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "node /Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/verify-check-links.mjs"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: local opt-in documentation CLI",
+    "flag_state": "not-applicable",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:090-link-checking-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: local opt-in documentation CLI",
+    "kill_switch": "Stop relying on this new CLI if it misclassifies supported links; preserve failing evidence and review a correction. Do not relabel the full-repository failure as success.",
+    "assignment": "Sticky atama bu yerel CLI için kullanıcı kohortu anlamına gelmez. İncelenen yerel çağrıların denetleyici baytları kaydedilen SHA256 özetiyle sabitlenir; yeni kaynakla tekrar ölçüm gerekir. Ürün modeli veya araç izni dağıtımı yapılmaz.",
+    "initial_exposure": "Local synthetic fixtures only; no production activation.",
+    "stop_conditions": [
+      "Supported-link false positive or false negative is confirmed.",
+      "Evidence hash differs from reviewed checker.",
+      "Out-of-repository path can be read or a reported historical failure is hidden."
+    ],
+    "expand_conditions": [
+      "Resolve or explicitly report whole-repository historical-link blockers within authorized ownership.",
+      "Complete required current-candidate quality gates and independent named human reviews before any deployment claim."
+    ],
+    "active_exam_policy": "CLI has no database or product runtime dependency and does not modify sessions, academic records, exam locks or help scope."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:92bd8bc6ad593c53911f414b7c2913a9c783548f",
+    "procedure": "Geri alma için yalnız bu I6 commitini yeni bir revert commit ile geri alın; önceki belge akışına dönün. Veri göçü yoktur. Tarihsel kanıtları değiştirmeyin.",
+    "max_minutes": 15,
+    "verification": "Explicit operator planning target supplied at assembly, not an observed rollback duration or production SLA. No rollback drill run.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic Markdown text and public source path/hash/command metadata only; no DB, browser identity, provider key or student content read by this preparation.",
+    "retention": "Append-only public governance record under repository history. Runtime replay material is copied into the evidence report to avoid depending on volatile paths."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
