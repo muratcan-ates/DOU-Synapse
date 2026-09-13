@@ -756,3 +756,18 @@ Mevcut `ai_token_reservations` ve işlem kilitleri kabulü geçti; yeni kota gö
 Gerçek dense retrieval kullanıcıya ait parçayı döndürdü; diğer ders sorgusu boş kaldı. Kullanıcı kimliği ile HNSW ve plan ayarları işlem sonrasında başlangıç değerlerine döndü. Testin kendisi elle RESET, oturum genelinde SET veya bağlantı değişimi yaparak sonucu temizlemedi. Uygulama iptali açık transaction içindeki bekleme noktasındadır; çalışan SQL iptalinde sürücü bağlantısı değiştirme davranışını mevcut başka testler kapsar.
 
 Yeni üretim kodu/göç eklenmedi. Kurulu sürücü psycopg olduğu için asyncpg'ye özgü ayar eklenmedi. **ENGEL:** Gerçek Supavisor/PgBouncer sürümü, transaction pooling ve prepared statement yapılandırması bu yerel koşuyla doğrulanmış değildir. Tam yerel API paketinin C4 zamanlama sonucu da bu hedefli geçişle kapatılmaz.
+
+
+## 13 Eylül 2026 — L4 D3: gerçek parser hatası ve worker kapanışı
+
+İzole PostgreSQL kümesinde yeni DB ve yalnız sentetik dosyalarla iki gerçek kabul testi geçti; başlatıcı toplamı 65.768 s, pytest rc 0, hata/atlama yok. `scripts/run_l4_worker_acceptance.py` küme kimliğini, adresi ve yeni DB adını doğrular; `scripts/test_worker_process_acceptance.py` gerçek API yüklemesi, depolama, parser, claim ve worker yollarını sınar. Ayrı süreç temizleme mekaniklerinde 16 test geçti (0.186 s); bu taklit mekanikleri iki gerçek DB/sinyal testiyle aynı kanıt değildir. <!-- docs-check: tarihsel 16 · 2026-09-13 -->
+
+Bozuk PDF gerçek parser tarafından üç kez reddedildi. Bir ve üç saniyelik gerçek geri çekilme aralıklarından sonra aynı iş satırı sırasıyla pending, pending, failed oldu. Son hata satırı saklandı; claim, lease ve revision sahipliği temizlendi, hiç chunk oluşmadı. Dördüncü drain ve doğrudan claim sorgusu işi yeniden almadı. Mevcut failed iş kaydı doğrulandı; yeni dead-letter tablosu veya üretim kodu eklenmedi.
+
+İkinci vakada gerçek `worker.main` üretimdeki SIGTERM işleyicisini kurdu. Sentetik Markdown parse/embedding işleminden sonra finalize öncesi kontrollü async bekleme ve etkin heartbeat sırasında, süreç kimliği/grubu, kaynak özeti ve DB claim sahipliği doğrulanarak gerçek SIGTERM gönderildi. Worker rc 0 ile çıktı; iş tekrar pending/uploaded durumuna döndü, attempt 1 olarak kaldı, claim/lease temizlendi ve chunk oluşmadı. Testte kapanış bekleme ve heartbeat 0.25 saniyeye ayarlanmıştır. Bu sonuç native kod içinde takılmış thread'in kesilebildiğini veya bulut kapanış SLA'sını kanıtlamaz.
+
+Başlatıcıya eklenen gözetici, pytest lideri erken bitse bile sahip olunan süreç grubu boşalmadan temizliği başarılı saymaz. Başlangıç el sıkışması ve zaman aşımı yarışları ayrı mekaniklerde sınandı. Gerçek kabul sonunda gözetici exit 0 ile toplandı, alt süreç grubu boştu; dış temizleyicinin ek TERM/KILL göndermemesi, ikinci testte worker'a gönderilen gerçek SIGTERM'den ayrı kayıttır.
+
+Ham public kabul kaydı, yalnız test adı/zamanı/sonucunu içeren JUnit izdüşümü ve komut makbuzları `evaluation/results/20260913-l4-d3/evidence.tar.gz` içinde; üyelerin SHA256 değerleri `inventory.json` içinde. Özel DB ayarı, ham özel log/XML ve model dosyaları arşivlenmedi. Kabulün dört worker/başlatıcı kaynağı önce/sonra aynıydı; beşinci mekanik test kaynağı ayrıca statik kaynak kaydı ve kendi test koşusuyla bağlandı. API dizini ve ayarlarıyla Ruff ile beş dosyanın biçim kontrolü geçti. İlk repo-kökü Ruff çağrısındaki import sınıflandırma hatası ayrı başarısız makbuz olarak korunur.
+
+Bu script testleri varsayılan API test toplamasına dahil değildir; CI workflow'una ekleme L4 kapsamı dışındadır. API'nin güncel toplama sayısı değişmedi. D3 hedefli kabulü; tam API paketi, canlı pooler, E5 kapasitesi veya üretime çıkış onayı yerine geçmez.
