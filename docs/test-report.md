@@ -727,3 +727,10 @@ Aşağıdaki **8 Eylül tarihli** sonuçların Recall@5 ve MRR değerleri arşiv
 [Hashing tanısı](../specs/018-codex-production-line/evidence/c1-final/c1-trace-analysis.md) ve [E5 tanısı](../specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-analysis.md), aynı dense koluyla FTS sırasının bu gerilemeyi ürettiğini ayırır. MRR artışı Recall@5 düşüşünü kapatmaz. Aynı aday yeniden eklenmedi veya körlemesine tekrar çalıştırılmadı; eşik, RRF, aday sayısı ve altın set değiştirilmedi.
 
 **ENGEL:** Yeni UUID'lerle tekrar yüklenen aynı içeriğin FTS sırası için kararlılık açığı sürüyor. Mevcut ters UUID testi yalnız dense kolunda etkin ve doğrudan DB tohumlaması kullanıyor; gerçek upload/worker yeniden ingestion kabulü sayılmıyor. C1-FTS tamamlanmış değildir. Farklı bir sıralama politikası önce genel sentetik/kalibrasyon örnekleriyle tasarlanmalı, ardından iki holdout ve gerçek yeniden yükleme kabulünden geçmelidir.
+
+
+## 13 Eylül 2026 — L4 C2: nedensellik belirsiz, göç eklenmedi
+
+Belirli kurulum koşulunda recall anomalisi gözlendi; indeks kurma belleğinin veya taşmanın buna neden olduğu **kanıtlanmadı**. [Tarihsel kapanış kaydının](team/codex/2026-09-09-window-checkpoint.md) C2 sonucu **INCONCLUSIVE** olarak korunur. Filtrelenmiş konsol özetinde fark görülmemesi, bütün vakaların sıfır farkla ölçüldüğünü kanıtlamaz. Bugün yeni indeks kurma/DB deneyi yapılmadı.
+
+Karar: yeni bellek zorunluluğu veya göç eklenmez; `0021` boş kalır. Mevcut [dense plan/pencere regresyonları](../apps/api/tests/test_retrieval_candidates.py) ve [recall/exact-oracle kontrolleri](../scripts/test_benchmark_retrieval_plan.py) korunur. Bunlar bellek taşmasının recall kaybına neden olduğunu kanıtlayan özel bir test olarak sunulmaz. C4 süreç RSS ölçümü de bu nedensellik açığını kapatmaz.
