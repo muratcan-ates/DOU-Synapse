@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "candidate_sha": "SELF",
+  "base_sha": "e9c03f5845a1b8776520bd389c5338b51a8c85e0",
+  "assembled_at": "2026-09-13T15:45:03.307486+00:00",
+  "job": "L4 D2",
+  "status": "targeted-pass",
+  "scope": "Eight real isolated-local PostgreSQL synthetic transaction-context tests: two production context managers (rls_session and control_rls_session), each across commit, rollback, real SQL error and application-wait cancellation. Same psycopg backend PID is reused across user A, no-user context and user B; RLS identity and local GUCs restore. No provider call, runtime or migration change, asyncpg claim, live pooler or production acceptance.",
+  "source_test_sha256": "4fad89d08263eb6dab7a2a22e5c7e79bdaaf7e91f2a8b56c28f32f8b4135589f",
+  "source_report_sha256": "581c2bf70aa308ea31ddb30273d1b5e43655c6ab3b34f81c50faddef25ef368c",
+  "runtime_changed": false,
+  "migration_changed": false,
+  "targeted": {
+    "passed": 8,
+    "failed": 0,
+    "duration_seconds": 74.42,
+    "exit_code": 0,
+    "started_at": "2026-09-13T15:40:13.933288+00:00",
+    "finished_at": "2026-09-13T15:41:40.798279+00:00",
+    "sources_unchanged": true,
+    "source_files_rechecked_at_assembly": 224,
+    "production_context_managers": [
+      "rls_session",
+      "control_rls_session"
+    ],
+    "outcomes": [
+      "commit",
+      "rollback",
+      "sql-error",
+      "cancel"
+    ],
+    "driver": "psycopg.AsyncConnection",
+    "pool": {
+      "pool_size": 1,
+      "max_overflow": 0,
+      "same_backend_pid_verified": true
+    },
+    "roles": {
+      "current_user": "dou_app",
+      "rolsuper": false,
+      "rolbypassrls": false
+    },
+    "explicit_begin_verified": true,
+    "unfiltered_rls_queries": [
+      "courses",
+      "documents",
+      "chunks"
+    ],
+    "identity_sequence": [
+      "baseline without user",
+      "user A",
+      "baseline without user",
+      "user B",
+      "baseline without user"
+    ],
+    "restored_settings": [
+      "app.current_user_id",
+      "hnsw.iterative_scan",
+      "plan_cache_mode",
+      "row_security"
+    ],
+    "retrieval": "Actual dense_search returns only the authorized course's synthetic chunks; cross-user course queries return no rows.",
+    "sql_error": "Actual PostgreSQL division-by-zero error with SQLSTATE 22012 during dense_search after local settings are applied.",
+    "cancel": "Application task is cancelled while awaiting an event inside an open transaction; context cleanup returns the same backend to baseline.",
+    "cancel_limit": "Not an in-flight SQL cancellation or connection-invalidation acceptance test.",
+    "pooler_limit": "Real local psycopg pool only; no deployed transaction pooler or asyncpg statement-cache measurement."
+  },
+  "commands": [
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_retrieval_transaction_context.py"
+      ],
+      "receipt": "d2-targeted/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "receipt": "d2-ruff/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "receipt": "d2-format/result.json"
+    }
+  ],
+  "static_checks": {
+    "d2-ruff": {
+      "exit_code": 0,
+      "status": "passed"
+    },
+    "d2-format": {
+      "exit_code": 0,
+      "status": "passed"
+    }
+  },
+  "inherited_full_api_gate": "Inherited local C4 full API run failed: 1688 passed, 1 failed at the unchanged 100 ms lag threshold. D2 runs only its eight targeted tests; the full local API suite was not rerun for this delivery and the inherited failure is not closed by this pass. The earlier C2 Linux CI success is separate environment evidence, not a replacement Mac run.",
+  "not_run": [
+    "full API suite on D2 delivery",
+    "live transaction pooler",
+    "asyncpg driver/statement cache",
+    "in-flight SQL cancellation",
+    "provider calls",
+    "hosted deployment",
+    "production capacity",
+    "new mutation run"
+  ],
+  "baseline_semantics": "Numeric baseline 0 is the predeclared absolute acceptance reference of zero failing D2 transaction-context tests, not a measured historical baseline. These eight tests are new. No comparative quality, performance or non-regression improvement is claimed.",
+  "privacy": "Synthetic records and operational paths/process/cluster metadata. Private administrator secret bytes checked absent from every selected archive member; secret file not archived. Not an anonymous operational archive."
+}

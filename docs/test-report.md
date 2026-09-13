@@ -745,3 +745,14 @@ Ders, genel kullanıcı ve platform bütçeleri ayrı vakalarda sınandı. İki 
 İptal vakasında ilk SQL kabulünden sonra, **COMMIT öncesinde** işlem iptal edildi. Satır ve kilitler geri alındı; farklı bağlantıda yeni rezervasyon kabul edildi ve yalnız yeni satır kaldı. Bu sonuç, sağlayıcıya gönderilmiş ve gerçek tüketimi bilinmeyen isteğe sıfır ücret/iade uygulanması anlamına gelmez.
 
 Mevcut `ai_token_reservations` ve işlem kilitleri kabulü geçti; yeni kota göçü eklenmedi, `0028` kullanılmadı. Ruff ve biçim kontrolü geçti. Bu yeni testler tek başına tam API, canlı pooler veya üretim kapasitesi kabulü değildir; C4 bölümündeki tam API zamanlama hatası ayrıca açık kalır.
+
+
+## 13 Eylül 2026 — L4 D2: aynı bağlantıda kullanıcı ve arama ayarı yalıtımı
+
+`apps/api/tests/test_retrieval_transaction_context.py` izole PostgreSQL kümesinde **8 test geçti**, rc 0, 74.42 s. Kaynaklar koşu boyunca değişmedi. Komut: `cd apps/api && .venv/bin/python -m pytest -q tests/test_retrieval_transaction_context.py`; ham makbuzlar `evaluation/results/20260913-l4-d2/evidence.tar.gz` içinde. <!-- docs-check: tarihsel 8 · 2026-09-13 -->
+
+Üretimdeki `rls_session` ve `control_rls_session` bağlamları, tek bağlantılı gerçek psycopg havuzunda normal COMMIT, uygulama hatasıyla ROLLBACK, PostgreSQL sıfıra bölme hatası ve uygulama sırasında iptal ile sınandı. Her işlem açık `begin` içinde çalıştı; aynı `pg_backend_pid` yeniden kullanıldı. Ders filtresi içermeyen SQL, A bağlamında yalnız A'nın ders/belge/chunk satırlarını, kimliksiz işlemde hiçbir satırı, B bağlamında yalnız B'nin satırlarını gördü. Rol `dou_app`, RLS açık, superuser/BYPASSRLS kapalıydı.
+
+Gerçek dense retrieval kullanıcıya ait parçayı döndürdü; diğer ders sorgusu boş kaldı. Kullanıcı kimliği ile HNSW ve plan ayarları işlem sonrasında başlangıç değerlerine döndü. Testin kendisi elle RESET, oturum genelinde SET veya bağlantı değişimi yaparak sonucu temizlemedi. Uygulama iptali açık transaction içindeki bekleme noktasındadır; çalışan SQL iptalinde sürücü bağlantısı değiştirme davranışını mevcut başka testler kapsar.
+
+Yeni üretim kodu/göç eklenmedi. Kurulu sürücü psycopg olduğu için asyncpg'ye özgü ayar eklenmedi. **ENGEL:** Gerçek Supavisor/PgBouncer sürümü, transaction pooling ve prepared statement yapılandırması bu yerel koşuyla doğrulanmış değildir. Tam yerel API paketinin C4 zamanlama sonucu da bu hedefli geçişle kapatılmaz.

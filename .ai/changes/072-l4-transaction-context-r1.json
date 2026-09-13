@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "change_id": "072-l4-transaction-context-r1",
+  "lineage_id": "l4-transaction-context",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "L4 D2: aynı psycopg bağlantısında RLS ve yerel ayar yalıtımı",
+  "summary": "İki üretim oturum bağlamı, commit/rollback/gerçek SQL hatası/uygulama iptali sonrasında aynı psycopg bağlantısında kullanıcı kimliğini ve yerel ayarları geri yükledi. Filtresiz RLS sorguları başka kullanıcının satırlarını göstermedi. Sekiz hedefli test geçti; uygulama kodu ve göçler değişmedi. Canlı pooler ve önceki yerel tam API zamanlama hatası açık.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:45:03.307486+00:00",
+  "review_by": "2026-10-13T15:45:03.307486+00:00",
+  "base_sha": "e9c03f5845a1b8776520bd389c5338b51a8c85e0",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Production unchanged from e9c03f5845a1b8776520bd389c5338b51a8c85e0; only transaction-context tests and evidence added.",
+    "model_revision": "Production unchanged from e9c03f5845a1b8776520bd389c5338b51a8c85e0; only transaction-context tests and evidence added.",
+    "prompt_revision": "Production unchanged from e9c03f5845a1b8776520bd389c5338b51a8c85e0; only transaction-context tests and evidence added.",
+    "tool_schema_revision": "Production unchanged from e9c03f5845a1b8776520bd389c5338b51a8c85e0; only transaction-context tests and evidence added.",
+    "guardrail_revision": "Production unchanged from e9c03f5845a1b8776520bd389c5338b51a8c85e0; only transaction-context tests and evidence added.",
+    "retrieval_revision": "Production unchanged from e9c03f5845a1b8776520bd389c5338b51a8c85e0; only transaction-context tests and evidence added.",
+    "embedding_revision": "Production unchanged from e9c03f5845a1b8776520bd389c5338b51a8c85e0; only transaction-context tests and evidence added.",
+    "evaluator_revision": "apps/api/tests/test_retrieval_transaction_context.py SHA256 4fad89d08263eb6dab7a2a22e5c7e79bdaaf7e91f2a8b56c28f32f8b4135589f; eight local synthetic real-PG transaction-context cases; no model-quality evaluator change."
+  },
+  "data": {
+    "corpus_digest": "4fad89d08263eb6dab7a2a22e5c7e79bdaaf7e91f2a8b56c28f32f8b4135589f",
+    "eval_set_digest": "4fad89d08263eb6dab7a2a22e5c7e79bdaaf7e91f2a8b56c28f32f8b4135589f",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "b7fd729f4b9ff93c9f2c2c50ff323e1696537bd4c41f14d8d1105ae86470f01f"
+    },
+    {
+      "path": "apps/api/tests/test_retrieval_transaction_context.py",
+      "state": "present",
+      "sha256": "4fad89d08263eb6dab7a2a22e5c7e79bdaaf7e91f2a8b56c28f32f8b4135589f"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "080db58fb9c5ea0b53df00031a23c9aa825fb77533aff3091238508a781f2129"
+    },
+    {
+      "path": "docs/test-report.md",
+      "state": "present",
+      "sha256": "581c2bf70aa308ea31ddb30273d1b5e43655c6ab3b34f81c50faddef25ef368c"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d2/evidence.tar.gz",
+      "state": "present",
+      "sha256": "f9e383f3166e6a3da7d51711181c0b1b9c5575560920f0346fbaf8e6d9ed0060"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d2/inventory.json",
+      "state": "present",
+      "sha256": "7a22f87108d7248c6ba201b239bb8071ce5a5420a6122f1fd2a5be3dd787b577"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d2/summary.json",
+      "state": "present",
+      "sha256": "67b8059a2f2ea00d37017afc61a67320209a4c9eb4b23ab3fb5c1c5ae819c5f5"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "bb27d6bc3cdec57080c76f0223709a1361fed510a4621e7ae4c7ac2fd889c81f"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "9d931d12d03cc466eccabe17b4424bbf1fdfab338371d7066f0b31f8d01b263f"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "86916254294e43feba235722f6e7077238b2675ad36aa758ff2d02d7d00c7aa5"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "cd25d319d4b7c8f6b9203434d486b2c526b2bf51ef7f17740c7e36eee02c4f4c"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/072-l4-transaction-context-r1.json",
+      "report_sha256": "94c53ffdde471030cd1bf0f9296c2b31c531a37be0d98035b231054fdb2bad0a",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_retrieval_transaction_context.py",
+    "holdout_ref": "evaluation/results/20260913-l4-d2/summary.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "metrics": [
+      {
+        "name": "absolute_d2_contract_failures_reference_only",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 8
+      }
+    ],
+    "exact_command": "cd apps/api && .venv/bin/python -m pytest -q tests/test_retrieval_transaction_context.py. Numeric baseline 0 is the predeclared absolute acceptance reference of zero failing D2 transaction-context tests, not a measured historical baseline. These eight tests are new. No comparative quality, performance or non-regression improvement is claimed. References denote test definition and run report, not statistical RAG calibration/holdout splits."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: test and evidence only; production configuration unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:072-l4-transaction-context-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: test and evidence only; production configuration unchanged",
+    "kill_switch": "Stop the owned isolated test run on target mismatch, fixture failure or source drift; no production exposure.",
+    "assignment": "Sticky synthetic fixture assignment by exact test source digest and pinned isolated database identity; no user cohort.",
+    "initial_exposure": "None; synthetic source/evidence publication only, no deployment.",
+    "stop_conditions": [
+      "Wrong database or role, source drift, cross-user rows, leaked session settings or incomplete cleanup."
+    ],
+    "expand_conditions": [
+      "Resolve inherited full API timing failure before whole-release acceptance.",
+      "Any later runtime or production change requires its own evidence and applicable named approvals."
+    ],
+    "active_exam_policy": "No active exam, academic record, course role, transaction behavior or answer policy changes."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:e9c03f5845a1b8776520bd389c5338b51a8c85e0",
+    "procedure": "Revert this test/evidence commit; no production runtime or database migration rollback is required.",
+    "max_minutes": 30,
+    "verification": "Planned operator action; not a measured production rollback SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic records and operational paths/process/cluster metadata. Private administrator secret bytes checked absent from every selected archive member; secret file not archived. Not an anonymous operational archive.",
+    "retention": "Synthetic evidence retained publicly for traceability. Institutional production retention and compliance are outside this local contract test."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
