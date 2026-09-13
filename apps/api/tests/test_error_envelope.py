@@ -194,7 +194,8 @@ class TestBlueprintRouter:
         }
         assert continuity_yollari <= yollar
         assert all("get" in app.openapi()["paths"][path] for path in continuity_yollari)
-        assert len(yollar) == 57, f"yol sayısı değişmiş: {len(yollar)}"
+        # L5 private Storage indirme yolu toplam sözleşmeye bir path ekler.
+        assert len(yollar) == 58, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:

@@ -21,6 +21,7 @@ BUCKET = "SYNTHETIC_PRIVATE_BUCKET"
 OBJECT_KEY = "courses/SYNTHETIC_COURSE/SYNTHETIC_OBJECT.md"
 PRIVATE_BODY = b"SYNTHETIC_PRIVATE_BODY"
 SERVICE_KEY = "SYNTHETIC_SERVICE_ROLE_CANARY"
+SIGN_TOKEN = "SYNTHETIC_SIGN_TOKEN_CANARY"
 SENSITIVE_MESSAGE = "SYNTHETIC_PRIVATE_TRANSPORT_MESSAGE"
 CANARIES = (
     PROJECT_HOST,
@@ -28,6 +29,7 @@ CANARIES = (
     OBJECT_KEY,
     "SYNTHETIC_OBJECT",
     SERVICE_KEY,
+    SIGN_TOKEN,
     PRIVATE_BODY.decode(),
     SENSITIVE_MESSAGE,
 )
@@ -66,6 +68,10 @@ def _store(outcome: str) -> SupabaseStorage:
     def handle(request: httpx.Request) -> httpx.Response:
         if outcome == "transport_error":
             raise httpx.ReadTimeout(SENSITIVE_MESSAGE, request=request)
+        if outcome == "success" and "/object/sign/" in request.url.path:
+            return httpx.Response(
+                200, json={"signedURL": f"/object/sign/{BUCKET}/{OBJECT_KEY}?token={SIGN_TOKEN}"}
+            )
         return httpx.Response(200 if outcome == "success" else 503, content=PRIVATE_BODY)
 
     return SupabaseStorage(
@@ -81,6 +87,8 @@ async def _operate(store: SupabaseStorage, operation: str) -> None:
         await store.save(OBJECT_KEY, PRIVATE_BODY)
     elif operation == "load":
         await store.load(OBJECT_KEY)
+    elif operation == "sign":
+        await store.signed_download_url(OBJECT_KEY)
     else:
         await store.delete(OBJECT_KEY)
 
@@ -93,7 +101,7 @@ def _assert_private(sink: io.StringIO) -> list[dict[str, Any]]:
 
 
 @pytest.mark.parametrize("level", [logging.INFO, logging.DEBUG])
-@pytest.mark.parametrize("operation", ["save", "load", "delete"])
+@pytest.mark.parametrize("operation", ["save", "load", "delete", "sign"])
 @pytest.mark.parametrize("outcome", ["success", "http_error", "transport_error"])
 async def test_emitted_storage_logs_contain_only_safe_operation_metadata(
     level: int, operation: str, outcome: str
@@ -116,7 +124,7 @@ async def test_emitted_storage_logs_contain_only_safe_operation_metadata(
         assert "exception" not in records[0]
 
 
-@pytest.mark.parametrize("operation", ["save", "load", "delete"])
+@pytest.mark.parametrize("operation", ["save", "load", "delete", "sign"])
 @pytest.mark.parametrize("outcome", ["http_error", "transport_error"])
 async def test_upper_worker_traceback_does_not_restore_private_transport_cause(
     operation: str,
@@ -150,3 +158,22 @@ def test_http_transport_debug_headers_are_suppressed_even_when_app_debug() -> No
     records = _assert_private(sink)
     assert len(records) == 1
     assert records[0]["message"] == "useful application diagnostic"
+
+
+async def test_invalid_signed_response_does_not_emit_private_body_or_token() -> None:
+    store = SupabaseStorage(
+        project_url=f"https://{PROJECT_HOST}",
+        service_role_key=SERVICE_KEY,
+        bucket=BUCKET,
+        transport=httpx.MockTransport(
+            lambda _request: httpx.Response(
+                200, json={"signedURL": f"https://foreign.invalid/{OBJECT_KEY}?token={SIGN_TOKEN}"}
+            )
+        ),
+    )
+    with _emitted_logs(logging.DEBUG) as sink:
+        with pytest.raises(StorageUnavailableError):
+            await store.signed_download_url(OBJECT_KEY)
+    records = _assert_private(sink)
+    assert len(records) == 1
+    assert records[0]["context"] == {"event": "storage_sign_response_invalid"}

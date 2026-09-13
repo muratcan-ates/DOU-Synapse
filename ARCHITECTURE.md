@@ -143,7 +143,7 @@ barındırmada bu iki çalışma biçiminin uyanış politikası ayrı seçilir;
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 30 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026`): <!-- docs-check: tables.count = 30 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026 -->
+Kodda gerçekten var olan 30 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0029`): <!-- docs-check: tables.count = 30 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0029 -->
 
 ```
 profiles            (id, email, full_name, created_at)

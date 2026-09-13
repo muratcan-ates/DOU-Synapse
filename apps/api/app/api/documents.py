@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import re
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, UploadFile, status
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 
@@ -14,6 +17,7 @@ from app.api.deps import (
     PageDep,
     SessionDep,
     SettingsDep,
+    UnlockedCourseMemberDep,
     load_owned,
 )
 from app.core.db import db_now
@@ -177,6 +181,68 @@ async def get_document(
         session, Document, document_id, context, message="Belge bulunamadı."
     )
     return DocumentOut.model_validate(document)
+
+
+@router.get(
+    "/{document_id}/download",
+    response_class=Response,
+    responses={
+        200: {
+            "description": "Yerel depodaki belge ek dosya olarak indirilir.",
+            "content": {
+                "application/octet-stream": {"schema": {"type": "string", "format": "binary"}}
+            },
+            "headers": {
+                "Cache-Control": {"schema": {"type": "string", "enum": ["no-store"]}},
+                "Content-Disposition": {"schema": {"type": "string"}},
+            },
+        },
+        307: {
+            "description": "Özel depodaki belge için 60 saniyelik imzalı adrese yönlendirilir.",
+            "headers": {
+                "Location": {
+                    "description": "Aynı Supabase projesindeki belgeye ait kısa süreli özel adres.",
+                    "schema": {"type": "string", "format": "uri"},
+                },
+                "Cache-Control": {"schema": {"type": "string", "enum": ["no-store"]}},
+            },
+        },
+    },
+)
+async def download_document(
+    document_id: UUID, context: UnlockedCourseMemberDep, session: SessionDep
+) -> Response:
+    """Üyelik ve sınav kilidi doğrulandıktan sonra kısa süreli indirme açar."""
+    document = await load_owned(
+        session, Document, document_id, context, message="Belge bulunamadı."
+    )
+    # service_role RLS'i atlar: kayıt ve kanonik ders yolu imzadan önce sınanır.
+    if (
+        re.fullmatch(
+            rf"courses/{re.escape(str(context.course_id))}/[0-9a-f]{{32}}"
+            r"\.(?:pdf|pptx|md|txt|py|java|js|ts|c|h|cpp)",
+            document.storage_path,
+        )
+        is None
+    ):
+        raise NotFoundError("Belge bulunamadı.")
+    storage = get_storage()
+    signed_url = await storage.signed_download_url(document.storage_path)
+    headers = {
+        "Cache-Control": "no-store",
+        "Referrer-Policy": "no-referrer",
+        "X-Content-Type-Options": "nosniff",
+    }
+    if signed_url is not None:
+        return RedirectResponse(signed_url, status_code=307, headers=headers)
+    headers["Content-Disposition"] = "attachment; filename*=UTF-8''" + quote(
+        document.file_name, safe=""
+    )
+    return Response(
+        content=await storage.load(document.storage_path),
+        media_type="application/octet-stream",
+        headers=headers,
+    )
 
 
 @router.post("/{document_id}/retry", response_model=DocumentOut)

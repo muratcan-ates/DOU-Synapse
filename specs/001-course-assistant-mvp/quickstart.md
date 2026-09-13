@@ -96,7 +96,7 @@ psql -d dou_synapse -tAc "select count(*) from information_schema.tables
   where table_schema='public' and table_type='BASE TABLE'"     # 15
 ```
 
-Depoda **22 migration dosyası** var (`0001`'den `0015`'e, aralıksız); hepsi tablo <!-- docs-check: migrations.count = 22 -->
+Depoda **23 migration dosyası** var (`0001`'den `0015`'e, aralıksız); hepsi tablo <!-- docs-check: migrations.count = 23 -->
 oluşturmaz. `0005` yalnız analitiğin ihtiyaç duyduğu okuma politikasını ekler — bu
 dosya atlanırsa **eğitmen analitiği sessizce boş görünür.** `0006` `chunks`'a
 `embedding_space` sütununu ekler, `0007` silme/yetki politikalarını düzeltir. `0002`
@@ -194,7 +194,7 @@ uv run python -m app.worker
 
 ```bash
 cd apps/api
-uv run pytest          # 1718 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 1718
+uv run pytest          # 1765 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 1765
 uv run mypy app        # temiz
 uv run ruff check .
 uv run ruff format --check .
