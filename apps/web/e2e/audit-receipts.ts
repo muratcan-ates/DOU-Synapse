@@ -1,7 +1,8 @@
 /** Sunucunun yanıt kimliği yalnız test koşusunun özel sahiplik makbuzuna girer. */
 import { randomUUID } from "node:crypto";
 import {
-  lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, writeFileSync,
+  closeSync, constants, fstatSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync,
+  readdirSync, renameSync, writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
@@ -124,10 +125,18 @@ function privateDirectory(path: string) {
       (stat.mode & 0o077) !== 0) throw new Error("Audit dizini özel bir yerel dizin olmalıdır.");
 }
 function readBounded(path: string): unknown {
-  const stat = lstatSync(path);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 4096 ||
-      (stat.mode & 0o077) !== 0) throw new Error("Audit dosyası sınırı ihlal edildi.");
-  return JSON.parse(readFileSync(path, "utf8")) as unknown;
+  // Denetim ve okuma aynı dosya tanıtıcısında yapılır: yol ikinci kez çözülmez,
+  // sembolik bağ O_NOFOLLOW ile açılamaz; kontrol-sonra-kullan yarışı kalmaz.
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile() || stat.size > 4096 || (stat.mode & 0o077) !== 0) {
+      throw new Error("Audit dosyası sınırı ihlal edildi.");
+    }
+    return JSON.parse(readFileSync(fd, "utf8")) as unknown;
+  } finally {
+    closeSync(fd);
+  }
 }
 function writePrivate(path: string, value: unknown) {
   const temporary = `${path}.${randomUUID()}.pending`;

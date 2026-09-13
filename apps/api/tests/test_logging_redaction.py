@@ -117,3 +117,13 @@ def test_database_engines_hide_bound_values_from_errors(
     assert engine.sync_engine.hide_parameters is True
     assert secret not in str(error)
     assert "SQL parameters hidden due to hide_parameters=True" in str(error)
+
+
+def test_log_text_kontrol_karakterlerini_kacirir_ve_kirpar() -> None:
+    """Günlük enjeksiyonu: satır sonu ve kontrol karakterleri tek satırda kaçırılır."""
+    from app.core.logging import log_text
+
+    assert log_text("a\r\nb\x1bc") == "a\\r\\nb\\x1bc"
+    assert log_text("ters\\bölü") == "ters\\\\bölü"
+    assert len(log_text("x" * 1000, limit=16)) == 16
+    assert log_text(None) == "None"

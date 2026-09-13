@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "change_id": "037-codeql-hardening-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T12:11:04+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "PR #26 HEAD 8f2d324 CodeQL bulguları: audit-receipts.ts TOCTOU (high), question_gen.py log injection (medium). probe.py:463 bulgusu 8f2d324 içeriğinde zaten 127.0.0.1; yeniden analiz bekler.",
+  "commands": [
+    "apps/api/.venv/bin/ruff check .",
+    "apps/api/.venv/bin/ruff format --check .",
+    "apps/api/.venv/bin/mypy app",
+    "TEST_DB_NAME=dou_codex_fix apps/api/.venv/bin/python -m pytest -q tests/test_logging_redaction.py -k 'log_text or redact'",
+    "cd apps/web && bunx tsc --noEmit"
+  ],
+  "results": {
+    "ruff_check": "pass",
+    "ruff_format": "pass",
+    "mypy": "pass",
+    "targeted_tests_passed": 14,
+    "tsc_errors": 0,
+    "codeql_rerun": "not-run (CI PR koşusunda ölçülür)",
+    "full_pytest_at_this_tree": "arka planda koşuyor; sonuç toplayıcı kaydında"
+  },
+  "comparison": {
+    "before": "readBounded: lstat sonra readFileSync (kontrol-sonra-kullan); logger.info context'inde ham str(course_id)/topic.id/type",
+    "after": "openSync(O_RDONLY|O_NOFOLLOW)+fstatSync+readFileSync(fd); log_text() ile kontrol karakteri kaçırma ve 256 karakter sınırı"
+  },
+  "limitations": "Kalite/kabul kanıtı değil; statik analiz bulgularının kapatılması. CodeQL'in kapandığı PR yeniden koşusunda görülür.",
+  "privacy": "içerik yok; yalnız dosya yolları ve komutlar"
+}

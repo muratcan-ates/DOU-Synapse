@@ -289,6 +289,19 @@ def redact(value: str) -> str:
     return value
 
 
+def log_text(value: object, *, limit: int = 256) -> str:
+    """Kullanıcı kaynaklı bir değeri günlük için tek satıra indirger.
+
+    Satır sonu ve diğer kontrol karakterleri kaçırılır, uzunluk sınırlanır. Amaç
+    günlük enjeksiyonunu (sahte satır/kayıt üretme) kaynağında kesmek; hassas kalıp
+    maskeleme ayrıca `RedactionFilter` tarafından yapılır.
+    """
+    text = str(value)
+    text = text.replace("\\", "\\\\").replace("\r", "\\r").replace("\n", "\\n")
+    text = "".join(ch if 0x20 <= ord(ch) != 0x7F else f"\\x{ord(ch):02x}" for ch in text)
+    return text[:limit]
+
+
 class RedactionFilter(logging.Filter):
     """Log kaydının mesajını ve ek alanlarını maskeler."""
 

@@ -46,7 +46,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.contracts import RetrievedChunk, Retriever
 from app.core import text_tr
 from app.core.llm_json import first_json_object
-from app.core.logging import get_logger
+from app.core.logging import get_logger, log_text
 from app.models.assessment import (
     LearningOutcome,
     Question,
@@ -610,9 +610,9 @@ async def generate_questions(
         "soru üretimi tamamlandı",
         extra={
             "context": {
-                "course_id": str(course_id),
-                "topic_id": str(topic.id),
-                "type": question_type.value,
+                "course_id": log_text(course_id),
+                "topic_id": log_text(topic.id),
+                "type": log_text(question_type.value),
                 "requested": report.requested,
                 "returned": report.returned,
                 "accepted": report.accepted,
