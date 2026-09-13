@@ -17,12 +17,12 @@ Backend token'ı doğrular ve tek bir çıktı üretir: `Principal(user_id, emai
 
 | Adım | Kod |
 |---|---|
-| Başlığı okuma, `Bearer` şeması zorunluluğu | [`api/deps.py:29`](../apps/api/app/api/deps.py#L29) |
-| Token doğrulama | [`core/security.py:88`](../apps/api/app/core/security.py#L88) |
-| Kullanıcı bağlamının veritabanına taşınması | [`core/db.py:71`](../apps/api/app/core/db.py#L71) |
+| Başlığı okuma, `Bearer` şeması zorunluluğu | [`api/deps.py::get_principal`](../apps/api/app/api/deps.py) |
+| Token doğrulama | [`core/security.py::_decode_supabase_token`](../apps/api/app/core/security.py) |
+| Kullanıcı bağlamının veritabanına taşınması | [`core/db.py::set_rls_context`](../apps/api/app/core/db.py) |
 
 Doğrulamada zorunlu tutulanlar (`_REQUIRED_CLAIMS`,
-[`security.py:38`](../apps/api/app/core/security.py#L38)):
+[`security.py::_REQUIRED_CLAIMS`](../apps/api/app/core/security.py)):
 
 - **İmza** — `SUPABASE_JWT_SECRET` ile HS256. Anahtar proje başınadır; başka bir
   Supabase projesinin token'ı bu anahtarla doğrulanamaz.
@@ -31,7 +31,7 @@ Doğrulamada zorunlu tutulanlar (`_REQUIRED_CLAIMS`,
 - **`iss`** — varlığı zorunlu; `SUPABASE_JWT_ISSUER` (veya uyumlu `JWT_ISSUER`) tanımlandığında değeri de karşılaştırılır. Üretimde bu ayar açık bir HTTPS `/auth/v1` adresi olmak zorundadır; eksik veya bozuk değer başlangıcı durdurur. Yerel/demo ortamında isteğe bağlıdır.
 - **`sub`** — UUID olmak zorunda; olmayan token 401.
 - **Algoritma** — izin listesinden `none` her koşulda eleniyor
-  ([`security.py:59`](../apps/api/app/core/security.py#L59)).
+  ([`security.py::_verification_algorithms`](../apps/api/app/core/security.py)).
 
 `exp`/`aud`/`iss`'in **zorunlu claim listesinde** olması ayrıca önemli: PyJWT,
 `audience`/`issuer` parametresi verilmediği sürece eksik bir claim'i sessizce
@@ -41,19 +41,19 @@ değildir; ikisi ayrı ayrı yazıldı ve ayrı ayrı test edildi.
 ### Geliştirme yolu (`dev:<uuid>`) ve üretimde neden açılamaz
 
 Yerel geliştirme ve çevrimdışı demo için `Authorization: Bearer dev:<uuid>`
-kabul edilir ([`security.py:146`](../apps/api/app/core/security.py#L146)). Bu
+kabul edilir ([`security.py::authenticate`](../apps/api/app/core/security.py)). Bu
 imzasız bir kimliktir: kabul edildiği bir ortamda **herkes herkes olabilir.**
 
 İki bağımsız kapı var:
 
 1. **Uygulama hiç açılmaz.** `DEV_AUTH_ENABLED` ile `ENVIRONMENT=production`
    birlikte verilirse ayarların doğrulanması hata verir ve süreç başlamaz
-   ([`config.py:167`](../apps/api/app/core/config.py#L167)). Aynı doğrulayıcı,
+   ([`config.py::Settings._check_auth_configuration`](../apps/api/app/core/config.py)). Aynı doğrulayıcı,
    dev kimliği kapalıyken `SUPABASE_JWT_SECRET` yoksa da açılmayı reddeder —
    "kimlik doğrulaması olmayan" bir konfigürasyon mümkün değildir.
 2. **Bayrak kapalıysa token reddedilir.** Bayrak herhangi bir yolla kapalı
    kalırsa `dev:` öneki 401 döner
-   ([`security.py:151`](../apps/api/app/core/security.py#L151)).
+   ([`security.py::authenticate`](../apps/api/app/core/security.py)).
 
 İkinci kapının testi `tests/test_security.py::TestGelistirmeKimligi::
 test_dev_kimligi_uretimde_reddedilir`.
@@ -62,7 +62,7 @@ test_dev_kimligi_uretimde_reddedilir`.
 
 Her başarısız doğrulama istemciye **tek bir cümle** döndürür:
 "Oturumunuz geçerli değil. Lütfen tekrar giriş yapın."
-([`security.py:30`](../apps/api/app/core/security.py#L30)).
+([`security.py::MESSAGE_INVALID_SESSION`](../apps/api/app/core/security.py)).
 
 Gerekçe: "süresi doldu" ile "imza geçersiz" arasındaki fark, elindeki token'ın
 hangi bakımdan bozuk olduğunu saldırgana ölçtürür — çalınmış bir token'ın hâlâ
@@ -105,7 +105,7 @@ değildir.** Yol parametresi yalnız "hangi ders" sorusunu yanıtlar.
 ### Katman 1 — uygulama
 
 Her ders kapsamlı uç, `CourseMemberDep` / `CourseInstructorDep` bağımlılığından
-geçer ([`deps.py:102`](../apps/api/app/api/deps.py#L102)). Bağımlılık her
+geçer ([`deps.py::require_course_member`](../apps/api/app/api/deps.py)). Bağımlılık her
 istekte üyelik tablosuna bakar ve üyelik yoksa **404** döner (403 değil):
 erişimi olmayan kullanıcı dersin var olup olmadığını da öğrenemez.
 
@@ -113,10 +113,15 @@ erişimi olmayan kullanıcı dersin var olup olmadığını da öğrenemez.
 
 API, tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle
 bağlanır. Her istek, işlem içinde `app.current_user_id` GUC'sini ayarlar
-([`db.py:71`](../apps/api/app/core/db.py#L71)); politikalar bu değeri okur.
+([`db.py::set_rls_context`](../apps/api/app/core/db.py)); politikalar bu değeri okur.
 Ayarlanmamışsa `app.current_user_id()` NULL döner ve **hiçbir satır görünmez**
-(fail-closed). Tablolar `FORCE ROW LEVEL SECURITY` taşır, yani sahip rol bile
-politikalara tabidir.
+(fail-closed). Çekirdek ve sohbet tablolarında `FORCE ROW LEVEL SECURITY`
+uygulanır ([`0001`](../supabase/migrations/0001_core_schema.sql),
+[`0003`](../supabase/migrations/0003_chat.sql)); superuser ve `BYPASSRLS` rolleri
+bu zorlamanın dışındadır. Bu, bütün şemalara genellenmez: [`0025`](../supabase/migrations/0025_shared_request_quota.sql)
+içindeki `app.request_rate_policies` ve `app.rate_limit_windows` tablolarında
+RLS etkin, `FORCE` yoktur. Uygulama/worker rollerinin doğrudan tablo yetkileri
+geri alınmıştır; kota erişimi dar `SECURITY DEFINER` işlevleri üzerinden yürür.
 
 `SET LOCAL` işleme bağlıdır: bağlantı havuza dönerken bağlam kendiliğinden
 temizlenir, bir sonraki isteğin önceki kullanıcının kimliğini devralması
@@ -164,11 +169,13 @@ bozar (`app.is_member`, `app.is_instructor`, `app.is_instructor_of`,
 fonksiyon gevşemesi, hiçbir politika metni değişmeden izolasyonun tamamını
 kaldırabilir.
 
-Politikası **bilinçli olarak olmayan** on üç işlem de fail-closed olarak
-sınanır: `courses` INSERT/DELETE, `profiles` INSERT/DELETE, `chunks`
-INSERT/UPDATE/DELETE, `ingestion_jobs` UPDATE/DELETE, `chat_sessions` DELETE,
-`chat_messages` UPDATE/DELETE, `answer_cache` UPDATE, `request_logs`
-UPDATE/DELETE. Biri "eksik" sanıp politika eklerse ilgili iddia kırmızı yanar.
+Politika verilmeyen işlemler ve yalnız sahibi için açılan veri hakkı işlemleri
+ayrı sınanır. Özellikle `chat_sessions` DELETE artık politikasız değildir:
+[`0012_privacy_rights.sql`](../supabase/migrations/0012_privacy_rights.sql) içindeki
+`chat_sessions_self_delete`, `user_id = app.current_user_id()` koşuluyla sahibine
+silme izni verir. [`rls_isolation.sql`](../supabase/tests/rls_isolation.sql) hem
+kendi oturumunu silebilmeyi hem başkasının oturumunu silememeyi denetler. Yukarıdaki
+baseline toplamları güncel politika envanteri yerine kullanılmaz.
 
 ### Uygulama katmanı (katman 1)
 
@@ -203,7 +210,7 @@ Savunma bir prompt temennisi değil, **yapısal**:
 
 1. **Ret metinleri bizim sabitlerimizdir, modelin ürettiği metin değil.**
    `MESSAGE_INSUFFICIENT_CONTEXT`, `MESSAGE_OUT_OF_SCOPE`, `MESSAGE_BLOCKED`
-   ([`api/chat.py:234-246`](../apps/api/app/api/chat.py#L234)). Sistem
+   ([`modules/agent/answers.py`](../apps/api/app/modules/agent/answers.py); `api/chat.py` bu sabitleri içe aktarır). Sistem
    reddettiğinde kullanıcıya giden cümle koddan gelir; materyalin içindeki bir
    talimat ret metnini ele geçiremez.
 2. **Atıf zorunluluğu** (§5) modelin serbest metin üretme alanını daraltır:
@@ -248,7 +255,7 @@ set-membership bir kontroldür.
 | Sağlayıcı/model adı | Kullanıcıya dönen zarfta yok; hata mesajları tek şablondan üretilir ([`core/errors.py`](../apps/api/app/core/errors.py)) |
 | Ham yığın izi | `unhandled_error_handler` genel Türkçe zarf döner. `exc_info` günlüğünde raw metin yerine izinli tür/göreli kaynak özeti nesnesi tutulur; mesaj, zincir, notes ve kaynak satırı yazılmaz ([günlük sözleşmesi](operations/logging-privacy.md)) |
 | Soru metni ölçüm kaydında | `request_logs` soru/cevap alanı taşımaz; mevcut yazıcı sabit rota ve ölçüm alanlarını kullanır. Text türündeki route sütunu tek başına içerik yazılmasını imkânsız kılmaz ([`0003_chat.sql`](../supabase/migrations/0003_chat.sql)) |
-| API anahtarı / JWT / TCKN / e-posta logda | Genel mesaj dalındaki `RedactionFilter` bilinen kalıpları maskeler; exception ve Uvicorn ERROR dalları izinli alanları seçer. İstemci kaynaklı destek kimliği S10'da açıktır; serbest kişisel metin veya dış günlük için tam güvence yoktur ([`core/logging.py`](../apps/api/app/core/logging.py)) |
+| API anahtarı / JWT / TCKN / e-posta logda | Genel mesaj dalındaki `RedactionFilter` bilinen kalıpları maskeler; exception ve Uvicorn ERROR dalları izinli alanları seçer. Destek kimliği sunucuda üretilir ([`request_context.py`](../apps/api/app/core/request_context.py)); serbest kişisel metin veya dış günlük için tam güvence yoktur ([`core/logging.py`](../apps/api/app/core/logging.py)) |
 | Dersin varlığı | Üye olmayana 404; "var ama giremezsin" ile "yok" ayırt edilemez |
 | Taslak sınav sorusu ve cevap anahtarı | `questions_read` politikası öğrenciye yalnız `approved` gösterir (`0004`) |
 | `request_logs` satırları | Öğrenciye tamamen kapalı; eğitmen yalnız kendi dersini okur (`0005`) |
@@ -257,7 +264,7 @@ set-membership bir kontroldür.
 öğrenci bağlamında `INSERT ... RETURNING` çalışmaz. `api/chat.py` bu yüzden
 ORM'in `session.add()` yolunu değil RETURNING üretmeyen Core INSERT'ünü
 kullanır — `.inline()` bunu zorlar
-([`chat.py:635`](../apps/api/app/api/chat.py#L635)).
+([`chat.py::post_chat`](../apps/api/app/api/chat.py)).
 
 ---
 
@@ -268,10 +275,13 @@ kullanır — `.inline()` bunu zorlar
   yasak listesi değil.
 - **Yükleme tekilliği**: `(course_id, file_hash)` üzerinde UNIQUE; aynı dosya
   ikinci kez embed edilmez.
-- **Sohbet istek sınırı**: kullanıcı+ders başına kayan pencere, varsayılan 20
-  istek / 60 saniye ([`chat.py:567`](../apps/api/app/api/chat.py#L567)).
+- **Sohbet istek sınırı**: kullanıcı+ders+kapsam başına PostgreSQL ortak kayan penceresi;
+  varsayılan 20 istek / 60 saniye. Bunlar ölçülmüş kapasite değil,
+  [`config.py`](../apps/api/app/core/config.py) ve [`0025`](../supabase/migrations/0025_shared_request_quota.sql)
+  politika değerleridir. [`request_quota.py::take_request_slot`](../apps/api/app/core/request_quota.py)
+  kabulü sağlayıcı çağrısından önce ayrı işlemde kesinleştirir.
 - **CORS**: izinli kaynaklar `CORS_ORIGINS`'ten gelir; üretimde yalnız gerçek
-  alan adını içerir ([`main.py:48`](../apps/api/app/main.py#L48)).
+  alan adını içerir ([`main.py::create_app`](../apps/api/app/main.py)).
 - **`POST /internal/drain`**: `WORKER_DRAIN_SECRET` yoksa kapalıdır; mevcut uç sabit zamanlı anahtar karşılaştırmasıyla korunur. Worker yapılandırması kullanıcıdan gelen genel bir URL değildir ([internal.py](../apps/api/app/api/internal.py)).
 
 ---
@@ -289,11 +299,11 @@ migration'ın `app.install_auth_user_bridge()` fonksiyonunu çağırır) ama
 Supabase'in `auth.users` şeması, izinleri ve `supabase_auth_admin` rolü birebir
 taklit edilmiştir, gerçek değildir.
 
-**3. Yeni API süreçleri ortak PostgreSQL istek kotasını kullanır.**0025 bütçeyi kullanıcı+ders+kapsam bazında paylaşır. Kontrol kabulü ayrı COMMIT'tir; başarısız sağlayıcı çağrısı hakkı geri vermez. İki gerçek HTTP sürecinde20 kabul/20 ret ve qgen300s Retry-After doğrulandı. Politika/DB hatasında sağlayıcı çağrısı yapılmadan503 döner. Eski bellek sayacını kullanan sürümle karışık geçiş bu garantiyi vermez. Token rezervasyonları ve aktif iş kontrolleri ayrı katmanlardır; soru üretiminin eşzamanlılık kapısı hâlâ süreç içindedir. [İşletim ve saklama sınırları](operations/shared-request-quota.md).
+**3. Yeni API süreçleri ortak PostgreSQL istek kotasını kullanır.** [`0025`](../supabase/migrations/0025_shared_request_quota.sql) ve [`request_quota.py`](../apps/api/app/core/request_quota.py) bütçeyi kullanıcı+ders+kapsam bazında paylaşır. Kontrol kabulü ayrı COMMIT'tir; başarısız sağlayıcı çağrısı hakkı geri vermez. İki gerçek HTTP sürecinde20 kabul/20 ret ve qgen300s Retry-After doğrulandı. Politika/DB hatasında sağlayıcı çağrısı yapılmadan503 döner. Eski bellek sayacını kullanan sürümle karışık geçiş bu garantiyi vermez. Token rezervasyonları ve aktif iş kontrolleri ayrı katmanlardır; soru üretiminin eşzamanlılık kapısı hâlâ süreç içindedir. [İşletim ve saklama sınırları](operations/shared-request-quota.md).
 
 **4. Güvenlik başlıkları vardır; TLS ayrı katmandır.** API JSON yanıtlarında CSP, nosniff ve referrer başlıkları, belge yüzeyinde ayrı dar politika vardır. Web CSP ve Permissions-Policy mevcuttur. Next'in mevcut üretim politikasında inline script/style izni kalır; nonce tabanlı daraltma uygulanmadı. Web CSP, yapılandırılmış API ve Supabase origin'lerini doğrulayarak `connect-src` listesine ekler; joker hedef açılmaz. Bu bir canlı Supabase giriş testi değildir. HTTPS/HSTS, gerçek dağıtımda doğrulanmalıdır.
 
-**5. CORS kimlik çerezlerini açmaz.** Güncel API `allow_credentials=False` kullanır; kimlik Bearer başlığıyla taşınır. İzinli origin listesi kurulumda dar tutulmalıdır.
+**5. CORS kimlik çerezlerini açmaz.** Güncel API [`main.py::create_app`](../apps/api/app/main.py) içinde `allow_credentials=False` kullanır; kimlik Bearer başlığıyla taşınır. İzinli origin listesi kurulumda dar tutulmalıdır.
 
 **6. Cevap önbelleğine yazma, uygulama katmanının garantisidir.** RLS
 düzeyinde dersin bir üyesi kendi dersinin `answer_cache`'ine satır yazabilir;
@@ -326,7 +336,14 @@ kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapal�
 
 S9/S9C hata metnini üç ayrı yoldan daraltır: `exc_info` nesne özeti, Uvicorn'un düz ERROR/CRITICAL kayıtlarında sabit olaylar ve çıktı arızasında tek sabit stderr işareti. `exception` alanı string'den nesneye geçmiştir; acil `logging_output_failed` kaydında zaman damgası yoktur. Collector bu biçimleri ayrıca kabul etmelidir. Yapılandırmadan önceki bütün süreç kayıtları JSON değildir. [İşletim sözleşmesi](operations/logging-privacy.md) ve [aşamalı yerel kabul](../specs/018-codex-production-line/evidence/s9-local/README.md), son birleşik test/hosted kabulünden ayrıdır.
 
-`request_id` hâlâ biçimi uygun istemci başlığından gelebilir ve tekrar kullanılabilir. Exception context'indeki değere de bilinen hassas kalıplar için maskeleme uygulanır; bu kalıplara uymayan diğer istemci kimlikleri yine kişisel bilgi taşıyabilir ve ilişkilendirilebilir. S9 bunu anonimleştirmez veya güvenilir kullanıcı/tekil işlem kanıtına dönüştürmez. İstemci kimliği değişikliği S10'da açıktır; erişim, saklama ve silme kararı bu metadata'yı da kapsamalıdır.
+S10 sonrasında destek kimliği istemci başlığından alınmaz.
+[`request_context.py::ServerRequestId`](../apps/api/app/core/request_context.py)
+her HTTP denemesi için sunucuda UUID4 üretir; `request_id_of` aynı isteğin state,
+hata zarfı, günlük ve audit tüketicilerine aynı iç nesneyi verir.
+[`main.py`](../apps/api/app/main.py) bu değeri `X-Request-ID` yanıt başlığına yazar.
+Bu kimlik yetki veya anonimlik kanıtı değildir; erişim, saklama ve silme kararı
+metadata için de gerekir. S9 dönemindeki istemci kimliği sınırı tarihsel kayıttır;
+S10'un yerel kabulü [kendi kanıt arşivinde](../specs/018-codex-production-line/evidence/s10-local/README.md) tutulur.
 
 Serbest metin yalnız `chat_messages.content` değildir: `answers.given`, değerlendirme geri bildirimi, kullanıcı yorumları ve yüklenen belgeler de kişisel bilgi içerebilir. Kullanıcı kimliğine bağlı operasyon kayıtları, ham soru içermese de kişisel veri niteliğini otomatik kaybetmez.
 
