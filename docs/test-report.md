@@ -787,3 +787,14 @@ DOU-Synapse, L4 runtime, fastembed ve Hugging Face için incelenen yerel cache k
 D6 planındaki iki eski iddia mevcut belgelerde zaten düzeltilmiştir. `ARCHITECTURE.md` §6 ve §8, Compose API rolünü `dou_app`, iş yazımı/poller rolünü `dou_worker` olarak ayırır; §10, `POST /internal/drain` ucunu uygulanmış olarak kaydeder. `docs/security.md` §7, sır tanımlı değilken ucun kapalı olduğunu ve sabit zamanlı anahtar karşılaştırmasını açıklar. Bu ifadeler `docker-compose.yml` ile `apps/api/app/api/internal.py` kaynaklarıyla karşılaştırılmıştır; aynı düzeltme tekrar uygulanmamıştır.
 
 **Kapsam:** kaynak ve belge tutarlılığı incelemesi. Bu işte Docker/Compose, canlı bağlantı rolü, RLS veya scale-to-zero uyanışı çalıştırılmadı (`not-run`); kodda yapılandırılmış olmak canlı kabul değildir. D6'nın bu iki eski iddiası için yeni engel bulunmadı.
+
+
+## 2026-09-13 — L4 S11 kurtarılan kaynakların yeniden uzlaştırılması
+
+9 Eylül kurtarma paketindeki **12 kaynak dosyasının tamamının** güncel SHA-256 özeti kurtarma manifestiyle yeniden eşleşti. **11 dosya**, manifestteki bağımsız tarihsel kaynak özetiyle de eşleşir. `test_storage_timeout_contract.py` için bağımsız tarihsel özet yoktur; kurtarma kaydıyla eşleşmesi bu eksikliği kapatmaz. Kurtarılan iki yama metni de kayıtlı özetleriyle eşleşmiştir; bu incelemede uygulanmamıştır.
+
+Bu paket tamamlanmış tek bir aday değildir: reconciler, CLI, storage ve config dosyaları için kayıtlı dört final özet kurtarılan baytlarla eşleşmez; sonraki gerçek-claim regresyon yamasının tam metni eksiktir. Kurtarma paketi özgün/v1/v2/ara sürümleri birlikte içerir. Bu kaynakları yeniden hashlemek, eski test sonuçlarını bugünkü kaynağın kabul kanıtına dönüştürmez.
+
+**ENGEL:** kurtarılan `0027_document_delete_outbox.sql`, L2'ye ayrılmış `0027_learning_events.sql` numarasıyla çakışır. L4'ün `0028` numarası yalnız gerekirse kota işi, L5'in `0029` numarası private storage içindir; S11 için yeni numara atanmalıdır. Ayrıca S11'in storage/config değişiklikleri L5 yüzeyiyle ve L4'ün storage/auth dokunmama sınırıyla çakışır. Entegrasyon sahibi ve göç numarası uzlaştırılmadan eski dosyalar üzerine kopyalanmadı.
+
+**Not-run:** yeni, tutarlı S11 adayı için tam API, gerçek ve yalıtılmış CLI/PostgreSQL kabulü, eksik ham kanıtların yeniden üretimi ve R3 dossier. Sonraki uygulama, güncel kaynak üzerinde eksik regresyonu yeniden kurmalı; yetkili claim, hedef sabitleme, etkin referans koruması, kesinti/tekrar deneme ve dosya sınırlarını yeni koşularla doğrulamalıdır.
