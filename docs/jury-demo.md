@@ -116,3 +116,14 @@ Hepsinin ölçümleri yukarıdaki teknik engel nedeniyle **koşulmadı**.
 3. `sh scripts/demo/run_web.sh` — üretim derlemesi, `127.0.0.1:3020`, `NEXT_PUBLIC_DEV_AUTH=true`.
 
 Sahte sağlayıcıyla yapılan prova gerçek model kanıtı değildir; jüriye hangi sağlayıcıyla gösterildiği söylenir.
+
+### 14 Eylül 2026 13:05 — yerel duman koşusu (sahte sağlayıcı, gerçek retrieval)
+
+`scripts/demo/` betikleriyle, `GROQ_API_KEY` olmadan (`LLM_FAKE_PROVIDER=true`), API 8020 / web 3020. Ölçülenler:
+
+- Eğitmen dev-auth girişi ve panel açıldı; `COME302 İşletim Sistemleri` dersi API'den açıldı, öğrenci üye yapıldı.
+- `sample_data/isletim-sistemleri` içinden dört dosya (PDF ×2, Markdown, PPTX) yüklendi; dördü de gerçek E5 embedding ile `completed` (7+6+4+3 parça).
+- Asistan sorusu "Bir sürecin durumları nelerdir…" için üç kaynak kartı geldi: `01-processes.pdf` sayfa 1 ve 3, `04-synchronization.md`. Cevap metni sahte sağlayıcının; kaynaklar gerçek retrieval'dan.
+- Soru üretimi: konu `Süreçler ve CPU zamanlama`, 3 MCQ istendi, 3 döndü, 3 kabul, 0 ret; üçü onaylandı.
+- Öğrenci konu filtreli alıştırma sınavını 3 soruyla başlattı; yanlış şıkla verilen cevap `is_correct=false`, `score=0`, "neden yanlış" kartı `02-cpu-scheduling.pdf` sayfa 1.
+- Ölçülmeyen: gerçek model cevap kalitesi (anahtar yok), süreli sınav, yayımlanmış blueprint kataloğu, prova süresi, ekran görüntüleri. Bunlar 15 Eylül provasının işi.
