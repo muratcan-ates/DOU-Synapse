@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "114-branch-aggregate-r1",
+  "captured_at": "2026-09-14T08:59:22+00:00",
+  "candidate_sha": "SELF",
+  "command": "python3 scripts/refresh_aggregate_dossier.py --target origin/018-codex-production-line; ardından dalın kendi kapıları koşulur",
+  "environment": "toplayıcı kayıt: kapsam birleştirir, yeni ölçüm üretmez",
+  "results": {
+    "aggregated_files": 5,
+    "validator_tests_passed": 89,
+    "ops_tests_passed": 17,
+    "mypy": "pass",
+    "workflow_policy": "pass",
+    "backup_restore_drill_rc": 0,
+    "docs_check_rc": 0,
+    "full_pytest_at_this_tree": "arka planda koşuyor; sonuç PR açıklamasında"
+  },
+  "governance_note": "Bu kayıt YENİ bir ölçüm iddia etmez; dalın commit'lerine dağılmış hassas dosyaları hedef dal tabanına karşı tek kapsam altında toplar. Her dilimin kendi kanıtı kendi dossier'inde durur ve değiştirilmez. Doğrulayıcı bir dossier'i yalnız HEAD'de tanıtıldığı commit'te uygun saydığı için, dalın üstüne yeni commit geldikçe bu kayıt yenilenmelidir; PR'dan önceki son commit'te bir kez koşturmak yeterlidir.",
+  "limitations": "Yerel ölçüm; barındırılan CI ve gerçek sağlayıcı kanıtı ayrıdır. Docker/Azure yok: deploy ve rollback iş akışları yalnız politika ve YAML düzeyinde doğrulandı.",
+  "privacy": "içerik yok; yalnız dosya yolları ve komutlar",
+  "commands": [
+    "apps/api/.venv/bin/python -m pytest -q scripts/test_ai_sdlc_check.py",
+    "cd apps/api && TEST_DB_NAME=dou_r3 .venv/bin/python -m pytest -q tests/test_rls_session_context.py tests/test_worker_graceful_shutdown.py tests/test_token_quota_multiprocess.py",
+    "cd apps/api && .venv/bin/mypy app",
+    "apps/api/.venv/bin/python scripts/workflow_policy_check.py",
+    "bash scripts/test_backup_restore_drill.sh",
+    "node scripts/docs_check.mjs"
+  ],
+  "scope": "019 şeridi (origin/018-codex-production-line'a karşı): D2'/D3'/D4'/D1' ölçümü, A5'/I5/A4' kapıları."
+}

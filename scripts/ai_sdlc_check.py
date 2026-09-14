@@ -219,6 +219,32 @@ EXTERNAL_APPROVAL_REF_PATTERN = re.compile(
     r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[1-9][0-9]*"
     r"#pullrequestreview-[1-9][0-9]*$"
 )
+# Kanıt betiği desenleri: bu yollardaki her dosya EN AZ BİR iş akışından
+# çağrılmalıdır. Depoda yazılmış ama hiçbir iş akışının koşturmadığı kanıt
+# betikleri gerçekten oldu; koşmayan kanıt kanıt değildir.
+EVIDENCE_SCRIPT_GLOBS = (
+    "scripts/*check*.py",
+    "supabase/tests/*.sql",
+    ".release/test_*.py",
+)
+WORKFLOW_GLOBS = ("*.yml", "*.yaml")
+DISCOVER_RE = re.compile(r"discover(?P<args>[^\n]*)")
+DISCOVER_START_RE = re.compile(r"(?:-s|--start-directory)[=\s]+(?P<value>\S+)")
+DISCOVER_PATTERN_RE = re.compile(r"(?:-p|--pattern)[=\s]+(?P<value>\S+)")
+DEFAULT_DISCOVER_PATTERN = "test*.py"
+DOSSIER_PREFIX_RE = re.compile(r"^(?P<prefix>[0-9]+)-")
+DOSSIER_REVISION_SUFFIX_RE = re.compile(r"-r[0-9]+$")
+# Bilinen istisna: `010` öneki iki ayrı dossier'de kullanıldı. `.ai/changes/`
+# append-only olduğu için bu dosyalar YENİDEN ADLANDIRILAMAZ — yeniden adlandırma
+# tam da denetim izini bozan hareket olurdu. Kural bu yüzden bundan sonrası için
+# geçerlidir: aşağıdaki iki yol beyaz listede, aynı öneki alacak ÜÇÜNCÜ bir
+# dossier yine kırmızı yanar.
+KNOWN_DOSSIER_PREFIX_COLLISIONS = frozenset(
+    {
+        ".ai/changes/010-branded-api-docs-r1.json",
+        ".ai/changes/010-dense-tiebreak-determinism-r1.json",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -1645,6 +1671,114 @@ def _lifecycle_errors(
     return errors
 
 
+def _unquote(value: str) -> str:
+    if len(value) > 1 and value[0] in "'\"" and value[-1] == value[0]:
+        return value[1:-1]
+    return value
+
+
+def _discover_targets(text: str) -> list[tuple[str, str]]:
+    """``unittest discover -s <dizin> -p <desen>`` çağrılarını çıkar.
+
+    Toplayıcı alt paketlere de iner; buradaki kanıt desenleri tek seviyeli
+    olduğu için üst dizin eşleşmesi yeterli, fazlası yanlış yeşil üretirdi.
+    """
+
+    targets: list[tuple[str, str]] = []
+    for match in DISCOVER_RE.finditer(text):
+        arguments = match.group("args")
+        start = DISCOVER_START_RE.search(arguments)
+        if start is None:
+            continue
+        pattern = DISCOVER_PATTERN_RE.search(arguments)
+        directory = PurePosixPath(_unquote(start.group("value"))).as_posix()
+        targets.append(
+            (
+                directory,
+                _unquote(pattern.group("value")) if pattern else DEFAULT_DISCOVER_PATTERN,
+            )
+        )
+    return targets
+
+
+def _is_wired(relative: str, texts: list[str], discover_targets: list[tuple[str, str]]) -> bool:
+    """Betik bir iş akışından yol, nokta-modül ya da toplayıcı ile çağrılıyor mu?"""
+
+    module = relative.removesuffix(".py").replace("/", ".") if relative.endswith(".py") else None
+    for text in texts:
+        if relative in text:
+            return True
+        if module is not None and module in text:
+            return True
+    name = PurePosixPath(relative).name
+    parent = PurePosixPath(relative).parent.as_posix()
+    return any(
+        directory == parent and fnmatch.fnmatchcase(name, pattern)
+        for directory, pattern in discover_targets
+    )
+
+
+def _evidence_script_errors(root: Path) -> list[str]:
+    """Kanıt betiklerinin iş akışlarına bağlı olduğunu doğrula.
+
+    Çalışma ağacı taranır: `validate_repository` zaten checkout'un incelenen
+    head commit'i olmasını şart koşuyor (`CHECKOUT_SHA`), dolayısıyla ağaçtaki
+    dosyalar incelenen adayın ta kendisidir.
+    """
+
+    workflow_directory = root / ".github" / "workflows"
+    texts: list[str] = []
+    for glob_pattern in WORKFLOW_GLOBS:
+        for workflow in sorted(workflow_directory.glob(glob_pattern)):
+            try:
+                texts.append(workflow.read_text(encoding="utf-8"))
+            except (OSError, UnicodeDecodeError):
+                return [f"UNREADABLE_WORKFLOW:{workflow.name}"]
+    discover_targets = [target for text in texts for target in _discover_targets(text)]
+    errors: list[str] = []
+    for glob_pattern in EVIDENCE_SCRIPT_GLOBS:
+        for candidate in sorted(root.glob(glob_pattern)):
+            relative = candidate.relative_to(root).as_posix()
+            if not _is_wired(relative, texts, discover_targets):
+                errors.append(f"UNWIRED_EVIDENCE_SCRIPT:{relative}")
+    return sorted(set(errors))
+
+
+def _dossier_slug(name: str) -> str:
+    """`010-branded-api-docs-r1.json` -> `branded-api-docs`.
+
+    Revizyon eki (`-r2`, `-r12`) ayıklanır: aynı soyun revizyonları aynı numarayı
+    PAYLAŞMALIDIR, çakışma sayılmaz. Çakışma, aynı numarayı FARKLI bir işin
+    almasıdır — sıra o zaman belirsizleşir.
+    """
+
+    stem = PurePosixPath(name).stem
+    without_prefix = DOSSIER_PREFIX_RE.sub("", stem, count=1)
+    return DOSSIER_REVISION_SUFFIX_RE.sub("", without_prefix, count=1)
+
+
+def _dossier_prefix_errors(dossier_paths: list[str]) -> list[str]:
+    """Dossier numara öneki iki farklı işe verilemez: iki `010-` kaydı bunu yaşattı."""
+
+    grouped: dict[str, list[str]] = {}
+    for dossier_path in dossier_paths:
+        match = DOSSIER_PREFIX_RE.match(PurePosixPath(dossier_path).name)
+        if match is None:
+            continue
+        grouped.setdefault(match.group("prefix"), []).append(dossier_path)
+    errors: list[str] = []
+    for prefix, paths in grouped.items():
+        if len({_dossier_slug(PurePosixPath(path).name) for path in paths}) < 2:
+            continue
+        offenders = [path for path in paths if path not in KNOWN_DOSSIER_PREFIX_COLLISIONS]
+        if not offenders:
+            # Yalnız bilinen tarihsel çakışma kaldı; yeni ihlal yok.
+            continue
+        for offender in sorted(offenders):
+            errors.append(f"DOSSIER_PREFIX_COLLISION:{prefix}:{offender}")
+    return sorted(set(errors))
+
+
 def validate_repository(
     *,
     repo_root: Path,
@@ -1684,6 +1818,7 @@ def validate_repository(
             return ["MISSING_JSON:.ai/schema.json"]
         schema = _json_from_commit(repo, head, schema_path)
         errors.extend(_schema_errors(schema, raw_schema))
+        errors.extend(_evidence_script_errors(repo))
 
         changes = _reviewed_changes(repo, merge_base, head)
         sensitive: dict[str, tuple[ChangedPath, str, dict[str, bool]]] = {}
@@ -1738,6 +1873,7 @@ def validate_repository(
 
         dossier_glob = policy["dossier_glob"]
         dossier_paths = _tree_paths(repo, head, dossier_glob)
+        errors.extend(_dossier_prefix_errors(dossier_paths))
         changed_dossier_paths = {
             change.path
             for change in changes

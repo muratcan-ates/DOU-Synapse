@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "change_id": "112-pooler-safe-rls-and-graceful-worker-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T08:56:30+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "D2'/D3'/D4'/D1' — yerel PostgreSQL 16 + pgvector; sağlayıcı çağrısı yok.",
+  "commands": [
+    "cd apps/api && .venv/bin/ruff check app/core/db.py app/worker.py tests/test_rls_session_context.py tests/test_worker_graceful_shutdown.py tests/test_token_quota_multiprocess.py",
+    "cd apps/api && .venv/bin/mypy app",
+    "cd apps/api && TEST_DB_NAME=dou_r1 .venv/bin/python -m pytest -q tests/test_rls_session_context.py tests/test_worker_graceful_shutdown.py tests/test_token_quota_multiprocess.py",
+    "bash scripts/test_backup_restore_drill.sh"
+  ],
+  "results": {
+    "gates": "her komutun çıkış kodu 0 ölçüldü"
+  },
+  "comparison": {
+    "before": "set_rls_context işlem dışı çağrıyı sessizce kabul ediyordu; worker yalnız SIGTERM'i dinliyor, ikinci sinyalde takılabiliyordu; çok-süreçli kota ölçümü yoktu; tatbikat betiği yoktu.",
+    "after": "İşlem dışı RLS bağlamı RuntimeError; pooler işareti sürücü önbelleğini kapatır; SIGTERM/SIGINT güvenli bırakma + ikinci sinyal OS'a; iki gerçek süreçte tam bir kabul ölçüldü; tatbikat yeşil."
+  },
+  "limitations": "Yerel ölçüm; barındırılan CI koşusu ve gerçek sağlayıcı kanıtı ayrıdır.",
+  "privacy": "içerik yok; yalnız dosya yolları ve komutlar"
+}

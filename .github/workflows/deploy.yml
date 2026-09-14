@@ -1,0 +1,405 @@
+# Azure for Students B2s_v2 VM'ine dağıtım.
+#
+# Ne kanıtlar: bu iş akışının YEŞİL yanması, seçilen imaj digest'inin VM'de ayakta
+# olduğunu, göçlerin defterle uygulandığını ve `/health/ready` ile duman testinin o an
+# 200 döndüğünü söyler. Uptime, SLO ya da kapasite kanıtı DEĞİLDİR.
+#
+# Neden digest, neden etiket değil: etiket yeniden hedeflenebilir. `:latest` ya da bir
+# sürüm etiketi bugün başka, yarın başka imajı gösterebilir; o zaman "hangi kod koşuyor"
+# sorusunun cevabı kalmaz ve geri alınacak hedef de belirsizleşir. Bu hat yalnız
+# `sha256:...` ile konuşur.
+#
+# Neden `workflow_run`: dağıtım YALNIZ `main` üzerinde YEŞİL biten CI'dan sonra başlar.
+# `push` tetiği CI'yı beklemez ve yeşil olmayan ağacı canlıya taşır.
+#
+# KANIT SINIRI — bu dosya bugün Azure kontrol düzlemine (`azure/login` + OIDC +
+# `az vm run-command`) DEĞİL, VM'e doğrudan SSH ile ulaşır. Sebep tek ve somut:
+# `scripts/workflow_policy_check.py` içindeki ALLOWED_WRITE_SCOPES bu dosyaya
+# `id-token: write` vermiyor ve OIDC o izin olmadan token üretemez. İzin listesini
+# genişletmek politika sahibinin işidir (bkz. docs/deployment.md §Dağıtım hattı).
+# SSH yolu daha az yetki ister ve host anahtarı sabitlenmiş olduğu sürece güvenlidir.
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "Dağıtılacak imaj digest'i (sha256:... — release-candidate özetinden)"
+        required: true
+        type: string
+
+# Aynı anda iki dağıtım VM'de yarışır. Devam edeni İPTAL ETMEYİZ: yarıda kesilen bir
+# `docker compose up` ya da göç, bilinmeyen bir duruma yol açar.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+# Dağıtım deponun içeriğini okur ve GHCR paket sürümlerini listeler; yazma yetkisi yok.
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  resolve:
+    name: Önkoşul, sır varlığı ve imaj digest'i
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # `main` üzerinde YEŞİL biten CI, ya da elle tetik. Başarısız/iptal CI dağıtmaz.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      image_digest: ${{ steps.digest.outputs.image_digest }}
+      image_name: ${{ steps.identity.outputs.image_name }}
+      source_sha: ${{ steps.identity.outputs.source_sha }}
+
+    steps:
+      - name: Tetik koşulunu ikinci kez doğrula
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          # `if:` ifadesi tek savunma olarak bırakılmaz; koşul burada da yazılıdır,
+          # böylece tetik bloğu ileride gevşetilirse iş yine kırmızı yanar.
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "elle tetik: dağıtılacak digest girdiden gelir"
+            exit 0
+          fi
+          if [[ "$EVENT_NAME" != "workflow_run" ]]; then
+            echo "::error title=DEPLOY_BAD_TRIGGER::Beklenmeyen olay: ${EVENT_NAME}"
+            exit 1
+          fi
+          if [[ "$RUN_CONCLUSION" != "success" || "$RUN_BRANCH" != "main" ]]; then
+            echo "::error title=DEPLOY_BAD_TRIGGER::CI sonucu '${RUN_CONCLUSION}', dal '${RUN_BRANCH}' — yalnız main/success dağıtılır"
+            exit 1
+          fi
+
+      - name: Zorunlu sırların VARLIĞINI fail-closed doğrula
+        shell: bash
+        env:
+          # Yalnız ADLAR bu depoda durur; değerler GitHub Secrets'tadır ve hiçbir
+          # adımda ekrana yazılmaz. Aşağıdaki kontrol uzunluk bile basmaz.
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_JWT_SECRET: ${{ secrets.SUPABASE_JWT_SECRET }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in DATABASE_URL SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY \
+                      SUPABASE_JWT_SECRET GROQ_API_KEY \
+                      AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID \
+                      DEPLOY_SSH_HOST DEPLOY_SSH_USER DEPLOY_SSH_KEY \
+                      DEPLOY_SSH_KNOWN_HOSTS; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error title=DEPLOY_NOT_CONFIGURED::Eksik GitHub Secret: ${missing[*]}"
+            exit 1
+          fi
+          echo "on iki sırrın hepsi tanımlı (değerler okunmadı)"
+
+      - name: İmaj adını ve kaynak SHA'yı türet
+        id: identity
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          DISPATCH_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # release-candidate.yml ile AYNI ad şeması; iki dosya ayrışırsa dağıtım
+          # var olmayan bir paketi arar ve kırmızı yanar.
+          image_name="ghcr.io/$(printf '%s/api' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            source_sha="$DISPATCH_SHA"
+          else
+            source_sha="$RUN_SHA"
+          fi
+          if [[ ! "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error title=DEPLOY_BAD_SHA::Kaynak SHA 40 haneli değil"
+            exit 1
+          fi
+          echo "image_name=$image_name" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Dağıtılacak digest'i çöz
+        id: digest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_DIGEST: ${{ inputs.image_digest }}
+          OWNER: ${{ github.repository_owner }}
+          REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ steps.identity.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            image_digest="$INPUT_DIGEST"
+          else
+            # release-candidate.yml karantina etiketini `quarantine-<sha>-<run>-<deneme>`
+            # olarak basar. Bu commit için yayımlanmış bir imaj YOKSA dağıtım yapılmaz:
+            # main'e girmiş her commit'in otomatik imajı yoktur ve olmayan imajı
+            # "en yenisi" diye dağıtmak sessizce yanlış sürümü canlıya taşır.
+            package="$(printf '%s' "${REPOSITORY#*/}/api" | tr '[:upper:]' '[:lower:]' | sed 's|/|%2F|g')"
+            versions=""
+            for scope in users orgs; do
+              if gh api "/${scope}/${OWNER}/packages/container/${package}/versions?per_page=100" \
+                   > /tmp/versions.json 2>/dev/null; then
+                versions=/tmp/versions.json
+                break
+              fi
+            done
+            if [[ -z "$versions" ]]; then
+              echo "::error title=DEPLOY_PACKAGE_UNREADABLE::GHCR paket sürümleri okunamadı (${package})"
+              exit 1
+            fi
+            image_digest="$(
+              jq -r --arg prefix "quarantine-${SOURCE_SHA}-" '
+                [ .[]
+                  | select(any(.metadata.container.tags[]?; startswith($prefix)))
+                ] | sort_by(.created_at) | last | .name // empty
+              ' "$versions"
+            )"
+            if [[ -z "$image_digest" ]]; then
+              echo "::error title=DEPLOY_NO_IMAGE::${SOURCE_SHA} için yayımlanmış imaj yok. Önce release-candidate (v* etiketi) koşmalı."
+              exit 1
+            fi
+          fi
+          if [[ ! "$image_digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error title=DEPLOY_BAD_DIGEST::Digest 'sha256:' + 64 hane olmalı"
+            exit 1
+          fi
+          echo "image_digest=$image_digest" >> "$GITHUB_OUTPUT"
+          echo "dağıtılacak digest: ${image_digest}"
+
+  deploy:
+    name: VM'e digest ile dağıt, göç, hazırlık ve duman testi
+    needs: resolve
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    env:
+      IMAGE_REF: ${{ needs.resolve.outputs.image_name }}@${{ needs.resolve.outputs.image_digest }}
+      REMOTE_DIR: /opt/dou-synapse
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: SSH anahtarını ve SABİTLENMİŞ host anahtarını kur
+        shell: bash
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # StrictHostKeyChecking=no KULLANILMAZ: sabitlenmemiş host anahtarı, dağıtım
+          # sırrını araya giren bir sunucuya teslim etmenin en kısa yoludur.
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Şu an koşan digest'i kaydet (geri alma hedefi)
+        id: previous
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -euo pipefail
+          previous="$(
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+              "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+              "cat ${REMOTE_DIR}/current-image-digest 2>/dev/null; true"
+          )"
+          previous="$(printf '%s' "$previous" | tr -d '[:space:]')"
+          if [[ "$previous" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "önceki digest: ${previous}"
+          else
+            # İlk dağıtımda önceki digest yoktur. Bunu boş bırakmak dürüsttür;
+            # geri alma adımı boş hedefle çalışmaz ve bunu açıkça söyler.
+            previous=""
+            echo "önceki digest yok — bu ilk dağıtım, otomatik geri alma hedefi yok"
+          fi
+          echo "previous_digest=${previous}" >> "$GITHUB_OUTPUT"
+
+      - name: VM'de imajı digest ile çek ve ayağa kaldır
+        id: rollout
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+            "IMAGE_REF='${IMAGE_REF}' REMOTE_DIR='${REMOTE_DIR}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$REMOTE_DIR"
+          # Compose dosyası yalnız DOU_API_IMAGE'ı okur; etiket adı VM'de tutulmaz.
+          printf 'DOU_API_IMAGE=%s\n' "$IMAGE_REF" > .env.image
+          docker compose --env-file .env.image -f docker-compose.deploy.yml pull
+          docker compose --env-file .env.image -f docker-compose.deploy.yml up -d --remove-orphans
+          printf '%s\n' "$IMAGE_REF" | sed 's/.*@//' > current-image-digest
+          docker compose --env-file .env.image -f docker-compose.deploy.yml ps
+          REMOTE
+
+      - name: PostgreSQL istemcisini kur
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Göçleri defterle uygula
+        shell: bash
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          # Önce kuru koşu: uygulanacak listeyi ve sha durumunu kayda geçir.
+          scripts/migrate.sh --dry-run
+          scripts/migrate.sh
+
+      - name: /health/ready 200 verene kadar bekle
+        id: ready
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            code="$(
+              curl -sS -o /tmp/ready.json -w '%{http_code}' --max-time 20 \
+                "https://${DEPLOY_SSH_HOST}/health/ready" || echo 000
+            )"
+            echo "deneme ${attempt}: HTTP ${code}"
+            if [[ "$code" == "200" ]]; then
+              cat /tmp/ready.json
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=DEPLOY_NOT_READY::/health/ready on denemede 200 vermedi"
+          if [[ -f /tmp/ready.json ]]; then
+            cat /tmp/ready.json
+          fi
+          exit 1
+
+      - name: Duman testi — koşan digest ve korunan uç
+        id: smoke
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          EXPECTED_DIGEST: ${{ needs.resolve.outputs.image_digest }}
+        run: |
+          set -euo pipefail
+          running="$(
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+              "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+              "docker inspect --format '{{index .RepoDigests 0}}' \$(docker compose --env-file ${REMOTE_DIR}/.env.image -f ${REMOTE_DIR}/docker-compose.deploy.yml ps -q api)"
+          )"
+          running_digest="${running##*@}"
+          if [[ "$running_digest" != "$EXPECTED_DIGEST" ]]; then
+            echo "::error title=DEPLOY_DIGEST_MISMATCH::VM'de koşan digest ${running_digest}, beklenen ${EXPECTED_DIGEST}"
+            exit 1
+          fi
+          echo "VM'de beklenen digest koşuyor"
+          # Korumalı drain ucu sırsız istekte 403/404 vermeli; 200 vermesi koruma
+          # kaybı demektir ve dağıtımı düşürür (docs/deployment.md §4.5).
+          drain_code="$(
+            curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+              -X POST "https://${DEPLOY_SSH_HOST}/internal/drain" || echo 000
+          )"
+          echo "sırsız /internal/drain: HTTP ${drain_code}"
+          if [[ "$drain_code" != "403" && "$drain_code" != "404" ]]; then
+            echo "::error title=DEPLOY_DRAIN_UNPROTECTED::Sırsız drain isteği ${drain_code} döndü"
+            exit 1
+          fi
+
+      - name: BAŞARISIZLIKTA önceki digest'e dön
+        if: ${{ failure() }}
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          IMAGE_NAME: ${{ needs.resolve.outputs.image_name }}
+          PREVIOUS_DIGEST: ${{ steps.previous.outputs.previous_digest }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$PREVIOUS_DIGEST" ]]; then
+            echo "::error title=DEPLOY_NO_ROLLBACK_TARGET::Önceki digest yok; elle müdahale gerekir (docs/deployment.md §9)"
+            exit 1
+          fi
+          echo "geri alınıyor: ${PREVIOUS_DIGEST}"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+            "IMAGE_REF='${IMAGE_NAME}@${PREVIOUS_DIGEST}' REMOTE_DIR='${REMOTE_DIR}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$REMOTE_DIR"
+          printf 'DOU_API_IMAGE=%s\n' "$IMAGE_REF" > .env.image
+          docker compose --env-file .env.image -f docker-compose.deploy.yml pull
+          docker compose --env-file .env.image -f docker-compose.deploy.yml up -d --remove-orphans
+          printf '%s\n' "$IMAGE_REF" | sed 's/.*@//' > current-image-digest
+          REMOTE
+          # Geri alınan sürüm de hazır olmalı; olmazsa iş kırmızı kalır ve
+          # docs/deployment.md §9 elle yol devreye girer.
+          for attempt in 1 2 3 4 5 6; do
+            code="$(
+              curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+                "https://${DEPLOY_SSH_HOST}/health/ready" || echo 000
+            )"
+            echo "geri alma sonrası deneme ${attempt}: HTTP ${code}"
+            if [[ "$code" == "200" ]]; then
+              echo "::warning title=DEPLOY_ROLLED_BACK::Dağıtım düştü, önceki digest geri yüklendi ve hazır"
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "::error title=DEPLOY_ROLLBACK_UNHEALTHY::Geri alınan sürüm de hazır değil — elle müdahale"
+          exit 1
+
+      - name: Kanıt sınırını özete yaz
+        if: ${{ success() }}
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ needs.resolve.outputs.image_digest }}
+          SOURCE_SHA: ${{ needs.resolve.outputs.source_sha }}
+        run: |
+          {
+            echo "## Dağıtım sonucu"
+            echo
+            echo "- kaynak commit: \`${SOURCE_SHA}\`"
+            echo "- dağıtılan digest: \`${IMAGE_DIGEST}\`"
+            echo "- göçler \`app.schema_migrations\` defterine yazıldı"
+            echo "- \`/health/ready\` 200, sırsız \`/internal/drain\` korumalı"
+            echo
+            echo "Bu sonuç o anki bir ölçümdür; uptime, SLO veya kapasite kanıtı değildir."
+          } >> "$GITHUB_STEP_SUMMARY"

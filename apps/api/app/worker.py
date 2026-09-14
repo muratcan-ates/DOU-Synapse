@@ -148,16 +148,49 @@ async def run_forever(
         await dispose()
 
 
+SHUTDOWN_SIGNALS: tuple[signal.Signals, ...] = (signal.SIGTERM, signal.SIGINT)
+
+
+def _drop_signal_handlers(loop: asyncio.AbstractEventLoop) -> None:
+    # Kaldırma, sinyali işletim sisteminin varsayılanına geri verir (SIGINT için
+    # KeyboardInterrupt). Kurulmamış bir işleyicinin kaldırılması hata değildir.
+    for number in SHUTDOWN_SIGNALS:
+        with contextlib.suppress(NotImplementedError, RuntimeError, ValueError):
+            loop.remove_signal_handler(number)
+
+
+def _request_stop(
+    stop: asyncio.Event, loop: asyncio.AbstractEventLoop, received: signal.Signals
+) -> None:
+    """İlk sinyal güvenli bırakmayı başlatır; ikincisi işletim sistemine geri verilir.
+
+    Güvenli bırakma sonludur: yeni iş alınmaz, elindeki tur `worker_shutdown_grace_seconds`
+    içinde biter, bitmezse iptal edilir ve iptal yolu lease'i bırakır (son denemedeyse iş
+    ölü mektuba yazılır). Yine de kapanış takılabilir — operatör rehin kalmamalıdır:
+    işleyiciler ilk sinyalde kaldırılır, dolayısıyla İKİNCİ sinyal süreci varsayılan
+    davranışla sonlandırır. Sert süreç kaybı zaten lease süresiyle kapsanır.
+    """
+    _drop_signal_handlers(loop)
+    if stop.is_set():
+        return
+    stop.set()
+    logger.info(
+        "kapatma sinyali alındı",
+        extra={"context": {"stage": "shutdown", "signal": received.name}},
+    )
+
+
 async def _run_signal_worker() -> None:
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     # Only the standalone process owns signals; API-local drain must not replace
     # Uvicorn's lifecycle handlers. Hard process loss is covered by lease expiry.
-    loop.add_signal_handler(signal.SIGTERM, stop.set)
+    for number in SHUTDOWN_SIGNALS:
+        loop.add_signal_handler(number, _request_stop, stop, loop, number)
     try:
         await run_forever(stop_event=stop)
     finally:
-        loop.remove_signal_handler(signal.SIGTERM)
+        _drop_signal_handlers(loop)
 
 
 def main() -> None:

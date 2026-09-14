@@ -229,6 +229,49 @@ jobs:
         working-directory: .
         run: supabase/tests/rls_portal_admin_mutation_check.sh
 
+      # Aşağıdaki üç kanıt da depoda VARDI ama hiçbir iş akışı koşturmuyordu;
+      # `scripts/ai_sdlc_check.py` artık çağrılmayan kanıt betiğini kırmızı yakıyor
+      # (EVIDENCE_UNREACHABLE) ve bu üçünü o kural buldu.
+      - name: Öğrenme olayları RLS kanıtı ve mutasyonu (0027)
+        working-directory: .
+        run: |
+          set -euo pipefail
+          psql -d postgres -c 'DROP DATABASE IF EXISTS rls_learning_template'
+          psql -d postgres -c 'CREATE DATABASE rls_learning_template'
+          for f in supabase/migrations/*.sql; do
+            psql -v ON_ERROR_STOP=1 -q -d rls_learning_template -f "$f"
+          done
+          # Önce iddialar bozulmamış şemada geçmeli...
+          psql -X -v ON_ERROR_STOP=1 -d rls_learning_template \
+            -f supabase/tests/rls_learning_events.sql 2>&1 | tee /tmp/rls_le.out
+          if grep -q 'FAIL  ' /tmp/rls_le.out; then echo "learning_events RLS bozuk"; exit 1; fi
+          # ...sonra her mutasyon ayrı kopyada kırmızı yanabilmeli.
+          supabase/tests/rls_learning_events_mutation_check.sh rls_learning_template
+
+      - name: Storage RLS kanıtı ve mutasyonu (0029, sentetik storage şeması)
+        working-directory: .
+        run: |
+          set -euo pipefail
+          # Test yalnız `dou_l5*` adlı, çekirdek göçleri uygulanmış ve storage
+          # şeması OLMAYAN bir veritabanında koşar; Supabase şeması testin kendi
+          # içinde sentetik kurulur ve sonunda geri alınır.
+          psql -d postgres -c 'DROP DATABASE IF EXISTS dou_l5_storage_ci'
+          psql -d postgres -c 'CREATE DATABASE dou_l5_storage_ci'
+          for f in supabase/migrations/*.sql; do
+            psql -v ON_ERROR_STOP=1 -q -d dou_l5_storage_ci -f "$f"
+          done
+          psql -X -v ON_ERROR_STOP=1 -d dou_l5_storage_ci \
+            -f supabase/tests/rls_storage.sql > /tmp/rls_storage.out 2>&1
+          supabase/tests/rls_storage_mutation_check.sh dou_l5_storage_ci
+
+      - name: Rol farkındalıklı ajan mutasyon aracının çevrimdışı sözleşmeleri
+        working-directory: .
+        env:
+          PYTHONPATH: apps/api:.
+        run: |
+          uv run --project apps/api python -m pytest -q \
+            scripts/test_role_agent_application_mutation_check.py
+
   image:
     name: API imajı — build + ağsız embedding kanıtı
     runs-on: ubuntu-latest
@@ -327,6 +370,26 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
+
+      # A4' — `test.skip` / `test.fixme` sessiz yeşildir: süit geçer, kanıt yoktur.
+      # Bağımlılık yok, yalnız git. `--untracked` henüz commit'lenmemiş dosyayı da
+      # görür, böylece kapı yerelde de kanıtlanabilir. Tek satırlık `! git grep ...`
+      # `set -e` altında rc>1 (grep hatası) durumunu yeşile çevirirdi; bu yüzden
+      # "eşleşme var" ile "grep patladı" ayrı ayrı ele alınıyor. ESLint eklenmez (H5).
+      - name: E2E süitinde devre dışı bırakılmış test yok
+        shell: bash
+        working-directory: .
+        run: |
+          status=0
+          git grep -n --untracked -E 'test\.(skip|fixme)\(' -- apps/web/e2e || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "E2E süitinde test.skip/test.fixme var: sessiz yeşil kabul edilmez"
+            exit 1
+          fi
+          if [ "$status" -ne 1 ]; then
+            echo "git grep beklenmedik çıkış kodu verdi: $status"
+            exit 1
+          fi
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
