@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "change_id": "111-ordinal-agreement-qwk-r1",
+  "lineage_id": "ordinal-agreement-qwk",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "E4 — insan-insan uyumu sıralı ölçekte: quadratic weighted kappa",
+  "summary": "evaluation/metrics.py'ye `ordinal_agreement` + `OrdinalAgreementResult` eklendi: QWK, anlaşmazlık uzaklığı histogramı ve beyan edilmiş sıralı ölçek. score_labels.py artık uyumu bu fonksiyonla ölçüyor ve hakem formu QWK + uzaklık profilini gösteriyor; adsal kappa kayıtta kalıyor. Ölçek sırası tahmin edilmiyor, beyan ediliyor; ORDINAL_SCALE ile ALLOWED_LABELS'ın ayrışması assert ve testle kapatıldı. 11 test eklendi; belge sayaçları ölçümden güncellendi. Sağlayıcı, model, prompt, guardrail, retrieval, embedding değişmedi.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T08:52:02.347750+00:00",
+  "review_by": "2026-10-14T08:52:02.347750+00:00",
+  "base_sha": "782dcf8a7852bc1b44ef6ed220d28928aad5eb15",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged from 782dcf8; evaluation-metric addition only.",
+    "model_revision": "Unchanged from 782dcf8; evaluation-metric addition only.",
+    "prompt_revision": "Unchanged from 782dcf8; evaluation-metric addition only.",
+    "tool_schema_revision": "Unchanged from 782dcf8; evaluation-metric addition only.",
+    "guardrail_revision": "Unchanged from 782dcf8; evaluation-metric addition only.",
+    "retrieval_revision": "Unchanged from 782dcf8; evaluation-metric addition only.",
+    "embedding_revision": "Unchanged from 782dcf8; evaluation-metric addition only.",
+    "evaluator_revision": "Uyum istatistiği adsal Cohen's kappa'dan quadratic weighted kappa'ya taşındı; adsal kappa raporda korunuyor."
+  },
+  "data": {
+    "corpus_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "eval_set_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "c2ef9f19a716db0e2d7480fb51ea50c8154701db3f20d9d8767f308538c7b7fb"
+    },
+    {
+      "path": "apps/api/tests/test_eval_metrics.py",
+      "state": "present",
+      "sha256": "c74bfc1aa6d6556127107b4063b88f49a29f7130c4f8da12de1d4dfaeed2c8cb"
+    },
+    {
+      "path": "apps/api/tests/test_faithfulness_scoring.py",
+      "state": "present",
+      "sha256": "ef2914a217fd385015b63f054bb26155ae3ff4e466dac5f5a3857e0cb07d7fd4"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "ef775d81f182f49f05439eb2c840b9d99d7b7b3adcb69f2f704025cb79546f04"
+    },
+    {
+      "path": "evaluation/faithfulness/README.md",
+      "state": "present",
+      "sha256": "bb2e1903f82fd8bb445bf30bebe0974f0600a2a3d3801ec0fff9e86ec22b8e0b"
+    },
+    {
+      "path": "evaluation/faithfulness/sample_template.md",
+      "state": "present",
+      "sha256": "ebb309f7aed960d20352286c050a0d0ea0949329dfee0c55ff6059ec6cabe0bf"
+    },
+    {
+      "path": "evaluation/faithfulness/score_labels.py",
+      "state": "present",
+      "sha256": "d8068d3bd276f767f8b609d69ca6ec15b408dee2b69cd9cf8a9d34becb1a3703"
+    },
+    {
+      "path": "evaluation/metrics.py",
+      "state": "present",
+      "sha256": "667d1c5fc164c5d859a9e778af753f06ae2cdcfb64a1410ba2a8f975310d502a"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "20cdc9e88b55f0a147047f6e0c4a42b20c2366923db729e789c1543d4338d8bc"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "0967a3e299414c92d0d07b9c074626fbfe0e77d0200243361a97b8d516892639"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "d7bd8f9ab2b19c5335c5d0d66531db55c6fabab28daec91affb08145ab8c3329"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/111-ordinal-agreement-qwk-r1.json",
+      "report_sha256": "f905442cae516fe92848630ace815ac60b049e38b1521caa77bc0d96e67155e4",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "evaluation/gold_set/calibration.json",
+    "holdout_ref": "evaluation/gold_set/holdout.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/faithfulness/labels_etiketleyici_1.md",
+    "metrics": [
+      {
+        "name": "ordinal_agreement_tests_passed",
+        "baseline": 0,
+        "candidate": 9,
+        "operator": ">=",
+        "threshold": 9,
+        "sample_size": 9
+      },
+      {
+        "name": "faithfulness_scoring_tests_passed",
+        "baseline": 13,
+        "candidate": 15,
+        "operator": ">=",
+        "threshold": 15,
+        "sample_size": 15
+      },
+      {
+        "name": "backend_tests_passed",
+        "baseline": 1907,
+        "candidate": 1918,
+        "operator": ">=",
+        "threshold": 1918,
+        "sample_size": 1918
+      },
+      {
+        "name": "mypy_errors",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 121
+      }
+    ],
+    "exact_command": "cd apps/api && TEST_DB_NAME=dou_l9 .venv/bin/python -m pytest -q tests/test_eval_metrics.py tests/test_faithfulness_scoring.py"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: offline evaluation metric; runtime unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:111-ordinal-agreement-qwk-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: offline evaluation metric; runtime unchanged",
+    "kill_switch": "score_labels.py `label_agreement`'a döndürülür; ordinal_agreement saf fonksiyon olarak zararsız kalır. Geçmiş raporlar adsal kappa taşımaya devam ettiği için karşılaştırılabilirlik kopmaz.",
+    "assignment": "Sticky to the exact reviewed candidate SHA; offline tooling only, no user exposure.",
+    "initial_exposure": "None; yerel/CI ölçüm aracı.",
+    "stop_conditions": [
+      "Ölçek sırası ile izinli etiket kümesi ayrışırsa (assert + test bunu kapatıyor).",
+      "Ölçekte olmayan bir etiket sessizce atılır hâle gelirse.",
+      "Tartışma SONRASI etiketlerden uyum hesaplanırsa."
+    ],
+    "expand_conditions": [
+      "İki gerçek etiketleyicinin doldurduğu form üzerinde insan-insan QWK'si ölçülmesi.",
+      "Model-insan QWK'sinin insan-insan QWK'sine göre normalize edilmesi (E4 ikinci yarı)."
+    ],
+    "active_exam_policy": "No academic record, active-exam lock, help scope or role change."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:782dcf8a7852bc1b44ef6ed220d28928aad5eb15",
+    "procedure": "Bu commit geri alınır; çalışma zamanı davranışı ve veri göçü yoktur.",
+    "max_minutes": 15,
+    "verification": "Planned operator response, not measured production SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Ölçü yalnız etiket dizileri üzerinde çalışır; cevap metni, öğrenci kimliği ve sağlayıcı anahtarı girmez. Testlerdeki etiketler sentetiktir.",
+    "retention": "Repository history only."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

@@ -97,21 +97,32 @@ Her etiketleyici bu tabloyu **kendi kopyasında** doldurur:
 ## Uyum hesabı
 
 Elle sayılmaz; tanımı testlerle sabitlenmiş fonksiyon kullanılır
-(`metrics.label_agreement`, `apps/api/tests/test_eval_metrics.py`):
+(`metrics.ordinal_agreement`, `apps/api/tests/test_eval_metrics.py`):
 
 ```bash
 cd apps/api
 uv run python -c "
 import sys; sys.path.insert(0, '../../evaluation')
 import metrics, json
+SCALE  = ('desteklenmiyor', 'kısmen', 'destekleniyor')  # sıra BEYAN edilir, tahmin edilmez
 first  = ['destekleniyor', 'kısmen', ...]   # 1. etiketleyici, soru sırasıyla
 second = ['destekleniyor', 'destekleniyor', ...]  # 2. etiketleyici
-print(json.dumps(metrics.label_agreement(first, second).as_dict(), ensure_ascii=False, indent=2))
+print(json.dumps(metrics.ordinal_agreement(first, second, SCALE).as_dict(), ensure_ascii=False, indent=2))
 "
 ```
 
+Bu üç etiket **sıralıdır**: `desteklenmiyor < kısmen < destekleniyor`. Sıra ölçüye
+girer, çünkü "destekleniyor"a karşı "desteklenmiyor" ile "destekleniyor"a karşı
+"kısmen" aynı ağırlıkta bir anlaşmazlık değildir.
+
 - **Ham uyum oranı zorunludur.**
-- **Cohen's kappa bonustur** ve tanımsız kalabilir: iki etiketleyici de her cevaba
+- **Quadratic weighted kappa (QWK) asıl raporlanan sayıdır**: anlaşmazlığı mesafenin
+  karesiyle cezalandırır. Aynı %50 ham uyumda, anlaşmazlıklar ölçeğin iki ucundaysa
+  QWK 0.00, komşu kutucuktaysa 0.67 çıkar — adsal kappa aynı çiftte 0.00 ve 0.33 verir,
+  yani farkı görür ama küçültür.
+- **Anlaşmazlık uzaklığı histogramı** birlikte raporlanır: tek bir kappa sayısı, iki
+  farklı anlaşmazlık profilini aynı gösterebilir.
+- **Cohen's kappa (adsal) bonustur** ve tanımsız kalabilir: iki etiketleyici de her cevaba
   aynı etiketi verdiyse şans uyumu 1'e gider ve kappa hesaplanamaz. Böyle bir durumda
   fonksiyon `None` döndürür; ham uyum yine raporlanır — tanımsız bir kappa, ölçülmüş
   bir uyumu geçersiz kılmaz.

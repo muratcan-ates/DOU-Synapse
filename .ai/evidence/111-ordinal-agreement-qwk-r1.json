@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "change_id": "111-ordinal-agreement-qwk-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T08:52:02+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "E4 — insan-insan uyumu sıralı ölçekte ölçülüyor. Ölçülen kusur: faithfulness etiketleri (destekleniyor/kısmen/desteklenmiyor) SIRALI olduğu hâlde `metrics.label_agreement` onları ADSAL sayıyordu; 'destekleniyor↔desteklenmiyor' ile 'destekleniyor↔kısmen' aynı ağırlıkta anlaşmazlık olarak raporlanıyordu. Eklenen `metrics.ordinal_agreement` quadratic weighted kappa ve anlaşmazlık uzaklığı histogramı üretir; `score_labels.py` raporu ikisini de taşır. Adsal kappa geriye dönük karşılaştırılabilirlik için kayıtta kalır.",
+  "commands": [
+    "cd apps/api && TEST_DB_NAME=dou_l9 .venv/bin/python -m pytest -q",
+    "cd apps/api && TEST_DB_NAME=dou_l9 .venv/bin/python -m pytest -q tests/test_eval_metrics.py -k 'Ordinal or LabelAgreement'",
+    "cd apps/api && TEST_DB_NAME=dou_l9 .venv/bin/python -m pytest -q tests/test_faithfulness_scoring.py",
+    "cd apps/api && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app",
+    "python3 scripts/test_quality_check.py",
+    "python3 -m unittest scripts.test_test_quality_check",
+    "node scripts/docs_check.mjs",
+    "python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023 --allow-gap 0028",
+    "apps/api/.venv/bin/python scripts/workflow_policy_check.py"
+  ],
+  "results": {
+    "full_pytest": "1918 passed, 38 subtests passed, 0 failed in 289.94s (yük ort. ~38)",
+    "ordinal_and_agreement_tests_passed": 13,
+    "faithfulness_scoring_tests_passed": 15,
+    "tests_added": 11,
+    "ruff_check": "pass",
+    "ruff_format": "pass (222 files)",
+    "mypy": "pass (Success: no issues found in 121 source files)",
+    "test_quality_gate": "TEST_QUALITY=PASS (91 dosya, bulgu yok)",
+    "docs_check": "PASS — sayaçlar `--duzelt` ile ölçümden yazıldı (backend.tests 1907 -> 1918)",
+    "migration_check": "MIGRATION_CHECK=PASS (24 göç)",
+    "workflow_policy": "WORKFLOW_POLICY_CHECK=PASS"
+  },
+  "comparison": {
+    "before": "Aynı %50 ham uyumda iki farklı anlaşmazlık profili: anlaşmazlıklar ölçeğin iki ucunda vs komşu kutucukta. label_agreement: adsal kappa 0.0000 ve 0.3333 — farkı görür ama mesafeyi ölçmez; rapor yalnız bu sayıyı ve ham uyumu taşıyordu, uzaklık profili hiç görünmüyordu.",
+    "after": "Aynı iki koşu: QWK 0.0000 ve 0.6667 — mesafe karesiyle cezalandırılıyor. Rapora ayrıca distance_histogram ve beyan edilmiş ordinal_scale giriyor. Ölçekte olmayan etiket sessizce atılmıyor, ValueError veriyor (atılsaydı bozuk etiket dosyası örneklemi küçültüp uyumu şişirirdi)."
+  },
+  "limitations": "İnsan-insan QWK'si için gerçek iki etiketleyicinin doldurduğu form gerekir; bu commit ölçüyü kurar, insan koşusunu yapmaz (labels_etiketleyici_*.md boş). Model-insan QWK'sinin insan-insan QWK'sine göre normalize edilmesi (E4'ün ikinci yarısı) gerçek etiketler geldiğinde eklenir. Ölçek sırası ÇAĞIRAN tarafından beyan edilir; yanlış beyan edilirse mesafe matrisi sessizce yanlış olur — bu yüzden score_labels.py'de ORDINAL_SCALE ile ALLOWED_LABELS'ın küme eşitliği içe aktarma anında assert ediliyor ve ayrıca test ediliyor.",
+  "privacy": "içerik yok; sentetik etiket dizileri ve komutlar. Öğrenci metni ölçüye girmiyor."
+}

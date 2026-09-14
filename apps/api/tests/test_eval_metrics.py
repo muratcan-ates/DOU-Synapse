@@ -536,6 +536,84 @@ class TestLabelAgreement:
             metrics.label_agreement(["a"], ["a", "b"])
 
 
+class TestOrdinalAgreement:
+    """Sıralı ölçekte uyum (E4): anlaşmazlığın UZAKLIĞI da ölçülür."""
+
+    SCALE = ("desteklenmiyor", "kısmen", "destekleniyor")
+
+    def test_ayni_ham_uyumda_uzak_anlasmazlik_daha_agir_cezalanir(self) -> None:
+        """Bu kuralın var olma sebebi tek bir satırda görünüyor.
+
+        İki koşunun da ham uyumu %50. Birincide anlaşmazlıklar ölçeğin iki
+        ucunda ("destekleniyor" ↔ "desteklenmiyor"), ikincide komşu kutucukta.
+        Adsal kappa bu farkı gösterir ama küçültür (0.00 → 0.33); QWK farkı
+        mesafenin karesiyle büyütür (0.00 → 0.67). Rubrik ve kaynak
+        etiketlerinde raporlanması gereken sayı ikincisidir.
+        """
+        first = ["desteklenmiyor", "desteklenmiyor", "destekleniyor", "destekleniyor"]
+        uzak = metrics.ordinal_agreement(first, ["desteklenmiyor"] * 4, self.SCALE)
+        komsu = metrics.ordinal_agreement(
+            first, ["kısmen", "kısmen", "destekleniyor", "destekleniyor"], self.SCALE
+        )
+
+        assert uzak.raw == komsu.raw == pytest.approx(0.5)
+        assert uzak.quadratic_kappa == pytest.approx(0.0)
+        assert komsu.quadratic_kappa == pytest.approx(2 / 3)
+        assert uzak.quadratic_kappa < komsu.quadratic_kappa
+
+    def test_uzaklik_histogrami_anlasmazligin_profilini_verir(self) -> None:
+        """Tek bir kappa sayısı, farklı anlaşmazlık profillerini aynı gösterebilir."""
+        result = metrics.ordinal_agreement(
+            ["desteklenmiyor", "kısmen", "destekleniyor"],
+            ["desteklenmiyor", "destekleniyor", "desteklenmiyor"],
+            self.SCALE,
+        )
+        assert result.distance_histogram == {0: 1, 1: 1, 2: 1}
+
+    def test_tam_uyumda_qwk_bir(self) -> None:
+        labels = ["kısmen", "destekleniyor", "desteklenmiyor"]
+        result = metrics.ordinal_agreement(labels, labels, self.SCALE)
+        assert result.quadratic_kappa == pytest.approx(1.0)
+        assert result.distance_histogram == {0: 3, 1: 0, 2: 0}
+
+    def test_tek_kutucuga_yigilmis_etiketlerde_qwk_tanimsiz(self) -> None:
+        """Beklenen anlaşmazlık sıfırsa bölme tanımsızdır; ham uyum yine raporlanır."""
+        labels = ["kısmen"] * 4
+        result = metrics.ordinal_agreement(labels, labels, self.SCALE)
+        assert result.quadratic_kappa is None
+        assert result.raw == pytest.approx(1.0)
+
+    def test_adsal_kappa_birlikte_tasinir(self) -> None:
+        """Geçmiş raporlarla karşılaştırılabilirlik için ikisi de kayda girer."""
+        result = metrics.ordinal_agreement(
+            ["desteklenmiyor", "destekleniyor"], ["kısmen", "destekleniyor"], self.SCALE
+        )
+        kayit = result.as_dict()
+        assert kayit["cohens_kappa"] == result.kappa
+        assert kayit["quadratic_weighted_kappa"] == result.quadratic_kappa
+        assert kayit["scale"] == list(self.SCALE)
+
+    def test_olcekte_olmayan_etiket_sessizce_atilmaz(self) -> None:
+        """Atılsaydı bozuk etiket dosyası örneklemi küçültür, uyumu şişirirdi."""
+        with pytest.raises(ValueError, match="Ölçekte olmayan etiket"):
+            metrics.ordinal_agreement(["kısmen"], ["belirsiz"], self.SCALE)
+
+    def test_siralama_etiketlerden_tahmin_edilmez(self) -> None:
+        """Ölçek zorunludur; iki kutucuktan az ya da tekrarlı ölçek reddedilir."""
+        with pytest.raises(ValueError, match="en az iki kutucuk"):
+            metrics.ordinal_agreement(["a"], ["a"], ("a",))
+        with pytest.raises(ValueError, match="tekrar eden kutucuk"):
+            metrics.ordinal_agreement(["a"], ["a"], ("a", "a"))
+
+    def test_esit_olmayan_uzunluk_reddedilir(self) -> None:
+        with pytest.raises(ValueError, match="aynı sayıda"):
+            metrics.ordinal_agreement(["kısmen"], ["kısmen", "kısmen"], self.SCALE)
+
+    def test_bos_orneklem_reddedilir(self) -> None:
+        with pytest.raises(ValueError, match="Boş örneklemde"):
+            metrics.ordinal_agreement([], [], self.SCALE)
+
+
 class TestSessizHataKorumalari:
     """9 Ağustos'ta ölçüm aracında bulunan iki sessiz hatanın nöbetçileri.
 
