@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "change_id": "110-test-quality-gate-r1",
+  "lineage_id": "test-quality-gate",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "A6' — AST test-kalite kapısı: ölçmeyen testi sayaçtan düşür",
+  "summary": "yeni dosya: scripts/test_quality_check.py — sıfır bağımlılıklı AST kapısı; üç dar kusuru (yalnız 2xx status_code iddiası, çağrısız pytest.raises bloğu, çağrısız/fixture'sız/uygulama-isimsiz iddia) yakalar, gerekçeli muafiyet ister. yeni dosya: scripts/test_test_quality_check.py — 31 sentetik vaka; yakalama VE susma ayrı sınanır (susma vakaları depodaki gerçek testlerden alındı). ci.yml'e 'Test kalite kapısı' adımı. Gerçek pakette kalan 5 meşru-ama-alışılmadık idiome yazılı gerekçe eklendi (yorum satırı; davranış değişmedi). Sağlayıcı, model, prompt, guardrail, retrieval değişmedi.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T03:42:19.008100+00:00",
+  "review_by": "2026-10-14T03:42:19.008100+00:00",
+  "base_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations.",
+    "model_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations.",
+    "prompt_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations.",
+    "tool_schema_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations.",
+    "guardrail_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations.",
+    "retrieval_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations.",
+    "embedding_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations.",
+    "evaluator_revision": "Unchanged from 22a85d3; test-quality gate and comment-only test annotations."
+  },
+  "data": {
+    "corpus_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "eval_set_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "18359a760bfa4b09dc883c44e977778688ac619dc8c9a183953d9b61a1b32f89"
+    },
+    {
+      "path": "apps/api/tests/test_exam_duration_projection.py",
+      "state": "present",
+      "sha256": "98a4cd47f8c92670f8dc1a87bc1af8974d2e0681273680a2804f906055d5c042"
+    },
+    {
+      "path": "apps/api/tests/test_exam_lock.py",
+      "state": "present",
+      "sha256": "5c5cb7fba10dfd8c13f5e2f83ca201c8c9d9765efd45fc700b02a54df1cc5b05"
+    },
+    {
+      "path": "apps/api/tests/test_rate_limit.py",
+      "state": "present",
+      "sha256": "8ad821a5907bc59f31dc191d710a8a49678d74c10e55c6ef7bb291f338f02b72"
+    },
+    {
+      "path": "apps/api/tests/test_study_continuity.py",
+      "state": "present",
+      "sha256": "0fb1334d5a46470f61b99a7122568cf2c303464ac43e5a163ba3eeba695f494c"
+    },
+    {
+      "path": "scripts/test_quality_check.py",
+      "state": "present",
+      "sha256": "d1f03e221e7dd8db7d307ba0c2ad4e9ee218da7707ed34cbc88fc7f5fecf685a"
+    },
+    {
+      "path": "scripts/test_test_quality_check.py",
+      "state": "present",
+      "sha256": "4ad1058b5a451adfc892746b643713195457502f6a39b049c1ff9293d6c1f77c"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/110-test-quality-gate-r1.json",
+      "report_sha256": "83e1f111c89021dec35742e7407e32c646a664702d579314a7d7969e5aa5b809",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "scripts/test_test_quality_check.py",
+    "holdout_ref": "specs/018-codex-production-line/verification.md",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/acceptance/assessment_cases.json",
+    "metrics": [
+      {
+        "name": "test_quality_findings_on_real_suite",
+        "baseline": 5,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 82
+      },
+      {
+        "name": "gate_unittest_passed",
+        "baseline": 0,
+        "candidate": 31,
+        "operator": ">=",
+        "threshold": 31,
+        "sample_size": 31
+      },
+      {
+        "name": "mypy_errors",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 114
+      }
+    ],
+    "exact_command": "python3 scripts/test_quality_check.py && python3 -m unittest scripts.test_test_quality_check && (cd apps/api && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app)"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: CI gate and test annotations; runtime unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:110-test-quality-gate-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: CI gate and test annotations; runtime unchanged",
+    "kill_switch": "ci.yml'deki 'Test kalite kapısı' adımı kaldırılır; kapı betiği ve yorumlar zararsız kalır. Yanlış alarm çıkarsa kural daraltılır, muafiyet çoğaltılmaz.",
+    "assignment": "Sticky to the exact reviewed candidate SHA; CI-only, no user exposure.",
+    "initial_exposure": "None; CI gate on PR/main only.",
+    "stop_conditions": [
+      "Kapı, gerekçesiz muafiyetle susturulabilir hâle gelirse.",
+      "Gerçek pakette yanlış alarm oranı bulguların yarısını geçerse.",
+      "Kapı bir test dosyasını içe aktarır ya da yürütür hâle gelirse (yalnız ast.parse olmalı)."
+    ],
+    "expand_conditions": [
+      "Bir hafta boyunca L1–L8 şeritlerinin PR'larında yanlış alarm üretmemesi.",
+      "apps/web unit testleri için eşdeğer kural setinin ayrıca değerlendirilmesi."
+    ],
+    "active_exam_policy": "No academic record, active-exam lock, help scope or role change."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "procedure": "Bu commit geri alınır; davranış değişimi yoktur, veri göçü yoktur.",
+    "max_minutes": 15,
+    "verification": "Planned operator response, not measured production SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Only synthetic test sources in the gate's own tests; the gate reads test files with ast.parse and never executes or imports them. No student payload, no provider keys.",
+    "retention": "Repository history only."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

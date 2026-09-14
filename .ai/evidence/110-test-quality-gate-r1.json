@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "change_id": "110-test-quality-gate-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T03:42:19+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "A6' test-kalite kapısı: scripts/test_quality_check.py (AST, sıfır bağımlılık) + scripts/test_test_quality_check.py (31 sentetik vaka) + ci.yml adımı. Gerçek paket (apps/api/tests, 82 dosya) üzerinde ilk sürüm ~60 bulgu üretti; dördü incelendi ve yanlış alarm çıktı (4xx iddiası, değişkene konmuş coroutine, ikinci context manager, yerel yardımcı). Kurallar daraltıldı; kalan 5 bulgu meşru-ama-alışılmadık idiom (kasıtlı totoloji = mutasyon kanıtı; 200'ün kendisinin iddia olduğu karşı-kontrol testleri) ve her birine gerekçeli muafiyet yazıldı.",
+  "commands": [
+    "python3 scripts/test_quality_check.py",
+    "python3 -m unittest scripts.test_test_quality_check",
+    "cd apps/api && .venv/bin/ruff check --config pyproject.toml ../../scripts/test_quality_check.py ../../scripts/test_test_quality_check.py",
+    "cd apps/api && .venv/bin/ruff format --check --config pyproject.toml ../../scripts/test_quality_check.py ../../scripts/test_test_quality_check.py",
+    "cd apps/api && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app",
+    "apps/api/.venv/bin/python scripts/workflow_policy_check.py",
+    "python3 -m unittest scripts.test_workflow_policy_check",
+    "python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023",
+    "node scripts/docs_check.mjs",
+    "cd apps/api && TEST_DB_NAME=dou_l9 .venv/bin/python -m pytest -q",
+    "cd apps/api && TEST_DB_NAME=dou_l9 .venv/bin/python -m pytest -q tests/test_role_aware_agent_application_guards.py::test_export_and_exam_start_share_user_lock",
+    "apps/api/.venv/bin/python -m unittest scripts.test_workflow_policy_check"
+  ],
+  "results": {
+    "test_quality_gate": "TEST_QUALITY=PASS (82 dosya tarandı, bulgu yok)",
+    "gate_unittest_passed": 31,
+    "ruff_check_scripts": "pass",
+    "ruff_format_scripts": "pass",
+    "ruff_check_api": "pass",
+    "ruff_format_api": "pass (206 files already formatted)",
+    "mypy_api": "pass (Success: no issues found in 114 source files)",
+    "workflow_policy": "WORKFLOW_POLICY_CHECK=PASS",
+    "migration_check": "MIGRATION_CHECK=PASS (22 göç)",
+    "docs_check": "rc=0; backend.tests/mypyFiles sayaçları ölçülemedi (uv run ortamında pytest/mypy spawn edilemedi — bu değişiklikle ilgisiz, dev extra'sız uv run)",
+    "full_pytest_at_this_tree": "1 failed, 1688 passed, 38 subtests passed in 221.90s — koşu sırasında makine yük ortalaması 532 (8 çekirdek; 10+ paralel şerit oturumu build/pytest koşturuyordu). Kırmızı: test_role_aware_agent_application_guards.py::test_export_and_exam_start_share_user_lock (kilit/zamanlama testi). Aynı test izole yeniden koşuldu: 1 passed in 11.90s (yük 13). Bu commit'in test dosyalarına tek dokunuşu yorum satırıdır; başarısız test dokunulan dosyalarda değil.",
+    "findings_before_tuning": "~60 (ilk sürüm, 4 örnek incelendi: hepsi yanlış alarm)",
+    "findings_after_tuning": 5,
+    "findings_after_waivers": 0,
+    "workflow_policy_unittest_passed": 27
+  },
+  "comparison": {
+    "before": "Test sayısı kanıt olarak kullanılıyor; yeşil ama ölçmeyen test ile ölçen test ayırt edilemiyor. scripts/ altında test-kalite kapısı yok.",
+    "after": "Üç dar kusur (2xx-only iddia, çağrısız pytest.raises bloğu, çağrısız/fixture'sız/uygulama-isimsiz test) sözdiziminde yakalanıyor; muafiyet yalnız yazılı gerekçeyle; gerekçesiz muafiyet kusur sayılıyor. Kapı ci.yml'de göç sözleşmesi adımının hemen ardında."
+  },
+  "limitations": "Kapı 'test zayıf' demez; 'iddia koda dokunmadan doğru kalır' der. Mutasyon testi (mutmut) yerine geçmez. Tek dosya ölçeğinde çalışır: yerel yardımcı çağrısını üretim dokunuşu sayar, yardımcının gerçekten üretime gidip gitmediğini izlemez. ci.yml dokunuşu L1 yüzeyine en küçük ek (10 satır, mevcut adımın altında); L1 dalıyla birleşmede yeniden konumlanabilir.",
+  "privacy": "içerik yok; yalnız dosya yolları, komutlar ve sentetik test kaynakları"
+}

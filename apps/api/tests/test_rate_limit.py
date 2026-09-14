@@ -271,6 +271,9 @@ class TestGenerationConcurrency:
             completion=FakeCompletion(_mcq_response(chunk_ids[0])),
         )
 
+        # test-quality: sadece-durum-kodu — iddia 200'ün kendisi: kapı birinci iş
+        # bitince yeniden açılmazsa ikinci çağrı 429 döner. Üretilen sorunun içeriği
+        # bu testin konusu değil, `test_assessment.py` onu ayrıca sınıyor.
         assert (await _uret(client, ayse, course_id, topic_id)).status_code == 200
         assert (await _uret(client, ayse, course_id, topic_id)).status_code == 200
 
@@ -299,6 +302,9 @@ class TestGenerationConcurrency:
 
         ikinci = asyncio.create_task(_uret(client, mehmet, course_id, topic_id))
         # İkinci de LLM'e ULAŞTI: kapı onu reddetmedi.
+        # test-quality: sadece-durum-kodu — asıl kanıt yukarıdaki `ikinci_basladi`
+        # beklemesi: kapı kullanıcı başına olmasaydı ikinci istek LLM'e hiç
+        # ulaşmaz ve test zaman aşımına düşerdi. 200'ler o kanıtın kapanışıdır.
         await asyncio.wait_for(sagliyici.ikinci_basladi.wait(), timeout=5)
 
         sagliyici.devam.set()
