@@ -175,6 +175,52 @@ istek istiyor. Sonraki sıfırlama **16 Eylül 00:00** — yani sunum sabahı. S
 çok sentetik öğrenciyle bölmek (her biri kendi 50.000'iyle). Karar Murat'ın; sayı
 koşulmadan rapora **yazılmaz**.
 
+## 4.3 ENGEL — yönetişim kapısı merge'den sonra kırmızı (insan kararı gerekiyor)
+
+**Durum:** `main`'de `AI quality` işi kırmızı. Merge'den önce iki ardışık koşuda
+yeşildi; kırmızıyı kampüs tasarımını birleştiren commit açtı. Sebep ölçüldü:
+
+```
+AI_SDLC_CHECK=FAIL
+LINEAGE_DUPLICATE_REVISION:.ai/changes/101-ci-evidence-wiring-r1.json
+```
+
+`scripts/ai_sdlc_check.py:1592-1608` soy kimliğini `(lineage_id, revision)` çifti
+olarak anahtarlıyor. GPT'nin dalından gelen `101-ci-evidence-wiring-r1` ile benim
+`151-ci-evidence-wiring-r1` kaydım **aynı çifti** taşıyor: ikisinde de
+`lineage_id = "ci-evidence-wiring"`, `revision = 1`.
+
+**İki kayıt gerçekten farklı iştir**, çakışma yalnız isim tesadüfü:
+
+| Kayıt | Kim | Ne |
+|---|---|---|
+| 101 | GPT (`3e7aa8b`) | Kampüs arayüzü, web bağımlılık yaması, CI kanıtı |
+| 151 | Ben (`12c9906`) | Bağlanmamış dört kanıt betiğini CI'a bağlama |
+
+**Neden kendim düzeltmedim.** `lineage_id`'yi kendi kaydımda değiştirmeyi denedim;
+doğrulayıcı bu sefer `STACK_CONTEXT:151-ci-evidence-wiring-r1:history` verdi —
+kayıtlar tanıtıldıkları commit'e bağlı ve sonradan düzenlenemiyor (append-only
+kuralının kodla zorlanmış hâli, AGENTS.md "Hassas commit ve dossier"). Denemeyi
+geri aldım, push'lanmadı. Yeni bir kayıt eklemek de işe yaramıyor: çakışan çift
+`(ci-evidence-wiring, 1)` ve o çiftteki iki girdi yerinde kalıyor. Toplayıcı
+(`refresh_aggregate_dossier.py`) başka bir sorunu çözüyor — çok commit'li dalda
+kapsamsız kalan hassas dosyaları — soy çakışmasını değil.
+
+**Seçenekler (karar Murat'ın):**
+
+1. **Kırmızıyı kabul et.** AGENTS.md zaten bunu öngörüyor: *"Toplayıcı nedeniyle
+   PR'daki 'Govern reviewed AI diff' kırmızı kalabilir; ebeveyn denetiminin yerini
+   tutmaz."* Sunumda yönetişim anlatılacaksa bu satır dürüstçe açıklanabilir:
+   iki şerit aynı adı seçti, kayıtlar silinmedi.
+2. **Denetim kaydını bilerek değiştir.** 101 ya da 151'in `lineage_id`'si
+   ayrıştırılır ve `STACK_CONTEXT` hatası da ayrıca giderilir. Bu, denetim
+   geçmişine dokunmak demektir; onayın şart, ben tek başıma yapmam.
+3. **GPT kendi kaydını düzeltsin.** 101 `origin/025-campus-ui`'de yayımlanmış
+   durumda, yani bu da yayımlanmış geçmişi değiştirmek olur.
+
+Sunumu durduran bir şey değil — ürün, testler ve demo etkilenmiyor. Yalnız
+`AI quality` rozeti kırmızı görünür.
+
 ## 5. Murat'a kalan işler (ben yapamam)
 
 | # | İş | Neden bende değil |
