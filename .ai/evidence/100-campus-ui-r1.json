@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "change_id": "100-campus-ui-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T15:23:36.661841+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "025 kampüs arayüzü: yerel sentetik sözleşme testleri, son web test paketi, tür denetimi, üretim derlemesi ve doküman/statik kontroller. Sınırlı elle tarayıcı incelemesinin kapsamı ayrı doğrulama belgesinde yer alır.",
+  "commands": [
+    {
+      "name": "baseline-targeted-web-contracts",
+      "command": [
+        "bun",
+        "test",
+        "lib/question-page-contracts.test.ts",
+        "lib/use-chat-turn.test.ts",
+        "lib/use-chat-session.test.ts",
+        "lib/chat-availability.test.ts",
+        "lib/chat-history-deletion.test.ts",
+        "lib/chat.test.ts",
+        "lib/exam.test.ts",
+        "lib/exam-answer.test.ts",
+        "lib/exam-drafts.test.ts",
+        "lib/blueprint.test.ts",
+        "lib/question-authoring.test.ts",
+        "lib/questions.test.ts"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-14T15:20:46.724766+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.381,
+      "output_sha256": "ad12b6fcf3b541c3996f1bceef8910fa0baea4d5cb2ee8b396a0d57c93cbd31d",
+      "source_revision": "f4a0952c41232df84f937f05991a417d959a5285",
+      "summary": "\n 256 pass\n 0 fail\n 619 expect() calls\nRan 256 tests across 12 files. [349.00ms]\n"
+    },
+    {
+      "name": "candidate-targeted-web-contracts",
+      "command": [
+        "bun",
+        "test",
+        "lib/question-page-contracts.test.ts",
+        "lib/use-chat-turn.test.ts",
+        "lib/use-chat-session.test.ts",
+        "lib/chat-availability.test.ts",
+        "lib/chat-history-deletion.test.ts",
+        "lib/chat.test.ts",
+        "lib/exam.test.ts",
+        "lib/exam-answer.test.ts",
+        "lib/exam-drafts.test.ts",
+        "lib/blueprint.test.ts",
+        "lib/question-authoring.test.ts",
+        "lib/questions.test.ts"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-14T15:20:47.106603+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.398,
+      "output_sha256": "ef35bdd7b6161bcadd28e2de2305c2d0f484df511b3be768468ff24b19093822",
+      "source_revision": "working-tree",
+      "summary": "\n 256 pass\n 0 fail\n 619 expect() calls\nRan 256 tests across 12 files. [367.00ms]\n"
+    },
+    {
+      "name": "typecheck",
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-14T15:20:47.504698+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 13.478,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "results": {
+    "baseline_targeted_web_contract_failures": 0,
+    "targeted_web_contract_failures": 0,
+    "targeted_web_contract_passes": 256,
+    "targeted_web_contract_assertions": 619,
+    "typecheck_rc": 0,
+    "full_web_unit_passes": 632,
+    "full_web_unit_failures": 0,
+    "full_web_unit_assertions": 1540,
+    "full_web_test_files": 51,
+    "production_build_rc": 0,
+    "contrast_rc": 0,
+    "docs_check_rc": 0,
+    "migration_check_rc": 0,
+    "migration_count": 24,
+    "workflow_policy_check_rc": 0
+  },
+  "notes": {
+    "evaluation_command": "cd apps/web && bun test lib/question-page-contracts.test.ts lib/use-chat-turn.test.ts lib/use-chat-session.test.ts lib/chat-availability.test.ts lib/chat-history-deletion.test.ts lib/chat.test.ts lib/exam.test.ts lib/exam-answer.test.ts lib/exam-drafts.test.ts lib/blueprint.test.ts lib/question-authoring.test.ts lib/questions.test.ts",
+    "baseline_method": "Aynı 12 test, f4a0952c41232df84f937f05991a417d959a5285 içinden git archive ile çıkarılan geçici apps/web ağacında, aynı kurulu bağımlılıklar ile çalıştırıldı: 256 pass, 0 fail, 619 expect().",
+    "candidate_method": "Aynı 12 test mevcut çalışma ağacında çalıştırıldı: 256 pass, 0 fail, 619 expect(). Ardından tsc --noEmit --incremental false rc0.",
+    "metric_definition": "targeted_web_contract_failures, belirtilen 12 dosyadaki bun test başarısızlık sayısıdır. Baseline0/candidate0; aynı kaynak testleri, farklı uygulama ağacı. Kullanıcı memnuniyeti veya gerçek model kalitesi metriği değildir.",
+    "threshold_origin": "Sıfır başarısızlık ve tür hatası, değişiklik öncesinde var olan test sözleşmeleri ve 025 kabul kapısıdır; eşik değişmedi.",
+    "manual_review": [
+      "Yeni öneri yalnız taslağı doldurur; kaynak, persona ve mode alanları mevcut sunucu üyeliği zarfından gelir.",
+      "Enter gönderimi canSend ve readonly/disabled durumunu denetler; Shift+Enter satır açar; IME ve Safari229 olayı gönderim yapmaz.",
+      "Asistan sınav kilidi/rol kararı hazır olmadan sohbet gövdesi kurulmaz; değişen politikada mevcut oturum sıfırlama kancaları korunur.",
+      "Kaynak kartları cevaplarla birlikte görünür; mobil asistan alt menüden112px + güvenli alan yukarıda; native dialog odak çemberi ve Escape korunur."
+    ],
+    "sensitive_path_reason": "apps/web/app/courses/**/chat/** ve components/course-assistant/** politika gereği R3; bu revizyon model, prompt, sağlayıcı, retrieval, değerlendirme veya API sözleşmesini değiştirmez.",
+    "human_anchor_scope": "specs/025-campus-ui/spec.md ürün sahibinin görsel kapsamını kaydeder; bağımsız insan kabulü verildiği iddia edilmez.",
+    "artifact_binding": "Dossier bütün son kaynak, test ve belge dosyalarına SHA256 ile bağlanır. Commit ve aynı-commit kanıt tazeliği resmi yönetişim CLI tarafından commit sonrasında ayrıca doğrulanmalıdır.",
+    "data_digests_scope": "corpus_digest ve eval_set_digest, önceki baseline/candidate karşılaştırmasındaki aynı 12 sentetik web test dosyasının içerik özetidir; ders RAG korpusunun değiştiği veya gerçek model kalitesinin ölçüldüğü anlamına gelmez.",
+    "reported_static_checks": {
+      "source": "specs/025-campus-ui/verification.md",
+      "results": [
+        "Ruff check passed",
+        "Ruff format check passed",
+        "mypy passed",
+        "git diff whitespace check passed"
+      ],
+      "individual_log_hashes_available": false,
+      "provenance": "Integrator reported successful tool output; no nonexistent per-command log file or digest is asserted."
+    },
+    "manual_browser_scope": "Doğrulama belgesinde belirtilen yerel sahte model senaryoları: sentetik öğrenci/eğitmen girişi, 375px düzen, sohbet ve kaynak geçişi, süreli sınav kilidi ve sonuçları, rol filtreleri, profil/hesap/ayar ekranları. Tam otomatik E2E, gerçek IME ve üretim kimlik sağlayıcısı kabulü değildir."
+  },
+  "not_run": [
+    {
+      "name": "full-automated-e2e-and-linux-pixel-comparison",
+      "reason": "Tam Playwright paketi ve Linux piksel karşılaştırmaları bu yerel oturumda çalıştırılmadı; mevcut harness atlanmadı ve görüntü referansları değiştirilmedi."
+    },
+    {
+      "name": "production-auth-provider-acceptance",
+      "reason": "Üretim kimlik sağlayıcısı kabulü yapılmadı; yerel sentetik giriş ve SDK sözleşme testleri gerçek kurum girişi kabulü değildir."
+    },
+    {
+      "name": "real-provider-acceptance",
+      "reason": "Model/prompt değişikliği yok; bu çalışma sahte model ve sentetik yerel kanıttır, gerçek LLM kalitesi doğrulanmadı."
+    },
+    {
+      "name": "production-rollback",
+      "reason": "Canlı dağıtım, yedekleme veya geri alma uygulanmadı."
+    },
+    {
+      "name": "full-backend-test-suite",
+      "reason": "Backend değiştirilmedi; tam backend test paketi yeniden çalıştırılmadı. Belge kontrolündeki toplama sayısı bu paketin geçtiği anlamına gelmez."
+    },
+    {
+      "name": "real-ime-and-os-reduced-motion-browser-check",
+      "reason": "IME güvenlik yolu ve azaltılmış hareket kuralı kod incelemesinde kontrol edildi; gerçek IME girişi ve işletim sistemi tercihi tarayıcıda taklit edilmedi."
+    }
+  ],
+  "limitations": "Tam ürün kabulü, tüm erişilebilirlik koşullarının sertifikası veya üretime hazır oluş iddiası yoktur. Bağımsız mühendislik, alan ve güvenlik/gizlilik onayları bekliyor. Gerçek öğrenci bilgisi ve kullanıcının referans ekranları arşivlenmedi. Kaydedilen sonuçlar doğrulama belgesindeki kapsamla sınırlıdır.",
+  "finalized_at": "2026-09-14T16:08:19.742951+00:00",
+  "final_integration_checks": [
+    {
+      "name": "final-web-unit-suite",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-web-tests.log",
+      "output_sha256": "d13cec11a76dd222d19563bab70590320f6a956c89efbf5e59aaf9de776b6d79",
+      "output_bytes": 71848,
+      "summary": "632 passed, 0 failed, 1540 assertions across 51 files.",
+      "provenance": "Integrator completed execution successfully; the existing local output file was independently read and hashed."
+    },
+    {
+      "name": "final-typescript",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-typecheck-final.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_bytes": 0,
+      "summary": "No compiler diagnostics; integrator confirmed exit code 0.",
+      "provenance": "Integrator completed execution successfully; the existing local output file was independently read and hashed."
+    },
+    {
+      "name": "final-production-build",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-build.log",
+      "output_sha256": "ad9a624cdd2b5cf83b3871b1a47ffd494051d2ce5c7f98bfed9822133f4275a8",
+      "output_bytes": 1299,
+      "summary": "Next.js production build completed; 22 page routes plus framework not-found and icon routes.",
+      "provenance": "Integrator completed execution successfully; the existing local output file was independently read and hashed."
+    },
+    {
+      "name": "contrast-tokens",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-contrast.md",
+      "output_sha256": "aecdc9c1cdb6223c8612e5528d3828b5fbe3ba546a19ef022eab7424c5e46fbf",
+      "output_bytes": 3356,
+      "summary": "Light/dark text and meaningful control-border pairs pass the declared thresholds.",
+      "provenance": "Integrator completed execution successfully; the existing local output file was independently read and hashed."
+    },
+    {
+      "name": "final-document-consistency",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-docs-final.log",
+      "output_sha256": "39c39fb19d30c7e29580043d8c0e2182ee0ab6dbdf174694167f3c7e1ab7a015",
+      "output_bytes": 2078,
+      "summary": "All live document counts match the measured values; 224 documents inspected.",
+      "provenance": "Integrator completed execution successfully; the existing local output file was independently read and hashed."
+    },
+    {
+      "name": "final-migration-sequence",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-migrations-final.log",
+      "output_sha256": "6fb0a585061dfc3a513f85ec0009b555d3ac1ec1bc53456e1386cf532b20fde5",
+      "output_bytes": 74,
+      "summary": "MIGRATION_CHECK=PASS, 24 migrations with declared historical gaps.",
+      "provenance": "Integrator completed execution successfully; the existing local output file was independently read and hashed."
+    },
+    {
+      "name": "final-workflow-policy",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-workflow-final.log",
+      "output_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2",
+      "output_bytes": 27,
+      "summary": "WORKFLOW_POLICY_CHECK=PASS.",
+      "provenance": "Integrator completed execution successfully; the existing local output file was independently read and hashed."
+    }
+  ],
+  "verification": {
+    "path": "specs/025-campus-ui/verification.md",
+    "sha256": "5d7cc6e2cfb020ed94e4bc6a6bbf3dd8396b03523f52725acb5070164f254e6c",
+    "scope": "Integrator-reported manual browser acceptance and remaining limits; this is not a complete automated E2E or production acceptance result."
+  }
+}

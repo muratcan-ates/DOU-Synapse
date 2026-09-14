@@ -84,13 +84,13 @@ export function ChatFeedbackControls({
   }
 
   return (
-    <div className="border-t border-border pt-3">
+    <div className="border-t border-border pt-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-fg-muted">Bu yanıt yardımcı oldu mu?</span>
+        <span className="text-sm text-fg-muted">Bu yanıt yardımcı oldu mu?</span>
         <Button
           type="button"
           variant="ghost"
-          className="h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-sm aria-pressed:bg-surface-sunken aria-pressed:font-semibold"
           aria-pressed={feedback?.rating === "helpful"}
           aria-disabled={busy}
           onClick={() => void save("helpful", "helpful", null, false)}
@@ -100,7 +100,7 @@ export function ChatFeedbackControls({
         <Button
           type="button"
           variant="ghost"
-          className="h-9 px-3 text-xs"
+          className="min-h-11 px-3 text-sm aria-pressed:bg-surface-sunken aria-pressed:font-semibold"
           aria-pressed={feedback?.rating === "unhelpful"}
           aria-disabled={busy}
           onClick={openProblemForm}
@@ -108,7 +108,7 @@ export function ChatFeedbackControls({
           Sorun var
         </Button>
         {feedback && !showProblem && (
-          <span role="status" className="text-xs text-fg-subtle">
+          <span role="status" className="text-sm text-fg-subtle">
             Kaydedildi: {FEEDBACK_REASON_LABEL[feedback.reason]}
             {feedback.share_with_instructor ? " · öğretmen incelemesine açık" : ""}
           </span>
@@ -117,13 +117,13 @@ export function ChatFeedbackControls({
 
       {showProblem && (
         <form
-          className="mt-3 space-y-3 rounded-lg border border-border bg-surface p-4"
+          className="mt-4 space-y-4 rounded-2xl border border-border bg-surface-sunken p-5"
           onSubmit={(event) => {
             event.preventDefault();
             void save("unhelpful", reason, comment.trim() || null, share);
           }}
         >
-          <label className="block text-xs text-fg-muted">
+          <label className="block text-sm text-fg-muted">
             Sorun türü
             <Select
               wrapperClassName="mt-1"
@@ -137,17 +137,17 @@ export function ChatFeedbackControls({
               ))}
             </Select>
           </label>
-          <label className="block text-xs text-fg-muted">
+          <label className="block text-sm text-fg-muted">
             Açıklama (isteğe bağlı)
             <textarea
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               maxLength={1000}
               rows={3}
-              className="mt-1 w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
+              className="mt-1 w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-base text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
             />
           </label>
-          <label className="flex items-start gap-3 text-xs text-fg-muted">
+          <label className="flex items-start gap-3 text-sm text-fg-muted">
             <input
               type="checkbox"
               checked={share}
@@ -170,7 +170,7 @@ export function ChatFeedbackControls({
         </form>
       )}
       {error && (
-        <p role="alert" className="mt-2 text-xs text-danger">
+        <p role="alert" className="mt-2 text-sm text-danger">
           {error}
         </p>
       )}

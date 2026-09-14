@@ -23,7 +23,8 @@ import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
 import { Field } from "@/components/field";
-import { Badge, Button, Card, ConfirmAction, EmptyState, Select } from "@/components/ui";
+import { ChevronRightIcon, FileIcon } from "@/components/icons";
+import { Badge, Button, Card, ConfirmAction, EmptyState, Input, Select } from "@/components/ui";
 import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
 import {
   courseAssistantWorkPath,
@@ -42,6 +43,7 @@ export default function CourseDetailPage() {
 function CourseDetail() {
   const { courseId } = useParams<{ courseId: string }>();
   const { isInstructor, ready: sessionReady } = useSession(courseId);
+  const [documentQuery, setDocumentQuery] = useState("");
   const chatAccess = useChatAvailability(sessionReady ? courseId : null);
 
   const fetchCourse = useCallback(() => api.get<Course>(`/courses/${courseId}`), [courseId]);
@@ -70,6 +72,9 @@ function CourseDetail() {
   const documents = documentsResource.data;
   const refreshError = courseResource.refreshError ?? documentsResource.refreshError;
   const ready = documents.filter((d) => d.status === "completed").length;
+  const visibleDocuments = documents.filter((document) =>
+    document.file_name.toLocaleLowerCase("tr-TR").includes(documentQuery.trim().toLocaleLowerCase("tr-TR")),
+  );
   const assistantIdentity = resolveCourseAssistantIdentity(
     chatAccess.audience,
     chatAccess.agentProfile,
@@ -77,11 +82,11 @@ function CourseDetail() {
 
   return (
     <div>
-      <nav className="mb-4 text-xs text-fg-subtle">
+      <nav className="mb-5 flex items-center gap-2 text-sm text-fg-subtle">
         <Link href="/courses" className="hover:text-fg">
           Derslerim
         </Link>{" "}
-        / <span className="text-fg-muted">{course.code}</span>
+        <ChevronRightIcon size={15} /> <span className="font-medium text-fg-muted">{course.code}</span>
       </nav>
 
       {/* Sekme şeridi diğer beş ders ekranında da başlığın üstünde. */}
@@ -96,60 +101,67 @@ function CourseDetail() {
               href={`/courses/${courseId}/sources`}
               className="inline-flex h-11 items-center rounded-lg border border-border-strong bg-surface px-4 text-sm font-medium text-fg hover:border-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              Retrieval testi
+              Kaynakları dene
             </Link>
           ) : undefined
         }
       />
 
-      {sessionReady && chatAccess.ready && assistantIdentity && (
-        <ProductRoles
-          courseId={courseId}
-          identity={assistantIdentity}
-          access={chatAccess}
-        />
-      )}
-
-      {isInstructor && (
-        <UploadBox
-          courseId={courseId}
-          documents={documents}
-          onUploaded={documentsResource.pulse}
-        />
-      )}
-
-      {refreshError && <RetryNote message={refreshError} onRetry={() => void reload()} />}
-
-      {documents.length === 0 ? (
-        <EmptyState
-          title={
-            isInstructor
-              ? "Henüz ders materyali yok. PDF, sunum veya kod dosyası yükleyerek başlayın."
-              : "Eğitmeniniz henüz materyal yüklemedi."
-          }
-        />
-      ) : (
-        // Kart yığını değil tek liste: tek yükselmiş yüzey (seviye 1), satırlar
-        // yalnız saç çizgisiyle bölünür (taste-skill: kart ancak gerçek
-        // hiyerarşi anlatıyorsa kullanılır).
-        <ul className="rise rise-1 divide-y divide-border overflow-hidden rounded-xl bg-surface shadow-e1">
-          {documents.map((doc) => (
-            <DocumentRow
-              key={doc.id}
-              courseId={courseId}
-              doc={doc}
-              isInstructor={isInstructor}
-              onDeleted={documentsResource.pulse}
+      <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section aria-labelledby="materials-title" className="min-w-0">
+          {isInstructor && (
+            <UploadBox courseId={courseId} documents={documents} onUploaded={documentsResource.pulse} />
+          )}
+          {refreshError && <RetryNote message={refreshError} onRetry={() => void reload()} />}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 id="materials-title" className="text-xl font-semibold text-fg">Ders materyalleri</h2>
+              <p className="mt-1 text-sm text-fg-muted">Asistanın yanıtlarına dayanak olan ders kaynakları.</p>
+            </div>
+            {documents.length > 0 && (
+              <Input
+                aria-label="Materyallerde ara"
+                placeholder="Dosya adıyla ara"
+                className="w-full sm:max-w-64"
+                type="search"
+                value={documentQuery}
+                onChange={(event) => setDocumentQuery(event.target.value)}
+              />
+            )}
+          </div>
+          {documents.length === 0 ? (
+            <EmptyState
+              title={isInstructor
+                ? "Henüz ders materyali yok. PDF, sunum veya kod dosyası yükleyerek başlayın."
+                : "Eğitmeniniz henüz materyal yüklemedi."}
             />
-          ))}
-        </ul>
-      )}
-      <LoadMore
-        hasMore={documentsResource.nextCursor !== null}
-        busy={documentsResource.loadingMore}
-        error={documentsResource.pageError}
-        onLoadMore={() => void documentsResource.loadMore()}
-      />
+          ) : visibleDocuments.length === 0 ? (
+            <EmptyState title="Bu adla eşleşen materyal bulunamadı." action={
+              <Button variant="secondary" onClick={() => setDocumentQuery("")}>Aramayı temizle</Button>
+            } />
+          ) : (
+            <ul className="rise divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface shadow-e1">
+              {visibleDocuments.map((doc) => (
+                <DocumentRow key={doc.id} courseId={courseId} doc={doc} isInstructor={isInstructor} onDeleted={documentsResource.pulse} />
+              ))}
+            </ul>
+          )}
+          {documentQuery && documentsResource.nextCursor !== null && (
+            <p className="mt-3 text-sm text-fg-muted">Arama yüklenen materyaller içindedir. Daha fazla materyal yükleyerek aramayı genişletebilirsiniz.</p>
+          )}
+          <LoadMore
+            hasMore={documentsResource.nextCursor !== null}
+            busy={documentsResource.loadingMore}
+            error={documentsResource.pageError}
+            onLoadMore={() => void documentsResource.loadMore()}
+          />
+        </section>
+        {sessionReady && chatAccess.ready && assistantIdentity && (
+          <aside className="min-w-0 xl:sticky xl:top-28">
+            <ProductRoles courseId={courseId} identity={assistantIdentity} access={chatAccess} />
+          </aside>
+        )}
+      </div>
     </div>
   );
 }
@@ -173,7 +185,7 @@ function ProductRoles({
   const secondary = isInstructor
     ? [
         {
-          task: "Blueprint ve onaylı soru havuzunu yönet",
+          task: "Sınav planı ve onaylı soru havuzunu yönet",
           description: "Sınav kapsamını sürümleyin; soruları öğrenciye açmadan önce inceleyin.",
           href: `/courses/${courseId}/blueprints`,
           action: "Sınav planına git",
@@ -200,70 +212,33 @@ function ProductRoles({
         },
       ];
 
-  /*
-   * Tek yükselmiş yüzey (seviye 1), kenarlıksız. Önceki hâl kenarlıklı kutu +
-   * içinde kırmızı raylı çukur blok + saç çizgili liste idi: kırmızı ray,
-   * kırmızı mono etiket ve kırmızı buton aynı blokta toplanınca aksan "buraya
-   * bas" demeyi bırakıyordu (14 Eylül ölçümü). Kırmızı artık yalnız birincil
-   * eylemde ("Asistanı aç"). Asistan kimliği (`primary.name`) burada tekrar
-   * yazılmaz: aynı ad sekme şeridindeki asistan düğmesinde zaten görünür.
-   */
   return (
-    <section
-      className="mb-8 rounded-xl bg-surface p-5 shadow-e1 md:p-6"
-      aria-labelledby="ai-roles-title"
-    >
-      <div className="mb-5">
-        <h2 id="ai-roles-title" className="text-lg font-medium text-fg">
-          Bu derste çalışma yolları
-        </h2>
-        <p className="prose-tr mt-1 text-xs text-fg-muted">
-          Asistan kimliği ve erişim durumu ders üyeliğinizden sunucu tarafından belirlenir.
-        </p>
+    <section className="overflow-hidden rounded-[20px] border border-border bg-surface shadow-e1" aria-labelledby="ai-roles-title">
+      <div className="border-b border-border p-6">
+        <h2 id="ai-roles-title" className="text-xl font-semibold text-fg">Bu derste çalışma yolları</h2>
+        <p className="mt-2 text-sm leading-relaxed text-fg-muted">Dersinizin kaynaklarıyla öğrenmeye devam edin.</p>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] md:gap-6">
-        <div className="flex flex-col items-start">
-          <h3 className="text-xl font-semibold tracking-tight text-fg">{primary.task}</h3>
-          <p className="prose-tr mt-2 text-sm text-fg-muted">{primary.description}</p>
-          {primary.href ? (
-            <Link
-              href={primary.href}
-              className="mt-5 inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-medium text-white shadow-e1 hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-bg"
-            >
-              {primary.action}
+      <div className="p-6">
+        <h3 className="text-lg font-semibold leading-snug text-fg">{primary.task}</h3>
+        <p className="mt-3 text-sm leading-relaxed text-fg-muted">{primary.description}</p>
+        {primary.href ? (
+          <Link href={primary.href} className="mt-5 inline-flex min-h-11 w-full items-center justify-between gap-3 rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-bg">
+            {primary.action}<ChevronRightIcon size={18} />
+          </Link>
+        ) : (
+          <p role="status" className="mt-5 rounded-xl bg-surface-sunken p-4 text-sm leading-relaxed text-fg-muted">{primary.action}</p>
+        )}
+      </div>
+      <div className="divide-y divide-border border-t border-border">
+        {secondary.map((role) => (
+          <div key={role.href} className="p-6">
+            <h3 className="font-medium text-fg">{role.task}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-fg-muted">{role.description}</p>
+            <Link href={role.href} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-brand transition-colors hover:text-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              {role.action}<ChevronRightIcon size={16} />
             </Link>
-          ) : (
-            <p
-              role="status"
-              className="mt-5 inline-flex min-h-11 items-center rounded-lg border border-border-strong bg-surface px-4 text-sm font-medium text-fg-muted"
-            >
-              {primary.action}
-            </p>
-          )}
-        </div>
-
-        <div className="grid gap-4">
-          {secondary.map((role) => (
-            <div
-              key={role.href}
-              className="flex flex-col items-start rounded-lg bg-surface-sunken p-4"
-            >
-              <h3 className="text-sm font-semibold text-fg">{role.task}</h3>
-              <p className="prose-tr mt-1 text-xs text-fg-muted">{role.description}</p>
-              {/*
-               * Gezinme bağlantısıdır, `<button>` değil: `href` ve link rolü
-               * korunur. Kabuk `Button variant="secondary" size="sm"` ile aynı.
-               */}
-              <Link
-                href={role.href}
-                className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface px-3 text-[0.8125rem] font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              >
-                {role.action}
-              </Link>
-            </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -310,20 +285,15 @@ function UploadBox({
   }, "Yükleme tamamlanamadı.");
 
   return (
-    <Card variant="soft" className="mb-6">
-      {/*
-       * Panel bir araçtır, okunacak içerik değil — çukur yüzeyde durur.
-       * Hizalama: başlık bloğu iki satır, kontrol bloğu tek satırdı ve
-       * `items-end` ikisini farklı taban çizgisine oturtuyordu. Başlık artık
-       * kendi satırında; kontroller altta tek hizada.
-       */}
+    <Card className="mb-7">
+      {/* Başlık ve etiketli kontroller aynı çalışma panelinde hizalanır. */}
       <div className="mb-4">
-        <p className="text-sm font-medium text-fg">Materyal yükle</p>
-        <p className="text-xs text-fg-muted">
+        <p className="text-xl font-semibold text-fg">Materyal yükle</p>
+        <p className="mt-2 text-sm text-fg-muted">
           PDF, PPTX, Markdown veya kod dosyası · en fazla 20 MB
         </p>
       </div>
-      <div className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
         <Field label="Yerine geçtiği belge (isteğe bağlı)">
           {(control) => (
             <Select
@@ -421,16 +391,19 @@ function DocumentRow({
 
   return (
     <li>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <div className="min-w-0">
-          <p className="truncate font-mono text-sm text-fg">{doc.file_name}</p>
-          <p className="mt-0.5 text-xs tabular-nums text-fg-subtle">
-            {formatBytes(doc.byte_size)}
-            {doc.page_count ? ` · ${doc.page_count} sayfa` : ""}
-            {doc.status === "completed" ? ` · ${doc.chunk_count} parça` : ""}
-          </p>
+      <div className="flex flex-col gap-4 px-5 py-5 sm:px-6">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-surface-sunken text-fg-muted"><FileIcon size={22} /></span>
+          <div className="min-w-0 flex-1">
+            <p className="break-words font-medium leading-relaxed text-fg">{doc.file_name}</p>
+            <p className="mt-1 text-sm tabular-nums text-fg-subtle">
+              {formatBytes(doc.byte_size)}
+              {doc.page_count ? ` · ${doc.page_count} sayfa` : ""}
+              {doc.status === "completed" ? ` · ${doc.chunk_count} parça` : ""}
+            </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:pl-14">
           <Badge tone={status.tone}>{status.label}</Badge>
           {doc.superseded_at && <Badge tone="warning">Eski sürüm</Badge>}
           {isInstructor && doc.status === "completed" && (
@@ -511,15 +484,15 @@ function ChunkPreviewList({ id, chunks }: { id: string; chunks: ChunkPreview[] }
     );
   }
   return (
-    <div id={id} className="space-y-2 border-t border-border px-6 py-4">
+    <div id={id} className="space-y-3 border-t border-border bg-bg px-5 py-5 sm:px-6">
       {chunks.slice(0, 5).map((chunk) => (
         // Ray değil çukur blok: parça, kartın altında duran alıntı yüzeyidir.
-        <div key={chunk.id} className="rounded-lg bg-surface-sunken px-3 py-2">
-          <p className="text-xs tabular-nums text-fg-subtle">
+        <div key={chunk.id} className="rounded-xl border border-border bg-surface px-4 py-4">
+          <p className="text-sm tabular-nums text-fg-subtle">
             {chunkLocation(chunk)} · {chunk.token_count} token
           </p>
           <p
-            className={`prose-tr mt-1 line-clamp-3 text-sm text-fg-muted ${
+            className={`prose-tr mt-2 line-clamp-3 text-base text-fg-muted ${
               chunk.content_type === "code" ? "font-mono text-xs" : ""
             }`}
           >

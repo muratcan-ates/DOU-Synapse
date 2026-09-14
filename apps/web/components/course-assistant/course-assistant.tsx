@@ -48,8 +48,10 @@ import {
   AssistantSignature,
   ModeSwitch,
   QuestionBubble,
+  ChatDraft,
+  ConversationStarters,
 } from "@/components/chat/transcript-parts";
-import { Button, Input } from "@/components/ui";
+import { Button } from "@/components/ui";
 
 const DIALOG_FOCUSABLE = [
   'a[href]',
@@ -106,8 +108,8 @@ export function CourseAssistant({
    */
   const triggerClass =
     placement === "floating"
-      ? // Mobilde alt gezinme çubuğunun (≈4rem + güvenli alan) üstünde durur; lg'de çubuk yok.
-        "fixed right-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 shadow-e1 lg:bottom-4"
+      ? // Mobilde yüzen menünün üstünde 112px + güvenli alan bırakır; lg'de menü yok.
+        "fixed right-4 bottom-[calc(7rem+env(safe-area-inset-bottom))] z-40 rounded-full border-border bg-surface px-5 shadow-e2 lg:right-6 lg:bottom-6"
       : "shadow-e1";
 
   return (
@@ -175,18 +177,18 @@ export function CourseAssistant({
         // Seviye 2 (popover/çekmece): e2 gölge, 12px+ köşe. Dar ekranda tam
         // yükseklik ve köşesiz (kenara yapışık); sm ve üstünde 16px içeriden,
         // yuvarlak köşeli panel.
-        className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-[29rem] overflow-hidden border-0 bg-surface p-0 text-fg shadow-e2 backdrop:bg-black/30 open:flex open:flex-col sm:my-4 sm:mr-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl"
+        className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-[34rem] overflow-hidden border-0 bg-surface p-0 text-fg shadow-e2 backdrop:bg-black/30 open:flex open:flex-col sm:my-4 sm:mr-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-[24px]"
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border bg-surface-sunken px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-5 sm:px-6">
           <div className="min-w-0">
             <p className="text-xs text-fg-subtle">
               {identity?.eyebrow ?? "Ders kapsamlı asistan"}
               {courseLabel ? ` · ${courseLabel}` : ""}
             </p>
-            <h2 id={titleId} className="mt-1 text-lg font-medium text-fg">
+            <h2 id={titleId} className="mt-1 text-xl font-semibold text-fg">
               {identity?.name ?? "Ders asistanı"}
             </h2>
-            <p id={descriptionId} className="prose-tr mt-1 text-xs text-fg-muted">
+            <p id={descriptionId} className="prose-tr mt-2 text-sm leading-6 text-fg-muted">
               {identity?.description ??
                 "Asistan kimliği ve kullanım politikası ders üyeliğinizden sunucu tarafından belirlenir."}
             </p>
@@ -268,15 +270,15 @@ export function AssistantIdentitySummary({
   hintLimit: number;
 }) {
   return (
-    <section className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
-      <div className="flex min-w-0 items-start gap-3">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface">
+    <section className="mb-7 flex flex-wrap items-center justify-between gap-5">
+      <div className="flex min-w-0 items-center gap-4">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-e1">
           <AssistantMark />
         </span>
         <div>
           <p className="text-xs text-fg-subtle">{identity.eyebrow}</p>
-          <h1 className="mt-0.5 text-xl font-medium text-fg">{identity.name}</h1>
-          <p className="prose-tr mt-1 text-sm text-fg-muted">{identity.description}</p>
+          <h1 className="mt-1 text-[28px] leading-tight font-semibold tracking-tight text-fg">{identity.name}</h1>
+          <p className="prose-tr mt-2 text-base leading-7 text-fg-muted">{identity.description}</p>
         </div>
       </div>
       <AssistantPolicyNote allowedModes={allowedModes} hintLimit={hintLimit} />
@@ -304,7 +306,7 @@ function AssistantConversation({
   const [recoveryError, setRecoveryError] = useState<ErrorInfo | null>(null);
   const [deletionNotice, setDeletionNotice] = useState<string | null>(null);
   const [messages, setMessages] = useState<TranscriptMessage[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   /*
@@ -406,39 +408,18 @@ function AssistantConversation({
       </div>
 
       <div
-        className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5"
+        className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-5 py-6 sm:px-6"
         aria-live="polite"
         aria-busy={sending}
       >
         {blocks.length === 0 && (
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-fg">Nereden başlamak istersiniz?</p>
-              <p className="prose-tr mt-1 text-xs text-fg-muted">
-                Öneriler yalnız besteciyi doldurur; siz göndermeden token harcanmaz.
-              </p>
-            </div>
-            <ul className="space-y-2">
-              {identity.suggestions.map((suggestion) => (
-                <li key={suggestion.label}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nextMode = allowedModes.includes(suggestion.preferredMode)
-                        ? suggestion.preferredMode
-                        : (firstAllowedChatMode(allowedModes) ?? mode);
-                      if (nextMode !== mode) resetConversation(nextMode);
-                      setDraft(suggestion.prompt);
-                      inputRef.current?.focus();
-                    }}
-                    className="min-h-11 w-full rounded-lg border border-border bg-bg px-3 py-2 text-left text-sm text-fg transition-colors hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  >
-                    {suggestion.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ConversationStarters compact suggestions={identity.suggestions} onSelect={(suggestion) => {
+            const nextMode = allowedModes.includes(suggestion.preferredMode)
+              ? suggestion.preferredMode : (firstAllowedChatMode(allowedModes) ?? mode);
+            if (nextMode !== mode) resetConversation(nextMode);
+            setDraft(suggestion.prompt);
+            inputRef.current?.focus();
+          }} />
         )}
 
         {blocks.map((block) => {
@@ -451,7 +432,7 @@ function AssistantConversation({
               <div key={block.id} className="space-y-3">
                 {signed}
                 <DemoResponseNotice fixture={block.fixture} />
-                <p className="prose-tr text-sm whitespace-pre-line text-fg">
+                <p className="prose-tr text-base leading-7 whitespace-pre-line text-fg">
                   {demoResponseText(block.text, block.fixture)}
                 </p>
                 {block.cached && (
@@ -503,7 +484,7 @@ function AssistantConversation({
       </div>
 
       <form
-        className="shrink-0 space-y-3 border-t border-border bg-surface px-4 py-4"
+        className="shrink-0 space-y-3 border-t border-border bg-surface px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6"
         onSubmit={(event) => {
           event.preventDefault();
           void send();
@@ -518,12 +499,14 @@ function AssistantConversation({
           />
         )}
 
-        <div className="flex gap-2">
+        <div className="space-y-3">
           <label htmlFor={`${courseId}-assistant-draft`} className="sr-only">
             {followUp ? "Denemen" : "Sorun"}
           </label>
-          <Input
+          <ChatDraft
             ref={inputRef}
+            onSend={() => void send()}
+            canSend={!sending && submittable}
             id={`${courseId}-assistant-draft`}
             value={draft}
             maxLength={QUESTION_MAX_LENGTH}
@@ -536,9 +519,12 @@ function AssistantConversation({
               followUp ? "Bu ipucuyla ne denediniz?" : "Ders kaynaklarına sorun…"
             }
           />
-          <Button type="submit" aria-disabled={sending || !submittable} className="px-3">
-            {sending ? "Bekleyin…" : "Gönder"}
-          </Button>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-fg-subtle">Shift + Enter ile yeni satır</p>
+            <Button type="submit" aria-disabled={sending || !submittable}>
+              {sending ? "Bekleyin…" : "Gönder"}
+            </Button>
+          </div>
         </div>
       </form>
     </div>
@@ -556,7 +542,7 @@ function AssistantPolicyNote({
 }) {
   const labels = allowedModes.map((mode) => CHAT_MODE_LABEL[mode]).join(" · ");
   return (
-    <p className={`${compact ? "max-w-[15rem]" : "max-w-[18rem]"} text-xs text-fg-subtle`}>
+    <p className={`${compact ? "max-w-[15rem]" : "max-w-[18rem]"} text-sm leading-6 text-fg-subtle`}>
       {labels}
       {allowedModes.includes("socratic") ? ` · ${hintLimit} ipucu sınırı` : ""}
     </p>
@@ -565,7 +551,7 @@ function AssistantPolicyNote({
 
 function AssistantUnavailable({ title, message }: { title: string; message: string }) {
   return (
-    <div className="w-full rounded-lg border border-border bg-bg p-5">
+    <div className="w-full rounded-2xl border border-border bg-bg p-6">
       <p className="text-sm font-medium text-fg">{title}</p>
       <p role="status" className="prose-tr mt-2 text-sm text-fg-muted">
         {message}
@@ -584,7 +570,7 @@ function AssistantAvailabilityError({
   compact?: boolean;
 }) {
   return (
-    <div className={compact ? "w-full" : "w-full rounded-lg border border-border bg-bg p-5"}>
+    <div className={compact ? "w-full" : "w-full rounded-2xl border border-border bg-bg p-6"}>
       {!compact && (
         <p className="mb-2 text-sm font-medium text-fg">Asistan durumuna ulaşılamadı</p>
       )}

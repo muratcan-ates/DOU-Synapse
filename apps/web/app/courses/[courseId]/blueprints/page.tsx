@@ -119,6 +119,16 @@ function BlueprintScreen() {
         description="Sınavın çatısını sorulardan önce çiz: hangi öğrenme çıktısından, hangi zorlukta, kaç soru."
       />
 
+      <nav aria-label="Sınav hazırlama aşamaları" className="mb-6 grid gap-2 sm:grid-cols-3">
+        {[{ href: "#learning-outcomes", label: "Öğrenme çıktılarını belirle" },
+          { href: "#exam-plans", label: "Sınav dağılımını kur" },
+          { href: selected ? "#exam-paper" : "#exam-plans", label: "Soruları seç ve yayımla" }].map((step, index) => (
+          <a key={step.label} href={step.href} className="group flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg transition-colors duration-200 hover:border-border-strong hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none">
+            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-sm text-fg-muted">{index + 1}</span>
+            {step.label}
+          </a>
+        ))}
+      </nav>
       <MetricRow
         items={[
           { label: "Öğrenme çıktısı", value: String(outcomes.data?.length ?? 0) },
@@ -136,12 +146,13 @@ function BlueprintScreen() {
         ]}
       />
 
-      <OutcomesCard courseId={courseId} outcomes={outcomes} />
+      <section id="learning-outcomes" className="scroll-mt-28"><OutcomesCard courseId={courseId} outcomes={outcomes} /></section>
       {(authoring.error ?? authoring.refreshError) && <ErrorNote
         message={authoring.error ?? authoring.refreshError ?? ""} kind={authoring.errorKind}
         requestId={authoring.errorRequestId} onRetry={authoring.reload} />}
 
 
+      <section id="exam-plans" className="scroll-mt-28">
       <BlueprintListCard
         courseId={courseId}
         blueprints={blueprints}
@@ -149,11 +160,13 @@ function BlueprintScreen() {
         selectedId={selectedId}
         onSelect={setSelectedId}
       />
+      </section>
 
       {linkedBlueprintId && !selected && blueprints.data && (
         <p role="status" className="mb-4 text-sm text-fg-muted">Bağlantıdaki sınav bu listede bulunmuyor.</p>
       )}
       {selected && (
+        <section id="exam-paper" className="scroll-mt-28">
         <BlueprintDetail
           courseId={courseId}
           blueprint={selected}
@@ -162,6 +175,7 @@ function BlueprintScreen() {
           outcomes={outcomes.data ?? []}
           onChanged={blueprints.reload}
         />
+        </section>
       )}
       </InstructorGate>
     </AppShell>
@@ -193,9 +207,9 @@ function OutcomesCard({
   });
 
   return (
-    <Card className="mb-6">
-      <h2 className="mb-1 text-lg font-semibold text-fg">Öğrenme çıktıları</h2>
-      <p className="prose-tr mb-4 text-sm text-fg-muted">
+    <Card className="mb-7">
+      <h2 className="mb-3 text-xl font-semibold text-fg">Öğrenme çıktıları</h2>
+      <p className="prose-tr mb-5 text-base leading-7 text-fg-muted">
         Dağılımın ekseni budur: her hücre bir çıktıya bağlanır. Konu dağılımı ayrıca
         girilmez, çıktının konusundan türetilir.
       </p>
@@ -215,9 +229,9 @@ function OutcomesCard({
           {outcomes.data.map((outcome) => (
             <li
               key={outcome.id}
-              className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border border-border px-3 py-2"
+              className="flex flex-wrap items-baseline gap-x-4 gap-y-2 border-b border-border px-1 py-4 last:border-b-0"
             >
-              <span className="font-mono text-sm text-fg">{outcome.code}</span>
+              <span className="text-sm font-semibold text-fg">{outcome.code}</span>
               <span className="prose-tr text-sm text-fg-muted">{outcome.description}</span>
               <Badge tone="neutral">{outcome.topic_id === null
                 ? "Konu atanmadı; dağılımda ayrı gösterilir"
@@ -230,7 +244,7 @@ function OutcomesCard({
       {(topics.error ?? topics.refreshError) && <ErrorNote
         message={topics.error ?? topics.refreshError ?? ""} kind={topics.errorKind}
         requestId={topics.errorRequestId} onRetry={topics.reload} />}
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-5">
         <Field label="Çıktının konusu">
           {(control) => <Select {...control} value={topicId} disabled={busy || !topics.data}
             onChange={(event) => setTopicId(event.target.value)}>
@@ -256,7 +270,7 @@ function OutcomesCard({
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Kilitlenmenin dört koşulunu sayar"
-              className="w-full sm:w-80"
+              className="w-full sm:w-80 xl:w-96"
             />
           )}
         </Field>
@@ -293,9 +307,9 @@ function BlueprintListCard({
   const [creating, setCreating] = useState(false);
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-7">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-fg">Sınavlar</h2>
+        <h2 className="text-xl font-semibold text-fg">Sınavlar</h2>
         <Button
           variant="secondary"
           onClick={() => setCreating((value) => !value)}
@@ -306,7 +320,7 @@ function BlueprintListCard({
       </div>
 
       {outcomes.length === 0 && (
-        <p className="prose-tr mb-4 text-sm text-fg-muted">
+        <p className="prose-tr mb-5 text-base leading-7 text-fg-muted">
           Önce en az bir öğrenme çıktısı tanımla: dağılım hücreleri çıktılara bağlanır.
         </p>
       )}
@@ -345,13 +359,13 @@ function BlueprintListCard({
                 type="button"
                 onClick={() => onSelect(blueprint.id)}
                 aria-current={blueprint.id === selectedId ? "true" : undefined}
-                className={`flex w-full flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
+                className={`flex w-full flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border px-5 py-5 text-left transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none ${
                   blueprint.id === selectedId
                     ? "border-border-strong bg-brand-subtle/30"
                     : "border-border hover:border-border-strong"
                 }`}
               >
-                <span className="font-medium text-fg">{blueprint.title}</span>
+                <span className="text-lg font-semibold text-fg">{blueprint.title}</span>
                 <span className="text-sm text-fg-muted">
                   {blueprint.total_questions} soru · {blueprint.total_points} puan ·{" "}
                   {blueprint.duration_minutes} dk
@@ -400,8 +414,8 @@ function CreateBlueprintForm({
   });
 
   return (
-    <div className="mb-6 rounded-lg border border-border-strong p-4">
-      <div className="mb-4 flex flex-wrap items-end gap-3">
+    <div className="mb-6 rounded-2xl border border-border bg-surface-sunken p-5 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-end gap-5">
         <Field label="Sınav adı">
           {(control) => (
             <Input
@@ -409,7 +423,7 @@ function CreateBlueprintForm({
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Vize"
-              className="w-64"
+              className="w-full sm:w-64"
             />
           )}
         </Field>
@@ -504,7 +518,7 @@ function CellEditor({
         paya eklenir, böylece toplam her zaman tam tutar.
       </p>
 
-      <div className="mb-3 flex flex-wrap items-end gap-3">
+      <div className="mb-3 flex flex-wrap items-end gap-5">
         <Field label="Öğrenme çıktısı">
           {(control) => (
             <Select
@@ -563,9 +577,9 @@ function CellEditor({
             return (
               <li
                 key={`${cell.learning_outcome_id}-${cell.difficulty}-${cell.question_type}`}
-                className="flex flex-wrap items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm"
+                className="flex flex-wrap items-center gap-3 rounded-xl border border-border px-4 py-4 text-sm"
               >
-                <span className="font-mono text-fg">{outcome?.code ?? "?"}</span>
+                <span className="font-semibold text-fg">{outcome?.code ?? "?"}</span>
                 <span className="text-fg-muted">{DIFFICULTY_LABEL[cell.difficulty]}</span>
                 <span className="text-fg-muted">{QUESTION_TYPE[cell.question_type]}</span>
                 <span className="text-fg">{cell.question_count} soru</span>
@@ -645,16 +659,16 @@ function BlueprintEditor({
   }, "Blueprint güncellenemedi.");
 
   return (
-    <div className="mb-4 rounded-lg border border-border-strong p-4">
+    <div className="mb-4 rounded-2xl border border-border bg-surface-sunken p-5 sm:p-6">
       <h3 className="mb-3 text-sm font-semibold text-fg">Dağılımı düzenle</h3>
-      <div className="mb-4 flex flex-wrap items-end gap-3">
+      <div className="mb-4 flex flex-wrap items-end gap-5">
         <Field label="Sınav adı">
           {(control) => (
             <Input
               {...control}
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="w-64"
+              className="w-full sm:w-64"
             />
           )}
         </Field>
@@ -737,9 +751,9 @@ function BlueprintDetail({
 
   return (
     <>
-      <Card className="mb-6">
+      <Card className="mb-7">
         <div className="mb-1 flex flex-wrap items-center gap-3">
-          <h2 className="text-lg font-semibold text-fg">{blueprint.title} · dağılım</h2>
+          <h2 className="text-xl font-semibold text-fg">{blueprint.title} · dağılım</h2>
           {/*
             Düzenleme ve silme, uçları (POST/DELETE .../blueprints/{bid}) zaten
             varken ekranda yoktu; üstelik aşağıdaki `notice` öğretmene tam da bu
@@ -792,7 +806,7 @@ function BlueprintDetail({
           {blueprint.cells.map((cell) => (
             <li
               key={cell.id}
-              className="flex flex-wrap items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm"
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-border px-4 py-4 text-sm"
             >
               {/* Etiket sunucudan gelir; ekran kendi hücre adını kurmaz. */}
               <span className="text-fg">{cell.label}</span>
@@ -817,7 +831,7 @@ function BlueprintDetail({
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-fg">Sürümler</h2>
+          <h2 className="text-xl font-semibold text-fg">Sürümler</h2>
           <Button variant="secondary" onClick={createVersion} aria-disabled={busy}>
             {busy ? "Açılıyor…" : "Yeni taslak sürüm"}
           </Button>
@@ -909,7 +923,7 @@ function VersionRow({
   const publish = () => submit("publish");
 
   return (
-    <li ref={versionRef} tabIndex={linked ? -1 : undefined} aria-label={`${blueprint.title} · ${version.version_no}. sürüm`} className="rounded-lg border border-border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+    <li ref={versionRef} tabIndex={linked ? -1 : undefined} aria-label={`${blueprint.title} · ${version.version_no}. sürüm`} className="rounded-2xl border border-border p-5 sm:p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
       <div className="flex flex-wrap items-center gap-3">
         <span className="font-medium text-fg">{version.version_no}. sürüm</span>
         <Badge
@@ -965,7 +979,7 @@ function VersionRow({
                 {readiness.missing_cells.map((cell) => (
                   <li
                     key={`${cell.learning_outcome_id}-${cell.difficulty}-${cell.question_type}`}
-                    className="prose-tr rounded-lg border border-border px-3 py-2 text-sm text-fg-muted"
+                    className="prose-tr rounded-xl border border-border px-4 py-4 text-sm text-fg-muted"
                   >
                     {cell.label}
                   </li>
@@ -984,7 +998,7 @@ function VersionRow({
               <h4 className="mb-1 text-sm font-semibold text-fg">
                 Sınıflandırılmamış sorular
               </h4>
-              <p className="prose-tr mb-1 text-xs text-fg-muted">
+              <p className="prose-tr mb-1 text-sm text-fg-muted">
                 Bunlar hiçbir hücreye sayılmıyor. Havuzda öğrenme çıktısı ve zorluk
                 atanmadan duran sorulardır.
               </p>
@@ -1001,7 +1015,7 @@ function VersionRow({
                 {readiness.unclassified_items.map((item) => (
                   <li
                     key={item.question_id}
-                    className="prose-tr rounded-lg border border-border px-3 py-2 text-sm text-fg-muted"
+                    className="prose-tr rounded-xl border border-border px-4 py-4 text-sm text-fg-muted"
                   >
                     {item.label}
                   </li>
@@ -1063,7 +1077,7 @@ function PaperEditor({
   });
 
   return (
-    <div className="mt-4 rounded-lg border border-border-strong p-4">
+    <div className="mt-4 rounded-2xl border border-border bg-surface-sunken p-5 sm:p-6">
       <h4 className="mb-1 text-sm font-semibold text-fg">Kâğıt</h4>
       <p className="prose-tr mb-3 text-sm text-fg-muted">
         Yalnız onaylanmış sorular konulabilir. Onay kapısı sunucudadır; bu liste onu
@@ -1094,7 +1108,7 @@ function PaperEditor({
           const outcome = outcomes.find((item) => item.id === question.learning_outcome_id);
           return (
             <li key={question.id}>
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border px-4 py-4 text-sm">
                 <input
                   type="checkbox"
                   checked={checked}
@@ -1111,7 +1125,7 @@ function PaperEditor({
                   <span className="text-fg">
                     {String(question.payload?.stem ?? question.payload?.prompt ?? question.id)}
                   </span>
-                  <span className="flex flex-wrap gap-2 text-xs text-fg-muted">
+                  <span className="flex flex-wrap gap-2 text-sm text-fg-muted">
                     <span>{QUESTION_TYPE[question.type]}</span>
                     {question.difficulty ? (
                       <span>{DIFFICULTY_LABEL[question.difficulty]}</span>

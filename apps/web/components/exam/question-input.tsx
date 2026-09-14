@@ -14,7 +14,7 @@ import { Badge, Input } from "@/components/ui";
  * hissi veriyordu.
  */
 const TEXTAREA_CLASS =
-  "w-full rounded-xl border border-border-strong bg-surface px-3.5 py-2.5 text-sm leading-6 text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
+  "w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-base leading-7 text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
 
 export function QuestionBody({
   view,
@@ -37,7 +37,7 @@ export function QuestionBody({
           ref={headingRef}
           tabIndex={-1}
           aria-describedby={describedBy}
-          className="prose-tr rounded-lg text-lg leading-relaxed font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+          className="prose-tr rounded-lg text-xl leading-relaxed font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
         >
           {prompt}
         </h1>
@@ -50,7 +50,7 @@ export function QuestionBody({
             Kod{view.language ? ` · ${view.language}` : ""}
           </h2>
           {/* Mono yalnız kod bloğunda: çukur yüzey, kodun içerik değil malzeme olduğunu söyler. */}
-          <pre className="overflow-x-auto rounded-xl bg-surface-sunken px-4 py-3">
+          <pre className="overflow-x-auto rounded-2xl bg-surface-sunken px-5 py-5">
             <code className="font-mono text-sm leading-6 text-fg">{view.code}</code>
           </pre>
         </div>
@@ -90,7 +90,7 @@ export function AnswerInput({
              */
             <label
               key={choice.key}
-              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-surface px-4 py-3 transition-colors hover:bg-surface-sunken has-checked:border-fg has-checked:bg-surface-sunken"
+              className="flex min-h-14 cursor-pointer items-start gap-4 rounded-xl border border-border-strong bg-surface px-5 py-4 transition-colors duration-150 hover:bg-surface-sunken has-checked:border-fg has-checked:bg-surface-sunken has-disabled:cursor-default has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand motion-reduce:transition-none"
             >
               <input
                 type="radio"
@@ -100,7 +100,7 @@ export function AnswerInput({
                 onChange={() => onChange(choice.key)}
                 className="mt-1 h-4 w-4 accent-fg"
               />
-              <span className="prose-tr text-sm leading-6 text-fg">{choice.text}</span>
+              <span className="prose-tr text-base leading-7 text-fg">{choice.text}</span>
             </label>
           );
         })}

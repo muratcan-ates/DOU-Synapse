@@ -57,7 +57,7 @@ export function ThemeControl({ tone = "ink" }: { tone?: "ink" | "canvas" }) {
             aria-pressed={active}
             onClick={() => choose(option.value)}
             className={[
-              "min-h-9 flex-1 rounded-md px-2 text-xs font-medium transition-colors duration-200",
+              "min-h-11 flex-1 rounded-lg px-2 text-xs font-medium transition-colors duration-200",
               ink
                 ? "focus-visible:outline-brand-on-ink"
                 : "focus-visible:outline-brand",

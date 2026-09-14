@@ -62,7 +62,7 @@ function AdminGate() {
   if (!profile.data.is_platform_admin) {
     return (
       <Card variant="soft">
-        <h1 className="text-xl font-medium text-fg">Bu alana erişiminiz yok</h1>
+        <h1 className="text-xl font-semibold text-fg">Bu alana erişiminiz yok</h1>
         <p className="mt-2 text-sm text-fg-muted">
           Bilgi İşlem paneli yalnız platform yöneticilerine açıktır. Ders eğitmeni
           olmak Bilgi İşlem yetkisi vermez.
@@ -85,9 +85,8 @@ function AdminContent() {
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <PageHeader
-        eyebrow="Salt okunur operasyon alanı"
         compact
         title="Bilgi İşlem"
         description="Platform sağlığını ve işletim metriklerini akademik içeriğe erişmeden izleyin."
@@ -97,7 +96,7 @@ function AdminContent() {
 
       <section aria-labelledby="admin-data-title">
         <div className="mb-4">
-          <h2 id="admin-data-title" className="text-xl font-medium text-fg">
+          <h2 id="admin-data-title" className="text-xl font-semibold text-fg">
             Teknik kayıtlar
           </h2>
           <p className="mt-1 text-sm text-fg-muted">
@@ -109,7 +108,7 @@ function AdminContent() {
         <div
           role="tablist"
           aria-label="Yönetim veri kümeleri"
-          className="mb-5 flex gap-5 overflow-x-auto border-b border-border"
+          className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-border bg-surface p-2 shadow-e1"
         >
           {tabs.map((tab, index) => (
             <button
@@ -133,8 +132,8 @@ function AdminContent() {
               }}
               className={
                 activeTab === tab.id
-                  ? "min-h-11 shrink-0 border-b-2 border-brand px-1 text-sm font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  : "min-h-11 shrink-0 border-b-2 border-transparent px-1 text-sm font-medium text-fg-muted hover:border-border-strong hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  ? "min-h-11 shrink-0 rounded-xl bg-brand-subtle px-4 text-sm font-semibold text-brand transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  : "min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               }
             >
               {tab.label}
@@ -147,7 +146,7 @@ function AdminContent() {
           role="tabpanel"
           aria-labelledby={`admin-tab-${activeTab}`}
           tabIndex={0}
-          className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="rise focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           {activeTab === "users" && <AdminUsersPanel />}
           {activeTab === "courses" && <AdminCoursesPanel />}
@@ -180,15 +179,16 @@ function AdminOverviewSection() {
   const data = resource.data;
   return (
     <section aria-labelledby="system-overview-title" className="space-y-5">
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 id="system-overview-title" className="text-xl font-medium text-fg">
+          <h2 id="system-overview-title" className="text-xl font-semibold text-fg">
             Platform durumu
           </h2>
           <p className="mt-1 text-sm text-fg-muted">
             Son 24 saatlik kullanım ve anlık servis görünümü
           </p>
         </div>
+        <Button variant="secondary" onClick={() => void resource.reload()}>Durumu yenile</Button>
       </div>
 
       {resource.refreshError && (
@@ -200,7 +200,7 @@ function AdminOverviewSection() {
         />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-y border-border bg-surface px-4 py-4 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-border bg-surface px-5 py-5 shadow-e1 sm:px-6">
         <div className="flex flex-wrap gap-2" aria-label="Servis sağlık durumları">
           <HealthBadge label="Uygulama" status={data.status} />
           <HealthBadge label="Veritabanı" status={data.database_status} />
@@ -208,7 +208,7 @@ function AdminOverviewSection() {
           <HealthBadge label="İstek kotası" status={data.request_quota_status ?? "unknown"} />
           <HealthBadge label="Embedding" status={data.embedding_status} />
         </div>
-        <p className="font-mono text-xs text-fg-subtle">
+        <p className="text-sm tabular-nums text-fg-subtle">
           Ölçüm: {adminDate(data.measured_at)}
         </p>
       </div>
@@ -228,7 +228,7 @@ function AdminOverviewSection() {
           Sohbet, gecikme ve token ölçümleri kaydedilmiş başarılı HTTP sohbet isteklerini
           kapsar. HTTP hata yanıtları ve kaydı oluşmayan istekler bu ölçümlere dahil değildir.
         </p>
-        <dl className="grid gap-px border-y border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
+        <dl className="grid gap-px overflow-hidden rounded-[20px] border border-border bg-border sm:grid-cols-2 xl:grid-cols-5">
           <OverviewDatum
             label="Başarılı sohbet turu"
             value={data.chat_turns_24h}
@@ -293,12 +293,12 @@ function OverviewDatum({
   detail?: string;
 }) {
   return (
-    <div className="flex min-h-20 flex-col-reverse gap-1 bg-bg px-4 py-4">
+    <div className="flex min-h-28 flex-col-reverse gap-3 bg-surface px-5 py-5">
       <dt className="text-xs text-fg-muted">
         {label}
         {detail ? ` (${detail})` : ""}
       </dt>
-      <dd className="font-mono text-lg text-fg">{value}</dd>
+      <dd className="text-2xl font-semibold tabular-nums text-fg">{value}</dd>
     </div>
   );
 }
@@ -736,13 +736,13 @@ function AdminTextFilter({
 
   return (
     <form
-      className="flex max-w-lg flex-wrap items-end gap-2"
+      className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-surface px-5 py-5"
       onSubmit={(event) => {
         event.preventDefault();
         onApply(draft.trim());
       }}
     >
-      <label className="min-w-52 flex-1 text-xs font-medium text-fg-muted">
+      <label className="min-w-0 flex-1 text-sm font-medium text-fg-muted">
         {label}
         <Input
           value={draft}

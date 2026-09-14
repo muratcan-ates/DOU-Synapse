@@ -5,7 +5,7 @@ import { DIFFICULTIES, DIFFICULTY_LABEL, type Difficulty, type LearningOutcome }
 import { outcomesForTopic, type Classification } from "@/lib/question-authoring";
 
 export const AUTHORING_CONTROL_CLASS =
-  "h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
+  "h-12 w-full rounded-xl border border-border-strong bg-surface px-4 text-base text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
 
 export function ClassificationFields({ courseId, topicId, outcomes, value, onChange }: {
   courseId: string;
@@ -17,7 +17,7 @@ export function ClassificationFields({ courseId, topicId, outcomes, value, onCha
   const matching = outcomesForTopic(outcomes, topicId);
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Öğrenme çıktısı">
           {(control) => <Select {...control}
             value={value.learningOutcomeId}
@@ -39,10 +39,10 @@ export function ClassificationFields({ courseId, topicId, outcomes, value, onCha
           </Select>}
         </Field>
       </div>
-      <p className="prose-tr text-xs text-fg-muted">
+      <p className="prose-tr text-sm text-fg-muted">
         Sınav planına eklemek için öğrenme çıktısı ve zorluğu birlikte seçin.
         {matching.length === 0 && " Bu konu için henüz öğrenme çıktısı yok."}{" "}
-        <Link href={`/courses/${courseId}/blueprints`} className="text-fg-muted underline underline-offset-4 hover:text-fg underline underline-offset-4">
+        <Link href={`/courses/${courseId}/blueprints`} className="text-fg-muted underline underline-offset-4 hover:text-fg">
           Öğrenme çıktılarını yönet
         </Link>
       </p>

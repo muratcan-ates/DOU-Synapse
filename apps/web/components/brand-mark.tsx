@@ -57,9 +57,9 @@ export function BrandLockup({
 }) {
   return (
     <span className={`flex items-center gap-2.5 ${className}`}>
-      <BrandMark tone={tone} className="h-6 w-6 shrink-0" />
+      <BrandMark tone={tone} className="h-8 w-8 shrink-0" />
       <span
-        className={`text-[0.9375rem] font-semibold tracking-tight ${
+        className={`text-lg font-semibold tracking-tight ${
           tone === "ink" ? "text-ink-fg" : "text-fg"
         }`}
       >

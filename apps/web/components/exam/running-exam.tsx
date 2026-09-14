@@ -242,7 +242,7 @@ export function RunningExam({
     act({ kind: "hint", questionId: question.id, level });
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto w-full max-w-4xl">
       {historyEnabled && (
         <div className="mb-4">
           <Button variant="ghost" onClick={onLeave}>Oturumlara dön</Button>
@@ -253,7 +253,7 @@ export function RunningExam({
         (DESIGN.md §Sınav ekranı, §Aksan disiplini): sayaç büyük ve tabular,
         süre nötr ve sessiz. Hareket yok; sayaç yanıp sönmez.
       */}
-      <Card className="mb-8">
+      <Card className="mb-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm font-medium text-fg">{EXAM_MODE[session.mode].label}</p>
@@ -280,7 +280,7 @@ export function RunningExam({
               */
               <span
                 role="timer"
-                className={`text-sm tabular-nums ${
+                className={`rounded-xl bg-surface-sunken px-4 py-3 text-lg tabular-nums ${
                   isLastMinute(remaining) ? "font-medium text-warning" : "text-fg-muted"
                 }`}
               >
@@ -321,6 +321,17 @@ export function RunningExam({
             <p role="status" className="prose-tr text-sm text-fg-muted">{helpLock.message}</p>}
         </div>
       )}
+      <nav aria-label="Soru gezintisi" className="mb-6 flex flex-wrap gap-2">
+        {questions.map((item, position) => <button key={item.id} type="button"
+          aria-current={position === index ? "step" : undefined}
+          aria-label={`Soru ${position + 1}${item.answered || feedbacks[item.id] ? ", cevaplandı" : ""}`}
+          onClick={() => goTo(position)}
+          className={`flex h-11 min-w-11 items-center justify-center rounded-xl border px-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${position === index ? "border-fg bg-fg text-surface" : "border-border-strong bg-surface text-fg hover:bg-surface-sunken"}`}>
+          {position + 1}
+          {(item.answered || feedbacks[item.id]) && <span aria-hidden="true" className="ml-1">✓</span>}
+        </button>)}
+      </nav>
+      <Card className="min-w-0">
       <QuestionBody
         view={view}
         headingRef={questionRef}
@@ -384,6 +395,7 @@ export function RunningExam({
         </div>
       )}
 
+      </Card>
       {actionError && (
         <div className="mt-4">
           <ErrorNote message={actionError} />
@@ -396,7 +408,7 @@ export function RunningExam({
         answered && helpAvailable && <SavedPracticeFeedback key={question.id} courseId={courseId} sessionId={session.id} questionId={question.id} onLocked={helpLock.reload} />
       ) : helpAvailable && feedback && <FeedbackPanel sessionId={session.id} courseId={courseId} feedback={feedback} />}
 
-      <div className="mt-10 flex items-center justify-between gap-4">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[20px] border border-border bg-surface p-5">
         {/*
           Gezinme düğmeleri `disabled` yerine `aria-disabled` kullanır: tarayıcı
           devre dışı bırakılan öğeden odağı <body>'ye atar, yani "Önceki"ye
@@ -446,7 +458,7 @@ function HintLadder({ courseId, sessionId, rungs }: { courseId: string; sessionI
         {rungs.map((rung, position) => (
           <li key={`${rung.hint_level}-${position}`} className="px-5 py-4">
             <p className="text-xs font-medium tabular-nums text-fg-subtle">{rung.hint_level}. ipucu</p>
-            <p className="prose-tr mt-1 text-sm leading-6 whitespace-pre-line text-fg">
+            <p className="prose-tr mt-2 text-base leading-7 whitespace-pre-line text-fg">
               {rung.text}
             </p>
             <div className="mt-3">

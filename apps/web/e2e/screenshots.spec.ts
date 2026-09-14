@@ -304,7 +304,7 @@ test.describe("belge ekran görüntüleri", { tag: ["@ekran", "@llm"] }, () => {
       await page.goto(`/courses/${seededCourse.course.id}`);
       await instructorShellReady(page, seededCourse.course.id, responses);
       await expect(page.getByRole("button", { name: "Dosya seç", exact: true })).toBeVisible();
-      const retrievalLink = page.getByRole("link", { name: "Retrieval testi", exact: true });
+      const retrievalLink = page.getByRole("link", { name: "Kaynakları dene", exact: true });
       await expect(retrievalLink).toHaveAttribute("href", `/courses/${seededCourse.course.id}/sources`);
       await expect(retrievalLink).toBeVisible();
       await expect(page.getByRole("heading", { name: "Bu derste çalışma yolları", exact: true })).toBeVisible();

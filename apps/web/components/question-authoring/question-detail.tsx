@@ -47,17 +47,17 @@ export function QuestionDetail({
   const status = QUESTION_STATUS[question.status];
 
   return (
-    <Card className="min-w-0">
+    <Card className="min-w-0 self-start">
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <Badge tone="neutral">{QUESTION_TYPE[question.type]}</Badge>
         <Badge tone={status.tone}>{status.label}</Badge>
         {view.answerFormat && (
           <Badge tone="neutral">{ANSWER_FORMAT[view.answerFormat]}</Badge>
         )}
-        <span className="text-xs text-fg-subtle">{topic}</span>
+        <span className="text-sm text-fg-subtle">{topic}</span>
       </div>
 
-      <p className="prose-tr mb-4 text-xs text-fg-muted">
+      <p className="prose-tr mb-4 text-sm text-fg-muted">
         {question.learning_outcome_id
           ? `Öğrenme çıktısı: ${outcomes.find((outcome) => outcome.id === question.learning_outcome_id)?.code ?? "Kayıtlı çıktı"}`
           : "Öğrenme çıktısı: Sınıflandırılmadı"}
@@ -68,7 +68,7 @@ export function QuestionDetail({
       </p>}
       {question.source_stale && <QuestionExamUsage key={question.id} courseId={courseId} questionId={question.id} />}
       {outsideFilter && (
-        <p className="mb-4 text-xs text-fg-muted">
+        <p className="mb-4 text-sm text-fg-muted">
           Bu soru seçili süzgeçte görünmüyor; kararınızı görebilesiniz diye
           panelde tutuluyor.
         </p>
@@ -82,7 +82,7 @@ export function QuestionDetail({
       <h2
         ref={stemRef}
         tabIndex={-1}
-        className="prose-tr rounded-lg text-lg font-normal text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+        className="prose-tr rounded-lg text-xl leading-8 font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
       >
         {view.stem ?? "Soru metni bu kayıtta yok."}
       </h2>
@@ -90,7 +90,7 @@ export function QuestionDetail({
       {!editing && <QuestionBody view={view} />}
 
       <div className="mt-6">
-        <h3 className="mb-2 text-xs font-medium text-fg-muted">
+        <h3 className="mb-3 text-base font-semibold text-fg">
           Üretimde kullanılan kaynak
         </h3>
         {view.source ? (
@@ -101,7 +101,7 @@ export function QuestionDetail({
             onay kararı "bu materyalde gerçekten var mı" sorusudur ve kaynak
             görünmüyorsa eğitmen onu göremeden onaylamamalı (Anayasa I).
           */
-          <p className="rounded-lg border border-border bg-bg px-4 py-3 text-sm text-fg-muted">
+          <p className="rounded-xl border border-border bg-surface-sunken px-4 py-3 text-sm text-fg-muted">
             Bu sorunun kaynak parçası okunamadı. Kaynağı görmeden onaylamayın.
           </p>
         )}
@@ -159,7 +159,7 @@ export function QuestionDetail({
         </span>
       </div>
 
-      <p className="mt-3 text-xs text-fg-subtle">
+      <p className="mt-3 text-sm text-fg-subtle">
         Onaylanmayan soru öğrenci akışında hiç görünmez.
       </p>
 
@@ -167,7 +167,7 @@ export function QuestionDetail({
         Karar sonucu: hem görünür hem duyurulur. `role="status"` örtük olarak
         polite'tır — karar bir hata değildir, `alert` kullanılmaz.
       */}
-      <p role="status" className="mt-2 text-xs text-fg-muted">
+      <p role="status" className="mt-2 text-sm text-fg-muted">
         {busy ? "Karar kaydediliyor…" : (notice ?? "")}
       </p>
 
@@ -186,14 +186,14 @@ function QuestionBody({ view }: { view: QuestionView }) {
           {view.options.map((option) => (
             <li
               key={option.key}
-              className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${
+              className={`flex items-start gap-4 rounded-xl border px-5 py-4 text-base ${
                 option.correct
                   ? "border-success bg-success-bg text-fg"
                   : "border-border text-fg-muted"
               }`}
             >
               {/* Renk tek başına bilgi taşımaz: doğru şıkta metin de var. */}
-              <span className="mt-0.5 w-14 shrink-0 text-xs text-fg-subtle">
+              <span className="mt-0.5 w-14 shrink-0 text-sm text-fg-subtle">
                 {option.key}
                 {option.correct ? " · doğru" : ""}
               </span>
@@ -205,18 +205,18 @@ function QuestionBody({ view }: { view: QuestionView }) {
 
       {view.code && (
         <div className="mt-5">
-          <h3 className="mb-2 text-xs font-medium text-fg-muted">
+          <h3 className="mb-3 text-base font-semibold text-fg">
             Kod{view.code.language ? ` · ${view.code.language}` : ""}
           </h3>
-          <pre className="overflow-x-auto rounded-lg border border-border bg-bg px-4 py-3">
-            <code className="font-mono text-xs text-fg">{view.code.code}</code>
+          <pre className="overflow-x-auto rounded-xl border border-border bg-surface-sunken px-4 py-3">
+            <code className="font-mono text-sm leading-7 text-fg">{view.code.code}</code>
           </pre>
         </div>
       )}
 
       {view.answerKey && (
         <Section title="Cevap anahtarı">
-          <p className="prose-tr rounded-lg border border-border bg-bg px-4 py-3 text-sm text-fg">
+          <p className="prose-tr rounded-xl border border-border bg-surface-sunken px-4 py-3 text-sm text-fg">
             {view.answerKey}
           </p>
         </Section>
@@ -224,7 +224,7 @@ function QuestionBody({ view }: { view: QuestionView }) {
 
       {view.bugAnswer && (
         <Section title="Cevap anahtarı">
-          <dl className="space-y-1 rounded-lg border border-border bg-bg px-4 py-3 text-sm">
+          <dl className="space-y-1 rounded-xl border border-border bg-surface-sunken px-4 py-3 text-sm">
             <Row label="Hatalı satır" value={view.bugAnswer.line?.toString() ?? null} />
             <Row label="Hata türü" value={view.bugAnswer.bugType} />
             <Row label="Düzeltme" value={view.bugAnswer.fixSummary} />
@@ -238,7 +238,7 @@ function QuestionBody({ view }: { view: QuestionView }) {
             {view.acceptedAnswers.map((answer) => (
               <span
                 key={answer}
-                className="rounded-sm border border-border bg-bg px-2.5 py-0.5 font-mono text-xs text-fg-muted"
+                className="rounded-sm border border-border bg-bg px-2.5 py-0.5 font-mono text-sm leading-7 text-fg-muted"
               >
                 {answer}
               </span>
@@ -251,7 +251,7 @@ function QuestionBody({ view }: { view: QuestionView }) {
         <Section title="Cevapta aranan noktalar">
           <ul className="space-y-1">
             {view.keyPoints.map((point) => (
-              <li key={point} className="prose-tr text-sm text-fg-muted">
+              <li key={point} className="prose-tr text-base leading-7 text-fg-muted">
                 · {point}
               </li>
             ))}
@@ -264,8 +264,8 @@ function QuestionBody({ view }: { view: QuestionView }) {
           <dl className="space-y-1">
             {view.rubric.map((item) => (
               <div key={item.point} className="flex items-baseline justify-between gap-3">
-                <dt className="prose-tr text-sm text-fg-muted">{item.point}</dt>
-                <dd className="font-mono text-xs text-fg-subtle">{item.weight}</dd>
+                <dt className="prose-tr text-base leading-7 text-fg-muted">{item.point}</dt>
+                <dd className="font-mono text-sm leading-7 text-fg-subtle">{item.weight}</dd>
               </div>
             ))}
           </dl>
@@ -274,7 +274,7 @@ function QuestionBody({ view }: { view: QuestionView }) {
 
       {view.explanation && (
         <Section title="Gerekçe">
-          <p className="prose-tr text-sm text-fg-muted">{view.explanation}</p>
+          <p className="prose-tr text-base leading-7 text-fg-muted">{view.explanation}</p>
         </Section>
       )}
     </>
@@ -284,7 +284,7 @@ function QuestionBody({ view }: { view: QuestionView }) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mt-6">
-      <h3 className="mb-2 text-xs font-medium text-fg-muted">{title}</h3>
+      <h3 className="mb-3 text-base font-semibold text-fg">{title}</h3>
       {children}
     </div>
   );
@@ -294,7 +294,7 @@ function Row({ label, value }: { label: string; value: string | null }) {
   if (value === null) return null;
   return (
     <div className="flex items-baseline gap-2">
-      <dt className="shrink-0 text-xs text-fg-subtle">{label}</dt>
+      <dt className="shrink-0 text-sm text-fg-subtle">{label}</dt>
       <dd className="prose-tr text-fg">{value}</dd>
     </div>
   );
