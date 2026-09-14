@@ -4,9 +4,30 @@
     {
       "name": "dou-web",
       "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev", "--port", "3010"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--port",
+        "3010"
+      ],
       "cwd": "apps/web",
       "port": 3010
+    },
+    {
+      "name": "dou-demo-api",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "scripts/demo/run_api.sh"
+      ],
+      "port": 8020
+    },
+    {
+      "name": "dou-demo-web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "scripts/demo/run_web.sh"
+      ],
+      "port": 3020
     }
   ]
 }

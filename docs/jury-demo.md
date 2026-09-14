@@ -106,3 +106,13 @@ Hepsinin ölçümleri yukarıdaki teknik engel nedeniyle **koşulmadı**.
 
 ### ENGEL
 - Ortam başlangıç engeli: demo için gerekli servisleri çalıştıracak `docker` binary'si bu oturumda yüklü değil; API/PostgreSQL ayakta olmayınca ekran görüntüsü üretimi ve senaryo koşumu yapılamadı.
+
+## Yerel demo kurulumu (14 Eylül 2026)
+
+Üç betik, sırayla; hepsi `scripts/demo/` altında ve yeniden koşulabilir:
+
+1. `sh scripts/demo/setup_db.sh` — temiz `dou_demo` veritabanı, `scripts/migrate.sh` ile 24 göç, yerel roller, sentetik seed (Ayşe Hoca ve öğrenci).
+2. `sh scripts/demo/run_api.sh` — API `127.0.0.1:8020`; dev-auth, gerçek E5 embedding, `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` açık. `apps/api/.env` içinde `GROQ_API_KEY` doluysa gerçek model, boşsa sahte sağlayıcı ve bunu açıkça yazar.
+3. `sh scripts/demo/run_web.sh` — üretim derlemesi, `127.0.0.1:3020`, `NEXT_PUBLIC_DEV_AUTH=true`.
+
+Sahte sağlayıcıyla yapılan prova gerçek model kanıtı değildir; jüriye hangi sağlayıcıyla gösterildiği söylenir.
