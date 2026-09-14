@@ -214,9 +214,16 @@ function ChatScreen({
         allowedModes={allowedModes}
         hintLimit={hintLimit}
       />
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      {/*
+       * `minmax(0,1fr)` ve `min-w-0` birlikte zorunlu. Sade `1fr`, `minmax(auto,1fr)`
+       * demektir; o `auto`, sütunun içeriğin min-content genişliğinin altına inmesini
+       * yasaklar. Telefon genişliğinde (tek sütun) sonuç ölçüldü: kapsayıcı 343px
+       * iken ızgara sütunu 551px'e şişiyor ve belge yana kayıyordu. Kabuk ve öbür
+       * sayfalar zaten bu deseni kullanıyor.
+       */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
       {/* Konuşma sütunu: okuma genişliği bileşenlerin içinde 70ch ile sınırlı */}
-      <div className="space-y-6">
+      <div className="min-w-0 space-y-6">
         <LoadMore
           hasMore={chat.historyCursor !== null}
           busy={chat.olderLoading}
@@ -275,7 +282,7 @@ function ChatScreen({
       </div>
 
       {/* Kaynak paneli: masaüstünde sabit sütun, mobilde içeriğin altına iner */}
-      <aside className="space-y-8">
+      <aside className="min-w-0 space-y-8">
         <CourseMaterialsSection documents={documents} />
         <SessionListSection
           courseId={courseId}

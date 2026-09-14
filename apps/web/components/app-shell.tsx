@@ -158,6 +158,16 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
+      {/*
+       * Mobil: alt gezinme çubuğu — ikon üstte, etiket altta. Çubuk `fixed`
+       * olduğu için ekranda hep altta durur; DOM'da ise İÇERİKTEN ÖNCE gelir.
+       * En sonda dururken klavye kullanıcısı ana menüye ancak sayfadaki bütün
+       * bağlantıları geçtikten sonra ulaşıyordu (portal.spec 30 sekmede
+       * ulaşamadı). Masaüstündeki `aside` de `main`'den önce; iki kırılım artık
+       * aynı sırayı izliyor.
+       */}
+      <MainNavigation items={navigation} pathname={pathname} mobile />
+
       <div className="mx-auto max-w-[1280px] px-4 py-6 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
         {/* Masaüstü: yüzen beyaz menü kartı. */}
         <aside className="hidden lg:block">
@@ -186,9 +196,6 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
-
-      {/* Mobil: alt gezinme çubuğu — ikon üstte, etiket altta. */}
-      <MainNavigation items={navigation} pathname={pathname} mobile />
     </div>
   );
 }
