@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "change_id": "112-pooler-safe-rls-and-graceful-worker-r1",
+  "lineage_id": "pooler-safe-rls-and-graceful-worker",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Havuzlayıcıya güvenli RLS bağlamı, SIGTERM güvenli bırakma ve yedek/geri yükleme tatbikatı (D2', D3', D4', D1' çok-süreç ölçümü)",
+  "summary": "app/core/db.py: RLS bağlamı yalnız açık işlem içinde (SET LOCAL, in_transaction zorunlu — session-seviyesi SET transaction pooler'da çapraz kullanıcı sızıntısı olurdu); DSN'de pgbouncer/pool_mode/prepared_statements işareti varsa sürücü prepared statement önbelleği kapatılır (psycopg prepare_threshold=None, asyncpg statement_cache_size=0). app/worker.py: SIGTERM/SIGINT ilk sinyalde güvenli bırakma (yeni iş yok, lease bırakma), ikinci sinyalde OS varsayılanı. Testler: çapraz kullanıcı sızıntı testi (SET LOCAL yerine SET ile kırmızı yanar), sinyal işleyici testi, iki AYRI SÜREÇTE token kotası (2x3000/5000 → tam biri; 0028 göçü gereksiz), gerçek Postgres'te yedek→düşür→geri yükle tatbikatı (satır sayısı, EXTENSION vector, dense arama aynı). Davranış, sağlayıcı, model ve prompt değişmedi.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T08:56:30+00:00",
+  "review_by": "2026-10-14T08:56:30+00:00",
+  "base_sha": "2b413d982a95434f1a8df862840f1c1914942ad7",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor.",
+    "model_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor.",
+    "prompt_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor.",
+    "tool_schema_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor.",
+    "guardrail_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor.",
+    "retrieval_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor.",
+    "embedding_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor.",
+    "evaluator_revision": "Unchanged from 2b413d9; bu commit davranış yüzeyini değiştirmiyor."
+  },
+  "data": {
+    "corpus_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "eval_set_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/core/db.py",
+      "state": "present",
+      "sha256": "f9783c8d20eff007b04c2c5ca36670b989658e3780554ccbcefd31c2bd2377b0"
+    },
+    {
+      "path": "apps/api/app/worker.py",
+      "state": "present",
+      "sha256": "f61446d41c65eb2cda7bdb11f2293221bfb4246558741ed66d203cd8395763d8"
+    },
+    {
+      "path": "apps/api/tests/test_rls_session_context.py",
+      "state": "present",
+      "sha256": "daf10464c50e6f4d915e6a5c271970bf9cb852827c9cde99e39e756c6c4315eb"
+    },
+    {
+      "path": "apps/api/tests/test_worker_graceful_shutdown.py",
+      "state": "present",
+      "sha256": "de8528c5de0d50f8e5f5e074da768d76517aed295cc5b3cd8cc49c87c3306874"
+    },
+    {
+      "path": "apps/api/tests/test_token_quota_multiprocess.py",
+      "state": "present",
+      "sha256": "ea3d53fadd5ed302a8f641bced2f3cd5a6c607c8200a6cf2e3b6d8093958bb91"
+    },
+    {
+      "path": "scripts/test_backup_restore_drill.sh",
+      "state": "present",
+      "sha256": "db66f26a6b99378504ed94b4bfda82e8b04d80e32ae0979d6860f964f865f288"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/112-pooler-safe-rls-and-graceful-worker-r1.json",
+      "report_sha256": "1bc255a49d884df578c9a2a682487fe31d74b7500817eb86fc9b78726f38406c",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/app/core/db.py",
+    "holdout_ref": "specs/018-codex-production-line/verification.md",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/acceptance/assessment_cases.json",
+    "metrics": [
+      {
+        "name": "ops_tests_passed",
+        "baseline": 0,
+        "candidate": 17,
+        "operator": ">=",
+        "threshold": 17,
+        "sample_size": 17
+      },
+      {
+        "name": "mypy_errors",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 1
+      },
+      {
+        "name": "drill_rc",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "cd apps/api && .venv/bin/ruff check app/core/db.py app/worker.py tests/test_rls_session_context.py tests/test_worker_graceful_shutdown.py tests/test_token_quota_multiprocess.py && cd apps/api && .venv/bin/mypy app && cd apps/api && TEST_DB_NAME=dou_r1 .venv/bin/python -m pytest -q tests/test_rls_session_context.py tests/test_worker_graceful_shutdown.py tests/test_token_quota_multiprocess.py && bash scripts/test_backup_restore_drill.sh"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: kapı/test/belge katmanı; ürün özellik bayrakları değişmedi",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:112-pooler-safe-rls-and-graceful-worker-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: kapı/test/belge katmanı; ürün özellik bayrakları değişmedi",
+    "kill_switch": "Commit geri alınır; kapı devre dışı kalır, ürün davranışı değişmez.",
+    "assignment": "Sticky to the exact reviewed candidate SHA; no real-user exposure.",
+    "initial_exposure": "None; yerel sentetik koşu.",
+    "stop_conditions": [
+      "Kapı yanlış pozitif üretip geliştirmeyi durdurursa.",
+      "Bir testin kırmızı yanabildiği kanıtlanamazsa.",
+      "Gerçek öğrenci içeriği kayıt yüzeyine girerse."
+    ],
+    "expand_conditions": [
+      "Barındırılan CI koşusunda aynı kapılar yeşil.",
+      "Adlandırılmış mühendislik/alan/gizlilik onayları ayrı ayrı alınır."
+    ],
+    "active_exam_policy": "No academic record, active-exam lock, help scope or role change."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2b413d982a95434f1a8df862840f1c1914942ad7",
+    "procedure": "Bu commit geri alınır; veri göçü geri alma gerektirmez (yalnız ileri göç eklenirse ayrıca belirtilir).",
+    "max_minutes": 30,
+    "verification": "Planned operator response, not measured production SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik fixture ve yerel DB/API koşuları. Gerçek öğrenci içeriği yok.",
+    "retention": "Kurumsal saklama ve gerçek sağlayıcı yaşam döngüsü açık; üretim terfisi yok."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
