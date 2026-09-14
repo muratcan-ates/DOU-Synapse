@@ -303,21 +303,23 @@ class TestFtsSiralamaBilgisi:
 
 
 class TestSabitKorpusSiralama:
-    """Eşit skorları aynı korpusta belge UUID'si ve parça sırası bağlar.
+    """Eşit skorları içerikten türeyen adres (file_hash, chunk_index) bağlar.
 
-    Belge UUID'si içerikten türemez; yeniden yüklenen korpus için aynı sıralama
-    iddia edilmez. İçerik-hash sıralaması C1 holdout'larında gerilettiği için
-    bu teslimde eski sorgu korunur. Korpuslar arası kararlılık ayrı açık iştir.
+    Belge ve parça UUID'leri `gen_random_uuid()` ürünüdür; aynı materyal ikinci
+    kez yüklendiğinde değişir ve eşit skorlu parçaların sırasını oynatırdı
+    (`test_fts_determinism.py` bunu deterministik olarak kırmızı yakar).
+    `documents.file_hash` dosya içeriğinin SHA256'sıdır; `dense.py` ile aynı
+    bağlayıcı kullanılır. Sıralamanın ana terimi (`ts_rank`) değişmedi.
     """
 
-    def test_esitlik_bozma_sabit_korpusta_belge_ve_parca_sirasini_korur(self) -> None:
+    def test_esitlik_bozma_icerik_adresiyle_yapilir(self) -> None:
         sql = str(_SQL)
 
-        assert "ORDER BY rank DESC, c.document_id, c.chunk_index" in sql
-        assert "ORDER BY m.rank DESC, m.document_id, m.chunk_index" in sql
+        assert "ORDER BY rank DESC, d.file_hash, c.chunk_index" in sql
+        assert "ORDER BY m.rank DESC, m.file_hash, m.chunk_index" in sql
         assert "ORDER BY rank DESC, c.id" not in sql
         assert "ORDER BY m.rank DESC, m.id" not in sql
-        assert "file_hash" not in sql
+        assert "c.document_id, c.chunk_index" not in sql
 
     async def test_esit_rankli_parcalar_belge_ici_sirayla_doner(
         self, client: AsyncClient, users: UserFactory, worker_engine: AsyncEngine
