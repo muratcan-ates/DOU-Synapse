@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "change_id": "120-l8-assessment-quality-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T08:30:00+00:00",
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "scope": "E4'ün mekanizma yarısı. Eşik kalibrasyonu ve ürün bağlantısı KAPSAM DIŞI.",
+  "commands": [
+    "TEST_DB_NAME=dou_l8_reb .venv/bin/python -m pytest -q tests/test_assessment_quality.py",
+    "TEST_DB_NAME=dou_l8_reb .venv/bin/python -m pytest -q tests/test_grading_second_pass.py",
+    ".venv/bin/ruff check app/modules/assessment/quality.py app/modules/assessment/second_pass.py",
+    ".venv/bin/ruff format --check app/modules/assessment/quality.py app/modules/assessment/second_pass.py",
+    ".venv/bin/mypy app"
+  ],
+  "results": {
+    "assessment_quality_tests_passed": 58,
+    "second_pass_tests_passed": 59,
+    "ruff_check": "pass",
+    "ruff_format": "pass",
+    "mypy": "pass (123 dosya)",
+    "mutation_probe_second_pass": "8 mutasyonun 8'i testlerce yakalandı",
+    "mutation_probe_quality": "2 mutasyonun 2'si yakalandı (text_tr -> str.lower: 13 failed; _jaccard -> 1.0: 7 failed)",
+    "fuzz_second_pass": "20000 rastgele girdi: çökme yok, toleransı aşan agreed yok, gizleyen kararda taşınan puan yok",
+    "production_callers": "0 — mekanizma hiçbir ürün yolundan çağrılmıyor"
+  },
+  "comparison": {
+    "before": "MCQ havuzunda kalite sinyali yok; rubrik puanı tek LLM koşusundan çıkıp doğrudan gösteriliyor.",
+    "after": "Sinyaller ve uzlaştırma mekanizması var ve testli; bağlanmadığı için gösterilen puan hâlâ tek koşudan."
+  },
+  "limitations": "Kalite/kabul kanıtı DEĞİLDİR. Eşiklerin hiçbiri kalibre edilmedi. Modüllerin çağıranı yok; E4 tamamlanmış sayılmaz.",
+  "privacy": "sentetik fixture; öğrenci içeriği yok"
+}
