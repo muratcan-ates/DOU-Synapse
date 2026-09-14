@@ -278,9 +278,10 @@ kurum kimliğiyle giriş (sunum sonrası).
 ## 8. Mevcut Durum (14 Eylül 2026)
 
 Ölçülen: 2139 otomatik API testi toplanıyor <!-- docs-check: tarihsel 2139 · 2026-09-14 -->,
-24 veritabanı göçü <!-- docs-check: tarihsel 24 · 2026-09-14 -->, 21 gerçek tarayıcı (Playwright)
-test dosyası <!-- docs-check: tarihsel 21 · 2026-09-14 -->, 22 web rotası
-<!-- docs-check: tarihsel 22 · 2026-09-14 -->, 61 API yolu <!-- docs-check: tarihsel 61 · 2026-09-14 --> / 77 işlem <!-- docs-check: tarihsel 77 · 2026-09-14 -->.
+24 veritabanı göçü <!-- docs-check: tarihsel 24 · 2026-09-14 -->,
+21 gerçek tarayıcı (Playwright) test dosyası <!-- docs-check: tarihsel 21 · 2026-09-14 -->,
+22 web rotası <!-- docs-check: tarihsel 22 · 2026-09-14 -->,
+61 API yolu <!-- docs-check: tarihsel 61 · 2026-09-14 --> / 77 işlem <!-- docs-check: tarihsel 77 · 2026-09-14 -->.
 Demo kurulumu tek makinede: İşletim Sistemleri dersi, 5 belge, 22 parça; gerçek Groq
 modeliyle kaynaklı cevap, kapsam dışı ret ve Sokratik ısrar reddi doğrulandı; jüri
 senaryosunun soruları çevrimdışı önbelleğe yazılıyor. CI'da API kapıları yeşil; uçtan uca
