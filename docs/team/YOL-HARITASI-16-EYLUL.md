@@ -114,7 +114,27 @@ Kural: her blok bitmeden sonrakine geçilmez; bloğu aşan iş sunum sonrasına 
 | 16:30–17:30 | 18 · 17 | Kronometreli prova (rol geçişi, kaynak kartı, kapsam dışı, ipucu merdiveni) + yedek klasörünü USB/iCloud'a | Murat + Claude | Süre tablosu; yedek makine dışında |
 | Akşam | 19 · 20 | Sunum akışı + çökme senaryosu (hangi dakikada ne; internet giderse Plan C); salon/donanım/bildirim | Murat | Tek sayfalık akış |
 
-Ertelenen (sunum sonrası, v2): Supabase Auth/Storage + canlı URL · OpenAI sağlayıcısı ·
+### CI uçtan uca: 9 kırmızıdan 3'ü düzeltildi, 6'sı düzenek boşluğu (sunum sonrası)
+
+İlk gerçek koşu (run 34884025385): **72 geçti, 9 düştü, 1 kararsız.** Kök nedenler:
+
+| Testler | Kök neden | Durum |
+|---|---|---|
+| `portal.spec:531` · `chat-history-deletion:82` · `flows.spec:686` | Kabuk turunun gerçek regresyonları: mobil DOM sırası, ızgara `1fr`, etiket biçimi | **Düzeltildi** (7ab347c, b06736a), gerçek tarayıcıyla ölçüldü |
+| `grounded-wrong-feedback` (3) | API `LLM_SIMULATE_GROUNDED_FEEDBACK=1` ile başlatılmalı | **not-run**: koşucu bu bayrağı hiç kurmuyor |
+| `provider-fallback` (3) | API `LLM_SIMULATE_RATE_LIMIT=1` ile başlatılmalı | **not-run**: aynı boşluk |
+
+Bu 6 test bu düzenekte **hiç koşabilir durumda değildi**; testlerin kendi başlıkları da
+"ayrı API süreci … L1 normal/simülasyon seçimini ayrı bağlamalıdır" diyor.
+`run_owned_e2e.py:72` tek API süreci açıyor ve iki bayrağı da kurmuyor. İki bayrak aynı
+anda açılamaz: bayrak açıkken `provider_fallback.py:196` **her** üretim çağrısında 429
+simüle eder, yani diğer bütün sohbet testleri düşerdi. Çözüm fazlı koşu: ana faz + iki
+simülasyon fazı, her biri kendi API süreciyle. `run_owned_e2e.py` hassas yol DEĞİL
+(dossier gerekmez), `ci.yml` hassas (R2) — bu yüzden fazlama koşucunun içinde yapılmalı,
+`ci.yml`e dokunmadan. Denetim muhasebesi (`ownedApiPid`, makbuz sayımı) tek API sürecine
+göre yazıldığı için değişiklik dikkat ister; sunum öncesi riskli, sunum sonrasına alındı.
+
+Ertelenen (sunum sonrası, v2): CI e2e fazlı koşu (yukarıdaki 6 test) · Supabase Auth/Storage + canlı URL · OpenAI sağlayıcısı ·
 kod çalıştırma (hayır, bilinçli) · LMS/LTI · öğrenci self-enroll · gerçek zamanlı işbirliği.
 
 ## 3. 16 Eylül — sunum günü kontrol listesi
