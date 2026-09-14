@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "change_id": "121-l8-rater-agreement-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T08:30:00+00:00",
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "scope": "Hesap mekanizması. Eşik belirleme ve insan-insan uyum ölçümü KAPSAM DIŞI.",
+  "commands": [
+    "TEST_DB_NAME=dou_l8_reb .venv/bin/python -m pytest -q tests/test_rater_agreement.py",
+    "apps/api/.venv/bin/ruff check --config apps/api/pyproject.toml evaluation/rater_agreement.py",
+    "apps/api/.venv/bin/ruff format --check --config apps/api/pyproject.toml evaluation/rater_agreement.py"
+  ],
+  "results": {
+    "rater_agreement_tests_passed": 34,
+    "ruff_check": "pass (apps/api/pyproject.toml yapılandırmasıyla)",
+    "ruff_format": "pass",
+    "independent_cross_check": "Modülden habersiz sıfırdan yazılmış ikinci uygulamayla 7 veri kümesi x 3 ağırlık şeması: 0 uyuşmazlık",
+    "manual_reference": "3x3 tablo elle hesaplandı: kuadratik 4/9, lineer 8/17, nominal 1/2 — kod birebir aynı",
+    "hardcoded_threshold_count": 0
+  },
+  "comparison": {
+    "before": "Yalnız nominal kappa; sıralı rubrik puanında anlaşmazlığın büyüklüğü yok sayılıyor.",
+    "after": "Nominal + lineer + kuadratik birlikte; hangi şemanın kullanıldığı raporda yazılı."
+  },
+  "limitations": "Bir eşik DEĞİL bir sayıdır. Küçük n'de güven aralığı çok geniştir; n=1'de sample_size_warning 0.0 çıkar (bootstrap'in bilinen sınırı).",
+  "privacy": "sentetik etiket dizileri; kişisel veri yok"
+}
