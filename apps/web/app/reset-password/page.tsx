@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
       <Card className="w-full sm:p-8">
         <span className="mb-5 grid h-12 w-12 place-items-center rounded-xl bg-brand-subtle text-brand"><ShieldIcon size={25} /></span>
         <p className="text-sm font-medium text-fg-muted">Hesap erişimi</p>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-fg">Yeni parola belirle</h1>
+        <h1 className="mt-2 text-[1.75rem] font-semibold tracking-tight text-fg">Yeni parola belirle</h1>
         <p className="mt-3 text-base leading-7 text-fg-muted">
           E-postandaki yenileme bağlantısını açtıysan yeni parolanı burada kaydedebilirsin.
         </p>
@@ -62,7 +62,7 @@ export default function ResetPasswordPage() {
             </p>
             <Link
               href="/courses"
-              className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-base font-medium text-white hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-base font-medium text-brand-fg hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               Derslerime git
             </Link>

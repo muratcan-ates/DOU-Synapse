@@ -511,7 +511,7 @@ def provision(args: argparse.Namespace, env: dict[str, str], runtime: Runtime) -
             require(value(database, MEMBERSHIPS) == 0, "UNEXPECTED_ROLE_MEMBERSHIP")
             summary = value(database, SUMMARY)
             require(
-                summary == {"vector": "0.8.6", "profiles": 2, "admins": 1, "auditRows": 0},
+                summary == {"vector": "0.8.6", "profiles": 3, "admins": 1, "auditRows": 0},
                 "SEED_OR_EXTENSION_CONTRACT",
             )
         role_connections = [

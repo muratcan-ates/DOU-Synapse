@@ -1,0 +1,457 @@
+{
+  "schema_version": 1,
+  "change_id": "101-ci-evidence-wiring-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T16:44:16.407084+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "Mechanical local UI/CI evidence for the combined PR candidate; fake-provider label denotes deterministic application tests, not a live AI provider. Dependency advisory observations are separately identified.",
+  "commands": [
+    {
+      "name": "code-analysis-tool-tests",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "-m",
+        "unittest",
+        "scripts.test_dead_code_check",
+        "scripts.test_diff_coverage_check"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "9de82272c3f705efa5c4393fb9e2b9afb11c67e29f6889bcaa21b25e836ec1e3",
+      "summary": "49 tests passed.",
+      "output": ".................................................\n----------------------------------------------------------------------\nRan 49 tests in 9.715s\n\nOK\n"
+    },
+    {
+      "name": "real-line-collector-smoke",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/diff_coverage_check.py",
+        "collect",
+        "--tests-root",
+        ".",
+        "--output",
+        "/tmp/campus025-ci101-coverage.json",
+        "--",
+        "scripts/test_dead_code_check.py",
+        "scripts/test_diff_coverage_check.py",
+        "-q"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "9718bd1680b1c09304f624be57aa90e8c487a3f292099313b29b80b39f6c2e77",
+      "summary": "49 tests and 4 subtests passed; actual sys.monitoring observed 1228 executed lines in 4 files. One local sandbox cache-write warning; tests and coverage creation succeeded.",
+      "output": ".................................................                    [100%]\n=============================== warnings summary ===============================\n../dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469\n  /Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /Users/muratates/code/dou-synapse-025-campus-ui/.pytest_cache/v/cache/nodeids: [Errno 1] Operation not permitted: '/Users/muratates/code/dou-synapse-025-campus-ui/pytest-cache-files-_1zx4683'\n    config.cache.set(\"cache/nodeids\", sorted(self.cached_nodeids))\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n49 passed, 1 warning, 4 subtests passed in 10.46s\nDIFF_COVERAGE_COLLECT=OK (4 dosya, 1228 satır → /private/tmp/campus025-ci101-coverage.json)\n"
+    },
+    {
+      "name": "changed-line-report",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/diff_coverage_check.py",
+        "report",
+        "--coverage",
+        "/tmp/campus025-ci101-coverage.json",
+        "--base",
+        "f4a0952c41232df84f937f05991a417d959a5285",
+        "--head",
+        "ffd9bf75e1460ea27381fc1b0b51406d9515dabd"
+      ],
+      "cwd": ".",
+      "source_revision": "ffd9bf75e1460ea27381fc1b0b51406d9515dabd",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "a8273310bd1b178fe02b4755f71a12b343bbfb7c9b9aa7ea133dfc6111f9ea55",
+      "summary": "N/A: no changed executable Python lines in the committed UI diff. No percentage or API coverage claim.",
+      "output": "DIFF_COVERAGE_CHECK=PASS (kapsanacak satır yok — değişen çalıştırılabilir satır bulunmadı)\n  - atlandı: .ai/changes/100-campus-ui-r1.json: Python dosyası değil, ölçülmedi\n  - atlandı: .ai/evidence/100-campus-ui-r1.json: Python dosyası değil, ölçülmedi\n  - atlandı: DESIGN.md: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/(auth)/auth/callback/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/(auth)/verify-email/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/account/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/admin/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/analytics/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/blueprints/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/chat/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/members/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/quality/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/questions/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/settings/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/sources/[chunkId]/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/[courseId]/sources/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/courses/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/dashboard/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/error.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/forgot-password/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/globals.css: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/kvkk/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/not-found.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/profile/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/app/reset-password/page.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/app-shell.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/blueprint/paper-preview.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/brand-mark.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/chat-feedback.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/chat/transcript-parts.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/course-assistant/course-assistant.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/course-nav.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/exam/feedback-panel.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/exam/finished-exam.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/exam/question-input.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/exam/running-exam.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/exam/session-history.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/exam/start-panel.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/learning-summary.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/page-state.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/policy-history.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/portal/admin-data-table.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/portal/portal-metrics.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/question-authoring/classification-fields.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/question-authoring/draft-editor.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/question-authoring/generate-panel.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/question-authoring/question-detail.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/socratic-ladder.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/source-card.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/theme-control.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/components/ui.tsx: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/e2e/flows.spec.ts: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/e2e/portal.spec.ts: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/e2e/screenshots.spec.ts: Python dosyası değil, ölçülmedi\n  - atlandı: apps/web/scripts/contrast.mjs: Python dosyası değil, ölçülmedi\n  - atlandı: specs/025-campus-ui/plan.md: Python dosyası değil, ölçülmedi\n  - atlandı: specs/025-campus-ui/spec.md: Python dosyası değil, ölçülmedi\n  - atlandı: specs/025-campus-ui/tasks.md: Python dosyası değil, ölçülmedi\n  - atlandı: specs/025-campus-ui/verification.md: Python dosyası değil, ölçülmedi\n"
+    },
+    {
+      "name": "dead-code-candidates",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/dead_code_check.py",
+        "apps/api/app",
+        "--warn-only"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "cd33c7098ebbe6a308aa10ea522fe51ae8ff45de6e1c7fcc609a456d1ff7b99c",
+      "summary": "123 files, 1117 definitions, 914 checked, 203 exemptions, one candidate (GradedAnswer). Existing warning mode is explicit; no dead-code-free claim.",
+      "output": "DEAD_CODE_CHECK=WARN (123 dosya, 1117 tanım, 914 denetlendi, 203 muaf, 1 aday)\n  - apps/api/app/contracts.py:317 sınıf `GradedAnswer` — hiçbir yerden referans yok\n  muafiyet: SQLAlchemy modeli=18, __all__ ihracı=85, dekoratörle kayıtlı=79, dunder / giriş noktası=19, typing dekoratörü=2\n  referans kapsamı: depo kökü /Users/muratates/code/dou-synapse-025-campus-ui (191 ek dosyada kullanım arandı)\n  (uyarı modu: çıkış kodu 0. Kapıyı kırmızı yakmak için --strict.)\n"
+    },
+    {
+      "name": "workflow-policy",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2",
+      "summary": "WORKFLOW_POLICY_CHECK=PASS.",
+      "output": "WORKFLOW_POLICY_CHECK=PASS\n"
+    },
+    {
+      "name": "workflow-policy-regressions",
+      "command": [
+        "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv/bin/python",
+        "-m",
+        "unittest",
+        "scripts.test_workflow_policy_check"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "7d453853f0677cb1dad1547e12b2fc7aacadf17363e5ea4252ace2c5742fd1a7",
+      "summary": "27 tests passed.",
+      "output": "...........................\n----------------------------------------------------------------------\nRan 27 tests in 0.501s\n\nOK\n"
+    },
+    {
+      "name": "baseline-evidence-wiring",
+      "command": [
+        "scripts.ai_sdlc_check._evidence_script_errors(Path(baseline_worktree))"
+      ],
+      "cwd": ".",
+      "source_revision": "f4a0952c41232df84f937f05991a417d959a5285",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "3d22fc7f6ebf7a389a7d9ac8b2c0bc0854c6547ce4e43246c93f41478e0a2eb7",
+      "summary": "Read-only check asserted original worktree HEAD f4 and clean workflow/validator/policy; four pre-existing missing bindings detected.",
+      "output": "{\n  \"source_revision\": \"f4a0952c41232df84f937f05991a417d959a5285\",\n  \"unwired_evidence_scripts\": 4,\n  \"errors\": [\n    \"UNWIRED_EVIDENCE_SCRIPT:scripts/dead_code_check.py\",\n    \"UNWIRED_EVIDENCE_SCRIPT:scripts/diff_coverage_check.py\",\n    \"UNWIRED_EVIDENCE_SCRIPT:scripts/test_dead_code_check.py\",\n    \"UNWIRED_EVIDENCE_SCRIPT:scripts/test_diff_coverage_check.py\"\n  ]\n}\n"
+    },
+    {
+      "name": "candidate-evidence-wiring",
+      "command": [
+        "scripts.ai_sdlc_check._evidence_script_errors(Path(candidate_worktree))"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "4bd0cb4c22d31b1bdb040d906bf64a6d14f65ac573fc3240e6e79a20aeabb1d3",
+      "summary": "Same unchanged validator finds zero unwired evidence scripts after CI binding.",
+      "output": "{\n  \"unwired_evidence_scripts\": 0,\n  \"errors\": []\n}\n"
+    },
+    {
+      "name": "security-frozen-install",
+      "command": [
+        "bun",
+        "install",
+        "--frozen-lockfile",
+        "--ignore-scripts"
+      ],
+      "cwd": "apps/web",
+      "source_revision": "working-tree:final-patched-dependencies",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "6ac443fbfe41db05857157b99fccdf6007200d8eb08baaa493955f59df8dcae1",
+      "summary": "Manifest/lock compatibility verified; no new direct dependency or override.",
+      "provenance": "Executed and successful exit code reported by the dependency-fix agent; existing log independently read and hashed.",
+      "output": "bun install v1.3.14 (0d9b296a)\n\n4 packages installed [344.00ms]\n"
+    },
+    {
+      "name": "security-advisory-json",
+      "command": [
+        "bun",
+        "audit",
+        "--json"
+      ],
+      "cwd": "apps/web",
+      "source_revision": "working-tree:final-patched-dependencies",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "summary": "No package advisories returned; {} and exit 0.",
+      "provenance": "Executed and successful exit code reported by the dependency-fix agent; existing log independently read and hashed.",
+      "output": "{}\n"
+    },
+    {
+      "name": "security-high-critical-gate",
+      "command": [
+        "bun",
+        "audit",
+        "--audit-level",
+        "high"
+      ],
+      "cwd": "apps/web",
+      "source_revision": "working-tree:final-patched-dependencies",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "01f6b1865f6a0bf2e9f2628d67f96e1ccbdd2ee54cc965ec07288b3e5ce275f5",
+      "summary": "No vulnerabilities found; exit 0 using the exact CI audit flag.",
+      "provenance": "Executed and successful exit code reported by the dependency-fix agent; existing log independently read and hashed.",
+      "output": "\u001b[0m\u001b[1mbun audit \u001b[0m\u001b[2mv1.3.14 (0d9b296a)\u001b[0m\nNo vulnerabilities found\n"
+    },
+    {
+      "name": "patched-dependency-typecheck",
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "cwd": "apps/web",
+      "source_revision": "working-tree:final-patched-dependencies",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "summary": "Typecheck exited 0 on the final patched lockfile.",
+      "provenance": "Executed and successful exit code reported by the dependency-fix agent; existing log independently read and hashed.",
+      "output": ""
+    },
+    {
+      "name": "patched-dependency-web-tests",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "apps/web",
+      "source_revision": "working-tree:final-patched-dependencies",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "014b6bcf174b8b9f428cc13d3fc3780ebec1cb5c20e254b72ed498f270a02a29",
+      "summary": "632 passed, 0 failed, 1540 assertions, 51 files; exact same unchanged test source set.",
+      "provenance": "Executed and successful exit code reported by the dependency-fix agent; existing log independently read and hashed.",
+      "output": "ssionListNeedsReload — liste yalnız gerçekten değiştiyse tazelenir > aynı kademede ikinci ipucu: istek atılmaz [0.03ms]\n(pass) sessionListNeedsReload — liste yalnız gerçekten değiştiyse tazelenir > QA oturumunda kademe yok: mevcut oturumda tazeleme yok [0.03ms]\n\nlib/course-assistant-dialog.test.ts:\n(pass) ders asistanı dialog klavye sözleşmesi > Escape açıkça kapatılır ve kapanış odağı tetikleyiciye döndürür [0.82ms]\n\n 632 pass\n 0 fail\n 1540 expect() calls\nRan 632 tests across 51 files. [2.00s]\n",
+      "output_excerpt": true
+    },
+    {
+      "name": "patched-dependency-production-build",
+      "command": [
+        "bun",
+        "run",
+        "build"
+      ],
+      "cwd": "apps/web",
+      "source_revision": "working-tree:final-patched-dependencies",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "30bae1746d978cd4ea71e625fb639633a7a086a78c5a1deb4cefb925c42e8b77",
+      "summary": "Next 16.3.3 build passed, 14 static pages generated. Local fake-auth preview settings; no production deploy.",
+      "provenance": "Executed and successful exit code reported by the dependency-fix agent; existing log independently read and hashed.",
+      "output": "$ next build\n▲ Next.js 16.3.3 (Turbopack)\n✓ Running next.config.ts took 2.5s\n\n  Creating an optimized production build ...\n✓ Compiled successfully in 10.8s\n  Running TypeScript ...\n  Finished TypeScript in 14.5s ...\n  Collecting page data using 7 workers ...\n  Generating static pages using 7 workers (0/14) ...\n  Generating static pages using 7 workers (3/14) \n  Generating static pages using 7 workers (6/14) \n  Generating static pages using 7 workers (10/14) \n✓ Generating static pages using 7 workers (14/14) in 713ms\n  Finalizing page optimization ...\n\nRoute (app)\n┌ ○ /\n├ ○ /_not-found\n├ ○ /account\n├ ○ /admin\n├ ○ /auth/callback\n├ ○ /courses\n├ ƒ /courses/[courseId]\n├ ƒ /courses/[courseId]/analytics\n├ ƒ /courses/[courseId]/blueprints\n├ ƒ /courses/[courseId]/chat\n├ ƒ /courses/[courseId]/exam\n├ ƒ /courses/[courseId]/members\n├ ƒ /courses/[courseId]/quality\n├ ƒ /courses/[courseId]/questions\n├ ƒ /courses/[courseId]/settings\n├ ƒ /courses/[courseId]/sources\n├ ƒ /courses/[courseId]/sources/[chunkId]\n├ ○ /dashboard\n├ ○ /forgot-password\n├ ○ /icon.svg\n├ ○ /kvkk\n├ ○ /profile\n├ ○ /reset-password\n└ ○ /verify-email\n\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "environment": {
+        "NEXT_PUBLIC_API_URL": "http://127.0.0.1:8025",
+        "NEXT_PUBLIC_DEV_AUTH": "true"
+      }
+    },
+    {
+      "name": "all-ci-run-step-shell-syntax",
+      "command": [
+        "bash",
+        "-n"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree:final-storage-ci",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "e11b092cc397281025fa11ff0296693c43eaf752db6cfa62d8e5e5ac903e1a28",
+      "output": "CI_WORKFLOW_SHELL_SYNTAX=PASS (48 run steps; no commands executed)\n",
+      "summary": "48 run bodies extracted structurally from YAML and parsed as shell without executing commands. GitHub interpolation replaced with inert words for this syntax check."
+    },
+    {
+      "name": "final-docs-live-count-check",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "source_revision": "working-tree:final-security-docs-and-storage-ci",
+      "status": "finished",
+      "exit_code": 0,
+      "output_sha256": "733a0ed24a790e0e8782332cace2377b6273ce882895c79cb68a8e797978ce9a",
+      "output": "\nÖLÇÜLEN\n  tables.count         32                       grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql\n  migrations.list      0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027,0029 ls supabase/migrations/*.sql\n  backend.tests        2139                     cd apps/api && uv run pytest --collect-only -q\n  frontend.tests       632                      cd apps/web && bun test lib/\n  frontend.testFiles   51                       cd apps/web && bun test lib/\n  e2e.tests            82                       cd apps/web && ./node_modules/.bin/playwright test --list\n  migrations.count     24                       ls supabase/migrations/*.sql\n  screens.count        22                       find apps/web/app -name page.tsx\n  sampleData.files     22                       find sample_data/isletim-sistemleri -type f -not -name '*.md' | wc -l\n  backend.mypyFiles    123                      cd apps/api && uv run mypy app\n\nİDDİA  30 canlı · 75 tarihsel · 225 belge tarandı\n\nMUAF   specs/002-production-hardening/tasks.md (entegratör)\n       Görev defteri: sayıları tarihli DONE notlarının içinde ve doğası gereği tarihsel kayıt. Ayrıca hiçbir işçi şeridi bu dosyayı değiştirmez; işaretleri entegratör koyar.\n\nMUAF   specs/001-course-assistant-mvp/tasks.md (entegratör)\n       Aynı sebep: kapanmış 001 şartnamesinin görev defteri, tarihli DONE notlarından ibaret.\n\nARŞİV  docs/team/** — 45 belge, işaretsiz taramadan muaf\n       Tarihli devir/brifing kayıtları; her dosya kendi gününün durumunu anlatır.\n\nKAPSAM DIŞI\n  · Eşik ifadeleri (`≥15 vaka` gibi) — hedef, ölçüm değil\n  · Dosya başına test sayıları (`test_exams.py (35 test)`) — kaynağı ayrı, sapması gözlenmedi\n  · Gecikme/token/chunk ölçümleri — koşum gerektirir, statik türetilemez\n  · RLS iddia sayıları (98 / 58) — psql koşumundan gelir, CI'nın RLS adımları kanıtlar\n\n✓ Belgelerdeki canlı sayıların tamamı ölçümle uyuşuyor.\n",
+      "provenance": "Integrator executed with the existing018 API dev environment and reported rc0; real log independently read and hashed.",
+      "environment": {
+        "UV_PROJECT_ENVIRONMENT": "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/.venv",
+        "UV_NO_SYNC": "true",
+        "UV_CACHE_DIR": "/tmp/campus025-uv",
+        "MYPY_CACHE_DIR": "/tmp/campus025-mypy"
+      }
+    }
+  ],
+  "results": {
+    "unwired_evidence_scripts": 0,
+    "baseline_unwired_evidence_scripts": 4,
+    "code_analysis_tool_test_passes": 49,
+    "code_analysis_tool_test_failures": 0,
+    "collector_test_passes": 49,
+    "collector_subtest_passes": 4,
+    "collector_executed_lines": 1228,
+    "collector_observed_files": 4,
+    "workflow_policy_test_passes": 27,
+    "workflow_policy_check_rc": 0,
+    "dead_code_candidates": 1,
+    "full_web_unit_passes": 632,
+    "full_web_unit_failures": 0,
+    "full_web_unit_assertions": 1540,
+    "full_web_test_files": 51,
+    "baseline_high_critical_dependency_advisories": 4,
+    "high_critical_dependency_advisories": 0,
+    "typecheck_rc": 0,
+    "production_build_rc": 0,
+    "security_audit_rc": 0,
+    "ci_shell_syntax_rc": 0,
+    "docs_check_rc": 0
+  },
+  "source_bindings": [
+    {
+      "path": "scripts/dead_code_check.py",
+      "sha256": "ef448d0b0f2d0215b0b74cad072cdd4c7ae11125577d4529f72ec6eb1f9eae4d"
+    },
+    {
+      "path": "scripts/diff_coverage_check.py",
+      "sha256": "15a17d1386b0ad5369e8691872407cc54c897a72aa35937df06fcbc19f888227"
+    },
+    {
+      "path": "scripts/test_dead_code_check.py",
+      "sha256": "6df38fcc87274931065f04b02e62d969fdf5ba704ebf78e0ac969587c1f9e330"
+    },
+    {
+      "path": "scripts/test_diff_coverage_check.py",
+      "sha256": "9e08190de01bbc0baad4eaf50a18dbaae708eea0edc782c1d5f2a41d08df2258"
+    },
+    {
+      "path": "scripts/ai_sdlc_check.py",
+      "sha256": "b08efde56c53da99f29f1ef29cb83028c0c0089332548f42c016f129a18c3ccb"
+    },
+    {
+      "path": "scripts/workflow_policy_check.py",
+      "sha256": "b8dd1d8cc6a910d9e58dff0dddfefb15754c3743797abd7a482e90ca65cc2749"
+    },
+    {
+      "path": "scripts/test_workflow_policy_check.py",
+      "sha256": "8f121aeef7a4fa103e6bcc69ac1b4beeee9268155de26e14780b148b9e2aa4ae"
+    },
+    {
+      "path": "apps/web/package.json",
+      "sha256": "d353fd71f970e2f420a84d0a4394f21c7f4fd5d7b56bea3c336f12fab491c398"
+    },
+    {
+      "path": "apps/web/bun.lock",
+      "sha256": "e80af62b222b1e316899441d6d29cb5a19b6e3b97278d93903cfaa082ca8b7b5"
+    },
+    {
+      "path": "specs/025-campus-ui/security.md",
+      "sha256": "da17fb8922766105d3f5d3a4a34f6cb15fb69469301fc5111194e72c9aa152df"
+    }
+  ],
+  "prior_ui_evidence": {
+    "source_revision": "ffd9bf75e1460ea27381fc1b0b51406d9515dabd",
+    "report_path": ".ai/evidence/100-campus-ui-r1.json",
+    "report_sha256": "c40428feb91a88808abd7858498259d6f117307f5514891c7f3b4b3ab4435fd5",
+    "verification_path": "specs/025-campus-ui/verification.md",
+    "scope": "Historical pre-dependency-patch UI evidence: 632 web unit tests, typecheck, production build, contrast and scoped manual fake-provider browser review. This does not by itself certify the later dependency versions."
+  },
+  "notes": {
+    "threshold_origin": "Zero unwired scripts is the unchanged repository validator rule; four baseline errors were reproduced before changing CI. No new numerical coverage threshold or strict dead-code rule is invented.",
+    "ci_behavior": "The API job keeps the complete existing pytest suite, wrapped in the existing sys.monitoring collector. Its pytest exit status is propagated. Coverage report compares checked-out candidate to the event base using fetched history. Parser/data/base errors fail. Warning-only dead-code and report-only coverage are explicitly named.",
+    "ci_security": "The web job runs bun audit --audit-level high after frozen installation, with no ignore list or continue-on-error. It covers the complete lockfile, including pre-existing advisories.",
+    "local_isolation": "Only standalone script tests ran locally. apps/api/conftest.py was not loaded; the existing development PostgreSQL roles, passwords and preview database were untouched.",
+    "working_tree_preflight": "Binding and schema checks are local preflight only; full committed governance and hosted workflow checks remain for the final committed SHA.",
+    "privacy": "Only source paths, package advisories, synthetic tests and technical measurements are included. No student content, tokens or connection secrets.",
+    "comparison_baselines": "Evidence-wiring baseline is original PR base f4a0952. Dependency-advisory baseline is unchanged pre-patch ffd9bf7; prior UI record 100 contains 632 passing tests before the dependency patch. Different baseline scopes are explicit, not conflated with a live model comparison.",
+    "scope_of_repeated_tests": "Final patched dependencies ran all 632 existing web tests, typecheck and build. Previous visual observations and contrast results remain historical in record 100 and verification.md; full browser E2E is not claimed as rerun.",
+    "storage_ci_fix": "The existing storage SQL correctly rejects nonlocal server addresses. GitHub runner-to-container port forwarding exposed the Docker bridge address, causing prior ffd9bf7 Storage step exit 3. The workflow now executes the unchanged SQL/mutation scripts inside the job-owned PostgreSQL service at 127.0.0.1. It copies only migrations and test scripts, retains all local-target/schema guards and asserts the exact baseline PASS marker before mutation checks.",
+    "storage_independent_review": "Integrator reported storage_ci_review agent read-only review PASS: copied file dependencies, PG environment, local target guards and all four mutations preserved. This code review does not replace the pending Docker execution.",
+    "docs_environment_retry": "An earlier check without the existing dev environment could not spawn pytest/mypy; it was not a product/test failure or passing measurement. The final documented environment produced the successful live-count check above."
+  },
+  "not_run": [
+    {
+      "name": "full-api-pytest-and-postgresql-integration-locally",
+      "reason": "The API test fixture changes shared PostgreSQL roles; the local check deliberately uses standalone tools. Full API integration is configured for the CI-owned PostgreSQL service."
+    },
+    {
+      "name": "hosted-final-github-pr-workflow",
+      "reason": "No final candidate commit/PR run exists yet at preparation time."
+    },
+    {
+      "name": "full-automated-e2e-real-auth-real-llm-production-rollback",
+      "reason": "Not executed in this follow-up. Prior scoped fake-provider browser observations remain separate."
+    },
+    {
+      "name": "updated-storage-container-step",
+      "reason": "No local Docker runtime was available. The new execution location was YAML/shell checked and reviewed, but requires the next exact-commit GitHub PR run for SQL/mutation integration evidence."
+    }
+  ],
+  "security_baseline": {
+    "source_revision": "ffd9bf75e1460ea27381fc1b0b51406d9515dabd",
+    "command": [
+      "bun",
+      "audit",
+      "--json"
+    ],
+    "exit_code": 1,
+    "output_sha256": "e0ac5da35705b5d527983b846e3251359d6d71a1312729077290f11d45e83137",
+    "advisories": {
+      "high": 2,
+      "critical": 2
+    },
+    "package_count": 3,
+    "meaning": "Recorded pre-patch negative result, not a passed command."
+  },
+  "installed_versions": {
+    "values": {
+      "next": "16.3.3",
+      "sharp": "0.35.4",
+      "nanoid": "3.3.18",
+      "heif": "1.23.2"
+    },
+    "output_sha256": "6977cf294679d95f0115133e4b4b7ad644be3e033b22dff807ce2a607f307a5f"
+  },
+  "control_scorecard": [
+    {
+      "control": "evidence-script binding",
+      "state": "observed",
+      "owner": "engineering",
+      "local_evidence": "Same validator: baseline 4, candidate 0. Actual tools and their tests executed.",
+      "hosted_state": "configured, awaiting exact-commit PR run"
+    },
+    {
+      "control": "API changed-line coverage",
+      "state": "configured",
+      "owner": "engineering",
+      "local_evidence": "Standalone real collector observed 1228 lines; report N/A for no Python diff. API DB suite not run locally.",
+      "failure_policy": "pytest failures or missing/malformed coverage fail; numerical coverage ratio remains report-only"
+    },
+    {
+      "control": "unused Python definitions",
+      "state": "observed",
+      "owner": "engineering",
+      "local_evidence": "123 files scanned, 1 candidate.",
+      "failure_policy": "Missing source/parse failures fail; findings remain explicit warning-only"
+    },
+    {
+      "control": "lockfile vulnerability gate",
+      "state": "observed",
+      "owner": "security",
+      "local_evidence": "4 pre-patch high/critical advisories to 0; exact bun audit --audit-level high passed.",
+      "hosted_state": "blocking step configured, awaiting exact-commit PR run"
+    },
+    {
+      "control": "Storage CI loopback isolation",
+      "state": "configured",
+      "owner": "engineering/security",
+      "local_evidence": "Workflow policy and shell parse passed; SQL target guards unchanged.",
+      "hosted_state": "awaiting exact-commit PR execution; previous bridged-address attempt failed closed"
+    }
+  ],
+  "historical_hosted_api_observation": {
+    "source_revision": "ffd9bf75e1460ea27381fc1b0b51406d9515dabd",
+    "api_test_passes": 2139,
+    "api_subtest_passes": 38,
+    "api_test_seconds": 225.56,
+    "later_storage_step_exit_code": 3,
+    "provenance": "Integrator verified prior GitHub CI output; no local per-run log hash is asserted. This is not a run of the updated collector/storage workflow."
+  }
+}

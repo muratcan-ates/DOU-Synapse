@@ -60,7 +60,7 @@ export function Field({
   const id = useId();
 
   return (
-    <div>
+    <div className="min-w-0">
       <label htmlFor={id} className="mb-1 block text-sm text-fg-muted">
         {label}
       </label>

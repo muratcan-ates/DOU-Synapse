@@ -1,0 +1,8 @@
+.art { color: var(--brand); min-width: 0; position: relative; }
+.drawing { display: block; width: 100%; height: 100%; max-height: inherit; overflow: visible; }
+.signal { filter: drop-shadow(0 0 4px var(--gold-light)); }
+.trace { stroke-dasharray: 9 91; stroke-dashoffset: 100; opacity: 0; animation: neural-trace 2.6s ease-in-out 1; }
+.node { opacity: 0; transform-box: fill-box; transform-origin: center; animation: neural-node 1.6s ease-out 1; }
+@keyframes neural-trace { 0% { stroke-dashoffset:100; opacity:0; } 15%,70% { opacity:1; } 100% { stroke-dashoffset:0; opacity:0; } }
+@keyframes neural-node { 0% { opacity:0; transform:scale(.3); } 35% { opacity:.23; } 100% { opacity:0; transform:scale(1.4); } }
+@media(prefers-reduced-motion:reduce) { .trace,.node { animation:none; } }

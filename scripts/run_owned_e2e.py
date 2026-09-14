@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import select
 import signal
@@ -17,11 +18,56 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Mapping
 from pathlib import Path
+from typing import NamedTuple
 from urllib.parse import urlsplit
 from urllib.request import ProxyHandler, Request, build_opener
 
 import e2e_audit_guard as guard
+
+
+class Phase(NamedTuple):
+    """Kendi API süreciyle koşan bir faz.
+
+    `slug` tek kaynaktır: hem dosya/dizin adı hem de playwright.config.ts'in
+    okuduğu E2E_PHASE değeridir. `budget` None ise fazın tavanı --test-timeout'tur.
+    `reserve`, bu fazın DUVAR SAATİ payıdır: tarayıcı beklemesi ARTI fazın kendi
+    ek yükü (port sondası, hazır olma beklemesi, iki guard anlık görüntüsü,
+    kapanış). Önceki fazlar bu payı yiyemez.
+    """
+
+    slug: str
+    flags: Mapping[str, str]
+    budget: float | None
+    reserve: float
+
+
+#: İki simülasyon bayrağı aynı anda açılamaz, bu yüzden üç ayrı API süreci.
+#: Ana faz önce koşar: 87 vakanın 78'ini ve soğuk web derlemesini o taşır.
+#: Simülasyon fazlarının derlemesi artımlıdır (aynı ağaç, aynı NEXT_PUBLIC_API_URL),
+#: bu yüzden payları soğuk derlemeye göre değil gerçek maliyetlerine göre ölçüldü.
+PHASES = (
+    Phase("main", {}, None, 0.0),
+    Phase("grounded", {"LLM_SIMULATE_GROUNDED_FEEDBACK": "1"}, 420.0, 260.0),
+    Phase("ratelimit", {"LLM_SIMULATE_RATE_LIMIT": "1"}, 300.0, 210.0),
+)
+#: Fazın tarayıcı beklemesi DIŞINDA harcadığı duvar saati için pay. Bu süre
+#: hiçbir fazın `budget`'ine girmez; sayılmazsa sessizce sonraki fazın payından
+#: düşer ve son faz hiç başlamaz.
+PHASE_OVERHEAD = 60.0
+#: Sonraki fazlara ayrılan toplam duvar saati.
+RESERVE_TOTAL = sum(phase.reserve for phase in PHASES)
+#: Bütün fazların VARSAYILAN toplam duvar saati tavanı. ci.yml işinin kendi
+#: sınırı 30 dk ve apt/uv/bun/playwright kurulumunu da kapsıyor; iş SIGKILL
+#: yerse result.json HİÇ yazılmaz, yani kapıdan önce durmak zorundayız.
+#: Operatör --test-timeout'u yükseltirse son tarih birlikte uzar (aşağıya bak).
+OVERALL_BUDGET = 1250.0
+#: Bu kadar tarayıcı süresi kalmadıysa faz başlatmak yerine açık kodla durulur.
+#: Anlamlı olması için ısınmış bir `next build` artı birkaç vakayı kapsamalı.
+PHASE_FLOOR = 150.0
+#: --test-timeout için akla yatkın üst sınır; `nan` ve negatif değerleri de eler.
+MAX_TEST_TIMEOUT = 7200.0
 
 
 def source_hashes(repo: Path) -> dict[str, str]:
@@ -54,7 +100,9 @@ def source_hashes(repo: Path) -> dict[str, str]:
     }
 
 
-def child_environment(repo: Path, pins: dict, output: Path, web_port: int) -> dict[str, str]:
+def child_environment(
+    repo: Path, pins: dict, output: Path, web_port: int, *, slug: str, flags: Mapping[str, str]
+) -> dict[str, str]:
     # No ambient provider secrets, PG routing, .env file, or app configuration.
     env = {k: os.environ[k] for k in ("PATH", "LANG", "TZ", "SYSTEMROOT") if k in os.environ}
     address = f"127.0.0.1:{pins['port']}/{pins['databaseName']}"
@@ -76,9 +124,16 @@ def child_environment(repo: Path, pins: dict, output: Path, web_port: int) -> di
             "GEMINI_API_KEY": "",
             "OPENAI_API_KEY": "",
             "STORAGE_BACKEND": "local",
-            "STORAGE_ROOT": str(output / "storage"),
+            # Her fazın kendi depo kökü: sonraki faz önceki fazın yüklediği
+            # belgeleri servis edemez, "faz arası durum yok" iddiası doğru kalır.
+            "STORAGE_ROOT": str(output / f"storage-{slug}"),
         }
     )
+    # Simülasyon bayrağı YALNIZ API sürecine girer. Bayrağı web ortamına da
+    # vermek API'yi değiştirmez (provider_fallback.py ve question_gen.py onu
+    # kendi süreçlerinde okur) ama ileride bir testin process.env'e bakıp
+    # simülasyon yapmayan API'ye karşı yeşil yanmasına kapı açardı.
+    env.update(flags)
     return env
 
 
@@ -168,27 +223,105 @@ def wait_ready(process: subprocess.Popen, origin: str, timeout: float = 40) -> N
     raise guard.GuardError("OWNED_API_NOT_READY")
 
 
-def run(args: argparse.Namespace) -> int:
-    repo = args.repo.resolve(strict=True)
-    guard.require(
-        Path(__file__).resolve() == repo / "scripts/run_owned_e2e.py"
-        and Path(guard.__file__).resolve() == repo / "scripts/e2e_audit_guard.py",
-        "EXECUTED_CONTROLLER_SOURCE_MISMATCH",
-    )
-    pins = guard.read_pins(args.pins, args.pins_sha256)
-    if pins["issuer"] == "github-owned-service":
-        guard.require(
-            os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("CI") == "true",
-            "GITHUB_JOB_CONTEXT_REQUIRED",
+def wait_web_port_free(web_port: int, timeout: float = 15) -> None:
+    """Önceki fazın web sunucusu portu bırakmadan sonraki faz başlamaz.
+
+    playwright.config.ts `reuseExistingServer: false` olduğu için port doluysa
+    Playwright çocuk süreçte "is already used" fırlatır; bu yaşam döngüsü hatası
+    aksi hâlde sıradan bir test hatası gibi okunurdu.
+    """
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            socket.create_connection(("127.0.0.1", web_port), timeout=0.2).close()
+        except OSError:
+            return
+        time.sleep(0.1)
+    raise guard.GuardError("WEB_PORT_BUSY")
+
+
+def run_guard(command: list[str], extra: list[str], log: Path) -> int:
+    """Guard evresini koşar; çıktı yalnız bir kez yazılabilen loga girer.
+
+    `Path.write_bytes` sessizce kısaltırdı: fazlı düzende kanıt kaybının hata
+    üretmeyen tek noktası burasıydı.
+    """
+    completed = subprocess.run([*command, *extra], capture_output=True, check=False)  # noqa: S603 — fixed colocated guard, validated pins.
+    with log.open("xb") as stream:
+        stream.write(completed.stdout + completed.stderr)
+    return completed.returncode
+
+
+def read_accounting(audit_directory: Path, receipt: bytes, run_id: str) -> dict[str, object]:
+    """Fazın son muhasebesini O FAZIN makbuzuna bağlar.
+
+    scope, target.json ve quiescence alanları fazlar arasında bayt bayt aynıdır
+    (runId ve targetId paylaşılır), bu yüzden guard tek başına çapraz bağlanmış
+    bir dizini veya bayat bir makbuzu fark edemez. Kalan tek pozitif kanıt,
+    final-accounting.json'un içindeki hash'lerin bu fazın dosyalarıyla eşleşmesidir.
+
+    SINIR: `private_read` 4 MiB okur. final-accounting.json baseline'dan büyüktür
+    (afterRows artı unexpectedNewRows); guard'ın MAX_ROWS=20000 sınırında bu ~2 MB
+    eder, yani yalnız baseline boşken 20 bin satırın tamamının beklenmedik çıktığı
+    patolojik durumda tavan aşılır ve sonuç AUDIT_ACCOUNTING_UNREADABLE olur.
+    """
+    path = audit_directory / "final-accounting.json"
+    if not path.exists():
+        # finish satır uyuşmazlığında 1, guard hatasında 2 döner; ikincisinde
+        # dosya hiç yazılmaz, yani hiçbir satır raporlanmamıştır.
+        return {"reconciled": False, "code": "AUDIT_ACCOUNTING_MISSING", "rowDamage": None}
+    try:
+        accounting = json.loads(guard.private_read(path))
+        baseline = guard.private_read(audit_directory / "baseline.json")
+        matched = (
+            accounting["quiescenceSha256"] == guard.digest(receipt)
+            and accounting["baselineSha256"] == guard.digest(baseline)
+            and accounting["scope"]["runId"] == run_id
         )
-    guard.require(0 < args.web_port < 65536, "WEB_PORT")
-    output = args.output
-    guard.require(output.is_absolute() and output.resolve() == output, "OUTPUT_PATH")
-    output.mkdir(mode=0o700, parents=False, exist_ok=False)
-    (output / "api-cwd").mkdir(mode=0o700)
-    before = source_hashes(repo)
-    guard.private_write(output / "source-before.json", before)
-    audit_directory = output / "audit"
+        damage = {
+            "missing": len(accounting["missingBaselineIds"]),
+            "changed": len(accounting["changedBaselineIds"]),
+            "unexpected": len(accounting["unexpectedNewRows"]),
+        }
+    except (guard.GuardError, OSError, ValueError, KeyError, TypeError):
+        return {"reconciled": False, "code": "AUDIT_ACCOUNTING_UNREADABLE", "rowDamage": None}
+    if not matched:
+        return {"reconciled": False, "code": "AUDIT_ACCOUNTING_CROSSWIRED", "rowDamage": damage}
+    return {"reconciled": True, "code": None, "rowDamage": damage}
+
+
+def row_damage(record: dict[str, object]) -> dict[str, int] | None:
+    """Fazın korunmuş satırlarındaki kayıp/değişim/beklenmeyen sayıları."""
+    damage = record.get("rowDamage")
+    return damage if isinstance(damage, dict) else None
+
+
+def phase_failure(phase: Phase, code: str, budget: float) -> dict[str, object]:
+    """Kendi API sürecine hiç ulaşamamış fazın kaydı; uzlaştırılmamış sayılır."""
+    return {
+        "phase": phase.slug,
+        "status": "FAIL",
+        "simulation": sorted(phase.flags) or None,
+        "errorCode": code,
+        "auditReconciled": False,
+        "rowDamage": None,
+        "budgetSeconds": round(budget, 3),
+    }
+
+
+def run_phase(
+    phase: Phase,
+    args: argparse.Namespace,
+    repo: Path,
+    pins: dict,
+    output: Path,
+    target_id: str,
+    budget: float,
+) -> dict[str, object]:
+    """Tek fazı kendi API süreci ve kendi denetim muhasebesiyle koşar."""
+    phase_started = time.monotonic()
+    audit_directory = output / "audit" / phase.slug
+    api_cwd = output / f"api-cwd-{phase.slug}"
     guard_command = [
         sys.executable,
         str(Path(__file__).with_name("e2e_audit_guard.py")),
@@ -204,79 +337,112 @@ def run(args: argparse.Namespace) -> int:
         args.run_id,
         "--execute",
     ]
-    begin = subprocess.run([*guard_command, "--phase", "begin"], capture_output=True, check=False)  # noqa: S603 — fixed colocated guard, validated pins.
-    (output / "guard-begin.log").write_bytes(begin.stdout + begin.stderr)
-    guard.require(begin.returncode == 0, "AUDIT_BEGIN_FAILED")
-    capture_env = json.loads(guard.private_read(audit_directory / "environment.json"))
-    guard.require(
-        set(capture_env)
-        == {
-            "E2E_RUN_ID",
-            "E2E_DATABASE_NAME",
-            "E2E_API_URL",
-            "E2E_AUDIT_TARGET_ID",
-            "E2E_AUDIT_DIR",
-        },
-        "AUDIT_ENV_SCHEMA",
-    )
-    api_env = child_environment(repo, pins, output, args.web_port)
-    # The browser requires the user's runtime/browser paths, but inherits no
-    # database route or application secrets. The private passfile is explicit.
-    web_env = {
-        k: os.environ[k]
-        for k in (
-            "PATH",
-            "HOME",
-            "LANG",
-            "TZ",
-            "CI",
-            "PG_BIN",
-            "NODE_EXTRA_CA_CERTS",
-            "NODE_OPTIONS",
-            "PLAYWRIGHT_BROWSERS_PATH",
-        )
-        if k in os.environ
-    }
-    web_env.update(capture_env)
-    if pins["issuer"] == "github-owned-service":
-        web_env["GITHUB_ACTIONS"] = "true"
-    web_env.update(
-        PGHOST="127.0.0.1",
-        PGHOSTADDR="127.0.0.1",
-        PGPORT=str(pins["port"]),
-        PGUSER=pins["dbaRole"],
-        PGPASSFILE=str(args.passfile),
-        E2E_PORT=str(args.web_port),
-        E2E_WEBPACK_BUILD="1" if args.webpack else "0",
-        NEXT_TELEMETRY_DISABLED="1",
-        # API tarafı (child_environment) DEV_AUTH_ENABLED=true ile kalkıyor; web
-        # L5'ten beri giriş ekranını bu bayrakla kapılıyor. Bayrak taşınmayınca
-        # ekran "Oturum açma henüz yapılandırılmadı" diyor ve giriş bekleyen her
-        # test zaman aşımına düşüyor (OWNED_E2E_FAILED, 14 Eylül 2026). Yalnız bu
-        # izole sentetik hedefte açılır; üretim kapısı değişmez.
-        NEXT_PUBLIC_DEV_AUTH="true",
-        NEXT_PUBLIC_SUPABASE_URL="",
-        NEXT_PUBLIC_SUPABASE_ANON_KEY="",
-        GROQ_API_KEY="",
-        GEMINI_API_KEY="",
-        OPENAI_API_KEY="",
-    )
-    started = time.monotonic()
     playwright_code = 1
     api_code = None
     stop_kind = "not-started"
     error_code = None
     api = None
     browser = None
+    capture_env: dict[str, str] = {}
+    # SO_REUSEADDR olmadan ikinci faz önceki fazın TIME_WAIT soketlerine takılır.
+    # SO_REUSEPORT değil: o, yabancı bir sürecin aynı portu paylaşmasına açıkça
+    # izin verirdi. SO_REUSEADDR Linux'ta (CI) canlı bir LISTEN soketiyle hâlâ
+    # çakışır; BSD/macOS'ta yabancı bir 0.0.0.0 dinleyicisiyle örtüşmeye izin
+    # verebilir, yani yerel koşuda bu kontrol tek başına sahiplik kanıtı değildir.
     listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        # Bind before launch and pass the actual listening socket. A different
-        # service cannot satisfy readiness by occupying the configured port.
-        listener.bind(("127.0.0.1", urlsplit(pins["apiOrigin"]).port))
-        listener.listen(128)
+        # İlk faz dahil HER fazda sondalanır. Playwright web sunucusunu
+        # `detached: true` ile kendi süreç grubunda başlatır, bu yüzden bütçe
+        # aşımında gönderdiğimiz killpg ona ULAŞMAZ ve `next start` portta
+        # öksüz kalabilir. İlk fazın önündeki öksüz de (önceki yerel koşudan)
+        # aynı şekilde açık WEB_PORT_BUSY'ye çevrilir, sıradan bir test
+        # hatasına değil.
+        wait_web_port_free(args.web_port)
+        api_cwd.mkdir(mode=0o700, parents=False, exist_ok=False)
+        # Dinleyici begin'den ÖNCE bağlanır: ters sırada, bağlanamayan bir faz
+        # hiçbir zaman uzlaştırılamayacak bir baseline bırakırdı.
+        try:
+            listener.bind(("127.0.0.1", urlsplit(pins["apiOrigin"]).port))
+            listener.listen(128)
+        except OSError as error:
+            raise guard.GuardError("OWNED_API_PORT_BUSY") from error
+        begin_code = run_guard(
+            guard_command, ["--phase", "begin"], output / f"guard-begin-{phase.slug}.log"
+        )
+        guard.require(begin_code == 0, "AUDIT_BEGIN_FAILED")
+        capture_env = json.loads(guard.private_read(audit_directory / "environment.json"))
+        guard.require(
+            set(capture_env)
+            == {
+                "E2E_RUN_ID",
+                "E2E_DATABASE_NAME",
+                "E2E_API_URL",
+                "E2E_AUDIT_TARGET_ID",
+                "E2E_AUDIT_DIR",
+            },
+            "AUDIT_ENV_SCHEMA",
+        )
+        # Guard'ın ürettiği tek faz-ayırt edici dize E2E_AUDIT_DIR'dir; diğer
+        # alanlar fazlar arasında bayt bayt aynı olduğundan çapraz bağlanmış bir
+        # dizini yalnız burada yakalayabiliriz.
+        guard.require(
+            capture_env["E2E_RUN_ID"] == args.run_id
+            and capture_env["E2E_AUDIT_TARGET_ID"] == target_id
+            and capture_env["E2E_AUDIT_DIR"] == str(audit_directory / "capture"),
+            "AUDIT_CAPTURE_SCOPE",
+        )
+        api_env = child_environment(
+            repo, pins, output, args.web_port, slug=phase.slug, flags=phase.flags
+        )
+        # The browser requires the user's runtime/browser paths, but inherits no
+        # database route or application secrets. The private passfile is explicit.
+        web_env = {
+            k: os.environ[k]
+            for k in (
+                "PATH",
+                "HOME",
+                "LANG",
+                "TZ",
+                "CI",
+                "PG_BIN",
+                "NODE_EXTRA_CA_CERTS",
+                "NODE_OPTIONS",
+                "PLAYWRIGHT_BROWSERS_PATH",
+            )
+            if k in os.environ
+        }
+        web_env.update(capture_env)
+        if pins["issuer"] == "github-owned-service":
+            web_env["GITHUB_ACTIONS"] = "true"
+        web_env.update(
+            PGHOST="127.0.0.1",
+            PGHOSTADDR="127.0.0.1",
+            PGPORT=str(pins["port"]),
+            PGUSER=pins["dbaRole"],
+            PGPASSFILE=str(args.passfile),
+            E2E_PORT=str(args.web_port),
+            E2E_WEBPACK_BUILD="1" if args.webpack else "0",
+            NEXT_TELEMETRY_DISABLED="1",
+            # API tarafı (child_environment) DEV_AUTH_ENABLED=true ile kalkıyor; web
+            # L5'ten beri giriş ekranını bu bayrakla kapılıyor. Bayrak taşınmayınca
+            # ekran "Oturum açma henüz yapılandırılmadı" diyor ve giriş bekleyen her
+            # test zaman aşımına düşüyor (OWNED_E2E_FAILED, 14 Eylül 2026). Yalnız bu
+            # izole sentetik hedefte açılır; üretim kapısı değişmez.
+            NEXT_PUBLIC_DEV_AUTH="true",
+            NEXT_PUBLIC_SUPABASE_URL="",
+            NEXT_PUBLIC_SUPABASE_ANON_KEY="",
+            GROQ_API_KEY="",
+            GEMINI_API_KEY="",
+            OPENAI_API_KEY="",
+            # playwright.config.ts fazı bu değişkenle seçer; kurulmazsa liste değişmez.
+            E2E_PHASE=phase.slug,
+        )
+        # Dinleyici yukarıda bağlandı ve çocuğa olduğu gibi devredilir. Başka
+        # bir servis portu işgal ederek hazır olma kontrolünü geçemez.
         with (
-            (output / "api.log").open("xb") as api_log,
-            (output / "playwright.log").open("xb") as web_log,
+            (output / f"api-{phase.slug}.log").open("xb") as api_log,
+            (output / f"playwright-{phase.slug}.log").open("xb") as web_log,
         ):
             api = subprocess.Popen(  # noqa: S603 — current interpreter and verified controller.
                 [
@@ -286,7 +452,7 @@ def run(args: argparse.Namespace) -> int:
                     str(listener.fileno()),
                 ],
                 env=api_env,
-                cwd=output / "api-cwd",
+                cwd=api_cwd,
                 pass_fds=(listener.fileno(),),
                 stdin=subprocess.PIPE,
                 stdout=api_log,
@@ -304,7 +470,7 @@ def run(args: argparse.Namespace) -> int:
                     stderr=subprocess.STDOUT,
                     start_new_session=True,
                 )
-                playwright_code = browser.wait(timeout=args.test_timeout)
+                playwright_code = browser.wait(timeout=budget)
             finally:
                 try:
                     if browser is not None and browser.poll() is None:
@@ -319,12 +485,25 @@ def run(args: argparse.Namespace) -> int:
                     api_code, stop_kind = stop_owned_api(api)
     except guard.GuardError as error:
         error_code = str(error)
+    except subprocess.TimeoutExpired:
+        # Tarayıcı bütçesini aşmakla, durdurulamayan API çocuğu aynı istisnayı
+        # kullanır; ayırmazsak bütçe aşımı "reaped edilemeyen çocuk" diye okunur.
+        error_code = (
+            "OWNED_API_UNREAPABLE" if stop_kind == "not-started" else "PLAYWRIGHT_BUDGET_EXCEEDED"
+        )
     except Exception:
         error_code = "OWNED_E2E_FAILED"
     finally:
         listener.close()
     finish_code = None
+    accounting: dict[str, object] = {
+        "reconciled": False,
+        "code": "AUDIT_NOT_RECONCILED",
+        "rowDamage": None,
+    }
     if api is not None and api_code == 0 and stop_kind == "graceful-pipe-and-wait":
+        # Playwright'ın sıfırdan farklı çıkışı da BURADAN raporlanır: guard bunu
+        # FAIL'e çevirir. Kirli kapanışta makbuz UYDURULMAZ; guard zaten reddeder.
         quiescence = {
             "version": 1,
             "runId": args.run_id,
@@ -334,38 +513,142 @@ def run(args: argparse.Namespace) -> int:
             "playwrightExitCode": playwright_code,
             "state": "stopped",
         }
-        path = output / "quiescence.json"
-        guard.private_write(path, quiescence)
-        finish = subprocess.run(  # noqa: S603 — fixed colocated guard, validated pins.
-            [*guard_command, "--phase", "finish", "--quiescence-receipt", str(path)],
-            capture_output=True,
-            check=False,
+        # Faz etiketi yalnız DOSYA ADINDA yaşar: guard makbuzun alan kümesini
+        # birebir karşılaştırır, fazladan anahtar QUIESCENCE_SCHEMA'yı düşürür.
+        path = output / f"quiescence-{phase.slug}.json"
+        receipt = guard.private_write(path, quiescence)
+        finish_code = run_guard(
+            guard_command,
+            ["--phase", "finish", "--quiescence-receipt", str(path)],
+            output / f"guard-finish-{phase.slug}.log",
         )
-        finish_code = finish.returncode
-        (output / "guard-finish.log").write_bytes(finish.stdout + finish.stderr)
-    after = source_hashes(repo)
-    guard.private_write(output / "source-after.json", after)
-    success = (
+        accounting = read_accounting(audit_directory, receipt, args.run_id)
+    damage = accounting["rowDamage"]
+    passed = (
         error_code is None
         and playwright_code == 0
         and api_code == 0
         and stop_kind == "graceful-pipe-and-wait"
         and finish_code == 0
-        and before == after
+        and accounting["reconciled"] is True
     )
-    result = {
-        "status": "PASS" if success else "FAIL",
-        "runId": args.run_id,
-        "targetId": capture_env["E2E_AUDIT_TARGET_ID"],
+    return {
+        "phase": phase.slug,
+        "status": "PASS" if passed else "FAIL",
+        "simulation": sorted(phase.flags) or None,
         "playwrightExitCode": playwright_code,
         "ownedApiPid": None if api is None else api.pid,
         "ownedApiExitCode": api_code,
         "stopObservation": stop_kind,
         "auditFinishExitCode": finish_code,
-        "errorCode": error_code,
+        "auditReconciled": accounting["reconciled"],
+        "rowDamage": damage,
+        "errorCode": None if passed else (error_code or accounting["code"]),
+        "budgetSeconds": round(budget, 3),
+        "seconds": round(time.monotonic() - phase_started, 3),
+        "auditDirectory": f"audit/{phase.slug}",
+        "apiLog": f"api-{phase.slug}.log",
+        "playwrightLog": f"playwright-{phase.slug}.log",
+        "quiescence": f"quiescence-{phase.slug}.json",
+    }
+
+
+def run(args: argparse.Namespace) -> int:
+    repo = args.repo.resolve(strict=True)
+    guard.require(
+        Path(__file__).resolve() == repo / "scripts/run_owned_e2e.py"
+        and Path(guard.__file__).resolve() == repo / "scripts/e2e_audit_guard.py",
+        "EXECUTED_CONTROLLER_SOURCE_MISMATCH",
+    )
+    pins = guard.read_pins(args.pins, args.pins_sha256)
+    if pins["issuer"] == "github-owned-service":
+        guard.require(
+            os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("CI") == "true",
+            "GITHUB_JOB_CONTEXT_REQUIRED",
+        )
+    guard.require(0 < args.web_port < 65536, "WEB_PORT")
+    # `nan` argparse'ın float dönüşümünden geçer, min() içinde yayılır ve
+    # `nan < PHASE_FLOOR` False olduğu için taban kontrolünü de atlar; sonra
+    # Popen.wait(timeout=nan) hiç zaman aşımı üretmez. Açıkça elenir.
+    guard.require(
+        math.isfinite(args.test_timeout) and 0 < args.test_timeout <= MAX_TEST_TIMEOUT,
+        "TEST_TIMEOUT",
+    )
+    output = args.output
+    guard.require(output.is_absolute() and output.resolve() == output, "OUTPUT_PATH")
+    output.mkdir(mode=0o700, parents=False, exist_ok=False)
+    # Guard kendi faz dizinini parents=False ile açar, üst dizini yaratmaz. Bu
+    # dizinin kipini de başka hiçbir kontrol denetlemiyor; burada ölçülür.
+    audit_root = output / "audit"
+    audit_root.mkdir(mode=0o700, parents=False, exist_ok=False)
+    guard.require(not audit_root.lstat().st_mode & 0o077, "PRIVATE_AUDIT_ROOT")
+    before = source_hashes(repo)
+    guard.private_write(output / "source-before.json", before)
+    # Guard'ın kendi hesabıyla birebir aynı hedef kimliği; her fazın yakalama
+    # ortamını buna karşı doğrularız.
+    target_id = guard.digest(
+        guard.canonical({"version": 1, "trustedPinsSha256": args.pins_sha256, "pins": pins})
+    )
+    started = time.monotonic()
+    # Son tarih, --test-timeout ile BİRLİKTE uzar: böylece ana fazın tavanı gerçekten
+    # --test-timeout olur ve simülasyon fazları payını yine de korur. ci.yml
+    # --test-timeout geçirmediği için CI'da tam olarak OVERALL_BUDGET geçerlidir.
+    deadline = started + max(OVERALL_BUDGET, args.test_timeout + RESERVE_TOTAL + PHASE_OVERHEAD)
+    records: list[dict[str, object]] = []
+    for index, phase in enumerate(PHASES):
+        # Sonraki fazların duvar saati payı ve BU fazın kendi ek yükü düşülür.
+        # Ek yük sayılmazsa sessizce sonraki fazın payından çıkar ve son faz
+        # hiç başlamaz — bu değişikliğin var olma sebebi olan 9 vaka koşmaz.
+        reserve_after = sum(later.reserve for later in PHASES[index + 1 :])
+        cap = args.test_timeout if phase.budget is None else phase.budget
+        budget = min(cap, deadline - time.monotonic() - reserve_after - PHASE_OVERHEAD)
+        if budget < PHASE_FLOOR:
+            records.append(phase_failure(phase, "PHASE_BUDGET_EXHAUSTED", budget))
+            break
+        try:
+            records.append(run_phase(phase, args, repo, pins, output, target_id, budget))
+        # Bir fazın çökmesi result.json'u tamamen yutmasın: kalan fazların ve
+        # önceki fazların verdikleri yine de yazılmalı.
+        except guard.GuardError as error:
+            records.append(phase_failure(phase, str(error), budget))
+        except Exception:
+            records.append(phase_failure(phase, "OWNED_E2E_FAILED", budget))
+        # Uzlaştırılmamış faz, satırlarını kimsenin raporlamadığı fazdır; guard'ın
+        # `begin`i quiescence aramaz, bu yüzden sonraki faz o artığı kendi
+        # baseline'ına yutar ve temiz görünürdü. Kalan fazları koşmuyoruz.
+        if not records[-1]["auditReconciled"]:
+            break
+    after = source_hashes(repo)
+    guard.private_write(output / "source-after.json", after)
+    # Toplam, fazların VE'sidir: eksik faz da başarıyı düşürür. Satır hasarı
+    # bugün zaten guard'ın finish çıkışını 1 yapıp fazın durumunu FAIL'e
+    # çeviriyor; buradaki terim o bağı kaybedersek diye ikinci kilittir.
+    damaged = any(sum(damage.values()) for record in records if (damage := row_damage(record)))
+    success = (
+        len(records) == len(PHASES)
+        and all(record["status"] == "PASS" for record in records)
+        and not damaged
+        and before == after
+    )
+    # Düz anahtarlar TEK bir fazı yansıtır (ilk düşen, yoksa son) — fazlar arası
+    # karışık bir özet, tek süreçli okuyucuyu yanıltırdı.
+    lead = next((record for record in records if record["status"] != "PASS"), records[-1])
+    result = {
+        "version": 2,
+        "status": "PASS" if success else "FAIL",
+        "runId": args.run_id,
+        "targetId": target_id,
+        "playwrightExitCode": lead.get("playwrightExitCode"),
+        "ownedApiPid": lead.get("ownedApiPid"),
+        "ownedApiExitCode": lead.get("ownedApiExitCode"),
+        "stopObservation": lead.get("stopObservation", "not-started"),
+        "auditFinishExitCode": lead.get("auditFinishExitCode"),
+        "errorCode": lead.get("errorCode"),
+        "leadPhase": lead["phase"],
         "sourceUnchanged": before == after,
         "webBuild": "webpack" if args.webpack else "default",
         "seconds": round(time.monotonic() - started, 3),
+        "phases": records,
         "scope": (
             "Synthetic local auth, hashing embeddings, fake model; no hosted or real-provider claim"
         ),
@@ -387,7 +670,10 @@ def main() -> int:
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--web-port", type=int, default=3100)
     parser.add_argument("--webpack", action="store_true")
-    parser.add_argument("--test-timeout", type=float, default=900)
+    # Ana fazın tarayıcı bütçesi. Varsayılan 900'den 720'ye indi: tek koşu üç faza
+    # bölündü ve üçünün toplamı ci.yml'nin 30 dakikalık iş sınırına sığmalı.
+    # 720 + RESERVE_TOTAL + PHASE_OVERHEAD tam olarak OVERALL_BUDGET'tir.
+    parser.add_argument("--test-timeout", type=float, default=720)
     args = parser.parse_args()
     os.umask(0o077)
     try:

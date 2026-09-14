@@ -1,0 +1,268 @@
+{
+  "schema_version": 1,
+  "change_id": "102-campus-visual-accessibility-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T22:25:19.337864+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "Kullanıcının açıkça yetkilendirdiği 025-campus-ui commit/push hazırlığı: güncel çizimlerin ürün arayüzüne bağlanması, kitap asistanı, uygulama erişilebilirlik ayarları, 404/kurtarma sayfaları ve sentetik demo öğretmen/Bilgi İşlem ayrımı. PASS yalnız aşağıdaki tamamlanmış mekanik kontroller içindir; ürün terfisi veya tüm kapıların başarı iddiası değildir.",
+  "commands": [
+    {
+      "name": "web-unit-suite",
+      "command": "bun test lib/",
+      "cwd": "apps/web",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-push-web-tests.log",
+      "output_sha256": "2717cf62a250b520374382ebccdcd3dcf2628218b3d71a71ab3e795bf101cff2",
+      "output_bytes": 73710,
+      "summary": "648 geçti, 0 başarısız, 1856 doğrulama; 53 dosya.",
+      "provenance": "Ana ajan başarılı komut sonucunu bildirdi; bu kaydı hazırlayan ajan mevcut günlük dosyasını ayrıca okuyup hashledi."
+    },
+    {
+      "name": "production-build",
+      "command": "bun run build",
+      "cwd": "apps/web",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-push-build.log",
+      "output_sha256": "daa3fe099c6ee0c2c1da5356d7b334d9cc7f8a23a724528f3c5a0a89ffb407ad",
+      "output_bytes": 1335,
+      "summary": "Next.js üretim derlemesi tamamlandı; bu yerel derleme üretime dağıtım değildir.",
+      "provenance": "Ana ajan başarılı komut sonucunu bildirdi; bu kaydı hazırlayan ajan mevcut günlük dosyasını ayrıca okuyup hashledi."
+    },
+    {
+      "name": "demo-provision-unit-contract",
+      "command": "PYTHONPATH=scripts apps/api/.venv/bin/python -m unittest scripts.test_provision_ci_e2e",
+      "cwd": ".",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-push-seed-tests.log",
+      "output_sha256": "37f8fbdbf326a8dc63c7cd55993ab2ca3d0af0dc23cb52d267ce4127428d3f2a",
+      "output_bytes": 113,
+      "summary": "14 sentetik birim testi geçti; gerçek veritabanı kurulumu çalıştırılmadı.",
+      "provenance": "Ana ajan başarılı komut sonucunu bildirdi; bu kaydı hazırlayan ajan mevcut günlük dosyasını ayrıca okuyup hashledi."
+    },
+    {
+      "name": "documentation-consistency-corrected",
+      "command": "node scripts/docs_check.mjs --duzelt",
+      "cwd": ".",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-push-docs-fix.log",
+      "output_sha256": "dca362cc2e7f576e671ea7317e89956a4dc4f16d0b32f1721020969918cf88bd",
+      "output_bytes": 2549,
+      "summary": "Yalnız ilgili canlı web test/dosya ve sayfa sayaçları güncellendi; belge sayıları ölçümle eşleşti. API test sayısı toplama sonucudur, testlerin geçtiği anlamına gelmez.",
+      "provenance": "Ana ajan rc0 bildirdi; mevcut tamamlanmış günlük ayrıca okunup hashlendi."
+    },
+    {
+      "name": "documentation-consistency-final",
+      "command": "node scripts/docs_check.mjs",
+      "cwd": ".",
+      "result": "pass",
+      "exit_code": 0,
+      "log_file": "campus025-push-docs-final.log",
+      "output_sha256": "c59729fd188700121d1359a56a93608ae226dc6c9b535eb43bb5dab16b104e28",
+      "output_bytes": 2078,
+      "summary": "Git teslim notu eklendikten sonra son belge kontrolü rc0 geçti.",
+      "provenance": "Ana ajan rc0 bildirdi; mevcut günlük ayrıca okunup hashlendi."
+    }
+  ],
+  "results": {
+    "full_web_unit_passes": 648,
+    "full_web_unit_failures": 0,
+    "full_web_unit_assertions": 1856,
+    "full_web_test_files": 53,
+    "typecheck_rc": 0,
+    "production_build_rc": 0,
+    "seed_provision_unit_passes": 14,
+    "seed_provision_unit_failures": 0,
+    "contrast_rc": 0,
+    "migration_check_rc": 0,
+    "migration_count": 24,
+    "workflow_policy_check_rc": 0,
+    "diff_check_rc": 0,
+    "targeted_secret_patterns_rc": 0,
+    "ruff_check_rc": 0,
+    "ruff_format_rc": 0,
+    "docs_check_rc": 0,
+    "mypy_rc": 0,
+    "mypy_files": 123,
+    "ruff_format_files": 236
+  },
+  "reported_checks": [
+    {
+      "name": "typecheck",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "bun run typecheck tamamlandı.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "contrast",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "Açık, koyu ve iki yüksek kontrast temada metin/kontrol eşikleri geçti.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "migration-check",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "24 göç; izinli boşluklar 0017, 0021, 0022, 0023 ve 0028.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "workflow-policy",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "Workflow politika kontrolü geçti; çalışma ağacındaki ayrı senaryo koşucu değişiklikleri bu commit kapsamına alınmıyor.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "diff-check",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "Seçilen değişikliklerde boşluk kontrolü geçti.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "targeted-secret-patterns",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "Seçilen dosyalarda hedefli sır desenleri taraması geçti; tüm sırları bulma garantisi değildir.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "ruff-check",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "Ruff check geçti.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "ruff-format",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "Ruff format check geçti; 236 dosya zaten biçimli.",
+      "provenance": "Ana ajanın bu commit/push turunda çalıştırdığı komut sonucu; ayrı günlük dosyası/hash varlığı iddia edilmiyor."
+    },
+    {
+      "name": "mypy",
+      "result": "pass",
+      "exit_code": 0,
+      "summary": "Hedef025 kaynaklarında123 dosya geçti.",
+      "provenance": "Ana ajan bu tur mevcut018 Python ortamındaki araçla çalıştırdı ve tamamlanan rc0 sonucunu bildirdi; ayrı günlük dosyası/hash iddia edilmiyor."
+    }
+  ],
+  "initial_failures": [
+    {
+      "name": "documentation-consistency-initial",
+      "result": "fail",
+      "log_file": "campus025-push-docs-initial.log",
+      "output_sha256": "0ef3d4949bff876e4f9e3cbd3f9974434a02461a9f36aef4ea62e0ae9f534e37",
+      "summary": "İlk denemede canlı belge sayaçları eskiydi ve yerel araç çözümleme sorunları görüldü. İlgili sayaç düzeltmesi ve mevcut yerel araç ortamıyla tekrar kontrol rc0 tamamlandı; ilk başarısızlık burada korunuyor."
+    }
+  ],
+  "pending_checks": [
+    {
+      "name": "parent-commit-governance",
+      "reason": "Gerçek commit ve aynı committeki kaynak/kanıt blobları oluştuktan sonra ana ajan doğrulayacak."
+    }
+  ],
+  "notes": {
+    "sensitive_path_reason": "components/course-assistant/** .ai/policy.json gereği R3. Asistan metni/işareti/sunum değişir; model, sağlayıcı, prompt, retrieval, araç izni, değerlendirme veya API değişmez. Demo seed artık öğretmen yerine ayrı teknik hesabı platform_admins içine koyar.",
+    "threshold_origin": "Sıfır test/tür hatası ve erişilebilirlik kontrast eşikleri önceden var olan kabul sözleşmeleridir; bu tur ölçümden sonra gevşetilmedi.",
+    "baseline_provenance": "Metrikteki baseline 0 başarısızlık, mevcut .ai/evidence/101-ci-evidence-wiring-r1.json içindeki tarihsel full_web_unit_failures değeridir. Bu tur taban committe yeniden koşulmuş karşılaştırma değildir. Güncel test sayısı artmıştır; aynı girdilerle model kalitesi karşılaştırması yapılmadı.",
+    "data_digest_definition": "corpus_digest ve eval_set_digest, Git indeksindeki mevcut apps/web/lib/*.test.ts ve *.test.tsx dosyalarının sıralı yol + SHA256 manifestinin SHA256 değeridir; 53 sentetik sözleşme test dosyası. Ders korpusu, öğrenci içeriği veya gerçek LLM değerlendirme verisi değildir.",
+    "test_manifest": [
+      "apps/web/lib/accessibility.test.ts\t3319cb0d4c6911b06fa93debebbbd8047d4289d36fc31d62311fe6fae055cbe1",
+      "apps/web/lib/admin.test.ts\t5dfc8a50856e00f5a78a3d042670f3a249c766ae7e31b40f0d544eb45504ea8c",
+      "apps/web/lib/analytics.test.ts\teb1a686972ba20c97ce12a72b55f1afb8a3db366fc526da5b2a5e41f7beec98b",
+      "apps/web/lib/api.test.ts\tb770861e9fb7ad89927a54c5d376bc30fb93c1ae9a9235db17e3391e3451c321",
+      "apps/web/lib/assessment-feedback.test.ts\t5113a50a6b01d364695d34194d89fde32b6299fe1b0e0000826fc7481483e79f",
+      "apps/web/lib/auth-config.test.ts\tf779c2abbda4a7419d5d8bba6aaa3784136012df9415c134f366c909885f25ad",
+      "apps/web/lib/auth-events.test.ts\tf98d8f54b4f5a3ab8f1befbb8a27253fdb756ec817991938fedaa1d6cf49799e",
+      "apps/web/lib/auth-login.test.tsx\tb279a6a9beb815d1b981fe0f6fb312d43179ab93b3ebdfdb7e95873499fe53ef",
+      "apps/web/lib/auth-session.test.ts\t090af2c77708b554c68b161fc6fe21af45177540d6e7286006453e8f9d4d35be",
+      "apps/web/lib/auth.test.ts\tc476abbf44e2ad5e4fa8df9e5e31ec3098f95969aadb85e38d2e5d927c7d2a43",
+      "apps/web/lib/blueprint.test.ts\t41343ff04c79b28a790c07c71bb78548ee7e66b417ca4401fa298623068c52e4",
+      "apps/web/lib/chat-availability.test.ts\t5accf9aa9447190acf66f178a0b1569449c17632683cc0a78a81e9f45d31701c",
+      "apps/web/lib/chat-history-deletion.test.ts\t7178a942578fe82dfb4c22e59c72922331ef9419b14b80897c074b226f2dac1d",
+      "apps/web/lib/chat.test.ts\t0fdb2f9fe09f8f00d74c5251fa0b9590b8451d80cfbc2fecc3464e7e22eb36c7",
+      "apps/web/lib/course-assistant-dialog.test.ts\ta6274914807ce91574b20e421231799c271f7fd2958be241670d52b0ff4bd4e5",
+      "apps/web/lib/course-assistant.test.ts\t183f344a06c10f9dddb17188c7cf6a642e5fd4e5dfbb3490a8ad6a0d74a476bd",
+      "apps/web/lib/course-cover.test.ts\t9be7df974f5d7359ef03626a702b9ffeb337c2573546fdbb440a6a5102fc8e81",
+      "apps/web/lib/dashboard.test.ts\t39a994514e6d2d6dd89cc445b68f7e5a1ad2c7627b4a9c3992921917a3012e2b",
+      "apps/web/lib/demo-response.test.ts\ta9707a6bc9f5d94e7bc35e52edb9c8483db5ac0395f81be257cf44306b4aa7c6",
+      "apps/web/lib/e2e-audit-receipts.test.ts\t5d7c208b3c2a312d5180a61ded287f525eaabf6a06611ad48be8e7b0d9775ab3",
+      "apps/web/lib/e2e-cleanup.test.ts\t9722d6178c6863fbcda8b7b02049c2d341c65c7f3e495943105c230f37e52271",
+      "apps/web/lib/e2e-identity.test.ts\t5c00462caea9e06aa42fe56105a647dc137e14833fd73eda314ed88d1b1ee9e6",
+      "apps/web/lib/errors.test.ts\t31989e672ef6281b94296dbb937892187c97e2229beb89b8e3a2702f80891c9d",
+      "apps/web/lib/exam-answer.test.ts\te6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+      "apps/web/lib/exam-drafts.test.ts\ta7e07bba08ff30650f66242fcc5a61e7a3f176e8c41bc314e405767e48c6e649",
+      "apps/web/lib/exam.test.ts\t985048642fad08610b8220c60ced284818d836cb28460468136b6c2ed7e2eb1a",
+      "apps/web/lib/instructor-gate.test.ts\t70861ca386375ee101de22251f964453568d952ccec9e68416ef22724eb2e196",
+      "apps/web/lib/labels.test.ts\t6571f8e206ba817791361cb6cb2d43e9ef8841444160eddf973629c8b3716536",
+      "apps/web/lib/markdown.test.ts\tfcc909b66a75d22f56ad8c238a433d1a656aad68f68601bb552dfffae83c8719",
+      "apps/web/lib/members.test.ts\tacb334dcecee9590ab19988125acff814bc92788f8365938406c9a49cce5c5dd",
+      "apps/web/lib/next-hint-feedback.test.ts\t65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+      "apps/web/lib/policy-draft-buffer.test.ts\t4046d094f0e17bc6c214dc67d915d6512fdf4fd31f38013e616ce7bf22d81487",
+      "apps/web/lib/policy-history.test.ts\tdb13d1356aa7bbf44ac99a28bd8d7bafc828a5a0831f41eb7364929c32e5a0e5",
+      "apps/web/lib/policy.test.ts\te5552c119025d246481220acadec7b5eebe88ac705e2efcaf206362f7e99649e",
+      "apps/web/lib/privacy.test.ts\t7f7ad9f60dd39208f340ccc4ae6d182b1090a20400fc812944ad3d8efab88ffe",
+      "apps/web/lib/profile.test.ts\tc0e136d1563bfd5cf93a5ea0760e654a088cc1cd49525e12550bf2637040a258",
+      "apps/web/lib/question-authoring.test.ts\t49b1a4dca8a68df8b40a75f0144f4f257c325bc670d4e6c5abdfd64cc675f52a",
+      "apps/web/lib/question-page-contracts.test.ts\td7d47e7001b82cc75cc2b5ec4d4bf1546dc3083b82f587b4a91d96f7258d6e40",
+      "apps/web/lib/questions.test.ts\t87260d523e79f4055a7ca01c2814e6d67b9168bc5e24972d969dbbd1ed8a67ce",
+      "apps/web/lib/route-metadata.test.ts\tca0dbf895c1af222d2631575b8cde77fa3f8d91b5fb77feffc3b9276ba3260dc",
+      "apps/web/lib/security-headers.test.ts\tf8594b510c3ee9e6a07f15896d435abb9ed1203b92e8dd3734eddf65d20b3b04",
+      "apps/web/lib/session.test.ts\t5e2cc37a25be787789623dce13a8c5cd31907b7c12471d38722b554f5bb5f18c",
+      "apps/web/lib/source-quality.test.ts\t82fbde39736eac4048a923926a07cd5b61033f34dd4eb6889b35353970888282",
+      "apps/web/lib/source.test.ts\tf591318ca861eb60d624d6f585997248e4d286dfaafc2a1003a931ea2d9409e5",
+      "apps/web/lib/theme.test.ts\t1dd6fd2ddf66d358ccb3fa0790e3d17d6653ab2deca1c775435012e4ce0ecf55",
+      "apps/web/lib/ui.test.ts\t94ed05fab4a8a80fe9e0419eb7690f729d0d489c7b72d059fb663f1dd0e4d997",
+      "apps/web/lib/use-assistant-policy.test.ts\t5de7b945d0d14861055a1387706406006b53167513a53667a016a0edc491336d",
+      "apps/web/lib/use-chat-session.test.ts\t38fa3c86577d26c75bce8a3be44953ff789212a1f2ac55ac4f86c14438679f6c",
+      "apps/web/lib/use-chat-turn.test.ts\tdea36e7bf7e79572a4225eb9c4bf929dc2267dcfb046133f2a7b2a906e5900af",
+      "apps/web/lib/use-paged-resource.test.ts\tca9fba329713c29740e45861afa6e5066656be79811eedd764c8c94420a98cf4",
+      "apps/web/lib/use-resource.test.ts\t9a96e0210a57200dc9952e2aa06824fb5d1f35e2747d58690105076d1acdf224",
+      "apps/web/lib/use-reverse-history.test.ts\t4df9f212050d85a1bb7066c168453642302a9f77d36c100269e19b388f19f3b7",
+      "apps/web/lib/use-submit.test.ts\t1bed9ac01604f7617f0f08d0cdd3038e976b47a48a1ec448c2a3ccbf3ec594cd"
+    ],
+    "historical_browser_evidence": "specs/025-campus-ui/drawn-visual-review.md ve role-accessibility-review.md kendi tarihlerindeki adayların sınırlı tarayıcı sonuçlarıdır; bu push turunda yeniden ölçüldükleri iddia edilmez.",
+    "authorization": "Kullanıcı bu konuşmada açıkça Git commit ve push istedi. Bu izin yalnız inceleme dalının paylaşımıdır; bağımsız insan onayı, main birleştirmesi veya üretim dağıtımı değildir.",
+    "scope_exclusions": [
+      ".github/workflows/ci.yml",
+      "scripts/run_owned_e2e.py",
+      "scripts/test_owned_e2e.py",
+      "apps/web/playwright.config.ts",
+      ".agents/skills/",
+      ".claude/skills/",
+      "skills-lock.json"
+    ],
+    "artifact_binding": "63 seçilmiş kaynak/test/belge dosyası Git indeksindeki commit edilecek blobların SHA256 değerleriyle bağlıdır; SVG CRLF normalizasyonu dahil. Çalışma ağacındaki kapsam dışı dosyalar commit iddiasına alınmaz. Geçmiş100/101 kayıtları değiştirilmez; aggregate dossier üretilmez.",
+    "tool_environment": "Ruff, mypy ve belge sayacı için mevcut 018-codex-production-line Python ortamındaki araçlar hedef025 kaynaklarına karşı kullanıldı; araç ortamı değiştirilmedi. UV_CACHE_DIR=/tmp/campus025-push-uv ve MYPY_CACHE_DIR=/tmp/campus025-push-mypy ile ayrı önbellekler kullanıldı. Bu kullanım diğer şeridin kaynaklarına yazıldığı anlamına gelmez.",
+    "index_checks": "Ana ajan son63 ürün dosyasının Git indeksinde hedefli sır desenleri taramasını ve git diff --cached --check kontrolünü rc0 tamamladı."
+  },
+  "not_run": [
+    {
+      "name": "full-api-pytest",
+      "reason": "Backend uygulama kodu bu tur değişmedi; tam API/DB test paketi bu push hazırlığında çalıştırılmadı."
+    },
+    {
+      "name": "full-automated-e2e",
+      "reason": "Tam Playwright paketi, tüm rol matrisi ve Linux görsel karşılaştırma bu push hazırlığında çalıştırılmadı; önceki elle tarayıcı sonuçları yeni koşu sayılmaz."
+    },
+    {
+      "name": "real-provider",
+      "reason": "Model ve prompt değişmedi; gerçek sağlayıcı kalitesi, kurum kimlik sağlayıcısı veya gerçek öğrenci kabulü ölçülmedi."
+    },
+    {
+      "name": "production-and-rollback",
+      "reason": "Üretim dağıtımı, canary, canlı yedek/rollback veya bağımsız yayın onayı yapılmadı."
+    }
+  ],
+  "limitations": "Yerel web/seed birim sözleşmesi ve statik doğrulama kanıtıdır. Erişilebilirlik sertifikası, tam ürün kabulü, gerçek model kalitesi veya üretime hazır oluş iddiası yoktur. Bağımsız mühendislik, alan ve güvenlik/gizlilik incelemesi bekliyor.",
+  "finalized_at": "2026-09-14T22:26:31.382117+00:00"
+}

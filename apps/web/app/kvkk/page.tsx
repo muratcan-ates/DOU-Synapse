@@ -71,7 +71,7 @@ function renderBlock(block: Block, index: number) {
     case "heading": {
       if (block.level === 1) {
         return (
-          <h1 key={key} className="mb-5 text-[28px] leading-tight font-semibold tracking-tight text-fg">
+          <h1 key={key} className="mb-5 text-[1.75rem] leading-tight font-semibold tracking-tight text-fg">
             {renderInline(block.content)}
           </h1>
         );

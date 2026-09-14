@@ -3,24 +3,24 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --brand: #c50c1f;
-  --brand-strong: #a00a19;
-  --brand-subtle: #fdebec;
+  --brand: #8a6518;
+  --brand-strong: #705010;
+  --brand-subtle: #f5edd9;
+  --brand-fg: #ffffff;
+  --gold-light: #d6b05e;
 
-  --fg: #202432;
-  --fg-muted: #555e6d;
-
-  --fg-subtle: #626a77;
-
-  --bg: #f2f4f7;
+  --fg: #132b45;
+  --fg-muted: #536170;
+  --fg-subtle: #5e6a76;
+  --bg: #faf9f6;
   --surface: #ffffff;
+  --surface-sunken: #f2eee5;
 
-  --border: rgba(32, 36, 50, 0.09);
-  --border-strong: rgba(32, 36, 50, 0.50);
+  --border: rgba(19, 43, 69, 0.11);
+  --border-strong: rgba(19, 43, 69, 0.52);
 
   --success: #346538;
   --success-bg: #edf3ec;
-
   --warning: #8a5c00;
   --warning-bg: #fbf3db;
   --danger: #9f2f2d;
@@ -28,34 +28,31 @@
   --info: #1f6c9f;
   --info-bg: #e1f3fe;
 
-  --surface-sunken: #e9edf2;
+  --elev-1: 0 2px 5px rgb(19 43 69 / .025), 0 8px 24px -14px rgb(19 43 69 / .13);
+  --elev-2: 0 2px 6px rgb(19 43 69 / .06), 0 18px 40px -20px rgb(19 43 69 / .24);
+  --elev-3: 0 28px 64px -24px rgb(7 25 48 / .32);
 
-  --elev-1: 0 2px 5px rgb(32 36 50 / .025), 0 8px 24px -14px rgb(32 36 50 / .13);
-  --elev-2: 0 2px 6px rgb(28 25 23 / 0.07), 0 18px 40px -20px rgb(28 25 23 / 0.30);
-  --elev-3: 0 28px 64px -24px rgb(28 25 23 / 0.36);
-
-  --ink: #1a1613;
-  --ink-raised: #241f1a;
-  --ink-fg: #f2efe9;
-  --ink-fg-muted: #a8a099;
-
-  --brand-on-ink: #ff6b78;
+  --ink: #071930;
+  --ink-raised: #102d4b;
+  --ink-fg: #f3f1e8;
+  --ink-fg-muted: #b7c7dc;
+  --brand-on-ink: #e6c36e;
 }
 
 :root[data-theme="dark"] {
-  --brand: #ff6b78;
-  --brand-strong: #ffa1aa;
-  --brand-subtle: #3a1a1e;
+  --brand: #e6c36e;
+  --brand-strong: #f1d58e;
+  --brand-subtle: #243043;
+  --brand-fg: #071930;
 
-  --fg: #f3f5f8;
-  --fg-muted: #b6becb;
-
-  --fg-subtle: #a1aab8;
-  --bg: #14171c;
-  --surface: #1d222a;
-  --border: rgba(245, 244, 242, 0.08);
-
-  --border-strong: rgba(245, 244, 242, 0.36);
+  --fg: #f3f1e8;
+  --fg-muted: #b7c7dc;
+  --fg-subtle: #9daec6;
+  --bg: #061426;
+  --surface: #0c213a;
+  --surface-sunken: #04101f;
+  --border: rgba(183, 199, 220, 0.13);
+  --border-strong: rgba(243, 241, 232, 0.40);
 
   --success: #7bc47f;
   --success-bg: #1d2a1e;
@@ -66,23 +63,17 @@
   --info: #6fb4dd;
   --info-bg: #14232e;
 
-  --surface-sunken: #101318;
-
-  --elev-1: inset 0 1px 0 rgb(245 244 242 / 0.04), 0 1px 2px rgb(0 0 0 / 0.45);
-  --elev-2: inset 0 1px 0 rgb(245 244 242 / 0.05), 0 12px 28px -18px rgb(0 0 0 / 0.75);
-  --elev-3: inset 0 1px 0 rgb(245 244 242 / 0.06), 0 28px 64px -24px rgb(0 0 0 / 0.85);
-
-  --ink: #131110;
-  --ink-raised: #1d1a17;
-  --ink-fg: #f3f5f8;
-  --ink-fg-muted: #b6becb;
-  --brand-on-ink: #ff6b78;
+  --elev-1: inset 0 1px 0 rgb(230 195 110 / .04), 0 1px 2px rgb(2 9 20 / .45);
+  --elev-2: inset 0 1px 0 rgb(230 195 110 / .05), 0 12px 28px -18px rgb(2 9 20 / .75);
+  --elev-3: inset 0 1px 0 rgb(230 195 110 / .06), 0 28px 64px -24px rgb(2 9 20 / .85);
 }
 
 @theme inline {
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
   --color-brand-subtle: var(--brand-subtle);
+  --color-brand-fg: var(--brand-fg);
+  --color-gold: var(--gold-light);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-subtle: var(--fg-subtle);
@@ -193,20 +184,23 @@ html[data-theme="dark"] {
 
 @keyframes sticky-elevate {
   from {
-    box-shadow: 0 0 0 0 rgb(28 25 23 / 0);
+    box-shadow: 0 0 0 0 rgb(19 43 69 / 0);
   }
   to {
     box-shadow: var(--elev-1);
   }
 }
 
-/* Kampüs kabuğu: gezinme işlevini koruyan, yalnız sunuma ait yerleşim. */
-.campus-shell { --rail-width: 208px; }
-.campus-topbar { height: 76px; background: var(--surface); border-bottom: 1px solid var(--border); }
-.campus-rail { width: var(--rail-width); transition: width 220ms ease; }
-.campus-workspace { transition: margin-left 220ms ease; }
-.campus-main { max-width: 1440px; margin-inline: auto; padding: 32px 36px 100px; }
-.campus-dock { box-shadow: var(--elev-2); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+/* Masaüstü gezinmesi ayrı bir yüzey; mobilde çalışma alanı tam genişliktedir. */
+.campus-shell { --rail-width: 248px; }
+.campus-topbar { height: 80px; background: var(--bg); }
+.campus-rail { width: calc(var(--rail-width) - 24px); top: 12px; bottom: 12px; left: 12px; border-radius: 22px; border: 1px solid var(--border); background: var(--surface); color: var(--fg); }
+.campus-workspace { min-width: 0; }
+.campus-main { max-width: 1480px; margin-inline: auto; padding: 24px 36px 100px; }
+.campus-dock { box-shadow: 0 12px 35px rgb(19 43 69 / .14), inset 0 1px 0 var(--surface); padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+@supports (backdrop-filter: blur(16px)) {
+  .campus-dock { background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(16px); }
+}
 .campus-panel { border-radius: 20px; background: var(--surface); box-shadow: var(--elev-1); }
 .campus-interactive { transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease; }
 @media (hover: hover) { .campus-interactive:hover { transform: translateY(-2px); box-shadow: var(--elev-2); } }
@@ -214,15 +208,72 @@ html[data-theme="dark"] {
 .campus-loading-mark { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: campus-spin 900ms linear infinite; }
 @keyframes campus-spin { to { transform: rotate(360deg); } }
 @media (min-width: 1024px) {
-  .campus-shell[data-collapsed="true"] { --rail-width: 88px; }
-  .campus-workspace { margin-left: var(--rail-width); }
-  .campus-rail { top: 76px; bottom: 0; }
+  .campus-shell[data-collapsed="true"] { --rail-width: 108px; }
+  .campus-workspace, .campus-topbar { margin-left: var(--rail-width); }
 }
 @media (max-width: 1023px) {
-  .campus-topbar { height: 68px; }
+  .campus-topbar { height: 72px; border-bottom: 1px solid var(--border); }
   .campus-main { padding: 24px 20px 140px; }
 }
 @media (max-width: 480px) { .campus-main { padding: 24px 16px 140px; } }
+.campus-switch::backdrop { background: rgb(4 16 31 / .48); backdrop-filter: blur(5px); }
+.campus-switch { inset: 12vh 0 auto; margin-inline: auto; width: min(600px, calc(100% - 32px)); max-height: 75dvh; padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 22px; color: var(--fg); background: var(--surface); box-shadow: var(--elev-3); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+
+/* Tarayıcıya özgü erişilebilirlik tercihleri; tema seçimini değiştirmez. */
+html[data-text-size="large"] { font-size: 125%; }
+
+:root[data-contrast="more"] {
+  --fg: #071930;
+  --fg-muted: #263b50;
+  --fg-subtle: #34485c;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-sunken: #f2eee5;
+  --brand: #705010;
+  --brand-strong: #533908;
+  --border: #627080;
+  --border-strong: #45566b;
+}
+
+:root[data-theme="dark"][data-contrast="more"] {
+  --fg: #ffffff;
+  --fg-muted: #e0e8f3;
+  --fg-subtle: #c3d1e3;
+  --bg: #04101f;
+  --surface: #061426;
+  --surface-sunken: #020b17;
+  --brand: #f1d58e;
+  --brand-strong: #ffe7ad;
+  --border: #8293a9;
+  --border-strong: #b7c7dc;
+}
+
+html[data-links="underlined"] a[href] { text-decoration-line: underline; text-underline-offset: .2em; }
+
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation: none !important;
+  transition-duration: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-motion="reduce"] .campus-interactive:hover { transform: none; }
+
+/* Büyük yazıda mobil üst çubuk ikonları en az 44px kalır; metin alanına yer açılır. */
+@media (max-width: 639px) {
+  html[data-text-size="large"] .campus-topbar { padding-inline: 16px; gap: 8px; }
+  html[data-text-size="large"] .campus-topbar > .ml-auto { gap: 4px; }
+  html[data-text-size="large"] .campus-topbar > .ml-auto > button,
+  html[data-text-size="large"] .campus-topbar #appearance-control { width: 44px; height: 44px; }
+}
+@media (max-width: 360px) {
+  html[data-text-size="large"] .campus-topbar > a > span > span:last-child { display: none; }
+}
+@media (min-width: 1024px) {
+  html[data-text-size="large"] .campus-shell:not([data-collapsed="true"]) { --rail-width: 304px; }
 }

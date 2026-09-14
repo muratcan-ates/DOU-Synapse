@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { TITLE_TEMPLATE } from "@/lib/metadata";
+import { AccessibilityProvider } from "@/components/accessibility-provider";
 import "./globals.css";
 
 /*
@@ -66,7 +67,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
          * CSP'nin `script-src 'self'` tarafında kalır.
          */}
         <script src="/theme-boot.js" />
-        {children}
+        <script src="/accessibility-boot.js" />
+        <AccessibilityProvider>{children}</AccessibilityProvider>
       </body>
     </html>
   );
