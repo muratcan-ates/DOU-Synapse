@@ -1,10 +1,15 @@
-# DOU-Synapse — Gereksinim Analizi Raporu
+# DOU-Synapse — Gereksinim Analizi Raporu (v2)
 
 **Proje:** CourseGPT — Yapay Zekâ Destekli Kişiselleştirilmiş Ders ve Sınav Asistanı
 **Ders:** COME 491/492 Bitirme Projesi · Doğuş Üniversitesi · Danışman: Yasemin Karagül
-**Takım:** Muratcan Ateş (frontend/lead) · Eren (backend/RAG + guardrail) · Metehan (assessment + ölçüm)
-**Tarih:** 6 Ağustos 2026 · **Teslim:** 24 Ağustos 2026
-**Tam gereksinim metni:** `specs/001-course-assistant-mvp/spec.md` (bu rapor onun akademik özetidir)
+**Takım:** Muratcan Ateş (lead, frontend) · Eren Onur (backend/RAG + guardrail) · Metehan (assessment + ölçüm) · Dursun Berkay Özgür · Burhan Şener Şenkal
+**Sürüm:** v2 — 14 Eylül 2026 (v1: 6 Ağustos 2026) · **Sunum:** 16 Eylül 2026
+**Tam gereksinim metni:** `specs/001-course-assistant-mvp/spec.md` ve sonraki spec dizinleri (bu rapor onların akademik özetidir)
+
+Danışmanın 6 Ağustos toplantısındaki isteği bu sürümün çerçevesidir: *fonksiyonel
+gereksinimler, kullanım senaryoları ve arayüzler; fonksiyonel olmayan gereksinimler gerekmez.*
+Buna göre §2.4 (kullanım senaryoları), §2.5 (arayüzler) ve §3.1 (yapay zekânın üç rolü) yeni;
+§5 yalnız kayıt amacıyla kısaltılmış hâlde duruyor.
 
 ---
 
@@ -12,9 +17,10 @@
 
 ### 1.1 Amaç
 
-Bu belge, danışmanın CourseGPT proje taslağındaki beklentileri doğrulanabilir sistem
-gereksinimlerine dönüştürür. Her taslak maddesi numaralı bir fonksiyonel gereksinime (FR)
-izlenir; her başarı hedefi ölçülebilir bir kabul kriterine (SC) bağlanır.
+Bu belge, danışmanın CourseGPT proje taslağındaki (27 Temmuz e-postası) ve 6 Ağustos
+toplantısındaki beklentileri doğrulanabilir sistem gereksinimlerine dönüştürür. Her taslak
+maddesi numaralı bir fonksiyonel gereksinime (FR) izlenir; her başarı hedefi ölçülebilir bir
+kabul kriterine (SC) bağlanır.
 
 ### 1.2 Problem tanımı
 
@@ -22,7 +28,7 @@ izlenir; her başarı hedefi ölçülebilir bir kabul kriterine (SC) bağlanır.
 (1) ders müfredatı dışına çıkıyor, (2) kaynak göstermiyor, (3) ödev sorularının cevabını
 doğrudan vererek öğrenmeyi zedeliyor. Literatürde bu üçüncü problem ölçülmüştür: Harvard'ın
 CS50 ders asistanı değerlendirmesinde yanıtların %22'sinde öğrenciye doğrudan çalışan kod
-sızdırıldığı raporlanmıştır (Liu vd., 2025).
+sızdırıldığı raporlanmıştır (Liu vd., 2025; bkz. `docs/references.md` A1).
 
 ### 1.3 Çözüm yaklaşımı
 
@@ -40,6 +46,7 @@ bulunamazsa sistem cevap üretmek yerine bunu açıkça söyler.
 | Abstention | Yeterli kanıt yokken cevap vermeme davranışı (hata değil, tasarlanmış sonuç) |
 | Guardrail | Cevap kullanıcıya gösterilmeden önce çalışan doğrulama katmanları zinciri |
 | RLS | Row-Level Security — veritabanı satır düzeyi erişim politikaları |
+| Blueprint | Eğitmenin kurduğu sınav çerçevesi: öğrenme çıktısı × zorluk × soru tipi matrisi |
 | Holdout / kalibrasyon seti | Ölçüm için ayrılmış / eşik ayarı için kullanılan ayrık soru kümeleri |
 
 ---
@@ -50,32 +57,107 @@ bulunamazsa sistem cevap üretmek yerine bunu açıkça söyler.
 
 | Sınıf | İhtiyaç | Ana etkileşimler |
 |---|---|---|
-| **Eğitmen** | Materyali denetim altında tutmak, sınıfın durumunu görmek | Ders/üye yönetimi, materyal yükleme ve önizleme, soru onayı, analitik özet |
-| **Öğrenci** | Sınava müfredat dahilinde, güvenilir kaynakla hazırlanmak | Kaynaklı soru-cevap, Sokratik çalışma, sınav provası, "neden yanlış", ilerleme takibi |
+| **Eğitmen** | Materyali denetim altında tutmak, sınav çerçevesini kurmak, sınıfın durumunu görmek | Ders/üye yönetimi, materyal yükleme ve önizleme, yapay zekâ politikası, soru üretimi ve onayı, blueprint, analitik özet |
+| **Öğrenci** | Sınava müfredat dahilinde, güvenilir kaynakla hazırlanmak | Kaynaklı soru-cevap, Sokratik çalışma, alıştırma ve sınav provası, "neden yanlış", ilerleme takibi |
+| **Bilgi İşlem (platform yöneticisi)** | Kurum düzeyinde kullanım ve sağlık görünürlüğü | Yönetim konsolu (kullanıcılar, dersler, istekler, işleme kuyruğu), API sözleşmesine erişim |
 
 ### 2.2 Çalışma ortamı ve kısıtlar
 
 - **Platform:** Web (masaüstü + mobil tarayıcı); Türkçe birinci dildir, materyal TR/EN karışıktır.
-- **Bütçe:** ~0 (ücretsiz katmanlar); **takvim:** 15 iş günü, iki sert kapı
-  (10 Ağu uçtan uca dikey demo, 17 Ağu özellik dondurma).
-- **Teknoloji kilidi:** Next.js · FastAPI/Python 3.12 · PostgreSQL 16 + pgvector ·
-  çok dilli embedding (multilingual-e5-large) · LiteLLM (Groq→Gemini otomatik yedekli).
-  Ağır çerçeveler (LangChain vb.) bilinçli olarak kullanılmaz — gerekçeler `research.md`'de.
+- **Bütçe:** ~0 (ücretsiz katmanlar).
+- **Teknoloji:** Next.js 16 · FastAPI / Python 3.12 · PostgreSQL 16 + pgvector · çok dilli
+  embedding `intfloat/multilingual-e5-large` (fastembed, yerel ve ağsız) · LiteLLM üzerinden
+  Groq (birincil `openai/gpt-oss-120b`, yedek `qwen/qwen3.6-27b`; Gemini ikinci sağlayıcı
+  seçeneği). Sunum kurulumu tek makinede, Docker'sız yerel yığındır.
+- **Danışmanın yığın önerisiyle fark:** LangChain/LlamaIndex kullanılmaz; retrieval → kanıt
+  eşiği → LLM → guardrail zinciri kendi kodumuzdadır, çünkü "kaynak yoksa cevap yok" kuralı
+  her katmanda ölçülebilir olmalıdır ve ağır çerçeveler bu kanıtı gizler. Vektör deposu
+  olarak FAISS/Chroma yerine pgvector seçildi: ders izolasyonu (RLS) ve vektör arama aynı
+  veritabanında, aynı işlemde kanıtlanır. Arayüz Streamlit yerine Next.js'tir; e-posta buna
+  açıkça izin verir. OpenAI'ın açık ağırlıklı `gpt-oss-120b` modeli Groq API üzerinden
+  kullanılır; böylece "OpenAI API / Groq API" önerisinin ikisi de karşılanır.
 - **Yasal:** KVKK aydınlatma metni; yapay zekâ çıktısı resmî not değildir
   (human-in-the-loop); örnek materyal telifsiz/kendi üretimidir.
 
 ### 2.3 Varsayımlar
 
 Öğrenci derse yalnız eğitmen davetiyle katılır (self-enroll v2). Sınav süresi ve soru
-sayısı MVP'de yapılandırma sabitidir (eğitmen ayar ekranı v2). Süre dolduğunda cevapsız
-sorular boş sayılır, puana katılmaz.
+sayısı ders politikasından gelir. Süre dolduğunda cevapsız sorular boş sayılır, puana
+katılmaz. Kod hiçbir koşulda çalıştırılmaz; kod soruları statik değerlendirilir.
+
+### 2.4 Kullanım senaryoları
+
+Her senaryo gerçek arayüzde uçtan uca çalıştırılmıştır (14 Eylül 2026 yerel duman koşusu,
+`docs/jury-demo.md`); "Kanıt" sütunu ilgili otomatik testi ya da koşuyu gösterir.
+
+| # | Senaryo | Aktör | Ön koşul | Ana akış | Alternatif / hata | FR | Kanıt |
+|---|---|---|---|---|---|---|---|
+| UC-01 | Ders açma ve materyal yükleme | Eğitmen | Giriş yapılmış | Ders oluştur → PDF/PPTX/MD/kod yükle → işleme durumunu izle → "Hazır" | Tür/boyut/imza reddi; mükerrer içerik hash ile reddedilir; işleme hatası yeniden dene | FR-004–008 | `test_documents*`, duman koşusu: 5 belge, 22 parça |
+| UC-02 | Öğrenci ekleme | Eğitmen | Ders var | Üye ekle (e-posta, rol) → üyelik aktif | Var olan üye; ders dışı kullanıcı okuma yetkisi almaz | FR-001–003 | RLS izolasyon kanıtı + mutasyon (CI) |
+| UC-03 | Kaynaklı soru-cevap | Öğrenci | Üyelik aktif, materyal hazır | Soru sor → parçalar getirilir → cevap + atıf kartları (dosya, sayfa/slayt) → karta tıkla, kaynak bağlamını gör | Kanıt yetersiz → `insufficient_context` mesajı; kapsam dışı → nazik ret; atıf doğrulanamazsa cevap gösterilmez | FR-009–013 | Gerçek modelle 14 Eyl: 5,7 sn, 3 kaynak; `flows.spec.ts` |
+| UC-04 | Kapsam dışı soru | Öğrenci | UC-03 | "İtalya'nın başkenti neresidir?" → ret, nedeniyle | Ret hata gibi değil olağan sonuç olarak sunulur | FR-011 | Gerçek modelle doğrulandı; `demo_questions.json` kapsam dışı kümesi |
+| UC-05 | Sokratik çalışma | Öğrenci | Ders politikasında Sokratik mod açık | Soru → yönlendirme → ipucu → benzer örnek → kaynaklı açıklama; "cevabı söyle" ısrarında merdiven ilerlemez | Kod/çözüm sızıntısı tespitinde şablon ipucuna düşülür (fail-closed) | FR-014–016 | Gerçek modelle 14 Eyl; Sokratik test kümesi |
+| UC-06 | Sınav çerçevesi kurma | Eğitmen | Materyal hazır | Konu (öğrenme çıktısı) → tip (test / klasik / kısa cevap / kod) → zorluk → isterse ≤5 örnek soru → blueprint sürümü | Blueprint hazır değilse yayınlanamaz (readiness) | FR-022–024, FR-036 | `blueprint-topic-readiness.spec.ts`, RLS blueprint kanıtı |
+| UC-07 | Soru üretimi ve onayı | Eğitmen | UC-06 | Üret → taslaklar havuza düşer → tek tek onayla / reddet / düzenle | Şema geçersiz üretim reddedilir; onaysız soru öğrenciye görünmez | FR-022–026 | `question-authoring.spec.ts`; şema geçerliliği SC-009 |
+| UC-08 | Alıştırma ve sınav provası | Öğrenci | Onaylı soru var | Alıştırma: anında geri bildirim; Sınav: süreli, tek deneme, geri bildirim sonda; yanlış çoktan seçmelide "neden yanlış" kaynak bölümü | Süre dolunca boş sorular puana katılmaz; sınav modunda asistan kilitli | FR-017–021 | `exam-completion-guards`, `grounded-wrong-feedback`, `exam-assistant-killswitch` spec'leri |
+| UC-09 | Sınıf analitiği | Eğitmen | Öğrenci etkinliği var | Konu bazlı ilerleme, soru kalitesi, sohbet geri bildirimi özetleri | Veri yoksa boş durum metni | FR-027–029 | `analytics`, `chat-quality` uçları; `learning-events.spec.ts` |
+| UC-10 | Kişisel veri hakları | Öğrenci | Giriş yapılmış | Sohbet geçmişini sil, verimi dışa aktar, hesabı anonimleştir | Aydınlatma metni girişten önce erişilebilir | FR-030–035 | `chat-history-deletion.spec.ts`, `/kvkk` |
+| UC-11 | Platform yönetimi | Bilgi İşlem | Yönetici yetkisi | Genel bakış, kullanıcılar, dersler, istek günlüğü, işleme kuyruğu; API sözleşmesi | Reddedilen erişim de denetim kaydına yazılır | Platform konsolu spec'i | `admin-readiness.spec.ts`, yetki mutasyon kanıtı |
+
+### 2.5 Arayüzler
+
+**Kullanıcı arayüzü (web, 22 rota).** Tüm metinler Türkçe; açık ve koyu tema; mobil düzen.
+
+| Rota | Rol | Amaç |
+|---|---|---|
+| `/` · `/forgot-password` · `/reset-password` · `/verify-email` · `/auth/callback` | herkes | Giriş ve hesap akışları |
+| `/kvkk` | herkes | Aydınlatma metni (girişten önce erişilebilir) |
+| `/dashboard` | eğitmen · öğrenci | Genel bakış: dersler, son etkinlik, öğrenci için ilerleme |
+| `/courses` | eğitmen · öğrenci | Ders listesi; eğitmen yeni ders açar |
+| `/courses/[id]` | eğitmen · öğrenci | Ders ana sayfası; eğitmen için materyal yükleme ve işleme durumu |
+| `/courses/[id]/sources` · `/sources/[chunkId]` | eğitmen · öğrenci | Kaynak parçaları ve atıf bağlamı |
+| `/courses/[id]/chat` | öğrenci | Ders asistanı: kaynaklı soru-cevap ve Sokratik mod |
+| `/courses/[id]/exam` | öğrenci | Alıştırma ve sınav provası, "neden yanlış" |
+| `/courses/[id]/questions` | eğitmen | Soru havuzu: üretim, taslak onayı, filtreler |
+| `/courses/[id]/blueprints` | eğitmen | Sınav çerçevesi (öğrenme çıktısı × zorluk × tip) |
+| `/courses/[id]/members` | eğitmen | Katılımcılar |
+| `/courses/[id]/analytics` · `/quality` | eğitmen | Sınıf analitiği ve yapay zekâ kalite göstergeleri |
+| `/courses/[id]/settings` | eğitmen | Yapay zekâ politikası (Sokratik, sınav modu, günlük bütçe) |
+| `/profile` · `/account` | herkes | Profil; veri dışa aktarma, silme, anonimleştirme |
+| `/admin` | Bilgi İşlem | Platform yönetim konsolu |
+
+**Programlama arayüzü (HTTP API).** OpenAPI 3.1; 61 yol, 77 işlem, 15 uç ailesi:
+`health`, `profile`, `dashboard`, `admin`, `courses`, `documents`, `sources`, `privacy`,
+`chat`, `policy`, `assessment`, `chat-quality`, `exams`, `blueprints`, `analytics`.
+Kimlik `Bearer` jetonu (yerel geliştirmede `dev:<uuid>`, canlıda kurum kimliği); hata zarfı
+`error.code · message · request_id`; sayfalama `items + next_cursor`. Belge sayfası `/docs`
+(şema yalnız platform yöneticisine).
+
+**Dış arayüzler.**
+
+| Sistem | Yön | Kullanım | Sunumda |
+|---|---|---|---|
+| Groq API (LiteLLM) | çıkış | Cevap üretimi, Sokratik ipucu, soru üretimi, rubrikli değerlendirme | Gerçek model; ağ kesilirse `answer_cache` + sahte sağlayıcı (Plan C) |
+| Google Gemini API (LiteLLM) | çıkış | Yedek sağlayıcı; değerlendirme yargıcı seçeneği | Anahtar girildiyse yedek |
+| PostgreSQL 16 + pgvector | iç | Tüm veri, vektör arama, RLS izolasyonu | Yerel |
+| fastembed (ONNX) | iç | Embedding; ağ gerektirmez, model önbelleği yerel | Yerel |
+| Dosya depolama | iç | Yüklenen materyaller (yerel dizin; v2'de Supabase Storage) | Yerel |
 
 ---
 
 ## 3. Paydaş Gereksinimi → Sistem Gereksinimi İzlenebilirliği
 
-Danışman taslağındaki **12 maddenin tamamı** karşılanmıştır; hiçbir madde ertelenmemiş
-veya kapsam dışına alınmamıştır:
+### 3.1 Yapay zekânın üç rolü (danışmanın istediği ayrım)
+
+| Rol | Danışmanın adı | Arayüzdeki yüzey | Yapar | Yapmaz | Kanıt |
+|---|---|---|---|---|---|
+| **Ders Asistanı** | Class Assistant | `/courses/[id]/chat` — "Ders Koçu" kimliği | Materyal içi soruyu kaynak göstererek yanıtlar; Sokratik modda ipucu merdiveni | Materyalde karşılığı olmayan soruya cevap üretmez; kod/çözüm sızdırmaz | UC-03/04/05; SC-002, SC-005, SC-007 |
+| **Sınav Mentoru** | Exam Mentor | `/courses/[id]/exam` — alıştırma ve sınav provası | Cevabı değerlendirir, yanlış çeldiricinin çeliştiği kaynak bölümünü gösterir; sınav modunda ipucu kapalı | Sınav sırasında cevap vermez; resmî not vermez (öneri niteliğinde) | UC-08; `grounded-wrong-feedback`, `exam-assistant-killswitch` |
+| **Soru Üretici** | CourseGPT | `/courses/[id]/questions` + `/blueprints` — "Eğitmen Asistanı" kimliği | Eğitmenin kurduğu çerçevede (tip, biçim, konu, örnek sorular) materyalden soru ve cevap anahtarı üretir | Eğitmen onayı olmadan hiçbir soruyu öğrenciye göstermez | UC-06/07; SC-009 |
+
+### 3.2 E-posta taslağı (27 Temmuz)
+
+Danışman taslağındaki **12 maddenin tamamı** karşılanmıştır:
 
 | # | Danışman taslağı maddesi | Karşılayan FR'ler |
 |---|---|---|
@@ -92,19 +174,28 @@ veya kapsam dışına alınmamıştır:
 | 11 | İnternet bilgisi karıştırılmaz | FR-009, FR-011 |
 | 12 | Teslim: platform + örnek paket & rapor + kılavuzlar | FR-031, FR-032, FR-033 |
 
+### 3.3 Toplantı istekleri (6 Ağustos)
+
+| # | İstek | Karşılık |
+|---|---|---|
+| T1 | Yapay zekânın rolü net tanımlansın | bkz. §3.1 (rol × yüzey × kanıt); arayüz kimlikleri |
+| T2 | Çoklu soru biçimi: test / klasik / kısa cevap; çerçeve önce kurulsun | `mcq`, `open` (`essay` / `short_answer`), `code_trace`, `bug_hunt`; blueprint; örnek soruyla üslup (FR-036, UC-06) |
+| T3 | İzlence/kitaptan örnek soru üret, cevabı vermeden yönlendir | Yüklenen materyalden üretim + Sokratik yönlendirme; izlenceden otomatik konu çıkarımı v2 |
+| T4 | Hocanın istediği çözüm yöntemi denetimi | Kısmen: rubrik ölçütleri; ayrı "beklenen çözüm yolu" alanı v2 |
+
 ---
 
 ## 4. Fonksiyonel Gereksinimler (özet)
 
-35 gereksinim yedi kullanıcı hikâyesi altında toplanmıştır (tam metin ve Given/When/Then
-kabul senaryoları spec.md'dedir):
+Gereksinimler kullanıcı hikâyeleri altında toplanmıştır (tam metin ve Given/When/Then kabul
+senaryoları spec dizinlerindedir):
 
 **A. Hesap, rol ve izolasyon (FR-001–003).** Rol yetkileri sunucuda zorlanır. Ders verisi
 dersler arasında **iki katmanda** izoledir: uygulama katmanı üyelik doğrulaması + PostgreSQL
 RLS. İstemciden gelen ders kimliği asla yetki sayılmaz.
 
 **B. Materyal yönetimi (FR-004–008).** PDF/PPTX/Markdown/metin/kod yüklenir; tür beyaz
-listesi + 20 MB sınırı + dosya imzası (magic byte) doğrulaması yapılır. İşleme asenkrondur
+listesi + boyut sınırı + dosya imzası (magic byte) doğrulaması yapılır. İşleme asenkrondur
 ve durum izlenir. Sayfa/slayt/bölüm metadata'sı korunarak parçalanır; mükerrer içerik
 hash ile reddedilir.
 
@@ -120,71 +211,78 @@ durum makinesi (yönlendirme → kavram ipucu → benzer örnek → kaynaklı a�
 İpuçları da kaynak parçadan türetilir ve atıf taşır. Kod bloğu/doğrudan çözüm sızıntısı
 kural tabanlı son kontrolle engellenir; ihlalde şablon ipucuna düşülür (fail-closed).
 
-**E. Sınav provası (FR-017–021).** Süreli oturum; sınav modunda ipucu kapalı, soru başına
-tek deneme, geri bildirim sonda (practice modunda süresiz + anında geri bildirim). Açık
-uçlu cevaplar rubrik + cevap anahtarı + kaynak parçalara göre değerlendirilir; çıktı
-şemaya uymalıdır. Her yanlış çoktan seçmeli için çeldiricinin çeliştiği kaynak bölümü
-gösterilir ("neden yanlış").
+**E. Sınav provası (FR-017–021, FR-036).** Süreli oturum; sınav modunda ipucu kapalı, soru
+başına tek deneme, geri bildirim sonda (alıştırma modunda süresiz + anında geri bildirim).
+Açık uçlu sorular iki biçimde değerlendirilir: `essay` rubrik + cevap anahtarı + kaynak
+parçalarla LLM'e, `short_answer` kabul edilen cevap listesiyle deterministik. Her yanlış
+çoktan seçmeli için çeldiricinin çeliştiği kaynak bölümü gösterilir ("neden yanlış").
 
-**F. Soru havuzu ve kod inceleme (FR-022–026).** Materyalden dört tipte soru üretilir:
-çoktan seçmeli, açık uçlu, `code_trace` (çıktı tahmini), `bug_hunt` (hata buldurma).
-Üretilenler taslak düşer; **eğitmen onayı olmadan öğrenciye gösterilmez**. Kod hiçbir
-koşulda çalıştırılmaz — değerlendirme statiktir.
+**F. Soru havuzu, blueprint ve kod inceleme (FR-022–026).** Materyalden dört tipte soru
+üretilir: çoktan seçmeli, açık uçlu, `code_trace` (çıktı tahmini), `bug_hunt` (hata
+buldurma). Eğitmen çerçeveyi kurar (konu, tip, biçim, isterse örnek sorular; blueprint ile
+hedef × zorluk × tip). Üretilenler taslak düşer; **eğitmen onayı olmadan öğrenciye
+gösterilmez**. Kod hiçbir koşulda çalıştırılmaz — değerlendirme statiktir.
 
-**G. İlerleme ve analitik (FR-027–029).** Konu bazlı performans EWMA ile izlenir
-(bilinçli sadeleştirme; gerekçesi ve "resmî not değildir" kaydı belgelidir). Eğitmen tek
-sayfalık sınıf özeti görür.
+**G. İlerleme ve analitik (FR-027–029).** Konu bazlı performans izlenir; öğrenme olayları
+kaydedilir; eğitmen tek sayfalık sınıf özeti ve yapay zekâ kalite göstergelerini görür.
 
 **H. Platform ve teslim (FR-030–035).** Tüm kullanıcı metinleri Türkçedir; ham hata/iz
-asla gösterilmez. Canlı URL + tek komutla yerel kurulum; örnek İşletim Sistemleri materyal
-paketi; eğitmen ve öğrenci kılavuzları; çevrimdışı demo sigortası; istek ve girdi sınırları.
+asla gösterilmez. Tek komutla yerel kurulum (`scripts/demo/*.sh`); örnek İşletim Sistemleri
+materyal paketi; eğitmen ve öğrenci kılavuzları; çevrimdışı demo sigortası (`answer_cache`);
+istek ve günlük jeton sınırları; KVKK hakları.
 
 ---
 
-## 5. Fonksiyonel Olmayan Gereksinimler
+## 5. Fonksiyonel Olmayan Gereksinimler (kayıt için)
+
+Danışman bu belge için fonksiyonel olmayan gereksinim istemedi; aşağıdaki satırlar teslimin
+kabul ölçütü değil, projenin kendi disiplininin kaydıdır.
 
 | Kategori | Gereksinim |
 |---|---|
-| **Güvenlik** | İki katmanlı ders izolasyonu; RLS'in fiilen çalıştığı, politika bilerek bozulup testin başarısız olmasıyla kanıtlanır (CI'da otomatik). Dosya imza doğrulaması; sunucu üretimi depolama anahtarları (path traversal engeli); loglarda kişisel veri/anahtar maskeleme; DEV kimlik doğrulaması üretimde yapılandırma düzeyinde reddedilir. |
-| **Doğruluk disiplini** | Rapor edilen her sayı ölçülür; eşikler kalibrasyon setinde ayarlanır, metrikler ayrık holdout sette raporlanır; koşulmayan deney için sonuç yazılmaz. "Deterministik/garanti" sözcükleri yalnız gerçekten deterministik mekanizmalar için kullanılır. |
-| **Performans** | Uçtan uca cevap p95 < 10 sn (sıcak replika); işleme ilerlemesi kullanıcıya n/m olarak gösterilir. |
-| **Kullanılabilirlik / erişilebilirlik** | WCAG AA kontrast (ölçülmüş); koyu tema zorunlu (gece çalışma senaryosu); mobil öncelikli öğrenci ekranları; abstention hata gibi değil bilgi olarak sunulur; durum renk+metin çiftiyle işaretlenir. |
-| **Dil** | Türkçe birinci sınıftır: tüm kullanıcı metinleri, hata mesajları dahil; `uppercase` dönüşümü yasak (i/İ bozulması); TR/EN karışık materyal için çok dilli embedding. |
-| **Dayanıklılık** | Fail-closed varsayılanlar: oturum bağlamı yoksa veri görünmez, kanıt yoksa cevap yok, doğrulanamayan çıktı gösterilmez. LLM sağlayıcı kesintisinde otomatik yedek (Groq→Gemini). |
-| **Uyumluluk** | KVKK aydınlatma metni; sohbet verisi saklama süresi tanımı; YZ değerlendirmesi öneri niteliğindedir. |
+| **Güvenlik** | İki katmanlı ders izolasyonu; RLS'in fiilen çalıştığı, politika bilerek bozulup testin başarısız olmasıyla kanıtlanır (CI'da 6 SQL kanıtı + 8 mutasyon betiği). Dosya imza doğrulaması; loglarda kişisel veri/anahtar maskeleme; DEV kimlik doğrulaması üretimde reddedilir. |
+| **Doğruluk disiplini** | Rapor edilen her sayı ölçülür; koşulmayan deney için sonuç yazılmaz; sahte sağlayıcı ölçümü gerçek model kalitesi olarak sunulmaz. |
+| **Performans** | Uçtan uca cevap p95 < 10 sn (14 Eylül gerçek model tek ölçüm: 5,7 sn). |
+| **Erişilebilirlik** | WCAG AA kontrast (ölçülmüş); koyu tema; mobil düzen; durum renk+metin çiftiyle. |
+| **Dayanıklılık** | Fail-closed varsayılanlar; LLM kesintisinde yedek model/sağlayıcı ve önbellek. |
+| **Uyumluluk** | KVKK aydınlatma metni; veri silme/dışa aktarma; YZ değerlendirmesi öneri niteliğindedir. |
 
 ---
 
 ## 6. Kabul Kriterleri (ölçülebilir)
 
-| Kriter | Hedef |
-|---|---|
-| SC-001 Dersler arası veri sızıntısı | 0 vaka |
-| SC-002 Kaynaksız akademik cevap (ipuçları dahil) | %0 |
-| SC-003 Holdout Recall@5 ve Recall@8 | ≥ %80 |
-| SC-004 Atıf hassasiyeti (doğru dosya+sayfa) | ≥ %90 |
-| SC-005 Kapsam dışı doğru ret | ≥ %90 (holdout) |
-| SC-006 Faithfulness | 20-30 cevaplık çift etiketleyicili manuel örneklem, uyum oranıyla raporlanır |
-| SC-007 Sokratik kod/çözüm sızıntısı | Test setinde 0 (set; gizli kod, sözde-kod, sözel çözüm vakalarını içerir) |
-| SC-008 Prompt injection (≥15 vaka) | Geçer — "temel kalıplara karşı sınandı" olarak raporlanır |
-| SC-009 Soru üretiminde şema geçerliliği | ≥ %98 |
-| SC-010 Cevap gecikmesi p95 | < 10 sn |
-| SC-011 Demo akışında kritik hata | 0 |
+| Kriter | Hedef | Durum (14 Eylül) |
+|---|---|---|
+| SC-001 Dersler arası veri sızıntısı | 0 vaka | RLS kanıtları CI'da yeşil |
+| SC-002 Kaynaksız akademik cevap (ipuçları dahil) | %0 | Mekanik atıf doğrulama; test kümesi |
+| SC-003 Holdout Recall@5 ve Recall@8 | ≥ %80 | Sahte sağlayıcı/hash ile ölçüldü; **gerçek modelle koşu 15 Eylül** |
+| SC-004 Atıf hassasiyeti (doğru dosya+sayfa) | ≥ %90 | aynı |
+| SC-005 Kapsam dışı doğru ret | ≥ %90 (holdout) | aynı; tekil gerçek model denemeleri geçti |
+| SC-006 Faithfulness | Çift etiketleyicili manuel örneklem | Planlı |
+| SC-007 Sokratik kod/çözüm sızıntısı | Test setinde 0 | Test kümesi yeşil |
+| SC-008 Prompt injection (≥15 vaka) | Geçer | `evaluation/` injection kümesi |
+| SC-009 Soru üretiminde şema geçerliliği | ≥ %98 | Şema doğrulama; sahte sağlayıcıda ölçüldü |
+| SC-010 Cevap gecikmesi p95 | < 10 sn | Tekil ölçüm 5,7 sn; p95 15 Eylül |
+| SC-011 Demo akışında kritik hata | 0 | 14 Eylül duman koşusu 10/10 |
 
-Metodoloji notu: n≈50'lik değerlendirme seti **yön göstergesidir, kesin hüküm değildir**;
-baseline-hybrid karşılaştırması eşleştirilmiş anlamlılık kaydıyla verilir. Set,
-danışmanın gözden geçirmesine sunulacaktır.
+Metodoloji notu: değerlendirme seti **yön göstergesidir, kesin hüküm değildir**; gerçek
+modelle koşulmamış her sayı belgede öyle etiketlenir.
 
 ## 7. Kapsam Dışı (gerekçeli)
 
-Dış internet kaynakları (taslaktaki "internet bilgisi karışmaz" şartı gereği; v2'de
-*eğitmen onaylı* paket olarak değerlendirilebilir) · kod çalıştırma ortamı · fine-tuning ·
-mobil uygulama · LMS entegrasyonu · öğrenci self-enroll · gerçek zamanlı işbirliği.
-Tam liste ve nedenleri: `PLAN.md §2`.
+Dış internet kaynakları (taslaktaki "internet bilgisi karışmaz" şartı gereği) · kod
+çalıştırma ortamı · fine-tuning · mobil uygulama · LMS entegrasyonu · öğrenci self-enroll ·
+gerçek zamanlı işbirliği · izlenceden otomatik konu çıkarımı (v2) · bulut barındırma ve
+kurum kimliğiyle giriş (sunum sonrası).
 
-## 8. Mevcut Durum (6 Ağustos)
+## 8. Mevcut Durum (14 Eylül 2026)
 
-Altyapı tamam ve 68 otomatik testle doğrulanmış durumda: izolasyon (kanıtlı RLS), <!-- docs-check: tarihsel 68 · 2026-08-06 -->
-materyal işleme hattı, embedding/indeksleme, arayüzün 6 ekranı. Cevap üretim hattı <!-- docs-check: tarihsel 6 · 2026-08-06 -->
-(retrieval→LLM→guardrail) 10 Ağustos dikey demo kapısının işidir; 60 görevlik izlenebilir
-iş listesi `specs/001-course-assistant-mvp/tasks.md`'dedir.
+Ölçülen: 2139 otomatik API testi toplanıyor <!-- docs-check: tarihsel 2139 · 2026-09-14 -->,
+24 veritabanı göçü <!-- docs-check: tarihsel 24 · 2026-09-14 -->, 21 gerçek tarayıcı (Playwright)
+test dosyası <!-- docs-check: tarihsel 21 · 2026-09-14 -->, 22 web rotası
+<!-- docs-check: tarihsel 22 · 2026-09-14 -->, 61 API yolu <!-- docs-check: tarihsel 61 · 2026-09-14 --> / 77 işlem <!-- docs-check: tarihsel 77 · 2026-09-14 -->.
+Demo kurulumu tek makinede: İşletim Sistemleri dersi, 5 belge, 22 parça; gerçek Groq
+modeliyle kaynaklı cevap, kapsam dışı ret ve Sokratik ısrar reddi doğrulandı; jüri
+senaryosunun soruları çevrimdışı önbelleğe yazılıyor. CI'da API kapıları yeşil; uçtan uca
+tarayıcı süiti entegre ağaçta ilk kez koşuyor. Eksikler ve saatli plan:
+`docs/team/YOL-HARITASI-16-EYLUL.md`.
