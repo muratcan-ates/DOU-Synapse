@@ -12,6 +12,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 
 def fail(message):
@@ -58,7 +59,26 @@ env = os.environ.copy()
 if env.get("DATABASE_URL"):
     if not env["DATABASE_URL"].startswith(("postgresql://", "postgres://")):
         fail("DATABASE_URL doğrudan PostgreSQL URL biçiminde olmalıdır.")
-    env["PGDATABASE"] = env.pop("DATABASE_URL")
+    # libpq, PGDATABASE içindeki URL'yi veritabanı ADI sanır ("database
+    # 'postgresql://…' does not exist") — ilk gerçek koşuda böyle düştü
+    # (14 Eylül 2026, dou_demo). URL, parçalarına ayrılıp libpq'nun kendi
+    # PG* değişkenlerine dağıtılır; sırlar yine yalnız ortamda kalır, argv'ye çıkmaz.
+    parts = urlsplit(env.pop("DATABASE_URL"))
+    if parts.hostname:
+        env["PGHOST"] = parts.hostname
+    if parts.port:
+        env["PGPORT"] = str(parts.port)
+    if parts.username:
+        env["PGUSER"] = unquote(parts.username)
+    if parts.password:
+        env["PGPASSWORD"] = unquote(parts.password)
+    database = unquote(parts.path.lstrip("/"))
+    if not database:
+        fail("DATABASE_URL veritabanı adı içermeli (…/<veritabanı>).")
+    env["PGDATABASE"] = database
+    for key, value in parse_qsl(parts.query):
+        if key in {"sslmode", "sslrootcert", "options", "application_name", "connect_timeout"}:
+            env["PG" + key.upper()] = value
 env.setdefault("PGCONNECT_TIMEOUT", "15")
 
 with tempfile.TemporaryDirectory(prefix="dou-migrate-") as directory:

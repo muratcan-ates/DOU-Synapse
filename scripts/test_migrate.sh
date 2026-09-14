@@ -193,6 +193,31 @@ try:
         require(sql("SELECT count(*) FROM concurrent_probe;", concurrent) == "1", "Eşzamanlı koşum göçü bir kez uygulamalı.")
         require(len(ledger(concurrent).splitlines()) == 1, "Eşzamanlı koşum tek başarı kaydı üretmeli.")
         report("İki gerçek runner tek oturum advisory kilidiyle seri çalışır.")
+    # DATABASE_URL yolu: 14 Eylül 2026'ya kadar test edilmemişti ve libpq URL'yi
+    # veritabanı ADI sanıp düşüyordu. Runner artık URL'yi PG* parçalarına ayırır.
+    via_url = create_database("url")
+    url_env = environment.copy()
+    url_env.pop("PGDATABASE", None)
+    host = url_env.get("PGHOST", "localhost")
+    port = url_env.get("PGPORT", "5432")
+    url_env["DATABASE_URL"] = f"postgresql://{host}:{port}/{via_url}"
+    url_child = subprocess.Popen(
+        [str(runner), "--migrations-dir", str(migrations)],
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=url_env,
+    )
+    children.append(url_child)
+    finish(url_child)
+    require(len(ledger(via_url).splitlines()) == len(originals), "DATABASE_URL ile koşum bütün göçleri kaydetmeli.")
+    bad_env = url_env.copy()
+    bad_env["DATABASE_URL"] = f"postgresql://{host}:{port}/"
+    bad_child = subprocess.Popen(
+        [str(runner), "--migrations-dir", str(migrations), "--dry-run"],
+        text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=bad_env,
+    )
+    children.append(bad_child)
+    _, bad_err = bad_child.communicate(timeout=90)
+    require(bad_child.returncode == 1 and "veritabanı adı" in bad_err, "Veritabanı adı olmayan DATABASE_URL açık hatayla reddedilmeli.")
+    report("DATABASE_URL, libpq PG* parçalarına ayrılır; adsız URL reddedilir.")
     print("PASS: Göç runner kabul kontrolleri tamamlandı.", flush=True)
 except (AssertionError, OSError, subprocess.TimeoutExpired) as error:
     print(f"FAIL: {error}", file=sys.stderr)
