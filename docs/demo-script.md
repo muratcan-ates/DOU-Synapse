@@ -407,17 +407,56 @@ Plan C (tam çevrimdışı) için `answer_cache` **birebir eşleşmeyle** çalı
 harfi harfine aşağıdaki gibi olmalı. Yalnız `qa` modu önbelleğe girer; Sokratik sahneler
 (3 ve 4) önbelleğe **girmez** ve sahte sağlayıcıyla koşar.
 
-`fill_answer_cache.py` bu listeyi almalı:
+### 15 Eylül 00:00 — GERÇEK modelle ölçülmüş liste
+
+Aşağıdaki liste tahmin değil: `fill_answer_cache.py` 24 soruyu gerçek modele sordu ve
+sonuçlar ölçüldü. **Sahnede yalnız bu listeden sorun.**
+
+**Kaynaklı cevap veren 12 soru** (parantez içi getirilen atıf sayısı; hepsi önbellekte,
+yani ağsız da çalışır ve jeton harcamaz):
 
 ```text
-Süreç ile iş parçacığı arasındaki fark nedir?
-İtalya'nın başkenti neresidir?
-Bugünkü dolar kuru ne kadar?
-Semafor nedir ve ne işe yarar?
-Deadlock oluşması için gereken dört koşul nedir?
-Sayfalama nedir?
-Context switch maliyeti neden yüksek?
+Dairesel bekleme koşulu nedir?                                        (6)
+Banker's Algorithm hangi deadlock stratejisine girer?                 (5)
+Deadlock oluşabilmesi için hangi dört koşulun sağlanması gerekir?     (5)
+Deadlock oluşması için gereken dört koşul nedir?                      (5)
+Mutex ile semafor arasındaki fark nedir?                              (5)
+Round-robin zamanlamada quantum süresinin seçimi neyi etkiler?        (5)
+Semafor nedir ve ne işe yarar?                                        (5)
+Context switch ne zaman gerçekleşir?                                  (4)
+Turnaround time ile waiting time arasındaki fark nedir?               (4)
+Süreç ile thread arasındaki temel fark nedir?                         (3)
+fork() çağrısı ne döndürür?                                           (3)
+Context switch maliyeti neden yüksek?                                 (2)
 ```
+
+**Reddetme sahnesi için 4 soru** (ikisi kapsam dışı, ikisi kanıt yetersiz — ikisi de
+tasarlanmış davranış, hata değil):
+
+```text
+İtalya'nın başkenti neresidir?            → out_of_scope
+Bugün İstanbul'da hava nasıl?             → out_of_scope
+Bu dersin vize sınavı ne zaman yapılacak? → insufficient_context
+Bugünkü dolar kuru ne kadar?              → insufficient_context
+```
+
+**SAHNEDE SORMAYIN — materyalde karşılığı yok** (ölçüldü, `insufficient_context` ya da
+`out_of_scope` dönüyor). Doğru davranış ama demo akışında arıza gibi görünür:
+
+```text
+Sayfalama nedir?
+Sayfalama (paging) dış parçalanmayı nasıl ortadan kaldırır?
+TLB ne işe yarar?
+inode ne saklar?
+Deadlock'u önlemek için tut ve bekle koşulu nasıl kırılır?
+```
+
+Bu beş konu örnek materyalde işlenmiyor. Sunumda gösterilmek isteniyorsa önce ilgili
+ders notu yüklenmeli; yüklenmeden soru listesine alınmamalı.
+
+Not: Sokratik sahneler önbelleğe **girmez** (önbellek yalnız `qa` modunu ve yalnız
+atıflı `answered` cevapları saklar), bu yüzden ağsız provada Sokratik tur sahte
+sağlayıcıyla koşar.
 
 İlk ikisi 2. ve 5. sahnenin **tam** soruları; kalan dördü jüri "başka bir şey sorun"
 derse kullanılacak yedeklerdir.

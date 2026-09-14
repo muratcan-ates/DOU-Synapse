@@ -142,6 +142,14 @@ kod çalıştırma (hayır, bilinçli) · LMS/LTI · öğrenci self-enroll · ge
 - [ ] `sh scripts/demo/run_api.sh` → logda `sağlayıcı: Groq`; `curl :8020/health/ready` 200
 - [ ] `sh scripts/demo/run_web.sh` → `:3020` giriş sayfası; Ayşe Hoca / Burak Yılmaz kartları
 - [ ] `answer_cache` dolu: `psql -d dou_demo -Atc "select count(*) from answer_cache"` ≥ senaryo sorusu sayısı
+- [ ] **Öğrenci jeton kotası taze** — bu, demoyu durdurabilecek tek sessiz risk:
+      ```
+      psql -d dou_demo -Atc "select coalesce(sum(coalesce(charged_tokens,reserved_tokens)),0) from ai_token_reservations where user_id='22222222-2222-2222-2222-222222222222' and created_at >= date_trunc('day', now() at time zone 'Europe/Istanbul') at time zone 'Europe/Istanbul'"
+      ```
+      Sonuç **35.000'in altında olmalı**. Tavan 50.000 (veritabanı sabiti, politikayla
+      aşılamaz) ve istek başına ~4.500 jeton gidiyor; üstündeyse demo ortasında
+      "Günlük kişisel AI kullanım kotan doldu" yazar. Önbellekten dönen cevaplar jeton
+      harcamaz — bu yüzden provayı önbellek dolu yapın.
 - [ ] Plan C provası yapıldı: Wi-Fi kapalı, senaryo sorusu kopyala-yapıştır → cevap önbellekten
 - [ ] Telefon hotspot bağlı ve şarjda; laptop adaptörde; bildirimler susturuldu; çözünürlük ayarlı
 - [ ] Yedek klasörü (`dou_demo.bundle` + `api.env` + OKU.md) USB'de

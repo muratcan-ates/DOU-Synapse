@@ -49,6 +49,60 @@ G1 hattının tamamı kuruldu ve tek tek doğrulandı: `dou_eval` veritabanı (2
 **Gece 23:28'de tek engel Groq kotasıydı** (`/chat` → 429); eval anahtarı ayrı olsa da
 aynı hesabın kotasını paylaşıyor.
 
+## 3.1 Gecenin en kritik bulgusu: jeton kotası demoyu durdurabilir
+
+Akşam boyunca gördüğüm `429`'ları Groq'a yazmıştım; **yanlıştı.** Hata gövdesi şunu
+diyor: `agent_quota_exhausted — "Günlük kişisel AI kullanım kotan doldu."` Yani sınır
+bizim kendi ürün kotamız.
+
+Ölçülenler:
+
+| Ölçüm | Değer | Kaynak |
+|---|---|---|
+| Öğrenci günlük tavanı | **50.000 jeton** | `0015_role_aware_course_agent.sql` — veritabanı sabiti; politikayla aşılamaz (aşılırsa exception) |
+| Eğitmen günlük tavanı | 200.000 jeton | aynı göç |
+| İstek başına gerçek tüketim | **~4.500 jeton** | 14 Eyl İstanbul günü: 10 istek / 44.862 jeton |
+| Öğrenci başına günlük soru | **~11** | yukarıdaki ikisinden |
+| Gün sınırı | `Europe/Istanbul` gece yarısı | `date_trunc('day', now() AT TIME ZONE 'Europe/Istanbul')` |
+
+**Demo riski:** jüri senaryosunda ~10 soru var. Tek öğrenci hesabıyla demo tam sınırda
+koşar; provada birkaç soru harcanmışsa sunum ortasında ekranda *"Günlük kişisel AI
+kullanım kotan doldu"* yazar. Politika ekranından yükseltmek İŞE YARAMAZ — tavan
+veritabanında.
+
+**Gerçek koruma `answer_cache`.** Önbellekten dönen cevap LLM'e gitmez, dolayısıyla jeton
+harcamaz. Yani önbellek yalnız "internet giderse" sigortası değil, **kota sigortası**.
+
+Bu yüzden doldurma dört sentetik öğrenciye bölündü (`burak2..4`, demo veritabanına
+eklendi): her biri kendi 50.000'ini kullanır, önbellek ise kullanıcıdan bağımsız
+anahtarlandığı için sonuç tek kullanıcıyla aynıdır. Depodaki `demo_questions.json`
+senaryonun kanonik hâli olarak DEĞİŞMEDİ; bölünmüş liste yalnız doldurma aracıdır.
+
+## 3.2 GPT'nin kampüs tasarımı main'e alındı
+
+Murat'ın kararı: GPT'nin tasarımı esas. `025-campus-ui` dalının **tasarım** commit'i
+(`ffd9bf7`, 61 dosya) main'e merge edildi; **GPT'nin dalına dokunulmadı** (`origin/025-campus-ui`
+hâlâ `3e7aa8b`) ve GPT çalışmaya devam ediyor — yeni hâli yarın aynı şekilde çekilecek,
+git artımlı birleştirdiği için tekrar iş çıkmaz.
+
+Dalın ikinci commit'i **bilerek alınmadı**, ayrı kararlar:
+- `next` 16.3.1 → 16.3.3 güvenlik yaması (+ `bun.lock`) — bağımlılık kararı Murat'ın.
+- GPT'nin kendi CI kablolaması + dossier 101. Not: GPT'nin CI çözümü bazı yerlerde
+  benimkinden **iyi** — `fetch-depth: 0` ekleyip diff-coverage raporunu gerçekten
+  koşturuyor ve Storage RLS testini korumayı gevşetmek yerine Postgres konteynerinin
+  İÇİNDE çalıştırıyor. Benim çözümüm (292bf8e + dossier 151) zaten main'de ve CI'da
+  yeşil; 36 saat kala değiştirmedim. Sunum sonrası GPT'ninkine geçilebilir.
+
+İki çakışma çıktı, ikisi de bu gecenin telefon düzeltmeleriyle aynı dosyalarda:
+`app-shell.tsx`'te GPT'nin sürümünde mobil çubuk yine DOM'un sonundaydı — öne alındı.
+`chat/page.tsx`'te GPT zaten `minmax(0,1fr)` + `min-w-0` kullanmış, düzeltme korunuyor.
+
+Doğrulandı (gerçek tarayıcı, 375×812, koyu tema): taşma yok (375/375), mobil menüye
+**4 sekme**, odak halkası 2px. Kapılar: tsc 0 · bun 632 · contrast AA.
+
+**Sonuç:** `docs/images` altındaki 12 görüntü yine eskidi (eski kabuğu gösteriyor).
+Önbellek doldurma bitince yeni tasarımla yeniden çekilecek.
+
 ## 4. Sabah ilk 30 dakika
 
 - [ ] `scratchpad/gozcu.log` son satırı: doldurma ve G1 koştu mu?
