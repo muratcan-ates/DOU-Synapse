@@ -7,8 +7,15 @@ BEGIN;
 -- Gerçek çekirdek göçleri önceden uygulanır; yalnız Supabase şeması sentetiktir.
 DO $$
 BEGIN
+    -- Sunucu adresi: Unix soketi (NULL), loopback ya da özel ağ (RFC 1918 / fc00::/7).
+    -- CI'da Postgres bir Docker servis konteyneridir; istemci localhost'a bağlanır ama
+    -- sunucu kendi adresini konteyner IP'si (172.16/12) olarak görür. Yalnız loopback
+    -- kabul edildiğinde bu adım CI'da hiç yeşil yanmadı. Asıl koruma dou_l5* ad kuralıdır.
     IF current_database() !~ '^dou_l5[a-z0-9_]*$'
-        OR (inet_server_addr() IS NOT NULL AND inet_server_addr() NOT IN ('127.0.0.1'::inet, '::1'::inet))
+        OR (inet_server_addr() IS NOT NULL AND NOT (
+            inet_server_addr() <<= '127.0.0.0/8'::inet OR inet_server_addr() <<= '::1/128'::inet
+            OR inet_server_addr() <<= '10.0.0.0/8'::inet OR inet_server_addr() <<= '172.16.0.0/12'::inet
+            OR inet_server_addr() <<= '192.168.0.0/16'::inet OR inet_server_addr() <<= 'fc00::/7'::inet))
     THEN RAISE EXCEPTION 'L5 yalnız ayrı yerel test veritabanında çalışır.'; END IF;
     IF to_regnamespace('storage') IS NOT NULL THEN
         RAISE EXCEPTION 'Var olan storage şemasında test çalıştırılmaz.';
