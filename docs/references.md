@@ -6,7 +6,9 @@ sonra buraya girer. Danışmanın istediği kitap/kaynak bağlantıları için "
 satırları bilinçli olarak boş bırakılmıştır — uydurma başlık yazılmaz.
 
 Biçim: APA 7'ye yakın; erişim tarihi 14 Eylül 2026. Üniversitenin resmî kaynakça biçimi
-netleşince tek geçişte dönüştürülür (bkz. plan maddesi "Kaynak listesi ve teslim evrakı").
+netleşince tek geçişte dönüştürülür (bu listenin kaydı: `docs/team/YOL-HARITASI-16-EYLUL.md`
+satır B3, "Kaynak listesi iskeleti"). `PLAN.md`'de böyle bir madde yok; önceki sürümde
+olmayan bir plan maddesine atıf yapılıyordu.
 
 ## 1. Akademik
 
