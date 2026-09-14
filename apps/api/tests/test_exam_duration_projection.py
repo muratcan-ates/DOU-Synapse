@@ -257,6 +257,9 @@ async def test_owner_predicate_mutation_breaks_isolation_and_rolls_back(
                 text("SELECT app.own_exam_duration(:id)"), {"id": session_id}
             )
             # The exact nonowner assertion above turns red without its SQL guard.
+            # test-quality: raises-totolojisi — totoloji KASITLI; sınanan şey üretim
+            # kodu değil, yukarıdaki iddianın kendisi: SQL koruması silindiğinde
+            # kırmızı yandığı burada gösteriliyor (mutasyon kanıtı).
             with pytest.raises(AssertionError, match="Nonowner learned an exam duration"):
                 assert duration is None, "Nonowner learned an exam duration"
             assert duration == 60

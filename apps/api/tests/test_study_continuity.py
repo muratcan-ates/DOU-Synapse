@@ -136,6 +136,8 @@ async def test_feedback_exam_lock_and_removed_guard_detection(
     mutated = await client.get(url, headers=pool.student)
     assert mutated.status_code == 200
     assert mutated.json()["solution"] is not None
+    # test-quality: raises-totolojisi — totoloji KASITLI: `_results_locked` kaldırılınca
+    # 403 iddiasının gerçekten düştüğünü gösterir, yani testin korumaya bağlı olduğunu.
     with pytest.raises(AssertionError):
         assert mutated.status_code == 403
 

@@ -290,6 +290,9 @@ class TestKilidinKapsami:
 
         response = await _ask(client, fixture, headers=fixture.instructor)
 
+        # test-quality: sadece-durum-kodu — iddia BURADA 200'ün kendisidir: kilit
+        # eğitmeni kapsasaydı bu çağrı 403 dönerdi. Gövdeden başka bir şey istemek
+        # muafiyeti değil, kilidin kapsamını sınamayan ikinci bir testi ölçerdi.
         assert response.status_code == 200, response.text
 
     async def test_sinav_bitince_asistan_geri_acilir(

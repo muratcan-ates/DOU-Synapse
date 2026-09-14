@@ -122,6 +122,16 @@ jobs:
           python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023
           python3 -m unittest scripts.test_migration_check
 
+      # Test SAYISI bu depoda kanıt olarak kullanılıyor (docs_check sayaçları,
+      # dossier metrikleri). Yeşil yanan ama hiçbir şey ölçmeyen test o sayacı
+      # şişirir. Bu kapı üç dar kusuru sözdiziminde yakalar; bulgu bilinçliyse
+      # testin içinde gerekçeli muafiyet ister, sessiz geçiş yoktur.
+      - name: Test kalite kapısı
+        working-directory: .
+        run: |
+          python3 scripts/test_quality_check.py
+          python3 -m unittest scripts.test_test_quality_check
+
       - name: RLS izolasyon kanıtı
         working-directory: .
         run: |
