@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "change_id": "115-wire-unreached-evidence-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T09:04:25+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "A5' bulgularının kapatılması — yalnız CI adımı; kanıt betikleri değişmedi.",
+  "commands": [
+    "supabase/tests/rls_learning_events_mutation_check.sh rls_learning_template_019",
+    "supabase/tests/rls_storage_mutation_check.sh dou_l5_storage_ci019",
+    "PYTHONPATH=apps/api:. apps/api/.venv/bin/python -m pytest -q scripts/test_role_agent_application_mutation_check.py",
+    "apps/api/.venv/bin/python scripts/workflow_policy_check.py"
+  ],
+  "results": {
+    "gates": "her komutun çıkış kodu 0 ölçüldü"
+  },
+  "comparison": {
+    "before": "Üç kanıt betiği depoda duruyor ama hiçbir workflow koşturmuyordu.",
+    "after": "Üçü de CI api işinde koşar; validator EVIDENCE_UNREACHABLE üretmez."
+  },
+  "limitations": "Yerel ölçüm; barındırılan CI koşusu ve gerçek sağlayıcı kanıtı ayrıdır.",
+  "privacy": "içerik yok; yalnız dosya yolları ve komutlar"
+}

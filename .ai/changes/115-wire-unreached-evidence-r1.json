@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "change_id": "115-wire-unreached-evidence-r1",
+  "lineage_id": "wire-unreached-evidence",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Çağrılmayan üç kanıt betiğini CI'a bağla (learning_events RLS, storage RLS, rol-ajan mutasyon aracı testleri)",
+  "summary": "A5' kuralı (EVIDENCE_UNREACHABLE) upstream ağacında üç kanıt buldu: supabase/tests/rls_learning_events.sql, supabase/tests/rls_storage.sql ve scripts/test_role_agent_application_mutation_check.py hiçbir iş akışından çağrılmıyordu. ci.yml api işine üç adım eklendi: learning_events SQL iddiaları + mutasyon betiği (7 mutasyonun tamamı kırmızı), storage SQL iddiaları + mutasyon betiği (dou_l5* adlı çekirdek göçlü DB, sentetik storage şeması; insert/delete/update yakalandı), rol-ajan aracının pytest testleri. Ürün kodu değişmedi.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T09:04:25+00:00",
+  "review_by": "2026-10-14T09:04:25+00:00",
+  "base_sha": "4bc0249c39864f431061522c55d051f974ee3a09",
+  "candidate_sha": "SELF",
+  "risk_tier": "R2",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor.",
+    "model_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor.",
+    "prompt_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor.",
+    "tool_schema_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor.",
+    "guardrail_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor.",
+    "retrieval_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor.",
+    "embedding_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor.",
+    "evaluator_revision": "Unchanged from 4bc0249; bu commit davranış yüzeyini değiştirmiyor."
+  },
+  "data": {
+    "corpus_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "eval_set_digest": "f65cee62b20ca19127e18db6651b55a7dc439ceddd7109e84fc3981ddba661de",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "state": "present",
+      "sha256": "47dd17848d96661b710352ba96decee09beef3889f7ef13f55a50e3584c07e5b"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/115-wire-unreached-evidence-r1.json",
+      "report_sha256": "7b2fc659e8a2199552995d84d83046cbb35a3973d9ba9f72d7ff8f44e52e6d54",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": ".github/workflows/ci.yml",
+    "holdout_ref": "specs/018-codex-production-line/verification.md",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/acceptance/assessment_cases.json",
+    "metrics": [
+      {
+        "name": "learning_mutations_caught",
+        "baseline": 0,
+        "candidate": 7,
+        "operator": ">=",
+        "threshold": 7,
+        "sample_size": 7
+      },
+      {
+        "name": "storage_mutations_caught",
+        "baseline": 0,
+        "candidate": 3,
+        "operator": ">=",
+        "threshold": 3,
+        "sample_size": 3
+      },
+      {
+        "name": "role_agent_tool_tests_passed",
+        "baseline": 0,
+        "candidate": 7,
+        "operator": ">=",
+        "threshold": 7,
+        "sample_size": 7
+      }
+    ],
+    "exact_command": "supabase/tests/rls_learning_events_mutation_check.sh rls_learning_template_019 && supabase/tests/rls_storage_mutation_check.sh dou_l5_storage_ci019 && PYTHONPATH=apps/api:. apps/api/.venv/bin/python -m pytest -q scripts/test_role_agent_application_mutation_check.py && apps/api/.venv/bin/python scripts/workflow_policy_check.py"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "course_or_product",
+      "actor": "Pending course_or_product reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: kapı/test/belge katmanı; ürün özellik bayrakları değişmedi",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:115-wire-unreached-evidence-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: kapı/test/belge katmanı; ürün özellik bayrakları değişmedi",
+    "kill_switch": "Commit geri alınır; kapı devre dışı kalır, ürün davranışı değişmez.",
+    "assignment": "Sticky to the exact reviewed candidate SHA; no real-user exposure.",
+    "initial_exposure": "None; yerel sentetik koşu.",
+    "stop_conditions": [
+      "Kapı yanlış pozitif üretip geliştirmeyi durdurursa.",
+      "Bir testin kırmızı yanabildiği kanıtlanamazsa.",
+      "Gerçek öğrenci içeriği kayıt yüzeyine girerse."
+    ],
+    "expand_conditions": [
+      "Barındırılan CI koşusunda aynı kapılar yeşil.",
+      "Adlandırılmış mühendislik/alan/gizlilik onayları ayrı ayrı alınır."
+    ],
+    "active_exam_policy": "No academic record, active-exam lock, help scope or role change."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:4bc0249c39864f431061522c55d051f974ee3a09",
+    "procedure": "Bu commit geri alınır; veri göçü geri alma gerektirmez (yalnız ileri göç eklenirse ayrıca belirtilir).",
+    "max_minutes": 30,
+    "verification": "Planned operator response, not measured production SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik fixture ve yerel DB/API koşuları. Gerçek öğrenci içeriği yok.",
+    "retention": "Kurumsal saklama ve gerçek sağlayıcı yaşam döngüsü açık; üretim terfisi yok."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
