@@ -13,6 +13,8 @@ export function FeedbackPanel({ courseId, feedback }: { courseId: string; feedba
   const score = formatScore(feedback.score);
   const solution = describeSolution(feedback.solution);
   const missingCriterion = groundedMissingCriterion(feedback);
+  const isUngroundedWithoutEvidence =
+    verdict === "ungraded" && (feedback.message ?? "").includes("tamamlanamadı");
 
   return (
     <div className="mt-6 rounded-lg border border-border bg-surface p-5">
@@ -20,18 +22,22 @@ export function FeedbackPanel({ courseId, feedback }: { courseId: string; feedba
         {/* Renk tek başına bilgi taşımaz: rozetin metni her zaman vardır. */}
         <Badge tone={spec.tone}>{spec.label}</Badge>
         {/* Puan yoksa yazılmaz — "0" yazmak olmayan bir ölçümü iddia etmektir. */}
-        {score && (
+        {!isUngroundedWithoutEvidence && score && (
           <span className="font-mono text-sm text-fg">
             {score} / {SCORE_SCALE}
           </span>
         )}
       </div>
 
-      {feedback.message && (
-        <p className="prose-tr mt-3 text-sm text-fg">{feedback.message}</p>
+      {isUngroundedWithoutEvidence ? (
+        <p className="prose-tr mt-3 text-sm text-fg">
+          Bu cevap kaynağa bağlanamadığı için puanlanmadı
+        </p>
+      ) : (
+        feedback.message && <p className="prose-tr mt-3 text-sm text-fg">{feedback.message}</p>
       )}
 
-      {feedback.missing_points && feedback.missing_points.length > 0 && (
+      {!isUngroundedWithoutEvidence && feedback.missing_points && feedback.missing_points.length > 0 && (
         <div className="mt-4">
           <h3 className="text-xs font-medium text-fg-muted">Eksik kalan noktalar</h3>
           <ul className="mt-2 space-y-1">
@@ -44,7 +50,7 @@ export function FeedbackPanel({ courseId, feedback }: { courseId: string; feedba
         </div>
       )}
 
-      {feedback.rubric_breakdown && feedback.rubric_breakdown.length > 0 && (
+      {!isUngroundedWithoutEvidence && feedback.rubric_breakdown && feedback.rubric_breakdown.length > 0 && (
         <div className="mt-4 overflow-x-auto">
           <h3 className="mb-2 text-xs font-medium text-fg-muted">Rubrik ölçütleri</h3>
           <table className="w-full min-w-[480px] text-left text-sm">
@@ -71,27 +77,27 @@ export function FeedbackPanel({ courseId, feedback }: { courseId: string; feedba
       )}
 
       {/* Açıklama kaynaklıdır: "neden yanlış" gerçek bir chunk'a dayanır. */}
-      {feedback.why_wrong && (
+      {!isUngroundedWithoutEvidence && feedback.why_wrong && (
         <div className="mt-4">
           <h3 className="mb-2 text-xs font-medium text-fg-muted">Neden yanlış?</h3>
           <SourceCard source={sourceInfo(feedback.why_wrong)} />
         </div>
       )}
 
-      {missingCriterion && <section aria-label="Eksik ölçütün dayanağı" className="mt-4 space-y-2">
+      {!isUngroundedWithoutEvidence && missingCriterion && <section aria-label="Eksik ölçütün dayanağı" className="mt-4 space-y-2">
         <h3 className="text-xs font-medium text-fg-muted">Eksik ölçütün dayanağı</h3>
         <p className="prose-tr text-sm text-fg">{missingCriterion.criterion}</p>
         <SourceCard source={sourceInfo(missingCriterion.source)} href={sourceContextHref(courseId, missingCriterion.source.chunk_id)} />
       </section>}
 
-      {feedback.evidence && (
+      {!isUngroundedWithoutEvidence && feedback.evidence && (
         <div className="mt-4">
           <h3 className="mb-2 text-xs font-medium text-fg-muted">Değerlendirmenin dayanağı</h3>
           <SourceCard source={sourceInfo(feedback.evidence)} />
         </div>
       )}
 
-      {solution.length > 0 && (
+      {!isUngroundedWithoutEvidence && solution.length > 0 && (
         <dl className="mt-4 space-y-2 border-t border-border pt-4">
           {solution.map((line, position) => (
             <div key={`${line.label}-${position}`}>
