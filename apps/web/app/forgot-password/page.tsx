@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
       <Card className="w-full sm:p-8">
         <span className="mb-5 grid h-12 w-12 place-items-center rounded-xl bg-brand-subtle text-brand"><ShieldIcon size={25} /></span>
         <p className="text-sm font-medium text-fg-muted">Hesap erişimi</p>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-fg">Parolanı yenile</h1>
+        <h1 className="mt-2 text-[1.75rem] font-semibold tracking-tight text-fg">Parolanı yenile</h1>
         <p className="mt-3 text-base leading-7 text-fg-muted">
           Üniversite hesabına kayıtlı e-posta adresini yaz. Hesap varsa yenileme bağlantısı
           gönderilir.

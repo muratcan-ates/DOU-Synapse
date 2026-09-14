@@ -702,10 +702,15 @@ test.describe("sınav provası", () => {
 
     await page.locator('input[type="radio"]').first().check();
     await sonraki.click();
-    await expect(page.getByText(`2/${havuz.taslaklar.length}`)).toBeVisible();
+    await expect(page.getByText(`Soru 2 / ${havuz.taslaklar.length}`, { exact: true })).toBeVisible();
+    const soruGezintisi = page.getByRole("navigation", { name: "Soru gezintisi", exact: true });
+    await expect(soruGezintisi.getByRole("button", { name: "Soru 2", exact: true }))
+      .toHaveAttribute("aria-current", "step");
 
     await onceki.click();
-    await expect(page.getByText(`1/${havuz.taslaklar.length}`)).toBeVisible();
+    await expect(page.getByText(`Soru 1 / ${havuz.taslaklar.length}`, { exact: true })).toBeVisible();
+    await expect(soruGezintisi.getByRole("button", { name: "Soru 1", exact: true }))
+      .toHaveAttribute("aria-current", "step");
     // Geri dönünce önceki cevap yerinde durmalı.
     await expect(page.locator('input[type="radio"]').first()).toBeChecked();
   });

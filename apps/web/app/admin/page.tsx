@@ -94,6 +94,8 @@ function AdminContent() {
 
       <AdminOverviewSection />
 
+      <AdminSecuritySection />
+
       <section aria-labelledby="admin-data-title">
         <div className="mb-4">
           <h2 id="admin-data-title" className="text-xl font-semibold text-fg">
@@ -155,6 +157,34 @@ function AdminContent() {
         </div>
       </section>
     </div>
+  );
+}
+
+/** Mevcut erişim sınırları; olay akışı bağlıymış gibi durum üretmez. */
+function AdminSecuritySection() {
+  return (
+    <section aria-labelledby="admin-security-title">
+      <h2 id="admin-security-title" className="text-xl font-semibold text-fg">Güvenlik</h2>
+      <div className="mt-4 overflow-hidden rounded-[20px] bg-surface shadow-e1">
+        <dl className="divide-y divide-border px-5 sm:px-6">
+          <div className="grid gap-2 py-4 sm:grid-cols-[12rem_1fr] sm:gap-6">
+            <dt className="text-sm font-semibold text-fg">Yönetici erişimi</dt>
+            <dd className="text-sm leading-6 text-fg-muted">Platform yöneticisi yetkisi, ders eğitmenliğinden bağımsız olarak sunucuda doğrulanır.</dd>
+          </div>
+          <div className="grid gap-2 py-4 sm:grid-cols-[12rem_1fr] sm:gap-6">
+            <dt className="text-sm font-semibold text-fg">Kayıt gizliliği</dt>
+            <dd className="text-sm leading-6 text-fg-muted">Kullanıcı dizininde e-postalar maskelenir. AI kullanım kayıtları soru, yanıt ve kaynak metni içermez.</dd>
+          </div>
+        </dl>
+        <div className="border-t border-border bg-surface-sunken px-5 py-4 sm:px-6">
+          <dl className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <dt className="text-sm font-semibold text-fg">Güvenlik olay akışı</dt>
+            <dd className="text-sm font-medium text-fg-muted">Henüz bağlı değil</dd>
+          </dl>
+          <p className="mt-2 text-sm leading-6 text-fg-muted">Bu panelde güvenlik alarmları ve olay listesi henüz gösterilmiyor.</p>
+        </div>
+      </div>
+    </section>
   );
 }
 

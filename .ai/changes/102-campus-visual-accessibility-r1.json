@@ -1,0 +1,449 @@
+{
+  "schema_version": 1,
+  "change_id": "102-campus-visual-accessibility-r1",
+  "lineage_id": "campus-visual-accessibility",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Çizimli kampüs arayüzü, erişilebilirlik ve ayrı teknik demo hesabı",
+  "summary": "Güncel sinaps/el çizimlerini, kitap işaretli asistanı, uygulama erişilebilirlik ayarlarını ve 404/kurtarma sayfalarını inceleme dalında paylaşır. Öğretmen ile Bilgi İşlem için ayrı sentetik hesap sağlanır; mevcut sunucu üyelikleri, sınav kilitleri ve AI davranışı korunur. Kullanıcı commit/push için açık izin verdi; main birleştirmesi veya üretim terfisi yapılmaz.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T22:25:19.337864+00:00",
+  "review_by": "2026-10-14T22:25:19.337864+00:00",
+  "base_sha": "3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "model_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "prompt_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "tool_schema_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "guardrail_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "retrieval_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "embedding_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "evaluator_revision": "unchanged:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20"
+  },
+  "data": {
+    "corpus_digest": "5960ee3daf3311cbcddc04e5af73b637ac312ea6a1cba7ff08d80f05c15359ee",
+    "eval_set_digest": "5960ee3daf3311cbcddc04e5af73b637ac312ea6a1cba7ff08d80f05c15359ee",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "DESIGN.md",
+      "state": "present",
+      "sha256": "ae690d65a73f879fe7b55b2818ef235a4ad5d04307d452ef1ddbc208f101ff16"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "d0027ecc895d23ec74eba3cf8afac37e26a038b8d8139aa464b63cbb2fb10166"
+    },
+    {
+      "path": "apps/web/app/(auth)/auth/callback/page.tsx",
+      "state": "present",
+      "sha256": "c0931501eb7ee6186c37968e1264ea1c9abff13b27be36a173f62ac70f24ede5"
+    },
+    {
+      "path": "apps/web/app/(auth)/verify-email/page.tsx",
+      "state": "present",
+      "sha256": "0a9966e0a7d7fa62dcdb269f479e25f8a0a97947520088d83c5c3e283ac9b102"
+    },
+    {
+      "path": "apps/web/app/admin/page.tsx",
+      "state": "present",
+      "sha256": "cd3bce8a10753359ef732f128e69a6eb3d865703feca48916ff547f2bbf303ce"
+    },
+    {
+      "path": "apps/web/app/courses/page.tsx",
+      "state": "present",
+      "sha256": "3db3314a9aa0a2cf4328544f84ef7a17263d966255fb2ffa1399520af627ab08"
+    },
+    {
+      "path": "apps/web/app/dashboard/page.tsx",
+      "state": "present",
+      "sha256": "c5cd52f66a7c83811eb989264dc2d7b414399225e944683f1db251b3cf9b26f4"
+    },
+    {
+      "path": "apps/web/app/error.tsx",
+      "state": "present",
+      "sha256": "a0db6dc4b5c581127715e8d8f30a7c8297774ba523da13f48ed7b6c33b62f3f2"
+    },
+    {
+      "path": "apps/web/app/forgot-password/page.tsx",
+      "state": "present",
+      "sha256": "b009b600b596fb46db77bf6ca23c4786b94d1d7b947b1e5c5ad38353a8010827"
+    },
+    {
+      "path": "apps/web/app/globals.css",
+      "state": "present",
+      "sha256": "cd12bc59123eb036331ea792b2431517a07d50f8e884bff51c82512e878f470b"
+    },
+    {
+      "path": "apps/web/app/kvkk/page.tsx",
+      "state": "present",
+      "sha256": "6c58172ea8fedd699c7a5b0254b9a0910ea9dd8405dbf505899c625cdb431765"
+    },
+    {
+      "path": "apps/web/app/layout.tsx",
+      "state": "present",
+      "sha256": "8541e678399a3d104e602398cd6d550786d8c18ba3a604df9c0573395db6c5fd"
+    },
+    {
+      "path": "apps/web/app/not-found.tsx",
+      "state": "present",
+      "sha256": "2582218a9190867e837be62ae64f60ea453b7131b8566201286510204c1e5f7e"
+    },
+    {
+      "path": "apps/web/app/page.tsx",
+      "state": "present",
+      "sha256": "93a35e286e312287d1a247916521f0e2fccac1838dfc9507410ec8dd3ba31bba"
+    },
+    {
+      "path": "apps/web/app/profile/page.tsx",
+      "state": "present",
+      "sha256": "2f19145243cb97bb035f5ad8650aedb2f4e35f9a696ce218a46d8bd1c0701be4"
+    },
+    {
+      "path": "apps/web/app/reset-password/page.tsx",
+      "state": "present",
+      "sha256": "27ab9a8d9c2199eedfc95d8cae520a71695bcfe56a76bb5c3ba800cc8093ad14"
+    },
+    {
+      "path": "apps/web/app/settings/layout.tsx",
+      "state": "present",
+      "sha256": "0974d79f9fe1cdeb979ebf4410910d87654f9593edab8f6eda4ec77904eb0b72"
+    },
+    {
+      "path": "apps/web/app/settings/page.tsx",
+      "state": "present",
+      "sha256": "2a77b5aef14a067d6a8e7b3a0fdf46d3c841f4df701d9d7c07377fefb2108ef7"
+    },
+    {
+      "path": "apps/web/app/study/layout.tsx",
+      "state": "present",
+      "sha256": "41c50159170d808fa1b5d743e06ff1cc3e68fe28d3627a88d4e71f3633fa98b8"
+    },
+    {
+      "path": "apps/web/app/study/page.tsx",
+      "state": "present",
+      "sha256": "89d04507fb8b0c34d487d960b3c9a3d08120dbe8bc85c01a1f030783e031a5b0"
+    },
+    {
+      "path": "apps/web/bun.lock",
+      "state": "present",
+      "sha256": "9c06322dd888752e1e113c88c82115c6a7fec4bebc9c3fab5b1b0286a85aa9db"
+    },
+    {
+      "path": "apps/web/components/accessibility-provider.tsx",
+      "state": "present",
+      "sha256": "84150f75181f77fea39d994d8150dc8e62100a5a947860d13656ffbe1c266203"
+    },
+    {
+      "path": "apps/web/components/app-shell.tsx",
+      "state": "present",
+      "sha256": "fe4448e992837cfae20eb338bd7e751f1d5f8761a7eccc10e168a8ee48c9daf7"
+    },
+    {
+      "path": "apps/web/components/brand-mark.tsx",
+      "state": "present",
+      "sha256": "c772acd4674da103aa4e6a7cd890ebc40d2a8ffa5376a971d324432e0a6ba208"
+    },
+    {
+      "path": "apps/web/components/campus-motion.tsx",
+      "state": "present",
+      "sha256": "a78685a494fa35ad6d0584da1a9a21493b1be47b1547376aac356ec57b953ece"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "7bdcdc9f342c116d6e9e029676cee536d41863ae08525a96cd08f6f9d9b0504e"
+    },
+    {
+      "path": "apps/web/components/course-cover.tsx",
+      "state": "present",
+      "sha256": "ac735dba63d48e56dd2466d15bffb0ce2a581388275720a8b30eacc118ec6ee9"
+    },
+    {
+      "path": "apps/web/components/course-nav.tsx",
+      "state": "present",
+      "sha256": "60b4c8432e1f0036b59f906a5cdd6f86c7c25dbe6157d776f2bf01a7f2b4a1aa"
+    },
+    {
+      "path": "apps/web/components/field.tsx",
+      "state": "present",
+      "sha256": "51d0b67962d8197c8fc4b85d595f493c32f07b8da54798d9cf4a70d4c229c6d4"
+    },
+    {
+      "path": "apps/web/components/icons.tsx",
+      "state": "present",
+      "sha256": "0b40a295272de4ec135c97fa68d4589d5431b8958be5372e73d9379b6648c1f1"
+    },
+    {
+      "path": "apps/web/components/quick-switch.tsx",
+      "state": "present",
+      "sha256": "3c3bac58ca384d1ebd4004f02435b49e24457fba18aefeb613f53fc9a9b103f2"
+    },
+    {
+      "path": "apps/web/components/synapse-constellation.module.css",
+      "state": "present",
+      "sha256": "921ff141074c75faf8c4e1223a9b958aefdc3cdf31eb30e5c49dcf4d2c4ec6fa"
+    },
+    {
+      "path": "apps/web/components/synapse-constellation.tsx",
+      "state": "present",
+      "sha256": "054d02667e4045a1ad11542c50dd8d056c38e5c7c7554b3a1b745e32dc31dec9"
+    },
+    {
+      "path": "apps/web/components/synapse-footer.tsx",
+      "state": "present",
+      "sha256": "692a82fa614fce58d11f5af9077581e1575d852af4068482377521e044f14a63"
+    },
+    {
+      "path": "apps/web/components/synapse-illustration.module.css",
+      "state": "present",
+      "sha256": "1467adfcd6426c6f4bfb7ae8da976dcfff6c338edbd7d6834351d0c8552b4e51"
+    },
+    {
+      "path": "apps/web/components/synapse-illustration.tsx",
+      "state": "present",
+      "sha256": "e5c59a4c78c6dfa1f4014e7a3bd12d79827919ad5c48db66c391d3b4551442db"
+    },
+    {
+      "path": "apps/web/components/theme-control.tsx",
+      "state": "present",
+      "sha256": "4db77aa6a2a9f3e56cfe721d2c3fe68201b7f9952fd5216b8fdb5c9fa4ff7300"
+    },
+    {
+      "path": "apps/web/e2e/flows.spec.ts",
+      "state": "present",
+      "sha256": "67e67761ff8636541b3c1646615033daf03dedbdc1b5b14897fbdc92a0833832"
+    },
+    {
+      "path": "apps/web/e2e/portal.spec.ts",
+      "state": "present",
+      "sha256": "f72d7e5687848c0c7cc6b722058e05ef48286b932fa2b9bcdbdad707baff4b94"
+    },
+    {
+      "path": "apps/web/lib/accessibility.test.ts",
+      "state": "present",
+      "sha256": "3319cb0d4c6911b06fa93debebbbd8047d4289d36fc31d62311fe6fae055cbe1"
+    },
+    {
+      "path": "apps/web/lib/accessibility.ts",
+      "state": "present",
+      "sha256": "8cd01b85131b861d7407ffa2787ac591987729030dff77ce2a14b4e986699a08"
+    },
+    {
+      "path": "apps/web/lib/auth-session.ts",
+      "state": "present",
+      "sha256": "20e91518273c76152235ceb2458f4444de0c18e46b0c7fc917afcd0501f29099"
+    },
+    {
+      "path": "apps/web/lib/course-cover.test.ts",
+      "state": "present",
+      "sha256": "9be7df974f5d7359ef03626a702b9ffeb337c2573546fdbb440a6a5102fc8e81"
+    },
+    {
+      "path": "apps/web/lib/course-cover.ts",
+      "state": "present",
+      "sha256": "e1d188010a3d8f6dc912a28157e732012e716a04a15c704b8288a32b3c6c4b11"
+    },
+    {
+      "path": "apps/web/package.json",
+      "state": "present",
+      "sha256": "2f14f8fca44e724f9d0c29d33395955401b8d041fdc78b93428f7c90281edc9a"
+    },
+    {
+      "path": "apps/web/public/accessibility-boot.js",
+      "state": "present",
+      "sha256": "d6deab96baa3b143b04976fad71613a91a9a806a3271bc36c9b6925575537bfc"
+    },
+    {
+      "path": "apps/web/public/brand/art/hands-dark.png",
+      "state": "present",
+      "sha256": "c7db894e9aa5138c01964c320f2c3c3312cac6151483ee29e653836c26b4271c"
+    },
+    {
+      "path": "apps/web/public/brand/art/hands-light.png",
+      "state": "present",
+      "sha256": "66d6132421c93ae4df0774201dbf65bd62b0c6ef313735587112768a5e688eb9"
+    },
+    {
+      "path": "apps/web/public/brand/art/neuron-dark.svg",
+      "state": "present",
+      "sha256": "f249ed3ef9bcf198fd7e78099a7c3bdfa7f0d9d07587fd263db9ebe252b00f98"
+    },
+    {
+      "path": "apps/web/public/brand/art/neuron-light.svg",
+      "state": "present",
+      "sha256": "7af53a95ad0901de499ee2a2c289dbc5b6ec435b5840f4b1f5578075619f90f0"
+    },
+    {
+      "path": "apps/web/public/brand/dogus-universitesi.svg",
+      "state": "present",
+      "sha256": "3e5656a673c1d631991e2b7343970821396f79d151f70672fba3f917a5930d68"
+    },
+    {
+      "path": "apps/web/scripts/contrast.mjs",
+      "state": "present",
+      "sha256": "fee112592aa8077da44b1de464538a3683d541cd6149589dc2164fd05e94d281"
+    },
+    {
+      "path": "scripts/provision_ci_e2e.py",
+      "state": "present",
+      "sha256": "2ef26212e3803a9dabd1600efbd557e3e52d5e7862d920930ea7aecd99fb5dc7"
+    },
+    {
+      "path": "scripts/test_provision_ci_e2e.py",
+      "state": "present",
+      "sha256": "41ad13525f1b5f8417c2a16bfd98464effeb36028111fba8a9b4e5edc9d79ff7"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "87e09e7338853d026aadb47ffb11974a20ab2ca47f5a92a6df61db7082656e03"
+    },
+    {
+      "path": "specs/002-production-hardening/research.md",
+      "state": "present",
+      "sha256": "d1c449ecc93ce1227514153a880d64fb51e775533dc9d04de47d681ea00e9c8f"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "e01bdcd7ce9c433ce9021b18756be4a0062467403f476a35ee2846132730d236"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "5c00ad25b2b47073fd81dc9067d8bcb36ccbfc61e043af195c98434c54a13f14"
+    },
+    {
+      "path": "specs/025-campus-ui/drawn-visual-review.md",
+      "state": "present",
+      "sha256": "da42aa6a9be0cf922eebc79feb7b8c2372d328d7957f1851b8cdaf92afb0047f"
+    },
+    {
+      "path": "specs/025-campus-ui/git-handoff.md",
+      "state": "present",
+      "sha256": "4581cb61eae96b215dc8b45908c9717f9daa7eeecdcd6a1d1cf39802732e5284"
+    },
+    {
+      "path": "specs/025-campus-ui/role-accessibility-review.md",
+      "state": "present",
+      "sha256": "757700c2150813858c0edeb3e7b1942c48d7d4b919c455fe395e54397bef9246"
+    },
+    {
+      "path": "specs/025-campus-ui/spec.md",
+      "state": "present",
+      "sha256": "187f4f68d9bdeede478524a48daac1fba386d5a6f330409681d5c795f23d8043"
+    },
+    {
+      "path": "supabase/seed_demo.sql",
+      "state": "present",
+      "sha256": "46505b4db3832a00c8bbccef388e7f9dc3b63f5c8b8c1952c6fad50ce1e86551"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/102-campus-visual-accessibility-r1.json",
+      "report_sha256": "691a805de7854ca8d448df40af47f32d87f1af2944a00c0c4e6c4d46ed1e204f",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/web/lib/accessibility.test.ts",
+    "holdout_ref": "apps/web/lib/course-assistant-dialog.test.ts",
+    "human_anchor_ref": "specs/025-campus-ui/spec.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "full_web_unit_failures",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 648
+      }
+    ],
+    "exact_command": "cd apps/web && bun test lib/"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "release-gate:102-campus-visual-accessibility-r1",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:102-campus-visual-accessibility-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "release-gate:102-campus-visual-accessibility-r1",
+    "kill_switch": "Üretime terfi ettirme; incelenen UI commitini geri al veya önceki web sürümünü koru. Demo rol ayrımını geri açma.",
+    "assignment": "Sticky inceleme oturumu exact candidate commitine sabitlenir; gerçek kullanıcı kohortu açılmadı.",
+    "initial_exposure": "Yerel sentetik önizleme ve kullanıcı onaylı Git inceleme dalı; üretime dağıtım yok.",
+    "stop_conditions": [
+      "Öğrenci veya öğretmen teknik yönetim verisine erişirse.",
+      "Aktif sınav kilidi, kaynak sınırı ya da asistan rol kapsamı bozulursa.",
+      "Temel gezinme, odak veya büyük yazı düzeni kullanılamaz hâle gelirse."
+    ],
+    "expand_conditions": [
+      "Son committeki tüm zorunlu kapılar, gerçek rol/E2E kabulüyle doğrulanır.",
+      "Bağımsız mühendislik, alan ve güvenlik/gizlilik sahipleri aynı adayı onaylar."
+    ],
+    "active_exam_policy": "Asistan/sınav kilidi ve oturum sözleşmeleri korunur; canlı sınav sürerken zorunlu sürüm geçişi yapılmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:3e7aa8be6fd69ffcf8a447b8fa6853143d414e20",
+    "procedure": "UI değişikliklerini önceki web sürümüne döndür; ayrı teknik demo hesabı ile öğretmenin kaldırılmış platform yetkisini koru. Seed yalnız yerel sentetik kurulum içindir, üretimde çalıştırılmaz.",
+    "max_minutes": 30,
+    "verification": "Planlanan operatör hedefi; ölçülmüş canlı rollback süresi değildir. Giriş, rol sınırı ve sınav kilidi yeniden doğrulanır.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız kaynak hashleri, sentetik demo kimlikleri ve sınırlı mekanik test sonuçları. Kullanıcının öğrenci bilgisi içeren referans ekranları, özel anahtarlar ve özel günlük girdileri kopyalanmadı. Onaylı yazısız dekoratif görseller ürün varlığıdır.",
+    "retention": "Kaynak kodu ve kişisel öğrenci içeriği barındırmayan inceleme kayıtları Git geçmişinde saklanır."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

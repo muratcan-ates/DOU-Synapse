@@ -14,7 +14,7 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
 ![Backend tests](https://img.shields.io/badge/backend_tests-2139_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 2139 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-632_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 632 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-648_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 648 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -474,11 +474,11 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
 | Backend testleri | **2139** <!-- docs-check: backend.tests = 2139 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **632** <!-- docs-check: frontend.tests = 632 --> | 51 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 51 --> |
+| Frontend birim testleri | **648** <!-- docs-check: frontend.tests = 648 --> | 53 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 53 --> |
 | Playwright tarayıcı vakaları | **82** <!-- docs-check: e2e.tests = 82 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
 | Migration | **24** <!-- docs-check: migrations.count = 24 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **32** <!-- docs-check: tables.count = 32 --> | Migration’larda kurulan benzersiz tablo sayısı |
-| Web ekranı | **22** <!-- docs-check: screens.count = 22 --> | Next.js <code>page.tsx</code> sayısı |
+| Web ekranı | **24** <!-- docs-check: screens.count = 24 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
 8 Eylül 2026 yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) <!-- docs-check: tarihsel 71 · 2026-09-08 -->
@@ -814,7 +814,7 @@ Güncel feature kanıtında backend koleksiyonu 2139 testtir; 38 alt vaka ayrıc
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 632 testtir. <!-- docs-check: frontend.tests = 632 -->
+Güncel feature kanıtında frontend kütüphane paketi 648 testtir. <!-- docs-check: frontend.tests = 648 -->
 
 Gerçek tarayıcı testi ayrı sentetik DB ve sahip olunan sunucu gerektirir;
 [E2E çalıştırma sözleşmesini](docs/development/owned-e2e.md) izleyin.

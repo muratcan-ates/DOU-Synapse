@@ -1,0 +1,47 @@
+.frame {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.neuron {
+  aspect-ratio: 2.05 / 1;
+}
+
+.hands {
+  aspect-ratio: 3 / 1;
+}
+
+.image {
+  object-fit: contain;
+  object-position: center;
+}
+
+.neuron .image {
+  object-fit: cover;
+  object-position: right center;
+}
+
+.light {
+  display: block;
+}
+
+.dark {
+  display: none;
+}
+
+:global(:root[data-theme="dark"]) .light {
+  display: none;
+}
+
+:global(:root[data-theme="dark"]) .dark {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .neuron {
+    aspect-ratio: 1.75 / 1;
+  }
+}

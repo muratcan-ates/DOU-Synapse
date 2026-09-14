@@ -10,7 +10,8 @@ export interface DemoUser {
   id: string;
   email: string;
   fullName: string;
-  role: "instructor" | "student";
+  // Yalnız demo kartı etiketi; yetki sunucudaki profil/üyelikten gelir.
+  role: "instructor" | "student" | "operator";
 }
 
 /**
@@ -45,7 +46,7 @@ function isDemoUser(value: unknown): value is DemoUser {
     typeof u.id === "string" &&
     typeof u.email === "string" &&
     typeof u.fullName === "string" &&
-    (u.role === "instructor" || u.role === "student")
+    (u.role === "instructor" || u.role === "student" || u.role === "operator")
   );
 }
 

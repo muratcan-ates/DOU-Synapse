@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
     <Card className="w-full sm:p-8">
       <span className="mb-5 grid h-12 w-12 place-items-center rounded-xl bg-brand-subtle text-brand"><ShieldIcon size={25} /></span>
       <p className="text-sm font-medium text-fg-muted">Hesap erişimi</p>
-      <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-fg">E-postanı doğrula</h1>
+      <h1 className="mt-2 text-[1.75rem] font-semibold tracking-tight text-fg">E-postanı doğrula</h1>
       <p className="mt-3 text-base leading-7 text-fg-muted">Hesabına kayıtlı e-posta adresine yeni bir doğrulama bağlantısı iste.</p>
       {!supabaseConfigured ? <p className="mt-6 rounded-xl bg-surface-sunken p-5 text-base leading-7 text-fg-muted">E-posta doğrulama henüz etkin değil.</p> : sent ?
         <p role="status" className="mt-6 rounded-xl bg-success-bg p-5 text-base leading-7 text-success">Bağlantı gönderilebiliyorsa gelen kutunda görünecek. Spam klasörünü de kontrol et.</p> :

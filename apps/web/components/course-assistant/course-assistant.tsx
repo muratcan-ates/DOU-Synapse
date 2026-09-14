@@ -100,17 +100,14 @@ export function CourseAssistant({
   }, [open]);
 
   const triggerText = identity?.name ?? (access.locked ? "Asistan kilitli" : "Ders asistanı");
-  /*
-   * Tetikleyici ikincil buton kabuğudur (kenarlık + yüzey + e1 gölge); kırmızı
-   * metin ya da dolgu taşımaz. Kırmızının üç meşru yeri (marka işareti, aktif
-   * gezinme, sayfadaki tek birincil eylem) arasında "asistanı aç" yok; marka
-   * işaretindeki tek kırmızı kare kimliği zaten taşıyor (DESIGN.md, 14 Eylül).
-   */
-  const triggerClass =
+  // Görünür ad rolü anlatır; açık kitap işareti yalnız dekoratiftir.
+  const triggerClass = [
+    "gap-2.5 min-h-11 [&]:rounded-xl [&]:border-brand/30 [&]:bg-surface [&]:text-fg hover:[&]:border-brand hover:[&]:bg-brand-subtle",
     placement === "floating"
-      ? // Mobilde yüzen menünün üstünde 112px + güvenli alan bırakır; lg'de menü yok.
-        "fixed right-4 bottom-[calc(7rem+env(safe-area-inset-bottom))] z-40 rounded-full border-border bg-surface px-5 shadow-e2 lg:right-6 lg:bottom-6"
-      : "shadow-e1";
+      ? // Mobil gezinmenin üstünde güvenli boşluk korunur.
+        "fixed right-4 bottom-[calc(7rem+env(safe-area-inset-bottom))] z-40 max-w-[calc(100vw-2rem)] px-4 shadow-e2 lg:right-6 lg:bottom-6"
+      : "max-w-full shadow-e1",
+  ].join(" ");
 
   return (
     <>
@@ -124,8 +121,10 @@ export function CourseAssistant({
         aria-controls={`${titleId}-dialog`}
         className={triggerClass}
       >
-        <AssistantMark />
-        {triggerText}
+        <span aria-hidden="true" className="grid h-6 w-6 shrink-0 place-items-center">
+          <AssistantMark />
+        </span>
+        <span className="min-w-0 text-sm font-semibold">{triggerText}</span>
       </Button>
 
       <dialog
@@ -177,21 +176,22 @@ export function CourseAssistant({
         // Seviye 2 (popover/çekmece): e2 gölge, 12px+ köşe. Dar ekranda tam
         // yükseklik ve köşesiz (kenara yapışık); sm ve üstünde 16px içeriden,
         // yuvarlak köşeli panel.
-        className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-[34rem] overflow-hidden border-0 bg-surface p-0 text-fg shadow-e2 backdrop:bg-black/30 open:flex open:flex-col sm:my-4 sm:mr-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-[24px]"
+        className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-[34rem] overflow-y-auto border-0 bg-surface p-0 text-fg shadow-e2 backdrop:bg-black/30 open:flex open:flex-col sm:my-4 sm:mr-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-[24px]"
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border bg-surface-sunken px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-5 sm:px-6">
-          <div className="min-w-0">
-            <p className="text-xs text-fg-subtle">
-              {identity?.eyebrow ?? "Ders kapsamlı asistan"}
-              {courseLabel ? ` · ${courseLabel}` : ""}
-            </p>
-            <h2 id={titleId} className="mt-1 text-xl font-semibold text-fg">
-              {identity?.name ?? "Ders asistanı"}
-            </h2>
-            <p id={descriptionId} className="prose-tr mt-2 text-sm leading-6 text-fg-muted">
-              {identity?.description ??
-                "Asistan kimliği ve kullanım politikası ders üyeliğinizden sunucu tarafından belirlenir."}
-            </p>
+        <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 border-b border-border bg-surface px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <span aria-hidden="true" className="grid h-6 w-6 shrink-0 place-items-center text-fg">
+              <AssistantMark />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs text-fg-subtle [overflow-wrap:anywhere]">
+                {identity?.eyebrow ?? "Ders kapsamlı asistan"}
+                {courseLabel ? ` · ${courseLabel}` : ""}
+              </p>
+              <h2 id={titleId} className="mt-1 text-xl font-semibold text-fg [overflow-wrap:anywhere]">
+                {identity?.name ?? "Ders asistanı"}
+              </h2>
+            </div>
           </div>
           <Button
             type="button"
@@ -203,6 +203,15 @@ export function CourseAssistant({
           >
             Kapat
           </Button>
+          <details className="col-span-2 mt-3 min-w-0 rounded-xl border border-border bg-surface-sunken px-3">
+            <summary className="min-h-11 cursor-pointer rounded-lg py-3 text-sm text-fg-muted marker:text-brand hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              Rol ve kapsam
+            </summary>
+            <p id={descriptionId} className="prose-tr pb-3 text-sm leading-6 text-fg-muted">
+              {identity?.description ??
+                "Asistan kimliği ve kullanım politikası ders üyeliğinizden sunucu tarafından belirlenir."}
+            </p>
+          </details>
         </header>
 
         {!access.ready ? (
@@ -272,12 +281,12 @@ export function AssistantIdentitySummary({
   return (
     <section className="mb-7 flex flex-wrap items-center justify-between gap-5">
       <div className="flex min-w-0 items-center gap-4">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-surface shadow-e1">
+        <span className="grid h-10 w-10 shrink-0 place-items-center text-fg">
           <AssistantMark />
         </span>
         <div>
           <p className="text-xs text-fg-subtle">{identity.eyebrow}</p>
-          <h1 className="mt-1 text-[28px] leading-tight font-semibold tracking-tight text-fg">{identity.name}</h1>
+          <h1 className="mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight text-fg">{identity.name}</h1>
           <p className="prose-tr mt-2 text-base leading-7 text-fg-muted">{identity.description}</p>
         </div>
       </div>
@@ -389,7 +398,7 @@ function AssistantConversation({
   </div>;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-[min(30rem,70dvh)] flex-1 flex-col">
       {deletionNotice && <p role="status" className="px-5 py-3 text-sm text-fg-muted">{deletionNotice}</p>}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
         <AssistantPolicyNote allowedModes={allowedModes} hintLimit={hintLimit} compact />
@@ -584,13 +593,24 @@ function AssistantAvailabilityError({
   );
 }
 
+/** Sokratik öğrenme için sade açık kitap; 24px çizgi setiyle aynı ölçekte. */
 function AssistantMark() {
   return (
-    <span aria-hidden="true" className="grid h-5 w-5 grid-cols-2 gap-0.5">
-      <span className="rounded-[2px] bg-brand" />
-      <span className="rounded-[2px] bg-fg-subtle" />
-      <span className="rounded-[2px] bg-fg-subtle" />
-      <span className="rounded-[2px] border border-border-strong" />
-    </span>
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 6.5C9.3 4.9 6.4 4.5 3 5v13.5c3.4-.5 6.3-.1 9 1.5 2.7-1.6 5.6-2 9-1.5V5c-3.4-.5-6.3-.1-9 1.5Z" />
+      <path d="M12 6.5V20" />
+      <path d="M6.5 8.5c.9 0 1.7.2 2.5.5" className="text-brand" />
+    </svg>
   );
 }

@@ -68,7 +68,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
        * şerit tamamen kalkar, sayfa dikey olarak zıplar.
        */}
       <nav
-        className={`mb-7 flex gap-1 overflow-x-auto rounded-2xl border border-border bg-surface p-1.5 shadow-e1 [scrollbar-width:thin] xl:flex-wrap ${
+        className={`mb-8 flex min-w-0 max-w-full gap-1 overflow-x-auto border-b border-border pb-1 [scrollbar-width:thin] xl:flex-wrap ${
           ready ? "" : "invisible"
         }`}
         aria-label={lock.locked ? lock.message ?? undefined : undefined}
@@ -109,9 +109,9 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
             key={tab.slug}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center whitespace-nowrap rounded-xl px-3.5 py-3 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
+            className={`relative flex shrink-0 items-center whitespace-nowrap rounded-t-xl px-3.5 py-3 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
               active
-                ? "bg-brand-subtle font-semibold text-brand"
+                ? "bg-brand-subtle font-semibold text-brand after:absolute after:inset-x-3.5 after:bottom-0 after:h-0.5 after:rounded-full after:bg-brand"
                 : "text-fg-muted hover:bg-bg hover:text-fg"
             }`}
           >

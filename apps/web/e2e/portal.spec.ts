@@ -27,7 +27,14 @@ const BURAK = {
   role: "student" as const,
 };
 
-type DemoUser = typeof AYSE | typeof BURAK;
+const IT = {
+  id: "33333333-3333-3333-3333-333333333333",
+  email: "bilgi-islem@demo.dogus.edu.tr",
+  fullName: "Bilgi İşlem",
+  role: "operator" as const,
+};
+
+type DemoUser = typeof AYSE | typeof BURAK | typeof IT;
 
 interface Course {
   id: string;
@@ -173,7 +180,11 @@ async function expectVisibleFocusRing(target: Locator) {
   expect(focusStyle.outlineWidth).toBeGreaterThanOrEqual(2);
 }
 
-async function expectMobileDarkAndFocused(page: Page, surfaceControl: Locator) {
+async function expectMobileDarkAndFocused(
+  page: Page,
+  surfaceControl: Locator,
+  direction: "Tab" | "Shift+Tab" = "Tab",
+) {
   await expect(page.getByRole("navigation", { name: "Mobil ana menü" })).toBeVisible();
 
   await page.keyboard.press("Tab");
@@ -184,7 +195,7 @@ async function expectMobileDarkAndFocused(page: Page, surfaceControl: Locator) {
   await expect(surfaceControl).toBeVisible();
   for (let tab = 0; tab < 30; tab += 1) {
     if (await surfaceControl.evaluate((element) => element === document.activeElement)) break;
-    await page.keyboard.press("Tab");
+    await page.keyboard.press(direction);
   }
   await expectVisibleFocusRing(surfaceControl);
 
@@ -198,7 +209,7 @@ async function expectMobileDarkAndFocused(page: Page, surfaceControl: Locator) {
   expect(surface.document).toBeLessThanOrEqual(surface.viewport);
   expect(surface.body).toBeLessThanOrEqual(surface.viewport);
   expect(surface.prefersDark).toBe(true);
-  expect(surface.background).toBe("rgb(20, 23, 28)");
+  expect(surface.background).toBe("rgb(6, 20, 38)");
 }
 
 test.describe("rol bazlı ürün portalı", () => {
@@ -385,9 +396,9 @@ test.describe("rol bazlı ürün portalı", () => {
 
   test("çıkış sonrası yeni kullanıcı önceki admin profilini devralmaz", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /Ayşe Hoca/ }).click();
+    await page.getByRole("button", { name: /Bilgi İşlem.*Teknik yönetim/ }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByRole("link", { name: "Bilgi İşlem" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Bilgi İşlem", exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Çıkış" }).click();
     await expect(page).toHaveURL(/\/$/);
@@ -449,7 +460,7 @@ test.describe("rol bazlı ürün portalı", () => {
   }) => {
     const browserErrors = recordBrowserErrors(page);
     const calls = recordPortalApiCalls(page);
-    await signIn(page, AYSE);
+    await signIn(page, IT);
 
     await page.goto("/admin");
 
@@ -551,6 +562,9 @@ test.describe("rol bazlı ürün portalı", () => {
       page
         .getByRole("navigation", { name: "Mobil ana menü" })
         .getByRole("link", { name: "Genel bakış", exact: true }),
+      // Mobil menü DOM sonunda: ders sayısından bağımsız olarak gerçek ters
+      // klavye sırasıyla ulaş; odak atama ya da Tab sınırı artırma yok.
+      "Shift+Tab",
     );
 
     await page.goto("/profile");
@@ -561,7 +575,7 @@ test.describe("rol bazlı ürün portalı", () => {
   test("mobil ve koyu temada admin taşmaz, odak görünür kalır", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.emulateMedia({ colorScheme: "dark" });
-    await signIn(page, AYSE);
+    await signIn(page, IT);
 
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Bilgi İşlem" })).toBeVisible();
