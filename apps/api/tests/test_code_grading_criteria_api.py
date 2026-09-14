@@ -1,4 +1,4 @@
-"""B3 gerçek API/RLS/kayıt kontrolleri; sentetik, hazır model yanıtları kullanılır."""
+"""Hazır açıklamalarla kod oracle API sınırları ve tarihsel rubrik okumaları."""
 
 from __future__ import annotations
 
@@ -70,6 +70,11 @@ def _verdict(source_id: UUID, *, invalid: bool = False) -> str:
                 {"olcut": RUBRIC[0]["point"], "puan": 100},
                 {"olcut": CRITERION, "puan": 50},
             ],
+            "grounded_feedback": {
+                "chunk_id": str(source_id),
+                "quote": "Bu cümle kaynakta yok." if invalid else DEADLOCK_TEXTS[0],
+                "next_hint": "Alıntıdaki bekleme koşullarını kendi cevabınla karşılaştır.",
+            },
             "grounded_missing_criterion": {
                 "criterion": CRITERION,
                 "chunk_id": str(source_id),
@@ -115,7 +120,14 @@ async def test_code_feedback_persists_and_respects_exam_and_owner_boundaries(
         saved = await client.post(
             base + "/answers",
             headers=pool.student,
-            json={"question_id": str(question_id), "given": "İş parçacıkları kilit bekler."},
+            json={
+                "question_id": str(question_id),
+                "given": "İş parçacıkları kilit bekler."
+                if kind is QuestionType.CODE_TRACE
+                else json.dumps(
+                    {"version": 1, "line": 1, "bug_type": "Kilit sırası", "fix_summary": "Düzelt."}
+                ),
+            },
         )
         assert saved.status_code == 201, saved.text
         immediate = saved.json()
@@ -126,24 +138,26 @@ async def test_code_feedback_persists_and_respects_exam_and_owner_boundaries(
             assert immediate["solution"] is None
             assert immediate["rubric_breakdown"] == []
             assert immediate["grounded_missing_criterion"] is None
+            assert immediate["next_hint"] is None
         else:
-            assert immediate["score"] == 80
-            assert immediate["grounded_missing_criterion"]["criterion"] == CRITERION
+            assert immediate["score"] == 0
+            assert immediate["why_wrong"]["snippet"] == DEADLOCK_TEXTS[0]
+            assert immediate["next_hint"]["source"] == immediate["why_wrong"]
         finished = await client.post(base + "/finish", headers=pool.student)
         assert finished.status_code == 200, finished.text
         detail = finished.json()["results"][0]
-        assert detail["score"] == 80
-        assert detail["is_correct"] is True
-        assert [row["earned"] for row in detail["rubric_breakdown"]] == [60, 20]
-        assert detail["why_wrong"] is None
-        claim = detail["grounded_missing_criterion"]
-        assert claim["criterion"] == CRITERION
-        assert claim["source"] == {
+        assert detail["score"] == 0  # Modelin 99 puanı kod oracle kararını değiştiremez.
+        assert detail["is_correct"] is False
+        assert detail["rubric_breakdown"] == []
+        assert detail["grounded_missing_criterion"] is None
+        assert detail["why_wrong"] == {
             "chunk_id": str(pool.chunk_ids[0]),
             "file_name": source["file_name"],
             "location": source["location"],
             "snippet": DEADLOCK_TEXTS[0],
         }
+        assert detail["next_hint"]["source"] == detail["why_wrong"]
+        assert detail["next_hint"]["text"].strip()
         assert detail["solution"]["rubric"] == RUBRIC
         read_path = base + (f"/answers/{question_id}" if mode == "practice" else "/results")
         reopened = await client.get(read_path, headers=pool.student)
@@ -164,10 +178,12 @@ async def test_code_feedback_persists_and_respects_exam_and_owner_boundaries(
                 text("SELECT feedback FROM answers WHERE session_id = :session"),
                 {"session": UUID(identity)},
             )
-        assert feedback["kaynakli_eksik_olcut"] == {
-            "criterion": CRITERION,
+        assert feedback["kaynakli_eksik_olcut"] is None
+        assert feedback["feedback_version"] == 1
+        assert feedback["grounded_feedback"] == {
             "chunk_id": str(pool.chunk_ids[0]),
             "quote": DEADLOCK_TEXTS[0],
+            "next_hint": "Alıntıdaki bekleme koşullarını kendi cevabınla karşılaştır.",
         }
         outsider = await users.create("b3-outsider@example.com")
         denied = await client.get(read_path, headers=users.auth(outsider))
@@ -224,6 +240,7 @@ async def test_fabricated_quote_with_valid_chunk_never_records_grade_or_mastery(
             assert result["solution"] is None
             assert result["evidence"] is None
             assert result["grounded_missing_criterion"] is None
+            assert result["next_hint"] is None
             assert result["missing_points"] == [] and result["rubric_breakdown"] == []
         async with rls_session(user_id=pool.student_id) as session:
             assert await session.scalar(text("SELECT count(*) FROM mastery")) == 0
@@ -310,3 +327,81 @@ async def test_legacy_rubricless_code_remains_readable_without_new_write(
     public = next(row for row in student.json()["items"] if row["id"] == str(identity))
     assert public["payload"]["code"] == legacy["code"]
     assert "answer_key" not in public["payload"] and "rubric" not in public["payload"]
+
+
+@pytest.mark.parametrize("kind", [QuestionType.CODE_TRACE, QuestionType.BUG_HUNT])
+async def test_historical_saved_code_rubric_is_read_without_oracle_regrading(
+    client: AsyncClient,
+    users: UserFactory,
+    admin_engine: AsyncEngine,
+    kind: QuestionType,
+) -> None:
+    pool = await build_course(client, users, admin_engine, approved=0)
+    question = await seed_question(
+        admin_engine,
+        course_id=UUID(pool.course_id),
+        topic_id=pool.topic_id,
+        source_chunk_id=pool.chunk_ids[0],
+        payload=_payload(kind),
+        question_type=kind,
+        status="approved",
+        reviewed_by=pool.instructor_id,
+    )
+    identity = (await start(client, pool, "practice"))["id"]
+    feedback = {
+        "durum": "degerlendirildi",
+        "dayanak_chunk_id": str(pool.chunk_ids[0]),
+        "rubrik_kirilimi": [
+            {"point": RUBRIC[0]["point"], "weight": 60, "score": 100, "earned": 60},
+            {"point": CRITERION, "weight": 40, "score": 50, "earned": 20},
+        ],
+        "kaynakli_eksik_olcut": {
+            "criterion": CRITERION,
+            "chunk_id": str(pool.chunk_ids[0]),
+            "quote": DEADLOCK_TEXTS[0],
+        },
+    }
+    async with admin_engine.begin() as conn:
+        await conn.execute(
+            text(
+                "INSERT INTO answers (session_id, question_id, course_id, given, score, "
+                "is_correct, feedback) VALUES (:session, :question, :course, 'Eski serbest cevap', "
+                "80, true, CAST(:feedback AS jsonb))"
+            ),
+            {
+                "session": UUID(identity),
+                "question": question,
+                "course": UUID(pool.course_id),
+                "feedback": json.dumps(feedback),
+            },
+        )
+    completion = FakeCompletion("Kayıtlı sonuç okunurken bu sağlayıcı çağrılmamalı.")
+    question_gen.set_providers(completion=completion)
+    try:
+        base = f"/courses/{pool.course_id}/exams/{identity}"
+        saved = await client.get(base + f"/answers/{question}", headers=pool.student)
+        assert saved.status_code == 200, saved.text
+        body = saved.json()
+        assert body["score"] == 80 and body["is_correct"] is True
+        assert body["rubric_breakdown"] == feedback["rubrik_kirilimi"]
+        assert body["grounded_missing_criterion"]["criterion"] == CRITERION
+        assert body["grounded_missing_criterion"]["source"]["snippet"] == DEADLOCK_TEXTS[0]
+        assert body["next_hint"] is None  # Eski kayıtlar için B9 dayanağı uydurulmaz.
+        finished = await client.post(base + "/finish", headers=pool.student)
+        assert finished.status_code == 200, finished.text
+        assert finished.json()["results"] == [body]
+        assert completion.calls == 0
+        async with admin_engine.connect() as conn:
+            row = (
+                (
+                    await conn.execute(
+                        text("SELECT score, feedback FROM answers WHERE session_id = :id"),
+                        {"id": UUID(identity)},
+                    )
+                )
+                .mappings()
+                .one()
+            )
+        assert row["score"] == 80 and row["feedback"] == feedback
+    finally:
+        question_gen.reset_providers()

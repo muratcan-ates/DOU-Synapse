@@ -102,6 +102,10 @@ export interface ChatAnswer {
   socratic_stage: SocraticStage | null;
   /** Cevap birebir eşleşmeli önbellekten geldi mi (FR-034). */
   cached: boolean;
+  /** Yalnız doğrulanmış demo yedeğinde true; geçmiş/önbellek bunu bildirmeyebilir. */
+  fixture?: true | null;
+  /** Yalnız yerel 429 simülasyonunda bu isteğin gerçek sağlayıcı deneme sayısı. */
+  provider_attempts?: number | null;
   /** İstek gövdesinden değil, sunucunun ders üyeliğinden türetilir. */
   audience: ChatAudience;
   /** Kullanıcının seçebileceği bir rol değildir; audience ile eşleşmelidir. */
@@ -373,6 +377,12 @@ export interface GroundedMissingCriterion {
   source: SourceRef;
 }
 
+/** Sunucunun doğruladığı sonraki çalışma adımı ve gerçek kaynak alıntısı. */
+export interface GroundedNextHint {
+  text: string;
+  source: SourceRef;
+}
+
 export interface AnswerFeedback {
   question_id: string;
   recorded?: boolean;
@@ -382,6 +392,7 @@ export interface AnswerFeedback {
   missing_points?: string[];
   rubric_breakdown?: RubricCriterionScore[];
   why_wrong?: SourceRef | null;
+  next_hint?: GroundedNextHint | null;
   grounded_missing_criterion?: GroundedMissingCriterion | null;
   evidence?: SourceRef | null;
   solution?: Record<string, unknown> | null;

@@ -23,6 +23,7 @@ bakmaz, yani bu ayrım hiçbir güvenlik kontrolünü etkilemez.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -188,6 +189,10 @@ class ChatResponse(BaseModel):
     #: Server-derived; the request schema deliberately has no matching field.
     audience: AssistantAudience
     agent_profile: str
+    #: Yalnız sunucunun fixture tipi True üretir; eski önbellek/geçmişte köken bilinmez.
+    fixture: Literal[True] | None = None
+    #: Yalnız yerel 429 benzetiminde, gerçek adapter sınırında ölçülen sayı.
+    provider_attempts: int | None = Field(default=None, ge=0)
 
 
 def snippet_of(chunk: RetrievedChunk, limit: int = SNIPPET_LENGTH) -> str:
@@ -220,6 +225,18 @@ def to_chat_response(
     imkânsız kılar — tek atıf kümesi, tek kontrol (Anayasa XI).
     """
     claims = claims or {}
+    from app.core.config import get_settings
+    from app.modules.agent.provider_fallback import (
+        DemoFixtureAnswer,
+        ProviderObservedAnswer,
+        simulation_enabled,
+    )
+
+    observed_attempts = (
+        answer.provider_attempts if isinstance(answer, ProviderObservedAnswer) else None
+    )
+    if cached and simulation_enabled(get_settings()):
+        observed_attempts = 0
     citations = [
         CitationOut(
             chunk_id=citation.chunk_id,
@@ -261,4 +278,6 @@ def to_chat_response(
         cached=cached,
         audience=audience,
         agent_profile=audience.agent_profile,
+        fixture=True if isinstance(answer, DemoFixtureAnswer) else None,
+        provider_attempts=observed_attempts,
     )

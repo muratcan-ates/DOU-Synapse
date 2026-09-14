@@ -1,0 +1,1899 @@
+{
+  "schema_version": 1,
+  "change_id": "052-grounded-explanation-oracles-r1",
+  "candidate_sha": "SELF",
+  "base_sha": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+  "captured_at": "2026-09-13T16:18:29.895827+00:00",
+  "status": "evidence-ready",
+  "result": "pass",
+  "acceptance_complete": false,
+  "claim_scope": "Yalnız yerel sentetik mekanik kapsam: deterministik kod puanı, gerçek RLS ile ders/kaynak/alıntı bağı, gösterim kilitleri ve ölçülmüş test akışları. Gerçek sağlayıcı veya pedagojik doğruluk iddiası yok.",
+  "expected_artifact_paths": [
+    "README.md",
+    "apps/api/app/api/exams.py",
+    "apps/api/app/modules/assessment/code_oracle.py",
+    "apps/api/app/modules/assessment/grading.py",
+    "apps/api/app/modules/assessment/local_grading_fixture.py",
+    "apps/api/app/modules/assessment/question_gen.py",
+    "apps/api/app/schemas/assessment.py",
+    "apps/api/tests/test_assessment.py",
+    "apps/api/tests/test_code_grading_criteria.py",
+    "apps/api/tests/test_code_grading_criteria_api.py",
+    "apps/api/tests/test_code_oracle_feedback.py",
+    "apps/api/tests/test_exams.py",
+    "apps/api/tests/test_explanation_feedback_api.py",
+    "apps/api/tests/test_grading_grounding.py",
+    "apps/web/components/exam/feedback-panel.tsx",
+    "apps/web/components/exam/question-input.tsx",
+    "apps/web/components/exam/running-exam.tsx",
+    "apps/web/e2e/grounded-wrong-feedback.spec.ts",
+    "apps/web/lib/assessment-feedback.ts",
+    "apps/web/lib/exam-answer.test.ts",
+    "apps/web/lib/exam-answer.ts",
+    "apps/web/lib/exam-drafts.ts",
+    "apps/web/lib/exam.ts",
+    "apps/web/lib/next-hint-feedback.test.ts",
+    "apps/web/lib/types.ts"
+  ],
+  "artifact_sha256": {
+    "README.md": "048151dcfb980e64aeb0eb59160a48b2c9f91ef56ad15b35201293d884d81df0",
+    "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+    "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+    "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+    "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+    "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+    "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+    "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+    "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+    "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+    "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+    "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+    "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+    "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+    "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+    "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+    "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+    "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+    "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+    "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+    "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+    "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+    "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+    "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+    "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+  },
+  "source_hashes": {
+    "README.md": "048151dcfb980e64aeb0eb59160a48b2c9f91ef56ad15b35201293d884d81df0",
+    "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+    "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+    "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+    "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+    "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+    "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+    "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+    "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+    "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+    "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+    "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+    "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+    "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+    "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+    "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+    "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+    "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+    "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+    "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+    "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+    "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+    "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+    "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+    "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+  },
+  "completed_checks": [
+    "targeted_api",
+    "full_pytest",
+    "ruff",
+    "format",
+    "mypy",
+    "migrations",
+    "workflows",
+    "bun",
+    "tsc",
+    "contrast",
+    "mutations",
+    "browser",
+    "normal_browser"
+  ],
+  "failing_checks": [
+    "documentation"
+  ],
+  "pending_checks": [
+    "Commit sonrasında ebeveyn tabanlı SDLC kapısı: not-run; bu kayıt kendi commit hashini önceden bilemez.",
+    "Uzak CI ve adaya bağlı gerçek sağlayıcı kabulü ölçülmedi.",
+    "İnsan pedagojik değerlendirmesi ve adlandırılmış bağımsız onaylar bekliyor.",
+    "Yeni version1 kayıtları koruyan uyumlu geri dönüş provası yapılmadı."
+  ],
+  "historical_draft_checks": {
+    "scope": "Önceki dış taslak sözdizimi/biçim kontrolleri aday kabulünün yerine geçmez.",
+    "security_review": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-052/security-review.md",
+      "sha256": "f3033c20b710f97a3d874e1be6cc6bdab4d8c518de737dac8f4c00cb19060e64"
+    }
+  },
+  "numeric_baseline": {
+    "status": "measured",
+    "definition": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-052/metric-definition.json",
+      "sha256": "3cbfd3551c68b8c6bec9d4bb2fe2e5942ce316b5fe4f69554bb426f15117ac7a"
+    },
+    "probe": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-052/baseline_probe.py",
+      "sha256": "95fd5febf09e22dfde41d4b57b27a971c2386defb3e5d189c4bbda94c4e34bc1"
+    },
+    "baseline_sha": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+    "baseline": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-baseline.json",
+        "sha256": "63d514b5a6ecf224b23653dbc3a2020b7ce2a52726cede797bcd7fdcd341abd8"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-baseline.log",
+        "sha256": "e80804bd4fee0f00c62b6f39208fa5f442571ffe2d046ae4ff37956f584a022e"
+      },
+      "command": [
+        ".venv/bin/python",
+        "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-052/baseline_probe.py",
+        "--api-root",
+        "/Users/muratates/code/dou-l2-product-v5/apps/api",
+        "--expected-head",
+        "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+        "--label",
+        "baseline"
+      ],
+      "measurement": {
+        "label": "baseline",
+        "captured_at": "2026-09-13T16:04:21.879579+00:00",
+        "head": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+        "api_root": "/Users/muratates/code/dou-l2-product-v5/apps/api",
+        "provider": "in-process-scripted; no network or database",
+        "metric": "code_trace_provider_score_override_cases_correct",
+        "observed": 0,
+        "sample_size": 2,
+        "threshold": 2,
+        "cases": [
+          {
+            "case": "yanlis_cikti_model_100_dese_de_0",
+            "provider_score": 100,
+            "expected_score": 0,
+            "graded": true,
+            "observed_score": 100,
+            "provider_calls": 1,
+            "correct": false
+          },
+          {
+            "case": "dogru_cikti_model_0_dese_de_100",
+            "provider_score": 0,
+            "expected_score": 100,
+            "graded": true,
+            "observed_score": 0,
+            "provider_calls": 1,
+            "correct": false
+          }
+        ],
+        "source_sha256": {
+          "app/modules/assessment/grading.py": "097a309880b01bee89c4c583442ecace0f4ec1e46ab329fb663a0405f34011e3",
+          "app/schemas/assessment.py": "bbff1420c3ecb84f4f96bae1132c0bbc9a1360f9c75e661262621d3711ce1202",
+          "app/modules/assessment/code_oracle.py": null
+        }
+      }
+    },
+    "candidate": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-candidate.json",
+        "sha256": "cb72deed9f6ca50683f2131a00156a6d77c25981ae01487e9d4fed7893fea3be"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-candidate.log",
+        "sha256": "d11bf636a9c6df56e8522ad03ac50006f261e9cecd8c2c05e3899bbcf061d4a7"
+      },
+      "command": [
+        ".venv/bin/python",
+        "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-052/baseline_probe.py",
+        "--api-root",
+        "/Users/muratates/code/dou-l2-product-v5/apps/api",
+        "--expected-head",
+        "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+        "--label",
+        "candidate"
+      ],
+      "measurement": {
+        "label": "candidate",
+        "captured_at": "2026-09-13T16:06:34.258744+00:00",
+        "head": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+        "api_root": "/Users/muratates/code/dou-l2-product-v5/apps/api",
+        "provider": "in-process-scripted; no network or database",
+        "metric": "code_trace_provider_score_override_cases_correct",
+        "observed": 2,
+        "sample_size": 2,
+        "threshold": 2,
+        "cases": [
+          {
+            "case": "yanlis_cikti_model_100_dese_de_0",
+            "provider_score": 100,
+            "expected_score": 0,
+            "graded": true,
+            "observed_score": 0,
+            "provider_calls": 1,
+            "correct": true
+          },
+          {
+            "case": "dogru_cikti_model_0_dese_de_100",
+            "provider_score": 0,
+            "expected_score": 100,
+            "graded": true,
+            "observed_score": 100,
+            "provider_calls": 0,
+            "correct": true
+          }
+        ],
+        "source_sha256": {
+          "app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+          "app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+          "app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa"
+        }
+      }
+    }
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik kimlikler, yerel ders kaynakları, sabit demo çıktıları, toplu sayılar ve kaynak/test hashleri kullanıldı. Gerçek öğrenci yanıtı veya sağlayıcı anahtarı yok. Dosya/ders kimliğini model değil veritabanı belirler.",
+    "retention": "İncelenmiş kayıt depoda sürümlenebilir; dış kanıtlar yereldir. Hukuki uyum veya gerçek veri saklama sertifikası iddia edilmez."
+  },
+  "approval_state": "pending",
+  "rollout_state": "not-deployed",
+  "known_limitations": [
+    "Alıntının birebir kaynakta bulunması anlamsal olarak öğrenci yanıtını çürüttüğünü kanıtlamaz.",
+    "Kısa yanıtta kaynak alıntısı ve ipucu deterministiktir; açıklama kalitesi insan tarafından doğrulanmadı.",
+    "Kod izleme yalnız CRLF ve tek son satır sonunu normalleştirir; harfler, boşluklar ve satır sırası aynıdır. Hata avında aynı satırdaki alternatif açıklama belirsiz sayılır.",
+    "Yeni kod puanı 0/100 oracle sonucudur; model puanı ve rubriği kullanılmaz. Tarihsel rubrik puanları korunur.",
+    "Kaynak değiştiğinde kayıtlı puan/ustalık yeniden yazılmaz; artık doğrulanamayan yeni sonuç gösterilmez.",
+    "Kaynak silme FK ile engellenebilir; kaynak metni/okunabilirlik testleri başarılı silme kanıtı değildir.",
+    "Yerel demo bayrağını kapatmak gerçek B9 davranışını kapatmaz; bu bayrak üretim geri dönüş anahtarı değildir.",
+    "Ham B4 geri dönüşü yeni version1 kayıtların alıntı kontrolünü zayıflatır; uyumlu okuyucu veya değerlendirme okumalarının kapatılması gerekir."
+  ],
+  "results": {
+    "targeted_api": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-targeted.json",
+        "sha256": "c7a1e64c84b94b5068b8c888dad67cc4ac1cd4b75174c406d220786dae64b479"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-targeted.log",
+        "sha256": "a971f5eb88a8438cbe788cdb69872261e02ffc0806fb6cf544fe733cb8ba9a4e"
+      },
+      "label": "b9-backend-targeted",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_code_oracle_feedback.py",
+        "tests/test_grading_grounding.py",
+        "tests/test_code_grading_criteria.py",
+        "tests/test_assessment.py::TestDeterministicGrading",
+        "tests/test_assessment.py::TestLlmGrading",
+        "tests/test_exams.py::TestMasteryIntegration::test_llm_bagliyken_acik_uclu_soru_uctan_puanlanir",
+        "tests/test_explanation_feedback_api.py",
+        "tests/test_code_grading_criteria_api.py"
+      ],
+      "cwd": "apps/api",
+      "rc": 0,
+      "captured_at": "2026-09-13T16:07:02.796146+00:00",
+      "elapsed_seconds": 29.47,
+      "source_hashes": {
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2_b9_api",
+      "counts": {
+        "summary": "202 passed in 26.05s",
+        "passed": 202,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "subtests_passed": 0,
+        "failing_tests": []
+      }
+    },
+    "full_pytest": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-pytest.json",
+        "sha256": "ce4b4eb6e1b4bdc39ce8a3bea571a8c3e858b9fb43ac7437b762ee982e4e5cd3"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-pytest.log",
+        "sha256": "948e463baf0556c1ae16b187afd4b5a6a2a6ab2df4f95d9c93a6f0d278e18f36"
+      },
+      "label": "b9-final-pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "cwd": "apps/api",
+      "rc": 0,
+      "captured_at": "2026-09-13T16:14:25.255300+00:00",
+      "elapsed_seconds": 233.47,
+      "source_hashes": {
+        "README.md": "048151dcfb980e64aeb0eb59160a48b2c9f91ef56ad15b35201293d884d81df0",
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2_b9_full",
+      "counts": {
+        "summary": "1819 passed, 5 warnings, 38 subtests passed in 212.59s (0:03:32)",
+        "passed": 1819,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "subtests_passed": 38,
+        "failing_tests": []
+      }
+    },
+    "ruff": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-ruff.json",
+        "sha256": "d19bdb85868cb525b573240eb438ffc69531b4aadbf78e40d97dfc2e1874a6ba"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-ruff.log",
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      "label": "b9-backend-ruff",
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "--no-cache",
+        "."
+      ],
+      "cwd": "apps/api",
+      "rc": 0,
+      "captured_at": "2026-09-13T16:07:27.575943+00:00",
+      "elapsed_seconds": 0.21,
+      "source_hashes": {
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2_b9_api"
+    },
+    "format": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-format.json",
+        "sha256": "fb0f82421fbe68b9bf545504297f7fb7e4d135cb778e6a3369a1ea2be2c58c97"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-format.log",
+        "sha256": "7c381f30eba54a4faaae06c2b395e1fb1311b6f2e081f35fa2a62e151dd6d97a"
+      },
+      "label": "b9-backend-format",
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--no-cache",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "rc": 0,
+      "captured_at": "2026-09-13T16:07:28.063278+00:00",
+      "elapsed_seconds": 0.1,
+      "source_hashes": {
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2_b9_api",
+      "formatted_files": 218
+    },
+    "mypy": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-mypy.json",
+        "sha256": "7a48d25e7788a9636511b15f581c4ec57bd39efcd99211c1f9a5802073d05ce1"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-mypy.log",
+        "sha256": "0cd98cfd5b35e0e85b86d75459966f02562f9c10fe59fb3d86271d1b9fa33e5c"
+      },
+      "label": "b9-backend-mypy",
+      "command": [
+        ".venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "rc": 0,
+      "captured_at": "2026-09-13T16:07:37.468625+00:00",
+      "elapsed_seconds": 6.86,
+      "source_hashes": {
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2_b9_api",
+      "source_files": 121
+    },
+    "migrations": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-migrations.json",
+        "sha256": "56ec95694f78bf8757e6e1d5b3f2e7349ab29dba6ad1c3cb4720fe5c785bf69f"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-migrations.log",
+        "sha256": "f5825a02401d3bd75b7665e52461a1e85a4e22eec66951ce0ca36fc292f6e5a7"
+      },
+      "label": "b9-migrations",
+      "command": [
+        "python3",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "rc": 0,
+      "captured_at": "2026-09-13T16:07:46.692226+00:00",
+      "elapsed_seconds": 0.26,
+      "source_hashes": {
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2"
+    },
+    "workflows": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-workflows.json",
+        "sha256": "e8b3fd210ce1b6aec037c0fb0cd073edad98e08a1ff2e0ec7956e2a492952f98"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-workflows.log",
+        "sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+      },
+      "label": "b9-workflows",
+      "command": [
+        "apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "rc": 0,
+      "captured_at": "2026-09-13T16:07:51.726583+00:00",
+      "elapsed_seconds": 0.54,
+      "source_hashes": {
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2"
+    },
+    "bun": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/bun-r1-result.json",
+        "sha256": "6b381abd0199c520780c22744ad02e88823925e2331b3928947a939ada3fc956"
+      },
+      "log": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/bun-r1.log",
+      "before": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/bun-r1-sources-before.json",
+        "sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e"
+      },
+      "after": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/bun-r1-sources-after.json",
+        "sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e"
+      },
+      "gate": "bun",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "started_at_utc": "2026-09-13T16:06:02.898087+00:00",
+      "completed_at_utc": "2026-09-13T16:06:04.301526+00:00",
+      "rc": 0,
+      "base_head": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+      "source_file_count": 205,
+      "source_changed_during_run": false,
+      "source_hashes_before": "bun-r1-sources-before.json",
+      "source_hashes_after": "bun-r1-sources-after.json",
+      "source_hashes_after_sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e",
+      "log_sha256": "151da9bfe820a7884715a82fdd72d015370c8534cae01cdbbdbf08052eb7468d",
+      "counts": {
+        "tests": 621,
+        "files": 48,
+        "passed": 621,
+        "failed": 0
+      }
+    },
+    "tsc": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/tsc-r1-result.json",
+        "sha256": "0e85fb6ccef26986c01f9ed3b224e04b3fe596a0841ac071a84fc245b8e97605"
+      },
+      "log": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/tsc-r1.log",
+      "before": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/tsc-r1-sources-before.json",
+        "sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e"
+      },
+      "after": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/tsc-r1-sources-after.json",
+        "sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e"
+      },
+      "gate": "tsc",
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "started_at_utc": "2026-09-13T16:06:18.212747+00:00",
+      "completed_at_utc": "2026-09-13T16:06:29.875566+00:00",
+      "rc": 0,
+      "base_head": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+      "source_file_count": 205,
+      "source_changed_during_run": false,
+      "source_hashes_before": "tsc-r1-sources-before.json",
+      "source_hashes_after": "tsc-r1-sources-after.json",
+      "source_hashes_after_sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "contrast": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/contrast-r1-result.json",
+        "sha256": "7b57d00fd946345b06e990265b6a51cbd7fbdf71798adbed03c59f3963cc417b"
+      },
+      "log": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/contrast-r1.log",
+      "before": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/contrast-r1-sources-before.json",
+        "sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e"
+      },
+      "after": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/contrast-r1-sources-after.json",
+        "sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e"
+      },
+      "gate": "contrast",
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "started_at_utc": "2026-09-13T16:06:38.766769+00:00",
+      "completed_at_utc": "2026-09-13T16:06:39.013744+00:00",
+      "rc": 0,
+      "base_head": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+      "source_file_count": 205,
+      "source_changed_during_run": false,
+      "source_hashes_before": "contrast-r1-sources-before.json",
+      "source_hashes_after": "contrast-r1-sources-after.json",
+      "source_hashes_after_sha256": "3026369e973565bc9786528f3d333d8489edbecfc4f1b30be7b7fee5e9871e8e",
+      "log_sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca"
+    },
+    "mutations": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/summary.json",
+        "sha256": "02f0a23c7283ce300265b5c7b517923ac4638d3942e47104bb742a66e50ec037"
+      },
+      "source_index": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/source-index.json",
+        "sha256": "b597de66ce1257aea8ca31dff05e7038c5f4338678cf5738024af7afe17c6486"
+      },
+      "passed": true,
+      "run_id": "20260913T160919Z-3e876559",
+      "cluster": {
+        "host": "127.0.0.1",
+        "port": 55452,
+        "system_identifier": "7685026919819642132",
+        "data_directory": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/postgres",
+        "admin": "muratates"
+      },
+      "gates": [
+        {
+          "identity": "control",
+          "result": "passed",
+          "rc": 0,
+          "timed_out": false,
+          "elapsed_seconds": 5.675,
+          "targets": [
+            "tests/test_explanation_feedback_api.py::test_readable_other_course_source_cannot_grade_or_reveal_new_feedback",
+            "tests/test_explanation_feedback_api.py::test_changed_source_hides_new_feedback_in_detail_totals_and_history[quote_changed]",
+            "tests/test_explanation_feedback_api.py::test_exam_reveal_and_other_exam_lock_withhold_next_hint_and_all_evidence",
+            "tests/test_explanation_feedback_api.py::test_wrong_course_document_link_blocks_grading_and_saved_feedback_before_side_effects[correct]"
+          ],
+          "test_database": "dou_l2_b9m_20260913t160919z_3e876559_control",
+          "mutation": null,
+          "snapshot_unchanged": true,
+          "repository_source_unchanged": true,
+          "cleanup": {
+            "fixture_dropped_database": true,
+            "scoped_cleanup": false,
+            "database_absent": true
+          },
+          "snapshot_index_sha256": "b597de66ce1257aea8ca31dff05e7038c5f4338678cf5738024af7afe17c6486",
+          "log_sha256": "ecb73083e5fdea417bea13451d160719279e45301e44b9553255d2c738867b7f",
+          "command_sha256": "9434dbf68408be1572e5f60ff7543bfde17261a6eac02bb018559f29500c84e5",
+          "observer_sha256": "e3e98b383db28e7a8a49662b7a6f922d741947e59f94b858aa76535fc69db79e",
+          "artifacts": {
+            "snapshot-index.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/control/snapshot-index.json",
+              "sha256": "b597de66ce1257aea8ca31dff05e7038c5f4338678cf5738024af7afe17c6486"
+            },
+            "pytest.log": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/control/pytest.log",
+              "sha256": "ecb73083e5fdea417bea13451d160719279e45301e44b9553255d2c738867b7f"
+            },
+            "command.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/control/command.json",
+              "sha256": "9434dbf68408be1572e5f60ff7543bfde17261a6eac02bb018559f29500c84e5"
+            },
+            "pytest-observer.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/control/pytest-observer.json",
+              "sha256": "e3e98b383db28e7a8a49662b7a6f922d741947e59f94b858aa76535fc69db79e"
+            }
+          },
+          "pytest_counts": {
+            "summary": "4 passed in 4.32s",
+            "passed": 4,
+            "failed": 0,
+            "errors": 0,
+            "skipped": 0,
+            "subtests_passed": 0,
+            "failing_tests": []
+          }
+        },
+        {
+          "identity": "M01",
+          "result": "killed",
+          "rc": 1,
+          "timed_out": false,
+          "elapsed_seconds": 6.014,
+          "targets": [
+            "tests/test_explanation_feedback_api.py::test_readable_other_course_source_cannot_grade_or_reveal_new_feedback"
+          ],
+          "test_database": "dou_l2_b9m_20260913t160919z_3e876559_m01",
+          "mutation": {
+            "path": "apps/api/app/modules/assessment/grading.py",
+            "before_sha256": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+            "after_sha256": "f1bab58496b4a93ce586f1225c5256f9cc9234b066f8c561a3fcf219e03090fe",
+            "patch_sha256": "822d5dac3a9d388281ec3e2efcd4b1274b34f8a01a3dab7012203c58da934d86"
+          },
+          "snapshot_unchanged": true,
+          "repository_source_unchanged": true,
+          "cleanup": {
+            "fixture_dropped_database": true,
+            "scoped_cleanup": false,
+            "database_absent": true
+          },
+          "snapshot_index_sha256": "b706718d6f754dfcdaa028ba49c2abc457480cb54f18a2e6d1c447e9cae4c83a",
+          "log_sha256": "a2ac248dc6b179b22c3db6d9746640d2ca44130fc2b4663f7473f6198f2c8f51",
+          "command_sha256": "ef98ae942483543d02c844f505a7b6d431f226a10dce805693710f4056f01fa5",
+          "observer_sha256": "f4f2694632d793aada3690d399a2b64515846bb06ecb44abaab4a915b78ae497",
+          "artifacts": {
+            "snapshot-index.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M01/snapshot-index.json",
+              "sha256": "b706718d6f754dfcdaa028ba49c2abc457480cb54f18a2e6d1c447e9cae4c83a"
+            },
+            "pytest.log": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M01/pytest.log",
+              "sha256": "a2ac248dc6b179b22c3db6d9746640d2ca44130fc2b4663f7473f6198f2c8f51"
+            },
+            "command.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M01/command.json",
+              "sha256": "ef98ae942483543d02c844f505a7b6d431f226a10dce805693710f4056f01fa5"
+            },
+            "pytest-observer.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M01/pytest-observer.json",
+              "sha256": "f4f2694632d793aada3690d399a2b64515846bb06ecb44abaab4a915b78ae497"
+            },
+            "mutation.patch": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M01/mutation.patch",
+              "sha256": "822d5dac3a9d388281ec3e2efcd4b1274b34f8a01a3dab7012203c58da934d86"
+            }
+          },
+          "pytest_counts": {
+            "summary": "1 failed in 4.91s",
+            "passed": 0,
+            "failed": 1,
+            "errors": 0,
+            "skipped": 0,
+            "subtests_passed": 0,
+            "failing_tests": [
+              "FAILED tests/test_explanation_feedback_api.py::test_readable_other_course_source_cannot_grade_or_reveal_new_feedback"
+            ]
+          }
+        },
+        {
+          "identity": "M02",
+          "result": "killed",
+          "rc": 1,
+          "timed_out": false,
+          "elapsed_seconds": 5.247,
+          "targets": [
+            "tests/test_explanation_feedback_api.py::test_readable_other_course_source_cannot_grade_or_reveal_new_feedback"
+          ],
+          "test_database": "dou_l2_b9m_20260913t160919z_3e876559_m02",
+          "mutation": {
+            "path": "apps/api/app/api/exams.py",
+            "before_sha256": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+            "after_sha256": "efc4781ff29cc9e36fb22adfa7bd4a5164270a3d4637444964d960ad489bcd52",
+            "patch_sha256": "a1b0752c261869ddfa706b755ff4bd6bf729965439c616cec342709abef4f57f"
+          },
+          "snapshot_unchanged": true,
+          "repository_source_unchanged": true,
+          "cleanup": {
+            "fixture_dropped_database": true,
+            "scoped_cleanup": false,
+            "database_absent": true
+          },
+          "snapshot_index_sha256": "3ab717a018159ac34b76c0bf4b991dbb68915e75866464e1bd17cb6422104d1d",
+          "log_sha256": "b20bb1ce8c77dc55155e92e8f60bd1fe17f76e91daff3b8a84b18a2760bc3320",
+          "command_sha256": "90a33004f14049e090d883f2acf3589ca3a138876912fcce37795f310f6c3880",
+          "observer_sha256": "8184f1c36fa7739bc6a21e5b6d884959815c9b371206fa69c77413e02d82e477",
+          "artifacts": {
+            "snapshot-index.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M02/snapshot-index.json",
+              "sha256": "3ab717a018159ac34b76c0bf4b991dbb68915e75866464e1bd17cb6422104d1d"
+            },
+            "pytest.log": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M02/pytest.log",
+              "sha256": "b20bb1ce8c77dc55155e92e8f60bd1fe17f76e91daff3b8a84b18a2760bc3320"
+            },
+            "command.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M02/command.json",
+              "sha256": "90a33004f14049e090d883f2acf3589ca3a138876912fcce37795f310f6c3880"
+            },
+            "pytest-observer.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M02/pytest-observer.json",
+              "sha256": "8184f1c36fa7739bc6a21e5b6d884959815c9b371206fa69c77413e02d82e477"
+            },
+            "mutation.patch": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M02/mutation.patch",
+              "sha256": "a1b0752c261869ddfa706b755ff4bd6bf729965439c616cec342709abef4f57f"
+            }
+          },
+          "pytest_counts": {
+            "summary": "1 failed in 4.00s",
+            "passed": 0,
+            "failed": 1,
+            "errors": 0,
+            "skipped": 0,
+            "subtests_passed": 0,
+            "failing_tests": [
+              "FAILED tests/test_explanation_feedback_api.py::test_readable_other_course_source_cannot_grade_or_reveal_new_feedback"
+            ]
+          }
+        },
+        {
+          "identity": "M03",
+          "result": "killed",
+          "rc": 1,
+          "timed_out": false,
+          "elapsed_seconds": 4.826,
+          "targets": [
+            "tests/test_explanation_feedback_api.py::test_changed_source_hides_new_feedback_in_detail_totals_and_history[quote_changed]"
+          ],
+          "test_database": "dou_l2_b9m_20260913t160919z_3e876559_m03",
+          "mutation": {
+            "path": "apps/api/app/modules/assessment/grading.py",
+            "before_sha256": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+            "after_sha256": "f9840a81202f1795f09a7289dfe52e5552d6291655321554fb14df4df8f842c3",
+            "patch_sha256": "36a9fff30415fab2c90184500e609d584d7acab44e7370b6f4f7930d12ef304c"
+          },
+          "snapshot_unchanged": true,
+          "repository_source_unchanged": true,
+          "cleanup": {
+            "fixture_dropped_database": true,
+            "scoped_cleanup": false,
+            "database_absent": true
+          },
+          "snapshot_index_sha256": "b37dd4713e0afd96a9947404b105d498c8bbc03d32f93b21f40bc4f1a50b5a3f",
+          "log_sha256": "2c6b7d240d16c60731473a8f247ba2b070a6c84df35bda1eb3d7d9663075f059",
+          "command_sha256": "231d5fba36ac407074c2cb037ef5ba815b42a728a68d39f479ecc634bd27b79e",
+          "observer_sha256": "be6b23bcd9e98d657932204c2690b550674453fe55ff7fcd041e563c9cafe583",
+          "artifacts": {
+            "snapshot-index.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M03/snapshot-index.json",
+              "sha256": "b37dd4713e0afd96a9947404b105d498c8bbc03d32f93b21f40bc4f1a50b5a3f"
+            },
+            "pytest.log": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M03/pytest.log",
+              "sha256": "2c6b7d240d16c60731473a8f247ba2b070a6c84df35bda1eb3d7d9663075f059"
+            },
+            "command.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M03/command.json",
+              "sha256": "231d5fba36ac407074c2cb037ef5ba815b42a728a68d39f479ecc634bd27b79e"
+            },
+            "pytest-observer.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M03/pytest-observer.json",
+              "sha256": "be6b23bcd9e98d657932204c2690b550674453fe55ff7fcd041e563c9cafe583"
+            },
+            "mutation.patch": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M03/mutation.patch",
+              "sha256": "36a9fff30415fab2c90184500e609d584d7acab44e7370b6f4f7930d12ef304c"
+            }
+          },
+          "pytest_counts": {
+            "summary": "1 failed in 3.70s",
+            "passed": 0,
+            "failed": 1,
+            "errors": 0,
+            "skipped": 0,
+            "subtests_passed": 0,
+            "failing_tests": [
+              "FAILED tests/test_explanation_feedback_api.py::test_changed_source_hides_new_feedback_in_detail_totals_and_history[quote_changed]"
+            ]
+          }
+        },
+        {
+          "identity": "M04",
+          "result": "killed",
+          "rc": 1,
+          "timed_out": false,
+          "elapsed_seconds": 6.337,
+          "targets": [
+            "tests/test_explanation_feedback_api.py::test_exam_reveal_and_other_exam_lock_withhold_next_hint_and_all_evidence"
+          ],
+          "test_database": "dou_l2_b9m_20260913t160919z_3e876559_m04",
+          "mutation": {
+            "path": "apps/api/app/api/exams.py",
+            "before_sha256": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+            "after_sha256": "c32cc7adb0aa81b64250332dd0d77eb1aeb6ed555897453224b622b367a238b8",
+            "patch_sha256": "c3296f875939f9647b22d678deb28242aadca26471d196dac58989b4d7fd920d"
+          },
+          "snapshot_unchanged": true,
+          "repository_source_unchanged": true,
+          "cleanup": {
+            "fixture_dropped_database": true,
+            "scoped_cleanup": false,
+            "database_absent": true
+          },
+          "snapshot_index_sha256": "2c23a46980bfd7b4781efd62b52ecf0eacc6b7cbb3c033719709b89a2438373e",
+          "log_sha256": "e6ea971b701fc131b927defb77669388f6ffb1acc1c36cdef61871e36f0d186b",
+          "command_sha256": "a941b5d459b389a93ed25dd59f178a15da24fcf23aa169bf7a26add16408440f",
+          "observer_sha256": "8e793ba214de004178fa862e67b9584bf69ae89f27a5fe98ccb92629e80e1e62",
+          "artifacts": {
+            "snapshot-index.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M04/snapshot-index.json",
+              "sha256": "2c23a46980bfd7b4781efd62b52ecf0eacc6b7cbb3c033719709b89a2438373e"
+            },
+            "pytest.log": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M04/pytest.log",
+              "sha256": "e6ea971b701fc131b927defb77669388f6ffb1acc1c36cdef61871e36f0d186b"
+            },
+            "command.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M04/command.json",
+              "sha256": "a941b5d459b389a93ed25dd59f178a15da24fcf23aa169bf7a26add16408440f"
+            },
+            "pytest-observer.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M04/pytest-observer.json",
+              "sha256": "8e793ba214de004178fa862e67b9584bf69ae89f27a5fe98ccb92629e80e1e62"
+            },
+            "mutation.patch": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M04/mutation.patch",
+              "sha256": "c3296f875939f9647b22d678deb28242aadca26471d196dac58989b4d7fd920d"
+            }
+          },
+          "pytest_counts": {
+            "summary": "1 failed in 5.03s",
+            "passed": 0,
+            "failed": 1,
+            "errors": 0,
+            "skipped": 0,
+            "subtests_passed": 0,
+            "failing_tests": [
+              "FAILED tests/test_explanation_feedback_api.py::test_exam_reveal_and_other_exam_lock_withhold_next_hint_and_all_evidence"
+            ]
+          }
+        },
+        {
+          "identity": "M05",
+          "result": "killed",
+          "rc": 1,
+          "timed_out": false,
+          "elapsed_seconds": 4.812,
+          "targets": [
+            "tests/test_explanation_feedback_api.py::test_wrong_course_document_link_blocks_grading_and_saved_feedback_before_side_effects[correct]"
+          ],
+          "test_database": "dou_l2_b9m_20260913t160919z_3e876559_m05",
+          "mutation": {
+            "path": "apps/api/app/modules/assessment/grading.py",
+            "before_sha256": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+            "after_sha256": "df9852ff7d0943a391497fe76abe7f0efb0b74f4b8a3047a9c19a9093d7288cb",
+            "patch_sha256": "d7574eda51f08940bad77d725dec45482373d2b71d252f73b964d5e932e0cb66"
+          },
+          "snapshot_unchanged": true,
+          "repository_source_unchanged": true,
+          "cleanup": {
+            "fixture_dropped_database": true,
+            "scoped_cleanup": false,
+            "database_absent": true
+          },
+          "snapshot_index_sha256": "9defb6332906e229f9b459573aa409a17985dd5f00817d842b22d3d83b712eb1",
+          "log_sha256": "c8e32b91f168ad4c57fd5d0a97d1acbfe2d00e4c6189a2e094b69b73b04db7be",
+          "command_sha256": "67dfbfae6feaea0093394ab4954d74aee6f26771659ca0fd8378ef4d0f576f49",
+          "observer_sha256": "42a91cd5028d8950165e209d319dc299a1ac2f6d6062790aec7b4e718d124e44",
+          "artifacts": {
+            "snapshot-index.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M05/snapshot-index.json",
+              "sha256": "9defb6332906e229f9b459573aa409a17985dd5f00817d842b22d3d83b712eb1"
+            },
+            "pytest.log": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M05/pytest.log",
+              "sha256": "c8e32b91f168ad4c57fd5d0a97d1acbfe2d00e4c6189a2e094b69b73b04db7be"
+            },
+            "command.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M05/command.json",
+              "sha256": "67dfbfae6feaea0093394ab4954d74aee6f26771659ca0fd8378ef4d0f576f49"
+            },
+            "pytest-observer.json": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M05/pytest-observer.json",
+              "sha256": "42a91cd5028d8950165e209d319dc299a1ac2f6d6062790aec7b4e718d124e44"
+            },
+            "mutation.patch": {
+              "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/M05/mutation.patch",
+              "sha256": "d7574eda51f08940bad77d725dec45482373d2b71d252f73b964d5e932e0cb66"
+            }
+          },
+          "pytest_counts": {
+            "summary": "1 failed in 3.66s",
+            "passed": 0,
+            "failed": 1,
+            "errors": 0,
+            "skipped": 0,
+            "subtests_passed": 0,
+            "failing_tests": [
+              "FAILED tests/test_explanation_feedback_api.py::test_wrong_course_document_link_blocks_grading_and_saved_feedback_before_side_effects[correct]"
+            ]
+          }
+        }
+      ]
+    },
+    "browser": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/result.json",
+        "sha256": "5f3ea486b09b05e28338571a2ce3a90ba63ccbd4eb946360db850a58bae65045"
+      },
+      "runtime": {
+        "apiOrigin": "http://127.0.0.1:8052",
+        "browser": "installed system Chrome",
+        "controllerPid": 37158,
+        "controllerSha256": "e7c5b38314cbef3a63e47263cd3bbcb05d11f4db749c957727768f437276730e",
+        "embedding": "hashing",
+        "provider": "local grounded-feedback fixture",
+        "scope": "Synthetic local auth and owned PostgreSQL only.",
+        "simulationFlag": "LLM_SIMULATE_GROUNDED_FEEDBACK=1",
+        "specs": [
+          "grounded-wrong-feedback.spec.ts"
+        ],
+        "startedAt": "2026-09-13T16:14:42.110126+00:00",
+        "startupConfiguration": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/e2e-local-startup-r4.config.ts",
+        "startupConfigurationSha256": "41104baa9e8c98eedbb62f6f94f4d25875e547df8453d30383ee693d20b677d3",
+        "startupTimeoutSeconds": 600,
+        "webPort": 3152
+      },
+      "runtime_receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/runtime.json",
+        "sha256": "9e330ec024333f41c5b574dc9e2c4b0a657b0a1b66ff9fc516fd127a3ef458e4"
+      },
+      "runtime_artifacts": {
+        "startupConfiguration": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/e2e-local-startup-r4.config.ts",
+          "sha256": "41104baa9e8c98eedbb62f6f94f4d25875e547df8453d30383ee693d20b677d3"
+        }
+      },
+      "closure": {
+        "quiescence": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/quiescence.json",
+          "sha256": "e36cd063099376e933c2e5ccd88276694f8b579fa8551314584d9faa8927f52c"
+        },
+        "guard_finish_log": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/guard-finish.log",
+          "sha256": "e1c5793aec10a01cd9ead0a839fced0e6c228ab8d66cff21b420988c703c8ca4"
+        }
+      },
+      "compiled_checks": {},
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/playwright.log",
+        "sha256": "5ecfb28c75a7a3f8c4abd4d073347a9cd2152120eaaf93b04eb16ae5cd7e6919"
+      },
+      "before": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/source-before.json",
+        "sha256": "97c51c2992525d16fdf22b98b8e7a82f632da0dba1a06c93c8219f8be33056df"
+      },
+      "after": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/source-after.json",
+        "sha256": "97c51c2992525d16fdf22b98b8e7a82f632da0dba1a06c93c8219f8be33056df"
+      },
+      "passed": true,
+      "counts": {
+        "passed": 6,
+        "failed": 0
+      },
+      "outcome": {
+        "auditFinishExitCode": 0,
+        "error": null,
+        "finishedAt": "2026-09-13T16:15:48.078869+00:00",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l2b9732a73d8ed5d",
+        "scope": "Synthetic local auth, hashing embeddings, explicit local grounded-feedback fixture; no real-provider or hosted claim.",
+        "screenshots": {
+          "playwright-artifacts/grounded-wrong-feedback-co-6bd4c-sonraki-ipucuyla-kaydedilir-chromium/next-hint-375-dark.png": "33e2d62e8794c278e9b8d61fc10eac31b0b25bfc6acf8ecabc467f10d7835343",
+          "playwright-artifacts/grounded-wrong-feedback-co-6bd4c-sonraki-ipucuyla-kaydedilir-chromium/next-hint-375-light.png": "1f47ee7ff7467055348b568bf06cc4197307b9ca69531ed579e352c3ead47250"
+        },
+        "seconds": 65.84,
+        "sourceUnchanged": true,
+        "specs": [
+          "grounded-wrong-feedback.spec.ts"
+        ],
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "audit_receipts": [
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/audit/baseline.json",
+          "sha256": "4bca7f1d9c72d4c8c273b4830923f95af08976aaabe5300043936bcc8f961080"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/audit/capture/scope.json",
+          "sha256": "d2d4744f264ed7c5dcb0fec69efa6ef045d86deda0edf0e91656a3ffd6179505"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/audit/environment.json",
+          "sha256": "91301516f6c59d48faf9a5b8cce683c4278f47b27a573dfc5d3066ba1caf4a93"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/audit/final-accounting.json",
+          "sha256": "7b1593058a7970e21933225cd2ab8827c835cb0057dc380c69534b51fa0f6819"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/audit/target.json",
+          "sha256": "20b32bcd7abcde519678fa4ca2d99a6273bf07454f3fdba0ad072c670e0f187e"
+        }
+      ],
+      "screenshots": [
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/playwright-artifacts/grounded-wrong-feedback-co-6bd4c-sonraki-ipucuyla-kaydedilir-chromium/next-hint-375-dark.png",
+          "sha256": "33e2d62e8794c278e9b8d61fc10eac31b0b25bfc6acf8ecabc467f10d7835343"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/playwright-artifacts/grounded-wrong-feedback-co-6bd4c-sonraki-ipucuyla-kaydedilir-chromium/next-hint-375-light.png",
+          "sha256": "1f47ee7ff7467055348b568bf06cc4197307b9ca69531ed579e352c3ead47250"
+        }
+      ]
+    },
+    "normal_browser": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/result.json",
+        "sha256": "8fc2b96411a925a9fb27de7af191a52991e8280e1a096411b1a75a63effd00fe"
+      },
+      "runtime": {
+        "apiOrigin": "http://127.0.0.1:8052",
+        "browser": "installed system Chrome",
+        "compiledApplicationSeal": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-compiled-artifact-seal.json",
+        "compiledApplicationSealSha256": "29dab8e7e825a309ff5e4318af7ea071e5e19f2d9d34ff66083c771723a24e2a",
+        "controllerPid": 39113,
+        "controllerSha256": "b924be753e9c204368f1b314ed63ffe35f833d49e38d94e65365b8ab0dac811b",
+        "databaseIdentity": {
+          "cluster": "7685026919819642132",
+          "dataDirectory": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/postgres",
+          "database": "dou_l2_b9_normal_r2_e2e_test",
+          "databaseOid": "517599",
+          "dbaRole": "muratates",
+          "port": 55452,
+          "version": "160014"
+        },
+        "embedding": "hashing",
+        "provider": "default FakeLlmClient",
+        "reusesVerifiedProductionBuild": true,
+        "scope": "Synthetic local auth and owned PostgreSQL only.",
+        "simulationFlags": {
+          "LLM_SIMULATE_GROUNDED_FEEDBACK": "0",
+          "LLM_SIMULATE_RATE_LIMIT": "0"
+        },
+        "specs": [
+          "code-rubric-feedback.spec.ts",
+          "student-assessment.spec.ts"
+        ],
+        "startedAt": "2026-09-13T16:16:56.282984+00:00",
+        "startupConfiguration": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/e2e-prebuilt-b9-normal.config.ts",
+        "startupConfigurationSha256": "0cac5713aa3db4989f1ab0cbc47a6a98895c86fbc311b495e1af02728d70c67f",
+        "startupTimeoutPolicy": "unchanged; inherited from repository configuration",
+        "webPort": 3152
+      },
+      "runtime_receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/runtime.json",
+        "sha256": "3fac94362cd85c4e425223678f45238e3c89a5f6b9b96205290165bdb4664fdb"
+      },
+      "runtime_artifacts": {
+        "startupConfiguration": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/e2e-prebuilt-b9-normal.config.ts",
+          "sha256": "0cac5713aa3db4989f1ab0cbc47a6a98895c86fbc311b495e1af02728d70c67f"
+        },
+        "compiledApplicationSeal": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-compiled-artifact-seal.json",
+          "sha256": "29dab8e7e825a309ff5e4318af7ea071e5e19f2d9d34ff66083c771723a24e2a"
+        }
+      },
+      "closure": {
+        "quiescence": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/quiescence.json",
+          "sha256": "ce81d2427ee3adc484094ecea9b4c749537eb1536084af12a53f659c4424c5a5"
+        },
+        "guard_finish_log": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/guard-finish.log",
+          "sha256": "e1c5793aec10a01cd9ead0a839fced0e6c228ab8d66cff21b420988c703c8ca4"
+        }
+      },
+      "compiled_checks": {
+        "compiled-seal-before.json": {
+          "receipt": {
+            "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/compiled-seal-before.json",
+            "sha256": "9a0b4bd6f2f688faf9d6bc9de9f4ba04b3cc9db66f086c0805805f2c614715ca"
+          },
+          "outcome": {
+            "applicationSourceCount": 171,
+            "artifactCount": 155,
+            "buildId": "xvttviJHga05xO4WtHe5t",
+            "seal": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-compiled-artifact-seal.json",
+            "sealSha256": "29dab8e7e825a309ff5e4318af7ea071e5e19f2d9d34ff66083c771723a24e2a",
+            "status": "PASS",
+            "verifiedAt": "2026-09-13T16:16:56.217892+00:00"
+          }
+        },
+        "compiled-seal-after.json": {
+          "receipt": {
+            "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/compiled-seal-after.json",
+            "sha256": "42c7d73591d8a8e903b82c827e9657be57c58145e07d3f3553fab068acf52ed1"
+          },
+          "outcome": {
+            "applicationSourceCount": 171,
+            "artifactCount": 155,
+            "buildId": "xvttviJHga05xO4WtHe5t",
+            "seal": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-compiled-artifact-seal.json",
+            "sealSha256": "29dab8e7e825a309ff5e4318af7ea071e5e19f2d9d34ff66083c771723a24e2a",
+            "status": "PASS",
+            "verifiedAt": "2026-09-13T16:17:31.457224+00:00"
+          }
+        }
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/playwright.log",
+        "sha256": "b38cf3b1744f85050ac07fc3a8ca9ca32cfa931982e77e8c0702b4744c5bf10d"
+      },
+      "before": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/source-before.json",
+        "sha256": "97c51c2992525d16fdf22b98b8e7a82f632da0dba1a06c93c8219f8be33056df"
+      },
+      "after": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/source-after.json",
+        "sha256": "97c51c2992525d16fdf22b98b8e7a82f632da0dba1a06c93c8219f8be33056df"
+      },
+      "passed": true,
+      "counts": {
+        "passed": 4,
+        "failed": 0
+      },
+      "outcome": {
+        "auditFinishExitCode": 0,
+        "compiledApplicationSealSha256": "29dab8e7e825a309ff5e4318af7ea071e5e19f2d9d34ff66083c771723a24e2a",
+        "compiledApplicationUnchanged": true,
+        "error": null,
+        "finishedAt": "2026-09-13T16:17:31.460071+00:00",
+        "ownedApiExitCode": 0,
+        "playwrightExitCode": 0,
+        "runId": "l2b9n20c6cc50e2e1e",
+        "scope": "Synthetic local auth and hashing embeddings; default FakeLlmClient with both simulation flags disabled. Existing recorded-feedback fixtures are not real-provider grading evidence.",
+        "screenshots": {
+          "playwright-artifacts/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-dark.png": "aeaca5cae3f76297147bc4beb445ac1f9fe86933877dae24a9a6990b3f3478a3",
+          "playwright-artifacts/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-light.png": "9a10e008d01379612ddfc8ec51ad8e625f088a3e11c2588caf22720b9157b3c0",
+          "playwright-artifacts/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-history-375-dark.png": "5042d35684d826d461b3ecb0f1a9f60140bc65812d0bdb8bf16632cbdd7cc6e4",
+          "playwright-artifacts/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-dark.png": "b5b5ec79eea440e2a7eefdeab18eff5b58d7877ca5dfe4a9d000cd3bdf5733c7",
+          "playwright-artifacts/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-light.png": "b9cbece75a9384cbe8a38e226acb6769dcafb99f61062e80e991f9795460d37d"
+        },
+        "seconds": 35.126,
+        "sourceUnchanged": true,
+        "specs": [
+          "code-rubric-feedback.spec.ts",
+          "student-assessment.spec.ts"
+        ],
+        "status": "PASS",
+        "stopObservation": "graceful-pipe-and-wait"
+      },
+      "audit_receipts": [
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/audit/baseline.json",
+          "sha256": "352cfe07896160b58f102212f2b3baa8f8d8baae9190777c3cb6830095c16425"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/audit/capture/scope.json",
+          "sha256": "1a8f79bfe742bef1f24637fd1ff964bfe67bbd0bde814250f863de9d6b5b1e28"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/audit/environment.json",
+          "sha256": "cab24f6e57223a09f105aabd8abe443eb7deddae37f03ca066a73c66ede5a1e4"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/audit/final-accounting.json",
+          "sha256": "444e4192476754d4f3878ec8f5a01c17f378667b4531ddd653e5252f61c79eff"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/audit/target.json",
+          "sha256": "6be6187dbed52f6b9d792c3bd0e9d7680ef95f56e4682db9a8022345df47697c"
+        }
+      ],
+      "screenshots": [
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/playwright-artifacts/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-dark.png",
+          "sha256": "aeaca5cae3f76297147bc4beb445ac1f9fe86933877dae24a9a6990b3f3478a3"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/playwright-artifacts/code-rubric-feedback-code--136f3-sınav-yetkisiyle-gösterilir-chromium/code-feedback-375-light.png",
+          "sha256": "9a10e008d01379612ddfc8ec51ad8e625f088a3e11c2588caf22720b9157b3c0"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/playwright-artifacts/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-history-375-dark.png",
+          "sha256": "5042d35684d826d461b3ecb0f1a9f60140bc65812d0bdb8bf16632cbdd7cc6e4"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/playwright-artifacts/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-dark.png",
+          "sha256": "b5b5ec79eea440e2a7eefdeab18eff5b58d7877ca5dfe4a9d000cd3bdf5733c7"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/playwright-artifacts/student-assessment-öğrenci-705d5-naklı-sonucunu-yeniden-açar-chromium/student-results-375-light.png",
+          "sha256": "b9cbece75a9384cbe8a38e226acb6769dcafb99f61062e80e991f9795460d37d"
+        }
+      ]
+    },
+    "documentation": {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-docs.json",
+        "sha256": "bef57d59292e0865cbf769392721cfa5b92f8bfb6816f7528467cd008f4ca882"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-docs.log",
+        "sha256": "c61218444286b2d333520502e86556cf07087ea3ab02a4466a7bc56a60cca1b8"
+      },
+      "label": "b9-final-docs",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "rc": 1,
+      "captured_at": "2026-09-13T16:10:43.672267+00:00",
+      "elapsed_seconds": 7.08,
+      "source_hashes": {
+        "README.md": "048151dcfb980e64aeb0eb59160a48b2c9f91ef56ad15b35201293d884d81df0",
+        "apps/api/app/api/exams.py": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2",
+        "apps/api/app/modules/assessment/code_oracle.py": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa",
+        "apps/api/app/modules/assessment/grading.py": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace",
+        "apps/api/app/modules/assessment/local_grading_fixture.py": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c",
+        "apps/api/app/modules/assessment/question_gen.py": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d",
+        "apps/api/app/schemas/assessment.py": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7",
+        "apps/api/tests/test_assessment.py": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117",
+        "apps/api/tests/test_code_grading_criteria.py": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4",
+        "apps/api/tests/test_code_grading_criteria_api.py": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77",
+        "apps/api/tests/test_code_oracle_feedback.py": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+        "apps/api/tests/test_exams.py": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d",
+        "apps/api/tests/test_explanation_feedback_api.py": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476",
+        "apps/api/tests/test_grading_grounding.py": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2",
+        "apps/web/components/exam/feedback-panel.tsx": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c",
+        "apps/web/components/exam/question-input.tsx": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd",
+        "apps/web/components/exam/running-exam.tsx": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8",
+        "apps/web/e2e/grounded-wrong-feedback.spec.ts": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+        "apps/web/lib/assessment-feedback.ts": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7",
+        "apps/web/lib/exam-answer.test.ts": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb",
+        "apps/web/lib/exam-answer.ts": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430",
+        "apps/web/lib/exam-drafts.ts": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e",
+        "apps/web/lib/exam.ts": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4",
+        "apps/web/lib/next-hint-feedback.test.ts": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67",
+        "apps/web/lib/types.ts": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+      },
+      "source_unchanged": true,
+      "test_database": "dou_l2",
+      "issues": [
+        {
+          "path": "ARCHITECTURE.md",
+          "line": 146,
+          "detail": "belgede 30, ölçülen 32 (`tables.count`, grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql)"
+        },
+        {
+          "path": "ARCHITECTURE.md",
+          "line": 146,
+          "detail": "belgede 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026, ölçülen 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027 (`migrations.list`, ls supabase/migrations/*.sql)"
+        },
+        {
+          "path": "ARCHITECTURE.md",
+          "line": 426,
+          "detail": "belgede 30, ölçülen 32 (`tables.count`, grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql)"
+        },
+        {
+          "path": "docs/deployment.md",
+          "line": 128,
+          "detail": "belgede 30, ölçülen 32 (`tables.count`, grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql)"
+        },
+        {
+          "path": "docs/runbook.md",
+          "line": 157,
+          "detail": "belgede 30, ölçülen 32 (`tables.count`, grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql)"
+        },
+        {
+          "path": "docs/security.md",
+          "line": 344,
+          "detail": "belgede 1689, ölçülen 1819 (`backend.tests`, cd apps/api && uv run pytest --collect-only -q)"
+        },
+        {
+          "path": "docs/security.md",
+          "line": 345,
+          "detail": "belgede 114, ölçülen 121 (`backend.mypyFiles`, cd apps/api && uv run mypy app)"
+        },
+        {
+          "path": "specs/001-course-assistant-mvp/quickstart.md",
+          "line": 92,
+          "detail": "belgede 30, ölçülen 32 (`tables.count`, grep -ihoE 'create table( if not exists)? [a-z_]+' supabase/migrations/*.sql)"
+        },
+        {
+          "path": "specs/001-course-assistant-mvp/quickstart.md",
+          "line": 99,
+          "detail": "belgede 22, ölçülen 23 (`migrations.count`, ls supabase/migrations/*.sql)"
+        },
+        {
+          "path": "specs/001-course-assistant-mvp/quickstart.md",
+          "line": 197,
+          "detail": "belgede 1689, ölçülen 1819 (`backend.tests`, cd apps/api && uv run pytest --collect-only -q)"
+        },
+        {
+          "path": "specs/002-production-hardening/plan.md",
+          "line": 32,
+          "detail": "belgede 1689, ölçülen 1819 (`backend.tests`, cd apps/api && uv run pytest --collect-only -q)"
+        },
+        {
+          "path": "specs/002-production-hardening/plan.md",
+          "line": 32,
+          "detail": "belgede 573, ölçülen 621 (`frontend.tests`, cd apps/web && bun test lib/)"
+        },
+        {
+          "path": "specs/002-production-hardening/plan.md",
+          "line": 32,
+          "detail": "belgede 71, ölçülen 81 (`e2e.tests`, cd apps/web && ./node_modules/.bin/playwright test --list)"
+        },
+        {
+          "path": "specs/005-role-aware-course-agent/quickstart.md",
+          "line": 130,
+          "detail": "belgede 1689, ölçülen 1819 (`backend.tests`, cd apps/api && uv run pytest --collect-only -q)"
+        },
+        {
+          "path": "specs/005-role-aware-course-agent/research.md",
+          "line": 283,
+          "detail": "belgede 573, ölçülen 621 (`frontend.tests`, cd apps/web && bun test lib/)"
+        },
+        {
+          "path": "specs/005-role-aware-course-agent/spec.md",
+          "line": 7,
+          "detail": "belgede 1689, ölçülen 1819 (`backend.tests`, cd apps/api && uv run pytest --collect-only -q)"
+        },
+        {
+          "path": "specs/005-role-aware-course-agent/spec.md",
+          "line": 7,
+          "detail": "belgede 114, ölçülen 121 (`backend.mypyFiles`, cd apps/api && uv run mypy app)"
+        },
+        {
+          "path": "specs/005-role-aware-course-agent/spec.md",
+          "line": 8,
+          "detail": "belgede 573, ölçülen 621 (`frontend.tests`, cd apps/web && bun test lib/)"
+        },
+        {
+          "path": "specs/005-role-aware-course-agent/spec.md",
+          "line": 9,
+          "detail": "belgede 71, ölçülen 81 (`e2e.tests`, cd apps/web && ./node_modules/.bin/playwright test --list)"
+        }
+      ],
+      "stale_count": 19,
+      "stale_files": [
+        "ARCHITECTURE.md",
+        "docs/deployment.md",
+        "docs/runbook.md",
+        "docs/security.md",
+        "specs/001-course-assistant-mvp/quickstart.md",
+        "specs/002-production-hardening/plan.md",
+        "specs/005-role-aware-course-agent/quickstart.md",
+        "specs/005-role-aware-course-agent/research.md",
+        "specs/005-role-aware-course-agent/spec.md"
+      ],
+      "ownership_blocker": true,
+      "handoff": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-docs/handoff.json",
+        "sha256": "6e46e48f0cb73a037ef30481f93bcb448717b37b861a23f12108aa5e195b9a8c"
+      },
+      "suggested_external_patch": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-docs/forbidden-counters.patch",
+        "sha256": "326d10f3d803dab695faf6a78153a2396e66fba1f2920714f59612f50ba94fda"
+      }
+    }
+  },
+  "compiled_application_and_visual_review": {
+    "compiled_seal": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-compiled-artifact-seal.json",
+      "sha256": "29dab8e7e825a309ff5e4318af7ea071e5e19f2d9d34ff66083c771723a24e2a"
+    },
+    "build_id": "xvttviJHga05xO4WtHe5t",
+    "source_count": 171,
+    "artifact_count": 155,
+    "visual_review": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-visual-review.json",
+      "sha256": "2c3c6cb57a9d9d34d576c33477dedd740c418b5e726635fb7933bbce375c609c"
+    },
+    "visual_outcome": {
+      "recorded_at": "2026-09-13T16:16:21.465972+00:00",
+      "method": "Root viewed both generated screenshots with view_image",
+      "scope": "375px light/dark code_trace wrong answer: single literal source card, labelled local-demo next hint, visible deterministic0score and solution, no page horizontal overflow in executed assertion. Floating existing Ders Koçu launcher remains visible; this is not a complete accessibility audit.",
+      "screenshots": [
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/playwright-artifacts/grounded-wrong-feedback-co-6bd4c-sonraki-ipucuyla-kaydedilir-chromium/next-hint-375-dark.png",
+          "sha256": "33e2d62e8794c278e9b8d61fc10eac31b0b25bfc6acf8ecabc467f10d7835343"
+        },
+        {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/playwright-artifacts/grounded-wrong-feedback-co-6bd4c-sonraki-ipucuyla-kaydedilir-chromium/next-hint-375-light.png",
+          "sha256": "1f47ee7ff7467055348b568bf06cc4197307b9ca69531ed579e352c3ead47250"
+        }
+      ],
+      "result": "reviewed",
+      "application_changed": false,
+      "browser_receipt_sha256": "5f3ea486b09b05e28338571a2ce3a90ba63ccbd4eb946360db850a58bae65045"
+    },
+    "scope": "Mühür mevcut derleme dosyalarına ve uygulama kaynaklarına bağlıdır. Görsel inceleme yalnız kayıtlı iki ekran görüntüsünün kapsamındadır."
+  },
+  "blocked_acceptance_reasons": [
+    "ENGEL: Gerçek belge kapısı rc1; sahiplik dışı 9 dosyada 19 eski sayaç. Öneri yaması ayrı tutuldu.",
+    "Commit sonrasında ebeveyn tabanlı SDLC kapısı: not-run; bu kayıt kendi commit hashini önceden bilemez.",
+    "Uzak CI ve adaya bağlı gerçek sağlayıcı kabulü ölçülmedi.",
+    "İnsan pedagojik değerlendirmesi ve adlandırılmış bağımsız onaylar bekliyor.",
+    "Yeni version1 kayıtları koruyan uyumlu geri dönüş provası yapılmadı."
+  ],
+  "historical_evidence": [
+    {
+      "stage": "hazırlık koruması",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal/measured/guard-begin.log",
+        "sha256": "c11270abd75244b9e5fc34f79b9845ec7e916a0f4a3f942c8b019b50c2abfda3"
+      },
+      "result": "Makbuz varsa aşağıdaki ilgili sonuçta; bu log tek başına çıkış kodu kanıtlamaz."
+    },
+    {
+      "stage": "hazırlık koruması",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/guard-begin.log",
+        "sha256": "9c723d3b034b9d7cbd1e3a6d8d2a986382b33e28ec50a2daa9dc608cfa1381a5"
+      },
+      "result": "Makbuz varsa aşağıdaki ilgili sonuçta; bu log tek başına çıkış kodu kanıtlamaz."
+    },
+    {
+      "stage": "hazırlık koruması",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/guard-begin.log",
+        "sha256": "7e4063ccfe9ea75687ba26357e8d6a9c0b443f2a33dcaf658c16ec3b39be1a51"
+      },
+      "result": "Makbuz varsa aşağıdaki ilgili sonuçta; bu log tek başına çıkış kodu kanıtlamaz."
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/result.json",
+        "sha256": "5f3ea486b09b05e28338571a2ce3a90ba63ccbd4eb946360db850a58bae65045"
+      },
+      "rc": null,
+      "result": "PASS",
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser/measured/playwright.log",
+        "sha256": "5ecfb28c75a7a3f8c4abd4d073347a9cd2152120eaaf93b04eb16ae5cd7e6919"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal/prepare-failure.json",
+        "sha256": "c3ef47bf43e36bc711be8b4565cbf1ca104564dd58725b59c9cd2a46d4d9380c"
+      },
+      "rc": null,
+      "result": "FAIL",
+      "source_unchanged": null
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/result.json",
+        "sha256": "8fc2b96411a925a9fb27de7af191a52991e8280e1a096411b1a75a63effd00fe"
+      },
+      "rc": null,
+      "result": "PASS",
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-browser-normal-r2/measured/playwright.log",
+        "sha256": "b38cf3b1744f85050ac07fc3a8ca9ca32cfa931982e77e8c0702b4744c5bf10d"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-mutations/20260913T160919Z-3e876559/summary.json",
+        "sha256": "02f0a23c7283ce300265b5c7b517923ac4638d3942e47104bb742a66e50ec037"
+      },
+      "rc": null,
+      "result": "pass",
+      "source_unchanged": null
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/bun-r1-result.json",
+        "sha256": "6b381abd0199c520780c22744ad02e88823925e2331b3928947a939ada3fc956"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": null
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/contrast-r1-result.json",
+        "sha256": "7b57d00fd946345b06e990265b6a51cbd7fbdf71798adbed03c59f3963cc417b"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": null
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/diff-check-result.json",
+        "sha256": "c6dfc08c820d99a4627e902d54995c78731c92883aea7e2a5d4f3afe0f036ec3"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": null
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b9-web/tsc-r1-result.json",
+        "sha256": "0e85fb6ccef26986c01f9ed3b224e04b3fe596a0841ac071a84fc245b8e97605"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": null
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-format.json",
+        "sha256": "fb0f82421fbe68b9bf545504297f7fb7e4d135cb778e6a3369a1ea2be2c58c97"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-format.log",
+        "sha256": "7c381f30eba54a4faaae06c2b395e1fb1311b6f2e081f35fa2a62e151dd6d97a"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-handoff.json",
+        "sha256": "af4c4348712525886d5ea9faec050d25023e90b4587929658f5dbfa87f8f4c36"
+      },
+      "rc": null,
+      "result": null,
+      "source_unchanged": null
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-mypy.json",
+        "sha256": "7a48d25e7788a9636511b15f581c4ec57bd39efcd99211c1f9a5802073d05ce1"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-mypy.log",
+        "sha256": "0cd98cfd5b35e0e85b86d75459966f02562f9c10fe59fb3d86271d1b9fa33e5c"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-ruff.json",
+        "sha256": "d19bdb85868cb525b573240eb438ffc69531b4aadbf78e40d97dfc2e1874a6ba"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-ruff.log",
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-targeted.json",
+        "sha256": "c7a1e64c84b94b5068b8c888dad67cc4ac1cd4b75174c406d220786dae64b479"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-backend-targeted.log",
+        "sha256": "a971f5eb88a8438cbe788cdb69872261e02ffc0806fb6cf544fe733cb8ba9a4e"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-docs-before-readme.json",
+        "sha256": "0b7dc29b15111925c999d8c533310d6b61b64826491e6fde2b5d510bc922f4aa"
+      },
+      "rc": 1,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-docs-before-readme.log",
+        "sha256": "d9ed610ba68cdcf52fa30644f5ecddf7513ddbaf4d0bee83109c17b7a85465cc"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-docs.json",
+        "sha256": "bef57d59292e0865cbf769392721cfa5b92f8bfb6816f7528467cd008f4ca882"
+      },
+      "rc": 1,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-docs.log",
+        "sha256": "c61218444286b2d333520502e86556cf07087ea3ab02a4466a7bc56a60cca1b8"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-pytest.json",
+        "sha256": "ce4b4eb6e1b4bdc39ce8a3bea571a8c3e858b9fb43ac7437b762ee982e4e5cd3"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-final-pytest.log",
+        "sha256": "948e463baf0556c1ae16b187afd4b5a6a2a6ab2df4f95d9c93a6f0d278e18f36"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-baseline.json",
+        "sha256": "63d514b5a6ecf224b23653dbc3a2020b7ce2a52726cede797bcd7fdcd341abd8"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-baseline.log",
+        "sha256": "e80804bd4fee0f00c62b6f39208fa5f442571ffe2d046ae4ff37956f584a022e"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-candidate.json",
+        "sha256": "cb72deed9f6ca50683f2131a00156a6d77c25981ae01487e9d4fed7893fea3be"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-metric-candidate.log",
+        "sha256": "d11bf636a9c6df56e8522ad03ac50006f261e9cecd8c2c05e3899bbcf061d4a7"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-migrations.json",
+        "sha256": "56ec95694f78bf8757e6e1d5b3f2e7349ab29dba6ad1c3cb4720fe5c785bf69f"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-migrations.log",
+        "sha256": "f5825a02401d3bd75b7665e52461a1e85a4e22eec66951ce0ca36fc292f6e5a7"
+      },
+      "failing_tests": []
+    },
+    {
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-workflows.json",
+        "sha256": "e8b3fd210ce1b6aec037c0fb0cd073edad98e08a1ff2e0ec7956e2a492952f98"
+      },
+      "rc": 0,
+      "result": null,
+      "source_unchanged": true,
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b9-workflows.log",
+        "sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+      },
+      "failing_tests": []
+    }
+  ],
+  "parent_sdlc": {
+    "result": "not-run",
+    "reason": "Commit sonrası ayrı kapı; bu kayıt döngüsel olarak kendi sonucunu geçer sayamaz."
+  },
+  "data_digest_scope": "corpus_digest sentetik oracle test dosyasını; eval_set_digest yerel tarayıcı test dosyasını bağlar. Bunlar gerçek öğrenci korpusu veya insan değerlendirme kümesi değildir."
+}

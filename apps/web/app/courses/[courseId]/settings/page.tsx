@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { LearningSummaryPanel } from "@/components/learning-summary";
 import { PolicyHistory } from "@/components/policy-history";
 import { CourseNav } from "@/components/course-nav";
 import { InstructorGate } from "@/components/instructor-gate";
@@ -58,7 +59,10 @@ function PolicyEditorBoundary({ courseId, viewerId, ready, isInstructor }: {
   return (
     <InstructorGate ready={ready} isInstructor={isInstructor}
       fallback={<EmptyState title="AI politikası yalnızca dersin eğitmenine gösterilir." />}>
-      <PolicyEditor courseId={courseId} viewerId={viewerId} draftBuffer={draftBuffer} />
+      <div className="space-y-8">
+        <LearningSummaryPanel courseId={courseId} />
+        <PolicyEditor courseId={courseId} viewerId={viewerId} draftBuffer={draftBuffer} />
+      </div>
     </InstructorGate>
   );
 }

@@ -230,6 +230,8 @@ async def test_export_agent_operasyon_kayitlarini_aciklayarak_disarida_birakir(
         "maliyet ve eşzamanlılık operasyon kaydıdır; bu dışa aktarıma dahil edilmez.",
         "ai_guard_events: Soru, cevap veya kaynak metni içermeyen hız, kota, "
         "eşzamanlılık ve kapsam reddi güvenlik kaydıdır; bu dışa aktarıma dahil edilmez.",
+        "learning_events: Ham soru, cevap veya kaynak metni içermeyen, ders bazında "
+        "takma kimlikle tutulan kişisel öğrenme olaylarıdır; bu dışa aktarıma dahil edilmez.",
         "chat_privacy_revisions: Soru veya cevap içermeyen hesap/ders kapsamlı silme "
         "sürüm sayacıdır; bu dışa aktarıma dahil edilmez.",
         "rate_limit_windows: İçerik taşımayan kullanıcı/ders kimliği ve kabul edilen istek "

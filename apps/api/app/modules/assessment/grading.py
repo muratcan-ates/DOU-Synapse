@@ -13,7 +13,8 @@ sunucunun yetkileriyle sızdırır.
 |---|---|---|
 | `mcq` | cevap anahtarıyla karşılaştırma + çeldirici→kaynak eşlemesi | **hayır** |
 | `open` + `short_answer` | kabul edilen karşılıklarla normalize eşleştirme | **hayır** |
-| `open` + `essay`, `code_trace`, `bug_hunt` | rubrik + anahtar + kaynakla şemalı | evet |
+| `open` + `essay` | kaynaklı rubrik + yanlış/eksik yanıta alıntı ve sonraki ipucu | evet |
+| `code_trace`, `bug_hunt` | deterministik çıktı/satır karşılaştırması | yalnız açıklama |
 
 LLM yolunda çıktı şemaya uymazsa veya okunabilir kaynaklara dayanmıyorsa **bir kez**
 yeniden denenir. İkinci deneme de doğrulanamazsa puan ve model geri bildirimi
@@ -35,10 +36,11 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationError
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import text_tr
@@ -47,15 +49,17 @@ from app.core.llm_json import first_json_object
 from app.core.logging import get_logger
 from app.models.assessment import Question
 from app.models.core import Chunk, Document
+from app.modules.assessment.code_oracle import code_oracle
 from app.modules.assessment.question_gen import (
     StructuredCompletion,
-    resolve_completion,
+    resolve_grading_completion,
 )
 from app.schemas.assessment import (
     AnswerFormat,
     BugHuntPayload,
     CodeTracePayload,
     GroundedCriterionEvidence,
+    GroundedFeedbackEvidence,
     McqPayload,
     OpenPayload,
     RubricCriterionScore,
@@ -117,6 +121,7 @@ class SourceMaterial:
     file_name: str
     location: str
     text: str
+    course_id: UUID | None = None
 
     def reference(self, *, focus: str | None = None) -> SourceRefOut:
         return SourceRefOut(
@@ -132,7 +137,8 @@ async def load_source_material(
 ) -> dict[UUID, SourceMaterial]:
     """Chunk kimliklerini tek sorguda kaynak malzemesine çevirir.
 
-    Görünmeyen (başka dersin) bir chunk RLS yüzünden sonuçta yer almaz; çağıran
+    RLS görünürlüğüne ek olarak chunk ile belgenin ders kimlikleri eşleşir.
+    İki derse üye aktörde de bozuk çapraz belge bağı kaynak sayılmaz; çağıran
     eksik kimliği "kaynak gösterilemedi" olarak karşılar.
     """
     unique = list(dict.fromkeys(chunk_ids))
@@ -140,7 +146,10 @@ async def load_source_material(
         return {}
     rows = await session.execute(
         select(Chunk, Document.file_name)
-        .join(Document, Document.id == Chunk.document_id)
+        .join(
+            Document,
+            and_(Document.id == Chunk.document_id, Document.course_id == Chunk.course_id),
+        )
         .where(Chunk.id.in_(unique))
     )
     return {
@@ -149,6 +158,7 @@ async def load_source_material(
             file_name=file_name,
             location=chunk_location(chunk),
             text=chunk.text,
+            course_id=chunk.course_id,
         )
         for chunk, file_name in rows.all()
     }
@@ -190,6 +200,8 @@ class GradingOutcome:
     #: türetilir; model ayrı bir toplam verse bile o okunmaz.
     rubric_breakdown: list[RubricCriterionScore] = field(default_factory=list)
     grounded_missing_criterion: GroundedCriterionEvidence | None = None
+    grounded_feedback: GroundedFeedbackEvidence | None = None
+    feedback_version: Literal[1] | None = None
 
 
 _UNGRADABLE_MESSAGE = (
@@ -200,6 +212,34 @@ _UNGRADABLE_MESSAGE = (
 def _ungraded(reason: str) -> GradingOutcome:
     logger.warning("değerlendirme tamamlanamadı", extra={"context": {"reason": reason}})
     return GradingOutcome(graded=False, message=_UNGRADABLE_MESSAGE)
+
+
+def _ungraded_new(reason: str) -> GradingOutcome:
+    outcome = _ungraded(reason)
+    outcome.feedback_version = 1
+    return outcome
+
+
+def grounded_feedback_is_valid(claim: GroundedFeedbackEvidence, *, source_text: str) -> bool:
+    """Alıntının birebir üyeliğini sınar; pedagojik anlam doğruluğu iddiası taşımaz."""
+    return bool(
+        source_text.strip()
+        and claim.quote.strip()
+        and len(claim.quote) <= SNIPPET_CHARS
+        and claim.quote in source_text
+        and claim.next_hint.strip()
+        and len(claim.next_hint) <= 1000
+    )
+
+
+def literal_feedback_quote(source_text: str) -> str:
+    """Kaynağın ilk dolu cümlesinden gerçek bir kesit; whitespace uydurulmaz."""
+    excerpt = source_text.lstrip()[:SNIPPET_CHARS]
+    boundaries = [excerpt.find(mark) for mark in (".", "!", "?", "\n")]
+    endings = [index for index in boundaries if index >= 0]
+    if endings:
+        excerpt = excerpt[: min(endings) + 1]
+    return excerpt.rstrip()
 
 
 # ---------------------------------------------------------------------------
@@ -243,7 +283,7 @@ def grade_mcq(payload: McqPayload, given: str) -> GradingOutcome:
 
 
 def grade_short_answer(
-    payload: OpenPayload, given: str, *, source_chunk_id: UUID
+    payload: OpenPayload, given: str, *, source_chunk_id: UUID, source_text: str | None = None
 ) -> GradingOutcome:
     """Kabul edilen karşılıklarla normalize eşleştirme (Karar 4).
 
@@ -257,23 +297,40 @@ def grade_short_answer(
     o fonksiyonun docstring'inde yazılıdır — burada tekrarlanmıyor ki iki metin
     bir gün ayrışmasın.
     """
+    if source_text is None or not source_text.strip():
+        return _ungraded_new("kısa cevap kaynağı okunamadı")
     answer = text_tr.normalize(given)
-    if not answer:
-        return GradingOutcome(graded=True, score=0, is_correct=False, focus=given)
 
     haystack = f" {answer} "
     for accepted in payload.accepted_answers:
         needle = text_tr.normalize(accepted)
         if needle and (answer == needle or f" {needle} " in haystack):
-            return GradingOutcome(graded=True, score=100, is_correct=True, focus=given)
+            return GradingOutcome(
+                graded=True,
+                score=100,
+                is_correct=True,
+                focus=given,
+                evidence_chunk_id=source_chunk_id,
+                feedback_version=1,
+            )
 
+    feedback = GroundedFeedbackEvidence(
+        chunk_id=source_chunk_id,
+        quote=literal_feedback_quote(source_text),
+        next_hint=(
+            "Kaynak cümlesindeki tanımı yanıtınla karşılaştır; farklı kalan kavramı yeniden yaz."
+        ),
+    )
     return GradingOutcome(
         graded=True,
         score=0,
         is_correct=False,
         missing_points=[payload.answer_key],
         why_wrong_chunk_id=source_chunk_id,
+        evidence_chunk_id=source_chunk_id,
         focus=given,
+        grounded_feedback=feedback,
+        feedback_version=1,
     )
 
 
@@ -298,6 +355,7 @@ class _LlmVerdict(BaseModel):
     #: Rubrik verilmişse ölçüt başına puan. Toplamı biz hesaplarız (FR-117).
     rubrik: list[_RubrikSatiri] = Field(default_factory=list, max_length=12)
     grounded_missing_criterion: GroundedCriterionEvidence | None = None
+    grounded_feedback: GroundedFeedbackEvidence | None = None
 
 
 _SYSTEM_PROMPT = (
@@ -310,13 +368,16 @@ _SYSTEM_PROMPT = (
     "Rubrik verilmişse her ölçüt için ayrıca "
     '"rubrik": [{"olcut": "<ölçütün metni>", "puan": 0-100} ...] yaz; ölçüt metnini '
     "verildiği gibi kopyala ve AĞIRLIKLARLA ÇARPMA — ağırlığı biz uygularız. "
-    "Kod rubriği verilmişse tüm ölçütleri tam bir kez puanla; ölçüt ekleme veya atlama. "
     "Açıkça puanladığın bir rubrik ölçütü 100'ün altındaysa ve kaynakta bu ölçütle "
     "ilgili gerçek bir alıntı varsa isteğe bağlı grounded_missing_criterion ver: "
     '{"criterion":"<rubrikteki ölçütün birebir metni>","chunk_id":"<dayanak_chunk_id>",'
     '"quote":"<kaynağın birebir, boş olmayan en fazla 320 karakterlik kesiti>"}. '
     "Bu alanı kaynaksız doldurma, alıntıyı yeniden yazma; uygun alıntı veya puanlanmış "
-    "ölçüt yoksa null ver. Alıntı bir anlam doğrulama sertifikası değildir."
+    "ölçüt yoksa null ver. Alıntı bir anlam doğrulama sertifikası değildir. "
+    "Toplam puan 100 altındaysa grounded_feedback zorunludur: "
+    '{"chunk_id":"<dayanak_chunk_id>","quote":"<kaynağın birebir <=320 karakter kesiti>",'
+    '"next_hint":"<yanıt sonrası Türkçe çalışma adımı; boş olmayan <=1000 karakter>"}. '
+    "Kaynaksız iddia veya yeniden yazılmış alıntı verme."
 )
 
 
@@ -341,7 +402,7 @@ def _reference_block(payload: BaseModel) -> str:
             f"satır {payload.answer_key.line}, tür '{payload.answer_key.bug_type}', "
             f"düzeltme: {payload.answer_key.fix_summary}"
         )
-    rubric = payload_rubric(payload)
+    rubric = payload_rubric(payload) if isinstance(payload, OpenPayload) else []
     if rubric:
         lines.append("Rubrik (ağırlıklar 100 üzerinden):")
         lines += [f"- {item.point} ({item.weight:.4g})" for item in normalized_rubric(rubric)]
@@ -373,21 +434,6 @@ def payload_rubric(payload: BaseModel) -> list[RubricItem]:
         payload.rubric
         if isinstance(payload, (OpenPayload, CodeTracePayload, BugHuntPayload))
         else []
-    )
-
-
-def _code_rubric_is_complete(payload: BaseModel, verdict: _LlmVerdict) -> bool:
-    if not isinstance(payload, (CodeTracePayload, BugHuntPayload)) or not payload.rubric:
-        return True
-    expected = [item.point for item in payload.rubric]
-    names = [point.strip().casefold() for point in expected]
-    observed = [item.olcut for item in verdict.rubrik]
-    return (
-        all(names)
-        and len(set(names)) == len(names)
-        and len(set(observed)) == len(observed)
-        and len(observed) == len(expected)
-        and set(observed) == set(expected)
     )
 
 
@@ -458,6 +504,80 @@ def _rubric_breakdown(payload: BaseModel, verdict: _LlmVerdict) -> list[RubricCr
     return satirlar
 
 
+class _CodeExplanation(BaseModel):
+    dayanak_chunk_id: UUID
+    grounded_feedback: GroundedFeedbackEvidence
+
+
+_CODE_EXPLANATION_PROMPT = (
+    "Kod yanıtının doğru/yanlış kararı metinsel cevap anahtarıyla sunucu tarafından verildi. "
+    "PUAN VERME, rubrik üretme; kod çalıştırma. Yalnız yanlış yanıtı kaynakla karşılaştırmaya "
+    "yardım eden Türkçe sonraki adımı ver. Cevabın yalnız JSON olsun: "
+    '{"dayanak_chunk_id":"<verilen kaynak>","grounded_feedback":'
+    '{"chunk_id":"<aynı kaynak>","quote":"<kaynağın birebir, boş olmayan <=320 karakter kesiti>",'
+    '"next_hint":"<boş olmayan <=1000 karakter sonraki çalışma adımı>"}}. '
+    "Alıntıyı yeniden yazma ve verilen kaynak dışında bilgi kullanma."
+)
+
+
+def _correct_code(source_id: UUID, given: str) -> GradingOutcome:
+    return GradingOutcome(
+        graded=True,
+        score=100,
+        is_correct=True,
+        evidence_chunk_id=source_id,
+        focus=given,
+        feedback_version=1,
+    )
+
+
+async def _grade_code(
+    completion: StructuredCompletion,
+    *,
+    payload: CodeTracePayload | BugHuntPayload,
+    given: str,
+    sources: Sequence[tuple[UUID, str]],
+) -> GradingOutcome:
+    score = code_oracle(payload, given)
+    if score is None:
+        return _ungraded_new("kod yanıtı deterministik karşılaştırma için belirsiz")
+    if score == 100:
+        return _correct_code(sources[0][0], given)
+    source_texts = dict(sources)
+    user = "\n\n".join(
+        [
+            _reference_block(payload),
+            f"Öğrencinin cevabı:\n{given}",
+            "Sunucunun deterministik kararı: yanlış (0).",
+            _sources_block(sources),
+        ]
+    )
+    for _ in range(2):
+        try:
+            raw = await completion.complete(system=_CODE_EXPLANATION_PROMPT, user=user)
+            data = first_json_object(raw)
+            verdict = _CodeExplanation.model_validate(data)
+        except Exception:
+            logger.info("kod açıklaması şema veya sağlayıcı denetiminden geçmedi")
+            continue
+        claim = verdict.grounded_feedback
+        if claim.chunk_id != verdict.dayanak_chunk_id or not grounded_feedback_is_valid(
+            claim, source_text=source_texts.get(claim.chunk_id, "")
+        ):
+            continue
+        return GradingOutcome(
+            graded=True,
+            score=0,
+            is_correct=False,
+            why_wrong_chunk_id=claim.chunk_id,
+            evidence_chunk_id=claim.chunk_id,
+            focus=given,
+            grounded_feedback=claim,
+            feedback_version=1,
+        )
+    return _ungraded_new("kod açıklaması iki denemede kaynak ve ipucuyla doğrulanamadı")
+
+
 async def grade_with_llm(
     completion: StructuredCompletion,
     *,
@@ -473,7 +593,16 @@ async def grade_with_llm(
     """
     readable_sources = [(chunk_id, body) for chunk_id, body in sources if body.strip()]
     if not readable_sources:
-        return _ungraded("okunabilir kaynak parçası yok")
+        return _ungraded_new("okunabilir kaynak parçası yok")
+    if isinstance(payload, (CodeTracePayload, BugHuntPayload)):
+        return await _grade_code(completion, payload=payload, given=given, sources=readable_sources)
+    if isinstance(payload, OpenPayload) and payload.format is AnswerFormat.SHORT_ANSWER:
+        return grade_short_answer(
+            payload,
+            given,
+            source_chunk_id=readable_sources[0][0],
+            source_text=readable_sources[0][1],
+        )
     valid_ids = {chunk_id for chunk_id, _ in readable_sources}
     user_prompt = "\n\n".join(
         [
@@ -502,9 +631,6 @@ async def grade_with_llm(
             logger.info("değerlendirme dayanağı set-membership'ten geçmedi")
             continue
 
-        if not _code_rubric_is_complete(payload, verdict):
-            logger.info("kod değerlendirmesi tüm tanımlı ölçütleri tekil olarak kapsamıyor")
-            continue
         breakdown = _rubric_breakdown(payload, verdict)
         grounded = verdict.grounded_missing_criterion
         if grounded is not None:
@@ -530,6 +656,16 @@ async def grade_with_llm(
         # da verir ama okunmaz — ikisi çelişirse öğrenciye gösterilen tablonun
         # toplamı tutmazdı (Anayasa III).
         score = sum(row.earned for row in breakdown) if breakdown else verdict.score
+        feedback = verdict.grounded_feedback
+        if score < 100 and feedback is None:
+            continue
+        if feedback is not None and (
+            feedback.chunk_id != evidence
+            or not grounded_feedback_is_valid(
+                feedback, source_text=dict(readable_sources).get(feedback.chunk_id, "")
+            )
+        ):
+            continue
 
         return GradingOutcome(
             graded=True,
@@ -540,9 +676,12 @@ async def grade_with_llm(
             focus=given,
             rubric_breakdown=breakdown,
             grounded_missing_criterion=grounded,
+            why_wrong_chunk_id=feedback.chunk_id if feedback is not None and score < 100 else None,
+            grounded_feedback=feedback,
+            feedback_version=1,
         )
 
-    return _ungraded("değerlendirme iki denemede de doğrulanamadı")
+    return _ungraded_new("değerlendirme iki denemede de doğrulanamadı")
 
 
 # ---------------------------------------------------------------------------
@@ -578,24 +717,34 @@ async def grade_answer(
     if isinstance(payload, McqPayload):
         return grade_mcq(payload, given)
 
+    material = await load_source_material(session, [question.source_chunk_id])
+    source = material.get(question.source_chunk_id)
+    if source is None or source.course_id != question.course_id or not source.text.strip():
+        return _ungraded_new("sorunun aynı ders içindeki kaynak ve belgesi okunamadı")
     if isinstance(payload, OpenPayload) and payload.format is AnswerFormat.SHORT_ANSWER:
-        return grade_short_answer(payload, given, source_chunk_id=question.source_chunk_id)
-
-    chunk = await session.get(Chunk, question.source_chunk_id)
-    if chunk is None or not chunk.text.strip():
-        return _ungraded("sorunun kaynak parçası okunamadı")
+        return grade_short_answer(
+            payload, given, source_chunk_id=source.chunk_id, source_text=source.text
+        )
+    if isinstance(payload, (CodeTracePayload, BugHuntPayload)):
+        score = code_oracle(payload, given)
+        if score is None:
+            return _ungraded_new("kod yanıtı deterministik karşılaştırma için belirsiz")
+        if score == 100:
+            return _correct_code(source.chunk_id, given)
 
     if completion is None:
         try:
-            completion = resolve_completion()
+            completion = resolve_grading_completion(
+                payload=payload, given=given, sources=[(source.chunk_id, source.text)]
+            )
         except AppError:
-            return _ungraded("LLM sağlayıcısı kurulamadı")
+            return _ungraded_new("LLM sağlayıcısı kurulamadı")
 
     return await grade_with_llm(
         completion,
         payload=payload,
         given=given,
-        sources=[(chunk.id, chunk.text)],
+        sources=[(source.chunk_id, source.text)],
     )
 
 

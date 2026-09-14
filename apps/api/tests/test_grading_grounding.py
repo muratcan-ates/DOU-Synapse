@@ -35,6 +35,11 @@ def _verdict(evidence: str | None = None, *, missing_field: bool = False) -> str
         "score": 80,
         "eksik_noktalar": ["Modelin doğrulanmamış iddiası"],
         "rubrik": [{"olcut": "Dört koşulu sayar", "puan": 80}],
+        "grounded_feedback": {
+            "chunk_id": evidence,
+            "quote": DEADLOCK_TEXTS[0][:300],
+            "next_hint": "Kaynakta belirtilen koşulları yanıtınla karşılaştır.",
+        },
     }
     if not missing_field:
         value["dayanak_chunk_id"] = evidence
@@ -50,11 +55,19 @@ def payload(request: pytest.FixtureRequest) -> BaseModel:
     if request.param == "bug_hunt":
         return BugHuntPayload(
             language="Python",
-            code="print(total)",
+            code="total = 0\nprint(total)",
             prompt="Koddaki hatayı bulun.",
             answer_key={"line": 1, "bug_type": "NameError", "fix_summary": "total tanımlanmalı"},
         )
     return OpenPayload.model_validate(ESSAY_PAYLOAD)
+
+
+def _given(payload: BaseModel) -> str:
+    if isinstance(payload, BugHuntPayload):
+        return json.dumps(
+            {"version": 1, "line": 2, "bug_type": "NameError", "fix_summary": "total tanımlanmalı"}
+        )
+    return "Cevabım."
 
 
 def _assert_ungraded(outcome: GradingOutcome) -> None:
@@ -80,7 +93,7 @@ async def test_invalid_evidence_exhausts_shared_two_attempt_budget(
         )
     )
     outcome = await grade_with_llm(
-        completion, payload=payload, given="Cevabım.", sources=[(uuid4(), DEADLOCK_TEXTS[0])]
+        completion, payload=payload, given=_given(payload), sources=[(uuid4(), DEADLOCK_TEXTS[0])]
     )
     assert completion.calls == 2
     _assert_ungraded(outcome)
@@ -90,11 +103,11 @@ async def test_invalid_evidence_then_valid_recovers_without_extra_calls(payload:
     source_id = uuid4()
     completion = FakeCompletion(_verdict(str(uuid4())), _verdict(str(source_id)))
     outcome = await grade_with_llm(
-        completion, payload=payload, given="Cevabım.", sources=[(source_id, DEADLOCK_TEXTS[0])]
+        completion, payload=payload, given=_given(payload), sources=[(source_id, DEADLOCK_TEXTS[0])]
     )
     assert completion.calls == 2
     assert outcome.graded is True
-    assert outcome.score == 80
+    assert outcome.score == (80 if isinstance(payload, OpenPayload) else 0)
     assert outcome.evidence_chunk_id == source_id
 
 
@@ -102,11 +115,11 @@ async def test_valid_evidence_first_attempt_is_unchanged(payload: BaseModel) -> 
     source_id = uuid4()
     completion = FakeCompletion(_verdict(str(source_id)))
     outcome = await grade_with_llm(
-        completion, payload=payload, given="Cevabım.", sources=[(source_id, DEADLOCK_TEXTS[0])]
+        completion, payload=payload, given=_given(payload), sources=[(source_id, DEADLOCK_TEXTS[0])]
     )
     assert completion.calls == 1
     assert outcome.graded is True
-    assert outcome.score == 80
+    assert outcome.score == (80 if isinstance(payload, OpenPayload) else 0)
     assert outcome.evidence_chunk_id == source_id
 
 
@@ -117,7 +130,9 @@ async def test_no_readable_sources_never_calls_provider(
     source_id = uuid4()
     completion = FakeCompletion(_verdict(str(source_id)))
     sources = [] if source_text is None else [(source_id, source_text)]
-    outcome = await grade_with_llm(completion, payload=payload, given="Cevabım.", sources=sources)
+    outcome = await grade_with_llm(
+        completion, payload=payload, given=_given(payload), sources=sources
+    )
     assert completion.calls == 0
     _assert_ungraded(outcome)
 

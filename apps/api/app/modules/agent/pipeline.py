@@ -67,7 +67,22 @@ class _DocumentScopedRetriever:
         return [chunk for chunk in chunks if chunk.document_id in self._document_ids][:limit]
 
 
+class LearningEventRetriever:
+    """Aynı istek/RLS işlemini öğrenme olayı yazıcısına taşır."""
+
+    def __init__(self, inner: Retriever, session: AsyncSession) -> None:
+        self.inner = inner
+        self.session = session
+
+    async def search(self, *, course_id: UUID, query: str, limit: int = 8) -> list[RetrievedChunk]:
+        return await self.inner.search(course_id=course_id, query=query, limit=limit)
+
+
 def get_retriever(session: AsyncSession, document_ids: frozenset[UUID] | None = None) -> Retriever:
+    return LearningEventRetriever(_get_retriever(session, document_ids), session)
+
+
+def _get_retriever(session: AsyncSession, document_ids: frozenset[UUID] | None = None) -> Retriever:
     if _retriever_factory is not None:
         injected = _retriever_factory(session)
         return (
@@ -94,7 +109,9 @@ def get_generator() -> Generator:
         raise PipelineUnavailableError(
             "Cevap üretimi henüz hazır değil. Lütfen daha sonra tekrar deneyin."
         ) from exc
-    return GenerationService()
+    from app.modules.agent.provider_fallback import build_chat_provider_client
+
+    return GenerationService(llm=build_chat_provider_client())
 
 
 def get_guardrails() -> Sequence[Guardrail]:

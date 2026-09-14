@@ -255,6 +255,8 @@ export interface TranscriptMessage {
    * `false` yazmak, sunucunun vermediği bir bilgiyi uydurmak olurdu (Anayasa III).
    */
   cached: boolean;
+  /** Yalnız canlı yanıtın sunucu alanından gelir; metinden çıkarılmaz. */
+  fixture?: true;
   /** Öğrencinin daha önce kaydettiği puan; yalnız kendi geçmişinde döner. */
   feedback: ChatFeedback | null;
 }
@@ -290,6 +292,7 @@ export function fromAnswer(answer: ChatAnswer): TranscriptMessage {
     citations: answer.citations ?? [],
     socraticStage: answer.socratic_stage,
     cached: answer.cached,
+    ...(answer.fixture === true ? { fixture: true as const } : {}),
     feedback: null,
   };
 }
@@ -350,6 +353,7 @@ export interface LadderRung {
   id: string;
   stage: SocraticStage | null;
   text: string;
+  fixture?: true;
   source: { fileName: string; location: string; quote: string };
   /** Bu kademeyi açan öğrenci denemesi; açılış turunda null. */
   attempt: string | null;
@@ -357,8 +361,8 @@ export interface LadderRung {
 
 export type ChatBlock =
   | { kind: "question"; id: string; text: string }
-  | { kind: "answer"; id: string; text: string; citations: Citation[]; cached: boolean }
-  | { kind: "abstention"; id: string; text: string; status: AbstentionStatus }
+  | { kind: "answer"; id: string; text: string; citations: Citation[]; cached: boolean; fixture?: true }
+  | { kind: "abstention"; id: string; text: string; status: AbstentionStatus; fixture?: true }
   | { kind: "ladder"; id: string; rungs: LadderRung[] };
 
 /**
@@ -416,6 +420,7 @@ export function toBlocks(
         id: message.id,
         text: message.content,
         status: message.status,
+        ...(message.fixture === true ? { fixture: true as const } : {}),
       });
     } else {
       blocks.push({
@@ -424,6 +429,7 @@ export function toBlocks(
         text: message.content,
         citations: message.citations,
         cached: message.cached,
+        ...(message.fixture === true ? { fixture: true as const } : {}),
       });
     }
   }
@@ -451,6 +457,7 @@ function toRung(message: TranscriptMessage): LadderRung | null {
     stage: message.socraticStage,
     text: message.content,
     source: citationSource(source),
+    ...(message.fixture === true ? { fixture: true as const } : {}),
     attempt: null,
   };
 }

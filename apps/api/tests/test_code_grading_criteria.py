@@ -18,7 +18,12 @@ from app.modules.assessment.authoring import validate_draft_payload
 from app.modules.assessment.grading import GradingOutcome, SourceMaterial, grade_with_llm
 from app.modules.assessment.question_gen import _drafts_from_response, _payload_from_draft
 from app.modules.generation.fake import _draft_for
-from app.schemas.assessment import GroundedCriterionEvidence, parse_payload, public_payload
+from app.schemas.assessment import (
+    GroundedCriterionEvidence,
+    RubricCriterionScore,
+    parse_payload,
+    public_payload,
+)
 from tests.factories import FakeCompletion
 
 SOURCE = "Döngü her adımda sayacı yazdırır. Son koşul sağlanmadığında döngü biter."
@@ -56,6 +61,11 @@ def _verdict(source_id: UUID, *, claim: bool = True) -> dict[str, Any]:
         "score": 99,
         "eksik_noktalar": [CRITERION],
         "dayanak_chunk_id": str(source_id),
+        "grounded_feedback": {
+            "chunk_id": str(source_id),
+            "quote": QUOTE,
+            "next_hint": "Bitiş koşulunu kaynakla karşılaştır.",
+        },
         "rubrik": [
             {"olcut": RUBRIC[0]["point"], "puan": 100},
             {"olcut": CRITERION, "puan": 50},
@@ -76,7 +86,18 @@ async def _grade(kind: QuestionType, value: dict[str, Any], *, raw: dict[str, An
     outcome = await grade_with_llm(
         completion,
         payload=parse_payload(kind, raw or _payload(kind)),
-        given="Sayaç artar.",
+        given=(
+            json.dumps(
+                {
+                    "version": 1,
+                    "line": 2,
+                    "bug_type": "Sonsuz döngü",
+                    "fix_summary": "Bitiş koşulu ekleyin.",
+                }
+            )
+            if kind is QuestionType.BUG_HUNT
+            else "Sayaç artar."
+        ),
         sources=[(source_id, SOURCE)],
     )
     return outcome, completion
@@ -92,9 +113,7 @@ def _ungraded(outcome: GradingOutcome) -> None:
     assert outcome.evidence_chunk_id is None
 
 
-@pytest.mark.parametrize(
-    "kind", [QuestionType.CODE_TRACE, QuestionType.BUG_HUNT, QuestionType.OPEN]
-)
+@pytest.mark.parametrize("kind", [QuestionType.OPEN])
 async def test_explicit_criterion_score_and_literal_quote_are_linked(kind: QuestionType) -> None:
     source_id = uuid4()
     outcome, completion = await _grade(kind, _verdict(source_id))
@@ -103,7 +122,8 @@ async def test_explicit_criterion_score_and_literal_quote_are_linked(kind: Quest
     assert outcome.score == 80  # 60*100% + 40*50%; modelin 99 puanı kullanılmaz.
     assert [row.earned for row in outcome.rubric_breakdown] == [60, 20]
     assert outcome.evidence_chunk_id == source_id
-    assert outcome.why_wrong_chunk_id is None  # Çoktan seçmeli/kısa cevap anlamı ayrı tutulur.
+    assert outcome.why_wrong_chunk_id == source_id
+    assert outcome.grounded_feedback is not None
     assert outcome.grounded_missing_criterion == GroundedCriterionEvidence(
         criterion=CRITERION, chunk_id=source_id, quote=QUOTE
     )
@@ -111,7 +131,7 @@ async def test_explicit_criterion_score_and_literal_quote_are_linked(kind: Quest
 
 @pytest.mark.parametrize("kind", [QuestionType.CODE_TRACE, QuestionType.BUG_HUNT])
 @pytest.mark.parametrize("case", ["missing", "partial", "duplicate", "foreign", "renamed", "case"])
-async def test_code_criteria_must_be_complete_unique_and_exact(
+async def test_code_model_rubric_cannot_override_deterministic_score(
     kind: QuestionType, case: str
 ) -> None:
     value = _verdict(uuid4(), claim=False)
@@ -128,27 +148,31 @@ async def test_code_criteria_must_be_complete_unique_and_exact(
     else:
         value["rubrik"][1]["olcut"] = CRITERION.upper()
     outcome, completion = await _grade(kind, value)
-    assert completion.calls == 2
-    _ungraded(outcome)
+    assert completion.calls == 1
+    assert outcome.score == 0 and outcome.rubric_breakdown == []
 
 
 @pytest.mark.parametrize("kind", [QuestionType.CODE_TRACE, QuestionType.BUG_HUNT])
-async def test_legacy_code_without_rubric_keeps_existing_score(kind: QuestionType) -> None:
+async def test_new_answer_to_legacy_code_uses_oracle_even_without_rubric(
+    kind: QuestionType,
+) -> None:
     value = _verdict(uuid4(), claim=False)
     value.pop("rubrik")
     outcome, completion = await _grade(kind, value, raw=_payload(kind, rubric=False))
     assert completion.calls == 1
     assert outcome.graded is True
-    assert outcome.score == 99
+    assert outcome.score == 0
     assert outcome.rubric_breakdown == []
     assert outcome.grounded_missing_criterion is None
 
 
 @pytest.mark.parametrize("kind", [QuestionType.CODE_TRACE, QuestionType.BUG_HUNT])
-async def test_valid_code_rubric_can_grade_without_optional_explanation(kind: QuestionType) -> None:
+async def test_code_uses_grounded_feedback_independently_of_old_criterion_field(
+    kind: QuestionType,
+) -> None:
     outcome, completion = await _grade(kind, _verdict(uuid4(), claim=False))
     assert completion.calls == 1
-    assert outcome.score == 80
+    assert outcome.score == 0
     assert outcome.grounded_missing_criterion is None
 
 
@@ -165,9 +189,7 @@ async def test_open_rubric_fallback_and_partial_scoring_are_unchanged(case: str)
     assert outcome.grounded_missing_criterion is None
 
 
-@pytest.mark.parametrize(
-    "kind", [QuestionType.CODE_TRACE, QuestionType.BUG_HUNT, QuestionType.OPEN]
-)
+@pytest.mark.parametrize("kind", [QuestionType.OPEN])
 @pytest.mark.parametrize(
     "case",
     [
@@ -233,7 +255,7 @@ async def test_valid_but_different_allowlisted_chunk_does_not_match_grading_evid
     completion = FakeCompletion(json.dumps(value))
     result = await grade_with_llm(
         completion,
-        payload=parse_payload(QuestionType.CODE_TRACE, _payload(QuestionType.CODE_TRACE)),
+        payload=parse_payload(QuestionType.OPEN, _payload(QuestionType.OPEN)),
         given="Yanıt",
         sources=[(source_id, SOURCE), (other_id, SOURCE)],
     )
@@ -249,7 +271,7 @@ async def test_bad_quote_then_valid_recovers_with_shared_two_attempt_budget() ->
     completion = FakeCompletion(json.dumps(invalid), json.dumps(valid))
     result = await grade_with_llm(
         completion,
-        payload=parse_payload(QuestionType.CODE_TRACE, _payload(QuestionType.CODE_TRACE)),
+        payload=parse_payload(QuestionType.OPEN, _payload(QuestionType.OPEN)),
         given="Yanıt",
         sources=[(source_id, SOURCE)],
     )
@@ -262,7 +284,7 @@ async def test_no_readable_source_means_no_provider_call() -> None:
     completion = FakeCompletion(json.dumps(_verdict(uuid4())))
     result = await grade_with_llm(
         completion,
-        payload=parse_payload(QuestionType.CODE_TRACE, _payload(QuestionType.CODE_TRACE)),
+        payload=parse_payload(QuestionType.OPEN, _payload(QuestionType.OPEN)),
         given="Yanıt",
         sources=[(uuid4(), " \n ")],
     )
@@ -349,7 +371,19 @@ async def test_saved_feedback_revalidates_quote_and_never_uses_model_source_meta
     case: str,
 ) -> None:
     source_id = uuid4()
-    outcome, _ = await _grade(QuestionType.CODE_TRACE, _verdict(source_id))
+    outcome = GradingOutcome(
+        graded=True,
+        score=80,
+        is_correct=True,
+        evidence_chunk_id=source_id,
+        rubric_breakdown=[
+            RubricCriterionScore(point=RUBRIC[0]["point"], weight=60, score=100, earned=60),
+            RubricCriterionScore(point=CRITERION, weight=40, score=50, earned=20),
+        ],
+        grounded_missing_criterion=GroundedCriterionEvidence(
+            criterion=CRITERION, chunk_id=source_id, quote=QUOTE
+        ),
+    )
     feedback = _feedback_payload(outcome)
     question = Question(
         id=uuid4(),
@@ -401,7 +435,7 @@ async def test_arbitrary_code_remains_text_and_is_never_executed(tmp_path) -> No
     raw["code"] = f"from pathlib import Path; Path({str(marker)!r}).write_text('executed')"
     result, completion = await _grade(QuestionType.CODE_TRACE, _verdict(uuid4()), raw=raw)
     assert completion.calls == 1
-    assert result.score == 80
+    assert result.score == 0
     assert not marker.exists()
 
 

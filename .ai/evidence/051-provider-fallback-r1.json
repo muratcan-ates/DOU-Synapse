@@ -1,0 +1,630 @@
+{
+  "schema_version": 1,
+  "change_id": "051-provider-fallback-r1",
+  "candidate_sha": "SELF",
+  "base_sha": "4454b6f09584eec27abdfc78c8fa600ed4c56a7a",
+  "captured_at": "2026-09-13T16:03:19.420949+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "PASS yalnız completed_checks içindeki ölçülmüş kaynak sürümleri ve kontroller içindir. failing_checks/pending_checks açık kalır; acceptance_complete=false. Gerçek sağlayıcı, yayın veya uçtan uca gecikme SLA iddiası yok.",
+  "completed_checks": [
+    {
+      "name": "fixture_schema_presence",
+      "result": "pass",
+      "rc": 0,
+      "measurement_path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-051/baseline-measurement.json",
+      "measurement_sha256": "758242f75cd55082b0150e587422fe18fb435d9ae5eade37d613573fc5bc8225",
+      "interpretation": "AST alan varlığı; davranış veya test geçişi değil."
+    },
+    {
+      "name": "provider_fallback_pytest",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_provider_rate_limit_fallback.py",
+        "tests/test_learning_events_api.py"
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T15:26:50.066068+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-targeted-r2.json",
+        "sha256": "894f8e4261be9bafdcd7208677e9a333f748bfac43516f94708a7486800b8a4a"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-targeted-r2.log",
+        "sha256": "01400f6ab5cfa40ebef1a0891634e89cefe077d25dcaedd3cead7b4cbf14f393"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "recorded_source_hashes_match_current": false,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": [
+        "README.md"
+      ],
+      "tests_passed": 40
+    },
+    {
+      "name": "ruff",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "--no-cache",
+        "."
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T15:20:47.856410+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-ruff-final.json",
+        "sha256": "c6047ab9486240f0594204f01ddf4675629bfdc4b013f1f61b10968876374c01"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-ruff-final.log",
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "recorded_source_hashes_match_current": false,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": [
+        "README.md"
+      ]
+    },
+    {
+      "name": "format",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--no-cache",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T15:20:50.810793+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-format-final.json",
+        "sha256": "01a0ba6773ecf84675b5f8a428e8a95c4b9cbf1783fa1160f23e09801ef6f441"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-format-final.log",
+        "sha256": "30c689af56ee22d48140f955e1f13df80526cddcc8deda9c44c1a6b9a9271c51"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "recorded_source_hashes_match_current": false,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": [
+        "README.md"
+      ]
+    },
+    {
+      "name": "mypy",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T15:22:04.133319+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-mypy-final.json",
+        "sha256": "ce0e4bb60561df3869d1a758d577a1fa5ca74605744fcf51fd5d89bb8e62889f"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-mypy-final.log",
+        "sha256": "d144f4b429956a53bf5c6beb1fc2bbd224cf5a2307ff13c3ca35f06e02685c53"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "recorded_source_hashes_match_current": false,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": [
+        "README.md"
+      ],
+      "source_files_checked": 119
+    },
+    {
+      "name": "full_pytest",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T16:02:14.072088+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-final-pytest.json",
+        "sha256": "09097659aea2b5084678c203b6c8054ae8a982757f8a603126a6df2bc383d161"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-final-pytest.log",
+        "sha256": "228b985fc73edca7cca395ebeb26d0f630b132aa5f326fbe37806a3dbf6757bd"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [],
+      "recorded_source_hashes_match_current": true,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": []
+    },
+    {
+      "name": "tsc",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit"
+      ],
+      "cwd": "apps/web",
+      "captured_at": "2026-09-13T15:53:22.704527+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-tsc-final.json",
+        "sha256": "dfef456ee6171bf1d867439cfc8b9247e8a9c4f1f63d2ea3a151eae4d13c5042"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-tsc-final.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [],
+      "recorded_source_hashes_match_current": true,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": []
+    },
+    {
+      "name": "migration_check",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "python3",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "captured_at": "2026-09-13T15:29:26.201227+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-migrations.json",
+        "sha256": "9943f0b8bd29483bfa3bab4eb5ad4f766f8f4c80be4df8a97ee472d1dd4f72b7"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-migrations.log",
+        "sha256": "f5825a02401d3bd75b7665e52461a1e85a4e22eec66951ce0ca36fc292f6e5a7"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "recorded_source_hashes_match_current": false,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": [
+        "README.md"
+      ]
+    },
+    {
+      "name": "workflow_policy",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "captured_at": "2026-09-13T15:29:58.355407+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-workflows.json",
+        "sha256": "f9c4ee6941f29cc1eb258061d08a2a528c1e8ccca57c97438265c27dc0426803"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-workflows.log",
+        "sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "recorded_source_hashes_match_current": false,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": [
+        "README.md"
+      ]
+    },
+    {
+      "name": "bun",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "captured_at": "2026-09-13T15:15:15.559451+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-web/bun.log",
+        "sha256": "4dc3a30450c0848251c2dcb6101513b79cc29bcd0feec22fb489e170bb3c0f9a"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-web/bun-sources-after.json",
+        "sha256": "4bbf2e59a342e90f1a45be4a8f20ad2e4296453f67502425c6625f8cd6f6598e"
+      },
+      "source_file_count": 201,
+      "source_unchanged_during_run": true,
+      "source_binding_current": false,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "scope": "apps/web source snapshot only; subsequent E2E-selector-only edits do not change library or contrast inputs",
+      "application_source_binding_current": true
+    },
+    {
+      "name": "contrast",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "captured_at": "2026-09-13T15:18:53.307457+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-web/contrast.log",
+        "sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-web/contrast-sources-after.json",
+        "sha256": "4bbf2e59a342e90f1a45be4a8f20ad2e4296453f67502425c6625f8cd6f6598e"
+      },
+      "source_file_count": 201,
+      "source_unchanged_during_run": true,
+      "source_binding_current": false,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "scope": "apps/web source snapshot only; subsequent E2E-selector-only edits do not change library or contrast inputs",
+      "application_source_binding_current": true
+    },
+    {
+      "name": "browser_simulation_E2E",
+      "result": "pass",
+      "rc": 0,
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r5/measured/result.json",
+        "sha256": "eb6c059551d9e4b7a584893ee78d9df2153a8f939ff06b625d491107993d1023"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r5/measured/playwright.log",
+        "sha256": "2aa41671df37566c4b9b8886c1ca9a6b410f1fd4e94cb525738e0e3a83cbdbe3"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r5/measured/source-after.json",
+        "sha256": "aaf97ac4e9b01a9a81b7fee67c9e389916980d548a1dab9f32a394780fcd7f52"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [],
+      "source_binding_current": true,
+      "scope": "Dedicated local LLM_SIMULATE_RATE_LIMIT=1 API, synthetic auth/hash embedding; not a real provider or hosted deployment.",
+      "audit_accounting": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r5/measured/audit/final-accounting.json",
+        "sha256": "a5565e363cabc0d8a9091f5a43dbafde6c09990966ff3bd8d03f590b4fcee436"
+      },
+      "run_id": "l2b4r5990f20cadcd2",
+      "screenshots": {
+        "playwright-artifacts/provider-fallback-iki-429--fd4b0-r-geçmişte-açıklama-korunur-chromium/demo-answer-desktop-light.png": "977d6075a123c4baa03b083968bc04adef4c61508776fde09f4611f040bdb298",
+        "playwright-artifacts/provider-fallback-kompakt--dccc3-nı-ve-kaynak-konumunu-korur-chromium/demo-socratic-375-dark.png": "6ad5440726dda2cb1d8cc855ab56d5c0ec62824f48dd76829f4152c1e8db660a"
+      },
+      "tests_passed": 3
+    }
+  ],
+  "failing_checks": [
+    {
+      "name": "docs_check",
+      "result": "fail",
+      "rc": 1,
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "captured_at": "2026-09-13T15:34:34.860390+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-final-docs.json",
+        "sha256": "b7af4dc04fec5f03887e0e5feb5ec75fea82bd601ba34b4433692d0263bd59f6"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-final-docs.log",
+        "sha256": "75879da719b115583d6a9016b71b39fc33c9bddc1686b9b79e2b11315e01a9f4"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hash_differences": [
+        "apps/web/e2e/provider-fallback.spec.ts"
+      ],
+      "recorded_source_hashes_match_current": false,
+      "API_source_hashes_match_current": true,
+      "candidate_sources_not_in_snapshot": [],
+      "stale_counter_findings": 19,
+      "finding_paths": [
+        "ARCHITECTURE.md",
+        "docs/deployment.md",
+        "docs/runbook.md",
+        "docs/security.md",
+        "specs/001-course-assistant-mvp/quickstart.md",
+        "specs/002-production-hardening/plan.md",
+        "specs/005-role-aware-course-agent/quickstart.md",
+        "specs/005-role-aware-course-agent/research.md",
+        "specs/005-role-aware-course-agent/spec.md"
+      ],
+      "reason": "ENGEL: Gerçek depo kontrolü başarısız; sahip şeridin belge sayaçları mirror PASS veya tarihsel sonuçla gizlenmez."
+    }
+  ],
+  "pending_checks": [
+    {
+      "name": "ai_sdlc_parent_commit",
+      "result": "not-run",
+      "reason": "Commit sonrası temiz ağaçta ayrı rapor; bu JSONa sonradan eklenmez."
+    },
+    {
+      "name": "hosted_CI",
+      "result": "not-run",
+      "reason": "Bu B4 adayına bağlı tamamlanmış makbuz henüz yok; önceki B3 sonuçları B4 kabulü sayılmaz."
+    },
+    {
+      "name": "real_provider_staging_canary_production_rollback",
+      "result": "not-run",
+      "reason": "Bu B4 adayına bağlı tamamlanmış makbuz henüz yok; önceki B3 sonuçları B4 kabulü sayılmaz."
+    }
+  ],
+  "acceptance_complete": false,
+  "source_sha256": {
+    "README.md": "0b8ecd3d8356b4bedfa15835b75a8d19362ed188f45a7759ed4d2b3ba5a9e00c",
+    "apps/api/app/modules/agent/answers.py": "b712f68e14230ef2fda33b6186aee433c4e55ef8c507acd87843cc14df71c59b",
+    "apps/api/app/modules/agent/pipeline.py": "1880d56159a4eb3b4f717ce2d3101d2fefc0cd615106cd683b2fc251c0350563",
+    "apps/api/app/modules/agent/provider_events.py": "c7e33d5d629e0090960bb6e90d8be7e638320a70314aa768348cc287a4cb39b3",
+    "apps/api/app/modules/agent/provider_fallback.py": "e09c38e165e9b6cc5887f72074b2e1334adec763c8908f73186c397e0f678d63",
+    "apps/api/app/schemas/chat.py": "42017febe1383cbb5b3d2fbc79304761f21f6b60cf3e9ee7e51ad006e8299135",
+    "apps/api/tests/test_provider_rate_limit_fallback.py": "4d73f91ec8338dd0aba86d17d5f6c2857128b14f0552a2b3325bd16d9e8eeffa",
+    "apps/web/app/courses/[courseId]/chat/page.tsx": "c0668d62c2d324f0035812e4728ac73f42c4b3bc66f3d6afcdbc76a70241642e",
+    "apps/web/components/course-assistant/course-assistant.tsx": "eee40514eb6dfc253bc77946de68454b32e72e1e46ff9249b0437f82809108bb",
+    "apps/web/components/demo-response-notice.tsx": "7e70045ea5e668a1daeafc4fd5fe25b49c492ca1991edebe187beb8dbb29e661",
+    "apps/web/components/socratic-ladder.tsx": "962ff1976a57e39d17cdf1a2d3c51d751c6de180b45c3b4aa1e39ab6db370589",
+    "apps/web/e2e/provider-fallback.spec.ts": "73b92fd87ee19e36705fd5f8a49ec2e82ec562c230a8d77077761a0cbca15774",
+    "apps/web/lib/chat.ts": "647f727864a33a34102fc97b17318ec4f655287d9323d72b94747aed7834c9ed",
+    "apps/web/lib/demo-response.test.ts": "a9707a6bc9f5d94e7bc35e52edb9c8483db5ac0395f81be257cf44306b4aa7c6",
+    "apps/web/lib/demo-response.ts": "a3e5893a314fbba7a64eff475723a4583f9c35ffee9c55c0ed892236f957be80",
+    "apps/web/lib/types.ts": "af27b910d5fe16419910807d1d8a2217b06da08974ebca783e84fb80d6dccf4f"
+  },
+  "source_snapshot_phase": "after B4 telemetry deadline fix; gates retain their exact source snapshots",
+  "comparison": {
+    "captured_at": "2026-09-13T15:18:04.538514+00:00",
+    "base_sha": "4454b6f09584eec27abdfc78c8fa600ed4c56a7a",
+    "command": [
+      "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3",
+      "-c",
+      "import ast,json,subprocess\nfrom pathlib import Path\nbase='4454b6f09584eec27abdfc78c8fa600ed4c56a7a'\npath='apps/api/app/schemas/chat.py'\ndef present(source):\n    return int(any(isinstance(node,ast.ClassDef) and node.name=='ChatResponse' and any(isinstance(item,ast.AnnAssign) and isinstance(item.target,ast.Name) and item.target.id=='fixture' for item in node.body) for node in ast.parse(source).body))\nold=subprocess.check_output(['git','show',f'{base}:{path}'],text=True)\nnew=Path(path).read_text()\nprint(json.dumps({'baseline':present(old),'candidate':present(new)}))\n"
+    ],
+    "cwd": "/Users/muratates/code/dou-l2-product-v5",
+    "rc": 0,
+    "stdout": "{\"baseline\": 0, \"candidate\": 1}",
+    "metric_definition_sha256": "18661b52688aa392896b92ea136d9500ccfa75020dc5a6915ce1d0998ddceeb3",
+    "baseline_schema_sha256": "ffcfca44d9b646b67239c5b925c36035717d5d1ada7d99a0df0cc41ca30f6fd6",
+    "candidate_schema_sha256": "42017febe1383cbb5b3d2fbc79304761f21f6b60cf3e9ee7e51ad006e8299135",
+    "baseline": 0,
+    "candidate": 1
+  },
+  "results": {
+    "fixture_response_field_present": 1,
+    "bun_tests_passed": 580,
+    "full_pytest": {
+      "rc": 0,
+      "passed": 1757,
+      "failed": 0,
+      "subtests": 38,
+      "failing_tests": [],
+      "source_unchanged": true,
+      "elapsed_seconds": 409.92
+    },
+    "browser_tests_passed": 3
+  },
+  "limitations": [
+    "Karşılaştırma yalnız fixture alanının AST varlığıdır; baseline davranış/kalite/test başarısı varsayılmaz.",
+    "ENGEL: Mevcut rol politikası max_provider_attempts=1 der. Kullanıcının açık B4 istisnası yalnız ham429 sonrası aynı birincil modele ikinci çağrıdır; en fazla bir başarılı completion üretilir. Genel kota sınırlama hakkı kaldırılmaz.",
+    "429 usage bilinmiyorsa token veya ücret maliyeti sıfır kabul edilemez. Mevcut quota reservation/reconcile kodu bu yüzeyin dışında; gerçek maliyet doğrulaması ve policy uyumu için sahip şerit kararı gerekir.",
+    "LLM_SIMULATE_RATE_LIMIT yalnız LOCAL ve gerçek eval-runtime kapalıyken uygulanır. Bu bayrak gerçek429 fallback davranışının üretim kill switchi değildir; normal adaptör aynı birincil modelde gerçek429 için de çalışır.",
+    "Yeni doğrudan yanıt fixture:true yalnız sunucudaki DemoFixtureAnswer alt tipinden gelir. Serbest model metnindeki etiket köken kanıtı değildir.",
+    "Cache/geçmiş serializerları bu işin yazma alanı dışında: yapılandırılmış fixture/provenance kalıcılaştırılmaz. Saklanan etiket öneki gövdede korunur; eski/önbellek yanıtında null metadata metinden tahmin edilmez.",
+    "L1: Yerel LLM_SIMULATE_RATE_LIMIT=1 API ve normal/simülasyon E2E seçimleri için ayrı CI adımı gerekir; .github/** bu şeridin yazma alanı dışında.",
+    "ENGEL: README dışındaki belge sayaçları docs/**/ARCHITECTURE.md/ilgili specs/** sahip şerit tarafından güncellenmeli. Gerçek docs kapısı koşulmadan PASS sayılmaz.",
+    "İnsan onayları, gerçek sağlayıcı/ortam, canary ve rollback bu taslakta yok. B3ten bilinen yarış zaman aşımı için B4 başarısı varsayılmaz.",
+    "Süre iddiası transport/retry bütçe kontrolü ve kalan sürede telemetry-await iptalidir. SDK lazy-load, DB cancellation-cleanup veya HTTP isteğinin tamamı için ölçülmüş uçtan uca gecikme SLA iddia edilmez."
+  ],
+  "privacy": "Sentetik veri ve sabit etiket/metin kullanılır; ham gerçek öğrenci içeriği, sağlayıcı anahtarı veya DB HMAC anahtarı bu kanıta alınmaz.",
+  "historical_checks": [
+    {
+      "name": "final_source_first_targeted_run",
+      "rc": 1,
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-targeted-final.json",
+        "sha256": "9c2cb95624e4b1b1fa035f5d8f84b82bc50750ced9f33f06fc84a59b5c730ead"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-targeted-final.log",
+        "sha256": "c603ffde7c2c9eb5e634824aecb76ef29a8a67eec44aea154ed3117c9d09f7df"
+      },
+      "scope": "39 passed, 1 failed: QA request returned rate_limit_unavailable503 before provider transport. Same-source rerun is separately recorded; underlying cause is not established."
+    },
+    {
+      "name": "provider_fallback_before_telemetry_fix",
+      "rc": 0,
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-targeted.json",
+        "sha256": "2b89151b97a13514573e52d050d1a4b2f23304f3e1896c201112be53ab4522ed"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-backend-targeted.log",
+        "sha256": "46ac7470ec302065c16c4fd90ba5112887428b04b50b1471e925d248c493d15e"
+      },
+      "tests_passed": 26,
+      "scope": "Daha önceki kaynak sürümü; son telemetry düzeltmesi bu koşuyla doğrulanmış sayılmaz."
+    },
+    {
+      "name": "browser_first_startup_timeout",
+      "result": "fail",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser/measured/result.json",
+        "sha256": "c6f48c544bcf9a367708a79dda391f619359340b087d863325e02b9ffa562e2c"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser/measured/playwright.log",
+        "sha256": "21eca296793399174388067f8a73c6db8f0c4eefad6ebeb041c4b2ccbb485da7"
+      },
+      "audit_accounting": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser/measured/audit/final-accounting.json",
+        "sha256": "7f84b27b2cf4c7387b1885aacc1b2ff7828f4cd261f45b1674439fc600237a6e"
+      },
+      "scope": "Configured webServer exceeded 180 seconds before browser tests started. API stopped gracefully; guard remained FAIL despite zero missing/changed/unexpected audit rows. Not a functional E2E pass."
+    },
+    {
+      "name": "browser_second_startup_timeout",
+      "result": "fail",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r2/measured/result.json",
+        "sha256": "0802fb18dad62ce2e83986d39ce078d9b4bf8b4937eeb274853e6f99e8f89e35"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r2/measured/playwright.log",
+        "sha256": "44a0cce8ce9acd0249ccd2cf5d1bcdf6842e49b102a5fd114580cd93948e0b89"
+      },
+      "audit_accounting": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r2/measured/audit/final-accounting.json",
+        "sha256": "ddbf658dc56afad08087309f033fc26c8f2dca4a16e583c188213c0ea651c2fd"
+      },
+      "scope": "Same unchanged config.webServer 180 second startup timeout was exceeded again before tests. Final local run uses a separately pinned configuration with 600 second startup only; test conditions/retries are unchanged. Repository and CI configuration were not modified."
+    },
+    {
+      "name": "browser_external_configuration_cwd_error",
+      "result": "fail",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r3/measured/result.json",
+        "sha256": "3bea6bf47f8bb96c3f66a33bb96f746c64979852b71a2f293f2b6be7c9f8e69a"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r3/measured/playwright.log",
+        "sha256": "76e6b03187647df485d7d5797c597877b9ad914573ed365e7766525fe28eb6b1"
+      },
+      "audit_accounting": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r3/measured/audit/final-accounting.json",
+        "sha256": "8398c8f5918503323188ed520667ca7404bb07249eba734c2a3b95272d86ec13"
+      },
+      "scope": "The external startup configuration defaulted webServer cwd to its own directory; Next could not find app/pages. Root corrected only the subsequent local harness to pin the existing apps/web cwd; product source and r3 evidence were left unchanged."
+    },
+    {
+      "name": "browser_first_functional_test_run",
+      "result": "fail",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r4/measured/result.json",
+        "sha256": "777afc81359afe182286a48e835e0994252bd2467eda639865355b3ba709ecc9"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r4/measured/playwright.log",
+        "sha256": "9c9d593a1e3578ce5f2829551cd5562e0827933edf915aed074117b0a1ce7af6"
+      },
+      "audit_accounting": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r4/measured/audit/final-accounting.json",
+        "sha256": "386a24e5441988010eb44c7796f17d45a46830c1a2b1292bc892c6d3b643994b"
+      },
+      "scope": "Three test assertions failed: full and compact exact text selectors omitted UI typographic quote characters; page-wide alert count also included the Next route announcer. Only the new E2E file was corrected to assert the exact quoted text within the source card and app alerts within main. The subsequent run reuses the same verified application build with pinned source and build-artifact hashes."
+    },
+    {
+      "name": "separate_production_build_after_startup_timeout",
+      "rc": 0,
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-web-build.json",
+        "sha256": "670a434f9fedc923c6f1b1d50244e5a8bdb1fe6a7751bf211a3a44b5ef5edcd7"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b4-web-build.log",
+        "sha256": "d72d314a4f9533f46b0865f6d8575db4fc3460f585c1680d38c30d896e8f0a3c"
+      },
+      "scope": "Separate measured production build with the same webpack arguments and explicit owned API URL; it does not replace browser acceptance."
+    }
+  ],
+  "bounded_source_review": {
+    "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-051/security-review.json",
+    "sha256": "e491d2b28049d435f3f4a7de5f2658f91e5a99f4461dd2e807b53b9ccd4d4cd1"
+  },
+  "local_browser_provenance": {
+    "runtime": {
+      "apiOrigin": "http://127.0.0.1:8052",
+      "browser": "installed system Chrome",
+      "compiledApplicationSealSha256": "9e97cfe307a0c6afc3e65a8d2f1c1c1bc1e94524fd99ea55f079c0d8d86fc402",
+      "controllerPid": 13781,
+      "controllerSha256": "0f9296a7bb08939905aabd7607af044fda604765492fcb16ee177dd186a2d385",
+      "embedding": "hashing",
+      "provider": "local raw429 simulation",
+      "reusesVerifiedProductionBuild": true,
+      "scope": "Synthetic local auth and owned PostgreSQL only.",
+      "simulationFlag": "LLM_SIMULATE_RATE_LIMIT=1",
+      "specs": [
+        "provider-fallback.spec.ts"
+      ],
+      "startedAt": "2026-09-13T15:54:03.868436+00:00",
+      "startupConfiguration": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/e2e-prebuilt-b4.config.ts",
+      "startupConfigurationSha256": "8588783ea46bb6eda332c6614317d29b73b7b5baccb6aa97b992cbc52a41bc7e",
+      "startupTimeoutSeconds": 600,
+      "webPort": 3152
+    },
+    "runtime_receipt": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-browser-r5/measured/runtime.json",
+      "sha256": "4dd827ee43dcd84d8b1342e5acb817a7bf71725fbe74d8287ed2c2e9fc44864e"
+    },
+    "compiled_application_seal": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-compiled-artifact-seal.json",
+      "sha256": "9e97cfe307a0c6afc3e65a8d2f1c1c1bc1e94524fd99ea55f079c0d8d86fc402"
+    },
+    "visual_review": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-visual-review.json",
+      "sha256": "9d71b50af38e7e4cc0d901e90ff0badd64171c92ac18817aaabca1f10e14a8ab"
+    },
+    "scope": "Son koşu, yalnız E2E seçicileri düzeltildikten sonra aynı üretim derlemesini kullandı. Uygulama kaynakları ve derleme dosyalarının hashleri önce/sonra doğrulandı; repo/CI ayarı değiştirilmedi. Testler bir worker, sıfır retry ve mevcut kabul koşullarıyla geçti."
+  },
+  "documentation_handoff": {
+    "receipt": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-docs/handoff.json",
+      "sha256": "283bc4a15e81a6a5bf3f57c25b0eb17fecf6974665e4ca8d5c62e946842796ab"
+    },
+    "forbidden_counter_patch": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b4-docs/forbidden-counters.patch",
+      "sha256": "1d0731e112f31c0b6c50e6369c105551ebe5761808bff278f4b36a5166aa3790"
+    },
+    "scope": "Yalnız README sayaçları uygulandı; dokuz yasak dosya değiştirilmedi."
+  },
+  "blocked_acceptance_reasons": [
+    "Gerçek docs_check rc1: dokuz sahiplik dışı dosyada 19 eski sayaç.",
+    "Kota reservation/reconcile uyumu, ayrı simülasyon CI seçimi ve adaya bağlı yayın/onay/geri dönüş kanıtları eksik."
+  ]
+}
