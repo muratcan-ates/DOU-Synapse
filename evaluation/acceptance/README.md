@@ -24,6 +24,10 @@ rubriği ve beklenen puanı onaylar. Boş insan puanı otomatik doldurulmaz.
 MCQ/kısa cevapta deterministik doğruluk ile açık/kod/hata inceleme sorularının
 LLM değerlendirmesi ayrı raporlanır. Bu dilimde gerçek grading runner koşulmadı.
 
+Bilinen bir sınır: eş anlamlı doğru cümlelerin bütün varyasyonları için
+otomatik puanlayıcı her zaman aynı davranışı vermez; bu nedenle öğretmen onayı
+zorunludur.
+
 ## Gerçek koşudan önce
 
 1. Temiz ve commit edilmiş aynı aday SHA, ayrı yerel eval veritabanı ve ayrı
