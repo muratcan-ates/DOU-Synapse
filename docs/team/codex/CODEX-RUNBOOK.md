@@ -26,8 +26,10 @@ cd apps/api && uv sync --extra dev --frozen && cd ../web && bun install && cd ..
    Sayı/SHA/dosya adı uydurma; beklenen çıktı sayısı yazma, kontrol koşulu yaz (`rc=0`; plan `Index Scan using chunks_embedding_idx` içerir).
 2. **Kaynak yoksa cevap yok.** Kanıt eşiği altındaki sorgu LLM'e gitmeden ret döner; gevşetme.
 3. **İki katmanlı yetki:** sunucu üyelik kontrolü **ve** aynı işlemde PostgreSQL RLS; mutasyon betikleri kırmızı yanabilmeli.
-4. **Göçler:** düz SQL, dosya adı sırası; **0021–0023 boş kalır** (CI `--allow-gap`), 0024–0026 kullanıldı, **yeni göç 0027'den**.
-   Geçmiş göç değişmez (dbmate yok). `python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023`.
+4. **Göçler:** düz SQL, dosya adı sırası; **0017 ve 0021–0023 boş kalır** (CI `--allow-gap`), 0024–0026 kullanıldı.
+   **Rezervasyon (14 Eylül 00:30 düzeltildi):** `0027` L2 learning_events (kullanıldı) · `0028` L4 · `0029` L5 private_storage (kullanıldı).
+   13 Eylül 16:50'de yedek daldan kurtarma için 0027/0028'in ayrıldığı yazılmıştı; kurtarma oturum limiti yüzünden hiç
+   başlamadı ve dalları boş olarak silindi, şeritler kendi numaralarını zaten kullanmıştı. Sonraki boş numara **0030**.
 5. **Yönetişim (`.ai/`)**: hassas yola dokunan commit aynı commit'te dossier + kanıt; append-only; numara = en büyük + 1 (bugün **037** dolu).
    CI yalnız **main'e push ve pull_request**'te koşar; PR'da doğrulayıcı tabanı **017 ucu** alır ve dossier yalnız HEAD'de
    tanıtıldığı commit'te + `base_sha` tabana eşitse sayılır. Protokol: her hassas commit kendi dossier'i (`base_sha`=ebeveyn, SELF);
