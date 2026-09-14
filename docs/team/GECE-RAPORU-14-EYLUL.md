@@ -103,6 +103,29 @@ Doğrulandı (gerçek tarayıcı, 375×812, koyu tema): taşma yok (375/375), mo
 **Sonuç:** `docs/images` altındaki 12 görüntü yine eskidi (eski kabuğu gösteriyor).
 Önbellek doldurma bitince yeni tasarımla yeniden çekilecek.
 
+## 3.3 Düzeltme: Gemini yedeği sohbet yolunda DEVREYE GİRMİYOR
+
+Gece boyunca iki kez "Gemini yedeği 429/503'ü çözer" dedim. **Öğrenci sohbeti için
+yanlıştı.** Kod bunu bilerek kapatmış (`modules/generation/service.py:213-217`):
+
+> *The role-aware HTTP path makes one semantic generation attempt. This keeps actual
+> usage inside the atomic reservation. Transport retries and provider failover are both
+> disabled for this route; malformed JSON fails closed instead of spending another budget.*
+
+`provider_attempt_limit=1` ve `schema_retry_limit=0`. Yani `LLM_FALLBACK_MODEL` ayarlı
+olsa bile sohbet isteğinde **ikinci sağlayıcı denenmiyor**; sebebi jeton rezervasyonunun
+atomik kalması. Ölçüldü: demo API günlüğünde 503 dönen isteklerde tek bir
+`provider = groq` satırı var, `gemini` hiç geçmiyor.
+
+**Sunum sonucu:** Groq'ta anlık bir hata olursa ekranda "asistan kullanılamıyor" çıkar ve
+ikinci sağlayıcı kurtarmaz. Tek gerçek koruma `answer_cache`'tir — önbellekteki soru
+modele hiç gitmez. Bu yüzden canlı sahnelerde **yalnız önbellekteki 12 soru** sorulmalı
+(liste `docs/demo-script.md`). Gemini anahtarı yine de `.env`'de duruyor; değerlendirme
+ve soru üretimi gibi başka yollar için geçerli, sohbet yolu için değil.
+
+Bu davranışı değiştirmek (failover'ı açmak) rezervasyon değişmezini etkiler; sunumdan
+36 saat önce yapılmadı, karar Murat'ın.
+
 ## 4. Sabah ilk 30 dakika
 
 - [ ] `scratchpad/gozcu.log` son satırı: doldurma ve G1 koştu mu?
@@ -113,6 +136,19 @@ Doğrulandı (gerçek tarayıcı, 375×812, koyu tema): taşma yok (375/375), mo
       `insufficient_context` alıyor (demo materyalinde inode yok), listeden çıkmalı
 - [ ] Gereksinim v2 son okuma → hocaya gönderim
 
+## 4.1 Gecenin sonucu (00:45 itibarıyla)
+
+| Konu | Durum | Kanıt |
+|---|---|---|
+| Yönetişim kapısı | **YEŞİL** | `AI quality` iki ardışık koşuda `success`. Sebep onay değil, bağlanmamış dört kanıt betiğiydi (dossier 151) |
+| CI api işi | **YEŞİL** | Storage RLS kök nedeni düzeltildi (292bf8e) |
+| Retrieval kalitesi | **Regresyon yok** | 15 Eyl koşusu: Recall@5 0,9714 · Recall@8 0,9810 · MRR 0,8583 (161 soruluk holdout, LLM'siz) |
+| Çevrimdışı önbellek | **12 soru + 4 ret** | Gerçek modelle dolduruldu; liste `docs/demo-script.md` |
+| Ekran görüntüleri | **16'sı yenilendi** | Kampüs tasarımı + gerçek model; Sokratik tur ısrar sahnesi dahil |
+| P1 · P2 dalları | **Kapandı** | Çakışmalar main lehine çözüldü, 11 tip hatası düzeltildi |
+| Gerçek modelli e2e metrikleri | **n=6, raporlanmadı** | Ürünün kendi jeton kotası durdurdu; sayı yazılmadı |
+| GPT'nin yeni tasarımı | **ALINAMADI** | `origin/025-campus-ui` 19:45'te duruyor; Murat'ın gördüğü "Bilgi, bağlantı kurdukça büyür" hero'lu sürüm commit'lenmemiş |
+
 ## 5. Murat'a kalan işler (ben yapamam)
 
 | # | İş | Neden bende değil |
@@ -122,7 +158,8 @@ Doğrulandı (gerçek tarayıcı, 375×812, koyu tema): taşma yok (375/375), mo
 | 3 | Yönetişim karantinası onayı | Denetim kaydı silme; onayın şart |
 | 4 | Yedek klasörünü USB/iCloud'a kopyalama | Fiziksel |
 | 5 | 025-campus-ui merge kararı | Tasarım GPT'de, karar senin |
-| 6 | Gemini anahtarı (isteğe bağlı) | `scratchpad/gemini-kur.sh` — Groq kotası dolarsa demoyu ayakta tutar |
+| 6 | **GPT'ye "commit'le ve push'la" demek** | Yeni kampüs tasarımı git'te yok; ben yalnız push'lanana erişebiliyorum |
+| 7 | Gemini anahtarı | Kondu. Ama §3.3: sohbet yolunda yedek sağlayıcı devreye GİRMİYOR, beklenti buna göre kurulmalı |
 
 ## 6. Ölçülmemiş / bilinmeyen
 
