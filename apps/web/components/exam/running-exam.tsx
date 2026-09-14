@@ -263,7 +263,10 @@ export function RunningExam({
               className="mt-1 text-2xl leading-none font-semibold tracking-tight tabular-nums text-fg"
             >
               <span className="sr-only">Soru </span>
-              {index + 1} / {questions.length}
+              {/* Boşluksuz: sayaç metni kullanıcıya görünen bir etikettir ve
+                  kabuk turunun kuralı "etiket değişmez"di. 99d78d6 bunu
+                  "2 / 3"e çevirince flows.spec.ts:704 haklı olarak kırıldı. */}
+              {index + 1}/{questions.length}
             </p>
           </div>
 

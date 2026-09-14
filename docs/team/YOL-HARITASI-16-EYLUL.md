@@ -78,6 +78,26 @@ Kural: "VAR" yalnız çalıştırılmış kanıtla yazıldı. Boşluk kodları (
 | B2 | Gereksinim belgesi v2 | ⏳ bu gece taslak |
 | B9 | Gece raporu | ⏳ gece sonunda |
 
+### GPT'nin yeni tasarımı gelince TAŞINACAK iki düzeltme
+
+Tasarım turu GPT'de (`025-campus-ui`); yeni kabuk geldiğinde aşağıdaki iki kusur
+yeniden doğabilir, çünkü ikisi de kabuk/ızgara yapısına bağlı. Commit `7ab347c`.
+
+1. **Izgara `minmax(0,1fr)` + `min-w-0`.** Sohbet sayfasında sade `1fr` kullanılırsa
+   telefon genişliğinde sütun içeriğin min-content genişliğine şişer ve sayfa yana
+   kayar (ölçüldü: kapsayıcı 343px, sütun 550,578px). Yeni tasarımda her ızgara
+   çocuğunda `min-w-0` olmalı.
+2. **Mobil gezinme çubuğu DOM'da içerikten ÖNCE.** `fixed` konumlandığı için
+   görünüm etkilenmez; sonda durursa klavye kullanıcısı ana menüye ancak bütün
+   sayfayı geçerek ulaşır (30 sekmede ulaşılamadı → 4 sekme).
+
+3. **Görünen etiket metni değişmez.** Kabuk turu sınav sayacını `2/3`'ten
+   `2 / 3`'e çevirdi ve `flows.spec.ts:704` kırıldı. Tasarım turunun kendi kuralı
+   "rol/etiket/href/test-id değişmez"di; yeni tasarımda da geçerli.
+
+Doğrulama betiği hazır: `scratchpad/dogrula375.mjs` — 375x812 koyu temada
+taşmayı ve sekme sayısını ölçer. Yeni tasarım geldiğinde önce bunu koştur.
+
 ## 2. 15 Eylül — saatli sıra
 
 Kural: her blok bitmeden sonrakine geçilmez; bloğu aşan iş sunum sonrasına yazılır.
