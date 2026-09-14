@@ -249,6 +249,12 @@ def run(args: argparse.Namespace) -> int:
         E2E_PORT=str(args.web_port),
         E2E_WEBPACK_BUILD="1" if args.webpack else "0",
         NEXT_TELEMETRY_DISABLED="1",
+        # API tarafı (child_environment) DEV_AUTH_ENABLED=true ile kalkıyor; web
+        # L5'ten beri giriş ekranını bu bayrakla kapılıyor. Bayrak taşınmayınca
+        # ekran "Oturum açma henüz yapılandırılmadı" diyor ve giriş bekleyen her
+        # test zaman aşımına düşüyor (OWNED_E2E_FAILED, 14 Eylül 2026). Yalnız bu
+        # izole sentetik hedefte açılır; üretim kapısı değişmez.
+        NEXT_PUBLIC_DEV_AUTH="true",
         NEXT_PUBLIC_SUPABASE_URL="",
         NEXT_PUBLIC_SUPABASE_ANON_KEY="",
         GROQ_API_KEY="",
