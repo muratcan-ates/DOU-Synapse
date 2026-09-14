@@ -1,0 +1,140 @@
+name: Gerçek model kabulü (P4)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy-check:
+    name: Workflow politika ve sözleşme denetimleri
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Commiti checkout et
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Python araç zincirini kur
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
+        with:
+          enable-cache: true
+
+      - name: Bağımlılıkları kur
+        run: uv sync --project apps/api --extra dev --frozen
+
+      - name: Workflow policy kontrolü
+        run: uv run --project apps/api python scripts/workflow_policy_check.py
+
+      - name: Gerçek model workflow lint planı
+        run: |
+          if command -v actionlint >/dev/null 2>&1; then
+            actionlint .github/workflows/real-eval.yml
+          else
+            echo "actionlint bu runner'da yüklü değil; PR'daki plan çıktısı bunu tamamlayacaktır."
+          fi
+
+  dry-run:
+    name: Gerçek model kabul planını dry-run ile üret
+    needs: policy-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EMBEDDING_PROVIDER: fastembed
+      EVAL_RUNTIME_ENABLED: "true"
+      EVAL_ADMIN_DSN: ${{ vars.EVAL_ADMIN_DSN }}
+      EVAL_APP_DSN: ${{ vars.EVAL_APP_DSN }}
+      EVAL_WORKER_DSN: ${{ vars.EVAL_WORKER_DSN }}
+      DATABASE_URL: ${{ vars.EVAL_APP_DSN }}
+      WORKER_DATABASE_URL: ${{ vars.EVAL_WORKER_DSN }}
+      EVAL_LLM_API_KEY: ${{ secrets.EVAL_LLM_API_KEY }}
+      EVAL_RUNTIME_SECRET: ${{ secrets.EVAL_RUNTIME_SECRET }}
+    steps:
+      - name: Commiti checkout et
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Python araç zincirini kur
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
+        with:
+          enable-cache: true
+
+      - name: Bağımlılıkları kur
+        run: uv sync --project apps/api --extra dev --frozen
+
+      - name: Korpus plan üretimi
+        run: |
+          mkdir -p /tmp/real-eval
+          DATABASE_URL="$EVAL_APP_DSN" WORKER_DATABASE_URL="$EVAL_WORKER_DSN" \
+            uv run --project apps/api python evaluation/build_corpus.py \
+            --database dou_eval --out /tmp/dou-corpus.json
+
+      - name: Ön kontrol (env + DB + korpus)
+        id: preflight
+        run: uv run --project apps/api python scripts/real_eval_preflight.py --output /tmp/real-eval/preflight.json --required-db-name dou_eval --corpus /tmp/dou-corpus.json
+
+      - name: Eval korpusu (dry-run planı)
+        run: |
+          mkdir -p /tmp/real-eval
+          uv run --project apps/api python evaluation/evaluate.py \
+            --set holdout --layer e2e --require-real --max-requests 30 --dry-run \
+            --api-url http://127.0.0.1:8015 --corpus /tmp/dou-corpus.json --results-dir /tmp/real-eval/evaluate
+
+      - name: Injection dry-run
+        env:
+          API_URL: http://127.0.0.1:8015
+        run: |
+          mkdir -p /tmp/real-eval
+          uv run --project apps/api python evaluation/injection/run_injection.py \
+            --api-url "$API_URL" --require-real --max-requests 40 --dry-run \
+            --corpus /tmp/dou-corpus.json --output-dir /tmp/real-eval/injection
+
+      - name: Faithfulness örnekleme ve etiketleme planı
+        run: |
+          mkdir -p /tmp/real-eval /tmp/dou-faithfulness
+          uv run --project apps/api python evaluation/faithfulness/pull_sample.py \
+            --api-url http://127.0.0.1:8015 --require-real --max-requests 30 --size 25 \
+            --corpus /tmp/dou-corpus.json --dry-run --output-dir /tmp/dou-faithfulness
+
+          cat >/tmp/dou-faithfulness/labeler-a.md <<'EOF'
+          # Etiketleyici A (KOŞULMADI)
+
+          ## 1. örnek_id (direct)
+          **Etiket:** `destekleniyor` / `kısmen` / `desteklenmiyor` → ______________
+          **Not:** ______________
+          EOF
+
+          cat >/tmp/dou-faithfulness/labeler-b.md <<'EOF'
+          # Etiketleyici B (KOŞULMADI)
+
+          ## 1. örnek_id (direct)
+          **Etiket:** `destekleniyor` / `kısmen` / `desteklenmiyor` → ______________
+          **Not:** ______________
+          EOF
+
+          if [ -f /tmp/dou-faithfulness/sample.json ]; then
+            uv run --project apps/api python evaluation/faithfulness/score_labels.py \
+              --sample /tmp/dou-faithfulness/sample.json \
+              --first /tmp/dou-faithfulness/labeler-a.md \
+              --second /tmp/dou-faithfulness/labeler-b.md \
+              --labeler-1 "etiketleyici-a" \
+              --labeler-2 "etiketleyici-b" \
+              --attest-independent \
+              --json-out /tmp/dou-faithfulness/score_labels.json \
+              --adjudication-out /tmp/dou-faithfulness/adjudication.md
+          else
+            echo "sample.json dry-run'de üretilmediği için score_labels.py çalıştırılmadı; sadece form planı yazıldı."
+          fi
+
+      - name: Preflight + dry-run çıktısı
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: real-eval-dry-run
+          path: /tmp/real-eval

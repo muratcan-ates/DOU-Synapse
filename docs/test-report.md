@@ -673,3 +673,21 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 
 **Kural:** her sayının yanında hangi koşu dosyasından geldiği yazılır. Kaynağı
 gösterilemeyen sayı rapordan çıkarılır.
+
+## 17. Gerçek model bölümü (koşulmadı)
+
+Aşağıdaki satırların hepsi gerçek anahtar gelene kadar `KOŞULMADI` olarak kalır.
+Koşulması planlanan komutlar mevcut, PR'da kuru çalıştırma çıktılarıyla birlikte
+yenilenmelidir.
+
+| Ölçüm | Komut | Hedef Sonuç | Durum |
+|---|---|---:|---|
+| Uçtan uca citation precision | `evaluation/evaluate.py --set holdout --layer e2e --require-real --max-requests 30 --dry-run` | — | **KOŞULMADI** |
+| Ret/sızıntı kalitesi (inj/SC-005/9) | `evaluation/injection/run_injection.py --require-real --max-requests 40 --dry-run` | — | **KOŞULMADI** |
+| Faithfulness örneklem planı | `evaluation/faithfulness/pull_sample.py --corpus /tmp/dou-corpus.json --require-real --max-requests 30 --size 25 --dry-run` | — | **KOŞULMADI** |
+| İnsan etiketleme uyumu | `evaluation/faithfulness/score_labels.py --sample … --first … --second …` | — | **KOŞULMADI** |
+| Preflight hazır mı? | `scripts/real_eval_preflight.py --required-db-name dou_eval --corpus /tmp/dou-corpus.json` | — | **KOŞULMADI** |
+| Korpus özeti SHA | `evaluation/build_corpus.py --database dou_eval --out /tmp/dou-corpus.json` | — | **KOŞULMADI** |
+
+`KOŞULMADI` satırları yalnız gerçek anahtar ile güvenli koşu sonrası, canlı değerlerle
+yenilenir; `preflight` sonuçları anahtar yokluğunda deklanşör değildir.
