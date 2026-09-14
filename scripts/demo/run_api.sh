@@ -22,7 +22,12 @@ export QUESTION_AUTHORING_ENABLED=true
 export STUDENT_ASSESSMENT_WORKSPACE_ENABLED=true
 mkdir -p "$STORAGE_ROOT"
 ENV_FILE="$KOK/apps/api/.env"
-if [ -f "$ENV_FILE" ] && grep -qE '^GROQ_API_KEY=.+' "$ENV_FILE"; then
+# DOU_DEMO_OFFLINE=1: Plan C — anahtar olsa da sahte sağlayıcı. qa cevapları zaten
+# answer_cache'ten döner; bu bayrak Sokratik sahne ve soru üretiminin ağa çıkmasını önler.
+if [ "${DOU_DEMO_OFFLINE:-0}" = "1" ]; then
+  export LLM_FAKE_PROVIDER=true
+  echo "[demo] ÇEVRİMDIŞI (DOU_DEMO_OFFLINE=1): sahte sağlayıcı, qa cevapları önbellekten"
+elif [ -f "$ENV_FILE" ] && grep -qE '^GROQ_API_KEY=.+' "$ENV_FILE"; then
   GROQ_API_KEY="$(grep -E '^GROQ_API_KEY=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
   export GROQ_API_KEY
   export LLM_FAKE_PROVIDER=false

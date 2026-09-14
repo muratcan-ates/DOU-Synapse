@@ -18,9 +18,14 @@
   ],
   "courses": [
     {
-      "code": "COME301",
+      "code": "COME302",
       "as_user_id": "22222222-2222-2222-2222-222222222222",
       "questions": [
+        "Süreç ile iş parçacığı arasındaki fark nedir?",
+        "Semafor nedir ve ne işe yarar?",
+        "Deadlock oluşması için gereken dört koşul nedir?",
+        "Sayfalama nedir?",
+        "Context switch maliyeti neden yüksek?",
         "Deadlock oluşabilmesi için hangi dört koşulun sağlanması gerekir?",
         "Dairesel bekleme koşulu nedir?",
         "Banker's Algorithm hangi deadlock stratejisine girer?",
@@ -37,6 +42,8 @@
         "Süreç ile thread arasındaki temel fark nedir?"
       ],
       "out_of_scope_questions": [
+        "İtalya'nın başkenti neresidir?",
+        "Bugünkü dolar kuru ne kadar?",
         "Bu dersin vize sınavı ne zaman yapılacak?",
         "Bugün İstanbul'da hava nasıl?"
       ]
