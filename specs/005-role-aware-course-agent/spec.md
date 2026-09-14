@@ -4,7 +4,7 @@
 **Base**: `7c1c219` (`004-ai-sdlc-excellence`; yerel governance teslim commit'i)
 **Created**: 2026-08-11
 
-**Status**: Backend, `0015` ve frontend kodlandı; tam API 1934/1934, mypy 121 dosya, <!-- docs-check: backend.tests = 1934 --><!-- docs-check: backend.mypyFiles = 121 -->
+**Status**: Backend, `0015` ve frontend kodlandı; tam API 2088/2088, mypy 123 dosya, <!-- docs-check: backend.tests = 2088 --><!-- docs-check: backend.mypyFiles = 123 -->
 frontend 632/632, typecheck ve production build geçti. <!-- docs-check: frontend.tests = 632 --> Seri gerçek-API tarayıcı
 41/41 <!-- docs-check: tarihsel 41 · 2026-09-04 -->; bugün depoda 82 vaka toplanıyor <!-- docs-check: e2e.tests = 82 -->. Manuel VoiceOver+Safari, doğrudan exam/kill-switch browser yolları,
 real-provider, staging, isimli onay ve canlı rollout kanıtı henüz yok.

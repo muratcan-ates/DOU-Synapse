@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "change_id": "122-l8-acceptance-packet-offline-r1",
+  "lineage_id": "l8-acceptance-packet-offline",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "E3 hazırlığı: çevrimdışı tekrar üretilebilir kabul paketi",
+  "summary": "E3 gerçek sağlayıcı ve iki insan etiketleyici gerektirdiği için engelli ve sahipsizdi. prepare_packet.py DEĞİŞTİRİLMEDİ; yanına sağlayıcısız, tohumla deterministik bir yol kondu. Ölçülen gerçek: prepare_packet.py örnekleme yapmaz ve manifest'indeki prepared_at/candidate_sha yüzünden çıktısı bayt bayt tekrar üretilebilir değildir. Yeni paketin baytları yalnız vaka dosyası, atıf yapılan materyal ve tohumdan türer. Etiketleyiciye giden form çıpasızdır; cevap anahtarı ayrı dosyadadır ve verilmez.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T08:30:00+00:00",
+  "review_by": "2026-10-14T08:30:00+00:00",
+  "base_sha": "ee1ce8ac6306e68464e541b39b2abbe5c5bcdf9a",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched.",
+    "model_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched.",
+    "prompt_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched.",
+    "tool_schema_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched.",
+    "guardrail_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched.",
+    "retrieval_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched.",
+    "embedding_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched.",
+    "evaluator_revision": "Unchanged from ee1ce8a; new offline mechanism only, no provider/model/prompt path touched."
+  },
+  "data": {
+    "corpus_digest": "0b0b397a64792eedea2d6be96809f8cb2d58299a9bec1da17c2606998c559749",
+    "eval_set_digest": "0b0b397a64792eedea2d6be96809f8cb2d58299a9bec1da17c2606998c559749",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "evaluation/acceptance/packet_offline.py",
+      "state": "present",
+      "sha256": "0b0b397a64792eedea2d6be96809f8cb2d58299a9bec1da17c2606998c559749"
+    },
+    {
+      "path": "apps/api/tests/test_acceptance_packet.py",
+      "state": "present",
+      "sha256": "9e7ce2dd82604e0ee003b901849e62d67eedc4e3af6977fdad7c9a05df296d20"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/122-l8-acceptance-packet-offline-r1.json",
+      "report_sha256": "5e3ef5de4f44153257d7bba64ca8c806e2e2c0cf558dffd8a5662cd58e1ce394",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_acceptance_packet.py",
+    "holdout_ref": "evaluation/acceptance/assessment_cases.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/faithfulness/labels_etiketleyici_1.md",
+    "metrics": [
+      {
+        "name": "acceptance_packet_tests_passed",
+        "baseline": 0,
+        "candidate": 30,
+        "operator": ">=",
+        "threshold": 30,
+        "sample_size": 30
+      },
+      {
+        "name": "packet_pool_size",
+        "baseline": 13,
+        "candidate": 13,
+        "operator": "<",
+        "threshold": 25,
+        "sample_size": 13
+      }
+    ],
+    "exact_command": "cd apps/api && TEST_DB_NAME=dou_l8_reb .venv/bin/python -m pytest -q tests/test_acceptance_packet.py"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: çevrimdışı mekanizma, hiçbir üretim yolundan çağrılmıyor",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:018-l8-unassigned",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: çevrimdışı mekanizma, hiçbir üretim yolundan çağrılmıyor",
+    "kill_switch": "Paket 25 örnek eşiğini karşılamadan 'E3 tamamlandı' diye anılırsa kayıt geri çekilir.",
+    "assignment": "Sticky to the exact reviewed candidate SHA; no real-user exposure.",
+    "initial_exposure": "None; yalnız yerel çevrimdışı koşu. Öğrenciye giden hiçbir yol değişmedi.",
+    "stop_conditions": [
+      "Eksik örnek uydurularak 25'e tamamlanır.",
+      "Etiketleyiciye çıpalı form verilir.",
+      "Tek etiketleyicinin çıktısı iki bağımsız etiket gibi raporlanır."
+    ],
+    "expand_conditions": [
+      "Adlandırılmış engineering/domain/privacy sahipleri ayrı ayrı onaylar.",
+      "Mekanizma bir ürün yoluna bağlanmadan önce o bağlantı ayrıca incelenir."
+    ],
+    "active_exam_policy": "No academic record, active-exam lock, help scope or role change."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:ee1ce8ac6306e68464e541b39b2abbe5c5bcdf9a",
+    "procedure": "Bu commit geri alınır; yeni dosyalar silinir. Çağıranı olmadığı için davranış değişimi yoktur, veri göçü yoktur.",
+    "max_minutes": 30,
+    "verification": "Planned operator response, not measured production SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik fixture ve yerel çevrimdışı koşu. Gerçek öğrenci içeriği, sağlayıcı anahtarı veya kişisel veri yok.",
+    "retention": "Kurumsal saklama ve gerçek sağlayıcı yaşam döngüsü açık; üretime terfi yok."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
