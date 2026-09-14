@@ -1,0 +1,529 @@
+{
+  "schema_version": 1,
+  "kind": "assessment_acceptance_draft",
+  "warning": "Aday insan çıpalarıdır. Kaynaklar ekip üretimi örneklerdir; hoca onayı ve gerçek puanlama koşusu yapılmadı. MCQ/kısa cevap deterministik, diğerleri gerçek LLM ve insan rubriği gerektirir.",
+  "cases": [
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-MCQ-01",
+      "question_type": "mcq",
+      "answer_format": null,
+      "source": {
+        "file_name": "01-processes.pdf"
+      },
+      "prompt": "Süreç ve thread arasındaki temel fark nedir?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Süreç izole bir adres uzayı kullanır; thread'ler aynı sürece ait adres uzayını paylaşır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "İkisi de aynı bellek alanını her zaman paylaşır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Thread üretimi süreç üretiminden daha ağırdır.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-MCQ-02",
+      "question_type": "mcq",
+      "answer_format": null,
+      "source": {
+        "file_name": "05-deadlock-demo.pdf"
+      },
+      "prompt": "Deadlock için gerekli dört koşuldan biri olmayan aşağıdakilerden hangisidir?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Kesme zorunluluğu.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Mutual exclusion, hold and wait ve circular wait birlikte yeterlidir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Kaynakların paylaşılamaması tek başına yeterlidir.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-MCQ-03",
+      "question_type": "mcq",
+      "answer_format": null,
+      "source": {
+        "file_name": "02-cpu-scheduling.pdf"
+      },
+      "prompt": "Round-Robin zamanlayıcı için en doğru ifade hangisidir?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Her thread'e bir zaman dilimi vererek yanıt süresini iyileştirir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Sadece önceliklendirme için kullanılır, zaman paylaşımı yapmaz.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "SJF ile aynı davranışı gösterir.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-SHORT-01",
+      "question_type": "open",
+      "answer_format": "short_answer",
+      "source": {
+        "file_name": "05-deadlock-demo.pdf"
+      },
+      "prompt": "Deadlock'da karşılıklı dışlama, tutma-bekleme ve dairesel bekleme ile hangi koşul eksik bırakılır?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Önceleme zorunluluğu",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "önceleme",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Zaman dilimi",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-SHORT-02",
+      "question_type": "open",
+      "answer_format": "short_answer",
+      "source": {
+        "file_name": "03-memory-management.pdf"
+      },
+      "prompt": "Sanal belleğin bir cümlelik amacını yazın.",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Uygulamaları her biri için yalıtılmış sanal adres alanı sağlar.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Programlar için yalıtık adres alanı sağlar.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Tüm veriyi tek fiziksel blokta saklar.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-SHORT-03",
+      "question_type": "open",
+      "answer_format": "short_answer",
+      "source": {
+        "file_name": "04-synchronization.pdf"
+      },
+      "prompt": "Üretici-tüketici senaryosunda eksik kalan kritik adım nedir?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Kritik bölge korunmadan semaforun doğru sıralamayla azaltılması",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Semaforun yalnız tek kez azaltılması",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Socket açmadan buffer ayırmak",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-ESSAY-01",
+      "question_type": "open",
+      "answer_format": "essay",
+      "source": {
+        "file_name": "04-synchronization.pdf"
+      },
+      "prompt": "Producer-consumer problem'de doğru akış kontrolünü adım adım açıklayın.",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Üretici boş bir slot oluşana kadar bekler; mutex ile paylaşılan tamponu günceller; sonra dolu semaforunu artırır. Tüketici dolu slot görmeden bloklanır; sonra mutex ile tüketir ve boş semaforunu artırır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Tüketici dolu olana bakar ve sonra mutex alınır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Önce mutex alınır, sonra semaforları güncellenir, sonra tekrar mutex alınır.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": [
+        {
+          "point": "Adım sıralaması doğru",
+          "weight": 60
+        },
+        {
+          "point": "Kritik bölge koruması ve semafor sırası doğru",
+          "weight": 40
+        }
+      ]
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-ESSAY-02",
+      "question_type": "open",
+      "answer_format": "essay",
+      "source": {
+        "file_name": "02-cpu-scheduling.pdf"
+      },
+      "prompt": "Round-Robin ve SJF arasında tekniğin farklarını ve etkisini karşılaştırın.",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Round-Robin kuyrukta zaman dilimi ile yanıt sürelerini kontrol eder; SJF iş yükü ölçümüne göre en kısa işi önce çalıştırır, fakat yanlış tahminlerde beklenebilir gecikme oluşur.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Sadece RR tekniği CPU'yu paylaştırır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "SJF tüm zamanlarda en iyi çeviklik sağlar.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": [
+        {
+          "point": "Round-Robin özellikleri doğru anlatılıyor",
+          "weight": 50
+        },
+        {
+          "point": "SJF ile karşılaştırma doğru",
+          "weight": 50
+        }
+      ]
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-ESSAY-03",
+      "question_type": "open",
+      "answer_format": "essay",
+      "source": {
+        "file_name": "03-memory-management.pdf"
+      },
+      "prompt": "Sayfa değiştirme politikalarının amaç ve karşıtı örneklerini anlatın.",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Amaç, çalışmada olan süreçlere uygun sayfaları RAM'de tutmaktır; LRU/Second-Chance pratikte yakınsama sağlar, optimal politika ideal ama öngörü gerektirir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Amaç yalnızca RAM kapasitesini artırmaktır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Paging yalnız diskten CPU önbelleğine taşır.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": [
+        {
+          "point": "Politikaların amacı doğru",
+          "weight": 60
+        },
+        {
+          "point": "Optimum ve uygulanabilir farkı doğru",
+          "weight": 40
+        }
+      ]
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-TRACE-01",
+      "question_type": "code_trace",
+      "answer_format": null,
+      "source": {
+        "file_name": "fork_example.c"
+      },
+      "prompt": "fork sonrası ebeveyn ve çocuk süreçte pid değerleri nasıl görünür?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Çocuk süreçte pid 0, ebeveyn sürecinde çocuğun pid değeri döner; ebeveyn wait ile çocuğu bekler.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Her iki süreçte de ebeveynin pid'i görünür.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Her iki sürecin pid'i 0 olur.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-TRACE-02",
+      "question_type": "code_trace",
+      "answer_format": null,
+      "source": {
+        "file_name": "thread_pool.py"
+      },
+      "prompt": "Worker thread bir işi tamamladığında hangi adımda döngüden çıkar?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Görevi işledikten sonra queue'dan alındığı yerde lock serbest bırakılır ve görev işaretçisi güncellenir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Görev tamamlanınca yalnız sayaç birikir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Thread işi bitmeden thread pool kapanır ve işlem sona erer.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-TRACE-03",
+      "question_type": "code_trace",
+      "answer_format": null,
+      "source": {
+        "file_name": "pipe_shell.c"
+      },
+      "prompt": "Aşağıdaki kodda pipe açma sıralaması hatalıysa hangi adım kritik?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Child process fork sonrası ilgili uç kapatma ve exec sırası önemlidir; yanlış kapanan uç bloklanma yaratır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Uçları kapatmak önemsenmez ama fork yeterlidir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Sadece write çağrısı eksik değilse bütün akış doğru kalır.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-BUG-01",
+      "question_type": "bug_hunt",
+      "answer_format": null,
+      "source": {
+        "file_name": "producer_consumer.py"
+      },
+      "prompt": "Üretici-tüketici kodunda sıralama hatası var: mutex ile semafor çağrı sırası nasıl düzeltilir?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Semafor azaltımı (wait) önce, mutex kritik bölümde alınmalı; boş slot yoksa yalnız bekleyen thread dışarı çıkmalı.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Önce mutex alınır sonra empty azaltılır; çoğu durumda çalışır.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Hata mutex kullanılmasında değil, değişken tipi seçilirken var.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-BUG-02",
+      "question_type": "bug_hunt",
+      "answer_format": null,
+      "source": {
+        "file_name": "reader_writer.py"
+      },
+      "prompt": "Aşağıdaki reader-writer kilit kodunda yanlış sıralama ne tür bir kilitleme sorununa yol açar?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Yazar ve okuyucu sayacı mutexsiz güncelleniyorsa race condition ve bekleme hatası oluşur.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Yalnızca adil bekleme kaybolur ama veri tutarlılığı etkilenmez.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Aynı fonksiyonda print eklenmesi sorunu çözer.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    },
+    {
+      "human_approved_by": null,
+      "human_approved_at": null,
+      "expected_score": null,
+      "expected_missing_points": null,
+      "observed_response": null,
+      "result": "not_run",
+      "id": "GRADE-BUG-03",
+      "question_type": "bug_hunt",
+      "answer_format": null,
+      "source": {
+        "file_name": "page_replacement.py"
+      },
+      "prompt": "Sayfa değiştirme simülasyonunda rastgele seçim hatası nasıl düzeltilir?",
+      "student_answers": [
+        {
+          "anchor": "correct",
+          "answer": "Gerçek yaş geçmişine göre en düşük tekrar adayını seçmeli, yalnızca rastgele değil referans geçmişi kullanılmalı.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "partial",
+          "answer": "Rastgele seçim bazen daha hızlıdır ama doğru sonuçlar beklenir.",
+          "human_expected_score": null
+        },
+        {
+          "anchor": "incorrect",
+          "answer": "Sayfa değiştirme her zaman son sayfayı atmalıdır.",
+          "human_expected_score": null
+        }
+      ],
+      "rubric": []
+    }
+  ]
+}
