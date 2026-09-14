@@ -1,0 +1,21 @@
+{
+ "schema_version": 1,
+ "change_id": "151-ci-evidence-wiring-r1",
+ "candidate_sha": "SELF",
+ "captured_at": "2026-09-14T20:49:06+00:00",
+ "evidence_label": "fake-provider",
+ "result": "pass",
+ "command": "apps/api/.venv/bin/python scripts/diff_coverage_check.py collect --output /tmp/cov.json -- -q tests/test_text_tr.py && apps/api/.venv/bin/python scripts/dead_code_check.py apps/api/app && apps/api/.venv/bin/python -m unittest scripts.test_dead_code_check scripts.test_diff_coverage_check && apps/api/.venv/bin/python scripts/workflow_policy_check.py && apps/api/.venv/bin/python scripts/ai_sdlc_check.py --repo-root . --policy .ai/policy.json --base-sha $(git rev-parse HEAD~1) --head-sha $(git rev-parse HEAD)",
+ "observations": [
+  "ai_sdlc_check: UNWIRED_EVIDENCE_SCRIPT 4 kayıt -> AI_SDLC_CHECK=PASS (0 kayıt).",
+  "diff_coverage_check collect: DIFF_COVERAGE_COLLECT=OK (28 dosya, 1059 satır), rc=0.",
+  "dead_code_check: DEAD_CODE_CHECK=WARN (123 dosya, 1117 tanım, 914 denetlendi, 203 muaf, 1 aday), rc=0 — uyarı kipi.",
+  "unittest scripts.test_dead_code_check scripts.test_diff_coverage_check: 49 test OK, rc=0.",
+  "workflow_policy_check: WORKFLOW_POLICY_CHECK=PASS.",
+  "ci.yml YAML olarak ayrıştırıldı; api işi 30 adım; eylem adımında working-directory yok."
+ ],
+ "not_run": [
+  "diff_coverage_check report: CI checkout sığ olduğu için taban commit yok; adım bilerek bağlanmadı.",
+  "CI üzerinde koşum: bu kayıt yazılırken yalnız yerel ölçüm var; CI sonucu push sonrası okunacak."
+ ]
+}

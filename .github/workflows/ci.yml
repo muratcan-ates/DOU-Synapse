@@ -75,8 +75,39 @@ jobs:
       - name: Tip kontrolü (mypy)
         run: uv run mypy app
 
-      - name: Testler
-        run: uv run pytest -q
+      # Süit kapsam eklentisiyle koşuluyor: AYNI pytest, aynı argümanlar, üstüne
+      # `sys.monitoring` tabanlı satır kapsamı. Ayrı bir kapsam adımı eklemek
+      # 2100+ testi ikinci kez çalıştırırdı; `collect` pytest'i kendisi sarar.
+      - name: Testler (+ değişen satır kapsamı toplama)
+        working-directory: .
+        run: |
+          uv run --project apps/api python scripts/diff_coverage_check.py \
+            collect --output "${RUNNER_TEMP}/dou-coverage.json" -- -q
+
+      # Rapor adımı BİLEREK yok: `report` bir taban commit'i ister, checkout ise
+      # sığ. Eşik zaten insan kararıdır (`--fail-under` varsayılanı yoktur), bu
+      # yüzden kapsam JSON'u kanıt olarak saklanır, eşik sonra bağlanır.
+      # `working-directory` yalnız `run` adımlarında geçerlidir; bu adım bir
+      # eylem çağırdığı için yol mutlak `runner.temp` üzerinden verilir.
+      - name: Kapsam kanıtını sakla
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: diff-coverage
+          path: ${{ runner.temp }}/dou-coverage.json
+          if-no-files-found: warn
+
+      # A9: bağımlılıksız ölü kod taraması. UYARI kipinde (rc=0); kırmızı yakmak
+      # için `--strict` gerekir ve bu bir insan kararıdır (.ai/agent-queue.md A9).
+      - name: Ölü kod taraması (uyarı kipi)
+        working-directory: .
+        run: uv run --project apps/api python scripts/dead_code_check.py apps/api/app
+
+      - name: Kalite kapılarının kendi testleri
+        working-directory: .
+        run: |
+          uv run --project apps/api python -m unittest \
+            scripts.test_dead_code_check scripts.test_diff_coverage_check
 
       - name: Retrieval ölçüm araçlarının çevrimdışı sözleşmeleri
         working-directory: .
