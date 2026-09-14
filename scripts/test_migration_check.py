@@ -79,8 +79,28 @@ class MigrationCheckTests(unittest.TestCase):
         self.assertNotEqual(check(yok, allowed_gaps=set()), [])
 
     def test_deponun_kendi_goclerini_dogrular(self) -> None:
-        """0017 ve runbook paralel işlerinin 0021–0023 rezervasyonu açık bildirilir."""
-        self.assertEqual(main(["--allow-gap", "0017", "--allow-gap", "0021", "--allow-gap", "0022", "--allow-gap", "0023"]), 0)
+        """0017, runbook paralel işlerinin 0021–0023 ve L4'ün 0028 rezervasyonu açık bildirilir.
+
+        0028: 13–14 Eylül şerit birleşiminde L2 0027'yi, L5 0029'u kullandı; L4 kota
+        yarışını kanıtlayamadığı için o numaraya göç yazmadı. ci.yml ile aynı liste.
+        """
+        self.assertEqual(
+            main(
+                [
+                    "--allow-gap",
+                    "0017",
+                    "--allow-gap",
+                    "0021",
+                    "--allow-gap",
+                    "0022",
+                    "--allow-gap",
+                    "0023",
+                    "--allow-gap",
+                    "0028",
+                ]
+            ),
+            0,
+        )
 
     def test_bildirimsiz_kosumda_depo_kapisi_kirmizi_yanar(self) -> None:
         """Rezerve numara bildirilmezse kapı sessiz kalmaz."""
