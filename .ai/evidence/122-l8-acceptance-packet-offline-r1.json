@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "change_id": "122-l8-acceptance-packet-offline-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T08:30:00+00:00",
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "scope": "Paketin üretilebilirliği ve skor hesabı. Gerçek sağlayıcı koşusu ve insan etiketleme KAPSAM DIŞI.",
+  "commands": [
+    "TEST_DB_NAME=dou_l8_reb .venv/bin/python -m pytest -q tests/test_acceptance_packet.py",
+    "apps/api/.venv/bin/ruff check --config apps/api/pyproject.toml evaluation/acceptance/packet_offline.py"
+  ],
+  "results": {
+    "acceptance_packet_tests_passed": 30,
+    "ruff_check": "pass (kardeş prepare_packet.py ile aynı E402 kalıbı, ek bulgu yok)",
+    "real_pool_size": 13,
+    "required_pool_size": 25,
+    "default_run": "rc=2 — eksik örnek uydurulmaz, paket üretilmez",
+    "answer_key_leak_fixed": "örnek kimliği artık cevap sha256'sından türüyor; ilk yazımda '-correct' son eki cevap anahtarını form başlığına sızdırıyordu",
+    "real_provider_run": "not-run — sağlayıcı anahtarı yok",
+    "human_labelling": "not-run — iki bağımsız etiketleyici yok"
+  },
+  "comparison": {
+    "before": "Paket üretimi doğrulanmıyor; çıktı tekrar üretilebilir değil; örnek seçimi yok.",
+    "after": "Tohumla bayt bayt tekrar üretilebilir paket, --verify farkı görüyor, dolu etiket alanı reddediliyor."
+  },
+  "limitations": "E3 TAMAMLANMADI. Havuz 13 < 25; gerçek sağlayıcı koşusu ve iki insan etiketleyici hâlâ engel. Bağımsızlık yalnız operatör beyanıdır, araç gözlemleyemez.",
+  "privacy": "sentetik/taslak vakalar; gerçek öğrenci cevabı yok"
+}
