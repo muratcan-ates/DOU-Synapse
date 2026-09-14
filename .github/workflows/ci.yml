@@ -141,6 +141,18 @@ jobs:
             --candidate-sha "$(git rev-parse HEAD)" \
             --evidence /tmp/role-agent-application-mutations.json
 
+      # Göç koşucusunun kendi sözleşmesi: idempotans, sha uyuşmazlığında durma,
+      # advisory lock ile tek koşucu. Betik kendi geçici veritabanını kurar ve
+      # siler; CI'daki `postgres` servisine yazmaz.
+      - name: Göç koşucusu sözleşmeleri (migrate.sh)
+        working-directory: .
+        shell: bash
+        env:
+          TEST_ADMIN_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+          PGPASSWORD: postgres
+        run: |
+          bash scripts/test_migrate.sh
+
       # Göç numaraları sıranın TEK kaydı: her yerde `supabase/migrations/*.sql`
       # dosya adı sırasıyla uygulanıyor. Aynı numarayı iki dal birden
       # kullandığında (0016 bu depoda gerçekten oldu) git çakışma üretmez,
