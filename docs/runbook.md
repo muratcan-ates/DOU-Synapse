@@ -178,7 +178,8 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
       psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"
       # request_logs_self_insert VE request_logs_instructor_read görmelisin
       ```
-- [ ] Demo dersinin materyali **hazır** mı: `8 materyal · 8 hazır` (Materyaller ekranı)
+- [ ] Demo dersinin materyali **hazır** mı: `5 materyal · 5 hazır` (Materyaller ekranı).
+      Ölçüldü: `psql -d dou_demo -Atc "select status, count(*) from documents group by 1"` → `completed|5`
 - [ ] Sınav sahnesi için **onaylanmış soru var mı** (öğrenci hesabıyla bak, boş olmamalı).
       Yoksa eğitmen incelemesiyle hazırlayın; sentetik üretimi gerçek ders sorusu diye onaylamayın.
 - [ ] `answer_cache` demo soruları **dolduruldu** mu (Plan C sigortası)

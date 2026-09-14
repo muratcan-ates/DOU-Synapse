@@ -139,7 +139,7 @@ En özgün an **5. sahnedir**: bilmediğini söyleyebilen asistan. Bunu bir eksi
 
 **Ne yapılacak:**
 
-1. Materyaller sekmesi açık, listede 8 materyal ve her birinin yanında **Hazır** rozeti
+1. Materyaller sekmesi açık, listede 5 materyal ve her birinin yanında **Hazır** rozeti
    ve parça sayısı görünüyor (`01-processes.pdf · 45 KB · 3 sayfa · 3 parça`).
 2. "Dosya seç" ile küçük bir PDF yükleyin (5-10 sayfa). Durum **Yükleniyor → İşleniyor →
    Hazır** akar ve parça sayısı belirir.
