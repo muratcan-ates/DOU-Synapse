@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "kind": "acceptance_packet",
+  "prepared_at": "2026-09-14T06:03:46+00:00",
+  "candidate_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+  "candidate_dirty": true,
+  "source_approval": "pending_instructor_review",
+  "source_origin": "repository_team_samples",
+  "sources": [
+    {
+      "path": "sample_data/isletim-sistemleri/01-processes.pdf",
+      "sha256": "02a75740e3077ac7f13d7c995039dc37100496b97a35f3707583bec201cb27a4"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/02-cpu-scheduling.pdf",
+      "sha256": "3f5e85335437ca2c0d13e8f7e96f15cf71eb648f7b141ef72aaa567a9e59261f"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/03-memory-management.pdf",
+      "sha256": "c065d206810b594d73d10bd171acdd9ca7cfeda5e2cbf67a586e99eb2d7efbce"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/04-synchronization.pdf",
+      "sha256": "3920c48bef0dafc5a77d9059ef40dcda561f98cee4d0d5851bfdbaa5f40b50ef"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/05-deadlock-demo.pdf",
+      "sha256": "16ff292714967e7898e2a91ef927a98e794b5ee9d62da7fd709c7dad8b723442"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/06-file-systems.pptx",
+      "sha256": "f0c0bce6cfba14c5d7e6a5924836d5b4ff4396b3456b5e80098d36bc9002f094"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/07-virtual-memory.pdf",
+      "sha256": "5e98c100208d205e07aca5327d79ba903dec8f7c76dc0797932ad7764de4a3b3"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/08-io-systems.pdf",
+      "sha256": "8a7bb5927c9c4495fb73e3d1a52934aa67ddf5f7a8eff540d39ed9db33573e77"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/09-disk-and-storage.pdf",
+      "sha256": "292536832151b154a842c6be65c19f83459b2a47420c226ba2b9794892766d57"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/10-security-and-protection.pdf",
+      "sha256": "a616f7ffacd5769198b72d078a8648ff4a5f1a08d17e1b42a3c0ff4bb2e0cb0a"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/11-virtualization-containers.pptx",
+      "sha256": "19521e1be90005bc32a78a8e558cb737119d3fa5f76e7c57a618ec3cbb7e9ad1"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/12-real-time-scheduling.pptx",
+      "sha256": "ac73311dd9f5fd8b0aa7efe403a2f56a78def276c60f0494f0bb7fa86cae79db"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/13-ipc.pptx",
+      "sha256": "86bae99faaf01b235b0c228279aeefd0ecf24d0e1e1c0177ea8cbd95b7a27f7e"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/14-distributed-os.pptx",
+      "sha256": "40b086a0a2a8ceaca54dda24fdd1663d23c47b35c04ad0c593c8c4698d7a449e"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/15-boot-and-kernel.pptx",
+      "sha256": "16865db9c74b8c0a3e48546e14d39c8edaa08f372c6268d3d651c8dc78e4c3d4"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/bankers_algorithm.c",
+      "sha256": "524096a926e417a8c65d52a2040ff1db46e04f107241521b534c158dc8055db3"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/fork_example.c",
+      "sha256": "3f7e0d6fd568d1499913440f7d6c928abd8e50b069902b31decdecf802acd519"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/page_replacement.py",
+      "sha256": "bd76649ce50f4e8f37213dddafe276d0cb0be6d61a99dd4fbefb5a37b796403a"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/pipe_shell.c",
+      "sha256": "263ad808cbfef63f99f41dcdd2b3a88e179043ac1b516730f0a61486509b56f5"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/producer_consumer.py",
+      "sha256": "d89fdbe248342e865629eef22f85eec1fed167d0191a84ba541aba2204733ad7"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/reader_writer.py",
+      "sha256": "d8220671dd623a3e76aec30a993d6928efb070190f8d5a2ce864a4499cf202a3"
+    },
+    {
+      "path": "sample_data/isletim-sistemleri/thread_pool.py",
+      "sha256": "c6801570afc04d2a91c0999a3c144cf79e2f085a3863965d6917240fba5ab77d"
+    }
+  ],
+  "gold_sets": [
+    {
+      "path": "evaluation/gold_set/calibration.json",
+      "sha256": "3dc3010ffdad46481ddb2f69bfa70d798f238f415c5b63db1c946bcd8dad052c"
+    },
+    {
+      "path": "evaluation/gold_set/holdout.json",
+      "sha256": "7b20d55902e91c3e1baa45dbd753e93737bfdf66a6e13c9fb0acad8bebef0e74"
+    },
+    {
+      "path": "evaluation/injection/cases.json",
+      "sha256": "7a1f3b2c719ce7365830e3e58ee169485a3657f030a26ecde4bb00b32dd71725"
+    }
+  ],
+  "assessment_cases_sha256": "6f2ee4937d2c0a117449cff466c918ef9b29736b770e47de90ad8264186b271c",
+  "assessment_cases_source_sha256": "6837a854dc3782a94de0ae085ffc7bc7085e989e2d47e48817630a8f8a14d2fa",
+  "real_provider_quality": "pending",
+  "independent_human_review": "pending",
+  "grading_run": "not_run",
+  "ocr": "not_required_for_current_text_samples",
+  "faithfulness_sample_sha256": null
+}
