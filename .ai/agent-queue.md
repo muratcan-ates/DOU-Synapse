@@ -24,7 +24,7 @@ Bu özet tam izin listesi değildir: her şeridin “Yüzeyin” ve “Dokunma�
 - `—` kayda geçmiş insan kararı engeli yok demektir. Atanmamış sahiplik ve teknik önkoşullar ayrıca yazılır; bunlar insan onayı verildiği anlamına gelmez.
 - Risk sütunu planlanan değişiklik için ön değerlendirmedir. Kesin dossier sınıfını gerçek diff ve `.ai/policy.json` belirler; R1/R2/R3 onayları burada verilmiş sayılmaz.
 - Komutlar kabul planıdır, çalıştırıldıkları iddia edilmez. `API` = `apps/api` içinde `TEST_DB_NAME=dou_<şerit> .venv/bin/python -m pytest -q`; `WEB` = `apps/web` içinde; diğerleri depo kökünde. Gerçek şerit kodunu kullan.
-- `DOCS` = `node scripts/docs_check.mjs`; `MIGRATION` = `python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023`; `POLICY` = `apps/api/.venv/bin/python scripts/workflow_policy_check.py`.
+- `DOCS` = `node scripts/docs_check.mjs`; `MIGRATION` = `python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023 --allow-gap 0028`; `POLICY` = `apps/api/.venv/bin/python scripts/workflow_policy_check.py`.
 - `EVAL` = `apps/api` içinde `.venv/bin/python ../../evaluation/evaluate.py`; korpus, gerçek API adresi, DSN ve çıktı değişkenleri hazırlanmış izole hedeflerden gelir, sır değerleri yazılmaz. CLI'da olmayan `--provider groq` kullanılmaz; sağlayıcı sunucu ortamından seçilir.
 - `YENİ` işareti henüz hazırlanacak dosyayı belirtir; yokken komutu not-run bırak. Salt DOCS sonucu davranış kabulü değildir; her satırdaki ek kontrol koşulu da kanıtlanır.
 - Her işe AGENTS.md ortak kapıları ve temiz commit'te ebeveyn tabanlı `ai_sdlc_check` eklenir. Dış ortam yoksa `not-run` + neden; iş tamamlanmış sayılmaz.

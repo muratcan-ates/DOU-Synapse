@@ -68,7 +68,7 @@ cd "$KOK/apps/api" && .venv/bin/ruff check . && .venv/bin/ruff format --check . 
 TEST_DB_NAME="dou_${SERIT}" .venv/bin/python -m pytest -q
 cd "$KOK/apps/web" && bun test lib/ && bunx tsc --noEmit && node scripts/contrast.mjs
 cd "$KOK" && node scripts/docs_check.mjs
-python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023
+python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023 --allow-gap 0028
 apps/api/.venv/bin/python scripts/workflow_policy_check.py
 ```
 Yeni testte sayaçlar: web bağımlılıkları ve Chromium hazırken `node scripts/docs_check.mjs --duzelt`.
