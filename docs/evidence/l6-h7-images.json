@@ -1,0 +1,133 @@
+{
+  "task": "H7",
+  "source_parent_sha": "8e7bc03412c5fc9b5dd1ac2989aa0e336631189c",
+  "run": {
+    "auditFinishExitCode": 0,
+    "buildReused": true,
+    "buildUnchanged": true,
+    "database": "dou_l6_e2e_h7_screenshots_03",
+    "error": null,
+    "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+    "ownedApiExitCode": 0,
+    "playwrightExitCode": 0,
+    "runId": "l6bfd01689864fde",
+    "sourceUnchanged": true,
+    "status": "PASS",
+    "stopObservation": "graceful-pipe-and-wait"
+  },
+  "source_before_sha256": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+  "source_after_sha256": "02e712756d3856d537159a2c385bfa9fb468a93ec884e6e8ec55ce90465f854f",
+  "playwright_log_sha256": "3dbb19cbf08a63960cdecf1777be5044cef2cadd0aaea47bcd10d3379d112d53",
+  "command": {
+    "command": [
+      "./node_modules/.bin/playwright",
+      "test",
+      "--workers=2",
+      "--config",
+      "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts",
+      "--project",
+      "llm",
+      "--grep",
+      "@ekran"
+    ],
+    "provider": "fake-provider",
+    "webPort": 3146
+  },
+  "images": {
+    "docs/images/09-sohbet-kaynakli-cevap.png": {
+      "sha256": "7cdd3ce92f490814cf849b90eee4d3c6cefac1bab2ecaef60739ab606808a9ad",
+      "width": 1280,
+      "height": 976,
+      "mtime_ns": 1789320397855958634,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Kaynak kartı, Deadlock bölüm etiketi, cevap ve etkin sohbet görünür."
+    },
+    "docs/images/10-sohbet-nazik-ret.png": {
+      "sha256": "c2045477996f72047d935550083052f25db882e40826345dc8c3283535a85d89",
+      "width": 1280,
+      "height": 901,
+      "mtime_ns": 1789320397392454189,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Materyalsiz ders ve dayanak bulunamadı açıklaması görünür."
+    },
+    "docs/images/10-sohbet-kapsam-disi-ret.png": {
+      "sha256": "30023096fb43e1ed27ee51541db3031f4b04b43f68360586da65b738374f95c4",
+      "width": 1280,
+      "height": 900,
+      "mtime_ns": 1789320399076402120,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Kapsam dışı ret, kaynak paneli ve Ders Koçu kimliği görünür."
+    },
+    "docs/images/05-egitmen-soru-havuzu.png": {
+      "sha256": "c94efaccc9f90d2b295c6d5fde2d93a9c402892f4897bb7cae4fdc6f607d5cbd",
+      "width": 1280,
+      "height": 2046,
+      "mtime_ns": 1789320399776766838,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Onaylı soru, seçenekler, gerekçe ve kaynak görünür; Konu ekle düğmesi artık asistan tarafından örtülmüyor."
+    },
+    "docs/images/06-egitmen-sinif-analitigi.png": {
+      "sha256": "1a9ec27693806cf921723b3ec32859f3556f685f4280500b1f606b81c75556cb",
+      "width": 1280,
+      "height": 1239,
+      "mtime_ns": 1789320400756695735,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Gerçek sentetik yanlış cevabın sınıf göstergeleri; kapsam dışı ret bölümünde Ölçüm yok."
+    },
+    "docs/images/15-ogrenci-ilerleme.png": {
+      "sha256": "277c1d8a8ed2eb0d4e1f8ddb32df4359e6f0839dbe5181ec098de2ad3f99212b",
+      "width": 1280,
+      "height": 900,
+      "mtime_ns": 1789320401513918908,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Öğrenciye ait konu göstergesi ve Ders Koçu düğmesi görünür."
+    },
+    "docs/images/03-egitmen-materyaller.png": {
+      "sha256": "93f50e071783368280c5aaa963a53e1b765d61e5ccbebed62b0530226b9f2c6c",
+      "width": 1280,
+      "height": 1206,
+      "mtime_ns": 1789320402496267752,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Hazır dosya satırı, Dosya seç ve önizleme düğmeleri görünür; asistan formu örtmüyor."
+    },
+    "docs/images/16-kvkk.png": {
+      "sha256": "1f16105274e24d03e652d0c47d66b9fefcf08828be71589f041eaa2920cb56e0",
+      "width": 1280,
+      "height": 3181,
+      "mtime_ns": 1789320402507954436,
+      "rewritten_in_run": true,
+      "visual_review": "reviewed",
+      "observation": "Güncel kişisel veri açıklaması tam sayfa görünür; uygunluk sertifikası değildir."
+    }
+  },
+  "provider": "local fake / hashing; synthetic owned profiles/courses",
+  "viewport": "1280x900 initially; materials and question-pool capture use measured page height plus 80 pixels; fullPage PNG dimensions recorded per file. No DOM hiding or product UI edit.",
+  "prior_attempts": [
+    {
+      "run": "h7-screenshots-01",
+      "status": "FAIL",
+      "passed": 7,
+      "failed": 1,
+      "reason": "Filename matched hidden replacement-select option; scoped to visible material list item."
+    },
+    {
+      "run": "h7-screenshots-02",
+      "status": "PASS",
+      "passed": 8,
+      "visual_review": "Two long forms had existing fixed assistant overlapping controls at 900 viewport height; screenshots regenerated with measured taller viewport."
+    }
+  ],
+  "limits": [
+    "Documentation screenshots only; not Linux CI visual baselines.",
+    "Unselected historical images were not regenerated.",
+    "UI numbers come from this synthetic run, not educational quality measurements."
+  ],
+  "raw_evidence": "runtime/evidence/h7-screenshots-03"
+}

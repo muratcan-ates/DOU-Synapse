@@ -1,3 +1,4 @@
+import { initializeWorkerProfiles } from "./worker-profiles";
 import { expectedAuditScope, validateAuditDirectory } from "./audit-receipts";
 import { resolveE2eDatabaseName, verifyDatabaseIdentity } from "./cleanup";
 import { createE2eCourseIdentity, createE2eRunId, validateE2eRunId } from "./fixtures";
@@ -49,6 +50,7 @@ export default async function globalSetup() {
       return body.items.some((course) => course.code === code);
     },
   });
+  initializeWorkerProfiles(auditDirectory, auditScope);
   console.log(`[e2e] audit makbuzu dizini: ${process.env.E2E_AUDIT_DIR}`);
   console.log(`[e2e] koşu kimliği: ${runId} · veritabanı kimliği doğrulandı: ${databaseName}`);
 }

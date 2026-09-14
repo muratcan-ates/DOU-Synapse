@@ -473,15 +473,15 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1765** <!-- docs-check: backend.tests = 1765 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **584** <!-- docs-check: frontend.tests = 584 --> | 48 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 48 --> |
-| Playwright tarayıcı vakaları | **71** <!-- docs-check: e2e.tests = 71 --> | Sayı `playwright test --list` ile toplanan vakalardır. Son yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) |
-| Migration | **23** <!-- docs-check: migrations.count = 23 --> | Şema evriminin kaynak dosyası sayısı |
+| Backend testleri | **1689** <!-- docs-check: backend.tests = 1689 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **573** <!-- docs-check: frontend.tests = 573 --> | 45 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 45 --> |
+| Playwright tarayıcı vakaları | **71** <!-- docs-check: e2e.tests = 71 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
+| Migration | **22** <!-- docs-check: migrations.count = 22 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **30** <!-- docs-check: tables.count = 30 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **22** <!-- docs-check: screens.count = 22 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
-8 Eylül 2026 tarihli yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) <!-- docs-check: tarihsel 71 · 2026-09-08 -->
+8 Eylül 2026 yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) <!-- docs-check: tarihsel 71 · 2026-09-08 -->
 
 005'in 11 Ağustos 2026 tarihli yerel kanıt koşusu ayrıca şunları kaydeder:
 

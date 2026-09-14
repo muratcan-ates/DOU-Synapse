@@ -82,26 +82,35 @@ done
 #    (dou_app_local / dou_worker_local — .env.example'daki DSN'lerle eşleşir)
 psql -d dou_synapse -f supabase/local_dev_setup.sql
 
-# 3) İzolasyon kanıtı — seed'den ÖNCE (aşağıdaki nota bakın), 8 PASS dönmeli
+# 3) İzolasyon kanıtı — seed'den ÖNCE; hata/FAIL olmadan tamamlanmalı
 psql -d dou_synapse -f supabase/tests/rls_isolation.sql
 
 # 4) Demo kullanıcıları (Ayşe + Burak, sabit UUID'ler)
 psql -d dou_synapse -f supabase/seed_demo.sql
 ```
 
-**Doğrulama — 30 tablo görmelisiniz:** <!-- docs-check: tables.count = 30 -->
+**Doğrulama — canlı şemayı okuyun:**
 
 ```bash
-psql -d dou_synapse -tAc "select count(*) from information_schema.tables
-  where table_schema='public' and table_type='BASE TABLE'"     # 15
+psql -v ON_ERROR_STOP=1 -d dou_synapse -c "SELECT table_schema, count(*) AS table_count
+  FROM information_schema.tables
+  WHERE table_schema IN ('public', 'app') AND table_type = 'BASE TABLE'
+  GROUP BY table_schema ORDER BY table_schema;"
 ```
 
-Depoda **23 migration dosyası** var (`0001`'den `0015`'e, aralıksız); hepsi tablo <!-- docs-check: migrations.count = 23 -->
-oluşturmaz. `0005` yalnız analitiğin ihtiyaç duyduğu okuma politikasını ekler — bu
-dosya atlanırsa **eğitmen analitiği sessizce boş görünür.** `0006` `chunks`'a
-`embedding_space` sütununu ekler, `0007` silme/yetki politikalarını düzeltir. `0002`
-Supabase Auth köprüsüdür ve **`auth` şeması yoksa kendini atlar** — yerel
-PostgreSQL'de böyledir, hata vermez.
+Bu sorgu bağlantı rolünün görebildiği gerçek tabloları sayar; şema kurulumu yapan
+yerel yönetici rolüyle çalıştırın. Sonucu çalıştırmadan başarı veya beklenen toplam
+yazmayın. `public` tek başına yeterli değildir: ortak istek kotasının tabloları
+`app` şemasındadır ([`0025`](../../supabase/migrations/0025_shared_request_quota.sql)).
+Bu belge düzeltmesinde canlı veritabanı sorgusu **koşulmadı**.
+
+Göç listesi aralıksız değildir; `0017`, `0021`, `0022` ve `0023` ayrılmış boşluklardır.
+Dosya envanteri [README göç yolculuğunda](../../README.md#migration-yolculuğu) ve
+[`supabase/migrations/`](../../supabase/migrations/) dizininde izlenir. Her göç
+tablo oluşturmaz: `0005` analitik okuma politikasını, `0006` embedding provenance
+sütununu, `0007` silme/yetki politikalarını ekler. `0002` Supabase Auth köprüsüdür;
+`auth` şeması yoksa koşullu köprü kurulumu atlanır. Bu nedenle kaynak dosyalarının
+sayısı canlı tablo sayısına veya Supabase üzerinde köprünün çalıştığına kanıt değildir.
 
 Notlar:
 
@@ -115,11 +124,11 @@ Notlar:
 
 ### RLS kanıtı — seed'den ÖNCE koşturun
 
-İzolasyon testi **8 kontrol** koşar ve sonunda `ROLLBACK` yapar, yani veritabanınızı
-kirletmez:
+İzolasyon testi kendi kontrollerini raporlar ve sonunda `ROLLBACK` yapar.
+Kabul koşulu hata/FAIL bulunmaması ve komutun başarılı tamamlanmasıdır:
 
 ```bash
-psql -d dou_synapse -f supabase/tests/rls_isolation.sql   # 8 PASS
+psql -v ON_ERROR_STOP=1 -d dou_synapse -f supabase/tests/rls_isolation.sql
 ```
 
 **Sıra önemli.** Test kendi sabit kimliklerini (`11111111-…`, `22222222-…`) kendisi
@@ -137,7 +146,7 @@ Bu bir izolasyon hatası değil, testin kurulum çakışmasıdır. İki çözüm
   ```bash
   createdb dou_synapse_rls
   for f in supabase/migrations/*.sql; do psql -q -v ON_ERROR_STOP=1 -d dou_synapse_rls -f "$f"; done
-  psql -d dou_synapse_rls -f supabase/tests/rls_isolation.sql   # 8 PASS
+  psql -v ON_ERROR_STOP=1 -d dou_synapse_rls -f supabase/tests/rls_isolation.sql
   dropdb dou_synapse_rls
   ```
 
@@ -194,7 +203,7 @@ uv run python -m app.worker
 
 ```bash
 cd apps/api
-uv run pytest          # 1765 test yeşil olmalı (~50-100 sn)   # docs-check: backend.tests = 1765
+uv run pytest          # Komut hatasız tamamlanmalı; sonuç adedini bu koşudan kaydedin
 uv run mypy app        # temiz
 uv run ruff check .
 uv run ruff format --check .
@@ -312,7 +321,7 @@ düzyazısını modelin yazmaması — bu yüzden "uç 200 döndü" ile "üretim
 | Compose ile yerel Postgres aynı anda | İkisi de 5432'yi dinler — birini durdurun (`brew services stop postgresql@16` veya `docker compose down`) |
 | **Her soruya "materyalde dayanak bulamadım" cevabı** | Büyük olasılıkla `EMBEDDING_PROVIDER=hashing` — §6.1. Ya da materyal `Hazır` değil |
 | **Cevaplar alakasız parçalara atıf yapıyor** | Sağlayıcı değiştirildi ama korpus yeniden işlenmedi. Materyalleri silip yeniden yükleyin (§6.1) |
-| **Eğitmen analitiği boş / ret oranı hep %0** | `0005_analytics.sql` uygulanmamış olabilir: `psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"` — iki politika görmelisiniz. (Oranın %0 görünmesinin ayrı ve bilinen bir sebebi daha var: [ARCHITECTURE §5](../../ARCHITECTURE.md#5-sorgu-pipelineı-ve-guardrail-zinciri)) |
+| **Eğitmen analitiği boş / ret oranı hep %0** | `0005_analytics.sql` uygulanmamış olabilir: `psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"` — gerekli politikaları [`0003`](../../supabase/migrations/0003_chat.sql) ve [`0005`](../../supabase/migrations/0005_analytics.sql) ile karşılaştırın. (Oranın %0 görünmesinin ayrı ve bilinen bir sebebi daha var: [ARCHITECTURE §5](../../ARCHITECTURE.md#5-sorgu-pipelineı-ve-guardrail-zinciri)) |
 | **Tarayıcıdan istek CORS'a takılıyor** | Frontend'i 3000/3100 dışında bir portta çalıştırıyorsunuz; portu `CORS_ORIGINS`'e ekleyin |
 | **"0 soru üretildi"** | Konuya bağlı materyal yoksa üretilecek soru da yoktur; önce konuyu kapsayan materyalin `Hazır` olduğundan emin olun |
 | İlk soru çok uzun sürüyor / asılı kalıyor | Model indiriliyor olabilir (2,1 GB). `EMBEDDING_CACHE_DIR`'i kontrol edin (§6.1) |

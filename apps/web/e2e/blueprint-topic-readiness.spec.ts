@@ -1,22 +1,19 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { test, teacher as workerTeacher, teacherHeaders, signIn } from "./worker-fixture";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const headers = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
+const headers = teacherHeaders;
 async function post(request: APIRequestContext, path: string, data: unknown = {}) {
   const response = await request.post(`${API}${path}`, { headers, data });
   expect(response.ok(), await response.text()).toBeTruthy(); return response.json();
-}
-async function login(page: Page) {
-  await page.goto("/"); await page.getByRole("button", { name: /Ayşe/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
 }
 
 test("öğrenme çıktısının seçilen konusu saklanır; konusuz çıktı ayrı dağılım grubunda görünür", async ({ page, request }, testInfo) => {
   const course = await post(request, "/courses", createE2eCourseIdentity("CIKTI-KONU"));
   const path = `/courses/${course.id}`;
   const topic = await post(request, `${path}/topics`, { name: "Deadlock" });
-  await login(page); await page.goto(`${path}/blueprints`);
+  await signIn(page, workerTeacher); await page.goto(`${path}/blueprints`);
   await page.getByLabel("Çıktının konusu", { exact: true }).selectOption(topic.id);
   await page.getByLabel("Kod", { exact: true }).fill("CO1");
   await page.getByLabel("Açıklama", { exact: true }).fill("Deadlock koşullarını açıklar.");
@@ -81,7 +78,7 @@ test("sınıflandırma kapalı görünürken mevcut uygun havuz yayınlanır ve 
   const version = await post(request, `${path}/blueprints/${blueprint.id}/versions`);
   const base = `${path}/blueprints/${blueprint.id}/versions/${version.id}`;
   await post(request, `${base}/items`, [{ question_id: bad.id }]);
-  await login(page);
+  await signIn(page, workerTeacher);
   // Only the capability response is simulated. Readiness/items/publish use the real API;
   // backend flag rollback is covered separately by API tests.
   await page.route(`${API}${path}/questions/authoring`, (route) => route.fulfill({ json: { enabled: false } }));

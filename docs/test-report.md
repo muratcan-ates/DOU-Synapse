@@ -1,18 +1,43 @@
 # Başarı testi raporu (T056)
 
-> 8 Eylül 2026 / 018 notu: Aşağıdaki 9 Ağustos ölçümleri tarihseldir. [Son 018 arama kabulü](../specs/018-codex-production-line/evidence/c1-final-acceptance.md), başarısız ilk adayı ve son kaynak tekrarını ayırır. §6.4'te document_id'nin kalıcı içerik anahtarı olduğu önerisi doğru değildir; UUID yeniden yüklemede değişir. Son dense adayı sınırlı pencerede içerik hash'i kullanır; FTS hash sıralaması kaliteyi düşürdüğü için geri çekilmiştir. Son E5 Recall@5 93/105 ve MRR baseline ile eşittir; bu, eski %97,1 sonucunun devri veya LLM kalite kabulü değildir.
+## Okuma özeti — belge incelemesi: 13 Eylül 2026
+
+Bu güncelleme mevcut rapor ve kalıcı kanıtları sınıflandırır. Retrieval altın seti,
+bu rapordaki RLS SQL/mutasyon tablosu, gerçek LLM, performans ve insan değerlendirmesi
+için ayrı kabul koşusu üretilmedi. Aşağıdaki tarihsel ölçümler kendi veri seti,
+kaynak sürümü ve ortamıyla sınırlıdır. Bugünkü ürünün aynı sonuçları verdiği bu
+belge düzenlemesinde ölçülmedi.
+
+Ortak `pytest` ve diğer zorunlu kapıların gerçek sonuçları ilgili commit
+kayıtlarında ayrıca raporlanır; `test_eval_metrics.py` gibi birim testleri bu
+kapsamdadır. Ortak regresyon testlerinin koşması, tarihsel kalite ölçüm
+tablolarının yeniden üretildiği anlamına gelmez.
+
+| Alan | Durum ve özgün tarih | Kanıt / sınır |
+|---|---|---|
+| Retrieval, embedding A/B ve kalibrasyon | **Ölçüldü — 9 Ağustos 2026** | [Tarihsel hibrit koşusu](../evaluation/results/2026-08-09T1657-holdout-hybrid-fastembed-retrieval.json), [embedding karşılaştırması](../evaluation/embedding_ab.md); §6–7 |
+| Son dense arama düzeltmesi | **Ölçüldü — 8 Eylül 2026** | [Dar yerel kabul](../specs/018-codex-production-line/evidence/c1-final-acceptance.md); LLM kalite kabulü değildir |
+| RLS ve mutasyonlar | **Tarihsel ölçüm kaydı — 7 Eylül 2026** | [017 doğrulaması](../specs/017-completion-integration/verification.md); blueprint iddia sayısındaki kaynak çelişkisi §4'te açık |
+| Sahte sağlayıcıyla uçtan uca mekanik davranış | **Ölçüldü — 9 Ağustos 2026** | [Koşu kaydı](../evaluation/results/2026-08-09T1705-holdout-hybrid-fastembed-e2e.json); gerçek cevap kalitesi ölçmez |
+| Gerçek LLM, atıf doğruluğu, kaynak sadakati, çözüm sızıntısı ve uçtan uca p95 | **Koşulmadı (not-run) — 9 Ağustos 2026 raporu; 13 Eylül'de yeni koşu yok** | [Sunucu ayarı notu](../evaluation/results/2026-08-09T1705-holdout-hybrid-fastembed-e2e.json) sahte sağlayıcıyı belirtir; gerçek embedding, gerçek LLM demek değildir |
+| Eğitmen incelemesi ve bağımsız iki kişiyle etiketleme | **Koşulmadı — 9 Ağustos 2026 raporu; 13 Eylül'de yeni inceleme yok** | [Etiketleme şablonu](../evaluation/faithfulness/sample_template.md); §1.4 ve §10 |
+| İndeks kurma belleği / recall nedenselliği | **INCONCLUSIVE — 9 Eylül 2026 kontrol noktası** | [Kalıcı kapanış kaydı](team/codex/2026-09-09-window-checkpoint.md); özgün geçici kanıtın yokluğu ve nedensellik sınırı §6.5'te |
+| Kilit sorgusu maliyeti, bloke süresi ve ısınma sonrası ilk istek | **Koşulmadı — 13 Eylül 2026 belge incelemesi** | [T114 ve T207](../specs/002-production-hardening/tasks.md); bu güncellemede ölçüm üretilmedi |
+| Üretim kopyası RLS, gerçek dağıtım ve demo provası | **Koşulmadı — bu raporda kabul kanıtı yok** | Tarihsel yerel/CI sonuçları bu kabulün yerine geçmez |
+
+> 8 Eylül 2026 tarihli arama kabulü: Aşağıdaki 9 Ağustos ölçümleri tarihseldir. [Son 018 arama kabulü](../specs/018-codex-production-line/evidence/c1-final-acceptance.md), başarısız ilk adayı ve son kaynak tekrarını ayırır. §6.4'te document_id'nin kalıcı içerik anahtarı olduğu önerisi doğru değildir; UUID yeniden yüklemede değişir. Son dense adayı sınırlı pencerede içerik hash'i kullanır; FTS hash sıralaması kaliteyi düşürdüğü için geri çekilmiştir. Son E5 Recall@5 93/105 ve MRR baseline ile eşittir; bu, eski %97,1 sonucunun devri veya LLM kalite kabulü değildir.
 
 **Sürüm: 2 · 9 Ağustos 2026** — retrieval katmanı ölçüldü, uçtan uca katman
 **sahte LLM sağlayıcısıyla** ölçüldü (cevap kalitesi sayıları geçersiz).
-**Ölçüm dalı:** `feat/eval-runs` · Bu belgedeki her sayı bir koşu dosyasına ya da
-yeniden koşturulabilir bir komuta dayanır.
+**Tarihsel ölçüm dalı:** `feat/eval-runs` · Koşu dosyaları aşağıda gösterilir.
+Bir komutun yazılmış olması, bu güncellemede çalıştırıldığı anlamına gelmez.
 
 > **Bu belgenin kuralı:** PLAN §5 tablosunun her satırında ya ölçülmüş bir sayı ya
 > **KOŞULMADI** notu vardır. Tahmin yoktur (Anayasa III). Bir sayının yanında hangi
 > sette ölçüldüğü, kaç örnek olduğu, hangi komutla üretildiği ve varsa güven aralığı
 > yazılıdır. Kaynağı gösterilemeyen sayı rapordan çıkarılır.
 
-> **En önemli çekince, en başta:** gerçek bir LLM sağlayıcı anahtarı **yok**
+> **En önemli çekince, en başta:** 9 Ağustos koşusunda gerçek bir LLM sağlayıcı anahtarı **yoktu**
 > (`GROQ_API_KEY`, `GEMINI_API_KEY`, `EVAL_LLM_API_KEY` boş). Uçtan uca koşular
 > `LLM_FAKE_PROVIDER=true` ile yapıldı. Sahte sağlayıcı getirilen chunk'ları
 > özetleyip döndürür. Bu yüzden **cevap kalitesine dair hiçbir sayı geçerli değildir**
@@ -23,6 +48,8 @@ yeniden koşturulabilir bir komuta dayanır.
 ---
 
 ## 0. v1'den v2'ye ne değişti
+
+**Durum:** Tarihsel karşılaştırma ölçüldü — 9 Ağustos 2026; bu güncellemede yeniden koşulmadı.
 
 | | v1 (9 Ağu, sabah) | v2 (9 Ağu, akşam) |
 |---|---|---|
@@ -42,6 +69,8 @@ karşılaştırma imkânı kaybolurdu.
 ---
 
 ## 1. Yöntem
+
+**Durum:** Yapısal/korpus kontrolleri ölçüldü — 9 Ağustos 2026; eğitmen ve içerik incelemesi koşulmadı. Bu güncellemede yeni koşu yok.
 
 ### 1.1. Gold set
 
@@ -67,7 +96,7 @@ kesişim arar, bulursa koşuyu hiç başlatmaz.
 
 **Ölçüldü:** kesişim yok — ve bu denetim v2'de bir kez GERÇEKTEN devreye girdi. Yeni
 yazılan bir kapsam dışı soru, kalibrasyondaki `C-014` ile birebir aynı çıktı ve koşu
-durduruldu. Kayıt `evaluation/gold_set/_extend_v2.py` içinde duruyor. Denetimin neden
+durduruldu. Kayıt [evaluation/gold_set/_extend_v2.py](../evaluation/gold_set/_extend_v2.py) içinde duruyor. Denetimin neden
 insana bırakılmadığının somut örneği: iki sette kapsam dışı soru yazarken aynı
 klişeye düşmek kolaydır.
 
@@ -103,8 +132,10 @@ kanıtlar, **o sayfanın soruyu cevapladığını kanıtlamaz.**
 
 ## 2. Metrik tanımları
 
-Tanımlar `evaluation/metrics.py`'de saf fonksiyonlar olarak yaşar ve
-`apps/api/tests/test_eval_metrics.py`'de sabitlenmiştir — "Recall@5 neydi" sorusunun
+**Durum:** Metrik tanımları — 9 Ağustos 2026 raporu; yeni değerlendirme metriği ölçülmedi. `test_eval_metrics.py` birim testinin gerçek sonucu ortak `pytest` kapı kaydında ayrıca raporlanır.
+
+Tanımlar [evaluation/metrics.py](../evaluation/metrics.py)'de saf fonksiyonlar olarak yaşar ve
+[apps/api/tests/test_eval_metrics.py](../apps/api/tests/test_eval_metrics.py)'de sabitlenmiştir — "Recall@5 neydi" sorusunun
 cevabı CI'da koşan koddur.
 
 | Metrik | Tanım |
@@ -124,7 +155,9 @@ cevabı CI'da koşan koddur.
 
 ## 3. PLAN §5 kabul kriterleri tablosu
 
-Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
+**Durum:** Karma tarihsel özet — retrieval/sahte sağlayıcı 9 Ağustos, RLS 7 Eylül 2026; koşulmayanlar satırda belirtilir. Bu kabul tablosu için ayrı güncel değerlendirme koşusu yapılmadı.
+
+Sütun anlamları: **Geçerli mi** = sayı özgün tarihsel koşul ve belirtilen kapsam içinde savunulabilir mi; bugünkü ürünün yeniden ölçümü değildir.
 
 | Metrik | Hedef | Ölçülen | Geçerli mi | Kaynak |
 |---|---:|---|---|---|
@@ -146,12 +179,14 @@ Sütun anlamları: **Geçerli mi** = sayı bugünkü koşulla savunulabilir mi.
 | Kaynaksız gösterilen akademik cevap | %0 | **0** (161 cevapta 0) | kısmen (§9) | `…e2e.json` |
 | Faithfulness (20-30 cevap, 2 etiketleyici) | raporlanır | **KOŞULMADI** — örneklem hazır | — | §10 |
 | Uçtan uca cevap p95 | < 10 sn | **KOŞULMADI** (LLM çağrısı yok) | — | §11 |
-| Soru üretiminde şema geçerliliği | ≥ %98 | **KOŞULMADI** | — | R4 alanı |
+| Soru üretiminde şema geçerliliği | ≥ %98 | **KOŞULMADI** | — | Soru üretimi kalite kabulü |
 | Demo akışında kritik hata | 0 | **KOŞULMADI** | — | demo provası yapılmadı |
 
 ---
 
 ## 4. RLS canlılık kanıtı
+
+**Durum:** Tarihsel ölçüm kaydı — 7 Eylül 2026; bu RLS SQL/mutasyon kabul tablosu yeniden üretilmedi. Ortak API regresyon kapısı ayrı kayıttır. Blueprint kaynak çelişkisi aşağıda.
 
 **KOŞULDU — 7 Eylül 2026 (017 dalı).** Sıfırdan kurulan bir veritabanında, bütün
 migration'lar (0001–0020) uygulandıktan sonra. Aşağıdaki sayılar o koşumdan alındı;
@@ -174,7 +209,7 @@ Mutasyon testi "politika var" demekle yetinmez: her politikayı teker teker boza
 **hangi iddianın** kırmızıya döndüğünü doğrular. Yalnız "bir yerde FAIL çıktı" demek
 yetersiz olurdu, çünkü alakasız bir bozulma da FAIL üretir.
 
-**Bu turda kapatılan boşluk:** yukarıdaki kanıtların beşi depoda vardı ama hiçbir iş
+**7 Eylül çalışmasında kapatılan boşluk:** yukarıdaki kanıtların beşi depoda vardı ama hiçbir iş
 akışı onları çağırmıyordu — yazılmış, koşulmuş, sonra rafta bırakılmışlardı. Koşmayan
 kanıt kanıt değildir; hepsi `ci.yml`'in `api` işine bağlandı. Ayrıca `psql … | tee`
 boru hattı çıkış kodunu yutuyordu (SQL yarıda kesilse bile adım yeşil yanıyordu);
@@ -193,12 +228,20 @@ bash supabase/tests/rls_blueprint_mutation_check.sh            # 23/23 yakaland�
 bash supabase/tests/rls_portal_admin_mutation_check.sh         # 3/3 yakalandı
 ```
 
+**Kaynak tutarsızlığı — 13 Eylül 2026:** bu bölümde korunan tarihsel blueprint
+satırı `37 PASS` derken [7 Eylül doğrulama kaydı](../specs/017-completion-integration/verification.md)
+`17 iddia, 0 FAIL` diyor. Özgün koşu çıktısı uzlaştırılmadan iki sayıdan biri doğru
+kabul edilmez. Tablo ve komut yorumundaki tarihsel sayı değiştirilmedi; burada
+blueprint için yeni ölçüm veya kesin iddia sayısı verilmez.
+
 **Henüz yapılmadı:** T051 — aynı kanıtın üretim kopyası üzerinde koşturulması.
 Yerel ve CI ortamında koşuldu; bulut kopyasında koşulmadı.
 
 ---
 
 ## 5. Korpus (v2)
+
+**Durum:** Korpus ölçüldü — 9 Ağustos 2026; bu güncellemede yeniden kurulmadı.
 
 Paket gerçek ingest hattından geçirildi (Anayasa VIII): gerçek yükleme ucu, gerçek
 doğrulama, gerçek worker, gerçek chunking ve embedding. Hiçbir satır doğrudan INSERT
@@ -214,12 +257,14 @@ EMBEDDING_PROVIDER=fastembed uv run python ../../evaluation/build_corpus.py \
     --database dou_synapse_eval --recreate --out /tmp/corpus_e5.json
 ```
 
-Dosya bazında döküm `sample_data/README.md`'de. `.md` dosyaları korpusa girmez:
+Dosya bazında döküm [sample_data/README.md](../sample_data/README.md)'de. `.md` dosyaları korpusa girmez:
 girseydi her sayfa iki kez temsil edilir ve Recall olduğundan yüksek çıkardı.
 
 ---
 
 ## 6. Holdout retrieval metrikleri ve dense vs hibrit (T044)
+
+**Durum:** Retrieval ölçüldü — 9 Ağustos 2026; 8 Eylül son kabul ayrı kanıttır. Bu güncellemede yeniden koşulmadı.
 
 **KOŞULDU.** Aynı holdout, aynı config, yalnız arama modu değişti. Korpus
 `fastembed` / `intfloat/multilingual-e5-large` ile gömüldü. **LLM çağrısı yok**,
@@ -314,12 +359,11 @@ etkilenmiyor çünkü kosinüs mesafesinde birebir eşitlik pratikte oluşmuyor.
 bağlı çıktı. Yani bir kabul kriterinin sonucu, ölçümle ilgisi olmayan bir uygulama
 ayrıntısına duyarlı.
 
-**Şerit 1'e öneri:** eşitlik bozma kuralı **kalıcı** bir alana bağlanmalı — örneğin
-`(document_id, page_number, slide_number, section_title)` ya da chunk'ın belge
-içindeki sıra numarası. `c.id` yerine kalıcı bir anahtar kullanmak sonucu ingest'ten
-bağımsız hale getirir ve bu satırın raporda dipnot olmasına gerek kalmaz. Aynı
-kırılganlık `dense.py`'nin `LIMIT`'li alt sorgusunda da var (orada eşitlik bozma
-alanı hiç yok), bugün tetiklenmiyor ama aynı sınıftan.
+**Tarihsel önerinin düzeltmesi — 8 Eylül 2026:** `document_id` yeniden yüklemede
+üretilen UUID'dir; kalıcı içerik anahtarı değildir. [Son arama kabulü](../specs/018-codex-production-line/evidence/c1-final-acceptance.md)
+dense aday penceresinde içerik hash'i ve parça sırasını korur. FTS için denenen
+hash sıralaması kaliteyi düşürdüğünden geri çekilmiştir. FTS yeniden yükleme
+kararlılığı açıktır; bu bölümdeki 9 Ağustos sayıları yeni adayın ölçümü değildir.
 
 **Bu raporda ne yapıldı:** tüm sayılar **son** korpus kurulumundan alındı ve o
 kurulumun koşu dosyaları depoda. Önceki kurulumun dosyaları silindi; iki farklı
@@ -327,9 +371,30 @@ kurulumdan gelen sayıları yan yana koymak karşılaştırmayı geçersiz kıla
 
 ---
 
+### 6.5. İndeks kurma belleği ve recall — INCONCLUSIVE
+
+**Durum: sonuçsuz tarihsel gözlem — 9 Eylül 2026; 13 Eylül'de yeniden koşulmadı.**
+Belirli kurulum koşulunda recall anomalisi gözlendi, nedensellik kanıtlanmadı;
+regresyon testi korunur. [8 Eylül kabul kaydı](../specs/018-codex-production-line/evidence/c1-final-acceptance.md)
+bellek/dökülme ile recall arasında nedensel deney bulunmadığını açıklar.
+[9 Eylül kapanış kaydı](team/codex/2026-09-09-window-checkpoint.md), sonraki C2
+çalışmasının **INCONCLUSIVE** kaldığını belirtir: yüksek bellek kolunun bellekte
+kaldığını gösteren bağımsız olumlu kanıt yoktur. Boş fark filtresi, bütün vakalarda
+ölçülmüş sıfır fark anlamına gelmez.
+
+Aynı kapanış denetiminde özgün geçici kanıt dizini ve test PostgreSQL dizini
+bulunamadı. Konsol özetleri özgün ham kayıtların yerine konulmaz; bu güncellemede
+eski deney yeniden üretilmedi. Yeni bellek zorunluluğu veya göç eklenmez; 0021
+boş kalır. [Retrieval testleri](../apps/api/tests/test_retrieval.py) korunan kod
+kanıtıdır; test dosyasının varlığı C2 nedenselliğinin ölçüldüğü anlamına gelmez.
+
+---
+
 ## 6b. Kanıt eşiği kalibrasyonu (T043) — yeniden kalibre edildi
 
-**KOŞULDU.** Tam analiz `evaluation/calibration.md` §8'de. Özet:
+**Durum:** Kalibrasyon ölçüldü — 9 Ağustos 2026; güncel kapsam denetimi sonrası ret metriği koşulmadı.
+
+**KOŞULDU.** Tam analiz [evaluation/calibration.md](../evaluation/calibration.md) §8'de. Özet:
 
 Kapsam dışı örneklem 3'ten 18'e çıkarıldığında **v1'deki temiz ayrışma kayboldu —
 kalibrasyon setinde de.** Yani v1'in 0,0054 genişliğindeki ayrışması gerçek bir olgu
@@ -355,8 +420,9 @@ doğru ret. Tarama şunu gösteriyor:
 tutturmak bu materyalde mümkün değil.** Bu artık bir şüphe değil, taramayla gösterilen
 bir sınır.
 
-**Şerit 1'e öneri:** kısa vadede 0,815; asıl çözüm kapının tasarımını gözden
-geçirmek (kapı yalnız `best_dense_score`'a bakıyor). Kararı bu şerit vermez.
+**9 Ağustos tarihli kalibrasyon önerisi:** kısa vadede 0,815 önerilmişti.
+Bu belge güncellemesi eşik seçmez; güncel kapsam denetimi sonrasında doğru ret
+oranı burada yeniden ölçülmedi (not-run).
 
 **Eşik holdout'a bakılarak seçilmedi ve seçilmeyecek.** Öneri yalnız kalibrasyon
 setinden üretildi.
@@ -365,8 +431,10 @@ setinden üretildi.
 
 ## 7. Embedding A/B (T045)
 
+**Durum:** Embedding karşılaştırması ölçüldü — 9 Ağustos 2026; bu güncellemede yeniden koşulmadı.
+
 **KOŞULDU — bge-m3'ün e5-large'dan iyi olduğuna dair kanıt yok.**
-Tam analiz `evaluation/embedding_ab.md`'de.
+Tam analiz [evaluation/embedding_ab.md](../evaluation/embedding_ab.md)'de.
 
 İki ayrı veritabanı, aynı materyal, aynı üretim ingest hattı; tek fark embedding.
 **Üretim indeksine dokunulmadı.** bge-m3 fastembed'in dense kataloğunda olmadığı için
@@ -401,7 +469,9 @@ bir dersin materyali bunun kat kat üstündedir.
 
 ## 8. Injection ve Sokratik sızıntı (T046)
 
-**KISMEN KOŞULDU.** Tam analiz `evaluation/injection/README.md`'de.
+**Durum:** Deterministik bölüm ölçüldü — 9 Ağustos 2026; gerçek LLM bölümü ve insan incelemesi koşulmadı.
+
+**KISMEN KOŞULDU.** Tam analiz [evaluation/injection/README.md](../evaluation/injection/README.md)'de.
 38 vaka, altı kategori (istenen alt sınır 15). `holdout.json`'daki 21
 injection/sızıntı kaydının tamamı bir vakaya bağlandı (34 bağ,
 `link_holdout.py --check` iki yönlü tutarlılığı doğruluyor).
@@ -439,7 +509,8 @@ koşulsalar bile geçerlidirler**, çünkü ölçülen şey modelin değil kodun
 
 Kalıp net: **soru ders sözcük dağarcığıyla başlıyorsa dense skor eşiği aşıyor**, asıl
 konu kapsam dışı olsa bile. §6b'de önerilen 0,840-0,845 aralığı üçünü de reddederdi.
-Düzeltme R4 ve Şerit 1'in; bu şerit raporlar.
+Bu tarihsel kusurun güncel durumu yeni kapsam dışı ret koşusuyla doğrulanmalıdır;
+bu belge incelemesi kusurun bugün de sürdüğünü veya kapandığını kanıtlamaz.
 
 ### 8.3. LLM'e bağlı denetimler — 17 vaka KOŞULMADI
 
@@ -461,6 +532,8 @@ anlatmak) kalıpla yakalanmaz.
 ---
 
 ## 8b. Uçtan uca ret davranışı ve SC-005
+
+**Durum:** Sahte sağlayıcıyla ölçüldü — 9 Ağustos 2026; gerçek LLM ret davranışı bu güncellemede koşulmadı.
 
 **Koşuldu** (161 soru, `results/2026-08-09T1705-holdout-hybrid-fastembed-e2e.json`),
 sunucu `LLM_FAKE_PROVIDER=true`.
@@ -514,6 +587,8 @@ düzelir. Kanıtlanmış olan kısım şudur: **kanıt kapısı tek başına bu 
 
 ## 9. Atıf metrikleri — neden KOŞULMADI sayılıyor
 
+**Durum:** Sahte sağlayıcı ham değerleri ölçüldü — 9 Ağustos 2026; gerçek model atıf kalitesi koşulmadı.
+
 Uçtan uca koşuda ölçülen ham değerler: **citation precision 0,454** (291 atıfta 132
 doğru), atıfsız gösterilen cevap **0/161**, reddedilmesi beklenen sorularda gösterilen
 atıf **33**.
@@ -537,8 +612,10 @@ bağlanamayan cevap gösterilmiyor.
 
 ## 10. Faithfulness örneklemi (T047)
 
+**Durum:** Sahte sağlayıcı örneklemi çekildi — 9 Ağustos 2026; geçerli gerçek cevap örneklemi ve iki kişiyle etiketleme koşulmadı.
+
 **KOŞULMADI.** Süreç ve şablon hazır, örneklem çekildi, **etiketleme yapılmadı.**
-Ayrıntı `evaluation/faithfulness/sample_template.md`'de.
+Ayrıntı [evaluation/faithfulness/sample_template.md](../evaluation/faithfulness/sample_template.md)'de.
 
 - Örneklem: 25 cevap, sabit tohum (20260809), `direct` + `multi_chunk`
   kategorilerinden, gerçek API'den çekildi → `sample_2026-08-09.json`.
@@ -546,7 +623,7 @@ Ayrıntı `evaluation/faithfulness/sample_template.md`'de.
   "kaynağa sadık" etiketi totoloji olurdu.
 - Etiketleme dosyaları (`labels_etiketleyici_1.md`, `_2.md`) üretildi, **ikisi de
   boş.** Dosyalar kaynak parçaların metnini de taşıyor.
-- **"İki kişi etiketledi" YAZILMADI.** Bu şeridi tek ajan koşturdu.
+- **"İki kişi etiketledi" YAZILMADI.** Bağımsız insan etiketlemesi yoktur.
 
 **Citation validator faithfulness'ı ölçmez.** O, retrieve edilmemiş bir kaynağa atıf
 yapılmasını engeller ve deterministiktir. Model, gerçekten retrieve edilmiş bir
@@ -555,6 +632,8 @@ chunk'a atıf verip o chunk'ın söylemediği bir şeyi de yazabilir.
 ---
 
 ## 11. Gecikme (T055)
+
+**Durum:** Retrieval/sahte sağlayıcı gecikmesi ölçüldü — 9 Ağustos 2026; gerçek LLM p95 ve cold-start koşulmadı.
 
 **Uçtan uca p95 KOŞULMADI.** Ölçülen 0,127 sn değeri **LLM çağrısı içermiyor**
 (sahte sağlayıcı); gerçek modelde bu sayı saniyeler mertebesine çıkar. Hedefle
@@ -577,6 +656,8 @@ yapıldı.
 
 ## 12. Analitik uçları (T038)
 
+**Durum:** v1 kaydından devralındı — 9 Ağustos 2026; v2 ve bu güncellemede analitik kabul yeniden koşulmadı.
+
 v1'den devralındı, v2'de yeniden koşulmadı. Uçlar yazıldı ve testli.
 Raporlanabilir üç davranış kararı: çalışılmamış konu listeye girmez (sayı olarak
 bildirilir); "en çok yanlış yapılan sorular" payda ile döner; kapsam dışı ret oranı
@@ -592,6 +673,8 @@ delinmediği `rls_assessment.sql` içindeki bir iddiayla ve mutasyon testiyle s�
 
 ## 13. Test durumu
 
+**Durum:** Tarihsel test koşusu ölçüldü — 9 Ağustos 2026; bu bölüm güncel kapı sonucu değildir.
+
 **Ölçüldü (9 Ağustos, `feat/eval-runs`):**
 
 ```bash
@@ -600,8 +683,8 @@ uv run mypy app                      # temiz, 59 dosya   # docs-check: tarihsel 
 uv run ruff check . && uv run ruff format --check .   # temiz
 ```
 
-Bu dalda üretim kodu değişmedi; değişenler `evaluation/**`, `sample_data/**`,
-`docs/test-report.md` ve `apps/api/tests/test_eval_metrics.py`.
+9 Ağustos ölçüm çalışmasında üretim kodu değişmedi; değişenler `evaluation/**`, `sample_data/**`,
+`docs/test-report.md` ve [apps/api/tests/test_eval_metrics.py](../apps/api/tests/test_eval_metrics.py).
 
 `test_eval_metrics.py`'deki üç test gold set büyüdüğünde kırıldı, çünkü soru
 sayılarını sabit yazıyorlardı. Sayılar setten türetilecek şekilde düzeltildi: boyutu
@@ -610,6 +693,8 @@ sayılarını sabit yazıyorlardı. Sayılar setten türetilecek şekilde düzel
 ---
 
 ## 14. Ölçüm altyapısında bulunan ve düzeltilen iki kusur
+
+**Durum:** Tarihsel ölçüm aracı bulguları — 9 Ağustos 2026; özgün değerlendirme deneyleri bu belge düzenlemesi için yeniden yürütülmedi. Ortak birim testlerinin sonucu kendi kapı kaydında raporlanır.
 
 Bunlar üretim kusuru değil, **ölçüm aracı** kusurudur — ama bir ölçüm aracının
 sessizce yanlış sayı üretmesi, ölçülen sistemin hatasından daha tehlikelidir.
@@ -634,9 +719,11 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 
 ## 15. Sınırlılıklar
 
+**Durum:** Sınırlılıklar — 9 Ağustos 2026 kaydı ve yukarıdaki Eylül ekleri; ayrı kalite değerlendirmesi kabulü koşulmadı.
+
 **Bu bölüm rapordan çıkarılamaz.**
 
-- **Gerçek LLM anahtarı yok.** Cevap kalitesine dair her sayı ya KOŞULMADI ya da
+- **Tarihsel koşuda gerçek LLM kullanılmadı.** Cevap kalitesine dair her sayı ya KOŞULMADI ya da
   açıkça "sahte sağlayıcı" damgalı. Bu, raporun en büyük boşluğudur.
 - **n=105 (retrieval) ve n=161 (uçtan uca) yön göstericidir**, kesin hüküm değildir.
   Alt kümeler n=14-45 arasında; bu boyutta tek bir sorunun sonucu oranı birkaç puan
@@ -659,17 +746,19 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 
 ## 16. Bu belge nasıl tamamlanacak
 
+**Durum:** Açık kabul planı — 13 Eylül 2026 belge incelemesi; listedeki işler bu güncellemede koşulmadı.
+
 | Adım | Bağımlılık | Kim |
 |---|---|---|
-| Gerçek LLM anahtarıyla uçtan uca koşu (citation precision, sızıntı, p95) | anahtar | R2 |
-| T047 etiketleme, iki bağımsız etiketleyici | anahtar + ikinci kişi | R2 + R4 |
-| T046 `review.md` doldurma | uçtan uca koşu | R2 + R4 |
-| `out_of_scope` etiketini kim üretecek — SC-005 ölçülebilir hâle gelsin | tasarım kararı | R4 / Şerit 1 |
-| `evidence_threshold` kararı (öneri 0,815) | tasarım kararı | Şerit 1 |
-| Kapsam kayması kusurunun düzeltilmesi (§8.2) | tasarım kararı | R4 / Şerit 1 |
-| FTS eşitlik bozmasının kalıcı alana bağlanması (§6.4) | tasarım kararı | Şerit 1 |
-| RLS kanıtının üretim kopyasında koşturulması (T051) | dağıtım | R3 |
-| Eğitmen gözden geçirmesi | gold set dondurulmuş | lider |
+| Gerçek LLM anahtarıyla uçtan uca koşu (citation precision, sızıntı, p95) | anahtar | Değerlendirme sorumlusu |
+| T047 etiketleme, iki bağımsız etiketleyici | anahtar + ikinci kişi | Değerlendirme sorumlusu + bağımsız etiketleyici |
+| T046 `review.md` doldurma | uçtan uca koşu | Değerlendirme sorumlusu + bağımsız etiketleyici |
+| Güncel `out_of_scope` davranışını ve SC-005 ret ölçümünü yeniden değerlendirme | güncel kaynak + dondurulmuş değerlendirme seti | Ürün ve retrieval sorumluları |
+| `evidence_threshold` kararı (öneri 0,815) | tasarım kararı | Retrieval sorumlusu |
+| Güncel kapsam kayması/ret davranışını yeniden ölçme (§8.2) | güncel kaynak + dondurulmuş değerlendirme seti | Ürün ve retrieval sorumluları |
+| FTS eşitlik bozmasının kalıcı alana bağlanması (§6.4) | tasarım kararı | Retrieval sorumlusu |
+| RLS kanıtının üretim kopyasında koşturulması (T051) | dağıtım | Operasyon sorumlusu |
+| Eğitmen gözden geçirmesi | gold set dondurulmuş | Danışman eğitmen |
 
 **Kural:** her sayının yanında hangi koşu dosyasından geldiği yazılır. Kaynağı
 gösterilemeyen sayı rapordan çıkarılır.

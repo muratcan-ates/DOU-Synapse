@@ -1,144 +1,326 @@
 /**
- * Belgelerdeki ekran görüntülerini ÜRETEN betik (`docs/images/`).
- *
- * Neden test paketinin içinde: ekran görüntüsü almak, ekranı gerçekten çalıştırıp
- * gezinmek demektir ve o iş için elimizde zaten çalışan bir tarayıcı sürücüsü var.
- * Elle alınan görüntüler bir sonraki arayüz değişikliğinde sessizce bayatlar;
- * bu dosya sayesinde `--grep @ekran` ile hepsi tek komutta tazelenir.
- *
- * NORMAL KOŞUDA ATLANIR (`@ekran` etiketi). Bir doğrulama değil, bir üretim
- * aracıdır: hiçbir şey iddia etmez, dolayısıyla CI'da koşması da anlamsız olurdu.
- *
- * Koşturma (API :8010 ve web :3010 ayakta olmalı):
- *
- *     cd apps/web
- *     E2E_API_URL=http://localhost:8010 \
- *       EKRAN=1 node_modules/.bin/playwright test screenshots --grep @ekran
- *
- * `bunx playwright` KULLANMAYIN — ayrı bir kopya indirip "two different versions"
- * hatası verir.
+ * Belgeler için gerçek arayüzden, yalnız koşuya ait sentetik veriyle PNG üretir.
+ * Kurulum/temizlik worker-fixture ve global setup/teardown sözleşmesini kullanır.
+ * EKRAN=1 ... --grep @ekran gerekir; üretim adımları docs/screenshots.md içindedir.
+ * Sahte sağlayıcı/hashing görüntüsü gerçek LLM kalitesi veya görsel baseline değildir.
  */
+import { mkdir } from "node:fs/promises";
+import { resolve } from "node:path";
+import { expect, type APIRequestContext, type Locator, type Page, type Response } from "@playwright/test";
+import type { LearningOutcome } from "../lib/blueprint";
+import type { ChatAnswer, ChatAvailability, ChatSessionSummary, Course, CourseDocument, Page as ApiPage } from "../lib/types";
+import { ABSTENTION_LABEL } from "../lib/chat";
+import { test as workerTest, teacher, student, teacherHeaders, studentHeaders, signIn } from "./worker-fixture";
+import { createE2eCourseIdentity, isRunScopedE2eCourseCode, requireE2eRunId } from "./fixtures";
+import { seedAssessmentCourse } from "./seed-assessment-course";
 
-import { expect, test, type Page } from "@playwright/test";
+const API = process.env.E2E_API_URL ?? "http://localhost:8000";
+const OUTPUT = resolve(__dirname, "../../../docs/images");
+type SeededCourse = Awaited<ReturnType<typeof seedAssessmentCourse>>;
 
-const AYSE = {
-  id: "11111111-1111-1111-1111-111111111111",
-  email: "ayse@dogus.edu.tr",
-  fullName: "Ayşe Hoca",
-  role: "instructor" as const,
-};
-const BURAK = {
-  id: "22222222-2222-2222-2222-222222222222",
-  email: "burak@dogus.edu.tr",
-  fullName: "Burak Yılmaz",
-  role: "student" as const,
-};
+function requireOwnedCourse(course: Course): void {
+  expect(isRunScopedE2eCourseCode(course.code, requireE2eRunId())).toBe(true);
+}
 
-/** Materyali gerçekten işlenmiş ders (COME 331). */
-const DERS = "c3b76077-20de-47e5-9fe1-4e770ffa64d2";
+async function post(request: APIRequestContext, path: string, data: unknown, asStudent = false) {
+  const response = await request.post(`${API}${path}`, {
+    headers: asStudent ? studentHeaders : teacherHeaders,
+    data,
+  });
+  expect(response.ok(), await response.text()).toBeTruthy();
+  return response.json();
+}
 
-const KLASOR = "../../docs/images";
+const test = workerTest.extend<{ seededCourse: SeededCourse; emptyCourse: Course }>({
+  seededCourse: async ({ request }, use) => {
+    const seeded = await seedAssessmentCourse(request);
+    requireOwnedCourse(seeded.course);
+    await use(seeded);
+  },
+  emptyCourse: async ({ request }, use) => {
+    // Materyalsiz ret, dolu dersin eşiğini değiştirerek taklit edilmez.
+    const course = await post(request, "/courses", createE2eCourseIdentity("MATERYAL-BEKLENIYOR"));
+    requireOwnedCourse(course);
+    await post(request, `/courses/${course.id}/members`, { email: student.email, role: "student" });
+    await use(course);
+  },
+});
 
-async function girisYap(page: Page, user: typeof AYSE | typeof BURAK) {
-  await page.addInitScript(
-    ([token, payload]) => {
-      localStorage.setItem("dou-synapse-token", token as string);
-      localStorage.setItem("dou-synapse-user", payload as string);
+async function ask(page: Page, courseId: string, question: string, responses: ReturnType<typeof observeCourseGets>): Promise<ChatAnswer> {
+  const composer = page.getByLabel("Sorun", { exact: true });
+  await expect(composer).toBeVisible();
+  await composer.fill(question);
+  const beforeSend = responses.mark();
+  const [response] = await Promise.all([
+    page.waitForResponse((response) =>
+      response.url() === `${API}/courses/${courseId}/chat` && response.request().method() === "POST",
+    ),
+    page.getByRole("button", { name: "Gönder", exact: true }).click(),
+  ]);
+  expect(response.status(), await response.text()).toBe(200);
+  const answer: ChatAnswer = await response.json();
+  expect(answer).toMatchObject({ mode: "qa", audience: "student", agent_profile: "student_coach" });
+  expect(answer.answer.trim().length).toBeGreaterThan(0);
+  // onAnswer bu yenilemeyi beklemeden başlatır; yalnız cevap görünürlüğü yeterli değildir.
+  const sessions = await responses.get<ApiPage<ChatSessionSummary>>("/chat/sessions", beforeSend);
+  const summary = sessions.items.find((item) => item.id === answer.session_id);
+  expect(summary).toBeDefined();
+  const activeChat = page.getByRole("list", { name: "Kişisel sohbetler", exact: true }).locator('button[aria-current="true"]');
+  await expect(activeChat).toContainText(summary!.title ?? "Başlıksız sohbet");
+  await expect(activeChat).toBeVisible();
+  await expect(page.getByText(answer.answer, { exact: true }).last()).toBeVisible();
+  await expect(composer).toHaveValue("");
+  await expect(page.getByRole("status").filter({ hasText: /Materyaller yükleniyor…|Sohbetler yükleniyor…/ })).toHaveCount(0);
+  return answer;
+}
+
+/** Navigasyon öncesinde kurulur; erken gelen yanıtlar da sonraki koşullu beklemeye kalır. */
+function observeCourseGets(page: Page, courseId: string) {
+  const base = `${API}/courses/${courseId}`;
+  const seen: Response[] = [];
+  const collect = (response: Response) => {
+    if (response.request().method() === "GET" && response.url().startsWith(base)) seen.push(response);
+  };
+  page.on("response", collect);
+  return {
+    mark: () => seen.length,
+    async get<T>(suffix: string, after = 0): Promise<T> {
+      const matches = (response: Response) => response.url() === `${base}${suffix}` && response.request().method() === "GET";
+      const response = seen.slice(after).find(matches) ?? await page.waitForResponse(matches);
+      expect(response.status(), await response.text()).toBe(200);
+      return response.json();
     },
-    [`dev:${user.id}`, JSON.stringify(user)],
-  );
+    stop() { page.off("response", collect); },
+  };
 }
 
-/** Girdiye yazıp gönderir ve cevabın gelmesini bekler. */
-async function sor(page: Page, soru: string) {
-  await page.getByLabel("Sorun").fill(soru);
-  await page.getByRole("button", { name: "Gönder" }).click();
-  // Cevabın KENDİSİNİ bekle. İlk yazımda "Gönder yeniden etkinleşir" bekleniyordu
-  // ve hiç gerçekleşmedi: cevap gelince girdi temizleniyor, boş girdide düğme
-  // zaten devre dışı kalıyor. Yanlış şeyi bekleyen bir bekleme, beklememekten
-  // kötü — zaman aşımına kadar sessizce oyalıyor.
-  await expect(page.getByText("Gönderiliyor…")).toHaveCount(0, { timeout: 180_000 });
+async function instructorShellReady(page: Page, courseId: string, responses: ReturnType<typeof observeCourseGets>) {
+  const [course, availability] = await Promise.all([
+    responses.get<Course>(""),
+    responses.get<ChatAvailability>("/chat/availability"),
+  ]);
+  expect(course).toMatchObject({ id: courseId, role: "instructor" });
+  expect(availability).toMatchObject({ available: true, audience: "instructor", agent_profile: "instructor_assistant" });
+  const questionsLink = page.getByRole("link", { name: "Soru havuzu", exact: true });
+  await expect(questionsLink).toHaveAttribute("href", `/courses/${courseId}/questions`);
+  await expect(questionsLink).toBeVisible();
+  await expect(page.getByRole("button", { name: "Eğitmen Asistanı", exact: true })).toBeVisible();
 }
 
-async function cek(page: Page, ad: string) {
-  // "Yükleniyor…" hâlinde çekilen bir görüntü, ürünü boş gösterir ve belgede
-  // yıllarca öyle kalır. Bir kez bu tuzağa düşüldü (03-egitmen-materyaller,
-  // 12 KB'lık boş sayfa), o yüzden bekleme burada ZORUNLU.
-  await expect(page.getByText("Yükleniyor…")).toHaveCount(0, { timeout: 60_000 });
-  await page.waitForTimeout(500); // giriş animasyonu otursun
-  await page.screenshot({ path: `${KLASOR}/${ad}.png`, fullPage: true });
+/** Sohbet dışındaki öğrenci sayfasında bağımsız availability yanıtı da beklenir. */
+async function studentShellReady(page: Page, courseId: string, responses: ReturnType<typeof observeCourseGets>) {
+  const [course, availability] = await Promise.all([
+    responses.get<Course>(""),
+    responses.get<ChatAvailability>("/chat/availability"),
+  ]);
+  expect(course).toMatchObject({ id: courseId, role: "student" });
+  expect(availability).toMatchObject({ available: true, audience: "student", agent_profile: "student_coach" });
+  const chatLink = page.getByRole("link", { name: "Asistan", exact: true });
+  await expect(chatLink).toHaveAttribute("href", `/courses/${courseId}/chat`);
+  await expect(chatLink).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ders Koçu", exact: true })).toBeVisible();
 }
 
-test.describe("belge ekran görüntüleri @ekran", () => {
-  // Görüntüler belgelerde yan yana duruyor; aynı genişlik olmazsa sayfa dağınık görünür.
-  test.use({ viewport: { width: 1280, height: 900 } });
+/** Yeni öğrenci sohbetinde ilk sorudan önce her iki yan panel doğrulanır. */
+async function studentChatReady(page: Page, courseId: string, responses: ReturnType<typeof observeCourseGets>, hasMaterial: boolean) {
+  const [course, availability, documents, sessions] = await Promise.all([
+    responses.get<Course>(""),
+    responses.get<ChatAvailability>("/chat/availability"),
+    responses.get<ApiPage<CourseDocument>>("/documents?limit=100"),
+    responses.get<ApiPage<ChatSessionSummary>>("/chat/sessions"),
+  ]);
+  expect(course).toMatchObject({ id: courseId, role: "student" });
+  expect(availability).toMatchObject({ available: true, audience: "student", agent_profile: "student_coach" });
+  const chatLink = page.getByRole("link", { name: "Asistan", exact: true });
+  await expect(chatLink).toHaveAttribute("href", `/courses/${courseId}/chat`);
+  await expect(chatLink).toBeVisible();
+  const materials = page.locator("aside section").filter({ has: page.getByRole("heading", { name: "Bu dersin kaynakları", exact: true }) });
+  if (hasMaterial) {
+    expect(documents.items).toHaveLength(1);
+    expect(documents.items[0]).toMatchObject({ file_name: "network-guards.md", status: "completed" });
+    await expect(materials.getByText("network-guards.md", { exact: true })).toBeVisible();
+    await expect(materials.getByText("Hazır", { exact: true })).toBeVisible();
+  } else {
+    expect(documents.items).toEqual([]);
+    await expect(materials.getByText("Bu derste henüz materyal yok. Eğitmen materyal yükleyene kadar asistan kaynak gösteremez.", { exact: true })).toBeVisible();
+  }
+  expect(sessions.items).toEqual([]);
+  await expect(page.getByText("Henüz bir sohbet açmadın.", { exact: true })).toBeVisible();
+}
 
-  test("sohbet — kaynaklı cevap ve önbellek işareti", async ({ page }) => {
-    await girisYap(page, BURAK);
-    await page.goto(`/courses/${DERS}/chat`);
-    await sor(page, "Context switch neden maliyetlidir?");
+async function capture(page: Page, name: string, ready: Locator): Promise<void> {
+  await expect(ready).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("status").filter({
+    hasText: /Yükleniyor…|Sorular yükleniyor…|Sohbet geçmişi yükleniyor…|Cevap hazırlanıyor…/,
+  })).toHaveCount(0);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.evaluate(async () => { await document.fonts.ready; });
+  if (["03-egitmen-materyaller", "05-egitmen-soru-havuzu"].includes(name)) {
+    // Uzun formun altındaki kontroller sabit asistan düğmesinin arkasında
+    // kalmasın. DOM'u gizlemeden gerçek tarayıcı yüksekliğini ölçülen sayfa
+    // boyuna ve düğme için ayrılan boşluğa göre genişlet.
+    const height = await page.evaluate(() => Math.max(document.body.scrollHeight, document.documentElement.scrollHeight));
+    await page.setViewportSize({ width: 1280, height: height + 80 });
+    await expect(ready).toBeVisible();
+  }
+  await mkdir(OUTPUT, { recursive: true });
+  // Sabit süre uyutmak yerine hazır arayüz/yazı tipleri beklenir; animasyon
+  // son durumu ve imleç screenshot API'si tarafından kararlılaştırılır.
+  await page.screenshot({ path: resolve(OUTPUT, `${name}.png`), fullPage: true, animations: "disabled", caret: "hide" });
+}
 
-    await expect(page.getByText("Sayfa", { exact: false }).first()).toBeVisible();
-    await cek(page, "09-sohbet-kaynakli-cevap");
+async function recordPracticeAnswer(request: APIRequestContext, seeded: SeededCourse): Promise<void> {
+  const options = seeded.question.payload.options as Array<{ key: string }>;
+  const wrong = options.find((option) => option.key !== seeded.question.payload.answer_key);
+  expect(wrong).toBeDefined();
+  const exam = await post(request, `${seeded.base}/exams`, { mode: "practice" }, true);
+  try {
+    expect(exam.questions.some((question: { id: string }) => question.id === seeded.question.id)).toBe(true);
+    const feedback = await post(request, `${seeded.base}/exams/${exam.id}/answers`, {
+      question_id: seeded.question.id, given: wrong!.key,
+    }, true);
+    expect(feedback).toMatchObject({ recorded: true, graded: true, is_correct: false });
+  } finally {
+    await post(request, `${seeded.base}/exams/${exam.id}/finish`, {}, true);
+  }
+}
+
+test.describe("belge ekran görüntüleri", { tag: ["@ekran", "@llm"] }, () => {
+  test.use({ viewport: { width: 1280, height: 900 }, colorScheme: "light", contextOptions: { reducedMotion: "reduce" } });
+  test.beforeEach(() => {
+    if (process.env.EKRAN !== "1") throw new Error("Belge görüntüsü üretimi EKRAN=1 gerektirir.");
+    test.setTimeout(120_000);
   });
 
-  test("sohbet — kapsam dışı soruda nazik ret", async ({ page }) => {
-    await girisYap(page, BURAK);
-    await page.goto(`/courses/${DERS}/chat`);
-    await sor(page, "Fransız İhtilali kaç yılında oldu?");
-
-    // Ret hata gibi GÖRÜNMEMELİ: bu görüntünün belgede anlatılan şeyi tam olarak bu.
-    await expect(page.getByRole("main").locator('[role="alert"]')).toHaveCount(0);
-    await cek(page, "10-sohbet-nazik-ret");
+  test("sohbet: sentetik materyale bağlı cevap", async ({ page, seededCourse }) => {
+    await signIn(page, student);
+    const responses = observeCourseGets(page, seededCourse.course.id);
+    try {
+      await page.goto(`/courses/${seededCourse.course.id}/chat`);
+      await studentChatReady(page, seededCourse.course.id, responses, true);
+      const answer = await ask(page, seededCourse.course.id, "Coffman koşulları nelerdir?", responses);
+      expect(answer.status).toBe("answered");
+      expect(answer.citations.length).toBeGreaterThan(0);
+      const citation = answer.citations[0];
+      // Markdown materyalin konumu bölüm adıdır; sahte bir Sayfa N beklenmez.
+      const source = page.getByRole("link", {
+        name: `${citation.file_name}, ${citation.location} kaynak bağlamını aç`, exact: true,
+      }).first();
+      await capture(page, "09-sohbet-kaynakli-cevap", source);
+    } finally { responses.stop(); }
   });
 
-  test("sohbet — kapsam dışı soruda nötr ret kartı", async ({ page }) => {
-    // İki ret türünün İKİNCİSİ: yukarıdaki test kanıt-yetersizliği retini çekiyor,
-    // bu test kapsam-dışı retini. Soru bilerek dersle hiç ilgisi olmayan bir genel
-    // kültür sorusu — kapı (assess_evidence) bunu out_of_scope'a düşürür ve kullanıcı
-    // MESSAGE_OUT_OF_SCOPE metnini görür (apps/api/app/api/chat.py).
-    await girisYap(page, BURAK);
-    await page.goto(`/courses/${DERS}/chat`);
-    await sor(page, "İtalya'nın başkenti neresidir?");
-
-    // Kart başlığı da gövdesi de aynı ifadeyi taşır; strict mode için gövdeye daralt.
-    await expect(
-      page.getByText("Bu soru dersin kapsamı dışında görünüyor", { exact: false }),
-    ).toBeVisible();
-    // Bu ret de hata gibi görünmemeli — nötr bilgi kartı olmalı.
-    await expect(page.getByRole("main").locator('[role="alert"]')).toHaveCount(0);
-    await cek(page, "10-sohbet-kapsam-disi-ret");
+  test("sohbet: materyalsiz derste dayanak bulunamaması", async ({ page, emptyCourse }) => {
+    await signIn(page, student);
+    const responses = observeCourseGets(page, emptyCourse.id);
+    try {
+      await page.goto(`/courses/${emptyCourse.id}/chat`);
+      await studentChatReady(page, emptyCourse.id, responses, false);
+      const answer = await ask(page, emptyCourse.id, "Deadlock nedir?", responses);
+      expect(answer.status).toBe("insufficient_context");
+      expect(answer.citations).toHaveLength(0);
+      await capture(page, "10-sohbet-nazik-ret", page.getByText(ABSTENTION_LABEL.insufficient_context, { exact: true }));
+    } finally { responses.stop(); }
   });
 
-  test("soru havuzu — üretim raporu ve elenme gerekçeleri", async ({ page }) => {
-    await girisYap(page, AYSE);
-    await page.goto(`/courses/${DERS}/questions`);
-    await expect(page.getByRole("heading", { name: "Soru havuzu" })).toBeVisible();
-    await cek(page, "05-egitmen-soru-havuzu");
+  test("sohbet: sentetik materyalin kapsamı dışındaki soru", async ({ page, seededCourse }) => {
+    await signIn(page, student);
+    const responses = observeCourseGets(page, seededCourse.course.id);
+    try {
+      await page.goto(`/courses/${seededCourse.course.id}/chat`);
+      await studentChatReady(page, seededCourse.course.id, responses, true);
+      const answer = await ask(page, seededCourse.course.id, "İtalya'nın başkenti neresidir?", responses);
+      // Başka bir durum dönüyorsa bu adı taşıyan görüntü üretilmez.
+      expect(answer.status).toBe("out_of_scope");
+      expect(answer.citations).toHaveLength(0);
+      await capture(page, "10-sohbet-kapsam-disi-ret", page.getByText(ABSTENTION_LABEL.out_of_scope, { exact: true }));
+    } finally { responses.stop(); }
   });
 
-  test("ilerleme — sınıf analitiği", async ({ page }) => {
-    await girisYap(page, AYSE);
-    await page.goto(`/courses/${DERS}/analytics`);
-    await expect(page.getByText("resmî bir not değildir", { exact: false })).toBeVisible();
-    await cek(page, "06-egitmen-sinif-analitigi");
+  test("soru havuzu: API'de üretilip onaylanan sentetik soru", async ({ page, seededCourse }) => {
+    await signIn(page, teacher);
+    const responses = observeCourseGets(page, seededCourse.course.id);
+    try {
+      await page.goto(`/courses/${seededCourse.course.id}/questions`);
+      await instructorShellReady(page, seededCourse.course.id, responses);
+      const authoring = await responses.get<{ enabled: boolean }>("/questions/authoring");
+      expect(typeof authoring.enabled).toBe("boolean");
+      const outcomeField = page.getByRole("combobox", { name: "Öğrenme çıktısı", exact: true });
+      const difficultyField = page.getByRole("combobox", { name: "Zorluk", exact: true });
+      if (authoring.enabled) {
+        const outcomes = await responses.get<LearningOutcome[]>("/learning-outcomes");
+        expect(Array.isArray(outcomes)).toBe(true);
+        await expect(outcomeField).toBeVisible();
+        await expect(difficultyField).toBeVisible();
+        await expect(page.getByRole("combobox", { name: "Konu", exact: true })).toHaveValue(seededCourse.question.topic_id);
+        const matching = outcomes.filter((outcome) => outcome.topic_id === null || outcome.topic_id === seededCourse.question.topic_id);
+        await expect(outcomeField.locator("option")).toHaveText([
+          "Sınıflandırılmadı", ...matching.map((outcome) => `${outcome.code}: ${outcome.description}`),
+        ]);
+      } else {
+        // Kapalı özellik de önce gerçek API kararından doğrulanır; bekleme atlanmaz.
+        await expect(outcomeField).toHaveCount(0);
+        await expect(difficultyField).toHaveCount(0);
+      }
+      await expect(page.getByRole("heading", { name: "Soru havuzu", exact: true })).toBeVisible();
+      const questions = page.getByRole("list", { name: "Soru havuzu", exact: true });
+      await expect(questions).toContainText(seededCourse.question.payload.stem);
+      await capture(page, "05-egitmen-soru-havuzu", questions);
+    } finally {
+      responses.stop();
+    }
   });
 
-  test("ilerleme — öğrenci görünümü", async ({ page }) => {
-    await girisYap(page, BURAK);
-    await page.goto(`/courses/${DERS}/analytics`);
-    await cek(page, "15-ogrenci-ilerleme");
+  test("ilerleme: sentetik cevap sonrası sınıf analitiği", async ({ page, request, seededCourse }) => {
+    await recordPracticeAnswer(request, seededCourse);
+    await signIn(page, teacher);
+    const responses = observeCourseGets(page, seededCourse.course.id);
+    try {
+      await page.goto(`/courses/${seededCourse.course.id}/analytics`);
+      await instructorShellReady(page, seededCourse.course.id, responses);
+      await expect(page.getByRole("heading", { name: "Sınıf analitiği", exact: true })).toBeVisible();
+      await expect(page.getByText("Bu gösterge resmî bir not değildir.", { exact: true })).toBeVisible();
+      await capture(page, "06-egitmen-sinif-analitigi", page.getByRole("heading", { name: "Konu bazlı sınıf durumu", exact: true }));
+    } finally { responses.stop(); }
   });
 
-  test("materyaller — eğitmen görünümü", async ({ page }) => {
-    await girisYap(page, AYSE);
-    await page.goto(`/courses/${DERS}`);
-    await cek(page, "03-egitmen-materyaller");
+  test("ilerleme: sentetik cevap sonrası öğrenci görünümü", async ({ page, request, seededCourse }) => {
+    await recordPracticeAnswer(request, seededCourse);
+    await signIn(page, student);
+    const responses = observeCourseGets(page, seededCourse.course.id);
+    try {
+      await page.goto(`/courses/${seededCourse.course.id}/analytics`);
+      await studentShellReady(page, seededCourse.course.id, responses);
+      await expect(page.getByRole("heading", { name: "İlerlemem", exact: true })).toBeVisible();
+      await capture(page, "15-ogrenci-ilerleme", page.getByRole("heading", { name: "Konularım", exact: true }));
+    } finally { responses.stop(); }
   });
 
-  test("Kişisel veriler ve gizlilik", async ({ page }) => {
+  test("materyaller: eğitmenin sentetik ders kaynağı", async ({ page, seededCourse }) => {
+    await signIn(page, teacher);
+    const responses = observeCourseGets(page, seededCourse.course.id);
+    try {
+      await page.goto(`/courses/${seededCourse.course.id}`);
+      await instructorShellReady(page, seededCourse.course.id, responses);
+      await expect(page.getByRole("button", { name: "Dosya seç", exact: true })).toBeVisible();
+      const retrievalLink = page.getByRole("link", { name: "Retrieval testi", exact: true });
+      await expect(retrievalLink).toHaveAttribute("href", `/courses/${seededCourse.course.id}/sources`);
+      await expect(retrievalLink).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Bu derste çalışma yolları", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: seededCourse.course.title, exact: true })).toBeVisible();
+      // Dosya adı select içindeki gizli option'da da vardır; görünür materyal
+      // satırını rolüyle seçerek yüklenmiş belgeyi doğrula.
+      const material = page.getByRole("listitem").filter({ has: page.getByText("network-guards.md", { exact: true }) });
+      await expect(material.getByText("Hazır", { exact: true })).toBeVisible();
+      await capture(page, "03-egitmen-materyaller", material.getByText("network-guards.md", { exact: true }));
+    } finally {
+      responses.stop();
+    }
+  });
+
+  test("kişisel veriler ve gizlilik açıklaması", async ({ page }) => {
     await page.goto("/kvkk");
-    await expect(page.getByRole("heading", { name: "Kişisel Veriler ve Gizlilik" })).toBeVisible();
-    await cek(page, "16-kvkk");
+    await capture(page, "16-kvkk", page.getByRole("heading", { name: "Kişisel Veriler ve Gizlilik", exact: true }));
   });
 });

@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { test, teacher as workerTeacher, teacherHeaders, signIn } from "./worker-fixture";
+import { expect } from "@playwright/test";
 
 import { createE2eCourseIdentity } from "./fixtures";
 
@@ -17,13 +18,8 @@ import { createE2eCourseIdentity } from "./fixtures";
  */
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const teacher = {
-  id: "11111111-1111-1111-1111-111111111111",
-  email: "ayse@dogus.edu.tr",
-  fullName: "Ayşe Hoca",
-  role: "instructor",
-};
-const headers = { Authorization: `Bearer dev:${teacher.id}` };
+const teacher = workerTeacher;
+const headers = teacherHeaders;
 
 test("soru silme, belge silmenin 409 çıkmazını arayüzden açar", async ({ page, request }) => {
   test.setTimeout(90_000);
@@ -84,10 +80,7 @@ test("soru silme, belge silmenin 409 çıkmazını arayüzden açar", async ({ p
   expect(blocked.status()).toBe(409);
   expect(await blocked.text()).toContain("Önce ilgili soruları kaldırın");
 
-  await page.addInitScript((user) => {
-    localStorage.setItem("dou-synapse-token", `dev:${user.id}`);
-    localStorage.setItem("dou-synapse-user", JSON.stringify(user));
-  }, teacher);
+  await signIn(page, teacher);
   await page.goto(`/courses/${course.id}/questions`);
 
   // Reddetmek satırı havuzda bırakır: kısıt hâlâ yürürlükte olmalı.

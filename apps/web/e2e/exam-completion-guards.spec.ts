@@ -1,10 +1,8 @@
-import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test";
+import { test, student, teacherHeaders, studentHeaders, signIn } from "./worker-fixture";
+import { expect, type APIRequestContext, type Page, type Route } from "@playwright/test";
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const teacherHeaders = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
-const student = { id: "22222222-2222-2222-2222-222222222222", email: "burak@dogus.edu.tr", fullName: "Burak Yılmaz", role: "student" };
-const studentHeaders = { Authorization: `Bearer dev:${student.id}` };
 
 async function prepareCourse(request: APIRequestContext) {
   const post = async (path: string, data?: unknown) => {
@@ -29,12 +27,6 @@ async function prepareCourse(request: APIRequestContext) {
   return { course, question, base: `${API}${path}` };
 }
 
-async function signIn(page: Page) {
-  await page.addInitScript((user) => {
-    localStorage.setItem("dou-synapse-token", `dev:${user.id}`);
-    localStorage.setItem("dou-synapse-user", JSON.stringify(user));
-  }, student);
-}
 
 async function finish(page: Page) {
   await page.getByRole("button", { name: "Sınavı bitir", exact: true }).click();
@@ -46,7 +38,7 @@ test("eğitmenin bir ve sıfır ipucu sınırı alıştırmaya yansır", async (
   test.setTimeout(90_000);
   const { course, question, base } = await prepareCourse(request);
   expect((await request.put(`${base}/ai-policy`, { headers: teacherHeaders, data: { hint_limit: 4 } })).ok()).toBeTruthy();
-  await signIn(page);
+  await signIn(page, student);
   await page.goto(`/courses/${course.id}/exam`);
   const started = page.waitForResponse((response) => response.url() === `${base}/exams` && response.request().method() === "POST");
   await page.getByRole("button", { name: "Alıştırma başlat", exact: true }).click();
@@ -62,7 +54,11 @@ test("eğitmenin bir ve sıfır ipucu sınırı alıştırmaya yansır", async (
   await expect(page.getByText("1. ipucu", { exact: true })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Sonraki ipucu", exact: true })).toHaveCount(0);
   expect((await request.put(`${base}/ai-policy`, { headers: teacherHeaders, data: { hint_limit: 0 } })).ok()).toBeTruthy();
-  await page.reload();
+  const [restored] = await Promise.all([
+    page.waitForResponse((response) => response.url() === `${base}/exams/${practice.id}` && response.request().method() === "GET"),
+    page.reload(),
+  ]);
+  expect(restored.status(), await restored.text()).toBe(200);
   await expect(page.getByRole("button", { name: "Cevabı gönder", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /İpucu al|Sonraki ipucu/ })).toHaveCount(0);
   const denied = await request.post(`${base}/exams/${practice.id}/hint`, { headers: studentHeaders, data: { question_id: question.id, hint_level: 1 } });
@@ -73,7 +69,7 @@ test("eğitmenin bir ve sıfır ipucu sınırı alıştırmaya yansır", async (
 test("görünür sorusu kalmayan süreli oturum bitirilip ders kilidi kaldırılır", async ({ page, request }, testInfo) => {
   test.setTimeout(90_000);
   const { course, question, base } = await prepareCourse(request);
-  await signIn(page);
+  await signIn(page, student);
   await page.goto(`/courses/${course.id}/exam`);
   const started = page.waitForResponse((response) => response.url() === `${base}/exams` && response.request().method() === "POST");
   await page.getByRole("button", { name: "Sınav başlat", exact: true }).click();
@@ -94,7 +90,7 @@ test("görünür sorusu kalmayan süreli oturum bitirilip ders kilidi kaldırıl
 test("başka sekmede başlayan sınav eski sonucu doğrulama boyunca ve kilitte gizler", async ({ page, request, context }) => {
   test.setTimeout(120_000);
   const { course, base } = await prepareCourse(request);
-  await signIn(page);
+  await signIn(page, student);
   await page.goto(`/courses/${course.id}/exam`);
   await page.getByRole("button", { name: "Alıştırma başlat", exact: true }).click();
   await page.getByRole("radio").first().check();
@@ -145,7 +141,10 @@ test("başka sekmede başlayan sınav eski sonucu doğrulama boyunca ve kilitte 
   try {
     const second = await context.newPage();
     await second.goto(`/courses/${course.id}/exam`);
-    await second.getByRole("button", { name: "Yeni sınav başlat", exact: true }).click();
+    // Yeni sekmenin kimlik uzlaşması son oturum seçimini temizleyebilir.
+    await expect(second.getByRole("heading", { name: /^(Sınav provası|Sınav sonucu)$/ })).toBeVisible();
+    const restart = second.getByRole("button", { name: "Yeni sınav başlat", exact: true });
+    if (await restart.isVisible()) await restart.click();
     await second.getByRole("button", { name: "Sınav başlat", exact: true }).click();
     await expect(second.getByRole("timer")).toBeVisible();
 

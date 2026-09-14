@@ -172,7 +172,7 @@ kriterli görevlerle; auth, RLS, `course_id` filtreleri, migration'lar insan inc
 | Faithfulness (manuel örneklem, 20-30 cevap, 2 etiketleyici) | raporlanır | **KOŞULMADI** (R2, LLM anahtarı bekliyor) | Uyum oranıyla birlikte |
 | Sokratik modda kod/çözüm sızıntısı | Test setinde 0 | **Birim testlerinde 0**; gerçek LLM ile KOŞULMADI | Set fence'siz kod, pseudocode, sözel çözüm vakaları içerir |
 | Injection testleri (≥15 vaka, kalıp aileleri) | Geçer | **KOŞULMADI** (R4) | "Smoke-test edildi" olarak raporlanır, "dayanıklı" denmez |
-| Soru üretiminde şema geçerliliği | ≥ %98 | **ÖLÇÜLEMEDİ** — sahte sağlayıcı soru üretmiyor; gerçek anahtar gerekiyor | — |
+| Soru üretiminde şema geçerliliği | ≥ %98 | **Gerçek sağlayıcıyla ölçüm KOŞULMADI.** Sahte sağlayıcı `QUESTION_GEN` göreviyle kaynaklara bağlı soru taslağı üretir; bu yol gerçek modelin şema başarı oranı veya pedagojik kalitesi değildir | Kod: [`FakeLlmClient.complete`](apps/api/app/modules/generation/fake.py); bu belge denetiminde yeni oran ölçülmedi |
 | Uçtan uca cevap p95 | < 10 sn | **KOŞULMADI.** Yerel ölçüm: ilk yükleme 19,1 sn (model yükleme dahil), sonraki yüklemeler 2–7 sn | **Sıcak replika, sorgu yolu** |
 | Demo akışında kritik hata | 0 | **Altı sahnenin altısı da** canlıda koşuldu ve geçti (9 Ağu akşamı, ekranlar bağlandıktan sonra) | `docs/demo-script.md` |
 | Backend testleri | yeşil | **479 geçiyordu** (`uv run pytest -q`) | 9 Ağustos tarihsel ölçümü | <!-- docs-check: tarihsel 479 · 2026-08-09 -->
