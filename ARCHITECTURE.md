@@ -143,7 +143,7 @@ barındırmada bu iki çalışma biçiminin uyanış politikası ayrı seçilir;
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 30 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0029`): <!-- docs-check: tables.count = 30 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0029 -->
+Kodda gerçekten var olan 32 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027,0029`): <!-- docs-check: tables.count = 32 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027,0029 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -423,7 +423,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.current_user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. Uygulama şemalarında toplam 30 tablo vardır; RLS ve GRANT sınırları tablo bazındadır. <!-- docs-check: tables.count = 30 -->
+  yazar. Uygulama şemalarında toplam 32 tablo vardır; RLS ve GRANT sınırları tablo bazındadır. <!-- docs-check: tables.count = 32 -->
   Çekirdek kullanıcı tablolarında `FORCE ROW LEVEL SECURITY` kullanılır; bütün
   tabloların FORCE olduğu iddia edilmez. Örneğin 0025'in `app.request_rate_policies`
   ve `app.rate_limit_windows` tablolarında RLS etkindir, doğrudan PUBLIC/dou_app/

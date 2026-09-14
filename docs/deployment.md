@@ -125,7 +125,7 @@ Kurulumdan sonra şemayı doğrulayın:
 psql -d "$DATABASE" -c "\dt public.*" -c "\dt app.*"
 ```
 
-Güncel migration setiyle iki uygulama şemasında toplam **30 tablo** bulunur: 28 public ve 2 app. <!-- docs-check: tables.count = 30 -->
+Güncel migration setiyle iki uygulama şemasında toplam **32 tablo** bulunur: 28 public ve 2 app. <!-- docs-check: tables.count = 32 -->
 
 Tarihsel not: 9 Ağustos'ta hem paylaşılan geliştirme veritabanında hem sıfırdan
 kurulan veritabanında **15 tablo** ölçülmüştü. <!-- docs-check: tarihsel 15 · 2026-08-09 -->
