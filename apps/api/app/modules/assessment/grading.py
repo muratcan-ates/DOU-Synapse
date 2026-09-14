@@ -449,7 +449,7 @@ def grounded_criterion_is_valid(
     Bu kontroller kaynak ve ölçüt bağlantısını doğrular. Modelin pedagojik
     yorumunun anlamsal doğruluğunu ölçmez. Hiçbir kod çalıştırılmaz.
     """
-    names = [item.point.strip().casefold() for item in rubric]
+    names = [text_tr.fold(item.point.strip()) for item in rubric]
     if not rubric or not all(names) or len(set(names)) != len(names):
         return False
     matching = [item for item in normalized_rubric(rubric) if item.point == claim.criterion]
@@ -489,10 +489,20 @@ def _rubric_breakdown(payload: BaseModel, verdict: _LlmVerdict) -> list[RubricCr
     if not verdict.rubrik:
         return []
 
-    puanlar = {row.olcut.strip().casefold(): row.puan for row in verdict.rubrik}
+    # Eşleme Türkçe'ye göre katlanır: str.casefold() "ADIMLARI"yı "adimlari",
+    # "Adımları"yı "adımları" yapar ve aynı ölçüt eşleşmez — 100 alan cevap 0'a
+    # düşer (L8 bulgusu, 14 Eylül 2026). text_tr.fold iki yazımı da aynı anahtara indirger.
+    puanlar = {text_tr.fold(row.olcut.strip()): row.puan for row in verdict.rubrik}
+    normalized = normalized_rubric(rubric)
+    if not any(text_tr.fold(item.point.strip()) in puanlar for item in normalized):
+        # Model kırılım döndürdü ama HİÇBİR satır rubrikle eşleşmiyor: bu "kısmi
+        # kırılım" değil, başka bir adlandırmadır. Hepsini 0'la doldurmak doğru
+        # cevabı sessizce sıfırlar; "kırılım yok" gibi davranılır ve çağıran
+        # modelin toplam score'unu kullanır (yukarıdaki ikinci boş durum).
+        return []
     satirlar: list[RubricCriterionScore] = []
-    for item in normalized_rubric(rubric):
-        puan = puanlar.get(item.point.strip().casefold(), 0)
+    for item in normalized:
+        puan = puanlar.get(text_tr.fold(item.point.strip()), 0)
         satirlar.append(
             RubricCriterionScore(
                 point=item.point,
@@ -637,7 +647,7 @@ async def grade_with_llm(
             explicit = [
                 row
                 for row in verdict.rubrik
-                if row.olcut.strip().casefold() == grounded.criterion.strip().casefold()
+                if text_tr.fold(row.olcut.strip()) == text_tr.fold(grounded.criterion.strip())
             ]
             if (
                 grounded.chunk_id != evidence
