@@ -1,3 +1,3 @@
 # Jüri Görselleri
 
-Bu oturumda demo stack koşumu yapılamadığı için `before`/`after` görsel dosyaları eklenemedi.
+Bu oturumda demo stack koşumu teknik olarak başlatılamadığı için (docker binary'si yok) `before`/`after` görsel dosyaları eklenemedi.

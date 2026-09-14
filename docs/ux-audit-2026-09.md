@@ -13,7 +13,8 @@
 - Durum: **Önce/sonra fark kapatıldı**.
 
 ## 2) P0/P1 gözden geçirme
-- Tam tur 375px + klavye: bu oturumda demo stack erişilemediği için **KOŞULMADI**.
+- Tam tur 375px + klavye: bu oturumda demo stack başlatılamadığı için **KOŞULMADI**.
+- Ek koşul: `docker` yüklü olmadığı için `docker compose` ile üretimsel davranış doğrulama turu da **KOŞULMADI**.
 
 ## 3) Kayıtlar
 - `before` / `after` görselleri: bu görevde demo/UI koşusu yapılamadığından ekran görüntüsü üretilemedi.
