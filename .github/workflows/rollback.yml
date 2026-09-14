@@ -1,0 +1,137 @@
+# Elle tetiklenen geri alma: canlı yığını bilinen bir önceki imaj dijestine döndürür.
+#
+# Neden ayrı dosya: `deploy.yml` içindeki otomatik geri alma yalnız dağıtımın
+# KENDİ koşusu sırasında çalışır. Sorun bir saat sonra fark edilirse o koşu
+# bitmiştir. Bu workflow, runbook'taki "15 dk geri alma" yolunu tek komuta indirir.
+#
+# Göç GERİ ALINMAZ. İleriye uyumlu göç ilkesi gereği bir önceki imaj yeni şemayla
+# çalışabilmelidir; şema geri alınmak zorundaysa bu bir olaydır, geri alma değildir.
+#
+# Bu dosya ÇALIŞTIRILMADI (Azure kaynağı henüz yok, runbook §4/2).
+
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "Dönülecek imaj dijesti (sha256:<64 hex>)"
+        required: true
+        type: string
+      reason:
+        description: "Geri alma gerekçesi (olay kaydına yazılır)"
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: Bilinen dijeste dön ve hazırlığı doğrula
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Girdi ve sır önkoşulunu fail-closed doğrula
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+          REASON: ${{ inputs.reason }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          DEPLOY_VM_NAME: ${{ secrets.DEPLOY_VM_NAME }}
+          DEPLOY_RESOURCE_GROUP: ${{ secrets.DEPLOY_RESOURCE_GROUP }}
+          DEPLOY_API_URL: ${{ secrets.DEPLOY_API_URL }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error title=INVALID_DIGEST::Dijest sha256:<64 hex> biçiminde olmalı" >&2
+            exit 1
+          fi
+          if [[ -z "${REASON// /}" ]]; then
+            echo "::error title=MISSING_REASON::Geri alma gerekçesiz yapılmaz" >&2
+            exit 1
+          fi
+          missing=()
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID \
+                      DEPLOY_VM_NAME DEPLOY_RESOURCE_GROUP DEPLOY_API_URL; do
+            [[ -n "${!name}" ]] || missing+=("$name")
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error title=DEPLOY_NOT_CONFIGURED::Eksik GitHub Secret: ${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Azure'a OIDC ile giriş
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Hedef dijestle yığını ayağa kaldır
+        shell: bash
+        env:
+          VM_NAME: ${{ secrets.DEPLOY_VM_NAME }}
+          RESOURCE_GROUP: ${{ secrets.DEPLOY_RESOURCE_GROUP }}
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+          REGISTRY_IMAGE: ghcr.io/${{ github.repository }}/api
+        run: |
+          set -euo pipefail
+          az vm run-command invoke \
+            --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" \
+            --command-id RunShellScript \
+            --scripts "set -euo pipefail
+              cd /opt/dou-synapse
+              export DOU_IMAGE='${REGISTRY_IMAGE}@${IMAGE_DIGEST}'
+              docker compose pull
+              docker compose up -d --remove-orphans
+              printf '%s' '${IMAGE_DIGEST}' > /opt/dou-synapse/.current-digest" \
+            --query 'value[0].message' -o tsv
+
+      - name: /health/ready 200 dönene kadar yokla
+        shell: bash
+        env:
+          API_URL: ${{ secrets.DEPLOY_API_URL }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            code="$(curl -sS -o /tmp/ready.json -w '%{http_code}' --max-time 30 \
+              "${API_URL%/}/health/ready" || echo 000)"
+            echo "deneme ${attempt}: HTTP ${code}"
+            if [[ "$code" == "200" ]]; then
+              cat /tmp/ready.json
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=ROLLBACK_READINESS_FAILED::Geri alma sonrası /health/ready 200 vermedi" >&2
+          exit 1
+
+      - name: Olay kaydını özete yaz
+        if: ${{ always() }}
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ inputs.image_digest }}
+          REASON: ${{ inputs.reason }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          {
+            echo "## Geri alma kaydı"
+            echo
+            echo "- Hedef dijest: \`${IMAGE_DIGEST}\`"
+            echo "- Gerekçe: ${REASON}"
+            echo "- Tetikleyen: ${ACTOR}"
+            echo
+            echo "Göç geri alınmadı; yalnız çalışan imaj değiştirildi."
+          } >> "$GITHUB_STEP_SUMMARY"

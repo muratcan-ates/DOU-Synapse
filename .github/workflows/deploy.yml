@@ -1,0 +1,265 @@
+# Azure for Students VM'ine dijest sabitli dağıtım.
+#
+# Neden `workflow_run`: dağıtım yalnız GÜVENİLİR bir `main` koşusunun ardından
+# tetiklenmelidir. `push` tetiği fork PR'larından gelen kodu da çalıştırabilir;
+# `workflow_run` ise tetikleyen koşunun dalını ve sonucunu ayrıca doğrulamamıza
+# izin verir. Aşağıdaki `guard` işi bu doğrulamayı FAIL-CLOSED yapar: dal `main`
+# değilse, sonuç `success` değilse veya SHA 40 karakterli değilse iş kırmızı düşer.
+#
+# Bu dosya ÇALIŞTIRILMADI. Azure aboneliği, Entra uygulama kaydı ve VM henüz
+# sağlanmadı (runbook §4/2, Murat'ın kararı bekleniyor). Buradaki adımlar
+# sözleşmedir; "dağıtım çalışıyor" kanıtı DEĞİLDİR.
+
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "Dağıtılacak imaj dijesti (sha256:...). Boşsa guard işi reddeder."
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Tetikleyici güveni ve sır önkoşulu
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      source_sha: ${{ steps.trust.outputs.source_sha }}
+      image_digest: ${{ steps.digest.outputs.image_digest }}
+
+    steps:
+      - name: Tetikleyici koşunun dalını ve sonucunu doğrula
+        id: trust
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          DISPATCH_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_run" ]]; then
+            # Fork PR koşuları `pull_request` olayıyla gelir ve depo sırlarına
+            # erişemez; yine de dağıtıma asla girmemeleri için açıkça reddedilir.
+            test "$RUN_EVENT" = "push"
+            test "$RUN_BRANCH" = "main"
+            test "$RUN_CONCLUSION" = "success"
+            source_sha="$RUN_SHA"
+          else
+            source_sha="$DISPATCH_SHA"
+          fi
+          if [[ ! "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error title=UNTRUSTED_SOURCE::Dağıtım kaynağı 40 karakterli commit SHA olmalı" >&2
+            exit 1
+          fi
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Dağıtım sırlarının tamamı tanımlı mı (fail-closed)
+        shell: bash
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          DEPLOY_VM_NAME: ${{ secrets.DEPLOY_VM_NAME }}
+          DEPLOY_RESOURCE_GROUP: ${{ secrets.DEPLOY_RESOURCE_GROUP }}
+          DEPLOY_API_URL: ${{ secrets.DEPLOY_API_URL }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID \
+                      DEPLOY_VM_NAME DEPLOY_RESOURCE_GROUP DEPLOY_API_URL; do
+            [[ -n "${!name}" ]] || missing+=("$name")
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error title=DEPLOY_NOT_CONFIGURED::Eksik GitHub Secret: ${missing[*]}" >&2
+            exit 1
+          fi
+          echo "dağıtım sırları tanımlı (değerler yazdırılmaz)"
+
+      - name: Dağıtılacak imaj dijestini çöz
+        id: digest
+        shell: bash
+        env:
+          INPUT_DIGEST: ${{ inputs.image_digest }}
+          SOURCE_SHA: ${{ steps.trust.outputs.source_sha }}
+          REGISTRY_IMAGE: ghcr.io/${{ github.repository }}/api
+        run: |
+          set -euo pipefail
+          # Etiket değil DİJEST dağıtılır: etiket taşınabilir, dijest taşınamaz.
+          # Bu, "hangi kodun canlıda olduğu" sorusunun tek kesin cevabıdır.
+          if [[ -n "$INPUT_DIGEST" ]]; then
+            digest="$INPUT_DIGEST"
+          else
+            digest="$(
+              docker buildx imagetools inspect "${REGISTRY_IMAGE}:sha-${SOURCE_SHA}" \
+                --format '{{ .Manifest.Digest }}'
+            )"
+          fi
+          if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error title=INVALID_DIGEST::Dijest sha256:<64 hex> biçiminde olmalı" >&2
+            exit 1
+          fi
+          echo "image_digest=$digest" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: VM'e dijestle dağıt, göç uygula, hazırlığı doğrula
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Doğrulanmış SHA'yı al
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          ref: ${{ needs.guard.outputs.source_sha }}
+          persist-credentials: false
+
+      - name: Azure'a OIDC ile giriş
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Önceki dijesti kaydet (geri alma hedefi)
+        id: previous
+        shell: bash
+        env:
+          VM_NAME: ${{ secrets.DEPLOY_VM_NAME }}
+          RESOURCE_GROUP: ${{ secrets.DEPLOY_RESOURCE_GROUP }}
+        run: |
+          set -euo pipefail
+          # Geri alma hedefi dağıtımdan ÖNCE saklanır. Sonradan okunursa
+          # zaten yeni dijest yazılmış olur ve geri alma kendini hedefler.
+          previous="$(
+            az vm run-command invoke \
+              --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" \
+              --command-id RunShellScript \
+              --scripts 'cat /opt/dou-synapse/.current-digest 2>/dev/null || echo none' \
+              --query 'value[0].message' -o tsv | tr -d '\r' | tail -n 1
+          )"
+          echo "previous_digest=$previous" >> "$GITHUB_OUTPUT"
+          echo "önceki dijest: $previous"
+
+      - name: İmajı çek, göçleri uygula, yığını dijestle ayağa kaldır
+        shell: bash
+        env:
+          VM_NAME: ${{ secrets.DEPLOY_VM_NAME }}
+          RESOURCE_GROUP: ${{ secrets.DEPLOY_RESOURCE_GROUP }}
+          IMAGE_DIGEST: ${{ needs.guard.outputs.image_digest }}
+          REGISTRY_IMAGE: ghcr.io/${{ github.repository }}/api
+        run: |
+          set -euo pipefail
+          # Sıra önemlidir: önce imaj çekilir (ağ hatası burada ucuzdur),
+          # sonra göç uygulanır (ileriye uyumlu), en son süreçler değiştirilir.
+          az vm run-command invoke \
+            --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" \
+            --command-id RunShellScript \
+            --scripts "set -euo pipefail
+              cd /opt/dou-synapse
+              export DOU_IMAGE='${REGISTRY_IMAGE}@${IMAGE_DIGEST}'
+              docker compose pull
+              ./scripts/migrate.sh
+              docker compose up -d --remove-orphans
+              printf '%s' '${IMAGE_DIGEST}' > /opt/dou-synapse/.current-digest" \
+            --query 'value[0].message' -o tsv
+
+      - name: /health/ready 200 dönene kadar yokla
+        id: ready
+        shell: bash
+        env:
+          API_URL: ${{ secrets.DEPLOY_API_URL }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            code="$(curl -sS -o /tmp/ready.json -w '%{http_code}' --max-time 30 \
+              "${API_URL%/}/health/ready" || echo 000)"
+            echo "deneme ${attempt}: HTTP ${code}"
+            if [[ "$code" == "200" ]]; then
+              cat /tmp/ready.json
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=READINESS_FAILED::/health/ready on denemede 200 vermedi" >&2
+          exit 1
+
+      - name: Duman testi — kaynaksız soru cevaplanmıyor
+        shell: bash
+        env:
+          API_URL: ${{ secrets.DEPLOY_API_URL }}
+        run: |
+          set -euo pipefail
+          # Anayasa I'in canlı kanıtı: kimliksiz istek 401/403 almalı.
+          # 200 dönerse yetki katmanı düşmüş demektir ve dağıtım geri alınır.
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+            -X POST "${API_URL%/}/api/courses/00000000-0000-0000-0000-000000000000/chat" \
+            -H 'content-type: application/json' \
+            --data '{"message":"duman"}' || echo 000)"
+          echo "kimliksiz sohbet isteği: HTTP ${code}"
+          case "$code" in
+            401|403) echo "yetki katmanı kapalı — beklenen" ;;
+            *) echo "::error title=SMOKE_FAILED::Kimliksiz istek ${code} döndü; 401/403 bekleniyordu" >&2; exit 1 ;;
+          esac
+
+      - name: Başarısızlıkta önceki dijeste dön
+        if: ${{ failure() && steps.previous.outputs.previous_digest != 'none' }}
+        shell: bash
+        env:
+          VM_NAME: ${{ secrets.DEPLOY_VM_NAME }}
+          RESOURCE_GROUP: ${{ secrets.DEPLOY_RESOURCE_GROUP }}
+          PREVIOUS_DIGEST: ${{ steps.previous.outputs.previous_digest }}
+          REGISTRY_IMAGE: ghcr.io/${{ github.repository }}/api
+        run: |
+          set -euo pipefail
+          # Göç GERİ ALINMAZ: ileriye uyumlu göç ilkesi gereği eski imaj yeni
+          # şemayla çalışabilmelidir. Geri alınan yalnızca çalışan imajdır.
+          az vm run-command invoke \
+            --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" \
+            --command-id RunShellScript \
+            --scripts "set -euo pipefail
+              cd /opt/dou-synapse
+              export DOU_IMAGE='${REGISTRY_IMAGE}@${PREVIOUS_DIGEST}'
+              docker compose up -d --remove-orphans
+              printf '%s' '${PREVIOUS_DIGEST}' > /opt/dou-synapse/.current-digest" \
+            --query 'value[0].message' -o tsv
+          echo "::error title=DEPLOY_ROLLED_BACK::Dağıtım başarısız; ${PREVIOUS_DIGEST} dijestine dönüldü" >&2
+          exit 1
+
+      - name: Dağıtım kanıt sınırını özete yaz
+        if: ${{ success() }}
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ needs.guard.outputs.image_digest }}
+          SOURCE_SHA: ${{ needs.guard.outputs.source_sha }}
+        run: |
+          {
+            echo "## Dağıtım sonucu"
+            echo
+            echo "- Kaynak SHA: \`${SOURCE_SHA}\`"
+            echo "- İmaj dijesti: \`${IMAGE_DIGEST}\`"
+            echo "- /health/ready bu koşuda 200 döndü."
+            echo "- Kimliksiz sohbet isteği 401/403 ile kapandı."
+            echo
+            echo "Bu sonuç anlık bir kabuldür; uptime, SLO veya yük kanıtı değildir."
+          } >> "$GITHUB_STEP_SUMMARY"

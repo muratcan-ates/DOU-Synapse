@@ -6,9 +6,11 @@
 
 name: Keepalive point-in-time probes
 
+# G5 kararı: zamanlanmış koşu KALDIRILDI. Hedef ortam henüz sağlanmadığı
+# için her gece kırmızı yanan bir iş, gerçek bir arızayla karıştırılabilir
+# gürültü üretiyordu. Kapının kendisi korunur: elle tetiklendiğinde eksik
+# yapılandırma hâlâ KEEPALIVE_NOT_CONFIGURED ile kırmızı düşer.
 on:
-  schedule:
-    - cron: "17 6 * * *"
   workflow_dispatch:
 
 # This workflow never needs repository or GitHub API access.

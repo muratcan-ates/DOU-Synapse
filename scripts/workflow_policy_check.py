@@ -28,6 +28,11 @@ ALLOWED_WRITE_SCOPES: dict[tuple[str, str], frozenset[str]] = {
     (".github/workflows/release-candidate.yml", "candidate"): frozenset(
         {"attestations", "id-token", "packages"}
     ),
+    # Azure OIDC federe kimlik jetonu ancak `id-token: write` ile üretilebilir.
+    # Kapsam bilerek TEK izne daraltıldı: dağıtım işinin depoya yazma, paket
+    # yayımlama veya güvenlik olayı bildirme yetkisi yoktur.
+    (".github/workflows/deploy.yml", "deploy"): frozenset({"id-token"}),
+    (".github/workflows/rollback.yml", "rollback"): frozenset({"id-token"}),
 }
 
 

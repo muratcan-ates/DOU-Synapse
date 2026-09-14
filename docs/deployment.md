@@ -290,8 +290,12 @@ uv run python scripts/measure_latency.py cold --base-url "$API_URL" \
 
 ## 9. Geri alma (rollback)
 
-1. **Uygulama**: Container Apps'te bir önceki revizyona geç. İmajlar
-   sürümlenmiş etiketlerle itilir; `latest` üretimde kullanılmaz.
+1. **Uygulama**: `.github/workflows/rollback.yml` elle tetiklenir; girdisi
+   dönülecek **imaj dijesti**dir (`sha256:<64 hex>`), etiket değil. Etiket
+   taşınabilir, dijest taşınamaz; "canlıda hangi kod var" sorusunun tek kesin
+   cevabı dijesttir. Dağıtımdan önceki dijest VM'de `/opt/dou-synapse/.current-digest`
+   dosyasında tutulur ve `deploy.yml` bunu dağıtımdan **önce** okur. Bu workflow
+   henüz koşulmadı: hedef abonelik ve VM sağlanmadı.
 2. **Migration**: geri alma betiği YOKTUR. Bir migration üretimde soruna yol
    açtıysa yol, ileri doğru düzelten yeni bir migration'dır; şema geri sarılmaz.
    Veri kaybı riski varsa §6'daki yedekten geri yüklenir.
@@ -312,6 +316,101 @@ Gerçek erişim gerektiren, henüz yapılmamış adımlar:
       gözlenir → geri alınır
 - [ ] Cold start ve p95 gerçek replikada ölçüldü (§8)
 - [ ] İmaj boyutu ve replika RSS ölçüldü (ACA ≤ 2 vCPU / 4 GiB)
+
+## 11. Azure for Students hedefi (13 Eylül 2026 kararı)
+
+Önceki bölümlerdeki Vercel + Azure Container Apps topolojisi bir **plan**dı ve
+hiçbir sağlayıcı hesabında uygulanmadı. 13 Eylül'de hedef, kredi ömrü ve tek
+makinede toplanabilirlik gerekçesiyle değiştirildi. Aşağıdakilerin **hiçbiri
+koşulmadı**; bu bölüm bir sözleşmedir, bir kabul kaydı değildir.
+
+### 11.1 Hedef
+
+| Parça | Nerede | Not |
+|---|---|---|
+| API + worker-poller | Azure `B2s_v2` VM (2 vCPU / 8 GiB), Avrupa | Aynı imaj, farklı `command` |
+| Web | Aynı VM, Next.js `standalone` çıktısı | Ayrı barındırma maliyeti eklenmesin diye |
+| Veritabanı + Storage | Supabase Free | PITR **yoktur**; §11.4 |
+| İmaj kayıt defteri | GHCR | Dijestle dağıtılır |
+
+`B2s_v2` için ölçülmemiş liste fiyatı öğrenci kredisini yaklaşık altı haftada
+tüketir. Bu bir tahmindir; gerçek tüketim Azure maliyet ekranından ölçülecek ve
+buraya ölçülmüş değerle yazılacaktır. Kredi bitiminde geçiş seçenekleri:
+**Plan B** Oracle Cloud A1 (ARM), **Plan C** Hetzner CX33. ARM hedefine geçiş
+`linux/arm64` imajının ayrıca kanıtlanmasını gerektirir — bugün yalnız `amd64`
+üretiliyor. Karar, `scripts/measure_embedding_rss.py` ölçümü geldikten sonra
+verilecek: embedding modelinin yerleşik bellek payı 8 GiB'in anlamlı bir
+kısmıysa int8 + ARM birlikte değerlendirilir.
+
+### 11.2 Dağıtım yolu
+
+`.github/workflows/deploy.yml` şu sırayı uygular ve her adımda fail-closed'dır:
+
+1. **guard** — tetikleyen koşunun dalı `main`, olayı `push`, sonucu `success`
+   mi? Değilse dağıtım başlamaz. Fork PR koşuları açıkça reddedilir.
+2. **guard** — altı GitHub Secret'ın hepsi tanımlı mı? Biri eksikse
+   `DEPLOY_NOT_CONFIGURED` ile kırmızı düşer. Eksik yapılandırma **yeşil
+   atlanmış iş** olarak görünmez.
+3. **guard** — dijest `sha256:<64 hex>` biçimine uyuyor mu?
+4. **deploy** — Azure'a OIDC ile giriş (`azure/login`, federe kimlik). Depoda
+   uzun ömürlü Azure parolası tutulmaz.
+5. **deploy** — önceki dijest okunur ve saklanır (geri alma hedefi).
+6. **deploy** — `docker compose pull` → `scripts/migrate.sh` → `docker compose up -d`.
+   Sıra kasıtlıdır: ağ hatası en ucuz yerde, göç süreç değişiminden önce.
+7. **deploy** — `/health/ready` 200 verene kadar on deneme.
+8. **deploy** — duman testi: kimliksiz sohbet isteği 401/403 almalı. 200 dönerse
+   yetki katmanı düşmüş demektir ve dağıtım başarısız sayılır.
+9. **deploy** — herhangi bir adım düşerse önceki dijeste otomatik dönülür.
+   **Göç geri alınmaz**; ileriye uyumlu göç ilkesi gereği eski imaj yeni şemayla
+   çalışabilmelidir.
+
+Sır **adları** (değerleri hiçbir yere yazılmaz): `AZURE_CLIENT_ID`,
+`AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `DEPLOY_VM_NAME`,
+`DEPLOY_RESOURCE_GROUP`, `DEPLOY_API_URL`, ve uygulamanın kendi sırları
+`DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+`SUPABASE_JWT_SECRET`, `GROQ_API_KEY`.
+
+`id-token: write` izni yalnız `deploy` ve `rollback` işlerine, yalnız bu tek
+kapsamla verilmiştir; `scripts/workflow_policy_check.py` bunu politika olarak
+sabitler ve başka bir yazma kapsamı eklenirse kırmızı yanar.
+
+### 11.3 Dal koruması ve zorunlu kontroller
+
+`main` dalında koruma açılacak; birleştirme için aşağıdaki iş adlarının yeşil
+olması istenecek. Adlar `.release/verify_checks.py` içindeki `REQUIRED_WORKFLOWS`
+envanteriyle aynıdır ve o envanter bu değişiklikle **değiştirilmedi**:
+
+- `ci.yml` işleri (api, web, docs, image)
+- `security.yml` / CodeQL
+- `ai-quality.yml`
+
+`deploy.yml` ve `rollback.yml` zorunlu kontrol **değildir**: birleştirmeyi
+engellemeleri değil, birleştirmeden sonra çalışmaları beklenir.
+
+### 11.4 Yedek: Supabase Free'de PITR yok
+
+Ücretsiz katmanda point-in-time recovery bulunmaz. Bunun karşılığı haftalık
+mantıksal export'tur (`scripts/backup.sh` / `scripts/restore.sh`). Bir yedeğin
+"var olması" onun geri yüklenebildiğini kanıtlamaz; tatbikat şunları doğrular:
+satır sayıları aynı, aynı sorgu için dense arama sonucu aynı ve
+`pg_restore --list` çıktısında `EXTENSION vector` görünüyor. Tatbikat sonucu
+[test raporuna](test-report.md) ölçülmüş olarak yazılır.
+
+### 11.5 Bütçe alarmı
+
+Azure maliyet yönetiminde kredi tükenmeden önce uyaran bir bütçe alarmı
+kurulacaktır. Eşik ve tarih, hesap açıldıktan sonra ölçülen gerçek günlük
+tüketime göre belirlenir; buraya tahmini bir sayı yazılmaz.
+
+### 11.6 Koşulmayanlar
+
+- [ ] Azure aboneliği ve Entra uygulama kaydı (OIDC federe kimlik) — runbook §4/2
+- [ ] `B2s_v2` VM sağlandı, Docker ve Compose kuruldu
+- [ ] `deploy.yml` gerçek bir koşuda uçtan uca çalıştı
+- [ ] `rollback.yml` gerçek bir geri almada çalıştı
+- [ ] Supabase projesi açıldı, göçler gerçek hedefte uygulandı
+- [ ] Bütçe alarmı kuruldu ve gerçek günlük tüketim ölçüldü
+- [ ] `linux/arm64` imajı üretildi (Plan B/C için önkoşul)
 
 ## 014 öğrenci çalışma alanı
 
