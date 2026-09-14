@@ -309,7 +309,7 @@ def test_packet_prepares_22_source_hashes_without_approving_or_overwriting(tmp_p
     assert packet["real_provider_quality"] == "pending"
     assert packet["grading_run"] == "not_run"
     draft = json.loads((output / "assessment_cases.json").read_text())
-    assert len(draft["cases"]) == 5
+    assert len(draft["cases"]) == 15
     assert all(case["expected_score"] is None for case in draft["cases"])
     original = (output / "manifest.json").read_bytes()
     with pytest.raises(FileExistsError):
