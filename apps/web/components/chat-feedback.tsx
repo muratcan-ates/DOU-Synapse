@@ -8,7 +8,7 @@ import type {
   ChatFeedbackReason,
 } from "@/lib/types";
 import { useSubmit } from "@/lib/use-submit";
-import { Button } from "@/components/ui";
+import { Button, Select } from "@/components/ui";
 
 export const FEEDBACK_REASON_LABEL: Record<ChatFeedbackReason, string> = {
   helpful: "Yararlı",
@@ -125,17 +125,17 @@ export function ChatFeedbackControls({
         >
           <label className="block text-xs text-fg-muted">
             Sorun türü
-            <select
+            <Select
+              wrapperClassName="mt-1"
               value={reason}
               onChange={(event) => setReason(event.target.value as ChatFeedbackReason)}
-              className="mt-1 h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
             >
               {PROBLEM_REASONS.map((value) => (
                 <option key={value} value={value}>
                   {FEEDBACK_REASON_LABEL[value]}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block text-xs text-fg-muted">
             Açıklama (isteğe bağlı)

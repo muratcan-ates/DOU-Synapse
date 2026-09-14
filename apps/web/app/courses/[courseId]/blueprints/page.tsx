@@ -63,7 +63,7 @@ import { Field } from "@/components/field";
 import { PaperPreview } from "@/components/blueprint/paper-preview";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
-import { Badge, Button, Card, ConfirmAction, EmptyState, Input } from "@/components/ui";
+import { Badge, Button, Card, ConfirmAction, EmptyState, Input, Select } from "@/components/ui";
 
 const DEFAULT_TYPE = "mcq" as const;
 
@@ -232,12 +232,11 @@ function OutcomesCard({
         requestId={topics.errorRequestId} onRetry={topics.reload} />}
       <div className="flex flex-wrap items-end gap-3">
         <Field label="Çıktının konusu">
-          {(control) => <select {...control} value={topicId} disabled={busy || !topics.data}
-            onChange={(event) => setTopicId(event.target.value)}
-            className="min-h-11 max-w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm text-fg">
+          {(control) => <Select {...control} value={topicId} disabled={busy || !topics.data}
+            onChange={(event) => setTopicId(event.target.value)}>
             <option value="">Konu atama</option>
             {(topics.data ?? []).map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
-          </select>}
+          </Select>}
         </Field>
         <Field label="Kod">
           {(control) => (
@@ -508,18 +507,17 @@ function CellEditor({
       <div className="mb-3 flex flex-wrap items-end gap-3">
         <Field label="Öğrenme çıktısı">
           {(control) => (
-            <select
+            <Select
               {...control}
               value={outcomeId}
               onChange={(event) => setOutcomeId(event.target.value)}
-              className="h-11 rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg"
             >
               {outcomes.map((outcome) => (
                 <option key={outcome.id} value={outcome.id}>
                   {outcome.code}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
         </Field>
         <Field label="Soru sayısı">

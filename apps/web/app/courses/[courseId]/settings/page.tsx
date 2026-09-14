@@ -173,7 +173,7 @@ function PolicyEditor({ courseId, viewerId, draftBuffer }: {
           <SectionTitle title="İpucu sınırı" description="Açılış sorusundan sonra verilebilecek en fazla ipucu sayısıdır." />
           <DefaultToggle checked={draft.inheritHints} label="Global üst sınırı kullan" onChange={(checked) => setDraft({ ...draft, inheritHints: checked })} />
           {!draft.inheritHints && (
-            <div className="mt-4">
+            <div className="mt-4 max-w-xs">
               <Input aria-label="İpucu sınırı" type="number" min={0} max={10} value={draft.hintLimit} onChange={(event) => setDraft({ ...draft, hintLimit: Number(event.target.value) })} />
             </div>
           )}
@@ -182,7 +182,7 @@ function PolicyEditor({ courseId, viewerId, draftBuffer }: {
           <SectionTitle title="Kanıt eşiği" description="En iyi dense skor bu değerin altındaysa model çağrılmadan kaynak yetersizliği döner." />
           <DefaultToggle checked={draft.inheritEvidence} label="Global eşiği kullan" onChange={(checked) => setDraft({ ...draft, inheritEvidence: checked })} />
           {!draft.inheritEvidence && (
-            <div className="mt-4">
+            <div className="mt-4 max-w-xs">
               <Input aria-label="Kanıt eşiği" type="number" min={0} max={1} step={0.01} value={draft.evidenceThreshold} onChange={(event) => setDraft({ ...draft, evidenceThreshold: Number(event.target.value) })} />
             </div>
           )}
@@ -202,19 +202,19 @@ function PolicyEditor({ courseId, viewerId, draftBuffer }: {
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <SectionTitle title="Öğrenci günlük token sınırı" description={`Öğrenci başına sohbet tüketimini sınırlar. Sunucuda uygulanan etkin tavan: ${policy.effective.student_daily_token_budget.toLocaleString("tr-TR")} token/gün.`} />
-          <Input aria-label="Öğrenci günlük token sınırı" type="number" min={256} max={1_000_000} value={draft.studentDailyTokenBudget} onChange={(event) => setDraft({ ...draft, studentDailyTokenBudget: Number(event.target.value) })} />
+          <Input className="max-w-xs" aria-label="Öğrenci günlük token sınırı" type="number" min={256} max={1_000_000} value={draft.studentDailyTokenBudget} onChange={(event) => setDraft({ ...draft, studentDailyTokenBudget: Number(event.target.value) })} />
         </Card>
         <Card>
           <SectionTitle title="Öğretim elemanı günlük token sınırı" description={`Öğretim elemanı başına sohbet tüketimini sınırlar. Sunucuda uygulanan etkin tavan: ${policy.effective.instructor_daily_token_budget.toLocaleString("tr-TR")} token/gün.`} />
-          <Input aria-label="Öğretim elemanı günlük token sınırı" type="number" min={256} max={1_000_000} value={draft.instructorDailyTokenBudget} onChange={(event) => setDraft({ ...draft, instructorDailyTokenBudget: Number(event.target.value) })} />
+          <Input className="max-w-xs" aria-label="Öğretim elemanı günlük token sınırı" type="number" min={256} max={1_000_000} value={draft.instructorDailyTokenBudget} onChange={(event) => setDraft({ ...draft, instructorDailyTokenBudget: Number(event.target.value) })} />
         </Card>
         <Card>
           <SectionTitle title="Yanıt başına token tavanı" description={`Her model yanıtının üst sınırıdır. Sunucuda uygulanan etkin tavan: ${policy.effective.max_output_tokens.toLocaleString("tr-TR")} token.`} />
-          <Input aria-label="Yanıt başına token tavanı" type="number" min={64} max={4096} value={draft.maxOutputTokens} onChange={(event) => setDraft({ ...draft, maxOutputTokens: Number(event.target.value) })} />
+          <Input className="max-w-xs" aria-label="Yanıt başına token tavanı" type="number" min={64} max={4096} value={draft.maxOutputTokens} onChange={(event) => setDraft({ ...draft, maxOutputTokens: Number(event.target.value) })} />
         </Card>
         <Card>
           <SectionTitle title="Eşzamanlı istek tavanı" description={`Aynı kullanıcı için aynı anda çalışabilecek en fazla sohbet isteğidir. Sunucuda uygulanan değer: ${policy.effective.max_concurrent_requests}.`} />
-          <Input aria-label="Eşzamanlı istek tavanı" type="number" min={1} max={4} value={draft.maxConcurrentRequests} onChange={(event) => setDraft({ ...draft, maxConcurrentRequests: Number(event.target.value) })} />
+          <Input className="max-w-xs" aria-label="Eşzamanlı istek tavanı" type="number" min={1} max={4} value={draft.maxConcurrentRequests} onChange={(event) => setDraft({ ...draft, maxConcurrentRequests: Number(event.target.value) })} />
         </Card>
       </div>
 
@@ -224,8 +224,8 @@ function PolicyEditor({ courseId, viewerId, draftBuffer }: {
         {!draft.allSources && (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             {documents.map((document) => (
-              <label key={document.id} className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-3 text-sm text-fg">
-                <input type="checkbox" checked={draft.sourceDocumentIds.includes(document.id)} onChange={() => setDraft({ ...draft, sourceDocumentIds: draft.sourceDocumentIds.includes(document.id) ? draft.sourceDocumentIds.filter((id) => id !== document.id) : [...draft.sourceDocumentIds, document.id] })} />
+              <label key={document.id} className="flex min-h-11 items-center gap-3 rounded-xl bg-surface-sunken px-3.5 text-sm text-fg">
+                <input type="checkbox" className={CHECKBOX} checked={draft.sourceDocumentIds.includes(document.id)} onChange={() => setDraft({ ...draft, sourceDocumentIds: draft.sourceDocumentIds.includes(document.id) ? draft.sourceDocumentIds.filter((id) => id !== document.id) : [...draft.sourceDocumentIds, document.id] })} />
                 <span>{document.file_name}</span>
               </label>
             ))}
@@ -234,8 +234,9 @@ function PolicyEditor({ courseId, viewerId, draftBuffer }: {
         )}
       </Card>
 
+      {/* Sayfadaki tek kırmızı: birincil eylem "Politikayı kaydet". */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
-        <p className="text-xs text-fg-muted">Son güncelleme: {policy.updated_at ? new Date(policy.updated_at).toLocaleString("tr-TR") : "Henüz özelleştirilmedi"}</p>
+        <p className="text-xs tabular-nums text-fg-muted">Son güncelleme: {policy.updated_at ? new Date(policy.updated_at).toLocaleString("tr-TR") : "Henüz özelleştirilmedi"}</p>
         <Button aria-disabled={saving} onClick={() => void save()}>{saving ? "Kaydediliyor…" : "Politikayı kaydet"}</Button>
       </div>
       <PolicyHistory key={historyRevision} courseId={courseId} viewerId={viewerId} documentNames={new Map(documents.map((document) => [document.id, document.file_name]))} />
@@ -243,14 +244,32 @@ function PolicyEditor({ courseId, viewerId, draftBuffer }: {
   );
 }
 
+/** Ayar grubu başlığı: `text-base font-semibold` + muted açıklama (DESIGN.md). */
 function SectionTitle({ title, description }: { title: string; description: string }) {
-  return <div className="mb-4"><h2 className="text-lg font-medium text-fg">{title}</h2><p className="prose-tr mt-1 text-sm text-fg-muted">{description}</p></div>;
+  return (
+    <div className="mb-4">
+      <h2 className="text-base font-semibold text-fg">{title}</h2>
+      <p className="prose-tr mt-1 max-w-[70ch] text-sm text-fg-muted">{description}</p>
+    </div>
+  );
 }
 
+const CHECKBOX = "size-4 shrink-0 accent-fg";
+
 function DefaultToggle({ checked, label, onChange }: { checked: boolean; label: string; onChange: (checked: boolean) => void }) {
-  return <label className="flex min-h-11 items-center gap-3 text-sm text-fg"><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span>{label}</span></label>;
+  return (
+    <label className="flex min-h-11 items-center gap-3 text-sm text-fg">
+      <input type="checkbox" className={CHECKBOX} checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <span>{label}</span>
+    </label>
+  );
 }
 
 function ModeCheckbox({ label, mode, draft, setDraft }: { label: string; mode: ChatMode; draft: PolicyDraft; setDraft: (draft: PolicyDraft) => void }) {
-  return <label className="flex min-h-11 items-center gap-3 text-sm text-fg"><input type="checkbox" checked={draft.allowedModes.includes(mode)} onChange={() => setDraft({ ...draft, allowedModes: toggleMode(draft.allowedModes, mode) })} /><span>{label}</span></label>;
+  return (
+    <label className="flex min-h-11 items-center gap-3 text-sm text-fg">
+      <input type="checkbox" className={CHECKBOX} checked={draft.allowedModes.includes(mode)} onChange={() => setDraft({ ...draft, allowedModes: toggleMode(draft.allowedModes, mode) })} />
+      <span>{label}</span>
+    </label>
+  );
 }

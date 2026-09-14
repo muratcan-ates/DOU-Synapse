@@ -16,12 +16,12 @@ export function PolicyHistory(props: Props) {
     <section aria-labelledby="policy-history-title" className="border-t border-border pt-8">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="policy-history-title" className="text-lg font-medium text-fg">Politika geçmişi</h2>
+          <h2 id="policy-history-title" className="text-base font-semibold text-fg">Politika geçmişi</h2>
           <p className="mt-1 text-sm text-fg-muted">Kaydedilen değişiklikleri önceki ve yeni değerleriyle inceleyin.</p>
         </div>
-        <Button variant="ghost" onClick={() => { setOffset(0); setRefresh((value) => value + 1); }}>Geçmişi yenile</Button>
+        <Button variant="ghost" size="sm" onClick={() => { setOffset(0); setRefresh((value) => value + 1); }}>Geçmişi yenile</Button>
       </div>
-      {offset > 0 && <Button variant="ghost" className="mb-3" onClick={() => setOffset((value) => Math.max(0, value - POLICY_HISTORY_PAGE_SIZE))}>Daha yeni kayıtlar</Button>}
+      {offset > 0 && <Button variant="secondary" size="sm" className="mb-3" onClick={() => setOffset((value) => Math.max(0, value - POLICY_HISTORY_PAGE_SIZE))}>Daha yeni kayıtlar</Button>}
       <HistoryPage key={`${props.courseId}:${offset}:${refresh}`} {...props} offset={offset} older={() => setOffset((value) => value + POLICY_HISTORY_PAGE_SIZE)} />
     </section>
   );
@@ -43,7 +43,7 @@ function HistoryPage({ courseId, viewerId, documentNames, offset, older }: Props
                 <details>
                   <summary aria-label={`Politika kaydı ${offset + index + 1}`} className="min-h-11 cursor-pointer py-4 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                     <span className="font-medium">{policyHistoryTitle(entry)}</span>
-                    <span className="mt-1 block text-xs text-fg-muted sm:ml-4 sm:inline">{policyHistoryDate(entry.changed_at)} · {policyHistoryActor(entry.changed_by, viewerId)}</span>
+                    <span className="mt-1 block text-xs tabular-nums text-fg-muted sm:ml-4 sm:inline">{policyHistoryDate(entry.changed_at)} · {policyHistoryActor(entry.changed_by, viewerId)}</span>
                   </summary>
                   {changes.length === 0 ? <p className="pb-4 text-sm text-fg-muted">Değerler değişmeden kaydedildi.</p> : (
                     <dl className="space-y-4 pb-5">
@@ -59,7 +59,7 @@ function HistoryPage({ courseId, viewerId, documentNames, offset, older }: Props
           })}
         </ol>
       )}
-      {rows.length > POLICY_HISTORY_PAGE_SIZE && <Button variant="secondary" className="mt-4" onClick={older}>Daha eski kayıtlar</Button>}
+      {rows.length > POLICY_HISTORY_PAGE_SIZE && <Button variant="secondary" size="sm" className="mt-4" onClick={older}>Daha eski kayıtlar</Button>}
     </>
   );
 }

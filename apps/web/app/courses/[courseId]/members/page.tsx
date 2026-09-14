@@ -14,20 +14,7 @@ import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
-import { Badge, Button, Card, ConfirmAction, EmptyState, Input } from "@/components/ui";
-
-/**
- * Girdi kabuğu — `ui.tsx`'teki `Input` ile birebir aynı ölçüler: 44px yükseklik
- * (DESIGN.md §Responsive dokunma hedefi), 8px köşe, 1px kenarlık, aynı odak
- * halkası. Yükseklik burada 40px'ti; e-posta girdisinin yanında hem yamuk
- * duruyor hem de dokunma hedefinin altında kalıyordu.
- *
- * Bu sabit geçici: `<select>` kabuğu ui.tsx'e `Select` olarak taşınmalı ki sınıf
- * dizisi `Input` ile tek yerde yaşasın (Anayasa XI). Bu görevde ui.tsx başka bir
- * şeride ait olduğu için taşınamadı.
- */
-const CONTROL_CLASS =
-  "h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
+import { Badge, Button, Card, ConfirmAction, EmptyState, Input, Select } from "@/components/ui";
 
 export default function MembersPage() {
   return (
@@ -260,15 +247,14 @@ function AddMemberForm({
           <label htmlFor={roleId} className="mb-1 block text-xs text-fg-muted">
             Rol
           </label>
-          <select
+          <Select
             id={roleId}
             value={role}
             onChange={(e) => setRole(e.target.value as typeof role)}
-            className={CONTROL_CLASS}
           >
             <option value="student">Öğrenci</option>
             <option value="instructor">Eğitmen</option>
-          </select>
+          </Select>
         </div>
         <Button type="submit" aria-disabled={busy}>
           {busy ? "Ekleniyor…" : "Derse ekle"}

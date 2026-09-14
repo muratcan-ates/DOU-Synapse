@@ -28,6 +28,14 @@
         "scripts/demo/run_web.sh"
       ],
       "port": 3020
+    },
+    {
+      "name": "dou-demo-web-dev",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "scripts/demo/run_web_dev.sh"
+      ],
+      "port": 3021
     }
   ]
 }

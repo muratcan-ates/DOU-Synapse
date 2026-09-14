@@ -234,13 +234,20 @@ export function PageHeader({
   return (
     <div className="rise mb-8 flex flex-wrap items-end justify-between gap-4 pb-6">
       {/*
-       * Başlık bloğu artık kırmızı bir dikey rayla açılıyor: sayfanın nerede
-       * başladığı tek bakışta okunuyor. Önceki hâlde başlık ile içerik arasında
-       * yalnız bir alt saç çizgisi vardı ve her sayfa aynı düzlükte başlıyordu.
+       * 14 Eylül 2026: kırmızı dikey ray kaldırıldı. Açık kabukta sayfanın
+       * başlangıcı zaten kanvas-kart farkından okunuyor; ray, üniversitenin
+       * kendi uygulamasının yanında "resmî evrak" gibi duruyordu ve kırmızıyı
+       * dördüncü bir yere yayıyordu (DESIGN.md §Kabuk ve kural değişikliği).
        */}
-      <div className="min-w-0 border-l-2 border-brand pl-5">
+      <div className="min-w-0">
+        {/*
+         * Eyebrow artık aksan rengi taşımaz: kırmızı yalnız marka işareti,
+         * aktif gezinme ve birincil eylemde kalır (DESIGN.md renk kilidi).
+         * Kırmızı üst etiket, kırmızı ray ve kırmızı buton aynı blokta
+         * toplanınca aksan "buraya bas" demeyi bırakıyordu (14 Eylül turu).
+         */}
         {eyebrow && (
-          <p className="mb-2 text-xs font-medium tracking-wide text-brand">{eyebrow}</p>
+          <p className="mb-2 text-xs font-medium tracking-wide text-fg-muted">{eyebrow}</p>
         )}
         <h1
           className={`text-balance font-semibold tracking-tight text-fg ${

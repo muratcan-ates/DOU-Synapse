@@ -13,15 +13,15 @@ export function LearningSummaryPanel({ courseId }: { courseId: string }) {
     <section aria-labelledby="learning-summary-title" className="border-b border-border pb-8">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 id="learning-summary-title" className="text-lg font-medium text-fg">Öğrenme özeti</h2>
-          <p className="prose-tr mt-1 text-sm text-fg-muted">
+          <h2 id="learning-summary-title" className="text-base font-semibold text-fg">Öğrenme özeti</h2>
+          <p className="prose-tr mt-1 max-w-[70ch] text-sm text-fg-muted">
             Konulara göre yanlış cevap, ipucu ve kaynak yetersizliği nedeniyle ret sayıları.
             Bu özet salt okunurdur; kişisel sohbet metinlerini içermez.
           </p>
         </div>
         <div role="group" aria-label="Öğrenme özeti dönemi" className="flex gap-2">
           {([7, 30] as const).map((period) => (
-            <Button key={period} variant="secondary" className={days === period ? "font-semibold underline underline-offset-4" : ""} aria-pressed={days === period} onClick={() => setDays(period)}>
+            <Button key={period} variant="secondary" size="sm" className={days === period ? "border-fg bg-surface-sunken font-semibold" : ""} aria-pressed={days === period} onClick={() => setDays(period)}>
               Son {period} gün
             </Button>
           ))}
@@ -41,28 +41,28 @@ function SummaryPeriod({ courseId, days }: { courseId: string; days: LearningSum
   const { topics, total_events: totalEvents } = summary.data;
   return (
     <div>
-      <p className="mb-3 text-xs text-fg-muted">Son {days} günde {totalEvents.toLocaleString("tr-TR")} öğrenme olayı kaydedildi.</p>
+      <p className="mb-3 text-xs tabular-nums text-fg-muted">Son {days} günde {totalEvents.toLocaleString("tr-TR")} öğrenme olayı kaydedildi.</p>
       {topics.length === 0 ? (
         <p className="py-4 text-sm text-fg-muted">Bu dönemde özetlenecek öğrenme olayı yok. Öğrencilerin çalışma etkinlikleri burada görünecek.</p>
       ) : (
         <>
           <table className="hidden w-full text-left text-sm md:table">
             <caption className="sr-only">Son {days} günün konu bazlı öğrenme özeti</caption>
-            <thead className="border-b border-border text-fg-muted">
+            <thead className="border-b border-border text-xs text-fg-muted">
               <tr>
                 <th scope="col" className="py-3 pr-4 font-medium">Konu</th>
-                <th scope="col" className="py-3 pr-4 font-medium">Yanlış cevap</th>
-                <th scope="col" className="py-3 pr-4 font-medium">İpucu</th>
-                <th scope="col" className="py-3 font-medium">Kaynak yetersizliği / ret</th>
+                <th scope="col" className="py-3 pr-4 text-right font-medium">Yanlış cevap</th>
+                <th scope="col" className="py-3 pr-4 text-right font-medium">İpucu</th>
+                <th scope="col" className="py-3 text-right font-medium">Kaynak yetersizliği / ret</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {topics.map((topic) => (
                 <tr key={topic.topic_id ?? "unassigned"}>
                   <th scope="row" className="py-3 pr-4 font-medium text-fg">{topic.topic_name}</th>
-                  <td className="py-3 pr-4 font-mono text-fg">{topic.wrong_answers.toLocaleString("tr-TR")}</td>
-                  <td className="py-3 pr-4 font-mono text-fg">{topic.hints_requested.toLocaleString("tr-TR")}</td>
-                  <td className="py-3 font-mono text-fg">{topic.unsupported_refusals.toLocaleString("tr-TR")}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums text-fg">{topic.wrong_answers.toLocaleString("tr-TR")}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums text-fg">{topic.hints_requested.toLocaleString("tr-TR")}</td>
+                  <td className="py-3 text-right tabular-nums text-fg">{topic.unsupported_refusals.toLocaleString("tr-TR")}</td>
                 </tr>
               ))}
             </tbody>
@@ -79,7 +79,7 @@ function SummaryPeriod({ courseId, days }: { courseId: string; days: LearningSum
                   ] as const).map(([label, count]) => (
                     <div key={label} className="flex justify-between gap-4">
                       <dt className="text-fg-muted">{label}</dt>
-                      <dd className="font-mono text-fg">{count.toLocaleString("tr-TR")}</dd>
+                      <dd className="tabular-nums text-fg">{count.toLocaleString("tr-TR")}</dd>
                     </div>
                   ))}
                 </dl>
@@ -88,7 +88,7 @@ function SummaryPeriod({ courseId, days }: { courseId: string; days: LearningSum
           </ul>
         </>
       )}
-      <Button variant="ghost" className="mt-3" onClick={() => void summary.reload()}>Özeti yenile</Button>
+      <Button variant="ghost" size="sm" className="mt-3" onClick={() => void summary.reload()}>Özeti yenile</Button>
     </div>
   );
 }

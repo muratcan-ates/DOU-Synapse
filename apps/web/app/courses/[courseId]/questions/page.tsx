@@ -42,10 +42,9 @@ import { CourseNav } from "@/components/course-nav";
 import { Field } from "@/components/field";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
-import { AUTHORING_CONTROL_CLASS as SELECT_CLASS } from "@/components/question-authoring/classification-fields";
 import { GeneratePanel } from "@/components/question-authoring/generate-panel";
 import { QuestionDetail } from "@/components/question-authoring/question-detail";
-import { Badge, Card, EmptyState } from "@/components/ui";
+import { Badge, Card, EmptyState, Select } from "@/components/ui";
 
 const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Tümü" },
@@ -106,7 +105,7 @@ function QuestionsView() {
             action={
               <Link
                 href={`/courses/${courseId}/exam`}
-                className="text-sm text-brand hover:text-brand-strong"
+                className="text-sm text-fg-muted underline underline-offset-4 hover:text-fg"
               >
                 Sınav provasına git
               </Link>
@@ -314,11 +313,11 @@ function QuestionPool({ courseId }: { courseId: string }) {
         <StatusTabs value={statusFilter} disabled={filtersBusy}
           onChange={(status) => changeFilters(status, topicFilter)} />
         <Field label="Konu süzgeci">
-          {(control) => <select {...control} value={topicFilter} disabled={filtersBusy}
-            onChange={(event) => changeFilters(statusFilter, event.target.value)} className={SELECT_CLASS}>
+          {(control) => <Select {...control} value={topicFilter} disabled={filtersBusy}
+            onChange={(event) => changeFilters(statusFilter, event.target.value)}>
             <option value="all">Tüm konular</option>
             {topics.map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
-          </select>}
+          </Select>}
         </Field>
       </div>
       <p className="mb-4 text-xs text-fg-subtle">
@@ -336,7 +335,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
         </>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <Card className="h-fit p-0">
+          <Card className="h-fit px-0 py-0">
             <h2 className="border-b border-border px-4 py-3 text-sm font-medium text-fg">Üretilen sorular</h2>
             {visible.length === 0 ? (
               <p className="px-4 py-6 text-sm text-fg-muted">

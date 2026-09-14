@@ -10,7 +10,7 @@ import {
 import { usePortalProfile } from "@/components/portal/portal-profile-context";
 import { PortalMetrics } from "@/components/portal/portal-metrics";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import {
   adminDate,
   adminTabIndexAfterKey,
@@ -706,17 +706,17 @@ function AdminFilter({
   return (
     <label className="block max-w-xs text-xs font-medium text-fg-muted">
       {label}
-      <select
+      <Select
+        wrapperClassName="mt-2"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 }

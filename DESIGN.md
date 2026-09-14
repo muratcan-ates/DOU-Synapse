@@ -264,28 +264,34 @@ dönüşümü tarayıcıya göre bozulur.
 **Boşluk ölçeği:** 4px tabanlı — `1(4) 2(8) 3(12) 4(16) 6(24) 8(32) 12(48) 16(64)`.
 Ara değer icat edilmez.
 
-**Uygulama iskeleti** (`components/app-shell.tsx` + `components/course-nav.tsx`):
+**Uygulama iskeleti — 14 Eylül 2026 kabuğu** (`components/app-shell.tsx` +
+`components/course-nav.tsx`):
 
 ```
-┌──────────────────────────────────────────────────┐
-│ Üst çubuk 56px, yapışkan — DOU Synapse · kullanıcı · çıkış │
-├──────────────────────────────────────────────────┤
-│  max-width 1200px, ortalı, yatay boşluk 16px      │
-│  ┌────────────────────────────────────────────┐  │
-│  │ Ders sekme şeridi — altı kenarlıkla ayrık   │  │
-│  ├────────────────────────────────────────────┤  │
-│  │ İçerik                                      │  │
-│  └────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────┐
+│ Üst çubuk 64px, yapışkan, beyaz — marka kilidi · tema · hesap · çıkış │
+├────────────────────────────────────────────────────────────┤
+│  max-width 1280px, ortalı; lg: [15rem menü kartı | içerik], boşluk 32px │
+│  ┌──────────┐  ┌──────────────────────────────────────┐    │
+│  │ ⌂ Genel  │  │ Ders sekme şeridi (çukur pist, beyaz  │    │
+│  │ ▯ Dersler│  │ aktif hap)                             │    │
+│  │ ◯ Profil │  ├──────────────────────────────────────┤    │
+│  └──────────┘  │ İçerik: kanvas üstünde yüzen beyaz    │    │
+│   yüzen beyaz  │ kartlar                                │    │
+│   kart, sticky └──────────────────────────────────────┘    │
+├────────────────────────────────────────────────────────────┤
+│ < lg: alt gezinme çubuğu (ikon üstte, etiket altta), sabit │
+└────────────────────────────────────────────────────────────┘
 ```
 
-**240px yan menü kararı geri alındı (9 Ağustos 2026).** Belge önce üst çubuk + sol yan
-menü tarif ediyordu; uygulama yan menü yerine ders içi yatay sekme şeridiyle yazıldı ve
-altı ekranın hepsi o desende. Belge koda çekildi, çünkü: gezinme yalnız ders içinde
-dallanıyor (altı sekme), 240px sabit sütun 1200px kanvasın beşte birini kalıcı olarak
-harcıyor ve okuma alanını daraltıyor; ayrıca yan menü mobilde ikinci bir desen (alt
-gezinme) daha gerektiriyordu — VARIANCE=düşük dial'i iki gezinme grameri kaldırmaz.
-Yan menü **uygulanmadı ve uygulanmayacak**; bu satır o kararın kaydıdır.
+**Yan menü kararının tarihçesi.** 9 Ağustos'ta 240px yan menü reddedilmiş, 20 Ağustos'ta
+tam boy mürekkep rayı gelmiş, 14 Eylül'de ürün sahibi rayı üniversitenin kendi uygulaması
+yanında "kaba" bulup açık kabuğu istemişti (bkz. §Components "Kabuk ve kural
+değişikliği"). Bugünkü hâl: masaüstünde **yüzen beyaz menü kartı** (15rem, `sticky
+top-24`, yalnız üst düzey dört bağlantı), mobilde **alt gezinme çubuğu**. İki gramer
+değil tek gramerin iki kırılımı: aynı `MainNavigation` bileşeni, aynı `aria-label`
+çifti ("Ana menü" / "Mobil ana menü"), aynı href ve etiketler. Ders içi dallanma hâlâ
+sekme şeridindedir; menü kartına ders sekmesi eklenmez.
 
 **Sohbet ekranı istisnası:** masaüstünde iki sütun — solda konuşma, sağda kaynak paneli
 (360px). Okuma genişliği `prose-tr` (70ch) ile metin bloğunun kendisinde sınırlanır.
@@ -322,11 +328,15 @@ tarayıcıda çubuk kenarlıkla ayrık kalır (fail-soft).
 
 ## Shapes
 
-`radius-sm: 4px` (rozet, etiket) · `radius-md: 8px` (buton, girdi, kart) ·
-`radius-lg: 12px` (modal, geniş panel) · `radius-full` (yalnız avatar ve durum noktası).
+14 Eylül 2026 ölçeği: `4px` (rozet, etiket) · `8px` (sekme hapı, menü satırı içi küçük
+öğeler) · `12px` (buton, girdi, seçim kutusu, menü satırı) · `16px` (kart, panel, menü
+kartı, sekme pisti, diyalog) · `radius-full` (avatar, hesap hapı, durum noktası).
+`ui.tsx` bu ölçeği taşır; sayfa kendi köşe yarıçapını icat etmez.
 
-Kenarlık daima `1px`. Tek istisna kenarlık değil **gösterge** olan aktif sekme alt
-çizgisidir (2px `--brand`): bir kutuyu çevrelemez, durum bildirir. Kalın çerçeve yok.
+Kenarlık daima `1px` ve yalnız kontrol sınırında (`--border-strong`) ya da düz kart
+varyantında (`--border`). Kartın varsayılanı **kenarlıksız + `shadow-e1`**; katman
+kenarlıktan değil gölgeden okunur. Kalın çerçeve ve renkli dikey ray yok — sayfa
+başlığındaki 2px kırmızı ray 14 Eylül'de kaldırıldı.
 
 ---
 
@@ -350,25 +360,83 @@ Kurallar: konum bilgisi (`Sayfa 12` / `Slayt 7` / bölüm adı) **her zaman gör
 alıntı metni chunk'tan birebir gelir, model tarafından yeniden yazılmaz; karta tıklamak
 belgenin o sayfasını açar.
 
+### Kabuk ve kural değişikliği — 14 Eylül 2026, 14:30 (ürün sahibi kararı)
+
+Ürün sahibi, mürekkep rayı ve kenarlıksız-ikonsuz gramerle çıkan sonucu üniversitenin
+kendi mobil uygulamasının (DOU Kampüs) yanında "kaba ve katı" buldu ve engelleyen
+kuralların kaldırılmasını istedi. Değişen kurallar, gerekçesiyle:
+
+- **Mürekkep rayı kaldırıldı.** Kabuk artık açık: üstte ince beyaz başlık çubuğu
+  (marka kilidi + hesap), masaüstünde solda **beyaz, yüzen menü kartı** (`rounded-2xl
+  shadow-e1`), mobilde **alt gezinme çubuğu**. Aktif satır yumuşak kırmızı ton
+  (`bg-brand-subtle text-brand`) — "aktif gezinme" kırmızının üç meşru kullanımından
+  biridir. 20 Ağustos'taki ray kararı bu satırla geri alındı.
+- **İkon seti serbest.** `components/icons.tsx`: elle yazılmış, 24px ızgara, 1.75 kalınlık,
+  hepsi `aria-hidden`; anlam her zaman yanındaki metinden gelir. Bağımlılık eklenmedi
+  (manifest kilidi duruyor); ikon kütüphanesi kararı Known Gaps'te kalır.
+- **Kanvas nötr açık gri** `#f3f4f6`, çukur yüzey `#e9eaee`; beyaz kart gölgeyle yüzer,
+  kenarlık taşımaz. Oranlar `scripts/contrast.mjs` ile yeniden ölçülür; kırmızıya
+  yaklaşan çift metin koyultularak çözülür, yüzey açılmaz.
+- **Köşeler:** buton/girdi 12px, kart ve panel 16px, rozet 4px. §Shapes buna göre okunur.
+- **Tipografi:** `text-xs` 13px, `text-sm` 15px; ölçek başlıkta aynı.
+
+Uygulama notu (aynı gün, ölçülmüş):
+- Kanvas inince `--fg-subtle` (#726b66) çukurda 4.36:1, `--warning` (#956400) 4.26:1 ile
+  eşiğin altına düştü; `contrast.mjs` yakaladı. İkisi de koyultuldu: `#6b645f`
+  (5.28 / 5.81 / 4.83) ve `#8a5c00` (5.28 / 5.81 / 4.84). Yüzeyler açılmadı.
+- Tailwind v4 çıktısında `.p-0`, `.p-6`'dan **önce** basılıyor: `<Card className="p-0">`
+  kart dolgusunu ezmez (derlenmiş CSS'te ölçüldü). Dolgusuz liste kartı için
+  `px-0 py-0` yazılır — eksen sınıfları `p-*`'dan sonra gelir ve kazanır.
+- Yüzen ders asistanı düğmesi mobilde alt gezinme çubuğunun üstünde durur
+  (`bottom: calc(4.75rem + safe-area)`), `lg`'de köşeye iner.
+
+### Aksan disiplini ve katman — 14 Eylül 2026 turu
+
+Ölçülen belirti: bir sayfada aynı anda kırmızı sayfa rayı, kırmızı blok rayı, kırmızı
+`eyebrow` etiketi, kırmızı mono ders kodu, yedi kırmızı satır içi bağlantı ve kırmızı buton
+vardı; kırmızı artık "buraya bas" demiyordu. Aynı sayfada dört metrik 1px saç çizgileriyle
+bölünmüş kenarlıklı bir ızgaradaydı ve tarayıcının yerli `<select>`'i formu üniversite
+portalı gibi gösteriyordu. Kurallar buna göre sıkılaştırıldı:
+
+- **Kırmızı üç yerde:** marka işareti, aktif gezinme çizgisi, sayfadaki **tek** birincil
+  eylem. Sayfa başlığındaki 2px ray bir süre istisna olarak kaldı; 14:30 kabuk kararıyla
+  o da kaldırıldı — blok içi kırmızı ray, kırmızı eyebrow, kırmızı ders kodu ve kırmızı
+  satır içi bağlantı **yok**.
+  `PageHeader.eyebrow` artık `--fg-muted` renginde çizilir.
+- **Katman, çizgi yerine:** bilgi ailesi tek yükselmiş yüzeyde (`rounded-xl bg-surface
+  shadow-e1`, kenarlıksız); alt bilgi çukur yüzeyde (`bg-surface-sunken`); saç çizgisi
+  ızgarası yalnız gerçek liste satırlarında.
+- **Rakamlar:** `font-mono` değil `tabular-nums`; metrik değeri `text-3xl`, etiket
+  `text-xs` (`components/portal/portal-metrics.tsx`).
+- **Seçim kutusu:** `components/ui.tsx` → `Select`. Yerli `<select>` semantiği (klavye,
+  ekran okuyucu, form) korunur; `appearance-none` ile kabuk `Input` ile aynı ölçüde, ok
+  işareti iki kenarlıklı döndürülmüş kare (elle SVG yok). Ham `<select>` yazılmaz.
+- **Satır içi eylem:** düz metin bağlantı değil `Button size="sm"` (secondary/ghost/danger).
+
 ### Ders sekme şeridi — ürünün tek gezinme grameri
 
 Yan menü yerine seçilen desen (bkz. §Layout). Ders içi altı bölüm tek bir yatay şeritte
 durur: Materyaller · Asistan · Sınav provası · Soru havuzu · İlerleme · Katılımcılar.
 
 ```
- Materyaller   Asistan   Sınav provası   İlerleme
- ──────────                                        ← aktif: 2px kırmızı alt çizgi
-────────────────────────────────────────────────   ← şerit altı 1px --border
+╭──────────────────────────────────────────────────────╮   ← pist: --surface-sunken, 16px köşe
+│ ┌───────────┐                                        │
+│ │Materyaller│  Asistan   Sınav provası   İlerleme    │   ← aktif: beyaz hap + e1 gölge
+│ └───────────┘                                        │
+╰──────────────────────────────────────────────────────╯
 ```
 
-Kurallar:
-- Aktif sekme kırmızının **üç meşru kullanımından biridir** (aktif navigasyon göstergesi):
-  2px `--brand` alt çizgi + `--fg` metin + `font-medium`. Pasif sekmeler `--fg-muted`.
+Kurallar (14 Eylül 2026 hâli):
+- Aktif sekme **beyaz hap** (`bg-surface shadow-e1 text-fg`), pasif `--fg-muted`; şerit
+  tek başına kırmızı taşımaz. Aktif gezinmenin kırmızısı üst düzey menüde (`app-shell`)
+  kullanılır; aynı sayfada iki kırmızı gezinme göstergesi olmaz.
 - Aktif sekme ayrıca `aria-current="page"` taşır — işaret yalnız renkle verilmez.
 - Yalnız eğitmene açık sekmeler (Soru havuzu, Katılımcılar) öğrencide **hiç render
   edilmez**; devre dışı görünen sekme yoktur (etkin görünüp iş yapmayan öğe kusurdur).
-- Şerit her genişlikte aynıdır; taşarsa yatay kayar (`overflow-x-auto`). Mobilde alt
-  gezinme çubuğuna dönüşmez — ikinci bir gezinme grameri yok.
+- `lg` ve üstünde şerit **sarar** (`flex-wrap`), altında yatay kayar; kaydırma çubuğu
+  gizlidir (`scrollbar-width: none`), dokunma/tekerlek kaydırması korunur. Ders içi
+  sekmeler mobilde alt gezinme çubuğuna taşınmaz — alt çubuk yalnız üst düzey dört
+  bağlantıyı taşır.
 
 ### Abstention (kapsam dışı) durumu — hata gibi görünmemeli
 
@@ -484,7 +552,9 @@ telefonla çalışma senaryosu), eğitmen paneli masaüstü öncelikli.
 
 Bilinçli olarak henüz karara bağlanmadı:
 
-- **İkon seti** — Lucide muhtemelen (shadcn ile gelir), ama doğrulanmadı.
+- **İkon seti** — 14 Eylül'den beri `components/icons.tsx`'te elle yazılmış sekiz ikon
+  var (24px, 1.75). Kütüphaneye geçiş (Lucide/Phosphor) manifest kilidi yüzünden bekliyor;
+  geçilirse aynı ızgara ve kalınlık korunur.
 - **Marka kırmızısının resmî değeri** — iki logo iki ton veriyor (`#C50C1F`, `#D60825`).
   Üniversitenin kurumsal kimlik kılavuzu bulunursa oradan sabitlenmeli.
 - **Grafik/analitik renkleri** — eğitmen panelindeki kategorik palet tanımlanmadı; konu

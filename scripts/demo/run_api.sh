@@ -15,7 +15,7 @@ export EMBEDDING_CACHE_DIR="${EMBEDDING_CACHE_DIR:-$HOME/.cache/dou-synapse/fast
 # Yerel roller ve parolalar supabase/local_dev_setup.sql'de sabittir (yalnız yerel geliştirme).
 export DATABASE_URL="postgresql+psycopg://dou_app:dou_app_local@localhost:5432/${DOU_DEMO_DB:-dou_demo}"
 export WORKER_DATABASE_URL="postgresql+psycopg://dou_worker:dou_worker_local@localhost:5432/${DOU_DEMO_DB:-dou_demo}"
-export CORS_ORIGINS='["http://localhost:3020","http://127.0.0.1:3020"]'
+export CORS_ORIGINS='["http://localhost:3020","http://127.0.0.1:3020","http://localhost:3021","http://127.0.0.1:3021"]'
 export STORAGE_BACKEND=local
 export STORAGE_ROOT="${STORAGE_ROOT:-$HOME/.cache/dou-synapse/demo-storage}"
 export QUESTION_AUTHORING_ENABLED=true

@@ -42,7 +42,13 @@ import { ErrorNote, Loading } from "@/components/page-state";
 import { demoResponseText } from "@/lib/demo-response";
 import { DemoResponseNotice } from "@/components/demo-response-notice";
 import { SocraticLadder } from "@/components/socratic-ladder";
-import { AbstentionNotice, SourceCard } from "@/components/source-card";
+import { SourceCard } from "@/components/source-card";
+import {
+  AbstentionBlock,
+  AssistantSignature,
+  ModeSwitch,
+  QuestionBubble,
+} from "@/components/chat/transcript-parts";
 import { Button, Input } from "@/components/ui";
 
 const DIALOG_FOCUSABLE = [
@@ -92,25 +98,33 @@ export function CourseAssistant({
   }, [open]);
 
   const triggerText = identity?.name ?? (access.locked ? "Asistan kilitli" : "Ders asistanı");
+  /*
+   * Tetikleyici ikincil buton kabuğudur (kenarlık + yüzey + e1 gölge); kırmızı
+   * metin ya da dolgu taşımaz. Kırmızının üç meşru yeri (marka işareti, aktif
+   * gezinme, sayfadaki tek birincil eylem) arasında "asistanı aç" yok; marka
+   * işaretindeki tek kırmızı kare kimliği zaten taşıyor (DESIGN.md, 14 Eylül).
+   */
   const triggerClass =
     placement === "floating"
-      ? "fixed right-4 bottom-4 z-40 border border-border-strong bg-surface px-4 py-2 text-fg"
-      : "h-11 px-0 text-xs font-medium text-brand underline-offset-4 hover:underline";
+      ? // Mobilde alt gezinme çubuğunun (≈4rem + güvenli alan) üstünde durur; lg'de çubuk yok.
+        "fixed right-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 shadow-e1 lg:bottom-4"
+      : "shadow-e1";
 
   return (
     <>
-      <button
+      <Button
         ref={triggerRef}
         type="button"
+        variant="secondary"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={`${titleId}-dialog`}
-        className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${triggerClass}`}
+        className={triggerClass}
       >
         <AssistantMark />
         {triggerText}
-      </button>
+      </Button>
 
       <dialog
         ref={dialogRef}
@@ -158,7 +172,10 @@ export function CourseAssistant({
           setOpen(false);
           triggerRef.current?.focus();
         }}
-        className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-[29rem] border-0 bg-surface p-0 text-fg backdrop:bg-black/30 open:flex open:flex-col"
+        // Seviye 2 (popover/çekmece): e2 gölge, 12px+ köşe. Dar ekranda tam
+        // yükseklik ve köşesiz (kenara yapışık); sm ve üstünde 16px içeriden,
+        // yuvarlak köşeli panel.
+        className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-[29rem] overflow-hidden border-0 bg-surface p-0 text-fg shadow-e2 backdrop:bg-black/30 open:flex open:flex-col sm:my-4 sm:mr-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-2xl"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
@@ -359,6 +376,8 @@ function AssistantConversation({
   };
 
   const blocks = mode === null ? [] : toBlocks(messages, { mode, pending });
+  // İmza en fazla bir kez: başlık zaten adı taşıyor.
+  const firstAssistantId = blocks.find((block) => block.kind !== "question")?.id;
 
   if (recoveryError) return <div className="space-y-3 p-5">
     <ErrorNote message={recoveryError.message} kind={recoveryError.kind} requestId={recoveryError.requestId} />
@@ -375,7 +394,7 @@ function AssistantConversation({
         <Button
           type="button"
           variant="ghost"
-          className="h-9 px-3 text-xs"
+          size="sm"
           aria-disabled={sending}
           onClick={() => {
             if (sending) return;
@@ -423,18 +442,14 @@ function AssistantConversation({
         )}
 
         {blocks.map((block) => {
+          const signed = block.id === firstAssistantId && <AssistantSignature name={identity.name} />;
           if (block.kind === "question") {
-            return (
-              <div key={block.id} className="flex justify-end">
-                <p className="max-w-[88%] rounded-lg bg-bg px-3 py-2 text-sm whitespace-pre-line text-fg">
-                  {block.text}
-                </p>
-              </div>
-            );
+            return <QuestionBubble key={block.id} text={block.text} />;
           }
           if (block.kind === "answer") {
             return (
               <div key={block.id} className="space-y-3">
+                {signed}
                 <DemoResponseNotice fixture={block.fixture} />
                 <p className="prose-tr text-sm whitespace-pre-line text-fg">
                   {demoResponseText(block.text, block.fixture)}
@@ -442,35 +457,37 @@ function AssistantConversation({
                 {block.cached && (
                   <p className="text-xs text-fg-subtle">{CACHED_ANSWER_NOTE}</p>
                 )}
-                {block.citations.length > 0 && (
-                  <details className="rounded-lg border border-border bg-bg">
-                    <summary className="min-h-11 cursor-pointer px-3 py-2 text-xs font-medium text-fg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand">
-                      {block.citations.length} kaynak
-                    </summary>
-                    <div className="space-y-2 border-t border-border p-3">
-                      {block.citations.map((citation, index) => (
-                        <SourceCard
-                          key={`${citation.chunk_id}:${index}`}
-                          source={citationSource(citation)}
-                          href={sourceContextHref(courseId, citation.chunk_id)}
-                          learningContext={{ courseId, chunkId: citation.chunk_id, sessionId }}
-                        />
-                      ))}
-                    </div>
-                  </details>
-                )}
+                {/*
+                  Kaynaklar katlanır `<details>` içindeydi ve kapalı hâli kaynağı
+                  gizliyordu. DESIGN.md: kaynak dipnot değil, cevapla eşit
+                  ağırlıkta; dikey yığın olarak her zaman görünür.
+                */}
+                {block.citations.map((citation, index) => (
+                  <SourceCard
+                    key={`${citation.chunk_id}:${index}`}
+                    source={citationSource(citation)}
+                    href={sourceContextHref(courseId, citation.chunk_id)}
+                    learningContext={{ courseId, chunkId: citation.chunk_id, sessionId }}
+                  />
+                ))}
               </div>
             );
           }
           if (block.kind === "abstention") {
             return (
               <div key={block.id} className="space-y-3">
+                {signed}
                 <DemoResponseNotice fixture={block.fixture} />
-                <AbstentionNotice status={block.status} message={demoResponseText(block.text, block.fixture)} />
+                <AbstentionBlock status={block.status} message={demoResponseText(block.text, block.fixture)} />
               </div>
             );
           }
-          return <SocraticLadder key={block.id} rungs={block.rungs} />;
+          return (
+            <div key={block.id} className="space-y-3">
+              {signed}
+              <SocraticLadder rungs={block.rungs} />
+            </div>
+          );
         })}
 
         {sending && <Loading label="Yanıt hazırlanıyor…" />}
@@ -493,26 +510,12 @@ function AssistantConversation({
         }}
       >
         {allowedModes.length > 1 && mode !== null && (
-          <div role="group" aria-label="Sohbet modu" className="flex gap-1">
-            {allowedChatUiModes(allowedModes).map((candidate) => (
-              <button
-                key={candidate}
-                type="button"
-                aria-pressed={mode === candidate}
-                aria-disabled={sending}
-                onClick={() => {
-                  if (!sending && mode !== candidate) resetConversation(candidate);
-                }}
-                className={`min-h-9 rounded-lg border px-3 text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand aria-disabled:opacity-40 ${
-                  mode === candidate
-                    ? "border-border-strong bg-bg font-medium text-fg"
-                    : "border-transparent text-fg-muted hover:text-fg"
-                }`}
-              >
-                {CHAT_MODE_LABEL[candidate]}
-              </button>
-            ))}
-          </div>
+          <ModeSwitch
+            modes={allowedChatUiModes(allowedModes)}
+            mode={mode}
+            sending={sending}
+            onSelect={resetConversation}
+          />
         )}
 
         <div className="flex gap-2">

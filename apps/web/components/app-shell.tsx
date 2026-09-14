@@ -1,26 +1,34 @@
 "use client";
 
 /**
- * Uygulama iskeleti: masaüstünde 64px üst çubuk, mobilde yatay ana menü.
- * Giriş yapılmamışsa login'e yönlendirir.
+ * Uygulama iskeleti — 14 Eylül 2026 kabuğu.
+ *
+ * Önceki kabuk tam boy mürekkep (siyah) rayıydı. Ürün sahibi, üniversitenin
+ * kendi mobil uygulamasının (açık gri kanvas, yüzen beyaz kartlar, ikonlu
+ * gezinme, tek kırmızı aksan) yanında bunu "kaba ve katı" buldu; DESIGN.md
+ * §Components "Kabuk ve kural değişikliği — 14 Eylül" kararıyla kabuk açık
+ * grama çevrildi:
+ *   - üstte ince beyaz başlık çubuğu (marka kilidi, hesap, çıkış),
+ *   - masaüstünde solda yüzen beyaz menü kartı (ikon + etiket satırları),
+ *   - mobilde alt gezinme çubuğu.
+ * Gezinme bağlantılarının href/etiket/aria değerleri değişmedi; E2E ve kas
+ * hafızası korunur.
  *
  * Oturum burada YENİDEN OKUNMAZ. Depoyu kendi state'ine kopyalayan her bileşen,
- * lib/session.ts'in "tek kaynak" iddiasını sessizce boşa çıkarır: rol kuralı
- * değiştiğinde (ör. asistan rolü eklendiğinde) hangi kopyanın güncellendiği
- * takip edilemez (Anayasa XI).
+ * lib/session.ts'in "tek kaynak" iddiasını sessizce boşa çıkarır (Anayasa XI).
  */
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import {
   PortalProfileProvider,
   usePortalProfile,
 } from "@/components/portal/portal-profile-context";
 import { ErrorNote } from "@/components/page-state";
 import { BrandLockup } from "@/components/brand-mark";
+import { BookIcon, HomeIcon, LogOutIcon, ShieldIcon, UserIcon } from "@/components/icons";
 import { ThemeControl } from "@/components/theme-control";
-import { Button } from "@/components/ui";
 import { subscribeAuthChanges } from "@/lib/auth-events";
 import { signOutCurrent } from "@/lib/api";
 import { describeError, type ErrorInfo } from "@/lib/errors";
@@ -55,6 +63,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
+interface NavigationItem {
+  href: string;
+  label: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+}
+
 function AuthenticatedShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -63,12 +77,12 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
   const [signOutError, setSignOutError] = useState<ErrorInfo | null>(null);
   const displayName = profile?.full_name || "Hesap";
   const displayInitial = displayName.trim().charAt(0).toLocaleUpperCase("tr-TR") || "H";
-  const navigation = [
-    { href: "/dashboard", label: "Genel bakış" },
-    { href: "/courses", label: "Dersler" },
-    { href: "/profile", label: "Profil" },
+  const navigation: NavigationItem[] = [
+    { href: "/dashboard", label: "Genel bakış", icon: HomeIcon },
+    { href: "/courses", label: "Dersler", icon: BookIcon },
+    { href: "/profile", label: "Profil", icon: UserIcon },
     ...(profile?.is_platform_admin
-      ? [{ href: "/admin", label: "Bilgi İşlem" }]
+      ? [{ href: "/admin", label: "Bilgi İşlem", icon: ShieldIcon }]
       : []),
   ];
 
@@ -92,104 +106,69 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
+    <div className="min-h-[100dvh]">
       <a
         href="#main-content"
-        className="sr-only fixed left-4 top-4 z-20 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-e2 focus:not-sr-only focus:outline-2 focus:outline-offset-2 focus:outline-brand"
+        className="sr-only fixed left-4 top-4 z-30 rounded-xl bg-surface px-4 py-3 text-sm font-medium text-fg shadow-e2 focus:not-sr-only focus:outline-2 focus:outline-offset-2 focus:outline-brand"
       >
         Ana içeriğe geç
       </a>
 
-      {/*
-       * Mürekkep rayı (masaüstü). Ürünün kimliği artık ekranın kendisinde:
-       * koyu blok kemik kanvasla kontrast kurar, kırmızı yalnız aktif satırda
-       * görünür. Ray sabit yükseklikte DEĞİL, tam boy — gezinme ve kimlik tek
-       * sütunda toplanır, içerik alanı üstten 64px kaybetmez.
-       */}
-      <aside className="sticky top-0 hidden h-[100dvh] flex-col justify-between bg-ink px-4 py-6 lg:flex">
-        <div className="flex flex-col gap-8">
+      {/* Üst çubuk: marka kilidi, kurum adı, tema, hesap, çıkış. Yapışkan; kaydırıldığında hafif gölge. */}
+      <header className="sticky top-0 z-20 border-b border-border bg-surface/90 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-4 lg:px-8">
           <Link
             href="/dashboard"
             aria-label="DOU Synapse"
-            className="rounded-lg px-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink"
+            className="flex items-center gap-3 rounded-xl px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
-            <BrandLockup tone="ink" />
-            <span className="mt-1 block px-9 text-[0.6875rem] text-ink-fg-muted">
+            <BrandLockup tone="canvas" />
+            <span className="hidden border-l border-border pl-3 text-sm text-fg-muted sm:block">
               Doğuş Üniversitesi
             </span>
           </Link>
-          <RailNavigation items={navigation} pathname={pathname} />
-        </div>
 
-        <div className="flex flex-col gap-1 border-t border-white/10 pt-4">
-          {/*
-           * Tema seçici rayın dibinde, hesap bloğunun hemen üstünde: gün boyu
-           * değişmeyen ama her zaman elin altında olması beklenen bir tercih.
-           * Aynı kontrol Profil sayfasında da var — dar ekranda ray yok.
-           */}
-          <ThemeControl />
-          <Link
-            href="/profile"
-            aria-label={`Profil: ${displayName}`}
-            className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm font-medium text-ink-fg-muted transition-colors duration-200 hover:bg-ink-raised hover:text-ink-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink"
-          >
-            <span
-              aria-hidden="true"
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink-raised text-xs font-semibold text-ink-fg"
-            >
-              {displayInitial}
-            </span>
-            <span className="truncate">{displayName}</span>
-          </Link>
-          <button
-            type="button"
-            aria-disabled={signingOut}
-            onClick={() => void handleSignOut()}
-            className="flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-ink-fg-muted transition-colors duration-200 hover:bg-ink-raised hover:text-ink-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink aria-disabled:opacity-50"
-          >
-            {signingOut ? "Çıkılıyor…" : "Çıkış"}
-          </button>
-        </div>
-      </aside>
-
-      {/* Mobil: ray yerine mürekkep üst şeridi; aynı gramer, tek satır. */}
-      <header className="sticky top-0 z-10 bg-ink lg:hidden">
-        <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
-          <Link
-            href="/dashboard"
-            aria-label="DOU Synapse"
-            className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink"
-          >
-            <BrandLockup tone="ink" />
-          </Link>
-          <div className="ml-auto flex min-w-0 items-center gap-1">
-            <span className="hidden max-w-[10rem] truncate text-xs text-ink-fg-muted sm:block">
-              {displayName}
-            </span>
+          <div className="ml-auto flex items-center gap-2">
+            <div className="hidden md:block">
+              <ThemeControl tone="canvas" />
+            </div>
             <Link
               href="/profile"
               aria-label={`Profil: ${displayName}`}
-              className="grid h-9 w-9 place-items-center rounded-full bg-ink-raised text-xs font-semibold text-ink-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink"
+              className="flex h-11 items-center gap-2 rounded-full bg-surface-sunken py-1 pl-1 pr-3 text-sm font-medium text-fg transition-colors duration-200 hover:bg-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              {displayInitial}
+              <span
+                aria-hidden="true"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-subtle text-sm font-semibold text-brand"
+              >
+                {displayInitial}
+              </span>
+              <span className="hidden max-w-[11rem] truncate sm:block">{displayName}</span>
             </Link>
             <button
               type="button"
               aria-disabled={signingOut}
               onClick={() => void handleSignOut()}
-              className="h-11 min-h-11 rounded-lg px-2 text-xs font-medium text-ink-fg-muted hover:text-ink-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink sm:text-sm"
+              className="inline-flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-medium text-fg-muted transition-colors duration-200 hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand aria-disabled:opacity-50"
             >
-              {signingOut ? "Çıkılıyor…" : "Çıkış"}
+              <LogOutIcon size={18} />
+              <span>{signingOut ? "Çıkılıyor…" : "Çıkış"}</span>
             </button>
           </div>
         </div>
-        <RailNavigation items={navigation} pathname={pathname} mobile />
       </header>
 
-      <div className="min-w-0">
-        {signOutError && (
-          <div className="border-b border-danger/30 bg-danger-bg">
-            <div className="mx-auto max-w-[1200px] px-4 py-3">
+      <div className="mx-auto max-w-[1280px] px-4 py-6 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
+        {/* Masaüstü: yüzen beyaz menü kartı. */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-24 rounded-2xl bg-surface p-3 shadow-e1">
+            <MainNavigation items={navigation} pathname={pathname} />
+          </div>
+        </aside>
+
+        <div className="min-w-0">
+          {signOutError && (
+            <div className="mb-6">
               <ErrorNote
                 message={signOutError.message}
                 kind={signOutError.kind}
@@ -197,31 +176,24 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
                 onRetry={() => void handleSignOut()}
               />
             </div>
-          </div>
-        )}
-        {/*
-         * Alt dolgu 7rem: sağ altta `fixed` duran ders asistanı düğmesi sayfanın
-         * son satırlarının üstüne biniyordu (ölçüldü). Düğme R3 korumalı
-         * dosyada; çakışma kaptan çözülür.
-         */}
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="mx-auto max-w-[1160px] px-4 pt-8 pb-28 lg:px-10 lg:pt-12"
-        >
-          {children}
-        </main>
+          )}
+          {/*
+           * Alt dolgu: mobilde alt gezinme çubuğu, masaüstünde sağ altta duran
+           * ders asistanı düğmesi sayfanın son satırlarının üstüne binmesin.
+           */}
+          <main id="main-content" tabIndex={-1} className="pb-32 lg:pb-28">
+            {children}
+          </main>
+        </div>
       </div>
+
+      {/* Mobil: alt gezinme çubuğu — ikon üstte, etiket altta. */}
+      <MainNavigation items={navigation} pathname={pathname} mobile />
     </div>
   );
 }
 
-interface NavigationItem {
-  href: string;
-  label: string;
-}
-
-function RailNavigation({
+function MainNavigation({
   items,
   pathname,
   mobile = false,
@@ -235,7 +207,7 @@ function RailNavigation({
       aria-label={mobile ? "Mobil ana menü" : "Ana menü"}
       className={
         mobile
-          ? "flex gap-1 overflow-x-auto border-t border-white/10 px-2 pb-1"
+          ? "fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-border bg-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden"
           : "flex flex-col gap-1"
       }
     >
@@ -243,18 +215,23 @@ function RailNavigation({
         const current =
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+        const Icon = item.icon;
         /*
-         * Aktif satır: kırmızı sol kenar + yükseltilmiş mürekkep yüzeyi.
-         * Renk tek başına bilgi taşımaz — `aria-current` her zaman verilir ve
-         * aktif satırın metni de açılır.
+         * Aktif satır yumuşak kırmızı ton: "aktif gezinme", kırmızının üç meşru
+         * kullanımından biri. Renk tek başına bilgi taşımaz — `aria-current`
+         * her zaman verilir ve aktif etiket kalın yazılır.
          */
-        const className = [
-          "inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink",
-          mobile ? "" : "border-l-2",
-          current
-            ? `bg-ink-raised text-ink-fg ${mobile ? "" : "border-brand-on-ink"}`
-            : `text-ink-fg-muted hover:bg-ink-raised hover:text-ink-fg ${mobile ? "" : "border-transparent"}`,
-        ].join(" ");
+        const className = mobile
+          ? [
+              "flex min-h-11 min-w-16 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1 text-xs font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+              current ? "bg-brand-subtle text-brand" : "text-fg-muted hover:text-fg",
+            ].join(" ")
+          : [
+              "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+              current
+                ? "bg-brand-subtle text-brand"
+                : "text-fg-muted hover:bg-surface-sunken hover:text-fg",
+            ].join(" ");
         return (
           <Link
             key={item.href}
@@ -262,7 +239,8 @@ function RailNavigation({
             aria-current={current ? "page" : undefined}
             className={className}
           >
-            {item.label}
+            <Icon size={mobile ? 22 : 20} />
+            <span>{item.label}</span>
           </Link>
         );
       })}

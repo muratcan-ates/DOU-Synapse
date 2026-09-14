@@ -67,7 +67,7 @@ export function Button({
         }
         onClick?.(event);
       }}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background,border,transform,box-shadow] duration-200 ${sizing} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${styles} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-[color,background,border,transform,box-shadow] duration-200 ${sizing} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${styles} ${className}`}
       {...props}
     />
   );
@@ -82,8 +82,36 @@ export function Input({
     <input
       ref={ref}
       {...props}
-      className={`h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand ${className}`}
+      className={`h-11 w-full rounded-xl border border-border-strong bg-surface px-3.5 text-sm text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand ${className}`}
     />
+  );
+}
+
+/**
+ * Yerli `<select>` semantiği korunur (klavye, ekran okuyucu, form gönderimi);
+ * yalnız kabuk stillenir. Tarayıcının kendi açılır kutusu ekranı "ÖBS/Bootstrap
+ * formu" gibi gösteriyordu ve tasarım turunda (14 Eylül 2026) en güçlü mock
+ * belirtisiydi. Ok, ikon kütüphanesi ya da elle SVG değil: iki kenarlıklı,
+ * 45° döndürülmüş kare — DESIGN.md "elle SVG çizme" kuralına uyar.
+ */
+export function Select({
+  className = "",
+  wrapperClassName = "",
+  ref,
+  ...props
+}: ComponentPropsWithRef<"select"> & { wrapperClassName?: string }) {
+  return (
+    <span className={`relative block min-w-0 ${wrapperClassName}`}>
+      <select
+        ref={ref}
+        {...props}
+        className={`h-11 w-full min-w-0 appearance-none rounded-xl border border-border-strong bg-surface pl-3.5 pr-10 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3.5 top-1/2 h-2.5 w-2.5 -translate-y-[70%] rotate-45 border-b-2 border-r-2 border-fg-muted"
+      />
+    </span>
   );
 }
 
@@ -97,12 +125,15 @@ export function Card({
   variant?: "default" | "soft" | "flat";
 }) {
   const variantClass = {
-    // Seviye 1: kanvastan yükselen içerik yüzeyi.
-    default: "rounded-lg border border-border bg-surface shadow-e1",
-    // Çukur: kanvasın ALTINDA duran açıklama/meta bloğu — gölge almaz.
-    soft: "rounded-lg border border-border bg-surface-sunken",
-    // Düz: içinde kendi satır ayraçları olan liste kabı; çift çerçeve olmasın.
-    flat: "rounded-lg border border-border bg-surface",
+    // Seviye 1: kanvastan yükselen içerik yüzeyi. Katmanı gölge taşır; 1px saç
+    // çizgisi kaldırıldı (14 Eylül 2026): kenarlık + gölge birlikte "kutu içinde
+    // kutu" okunuyordu ve üniversite portalının kart gramerini tekrarlıyordu.
+    // Koyu temada gölge görünmez; katmanı --elev-1'deki iç aydınlatma taşır.
+    default: "rounded-2xl bg-surface shadow-e1",
+    // Çukur: kanvasın ALTINDA duran açıklama/meta bloğu — gölge ve kenarlık almaz.
+    soft: "rounded-2xl bg-surface-sunken",
+    // Düz: içinde kendi satır ayraçları olan liste kabı; tek ince çerçeve.
+    flat: "rounded-2xl border border-border bg-surface",
   }[variant];
   return (
     <div className={`${variantClass} p-6 ${className}`}>
@@ -287,7 +318,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rise flex flex-col items-center gap-4 rounded-lg border border-dashed border-border-strong bg-surface-sunken py-16 text-center">
+    // 14 Eylül 2026: kesikli kenarlık gitti — boş durum da bir çukur yüzeydir, "eksik parça" değil.
+    <div className="rise flex flex-col items-center gap-4 rounded-2xl bg-surface-sunken px-6 py-16 text-center">
       <p className="prose-tr text-sm text-fg-muted">{title}</p>
       {action}
     </div>

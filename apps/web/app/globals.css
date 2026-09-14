@@ -35,9 +35,16 @@
      altında kaldı (kapı yakaladı). Çukur yüzeyi açmak çözüm değildi — AA'yı
      tutan en koyu çukur, kanvastan 1.036 oranla ayırt edilemiyordu, yani
      katman olmaktan çıkıyordu. Bu yüzden metin koyultuldu: #726b66 üç zeminde
-     de payla geçer (5.06 / 5.24 / 4.64). */
-  --fg-subtle: #726b66;
-  --bg: #fbfbfa;
+     de payla geçer (5.06 / 5.24 / 4.64).
+     14 Eylül 2026: kanvas #f3f4f6 ve çukur #e9eaee'ye inince #726b66 çukurda
+     4.36:1 ile yine eşiğin altında kaldı (kapı yakaladı). Aynı ilke: yüzey
+     açılmaz, metin koyulur. #6b645f üç zeminde 5.28 / 5.81 / 4.83. */
+  --fg-subtle: #6b645f;
+  /* 14 Eylül 2026: #fbfbfa idi — beyaz kartlar kanvastan ayrışmıyor, katman
+     yalnız saç çizgisinden okunuyordu. Kanvas bir ton indi; kart beyaz kalır ve
+     gölgeyle yüzer (Doğuş mobil uygulamasının kart grameri). Oranlar
+     scripts/contrast.mjs ile yeniden ölçülür. */
+  --bg: #f3f4f6;
   --surface: #ffffff;
   /* İki kenarlık token'ı iki AYRI iş yapar; oranları da ayrı eşiğe tabidir.
      --border DEKORATİF ayraçtır (kart kenarı, liste ayracı, şerit altı): bir
@@ -58,7 +65,8 @@
      neden değiştirilmediği DESIGN.md §Colors "Karşılanmayan eşikler"de. */
   --success: #346538;
   --success-bg: #edf3ec;
-  --warning: #956400;
+  /* 14 Eylül 2026: #956400 yeni çukur üstünde 4.26:1 idi; #8a5c00 → 5.28 / 5.81 / 4.84. */
+  --warning: #8a5c00;
   --warning-bg: #fbf3db;
   --danger: #9f2f2d;
   --danger-bg: #fdebec;
@@ -69,12 +77,12 @@
      Üç katman oldu — çukur (--surface-sunken) < kanvas (--bg) < kart
      (--surface + gölge). Önceden her şey kanvas üstünde beyaz karttı ve
      hiyerarşi yalnız 1px saç çizgisinden okunuyordu. */
-  --surface-sunken: #f2f1ef;
+  --surface-sunken: #e9eaee;
 
   /* DESIGN.md §Elevation seviyeleri artık token; gölge saf siyah DEĞİL,
      metin renginin (28,25,23) sıcak tonuyla renklendirilir — soğuk siyah
      gölge kemik kanvasın üstünde kirli gri görünür. */
-  --elev-1: 0 1px 2px rgb(28 25 23 / 0.05), 0 10px 24px -16px rgb(28 25 23 / 0.24);
+  --elev-1: 0 1px 2px rgb(28 25 23 / 0.03), 0 12px 32px -14px rgb(28 25 23 / 0.14);
   --elev-2: 0 2px 6px rgb(28 25 23 / 0.07), 0 18px 40px -20px rgb(28 25 23 / 0.30);
   --elev-3: 0 28px 64px -24px rgb(28 25 23 / 0.36);
 
@@ -181,10 +189,13 @@
    * 31.25 · 39.06. `text-4xl` ve üstü bilerek tanımlanmadı: ölçek ürün metnini
    * kapsar, giriş ekranı başlığı ölçek dışı display boyudur (DESIGN.md'de yazılı).
    */
-  --text-xs: 0.75rem; /* 12px */
-  --text-xs--line-height: 1rem; /* 16 */
-  --text-sm: 0.875rem; /* 14px */
-  --text-sm--line-height: 1.25rem; /* 20 */
+  /* 14 Eylül 2026: xs 12→13, sm 14→15. Arayüzün büyük kısmı bu iki adımla
+     yazılıyor ve 12/14 ekranda "her şey cılız" okunuyordu; ölçek başlıkta
+     aynı kalır. */
+  --text-xs: 0.8125rem; /* 13px */
+  --text-xs--line-height: 1.125rem; /* 18 */
+  --text-sm: 0.9375rem; /* 15px */
+  --text-sm--line-height: 1.375rem; /* 22 */
   --text-base: 1rem; /* 16px */
   --text-base--line-height: 1.625rem; /* 26 — uzun okuma için bilinçli yüksek */
   --text-lg: 1.25rem; /* 20px */

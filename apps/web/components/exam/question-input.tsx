@@ -7,8 +7,14 @@ import { ANSWER_MAX_LENGTH, type QuestionView } from "@/lib/exam";
 import { Field } from "@/components/field";
 import { Badge, Input } from "@/components/ui";
 
+/*
+ * Çok satırlı cevap kutusu `Input` ile aynı kabuğu taşır (12px köşe, kontrol
+ * sınırı, aynı odak halkası); yalnız yükseklik satır sayısından gelir. İki
+ * girdi türü aynı formda yan yana durduğunda ölçü farkı ürünün derlenmemiş
+ * hissi veriyordu.
+ */
 const TEXTAREA_CLASS =
-  "w-full rounded-lg border border-border-strong bg-surface px-3 py-2 text-sm leading-6 text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
+  "w-full rounded-xl border border-border-strong bg-surface px-3.5 py-2.5 text-sm leading-6 text-fg placeholder:text-fg-subtle focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand";
 
 export function QuestionBody({
   view,
@@ -26,11 +32,12 @@ export function QuestionBody({
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-3">
+        {/* Soru kökü `text-lg` (DESIGN.md §Sınav ekranı); satır aralığı okuma için geniş. */}
         <h1
           ref={headingRef}
           tabIndex={-1}
           aria-describedby={describedBy}
-          className="prose-tr rounded-lg text-lg leading-7 font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+          className="prose-tr rounded-lg text-lg leading-relaxed font-medium text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
         >
           {prompt}
         </h1>
@@ -42,8 +49,9 @@ export function QuestionBody({
           <h2 className="mb-2 text-xs font-medium text-fg-muted">
             Kod{view.language ? ` · ${view.language}` : ""}
           </h2>
-          <pre className="overflow-x-auto rounded-lg border border-border bg-bg px-4 py-3">
-            <code className="font-mono text-xs text-fg">{view.code}</code>
+          {/* Mono yalnız kod bloğunda: çukur yüzey, kodun içerik değil malzeme olduğunu söyler. */}
+          <pre className="overflow-x-auto rounded-xl bg-surface-sunken px-4 py-3">
+            <code className="font-mono text-sm leading-6 text-fg">{view.code}</code>
           </pre>
         </div>
       )}
@@ -69,18 +77,20 @@ export function AnswerInput({
   const answerHelpId = useId();
   if (view.kind === "mcq") {
     return (
-      <fieldset className="mt-8 space-y-4">
+      /* Şıklar arasında bol boşluk: yanlış tıklama sınav kaygısını artırır (DESIGN.md). */
+      <fieldset className="mt-8 space-y-3">
         <legend className="sr-only">Cevap şıkları</legend>
         {view.choices.map((choice) => {
           const active = draft === choice.key;
           return (
+            /*
+             * Radyo semantiği korunur; seçili görünümü CSS `:has(:checked)` ile
+             * satırın kendisi taşır. Seçim rengi aksan değil metin rengidir:
+             * kırmızı bu sayfada yalnız "Cevabı gönder"de durur.
+             */
             <label
               key={choice.key}
-              className={`flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
-                active
-                  ? "border-brand bg-brand-subtle"
-                  : "border-border bg-surface hover:border-border-strong"
-              }`}
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-surface px-4 py-3 transition-colors hover:bg-surface-sunken has-checked:border-fg has-checked:bg-surface-sunken"
             >
               <input
                 type="radio"
@@ -88,7 +98,7 @@ export function AnswerInput({
                 checked={active}
                 disabled={disabled}
                 onChange={() => onChange(choice.key)}
-                className="mt-1 h-4 w-4 accent-brand"
+                className="mt-1 h-4 w-4 accent-fg"
               />
               <span className="prose-tr text-sm leading-6 text-fg">{choice.text}</span>
             </label>

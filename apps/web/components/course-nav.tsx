@@ -69,7 +69,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
        * şerit tamamen kalkar, sayfa dikey olarak zıplar.
        */}
       <nav
-        className={`mb-8 flex gap-1 overflow-x-auto rounded-xl bg-surface-sunken p-1 ${
+        className={`mb-8 flex gap-1 overflow-x-auto rounded-2xl bg-surface-sunken p-1.5 [scrollbar-width:none] lg:flex-wrap [&::-webkit-scrollbar]:hidden ${
           ready ? "" : "invisible"
         }`}
         aria-label={lock.locked ? lock.message ?? undefined : undefined}
@@ -89,7 +89,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
               key={tab.slug}
               aria-disabled="true"
               title={lock.message ?? undefined}
-              className="flex items-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm text-fg-subtle"
+              className="flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm text-fg-subtle"
             >
               {tab.label}
               <span className="rounded-sm border border-border px-1.5 py-0.5 text-xs text-fg-muted">
@@ -110,7 +110,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
             key={tab.slug}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center whitespace-nowrap rounded-lg px-3.5 py-2.5 text-sm transition-colors duration-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
+            className={`flex items-center whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
               active
                 ? "bg-surface font-medium text-fg shadow-e1"
                 : "text-fg-muted hover:bg-surface/70 hover:text-fg"
@@ -121,12 +121,20 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
         );
         })}
       </nav>
+      {/*
+       * Materyal sayfasında tetikleyici şeridin altında, sağa yaslı bir satırda
+       * durur; diğer ders sayfalarında sağ altta yüzer. Satır sarmalayıcısı
+       * yalnız satır içi yerleşimde çizilir ki yüzen düğme akışa boşluk
+       * bırakmasın.
+       */}
       {ready && pathname !== `${base}/chat` && (
-        <CourseAssistant
-          courseId={courseId}
-          availability={lock}
-          placement={isMaterialsPage ? "inline" : "floating"}
-        />
+        isMaterialsPage ? (
+          <div className="-mt-4 mb-6 flex justify-end">
+            <CourseAssistant courseId={courseId} availability={lock} placement="inline" />
+          </div>
+        ) : (
+          <CourseAssistant courseId={courseId} availability={lock} placement="floating" />
+        )
       )}
     </>
   );

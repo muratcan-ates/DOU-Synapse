@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * Kaynak bağlamı — atıfta kullanılan pasaj, önceki ve sonraki parçayla.
+ *
+ * Kompozisyon (DESIGN.md 14 Eylül 2026 turu): parçalar tek çerçeveli listede
+ * (`Card flat` + satır ayraçları); her satırın üstünde konum ve token sayısı
+ * muted, metin `prose-tr`. Atıfta kullanılan pasaj kanvas renginde (`bg-bg`)
+ * ve bilgi rozetiyle işaretlenir; renk tek başına bilgi taşımaz. Kod parçaları
+ * `font-mono` kalır: bu bir rakam değil, kaynak kodun kendisidir.
+ */
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback } from "react";
@@ -39,9 +49,9 @@ function SourceDetails({ courseId, chunkId }: { courseId: string; chunkId: strin
   return (
     <div>
       <CourseNav courseId={courseId} />
-      <nav className="mb-4 text-xs text-fg-subtle">
+      <nav className="mb-4 text-xs text-fg-muted">
         <Link href={`/courses/${courseId}`} className="hover:text-fg">Materyaller</Link>
-        {" / "}
+        <span className="text-fg-subtle">{" / "}</span>
         <Link href={`/courses/${courseId}/sources`} className="hover:text-fg">Retrieval laboratuvarı</Link>
       </nav>
 
@@ -50,31 +60,38 @@ function SourceDetails({ courseId, chunkId }: { courseId: string; chunkId: strin
       {data && !error && !refreshError && (
         <>
           <PageHeader
+            compact
             title={data.file_name}
             description="Atıfta kullanılan pasaj, belgedeki önceki ve sonraki parçayla birlikte gösteriliyor."
           />
-          <div className="space-y-3">
-            {data.chunks.map((chunk) => (
-              <Card
-                key={chunk.id}
-                className={chunk.selected ? "border-border-strong bg-bg" : ""}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-xs text-fg-subtle">
-                    {chunkLocation(chunk)} · {chunk.token_count} token
-                  </p>
-                  {chunk.selected && <Badge tone="info">Atıfta kullanılan pasaj</Badge>}
-                </div>
-                <p
-                  className={`prose-tr mt-3 whitespace-pre-line text-fg ${
-                    chunk.content_type === "code" ? "font-mono text-sm" : "text-base"
-                  }`}
+          <Card variant="flat" className="px-0 py-0">
+            <div className="flex items-center justify-between gap-3 px-5 py-3">
+              <p className="min-w-0 truncate text-sm font-medium text-fg">{data.file_name}</p>
+              <span className="shrink-0 text-xs tabular-nums text-fg-muted">{data.chunks.length} parça</span>
+            </div>
+            <ol className="divide-y divide-border border-t border-border">
+              {data.chunks.map((chunk) => (
+                <li
+                  key={chunk.id}
+                  className={`px-5 py-5 ${chunk.selected ? "bg-bg" : ""}`}
                 >
-                  {chunk.text}
-                </p>
-              </Card>
-            ))}
-          </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs tabular-nums text-fg-muted">
+                      {chunkLocation(chunk)} · {chunk.token_count} token
+                    </p>
+                    {chunk.selected && <Badge tone="info">Atıfta kullanılan pasaj</Badge>}
+                  </div>
+                  <p
+                    className={`prose-tr mt-3 max-w-[70ch] whitespace-pre-line text-fg ${
+                      chunk.content_type === "code" ? "font-mono text-sm" : "text-base"
+                    }`}
+                  >
+                    {chunk.text}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </Card>
         </>
       )}
     </div>

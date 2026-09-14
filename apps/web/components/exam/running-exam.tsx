@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { sourceContextHref } from "@/lib/source-quality";
 import { api } from "@/lib/api";
 import { examAnswerValue, submittedAnswerText } from "@/lib/exam-answer";
-import { appendExamHint, canSubmitAnswer, describeQuestion, EXAM_MODE, formatClock, isLastMinute,
+import { appendExamHint, canSubmitAnswer, describeQuestion, EXAM_MODE, formatClock, HINT_MAX_LEVEL, isLastMinute,
   nextHintLevel, shownQuestions, showsHints, sourceInfo, tickRemaining, timeIsUp, timeNotice } from "@/lib/exam";
 import type { AnswerFeedback, ExamFinish, ExamHint, ExamSession } from "@/lib/types";
 import { useSubmit } from "@/lib/use-submit";
@@ -12,7 +12,7 @@ import { useExamDrafts } from "@/lib/use-exam-drafts";
 import { examStateChanged, type ChatLock } from "@/lib/chat-availability";
 import { ErrorNote, Loading } from "@/components/page-state";
 import { SourceCard } from "@/components/source-card";
-import { Badge, Button, ConfirmAction, EmptyState } from "@/components/ui";
+import { Button, Card, ConfirmAction, EmptyState } from "@/components/ui";
 import { QuestionBody, AnswerInput } from "@/components/exam/question-input";
 import { FeedbackPanel } from "@/components/exam/feedback-panel";
 import { SavedPracticeFeedback } from "@/components/exam/saved-practice-feedback";
@@ -248,35 +248,47 @@ export function RunningExam({
           <Button variant="ghost" onClick={onLeave}>Oturumlara dön</Button>
         </div>
       )}
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3 text-sm">
-        <span id={progressId} className="text-fg-muted">
-          Soru{" "}
-          <span className="font-medium text-fg">
-            {index + 1}/{questions.length}
-          </span>
-        </span>
-
-        <div className="flex items-center gap-3">
-          <Badge tone="neutral">{EXAM_MODE[session.mode].label}</Badge>
-          {remaining !== null && (
-            /*
-              `role="timer"` örtük olarak aria-live="off" taşır: sayaç görsel
-              olarak saniyede güncellenir ama kendiliğinden okunmaz. Anlamlı
-              duyuru aşağıdaki eşik bölgesinden gelir.
-            */
-            <span
-              role="timer"
-              className={`font-mono tabular-nums ${
-                isLastMinute(remaining) ? "font-medium text-warning" : "text-fg-muted"
-              }`}
+      {/*
+        Oturum başlığı, soru sayacı ve kalan süre tek yükselmiş yüzeyde
+        (DESIGN.md §Sınav ekranı, §Aksan disiplini): sayaç büyük ve tabular,
+        süre nötr ve sessiz. Hareket yok; sayaç yanıp sönmez.
+      */}
+      <Card className="mb-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-fg">{EXAM_MODE[session.mode].label}</p>
+            {/* Soru başlığının `aria-describedby`'ı buraya bağlıdır: "Soru 3 / 5" okunur. */}
+            <p
+              id={progressId}
+              className="mt-1 text-2xl leading-none font-semibold tracking-tight tabular-nums text-fg"
             >
-              <span className="sr-only">Kalan süre </span>
-              {formatClock(remaining)}
-            </span>
-          )}
-          {finishAction}
+              <span className="sr-only">Soru </span>
+              {index + 1} / {questions.length}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            {remaining !== null && (
+              /*
+                `role="timer"` örtük olarak aria-live="off" taşır: sayaç görsel
+                olarak saniyede güncellenir ama kendiliğinden okunmaz. Anlamlı
+                duyuru aşağıdaki eşik bölgesinden gelir. Son 60 saniyede
+                `--warning`'e döner; kırmızı ve yanıp sönme yok (DESIGN.md).
+              */
+              <span
+                role="timer"
+                className={`text-sm tabular-nums ${
+                  isLastMinute(remaining) ? "font-medium text-warning" : "text-fg-muted"
+                }`}
+              >
+                <span className="sr-only">Kalan süre </span>
+                {formatClock(remaining)}
+              </span>
+            )}
+            {finishAction}
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Yalnız eşiklerde konuşur; metin değişmediği sürece yeniden okunmaz. */}
       <p role="status" className="sr-only">
@@ -284,11 +296,12 @@ export function RunningExam({
       </p>
 
       {timeUp && (
-        <div className="mb-6 rounded-lg border border-border bg-surface p-4">
+        /* Bilgi satırı, hata değil: çukur yüzey, kırmızı yok. */
+        <Card variant="soft" className="mb-6 px-4 py-4">
           <p className="prose-tr text-sm text-fg">
             Süre doldu. Yeni cevap kabul edilmiyor; sonucu görmek için sınavı bitirin.
           </p>
-        </div>
+        </Card>
       )}
 
       {/* Tazeleme hatası sayfayı silmez: sınav ekranda kalır, uyarı satır içi durur. */}
@@ -313,24 +326,27 @@ export function RunningExam({
       />
 
       {view.kind === "unsupported" ? (
-        <p className="prose-tr mt-6 rounded-lg border border-border bg-surface p-4 text-sm text-fg-muted">
-          Bu soru tipi bu sürümde gösterilemiyor, bu yüzden atlandı. Boş bırakılan
-          sorular yanlış sayılmaz.
-        </p>
+        <Card variant="soft" className="mt-6 px-4 py-4">
+          <p className="prose-tr text-sm text-fg-muted">
+            Bu soru tipi bu sürümde gösterilemiyor, bu yüzden atlandı. Boş bırakılan
+            sorular yanlış sayılmaz.
+          </p>
+        </Card>
       ) : answered ? (
-        <div className="mt-6 rounded-lg border border-border bg-surface p-4">
+        <Card variant="soft" className="mt-6 px-4 py-4">
           <p className="text-sm text-fg-muted">Bu soruyu cevapladınız.</p>
           {submitted[question.id] !== undefined && (
             question.type === "code_trace" ? (
               <div className="mt-2">
                 <p className="text-sm text-fg-muted">Gönderdiğiniz cevap:</p>
+                {/* Kod çıktısı yalnız kod bloğunda mono kalır. */}
                 <pre className="mt-1 overflow-x-auto whitespace-pre-wrap font-mono text-sm text-fg"><code>{submitted[question.id]}</code></pre>
               </div>
             ) : (
               <p className="prose-tr mt-2 text-sm whitespace-pre-line text-fg">Gönderdiğiniz cevap: {submittedAnswerText(question.type, submitted[question.id])}</p>
             )
           )}
-        </div>
+        </Card>
       ) : (
         <AnswerInput
           view={view}
@@ -402,16 +418,31 @@ export function RunningExam({
   );
 }
 
+/**
+ * Sokratik ipucu merdiveni (DESIGN.md §Components): her ipucu bir öncekinin
+ * altında kalır, silinmez. Kademe göstergesi ilerleme çubuğu değil dört ayrık
+ * segmenttir ve sayı yazmaz; "4 adımda biter" hissi düşünmeyi hızlandırma
+ * baskısı üretir. Ulaşılan kademe metin rengiyle dolar, aksan rengiyle değil.
+ */
 function HintLadder({ courseId, sessionId, rungs }: { courseId: string; sessionId: string; rungs: ExamHint[] }) {
+  const reached = rungs.length > 0 ? rungs[rungs.length - 1].hint_level : 0;
   return (
-    <div className="mt-6 rounded-lg border border-border bg-surface">
-      <p className="border-b border-border px-5 py-3 text-sm font-medium text-fg">
-        İpuçları
-      </p>
+    <Card variant="flat" className="mt-6 px-0 py-0">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
+        <p className="text-sm font-medium text-fg">İpuçları</p>
+        <div aria-hidden="true" className="flex items-center gap-1">
+          {Array.from({ length: HINT_MAX_LEVEL }, (_, position) => (
+            <span
+              key={position}
+              className={`h-1.5 w-5 rounded-sm ${position < reached ? "bg-fg" : "bg-border"}`}
+            />
+          ))}
+        </div>
+      </div>
       <ol className="divide-y divide-border">
         {rungs.map((rung, position) => (
           <li key={`${rung.hint_level}-${position}`} className="px-5 py-4">
-            <p className="text-xs font-medium text-fg-subtle">{rung.hint_level}. ipucu</p>
+            <p className="text-xs font-medium tabular-nums text-fg-subtle">{rung.hint_level}. ipucu</p>
             <p className="prose-tr mt-1 text-sm leading-6 whitespace-pre-line text-fg">
               {rung.text}
             </p>
@@ -421,6 +452,6 @@ function HintLadder({ courseId, sessionId, rungs }: { courseId: string; sessionI
           </li>
         ))}
       </ol>
-    </div>
+    </Card>
   );
 }

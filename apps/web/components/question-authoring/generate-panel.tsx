@@ -8,7 +8,7 @@ import type { AnswerFormat, QuestionGeneration, QuestionType, Topic } from "@/li
 import { useSubmit } from "@/lib/use-submit";
 import { Field } from "@/components/field";
 import { ErrorNote } from "@/components/page-state";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card, Input, Select } from "@/components/ui";
 import { AUTHORING_CONTROL_CLASS as SELECT_CLASS, ClassificationFields } from "./classification-fields";
 
 /**
@@ -91,7 +91,7 @@ export function GeneratePanel({
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Konu">
               {(control) => (
-                <select
+                <Select
                   {...control}
                   value={activeTopicId}
                   onChange={(e) => {
@@ -100,31 +100,29 @@ export function GeneratePanel({
                       setClassification(EMPTY_CLASSIFICATION);
                     }
                   }}
-                  className={SELECT_CLASS}
                 >
                   {topics.map((topic) => (
                     <option key={topic.id} value={topic.id}>
                       {topic.name}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </Field>
 
             <Field label="Soru tipi">
               {(control) => (
-                <select
+                <Select
                   {...control}
                   value={questionType}
                   onChange={(e) => setQuestionType(e.target.value as QuestionType)}
-                  className={SELECT_CLASS}
                 >
                   {(Object.keys(QUESTION_TYPE) as QuestionType[]).map((type) => (
                     <option key={type} value={type}>
                       {QUESTION_TYPE[type]}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </Field>
 
@@ -136,18 +134,17 @@ export function GeneratePanel({
             {questionType === "open" && (
               <Field label="Cevap biçimi">
                 {(control) => (
-                  <select
+                  <Select
                     {...control}
                     value={answerFormat}
                     onChange={(e) => setAnswerFormat(e.target.value as AnswerFormat)}
-                    className={SELECT_CLASS}
                   >
                     {(Object.keys(ANSWER_FORMAT) as AnswerFormat[]).map((format) => (
                       <option key={format} value={format}>
                         {ANSWER_FORMAT[format]}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </Field>
             )}
@@ -156,18 +153,17 @@ export function GeneratePanel({
                 geçersiz bir sayının hiç oluşmaması, sonra reddedilmesinden iyi. */}
             <Field label="Kaç soru">
               {(control) => (
-                <select
+                <Select
                   {...control}
                   value={count}
                   onChange={(e) => setCount(Number(e.target.value))}
-                  className={SELECT_CLASS}
                 >
                   {GENERATE_COUNTS.map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </Field>
           </div>

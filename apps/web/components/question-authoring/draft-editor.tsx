@@ -9,7 +9,7 @@ import { useSubmit } from "@/lib/use-submit";
 import type { Question } from "@/lib/types";
 import { Field } from "@/components/field";
 import { ErrorNote } from "@/components/page-state";
-import { Button, ConfirmAction, Input } from "@/components/ui";
+import { Button, ConfirmAction, Input, Select } from "@/components/ui";
 import { AUTHORING_CONTROL_CLASS, ClassificationFields } from "./classification-fields";
 
 /** The original question stays in the parent until the server accepts the full edit. */
@@ -88,18 +88,18 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
           {form.options.map((option, index) => <TextArea key={option.key} label={`${option.key} şıkkı`}
             value={option.text} onChange={(value) => change("options", form.options.map((item, i) => i === index ? { ...item, text: value } : item))}
             required maxLength={1000} rows={2} />)}
-          <Field label="Doğru şık">{(control) => <select {...control} className={AUTHORING_CONTROL_CLASS} required
+          <Field label="Doğru şık">{(control) => <Select {...control} required
             value={form.answerKey} onChange={(event) => setForm((current) => changeCorrectOption(current, event.target.value, question.source?.chunk_id))}>
             <option value="">Şık seçin</option>
             {form.options.map((option) => <option key={option.key} value={option.key}>{option.key}</option>)}
-          </select>}</Field>
+          </Select>}</Field>
           <p className="prose-tr text-xs text-fg-muted">Her yanlış şık için çeliştiği kaynağı kontrol edin. Doğru şıkkı değiştirince yeni yanlış şık için sorunun üretildiği kaynak seçilir.</p>
           {form.options.filter((option) => option.key !== form.answerKey).map((option) => <Field key={option.key} label={`${option.key} yanlış şıkkının kaynağı`}>
-            {(control) => <select {...control} required className={AUTHORING_CONTROL_CLASS} value={form.distractorSources[option.key] ?? ""}
+            {(control) => <Select {...control} required value={form.distractorSources[option.key] ?? ""}
               onChange={(event) => change("distractorSources", { ...form.distractorSources, [option.key]: event.target.value })}>
               <option value="">Kaynak seçin</option>
               {sources.map((source) => <option key={source.id} value={source.id}>{source.label}</option>)}
-            </select>}
+            </Select>}
           </Field>)}
         </div> : question.type === "bug_hunt" ? <div className="space-y-3">
           <Field label="Hatalı satır">{(control) => <Input {...control} type="number" min={1} required value={form.bugLine}

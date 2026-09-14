@@ -54,8 +54,14 @@ import { ErrorNote, Loading, LoadMore } from "@/components/page-state";
 import { demoResponseText } from "@/lib/demo-response";
 import { DemoResponseNotice } from "@/components/demo-response-notice";
 import { SocraticLadder } from "@/components/socratic-ladder";
-import { AbstentionNotice, SourceCard } from "@/components/source-card";
-import { Badge, Button, EmptyState, Input } from "@/components/ui";
+import { SourceCard } from "@/components/source-card";
+import {
+  AbstentionBlock,
+  AssistantSignature,
+  ModeSwitch,
+  QuestionBubble,
+} from "@/components/chat/transcript-parts";
+import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 
 export default function ChatPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -234,6 +240,7 @@ function ChatScreen({
         <ChatTranscript
           sessionId={chat.sessionId}
           courseId={courseId}
+          signature={identity.name}
           canGiveFeedback={canGiveFeedback}
           blocks={blocks}
           feedbackByMessage={feedbackByMessage}
@@ -292,6 +299,7 @@ function ChatTranscript({
   courseId,
   sessionId,
   canGiveFeedback,
+  signature,
   blocks,
   feedbackByMessage,
   onSaveFeedback,
@@ -299,6 +307,8 @@ function ChatTranscript({
   courseId: string;
   canGiveFeedback: boolean;
   sessionId: string | null;
+  /** Asistan adı; dökümde en fazla bir kez, ilk asistan bloğunun üstünde. */
+  signature: string;
   blocks: ChatBlock[];
   feedbackByMessage: Map<string, TranscriptMessage["feedback"]>;
   onSaveFeedback: (
@@ -306,21 +316,20 @@ function ChatTranscript({
     feedback: NonNullable<TranscriptMessage["feedback"]>,
   ) => void;
 }) {
+  // İmza yalnız ilk asistan bloğunun üstünde: başlık zaten adı taşıyor, her
+  // cevapta tekrar etmek dökümü sohbet uygulaması taklidine çevirirdi.
+  const firstAssistantId = blocks.find((block) => block.kind !== "question")?.id;
   return (
     <>
       {blocks.map((block) => {
+        const signed = block.id === firstAssistantId && <AssistantSignature name={signature} />;
         switch (block.kind) {
           case "question":
-            return (
-              <div key={block.id} className="flex justify-end">
-                <p className="max-w-[85%] rounded-lg bg-surface px-4 py-3 text-sm whitespace-pre-line text-fg">
-                  {block.text}
-                </p>
-              </div>
-            );
+            return <QuestionBubble key={block.id} text={block.text} />;
           case "answer":
             return (
               <div key={block.id} className="space-y-3">
+                {signed}
                 <DemoResponseNotice fixture={block.fixture} />
                 <p className="prose-tr text-base whitespace-pre-line text-fg">
                   {demoResponseText(block.text, block.fixture)}
@@ -356,8 +365,9 @@ function ChatTranscript({
           case "abstention":
             return (
               <div key={block.id} className="space-y-3">
+                {signed}
                 <DemoResponseNotice fixture={block.fixture} />
-                <AbstentionNotice status={block.status} message={demoResponseText(block.text, block.fixture)} />
+                <AbstentionBlock status={block.status} message={demoResponseText(block.text, block.fixture)} />
                 {canGiveFeedback && (
                   <ChatFeedbackControls
                     courseId={courseId}
@@ -370,24 +380,26 @@ function ChatTranscript({
             );
           case "ladder":
             return (
-              <SocraticLadder
-                key={block.id}
-                rungs={block.rungs}
-                footerForRung={
-                  canGiveFeedback
-                    ? (rung) => (
-                        <div className="mt-3">
-                          <ChatFeedbackControls
-                            courseId={courseId}
-                            messageId={rung.id}
-                            initial={feedbackByMessage.get(rung.id) ?? null}
-                            onSaved={(feedback) => onSaveFeedback(rung.id, feedback)}
-                          />
-                        </div>
-                      )
-                    : undefined
-                }
-              />
+              <div key={block.id} className="space-y-3">
+                {signed}
+                <SocraticLadder
+                  rungs={block.rungs}
+                  footerForRung={
+                    canGiveFeedback
+                      ? (rung) => (
+                          <div className="mt-3">
+                            <ChatFeedbackControls
+                              courseId={courseId}
+                              messageId={rung.id}
+                              initial={feedbackByMessage.get(rung.id) ?? null}
+                              onSaved={(feedback) => onSaveFeedback(rung.id, feedback)}
+                            />
+                          </div>
+                        )
+                      : undefined
+                  }
+                />
+              </div>
             );
         }
       })}
@@ -425,35 +437,7 @@ function ChatComposer({
         onSend();
       }}
     >
-      <div
-        role="group"
-        aria-label="Sohbet modu"
-        className="flex w-fit gap-1 rounded-lg border border-border p-1"
-      >
-        {allowedModes.map((value) => {
-          const active = mode === value;
-          return (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={active}
-              aria-disabled={sending}
-              onClick={() => {
-                // Mod oturum ortasında değişemez (sunucu 422 döner): değişim
-                // yeni oturum açar, hata göstermez.
-                if (!sending && !active) onSelectMode(value);
-              }}
-              className={`h-8 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${
-                active
-                  ? "border-border-strong bg-surface font-medium text-fg"
-                  : "border-transparent text-fg-muted hover:text-fg"
-              }`}
-            >
-              {CHAT_MODE_LABEL[value]}
-            </button>
-          );
-        })}
-      </div>
+      <ModeSwitch modes={allowedModes} mode={mode} sending={sending} onSelect={onSelectMode} />
 
       <div className="flex gap-2">
         {/* Placeholder etiket yerine geçmez (DESIGN.md): etiket gizli ama var. */}
@@ -489,58 +473,58 @@ function CourseMaterialsSection({
   documents: Resource<CourseDocument[]>;
 }) {
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-medium text-fg">Bu dersin kaynakları</h2>
-      <p className="prose-tr text-xs text-fg-muted">
-        Asistan yalnızca eğitmenin yüklediği bu materyallerden cevap verir;
-        her cevap sayfa numarasıyla gelir.
-      </p>
-      {documents.error && (
-        <ErrorNote
-          message={documents.error}
-          kind={documents.errorKind}
-          requestId={documents.errorRequestId}
-          onRetry={() => void documents.reload()}
-        />
-      )}
-      {documents.refreshError && (
-        <ErrorNote
-          message={documents.refreshError}
-          kind={documents.errorKind}
-          requestId={documents.errorRequestId}
-          onRetry={() => void documents.reload()}
-        />
-      )}
-      {documents.loading && <Loading label="Materyaller yükleniyor…" />}
-      {documents.data?.length === 0 && (
+    <Card variant="flat">
+      <section className="space-y-3">
+        <h2 className="text-sm font-medium text-fg">Bu dersin kaynakları</h2>
         <p className="prose-tr text-xs text-fg-muted">
-          Bu derste henüz materyal yok. Eğitmen materyal yükleyene kadar
-          asistan kaynak gösteremez.
+          Asistan yalnızca eğitmenin yüklediği bu materyallerden cevap verir;
+          her cevap sayfa numarasıyla gelir.
         </p>
-      )}
-      {documents.data && documents.data.length > 0 && (
-        <ul className="space-y-2">
-          {documents.data.map((doc) => (
-            <li
-              key={doc.id}
-              className="rounded-lg border border-border bg-surface px-3 py-2"
-            >
-              <p className="truncate font-mono text-xs text-fg">{doc.file_name}</p>
-              <p className="mt-1.5 flex items-center gap-2">
-                <Badge tone={DOCUMENT_STATUS[doc.status].tone}>
-                  {DOCUMENT_STATUS[doc.status].label}
-                </Badge>
-                <span className="text-xs text-fg-muted">
-                  {doc.page_count === null
-                    ? `${doc.chunk_count} parça`
-                    : `${doc.page_count} sayfa`}
-                </span>
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+        {documents.error && (
+          <ErrorNote
+            message={documents.error}
+            kind={documents.errorKind}
+            requestId={documents.errorRequestId}
+            onRetry={() => void documents.reload()}
+          />
+        )}
+        {documents.refreshError && (
+          <ErrorNote
+            message={documents.refreshError}
+            kind={documents.errorKind}
+            requestId={documents.errorRequestId}
+            onRetry={() => void documents.reload()}
+          />
+        )}
+        {documents.loading && <Loading label="Materyaller yükleniyor…" />}
+        {documents.data?.length === 0 && (
+          <p className="prose-tr text-xs text-fg-muted">
+            Bu derste henüz materyal yok. Eğitmen materyal yükleyene kadar
+            asistan kaynak gösteremez.
+          </p>
+        )}
+        {/* Liste satırları saç çizgisiyle ayrılır (seviye 0); kabuk tek ince çerçeve. */}
+        {documents.data && documents.data.length > 0 && (
+          <ul className="divide-y divide-border border-t border-border">
+            {documents.data.map((doc) => (
+              <li key={doc.id} className="py-3">
+                <p className="truncate text-sm font-medium text-fg">{doc.file_name}</p>
+                <p className="mt-1.5 flex items-center gap-2">
+                  <Badge tone={DOCUMENT_STATUS[doc.status].tone}>
+                    {DOCUMENT_STATUS[doc.status].label}
+                  </Badge>
+                  <span className="text-xs tabular-nums text-fg-muted">
+                    {doc.page_count === null
+                      ? `${doc.chunk_count} parça`
+                      : `${doc.page_count} sayfa`}
+                  </span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </Card>
   );
 }
 
@@ -567,103 +551,115 @@ function SessionListSection({
   onOpenSession: (summary: ChatSessionSummary) => void;
 }) {
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-medium text-fg">Sohbetlerin</h2>
-        <Button
-          type="button"
-          variant="secondary"
-          aria-disabled={sending}
-          onClick={() => {
-            if (!sending) onStartNew();
-          }}
-        >
-          Yeni sohbet
-        </Button>
-      </div>
-      {deletionNotice && <p role="status" className="text-sm text-fg-muted">{deletionNotice}</p>}
-      {sessions.error && (
-        <ErrorNote
-          message={sessions.error}
-          kind={sessions.errorKind}
-          requestId={sessions.errorRequestId}
-          onRetry={() => void sessions.reload()}
+    <Card variant="flat">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium text-fg">Sohbetlerin</h2>
+          <Button
+            type="button"
+            variant="secondary"
+            aria-disabled={sending}
+            onClick={() => {
+              if (!sending) onStartNew();
+            }}
+          >
+            Yeni sohbet
+          </Button>
+        </div>
+        {deletionNotice && <p role="status" className="text-sm text-fg-muted">{deletionNotice}</p>}
+        {sessions.error && (
+          <ErrorNote
+            message={sessions.error}
+            kind={sessions.errorKind}
+            requestId={sessions.errorRequestId}
+            onRetry={() => void sessions.reload()}
+          />
+        )}
+        {sessions.refreshError && (
+          <ErrorNote
+            message={sessions.refreshError}
+            kind={sessions.errorKind}
+            requestId={sessions.errorRequestId}
+            onRetry={() => void sessions.reload()}
+          />
+        )}
+        {sessions.loading && <Loading label="Sohbetler yükleniyor…" />}
+        {sessions.data?.length === 0 && (
+          <p className="text-xs text-fg-muted">Henüz bir sohbet açmadın.</p>
+        )}
+        {sessions.data && sessions.data.length > 0 && (
+          <ul aria-label="Kişisel sohbetler" className="max-h-96 space-y-3 overflow-y-auto">
+            {sessions.data.map((summary) => {
+              const active = summary.id === sessionId;
+              const summaryMode: ChatUiMode | null =
+                summary.mode === "exam" ? null : summary.mode;
+              const modeAllowed =
+                summaryMode !== null && allowedModes.includes(summaryMode);
+              const identityAllowed = sessionMatchesAssistant(summary, identity);
+              const sessionAllowed = modeAllowed && identityAllowed;
+              // Sokratik oturuma dönen öğrenci nerede kaldığını listeden görür.
+              // QA'da ve kademesi henüz bildirilmemiş oturumda null döner ve
+              // satıra hiçbir şey eklenmez.
+              const stage = sessionStageLabel(summary);
+              return (
+                <li key={summary.id}>
+                  <button
+                    type="button"
+                    aria-current={active ? "true" : undefined}
+                    aria-disabled={!sessionAllowed}
+                    title={
+                      sessionAllowed
+                        ? undefined
+                        : identityAllowed
+                          ? "Bu sohbet modu ders politikasında artık kapalı."
+                          : "Bu sohbet farklı bir üyelik profiliyle oluşturulmuş."
+                    }
+                    onClick={() => {
+                      if (sessionAllowed) onOpenSession(summary);
+                    }}
+                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                      active
+                        ? "bg-surface-sunken font-medium"
+                        : "hover:bg-surface-sunken"
+                    } ${sessionAllowed ? "" : "cursor-not-allowed opacity-50"}`}
+                  >
+                    <span className="block truncate text-xs text-fg">
+                      {summary.title ?? "Başlıksız sohbet"}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-fg-subtle">
+                      {stage === null
+                        ? CHAT_MODE_LABEL[summary.mode]
+                        : `${CHAT_MODE_LABEL[summary.mode]} · ${stage}`}
+                      {!identityAllowed
+                        ? " · Farklı profil"
+                        : !modeAllowed
+                          ? " · Politika ile kapalı"
+                          : ""}
+                    </span>
+                  </button>
+                  {/*
+                   * `ChatHistoryDelete` tetikleyicisini ikincil (kenarlıklı) çizer;
+                   * liste satırında `ghost sm` ağırlığında durmalı (DESIGN.md
+                   * "satır içi eylem"). Kabuk ebeveynden, yalnız doğrudan
+                   * tetikleyici (`div > button`) hedeflenerek kurulur; onay
+                   * satırındaki Vazgeç / Kalıcı olarak sil daha derindedir ve
+                   * etkilenmez. Metin, aria-label, odak ve davranış aynen kalır.
+                   */}
+                  <div className="mt-1 [&>div>button]:h-9 [&>div>button]:border-transparent [&>div>button]:px-3 [&>div>button]:text-[0.8125rem] [&>div>button]:text-fg-muted [&>div>button:hover]:border-transparent [&>div>button:hover]:bg-surface-sunken [&>div>button:hover]:text-fg">
+                    <ChatHistoryDelete courseId={courseId} sessionId={summary.id} title={summary.title ?? "Başlıksız"} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <LoadMore
+          hasMore={sessions.nextCursor !== null}
+          busy={sessions.loadingMore}
+          error={sessions.pageError}
+          onLoadMore={() => void sessions.loadMore()}
         />
-      )}
-      {sessions.refreshError && (
-        <ErrorNote
-          message={sessions.refreshError}
-          kind={sessions.errorKind}
-          requestId={sessions.errorRequestId}
-          onRetry={() => void sessions.reload()}
-        />
-      )}
-      {sessions.loading && <Loading label="Sohbetler yükleniyor…" />}
-      {sessions.data?.length === 0 && (
-        <p className="text-xs text-fg-muted">Henüz bir sohbet açmadın.</p>
-      )}
-      {sessions.data && sessions.data.length > 0 && (
-        <ul aria-label="Kişisel sohbetler" className="max-h-96 space-y-3 overflow-y-auto">
-          {sessions.data.map((summary) => {
-            const active = summary.id === sessionId;
-            const summaryMode: ChatUiMode | null =
-              summary.mode === "exam" ? null : summary.mode;
-            const modeAllowed =
-              summaryMode !== null && allowedModes.includes(summaryMode);
-            const identityAllowed = sessionMatchesAssistant(summary, identity);
-            const sessionAllowed = modeAllowed && identityAllowed;
-            // Sokratik oturuma dönen öğrenci nerede kaldığını listeden görür.
-            // QA'da ve kademesi henüz bildirilmemiş oturumda null döner ve
-            // satıra hiçbir şey eklenmez.
-            const stage = sessionStageLabel(summary);
-            return (
-              <li key={summary.id}>
-                <button
-                  type="button"
-                  aria-current={active ? "true" : undefined}
-                  aria-disabled={!sessionAllowed}
-                  title={
-                    sessionAllowed
-                      ? undefined
-                      : identityAllowed
-                        ? "Bu sohbet modu ders politikasında artık kapalı."
-                        : "Bu sohbet farklı bir üyelik profiliyle oluşturulmuş."
-                  }
-                  onClick={() => {
-                    if (sessionAllowed) onOpenSession(summary);
-                  }}
-                  className={`w-full rounded-lg border px-3 py-2 text-left transition-colors ${
-                    active
-                      ? "border-border-strong bg-surface"
-                      : "border-transparent hover:bg-surface"
-                  } ${sessionAllowed ? "" : "cursor-not-allowed opacity-50"}`}
-                >
-                  <span className="block truncate text-xs text-fg">
-                    {summary.title ?? "Başlıksız sohbet"}
-                  </span>
-                  <span className="mt-0.5 block text-xs text-fg-subtle">
-                    {stage === null
-                      ? CHAT_MODE_LABEL[summary.mode]
-                      : `${CHAT_MODE_LABEL[summary.mode]} · ${stage}`}
-                    {!identityAllowed
-                      ? " · Farklı profil"
-                      : !modeAllowed
-                        ? " · Politika ile kapalı"
-                        : ""}
-                  </span>
-                </button>
-                <ChatHistoryDelete courseId={courseId} sessionId={summary.id} title={summary.title ?? "Başlıksız"} />
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <LoadMore
-        hasMore={sessions.nextCursor !== null}
-        busy={sessions.loadingMore}
-        error={sessions.pageError}
-        onLoadMore={() => void sessions.loadMore()}
-      />
-    </section>
+      </section>
+    </Card>
   );
 }

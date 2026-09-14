@@ -2,9 +2,15 @@
 
 /**
  * Giriş — split-screen editoryal yerleşim (taste-skill anti-center kuralı).
- * Sol panel: ürün tezi, display tipografi. Sağ panel: geliştirme kimlikleri.
- * Backend DEV_AUTH_ENABLED=true iken `Bearer dev:<uuid>` kabul eder; iki demo
- * kullanıcı supabase/seed_demo.sql ile oluşturulur. Canlıda yerini Supabase Auth alır.
+ * Sol panel: ürün tezi, display tipografi. Sağ panel: kanvas üstünde yüzen tek
+ * oturum kartı. Backend DEV_AUTH_ENABLED=true iken `Bearer dev:<uuid>` kabul
+ * eder; iki demo kullanıcı supabase/seed_demo.sql ile oluşturulur. Canlıda
+ * yerini Supabase Auth alır.
+ *
+ * 14 Eylül 2026 turu (DESIGN.md §Components "Aksan disiplini ve katman"):
+ * kırmızı bu ekranda yalnız marka işareti ve "Oturum aç" düğmesindedir. Kırmızı
+ * blok rayı, kırmızı üst satır, kırmızı mono avatar ve kırmızı satır içi
+ * bağlantılar kaldırıldı; sütun ayrımı çizgiyle değil kartın gölgesiyle kurulur.
  */
 
 import Link from "next/link";
@@ -15,7 +21,7 @@ import { signIn, signInWithPassword, type DemoUser } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import { useSubmit } from "@/lib/use-submit";
 import { ErrorNote } from "@/components/page-state";
-import { Button, Input } from "@/components/ui";
+import { Button, Card, Input } from "@/components/ui";
 import { Field } from "@/components/field";
 import { ThemeControl } from "@/components/theme-control";
 import { supabaseConfigured } from "@/lib/supabase";
@@ -36,6 +42,17 @@ const DEMO_USERS: DemoUser[] = [
     role: "student",
   },
 ];
+
+/** Bir yanıtın izlediği üç adım; sıra numarası rakamdır, kod değil. */
+const EVIDENCE_STEPS: { step: string; text: string }[] = [
+  { step: "01", text: "Ders kaynağını bulur" },
+  { step: "02", text: "İlgili sayfayı gösterir" },
+  { step: "03", text: "Adım adım çalıştırır" },
+];
+
+/** Muted satır içi bağlantı: kırmızı yalnız birincil eylemde kalır. */
+const QUIET_LINK =
+  "text-fg-muted underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -80,17 +97,15 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-[100dvh] lg:grid-cols-[minmax(0,1.18fr)_minmax(28rem,0.82fr)]">
       {/* Sol: ürün tezi ve tek kanıt zinciri. */}
-      <section className="flex flex-col justify-between border-b border-border p-8 lg:border-r lg:border-b-0 lg:p-14">
-        <div className="rise border-l-2 border-brand pl-4">
-          <div>
-            <BrandLockup tone="canvas" className="mb-2" />
-            <p className="text-sm font-medium text-fg">Doğuş Üniversitesi</p>
-            <p className="text-xs text-fg-subtle">COME 492 · Bitirme projesi</p>
-          </div>
+      <section className="flex flex-col justify-between p-8 lg:p-14">
+        <div className="rise">
+          <BrandLockup tone="canvas" className="mb-2" />
+          <p className="text-sm font-medium text-fg">Doğuş Üniversitesi</p>
+          <p className="text-xs text-fg-subtle">COME 492 · Bitirme projesi</p>
         </div>
 
         <div className="py-16 lg:py-12">
-          <p className="rise rise-1 mb-4 max-w-md text-sm font-medium text-brand">
+          <p className="rise rise-1 mb-4 max-w-md text-sm font-medium text-fg-muted">
             Kaynağı görünen ders çalışma alanı
           </p>
           <h1 className="rise rise-1 max-w-2xl text-5xl font-semibold tracking-tighter text-fg md:text-6xl">
@@ -101,32 +116,29 @@ export default function LoginPage() {
             sayfayla birlikte gelir; kaynak yoksa cevap da yoktur.
           </p>
 
+          {/*
+           * Üç adım üç çukur kart: kanvasın altında duran açıklama bloğu.
+           * Önceki hâl `border-y` + sütun başı saç çizgileriydi ve portalın
+           * "çizgiyle bölünmüş ızgara" gramerini tekrarlıyordu.
+           */}
           <section
             aria-labelledby="evidence-rail-title"
-            className="rise rise-3 mt-12 max-w-2xl border-y border-border py-5"
+            className="rise rise-3 mt-12 max-w-2xl"
           >
-            <div className="grid gap-5 md:grid-cols-[11rem_1fr] md:items-start">
-              <div>
-                <p className="font-mono text-xs text-brand">Kaynak zinciri</p>
-                <h2 id="evidence-rail-title" className="mt-1 text-sm font-medium text-fg">
-                  Bir yanıtın izlediği yol
-                </h2>
-              </div>
-              <ol className="grid gap-3 text-sm text-fg-muted sm:grid-cols-3 sm:gap-0">
-                <li className="border-border sm:border-l sm:pl-4">
-                  <span className="block font-mono text-xs text-fg-subtle">01</span>
-                  <span className="mt-1 block text-fg">Ders kaynağını bulur</span>
+            <p className="text-xs font-medium text-fg-muted">Kaynak zinciri</p>
+            <h2 id="evidence-rail-title" className="mt-1 text-sm font-medium text-fg">
+              Bir yanıtın izlediği yol
+            </h2>
+            <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+              {EVIDENCE_STEPS.map(({ step, text }) => (
+                <li key={step}>
+                  <Card variant="soft" className="h-full">
+                    <span className="block text-xs tabular-nums text-fg-subtle">{step}</span>
+                    <span className="mt-2 block text-sm text-fg">{text}</span>
+                  </Card>
                 </li>
-                <li className="border-border sm:border-l sm:pl-4">
-                  <span className="block font-mono text-xs text-fg-subtle">02</span>
-                  <span className="mt-1 block text-fg">İlgili sayfayı gösterir</span>
-                </li>
-                <li className="border-border sm:border-l sm:pl-4">
-                  <span className="block font-mono text-xs text-fg-subtle">03</span>
-                  <span className="mt-1 block text-fg">Adım adım çalıştırır</span>
-                </li>
-              </ol>
-            </div>
+              ))}
+            </ol>
           </section>
         </div>
 
@@ -142,10 +154,10 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* Sağ: giriş paneli. Panel ayrımı kenarlık + hafif yüzey tonuyla kurulur. */}
-      <section className="flex items-center bg-surface p-8 lg:p-14">
-        <div className="w-full max-w-sm">
-          <p className="rise font-mono text-xs text-brand">Ders alanına giriş</p>
+      {/* Sağ: oturum kartı. Katmanı gölge taşır; kenarlık ya da ayrı yüzey tonu yok. */}
+      <section className="flex items-center p-8 lg:p-14">
+        <Card className="mx-auto w-full max-w-md sm:p-8">
+          <p className="rise text-xs font-medium text-fg-muted">Ders alanına giriş</p>
           <h2 className="rise rise-1 mt-2 text-2xl font-semibold tracking-tight text-fg">
             Oturum aç
           </h2>
@@ -181,14 +193,12 @@ export default function LoginPage() {
                   />
                 )}
               </Field>
+              {/* Sayfadaki tek kırmızı eylem. */}
               <Button type="submit" className="w-full" aria-disabled={busy}>
                 {busy ? "Oturum açılıyor…" : "Oturum aç"}
               </Button>
               <p className="text-right">
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-brand hover:text-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                >
+                <Link href="/forgot-password" className={`text-xs ${QUIET_LINK}`}>
                   Parolamı unuttum
                 </Link>
               </p>
@@ -200,22 +210,23 @@ export default function LoginPage() {
               {entra.busy ? "Yönlendiriliyor…" : "Üniversite hesabıyla devam et"}
             </Button>
             {!entraAvailable && <p className="text-xs text-fg-muted">Üniversite hesabıyla giriş henüz etkin değil.</p>}
-            {supabaseConfigured && <Link href="/verify-email" className="block text-sm text-brand underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">E-posta doğrulama bağlantısı iste</Link>}
+            {supabaseConfigured && <Link href="/verify-email" className={`block text-sm ${QUIET_LINK}`}>E-posta doğrulama bağlantısı iste</Link>}
           </div>
 
           {devAuthEnabled && (
             /* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek
-               olduğunu peşinen söyler. */
-            <ul className="mt-6 divide-y divide-border overflow-hidden rounded-lg border border-border bg-bg">
+               olduğunu peşinen söyler. Satırlar kart içinde `divide-y`;
+               ikinci bir çerçeve yok. */
+            <ul className="mt-6 divide-y divide-border">
               {DEMO_USERS.map((user, index) => (
                 <li key={user.id}>
                   <button
                     onClick={() => enter(user)}
-                    className={`rise rise-${index + 2} group flex min-h-16 w-full items-center gap-4 bg-surface px-4 py-3 text-left transition-colors duration-200 hover:bg-bg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand`}
+                    className={`rise rise-${index + 2} group flex min-h-16 w-full items-center gap-4 rounded-lg px-2 py-3 text-left transition-colors duration-200 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand`}
                   >
                     <span
                       aria-hidden
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-subtle font-mono text-sm font-semibold text-brand"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-sm font-semibold text-fg"
                     >
                       {user.fullName.charAt(0)}
                     </span>
@@ -261,7 +272,7 @@ export default function LoginPage() {
             hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
             paylaşıldığını açıklar.
           </p>
-        </div>
+        </Card>
       </section>
     </main>
   );

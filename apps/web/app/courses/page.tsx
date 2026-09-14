@@ -12,7 +12,17 @@ import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { Field } from "@/components/field";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
-import { Button, Card, EmptyState, Input } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
+
+/**
+ * Kartın sağındaki "Derse git" işareti. Kartın tamamı zaten bağlantıdır
+ * (Playwright dersi bağlantı adındaki ders koduyla bulur); bağlantı içine
+ * ikinci bir etkileşimli öğe (`<button>`) koymak geçersiz HTML olurdu. Bu
+ * yüzden işaret `Button variant="secondary" size="sm"` ile aynı kabuğu taşıyan
+ * dekoratif bir `span`dır ve erişilebilirlik ağacından gizlenir.
+ */
+const GO_TO_COURSE_MARK =
+  "inline-flex h-9 shrink-0 items-center justify-center rounded-xl border border-border-strong bg-surface px-3 text-[0.8125rem] font-medium text-fg transition-[color,background,border] duration-200 group-hover:border-fg-subtle group-hover:bg-surface-sunken";
 
 export default function CoursesPage() {
   return (
@@ -125,27 +135,33 @@ function CourseList() {
           }
         />
       ) : (
-        /* Kart ızgarası bir listedir: `ul/li` ekran okuyucuya kaç ders
-           olduğunu söyler, `div` yığını söylemez. */
-        <ul className="grid gap-4 sm:grid-cols-2">
+        /* Kart listesi bir listedir: `ul/li` ekran okuyucuya kaç ders
+           olduğunu söyler, `div` yığını söylemez. Her ders tek satır kart:
+           sol tarafta kod · başlık · rol, sağda "Derse git" işareti. */
+        <ul className="grid gap-4">
           {courses.map((course, index) => (
             <li key={course.id} className={`rise rise-${Math.min(index + 1, 3)}`}>
               <Link
                 href={`/courses/${course.id}`}
                 /* Odak halkası ürünün her tıklanabilir öğesinde aynı: kart
                    bağlantısı tarayıcı varsayılanına bırakılmaz. */
-                className="block h-full rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                className="group block rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                <Card className="h-full transition-[border,box-shadow] duration-200 hover:border-border-strong hover:shadow-[0_2px_8px_rgba(28,25,23,0.04)]">
-                  <p className="font-mono text-xs tracking-wide text-fg-subtle">
-                    {course.code}
-                  </p>
-                  <p className="mt-2 text-lg font-medium tracking-tight text-fg">
-                    {course.title}
-                  </p>
-                  <p className="mt-4 text-xs text-fg-subtle">
-                    {course.role === "instructor" ? "Eğitmen" : "Öğrenci"}
-                  </p>
+                <Card className="flex flex-wrap items-center justify-between gap-4 transition-[box-shadow,transform] duration-200 group-hover:shadow-e2 group-active:translate-y-px">
+                  <div className="min-w-0">
+                    <p className="text-xs text-fg-muted">{course.code}</p>
+                    <p className="mt-1 text-lg font-semibold tracking-tight text-fg">
+                      {course.title}
+                    </p>
+                    <div className="mt-3">
+                      <Badge tone={course.role === "instructor" ? "info" : "neutral"}>
+                        {course.role === "instructor" ? "Eğitmen" : "Öğrenci"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <span aria-hidden="true" className={GO_TO_COURSE_MARK}>
+                    Derse git
+                  </span>
                 </Card>
               </Link>
             </li>
@@ -214,7 +230,9 @@ function CreateCourseForm({ id, onCreated }: { id: string; onCreated: () => void
   const invalid = rejection?.fromInput ?? false;
 
   return (
-    <Card className="mb-6">
+    /* Çukur yüzey: form liste kartlarıyla aynı katmanda yarışmaz; "Oluştur"
+       formun açık olduğu anda sayfadaki tek kırmızı eylemdir. */
+    <Card variant="soft" className="mb-6">
       {/*
        * Etiketler görünür ve `htmlFor` ile bağlı; placeholder yalnız örnek
        * değerdir (DESIGN.md: "Placeholder metni etiket yerine kullanma —

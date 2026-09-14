@@ -10,7 +10,7 @@ import { useResource } from "@/lib/use-resource";
 import { useSubmit } from "@/lib/use-submit";
 import { Field } from "@/components/field";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
-import { Button, Card, EmptyState } from "@/components/ui";
+import { Button, Card, EmptyState, Select } from "@/components/ui";
 import { SessionHistory } from "@/components/exam/session-history";
 
 export function StartPanel({ courseId, catalog, onRefreshCatalog, onStarted }: {
@@ -55,11 +55,11 @@ export function StartPanel({ courseId, catalog, onRefreshCatalog, onStarted }: {
                 ) : (
                   <Field label="Çalışma konusu">
                     {(control) => (
-                      <select {...control} value={topicId} onChange={(event) => setTopicId(event.target.value)}
-                        disabled={busy} className="h-11 w-full min-w-0 rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand">
+                      <Select {...control} value={topicId} onChange={(event) => setTopicId(event.target.value)}
+                        disabled={busy}>
                         <option value="">Tüm konular</option>
                         {(topics.data ?? []).map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
-                      </select>
+                      </Select>
                     )}
                   </Field>
                 )}

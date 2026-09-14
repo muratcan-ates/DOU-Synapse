@@ -22,7 +22,8 @@ import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
-import { Badge, Button, Card, ConfirmAction, EmptyState } from "@/components/ui";
+import { Field } from "@/components/field";
+import { Badge, Button, Card, ConfirmAction, EmptyState, Select } from "@/components/ui";
 import { useChatAvailability, type ChatLock } from "@/lib/chat-availability";
 import {
   courseAssistantWorkPath,
@@ -128,9 +129,10 @@ function CourseDetail() {
           }
         />
       ) : (
-        // Kart yığını değil tek liste: satırlar yalnız ayırıcıyla bölünür
-        // (taste-skill: kart ancak gerçek hiyerarşi anlatıyorsa kullanılır).
-        <ul className="rise rise-1 divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        // Kart yığını değil tek liste: tek yükselmiş yüzey (seviye 1), satırlar
+        // yalnız saç çizgisiyle bölünür (taste-skill: kart ancak gerçek
+        // hiyerarşi anlatıyorsa kullanılır).
+        <ul className="rise rise-1 divide-y divide-border overflow-hidden rounded-xl bg-surface shadow-e1">
           {documents.map((doc) => (
             <DocumentRow
               key={doc.id}
@@ -171,60 +173,63 @@ function ProductRoles({
   const secondary = isInstructor
     ? [
         {
-          name: "Sınav tasarımı",
           task: "Blueprint ve onaylı soru havuzunu yönet",
           description: "Sınav kapsamını sürümleyin; soruları öğrenciye açmadan önce inceleyin.",
           href: `/courses/${courseId}/blueprints`,
+          action: "Sınav planına git",
         },
         {
-          name: "Sınıf analitiği",
           task: "Öğrenme durumunu toplu görünümde incele",
           description: "Kişisel sohbet içeriğini açmadan zorlanılan alanları izleyin.",
           href: `/courses/${courseId}/analytics`,
+          action: "Analitiği aç",
         },
       ]
     : [
         {
-          name: "Sınav provası",
           task: "Onaylı sorularla kendini dene",
           description: "Süreli prova yapın; puanı ve neden yanlış analizini görün.",
           href: `/courses/${courseId}/exam`,
+          action: "Sınav provasına git",
         },
         {
-          name: "İlerleme",
           task: "Konu durumunu gözden geçir",
           description: "Hangi konularda ilerlediğinizi ve nerede yeniden çalışmanız gerektiğini görün.",
           href: `/courses/${courseId}/analytics`,
+          action: "İlerlemeyi aç",
         },
       ];
 
+  /*
+   * Tek yükselmiş yüzey (seviye 1), kenarlıksız. Önceki hâl kenarlıklı kutu +
+   * içinde kırmızı raylı çukur blok + saç çizgili liste idi: kırmızı ray,
+   * kırmızı mono etiket ve kırmızı buton aynı blokta toplanınca aksan "buraya
+   * bas" demeyi bırakıyordu (14 Eylül ölçümü). Kırmızı artık yalnız birincil
+   * eylemde ("Asistanı aç"). Asistan kimliği (`primary.name`) burada tekrar
+   * yazılmaz: aynı ad sekme şeridindeki asistan düğmesinde zaten görünür.
+   */
   return (
     <section
-      className="mb-8 overflow-hidden rounded-xl border border-border bg-surface"
+      className="mb-8 rounded-xl bg-surface p-5 shadow-e1 md:p-6"
       aria-labelledby="ai-roles-title"
     >
-      <div className="border-b border-border px-5 py-4 md:px-6">
-        <div>
-          <h2 id="ai-roles-title" className="text-lg font-medium text-fg">
-            Bu derste çalışma yolları
-          </h2>
-          <p className="prose-tr mt-1 text-xs text-fg-muted">
-            Asistan kimliği ve erişim durumu ders üyeliğinizden sunucu tarafından belirlenir.
-          </p>
-        </div>
+      <div className="mb-5">
+        <h2 id="ai-roles-title" className="text-lg font-medium text-fg">
+          Bu derste çalışma yolları
+        </h2>
+        <p className="prose-tr mt-1 text-xs text-fg-muted">
+          Asistan kimliği ve erişim durumu ders üyeliğinizden sunucu tarafından belirlenir.
+        </p>
       </div>
 
-      <div className="grid md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-        <div className="border-l-2 border-brand bg-surface-sunken p-5 md:p-6">
-          <p className="text-xs font-medium text-fg-muted">{primary.name}</p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-fg">
-            {primary.task}
-          </h3>
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] md:gap-6">
+        <div className="flex flex-col items-start">
+          <h3 className="text-xl font-semibold tracking-tight text-fg">{primary.task}</h3>
           <p className="prose-tr mt-2 text-sm text-fg-muted">{primary.description}</p>
           {primary.href ? (
             <Link
               href={primary.href}
-              className="mt-5 inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-medium text-white hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-bg"
+              className="mt-5 inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-medium text-white shadow-e1 hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-bg"
             >
               {primary.action}
             </Link>
@@ -238,27 +243,25 @@ function ProductRoles({
           )}
         </div>
 
-        <div className="divide-y divide-border md:border-l md:border-border">
+        <div className="grid gap-4">
           {secondary.map((role) => (
-            <Link
-              key={role.name}
-              href={role.href}
-              className="group flex min-h-28 items-center gap-4 px-5 py-4 transition-colors hover:bg-bg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand md:px-6"
+            <div
+              key={role.href}
+              className="flex flex-col items-start rounded-lg bg-surface-sunken p-4"
             >
-              <span className="min-w-0 flex-1">
-                <span className="font-mono text-xs text-brand">{role.name}</span>
-                <span className="mt-1 block text-sm font-medium text-fg">{role.task}</span>
-                <span className="prose-tr mt-1 block text-xs text-fg-muted">
-                  {role.description}
-                </span>
-              </span>
-              <span
-                aria-hidden
-                className="text-fg-subtle transition-transform duration-200 group-hover:translate-x-0.5"
+              <h3 className="text-sm font-semibold text-fg">{role.task}</h3>
+              <p className="prose-tr mt-1 text-xs text-fg-muted">{role.description}</p>
+              {/*
+               * Gezinme bağlantısıdır, `<button>` değil: `href` ve link rolü
+               * korunur. Kabuk `Button variant="secondary" size="sm"` ile aynı.
+               */}
+              <Link
+                href={role.href}
+                className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border-strong bg-surface px-3 text-[0.8125rem] font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                →
-              </span>
-            </Link>
+                {role.action}
+              </Link>
+            </div>
           ))}
         </div>
       </div>
@@ -321,23 +324,24 @@ function UploadBox({
         </p>
       </div>
       <div className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-        <label className="text-sm text-fg-muted">
-          <span className="mb-1 block">Yerine geçtiği belge (isteğe bağlı)</span>
-          <select
-            value={replacesDocumentId}
-            onChange={(event) => setReplacesDocumentId(event.target.value)}
-            className="h-11 w-full rounded-lg border border-border-strong bg-surface px-3 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-brand"
-          >
-            <option value="">Yeni, bağımsız materyal</option>
-            {documents
-              .filter((document) => !document.superseded_at)
-              .map((document) => (
-                <option key={document.id} value={document.id}>
-                  {document.file_name}
-                </option>
-              ))}
-          </select>
-        </label>
+        <Field label="Yerine geçtiği belge (isteğe bağlı)">
+          {(control) => (
+            <Select
+              {...control}
+              value={replacesDocumentId}
+              onChange={(event) => setReplacesDocumentId(event.target.value)}
+            >
+              <option value="">Yeni, bağımsız materyal</option>
+              {documents
+                .filter((document) => !document.superseded_at)
+                .map((document) => (
+                  <option key={document.id} value={document.id}>
+                    {document.file_name}
+                  </option>
+                ))}
+            </Select>
+          )}
+        </Field>
         <input
           ref={inputRef}
           type="file"
@@ -348,7 +352,9 @@ function UploadBox({
             if (file) void handleFile(file);
           }}
         />
+        {/* İkincil: sayfadaki tek kırmızı buton "Asistanı aç" (birincil eylem). */}
         <Button
+          variant="secondary"
           aria-disabled={busy}
           onClick={() => {
             if (busy) return;
@@ -418,7 +424,7 @@ function DocumentRow({
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="min-w-0">
           <p className="truncate font-mono text-sm text-fg">{doc.file_name}</p>
-          <p className="mt-0.5 text-xs text-fg-subtle">
+          <p className="mt-0.5 text-xs tabular-nums text-fg-subtle">
             {formatBytes(doc.byte_size)}
             {doc.page_count ? ` · ${doc.page_count} sayfa` : ""}
             {doc.status === "completed" ? ` · ${doc.chunk_count} parça` : ""}
@@ -499,16 +505,17 @@ function DocumentRow({
 function ChunkPreviewList({ id, chunks }: { id: string; chunks: ChunkPreview[] }) {
   if (chunks.length === 0) {
     return (
-      <p id={id} className="border-t border-border bg-bg px-6 py-4 text-sm text-fg-muted">
+      <p id={id} className="border-t border-border px-6 py-4 text-sm text-fg-muted">
         Bu belgeden parça çıkarılmamış.
       </p>
     );
   }
   return (
-    <div id={id} className="space-y-2 border-t border-border bg-bg px-6 py-4">
+    <div id={id} className="space-y-2 border-t border-border px-6 py-4">
       {chunks.slice(0, 5).map((chunk) => (
-        <div key={chunk.id} className="border-l-2 border-border-strong py-1 pl-4">
-          <p className="text-xs text-fg-subtle">
+        // Ray değil çukur blok: parça, kartın altında duran alıntı yüzeyidir.
+        <div key={chunk.id} className="rounded-lg bg-surface-sunken px-3 py-2">
+          <p className="text-xs tabular-nums text-fg-subtle">
             {chunkLocation(chunk)} · {chunk.token_count} token
           </p>
           <p
@@ -521,7 +528,7 @@ function ChunkPreviewList({ id, chunks }: { id: string; chunks: ChunkPreview[] }
         </div>
       ))}
       {chunks.length > 5 && (
-        <p className="pl-4 text-xs text-fg-subtle">
+        <p className="px-3 text-xs tabular-nums text-fg-subtle">
           ve {chunks.length - 5} parça daha
         </p>
       )}
