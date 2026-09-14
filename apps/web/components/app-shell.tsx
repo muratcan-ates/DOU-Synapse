@@ -154,7 +154,7 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
 
       {/* Mobil: ray yerine mürekkep üst şeridi; aynı gramer, tek satır. */}
       <header className="sticky top-0 z-10 bg-ink lg:hidden">
-        <div className="flex h-14 items-center gap-4 px-4">
+        <div className="flex h-14 items-center gap-2 px-3 sm:px-4">
           <Link
             href="/dashboard"
             aria-label="DOU Synapse"
@@ -162,7 +162,10 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
           >
             <BrandLockup tone="ink" />
           </Link>
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex min-w-0 items-center gap-1">
+            <span className="hidden max-w-[10rem] truncate text-xs text-ink-fg-muted sm:block">
+              {displayName}
+            </span>
             <Link
               href="/profile"
               aria-label={`Profil: ${displayName}`}
@@ -174,7 +177,7 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
               type="button"
               aria-disabled={signingOut}
               onClick={() => void handleSignOut()}
-              className="min-h-11 rounded-lg px-3 text-sm font-medium text-ink-fg-muted hover:text-ink-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink"
+              className="h-11 min-h-11 rounded-lg px-2 text-xs font-medium text-ink-fg-muted hover:text-ink-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-on-ink sm:text-sm"
             >
               {signingOut ? "Çıkılıyor…" : "Çıkış"}
             </button>
