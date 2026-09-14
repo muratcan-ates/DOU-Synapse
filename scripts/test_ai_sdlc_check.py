@@ -10,7 +10,12 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from scripts.ai_sdlc_check import _risk_for_path, validate_repository
+from scripts.ai_sdlc_check import (
+    _evidence_reachability_errors,
+    _git,
+    _risk_for_path,
+    validate_repository,
+)
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
 
@@ -1600,12 +1605,9 @@ class ProductionPolicyCoverageTests(unittest.TestCase):
                 risk, _ = _risk_for_path(path, policy)
                 self.assertEqual(minimum, risk)
 
-
     def test_delivery_gates_require_a_dossier_in_real_git_commits(self) -> None:
         """Gerçek politika ile dosyasız kapı değişikliği kırmızı yanmalıdır."""
-        policy = json.loads(
-            (SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8")
-        )
+        policy = json.loads((SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8"))
         paths = (
             ".github/workflows/ci.yml",
             ".github/workflows/security.yml",
@@ -1667,6 +1669,180 @@ class WorkflowBindingTests(unittest.TestCase):
             "astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e",
             action_refs,
         )
+
+
+class EvidenceReachabilityTests(unittest.TestCase):
+    """Kanıt betiklerinin en az bir workflow'dan erişilebilir olduğunu sınar.
+
+    Her senaryo sentetik bir geçici depoda kurulur; depodaki gerçek dosyalara
+    dokunulmaz.
+    """
+
+    def setUp(self) -> None:
+        self.repo = RepositoryFixture()
+
+    def tearDown(self) -> None:
+        self.repo.close()
+
+    def _workflow(self, run_body: str) -> str:
+        return (
+            "name: Kapılar\n"
+            "on: [push]\n"
+            "jobs:\n"
+            "  gates:\n"
+            "    runs-on: ubuntu-latest\n"
+            "    steps:\n"
+            "      - name: Kanıt\n"
+            "        run: |\n"
+            f"{run_body}"
+        )
+
+    def test_workflow_cagrisi_silinince_dogrulayici_kirmizi_yanar(self) -> None:
+        self.repo.write("scripts/demo_check.py", "# kanıt betiği\n")
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          python3 scripts/demo_check.py\n"),
+        )
+        self.repo.commit("kanıt betiğini kapıya bağla")
+        self.assertNotIn("EVIDENCE_UNREACHABLE:scripts/demo_check.py", self.repo.validate())
+
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          echo 'kapı boşaltıldı'\n"),
+        )
+        self.repo.commit("workflow çağrısını sil")
+        self.assertIn("EVIDENCE_UNREACHABLE:scripts/demo_check.py", self.repo.validate())
+
+    def test_beyaz_listedeki_birim_testi_kirmizi_yakmaz(self) -> None:
+        """`scripts/test_*.py` bir kanıt betiği değil, doğrulayıcının birim testidir."""
+
+        self.repo.write("scripts/demo_check.py", "# sınanan doğrulayıcı\n")
+        self.repo.write("scripts/test_demo_check.py", "# birim testi\n")
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          python3 scripts/demo_check.py\n"),
+        )
+        self.repo.commit("birim testi ekle")
+        self.assertNotIn(
+            "EVIDENCE_UNREACHABLE:scripts/test_demo_check.py",
+            self.repo.validate(),
+        )
+
+    def test_kardesi_olmayan_test_adli_kapi_beyaz_listeye_giremez(self) -> None:
+        """Adı `test_` ile başlayan ama kendisi bir kapı olan betik muaf değildir."""
+
+        # `scripts/kalite_check.py` diye bir kardeş YOK: bu dosya bir birim
+        # testi değil, bağımsız bir kanıt betiğidir.
+        self.repo.write("scripts/test_kalite_check.py", "# test kalitesi kapısı\n")
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          echo 'kapı koşmuyor'\n"),
+        )
+        self.repo.commit("kardeşi olmayan kapı")
+        self.assertIn(
+            "EVIDENCE_UNREACHABLE:scripts/test_kalite_check.py",
+            self.repo.validate(),
+        )
+
+        # Kardeş betik eklenince aynı dosya birim testine dönüşür ve muaf olur.
+        self.repo.write("scripts/kalite_check.py", "# sınanan doğrulayıcı\n")
+        self.repo.commit("kardeş betiği ekle")
+        self.assertNotIn(
+            "EVIDENCE_UNREACHABLE:scripts/test_kalite_check.py",
+            self.repo.validate(),
+        )
+
+    def test_tek_seviye_dolayli_cagri_yesil_sayilir(self) -> None:
+        self.repo.write("scripts/demo_check.py", "# kanıt betiği\n")
+        self.repo.write(
+            "scripts/demo_runner.py",
+            "SUBCHECKS = ('scripts/demo_check.py',)\n",
+        )
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          python3 scripts/demo_runner.py\n"),
+        )
+        self.repo.commit("dolaylı çağrı")
+        self.assertNotIn("EVIDENCE_UNREACHABLE:scripts/demo_check.py", self.repo.validate())
+
+    def test_workflowdan_cagrilmayan_betik_dolayli_erisim_saglayamaz(self) -> None:
+        """İki ölü betik birbirini aklayamaz: aracı da kapıdan koşmalıdır."""
+
+        self.repo.write("scripts/demo_check.py", "# kanıt betiği\n")
+        self.repo.write(
+            "scripts/orphan_runner.py",
+            "SUBCHECKS = ('scripts/demo_check.py',)\n",
+        )
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          echo 'aracı hiç koşmuyor'\n"),
+        )
+        self.repo.commit("ölü aracı")
+        self.assertIn("EVIDENCE_UNREACHABLE:scripts/demo_check.py", self.repo.validate())
+
+    def test_run_blogu_disindaki_dosya_adi_calisma_sayilmaz(self) -> None:
+        """`paths:` filtresinde geçen ad, betiğin koştuğu anlamına gelmez."""
+
+        self.repo.write("scripts/demo_check.py", "# kanıt betiği\n")
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            "name: Kapılar\n"
+            "on:\n"
+            "  push:\n"
+            "    paths:\n"
+            "      - scripts/demo_check.py\n"
+            "jobs:\n"
+            "  gates:\n"
+            "    runs-on: ubuntu-latest\n"
+            "    steps:\n"
+            "      - run: echo 'hiçbir kanıt koşmuyor'\n",
+        )
+        self.repo.commit("yalnızca paths filtresi")
+        self.assertIn("EVIDENCE_UNREACHABLE:scripts/demo_check.py", self.repo.validate())
+
+    def test_kesif_tabanli_unittest_discover_kanit_testlerini_kapsar(self) -> None:
+        self.repo.write(".release/test_demo.py", "# yayın kanıtı regresyonu\n")
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          python3 -m unittest discover -s .release -p 'test_*.py'\n"),
+        )
+        self.repo.commit("keşif tabanlı koşum")
+        self.assertNotIn("EVIDENCE_UNREACHABLE:.release/test_demo.py", self.repo.validate())
+
+    def test_kesif_deseni_tutmayan_kanit_testi_kirmizi_yanar(self) -> None:
+        self.repo.write(".release/test_demo.py", "# yayın kanıtı regresyonu\n")
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          python3 -m unittest discover -s .release -p 'check_*.py'\n"),
+        )
+        self.repo.commit("keşif deseni tutmuyor")
+        self.assertIn("EVIDENCE_UNREACHABLE:.release/test_demo.py", self.repo.validate())
+
+    def test_supabase_rls_kaniti_kapiya_bagli_olmalidir(self) -> None:
+        self.repo.write("supabase/tests/rls_demo.sql", "SELECT 1;\n")
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          echo 'RLS kanıtı koşmuyor'\n"),
+        )
+        self.repo.commit("bağlanmamış RLS kanıtı")
+        errors = self.repo.validate()
+        self.assertIn("EVIDENCE_UNREACHABLE:supabase/tests/rls_demo.sql", errors)
+
+        self.repo.write(
+            ".github/workflows/gates.yml",
+            self._workflow("          psql -f supabase/tests/rls_demo.sql\n"),
+        )
+        self.repo.commit("RLS kanıtını kapıya bağla")
+        self.assertNotIn(
+            "EVIDENCE_UNREACHABLE:supabase/tests/rls_demo.sql",
+            self.repo.validate(),
+        )
+
+    def test_gercek_depoda_hicbir_kanit_betigi_erisilemez_degil(self) -> None:
+        """Bu kapı ana dalda yeşil olmalıdır; aksi halde her PR'ı bloklar."""
+
+        head = str(_git(SOURCE_ROOT, "rev-parse", "HEAD")).strip()
+        self.assertEqual([], _evidence_reachability_errors(SOURCE_ROOT, head))
 
 
 if __name__ == "__main__":

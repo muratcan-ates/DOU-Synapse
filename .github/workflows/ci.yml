@@ -78,6 +78,33 @@ jobs:
       - name: Testler
         run: uv run pytest -q
 
+      # Yeşil bir test paketi, testlerin bir şey KANITLADIĞI anlamına gelmez.
+      # Bu kapı üç sessiz kalıbı AST ile arar: (1) gövdesindeki tek iddia
+      # yalnız `status_code`'a bakan test, (2) `pytest.raises` totolojisi —
+      # blok istisnayı kendisi fırlatır, sınanan kodu hiç çağırmaz, (3) adı
+      # `test` ile başlayıp gövdesinde hiçbir çağrı bulunmayan test. Betik saf
+      # stdlib'dir (`ast`); yeni bağımlılık yok, `uv` bile gerekmez.
+      #
+      # NEDEN `--fail-on-warn` YOK — ŞİMDİLİK UYARI MODU: kapı yazıldığı gün
+      # (13 Eylül 2026) mevcut ağaçta 60 bulgu ölçüldü — 54 STATUS_ONLY_ASSERT
+      # ve 6 NO_CALL_TEST. Kapıyı bugün zorlayıcı moda almak, kapıyla hiç
+      # ilgisi olmayan bir PR'ı kırmızıya düşürürdü; o durumda ilk refleks
+      # kapıyı kaldırmak olur. Bu yüzden adım rc=0 döner ama bulguları ve
+      # `TEST_QUALITY_WARNINGS=<n>` satırını log'a yazar: sayı GÖRÜNÜR olur,
+      # sessizce büyüyemez. Sayı sıfırlandığında bu satıra `--fail-on-warn`
+      # eklenir ve kapı zorlayıcı olur.
+      #
+      # Kapının GERÇEKTEN kırmızı yanabildiği ayrı ve zorlayıcı biçimde
+      # kanıtlanır: `scripts/test_test_quality_check.py` üç kuralın her biri
+      # için sentetik pozitif ve negatif örnek kurar, `--fail-on-warn` ile
+      # rc=1 döndüğünü doğrular ve aşağıdaki ilk komutla burada koşar.
+      # Yanmayan kapı kapı değildir.
+      - name: Test kalite kapısı (AST)
+        working-directory: .
+        run: |
+          python3 -m unittest scripts.test_test_quality_check
+          python3 scripts/test_quality_check.py
+
       - name: Retrieval ölçüm araçlarının çevrimdışı sözleşmeleri
         working-directory: .
         env:
@@ -105,6 +132,11 @@ jobs:
       - name: Rol farkındalıklı ajan uygulama mutasyonları
         working-directory: .
         run: |
+          # Doğrulayıcının KENDİ testleri de kapıda koşmalı: A5' ölçümü
+          # (scripts/ai_sdlc_check.py, EVIDENCE_UNREACHABLE) bu dosyanın hiçbir
+          # workflow'dan çağrılmadığını gösterdi. Mutasyon kontrolü bozulsaydı
+          # CI bunu görmeden yeşil yanardı.
+          uv run --project apps/api python -m pytest -q scripts/test_role_agent_application_mutation_check.py
           uv run --project apps/api python scripts/role_agent_application_mutation_check.py \
             --candidate-sha "$(git rev-parse HEAD)" \
             --evidence /tmp/role-agent-application-mutations.json
@@ -315,6 +347,30 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
+
+      # Atlanmış bir E2E testi raporda YEŞİL görünür ama hiçbir şey kanıtlamaz:
+      # `test.skip` / `test.fixme` ile devre dışı bırakılan senaryo koşmaz,
+      # toplam sayı sessizce düşer ve kimse fark etmez. Kapının maliyeti sıfır
+      # bağımlılıktır — yalnız checkout'un bıraktığı git ağacını okur, bun
+      # kurulumunu beklemez. (ESLint kuralı ayrı bir iş; bu adım onun yerine
+      # değil, ondan önce gelir.)
+      #
+      # rc semantiği: `git grep` EŞLEŞME BULUNCA 0, bulamayınca 1 döner —
+      # kapının istediği tam tersi, bu yüzden `!` ile çevrilir. `bash -e`
+      # çevrilmiş komutta betiği SONLANDIRMAZ (POSIX: dönüş değeri `!` ile
+      # tersleniyorsa `set -e` yok sayılır), ama bu satır betiğin son komutu
+      # olduğu için betiğin çıkış kodu yine de 1 olur ve adım kırmızı yanar.
+      #
+      # `working-directory: .` şart: bu işin varsayılanı `apps/web` ve
+      # `git grep` pathspec'i çalışma dizinine göredir. Varsayılanla koşsaydı
+      # `apps/web/e2e` hiçbir şeyle eşleşmez, komut her zaman 1 döner, `!` onu
+      # 0'a çevirir ve kapı sonsuza dek sahte-yeşil kalırdı.
+      - name: Atlanmış E2E testi yok
+        shell: bash
+        working-directory: .
+        run: |
+          ! git grep -nE 'test\.(skip|fixme)\(' -- apps/web/e2e
+
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - run: bun run typecheck

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import functools
 import hashlib
 import json
 import math
@@ -74,6 +75,44 @@ BOOTSTRAP_R3_PATHS = frozenset(
         ".github/workflows/ai-quality.yml",
     }
 )
+# Kanıt betiği desenleri: bu desenlere uyan her dosya, en az bir workflow'dan
+# erişilebilir olmalıdır. Depoda duran ama hiçbir kapıda koşmayan bir doğrulayıcı,
+# etkin görünüp iş yapmayan bir butondan farksızdır: kanıt ürettiği sanılır,
+# üretmez. Desenler `fnmatch` ile eşleşir (`*` burada `/` karakterini de kapsar).
+EVIDENCE_SCRIPT_PATTERNS = (
+    "scripts/*check*.py",
+    "supabase/tests/*.sql",
+    ".release/test_*.py",
+)
+# Beyaz liste: workflow'dan DOSYA YOLU olarak çağrılması anlamsız olan dosyalar.
+# Her girdi (desen, Türkçe gerekçe) çiftidir; gerekçesiz girdi eklenmez, çünkü
+# gerekçe olmadan beyaz liste sessizce kapıyı boşaltmanın yoluna dönüşür.
+# Muafiyet koşullu uygulanır: `_is_whitelisted_evidence_script` yalnızca
+# sınanan kardeş betik depoda varsa muaf tutar (bkz. o fonksiyonun açıklaması).
+EVIDENCE_REACHABILITY_WHITELIST = (
+    (
+        "scripts/test_*.py",
+        "`scripts/<ad>.py` kardeşi depoda varsa bu dosya bağımsız bir kanıt "
+        "betiği değil, o betiğin birim testidir: `scripts/*check*.py` desenine "
+        "yalnızca sınadığı doğrulayıcının adını taşıdığı için takılır ve onu "
+        "pytest/unittest toplayıcısı çalıştırır "
+        "(ör. `python -m unittest scripts.test_migration_check`), bu yüzden "
+        "workflow metninde dosya yolu biçiminde aranması yanlış pozitiftir. "
+        "Kardeş betik YOKSA muafiyet düşer: adı `test_` ile başlayan ama "
+        "kendisi bir kapı olan betik (ör. bir test kalitesi denetleyicisi) "
+        "gerçek bir kanıt betiğidir ve bir workflow'a bağlanmalıdır.",
+    ),
+)
+# Dolaylı erişimde okunacak çağıran dosya türleri. Kanıt betikleri yalnızca
+# metin tabanlı betiklerden çağrılır; ikili dosyaları okumanın anlamı yoktur.
+EVIDENCE_CALLER_SUFFIXES = frozenset({".py", ".sh", ".mjs", ".js", ".sql"})
+WORKFLOW_DIRECTORY = ".github/workflows/"
+WORKFLOW_SUFFIXES = (".yml", ".yaml")
+# `run:` anahtarını yakalar; `- run: cmd` ve `run: |` biçimlerinin ikisini de
+# karşılar. Üçüncü parti YAML kütüphanesi yok (bu betik yalnızca stdlib kullanır).
+RUN_KEY_PATTERN = re.compile(r"^(?P<prefix>\s*(?:-\s+)?)run:(?P<inline>.*)$")
+DISCOVER_START_PATTERN = re.compile(r"-s\s+['\"]?([^\s'\"]+)")
+DISCOVER_GLOB_PATTERN = re.compile(r"-p\s+['\"]?([^\s'\"]+)")
 CHANGE_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 EXPECTED_SCHEMA_SHA256 = "90f5f2e516a51ab4d148ffacb6a322311a3dad9cf6c47a25d20a4d0c8f373606"
 DOSSIER_FIELDS = frozenset(
@@ -452,7 +491,15 @@ def _blob(repo: Path, commit: str, path: str) -> bytes | None:
     return completed.stdout
 
 
-def _tree_paths(repo: Path, commit: str, pattern: str) -> list[str]:
+@functools.lru_cache(maxsize=32)
+def _all_tree_paths(repo: Path, commit: str) -> tuple[str, ...]:
+    """Commit ağacındaki tüm yolları, güvenlik denetiminden geçirerek döndürür.
+
+    Bir commit'in ağacı değişmezdir, bu yüzden (depo, commit) başına bir kez
+    okunur: doğrulayıcı aynı ağacı birkaç kez tarar ve her tarama ayrı bir
+    `git ls-tree` süreci demektir.
+    """
+
     raw = bytes(_git(repo, "ls-tree", "-rz", "--name-only", commit, text=False))
     try:
         paths = raw.decode("utf-8").split("\0")
@@ -464,9 +511,165 @@ def _tree_paths(repo: Path, commit: str, pattern: str) -> list[str]:
             continue
         if _safe_relative_path(path) is None:
             raise ValidationFailure("INVALID_GIT_PATH")
-        if fnmatch.fnmatchcase(path, pattern):
-            selected.append(path)
-    return sorted(selected)
+        selected.append(path)
+    # Önbelleğe alınan değer değiştirilemez olmalıdır: liste dönseydi bir
+    # çağıran onu yerinde değiştirip sonraki çağıranları zehirleyebilirdi.
+    return tuple(sorted(selected))
+
+
+def _tree_paths(repo: Path, commit: str, pattern: str) -> list[str]:
+    return [path for path in _all_tree_paths(repo, commit) if fnmatch.fnmatchcase(path, pattern)]
+
+
+def _workflow_run_blocks(text: str) -> list[str]:
+    """Bir workflow YAML'indeki tüm `run:` bloklarının ham metnini döndürür.
+
+    Betik yalnızca standart kütüphaneyi kullandığı için YAML ayrıştırıcısı yok;
+    girinti tabanlı, kasıtlı olarak basit bir tarayıcı kullanılır. `run:`
+    anahtarından sonra, anahtarın sütunundan daha içeride duran her satır o
+    bloğa aittir. Yalnızca `run:` bloklarına bakmak önemlidir: `paths:` veya
+    `uses:` altında geçen bir dosya adı o dosyanın koştuğu anlamına gelmez.
+    """
+
+    lines = text.splitlines()
+    blocks: list[str] = []
+    index = 0
+    while index < len(lines):
+        match = RUN_KEY_PATTERN.match(lines[index])
+        if match is None:
+            index += 1
+            continue
+        key_column = len(match.group("prefix"))
+        collected = [match.group("inline")]
+        index += 1
+        while index < len(lines):
+            line = lines[index]
+            if line.strip() and len(line) - len(line.lstrip()) <= key_column:
+                break
+            collected.append(line)
+            index += 1
+        blocks.append("\n".join(collected))
+    return blocks
+
+
+def _discovery_reach(run_blocks: list[str]) -> list[tuple[str, str]]:
+    """`unittest discover -s DIZIN -p DESEN` çağrılarını (dizin, desen) olarak toplar.
+
+    Keşif tabanlı koşumlar dosya adını hiç yazmaz; yalnızca yol eşleşmesine
+    bakan bir kural bu dosyaları haksız yere kırmızı yakardı.
+    """
+
+    reach: list[tuple[str, str]] = []
+    for block in run_blocks:
+        for line in block.splitlines():
+            if "discover" not in line:
+                continue
+            start = DISCOVER_START_PATTERN.search(line)
+            glob = DISCOVER_GLOB_PATTERN.search(line)
+            if start is None or glob is None:
+                continue
+            normalized = start.group(1).rstrip("/")
+            if _safe_relative_path(normalized) is None and normalized not in {".", ""}:
+                continue
+            reach.append((PurePosixPath(normalized or ".").as_posix(), glob.group(1)))
+    return reach
+
+
+def _discovery_covers(path: str, reach: list[tuple[str, str]]) -> bool:
+    candidate = PurePosixPath(path)
+    for start, glob in reach:
+        if start != ".":
+            try:
+                candidate.relative_to(PurePosixPath(start))
+            except ValueError:
+                continue
+        if fnmatch.fnmatchcase(candidate.name, glob):
+            return True
+    return False
+
+
+def _is_whitelisted_evidence_script(path: str, tree: frozenset[str]) -> bool:
+    """Dosya, kanıt-erişilebilirlik zorunluluğundan muaf mı?
+
+    Muafiyet iki koşulun BİRLİKTE sağlanmasına bağlıdır:
+      1. Yol, `EVIDENCE_REACHABILITY_WHITELIST` desenlerinden birine uyar.
+      2. `test_` önekinin kaldırılmasıyla elde edilen kardeş betik depoda
+         gerçekten vardır (`scripts/test_migration_check.py` ->
+         `scripts/migration_check.py`).
+    İkinci koşul, "adı `test_` ile başlıyorsa muaftır" gibi kör bir kuralın
+    açtığı deliği kapatır: sınadığı bir kardeşi olmayan, kendisi bir kapı olan
+    `scripts/test_*_check.py` betiğini muaf saymak, doğrulayıcıyı etkin görünüp
+    iş yapmayan bir kurala çevirirdi.
+    """
+
+    candidate = PurePosixPath(path)
+    if not candidate.name.startswith("test_"):
+        return False
+    sibling = (candidate.parent / candidate.name[len("test_") :]).as_posix()
+    if sibling not in tree:
+        return False
+    return any(fnmatch.fnmatchcase(path, pattern) for pattern, _ in EVIDENCE_REACHABILITY_WHITELIST)
+
+
+def _evidence_reachability_errors(repo: Path, head: str) -> list[str]:
+    """Her kanıt betiğinin en az bir workflow'dan erişilebilir olduğunu doğrular.
+
+    Erişilebilirlik üç biçimde sayılır:
+      1. Doğrudan: dosya yolu bir workflow'un `run:` bloğunda geçer.
+      2. Keşif: `unittest discover -s DIZIN -p DESEN` dosyayı kapsar.
+      3. Tek seviye dolaylı: dosyayı, workflow'dan doğrudan çağrılan başka bir
+         betik metninde adıyla çağırır.
+    Beyaz listedeki desenler bu zorunluluktan muaftır; gerekçeleri sabitin
+    yanında Türkçe olarak yazılıdır.
+    """
+
+    tree = _all_tree_paths(repo, head)
+    known = frozenset(tree)
+    candidates = [
+        path
+        for path in tree
+        if any(fnmatch.fnmatchcase(path, pattern) for pattern in EVIDENCE_SCRIPT_PATTERNS)
+        and not _is_whitelisted_evidence_script(path, known)
+    ]
+    if not candidates:
+        return []
+
+    run_blocks: list[str] = []
+    for path in tree:
+        if not path.startswith(WORKFLOW_DIRECTORY) or not path.endswith(WORKFLOW_SUFFIXES):
+            continue
+        raw = _blob(repo, head, path)
+        if raw is None:
+            continue
+        run_blocks.extend(_workflow_run_blocks(raw.decode("utf-8", errors="replace")))
+    workflow_text = "\n".join(run_blocks)
+    reach = _discovery_reach(run_blocks)
+
+    unresolved = [
+        path
+        for path in candidates
+        if path not in workflow_text and not _discovery_covers(path, reach)
+    ]
+    if not unresolved:
+        # Dolaylı arama her çağıran betik için ayrı bir `git cat-file` demektir;
+        # doğrudan erişim zaten kanıtlandıysa o bedeli hiç ödemeyiz.
+        return []
+
+    # Dolaylı erişim yalnızca workflow'dan doğrudan çağrılan betiklerin metninde
+    # aranır; aksi halde depodaki herhangi iki ölü betik birbirini aklayabilirdi.
+    caller_texts: list[str] = []
+    for path in tree:
+        if PurePosixPath(path).suffix not in EVIDENCE_CALLER_SUFFIXES:
+            continue
+        if path not in workflow_text:
+            continue
+        raw = _blob(repo, head, path)
+        if raw is None:
+            continue
+        caller_texts.append(raw.decode("utf-8", errors="replace"))
+    caller_text = "\n".join(caller_texts)
+
+    return [f"EVIDENCE_UNREACHABLE:{path}" for path in unresolved if path not in caller_text]
 
 
 def _reviewed_changes(repo: Path, merge_base: str, head: str) -> list[ChangedPath]:
@@ -1684,6 +1887,7 @@ def validate_repository(
             return ["MISSING_JSON:.ai/schema.json"]
         schema = _json_from_commit(repo, head, schema_path)
         errors.extend(_schema_errors(schema, raw_schema))
+        errors.extend(_evidence_reachability_errors(repo, head))
 
         changes = _reviewed_changes(repo, merge_base, head)
         sensitive: dict[str, tuple[ChangedPath, str, dict[str, bool]]] = {}
