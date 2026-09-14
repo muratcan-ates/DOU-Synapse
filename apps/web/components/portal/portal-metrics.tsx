@@ -6,28 +6,15 @@ export interface PortalMetric {
   detail?: string;
 }
 
-/**
- * Metrik şeridi: kanvastan yükselen tek yüzey, içinde dört sayı.
- *
- * Önceki hâl dört hücreyi 1px saç çizgileriyle bölen kenarlıklı bir ızgaraydı
- * ve sayılar `font-mono`, `text-xl` idi — üniversite portalının "Duyurular"
- * kutusuyla aynı gramer. Katman sinyali artık gölgeden geliyor (DESIGN.md
- * §Elevation seviye 1), sayılar `tabular-nums` ile display ölçekte: hizalama
- * korunur, Türkçe ondalık ayracı kopmaz. Kırmızı yok; bu şerit bir eylem değil.
- */
+/** Mobilde iki sütunlu, büyük boşluklar yerine okunur etiket/değer grupları. */
 export function PortalMetrics({ items }: { items: PortalMetric[] }) {
   return (
-    <dl className="grid gap-x-8 gap-y-6 rounded-xl bg-surface px-6 py-6 shadow-e1 sm:grid-cols-2 xl:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-x-5 gap-y-5 rounded-[20px] bg-surface px-5 py-5 sm:px-6 xl:grid-cols-4">
       {items.map((item) => (
-        // column-reverse: DOM sırası ters okunur — görselde sayı üstte, etiket altında, ayrıntı en altta.
-        // justify-end: column-reverse'te ana eksen aşağıdan başlar; end = üst. Ayrıntısı olan
-        // hücre uzasa da sayılar aynı üst çizgide durur.
-        <div key={item.label} className="flex flex-col-reverse justify-end gap-1.5">
-          {item.detail && <p className="max-w-52 text-xs text-fg-subtle">{item.detail}</p>}
-          <dt className="text-xs font-medium text-fg-muted">{item.label}</dt>
-          <dd className="text-3xl leading-none font-semibold tracking-tight tabular-nums text-fg">
-            {item.value}
-          </dd>
+        <div key={item.label} className="min-w-0 border-l-2 border-border pl-3">
+          <dt className="text-sm text-fg-muted">{item.label}</dt>
+          <dd className="mt-1 text-2xl font-semibold leading-tight tracking-tight tabular-nums text-fg">{item.value}</dd>
+          {item.detail && <dd className="mt-2 max-w-56 text-xs leading-relaxed text-fg-subtle">{item.detail}</dd>}
         </div>
       ))}
     </dl>

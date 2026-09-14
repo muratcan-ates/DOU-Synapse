@@ -49,7 +49,7 @@ function SourceDetails({ courseId, chunkId }: { courseId: string; chunkId: strin
   return (
     <div>
       <CourseNav courseId={courseId} />
-      <nav className="mb-4 text-xs text-fg-muted">
+      <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-fg-muted">
         <Link href={`/courses/${courseId}`} className="hover:text-fg">Materyaller</Link>
         <span className="text-fg-subtle">{" / "}</span>
         <Link href={`/courses/${courseId}/sources`} className="hover:text-fg">Retrieval laboratuvarı</Link>
@@ -65,24 +65,24 @@ function SourceDetails({ courseId, chunkId }: { courseId: string; chunkId: strin
             description="Atıfta kullanılan pasaj, belgedeki önceki ve sonraki parçayla birlikte gösteriliyor."
           />
           <Card variant="flat" padding="none">
-            <div className="flex items-center justify-between gap-3 px-5 py-3">
-              <p className="min-w-0 truncate text-sm font-medium text-fg">{data.file_name}</p>
-              <span className="shrink-0 text-xs tabular-nums text-fg-muted">{data.chunks.length} parça</span>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-7">
+              <p className="min-w-0 break-words text-base font-semibold text-fg">{data.file_name}</p>
+              <span className="shrink-0 text-sm tabular-nums text-fg-muted">{data.chunks.length} parça</span>
             </div>
             <ol className="divide-y divide-border border-t border-border">
               {data.chunks.map((chunk) => (
                 <li
                   key={chunk.id}
-                  className={`px-5 py-5 ${chunk.selected ? "bg-bg" : ""}`}
+                  className={`px-5 py-6 sm:px-7 sm:py-7 ${chunk.selected ? "bg-info-bg/40" : ""}`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs tabular-nums text-fg-muted">
+                    <p className="text-sm tabular-nums text-fg-muted">
                       {chunkLocation(chunk)} · {chunk.token_count} token
                     </p>
                     {chunk.selected && <Badge tone="info">Atıfta kullanılan pasaj</Badge>}
                   </div>
                   <p
-                    className={`prose-tr mt-3 max-w-[70ch] whitespace-pre-line text-fg ${
+                    className={`prose-tr mt-4 max-w-[80ch] leading-relaxed whitespace-pre-line text-fg ${
                       chunk.content_type === "code" ? "font-mono text-sm" : "text-base"
                     }`}
                   >

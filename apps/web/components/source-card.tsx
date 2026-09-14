@@ -9,6 +9,7 @@
  */
 
 import Link from "next/link";
+import { ChevronRightIcon, FileIcon } from "@/components/icons";
 import { recordCitationOpened, type CitationLearningContext } from "@/lib/learning-events";
 import { ABSTENTION_LABEL, type AbstentionStatus } from "@/lib/chat";
 import type { SourceInfo } from "@/lib/types";
@@ -30,22 +31,23 @@ export function SourceCard({ source, href, learningContext }: {
     if (learningContext) void recordCitationOpened(learningContext).catch(() => undefined);
   }
   const card = (
-    <div className="rounded-lg border border-border bg-bg">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
-        <span className="truncate font-mono text-xs text-fg">{source.fileName}</span>
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface transition-colors group-hover:border-fg-subtle">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-sunken px-4 py-3">
+        <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-fg"><FileIcon size={17} className="shrink-0" /><span className="min-w-0 break-words">{source.fileName}</span></span>
         {/*
           Konum rozeti INFO tonundadır, marka kırmızısı değil: kırmızının üç
           meşru kullanımı var (birincil eylem, aktif navigasyon, kurum işareti)
           ve kaynak göstergesi bunların hiçbiri. `--info` zaten "kaynak
           referansı" için tanımlı (DESIGN.md §Semantik).
         */}
-        <span className="shrink-0 rounded bg-info-bg px-2 py-0.5 text-xs font-medium text-info">
+        <span className="shrink-0 rounded-md bg-info-bg px-2.5 py-1 text-sm font-medium text-info">
           {source.location}
         </span>
       </div>
-      <blockquote className="prose-tr px-4 py-3 text-sm text-fg-muted">
+      <blockquote className="prose-tr px-4 py-4 text-base leading-relaxed text-fg-muted">
         &ldquo;{source.quote}&rdquo;
       </blockquote>
+      {href && <span className="flex items-center justify-between gap-2 px-4 pb-4 text-sm font-medium text-info">Kaynak bağlamını aç<ChevronRightIcon size={17} /></span>}
     </div>
   );
   if (!href) return card;
@@ -55,7 +57,7 @@ export function SourceCard({ source, href, learningContext }: {
       onClick={recordOpen}
       onAuxClick={(event) => { if (event.button === 1) recordOpen(); }}
       aria-label={`${source.fileName}, ${source.location} kaynak bağlamını aç`}
-      className="block rounded-lg transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      className="group block rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       {card}
     </Link>
@@ -83,9 +85,9 @@ export function AbstentionNotice({
   message: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-4">
-      <p className="text-xs font-medium text-fg-muted">{ABSTENTION_LABEL[status]}</p>
-      <p className="prose-tr mt-2 text-sm text-fg">{message}</p>
+    <div className="rounded-2xl border border-border bg-surface-sunken p-5">
+      <p className="text-sm font-semibold text-fg-muted">{ABSTENTION_LABEL[status]}</p>
+      <p className="prose-tr mt-2 text-base leading-relaxed text-fg">{message}</p>
     </div>
   );
 }

@@ -32,10 +32,10 @@ export function FinishedExam(props: FinishedExamProps) {
     <Button variant="secondary" onClick={onRestart}>Yeni sınav başlat</Button>
   } />;
   if (!helpLock.ready) return (
-    <div className="mx-auto max-w-2xl">{title}<Loading label="Sonuç erişimi doğrulanıyor…" /></div>
+    <div className="mx-auto w-full max-w-4xl">{title}<Loading label="Sonuç erişimi doğrulanıyor…" /></div>
   );
   if (helpLock.error || helpLock.refreshError) return (
-    <div className="mx-auto max-w-2xl">{title}<ErrorNote
+    <div className="mx-auto w-full max-w-4xl">{title}<ErrorNote
       message={helpLock.error ?? helpLock.refreshError ?? ""} onRetry={helpLock.reload} /></div>
   );
   // Availability yalnız yenileme sinyalidir: asistanın bakım/politika kilidi
@@ -70,11 +70,11 @@ function ResultDetails({ courseId, session, finish, questions, onRestart, histor
     <Button variant="secondary" onClick={onRestart}>Yeni sınav başlat</Button>
   } />;
 
-  if (result.loading) return <div className="mx-auto max-w-2xl">{title}<Loading label="Sonuçlar yükleniyor…" /></div>;
-  if (result.error || result.refreshError) return <div className="mx-auto max-w-2xl">{title}<ErrorNote message={result.error ?? result.refreshError ?? ""} onRetry={result.reload} /></div>;
+  if (result.loading) return <div className="mx-auto w-full max-w-4xl">{title}<Loading label="Sonuçlar yükleniyor…" /></div>;
+  if (result.error || result.refreshError) return <div className="mx-auto w-full max-w-4xl">{title}<ErrorNote message={result.error ?? result.refreshError ?? ""} onRetry={result.reload} /></div>;
   if (result.data === null) return <Loading />;
   if (result.data.lockedMessage) return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto w-full max-w-4xl">
       {title}
       <div className="border-y border-border py-6">
         <p role="status" className="prose-tr text-sm text-fg">{result.data.lockedMessage}</p>
@@ -94,7 +94,7 @@ function ResultDetails({ courseId, session, finish, questions, onRestart, histor
   }));
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto w-full max-w-4xl">
       <PageHeader title="Sınav sonucu" description={completed?.message} action={
         <Button variant="secondary" onClick={onRestart}>Yeni sınav başlat</Button>
       } />
@@ -115,7 +115,7 @@ function ResultDetails({ courseId, session, finish, questions, onRestart, histor
         <ol className="space-y-6">
           {(completed.results ?? []).map((feedback, position) => (
             <li key={feedback.question_id}>
-              <h2 className="prose-tr text-sm font-medium text-fg">{position + 1}. {prompts.get(feedback.question_id) ?? "Soru metni gösterilemiyor"}</h2>
+              <h2 className="prose-tr text-lg font-semibold text-fg">{position + 1}. {prompts.get(feedback.question_id) ?? "Soru metni gösterilemiyor"}</h2>
               <FeedbackPanel sessionId={session.id} courseId={courseId} feedback={feedback} />
             </li>
           ))}

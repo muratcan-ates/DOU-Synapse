@@ -158,7 +158,7 @@ const BADGE_PAIRS = [
 /** Birincil buton: metin marka zemini üstünde (light/dark ayrı metin rengi). */
 const BUTTON_PAIRS = {
   light: [["#ffffff", "brand", "birincil buton metni"]],
-  dark: [["#191715", "brand", "birincil buton metni"]],
+  dark: [["bg", "brand", "birincil buton metni"]],
 };
 
 /**
@@ -221,7 +221,7 @@ function measure(theme, tokens) {
     });
   }
   for (const [fg, bg, note] of BUTTON_PAIRS[theme]) {
-    const ratio = contrast(fg, tokens[bg]);
+    const ratio = contrast(tokens[fg] ?? fg, tokens[bg]);
     rows.push({
       kind: "badge",
       theme,

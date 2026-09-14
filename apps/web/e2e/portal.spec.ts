@@ -198,7 +198,7 @@ async function expectMobileDarkAndFocused(page: Page, surfaceControl: Locator) {
   expect(surface.document).toBeLessThanOrEqual(surface.viewport);
   expect(surface.body).toBeLessThanOrEqual(surface.viewport);
   expect(surface.prefersDark).toBe(true);
-  expect(surface.background).toBe("rgb(25, 23, 21)");
+  expect(surface.background).toBe("rgb(20, 23, 28)");
 }
 
 test.describe("rol bazlı ürün portalı", () => {
@@ -211,6 +211,7 @@ test.describe("rol bazlı ürün portalı", () => {
     await expect(page.getByRole("heading", { name: /Merhaba|Genel bakış/ })).toBeVisible();
     const card = courseCard(page, course);
     await expect(card).toBeVisible();
+    await card.getByText("Araçlar ve ders ayrıntıları", { exact: true }).click();
     await expect(card.getByText("Eğitmen", { exact: true })).toBeVisible();
     await expect(card.getByRole("link", { name: "Soru havuzu" })).toHaveAttribute(
       "href",
@@ -240,6 +241,7 @@ test.describe("rol bazlı ürün portalı", () => {
 
     const card = courseCard(page, course);
     await expect(card).toBeVisible();
+    await card.getByText("Araçlar ve ders ayrıntıları", { exact: true }).click();
     await expect(card.getByText("Öğrenci", { exact: true })).toBeVisible();
     await expect(card.getByRole("link", { name: "Asistan" })).toHaveAttribute(
       "href",
@@ -269,6 +271,7 @@ test.describe("rol bazlı ürün portalı", () => {
 
     const card = courseCard(page, course);
     await expect(card).toBeVisible();
+    await card.getByText("Araçlar ve ders ayrıntıları", { exact: true }).click();
     await expect(
       card
         .getByText("Çalışma sorusu", { exact: true })
@@ -298,6 +301,8 @@ test.describe("rol bazlı ürün portalı", () => {
 
     const studentCard = courseCard(page, studentCourse);
     const instructorCard = courseCard(page, instructorCourse);
+    await studentCard.getByText("Araçlar ve ders ayrıntıları", { exact: true }).click();
+    await instructorCard.getByText("Araçlar ve ders ayrıntıları", { exact: true }).click();
     await expect(studentCard.getByText("Öğrenci", { exact: true })).toBeVisible();
     await expect(studentCard.getByRole("link", { name: "Asistan" })).toBeVisible();
     await expect(studentCard.getByRole("link", { name: "AI politikası" })).toHaveCount(0);
@@ -405,6 +410,8 @@ test.describe("rol bazlı ürün portalı", () => {
     await page.goto("/dashboard");
     const studentCard = courseCard(page, studentCourse);
     const instructorCard = courseCard(page, instructorCourse);
+    await studentCard.getByText("Araçlar ve ders ayrıntıları", { exact: true }).click();
+    await instructorCard.getByText("Araçlar ve ders ayrıntıları", { exact: true }).click();
     await expect(studentCard.getByRole("link", { name: "Sınav planı" })).toHaveCount(0);
     const instructorTool = instructorCard.getByRole("link", { name: "Sınav planı" });
     await expect(instructorTool).toHaveAttribute(
@@ -415,7 +422,7 @@ test.describe("rol bazlı ürün portalı", () => {
     await expect(page).toHaveURL(new RegExp(`/courses/${instructorCourse.id}/blueprints$`));
     await expect(page.getByRole("heading", { name: "Sınav blueprint'i", exact: true }))
       .toBeVisible();
-    await expect(page.getByRole("link", { name: "Sınav blueprint'i", exact: true }))
+    await expect(page.getByRole("link", { name: "Sınav planı", exact: true }))
       .toBeVisible();
     await expect(page.getByRole("button", { name: "Yeni sınav kur" })).toBeVisible();
     const instructorBlueprints = await fetch(
@@ -428,7 +435,7 @@ test.describe("rol bazlı ürün portalı", () => {
     await expect(
       page.getByText("Sınav blueprint'i eğitmen aracıdır; bu sayfa sana kapalı."),
     ).toBeVisible();
-    await expect(page.getByRole("link", { name: "Sınav blueprint'i", exact: true }))
+    await expect(page.getByRole("link", { name: "Sınav planı", exact: true }))
       .toHaveCount(0);
     await expect(page.getByRole("button", { name: "Yeni sınav kur" })).toHaveCount(0);
     const studentBlueprints = await fetch(`${API}/courses/${studentCourse.id}/blueprints`, {
@@ -451,7 +458,8 @@ test.describe("rol bazlı ürün portalı", () => {
     await expect(page.getByText(/Veritabanı: (Hazır|Kısıtlı|Hata|Ulaşılamıyor)/)).toBeVisible();
     await expect(page.getByText(/Embedding: (Hazır|Hazırlanıyor|Kapalı|Hata)/)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Kullanıcılar" })).toBeVisible();
-    await expect(page.getByText("ay***@dogus.edu.tr")).toBeVisible();
+    await expect(page.getByRole("table", { name: "Kullanıcılar", exact: true })
+      .getByText("ay***@dogus.edu.tr")).toBeVisible();
     await expect(page.getByText(AYSE.email, { exact: true })).toHaveCount(0);
     const userSearch = page.getByLabel("Kullanıcı ara");
     await expect(userSearch).toHaveAttribute("placeholder", "Ad veya maskeli e-posta");
@@ -496,7 +504,8 @@ test.describe("rol bazlı ürün portalı", () => {
       offset: 0,
       search: BURAK.email,
     });
-    await expect(page.getByText("Kullanıcı kaydı bulunamadı.", { exact: true }))
+    await expect(page.getByRole("table", { name: "Kullanıcılar", exact: true })
+      .getByText("Kullanıcı kaydı bulunamadı.", { exact: true }))
       .toBeVisible();
     await expect(page.getByText(AYSE.email, { exact: true })).toHaveCount(0);
 

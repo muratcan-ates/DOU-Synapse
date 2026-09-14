@@ -58,7 +58,7 @@ import { useResource } from "@/lib/use-resource";
  * ile aynıdır.
  */
 const LINK_BUTTON_SM =
-  "inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-[0.8125rem] font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
 export default function AnalyticsPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -210,7 +210,7 @@ function FocusCard({ data }: { data?: StudentAnalytics | ClassAnalytics }) {
 
   return (
     <Card className="mb-6">
-      <p className="prose-tr max-w-[70ch] text-sm text-fg-muted">
+      <p className="prose-tr max-w-[80ch] text-sm leading-relaxed text-fg-muted">
         <span className="font-medium text-fg">Bu gösterge resmî bir not değildir.</span>{" "}
         Nereye çalışılacağını gösteren pedagojik bir öneridir. Skor, son cevaplara
         daha çok ağırlık veren üstel bir ortalamayla hesaplanır ve alınan ipucu
@@ -219,9 +219,9 @@ function FocusCard({ data }: { data?: StudentAnalytics | ClassAnalytics }) {
       {figures.length > 0 && (
         <dl className="mt-6 flex flex-wrap gap-x-12 gap-y-6">
           {figures.map((figure) => (
-            <div key={figure.label} className="flex flex-col-reverse gap-2">
-              <dt className="text-xs font-medium text-fg-muted">{figure.label}</dt>
-              <dd className="text-4xl leading-none font-semibold tracking-tight tabular-nums text-fg sm:text-5xl">
+            <div key={figure.label} className="flex min-w-32 flex-col-reverse gap-3">
+              <dt className="text-sm font-medium text-fg-muted">{figure.label}</dt>
+              <dd className="text-3xl leading-none font-semibold tracking-tight tabular-nums text-fg sm:text-4xl">
                 {figure.value}
               </dd>
             </div>
@@ -294,22 +294,22 @@ function UntrackedNote({ count }: { count: number }) {
 function TopicRowItem({ row, rank }: { row: TopicRow; rank: number }) {
   const level = MASTERY_LEVEL[row.level];
   return (
-    <li className="px-5 py-3.5">
+    <li className="px-5 py-5 transition-colors hover:bg-surface-sunken sm:px-6">
       <div className="flex items-center gap-3">
         <span className="w-6 shrink-0 text-xs tabular-nums text-fg-subtle">#{rank}</span>
-        <p className="min-w-0 flex-1 truncate text-sm text-fg">{row.name}</p>
+        <p className="min-w-0 flex-1 break-words text-base font-medium leading-relaxed text-fg">{row.name}</p>
         <span className="shrink-0 text-sm font-semibold tabular-nums text-fg">
           {scoreText(row.score)}
         </span>
       </div>
       {/* pl-9 = sıra sütunu (24px) + boşluk (12px): alt katman adla hizalanır. */}
-      <div className="mt-2 flex items-center gap-3 pl-9">
+      <div className="mt-3 flex flex-wrap items-center gap-3 pl-9">
         <div
           aria-hidden="true"
-          className="h-1.5 w-full max-w-[26rem] rounded-full bg-border"
+          className="h-2 min-w-16 flex-1 rounded-full bg-border"
         >
           <div
-            className="h-1.5 rounded-full bg-fg-subtle transition-[width] duration-500"
+            className="h-2 rounded-full bg-fg-subtle transition-[width] duration-500 motion-reduce:transition-none"
             style={{ width: `${barPercent(row.score)}%` }}
           />
         </div>
@@ -320,7 +320,7 @@ function TopicRowItem({ row, rank }: { row: TopicRow; rank: number }) {
             kullanan öğrenci skorun kaç cevaba dayandığını hiç öğrenemez.
             `sr-only` görsel olarak gizler, okunur bırakır.
           */}
-          <span className="sr-only text-xs tabular-nums text-fg-subtle sm:not-sr-only">
+          <span className="sr-only text-sm tabular-nums text-fg-subtle sm:not-sr-only">
             {volumeText(row)}
           </span>
           <Badge tone={level.tone}>{level.label}</Badge>
@@ -370,8 +370,8 @@ function TopicList({
 
   return (
     <Card variant="flat" padding="none" className="mb-6">
-      <div className="flex items-center justify-between gap-3 px-5 py-3">
-        <h2 className="text-sm font-medium text-fg">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-6">
+        <h2 className="text-lg font-semibold text-fg">
           {isInstructor ? "Konu bazlı sınıf durumu" : "Konularım"}
         </h2>
         <span className="text-xs text-fg-muted">önce zorlanılan konu</span>
@@ -400,7 +400,7 @@ function OutOfScopeCard({ stat }: { stat: ClassAnalytics["out_of_scope"] }) {
   return (
     <Card variant="soft" className="mb-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="text-sm font-medium text-fg">Kapsam dışı ret oranı</h2>
+        <h2 className="text-lg font-semibold text-fg">Kapsam dışı ret oranı</h2>
         <span className="text-2xl leading-none font-semibold tracking-tight tabular-nums text-fg">
           {rateText(stat.rate)}
         </span>
@@ -445,8 +445,8 @@ function MissedQuestions({
 }) {
   return (
     <Card variant="flat" padding="none" className="mb-6">
-      <div className="flex items-center justify-between gap-3 px-5 py-3">
-        <h2 className="text-sm font-medium text-fg">En çok yanlış yapılan sorular</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-6">
+        <h2 className="text-lg font-semibold text-fg">En çok yanlış yapılan sorular</h2>
         {questions.length > 0 && (
           <span className="shrink-0 text-xs text-fg-muted">yanlış / değerlendirilen</span>
         )}
@@ -461,11 +461,11 @@ function MissedQuestions({
           {questions.map((question) => (
             <li
               key={question.question_id}
-              className="flex flex-wrap items-start gap-4 px-5 py-3.5"
+              className="flex flex-wrap items-start gap-4 px-5 py-5 sm:px-6"
             >
               <div className="min-w-0 flex-1">
-                <p className="prose-tr text-sm text-fg">{question.stem}</p>
-                <p className="mt-1 text-xs text-fg-subtle">{question.topic_name}</p>
+                <p className="prose-tr text-base leading-relaxed text-fg">{question.stem}</p>
+                <p className="mt-2 text-sm text-fg-subtle">{question.topic_name}</p>
               </div>
               <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-fg">
                 {missedRateText(question)}

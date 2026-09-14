@@ -29,26 +29,26 @@ export function AdminDataTable<T>({
   const descriptionId = useId();
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface">
-      <div className="border-b border-border px-5 py-4">
-        <h2 id={titleId} className="text-lg font-medium text-fg">{title}</h2>
-        <p id={descriptionId} className="mt-1 text-xs text-fg-muted">
+    <div className="overflow-hidden rounded-[20px] border border-border bg-surface shadow-e1">
+      <div className="border-b border-border px-5 py-5 sm:px-6">
+        <h2 id={titleId} className="text-xl font-semibold text-fg">{title}</h2>
+        <p id={descriptionId} className="mt-2 max-w-[75ch] text-sm leading-relaxed text-fg-muted">
           {description}
         </p>
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto md:block">
         <table
           className="min-w-full border-collapse text-left text-sm"
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
         >
-          <thead className="bg-bg text-xs text-fg-muted">
+          <thead className="bg-surface-sunken text-sm text-fg-muted">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
                   scope="col"
-                  className={`whitespace-nowrap border-b border-border px-4 py-3 font-medium ${column.className ?? ""}`}
+                  className={`whitespace-nowrap border-b border-border px-5 py-4 font-medium ${column.className ?? ""}`}
                 >
                   {column.header}
                 </th>
@@ -71,7 +71,7 @@ export function AdminDataTable<T>({
                   {columns.map((column) => (
                     <td
                       key={column.key}
-                      className={`whitespace-nowrap px-4 py-3 align-top text-fg ${column.className ?? ""}`}
+                      className={`whitespace-nowrap px-5 py-4 align-top text-fg ${column.className ?? ""}`}
                     >
                       {column.render(item)}
                     </td>
@@ -81,6 +81,26 @@ export function AdminDataTable<T>({
             )}
           </tbody>
         </table>
+      </div>
+      <div className="md:hidden" aria-labelledby={titleId} aria-describedby={descriptionId}>
+        {items.length === 0 ? (
+          <p className="px-5 py-10 text-sm leading-relaxed text-fg-muted">{emptyMessage}</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {items.map((item) => (
+              <li key={rowKey(item)} className="px-5 py-5">
+                <dl className="space-y-4">
+                  {columns.map((column, index) => (
+                    <div key={column.key} className={index === 0 ? "border-b border-border pb-4" : "grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-3"}>
+                      <dt className={index === 0 ? "mb-2 text-sm text-fg-muted" : "text-sm text-fg-muted"}>{column.header}</dt>
+                      <dd className={`min-w-0 break-words text-sm text-fg ${index === 0 ? "font-medium" : ""}`}>{column.render(item)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
@@ -104,7 +124,7 @@ export function AdminPagination({
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
-      <p className="text-xs text-fg-muted" aria-live="polite">
+      <p className="text-sm text-fg-muted" aria-live="polite">
         {first}-{last} / {total} kayıt
       </p>
       <div className="flex gap-2">

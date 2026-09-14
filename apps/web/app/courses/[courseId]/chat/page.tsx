@@ -60,8 +60,10 @@ import {
   AssistantSignature,
   ModeSwitch,
   QuestionBubble,
+  ChatDraft,
+  ConversationStarters,
 } from "@/components/chat/transcript-parts";
-import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
+import { Badge, Button, Card, EmptyState } from "@/components/ui";
 
 export default function ChatPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -214,9 +216,10 @@ function ChatScreen({
         allowedModes={allowedModes}
         hintLimit={hintLimit}
       />
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
       {/* Konuşma sütunu: okuma genişliği bileşenlerin içinde 70ch ile sınırlı */}
-      <div className="space-y-6">
+      <div className="min-w-0 rounded-[20px] border border-border bg-surface shadow-e1">
+        <div className="space-y-7 px-5 py-6 sm:px-8 sm:py-8">
         <LoadMore
           hasMore={chat.historyCursor !== null}
           busy={chat.olderLoading}
@@ -233,8 +236,13 @@ function ChatScreen({
         )}
         {chat.historyLoading && <Loading label="Sohbet geçmişi yükleniyor…" />}
 
-        {blocks.length === 0 && !chat.historyLoading && (
-          <EmptyState title="Ders materyalinden bir soru sorarak başlayın. Her cevap dayandığı sayfayla birlikte gelir; Sokratik modda cevap yerine adım adım ipucu verilir." />
+        {blocks.length === 0 && !chat.historyLoading && !chat.recoveryError && (
+          <ConversationStarters suggestions={identity.suggestions} onSelect={(suggestion) => {
+            const nextMode = allowedModes.includes(suggestion.preferredMode) ? suggestion.preferredMode : chat.mode;
+            if (nextMode !== chat.mode) chat.startNewSession(nextMode);
+            chat.setDraft(suggestion.prompt);
+            document.getElementById("chat-draft")?.focus();
+          }} />
         )}
 
         <ChatTranscript
@@ -258,6 +266,7 @@ function ChatScreen({
         )}
 
         {chat.deletionNotice && <p role="status" className="text-sm text-fg-muted">{chat.deletionNotice}</p>}
+        </div>
         {chat.recoveryError ? <div className="space-y-3">
           <ErrorNote message={chat.recoveryError.message} kind={chat.recoveryError.kind} requestId={chat.recoveryError.requestId} />
           <Button type="button" variant="secondary" onClick={() => window.location.reload()}>Sohbeti yeniden yükle</Button>
@@ -275,7 +284,7 @@ function ChatScreen({
       </div>
 
       {/* Kaynak paneli: masaüstünde sabit sütun, mobilde içeriğin altına iner */}
-      <aside className="space-y-8">
+      <aside className="grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-1">
         <CourseMaterialsSection documents={documents} />
         <SessionListSection
           courseId={courseId}
@@ -431,7 +440,7 @@ function ChatComposer({
 }) {
   return (
     <form
-      className="space-y-3"
+      className="space-y-4 rounded-b-[20px] border-t border-border bg-surface px-5 py-5 sm:px-8"
       onSubmit={(e) => {
         e.preventDefault();
         onSend();
@@ -439,13 +448,15 @@ function ChatComposer({
     >
       <ModeSwitch modes={allowedModes} mode={mode} sending={sending} onSelect={onSelectMode} />
 
-      <div className="flex gap-2">
+      <div className="space-y-3">
         {/* Placeholder etiket yerine geçmez (DESIGN.md): etiket gizli ama var. */}
         <label htmlFor="chat-draft" className="sr-only">
           {followUp ? "Denemen" : "Sorun"}
         </label>
-        <Input
+        <ChatDraft
           id="chat-draft"
+          onSend={onSend}
+          canSend={!sending && submittable}
           value={draft}
           onChange={(e) => onDraftChange(e.target.value)}
           readOnly={sending}
@@ -458,9 +469,12 @@ function ChatComposer({
               : "Ders materyaline soru sorun…"
           }
         />
-        <Button type="submit" aria-disabled={sending || !submittable}>
-          {sending ? "Gönderiliyor…" : "Gönder"}
-        </Button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-fg-subtle">Enter ile gönder · Shift + Enter ile yeni satır</p>
+          <Button type="submit" aria-disabled={sending || !submittable}>
+            {sending ? "Gönderiliyor…" : "Gönder"}
+          </Button>
+        </div>
       </div>
     </form>
   );
@@ -473,10 +487,10 @@ function CourseMaterialsSection({
   documents: Resource<CourseDocument[]>;
 }) {
   return (
-    <Card variant="flat">
+    <Card className="min-w-0">
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-fg">Bu dersin kaynakları</h2>
-        <p className="prose-tr text-xs text-fg-muted">
+        <h2 className="text-lg font-semibold text-fg">Bu dersin kaynakları</h2>
+        <p className="prose-tr text-sm leading-6 text-fg-muted">
           Asistan yalnızca eğitmenin yüklediği bu materyallerden cevap verir;
           her cevap sayfa numarasıyla gelir.
         </p>
@@ -498,7 +512,7 @@ function CourseMaterialsSection({
         )}
         {documents.loading && <Loading label="Materyaller yükleniyor…" />}
         {documents.data?.length === 0 && (
-          <p className="prose-tr text-xs text-fg-muted">
+          <p className="prose-tr text-sm leading-6 text-fg-muted">
             Bu derste henüz materyal yok. Eğitmen materyal yükleyene kadar
             asistan kaynak gösteremez.
           </p>
@@ -508,7 +522,7 @@ function CourseMaterialsSection({
           <ul className="divide-y divide-border border-t border-border">
             {documents.data.map((doc) => (
               <li key={doc.id} className="py-3">
-                <p className="truncate text-sm font-medium text-fg">{doc.file_name}</p>
+                <p className="break-words text-sm font-medium text-fg">{doc.file_name}</p>
                 <p className="mt-1.5 flex items-center gap-2">
                   <Badge tone={DOCUMENT_STATUS[doc.status].tone}>
                     {DOCUMENT_STATUS[doc.status].label}
@@ -551,10 +565,10 @@ function SessionListSection({
   onOpenSession: (summary: ChatSessionSummary) => void;
 }) {
   return (
-    <Card variant="flat">
+    <Card className="min-w-0">
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-medium text-fg">Sohbetlerin</h2>
+          <h2 className="text-lg font-semibold text-fg">Sohbetlerin</h2>
           <Button
             type="button"
             variant="secondary"
@@ -585,7 +599,7 @@ function SessionListSection({
         )}
         {sessions.loading && <Loading label="Sohbetler yükleniyor…" />}
         {sessions.data?.length === 0 && (
-          <p className="text-xs text-fg-muted">Henüz bir sohbet açmadın.</p>
+          <p className="text-sm text-fg-muted">Henüz bir sohbet açmadın.</p>
         )}
         {sessions.data && sessions.data.length > 0 && (
           <ul aria-label="Kişisel sohbetler" className="max-h-96 space-y-3 overflow-y-auto">
@@ -617,16 +631,16 @@ function SessionListSection({
                     onClick={() => {
                       if (sessionAllowed) onOpenSession(summary);
                     }}
-                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                    className={`w-full rounded-xl border border-transparent px-3 py-3 text-left transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
                       active
-                        ? "bg-surface-sunken font-medium"
+                        ? "border-border bg-surface-sunken font-medium"
                         : "hover:bg-surface-sunken"
                     } ${sessionAllowed ? "" : "cursor-not-allowed opacity-50"}`}
                   >
-                    <span className="block truncate text-xs text-fg">
+                    <span className="block line-clamp-2 text-sm leading-6 text-fg">
                       {summary.title ?? "Başlıksız sohbet"}
                     </span>
-                    <span className="mt-0.5 block text-xs text-fg-subtle">
+                    <span className="mt-1 block text-sm text-fg-subtle">
                       {stage === null
                         ? CHAT_MODE_LABEL[summary.mode]
                         : `${CHAT_MODE_LABEL[summary.mode]} · ${stage}`}
