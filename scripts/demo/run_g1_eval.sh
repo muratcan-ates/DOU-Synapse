@@ -73,6 +73,17 @@ apps/api/.venv/bin/python scripts/real_eval_preflight.py \
   --repo "$KOK" --corpus "$KORPUS" --required-db-name "$DB" \
   --output "$CIKTI/preflight.json"
 
+# Port zaten dinleniyorsa DURDUR. Sessizce devam etmek en sinsi hatayı üretiyor:
+# önceki koşudan kalan süreç "hazır" görünür, evaluate.py ona bağlanır ve sunucu
+# kanıtındaki candidate_sha bu commit'le tutmadığı için koşu "gerçek değerlendirme
+# çalışma kanıtı doğrulanamadı" ile düşer. Sebebi de görünmez.
+if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+  echo "HATA: $PORT portu zaten dinleniyor. Eski değerlendirme API'si olabilir:"
+  lsof -nP -iTCP:"$PORT" -sTCP:LISTEN | sed -n '2,4p'
+  echo "Kapat:  pkill -f 'port $PORT'"
+  exit 1
+fi
+
 echo "[g1] API $PORT açılıyor (sağlayıcı: $EVAL_LLM_PROVIDER)"
 apps/api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port "$PORT" \
   > "$CIKTI/api.log" 2>&1 &
