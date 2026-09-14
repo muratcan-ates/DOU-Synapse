@@ -31,11 +31,11 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 
 | Katman | Durum | Açıklama |
 |---|---|---|
-| **Main'e birleşmiş ürün** | `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac` | GitHub main 7 Eylül'de yeniden doğrulandı; PR #22 dahil önceki ürün ve arayüz çalışmaları burada |
-| **Etkin geliştirme adayı** | `018-codex-production-line` | `017-completion-integration` / `6218159` tabanını korur. Son hosted baş `f79d8a2`; S9/S10 yerel güvenlik kaynaklarının herkese açık gönderimi kullanıcı onayı bekler |
-| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Son yerel API 1571, tarayıcı 71; kontrol noktaları ve kaynak hashleri ayrı. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
+| **Main'e birleşmiş ürün** | `babdb664af6297255ec93fec4e3f4bb3af434fb7` | GitHub main'in güncel başı. Kampüs arayüzü tasarımı (`025-campus-ui`) bu başta birleşiktir |
+| **Etkin geliştirme adayı** | `018-codex-production-line` | Aday ile main aynı başta; şeritlerin (P1–P5, 019, 025) çalışması buraya toplanır |
+| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Yerel süitler: API 2139, web birim 648, tarayıcı 87 vaka toplanıyor <!-- docs-check: backend.tests = 2139 --><!-- docs-check: frontend.tests = 648 --><!-- docs-check: e2e.tests = 87 -->. CI'da uçtan uca iş hâlâ kırmızı: 9 test simülasyon bayrağı gerektiriyor ve koşucu fazlanması henüz birleşmedi. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
 | **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
-| **Gerçek model ve insan kabulü** | Bekliyor | [Kabul paketi](evaluation/acceptance/README.md) hazır; öğretmen materyal/rubrik onayı, gerçek yanıtlar ve bağımsız insan değerlendirmesi gerekiyor |
+| **Gerçek model ve insan kabulü** | Kısmen ölçüldü | Demo yığını **gerçek Groq** ile koşuyor (`openai/gpt-oss-120b`); kapsam dışı ret, Sokratik merdiven ve atıflı cevap gerçek modelle tek tek doğrulandı (koşu kaydı `docs/team/GECE-RAPORU-14-EYLUL.md`). **Holdout değerlendirmesi (G1) koşulmadı** — sebep ölçüldü, `docs/team/GECE-RAPORU-14-EYLUL.md` §4.2. Öğretmen materyal/rubrik onayı ve bağımsız insan değerlendirmesi hâlâ gerekiyor |
 | **Staging / production** | Kanıtlanmadı | Canlı Auth/Storage/worker, kalite, yedek/geri yükleme ve geri dönüş kabulü tamamlanmadan yayın iddiası yok |
 
 Adayın kesin commit kimliği, kirli kaynak sınırı ve yeni test kayıtları [018 doğrulamasında](specs/018-codex-production-line/verification.md) ve [tamamlanma defterinde](docs/completion-program.md) bulunur. Aşağıdaki gelişim günlüğü geçmiş aşamaları anlatır; bu tablo yeni main veya canlı dağıtım iddiası taşımaz.
