@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "change_id": "060-migration-runner-r1",
+  "lineage_id": "l3-migration-runner",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "göçleri kilit ve değişmez özet defteriyle uygula",
+  "summary": "G2: yeni scripts/migrate.sh ve scripts/test_migrate.sh. Tek oturum kilidi aynı göçün eşzamanlı uygulanmasını engeller; hash defteri geçmiş dosya değişikliğini reddeder.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T14:38:17.791457+00:00",
+  "review_by": "2026-10-13T14:38:17.791457+00:00",
+  "base_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "model_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "prompt_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "tool_schema_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "guardrail_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "retrieval_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "embedding_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "evaluator_revision": "Değişmedi; L3 migration-runner işletim değişimi, taban 22a85d390f759a77265e624d4d2acdf9b7c3d143"
+  },
+  "data": {
+    "corpus_digest": "ca0bcf7bd6cbf9b56498d21443fb1b2e3cc0b94bf53f07115681a1294b8bba53",
+    "eval_set_digest": "ba8a7abd8d49bba73b9d48b12e98c86aa82f27e80bf3175dddc846381a87402c",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "scripts/migrate.sh",
+      "state": "present",
+      "sha256": "ba8a7abd8d49bba73b9d48b12e98c86aa82f27e80bf3175dddc846381a87402c"
+    },
+    {
+      "path": "scripts/test_migrate.sh",
+      "state": "present",
+      "sha256": "82b7fc29d063b7b60eab5b48ad7933e538776f3c24193d75e670f64136d646cb"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/060-migration-runner-r1.json",
+      "report_sha256": "616fa0daf29a34c1cf9a15c0f37c26f38ca1380844781d005c0ad7a63faebd23",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "scripts/migrate.sh",
+    "holdout_ref": ".release/test_validate_evidence.py",
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "ruff_rc",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "PATH=/opt/homebrew/opt/postgresql@16/bin:$PATH PGHOST=127.0.0.1 PGPORT=55463 PGUSER=muratates scripts/test_migrate.sh"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "GitHub staging environment reviewer ve zorunlu kabul kapıları",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:060-migration-runner-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "GitHub staging environment reviewer ve zorunlu kabul kapıları",
+    "kill_switch": "Dağıtım workflowunu durdur; başarısız kapı veya eksik kanıtta terfi etme.",
+    "assignment": "Sticky: incelenen commit SHA ve registry digest aynı adaya sabitlenir.",
+    "initial_exposure": "Yok; yalnız sentetik yerel kontroller. Canlı dağıtım not-run.",
+    "stop_conditions": [
+      "Zorunlu kapı başarısız veya çalıştırılmamış.",
+      "Sır, web standalone veya göç/kimlik önkoşulu eksik.",
+      "İmaj digest veya geçmiş göç özeti uyuşmuyor."
+    ],
+    "expand_conditions": [
+      "Aynı commit üzerindeki bütün zorunlu kapılar geçer.",
+      "Staging için bağımsız insan incelemesi ve gerçek ortam kabulü tamamlanır."
+    ],
+    "active_exam_policy": "Sınav kilidi, üyelik ve RLS sözleşmeleri değiştirilmez."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "procedure": "Bu L3 commitini incelemeyle geri al; uygulanmış göçleri değiştirme. İmaj geri dönüşü yalnız expand–contract uyumu kanıtlandıysa yapılır.",
+    "max_minutes": 15,
+    "verification": "Plan; canlı geri dönüş süresi ölçülmedi, not-run.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik yerel test verisi; sır veya gerçek öğrenci içeriği tutulmaz.",
+    "retention": "Kaynak ve sonuç özetleri sürümlüdür; yerel DB üretim saklama kabulü değildir."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
