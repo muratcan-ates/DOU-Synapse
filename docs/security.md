@@ -362,7 +362,7 @@ Sohbetin özel kalması genel kuraldır; öğrencinin açıkça eğitmen incelem
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 2088 test   # docs-check: backend.tests = 2088
+cd apps/api && uv run pytest -q                 # 2134 test   # docs-check: backend.tests = 2134
 cd apps/api && uv run mypy app                  # temiz, 123 dosya   # docs-check: backend.mypyFiles = 123
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
