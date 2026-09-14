@@ -53,6 +53,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
   const ownLock = useChatAvailability(providedLock ? null : courseId);
   const lock = providedLock ?? ownLock;
   const base = `/courses/${courseId}`;
+  const isMaterialsPage = pathname === base;
 
   return (
     <>
@@ -121,7 +122,11 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
         })}
       </nav>
       {ready && pathname !== `${base}/chat` && (
-        <CourseAssistant courseId={courseId} availability={lock} />
+        <CourseAssistant
+          courseId={courseId}
+          availability={lock}
+          placement={isMaterialsPage ? "inline" : "floating"}
+        />
       )}
     </>
   );
