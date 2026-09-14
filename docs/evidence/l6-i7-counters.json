@@ -1,0 +1,233 @@
+{
+  "task": "I7",
+  "source_sha": "393263ca6db79792988747e08ea09773b978a064",
+  "started_at": "2026-09-13T17:11:46.598965+00:00",
+  "finished_at": "2026-09-13T17:12:34.646622+00:00",
+  "kind": "physical-shadow counter measurement; no full backend or browser execution",
+  "measured": {
+    "backend_collect": 1689,
+    "mypy": 114,
+    "frontend_tests": 573,
+    "frontend_files": 45,
+    "e2e_list": 71
+  },
+  "selection": {
+    "CI": "unset",
+    "EKRAN": "unset",
+    "E2E_VISUAL": "unset",
+    "E2E_AGENT_DISABLED": "unset",
+    "PLAYWRIGHT_TEST_CONFIG": "unset",
+    "E2E_DATABASE_NAME": "unset",
+    "E2E_RUN_ID": "unset",
+    "E2E_AUDIT_DIR": "unset"
+  },
+  "commands": [
+    {
+      "name": "python-source-origin",
+      "command": [
+        "uv",
+        "run",
+        "python",
+        "-c",
+        "import importlib.util,json,pathlib; p=pathlib.Path(importlib.util.find_spec('app').origin).resolve(); expected=pathlib.Path.cwd()/'app'/'__init__.py'; assert p==expected.resolve(), (p,expected); print(json.dumps({'app_origin':str(p),'shadow_app_confirmed':True}))"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/api",
+      "started_at": "2026-09-13T17:11:49.166676+00:00",
+      "status": "completed",
+      "rc": 0,
+      "finished_at": "2026-09-13T17:11:49.317401+00:00",
+      "elapsed_seconds": 0.15,
+      "stdout_sha256": "23bd92cc42a28e1c5a18bdfaf62884c0018451b3518ce99e0b262ee76e094fe4",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "backend_collect",
+      "command": [
+        "uv",
+        "run",
+        "pytest",
+        "--collect-only",
+        "-q"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/api",
+      "started_at": "2026-09-13T17:11:49.956450+00:00",
+      "status": "completed",
+      "rc": 0,
+      "finished_at": "2026-09-13T17:11:53.348543+00:00",
+      "elapsed_seconds": 3.391,
+      "stdout_sha256": "e37530c2fafc562108e04fc4ab3f25a7662c7199e9780fc96b1f400b1f05a6f4",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "mypy",
+      "command": [
+        "uv",
+        "run",
+        "mypy",
+        "app"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/api",
+      "started_at": "2026-09-13T17:11:54.174548+00:00",
+      "status": "completed",
+      "rc": 0,
+      "finished_at": "2026-09-13T17:12:19.459594+00:00",
+      "elapsed_seconds": 25.283,
+      "stdout_sha256": "0d9882f1f6dd71fa523924801fe936e3519a4e0c1d8ed1d296b549cc336dbcbc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "frontend_tests",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/web",
+      "started_at": "2026-09-13T17:12:20.947431+00:00",
+      "status": "completed",
+      "rc": 0,
+      "finished_at": "2026-09-13T17:12:21.315225+00:00",
+      "elapsed_seconds": 0.367,
+      "stdout_sha256": "d6684989b8dd63b37d2f1954270826fbe1bd89a8debd12bcacf03ed1c6140ef6",
+      "stderr_sha256": "50589d674cd7b5921b7cfc1621bf3fb9cd1865a2a71e7249aa783d9550bbea98"
+    },
+    {
+      "name": "frontend_files",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/web",
+      "started_at": "2026-09-13T17:12:22.592980+00:00",
+      "status": "completed",
+      "rc": 0,
+      "finished_at": "2026-09-13T17:12:22.906550+00:00",
+      "elapsed_seconds": 0.313,
+      "stdout_sha256": "d6684989b8dd63b37d2f1954270826fbe1bd89a8debd12bcacf03ed1c6140ef6",
+      "stderr_sha256": "4431d0412c31216b30fae8486168afe7c5ae4905a463c69b8efb10fd6d4c2769"
+    },
+    {
+      "name": "e2e_list",
+      "command": [
+        "./node_modules/.bin/playwright",
+        "test",
+        "--list"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/web",
+      "started_at": "2026-09-13T17:12:24.054512+00:00",
+      "status": "completed",
+      "rc": 0,
+      "finished_at": "2026-09-13T17:12:25.377959+00:00",
+      "elapsed_seconds": 1.323,
+      "stdout_sha256": "0048410fefc87a790dcfdc011439393141f43778f62cbacfabf503cc2b8edfa6",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "docs-duzelt",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs",
+        "--duzelt"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow",
+      "started_at": "2026-09-13T17:12:26.657015+00:00",
+      "status": "completed",
+      "rc": 0,
+      "finished_at": "2026-09-13T17:12:33.039356+00:00",
+      "elapsed_seconds": 6.382,
+      "stdout_sha256": "7665f31d8f926065bcb44ef0f1a17412ed42fe3efba8fd89165e41c0e96066ef",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "nested_commands": [
+    {
+      "command": "uv",
+      "args": [
+        "run",
+        "pytest",
+        "--collect-only",
+        "-q"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/api",
+      "started_at": "2026-09-13T17:12:26.784Z",
+      "finished_at": "2026-09-13T17:12:30.815Z",
+      "rc": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "command": "bun",
+      "args": [
+        "test",
+        "lib/"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/web",
+      "started_at": "2026-09-13T17:12:30.816Z",
+      "finished_at": "2026-09-13T17:12:31.074Z",
+      "rc": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "command": "bun",
+      "args": [
+        "test",
+        "lib/"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/web",
+      "started_at": "2026-09-13T17:12:31.074Z",
+      "finished_at": "2026-09-13T17:12:31.328Z",
+      "rc": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "command": "./node_modules/.bin/playwright",
+      "args": [
+        "test",
+        "--list"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/web",
+      "started_at": "2026-09-13T17:12:31.329Z",
+      "finished_at": "2026-09-13T17:12:31.872Z",
+      "rc": 0,
+      "signal": null,
+      "error": null
+    },
+    {
+      "command": "uv",
+      "args": [
+        "run",
+        "mypy",
+        "app"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/evidence/i7-current-counters-01/shadow/apps/api",
+      "started_at": "2026-09-13T17:12:31.874Z",
+      "finished_at": "2026-09-13T17:12:32.876Z",
+      "rc": 0,
+      "signal": null,
+      "error": null
+    }
+  ],
+  "docs_check_sha256": "65ebef8d695fc859bd46d00f178d861d0e6f93e9ec57bf2ca63ef93cae85a320",
+  "source_unchanged": true,
+  "result_sha256": "0c550b02c997687b1dabb11fae5775211576951a1538a82a9c4f462fb020319c",
+  "readme_transfer": {
+    "base_sha": "393263ca6db79792988747e08ea09773b978a064",
+    "source_path": "README.md",
+    "source_sha256": "436537a680af152a58a71d8ed3bbdb9c2e8c7efbbb01d8b0e6fddfb7437154f5",
+    "candidate_sha256": "88c6ef79817e950484287d1c11df4bdc9e304eaec8ad9f09abd07975ca4ea79f",
+    "patch_sha256": "bc773355a22666c67f3864f8cdcd2f4885de85bbeaf3acdb4e0fe087c3da0a0b",
+    "docs_check_sha256": "65ebef8d695fc859bd46d00f178d861d0e6f93e9ec57bf2ca63ef93cae85a320",
+    "counter_is_collection_not_passed_tests": true,
+    "e2e_tests_observed": 71,
+    "allowed_change": "Exact README e2e live row and reviewed historical71 paragraph separation only."
+  },
+  "limitations": [
+    "H4/H3 unpublished candidates are absent from normal collection.",
+    "Chromium install remains blocked by earlier TLS ECONNRESET; metadata collection does not verify browser installation.",
+    "Main repository full gates and commit-parent governance are recorded separately after this measurement."
+  ],
+  "raw_evidence": "runtime/evidence/i7-current-counters-01"
+}

@@ -1,0 +1,472 @@
+{
+  "task": "H6",
+  "run": {
+    "auditFinishExitCode": 0,
+    "buildReused": false,
+    "buildUnchanged": null,
+    "database": "dou_l6_e2e_h6_production_csp_03",
+    "error": null,
+    "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+    "ownedApiExitCode": 0,
+    "playwrightExitCode": 0,
+    "runId": "l6ffc5a58c4f285b",
+    "sourceUnchanged": true,
+    "status": "PASS",
+    "stopObservation": "graceful-pipe-and-wait"
+  },
+  "browser_status": "passed",
+  "started_at": "2026-09-13T17:18:55.132Z",
+  "finished_at": "2026-09-13T17:18:56.361Z",
+  "production_build_id": "EmDMOIDv6KKbyDM3u6HGE",
+  "runtime_inputs": {
+    "before": {
+      "/Users/muratates/code/dou-synapse-l6-runtime/run_e2e.py": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+      "/Users/muratates/code/dou-synapse-l6-runtime/h6-browser/playwright.config.ts": "f5306df242bad39d70d2091e85ea548f1a579376e5851fb7f277690dd44b97d6",
+      "/Users/muratates/code/dou-synapse-l6-runtime/h6-browser/h6.spec.ts": "1446dbbd12ad08c8f5e26483d39e2b104407ef8160f91025e3b57d1eee5fb736",
+      "/Users/muratates/code/dou-synapse-l6-runtime/h6-browser/source-pins.json": "7180e1ce4b328468fcefe2e03fc755be238bc0aaa8284aae8cc3fe352e0b681e"
+    },
+    "after": {
+      "/Users/muratates/code/dou-synapse-l6-runtime/run_e2e.py": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+      "/Users/muratates/code/dou-synapse-l6-runtime/h6-browser/playwright.config.ts": "f5306df242bad39d70d2091e85ea548f1a579376e5851fb7f277690dd44b97d6",
+      "/Users/muratates/code/dou-synapse-l6-runtime/h6-browser/h6.spec.ts": "1446dbbd12ad08c8f5e26483d39e2b104407ef8160f91025e3b57d1eee5fb736",
+      "/Users/muratates/code/dou-synapse-l6-runtime/h6-browser/source-pins.json": "7180e1ce4b328468fcefe2e03fc755be238bc0aaa8284aae8cc3fe352e0b681e"
+    },
+    "unchanged": true
+  },
+  "applied_sources": {
+    "/Users/muratates/code/dou-synapse-l6-frontend-docs/apps/web/next.config.ts": "615200388f84a2b92c35ead8d2fe9487e97d5cd59b303fa481e0a89ad2fdcb7c",
+    "/Users/muratates/code/dou-synapse-l6-frontend-docs/apps/web/lib/security-headers.ts": "5fef135ffbcee807cc833582b02735cada79bb0c2370b207da296cc6a3bc39e0"
+  },
+  "observations": [
+    {
+      "kind": "http",
+      "route": "/",
+      "status": 200,
+      "headers": [
+        {
+          "name": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "name": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "name": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "name": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "Vary",
+          "value": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+        },
+        {
+          "name": "x-nextjs-cache",
+          "value": "HIT"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-stale-time",
+          "value": "300"
+        },
+        {
+          "name": "X-Powered-By",
+          "value": "Next.js"
+        },
+        {
+          "name": "Cache-Control",
+          "value": "s-maxage=31536000"
+        },
+        {
+          "name": "ETag",
+          "value": "\"426ribg1o6aup\""
+        },
+        {
+          "name": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        },
+        {
+          "name": "Content-Encoding",
+          "value": "gzip"
+        },
+        {
+          "name": "Date",
+          "value": "Sun, 13 Sep 2026 17:18:55 GMT"
+        },
+        {
+          "name": "Connection",
+          "value": "keep-alive"
+        },
+        {
+          "name": "Keep-Alive",
+          "value": "timeout=5"
+        },
+        {
+          "name": "Transfer-Encoding",
+          "value": "chunked"
+        }
+      ]
+    },
+    {
+      "kind": "http",
+      "route": "/dashboard",
+      "status": 200,
+      "headers": [
+        {
+          "name": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "name": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "name": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "name": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "Vary",
+          "value": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+        },
+        {
+          "name": "x-nextjs-cache",
+          "value": "HIT"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-stale-time",
+          "value": "300"
+        },
+        {
+          "name": "X-Powered-By",
+          "value": "Next.js"
+        },
+        {
+          "name": "Cache-Control",
+          "value": "s-maxage=31536000"
+        },
+        {
+          "name": "ETag",
+          "value": "\"182r4ppazhl74r\""
+        },
+        {
+          "name": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        },
+        {
+          "name": "Content-Encoding",
+          "value": "gzip"
+        },
+        {
+          "name": "Date",
+          "value": "Sun, 13 Sep 2026 17:18:55 GMT"
+        },
+        {
+          "name": "Connection",
+          "value": "keep-alive"
+        },
+        {
+          "name": "Keep-Alive",
+          "value": "timeout=5"
+        },
+        {
+          "name": "Transfer-Encoding",
+          "value": "chunked"
+        }
+      ]
+    },
+    {
+      "kind": "browser-document",
+      "route": "/",
+      "status": 200,
+      "headers": [
+        {
+          "name": "Cache-Control",
+          "value": "s-maxage=31536000"
+        },
+        {
+          "name": "Connection",
+          "value": "keep-alive"
+        },
+        {
+          "name": "Content-Encoding",
+          "value": "gzip"
+        },
+        {
+          "name": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        },
+        {
+          "name": "Date",
+          "value": "Sun, 13 Sep 2026 17:18:55 GMT"
+        },
+        {
+          "name": "ETag",
+          "value": "\"426ribg1o6aup\""
+        },
+        {
+          "name": "Keep-Alive",
+          "value": "timeout=5"
+        },
+        {
+          "name": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "name": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "name": "Transfer-Encoding",
+          "value": "chunked"
+        },
+        {
+          "name": "Vary",
+          "value": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+        },
+        {
+          "name": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "name": "X-Powered-By",
+          "value": "Next.js"
+        },
+        {
+          "name": "x-nextjs-cache",
+          "value": "HIT"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-stale-time",
+          "value": "300"
+        }
+      ]
+    },
+    {
+      "kind": "controlled-inline-probe",
+      "executed": true,
+      "meaning": "A DOM-added inline script executed under the actual enforced + report-only response headers; no violation-event count is required."
+    },
+    {
+      "kind": "real-demo-auth-and-dashboard",
+      "apiStatus": 200,
+      "viewerMatchesOwnedWorker": true,
+      "greetingVisible": true
+    },
+    {
+      "kind": "browser-document",
+      "route": "/dashboard",
+      "status": 200,
+      "headers": [
+        {
+          "name": "Cache-Control",
+          "value": "s-maxage=31536000"
+        },
+        {
+          "name": "Connection",
+          "value": "keep-alive"
+        },
+        {
+          "name": "Content-Encoding",
+          "value": "gzip"
+        },
+        {
+          "name": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' http://127.0.0.1:8046; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "name": "Content-Type",
+          "value": "text/html; charset=utf-8"
+        },
+        {
+          "name": "Date",
+          "value": "Sun, 13 Sep 2026 17:18:56 GMT"
+        },
+        {
+          "name": "ETag",
+          "value": "\"182r4ppazhl74r\""
+        },
+        {
+          "name": "Keep-Alive",
+          "value": "timeout=5"
+        },
+        {
+          "name": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "name": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "name": "Transfer-Encoding",
+          "value": "chunked"
+        },
+        {
+          "name": "Vary",
+          "value": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"
+        },
+        {
+          "name": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "name": "X-Powered-By",
+          "value": "Next.js"
+        },
+        {
+          "name": "x-nextjs-cache",
+          "value": "HIT"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-prerender",
+          "value": "1"
+        },
+        {
+          "name": "x-nextjs-stale-time",
+          "value": "300"
+        }
+      ],
+      "hydratedGreetingVisible": true
+    },
+    {
+      "kind": "hydrated-sign-out",
+      "loginVisible": true
+    }
+  ],
+  "page_errors": [],
+  "received_violation_events": 5,
+  "violation_events": [
+    {
+      "disposition": "report",
+      "effectiveDirective": "script-src-elem",
+      "violatedDirective": "script-src-elem",
+      "blockedURI": "inline",
+      "documentURI": "http://localhost:3146/",
+      "sourceFile": "http://localhost:3146/",
+      "lineNumber": 1,
+      "columnNumber": 0,
+      "statusCode": 200
+    },
+    {
+      "disposition": "report",
+      "effectiveDirective": "script-src-elem",
+      "violatedDirective": "script-src-elem",
+      "blockedURI": "inline",
+      "documentURI": "http://localhost:3146/",
+      "sourceFile": "http://localhost:3146/",
+      "lineNumber": 1,
+      "columnNumber": 0,
+      "statusCode": 200
+    },
+    {
+      "disposition": "report",
+      "effectiveDirective": "script-src-elem",
+      "violatedDirective": "script-src-elem",
+      "blockedURI": "inline",
+      "documentURI": "http://localhost:3146/",
+      "sourceFile": "",
+      "lineNumber": 5,
+      "columnNumber": 21,
+      "statusCode": 200
+    },
+    {
+      "disposition": "report",
+      "effectiveDirective": "script-src-elem",
+      "violatedDirective": "script-src-elem",
+      "blockedURI": "inline",
+      "documentURI": "http://localhost:3146/dashboard",
+      "sourceFile": "http://localhost:3146/dashboard",
+      "lineNumber": 1,
+      "columnNumber": 0,
+      "statusCode": 200
+    },
+    {
+      "disposition": "report",
+      "effectiveDirective": "script-src-elem",
+      "violatedDirective": "script-src-elem",
+      "blockedURI": "inline",
+      "documentURI": "http://localhost:3146/dashboard",
+      "sourceFile": "http://localhost:3146/dashboard",
+      "lineNumber": 1,
+      "columnNumber": 0,
+      "statusCode": 200
+    }
+  ],
+  "violation_events_truncated": false,
+  "violation_caveat": "No assertion requires events or a particular count. No observed event is not proof of zero violations. The controlled inline probe may produce additional real report-only events.",
+  "runtime_browser_record_sha256": "d5ce963187c2b4e52f159a38c0ef68b0d8e6ed60f3bc016e3b442493cc45d5a8",
+  "screenshot_sha256": "c6965f603b99c3b81d35a852fffb9df575f87007129bc9039d43926c39b4b759",
+  "screenshot_review": "Root viewed actual dashboard PNG: owned synthetic student greeting, empty-course state, navigation and sign-out visible; no clipping observed. Not a whole-site visual acceptance.",
+  "browser_environment": "local macOS Chrome; fake/hash providers; external Supabase auth unconfigured",
+  "prior_attempts": [
+    {
+      "run": "h6-production-csp-01",
+      "status": "FAIL",
+      "reason": "Runtime config import.meta rejected in CommonJS; no browser/build acceptance."
+    },
+    {
+      "run": "h6-production-csp-02",
+      "status": "FAIL",
+      "reason": "Historical backup spec discovered; no browser acceptance. Active runtime copied to separate directory."
+    }
+  ],
+  "raw_evidence": "runtime/evidence/h6-production-csp-03",
+  "limits": [
+    "Fresh build recorded; full build before/after hash equality not claimed.",
+    "No central report delivery, external auth, real LLM or production deployment tested."
+  ]
+}

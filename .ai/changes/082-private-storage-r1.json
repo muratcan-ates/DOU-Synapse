@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "change_id": "082-private-storage-r1",
+  "lineage_id": "private-storage",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Enforce private course document downloads",
+  "summary": "Yerel API üyelik, sınav ve nesne yolu sınırları ile sentetik Storage RLS; canlı ve göç sırası kabulü açık.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T16:12:31.276000+00:00",
+  "review_by": "2026-10-13T16:12:31.276000+00:00",
+  "base_sha": "2c6f346aab3076f952554dfee3468c9faeed2317",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged:2c6f346aab3076f952554dfee3468c9faeed2317",
+    "model_revision": "unchanged:2c6f346aab3076f952554dfee3468c9faeed2317",
+    "prompt_revision": "unchanged:2c6f346aab3076f952554dfee3468c9faeed2317",
+    "tool_schema_revision": "l5:082-private-storage-r1:GET-document-download",
+    "guardrail_revision": "l5:082-private-storage-r1",
+    "retrieval_revision": "unchanged:2c6f346aab3076f952554dfee3468c9faeed2317",
+    "embedding_revision": "unchanged:2c6f346aab3076f952554dfee3468c9faeed2317",
+    "evaluator_revision": "unchanged:2c6f346aab3076f952554dfee3468c9faeed2317"
+  },
+  "data": {
+    "corpus_digest": "7c577f8e1e1bd2195407384080088341f97b72f2f6e68ccf9f1f5649d2338406",
+    "eval_set_digest": "7c577f8e1e1bd2195407384080088341f97b72f2f6e68ccf9f1f5649d2338406",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "ARCHITECTURE.md",
+      "state": "present",
+      "sha256": "d566787938b5300a4217791722bdd9319b206d7fca97849ef9dd6a9ea2126092"
+    },
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "17ca2bcd811605fbd29b9597066246f6c5d0a2d9763a5e243f0e46dfbee79ff6"
+    },
+    {
+      "path": "apps/api/app/api/documents.py",
+      "state": "present",
+      "sha256": "3704d873af65de015ffd49976a37f78271f2a52760e25bd90067ee4ecf98e126"
+    },
+    {
+      "path": "apps/api/app/modules/ingestion/storage.py",
+      "state": "present",
+      "sha256": "67b787cff39251ae546c894a0ca3b7e7d8197b42ab5b59a959b8e39e3f4c9679"
+    },
+    {
+      "path": "apps/api/tests/test_error_envelope.py",
+      "state": "present",
+      "sha256": "053e0a975bdd573dc7101d55e67bb76b6d601896a0a0d142c2cba2e95b009b53"
+    },
+    {
+      "path": "apps/api/tests/test_storage_download.py",
+      "state": "present",
+      "sha256": "7c577f8e1e1bd2195407384080088341f97b72f2f6e68ccf9f1f5649d2338406"
+    },
+    {
+      "path": "apps/api/tests/test_storage_log_privacy.py",
+      "state": "present",
+      "sha256": "d31f4e5c5e50b82d11d0dfdbb9d5a042bcfa7f322713a374e37f1e089c1bb6f9"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "a48363236a4298f4451772b067bef567b2640e88c666916e2afc95cf5f585e78"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "88849fb4848daadfd6d8a7a5725fb3bf7e3c0a7e50b0ee0a3754bd2f3fdb8e50"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "8f56aebfc6b2231a01096fde17aa9c42f7ea6192e222624909d94715f9bd48f5"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "8c71c713fb4fc3adcf831906883aaf2e875b780305b8e95afa76f0eedb562e11"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "e896f637d68671e8a8fd9b4bcbaa3d9fa205fb8109508acc3fe67bac63291d9e"
+    },
+    {
+      "path": "supabase/migrations/0029_private_storage.sql",
+      "state": "present",
+      "sha256": "33cc5ad63c3f2b8fbbbca29aa372213c4d1d85122a0f1e992c4929e4c847cd6f"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/082-private-storage-r1.json",
+      "report_sha256": "5d9d5cd8a0a16367c677a3f74ce6a36978feacebfc6cd0a8c6007aecd58d9a07",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_storage_download.py",
+    "holdout_ref": "apps/api/tests/test_security.py",
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "unauthorized_signed_downloads",
+        "baseline": 3,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 3
+      }
+    ],
+    "exact_command": "apps/api/.venv/bin/python /Users/muratates/code/DOU-Synapse-l5-runtime/drafts/storage/mutations/run_storage_boundary_mutations.py --repo /Users/muratates/code/DOU-Synapse-l5-auth --port 55459 --out /Users/muratates/code/DOU-Synapse-l5-runtime/evidence/F4-api-mutations-final/cases"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "release-gate:082-private-storage-r1",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:082-private-storage-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "release-gate:082-private-storage-r1",
+    "kill_switch": "İhlalde sürümü terfi ettirme; indirme/giriş yüzeyini kapat ve önceki uyumlu sürüme dön.",
+    "assignment": "Sticky atama: sentetik oturum incelenen commit SHA değerine sabitlenir.",
+    "initial_exposure": "Canlı kullanıcı yok; yerel ve sentetik test.",
+    "stop_conditions": [
+      "Yetkisiz kullanıcıya kimlik veya ders belgesi açılması.",
+      "Geçersiz JWT veya gecikmiş yanıtın eski özel oturumu geri açması."
+    ],
+    "expand_conditions": [
+      "Aynı aday kapıları ve gerçek Supabase/Entra kabulü geçer.",
+      "Mühendislik, alan ve güvenlik sorumluları aynı adayı onaylar."
+    ],
+    "active_exam_policy": "Ders ve sınav kilitleri korunur; aktif sınavda öğrenci kaynak erişimi açılmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:2c6f346aab3076f952554dfee3468c9faeed2317",
+    "procedure": "Uygulama commitini geri al; private bucket ve erişim retlerini koru. Geçmiş göç dosyasını değiştirme.",
+    "max_minutes": 30,
+    "verification": "Negatif auth/Storage/üyelik testlerini tekrar çalıştır; canlı geri alma henüz ölçülmedi.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik kimlikler, komutlar, çıkış kodları ve hashler; gerçek anahtar veya öğrenci içeriği yok.",
+    "retention": "Kanıt özetleri depo geçmişinde korunur; gerçek sağlayıcı saklama politikası yerel kabulün dışındadır."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

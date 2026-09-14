@@ -19,6 +19,8 @@ import { Button, Input } from "@/components/ui";
 import { Field } from "@/components/field";
 import { ThemeControl } from "@/components/theme-control";
 import { supabaseConfigured } from "@/lib/supabase";
+import { entraTenantId, isDevAuthEnabled } from "@/lib/auth-config";
+import { signInWithEntra } from "@/lib/auth-session";
 
 const DEMO_USERS: DemoUser[] = [
   {
@@ -37,6 +39,9 @@ const DEMO_USERS: DemoUser[] = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const devAuthEnabled = isDevAuthEnabled();
+  const entraAvailable = supabaseConfigured && entraTenantId() !== null;
+  const entra = useSubmit(signInWithEntra, "Üniversite hesabıyla giriş başlatılamadı.");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { busy, error, setError, submit } = useSubmit(async () => {
@@ -147,7 +152,7 @@ export default function LoginPage() {
           <p className="rise rise-1 mt-2 text-sm text-fg-muted">
             {supabaseConfigured
               ? "Üniversite hesabınızla devam edin"
-              : "Geliştirme ortamı girişi; canlıda üniversite hesabı kullanılır"}
+              : devAuthEnabled ? "Geliştirme ortamı girişi; canlıda üniversite hesabı kullanılır" : "Oturum açma henüz yapılandırılmadı"}
           </p>
 
           {supabaseConfigured ? (
@@ -188,7 +193,17 @@ export default function LoginPage() {
                 </Link>
               </p>
             </form>
-          ) : (
+          ) : null}
+
+          <div className="mt-5 space-y-3">
+            <Button type="button" variant="secondary" className="w-full" disabled={!entraAvailable || entra.busy} onClick={() => void entra.submit()}>
+              {entra.busy ? "Yönlendiriliyor…" : "Üniversite hesabıyla devam et"}
+            </Button>
+            {!entraAvailable && <p className="text-xs text-fg-muted">Üniversite hesabıyla giriş henüz etkin değil.</p>}
+            {supabaseConfigured && <Link href="/verify-email" className="block text-sm text-brand underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">E-posta doğrulama bağlantısı iste</Link>}
+          </div>
+
+          {devAuthEnabled && (
             /* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek
                olduğunu peşinen söyler. */
             <ul className="mt-6 divide-y divide-border overflow-hidden rounded-lg border border-border bg-bg">
@@ -225,9 +240,9 @@ export default function LoginPage() {
             </ul>
           )}
 
-          {error && (
+          {(error || entra.error) && (
             <div className="mt-4">
-              <ErrorNote message={error} />
+              <ErrorNote message={error ?? entra.error!} />
             </div>
           )}
 

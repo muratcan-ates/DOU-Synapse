@@ -1,5 +1,8 @@
 # Görevler: 005 Rol Farkındalıklı Ders Ajanı
 
+> **Kutu incelemesi — 13 Eylül 2026:** başlangıçtaki 18 açık görev yeniden sayıldı; 1 görev mevcut kod/belge kanıtıyla kapatıldı, 17 görev açık kaldı. Özgün görev metinleri korundu, her açık kutuya tarihli karar ve kaynak eklendi. Bu çalışma yeni test, gerçek sağlayıcı, insan değerlendirmesi veya canlı dağıtım ölçümü değildir; tarihsel kabul kendi kaynak sürümüyle sınırlıdır. specs/001–005 toplam sayımı ayrı raporlanır.
+
+
 **Branch**: `005-role-aware-course-agent`
 **Base**: `7c1c219`
 **Durum**: Speckit + backend/migration + frontend kodlandı. Güncel entegrasyon
@@ -207,6 +210,8 @@ Fake-provider kanıtı gerçek model kalitesi değildir.
   adı/açıklaması, Tab/Shift+Tab focus trap'i, Escape sonrası tetikleyiciye odak
   dönüşü ve yatay taşmasız görünümü gerçek tarayıcıda doğruladı. Manuel
   VoiceOver+Safari gözlemi yapılmadığı için **PARTIAL**.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Otomatik drawer erişilebilirlik kaydı manuel VoiceOver/Safari ekran okuyucu turunun yerine geçmez; manuel kabul yapılmadı. Kanıt: [role-aware-agent.spec.ts](../../apps/web/e2e/role-aware-agent.spec.ts). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [x] **T308** Vitest: student/instructor/mixed-role, course switch, no audience
   payload, 200/403/409/422/429/503, session continuation ve disabled composer.
   — frontend `bun test lib/` 325/325, 2026-08-11 <!-- docs-check: tarihsel 325 · 2026-08-11 -->
@@ -216,6 +221,8 @@ Fake-provider kanıtı gerçek model kalitesi değildir.
   gönderimde tam 1 chat POST olduğunu, console/page error ve yatay taşma
   bulunmadığını doğruladı. Direct exam POST ve kill-switch tarayıcı yolları henüz
   otomatik koşulmadığı için **PARTIAL**.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Ağ senaryolarının tümü için gerçek sunucu exam/kill-switch kabulü henüz bu incelemeye bağlı değil; H4 sonucu ayrıca gerekir. Kanıt: [role-aware-agent.spec.ts](../../apps/web/e2e/role-aware-agent.spec.ts). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 
 **P3 kapısı**: `bun test`, typecheck, production build, hedefli seri Playwright ve
 elle student/instructor/mobile/dark turu yeşil.
@@ -308,19 +315,33 @@ olmadan “production” değildir.
 
 - [ ] **T501** Gerçek Supabase Auth/Storage ve staging 0015; student/instructor/
   mixed/admin RLS yolculukları. — KOŞULMADI
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Gerçek Supabase Auth/Storage ve hedef staging rol/RLS yolculukları koşulmadı. Kanıt: [deployment.md](../../docs/deployment.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T502** Exact provider/model ile student ve instructor ayrı holdout/rubric;
   faithfulness, scope, leakage, token/tur. — KOŞULMADI
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Aynı gerçek provider/model ile öğrenci/eğitmen ayrı holdout/rubric kabulü yok. Kanıt: [test-report.md](../../docs/test-report.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T503** Pedagoji/ürün ve güvenlik/operasyon için iki bağımsız isimli,
   immutable approval. — KOŞULMADI
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: İki bağımsız isimli pedagojik ve güvenlik/operasyon onayı yok. Kanıt: [005-role-aware-course-agent-r12.json](../../.ai/changes/005-role-aware-course-agent-r12.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T504** Normal staging'de `COURSE_AGENT_ENABLED=true`; ayrıca `false`
   emergency rollback provası: direct POST 503, provider 0, 0015 verisi korunur.
   Cohort canary ayrı deployment kontrolüdür. — KOŞULMADI
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Yerel flag testleri normal stagingde true/false emergency rollback kanıtı değildir. Kanıt: [test_role_aware_agent.py](../../apps/api/tests/test_role_aware_agent.py). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T505** Internal/eğitmen canary; sonra küçük öğrenci canary; stop eşiklerini
   izleyip go/stop kaydı yaz. — KOŞULMADI
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Gerçek eğitmen ve öğrenci canary go/stop gözlemi yok. Kanıt: [005-role-aware-course-agent-r12.json](../../.ai/changes/005-role-aware-course-agent-r12.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T506** Leakage, exam bypass, quota overshoot veya rollback failure >0 ise
   flag kapat; eşik aşımı varsa aynı davranış. — KOŞULMADI
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Canlı stop eşikleri tetiklenmesi ve flag kapatma kabulü yok. Kanıt: [005-role-aware-course-agent-r12.json](../../.ai/changes/005-role-aware-course-agent-r12.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T507** Aday yalnız aynı SHA/revision/approval ile kademeli genişletilir;
   rollout/rollback dossier'a append-only eklenir. — KOŞULMADI
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Aynı SHA/revision/approval ile gerçek rollout/rollback genişletme kaydı yok. Kanıt: [005-role-aware-course-agent-r12.json](../../.ai/changes/005-role-aware-course-agent-r12.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 
 ---
 
@@ -329,11 +350,23 @@ olmadan “production” değildir.
 Bu görevler ilk 005 uygulaması içinde DONE işaretlenmez:
 
 - [ ] **F601** Request idempotency/replay key ve duplicate-provider-call sözleşmesi.
-- [ ] **F602** Workerlar arası DB/Redis minute/request bucket.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: POST otomatik tekrarının kapalı olması kalıcı idempotency/replay key ve duplicate-provider-call sözleşmesi değildir. Kanıt: [api.ts](../../apps/web/lib/api.ts). Yeni test/provider/dağıtım koşusu yapılmadı.
+
+- [x] **F602** Workerlar arası DB/Redis minute/request bucket.
+  > **İnceleme (2026-09-13) — Kod/belge kapsamı kapandı:** İlk 005 tesliminden sonra 018 D1, süreçler arası PostgreSQL istek kotasını 0025 ile uygulamış. İki gerçek HTTP süreci yerel kabulü ve R3 029 kaydı mevcut; Redis eklenmedi, hedef staging/canary kabulü ayrı açık. Kanıt: [request_quota.py](../../apps/api/app/core/request_quota.py) · [0025_shared_request_quota.sql](../../supabase/migrations/0025_shared_request_quota.sql) · [README.md](../../specs/018-codex-production-line/evidence/d1-http-local/README.md) · [029-runtime-resilience-privacy-r1.json](../../.ai/changes/029-runtime-resilience-privacy-r1.json) · [029-runtime-resilience-privacy-r1.json](../../.ai/evidence/029-runtime-resilience-privacy-r1.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **F603** Adaptive strike/temporary backoff; false-positive/fairness ölçümü.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Adaptive strike/backoff için false-positive/fairness ölçümü ve ayrı kabul kaydı yok. Kanıt: [request_quota.py](../../apps/api/app/core/request_quota.py). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **F604** Privacy onaylı prompt HMAC/fingerprint ve rotation/retention.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Onaylı prompt HMAC/fingerprint rotation/retention tasarımı ve kabul kaydı yok; yeni fingerprint verisi üretilmedi. Kanıt: [kvkk.md](../../docs/kvkk.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **F605** IP/device/WAF/credential-stuffing edge koruması.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Gerçek edge/WAF/device/credential-stuffing koruması kabulü yok. Kanıt: [security.md](../../docs/security.md). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **F606** Privacy-safe toplu operasyon paneli; bireysel prompt/ledger görünümü yok.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Mevcut yönetim/sağlık görünümü ayrı privacy onaylı toplu abuse panelinin kabulünü kanıtlamıyor. Kanıt: [admin.py](../../apps/api/app/api/admin.py). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 
 Her biri ayrı threat/privacy/R3 değişikliği ve acceptance/mutation kanıtı ister.
 
@@ -348,9 +381,15 @@ Her biri ayrı threat/privacy/R3 değişikliği ve acceptance/mutation kanıtı 
   `005-role-aware-course-agent` origin'e gönderildi; local/origin eşitliği
   push sonrası ölçüldü. — DONE 2026-08-11
 - [ ] **T703** Draft PR aç; required CI ve AI/security gates sonucunu gözle.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Bu özgün 005 işinin draft PR/required CI ve AI/security sonucunun tamamı bu salt okunur kaynak incelemesinde doğrulanmadı. Kanıt: [005-role-aware-course-agent-main-integration.json](../../.ai/evidence/005-role-aware-course-agent-main-integration.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T704** CI, R3 approvals ve release verification yeşil olmadan main'e merge etme.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Main merge için gerekli CI/R3 insan onayı/release verification birleşik kabulü bu incelemede doğrulanmadı; merge yapılmadı. Kanıt: [005-role-aware-course-agent-main-integration.json](../../.ai/evidence/005-role-aware-course-agent-main-integration.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 - [ ] **T705** Merge sonrası main SHA, migration, OpenAPI/docs ve deploy durumunu
   ayrı raporla; merge'i production ile karıştırma.
+  > **İnceleme (2026-09-13) — Açık:** AÇIK: Merge sonrası güncel main SHA/göç/OpenAPI/deploy kabul raporu bu incelemede üretilmedi; yerel kaynak varlığı deployment değildir. Kanıt: [005-role-aware-course-agent-main-integration.json](../../.ai/evidence/005-role-aware-course-agent-main-integration.json). Yeni test/provider/dağıtım koşusu yapılmadı.
+
 
 ## Son rapor şablonu
 

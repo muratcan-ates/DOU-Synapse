@@ -1,10 +1,8 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { test, teacher as workerTeacher, student, teacherHeaders, studentHeaders, signIn } from "./worker-fixture";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const studentId = "22222222-2222-2222-2222-222222222222";
-const teacherHeaders = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
-const studentHeaders = { Authorization: `Bearer dev:${studentId}` };
 const deletionKey = "dou-synapse:chat-deletion:v1";
 const rememberedKey = (id: string) => `dou-synapse-chat-session:${id}`;
 const composer = (page: Page) => page.getByRole("textbox", { name: "Sorun", exact: true });
@@ -16,7 +14,7 @@ async function prepareCourse(request: APIRequestContext) {
   expect(response.ok(), await response.text()).toBeTruthy();
   const course = await response.json() as { id: string; code: string };
   const base = `${API}/courses/${course.id}`;
-  expect((await request.post(`${base}/members`, { headers: teacherHeaders, data: { email: "burak@dogus.edu.tr", role: "student" } })).ok()).toBeTruthy();
+  expect((await request.post(`${base}/members`, { headers: teacherHeaders, data: { email: student.email, role: "student" } })).ok()).toBeTruthy();
   const upload = await request.post(`${base}/documents`, { headers: teacherHeaders, multipart: {
     file: { name: "deletion-synthetic.md", mimeType: "text/markdown", buffer: Buffer.from("# Deadlock\nDeadlock iki veya daha fazla sürecin birbirini beklemesidir. Coffman koşulları karşılıklı dışlama, tut ve bekle, kesintisizlik ve dairesel beklemedir.\n") },
   } });
@@ -28,10 +26,6 @@ async function seedChat(request: APIRequestContext, base: string, question: stri
   const response = await request.post(`${base}/chat`, { headers: teacher ? teacherHeaders : studentHeaders, data: { question, mode: "qa" } });
   expect(response.status(), await response.text()).toBe(200);
   return await response.json() as { session_id: string };
-}
-async function login(page: Page, teacher = false) {
-  await page.goto("/"); await page.getByRole("button", { name: teacher ? /Ayşe Hoca/ : /Burak Yılmaz/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
 }
 async function send(page: Page, text: string) {
   await composer(page).fill(text); await page.getByRole("button", { name: "Gönder", exact: true }).click();
@@ -68,11 +62,11 @@ for (const teacher of [false, true]) {
     const removed = await seedChat(request, base, removedQuestion, teacher); const kept = await seedChat(request, base, keptQuestion, teacher);
     const otherUser = await seedChat(request, base, "Deadlock nedir? Diğer kişinin sohbeti.", !teacher);
     const otherCourse = await seedChat(request, otherBase, "Deadlock nedir? Diğer ders sohbeti.", teacher);
-    await login(page, teacher); await page.goto(`/courses/${course.id}/chat`);
+    await signIn(page, teacher ? workerTeacher : student); await page.goto(`/courses/${course.id}/chat`);
     await history(page).getByRole("listitem").filter({ hasText: keptQuestion }).getByRole("button").first().click();
     await expect(paragraphs(page, keptQuestion)).toBeVisible();
     const draft = "Gönderilmemiş sentetik taslak korunmalı."; await composer(page).fill(draft);
-    const examDraft = `dou-synapse:exam-drafts:v1:${studentId}:synthetic:exam`;
+    const examDraft = `dou-synapse:exam-drafts:v1:${student.id}:synthetic:exam`;
     await page.evaluate((key) => { sessionStorage.setItem(key, "synthetic-exam-draft"); localStorage.setItem("deletion-test:preference", "keep"); }, examDraft);
     const removedRow = history(page).getByRole("listitem").filter({ hasText: removedQuestion });
     await removedRow.getByRole("button", { name: "Sohbeti sil", exact: true }).click();
@@ -104,7 +98,7 @@ for (const teacher of [false, true]) {
     expect(await page.evaluate((key) => localStorage.getItem(key), rememberedKey(course.id))).toBeNull();
     const marker = await page.evaluate((key) => localStorage.getItem(key), deletionKey);
     expect(Object.keys(JSON.parse(marker!)).sort()).toEqual(["authEpoch", "courseId", "nonce", "sessionId"]);
-    expect(marker).not.toContain(draft); expect(marker).not.toContain(keptQuestion); expect(marker).not.toContain(studentId);
+    expect(marker).not.toContain(draft); expect(marker).not.toContain(keptQuestion); expect(marker).not.toContain(student.id);
   });
 }
 
@@ -112,7 +106,7 @@ test("ders silmesi bekleyen gerçek200 sohbeti ve eski listeyi geri getiremez; d
   test.setTimeout(120_000);
   const { course, base } = await prepareCourse(request); const oldTitle = "Deadlock nedir? Eski liste satırının sentetik sorusu.";
   await seedChat(request, base, oldTitle);
-  await login(page); await page.goto(`/courses/${course.id}/chat`); await expect(composer(page)).toBeVisible();
+  await signIn(page, student); await page.goto(`/courses/${course.id}/chat`); await expect(composer(page)).toBeVisible();
   const compact = await context.newPage(); await openCompact(compact, course.code);
   const compactQuestion = "Deadlock nedir? Kompakt özel sentetik soru.";
   const compactAnswer = compact.waitForResponse((response) => response.url() === `${base}/chat` && response.request().method() === "POST");
@@ -130,6 +124,8 @@ test("ders silmesi bekleyen gerçek200 sohbeti ve eski listeyi geri getiremez; d
   }, { times: 1 });
   await oldList.goto(`/courses/${course.id}/chat`); await list.seen;
   try {
+    // Silme işlemini etkin sekmede yap; diğer tüketiciler arka planda kalır.
+    await page.bringToFront();
     await deleteCourse(page, base);
     // Background consumers get neither focus nor a manual invalidation here.
     await expect(composer(delayed)).toHaveValue(""); await expect(paragraphs(compact, compactQuestion)).toHaveCount(0);
@@ -148,7 +144,7 @@ test("silme bildirimini kaçırmış tam ve kompakt sekmeler pageshow ile gerçe
   test.setTimeout(120_000);
   const { course, base } = await prepareCourse(request); const title = "Deadlock nedir? Geri dönen sekmenin sentetik özel sohbeti.";
   const seeded = await seedChat(request, base, title);
-  await login(page); await page.goto(`/courses/${course.id}/chat`);
+  await signIn(page, student); await page.goto(`/courses/${course.id}/chat`);
   const compact = await context.newPage(); await openCompact(compact, course.code);
   const compactTitle = "Deadlock nedir? Geri dönen kompakt özel soru.";
   const compactAnswer = compact.waitForResponse((response) => response.url() === `${base}/chat` && response.request().method() === "POST");
@@ -180,10 +176,10 @@ for (const failure of ["membership", "history-conflict"] as const) {
   test(`${failure === "membership" ? "gerçek üyelik kaybı404" : "chat_history_changed409 sözleşmesi"} eski konuşmayı kapatır ve açık yeniden yükleme ister`, async ({ page, request }) => {
     test.setTimeout(90_000);
     const { course, base } = await prepareCourse(request); const title = "Deadlock nedir? Yetki yenilenecek sentetik sohbet.";
-    await seedChat(request, base, title); await login(page); await page.goto(`/courses/${course.id}/chat`);
+    await seedChat(request, base, title); await signIn(page, student); await page.goto(`/courses/${course.id}/chat`);
     await history(page).getByRole("listitem").filter({ hasText: title }).getByRole("button").first().click(); await expect(paragraphs(page, title)).toBeVisible();
     if (failure === "membership") {
-      expect((await request.delete(`${base}/members/${studentId}`, { headers: teacherHeaders })).status()).toBe(204);
+      expect((await request.delete(`${base}/members/${student.id}`, { headers: teacherHeaders })).status()).toBe(204);
     } else {
       // Only this error envelope is synthetic. Actual DELETE/POST409 ordering has separate API concurrency evidence.
       await page.route(`${base}/chat`, (route) => route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ error: {
@@ -214,7 +210,7 @@ test("aktif sınavda kendi sohbetini silebilir; silme sohbet okuma ve cevap yard
   const started = await request.post(`${base}/exams`, { headers: studentHeaders, data: { mode: "exam" } });
   expect(started.ok(), await started.text()).toBeTruthy(); const exam = await started.json();
   try {
-    await login(page); await page.goto(`/courses/${course.id}/chat`); await expect(composer(page)).toHaveCount(0);
+    await signIn(page, student); await page.goto(`/courses/${course.id}/chat`); await expect(composer(page)).toHaveCount(0);
     await deleteCourse(page, base); await expect(composer(page)).toHaveCount(0);
     expect((await request.get(`${base}/chat/sessions`, { headers: studentHeaders })).status()).toBe(403);
     expect((await request.post(`${base}/chat`, { headers: studentHeaders, data: { question: "Coffman koşulları nelerdir?", mode: "qa" } })).status()).toBe(403);

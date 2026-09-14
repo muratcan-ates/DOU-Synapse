@@ -28,8 +28,17 @@ from app.contracts import (
 )
 from app.core.config import Settings
 from app.core.errors import ValidationError
+from app.modules.agent.pipeline import LearningEventRetriever
+from app.modules.agent.provider_events import learning_provider_context
+from app.modules.agent.provider_fallback import (
+    ProviderRateLimitExhausted,
+    attach_provider_attempts,
+    demo_fixture_answer,
+    provider_attempt_context,
+)
 from app.modules.agent.token_precharge import _quota_input_token_ceiling
 from app.modules.assessment import socratic
+from app.modules.assessment.learning_events import record_learning_event
 from app.modules.generation import prompts as generation_prompts
 
 # Reddin sözü BİZE aittir, modele değil (Anayasa V + injection savunması): kaynak
@@ -153,6 +162,36 @@ async def _generate(
     audience: AssistantAudience,
     max_output_tokens: int,
 ) -> tuple[GeneratedAnswer, dict[UUID, str]]:
+    try:
+        return await _generate_once(
+            generator,
+            question=question,
+            chunks=chunks,
+            mode=mode,
+            stage=stage,
+            student_attempt=student_attempt,
+            audience=audience,
+            max_output_tokens=max_output_tokens,
+        )
+    except ProviderRateLimitExhausted:
+        if mode is ChatMode.EXAM:
+            raise
+        # Bu metin sağlayıcı çıktısı değildir. Aynı kanıt kümesiyle olağan
+        # citation/leakage/sanitize zincirinden geçer; model değişmez.
+        return demo_fixture_answer(chunks, mode=mode, stage=stage), {}
+
+
+async def _generate_once(
+    generator: Generator,
+    *,
+    question: str,
+    chunks: list[RetrievedChunk],
+    mode: ChatMode,
+    stage: SocraticStage | None,
+    student_attempt: str | None,
+    audience: AssistantAudience,
+    max_output_tokens: int,
+) -> tuple[GeneratedAnswer, dict[UUID, str]]:
     """Üreteci çağırır ve varsa iddia metinlerini de alır.
 
     `ClaimingGenerator` uygulayan bir üreteç `generate_with_claims` sunar; sunmayan
@@ -192,6 +231,63 @@ async def _generate(
 
 
 async def produce_answer(
+    *,
+    question: str,
+    course_id: UUID,
+    mode: ChatMode,
+    decision: socratic.SocraticDecision | None,
+    retriever: Retriever,
+    generator: Generator,
+    guardrails: Sequence[Guardrail],
+    settings: Settings,
+    student_attempt: str | None = None,
+    evidence_threshold: float | None = None,
+    audience: AssistantAudience = AssistantAudience.STUDENT,
+    max_output_tokens: int = 700,
+    before_generation: Callable[[int], Awaitable[None]] | None = None,
+    allow_regeneration: bool = True,
+) -> AnswerOutcome:
+    """Cevabı ve içeriksiz olayını aynı ders/RLS işlemi içinde üretir."""
+    event_session = retriever.session if isinstance(retriever, LearningEventRetriever) else None
+    with (
+        learning_provider_context(event_session, course_id),
+        provider_attempt_context(settings) as provider_counter,
+    ):
+        outcome = await _produce_answer(
+            question=question,
+            course_id=course_id,
+            mode=mode,
+            decision=decision,
+            retriever=retriever,
+            generator=generator,
+            guardrails=guardrails,
+            settings=settings,
+            student_attempt=student_attempt,
+            evidence_threshold=evidence_threshold,
+            audience=audience,
+            max_output_tokens=max_output_tokens,
+            before_generation=before_generation,
+            allow_regeneration=allow_regeneration,
+        )
+    if isinstance(retriever, LearningEventRetriever):
+        if outcome.answer.status in {AnswerStatus.OUT_OF_SCOPE, AnswerStatus.INSUFFICIENT_CONTEXT}:
+            await record_learning_event(
+                retriever.session,
+                course_id=course_id,
+                event_type="unsupported_refusal",
+                metadata_json={"source": "chat"},
+            )
+        elif mode is ChatMode.SOCRATIC and outcome.answer.status is AnswerStatus.ANSWERED:
+            await record_learning_event(
+                retriever.session,
+                course_id=course_id,
+                event_type="hint_requested",
+                metadata_json={"source": "chat"},
+            )
+    return AnswerOutcome(attach_provider_attempts(outcome.answer, provider_counter), outcome.claims)
+
+
+async def _produce_answer(
     *,
     question: str,
     course_id: UUID,

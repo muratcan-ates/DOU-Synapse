@@ -1,0 +1,684 @@
+{
+  "schema_version": 1,
+  "change_id": "050-learning-events-r1",
+  "candidate_sha": "SELF",
+  "base_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+  "captured_at": "2026-09-13T15:08:07.984583+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "PASS yalnız completed_checks içinde fiilen biten yerel mekanik kontrollerin belirtilen kaynak anlık görüntüleri üzerindeki sonucudur. failing_checks ve pending_checks ayrı tutulur; acceptance_complete=false. Bu rapor bütün zorunlu kapıların geçtiği, CI, gerçek sağlayıcı, yayın veya B3 kabulünün tamamlandığı anlamına gelmez.",
+  "completed_checks": [
+    {
+      "name": "service_pytest",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "/Users/muratates/code/dou-l2-product-v5/apps/api/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_learning_events_service.py",
+        "-q"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/api",
+      "captured_at": "2026-09-13T14:30:24.664041+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-database/service_pytest.log",
+        "sha256": "90e5db21a4a3e43d34d987454c4ed954841acaa018a6900251c2e1dc5785b14c"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-database/results.json",
+        "sha256": "0ed0c6ddff016439053f9491a8f8d713ce864be1ddeef0b0ff2a6eb80d585c91"
+      },
+      "source_binding_current": true
+    },
+    {
+      "name": "rls",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "/opt/homebrew/opt/postgresql@16/bin/psql",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-d",
+        "dou_l2_crypto_schema",
+        "-f",
+        "supabase/tests/rls_learning_events.sql"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5",
+      "captured_at": "2026-09-13T14:30:24.762474+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-database/rls.log",
+        "sha256": "70fd2f07ce8ac7b28c1c850070f5946ce9cc5216800cc1004c05b2edee66bf75"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-database/results.json",
+        "sha256": "0ed0c6ddff016439053f9491a8f8d713ce864be1ddeef0b0ff2a6eb80d585c91"
+      },
+      "source_binding_current": true
+    },
+    {
+      "name": "mutations",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "bash",
+        "supabase/tests/rls_learning_events_mutation_check.sh",
+        "dou_l2_crypto_schema"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5",
+      "captured_at": "2026-09-13T14:30:29.613303+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-database/mutations.log",
+        "sha256": "6f74f1648a9084e0d55e4f345ff5d11a694bf6baab07ff7b16330805fd25868a"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-database/results.json",
+        "sha256": "0ed0c6ddff016439053f9491a8f8d713ce864be1ddeef0b0ff2a6eb80d585c91"
+      },
+      "source_binding_current": true
+    },
+    {
+      "name": "bun",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "captured_at": "2026-09-13T14:29:26.229325+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-web/bun.log",
+        "sha256": "429ecd1f22960cc98e8558d33c773811f951eb58be5bd1fdd5fe3d609609d3e0"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-web/bun-sources-after.json",
+        "sha256": "cad55a4b37c5626b0c6c050346a546a2799ffdb7aba0366e286c2e73453d44d8"
+      },
+      "source_binding_current": true
+    },
+    {
+      "name": "tsc",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "captured_at": "2026-09-13T14:29:59.410109+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-web/tsc.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-web/tsc-sources-after.json",
+        "sha256": "cad55a4b37c5626b0c6c050346a546a2799ffdb7aba0366e286c2e73453d44d8"
+      },
+      "source_binding_current": true
+    },
+    {
+      "name": "contrast",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "captured_at": "2026-09-13T14:30:18.556981+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-web/contrast.log",
+        "sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-web/contrast-sources-after.json",
+        "sha256": "cad55a4b37c5626b0c6c050346a546a2799ffdb7aba0366e286c2e73453d44d8"
+      },
+      "source_binding_current": true
+    },
+    {
+      "name": "ruff",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T14:42:23.018411+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-ruff.log",
+        "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-ruff.json",
+        "sha256": "d95ad534140ee8393128b5bea016990950992ee5c8067f304c633e4bc11536e9"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hashes_match_current": false,
+      "recorded_source_hash_differences": [
+        "README.md"
+      ],
+      "candidate_sources_not_in_snapshot": [],
+      "source_binding_current": false,
+      "snapshot_phase": "after-final-source-edits"
+    },
+    {
+      "name": "format",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T14:42:23.923170+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-format.log",
+        "sha256": "92100405e0065b954fa416a1dd6d858c2a46e79ca278425917fcc710495dff8d"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-format.json",
+        "sha256": "12d54f0f950b5e696ec51091275e879348b5e9c26cfcff5eb907cc36cf641b0e"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hashes_match_current": false,
+      "recorded_source_hash_differences": [
+        "README.md"
+      ],
+      "candidate_sources_not_in_snapshot": [],
+      "source_binding_current": false,
+      "snapshot_phase": "after-final-source-edits"
+    },
+    {
+      "name": "migrations",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "python3",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "captured_at": "2026-09-13T14:31:31.379003+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-migrations.log",
+        "sha256": "f5825a02401d3bd75b7665e52461a1e85a4e22eec66951ce0ca36fc292f6e5a7"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-migrations.json",
+        "sha256": "948ed4c94e0b08a21de8d5794a077d147b3d14e40549fb1df930396001209324"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hashes_match_current": true,
+      "recorded_source_hash_differences": [],
+      "candidate_sources_not_in_snapshot": [
+        "README.md",
+        "apps/api/app/schemas/privacy.py",
+        "apps/api/tests/test_user_rights.py"
+      ],
+      "source_binding_current": false,
+      "snapshot_phase": "before-README-and-export-disclosure-edit"
+    },
+    {
+      "name": "workflows",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "captured_at": "2026-09-13T14:31:33.047370+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-workflows.log",
+        "sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-workflows.json",
+        "sha256": "75a5fd114df27e326129b12c45e20fcd896495cd93b961d5c0d0323dee135c26"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hashes_match_current": true,
+      "recorded_source_hash_differences": [],
+      "candidate_sources_not_in_snapshot": [
+        "README.md",
+        "apps/api/app/schemas/privacy.py",
+        "apps/api/tests/test_user_rights.py"
+      ],
+      "source_binding_current": false,
+      "snapshot_phase": "before-README-and-export-disclosure-edit"
+    },
+    {
+      "name": "mypy",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        ".venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T14:42:32.970993+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-mypy.log",
+        "sha256": "749c760efef02805f6b5a0336f3a75504bd2c15fdd98962720faca6c94956f55"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-mypy.json",
+        "sha256": "5d7df06cb479fb04f1716a4cb610af1ae0e876909883c16d4c5adb5af4c08459"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hashes_match_current": false,
+      "recorded_source_hash_differences": [
+        "README.md"
+      ],
+      "candidate_sources_not_in_snapshot": [],
+      "source_binding_current": false,
+      "snapshot_phase": "after-final-source-edits"
+    },
+    {
+      "name": "browser_E2E",
+      "result": "pass",
+      "rc": 0,
+      "command": [
+        "playwright",
+        "test",
+        "learning-events.spec.ts",
+        "--workers=1",
+        "--retries=0",
+        "--output",
+        "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-browser/measured/playwright-artifacts"
+      ],
+      "cwd": "/Users/muratates/code/dou-l2-product-v5/apps/web",
+      "captured_at": "2026-09-13T14:40:05.330777+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-browser/measured/playwright.log",
+        "sha256": "65f59aa32fe649a181cafebfbbc2b57e71b0457e92976996f2bdac63921569ad"
+      },
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-browser/measured/result.json",
+        "sha256": "88886f1507ad686ccffc336dae56c554de6af6611944ac7814558107df5e018c"
+      },
+      "source_snapshot_before": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-browser/measured/source-before.json",
+        "sha256": "395c830b788f2a43be95fa713fbcd027565b5399ce5c545e0599b7f387670f10"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-browser/measured/source-after.json",
+        "sha256": "395c830b788f2a43be95fa713fbcd027565b5399ce5c545e0599b7f387670f10"
+      },
+      "source_snapshot_file_count": 358,
+      "source_unchanged_during_run": true,
+      "source_binding_current": false,
+      "recorded_source_hash_differences": [
+        "apps/api/app/schemas/privacy.py"
+      ],
+      "changes_after_run": [
+        "README.md",
+        "apps/api/app/schemas/privacy.py",
+        "apps/api/tests/test_user_rights.py"
+      ],
+      "changes_after_run_explanation": "README sayaçları ile privacy.py dışa aktarım kapsamı açıklaması ve test_user_rights.py mevcut açıklama beklentisi güncellendi. E2E kaynağı ve öğrenme olayı/rol/özet uygulaması değişmedi. Browser tekrar koşulmadı; yeni açıklama tam API suite ile ayrıca doğrulanır.",
+      "run_id": "l2b3093602de0caf",
+      "audit_final_accounting": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-browser/measured/audit/final-accounting.json",
+        "sha256": "b1382e7d0d4cc2e70c76c3012f5f603046298976dd0b96bd21820924ff7afd9f"
+      },
+      "quiescence": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-browser/measured/quiescence.json",
+        "sha256": "5335b998f7d9445f2868249a3f5de4524afa5a8a13666337156111ce8b7226f1"
+      },
+      "audit_before_count": 0,
+      "audit_after_count": 0,
+      "audit_unexpected_rows": {},
+      "audit_missing_baseline_ids": [],
+      "scope": "Synthetic local auth, hashing embeddings, fake provider; no real-provider or hosted claim.",
+      "screenshots": {
+        "playwright-artifacts/learning-events-çalışma-ot-0e98b-nız-konu-toplamlarını-görür-chromium/learning-summary-375-dark.png": "ba95c773cf143a9b6fa0401763736e6f4fd39e1bca00b5a56abfe377de24394a"
+      }
+    }
+  ],
+  "results": {
+    "learning_events_migration_present": 1,
+    "learning_event_service_tests_passed": 28,
+    "learning_event_rls_assertions_passed": 30,
+    "learning_event_mutations_killed": 7,
+    "bun_tests_passed": 573,
+    "mypy_source_files": 118,
+    "browser_E2E_tests_passed": 1
+  },
+  "comparison": {
+    "captured_at": "2026-09-13T14:34:25.982460+00:00",
+    "base_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "command": [
+      "git",
+      "cat-file",
+      "-e",
+      "22a85d390f759a77265e624d4d2acdf9b7c3d143:supabase/migrations/0027_learning_events.sql"
+    ],
+    "baseline_command_rc": 128,
+    "baseline_stderr": "fatal: path 'supabase/migrations/0027_learning_events.sql' exists on disk, but not in '22a85d390f759a77265e624d4d2acdf9b7c3d143'",
+    "baseline": 0,
+    "candidate": 1,
+    "candidate_path": "supabase/migrations/0027_learning_events.sql",
+    "candidate_sha256": "12a3f7a3ade3c31b8ceb6836cccca98dde4349dfbd6577e270d4148bb9bbd2b4",
+    "definition_sha256": "312cad64faa952396debd23e7024ee0e3db3bccde5eb44c19965f9d43dc3940c",
+    "interpretation": "Yalnız aynı dosyanın varlık karşılaştırması. Taban sürümde çalışan test veya ölçülen davranış skoru sıfır sayılmadı."
+  },
+  "pending_checks": [
+    {
+      "name": "ai_sdlc_parent_commit",
+      "result": "not-run",
+      "reason": "Kaynaklar henüz commit edilmedi; checker yalnız aynı committeki dossier/evidence ve git blobları üzerinden anlamlıdır."
+    },
+    {
+      "name": "hosted_CI",
+      "result": "not-run",
+      "reason": "Draft PR ve push sonrası ölçülür; aggregate dossier bu şeritte oluşturulmayacak."
+    },
+    {
+      "name": "real_provider_staging_canary_production_rollback",
+      "result": "not-run",
+      "reason": "Bu B3 yerel sentetik kanıtıdır; gerçek sağlayıcı/ortam ve rollback çalıştırılmadı."
+    }
+  ],
+  "acceptance_complete": false,
+  "source_sha256": {
+    "README.md": "e3864bb1b1d6286dc000ab775bf58d017ef1f43e69da762ede36d2946c5750d1",
+    "apps/api/app/api/exams.py": "c90c047a576ce42a8b6abbbb29b1f80cf77422ec364c42946d68ef8dba7d3458",
+    "apps/api/app/models/learning_event.py": "45a59b998f38d41a89e5c6851383e7401a312102b8c9a9a7a698601fedb36c8b",
+    "apps/api/app/modules/agent/answers.py": "f0cd06864ead375b05fb0b7abbb5587c4d9a649c00a9e6146cc9a90b6c940dd8",
+    "apps/api/app/modules/agent/pipeline.py": "1ad0864284b586dd8f2ce4b5403cb60a9502fd83d02014731d2509544360a5a4",
+    "apps/api/app/modules/agent/provider_events.py": "7587917a6dda5c608cce93f2c0d03b3a341d2688d02e7d068b0f444a3cec367c",
+    "apps/api/app/modules/assessment/learning_events.py": "64e95e9c16c28756e157f49e97d617e79176c0c5dc3d9a4975c171090a297b92",
+    "apps/api/app/schemas/learning_events.py": "f10e84ca3771877d32ffb31777098c13b69e742480b5d276ee9b15daa9f7275f",
+    "apps/api/app/schemas/privacy.py": "9b9535e344a249b353e3cdd230eb94caf8b3e2ed9379122603d22ae3f2031a50",
+    "apps/api/tests/test_error_envelope.py": "00320b7485e6e23405eb11a7f0b714f803978551143d63cc37e64890ac47ba2b",
+    "apps/api/tests/test_learning_events_api.py": "8eff2fede7a0aee849097e9ffd06a5a5ba7535cffc7b408e8709fa5681dbc582",
+    "apps/api/tests/test_learning_events_service.py": "e02bfed8ef6e52cfd35050c2a4c3d2ab6853306aa333f178b28810d6ef38a2e7",
+    "apps/api/tests/test_user_rights.py": "9af56e0dec34b38ac017b495b68a1e6c963609fce9c41f12e529ce22cfc5251e",
+    "apps/web/app/courses/[courseId]/chat/page.tsx": "989afe782a7e8c5cadea222cf334d48a854e8fe5044c734b1af56e87624815df",
+    "apps/web/app/courses/[courseId]/settings/page.tsx": "e77f419b54a509647f95ee570cf78439211cb075dc6745bf113385e706036d6d",
+    "apps/web/components/course-assistant/course-assistant.tsx": "d6f379cc54993976728f6ea8e291730f1ad896a94deb5dfb804599c69b67de64",
+    "apps/web/components/exam/feedback-panel.tsx": "9ff77da10cbd38c8b57434f33139e83eeca9fde45ad7617be990c4d8875de497",
+    "apps/web/components/exam/finished-exam.tsx": "6d56501a95016c8feaa36180219aa5c2f68a54ba949196c14546764eb031c37b",
+    "apps/web/components/exam/running-exam.tsx": "52b158c6b1fd10feb9d31b77b50af6acb24673049bf2d43b8cbee0d3afa85992",
+    "apps/web/components/exam/saved-practice-feedback.tsx": "dfe3564f523c23c05c631a5a848257ea6cbcf604ba55a6e4bedb4cc39c73262e",
+    "apps/web/components/learning-summary.tsx": "d5431c3183c5620246fb6ac80338d3910343727f69dcdae3d337f9b66a5a43b2",
+    "apps/web/components/source-card.tsx": "029813395061cd38aaf03e95c4ecb1cb93006c5b23a7b8c153bf63143a9abffa",
+    "apps/web/e2e/learning-events.spec.ts": "a99e72194f0aeacab9cb56bdefde0aae3d65ed69f8293718cc12c3a45f7b40ee",
+    "apps/web/lib/assessment-feedback.test.ts": "5113a50a6b01d364695d34194d89fde32b6299fe1b0e0000826fc7481483e79f",
+    "apps/web/lib/learning-events.ts": "a0349bc75ada979f9f42dfefd259e474f2b16c1b93abb84217bebd17151c35eb",
+    "supabase/migrations/0027_learning_events.sql": "12a3f7a3ade3c31b8ceb6836cccca98dde4349dfbd6577e270d4148bb9bbd2b4",
+    "supabase/tests/rls_learning_events.sql": "646fcb768827bb940a1fb22a2726bc19732d3f8a2deea36ba005f790d80b00fe",
+    "supabase/tests/rls_learning_events_mutation_check.sh": "e27b8bd576958f65f0389e154c0b155312295a5592720d247a55ac0a104df876"
+  },
+  "data_scope": {
+    "corpus_ref": "supabase/tests/rls_learning_events.sql",
+    "eval_set_ref": "apps/api/tests/test_learning_events_service.py",
+    "classification": "synthetic-non-personal",
+    "human_anchor_use": "docs/team/codex/40-BIRLESIK-PLAN.md gereksinim dayanağıdır; bir insanın adayı onayladığı veya testleri etiketlediği iddia edilmez."
+  },
+  "privacy": "Kalıcı loglarda yalnız sentetik testler, kod yolları ve komut sonuçları var. Gerçek öğrenci sohbeti/cevabı, e-posta/ad, sağlayıcı anahtarı veya DB HMAC anahtarı eklenmez. Üretim pseudo kimliği anonimlik veya hukuki uyum sertifikası değildir.",
+  "limitations": [
+    "Baseline metriği yalnız yeni göç dosyasının yapısal varlığını karşılaştırır; baseline davranış/performans/eğitsel kalite ölçümü yapılmadı.",
+    "R3 için üretim/aşamalı yayın öncesi gerçek bir dağıtım bayrağı eksik; sürümü yayınlamama ve önceki sürüme dönüş kontrolü bu eksikliği gizlemez.",
+    "İnsan onayları ve bağımsız onaylayacak kişilerin adları henüz atanmadı. Aktif sınavda sürüm değiştiren rollout yapılmayacak.",
+    "Kurumsal saklama süresi, silme/export kapsamı, yedekler ve gerçek ortam sorumluları bu işte karara bağlanmadı.",
+    "ENGEL: docs/** bu şeridin yazma alanı dışında. Sayaç düzeltmeleri bu dosyalara dokunmayı gerektirirse lider/sahip şerit tamamlamalıdır.",
+    "L1: rls_learning_events.sql ve rls_learning_events_mutation_check.sh için CI adımı ekle; .github/** L2 kapsamında değil.",
+    "refresh_aggregate_dossier.py çalıştırılmadı. Entegrasyon tabanına göre Govern reviewed AI diff toplayıcı nedeniyle kırmızı olabilir.",
+    "ENGEL: Zaman aşımı nedeniyle son tam API suite yeşil değil. Baseline ve candidate mikro bulguları ayrıca saklandı; ilgili yaşam döngüsü/timer kodunda kapsam dışı değişiklik yapılmadı."
+  ],
+  "failing_checks": [
+    {
+      "name": "full_pytest",
+      "result": "fail",
+      "rc": -15,
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "cwd": "apps/api",
+      "captured_at": "2026-09-13T15:05:04.767031+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-pytest.log",
+        "sha256": "ef8ef93ac818d3cc888a86d9e4110732bf6fc17cb198e931bf319e3bd8aedd18"
+      },
+      "source_snapshot": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-pytest.json",
+        "sha256": "2bd0533911676f1681f4b68d7049fd216db6500bd9ea8ea21ea1e5aa58680beb"
+      },
+      "source_unchanged_during_run": true,
+      "recorded_source_hashes_match_current": false,
+      "recorded_source_hash_differences": [
+        "README.md"
+      ],
+      "candidate_sources_not_in_snapshot": [],
+      "source_binding_current": false,
+      "snapshot_phase": "after-final-source-edits",
+      "failure_summary": " ============================\nFAILED tests/test_chat_deletion_race.py::test_profile_delete_does_not_leave_inflight_new_chat_after_success[False]\n1 failed, 1727 passed, 5 warnings, 38 subtests passed in 886.79s (0:14:46)\nsys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute\n",
+      "completed_test_execution": {
+        "result": "fail",
+        "failed": 1,
+        "passed": 1727,
+        "warnings": 5,
+        "subtests_passed": 38
+      },
+      "interpreter_termination": {
+        "receipt": {
+          "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-pytest-termination.json",
+          "sha256": "a9bbe8f5f9876d608730d27ef1404b4afea9c5534b9ea1c8a6bd531d2fbf8c7d"
+        },
+        "process_return_code": -15,
+        "signal": "SIGTERM",
+        "phase": "Python interpreter final GC after completed pytest and database teardown",
+        "test_database_removed": true,
+        "sample_sha256": "1226d1e31f02e469065de1522444ad4b0d5a48728e61ac54cee9cd0020fbd504",
+        "scope": "Tamamlanmış başarısız test raporu korunur. -15, test hükmü değil, son GC aşamasında SIGTERM verilen yorumlayıcının dönüş kodudur."
+      }
+    },
+    {
+      "name": "docs_check",
+      "result": "fail",
+      "rc": 1,
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "captured_at": "2026-09-13T14:43:15.756605+00:00",
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-docs.log",
+        "sha256": "590803f6797fa99552da0505b8746a73c6f15e7719254890a36ff510669c9f1b"
+      },
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-final-docs.json",
+        "sha256": "8c2be3eba57b71a15aa6b650571e65c7c4a92707673b6c30dbb36a32f6cfeba1"
+      },
+      "phase": "after-final-source-edits",
+      "source_unchanged_during_run": true,
+      "source_binding_current": false,
+      "stale_counter_findings": 16,
+      "readme_findings": 0,
+      "forbidden_path_findings": 16,
+      "finding_paths": [
+        "ARCHITECTURE.md",
+        "docs/deployment.md",
+        "docs/runbook.md",
+        "docs/security.md",
+        "specs/001-course-assistant-mvp/quickstart.md",
+        "specs/002-production-hardening/plan.md",
+        "specs/005-role-aware-course-agent/quickstart.md",
+        "specs/005-role-aware-course-agent/spec.md"
+      ],
+      "unmodified_checker": true,
+      "reason": "ENGEL: ARCHITECTURE.md, docs/** ve ilgili specs/** sayaç düzeltmeleri L2 yazma kapsamı dışında. Depo dışındaki mirror-check PASS sonucu gerçek depo PASS sayılmaz. README düzeltmesi sonrası son ölçülen makbuz varsa yukarıda kullanılır."
+    }
+  ],
+  "privacy_export_change": {
+    "patch": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-050/privacy-export.patch",
+      "sha256": "76f36217a7148f1b29a4a7a7aeb8f00aadeadc9e91cc15057e447d5920e02576"
+    },
+    "applied_by": "root",
+    "current_schema_sha256": "9b9535e344a249b353e3cdd230eb94caf8b3e2ed9379122603d22ae3f2031a50",
+    "current_test_sha256": "9af56e0dec34b38ac017b495b68a1e6c963609fce9c41f12e529ce22cfc5251e",
+    "existing_test_target": "apps/api/tests/test_user_rights.py::test_export_agent_operasyon_kayitlarini_aciklayarak_disarida_birakir",
+    "scope": "learning_events dışa aktarım dışında olduğunu mevcut not_included sözleşmesinde bildirir. Ham içerik veya olayları exporta eklemez.",
+    "verification": "Final suite completed with a failure in test_chat_deletion_race; no separate export-target run is claimed."
+  },
+  "bounded_source_review": {
+    "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-050/security-review.json",
+    "sha256": "2da95bdb7114305a5665c2c4cd0436ed807af99fe269f08a7c71db50d4a170c9"
+  },
+  "historical_checks": [
+    {
+      "name": "full_pytest_before_export_disclosure",
+      "result": "pass",
+      "rc": 0,
+      "captured_at": "2026-09-13T14:38:02.601288+00:00",
+      "receipt": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-pytest.json",
+        "sha256": "f4baafac1fbb4e743e8bc5d814816f49ffa0cec1a2e0667390429e6b93bc6adb"
+      },
+      "log": {
+        "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-pytest.log",
+        "sha256": "4f1db5d1beacef5426b9b4f383f8bf4730c598e4cd38a1003c586101ebe34c62"
+      },
+      "source_hashes": {
+        "apps/api/app/api/exams.py": "c90c047a576ce42a8b6abbbb29b1f80cf77422ec364c42946d68ef8dba7d3458",
+        "apps/api/app/models/learning_event.py": "45a59b998f38d41a89e5c6851383e7401a312102b8c9a9a7a698601fedb36c8b",
+        "apps/api/app/modules/agent/answers.py": "f0cd06864ead375b05fb0b7abbb5587c4d9a649c00a9e6146cc9a90b6c940dd8",
+        "apps/api/app/modules/agent/pipeline.py": "1ad0864284b586dd8f2ce4b5403cb60a9502fd83d02014731d2509544360a5a4",
+        "apps/api/app/modules/agent/provider_events.py": "7587917a6dda5c608cce93f2c0d03b3a341d2688d02e7d068b0f444a3cec367c",
+        "apps/api/app/modules/assessment/learning_events.py": "64e95e9c16c28756e157f49e97d617e79176c0c5dc3d9a4975c171090a297b92",
+        "apps/api/app/schemas/learning_events.py": "f10e84ca3771877d32ffb31777098c13b69e742480b5d276ee9b15daa9f7275f",
+        "apps/api/tests/test_error_envelope.py": "00320b7485e6e23405eb11a7f0b714f803978551143d63cc37e64890ac47ba2b",
+        "apps/api/tests/test_learning_events_api.py": "8eff2fede7a0aee849097e9ffd06a5a5ba7535cffc7b408e8709fa5681dbc582",
+        "apps/api/tests/test_learning_events_service.py": "e02bfed8ef6e52cfd35050c2a4c3d2ab6853306aa333f178b28810d6ef38a2e7",
+        "apps/web/app/courses/[courseId]/chat/page.tsx": "989afe782a7e8c5cadea222cf334d48a854e8fe5044c734b1af56e87624815df",
+        "apps/web/app/courses/[courseId]/settings/page.tsx": "e77f419b54a509647f95ee570cf78439211cb075dc6745bf113385e706036d6d",
+        "apps/web/components/course-assistant/course-assistant.tsx": "d6f379cc54993976728f6ea8e291730f1ad896a94deb5dfb804599c69b67de64",
+        "apps/web/components/exam/feedback-panel.tsx": "9ff77da10cbd38c8b57434f33139e83eeca9fde45ad7617be990c4d8875de497",
+        "apps/web/components/exam/finished-exam.tsx": "6d56501a95016c8feaa36180219aa5c2f68a54ba949196c14546764eb031c37b",
+        "apps/web/components/exam/running-exam.tsx": "52b158c6b1fd10feb9d31b77b50af6acb24673049bf2d43b8cbee0d3afa85992",
+        "apps/web/components/exam/saved-practice-feedback.tsx": "dfe3564f523c23c05c631a5a848257ea6cbcf604ba55a6e4bedb4cc39c73262e",
+        "apps/web/components/learning-summary.tsx": "d5431c3183c5620246fb6ac80338d3910343727f69dcdae3d337f9b66a5a43b2",
+        "apps/web/components/source-card.tsx": "029813395061cd38aaf03e95c4ecb1cb93006c5b23a7b8c153bf63143a9abffa",
+        "apps/web/e2e/learning-events.spec.ts": "a99e72194f0aeacab9cb56bdefde0aae3d65ed69f8293718cc12c3a45f7b40ee",
+        "apps/web/lib/assessment-feedback.test.ts": "5113a50a6b01d364695d34194d89fde32b6299fe1b0e0000826fc7481483e79f",
+        "apps/web/lib/learning-events.ts": "a0349bc75ada979f9f42dfefd259e474f2b16c1b93abb84217bebd17151c35eb",
+        "supabase/migrations/0027_learning_events.sql": "12a3f7a3ade3c31b8ceb6836cccca98dde4349dfbd6577e270d4148bb9bbd2b4",
+        "supabase/tests/rls_learning_events.sql": "646fcb768827bb940a1fb22a2726bc19732d3f8a2deea36ba005f790d80b00fe",
+        "supabase/tests/rls_learning_events_mutation_check.sh": "e27b8bd576958f65f0389e154c0b155312295a5592720d247a55ac0a104df876"
+      },
+      "tests_passed": 1728,
+      "warnings": 5,
+      "subtests_passed": 38,
+      "scope": "Tarihsel yerel koşu; sonraki final koşunun başarısızlığını örten nihai geçiş kanıtı olarak kullanılmaz."
+    }
+  ],
+  "race_timing_comparison": {
+    "baseline_receipt_snapshot": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-050/baseline-observation-at-dossier.json",
+      "sha256": "ba878d6fc15f3863629f5a0e2ccac24eafa893c5c282698a858cc9b8758a10cf"
+    },
+    "baseline_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "baseline_runs": [
+      {
+        "run": 1,
+        "command": [
+          "/Users/muratates/code/dou-l2-product-v5/apps/api/.venv/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_chat_deletion_race.py::test_profile_delete_does_not_leave_inflight_new_chat_after_success[False]",
+          "-q",
+          "--basetemp",
+          "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-race-baseline/tmp-1"
+        ],
+        "cwd": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/b3-race-baseline/apps/api",
+        "started_at": "2026-09-13T15:00:32.044541+00:00",
+        "completed_at": "2026-09-13T15:03:03.203562+00:00",
+        "elapsed_seconds": 151.155,
+        "rc": 0,
+        "log_path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-race-baseline/run-1.log",
+        "log_sha256": "4899daf1fb8eb5e48b3b9e0da69261f4d5e6abacb9ddaa4de5865cd14f0a54f1",
+        "source_unchanged": true
+      },
+      {
+        "run": 2,
+        "command": [
+          "/Users/muratates/code/dou-l2-product-v5/apps/api/.venv/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_chat_deletion_race.py::test_profile_delete_does_not_leave_inflight_new_chat_after_success[False]",
+          "-q",
+          "--basetemp",
+          "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-race-baseline/tmp-2"
+        ],
+        "cwd": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/b3-race-baseline/apps/api",
+        "started_at": "2026-09-13T15:03:03.210296+00:00",
+        "completed_at": "2026-09-13T15:05:18.451782+00:00",
+        "elapsed_seconds": 135.251,
+        "rc": 1,
+        "log_path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-race-baseline/run-2.log",
+        "log_sha256": "70785a04e2065d1ac0f1aad23a512b565ea0022c066a52b54658c72be006d93a",
+        "source_unchanged": true
+      },
+      {
+        "run": 3,
+        "command": [
+          "/Users/muratates/code/dou-l2-product-v5/apps/api/.venv/bin/python",
+          "-m",
+          "pytest",
+          "tests/test_chat_deletion_race.py::test_profile_delete_does_not_leave_inflight_new_chat_after_success[False]",
+          "-q",
+          "--basetemp",
+          "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-race-baseline/tmp-3"
+        ],
+        "cwd": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/b3-race-baseline/apps/api",
+        "started_at": "2026-09-13T15:05:18.483303+00:00",
+        "completed_at": "2026-09-13T15:06:23.483878+00:00",
+        "elapsed_seconds": 65.0,
+        "rc": 0,
+        "log_path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-race-baseline/run-3.log",
+        "log_sha256": "a2a236094a7afe8c76f6177747a381e7bea0b133127d2ccc5fd076c0bcd37533",
+        "source_unchanged": true
+      }
+    ],
+    "remaining_baseline_runs_at_capture": 0,
+    "remaining_run_state": "complete",
+    "candidate_receipt": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-race-candidate.json",
+      "sha256": "2632a8e88fd7f5f748c7964564b61125a5cf43e6389fcf0a36ca98f5267fcaf1"
+    },
+    "candidate_log": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/gates/b3-race-candidate.log",
+      "sha256": "471fcc22eb35d61224413153971e8be2da3156593a5e838cc71f9b09ce852eca"
+    },
+    "candidate_rc": 1,
+    "critical_path_byte_comparison": {
+      "path": "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/evidence/b3-race-baseline/critical-path-comparison.json",
+      "sha256": "69927e974ec2c6f72b1d6b2b14c197f5e92d8e2ccd2932cb6b826cfba682cb14"
+    },
+    "observed_baseline_and_candidate_micro_failure": "İkinci baseline ve candidate mikro koşu aynı node içinde :208 model.entered.wait(timeout=5) aşamasında TimeoutError verdi. İlk baseline aynı testi geçti.",
+    "full_suite_failure_distinction": "Tam suite :210 delete_scanned.wait(timeout=5) aşamasında kaldı. Tabanda da bu testin bir zaman aşımı ölçülmüş olması, tam suite :210 kök nedenini veya B3 etkisinin kesin yokluğunu kanıtlamaz.",
+    "decision": "ENGEL: Zaman aşımı araştırması ve ilgili chat/privacy yaşam döngüsü bu değişiklikte düzeltilmedi; B3 tam kabulü açık kalır."
+  }
+}

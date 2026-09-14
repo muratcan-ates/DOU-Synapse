@@ -1,0 +1,70 @@
+{
+  "job": "H3",
+  "captured_at": "2026-09-13T16:45:05.361051+00:00",
+  "source_parent_sha": "74933ec7184d4fabc651e4bbf40db64137e6e8a8",
+  "candidate_publication": "prepared, tested, parked; outside-scope counter permission pending",
+  "candidate_file": "apps/web/e2e/accessibility-keyboard.spec.ts",
+  "candidate_sha256": "06f7d6e176955b8291eb73ccc12cde9218dba70927d237d8f935ac733d16b3fa",
+  "environment": {
+    "browser_channel": "chrome",
+    "platform": "local macOS",
+    "provider": "fake-provider",
+    "embedding": "hashing",
+    "database": "owned isolated synthetic PostgreSQL"
+  },
+  "command": [
+    "./node_modules/.bin/playwright",
+    "test",
+    "--workers=2",
+    "--config",
+    "/Users/muratates/code/dou-synapse-l6-runtime/repeat.config.ts",
+    "accessibility-keyboard",
+    "--grep",
+    "@keyboard"
+  ],
+  "observed_test_count": 3,
+  "observed_workers": 2,
+  "playwright_summary": "3 passed (14.4s)",
+  "owned_result": {
+    "auditFinishExitCode": 0,
+    "buildReused": true,
+    "buildUnchanged": true,
+    "database": "dou_l6_e2e_h3_keyboard_01",
+    "error": null,
+    "harnessSha256": "e0e3a554d9b6ecb25d56ca3189776d6f4fd45fe9298c17affa7f1f4b68d63679",
+    "ownedApiExitCode": 0,
+    "playwrightExitCode": 0,
+    "runId": "l6622691d4014da7",
+    "sourceUnchanged": true,
+    "status": "PASS",
+    "stopObservation": "graceful-pipe-and-wait"
+  },
+  "evidence_sha256": {
+    "evidence/h3-keyboard-01/result.json": "d64121627dce19d60fd567d6448c81f2f4ab6bd2ef616af8007ab2ef0a584abb",
+    "evidence/h3-keyboard-01/playwright.log": "cc9f854736cb8d3466dab5c292a30f56e415b01f7e4075c19348b08f57b5141f",
+    "evidence/h3-keyboard-01/source-before.json": "05495ecb349976e8b5524db6a7bbe89a8353f53837097752c89d370dfd8ffaf2",
+    "evidence/h3-keyboard-01/source-after.json": "05495ecb349976e8b5524db6a7bbe89a8353f53837097752c89d370dfd8ffaf2",
+    "evidence/h3-keyboard-01/build-before.json": "527d88acfaca36b150971f811bf7b1a3746916b72093d6067c96ef3866d7b91c",
+    "evidence/h3-keyboard-01/build-after.json": "527d88acfaca36b150971f811bf7b1a3746916b72093d6067c96ef3866d7b91c",
+    "evidence/h3-docs-before/result.json": "fd70303aaf33f16d7a939d376ac604cb4510c40da4ce9c79657353fb87875fc7",
+    "evidence/h3-docs-before/docs_check.log": "2df12fd296f0a98aed17f133347cdcdada3fbde101708e7cb92cea890de929eb",
+    "evidence/i7-h3-counters-01/result.json": "1ee900060a626aa148017ed9d19280544c52fa8c6efbed9d35391d54ee17ae04"
+  },
+  "counter_check": {
+    "main_docs_check_rc": 1,
+    "measured_e2e_collection": 74,
+    "shadow_docs_duzelt_rc": 0,
+    "main_written": false,
+    "blocking_paths": [
+      "specs/002-production-hardening/plan.md",
+      "specs/005-role-aware-course-agent/spec.md"
+    ]
+  },
+  "not_run": [
+    "manual route tour",
+    "screen-reader tour",
+    "axe scan: dependency @axe-core/playwright",
+    "Linux visual acceptance",
+    "real provider and production acceptance"
+  ]
+}

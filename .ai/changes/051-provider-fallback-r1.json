@@ -1,0 +1,216 @@
+{
+  "schema_version": 1,
+  "change_id": "051-provider-fallback-r1",
+  "lineage_id": "provider-rate-limit-fallback",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "429 sonrası aynı sağlayıcıda kontrollü tekrar ve etiketli demo yanıtı",
+  "summary": "Ham 429 sonrası aynı birincil sağlayıcı bir kez yeniden denenir; yanıt alınamazsa mevcut kanıt kümesiyle açıkça etiketlenen sabit demo metni gösterilir. Yerel API ve tarayıcı testleri ölçüldü; kanıt eşiği korunur, tekrarın kota uyumu ve eksik entegrasyon kapıları ayrıca raporlanır.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:18:02.826724+00:00",
+  "review_by": "2026-10-13T15:18:02.826724+00:00",
+  "base_sha": "4454b6f09584eec27abdfc78c8fa600ed4c56a7a",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "SameProviderRetryClient: yalnız ham429 sonrası aynı primary modele bir tekrar; genel failover yok. Telemetry await kalan transport bütçesinde asyncio.timeout ile iptal edilir; özgün429 ve dış iptal korunur.",
+    "model_revision": "Temel4454b6f ile aynı yapılandırılmış primary model; sessiz model değişimi yapılmaz. LLM_SIMULATE_RATE_LIMIT yalnız yerel sentetik transport kurar.",
+    "prompt_revision": "Normal generation promptları değişmez; provider_fallback.py içinde sunucuya ait önceden kaydedilmiş sabit demo çalışma yönergesi eklenir.",
+    "tool_schema_revision": "ChatResponse.fixture:true|null ve yalnız yerel simülasyonda provider_attempts; istemci isteğinde fixture veya sayaç alanı yok.",
+    "guardrail_revision": "Mevcut kanıt eşiği, RLS/üyelik, sınav kilidi ve citation/leakage/sanitize zinciri korunur; fixture aynı zincirden geçer.",
+    "retrieval_revision": "B3 tabanı ile aynı retrieval; dönen ders kaynakları korunur, yeni kaynak/metaveri uydurulmaz.",
+    "embedding_revision": "Temel4454b6f ile aynı; yerel kanıtlar hashing ve sentetik ders kaynaklarıyla ölçüldü.",
+    "evaluator_revision": "Sağlayıcı/API hedefli testleri, web yardımcı testleri, tip/kontrast kapıları ve üç yerel simülasyon tarayıcı vakası ölçüldü. Tam suite ve belge kontrolünün gerçek sonuçları kanıtta ayrı tutulur."
+  },
+  "data": {
+    "corpus_digest": "4d73f91ec8338dd0aba86d17d5f6c2857128b14f0552a2b3325bd16d9e8eeffa",
+    "eval_set_digest": "73b92fd87ee19e36705fd5f8a49ec2e82ec562c230a8d77077761a0cbca15774",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "0b8ecd3d8356b4bedfa15835b75a8d19362ed188f45a7759ed4d2b3ba5a9e00c"
+    },
+    {
+      "path": "apps/api/app/modules/agent/answers.py",
+      "state": "present",
+      "sha256": "b712f68e14230ef2fda33b6186aee433c4e55ef8c507acd87843cc14df71c59b"
+    },
+    {
+      "path": "apps/api/app/modules/agent/pipeline.py",
+      "state": "present",
+      "sha256": "1880d56159a4eb3b4f717ce2d3101d2fefc0cd615106cd683b2fc251c0350563"
+    },
+    {
+      "path": "apps/api/app/modules/agent/provider_events.py",
+      "state": "present",
+      "sha256": "c7e33d5d629e0090960bb6e90d8be7e638320a70314aa768348cc287a4cb39b3"
+    },
+    {
+      "path": "apps/api/app/modules/agent/provider_fallback.py",
+      "state": "present",
+      "sha256": "e09c38e165e9b6cc5887f72074b2e1334adec763c8908f73186c397e0f678d63"
+    },
+    {
+      "path": "apps/api/app/schemas/chat.py",
+      "state": "present",
+      "sha256": "42017febe1383cbb5b3d2fbc79304761f21f6b60cf3e9ee7e51ad006e8299135"
+    },
+    {
+      "path": "apps/api/tests/test_provider_rate_limit_fallback.py",
+      "state": "present",
+      "sha256": "4d73f91ec8338dd0aba86d17d5f6c2857128b14f0552a2b3325bd16d9e8eeffa"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "c0668d62c2d324f0035812e4728ac73f42c4b3bc66f3d6afcdbc76a70241642e"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "eee40514eb6dfc253bc77946de68454b32e72e1e46ff9249b0437f82809108bb"
+    },
+    {
+      "path": "apps/web/components/demo-response-notice.tsx",
+      "state": "present",
+      "sha256": "7e70045ea5e668a1daeafc4fd5fe25b49c492ca1991edebe187beb8dbb29e661"
+    },
+    {
+      "path": "apps/web/components/socratic-ladder.tsx",
+      "state": "present",
+      "sha256": "962ff1976a57e39d17cdf1a2d3c51d751c6de180b45c3b4aa1e39ab6db370589"
+    },
+    {
+      "path": "apps/web/e2e/provider-fallback.spec.ts",
+      "state": "present",
+      "sha256": "73b92fd87ee19e36705fd5f8a49ec2e82ec562c230a8d77077761a0cbca15774"
+    },
+    {
+      "path": "apps/web/lib/chat.ts",
+      "state": "present",
+      "sha256": "647f727864a33a34102fc97b17318ec4f655287d9323d72b94747aed7834c9ed"
+    },
+    {
+      "path": "apps/web/lib/demo-response.test.ts",
+      "state": "present",
+      "sha256": "a9707a6bc9f5d94e7bc35e52edb9c8483db5ac0395f81be257cf44306b4aa7c6"
+    },
+    {
+      "path": "apps/web/lib/demo-response.ts",
+      "state": "present",
+      "sha256": "a3e5893a314fbba7a64eff475723a4583f9c35ffee9c55c0ed892236f957be80"
+    },
+    {
+      "path": "apps/web/lib/types.ts",
+      "state": "present",
+      "sha256": "af27b910d5fe16419910807d1d8a2217b06da08974ebca783e84fb80d6dccf4f"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/051-provider-fallback-r1.json",
+      "report_sha256": "18c2c82198f4f19e0885a10fd715aa1bbdd22595c4980036044361e6480511f7",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_provider_rate_limit_fallback.py",
+    "holdout_ref": "apps/web/e2e/provider-fallback.spec.ts",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "metrics": [
+      {
+        "name": "fixture_response_field_present",
+        "baseline": 0,
+        "candidate": 1,
+        "operator": "==",
+        "threshold": 1,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3 -c 'import ast,json,subprocess\nfrom pathlib import Path\nbase='\"'\"'4454b6f09584eec27abdfc78c8fa600ed4c56a7a'\"'\"'\npath='\"'\"'apps/api/app/schemas/chat.py'\"'\"'\ndef present(source):\n    return int(any(isinstance(node,ast.ClassDef) and node.name=='\"'\"'ChatResponse'\"'\"' and any(isinstance(item,ast.AnnAssign) and isinstance(item.target,ast.Name) and item.target.id=='\"'\"'fixture'\"'\"' for item in node.body) for node in ast.parse(source).body))\nold=subprocess.check_output(['\"'\"'git'\"'\"','\"'\"'show'\"'\"',f'\"'\"'{base}:{path}'\"'\"'],text=True)\nnew=Path(path).read_text()\nprint(json.dumps({'\"'\"'baseline'\"'\"':present(old),'\"'\"'candidate'\"'\"':present(new)}))\n'"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Atanacak bağımsız mühendislik gözden geçireni",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Atanacak bağımsız ders/alan sorumlusu",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Atanacak bağımsız güvenlik/gizlilik sorumlusu",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "LLM_SIMULATE_RATE_LIMIT",
+    "flag_state": "not-applicable",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:051-provider-fallback-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "LLM_SIMULATE_RATE_LIMIT",
+    "kill_switch": "Yerel simülasyon için bayrağı kaldır. Gerçek429 fallback kodunu kapatmak için uygulamayı4454b6f tabanına geri al; simülasyon bayrağı üretim davranışını kapatmaz. Geri dönüş henüz çalıştırılmadı.",
+    "assignment": "İleride onaylanan pilot ders/oturumlar exact candidate SHA üzerinde sticky tutulacak; bu işte gerçek kullanıcı kohortu açılmadı.",
+    "initial_exposure": "Yalnız yerel sentetik test koşuları. Staging/canary/production dağıtımı yok.",
+    "stop_conditions": [
+      "Fixture canlı yanıt gibi etiketlenirse veya köken serbest metinden tahmin edilirse yayını durdur.",
+      "Aynı primary dışında modele geçilirse, ham429 yokken ikinci transport açılırsa veya birden çok başarılı completion üretilirse durdur.",
+      "Kanıt eşiği/RLS/üyelik/sınav kilidi atlanırsa, ret yolunda sağlayıcı çağrılırsa veya gerçek maliyet bilinmeden sıfır denirse durdur.",
+      "Kota kararı, zorunlu kapılar, adaya bağlı CI veya insan onayı eksikse pilot başlatma."
+    ],
+    "expand_conditions": [
+      "B4 servis/API/web/E2E kapıları aday kaynak hashlerine bağlanır.",
+      "Engineering, domain ve security_or_privacy rollerine atanmış bağımsız insanlar exact candidate üzerinde onay verir.",
+      "Kota exception/maliyet sözleşmesi, üretim rollout kontrolü ve geri dönüş kanıtı tamamlanır."
+    ],
+    "active_exam_policy": "Aktif sınavda sürüm değiştirilmez ve demo fallback EXAM modunda yanıt üretmez. Gerçek öğrenci sınav pilotu bu çalışma kapsamında açılmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:4454b6f09584eec27abdfc78c8fa600ed4c56a7a",
+    "procedure": "Uygulamayı4454b6f09584eec27abdfc78c8fa600ed4c56a7a sürümüne al; yeni yerel simülasyon env bayrağını kaldır. B3 öğrenme olayları/0027 ve veriler korunur; DB geri göçü yok.",
+    "max_minutes": 30,
+    "verification": "30 dakika planlanan hedef; süre ölçülmedi. Önceki chat/ret/sınav kilidi ve B3 olay akışları yeniden doğrulanacak.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Sentetik kaynak ve sabit demo metni. Olay kaydı içeriksiz B3 yazıcısını kullanır. Doğrudan fixture kimliği sunucu alt tipinden gelir; kayıttaki etiket gövdede korunur, cache/history metadata uydurulmaz.",
+    "retention": "Gerçek öğrenci saklama/silme/yedek politikası bu işte değiştirilmez veya onaylanmaz. Kanıtlara gerçek sohbet/cevap, provider credential veya DB HMAC anahtarı eklenmez."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

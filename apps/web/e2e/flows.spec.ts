@@ -1,3 +1,4 @@
+import { test, teacher as AYSE, student as BURAK, signIn, type WorkerUser as DemoUser } from "./worker-fixture";
 /**
  * Uçtan uca akış testleri — Anayasa VIII'in kalıcı hâli.
  *
@@ -23,7 +24,7 @@
  * versions" hatası verir.
  */
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { createE2eCourseIdentity } from "./fixtures";
 
@@ -35,32 +36,7 @@ import { createE2eCourseIdentity } from "./fixtures";
  */
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 
-/** Seed'deki sabit demo kimlikleri (supabase/seed_demo.sql). */
-const AYSE = {
-  id: "11111111-1111-1111-1111-111111111111",
-  email: "ayse@dogus.edu.tr",
-  fullName: "Ayşe Hoca",
-  role: "instructor" as const,
-};
-const BURAK = {
-  id: "22222222-2222-2222-2222-222222222222",
-  email: "burak@dogus.edu.tr",
-  fullName: "Burak Yılmaz",
-  role: "student" as const,
-};
 
-type DemoUser = typeof AYSE | typeof BURAK;
-
-/** Tarayıcıya oturum enjekte eder — giriş ekranını her testte tıklamak yerine. */
-async function signIn(page: Page, user: DemoUser) {
-  await page.addInitScript(
-    ([token, payload]) => {
-      localStorage.setItem("dou-synapse-token", token as string);
-      localStorage.setItem("dou-synapse-user", payload as string);
-    },
-    [`dev:${user.id}`, JSON.stringify(user)],
-  );
-}
 
 function authHeader(user: DemoUser) {
   return `Bearer dev:${user.id}`;
@@ -470,11 +446,10 @@ test.describe("sohbet — ürünün tezi", () => {
     await page.getByRole("button", { name: "Çıkış" }).click();
     const teacherButton = page.getByRole("button", { name: /Ayşe Hoca/ });
     await expect(teacherButton).toBeVisible();
-    await teacherButton.click();
+    await signIn(page, AYSE);
     await expect(page).toHaveURL(/\/dashboard$/);
 
-    // Keep the role switch inside Next.js client navigation. The test helper's
-    // init script intentionally restores Burak on a full page load.
+    // Rol önbelleği aynı SPA içinde sınanır; tam sayfa yüküyle sıfırlanmaz.
     await page.getByRole("link", { name: "Tüm dersler" }).click();
     await expect(page).toHaveURL(/\/courses$/);
     const courseLink = page.getByRole("link", { name: new RegExp(course.code) });
@@ -485,7 +460,7 @@ test.describe("sohbet — ürünün tezi", () => {
     await expect(page).toHaveURL(/\/quality$/);
 
     await expect(page.getByRole("heading", { name: "AI kalite" })).toBeVisible();
-    await expect(page.getByText("Burak Yılmaz")).toBeVisible();
+    await expect(page.getByText(BURAK.fullName)).toBeVisible();
     await expect(page.getByText("Deadlock koşullarını açıklar mısın?")).toBeVisible();
     await expect(
       page.getByText("Öğrenci notu: Kaynak görünmedi; öğretmenim bu örneği inceleyebilir."),

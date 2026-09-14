@@ -1,15 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { test, teacher as workerTeacher, teacherHeaders, signIn } from "./worker-fixture";
+import { expect } from "@playwright/test";
 
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const teacher = {
-  id: "11111111-1111-1111-1111-111111111111",
-  email: "ayse@dogus.edu.tr",
-  fullName: "Ayşe Hoca",
-  role: "instructor",
-};
-const headers = { Authorization: `Bearer dev:${teacher.id}` };
+const teacher = workerTeacher;
+const headers = teacherHeaders;
 
 test("eğitmen üretir, taslağı düzenler ve sınıflandırılmış soruyu yayımlar", async ({ page, request }, testInfo) => {
   test.setTimeout(90_000);
@@ -48,10 +44,7 @@ test("eğitmen üretir, taslağı düzenler ve sınıflandırılmış soruyu yay
     return result.items[0]?.status;
   }, { timeout: 25_000 }).toBe("completed");
 
-  await page.addInitScript((user) => {
-    localStorage.setItem("dou-synapse-token", `dev:${user.id}`);
-    localStorage.setItem("dou-synapse-user", JSON.stringify(user));
-  }, teacher);
+  await signIn(page, teacher);
   await page.goto(`/courses/${course.id}/questions`);
   await expect(page.getByLabel("Öğrenme çıktısı", { exact: true })).toBeVisible();
   await page.getByLabel("Konu", { exact: true }).selectOption(topic.id);

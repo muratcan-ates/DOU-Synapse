@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 from typing import Protocol
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlsplit
 
 import httpx
 
@@ -18,6 +18,9 @@ from app.core.errors import NotFoundError, StorageUnavailableError
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+SIGNED_DOWNLOAD_TTL_SECONDS = 60
+PRIVATE_STORAGE_BUCKET = "course-materials"
 
 
 def _log_storage_failure(operation: str, error: httpx.HTTPError) -> None:
@@ -37,6 +40,8 @@ class DocumentStorage(Protocol):
     async def load(self, key: str) -> bytes: ...
 
     async def delete(self, key: str) -> None: ...
+
+    async def signed_download_url(self, key: str) -> str | None: ...
 
 
 class LocalFileStorage:
@@ -76,6 +81,11 @@ class LocalFileStorage:
     async def delete(self, key: str) -> None:
         path = self._resolve(key)
         await asyncio.to_thread(path.unlink, True)
+
+    async def signed_download_url(self, key: str) -> None:
+        # Yerel demo dosyayı yetkili API yanıtında taşır.
+        self._resolve(key)
+        return None
 
 
 class SupabaseStorage:
@@ -155,6 +165,61 @@ class SupabaseStorage:
                 "Belge deposuna şu anda erişilemiyor. Lütfen yeniden deneyin."
             ) from None
 
+    async def signed_download_url(self, key: str) -> str:
+        object_path = f"/object/sign/{quote(self._bucket, safe='')}/{quote(key, safe='/')}"
+        try:
+            async with self._client() as client:
+                response = await client.post(
+                    self._base_url + object_path,
+                    headers=self._headers,
+                    json={"expiresIn": SIGNED_DOWNLOAD_TTL_SECONDS},
+                )
+            if response.status_code == 404:
+                raise NotFoundError("Belge dosyası bulunamadı.")
+            response.raise_for_status()
+        except httpx.HTTPError as exc:
+            _log_storage_failure("sign", exc)
+            raise StorageUnavailableError(
+                "Belge deposuna şu anda erişilemiyor. Lütfen yeniden deneyin."
+            ) from None
+
+        try:
+            payload = response.json()
+            signed = payload.get("signedURL") if isinstance(payload, dict) else None
+            if (
+                not isinstance(signed, str)
+                or not signed
+                or any(ord(char) <= 32 or ord(char) == 127 for char in signed)
+            ):
+                raise ValueError
+            # REST göreli yolu /object/sign ile döndürür. Yalnız aynı projenin
+            # aynı nesnesine ait tek token kabul edilir; yanıt redirect yetkisi değildir.
+            url = self._base_url + signed if signed.startswith("/object/sign/") else signed
+            parsed = urlsplit(url)
+            base = urlsplit(self._base_url)
+            query = parse_qs(parsed.query, keep_blank_values=True, strict_parsing=True)
+            if (
+                parsed.scheme != base.scheme
+                or parsed.netloc != base.netloc
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.path != base.path + object_path
+                or parsed.fragment
+                or set(query) != {"token"}
+                or len(query["token"]) != 1
+                or not query["token"][0]
+            ):
+                raise ValueError
+            return url
+        except (ValueError, TypeError):
+            logger.error(
+                "Belge indirme bağlantısı doğrulanamadı",
+                extra={"context": {"event": "storage_sign_response_invalid"}},
+            )
+            raise StorageUnavailableError(
+                "Belge indirme bağlantısı oluşturulamadı. Lütfen yeniden deneyin."
+            ) from None
+
     async def delete(self, key: str) -> None:
         try:
             async with self._client() as client:
@@ -186,6 +251,10 @@ def get_storage() -> DocumentStorage:
 
         settings = get_settings()
         if settings.storage_backend == "supabase":
+            if settings.supabase_storage_bucket != PRIVATE_STORAGE_BUCKET:
+                raise ValueError(
+                    "Supabase deposu yalnız course-materials özel bucket kullanabilir."
+                )
             # Settings doğrulayıcısı bu iki değerin varlığını zorlar. Assert'ler
             # type checker'a aynı invarianti taşır; çalışma zamanı kaçış kapısı
             # değildir.

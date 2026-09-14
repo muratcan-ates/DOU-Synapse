@@ -5,8 +5,15 @@ izlemenize yardımcı olur. Asistanın kullanabildiği kaynakları ve çalışma
 belirler. Yanıtları ve değerlendirmeleri kaynaklarıyla birlikte inceleyin; bir kaynak
 bağlantısı, açıklamanın veya puanın mutlaka doğru olduğu anlamına gelmez.
 
-> Görseller önceki sürümden örnek ekranlardır. Aşağıdaki adımlar mevcut ekran adlarına
-> göre düzenlenmiştir; bazı özellikler kullandığınız ortamda açılmamış olabilir.
+> **13 Eylül 2026 — kaynak ve yerel tarayıcı incelemesi:** sentetik öğrenci hesabıyla
+> ders sayfaları, rol sınırları, alıştırma sonucu ve profil/veri işlemi girişleri
+> kontrol edildi. Koşu fake sağlayıcı ve hashing kullanır; gerçek Supabase girişi,
+> parola kurtarma ve dış sağlayıcı kalitesi denenmedi. Bütün iş akışları veya
+> WCAG AA uygunluğu doğrulanmış değildir. Mobil profil görüntüsündeki menü örtüşmesi
+> dahil kapsam ve açık sınırlar [kılavuz doğrulama kaydındadır](guide-verification.md).
+> Bu belgede kullanılan görsellerden [ekran görüntüsü kaydında](screenshots.md)
+> listelenenler H7 kapsamında yenilendi; diğer görseller önceki sürüm örnekleridir.
+> Bazı özellikler kullandığınız ortamda açılmamış olabilir.
 
 ## 1. Giriş ve derse katılım
 
@@ -18,9 +25,31 @@ kimlik kartları gösterilebilir; bunlar kişisel hesabınızın yerine geçmez.
 
 ![Derslerim](images/07-ogrenci-ders-listesi.png)
 
-**Derslerim** yalnız erişiminiz olan dersleri gösterir. Bir ders görünmüyorsa doğru hesapla
+**Dersler** menüsü **Derslerim** ekranını açar ve yalnız erişiminiz olan dersleri gösterir.
+Bir ders görünmüyorsa doğru hesapla
 giriş yaptığınızı kontrol edin ve hocanızdan üyeliğinizi doğrulamasını isteyin. Bu ekranda
-kendinizi bir derse ekleyemezsiniz.
+kendinizi mevcut bir derse ekleyemezsiniz.
+
+### Parolayı yenileme
+
+Parolalı giriş kullanıyorsanız **Parolamı unuttum** bağlantısını açın. **E-posta** alanını
+doldurup **Yenileme bağlantısı gönder** deyin. Ekranın genel yanıtı hesabın varlığını
+doğrulamaz. Gelen bağlantıdan **Yeni parola belirle** ekranını açıp yeni parolayı ve
+**Yeni parola tekrar** alanını doldurun; **Parolayı güncelle** ile kaydedin. İşlem
+başarılıysa **Derslerime git** bağlantısını kullanın. Bağlantı geçersiz veya süresi
+dolmuşsa **Yeni bağlantı iste** deyin. Hazır kimlik kartlarıyla kullanılan yerel demoda
+parola yenileme etkin değildir.
+
+### Genel bakış ve gezinme
+
+Girişten sonra **Genel bakış** açılır. Öğrenci olduğunuz dersin **Çalışmaya devam et**
+bağlantısı asistanı açar; etkin sınav kilidi varsa **Sınava dön** görünür. **Tüm dersler**
+ders listenize götürür. Ders kartındaki rol, o derse özgüdür; başka dersteki eğitmen
+rolünüz burada öğrenci yetkisini değiştirmez.
+
+Bir ders için **Henüz ölçülmedi** görüyorsanız bunu sıfır başarı olarak yorumlamayın.
+**Yeni ders**, mevcut bir derse katılma yolu değildir; ayrı bir ders oluşturur.
+Hocanızın dersine erişmek için üyeliğinizin eklenmesi gerekir.
 
 ## 2. Asistanla çalışma
 
@@ -31,6 +60,19 @@ Dersi açıp **Asistan** sekmesine geçin. Hocanızın izin verdiği modlar aras
 | Soru-cevap | Bir kavramı açıklatmak veya hatırlamak |
 | Sokratik | Çözüm denemenizi paylaşarak adım adım ipucu almak |
 
+### Ders kartındaki veya köşedeki asistan
+
+Genel bakıştaki ders kartında **Ders asistanı**, ders sayfalarının köşesinde ise
+üyeliğiniz doğrulandıktan sonra **Ders Koçu** düğmesi kısa paneli açar.
+Öğrenci panelinin adı **Ders Koçu**dur.
+**Sorun** alanına yazıp **Gönder** deyin; Sokratik devamda alan **Denemen** olarak görünür.
+**Yeni konuşma** ayrı konuşma başlatır. Panelde mod değiştirmek de yeni konuşma başlatır;
+mevcut konuşmanın modunu dönüştürmez. **Kapat** veya Escape ile panelden çıkabilirsiniz.
+
+Panel yalnız açtığınız dersin kaynaklarına ve izinlerine bağlıdır. Sınav kilidi veya
+kullanımın kapalı olduğu uyarısı varken yeni panel açmak sınırı kaldırmaz. Geçmişi ve
+silme işlemlerini yönetmek için dersin **Asistan** sekmesini kullanın.
+
 ### Kaynakları inceleme
 
 ![Kaynaklı cevap](images/09-sohbet-kaynakli-cevap.png)
@@ -40,6 +82,11 @@ Yanıtı bu bölümle karşılaştırın. Kaynak bağlantısını açtığınız
 kontrol edilir; eski bir konuşmada görünmüş olması kaynağın hâlâ açılabileceği anlamına
 gelmez. **Bu dersin kaynakları** paneli de ders materyallerini incelemenizi sağlar.
 Hocanızın kaynak seçimi, hangi materyallerin yanıt için kullanılabileceğini sınırlayabilir.
+
+Kaynak ayrıntısında **Atıfta kullanılan pasaj** işaretini ve varsa önceki/sonraki parçaları
+birlikte okuyun. Buradaki **Retrieval laboratuvarı** bağlantısı eğitmen aracına gider;
+öğrenci olarak bu araca erişiminiz olmayabilir. Kaynak okumaya veya çalışmaya devam
+etmek için dersin **Asistan** ya da **Materyaller** sekmesini kullanın.
 
 ### Konuşmalara dönme ve silme
 
@@ -171,7 +218,9 @@ tekrar deneyin. Alıştırma bu indirme kilidini oluşturmaz.
 
 ![İlerleme](images/15-ogrenci-ilerleme.png)
 
-**İlerleme** ekranı konu bazında puan, seviye ve ölçümün kaç yanıta dayandığını gösterir:
+Dersin **İlerleme** sekmesi öğrenci için **İlerlemem** ekranını açar. Konu bazında puan,
+seviye ve ölçümün kaç yanıta dayandığını gösterir. Son yanıtlarınızdan sonra **Yenile**
+deyin; ekran sürekli kendiliğinden yenilenmez:
 
 | Seviye | Puan |
 |---|---|
@@ -185,7 +234,10 @@ sonucu genel başarı yargısı olarak kullanmayın. Bu bir resmî not değildir
 ## 7. Profil ve kişisel veriler
 
 **Profil** ekranında adınızı düzenleyip **Profili kaydet** diyebilirsiniz. E-posta alanı
-bu ekranda düzenlenmez. **Verilerimi indir veya sil** bağlantısı **Verilerim** alanını açar.
+bu ekranda düzenlenmez. **Ders rolleri** listesinde her dersin üyeliğini ayrı kontrol
+edin; profil adı değiştirmek ders yetkisi vermez. Görünümü **Sistem**, **Açık** veya
+**Koyu** seçeneğiyle değiştirebilirsiniz. **Verilerimi indir veya sil** bağlantısı
+**Verilerim** alanını açar.
 
 | İşlem | Adımlar ve kapsam |
 |---|---|

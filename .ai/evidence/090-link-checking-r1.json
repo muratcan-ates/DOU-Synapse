@@ -1,0 +1,1796 @@
+{
+  "schema_version": 1,
+  "change_id": "090-link-checking-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T16:55:10.419725+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "Only the measured deterministic synthetic link-checker fixture/CLI contract. No model/provider calls; fake-provider is the available policy label for mechanical evidence. Not full-repository acceptance.",
+  "parent_sha_at_materialization": "92bd8bc6ad593c53911f414b7c2913a9c783548f",
+  "checker_sha256": "513aa20915269befa02821c51baccc4a10dbcc5392372ca7e3ab569e886c96d1",
+  "measurement_time": "2026-09-13T15:11:00.582Z",
+  "assembly_time_is_not_a_test_run": true,
+  "source_inputs_sha256": {
+    "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs": "513aa20915269befa02821c51baccc4a10dbcc5392372ca7e3ab569e886c96d1",
+    "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/verify-check-links.mjs": "658c9c3252787657e8f7dd1190d0f0283ddddec1705fb1718eb6c12a0ff78b7e",
+    "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/verification-result.json": "cba9dbed9642e19e22937316c8e7da48f4f3d7ad153dbfdee04a1865d41304d2",
+    "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/verification-log.json": "eb4f297a373537aa230b2b2b7961c080a57fc022f4545d21c458e6875fbc11cf",
+    "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/verification-result-before-speckit-fix.json": "6b74e3d715c8da6df025e7f616fb615e019f84daa73aca97fd97ecbcbf115532",
+    "/Users/muratates/code/dou-synapse-l6-runtime/evidence/link-baseline-before-i1.json": "58c103cc6096571def4c9f3eac21973b9f5536558cc91ce397a36b80a30e2863"
+  },
+  "commands": [
+    "node /Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/verify-check-links.mjs"
+  ],
+  "results": {
+    "fixture_command_cases_passed": 29,
+    "plain_output_rc": 0,
+    "syntax_rc": 0,
+    "final_tracked_markdown_scan": "blocked",
+    "full_repository_acceptance": "not-claimed"
+  },
+  "fixture_summary_as_observed": {
+    "result": "pass",
+    "date": "2026-09-13T15:11:00.582Z",
+    "checker": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+    "fixtureRepository": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+    "commandCases": 29,
+    "plainOutputRc": 0,
+    "syntaxRc": 0,
+    "node": "v22.17.1"
+  },
+  "fixture_cases": [
+    {
+      "name": "default_tracked_markdown",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 0,
+      "observed_rc": 0,
+      "expected_error": null,
+      "observed_errors": [],
+      "observed_counts": {
+        "filesChecked": 3,
+        "linksChecked": 32,
+        "externalHttpSkipped": 3,
+        "otherSchemesSkipped": 1
+      },
+      "fragments_skipped": [
+        {
+          "file": "good.md",
+          "line": 36,
+          "target": "images/safe.svg#shape",
+          "reason": "markdown_or_line_fragment_only"
+        }
+      ]
+    },
+    {
+      "name": "explicit_and_duplicate_file_arguments",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "good.md",
+        "good.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 0,
+      "observed_rc": 0,
+      "expected_error": null,
+      "observed_errors": [],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 30,
+        "externalHttpSkipped": 3,
+        "otherSchemesSkipped": 1
+      },
+      "fragments_skipped": [
+        {
+          "file": "good.md",
+          "line": 36,
+          "target": "images/safe.svg#shape",
+          "reason": "markdown_or_line_fragment_only"
+        }
+      ]
+    },
+    {
+      "name": "speckit_labels_are_text",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "speckit_labels.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 0,
+      "observed_rc": 0,
+      "expected_error": null,
+      "observed_errors": [],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "defined_spaced_and_newline_references",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "defined_spaced_reference.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 0,
+      "observed_rc": 0,
+      "expected_error": null,
+      "observed_errors": [],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 2,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "missing_path",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "missing_path.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_path",
+      "observed_errors": [
+        {
+          "file": "missing_path.md",
+          "line": 1,
+          "code": "missing_path",
+          "target": "missing.md",
+          "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "missing_anchor",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "missing_anchor.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_anchor",
+      "observed_errors": [
+        {
+          "file": "missing_anchor.md",
+          "line": 1,
+          "code": "missing_anchor",
+          "target": "target.md#missing",
+          "message": "Markdown başlığı veya açık HTML id/name bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "missing_reference",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "missing_reference.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_reference",
+      "observed_errors": [
+        {
+          "file": "missing_reference.md",
+          "line": 1,
+          "code": "missing_reference",
+          "target": "missing",
+          "message": "Referans tanımı bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "adjacent_tag_missing_reference",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "adjacent_tag_missing_reference.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_reference",
+      "observed_errors": [
+        {
+          "file": "adjacent_tag_missing_reference.md",
+          "line": 1,
+          "code": "missing_reference",
+          "target": "US4",
+          "message": "Referans tanımı bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "spaced_collapsed_reference",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "spaced_collapsed_reference.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_reference",
+      "observed_errors": [
+        {
+          "file": "spaced_collapsed_reference.md",
+          "line": 1,
+          "code": "missing_reference",
+          "target": "missing",
+          "message": "Referans tanımı bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "defined_spaced_missing_path",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "defined_spaced_missing_path.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_path",
+      "observed_errors": [
+        {
+          "file": "defined_spaced_missing_path.md",
+          "line": 1,
+          "code": "missing_path",
+          "target": "absent-spaced.md",
+          "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "defined_spaced_missing_anchor",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "defined_spaced_missing_anchor.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_anchor",
+      "observed_errors": [
+        {
+          "file": "defined_spaced_missing_anchor.md",
+          "line": 1,
+          "code": "missing_anchor",
+          "target": "target.md#absent-anchor",
+          "message": "Markdown başlığı veya açık HTML id/name bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "missing_image_reference",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "missing_image_reference.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_reference",
+      "observed_errors": [
+        {
+          "file": "missing_image_reference.md",
+          "line": 1,
+          "code": "missing_reference",
+          "target": "missing",
+          "message": "Referans tanımı bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "collapsed_reference",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "collapsed_reference.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_reference",
+      "observed_errors": [
+        {
+          "file": "collapsed_reference.md",
+          "line": 1,
+          "code": "missing_reference",
+          "target": "missing",
+          "message": "Referans tanımı bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "malformed_link",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "malformed_link.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "malformed_link",
+      "observed_errors": [
+        {
+          "file": "malformed_link.md",
+          "line": 1,
+          "code": "malformed_link",
+          "target": "bad",
+          "message": "Bağlantı hedefi veya kapanışı çözümlenemedi."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "malformed_reference",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "malformed_reference.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "malformed_reference",
+      "observed_errors": [
+        {
+          "file": "malformed_reference.md",
+          "line": 1,
+          "code": "malformed_reference",
+          "target": "bad",
+          "message": "Referans tanımı tek satırlı URL ve isteğe bağlı başlık olmalı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "malformed_encoding",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "malformed_encoding.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "malformed_url",
+      "observed_errors": [
+        {
+          "file": "malformed_encoding.md",
+          "line": 1,
+          "code": "malformed_url",
+          "target": "target%ZZ.md",
+          "message": "Geçersiz URL kodlaması veya dosya yolu."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "line_zero",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "line_zero.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "invalid_line_range",
+      "observed_errors": [
+        {
+          "file": "line_zero.md",
+          "line": 1,
+          "code": "invalid_line_range",
+          "target": "source.js#L0",
+          "message": "Satır aralığı hedefin 2 satırı içinde değil."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "line_overflow",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "line_overflow.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "invalid_line_range",
+      "observed_errors": [
+        {
+          "file": "line_overflow.md",
+          "line": 1,
+          "code": "invalid_line_range",
+          "target": "source.js#L3",
+          "message": "Satır aralığı hedefin 2 satırı içinde değil."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "line_reversed",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "line_reversed.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "invalid_line_range",
+      "observed_errors": [
+        {
+          "file": "line_reversed.md",
+          "line": 1,
+          "code": "invalid_line_range",
+          "target": "source.js#L2-L1",
+          "message": "Satır aralığı hedefin 2 satırı içinde değil."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "malformed_line_range",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "malformed_line_range.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "invalid_line_range",
+      "observed_errors": [
+        {
+          "file": "malformed_line_range.md",
+          "line": 1,
+          "code": "invalid_line_range",
+          "target": "source.js#L1-Lx",
+          "message": "Satır fragmenti #L1 veya #L1-L2 biçiminde olmalı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "empty_line_target",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "empty_line_target.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "invalid_line_range",
+      "observed_errors": [
+        {
+          "file": "empty_line_target.md",
+          "line": 1,
+          "code": "invalid_line_range",
+          "target": "empty.txt#L1",
+          "message": "Satır aralığı hedefin 0 satırı içinde değil."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "repository_escape",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "repository_escape.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_path",
+      "observed_errors": [
+        {
+          "file": "repository_escape.md",
+          "line": 1,
+          "code": "missing_path",
+          "target": "../outside.md",
+          "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "code_anchor_is_not_html",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "code_anchor_is_not_html.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_anchor",
+      "observed_errors": [
+        {
+          "file": "code_anchor_is_not_html.md",
+          "line": 1,
+          "code": "missing_anchor",
+          "target": "target.md#code-only",
+          "message": "Markdown başlığı veya açık HTML id/name bulunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "line_on_directory",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "line_on_directory.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "unreadable_fragment_target",
+      "observed_errors": [
+        {
+          "file": "line_on_directory.md",
+          "line": 1,
+          "code": "unreadable_fragment_target",
+          "target": "images#L1",
+          "message": "Fragment hedefi okunabilir UTF-8 dosyası değil."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 1,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "nested_image_missing",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "nested_image_missing.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 1,
+      "observed_rc": 1,
+      "expected_error": "missing_path",
+      "observed_errors": [
+        {
+          "file": "nested_image_missing.md",
+          "line": 1,
+          "code": "missing_path",
+          "target": "missing-image.svg",
+          "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 1,
+        "linksChecked": 2,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "invalid_utf8_input",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "invalid_utf8.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 2,
+      "observed_rc": 2,
+      "expected_error": "invalid_input_file",
+      "observed_errors": [
+        {
+          "file": "invalid_utf8.md",
+          "code": "invalid_input_file",
+          "message": "Depo içindeki okunabilir UTF-8 Markdown dosyası gerekli."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 0,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "missing_input_file",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "nonexistent-input.md"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 2,
+      "observed_rc": 2,
+      "expected_error": "invalid_input_file",
+      "observed_errors": [
+        {
+          "file": "nonexistent-input.md",
+          "code": "invalid_input_file",
+          "message": "Depo içindeki okunabilir UTF-8 Markdown dosyası gerekli."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 0,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "unknown_argument",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json",
+        "--nonsense"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "expected_rc": 2,
+      "observed_rc": 2,
+      "expected_error": "invalid_argument",
+      "observed_errors": [
+        {
+          "code": "invalid_argument",
+          "target": "--nonsense",
+          "message": "Bilinmeyen seçenek; dosya adıysa önce -- kullanın."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 0,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    },
+    {
+      "name": "outside_git_repository",
+      "command": [
+        "/usr/local/bin/node",
+        "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+        "--json"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures",
+      "expected_rc": 2,
+      "observed_rc": 2,
+      "expected_error": "repository_unavailable",
+      "observed_errors": [
+        {
+          "code": "repository_unavailable",
+          "message": "Git depo kökü veya izlenen dosya listesi okunamadı."
+        }
+      ],
+      "observed_counts": {
+        "filesChecked": 0,
+        "linksChecked": 0,
+        "externalHttpSkipped": 0,
+        "otherSchemesSkipped": 0
+      },
+      "fragments_skipped": []
+    }
+  ],
+  "baseline": {
+    "source": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/verification-result-before-speckit-fix.json",
+    "sha256": "6b74e3d715c8da6df025e7f616fb615e019f84daa73aca97fd97ecbcbf115532",
+    "observed_summary": {
+      "result": "pass",
+      "date": "2026-09-13T14:44:38.779Z",
+      "checker": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/scripts/check_links.mjs",
+      "fixtureRepository": "/Users/muratates/code/dou-synapse-l6-runtime/candidates/i6/fixtures/repo",
+      "commandCases": 23,
+      "plainOutputRc": 0,
+      "syntaxRc": 0,
+      "node": "v22.17.1"
+    },
+    "meaning": "Earlier development run, before the Speckit-label parser correction. Only its actually observed plain-output and syntax exit codes form numeric baseline fields. Different fixture counts are not a like-for-like quality improvement or product baseline."
+  },
+  "threshold_provenance": "Expected exit codes and error codes are literal assertions in the archived verifier. CLI zero-exit syntax/plain thresholds are contract expectations, not post-hoc numeric quality thresholds. This is not an LLM evaluation.",
+  "evaluation_references": {
+    "calibration": {
+      "path": ".ai/evidence/090-link-checking-r1.json",
+      "meaning": "This report archives synthetic mechanical fixture/oracle inputs and expected/observed CLI cases; no fitted or numerical calibration run occurred. Fixtures informed implementation and are not held-out."
+    },
+    "holdout": {
+      "path": "docs/link-checking.md",
+      "meaning": "Actual documentation of the subsequent whole-repository acceptance protocol and parsing exclusions. This reference is NOT a blind holdout dataset; no independent holdout-quality score is claimed."
+    },
+    "human_anchor": {
+      "path": ".specify/memory/constitution.md",
+      "sha256": "92001361aedc1073d4ddbb019bbd37305b552a23e1807ca80530b63ef091edd0",
+      "meaning": "Repository governance and human-review requirement only; neither human-labelled link judgments nor a named reviewer approval were collected."
+    }
+  },
+  "synthetic_replay_material": {
+    "verifier_source": "import assert from \"node:assert/strict\";\nimport { execFileSync, spawnSync } from \"node:child_process\";\nimport { mkdirSync, writeFileSync } from \"node:fs\";\nimport { dirname, join } from \"node:path\";\nimport { fileURLToPath } from \"node:url\";\n\nconst root = dirname(fileURLToPath(import.meta.url));\nconst repo = join(root, \"fixtures\", \"repo\");\nconst checker = join(root, \"scripts\", \"check_links.mjs\");\nmkdirSync(join(repo, \"images\"), { recursive: true });\nconst put = (name, text) => writeFileSync(join(repo, name), text);\nexecFileSync(\"git\", [\"init\", \"--quiet\", repo]);\nput(\"source.js\", \"const first = 1;\\nconst second = 2;\\n\");\nput(\"empty.txt\", \"\");\nput(\"images/safe.svg\", '<svg><path id=\"shape\"/></svg>\\n');\nput(\"şey (özel).md\", \"# İçerik\\n\");\nput(\"target.md\", [\n  \"# Başlangıç `Kod`\", \"# Tekrar\", \"# Tekrar\", \"# Tekrar-1\", \"# Tekrar\",\n  \"# İleri\", \"# [Görünen](target.md)\", \"# `[x](y)`\", \"# `<etiket>`\",\n  \"# Başlık &amp; içerik\", \"Setext İkinci\", \"-------------\", '<a id=\"manuel\"></a>',\n  \"# [Başvuru][gönderim]\", \"\", \"[gönderim]: target.md\", \"\",\n  '`<a id=\"code-only\">`', \"\",\n].join(\"\\n\"));\nput(\"good.md\", [\n  \"# Başlık\", \"[base](target.md)\", \"![image](images/safe.svg)\",\n  \"[parentheses](şey%20(özel).md#i\\u0307çerik)\", \"[escaped parentheses](şey%20\\\\(özel\\\\).md#i\\u0307çerik)\",\n  \"[angle path](<şey (özel).md#i\\u0307çerik>)\", `[encoded path](${encodeURIComponent(\"şey (özel).md\")}#${encodeURIComponent(\"i\\u0307çerik\")})`,\n  `[heading](target.md#${encodeURIComponent(\"başlangıç-kod\")})`,\n  \"[duplicate](target.md#tekrar-1)\", \"[collision](target.md#tekrar-1-1)\", \"[duplicate again](target.md#tekrar-2)\",\n  `[dotted i](target.md#${encodeURIComponent(\"i\\u0307leri\")})`,\n  \"[heading link text](target.md#görünen)\", \"[literal code link](target.md#xy)\", \"[literal code tag](target.md#etiket)\",\n  \"[entity](target.md#başlık--içerik)\", \"[setext](target.md#setext-i̇kinci)\", \"[explicit anchor](target.md#manuel)\",\n  \"[reference in heading](target.md#başvuru)\", \"[same document](#başlık)\", \"[line](source.js#L1)\", \"[range](source.js#L1-L2)\",\n  \"[ref link][REF]\", \"[spaced reference] [ref]\", \"[ref][]\", \"[ref]\", \"![image ref][picture]\", \"[![linked image][picture]](target.md)\",\n  \"[ref]: <target.md#tekrar-1> \\\"Başlık\\\"\", \"[picture]: images/safe.svg\", \"\",\n  \"[external](https://example.invalid/no-network)\", \"[angle external](<https://example.invalid/angle>)\", \"<https://example.invalid/auto>\",\n  \"[email](mailto:test@example.invalid)\", \"[svg id](images/safe.svg#shape)\",\n  '[quoted title](target.md \"title with ) bracket\")',\n  \"`[ignore](absent-inline.md)`\", \"``[ignore](absent-multi.md) ` x``\", \"\\\\[escaped](absent-escaped.md)\",\n  \"```md\", \"[ignore](absent-fenced.md)\", \"```\", \"~~~\", \"[ignore](absent-tilde.md)\", \"~~~~\",\n  \"<!-- [ignore](absent-comment.md) -->\", \"\",\n].join(\"\\n\"));\nexecFileSync(\"git\", [\"add\", \"good.md\", \"target.md\", \"şey (özel).md\", \"source.js\", \"empty.txt\", \"images/safe.svg\"], { cwd: repo });\nput(\"untracked.md\", \"[ignore untracked](absent-untracked.md)\\n\");\n\nconst results = [];\nconst invoke = (name, args, expected, code, cwd = repo) => {\n  const execution = spawnSync(process.execPath, [checker, \"--json\", ...args], { cwd, encoding: \"utf8\" });\n  const output = JSON.parse(execution.stdout);\n  const result = { name, command: [process.execPath, checker, \"--json\", ...args], cwd, rc: execution.status, stdout: output, stderr: execution.stderr };\n  results.push(result);\n  assert.equal(execution.status, expected, JSON.stringify(result));\n  if (code) assert.ok(output.errors.some((error) => error.code === code), JSON.stringify(result));\n  return output;\n};\n\ntry {\n  const normal = invoke(\"default_tracked_markdown\", [], 0);\n  assert.equal(normal.filesChecked, 3);\n  assert.equal(normal.externalHttpSkipped, 3);\n  assert.equal(normal.otherSchemesSkipped, 1);\n  assert.equal(normal.fragmentsSkipped.length, 1);\n  assert.ok(normal.linksChecked > 0);\n  const explicit = invoke(\"explicit_and_duplicate_file_arguments\", [\"good.md\", \"good.md\"], 0);\n  assert.equal(explicit.filesChecked, 1);\n  put(\"speckit_labels.md\", [\n    \"- [x] T106 [P] [US4] Dar görev açıklaması.\",\n    \"- [x] T203 [P] [US1] [US2] Paylaşılan görev açıklaması.\",\n    \"- [x] [NEEDS CLARIFICATION] işareti kalmadı.\",\n    \"[P]\\n[US7]\", \"\",\n  ].join(\"\\n\"));\n  const speckit = invoke(\"speckit_labels_are_text\", [\"speckit_labels.md\"], 0);\n  assert.equal(speckit.linksChecked, 0);\n  assert.deepEqual(speckit.errors, []);\n  put(\"defined_spaced_reference.md\", \"[görünür] [hedef]\\n[satır geçişli]\\n[hedef]\\n\\n[hedef]: target.md#başlangıç-kod\\n\");\n  const spaced = invoke(\"defined_spaced_and_newline_references\", [\"defined_spaced_reference.md\"], 0);\n  assert.equal(spaced.linksChecked, 2);\n  const negativeCases = [\n    [\"missing_path\", \"[bad](missing.md)\\n\", \"missing_path\"],\n    [\"missing_anchor\", \"[bad](target.md#missing)\\n\", \"missing_anchor\"],\n    [\"missing_reference\", \"[bad][missing]\\n\", \"missing_reference\"],\n    [\"adjacent_tag_missing_reference\", \"[P][US4]\\n\", \"missing_reference\"],\n    [\"spaced_collapsed_reference\", \"[missing] []\\n\", \"missing_reference\"],\n    [\"defined_spaced_missing_path\", \"[label] [ref]\\n\\n[ref]: absent-spaced.md\\n\", \"missing_path\"],\n    [\"defined_spaced_missing_anchor\", \"[label] [ref]\\n\\n[ref]: target.md#absent-anchor\\n\", \"missing_anchor\"],\n    [\"missing_image_reference\", \"![bad][missing]\\n\", \"missing_reference\"],\n    [\"collapsed_reference\", \"[missing][]\\n\", \"missing_reference\"],\n    [\"malformed_link\", \"[bad](target.md\\n\", \"malformed_link\"],\n    [\"malformed_reference\", \"[bad]: <target.md\\n\", \"malformed_reference\"],\n    [\"malformed_encoding\", \"[bad](target%ZZ.md)\\n\", \"malformed_url\"],\n    [\"line_zero\", \"[bad](source.js#L0)\\n\", \"invalid_line_range\"],\n    [\"line_overflow\", \"[bad](source.js#L3)\\n\", \"invalid_line_range\"],\n    [\"line_reversed\", \"[bad](source.js#L2-L1)\\n\", \"invalid_line_range\"],\n    [\"malformed_line_range\", \"[bad](source.js#L1-Lx)\\n\", \"invalid_line_range\"],\n    [\"empty_line_target\", \"[bad](empty.txt#L1)\\n\", \"invalid_line_range\"],\n    [\"repository_escape\", \"[bad](../outside.md)\\n\", \"missing_path\"],\n    [\"code_anchor_is_not_html\", \"[bad](target.md#code-only)\\n\", \"missing_anchor\"],\n    [\"line_on_directory\", \"[bad](images#L1)\\n\", \"unreadable_fragment_target\"],\n    [\"nested_image_missing\", \"[![bad](missing-image.svg)](target.md)\\n\", \"missing_path\"],\n  ];\n  writeFileSync(join(dirname(repo), \"outside.md\"), \"# Outside\\n\");\n  for (const [name, content, code] of negativeCases) {\n    put(`${name}.md`, content);\n    const output = invoke(name, [`${name}.md`], 1, code);\n    assert.equal(output.errors[0].line, 1);\n  }\n  put(\"invalid_utf8.md\", Buffer.from([0xff, 0xfe]));\n  invoke(\"invalid_utf8_input\", [\"invalid_utf8.md\"], 2, \"invalid_input_file\");\n  invoke(\"missing_input_file\", [\"nonexistent-input.md\"], 2, \"invalid_input_file\");\n  invoke(\"unknown_argument\", [\"--nonsense\"], 2, \"invalid_argument\");\n  invoke(\"outside_git_repository\", [], 2, \"repository_unavailable\", dirname(repo));\n  const plain = spawnSync(process.execPath, [checker, \"good.md\"], { cwd: repo, encoding: \"utf8\" });\n  assert.equal(plain.status, 0);\n  assert.match(plain.stdout, /dış HTTP\\(S\\) kontrol edilmedi: 3/);\n  const syntax = spawnSync(process.execPath, [\"--check\", checker], { encoding: \"utf8\" });\n  assert.equal(syntax.status, 0, syntax.stderr);\n  const summary = { result: \"pass\", date: new Date().toISOString(), checker, fixtureRepository: repo, commandCases: results.length, plainOutputRc: plain.status, syntaxRc: syntax.status, node: process.version };\n  writeFileSync(join(root, \"verification-result.json\"), JSON.stringify(summary, null, 2) + \"\\n\");\n  writeFileSync(join(root, \"verification-log.json\"), JSON.stringify(results, null, 2) + \"\\n\");\n  process.stdout.write(JSON.stringify(summary, null, 2) + \"\\n\");\n} catch (error) {\n  writeFileSync(join(root, \"verification-log.json\"), JSON.stringify(results, null, 2) + \"\\n\");\n  writeFileSync(join(root, \"verification-result.json\"), JSON.stringify({ result: \"fail\", message: error.message, casesRun: results.length }, null, 2) + \"\\n\");\n  throw error;\n}\n",
+    "verifier_sha256": "658c9c3252787657e8f7dd1190d0f0283ddddec1705fb1718eb6c12a0ff78b7e",
+    "fixtures": [
+      {
+        "path": "outside.md",
+        "sha256": "d72d2d4beaf8f2dbec4e6eff9a09901af762d3c5987ea3a2da3deef7122f7f2b",
+        "bytes_base64": "IyBPdXRzaWRlCg=="
+      },
+      {
+        "path": "repo/adjacent_tag_missing_reference.md",
+        "sha256": "2c87b481dfd37ddec61cfb236082e7f1a9421e05760bffe9b0b80249c39c249b",
+        "bytes_base64": "W1BdW1VTNF0K"
+      },
+      {
+        "path": "repo/code_anchor_is_not_html.md",
+        "sha256": "78dee484b9155fe7a654656a06431015fe49e57b2ef4e8a41bbf4ada7ba20c47",
+        "bytes_base64": "W2JhZF0odGFyZ2V0Lm1kI2NvZGUtb25seSkK"
+      },
+      {
+        "path": "repo/collapsed_reference.md",
+        "sha256": "074da2543efde6d8e537b90cb7a436147eeef276a9c65e1f16ef79d325941fd6",
+        "bytes_base64": "W21pc3NpbmddW10K"
+      },
+      {
+        "path": "repo/defined_spaced_missing_anchor.md",
+        "sha256": "d6f67cf32f97b4228b242c2158cb91e355561c08490172e254eadd69fb1820b6",
+        "bytes_base64": "W2xhYmVsXSBbcmVmXQoKW3JlZl06IHRhcmdldC5tZCNhYnNlbnQtYW5jaG9yCg=="
+      },
+      {
+        "path": "repo/defined_spaced_missing_path.md",
+        "sha256": "a1657a03853994bf5e75deaf1f1791c5642c73b9b5bca0b541eddb93fc5fe90f",
+        "bytes_base64": "W2xhYmVsXSBbcmVmXQoKW3JlZl06IGFic2VudC1zcGFjZWQubWQK"
+      },
+      {
+        "path": "repo/defined_spaced_reference.md",
+        "sha256": "6c596dcf2810cdc06c78629db2f026bf2a8bd60bf15d946bd732b833e3a67496",
+        "bytes_base64": "W2fDtnLDvG7DvHJdIFtoZWRlZl0KW3NhdMSxciBnZcOnacWfbGldCltoZWRlZl0KCltoZWRlZl06IHRhcmdldC5tZCNiYcWfbGFuZ8Sxw6cta29kCg=="
+      },
+      {
+        "path": "repo/empty.txt",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes_base64": ""
+      },
+      {
+        "path": "repo/empty_line_target.md",
+        "sha256": "7bbef1b7f087327dc6df9ece8e626a40b024621ee543768beff75c8000aa5fc8",
+        "bytes_base64": "W2JhZF0oZW1wdHkudHh0I0wxKQo="
+      },
+      {
+        "path": "repo/good.md",
+        "sha256": "9c79c71cdbf519911175ed839be3018bdc87af544d21a96c2f98f51854bce34e",
+        "bytes_base64": "IyBCYcWfbMSxawpbYmFzZV0odGFyZ2V0Lm1kKQohW2ltYWdlXShpbWFnZXMvc2FmZS5zdmcpCltwYXJlbnRoZXNlc10oxZ9leSUyMCjDtnplbCkubWQjacyHw6dlcmlrKQpbZXNjYXBlZCBwYXJlbnRoZXNlc10oxZ9leSUyMFwow7Z6ZWxcKS5tZCNpzIfDp2VyaWspClthbmdsZSBwYXRoXSg8xZ9leSAow7Z6ZWwpLm1kI2nMh8OnZXJpaz4pCltlbmNvZGVkIHBhdGhdKCVDNSU5RmV5JTIwKCVDMyVCNnplbCkubWQjaSVDQyU4NyVDMyVBN2VyaWspCltoZWFkaW5nXSh0YXJnZXQubWQjYmElQzUlOUZsYW5nJUM0JUIxJUMzJUE3LWtvZCkKW2R1cGxpY2F0ZV0odGFyZ2V0Lm1kI3Rla3Jhci0xKQpbY29sbGlzaW9uXSh0YXJnZXQubWQjdGVrcmFyLTEtMSkKW2R1cGxpY2F0ZSBhZ2Fpbl0odGFyZ2V0Lm1kI3Rla3Jhci0yKQpbZG90dGVkIGldKHRhcmdldC5tZCNpJUNDJTg3bGVyaSkKW2hlYWRpbmcgbGluayB0ZXh0XSh0YXJnZXQubWQjZ8O2csO8bmVuKQpbbGl0ZXJhbCBjb2RlIGxpbmtdKHRhcmdldC5tZCN4eSkKW2xpdGVyYWwgY29kZSB0YWddKHRhcmdldC5tZCNldGlrZXQpCltlbnRpdHldKHRhcmdldC5tZCNiYcWfbMSxay0tacOnZXJpaykKW3NldGV4dF0odGFyZ2V0Lm1kI3NldGV4dC1pzIdraW5jaSkKW2V4cGxpY2l0IGFuY2hvcl0odGFyZ2V0Lm1kI21hbnVlbCkKW3JlZmVyZW5jZSBpbiBoZWFkaW5nXSh0YXJnZXQubWQjYmHFn3Z1cnUpCltzYW1lIGRvY3VtZW50XSgjYmHFn2zEsWspCltsaW5lXShzb3VyY2UuanMjTDEpCltyYW5nZV0oc291cmNlLmpzI0wxLUwyKQpbcmVmIGxpbmtdW1JFRl0KW3NwYWNlZCByZWZlcmVuY2VdIFtyZWZdCltyZWZdW10KW3JlZl0KIVtpbWFnZSByZWZdW3BpY3R1cmVdClshW2xpbmtlZCBpbWFnZV1bcGljdHVyZV1dKHRhcmdldC5tZCkKW3JlZl06IDx0YXJnZXQubWQjdGVrcmFyLTE+ICJCYcWfbMSxayIKW3BpY3R1cmVdOiBpbWFnZXMvc2FmZS5zdmcKCltleHRlcm5hbF0oaHR0cHM6Ly9leGFtcGxlLmludmFsaWQvbm8tbmV0d29yaykKW2FuZ2xlIGV4dGVybmFsXSg8aHR0cHM6Ly9leGFtcGxlLmludmFsaWQvYW5nbGU+KQo8aHR0cHM6Ly9leGFtcGxlLmludmFsaWQvYXV0bz4KW2VtYWlsXShtYWlsdG86dGVzdEBleGFtcGxlLmludmFsaWQpCltzdmcgaWRdKGltYWdlcy9zYWZlLnN2ZyNzaGFwZSkKW3F1b3RlZCB0aXRsZV0odGFyZ2V0Lm1kICJ0aXRsZSB3aXRoICkgYnJhY2tldCIpCmBbaWdub3JlXShhYnNlbnQtaW5saW5lLm1kKWAKYGBbaWdub3JlXShhYnNlbnQtbXVsdGkubWQpIGAgeGBgClxbZXNjYXBlZF0oYWJzZW50LWVzY2FwZWQubWQpCmBgYG1kCltpZ25vcmVdKGFic2VudC1mZW5jZWQubWQpCmBgYAp+fn4KW2lnbm9yZV0oYWJzZW50LXRpbGRlLm1kKQp+fn5+CjwhLS0gW2lnbm9yZV0oYWJzZW50LWNvbW1lbnQubWQpIC0tPgo="
+      },
+      {
+        "path": "repo/images/safe.svg",
+        "sha256": "dc4052b8c675665767f69dfab924387348084625ea7e06cde307f4fa485d879f",
+        "bytes_base64": "PHN2Zz48cGF0aCBpZD0ic2hhcGUiLz48L3N2Zz4K"
+      },
+      {
+        "path": "repo/invalid_utf8.md",
+        "sha256": "b3d510ef04275ca8e698e5b3cbb0ece3949ef9252f0cdc839e9ee347409a2209",
+        "bytes_base64": "//4="
+      },
+      {
+        "path": "repo/line_on_directory.md",
+        "sha256": "74189f83abf72d96f3b998bc702bda7687924ace39df574b4d2e244a17feeb18",
+        "bytes_base64": "W2JhZF0oaW1hZ2VzI0wxKQo="
+      },
+      {
+        "path": "repo/line_overflow.md",
+        "sha256": "a47c72fe37ff0ad3790e50f14946bb0562410c0c2916860eb18356cc4a3f8588",
+        "bytes_base64": "W2JhZF0oc291cmNlLmpzI0wzKQo="
+      },
+      {
+        "path": "repo/line_reversed.md",
+        "sha256": "a7065b70fb1b8bc5c596f595270080cb78fe08362876bf3fce0d2c4b99f4ad12",
+        "bytes_base64": "W2JhZF0oc291cmNlLmpzI0wyLUwxKQo="
+      },
+      {
+        "path": "repo/line_zero.md",
+        "sha256": "8f1914f39c60a6b92328648170f571092f853f774a0d05e9fa872facc34cc44b",
+        "bytes_base64": "W2JhZF0oc291cmNlLmpzI0wwKQo="
+      },
+      {
+        "path": "repo/malformed_encoding.md",
+        "sha256": "42e20d5d89ab79beaa39ffbce84b9fb6739734f7b5e0ef20f8c3d3871707f55e",
+        "bytes_base64": "W2JhZF0odGFyZ2V0JVpaLm1kKQo="
+      },
+      {
+        "path": "repo/malformed_line_range.md",
+        "sha256": "64f5a227e510dc31ed7eae1307676f85a4aba27c882ae20ec87452954d1d7e18",
+        "bytes_base64": "W2JhZF0oc291cmNlLmpzI0wxLUx4KQo="
+      },
+      {
+        "path": "repo/malformed_link.md",
+        "sha256": "f2fd0cb6c13656fff065686a34f1065592cb9d1168a7ea6423191879eac98fb4",
+        "bytes_base64": "W2JhZF0odGFyZ2V0Lm1kCg=="
+      },
+      {
+        "path": "repo/malformed_reference.md",
+        "sha256": "8e1668b7cb00161e2fd0391c0aa872c278854540968fbf424852ee5eccfd4dfd",
+        "bytes_base64": "W2JhZF06IDx0YXJnZXQubWQK"
+      },
+      {
+        "path": "repo/missing_anchor.md",
+        "sha256": "e8aa3402f94783ac51d992bf34a28d82ef71f94d3e1a7f12c85977a1ce501f5d",
+        "bytes_base64": "W2JhZF0odGFyZ2V0Lm1kI21pc3NpbmcpCg=="
+      },
+      {
+        "path": "repo/missing_image_reference.md",
+        "sha256": "380eace3dbc85926432b1d4c200a3478742c7d87717c8e276f9ba1ef66d32cb9",
+        "bytes_base64": "IVtiYWRdW21pc3NpbmddCg=="
+      },
+      {
+        "path": "repo/missing_path.md",
+        "sha256": "2054408adcea86448dbe59d0352aad058515a4ed897406994e8dcd30670b44c4",
+        "bytes_base64": "W2JhZF0obWlzc2luZy5tZCkK"
+      },
+      {
+        "path": "repo/missing_reference.md",
+        "sha256": "42291d0e84517f6066361c9481eccc0782438b3051ba83cbc00261027fce2ba1",
+        "bytes_base64": "W2JhZF1bbWlzc2luZ10K"
+      },
+      {
+        "path": "repo/nested_image_missing.md",
+        "sha256": "f3d26ee59ada2ec52565e39cfdd4a15ed513fbd6e7ff4fa997456e54f8e8ed98",
+        "bytes_base64": "WyFbYmFkXShtaXNzaW5nLWltYWdlLnN2ZyldKHRhcmdldC5tZCkK"
+      },
+      {
+        "path": "repo/repository_escape.md",
+        "sha256": "852bbe77236f8c6da3000d1a283ba43fa220fa82e5501499de86847a69a79eb5",
+        "bytes_base64": "W2JhZF0oLi4vb3V0c2lkZS5tZCkK"
+      },
+      {
+        "path": "repo/source.js",
+        "sha256": "c0807afc22927dbfe412dc2cd558ce6116f0c604cf31a218190dee87ef6965df",
+        "bytes_base64": "Y29uc3QgZmlyc3QgPSAxOwpjb25zdCBzZWNvbmQgPSAyOwo="
+      },
+      {
+        "path": "repo/spaced_collapsed_reference.md",
+        "sha256": "d557ac0f50c09037bf9639a6dd13b768831faab3b4166f8948c8ae41aa421574",
+        "bytes_base64": "W21pc3NpbmddIFtdCg=="
+      },
+      {
+        "path": "repo/speckit_labels.md",
+        "sha256": "b5dd9c88ee29968049ccd70fe97d93bd8554ddf3664d42edc55662d44899458d",
+        "bytes_base64": "LSBbeF0gVDEwNiBbUF0gW1VTNF0gRGFyIGfDtnJldiBhw6fEsWtsYW1hc8SxLgotIFt4XSBUMjAzIFtQXSBbVVMxXSBbVVMyXSBQYXlsYcWfxLFsYW4gZ8O2cmV2IGHDp8Sxa2xhbWFzxLEuCi0gW3hdIFtORUVEUyBDTEFSSUZJQ0FUSU9OXSBpxZ9hcmV0aSBrYWxtYWTEsS4KW1BdCltVUzddCg=="
+      },
+      {
+        "path": "repo/target.md",
+        "sha256": "52638e77690beb3800162e3216d1f3da2f4480b0066f78cc064b56189afca050",
+        "bytes_base64": "IyBCYcWfbGFuZ8Sxw6cgYEtvZGAKIyBUZWtyYXIKIyBUZWtyYXIKIyBUZWtyYXItMQojIFRla3JhcgojIMSwbGVyaQojIFtHw7Zyw7xuZW5dKHRhcmdldC5tZCkKIyBgW3hdKHkpYAojIGA8ZXRpa2V0PmAKIyBCYcWfbMSxayAmYW1wOyBpw6dlcmlrClNldGV4dCDEsGtpbmNpCi0tLS0tLS0tLS0tLS0KPGEgaWQ9Im1hbnVlbCI+PC9hPgojIFtCYcWfdnVydV1bZ8O2bmRlcmltXQoKW2fDtm5kZXJpbV06IHRhcmdldC5tZAoKYDxhIGlkPSJjb2RlLW9ubHkiPmAK"
+      },
+      {
+        "path": "repo/untracked.md",
+        "sha256": "473f465b5073ac0d1def2324ccc5c0678063ab7fd1e2dab77a866c58ddb9df91",
+        "bytes_base64": "W2lnbm9yZSB1bnRyYWNrZWRdKGFic2VudC11bnRyYWNrZWQubWQpCg=="
+      },
+      {
+        "path": "repo/şey (özel).md",
+        "sha256": "ade7ea77668f783504cbe49cfb57d3d1badb6c08661caad7544eef235164ce66",
+        "bytes_base64": "IyDEsMOnZXJpawo="
+      }
+    ],
+    "limitation": "Archived runtime fixture bytes were collected at assembly. The verifier reconstructs its own fixtures; the authoritative executed evidence is the hashed final log. This archive was not independently rerun."
+  },
+  "historical_repository_scan": {
+    "status": "ENGEL",
+    "phase": "Before I1; 2026-09-13, root-owned prior observation",
+    "sha256": "58c103cc6096571def4c9f3eac21973b9f5536558cc91ce397a36b80a30e2863",
+    "observed_error_count": 30,
+    "errors": [
+      {
+        "file": "specs/018-codex-production-line/evidence/c1-final-acceptance.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/specs/018-codex-production-line/evidence/c1-report.md",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d1-http-measured-02/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d1-http-measured-02/http-results.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d1-http-provision-02/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+        "line": 21,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d1-http-independent-audit.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+        "line": 27,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d1-http-measured-01/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-d2-implementation-candidate/files/supabase/migrations/0026_ingestion_claim_leases.sql:34",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/supabase/migrations/0008_exam_blueprint.sql:325",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-d2-stage-01/apps/api/app/modules/ingestion/claims.py:250",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-d2-stage-01/apps/api/app/modules/ingestion/claims.py:156",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-d2-stage-01/apps/api/app/api/documents.py:193",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 9,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-d2-lineage-regression.py",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 9,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-lineage-red-01/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 9,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-lineage-red-01/tests.log",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+        "line": 17,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-independent-migration-review.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+        "line": 3,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-d2-process-measured-01/report.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+        "line": 3,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-process-provision-01/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+        "line": 9,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-d2-process-acceptance/process_acceptance.py:1255",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+        "line": 9,
+        "code": "missing_path",
+        "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/main.py:191",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+        "line": 11,
+        "code": "missing_path",
+        "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/docs/kvkk.md:28",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+        "line": 11,
+        "code": "missing_path",
+        "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/docs/security/privacy-review-2026-09-08.md:43",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+        "line": 13,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-process-v1-independent-review.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+        "line": 3,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-independent-migration-review.md",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-stage-tests-02/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-stage-tests-02/tests.log",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+        "line": 11,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-migration-preconditions-01/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+        "line": 15,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-v2-authority-acceptance-addendum.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md",
+        "line": 3,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-v2-authority-acceptance-addendum.md",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md",
+        "line": 5,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-migration-positive-01/result.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      },
+      {
+        "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md",
+        "line": 9,
+        "code": "missing_path",
+        "target": "/private/tmp/dou018-evidence/d2-v2-legacy-positive-addendum.json",
+        "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+      }
+    ],
+    "result_is_not_current_tree_acceptance": true
+  },
+  "final_repository_scan": {
+    "status": "blocked",
+    "evidence_sha256": "f6c5e74264941159379537ea3dc85e2b680d46043be9b880ff7d871bda6d0d74",
+    "record": {
+      "date": "2026-09-13T16:54:52.654443+00:00",
+      "source_head": "92bd8bc6ad593c53911f414b7c2913a9c783548f",
+      "checker_sha256": "513aa20915269befa02821c51baccc4a10dbcc5392372ca7e3ab569e886c96d1",
+      "command": [
+        "node",
+        "scripts/check_links.mjs",
+        "--json"
+      ],
+      "cwd": "/Users/muratates/code/dou-synapse-l6-frontend-docs",
+      "rc": 1,
+      "source_files_sha256": {
+        ".agents/skills/dou-entegrasyon/SKILL.md": "bedfcbd3da2419328881243eff54d275b8f89999fe02a706c507ad23bee3823b",
+        ".agents/skills/dou-kanit/SKILL.md": "2d24ac582b38a6083cee47715747e621b540212f661e50c17e066f2fde88c312",
+        ".agents/skills/dou-kurulum/SKILL.md": "097084ddd578487db8926b39ba32cbf661986651bbe6fffca361955b23ab89e9",
+        ".agents/skills/speckit-analyze/SKILL.md": "56e9504002fe2d4093f5594e54fdf61287a16a366aa6d15dc865c901f7311e26",
+        ".agents/skills/speckit-checklist/SKILL.md": "82477e010cbb00bfe9b478cc3d665b7fad9d02af8376496350aaaf00a8355f93",
+        ".agents/skills/speckit-clarify/SKILL.md": "eb0d8f3f7cf15beb5bc9018f4d103fefffd37530b63ee1547c802353af0722db",
+        ".agents/skills/speckit-constitution/SKILL.md": "1c933315135c72d3facdb9fb7b0fb1414147115fa3c151aca378b640ffcb803e",
+        ".agents/skills/speckit-git-commit/SKILL.md": "ce7c2ee520310888e2808dcd5eab1ae23ce72a265ce789373d262e3f4eee88ed",
+        ".agents/skills/speckit-git-feature/SKILL.md": "449e1f4b42077d87d8059880a29165217fcd067211ef915cf74eb9f5562fa30f",
+        ".agents/skills/speckit-git-initialize/SKILL.md": "2c568ddf2f9db1af61e6624d7dc5b746b0fa73b550479aa1418141718f1b1f84",
+        ".agents/skills/speckit-git-remote/SKILL.md": "2631a2328895d473b3418684256da046e4c637729c1515217d95190d7bcaf580",
+        ".agents/skills/speckit-git-validate/SKILL.md": "68786a81dbcde6ad5c991b8be28fe77530fa6780de836d5393032bda2ba2d84a",
+        ".agents/skills/speckit-implement/SKILL.md": "25d7359b61bc9ca76a75f4158a1d3b8364e5c6bc7de37f3854a76758f2f59abb",
+        ".agents/skills/speckit-plan/SKILL.md": "de47f92a98443412dc5aed95d019d7c89fd91c8fef72947736296e39cc9192db",
+        ".agents/skills/speckit-specify/SKILL.md": "6f68ca54b3c2feac037a018dd5bd3593089e87a4dcf9816e81bb78b0e89a957b",
+        ".agents/skills/speckit-tasks/SKILL.md": "122bc2f1bdf2bd8c67c6f8e3e7263692d9c208fbf3e60ebf85299975d7dcab67",
+        ".agents/skills/speckit-taskstoissues/SKILL.md": "97e85c2e14669e205e1438f3799e3b14badf85711606d291f7aeb5e3d3f8c065",
+        ".ai/README.md": "3be993a93233a28f3ebe2b7fd7e9b4e16f7f13701581152e9904017c38d45256",
+        ".claude/skills/dou-entegrasyon/SKILL.md": "bedfcbd3da2419328881243eff54d275b8f89999fe02a706c507ad23bee3823b",
+        ".claude/skills/dou-kanit/SKILL.md": "2d24ac582b38a6083cee47715747e621b540212f661e50c17e066f2fde88c312",
+        ".claude/skills/dou-kurulum/SKILL.md": "097084ddd578487db8926b39ba32cbf661986651bbe6fffca361955b23ab89e9",
+        ".claude/skills/speckit-analyze/SKILL.md": "2eef0fbff6cad15c9d4714d8986192387811c971a82a1135ab0404f3db0c5e90",
+        ".claude/skills/speckit-checklist/SKILL.md": "26419fc118dcd9c4e1e977460696a04b7757b8fb0a2d1ff9c64732669deb7977",
+        ".claude/skills/speckit-clarify/SKILL.md": "f2560f9f2007b4e995130f0c42633f08837a76a35d94e84091713a6f39bb1064",
+        ".claude/skills/speckit-constitution/SKILL.md": "c1a044aba243ca6aff627fb5e4404feb6f1108d4f7dd174631bee3ae477d6c15",
+        ".claude/skills/speckit-git-commit/SKILL.md": "5c7bf976944f5ab6d6dbc143c160aa8742d2f303abdf1453688535d5ceffa1c4",
+        ".claude/skills/speckit-git-feature/SKILL.md": "50a413ca98b650a81c773769613afa1e9042851e6057f9a7e049aa801f6d0ed0",
+        ".claude/skills/speckit-git-initialize/SKILL.md": "2c3e80ca3f596720c064122b930eb224a87b4a9575f58db4a0c32de3bbc0be99",
+        ".claude/skills/speckit-git-remote/SKILL.md": "045d34977a70cae585b8bc0adbfd378374498f1a6c59c77615923e64f8d1b3f0",
+        ".claude/skills/speckit-git-validate/SKILL.md": "ab7656044903e878e73c8bd9d40d3d46cd6fecff6e054780ceb9e81ffa18c923",
+        ".claude/skills/speckit-implement/SKILL.md": "6029565c1a56de8919d1846b187cd644f734a0e30a6067a709803e6bc0d2abf7",
+        ".claude/skills/speckit-plan/SKILL.md": "8141ebbce228ad0b422a84e3b995d2bd85de917b96eadd02b5fcb56fb23f2594",
+        ".claude/skills/speckit-specify/SKILL.md": "caadc05119eca453709a0425ed88d253883f9c55da4c13a4898367653a859483",
+        ".claude/skills/speckit-tasks/SKILL.md": "54c4665be61818ed50aa528bb4c51db3627079b2c67d47f2b01046268288c4a5",
+        ".claude/skills/speckit-taskstoissues/SKILL.md": "99bf5ffd90dcb57b63007c7f659a5160a18ce6feb82889895808e2d277abe83b",
+        ".github/pull_request_template.md": "ecb8e344e0c1b806dcb626daab60ddd66106b58fa838f1b98df61b268c1ba041",
+        ".release/README.md": "a72ddf4b01d8e6778a2e445765c79dbb4b4d46c286f65c1cc83622c451ef1e74",
+        ".specify/extensions/git/README.md": "38c0140b7804028cf0d212a29b930c9183f4eec7dcaf3ebc4af080653e290924",
+        ".specify/extensions/git/commands/speckit.git.commit.md": "445ed4cd43c8e685de294b68c841b8f15e082f7033f74b042feddd59edf7779c",
+        ".specify/extensions/git/commands/speckit.git.feature.md": "8e5788984c7423ecf9cbb984cca8043c2f35f28987c955f6a999154fe8d4059a",
+        ".specify/extensions/git/commands/speckit.git.initialize.md": "07bf0e1a9fc251482774141be5a903cbeb018f90cb66b2d29a5fff7f0bd3ecb7",
+        ".specify/extensions/git/commands/speckit.git.remote.md": "00397aff45bf00d3111b4f162e4220fd5a9020e72e4afe9179859c21bcd8aac3",
+        ".specify/extensions/git/commands/speckit.git.validate.md": "d8f8e5ecc52e819749f355b6dd1ad8400e9b1dfe03882a12c0d2369530f1f083",
+        ".specify/memory/constitution.md": "92001361aedc1073d4ddbb019bbd37305b552a23e1807ca80530b63ef091edd0",
+        ".specify/templates/checklist-template.md": "c37695297e5d3153d64f82c21223509940b13932046c7961c42d1d669516130c",
+        ".specify/templates/constitution-template.md": "ce7549540fa45543cca797a150201d868e64495fdff39dc38246fb17bd4024b3",
+        ".specify/templates/plan-template.md": "cc7f7979cf8d8836ec26492785affd80791d3422a2b745062ec695be8c985ef7",
+        ".specify/templates/spec-template.md": "3945437fc35cd30a5b2bf7beea680337c3516826d3efa5a6b92c4a7eca1ba28e",
+        ".specify/templates/tasks-template.md": "fc29a233f6f5a27ca31f1aa46b596af6500c627441c6e62b2bc4a1d721525842",
+        "ARCHITECTURE.md": "f4a2ba77c29e9ebad7c233eb239e99210a37b2211d31082f775fc2ec3f93995e",
+        "DESIGN.md": "6fca67022dd53d0b1da096c48c99fd74b57ccaff57b39fd77d68fbe438eeb40b",
+        "PLAN.md": "b9d0c073cb752cb901a504b110cef4f704b7337c02cc04c881aeafcee5d3b7a8",
+        "README.md": "436537a680af152a58a71d8ed3bbdb9c2e8c7efbbb01d8b0e6fddfb7437154f5",
+        "apps/api/README.md": "69be0183b35c0242cdc6b297ec3b2bbd23ed10a26aa6563f7eb163b0006ed913",
+        "apps/web/AGENTS.md": "63f2c50380ed6303237cce215ce27af1d620d094c215e28d1b1538a3c070e3bb",
+        "apps/web/CLAUDE.md": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
+        "apps/web/README.md": "60b55ff7df79af72590f9524208e46642bc32bdc175cdad41349681c0e2f958f",
+        "docs/PRODUCT_PARITY_AND_PRODUCTION_ROADMAP.md": "b354a3a462b7a26ea303cf1a08353034078643696136202e49884fc12f55c8d5",
+        "docs/RAD_PROMPTLARI.md": "42b1c0b72503850f68c79aff130ea8ea016b4197d5499fe2924de822f08c8d22",
+        "docs/accessibility.md": "ff39babedb2f9b37caaa97c659cdb136d27a216fdc15de474eab717305f85ffc",
+        "docs/admin-guide.md": "df7863c2fde5376a8838215e9c17e62c45a13553dc59401d8d351d7e27821b8b",
+        "docs/adr/0001-build-once-promote-by-digest.md": "80fa6ccc98793edd146d517dfa774dbf96fcc4b75446fc5c55b01d5a1b23d50c",
+        "docs/adr/README.md": "40f69af72da5fe899980b0966d549eded8948dcbbce440f8f9d056c0b1640cc4",
+        "docs/adr/template.md": "92a402b6fc76a7d3428ab619d47a0d11f701073fad85a5cd1bf9cf87cd3d3924",
+        "docs/agent-skills.md": "90aa33cdcf31596cf8b03be5d53b69787b16537704b07cfe9bd855c7f074a34e",
+        "docs/agents-skills-inventory.md": "bb7da97b582e370164a0710fe619b2a8cc23ea8cf7e07bc1d5ed3e4426b53017",
+        "docs/completion-program.md": "ef1c7247620593bf9593ec11f5397fcd3af7271b3a0727e854f20147118d58fe",
+        "docs/demo-script.md": "be69d1ff8c31b471b1f4593d5b56273f63cec47ad9251cc69948da038a873eca",
+        "docs/deployment.md": "cc6b60cc440f4644bf9923764c2b3649d7e8df54d9b70a777ca81a5a37ed721d",
+        "docs/development/owned-e2e.md": "722cfd4ca211da1f7c22c2d268d4accc5bf72c52b538e89453b65590dbcf8ca1",
+        "docs/engineering/AI_SDLC.md": "333e3cc476b1fe0c62506f3f48863eaf270d0987214b33f410cf8ffe5c21022c",
+        "docs/engineering/ENGINEERING_EXCELLENCE.md": "4fc43f00ca8bc347a75be3498cc46f068b0c8c10ed54d669e693fcd3729b28b9",
+        "docs/engineering/INCIDENT_RESPONSE.md": "366a76d3f489f46cc62149473fd31e96808aa12d23e082914347aa74bcbbb3a2",
+        "docs/engineering/RELEASE_PROCESS.md": "ab57788edc773edb54987451f0e547b2da27df81b3494ea65a66afebcafdd7f3",
+        "docs/engineering/SLO.md": "19ba45de6e53a9e0bed4da86eb6bbbbe3a4f4763362e7e167b84f026a6ea551a",
+        "docs/instructor-guide.md": "093666544bea9b1b98af5235de8abe059566e53407b7e4b100b972fe7f7a7192",
+        "docs/jury-demo.md": "d607d45adc344140670f1b7ff150c5774ba649602d6e68e736cd1309ab09f243",
+        "docs/kvkk.md": "aae15d48f82be09b515ad48d52fd1a6ec7e260f0fd34b8e8a328cbdd8b336c88",
+        "docs/operations/ingestion-recovery.md": "c6ad4a6bd3888ad2c61e98af435856a7d8c9b6c0ed07e05da9d8b31498521d2a",
+        "docs/operations/logging-privacy.md": "bac6563422adb216c82b5a43fc59e20d39574b41a96f7eca8b92e78158deff99",
+        "docs/operations/shared-request-quota.md": "e5db73c85fcb904e20f07659dc8572c45944a10820a52db3a06cd6a878878bee",
+        "docs/provider-readiness.md": "9f537211e0bca0c68799217694f7c02513941786529fedd3d9e3e618899e50de",
+        "docs/recovery.md": "2ada4fb268b6acaff6f3af9615a2e170e6f200cbc7d3cb11c9c44894040ce48d",
+        "docs/requirements-analysis.md": "112989fe5aa4969c39cd16c49f4fe8908b2774afa41c570ab1bd89db4322a13a",
+        "docs/runbook.md": "7996ea8f6f8277f373ab04fa39f8d63d5ddc21b1e1cb8017727c0bc97415ae8a",
+        "docs/security.md": "9680926b0f2028365b42f15a1d92046e2083cb227642f43d1d52c49bb450d2bf",
+        "docs/security/privacy-review-2026-09-08.md": "c474d5e7221ec3bbf3e8533e2423201c75e6d9ad8a52e473c22d6ce5e5c7c341",
+        "docs/student-guide.md": "f8ab6781e2e417f9596bc4bc17d4754c6783b267f0fd57962b8deaed0da8b1ea",
+        "docs/team/00_TAKIM_KOORDINASYON.md": "ff5bf24e2bccc5bd44a089ae0e2c47c4fb479dd273768125714fab724f792d8c",
+        "docs/team/01_BACKEND_RAG_BRIEF.md": "5fb5122914dc5ad8f4edd03951a95ee810d171e1479bdb97c03c948780d08d80",
+        "docs/team/02_GUARDRAIL_QA_BRIEF.md": "6001e02d03e4135df6c62b3a58e307acd81f665fae1876b18b0a52227b69951c",
+        "docs/team/03_ASSESSMENT_BRIEF.md": "301408e1811c1dd187b297cec67dda8aa549b1c5be5612bb4d8dce31db58463c",
+        "docs/team/04_FRONTEND_BRIEF.md": "b15c6dced2ca2126cb61a73663a07e136199d9df9c4cf49bb1a5acdfab5108a4",
+        "docs/team/05_DATA_EVAL_BRIEF.md": "24a90502532b877c6ee2abef8a62fd228626c94af2c88c6241a16cac491d52ca",
+        "docs/team/AI_ASISTAN_BASLANGIC.md": "354b03df1805143195d185eaf793e3f61e67e85326e00d3841dcd1b73932af29",
+        "docs/team/CLAUDE_DESIGN_PROMPT.md": "1137a33a424189770318f8b3de70a548619e97f22bd6e7eb41a4dd05ca46d5b0",
+        "docs/team/HANDOFF.md": "9a33e23f6adeafff5a74e80bc3141c79241c7d297ea5861e085a456d2b22ed16",
+        "docs/team/METEHAN_YOL_HARITASI.md": "330fce1951e469bc424bb61cc0a485c262bda01571f50fb0e2cb92c1ac6dbacf",
+        "docs/team/PR_INCELEME_2026-08-06.md": "b2153ce5510ac89d403621af4652169d7078675a5ac4e93b907f5b0f00197a2c",
+        "docs/team/VIDEO_SENARYOSU.md": "31730d2049aa477acf2d2dbb73b57ef6233ed1427e0f8763675a5e2bd4b6b2e2",
+        "docs/team/codex/2026-09-09-window-checkpoint.md": "d71bee7b56592d52f16b6be10620eebcaf496f81ea603b71b4a9ec64a9122758",
+        "docs/team/codex/40-BIRLESIK-PLAN.md": "1f02efeaef4ca933188e9c9c79434c69cd78da520ba0dabf7a124a48fa5aa92b",
+        "docs/team/codex/CODEX-ILK-MESAJ.md": "3a47038ba76d724118e6629938fe2427ec8106d499ebae4f66ae040024c1ecc4",
+        "docs/team/codex/CODEX-RUNBOOK.md": "fcffc5b20e7677f1fd4c9a4c403a74ed16463a4bee8e506a055f9feaf3711b72",
+        "docs/team/modularization-v2-audit.md": "30dda4c4500c44257af7184eb71a4cced8620849ba5fe954493b3d5ac0f1cad1",
+        "docs/team/parallel/00_OKU_ONCE.md": "d075aee8a0295c5c466e175a2b9763f0a80c55cdf565df44e3856b5e9dbfbc0c",
+        "docs/team/parallel/01_RETRIEVAL.md": "d0ebd2dacc7c9f407000436a132f6ecb52792ac4313f89f7154489327328ea8d",
+        "docs/team/parallel/02_GENERATION.md": "ebe0af2938ffd705dd6abd5e87ff32ba5ca03271ce54b5efe3c77be1da529efe",
+        "docs/team/parallel/03_CHAT_SOKRATIK.md": "a24a19ab07337ee9f2a95792c3728908bb7535dade6aa53b3f46ba1bc849f14b",
+        "docs/team/parallel/04_SORU_SINAV.md": "e94fc0dcdc9ade0400e4a7730b971e54640464a625e28d1e908c0e256e8ad17a",
+        "docs/team/parallel/05_ANALITIK_EVAL.md": "6ae3b8ac6583d8958afff33748ca8585202936a4096bf338f426a7806777591e",
+        "docs/team/parallel/06_LIDER_DEVIR.md": "fbf355741c9a5ac05fd71e5856e33911d93118f18962d9db15c5fdcbf1ac4985",
+        "docs/team/parallel/07_SERIT_RAPORLARI.md": "975f63e0f829067084dbe4b60a40a1ebf8f5e0d598d4d3fa1a8dbe007edbb8bf",
+        "docs/team/parallel/10_OKU_ONCE_FAZ2.md": "aef518cd3c522bbdd71832ef64b5becdb14b870bd3bc51b1a79cb3ac630865d4",
+        "docs/team/parallel/11_R1_KIMLIK.md": "89731981f2d96f09c22f442a4d19db7f667c0a7a55970f1659a1bf57bd030aca",
+        "docs/team/parallel/12_R2_OLCUM.md": "164c1a1113827facf546770b5b5cd70f9da6a850df681a4802d701194599e93f",
+        "docs/team/parallel/13_R3_DAGITIM.md": "be405f7c08ccff6ae120ab95c03a24e08a5a45c0902736224aedaed18912ffb2",
+        "docs/team/parallel/14_R4_KALITE.md": "b17d61670a6400ac4316cf5616e90c9f80b53ccd733eb49455d540c9502b45cd",
+        "docs/team/parallel/15_R5_BELGELER.md": "ba76c8148d81ab82dc81fce74b857e5c2d117f461e95ba3031ce88fb655b2857",
+        "docs/team/parallel/16_MODULERLIK_DENETIMI.md": "140b3864f6aa6ff9f2b9fa0aeab956fe775450c413bd19075f21cb7bc31acef9",
+        "docs/team/parallel/20_DEVIR_9_AGUSTOS.md": "da414bed4010381b46952e1d1e57f24bd8ee9bbc792350d5b3b01e791001e834",
+        "docs/team/parallel/KARARLAR_SERIT4.md": "d624fefe2c06afc9ab163a4486337302df7a3937e2507c3f6a55b294843bcd8c",
+        "docs/test-report.md": "eecc55761319e2978185d67663c65cfacbf144a0dcf744c5597e77772d76846b",
+        "docs/testing.md": "bfc3ccff31f845f623267ae407dbc56fe18274609310066b963d578b559959b0",
+        "docs/visual-testing.md": "df79fef973ea9240a48bc7643d4736a685125ae3ffaac0569ea6d4e510bc99f8",
+        "evaluation/README.md": "ed74427fff8f77deb6c7f7bc8269624d10ce243fb70263577e4187e7af4cd57d",
+        "evaluation/acceptance/README.md": "a129c22cbd5740380b142495949a763944a269e693aa82596c5146d954faf81c",
+        "evaluation/calibration.md": "a8f2697c984c0c432fd279e0f86325f95f76ad74a17f3d32a730c321d6ba9c61",
+        "evaluation/embedding_ab.md": "140791c16dd350cc3904b334f322a5bee315108ff805340132027278d90ee005",
+        "evaluation/faithfulness/README.md": "830aa372caf575649e75129c1d33b4ff84334ef90e86f502a5d79b3685486dd2",
+        "evaluation/faithfulness/labels_etiketleyici_1.md": "d734df7b3f5883b39977ece40265ce3a52221c4bba830b9647ad1ea3d2a32b45",
+        "evaluation/faithfulness/labels_etiketleyici_2.md": "2bb0dca16db7610e7f22111e5ae771941e711c99f2deaf3ab6495e419ac35589",
+        "evaluation/faithfulness/sample_template.md": "c312a91163c82be182bd65604611c52f795abe4645224366b804b84d95215072",
+        "evaluation/gold_set/SCHEMA.md": "d70450b842871e15a6bd7857f0a64fd05800ab17972688dc960db4df99dc91cd",
+        "evaluation/injection/README.md": "9c34839354a2cf26758a60d58e7d0054f61cddd68a48459dbdd64d32deb4bc0c",
+        "evaluation/injection/material/zehirli-not.md": "889e148c2e19f0f5962eda732b38d4620cceed8a961ec0a29981d59687d72b79",
+        "evaluation/results/2026-08-09T1616-injection.review.md": "492276ddb0535bd15c69aadee0dd9a5bde0574814fd69bdb91e2c1fce123956f",
+        "evaluation/results/2026-08-09T1705-holdout-hybrid-fastembed-e2e.review.md": "946155cce1ed143b9b0d1327325bfe64c018d39a09d26daa5fd695bfd308c465",
+        "evaluation/role_agent_005/HUMAN_ANCHOR_NOT_RUN.md": "02ce2f47a91a04ee8621617014a95d534b71538c8e68df72632de65794d9e078",
+        "sample_data/README.md": "c0b2d1d5362e412e2088207f00b72f4e58bf85207bdf666529a49bec5fefe6d1",
+        "sample_data/isletim-sistemleri/01-processes.md": "24c95fba9c3545563454ce5a319d99969019f9cff63bb3f3f7a6927af0196ae7",
+        "sample_data/isletim-sistemleri/02-cpu-scheduling.md": "ea46c9f070f5a289906ed5177d8a0a473929f3945a361251027d8eab6ae2827b",
+        "sample_data/isletim-sistemleri/03-memory-management.md": "ed9f279b22ba79f7da49223490c84a6c84f5722eef61728afbf40c44c6cae93f",
+        "sample_data/isletim-sistemleri/04-synchronization.md": "821ada3a56dce0fa67b969c804a71d9909e965bdd9e9367997de28105e6efa09",
+        "sample_data/isletim-sistemleri/05-deadlock-demo.md": "f8fe1e590d9db45414137e06414e3372574bb3b482140792e7e532ab64e30fba",
+        "sample_data/isletim-sistemleri/07-virtual-memory.md": "8a76fd8e4c62710fcbe488bceeb3f858446ce3762940e298499f9bc63738c8c1",
+        "sample_data/isletim-sistemleri/08-io-systems.md": "0b2d047b0c5232c9a2cebca8ab4b52b2d79cf68075dfbe309927182feae0242b",
+        "sample_data/isletim-sistemleri/09-disk-and-storage.md": "01e249340764e2156b45cc4a0977f37d99ba655a36014dd5791e012e88053110",
+        "sample_data/isletim-sistemleri/10-security-and-protection.md": "eb81e0ceed60db9c22fa342dfbb1ad43d7d72bfb8555d5b5c3f02ac7c04ae50a",
+        "sample_data/isletim-sistemleri/11-virtualization-containers.md": "f8b0a36d1418b7f1f191f4f61483a1ddea649b09965f41575598f83b87f48278",
+        "sample_data/isletim-sistemleri/12-real-time-scheduling.md": "adef754cc1a483792f349d98708d89fd54dda4ece6cf99c987a726b8be17c266",
+        "sample_data/isletim-sistemleri/13-ipc.md": "3fdbeb9ae506119c8380460ebb4531fae6d6da5b30ddb51ded05d675f5fd2376",
+        "sample_data/isletim-sistemleri/14-distributed-os.md": "87316a8c569444b1fcd79eeb30173fb0d5b26d5c4f23f68a296007c4ccd87c9a",
+        "sample_data/isletim-sistemleri/15-boot-and-kernel.md": "1de0b181bc9c6b68b73ec0b079658b59c31edb8f35884c49206e411997c1e225",
+        "specs/001-course-assistant-mvp/contracts/README.md": "2ddb9d054996570fdf4ec371fa3c47082e41fdb77431a9ea004a36f3428b7e4f",
+        "specs/001-course-assistant-mvp/data-model.md": "4441f3f41869f933a379b83248575c534cf77c759cf358ee7c95120ff7bede7d",
+        "specs/001-course-assistant-mvp/plan.md": "893479c42dffb7bbe064d50d85ac49ed36459edebec6bb879725a86601288a59",
+        "specs/001-course-assistant-mvp/quickstart.md": "7472b55461b8211f545f165241d06b2bcdd7d599ea95f0446c993d0945bb6efd",
+        "specs/001-course-assistant-mvp/research.md": "e42d428111ae93319e71757bf81a056625e83e51ce9057fbc0a7f6bf6521bdf0",
+        "specs/001-course-assistant-mvp/spec.md": "6109ac3ebd92029332ff3c43a8df92569f73bf67dd562a2999cb1670803a840f",
+        "specs/001-course-assistant-mvp/tasks.md": "0054abf55bc381b406245afde991c4e05f5502b41493dfb05d5afaf061da4c21",
+        "specs/002-production-hardening/checklists/requirements.md": "66799be6b76b6e7a8f1fd319eae26b40b5f1aace1c746cbb1b208de4fbb4609c",
+        "specs/002-production-hardening/contracts/api-changes.md": "4d4848aa463c678074696bd49f6e4f5a168d6452290fe26f9835d59a1ee9d2f2",
+        "specs/002-production-hardening/data-model.md": "b1733fe315ecbec2d052c640ea5f1170c442dacd50344fa64aa843e3d3ae4a0b",
+        "specs/002-production-hardening/plan.md": "85219b6d49d8a6823cd3fe9d3a1e6ad86eb1822ba6f8ed9bed208cab055de951",
+        "specs/002-production-hardening/quickstart.md": "51c97907d3ac8b989c176f3a16f9552273e3b72442782fc9fe69310d438f272a",
+        "specs/002-production-hardening/research.md": "b539b13186a5aa703f1841c7617d8bb1556ae37f7354f08eb9e843afa809ab01",
+        "specs/002-production-hardening/spec.md": "e92cf83398dff976088475f9bae1fe8141fd2d05efea27adb47c5e261099d378",
+        "specs/002-production-hardening/tasks.md": "e4f77b2425d5f1ab33adedd392fdbeb64b5c98af9963b5da5c57d238b4a23689",
+        "specs/003-product-portal/contracts/api.md": "7269fee46f3ec7e574c483f8fd4b88cd96952bc43881a643f62230c11b703984",
+        "specs/003-product-portal/data-model.md": "35c0aba5bbda136f87b7d52eea5e70c3f6f8ced4a2b1d715cebd2b9a163193ad",
+        "specs/003-product-portal/full-product-roadmap.md": "884f0aa37d10763340ba5a50f9285674aac83e47af16fdfc9fc102499a4ee7d4",
+        "specs/003-product-portal/plan.md": "ad4787be439b905d6db71ec665bdd5e0562d62afc7dc82e18d788adde4723805",
+        "specs/003-product-portal/quickstart.md": "383759ecc6b51c8f227cbe3e1d700c1e2b9694fe37bfe7bb2ceeaadbe77c5722",
+        "specs/003-product-portal/research.md": "cd70f688c3fb9cc13d1ea6bd25906d4bc6f26fcaa56a730d249ccb1eb65cfcff",
+        "specs/003-product-portal/spec.md": "ce8804b33d9bf0c54f7acdf4d993849acc61461318e719420f627ee8eade0c8c",
+        "specs/003-product-portal/tasks.md": "66001c6a55ff905438366d120fcb321cbdff6f8084a47c9b93acbb3ebf795396",
+        "specs/004-ai-sdlc-excellence/contracts/ai-change-dossier.md": "dedfc95a23fdeaf21cc63aa7177b0007e5cf4edb18c17fe5f6eff7632abe9b54",
+        "specs/004-ai-sdlc-excellence/contracts/release-evidence.md": "2e47c81ef65195ddd32891e8a0ad8422c20df956d97c3750401ab55332d59f56",
+        "specs/004-ai-sdlc-excellence/data-model.md": "0e0306b3b5faeb720292d39738e18ecf20477fbeffa7b4840965767bf3ed51b4",
+        "specs/004-ai-sdlc-excellence/evidence/2026-08-11-local-verification.md": "51dcc29e5f17ad7f3a582352add5301d8727ddf421e905b44b5f82ffcccc43cc",
+        "specs/004-ai-sdlc-excellence/plan.md": "7f3a5e3cba2cb35c602c5dae7451a229ca78b9f634d2fe7bf5fa27887704361f",
+        "specs/004-ai-sdlc-excellence/quickstart.md": "430f4779d3d3c89348fd8907c63edd758ee31f51a291eab50b215886e7f2471b",
+        "specs/004-ai-sdlc-excellence/research.md": "ef0c51d0fa943e0b9a87b01b5772f6875c0c9046741cc876e9a04786e5f0aef3",
+        "specs/004-ai-sdlc-excellence/spec.md": "9c3b8fa9063c5567071d6b34d3749679ee95239bff6310be2483108ee965b730",
+        "specs/004-ai-sdlc-excellence/tasks.md": "bb19b76aee1bde6ea491eef3b5f89e4b72a9331271fbb75f186fb8d647b6a3b2",
+        "specs/005-role-aware-course-agent/contracts/api.md": "67795f94b9aabb23380aafe0e52fa021aff4c151d5dae78d8ef4ee479f3cb04e",
+        "specs/005-role-aware-course-agent/data-model.md": "e4cb8c8a35c93654aec10069f29f6d6064758e811d19a67e0b3b5b0504aaf69b",
+        "specs/005-role-aware-course-agent/plan.md": "c91b97c6fa1003817cd89f880ea5858e61e61d79a448fdfa0e545930c8a126c5",
+        "specs/005-role-aware-course-agent/quickstart.md": "05eef4517b52f95c2b92d1501725c31ffc1ec1d9e685b34997e45a54c46f2c04",
+        "specs/005-role-aware-course-agent/research.md": "a5e3df1b7b85acad6bf29bb20dc444427cd5259cd67c05aa1ed4c3d718fc05b3",
+        "specs/005-role-aware-course-agent/spec.md": "e9c9774086d8cbc62ec6eeaaddb9cd3265ff144dbc696be998a388a203f289ec",
+        "specs/005-role-aware-course-agent/tasks.md": "9e1503a0b822cd629939c80a496d2bc75a59864f87058a2b3e4718cb4da26568",
+        "specs/005-role-aware-course-agent/threat-model.md": "4bcd9cb8c7f549f2975f7fd0de66d7aabb6608a79ddd82756577629690048788",
+        "specs/013-question-authoring/contracts/api.md": "55ab43e3d610c923c9184c05315b6bc7677449a9ecfba634bc0e9255d04a4443",
+        "specs/013-question-authoring/data-model.md": "d82a40bd347d97845ef73338a0ec1487336904dde1340b316fdce10992d23ab7",
+        "specs/013-question-authoring/plan.md": "9598d813530496c580344440f61ce0ab199f787a37d5b3236a6010b11c4bcb8e",
+        "specs/013-question-authoring/quickstart.md": "107f89bf2ddbc9b5f09177c3a0718018fa5fafc58a335bf7f9462fc9c74f59c7",
+        "specs/013-question-authoring/research.md": "5bc61951796cc2b0c8ca1d49e62ff4cfbf67ca61b429d7ab6ddec75fa37d89b9",
+        "specs/013-question-authoring/spec.md": "4b03e95ecf7798c564b23573715a148e20d5d6d821822270fe9ddebdf0a8a0f4",
+        "specs/013-question-authoring/tasks.md": "30cc0af0307a76acb84235670849cf33d71b86d56eb20d652203b744cad552b7",
+        "specs/013-question-authoring/verification.md": "270a370fd88170a807b38214812855ef4b99058e07520e8efc747cbd35f12702",
+        "specs/014-student-assessment/contracts/api.md": "c93e7a164b393b65be4ea6d4868bd3c700d384ff55b3bccad711e62e789fdc7b",
+        "specs/014-student-assessment/data-model.md": "9bc2328922eaec46a7c0a7229218b261f7546533a26bf3469f1d4506338ac17b",
+        "specs/014-student-assessment/mail-acceptance.md": "63fe60cbc5081e980d54a55fb532cd41cedfd6ae8a8db3da351cb363dd06bc93",
+        "specs/014-student-assessment/plan.md": "3edab6800f4202e3c746cb5e19ba5361596d634645e3c19bfd0981b3b268e9d4",
+        "specs/014-student-assessment/quickstart.md": "2da1ad6265fa0f3bbb053397e599a4fc49e3fe25c2c08f3120c60058f793c699",
+        "specs/014-student-assessment/research.md": "d15a72a0e34b2b2962fac9176bf8b140f9fa5b7b6d5dcf5c37725c9ffbf3c479",
+        "specs/014-student-assessment/spec.md": "043a8605a2fc2c026ba0465dd772c19098e37adfbeedf18b597b4e87f8d7ffe7",
+        "specs/014-student-assessment/tasks.md": "b5582d4849aaed6e1a22bae0705e24dca7ad46b1653d94a098d4c0d6fee3abfa",
+        "specs/014-student-assessment/verification.md": "af5981a2426336edc15b7fdbcb89ad1845d57335dd74fe0cd37e6bc701f7e609",
+        "specs/015-completion-program/candidate-correction.md": "a32608955efcae6316316ab5cd6a6d0b8af3238f0eab9f2d1c4688b8d934b757",
+        "specs/015-completion-program/contracts/api.md": "6f1bde943a121b24012d165b2f749f82cc0e1aba5e8560d96f2110263c5eee1a",
+        "specs/015-completion-program/data-model.md": "1ba96c6768b71c500457efc0c3939ee344bf2777bc7cb2b4ea007ad568f8d1df",
+        "specs/015-completion-program/mail-acceptance.md": "df945f461ffc923ba9f5abfcd48f57f5753da9471c80d30627aaad4cbb86c7d1",
+        "specs/015-completion-program/plan.md": "5d289472e0dce5443c51716563a5f6b1612ccf86ffe60c28e255dd8d5ddd5904",
+        "specs/015-completion-program/quickstart.md": "7a61ed7553b52574a2ad750c2dcaa9e620b8f57230509c88b674206eff72604d",
+        "specs/015-completion-program/release-review.md": "a994ef60f6f0091600038532c1cc2ee4275c2b33c55097fe5ce7a843c37024a1",
+        "specs/015-completion-program/research.md": "7dd8e25a301bdd49755b82a0c3f6eae5a6cae16a75bc42a3093a69acf5b36fe5",
+        "specs/015-completion-program/skill-evaluation.md": "39163a5d02eead5445311d8f78823d1802fdb1adcf007372687e7484e9ebb228",
+        "specs/015-completion-program/spec.md": "b1819b6cb1448bd6ba9976258d04b19c0a994753b69f87e921efc4e69a631478",
+        "specs/015-completion-program/tasks.md": "9a653b0976cd59622ba0725da4b78c89225315285f9ec66bcc561128c117e34d",
+        "specs/015-completion-program/verification.md": "30f4b51275643f142114158c8280aa5ebd5e7bedfaede48b2d2e370618250565",
+        "specs/016-agent-skills/delivery.md": "41d901a5b8bb56ce6a7615e5b36ce2e2c5979b0f634c5df8187510948837af5a",
+        "specs/016-agent-skills/evidence/forward-trial.md": "3634b7b3ebecc4d400e2f7b889007f80c85e60f797f5dd39b46c2fa90852ecac",
+        "specs/016-agent-skills/plan.md": "e911797dfde8cc9eb4e8c1697fa5572d9afc59ebcdc2f6f60833c41658c21db8",
+        "specs/016-agent-skills/spec.md": "4ab45bf193672775f0b0cb2316deae645ea6bd36822f9c6b5460f23981b3ff4c",
+        "specs/016-agent-skills/tasks.md": "6ae40e6d5a669b461a7059aea78841e1ef0946a611bde1ba6c864a174e33f2b1",
+        "specs/016-agent-skills/verification.md": "b7c1b52ddbae9922a6b9a6ab860b8e5a0372a679d59efc9d1d88c4ae26e774e7",
+        "specs/017-completion-integration/plan.md": "7a82f1975a51127fa118946e6c8479ecc22d5cc18ceff6f29711cc527985411f",
+        "specs/017-completion-integration/quickstart.md": "0c0d01ed60716fd0ed864548cd59e9f15de30fe08bae4da6cce647864aa78fbc",
+        "specs/017-completion-integration/spec.md": "3a0be898ea5bc6f0117a4f47c04217973eb95cc45ed488f97ac9cba0e2651746",
+        "specs/017-completion-integration/tasks.md": "7f657bd4836c30878f359b588e60da379c4430da3ad863421350992e9a879ae9",
+        "specs/017-completion-integration/verification.md": "8083851bae14ac848b535fab82be6ed79fb846d61e7fabcfa53b129294311a18",
+        "specs/018-codex-production-line/contracts/api.md": "ff837a4bb2e8478d7ff13808fd96e73250387f42faa0083e160bf0f4ec732a76",
+        "specs/018-codex-production-line/evidence/b4-race-design.md": "160409ee79a84fee7abb61f340c5f7bf6a4dc872309d9cb14008a99f05bd0da8",
+        "specs/018-codex-production-line/evidence/c1-final-acceptance.md": "2ea822ddfe23158986d528ed12e8fee12559e290318ec557b8299a064778532f",
+        "specs/018-codex-production-line/evidence/c1-final/c1-e5-analysis.md": "707abf1dc220e88eef5d3a535d3dca5c7618ea76ec325f80b1ee3a9fd2566728",
+        "specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-analysis.md": "4d1e1f3e8b60cacc6080b3ec1763c936f663568edc98983ef5a12aaeeeb5f190",
+        "specs/018-codex-production-line/evidence/c1-final/c1-final-source-rerun-runbook.md": "a81ffcb9deeaa6c72c75c31b83398d32c3197bce5305d8de93a0467821796418",
+        "specs/018-codex-production-line/evidence/c1-final/c1-trace-analysis.md": "a2487d98ec39eee1cb52c22e8df344c61da92ad357549ea614b3c7f93fb4e09c",
+        "specs/018-codex-production-line/evidence/c1-holdout-analysis.md": "afa1e80826f4df72dcc229bc1f166b5bbbd1e1d9402a3b257bfa0c8c9d9a6819",
+        "specs/018-codex-production-line/evidence/c1-holdout-runbook.md": "2058f3f1929aeff43a1d6b3cafba09deba20eca56c391ae54cea0b8118c5f95b",
+        "specs/018-codex-production-line/evidence/c1-report.md": "08389ea820ad4231743a363924c84924265f9ee815e61f982dd5c5b809546d1e",
+        "specs/018-codex-production-line/evidence/d-final-local/README.md": "887c75adc8208a604a161b0aa8144dd8fa8d4133fe6ca8fed771981b11314834",
+        "specs/018-codex-production-line/evidence/d-final-local/d2-observer-source/README.md": "c46935d5181280ebf6364f5fcdf68b61e2c0f7ce39147ae157819ae10563562e",
+        "specs/018-codex-production-line/evidence/d-final-local/d3-current-helper/README.md": "61628a7c14fc3310663490ca14fbd271dcd7e19c63a519bedf0d8c8ea5c37626",
+        "specs/018-codex-production-line/evidence/d1-http-local/README.md": "cc4bd0182e9ce609087d37f7653eea1c95a58602348edb57bfc365b82d6c957a",
+        "specs/018-codex-production-line/evidence/d1-http-local/harness-v2/README.md": "2c1fb84bb8b465880427942753c2245e895892d74de251aef6028ac320ce67c4",
+        "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md": "5d31ef081452c4b9562025025f49bdac6e2b47a7a49ac62e3afe3527aa55589e",
+        "specs/018-codex-production-line/evidence/d2-local/README.md": "536ffb63a42c16dcef1bf464964b2cb366d660a8ed70918730a2f7a213468154",
+        "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md": "7b93e42d59dc94ea69e9785c15464749fda2ee1be3404e041f2d360733342c5b",
+        "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md": "04cee58f18995c3d3b431a3b4023a1df5de3befd8a2c6dd27c498528e3023ff6",
+        "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md": "a7961e15af265fe03062a55cc037fc92595de7004a7d74aaf919e569be0fd460",
+        "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md": "1dcbc9fce545235a8960572aaae560de73c86c3c4b54c0e4f56aa7c0feb4d43a",
+        "specs/018-codex-production-line/evidence/d3-local/README.md": "ef5bec081166328bc850da1f405ae2a6f4c27d58fb570d70d2d3b31ebbbb3d2b",
+        "specs/018-codex-production-line/evidence/d3-recovery-design.md": "49c60947a574ae7b44d3a518142bb1243f86f93057e2a5a08e40903ca48107a4",
+        "specs/018-codex-production-line/evidence/ops-local/README.md": "31f3c03f865ff47cb3e3b8667f50d32b7408410f497052349679e28ee3dcfd0b",
+        "specs/018-codex-production-line/evidence/ops-local/harness/d3-README.md": "3259bfcaf222256cba92abcb939b41d0c3ee7b370b07303b03b8ccc9f928e683",
+        "specs/018-codex-production-line/evidence/ops-local/harness/r1-README.md": "81516767d0e128cc7677cf3fbb363fde75d1cff096e15e4819098414f6e886a6",
+        "specs/018-codex-production-line/evidence/ops-local/reviews/d3.md": "fab870f91d7febb8d90a842fa1d0db28261282bde1b9abbcfd82cf21aeee609b",
+        "specs/018-codex-production-line/evidence/ops-local/reviews/ops1.md": "6ee10321b410a315bc4bae932f7f1f3127c302f449c56ed50e9f7ac8bbd83ad8",
+        "specs/018-codex-production-line/evidence/ops-local/reviews/r1.md": "1f413b2f135ae64f18af0dd45deac7612153d8b004a8a2684849c6a62191c3ea",
+        "specs/018-codex-production-line/evidence/ops-local/reviews/worker.md": "6db4b823f3a1f9647c19addd1a14b625d80a74a080d0bb1f92eb8550484b3118",
+        "specs/018-codex-production-line/evidence/s10-local/README.md": "4ed4474152877b4421774b5fe94d9ec9a86af4fa18476c8ae0962c0a6d6b6ca4",
+        "specs/018-codex-production-line/evidence/s9-local/README.md": "55b0ce852dd85885176b89b3158df59f7dd02d0ea84cbeb657a69b8f8fce7aa1",
+        "specs/018-codex-production-line/plan.md": "0f97043f3801afb971607d85f9db05703519d0f576618156b2d15051ebb45db0",
+        "specs/018-codex-production-line/spec.md": "e36fa2cf32ebee9c8fbcb8704a3fd1890465f0c5968df617ea895e4521e00d0b",
+        "specs/018-codex-production-line/tasks.md": "f3832d32bac48e7318010f7ad3471b8b908b2619964942f7f1d7ab0a8c1537a1",
+        "specs/018-codex-production-line/verification.md": "7f8d219a878549aca918eba37cb6752b28e67e109394c3ab6ddd42f7b0844e27"
+      },
+      "stdout": {
+        "root": "/Users/muratates/code/dou-synapse-l6-frontend-docs",
+        "filesChecked": 270,
+        "linksChecked": 770,
+        "externalHttpSkipped": 103,
+        "otherSchemesSkipped": 0,
+        "fragmentsSkipped": [],
+        "errors": [
+          {
+            "file": "specs/018-codex-production-line/evidence/c1-final-acceptance.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/specs/018-codex-production-line/evidence/c1-report.md",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d1-http-measured-02/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d1-http-measured-02/http-results.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d1-http-provision-02/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+            "line": 21,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d1-http-independent-audit.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d1-http-local/independent-audit.md",
+            "line": 27,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d1-http-measured-01/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-d2-implementation-candidate/files/supabase/migrations/0026_ingestion_claim_leases.sql:34",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/supabase/migrations/0008_exam_blueprint.sql:325",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-d2-stage-01/apps/api/app/modules/ingestion/claims.py:250",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-d2-stage-01/apps/api/app/modules/ingestion/claims.py:156",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-d2-stage-01/apps/api/app/api/documents.py:193",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 9,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-d2-lineage-regression.py",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 9,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-lineage-red-01/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 9,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-lineage-red-01/tests.log",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-independent-migration-review.md",
+            "line": 17,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-independent-migration-review.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+            "line": 3,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-d2-process-measured-01/report.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+            "line": 3,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-process-provision-01/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+            "line": 9,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-d2-process-acceptance/process_acceptance.py:1255",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+            "line": 9,
+            "code": "missing_path",
+            "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/apps/api/app/main.py:191",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+            "line": 11,
+            "code": "missing_path",
+            "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/docs/kvkk.md:28",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+            "line": 11,
+            "code": "missing_path",
+            "target": "/Users/muratates/code/dou-synapse-018-codex-production-line/docs/security/privacy-review-2026-09-08.md:43",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-process-v1-independent-review.md",
+            "line": 13,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-process-v1-independent-review.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+            "line": 3,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-independent-migration-review.md",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-stage-tests-02/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-stage-tests-02/tests.log",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+            "line": 11,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-migration-preconditions-01/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-authority-acceptance-addendum.md",
+            "line": 15,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-v2-authority-acceptance-addendum.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md",
+            "line": 3,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-v2-authority-acceptance-addendum.md",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md",
+            "line": 5,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-migration-positive-01/result.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          },
+          {
+            "file": "specs/018-codex-production-line/evidence/d2-local/d2-v2-legacy-positive-addendum.md",
+            "line": 9,
+            "code": "missing_path",
+            "target": "/private/tmp/dou018-evidence/d2-v2-legacy-positive-addendum.json",
+            "message": "Hedef bulunamadı veya depo dışına çıkıyor."
+          }
+        ],
+        "limitations": [
+          "HTTP(S), mailto ve diğer dış şemalar doğrulanmaz; yalnız sayılır.",
+          "CommonMark ayrıştırıcısı değildir: iç içe liste/alıntı kod blokları, girintili kod, MDX, ham HTML bağlantıları ve çıplak URL'ler kapsam dışıdır.",
+          "Tanımsız kısa [etiket] veya boşluk/satır geçişiyle ayrılmış [P] [US1] metni bağlantı sayılmaz; tanımlı boşluklu referanslar, bitişik [metin][etiket] ve [etiket][] doğrulanır.",
+          "Referans tanımları tek satır olmalıdır; başlık slug'ları yaygın Markdown/GitHub biçimini ve Unicode harfleri destekler, tam HTML entity kataloğu içermez.",
+          "Markdown dışındaki fragmentler yalnız #Lsatır ve #Lbaşlangıç-Lbitiş biçiminde doğrulanır; diğerleri açıkça kontrol dışı raporlanır."
+        ]
+      }
+    },
+    "limitation": "Default scan covers tracked Markdown only; untracked new Markdown needs an explicit separate check. No external URL checks."
+  },
+  "limitations": [
+    "ENGEL: Historical scan contains 30 broken local paths in immutable evidence documents outside I6 edit ownership; this dossier does not repair or waive them.",
+    "No independent blind holdout, human link-label calibration, real-provider, hosted CI, staging, canary, production or measured rollback evidence.",
+    "No HTTP(S) network validation and no full CommonMark/MDX conformance; parser limitations remain those in docs/link-checking.md.",
+    "All reviewer roles are unresolved requirements; there is no named human approval. No deployment or production-readiness claim."
+  ],
+  "privacy": "Only generated synthetic fixtures, public source paths, commands, hashes and timestamps. No database, user session, provider credential or identifiable student payload."
+}

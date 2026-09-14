@@ -1,9 +1,8 @@
-import { expect, test, type APIRequestContext, type Page, type Route } from "@playwright/test";
+import { test, student, teacherHeaders, studentHeaders, signIn } from "./worker-fixture";
+import { expect, type APIRequestContext, type Page, type Route } from "@playwright/test";
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const teacherHeaders = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
-const studentHeaders = { Authorization: "Bearer dev:22222222-2222-2222-2222-222222222222" };
 const sourceName = "exam-cross-tab-synthetic.md";
 
 async function prepareCourse(request: APIRequestContext) {
@@ -13,7 +12,7 @@ async function prepareCourse(request: APIRequestContext) {
   };
   const course = await post("/courses", createE2eCourseIdentity("SINAV-SEKMELER"));
   const path = `/courses/${course.id}`;
-  await post(`${path}/members`, { email: "burak@dogus.edu.tr", role: "student" });
+  await post(`${path}/members`, { email: student.email, role: "student" });
   const topic = await post(`${path}/topics`, { name: "Deadlock" });
   const upload = await request.post(`${API}${path}/documents`, { headers: teacherHeaders, multipart: {
     file: { name: sourceName, mimeType: "text/markdown", buffer: Buffer.from("# Deadlock\nDeadlock iki veya daha fazla sürecin birbirini beklemesidir. Coffman koşulları karşılıklı dışlama, tut ve bekle, kesintisizlik ve dairesel beklemedir.\n") },
@@ -28,11 +27,6 @@ async function prepareCourse(request: APIRequestContext) {
   return { course, base: `${API}${path}`, sourcePath: `${path}/sources/${question.source.chunk_id}` };
 }
 
-async function login(page: Page) {
-  await page.goto("/");
-  await page.getByRole("button", { name: /Burak Yılmaz/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-}
 
 async function finish(page: Page) {
   await page.getByRole("button", { name: "Sınavı bitir", exact: true }).click();
@@ -63,7 +57,7 @@ async function paint(page: Page) {
 test("başka sekmede sınav başlayınca tam/kompakt sohbet ve eski sonuç kapanır; geç açık karar geri açamaz", async ({ page, context, request }) => {
   test.setTimeout(150_000);
   const { course, base } = await prepareCourse(request);
-  await login(page);
+  await signIn(page, student);
   await page.goto(`/courses/${course.id}/exam`);
   await page.getByRole("button", { name: "Alıştırma başlat", exact: true }).click();
   await page.getByRole("radio").first().check();
@@ -131,7 +125,7 @@ test("başka sekmede sınav başlayınca tam/kompakt sohbet ve eski sonuç kapan
 test("kaynak pasajı başka sekmenin sınavında ve geç200 karşısında gizlenir; asistan bakımı kaynak izni değildir", async ({ page, context, request }, testInfo) => {
   test.setTimeout(120_000);
   const { course, base, sourcePath } = await prepareCourse(request);
-  await login(page);
+  await signIn(page, student);
   // Only the operational status is simulated; source authorization stays real.
   await page.route(`${base}/chat/availability`, async (route) => {
     const response = await route.fetch(); const body = await response.json();
@@ -171,7 +165,7 @@ test("kaynak pasajı başka sekmenin sınavında ve geç200 karşısında gizlen
 test("odak, pageshow ve görünür olma sinyalleri sunucuda değişen sınav erişimini yeniden doğrular", async ({ page, request }) => {
   test.setTimeout(120_000);
   const { base, sourcePath } = await prepareCourse(request);
-  await login(page); await page.goto(sourcePath); await page.bringToFront();
+  await signIn(page, student); await page.goto(sourcePath); await page.bringToFront();
   await expect(page.getByRole("heading", { name: sourceName, exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.visibilityState)).toBe("visible");
   const signal = async (event: string) => page.evaluate((name) => {

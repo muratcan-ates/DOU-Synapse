@@ -1,0 +1,276 @@
+{
+  "schema_version": 1,
+  "change_id": "050-learning-events-r1",
+  "lineage_id": "learning-events",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Öğrenme olayları ve içeriksiz eğitmen özeti",
+  "summary": "0027 öğrenme olaylarını ders kapsamında gizli anahtarlı pseudo kimlikle kaydeder; worker yazıcısı üyelik ve nesne sınırını SQL içinde doğrular. Öğrenci yalnız kendi içeriksiz olay projeksiyonunu, eğitmen yalnız konu toplamlarını görür. Soru, cevap, ipucu, kaynak açılışı, ret ve sağlayıcı 429 olayları mevcut akışlara bağlanır; yayın onayları ve zorunlu kapıların tamamı henüz sağlanmadı.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T14:34:25.982460+00:00",
+  "review_by": "2026-10-13T14:34:25.982460+00:00",
+  "base_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "apps/api/app/modules/agent/provider_events.py: mevcut LiteLlmClient transportunda gerçek429 gözlemi; sağlayıcı/model seçimi tabanla aynı, yeni sağlayıcı yok.",
+    "model_revision": "Taban22a85d390f759a77265e624d4d2acdf9b7c3d143 ile aynı model yapılandırması; B4 simülasyon/fallback henüz uygulanmadı.",
+    "prompt_revision": "Taban22a85d390f759a77265e624d4d2acdf9b7c3d143 ile aynı; prompt değişikliği yok.",
+    "tool_schema_revision": "supabase/migrations/0027_learning_events.sql ve apps/api/app/schemas/learning_events.py; sunucudan kimlik, SQL dar worker recorder ve eğitmen aggregate.",
+    "guardrail_revision": "Kanıt eşiği ve ret kararı korunur; event okumasında outcome/evidence/model/metadata kolonları öğrenciye SQL grant ile kapalı, citation ucunda ders/sahiplik/sınav kilidi denetlenir.",
+    "retrieval_revision": "Retrieval modülleri değişmedi; LearningEventRetriever yalnız RLS oturumunu olay yazıcısına taşır.",
+    "embedding_revision": "Taban22a85d390f759a77265e624d4d2acdf9b7c3d143 ile aynı; yerel kanıt hashing fixture kullanır.",
+    "evaluator_revision": "Mevcut grading davranışı değişmedi; yeni learning_events servis/API/RLS/mutasyon kabul testleri ve event E2E senaryosu eklendi."
+  },
+  "data": {
+    "corpus_digest": "646fcb768827bb940a1fb22a2726bc19732d3f8a2deea36ba005f790d80b00fe",
+    "eval_set_digest": "e02bfed8ef6e52cfd35050c2a4c3d2ab6853306aa333f178b28810d6ef38a2e7",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "e3864bb1b1d6286dc000ab775bf58d017ef1f43e69da762ede36d2946c5750d1"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "c90c047a576ce42a8b6abbbb29b1f80cf77422ec364c42946d68ef8dba7d3458"
+    },
+    {
+      "path": "apps/api/app/models/learning_event.py",
+      "state": "present",
+      "sha256": "45a59b998f38d41a89e5c6851383e7401a312102b8c9a9a7a698601fedb36c8b"
+    },
+    {
+      "path": "apps/api/app/modules/agent/answers.py",
+      "state": "present",
+      "sha256": "f0cd06864ead375b05fb0b7abbb5587c4d9a649c00a9e6146cc9a90b6c940dd8"
+    },
+    {
+      "path": "apps/api/app/modules/agent/pipeline.py",
+      "state": "present",
+      "sha256": "1ad0864284b586dd8f2ce4b5403cb60a9502fd83d02014731d2509544360a5a4"
+    },
+    {
+      "path": "apps/api/app/modules/agent/provider_events.py",
+      "state": "present",
+      "sha256": "7587917a6dda5c608cce93f2c0d03b3a341d2688d02e7d068b0f444a3cec367c"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/learning_events.py",
+      "state": "present",
+      "sha256": "64e95e9c16c28756e157f49e97d617e79176c0c5dc3d9a4975c171090a297b92"
+    },
+    {
+      "path": "apps/api/app/schemas/learning_events.py",
+      "state": "present",
+      "sha256": "f10e84ca3771877d32ffb31777098c13b69e742480b5d276ee9b15daa9f7275f"
+    },
+    {
+      "path": "apps/api/app/schemas/privacy.py",
+      "state": "present",
+      "sha256": "9b9535e344a249b353e3cdd230eb94caf8b3e2ed9379122603d22ae3f2031a50"
+    },
+    {
+      "path": "apps/api/tests/test_error_envelope.py",
+      "state": "present",
+      "sha256": "00320b7485e6e23405eb11a7f0b714f803978551143d63cc37e64890ac47ba2b"
+    },
+    {
+      "path": "apps/api/tests/test_learning_events_api.py",
+      "state": "present",
+      "sha256": "8eff2fede7a0aee849097e9ffd06a5a5ba7535cffc7b408e8709fa5681dbc582"
+    },
+    {
+      "path": "apps/api/tests/test_learning_events_service.py",
+      "state": "present",
+      "sha256": "e02bfed8ef6e52cfd35050c2a4c3d2ab6853306aa333f178b28810d6ef38a2e7"
+    },
+    {
+      "path": "apps/api/tests/test_user_rights.py",
+      "state": "present",
+      "sha256": "9af56e0dec34b38ac017b495b68a1e6c963609fce9c41f12e529ce22cfc5251e"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "989afe782a7e8c5cadea222cf334d48a854e8fe5044c734b1af56e87624815df"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/settings/page.tsx",
+      "state": "present",
+      "sha256": "e77f419b54a509647f95ee570cf78439211cb075dc6745bf113385e706036d6d"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "d6f379cc54993976728f6ea8e291730f1ad896a94deb5dfb804599c69b67de64"
+    },
+    {
+      "path": "apps/web/components/exam/feedback-panel.tsx",
+      "state": "present",
+      "sha256": "9ff77da10cbd38c8b57434f33139e83eeca9fde45ad7617be990c4d8875de497"
+    },
+    {
+      "path": "apps/web/components/exam/finished-exam.tsx",
+      "state": "present",
+      "sha256": "6d56501a95016c8feaa36180219aa5c2f68a54ba949196c14546764eb031c37b"
+    },
+    {
+      "path": "apps/web/components/exam/running-exam.tsx",
+      "state": "present",
+      "sha256": "52b158c6b1fd10feb9d31b77b50af6acb24673049bf2d43b8cbee0d3afa85992"
+    },
+    {
+      "path": "apps/web/components/exam/saved-practice-feedback.tsx",
+      "state": "present",
+      "sha256": "dfe3564f523c23c05c631a5a848257ea6cbcf604ba55a6e4bedb4cc39c73262e"
+    },
+    {
+      "path": "apps/web/components/learning-summary.tsx",
+      "state": "present",
+      "sha256": "d5431c3183c5620246fb6ac80338d3910343727f69dcdae3d337f9b66a5a43b2"
+    },
+    {
+      "path": "apps/web/components/source-card.tsx",
+      "state": "present",
+      "sha256": "029813395061cd38aaf03e95c4ecb1cb93006c5b23a7b8c153bf63143a9abffa"
+    },
+    {
+      "path": "apps/web/e2e/learning-events.spec.ts",
+      "state": "present",
+      "sha256": "a99e72194f0aeacab9cb56bdefde0aae3d65ed69f8293718cc12c3a45f7b40ee"
+    },
+    {
+      "path": "apps/web/lib/assessment-feedback.test.ts",
+      "state": "present",
+      "sha256": "5113a50a6b01d364695d34194d89fde32b6299fe1b0e0000826fc7481483e79f"
+    },
+    {
+      "path": "apps/web/lib/learning-events.ts",
+      "state": "present",
+      "sha256": "a0349bc75ada979f9f42dfefd259e474f2b16c1b93abb84217bebd17151c35eb"
+    },
+    {
+      "path": "supabase/migrations/0027_learning_events.sql",
+      "state": "present",
+      "sha256": "12a3f7a3ade3c31b8ceb6836cccca98dde4349dfbd6577e270d4148bb9bbd2b4"
+    },
+    {
+      "path": "supabase/tests/rls_learning_events.sql",
+      "state": "present",
+      "sha256": "646fcb768827bb940a1fb22a2726bc19732d3f8a2deea36ba005f790d80b00fe"
+    },
+    {
+      "path": "supabase/tests/rls_learning_events_mutation_check.sh",
+      "state": "present",
+      "sha256": "e27b8bd576958f65f0389e154c0b155312295a5592720d247a55ac0a104df876"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/050-learning-events-r1.json",
+      "report_sha256": "2b57428dbaa3910b6be5141cde64fe4e427ecd9e2b962504f72e4a1f4baddf95",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_learning_events_service.py",
+    "holdout_ref": "supabase/tests/rls_learning_events.sql",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "metrics": [
+      {
+        "name": "learning_events_migration_present",
+        "operator": "==",
+        "threshold": 1,
+        "sample_size": 1,
+        "baseline": 0,
+        "candidate": 1
+      }
+    ],
+    "exact_command": "git cat-file -e 22a85d390f759a77265e624d4d2acdf9b7c3d143:supabase/migrations/0027_learning_events.sql\npython3 -c 'from pathlib import Path; print(int(Path(\"supabase/migrations/0027_learning_events.sql\").is_file()))'\nPGHOST=127.0.0.1 PGPORT=55452 PG_BIN=/opt/homebrew/opt/postgresql@16/bin bash supabase/tests/rls_learning_events_mutation_check.sh dou_l2_crypto_schema"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Atanacak bağımsız mühendislik gözden geçireni",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Atanacak bağımsız ders/alan sorumlusu",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Atanacak bağımsız güvenlik/gizlilik sorumlusu",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-implemented: learning-event rollout feature flag; promotion blocked until explicitly implemented and reviewed",
+    "flag_state": "not-applicable",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:050-learning-events-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-implemented: learning-event rollout feature flag; promotion blocked until explicitly implemented and reviewed",
+    "kill_switch": "Onaylı dağıtım yokken adayı yayınlama; yayın kararı öncesi hata durumunda önceki22a85d3 uygulama sürümüne dön. Bu prosedürün süresi henüz ölçülmedi.",
+    "assignment": "İleride onaylanacak pilot ders ve oturumları tam candidate SHA üzerinde sticky tutulacak; bu işte gerçek kullanıcı kohortu açılmadı.",
+    "initial_exposure": "Yalnız yerel sentetik DB/API/browser hazırlığı; staging, canary veya production dağıtımı yok.",
+    "stop_conditions": [
+      "Gerçek kullanıcı kimliği/ham sohbet/cevap olay kaydına veya rapora girerse dağıtımı durdur.",
+      "Öğrenci başka aktör olayını veya exam outcome/evidence kolonunu okuyabiliyorsa dağıtımı durdur.",
+      "Eğitmen başka dersin toplamını veya ham öğrenci olayını okuyabiliyorsa dağıtımı durdur.",
+      "E2E, zorunlu kapılar, adaya bağlı CI, onay veya gerçek rollout bayrağı eksikse pilotu başlatma."
+    ],
+    "expand_conditions": [
+      "Root tam pytest/E2E/kapı çıktıları aday hashlerine bağlanır.",
+      "Engineering, domain ve security_or_privacy rollerine atanmış bağımsız insanlar exact candidate üzerinde onay verir.",
+      "Gerçek feature flag, geri dönüş kanıtı ve kurumsal veri yaşam döngüsü kararı tamamlanır."
+    ],
+    "active_exam_policy": "Aktif sınav oturumu içinde sürüm/rol/kanıt eşiği değiştirilmez; öğrenci outcome ve evidence kolonlarına erişemez. Gerçek sınav pilotu onay verilene kadar açılmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "procedure": "Uygulama sürümünü22a85d390f759a77265e624d4d2acdf9b7c3d143 seviyesine geri al; additive0027 tablo ve gizli anahtarı silmeden koru. Yeni yazıcı/okuma uçları önceki sürümde olmadığından olay üretimi durur. Veri silen down migration çalıştırma.",
+    "max_minutes": 30,
+    "verification": "30dakika planlanan operatör hedefidir, ölçülmüş SLA değildir. Yeniden rol/RLS, sınav kilidi ve önceki akış kabulü koşulacak; rollback bu adayda çalıştırılmadı.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik test kanıtı. Üretim tasarımında pseudo kimlik DB içinde saklanan rastgele anahtarla course+current_user HMAC türetilir; ham e-posta/ad/sohbet/yanıt taşınmaz. Öğrenci olay kolonları sınırlandırılır, eğitmen yalnız toplam görür. /me/export not_included sözleşmesi learning_events dışlandığını açıklar. Anahtar ve gerçek veriler kanıt arşivine veya git deposuna alınmaz.",
+    "retention": "Sentetik test DBleri izole ve yeniden üretilebilir. Gerçek öğrenci için saklama/silme/export ve yedek yaşam döngüsü kurumsal sorumlusu tarafından belirlenmeden production promotion yok; bu çalışma hukuki uyum sertifikası değildir."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

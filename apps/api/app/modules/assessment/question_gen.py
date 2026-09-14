@@ -35,6 +35,7 @@ bağladığı sahteler varsa onlar, yoksa gerçek modüller. Hiçbir sağlayıc�
 
 from __future__ import annotations
 
+import os
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -162,6 +163,32 @@ def resolve_completion(task: LlmTask = LlmTask.CHAT) -> StructuredCompletion:
     if _completion is not None:
         return _completion
     return _GenerationCompletion(build_llm_client(), LlmRequest, task=task)
+
+
+def resolve_grading_completion(
+    *, payload: BaseModel, given: str, sources: Sequence[tuple[UUID, str]]
+) -> StructuredCompletion:
+    """Sahte notlandırma yalnız yerel ortamda ve açık görev bağlamıyla seçilir."""
+    del given
+    from app.core.config import Environment, get_settings
+    from app.modules.assessment.local_grading_fixture import (
+        GroundedSimulationForbidden,
+        LocalGradingFixture,
+    )
+    from app.modules.generation.fake import FakeLlmClient
+
+    enabled = os.environ.get("LLM_SIMULATE_GROUNDED_FEEDBACK") == "1"
+    settings = get_settings()
+    if enabled and (settings.environment is not Environment.LOCAL or settings.eval_runtime_enabled):
+        raise GroundedSimulationForbidden
+    completion = resolve_completion()
+    if not enabled:
+        return completion
+    if isinstance(completion, _GenerationCompletion) and isinstance(
+        completion._client, FakeLlmClient
+    ):
+        return LocalGradingFixture(payload=payload, sources=sources)
+    raise GroundedSimulationForbidden
 
 
 # ---------------------------------------------------------------------------

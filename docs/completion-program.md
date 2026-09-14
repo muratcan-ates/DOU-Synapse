@@ -4,11 +4,15 @@ Kullanıcı 8 Eylül 2026'da Codex ve Claude çalışmalarının birleştirilmes
 
 ## Güncel çalışma
 
-Aktif dal `018-codex-production-line`; çalışma ağacı `/Users/muratates/code/dou-synapse-018-codex-production-line`. Kesin taban `621815908d5372d8de414aec4ca1dc63da008dca` (`017-completion-integration`), 8 Eylül'de GitHub ile eşleştirildi. 013/014/015 ürün dilimleri, 016 beceriler, Codex017 düzeltmeleri ve Claude'un0020/CI/runbook katkıları tabanda zaten birleşik. Yeni dal bu geçmişi korur. Ana dal veya canlı ortam birleşimi yapılmadı.
+Aşağıdaki başlangıç ve kanıt kayıtları 8–9 Eylül 2026 tarihli 018 entegrasyon çalışmasına aittir. 13 Eylül L6 devamı `018-l6-frontend-docs` dalında yürür ve taslak PR hedefi `018-codex-production-line` olur; eski taban SHA'sı veya test sonuçları yeni L6 adayının kabulü değildir. Güncel kuyruk için [Codex runbook v2](team/codex/CODEX-RUNBOOK.md) ve [birleşik plan](team/codex/40-BIRLESIK-PLAN.md) okunur; L6'nın özel sahiplik, dossier ve işlem sırası kendi iş talimatından gelir.
 
-Eski defter016'da kalmıştı. Tarihsel kanıtlar [015](../specs/015-completion-program/verification.md), [016](../specs/016-agent-skills/verification.md) ve [017](../specs/017-completion-integration/verification.md) kayıtlarında korunur; bu adayın sonucu sayılmaz. Geçici017 kanıt klasörü artık yok; eski geçici yollar yeni sonuç olarak kullanılmaz.
+### Tarihsel başlangıç — 8 Eylül 2026
 
-Güncel kabul/sahiplik: [018 spec](../specs/018-codex-production-line/spec.md), [plan](../specs/018-codex-production-line/plan.md), [iş listesi](../specs/018-codex-production-line/tasks.md), [doğrulama](../specs/018-codex-production-line/verification.md).
+O tarihteki dal `018-codex-production-line`; çalışma ağacı `/Users/muratates/code/dou-synapse-018-codex-production-line`. Kesin taban `621815908d5372d8de414aec4ca1dc63da008dca` (`017-completion-integration`), 8 Eylül'de GitHub ile eşleştirildi. 013/014/015 ürün dilimleri, 016 beceriler, Codex017 düzeltmeleri ve Claude'un0020/CI/runbook katkıları tabanda zaten birleşik. Yeni dal bu geçmişi korur. Ana dal veya canlı ortam birleşimi yapılmadı.
+
+Başlangıçta eski defter 016'da kalmıştı. Tarihsel kanıtlar [015](../specs/015-completion-program/verification.md), [016](../specs/016-agent-skills/verification.md) ve [017](../specs/017-completion-integration/verification.md) kayıtlarında korunur; bu adayın sonucu sayılmaz. Geçici017 kanıt klasörü artık yok; eski geçici yollar yeni sonuç olarak kullanılmaz.
+
+018 entegrasyonunun kabul/sahiplik kaydı: [018 spec](../specs/018-codex-production-line/spec.md), [plan](../specs/018-codex-production-line/plan.md), [iş listesi](../specs/018-codex-production-line/tasks.md), [doğrulama](../specs/018-codex-production-line/verification.md).
 
 ## Birleştirilmiş iş kuyruğu
 

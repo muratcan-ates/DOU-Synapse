@@ -11,18 +11,20 @@ doğrulama: 8 Eylül 2026 · Kapsam: 018 yerel aday; tarihli eski ölçümler ay
 
 ### Üretim yolu
 
-Kullanıcı Supabase Auth ile giriş yapar, Supabase HS256 imzalı bir JWT üretir,
-istemci bunu her istekte `Authorization: Bearer <jwt>` başlığında gönderir.
+Kullanıcı Supabase Auth ile giriş yapar; uygulamanın Gün-1 sözleşmesi HS256
+imzalı kullanıcı JWT'sidir. Gerçek projenin imzalama ayarı canlı kabulde ayrıca
+doğrulanmalıdır; bütün Supabase projelerinin HS256 kullandığı varsayılmaz.
+İstemci token'ı her istekte `Authorization: Bearer <jwt>` başlığında gönderir.
 Backend token'ı doğrular ve tek bir çıktı üretir: `Principal(user_id, email)`.
 
 | Adım | Kod |
 |---|---|
-| Başlığı okuma, `Bearer` şeması zorunluluğu | [`api/deps.py:29`](../apps/api/app/api/deps.py#L29) |
-| Token doğrulama | [`core/security.py:88`](../apps/api/app/core/security.py#L88) |
-| Kullanıcı bağlamının veritabanına taşınması | [`core/db.py:71`](../apps/api/app/core/db.py#L71) |
+| Başlığı okuma, `Bearer` şeması zorunluluğu | [`api/deps.py::get_principal`](../apps/api/app/api/deps.py) |
+| Token doğrulama | [`core/security.py::_decode_supabase_token`](../apps/api/app/core/security.py) |
+| Kullanıcı bağlamının veritabanına taşınması | [`core/db.py::set_rls_context`](../apps/api/app/core/db.py) |
 
 Doğrulamada zorunlu tutulanlar (`_REQUIRED_CLAIMS`,
-[`security.py:38`](../apps/api/app/core/security.py#L38)):
+[`security.py::_REQUIRED_CLAIMS`](../apps/api/app/core/security.py)):
 
 - **İmza** — `SUPABASE_JWT_SECRET` ile HS256. Anahtar proje başınadır; başka bir
   Supabase projesinin token'ı bu anahtarla doğrulanamaz.
@@ -30,7 +32,9 @@ Doğrulamada zorunlu tutulanlar (`_REQUIRED_CLAIMS`,
 - **`aud`** — `authenticated` olmak zorunda.
 - **`iss`** — varlığı zorunlu; `SUPABASE_JWT_ISSUER` (veya uyumlu `JWT_ISSUER`) tanımlandığında değeri de karşılaştırılır. Üretimde bu ayar açık bir HTTPS `/auth/v1` adresi olmak zorundadır; eksik veya bozuk değer başlangıcı durdurur. Yerel/demo ortamında isteğe bağlıdır.
 - **`sub`** — UUID olmak zorunda; olmayan token 401.
-- **Algoritma** — izin listesinden `none` her koşulda eleniyor
+- **Algoritma** — izin listesi tam olarak `["HS256"]` olmalıdır. Boş, farklı veya
+  karma liste sessizce daraltılmaz; istek bütünüyle reddedilir. `none`, imzasız
+  token ve diğer algoritmalar kabul edilmez
   ([`security.py:59`](../apps/api/app/core/security.py#L59)).
 
 `exp`/`aud`/`iss`'in **zorunlu claim listesinde** olması ayrıca önemli: PyJWT,
@@ -41,19 +45,19 @@ değildir; ikisi ayrı ayrı yazıldı ve ayrı ayrı test edildi.
 ### Geliştirme yolu (`dev:<uuid>`) ve üretimde neden açılamaz
 
 Yerel geliştirme ve çevrimdışı demo için `Authorization: Bearer dev:<uuid>`
-kabul edilir ([`security.py:146`](../apps/api/app/core/security.py#L146)). Bu
+kabul edilir ([`security.py::authenticate`](../apps/api/app/core/security.py)). Bu
 imzasız bir kimliktir: kabul edildiği bir ortamda **herkes herkes olabilir.**
 
 İki bağımsız kapı var:
 
 1. **Uygulama hiç açılmaz.** `DEV_AUTH_ENABLED` ile `ENVIRONMENT=production`
    birlikte verilirse ayarların doğrulanması hata verir ve süreç başlamaz
-   ([`config.py:167`](../apps/api/app/core/config.py#L167)). Aynı doğrulayıcı,
+   ([`config.py::Settings._check_auth_configuration`](../apps/api/app/core/config.py)). Aynı doğrulayıcı,
    dev kimliği kapalıyken `SUPABASE_JWT_SECRET` yoksa da açılmayı reddeder —
    "kimlik doğrulaması olmayan" bir konfigürasyon mümkün değildir.
 2. **Bayrak kapalıysa token reddedilir.** Bayrak herhangi bir yolla kapalı
    kalırsa `dev:` öneki 401 döner
-   ([`security.py:151`](../apps/api/app/core/security.py#L151)).
+   ([`security.py::authenticate`](../apps/api/app/core/security.py)).
 
 İkinci kapının testi `tests/test_security.py::TestGelistirmeKimligi::
 test_dev_kimligi_uretimde_reddedilir`.
@@ -62,7 +66,7 @@ test_dev_kimligi_uretimde_reddedilir`.
 
 Her başarısız doğrulama istemciye **tek bir cümle** döndürür:
 "Oturumunuz geçerli değil. Lütfen tekrar giriş yapın."
-([`security.py:30`](../apps/api/app/core/security.py#L30)).
+([`security.py::MESSAGE_INVALID_SESSION`](../apps/api/app/core/security.py)).
 
 Gerekçe: "süresi doldu" ile "imza geçersiz" arasındaki fark, elindeki token'ın
 hangi bakımdan bozuk olduğunu saldırgana ölçtürür — çalınmış bir token'ın hâlâ
@@ -105,7 +109,7 @@ değildir.** Yol parametresi yalnız "hangi ders" sorusunu yanıtlar.
 ### Katman 1 — uygulama
 
 Her ders kapsamlı uç, `CourseMemberDep` / `CourseInstructorDep` bağımlılığından
-geçer ([`deps.py:102`](../apps/api/app/api/deps.py#L102)). Bağımlılık her
+geçer ([`deps.py::require_course_member`](../apps/api/app/api/deps.py)). Bağımlılık her
 istekte üyelik tablosuna bakar ve üyelik yoksa **404** döner (403 değil):
 erişimi olmayan kullanıcı dersin var olup olmadığını da öğrenemez.
 
@@ -113,10 +117,15 @@ erişimi olmayan kullanıcı dersin var olup olmadığını da öğrenemez.
 
 API, tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle
 bağlanır. Her istek, işlem içinde `app.current_user_id` GUC'sini ayarlar
-([`db.py:71`](../apps/api/app/core/db.py#L71)); politikalar bu değeri okur.
+([`db.py::set_rls_context`](../apps/api/app/core/db.py)); politikalar bu değeri okur.
 Ayarlanmamışsa `app.current_user_id()` NULL döner ve **hiçbir satır görünmez**
-(fail-closed). Tablolar `FORCE ROW LEVEL SECURITY` taşır, yani sahip rol bile
-politikalara tabidir.
+(fail-closed). Çekirdek ve sohbet tablolarında `FORCE ROW LEVEL SECURITY`
+uygulanır ([`0001`](../supabase/migrations/0001_core_schema.sql),
+[`0003`](../supabase/migrations/0003_chat.sql)); superuser ve `BYPASSRLS` rolleri
+bu zorlamanın dışındadır. Bu, bütün şemalara genellenmez: [`0025`](../supabase/migrations/0025_shared_request_quota.sql)
+içindeki `app.request_rate_policies` ve `app.rate_limit_windows` tablolarında
+RLS etkin, `FORCE` yoktur. Uygulama/worker rollerinin doğrudan tablo yetkileri
+geri alınmıştır; kota erişimi dar `SECURITY DEFINER` işlevleri üzerinden yürür.
 
 `SET LOCAL` işleme bağlıdır: bağlantı havuza dönerken bağlam kendiliğinden
 temizlenir, bir sonraki isteğin önceki kullanıcının kimliğini devralması
@@ -164,11 +173,13 @@ bozar (`app.is_member`, `app.is_instructor`, `app.is_instructor_of`,
 fonksiyon gevşemesi, hiçbir politika metni değişmeden izolasyonun tamamını
 kaldırabilir.
 
-Politikası **bilinçli olarak olmayan** on üç işlem de fail-closed olarak
-sınanır: `courses` INSERT/DELETE, `profiles` INSERT/DELETE, `chunks`
-INSERT/UPDATE/DELETE, `ingestion_jobs` UPDATE/DELETE, `chat_sessions` DELETE,
-`chat_messages` UPDATE/DELETE, `answer_cache` UPDATE, `request_logs`
-UPDATE/DELETE. Biri "eksik" sanıp politika eklerse ilgili iddia kırmızı yanar.
+Politika verilmeyen işlemler ve yalnız sahibi için açılan veri hakkı işlemleri
+ayrı sınanır. Özellikle `chat_sessions` DELETE artık politikasız değildir:
+[`0012_privacy_rights.sql`](../supabase/migrations/0012_privacy_rights.sql) içindeki
+`chat_sessions_self_delete`, `user_id = app.current_user_id()` koşuluyla sahibine
+silme izni verir. [`rls_isolation.sql`](../supabase/tests/rls_isolation.sql) hem
+kendi oturumunu silebilmeyi hem başkasının oturumunu silememeyi denetler. Yukarıdaki
+baseline toplamları güncel politika envanteri yerine kullanılmaz.
 
 ### Uygulama katmanı (katman 1)
 
@@ -203,7 +214,7 @@ Savunma bir prompt temennisi değil, **yapısal**:
 
 1. **Ret metinleri bizim sabitlerimizdir, modelin ürettiği metin değil.**
    `MESSAGE_INSUFFICIENT_CONTEXT`, `MESSAGE_OUT_OF_SCOPE`, `MESSAGE_BLOCKED`
-   ([`api/chat.py:234-246`](../apps/api/app/api/chat.py#L234)). Sistem
+   ([`modules/agent/answers.py`](../apps/api/app/modules/agent/answers.py); `api/chat.py` bu sabitleri içe aktarır). Sistem
    reddettiğinde kullanıcıya giden cümle koddan gelir; materyalin içindeki bir
    talimat ret metnini ele geçiremez.
 2. **Atıf zorunluluğu** (§5) modelin serbest metin üretme alanını daraltır:
@@ -248,7 +259,7 @@ set-membership bir kontroldür.
 | Sağlayıcı/model adı | Kullanıcıya dönen zarfta yok; hata mesajları tek şablondan üretilir ([`core/errors.py`](../apps/api/app/core/errors.py)) |
 | Ham yığın izi | `unhandled_error_handler` genel Türkçe zarf döner. `exc_info` günlüğünde raw metin yerine izinli tür/göreli kaynak özeti nesnesi tutulur; mesaj, zincir, notes ve kaynak satırı yazılmaz ([günlük sözleşmesi](operations/logging-privacy.md)) |
 | Soru metni ölçüm kaydında | `request_logs` soru/cevap alanı taşımaz; mevcut yazıcı sabit rota ve ölçüm alanlarını kullanır. Text türündeki route sütunu tek başına içerik yazılmasını imkânsız kılmaz ([`0003_chat.sql`](../supabase/migrations/0003_chat.sql)) |
-| API anahtarı / JWT / TCKN / e-posta logda | Genel mesaj dalındaki `RedactionFilter` bilinen kalıpları maskeler; exception ve Uvicorn ERROR dalları izinli alanları seçer. İstemci kaynaklı destek kimliği S10'da açıktır; serbest kişisel metin veya dış günlük için tam güvence yoktur ([`core/logging.py`](../apps/api/app/core/logging.py)) |
+| API anahtarı / JWT / TCKN / e-posta logda | Genel mesaj dalındaki `RedactionFilter` bilinen kalıpları maskeler; exception ve Uvicorn ERROR dalları izinli alanları seçer. Destek kimliği sunucuda üretilir ([`request_context.py`](../apps/api/app/core/request_context.py)); serbest kişisel metin veya dış günlük için tam güvence yoktur ([`core/logging.py`](../apps/api/app/core/logging.py)) |
 | Dersin varlığı | Üye olmayana 404; "var ama giremezsin" ile "yok" ayırt edilemez |
 | Taslak sınav sorusu ve cevap anahtarı | `questions_read` politikası öğrenciye yalnız `approved` gösterir (`0004`) |
 | `request_logs` satırları | Öğrenciye tamamen kapalı; eğitmen yalnız kendi dersini okur (`0005`) |
@@ -257,7 +268,7 @@ set-membership bir kontroldür.
 öğrenci bağlamında `INSERT ... RETURNING` çalışmaz. `api/chat.py` bu yüzden
 ORM'in `session.add()` yolunu değil RETURNING üretmeyen Core INSERT'ünü
 kullanır — `.inline()` bunu zorlar
-([`chat.py:635`](../apps/api/app/api/chat.py#L635)).
+([`chat.py::post_chat`](../apps/api/app/api/chat.py)).
 
 ---
 
@@ -268,10 +279,13 @@ kullanır — `.inline()` bunu zorlar
   yasak listesi değil.
 - **Yükleme tekilliği**: `(course_id, file_hash)` üzerinde UNIQUE; aynı dosya
   ikinci kez embed edilmez.
-- **Sohbet istek sınırı**: kullanıcı+ders başına kayan pencere, varsayılan 20
-  istek / 60 saniye ([`chat.py:567`](../apps/api/app/api/chat.py#L567)).
+- **Sohbet istek sınırı**: kullanıcı+ders+kapsam başına PostgreSQL ortak kayan penceresi;
+  varsayılan 20 istek / 60 saniye. Bunlar ölçülmüş kapasite değil,
+  [`config.py`](../apps/api/app/core/config.py) ve [`0025`](../supabase/migrations/0025_shared_request_quota.sql)
+  politika değerleridir. [`request_quota.py::take_request_slot`](../apps/api/app/core/request_quota.py)
+  kabulü sağlayıcı çağrısından önce ayrı işlemde kesinleştirir.
 - **CORS**: izinli kaynaklar `CORS_ORIGINS`'ten gelir; üretimde yalnız gerçek
-  alan adını içerir ([`main.py:48`](../apps/api/app/main.py#L48)).
+  alan adını içerir ([`main.py::create_app`](../apps/api/app/main.py)).
 - **`POST /internal/drain`**: `WORKER_DRAIN_SECRET` yoksa kapalıdır; mevcut uç sabit zamanlı anahtar karşılaştırmasıyla korunur. Worker yapılandırması kullanıcıdan gelen genel bir URL değildir ([internal.py](../apps/api/app/api/internal.py)).
 
 ---
@@ -289,11 +303,11 @@ migration'ın `app.install_auth_user_bridge()` fonksiyonunu çağırır) ama
 Supabase'in `auth.users` şeması, izinleri ve `supabase_auth_admin` rolü birebir
 taklit edilmiştir, gerçek değildir.
 
-**3. Yeni API süreçleri ortak PostgreSQL istek kotasını kullanır.**0025 bütçeyi kullanıcı+ders+kapsam bazında paylaşır. Kontrol kabulü ayrı COMMIT'tir; başarısız sağlayıcı çağrısı hakkı geri vermez. İki gerçek HTTP sürecinde20 kabul/20 ret ve qgen300s Retry-After doğrulandı. Politika/DB hatasında sağlayıcı çağrısı yapılmadan503 döner. Eski bellek sayacını kullanan sürümle karışık geçiş bu garantiyi vermez. Token rezervasyonları ve aktif iş kontrolleri ayrı katmanlardır; soru üretiminin eşzamanlılık kapısı hâlâ süreç içindedir. [İşletim ve saklama sınırları](operations/shared-request-quota.md).
+**3. Yeni API süreçleri ortak PostgreSQL istek kotasını kullanır.** [`0025`](../supabase/migrations/0025_shared_request_quota.sql) ve [`request_quota.py`](../apps/api/app/core/request_quota.py) bütçeyi kullanıcı+ders+kapsam bazında paylaşır. Kontrol kabulü ayrı COMMIT'tir; başarısız sağlayıcı çağrısı hakkı geri vermez. İki gerçek HTTP sürecinde20 kabul/20 ret ve qgen300s Retry-After doğrulandı. Politika/DB hatasında sağlayıcı çağrısı yapılmadan503 döner. Eski bellek sayacını kullanan sürümle karışık geçiş bu garantiyi vermez. Token rezervasyonları ve aktif iş kontrolleri ayrı katmanlardır; soru üretiminin eşzamanlılık kapısı hâlâ süreç içindedir. [İşletim ve saklama sınırları](operations/shared-request-quota.md).
 
 **4. Güvenlik başlıkları vardır; TLS ayrı katmandır.** API JSON yanıtlarında CSP, nosniff ve referrer başlıkları, belge yüzeyinde ayrı dar politika vardır. Web CSP ve Permissions-Policy mevcuttur. Next'in mevcut üretim politikasında inline script/style izni kalır; nonce tabanlı daraltma uygulanmadı. Web CSP, yapılandırılmış API ve Supabase origin'lerini doğrulayarak `connect-src` listesine ekler; joker hedef açılmaz. Bu bir canlı Supabase giriş testi değildir. HTTPS/HSTS, gerçek dağıtımda doğrulanmalıdır.
 
-**5. CORS kimlik çerezlerini açmaz.** Güncel API `allow_credentials=False` kullanır; kimlik Bearer başlığıyla taşınır. İzinli origin listesi kurulumda dar tutulmalıdır.
+**5. CORS kimlik çerezlerini açmaz.** Güncel API [`main.py::create_app`](../apps/api/app/main.py) içinde `allow_credentials=False` kullanır; kimlik Bearer başlığıyla taşınır. İzinli origin listesi kurulumda dar tutulmalıdır.
 
 **6. Cevap önbelleğine yazma, uygulama katmanının garantisidir.** RLS
 düzeyinde dersin bir üyesi kendi dersinin `answer_cache`'ine satır yazabilir;
@@ -326,7 +340,14 @@ kimliği yoktur, tek yol API'dir. Başka derse sızma ise iki katmanda da kapal�
 
 S9/S9C hata metnini üç ayrı yoldan daraltır: `exc_info` nesne özeti, Uvicorn'un düz ERROR/CRITICAL kayıtlarında sabit olaylar ve çıktı arızasında tek sabit stderr işareti. `exception` alanı string'den nesneye geçmiştir; acil `logging_output_failed` kaydında zaman damgası yoktur. Collector bu biçimleri ayrıca kabul etmelidir. Yapılandırmadan önceki bütün süreç kayıtları JSON değildir. [İşletim sözleşmesi](operations/logging-privacy.md) ve [aşamalı yerel kabul](../specs/018-codex-production-line/evidence/s9-local/README.md), son birleşik test/hosted kabulünden ayrıdır.
 
-`request_id` hâlâ biçimi uygun istemci başlığından gelebilir ve tekrar kullanılabilir. Exception context'indeki değere de bilinen hassas kalıplar için maskeleme uygulanır; bu kalıplara uymayan diğer istemci kimlikleri yine kişisel bilgi taşıyabilir ve ilişkilendirilebilir. S9 bunu anonimleştirmez veya güvenilir kullanıcı/tekil işlem kanıtına dönüştürmez. İstemci kimliği değişikliği S10'da açıktır; erişim, saklama ve silme kararı bu metadata'yı da kapsamalıdır.
+S10 sonrasında destek kimliği istemci başlığından alınmaz.
+[`request_context.py::ServerRequestId`](../apps/api/app/core/request_context.py)
+her HTTP denemesi için sunucuda UUID4 üretir; `request_id_of` aynı isteğin state,
+hata zarfı, günlük ve audit tüketicilerine aynı iç nesneyi verir.
+[`main.py`](../apps/api/app/main.py) bu değeri `X-Request-ID` yanıt başlığına yazar.
+Bu kimlik yetki veya anonimlik kanıtı değildir; erişim, saklama ve silme kararı
+metadata için de gerekir. S9 dönemindeki istemci kimliği sınırı tarihsel kayıttır;
+S10'un yerel kabulü [kendi kanıt arşivinde](../specs/018-codex-production-line/evidence/s10-local/README.md) tutulur.
 
 Serbest metin yalnız `chat_messages.content` değildir: `answers.given`, değerlendirme geri bildirimi, kullanıcı yorumları ve yüklenen belgeler de kişisel bilgi içerebilir. Kullanıcı kimliğine bağlı operasyon kayıtları, ham soru içermese de kişisel veri niteliğini otomatik kaybetmez.
 
@@ -341,8 +362,8 @@ Sohbetin özel kalması genel kuraldır; öğrencinin açıkça eğitmen incelem
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 1689 test   # docs-check: backend.tests = 1689
-cd apps/api && uv run mypy app                  # temiz, 114 dosya   # docs-check: backend.mypyFiles = 114
+cd apps/api && uv run pytest -q                 # 1907 test   # docs-check: backend.tests = 1907
+cd apps/api && uv run mypy app                  # temiz, 121 dosya   # docs-check: backend.mypyFiles = 121
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -379,3 +400,55 @@ Kayıtlı alıştırma geri bildirimi, üye olmanın yanında açık oturum sahi
 Gönderilmemiş tarayıcı taslakları sessionStorage içinde kullanıcı/ders/oturum kapsamında tutulur; anahtar, kaynak, geri bildirim veya kimlik belirteci içermez. Geri yükleme sunucunun doğruladığı oturumdan sonra yapılır; gönderme, bitirme, süre dolması, kayıp oturum ve çıkış temizliği vardır. Bu depolama XSS için ayrı bir güvenlik sınırı değildir ve cihazlar arası eşitleme sağlamaz.
 
 Değerlendirme kanıt uçları varsayılan kapalı ayrı runtime moduna ve ayrı sırra bağlıdır; üretimde bu mod reddedilir. Gerçek sağlayıcıya ulaşılmadığını belirten sonuçlar gerçek cevap kalite kanıtı sayılmaz. Anahtar değerleri/ham bağlantı dizeleri raporlanmaz. Değerlendirme verileri yalnız izole, sentetik veri tabanında hazırlanır.
+
+## 018 L5 kimlik ve private Storage işletim sınırları
+
+Web geliştirme girişi yalnız derleme ortamındaki `NEXT_PUBLIC_DEV_AUTH=true` ile görünür ve kullanılabilir; API tarafında bağımsız `DEV_AUTH_ENABLED` kapısı korunur. Supabase istemcisi için mevcut `NEXT_PUBLIC_SUPABASE_URL` ve `NEXT_PUBLIC_SUPABASE_ANON_KEY` yapılandırması kullanılır. Entra düğmesi ayrıca somut bir `NEXT_PUBLIC_ENTRA_TENANT_ID` UUID'si ister. Bu istemci kontrolü tenant izolasyonu kanıtı değildir: Supabase Azure Tenant URL'si ilgili tenant'a, Entra uygulaması da tek tenant kabulüne bağlanmalıdır. Supabase redirect izin listesi uygulamanın `/auth/callback` adresini ve parola kurtarmada kullanılan `?next=reset-password` dönüşünü kapsamalıdır; gerçek proje üzerinde kabul henüz yapılmadı.
+
+Sağlayıcı giriş/çıkışı aynı origin Web Lock'u ile sıralanır; destek yoksa sağlayıcı yazımı reddedilir. Auth epoch kontrolü eski HTTP yanıtlarını ayırır; test edilen gecikmiş SDK giriş/çıkış olayları yeni oturumu geri açmaz veya kapatmaz. Merkezi 401 temizliği özel görünümü kapatır; 403 ders yetkisi reddidir ve oturumu kapatmaz. Kullanıcı metadata'sı veya e-posta alan adı ders rolü üretmez; yetki sunucudaki `course_memberships` kaydından gelir. Geçerli provider oturumu istemcide pedagojik yetki belgesi sayılmaz.
+
+`GET /courses/{course_id}/documents/{document_id}/download` sırasıyla üyelik/sınav kilidi, belge-ders eşleşmesi ve kanonik nesne yolunu doğrular. `STORAGE_BACKEND=supabase` yalnız `course-materials` bucket'ını kullanır; sunucunun `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` değerleri istemciye taşınmaz. Storage imza isteği `expiresIn=60` gönderir; yanıtın aynı proje/nesneye ait tek token içeren signed URL olması gerekir. Public veya başka origin/nesne URL'si kabul edilmez. Uzak yanıt `307`, `Cache-Control: no-store` ve `Referrer-Policy: no-referrer` taşır. Yerel backend dosyayı `200` attachment olarak verir. Bu başlıklar daha önce indirilmiş kopyaları silmez.
+
+`service_role` Storage RLS'i atlar; bu nedenle imzalama öncesi API kontrolü asıl katmandır. Verilmiş URL süreli bearer yetkisidir: üyelik iptali veya yeni sınavdan sonra TTL dolana kadar kullanılabilir. Anlık iptal/edge cache temizliği ölçülmedi. SQL sınav kilidi saklanan `expires_at` değerini kullanır; API'nin global süre tavanına göre daha uzun süre kapalı kalabilir.
+
+[`0029_private_storage.sql`](../supabase/migrations/0029_private_storage.sql) yerel PostgreSQL'de `storage.objects` yoksa işlem yapmadan geçer. Şema varsa modern `owner_id` metin alanı ve gerekli yetkileri doğrular; uyumsuz kurulumda kapalı kalır. Kurucu, süper kullanıcı veya gerekli sahiplik/GRANT yetkileriyle `CREATEROLE+BYPASSRLS` taşımalıdır. Ayrı `storage_private` şemasındaki dar yardımcı rol uygulama/istemci rolüne verilmez. Aktif üyelik okuma, eğitmen yazma, aktif üye sahip/eğitmen silme koşuludur; update/upsert kapalıdır. Öğrencinin aktif sınavı okumayı kapatır, eğitmen bu kilitten muaftır. Geniş eski permissive politika restrictive sınırları aşamaz. Hosted Supabase yönetim yetkileri henüz doğrulanmadı.
+
+F5 SQL kanıtı gerçek çekirdek göçleri ve `FORCE ROW LEVEL SECURITY` tablolarını kullanır; yalnız Supabase `storage` şeması sentetiktir. JWT claim GUC'leri `authenticated` rolü altında kurulur. Test mevcut Storage şemasını kabul etmez; ayrı yerel `dou_l5*` veritabanı ister ve bütün fikstürü işlem sonunda geri alır. Bu nedenle gerçek projede çalıştırılmaz. Önce çekirdek göçlerin uygulanmış olduğu ayrı test veritabanı hazırlanır, ardından depo kökünde aşağıdaki komutlar kullanılır; `PGHOST`, `PGPORT`, `PGUSER` yerel test bağlantısını göstermelidir:
+
+```bash
+psql -X -v ON_ERROR_STOP=1 -d dou_l5_storage -v storage_mutation=none -f supabase/tests/rls_storage.sql
+bash supabase/tests/rls_storage_mutation_check.sh dou_l5_storage
+```
+
+Mutasyon betiği read/insert/delete/update politikalarını tek tek gevşetir. Her bozuk koşuda sıfır dışı çıkış yanında ilgili `L5_ASSERT` etiketini arar; yalnız sözdizimi veya bağlantı hatasını güvenlik başarısı saymaz. Önce ve her mutasyondan sonra normal politika koşusunun geçmesi zorunludur. GitHub CI adımını L1 ekler; L5 workflow dosyasını değiştirmez. Güncel entegrasyon engeli: taban dalda 0027/0028 yoktur; izinli boşlukları genişletmeden çalışan göç sırası kapısı 0029 nedeniyle rc1 döner. Başka numara veya boş göç eklenmemiştir.
+
+## JWKS geçiş hazırlığı (F2; uygulama yok)
+
+**Gün-1 yalnız HS256 ile devam eder.** Bu bölüm gelecekteki asimetrik doğrulama için önerilen kabul ve işletim planıdır; JWKS istemcisi, algoritma değişimi veya yeni bağımlılık eklemez. Gerçek Supabase projesi ve anahtarları bulunmadığından canlı imza, rotasyon, kesinti ve iptal denemeleri `not-run` durumundadır.
+
+### Güvenilen kaynak ve `kid` çözümü
+
+Doğrulayıcı, dağıtımda onaylanan tam issuer ve ona bağlı tek HTTPS JWKS adresini kullanır. Supabase'in keşif yolu `https://<project-ref>.supabase.co/auth/v1/.well-known/jwks.json` biçimindedir; gerçek adres proje oluşturulduğunda kaydedilir. Token'ın `iss`, `jku`, `x5u` veya gömülü `jwk` alanı ağ hedefi ya da güvenilen anahtar olamaz. Yönlendirmeler ve izin listesi dışındaki hedefler reddedilir. Asimetrik anahtarların keşif uçlarında yayımlanması, ortak HS256 sırrının buradan alınabileceği anlamına gelmez. [Supabase imza anahtarları](https://supabase.com/docs/guides/auth/signing-keys#public-key-discovery-and-caching).
+
+Asimetrik yolda `kid` zorunlu, boş olmayan ve uzunluğu sınırlı bir metindir; yalnız onaylı issuer'ın doğrulanmış JWKS kümesinde tam eşleşme arar. Eksik, bilinmeyen veya aynı `kid` ile birden fazla aday bulunan anahtar reddedilir. Bilinmeyen `kid`, toplam istek bütçesi içinde en fazla bir zorunlu yenileme tetikleyebilir; sonuç yine yoksa kabul yoktur. `kid` kimliği doğrulamaz. İmza ardından zorunlu `exp`, tam issuer, `aud=authenticated` ve UUID `sub` denetlenir. E-posta alan adı veya kullanıcı metadata'sı ders rolü vermez; rol sunucuda `course_memberships` kaydından çözülür.
+
+Algoritma ve anahtar türü izin listeleri dağıtım kararıyla sabittir. Geçiş adayı için **tek asimetrik eşleşme** seçilip sınanır: örneğin `ES256` → `EC/P-256`; `RS256` → `RSA` ayrı bir karardır. Doğrulayıcı `alg`, `kty`, eğri, anahtar kullanım amacı ve varsa `key_ops` uyumunu kontrol eder. HS256 yalnız ayrı legacy doğrulayıcı ve ayrı ortak sır ile kullanılabilir. `HS256` ve asimetrik algoritmalar aynı decode çağrısında/anahtar parametresinde birleştirilmez; açık anahtar HMAC sırrına çevrilmez. Token'ın bildirdiği `alg` izin listesini oluşturamaz. Asimetrik doğrulama başarısız olunca HS256'ya veya dev kimliğine dönüş yoktur. [PyJWT algoritma uyarısı](https://pyjwt.readthedocs.io/en/stable/api.html#jwt.decode).
+
+### JWKS kesintisinde kabul yok
+
+**Geçiş etkinleştirildikten sonra JWKS erişim kontrolü her kullanıcı isteğinin kabul ön koşuludur; önbellekte anahtar bulunsa da erişim başarısızsa istek kabul edilmez.** Pencere içindeki legacy HS256 kabulü de bu kesinti kapısını atlayamaz. Devreye alınmadan önceki Gün-1 HS256 yolu JWKS'ye bağlanmaz.
+
+Önerilen başlangıç sınırları: kullanıcı isteği başına toplam 3 saniyelik JWKS bütçesi, en çok 64 KiB yanıt, 16 anahtar ve 128 karakter `kid`; ayrıştırılmış küme için en çok 60 saniyelik TTL. Bunlar uygulanmış veya ölçülmüş değerler değildir; adayın yük ve hata testlerinde değerlendirilir. Önceden tamamlanmış önbellek okuması tek başına erişilebilirlik kanıtı olmaz: kabul için o isteğin yeni, başarılı ve doğrulanmış JWKS yanıtına katılması gerekir. Eşzamanlı istekler devam eden tek ağ çağrısını paylaşabilir. Zaman aşımı, TLS/DNS/ağ hatası, başarısız HTTP, boş/bozuk/aşırı büyük küme veya bütçe aşımı reddir; süresi geçmiş anahtarla devam edilmez. İçeriksiz işletim sinyali ve alarm üretilir, token/anahtar/kişisel veri loglanmaz.
+
+PyJWT'nin küme ve anahtar önbellekleri bu uygulama kararının yerine geçmez; varsayılan önbellek davranışı kesinti kabul kapısını sağlamış sayılmaz. [PyJWT JWKS istemcisi](https://pyjwt.readthedocs.io/en/stable/api.html#jwt.PyJWKClient). Supabase'in edge önbelleği nedeniyle başarılı keşif yanıtı bile iptalin bütün tüketicilerde aynı anda görüldüğünü kanıtlamaz. Acil iptal için bütün API süreçlerinde uygulanabilen anahtar ret listesi ve önbellek temizleme yolu önceden sınanmalıdır. [Supabase önbellek ve iptal sınırları](https://supabase.com/docs/guides/auth/signing-keys#public-key-discovery-and-caching).
+
+### Önerilen 14 günlük pencere ve eski anahtarın iptali
+
+1. **T0 öncesi hazırlık:** Gerçek issuer/JWKS, seçilen algoritma ve anahtar türü, token ömürleri, saat toleransı, tüm doğrulayıcılar, SDK sürümleri ve gerekli kriptografi bağımlılıkları doğrulanır. Gerekli bağımlılık değişimi ayrıca onaylanmadan yapılmaz. API, web, Storage/worker ve varsa Edge Functions, otomasyon, mobil/CLI gibi eski tüketiciler envantere alınır; legacy `anon`/`service_role` kullanım yerleri ve sahibi kaydedilir. Negatif JWT, bilinmeyen/çift `kid`, anahtar türü karışması, sıcak/soğuk önbellek kesintisi, rotasyon, iptal ve geri dönüş denemeleri geçmeden terfi yoktur.
+2. **T0 ve pencere:** Önerilen 14 gün, **onaylı rollout kaydındaki kontrollü asimetrik imzalama başlangıcından** itibaren başlar; bu belgenin yazıldığı gün başlamaz. Önce yeni standby anahtarın tüm tüketicilerce görüldüğü doğrulanır. Pencere boyunca yalnız açıkça izin verilen eski HS256 yolu ile yeni asimetrik yol ayrı doğrulayıcılarda yaşar; issuer/audience ve kesinti kapıları aynıdır. Son tarih sessizce uzatılamaz. Terfi koşulları sağlanmazsa yeni karara kadar kapanış ya da kayıtlı güvenli geri dönüş uygulanır.
+3. **T0 + 14 gün kapanışı:** Kullanıcı token ömürleri/saat toleransı dolmuş, eski doğrulama tüketicileri ve legacy API anahtarı kullanımı kapanmış olmalıdır. Legacy `anon` ve `service_role`, JWT secret ile bağlı JWT'lerdir; eski sırrı iptal etmeden önce bunların tüketicileri uygun publishable/server secret anahtarlara geçirilip legacy anahtarlar devre dışı bırakılır. İmza rotasyonu tek başına eski anahtarın güvenini kaldırmaz; eski anahtar ayrıca iptal edilir. [Supabase anahtar yaşam döngüsü ve legacy API anahtarları](https://supabase.com/docs/guides/auth/signing-keys#lifetime-of-a-signing-key).
+4. **İptalin doğrulanması:** Backend'in HS256 kabul yolu kapatılır, eski sır çalışan süreçlerden/dağıtım ayarlarından kaldırılır ve yerel anahtar önbellekleri temizlenir. Eski anahtarla imzalı, süresi henüz dolmamış token bütün tüketicilerde reddedilmelidir; yeni anahtarın pozitif kontrolü sürmelidir. Sızıntı şüphesinde 14 gün beklenmez; acil ret/iptal yolu kullanılır ve tehlikeye girmiş anahtar geri açılmaz. Geri dönüş yalnız kayıtlı, iptal edilmemiş ve güvenilir anahtarla yapılabilir.
+
+Canlı ön koşullar ayrıca korunur: Entra için Supabase Azure Tenant URL'si somut tenant'a bağlanır ve Entra uygulaması tek tenant kabul eder; `NEXT_PUBLIC_ENTRA_TENANT_ID` yalnız istemci biçim kapısıdır. [Supabase Azure yapılandırması](https://supabase.com/docs/guides/auth/social-login/auth-azure). Storage'da `service_role` RLS'i atlar; anahtar veya imza geçişi, sunucunun dosya işleminden **önceki ders üyeliği kontrolünü** kaldırmaz. [Supabase Storage erişim kontrolü](https://supabase.com/docs/guides/storage/security/access-control#bypassing-access-controls). Bu canlı yapılandırmalar da henüz `not-run` durumundadır.
+
+13 Eylül 2026 tarihli yerel ön koşullar, F6 `not-run` nedenleri ve L1 entegrasyon işleri [L5 doğrulama devrinde](security/l5-auth-storage-verification.md) kayıtlıdır. Yerel PostgreSQL/sentetik Storage kanıtı, çalışan Supabase yığını veya canlı tenant kabulü sayılmaz.

@@ -119,7 +119,9 @@ jobs:
         working-directory: .
         run: |
           # 0017 ve runbook şeritleri 0021–0023 rezerve; B4 göçü 0024 ile başlar.
-          python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023
+          # 0028 L4 şeridine ayrıldı; kota yarışı kanıtlanmadığı için göç yazılmadı,
+          # L2 0027 ve L5 0029 birleşince boşluk kaldı (13–14 Eylül 2026).
+          python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023 --allow-gap 0028
           python3 -m unittest scripts.test_migration_check
 
       # Test SAYISI bu depoda kanıt olarak kullanılıyor (docs_check sayaçları,

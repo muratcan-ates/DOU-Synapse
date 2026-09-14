@@ -4,8 +4,18 @@ Bu kılavuz ders açma, materyal yükleme, soru inceleme, sınav hazırlama, der
 ayarları ve öğrenci geri bildirimlerini kapsar. Yapay zekânın ürettiği soru ve puanları
 kaynakla birlikte inceleyin; kaynak gösterilmesi tek başına pedagojik doğruluk kanıtı değildir.
 
-> Görseller önceki sürümden örnek ekranlardır. Aşağıdaki adımlar mevcut ekran adlarına
-> göre düzenlenmiştir; bazı özellikler kullandığınız ortamda açılmamış olabilir.
+> **13 Eylül 2026 — yerel arayüz kontrolü:** ekran adları, formlar ve ders rolü
+> sınırları, koşuya ait sentetik kimlik ve derslerle gerçek yerel API üzerinden
+> tarayıcıda karşılaştırıldı; sahte sağlayıcı ve hashing kullanıldı. Taslak düzenleme
+> formu, kaydetme düğmesi ve bu düğmenin forma bağlılığı kontrol edildi. Düzenlenmiş
+> taslağı kaydetme/onaylama, sınav yayınlama ve canlıya alma bu turda yapılmadı.
+> Ayrıntı ve sınırlar [kılavuz doğrulama kaydında](guide-verification.md) yer alır;
+> bu kontrol gerçek LLM kalitesi veya bütün iş akışları için kabul kanıtı değildir.
+>
+> Bu kılavuzdaki materyal, soru havuzu ve sınıf analitiği görselleri
+> [belge görsellerini yenileme koşusunda](screenshots.md) yenilendi. Giriş, ders listesi ve
+> katılımcı görselleri önceki sürüm örnekleridir. Yerel I2 kanıt görüntüleri bunların
+> yerine yayımlanmadı. Bazı özellikler kullandığınız ortamda açılmamış olabilir.
 
 ## 1. Giriş ve ders yetkisi
 
@@ -19,9 +29,31 @@ Eğitmen yetkiniz **ders bazlıdır**: bir derste eğitmen, başka bir derste ö
 olabilirsiniz. Açtığınız dersin eğitmeni olursunuz. **Bilgi İşlem** alanının yetkisi
 ayrıdır; eğitmen olmak bu alana giriş hakkı vermez.
 
+Parolanızı yenilemeniz gerekirse **Parolamı unuttum → Yenileme bağlantısı gönder**
+yolunu kullanın. E-postadaki bağlantıdan yeni parolayı belirleyip **Parolayı güncelle**
+deyin. Bağlantı geçersizse **Yeni bağlantı iste** seçeneği vardır. Bu akış, hazır demo
+kimlikleriyle kullanılan yerel girişte etkin değildir.
+
+### Genel bakış ve ders asistanı
+
+Girişten sonra **Genel bakış**, derslerinizi ve o dersteki rolünüze uygun araçları gösterir.
+Eğitmen olduğunuz derste **Dersi yönet** materyalleri açar. Ders kartında **Sınav planı**
+yazan bağlantı, ders içindeki **Sınav blueprint'i** ekranına; **Analitik** bağlantısı
+**Sınıf analitiği** ekranına gider. Bekleyen taslak ve işlenemeyen kaynak bildirimlerini
+ilgili ders ekranında inceleyin.
+
+Ders kartındaki **Ders asistanı** veya ders sayfasının köşesindeki
+**Eğitmen Asistanı** düğmesi kısa panel açar. Panelin kimliği ders üyeliği
+sunucudan doğrulandıktan sonra belirlenir. Kaynaklara dayalı
+öğretim hazırlığı için soruyu yazıp **Gönder** deyin. **Yeni konuşma** ayrı konuşma
+başlatır; **Kapat** veya Escape paneli kapatır. Önerileri incelemek ve uygulamak size
+aittir; bu konuşma soru onaylama veya sınav yayınlama işlemi yapmaz. Öğrenci olduğunuz
+başka bir derste aynı hesap **Ders Koçu** görünümünü ve o dersin öğrenci sınırlarını alır.
+
 ## 2. Ders açma ve materyal yükleme
 
-**Derslerim** ekranında ders kodunu ve adını girerek yeni ders oluşturun.
+**Dersler** menüsünden **Derslerim** ekranını açın. **Yeni ders** düğmesine basıp
+**Ders kodu** ve **Ders adı** alanlarını doldurun; **Oluştur** ile kaydedin.
 
 ![Derslerim](images/02-egitmen-ders-listesi.png)
 
@@ -65,12 +97,17 @@ kayıtlarını silmeye yönelmeyin.
 
 **Materyaller → Retrieval testi** bağlantısı **Retrieval laboratuvarı** ekranını açar.
 Dersle ilgili soruyu yazıp **Parçaları getir** deyin. Gelen alıntı ve konumları inceleyin.
+Bir kaynak ayrıntısını açarsanız **Atıfta kullanılan pasaj** ile varsa önceki ve sonraki
+parçaları birlikte okuyun. Laboratuvar eğitmen aracıdır; öğrenciye bu sayfanın bağlantısını
+vermek ona aynı yetkiyi sağlamaz.
 Bu ekran, ilgili materyal bölümlerini bulmanıza yardımcı olur; üretilmiş bir yanıtın veya
 puanlamanın doğruluğunu ölçmez.
 
 ## 3. Katılımcılar
 
-Ders → **Katılımcılar**. Kullanıcıyı e-postasıyla ekleyip dersteki rolünü seçin.
+Ders → **Katılımcılar**. Kullanıcının e-postasını girin, **Rol** alanından **Öğrenci**
+veya **Eğitmen** seçin ve **Derse ekle** deyin. Üyeliği kaldırmak için **Çıkar**,
+ardından **Evet, çıkar** ile onaylayın; vazgeçerseniz onaylamadan kapatın.
 
 ![Katılımcılar](images/04-egitmen-katilimcilar.png)
 
@@ -119,8 +156,12 @@ seçimleri genişletin. Yeni bir filtre seçmek listeyi baştan getirir.
 4. Eski bir kod sorusunda ölçüt yoksa ekran bunu bildirir. Kaydetmeden önce ölçüt ekleyin.
    Eski kayıtlar için bazı alanlar kilitliyse açıklamayı izleyin; her eski kaydın bütün
    alanlarının düzenlenebildiğini varsaymayın.
-5. **Taslağı kaydet**, yalnız düzenlemeyi saklar. İnceleme bittiyse **Onayla ve öğrenciye aç**;
+5. Formun altındaki **Taslağı kaydet**, yalnız düzenlemeyi saklar. İnceleme bittiyse **Onayla ve öğrenciye aç**;
    soru uygun değilse **Reddet** deyin. **Sıradaki taslağa geç** ile incelemeyi sürdürün.
+
+Çoktan seçmeli taslakta **Şıklar ve cevap anahtarı → Doğru şık** alanını ve her yanlış
+şıkkın kaynak seçimini birlikte inceleyin. Doğru şıkkı değiştirince yeni yanlış şık
+başlangıçta sorunun üretildiği kaynağa bağlanır; bu dayanağı ayrıca kontrol edin.
 
 Onaylanmamış sorular öğrenciye açılmaz. Reddedilen sorular havuzda kalır ve sınavlarda
 kullanılmaz. **Havuzdan sil** işlemini yalnız gerçekten kaldırmak istediğiniz soru için
@@ -176,7 +217,8 @@ ayarlayın:
 | **Asistan modları** | İzin verilen **Soru ve cevap** ve **Sokratik koç** modları; isterseniz **Global varsayılanı kullan** seçimini koruyun |
 | **İpucu sınırı** | Sokratik açılış sorusundan sonraki en fazla ipucu sayısı |
 | **Kanıt eşiği** | Yanıt vermek için yeterli kaynak bulunup bulunmadığına ilişkin eşiği değiştirir; yüksek değer daha çok kaynak yetersizliği uyarısına yol açabilir |
-| **Günlük sohbet token bütçesi** ve kişi başına sınırlar | Sohbet kullanımını sınırlar; token, metin kullanımının ölçüsüdür. Varsayılan seçimi sınırsız kullanım anlamına gelmez |
+| **Günlük sohbet token bütçesi** | Dersin sohbet kullanımını sınırlar; token, metin kullanımının ölçüsüdür. Varsayılan seçimi sınırsız kullanım anlamına gelmez |
+| **Öğrenci günlük token sınırı** ve **Öğretim elemanı günlük token sınırı** | Her rol için kişi başına günlük sohbet tüketimini sınırlar; alan açıklamasındaki sunucuda uygulanan etkin tavanı okuyun |
 | **Yanıt başına token tavanı** | Yanıtın azami uzunluğunu sınırlar |
 | **Eşzamanlı istek tavanı** | Aynı kişinin birlikte yürütebildiği sohbet isteklerini sınırlar |
 | **İzin verilen kaynaklar** | Öğrencinin asistan yanıtlarında kullanılabilecek materyalleri seçer |
@@ -207,7 +249,8 @@ bildirim verilmiş etkileşimleri kapsar.
 
 ## 8. Sınıf ilerlemesi
 
-Ders → **İlerleme**.
+Ders → **İlerleme**, eğitmen için **Sınıf analitiği** ekranını açar. Güncel kayıtları
+getirmek için **Yenile** deyin; ekran sürekli kendiliğinden yenilenmez.
 
 ![Sınıf analitiği](images/06-egitmen-sinif-analitigi.png)
 
@@ -228,6 +271,11 @@ Eğitmen olarak da **Asistan → Sohbetlerin → Sohbeti sil** ile tek konuşman
 **Kişisel sohbet geçmişin → Bu dersteki sohbetlerimi sil** ile dersteki bütün kendi
 sohbetlerinizi silebilirsiniz. **Kalıcı olarak sil** ile açıkça onaylayın veya **Vazgeç**
 deyin. Bu işlemler öğrencilerin sohbetlerini silmez.
+
+**Profil → Hesap bilgileri** bölümünde **Ad soyad** alanını düzenleyip **Profili kaydet**
+diyebilirsiniz; **E-posta** burada değiştirilemez. **Ders rolleri** bölümünden her dersteki
+üyeliğinizi kontrol edin. **Görünüm → Sistem / Açık / Koyu** seçimi yalnız bu tarayıcıda
+saklanır; **Sistem** cihazın görünüm ayarını izler.
 
 **Profil → Verilerimi indir veya sil**, kendi veri indirme, tüm sohbet geçmişini silme ve
 profil bilgilerini kaldırma işlemlerinizi açar. **Profil bilgilerimi kaldır**, bütün

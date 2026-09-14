@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "archive_sha256": "c68ae1b48d854868f43e47a471984113e59dc2705867ba7ea5953d9fe6137998",
+  "files": [
+    {
+      "path": "d3-acceptance-01.json",
+      "bytes": 28055,
+      "sha256": "518f3c9e514340273742635d7c2e706b769889d9c59e8ff3810fde5ea48d2f53"
+    },
+    {
+      "path": "d3-acceptance/result.json",
+      "bytes": 734,
+      "sha256": "8ab425743739826249e6033b445d242b66807c3d931ea32bdeea3e5ccdd7d0d5"
+    },
+    {
+      "path": "d3-acceptance/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d3-acceptance/stdout.txt",
+      "bytes": 28056,
+      "sha256": "41f46a797d3ed790db6b4a52f642042054358912d396215b4292fbc4ba7ffbe6"
+    },
+    {
+      "path": "d3-candidate/address-validation-05-01.log",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "d3-candidate/address-validation-05-02.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d3-candidate/address-validation-05-unit.log",
+      "bytes": 2916,
+      "sha256": "856a261b9b64bc5b5520d94449f63079bd12c7fd80fddab3de972303fe333dab"
+    },
+    {
+      "path": "d3-candidate/draft-static-validation-05.json",
+      "bytes": 3133,
+      "sha256": "54f6be77c94bb064e2c9c8202edcd65a20d09aabcd52e77d55ed5c25701d79f5"
+    },
+    {
+      "path": "d3-docs/result.json",
+      "bytes": 436,
+      "sha256": "2fe5a65b2ca673e513ce7442bc37290e6d87add56f026d7084b6d57140c094b2"
+    },
+    {
+      "path": "d3-docs/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d3-docs/stdout.txt",
+      "bytes": 2068,
+      "sha256": "955306237590f589641d0e6956529c2a5d1cfa6d42ef10290e3dd6eff803b28f"
+    },
+    {
+      "path": "d3-format/result.json",
+      "bytes": 709,
+      "sha256": "5f0259eb0cf4cb282469d461d165d0a951baa03d6a6bbb7cc679d7fbb9c7c336"
+    },
+    {
+      "path": "d3-format/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d3-format/stdout.txt",
+      "bytes": 26,
+      "sha256": "f114d83b30c5c657ee43a847a45bafccaea255d82673feb87c26d252c61e29c1"
+    },
+    {
+      "path": "d3-junit-public.json",
+      "bytes": 742,
+      "sha256": "1f95ffc2a6e07c9f9121574d7aa33d4a9feefe2868ee3bb691e4b9fd72819fe0"
+    },
+    {
+      "path": "d3-mechanics/result.json",
+      "bytes": 540,
+      "sha256": "e78aecaee8eff817a7e14e1d88bcbdbe263b6801b4b2bcec09216323ae08534f"
+    },
+    {
+      "path": "d3-mechanics/stderr.txt",
+      "bytes": 2916,
+      "sha256": "1894adbdf51213cdefc43c2bbaae55d03e9013065f7556aef5529bcc6dee2ab3"
+    },
+    {
+      "path": "d3-mechanics/stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d3-ruff-api/result.json",
+      "bytes": 712,
+      "sha256": "b5e2640dc5cab1be23dece9d4e1ab2a1d1e62a7d433dab403236049cbee922aa"
+    },
+    {
+      "path": "d3-ruff-api/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d3-ruff-api/stdout.txt",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "d3-ruff/result.json",
+      "bytes": 693,
+      "sha256": "c4a7636298269b7f0c600db69fdf4e9bf29e476d65482686b17b23726aca923d"
+    },
+    {
+      "path": "d3-ruff/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d3-ruff/stdout.txt",
+      "bytes": 1820,
+      "sha256": "0889f442f68f3738b057f4bd5e2576a3ffda39fd0dd9b0ecbbc95810d004e465"
+    }
+  ],
+  "deterministic_archive": "Sorted USTAR members, uid/gid/mtime zero, mode 0644; gzip filename empty and mtime zero.",
+  "private_secret_bytes_absent": true,
+  "private_files_included": false
+}

@@ -154,7 +154,7 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
       ```bash
       psql -X -v ON_ERROR_STOP=1 -d "$DATABASE" -c "SELECT n.nspname, count(*) FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','app') AND c.relkind IN ('r','p') GROUP BY n.nspname ORDER BY n.nspname"
       ```
-      Güncel şema **30 tablo** içerir: 28 public + 2 app. <!-- docs-check: tables.count = 30 -->
+      Güncel şema **32 tablo** içerir: 28 public + 2 app. <!-- docs-check: tables.count = 32 -->
       Sayı yalnız ilk kontroldür; uygulanan migration kayıtları/dosya hash'leri,
       sütun/index/policy ve gerçek rol yetkileri de eşleşmelidir. Sapmada bütün
       migration dosyalarını yeniden çalıştırmayın. [Dağıtım §3](deployment.md#3-migration-sırası)

@@ -1,3 +1,4 @@
+import { test as profileTest, teacher as profileTeacher, signIn as signInProfile } from "./worker-fixture";
 import { test } from "./audit-fixture";
 /**
  * Rol bazlı ürün portalının uçtan uca nöbetçileri.
@@ -338,13 +339,13 @@ test.describe("rol bazlı ürün portalı", () => {
       .toHaveLength(1);
   });
 
-  test("profil PATCH sunucu adını ve paylaşılan üst çubuk değerini yeniler", async ({
+  profileTest("profil PATCH sunucu adını ve paylaşılan üst çubuk değerini yeniler", async ({
     page,
   }) => {
-    const originalProfile = await apiGet<ProfileSnapshot>("/me/profile", AYSE);
-    const originalName = originalProfile.full_name ?? AYSE.fullName;
+    const originalProfile = await apiGet<ProfileSnapshot>("/me/profile", profileTeacher);
+    const originalName = originalProfile.full_name ?? profileTeacher.fullName;
     const updatedName = `Ayşe E2E ${Date.now().toString(36)}`;
-    await signIn(page, AYSE);
+    await signInProfile(page, profileTeacher);
 
     try {
       await page.goto("/profile");
@@ -365,7 +366,7 @@ test.describe("rol bazlı ürün portalı", () => {
       await expect(nameInput).toHaveValue(updatedName);
       await expect(page.getByRole("link", { name: `Profil: ${updatedName}`, exact: true }))
         .toBeVisible();
-      await expect.poll(async () => (await apiGet<ProfileSnapshot>("/me/profile", AYSE)).full_name)
+      await expect.poll(async () => (await apiGet<ProfileSnapshot>("/me/profile", profileTeacher)).full_name)
         .toBe(updatedName);
 
       await page.reload();
@@ -373,7 +374,7 @@ test.describe("rol bazlı ürün portalı", () => {
       await expect(page.getByRole("link", { name: `Profil: ${updatedName}`, exact: true }))
         .toBeVisible();
     } finally {
-      await apiPatch<ProfileSnapshot>("/me/profile", { full_name: originalName }, AYSE);
+      await apiPatch<ProfileSnapshot>("/me/profile", { full_name: originalName }, profileTeacher);
     }
   });
 

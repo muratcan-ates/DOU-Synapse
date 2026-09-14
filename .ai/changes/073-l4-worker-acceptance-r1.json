@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "change_id": "073-l4-worker-acceptance-r1",
+  "lineage_id": "l4-worker-acceptance",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "L4 D3: gerçek worker tekrar deneme ve SIGTERM kabul kanıtı",
+  "summary": "Bozuk PDF üç gerçek worker ayrıştırma denemesinden sonra aynı failed kayıtta kaldı; dördüncü claim oluşmadı. Gerçek worker.main süreci ayrıştırma ve hashing sonrası iptal edilebilir beklemede SIGTERM aldı, claim'i bıraktı ve 0 ile çıktı. İki gerçek DB/worker testi ve ayrı 16 sahte süreç mekaniği geçti. Uygulama/göç değişmedi; yerel tam API zamanlama hatası açık.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:59:13.544412+00:00",
+  "review_by": "2026-10-13T15:59:13.544412+00:00",
+  "base_sha": "7316241a28e5eab3b1a021846f60ed02c99d9b18",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Production unchanged from 7316241a28e5eab3b1a021846f60ed02c99d9b18; only isolated worker acceptance scripts and evidence added.",
+    "model_revision": "Production unchanged from 7316241a28e5eab3b1a021846f60ed02c99d9b18; only isolated worker acceptance scripts and evidence added.",
+    "prompt_revision": "Production unchanged from 7316241a28e5eab3b1a021846f60ed02c99d9b18; only isolated worker acceptance scripts and evidence added.",
+    "tool_schema_revision": "scripts/run_l4_worker_acceptance.py SHA256 d6c03b45cfe8b217a5780101810a1f97b374b4b67bcc11e0c495eae0dd4e8ae0; local owned-target acceptance launcher, not a production tool permission.",
+    "guardrail_revision": "Production unchanged from 7316241a28e5eab3b1a021846f60ed02c99d9b18; only isolated worker acceptance scripts and evidence added.",
+    "retrieval_revision": "Production unchanged from 7316241a28e5eab3b1a021846f60ed02c99d9b18; only isolated worker acceptance scripts and evidence added.",
+    "embedding_revision": "Production unchanged from 7316241a28e5eab3b1a021846f60ed02c99d9b18; only isolated worker acceptance scripts and evidence added.",
+    "evaluator_revision": "scripts/test_worker_process_acceptance.py SHA256 c816f4debdcafd30f7ccaa4cb08dfc45d0acbe683e5ba0edb5ee1a8d947b619d; two real local worker cases; separate scripts/test_l4_worker_launcher_cleanup.py SHA256 a65a6d7fcf1ce13b7b3847679d61f26a7b1b3b9f77b6a49501f26abc53c32c42 with sixteen fake-process cases."
+  },
+  "data": {
+    "corpus_digest": "c816f4debdcafd30f7ccaa4cb08dfc45d0acbe683e5ba0edb5ee1a8d947b619d",
+    "eval_set_digest": "ec5b93bad67601ca0801ca6cb690516acf078855a0920467d36d0c7b164a066d",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "docs/test-report.md",
+      "state": "present",
+      "sha256": "b35a1ff01f44ef11f19c2894e9e728836163a4817a8786b3e3791290aea30ecf"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d3/evidence.tar.gz",
+      "state": "present",
+      "sha256": "c68ae1b48d854868f43e47a471984113e59dc2705867ba7ea5953d9fe6137998"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d3/inventory.json",
+      "state": "present",
+      "sha256": "10dd30ec6e48576172d08dc76ec43bbb65c53f9565bb6c07f63acc3eb51c3aca"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-d3/summary.json",
+      "state": "present",
+      "sha256": "800b4efc2639943570323775e783955d3c8b974e0151d6d0a105a68061f7062d"
+    },
+    {
+      "path": "scripts/l4_worker_group_anchor.py",
+      "state": "present",
+      "sha256": "b6e04d69a7318280a5b1673bf00196529564113d6146e70a83ecfa20c405f839"
+    },
+    {
+      "path": "scripts/l4_worker_signal_child.py",
+      "state": "present",
+      "sha256": "e37de5a5b0b6f0708cecde006eda6fff33babe34c128ddae47eb8b638a8e848d"
+    },
+    {
+      "path": "scripts/run_l4_worker_acceptance.py",
+      "state": "present",
+      "sha256": "d6c03b45cfe8b217a5780101810a1f97b374b4b67bcc11e0c495eae0dd4e8ae0"
+    },
+    {
+      "path": "scripts/test_l4_worker_launcher_cleanup.py",
+      "state": "present",
+      "sha256": "a65a6d7fcf1ce13b7b3847679d61f26a7b1b3b9f77b6a49501f26abc53c32c42"
+    },
+    {
+      "path": "scripts/test_worker_process_acceptance.py",
+      "state": "present",
+      "sha256": "c816f4debdcafd30f7ccaa4cb08dfc45d0acbe683e5ba0edb5ee1a8d947b619d"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/073-l4-worker-acceptance-r1.json",
+      "report_sha256": "cfd38d8d3ef3727303a77a26d04e3070f0fcfaadbde332acc0a1116c2c8176f3",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "scripts/test_worker_process_acceptance.py",
+    "holdout_ref": "evaluation/results/20260913-l4-d3/summary.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "metrics": [
+      {
+        "name": "absolute_real_worker_contract_failures_reference_only",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 2
+      },
+      {
+        "name": "absolute_fake_process_mechanics_failures_reference_only",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 16
+      }
+    ],
+    "exact_command": "Actual launcher argv and the owned pytest child argv are recorded exactly in the summary and public receipt; the private config/XML/raw child logs are excluded. [\"apps/api/.venv/bin/python\", \"scripts/run_l4_worker_acceptance.py\", \"--private-config\", \"/Users/muratates/code/.dou-synapse-l4-runtime/d3-private/run-20260913_154709-8fbe6776.json\", \"--output\", \"/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/DOU-Synapse-L4-2026-09-13/d3-acceptance-01.json\"]. Numeric baseline 0 is the predeclared absolute reference of zero failed D3 contract tests, not a measured historical baseline. Two real PostgreSQL/worker tests and sixteen fake-process launcher mechanics tests are distinct evidence sets; no before/after or production improvement is claimed. References are test definitions and run report, not RAG calibration/holdout splits."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: manually invoked isolated acceptance scripts; production configuration unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:073-l4-worker-acceptance-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: manually invoked isolated acceptance scripts; production configuration unchanged",
+    "kill_switch": "Stop only the launcher's verified owned process group under its anchored identity protocol; refuse ambiguous ownership and retain failure diagnostics. No production exposure.",
+    "assignment": "Sticky synthetic fixture assignment by exact script digests and one pinned newly owned database/process group; no student cohort.",
+    "initial_exposure": "None; public synthetic source/evidence only, no deployment.",
+    "stop_conditions": [
+      "Wrong target database, source drift, incomplete group cleanup, stale claim or unexpected parser/worker result."
+    ],
+    "expand_conditions": [
+      "Resolve the separate local full API timing gate before whole-release acceptance.",
+      "Obtain separate native-blocking shutdown and deployed hosting evidence before asserting a production shutdown SLA."
+    ],
+    "active_exam_policy": "No active exam, academic record, course role, ingestion policy or student data changes."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:7316241a28e5eab3b1a021846f60ed02c99d9b18",
+    "procedure": "Revert this acceptance-script/evidence commit; no production runtime or database migration rollback is required.",
+    "max_minutes": 30,
+    "verification": "Planned operator action; not a measured production rollback SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixtures and operational path/process metadata. Only the explicit public receipt/log whitelist is archived; private admin secret bytes checked absent. Private config, XML and raw child logs are not read or archived. This is not an anonymous operational archive.",
+    "retention": "Synthetic evidence retained publicly for traceability. Private acceptance configuration/XML/child logs remain local; institutional production retention/compliance is outside this acceptance."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

@@ -31,13 +31,13 @@ Compose çalıştırma kabulü ayrıca gerekir.
 | Embedding | **`intfloat/multilingual-e5-large` (1024 boyut), ONNX/fastembed.** **`EMBEDDING_PROVIDER` ingest-zamanı kararıdır: değiştirmek tam re-index gerektirir, runtime'da çevrilmez.** Modeli imaja gömen build kodu ve ağsız imaj kontrolü vardır (§10); ölçüm ilgili adayın CI kanıtına bağlıdır | bge-m3 (fastembed dense kataloğunda yok — bkz. aşağıdaki not); İngilizce-odaklı embedding (TR materyalde çöker); API-only (per-query maliyet + offline demo imkânsız) |
 | Sparse arama | **PostgreSQL FTS, `simple` + `unaccent` konfigürasyonu** (köklendirme yok → `fork()`, `O(n log n)` gibi teknik tokenlar korunur); turkish/english konfigürasyonlarıyla gold set üzerinde karşılaştırılıp raporlanır | turkish snowball (İngilizce terimleri bozar), english (Türkçe ekleri bozar) |
 | Füzyon | **Reciprocal Rank Fusion** (k=60) | Öğrenilmiş fusion (veri yok), skor normalizasyonu (kırılgan) |
-| Reranker | **P1, bayrak arkasında** (bge-reranker-v2-m3) | Ana hatta zorunlu (latency + deployment riski) |
-| LLM | **LiteLLM Router: Groq (Llama) → Gemini Flash OTOMATİK failover + retry/backoff** (kod seviyesinde; manuel anahtar değişimi değil). Failover H2'de bilerek Groq anahtarı bozularak test edilir | Tek sağlayıcı; yerel LLM hosting (GPU/cold-start) |
+| Reranker | **Uygulanmadı.** `ENABLE_RERANKER` çalışma zamanı ayarı ve retrieval hattında reranker adımı yok; deney planı mevcut özellik sayılmaz (§10) | Ana hatta zorunlu (latency + deployment riski) |
+| LLM | **LiteLLM istemcisinde yapılandırılmış sağlayıcı sırası, sınırlı retry/backoff ve failover.** Model adlarının kaynağı [`core/provider_config.py`](apps/api/app/core/provider_config.py), ayarlar [`core/config.py`](apps/api/app/core/config.py), tüketici [`generation/llm.py::LiteLlmClient`](apps/api/app/modules/generation/llm.py). Çağrının `max_provider_attempts` sınırı da uygulanır; bu kod varlığı gerçek sağlayıcı deneyi değildir | Tek sağlayıcı; yerel LLM hosting (GPU/cold-start) |
 | Yapılandırılmış çıktı | **Pydantic şema + server-side validasyon + 1 retry** | Sağlayıcıya özel structured-output'a tam güven |
 | Orkestrasyon | **Düz Python servis kodu + açık state machine** | LangChain/LlamaIndex/LangGraph (debug şeffaflığı) |
 | Arka plan işleri | **PostgreSQL job tablosu, kısa claim işlemi ve lease/token/revision koruması.** BackgroundTasks veya yapılandırılmış HTTP drain tetiği; ayrı sürekli worker mevcut. `/internal/drain` anahtar yoksa kapalıdır | Scale-to-zero için dış uyanış/takvim gerekir; Redis/Celery eklenmedi |
 | Deploy | **Vercel + Azure Container Apps + Supabase** hedeflenir; bugün depoda yalnız `docker-compose.yml` + `apps/api/Dockerfile` var. Bulut dağıtımı **R3'ün açık işi** (§10) | Son haftada ilk deploy (CORS/JWT/cold-start sürprizleri teslime 2 gün kala), tek VM, K8s |
-| CI | **GitHub Actions**: ruff + ruff format + mypy + pytest + RLS izolasyon kanıtı (api) · lint + tsc (web) · Playwright uçtan uca. **Docker build ve ağsız model kontrolü** de vardır (§10); başarı yalnız ölçülen commit için geçerlidir | — |
+| CI | **GitHub Actions**: ruff + ruff format + mypy + pytest + RLS izolasyon kanıtı (api) · tip kontrolü + `bun test lib/` + kontrast + build (web) · Playwright uçtan uca. Adımlar [CI tanımında](.github/workflows/ci.yml) bulunur; web işi adında geçen lint için ayrı bir lint komutu yoktur. **Docker build ve ağsız model kontrolü** de vardır (§10); başarı yalnız ölçülen commit için geçerlidir | — |
 | Gözlemleme | **Yapılandırılmış JSON log + request/hata tabloları** (redaction'lı) | Langfuse/Sentry (v2) |
 
 ### Embedding modeli: bge-m3'ten multilingual-e5-large'a
@@ -143,7 +143,7 @@ barındırmada bu iki çalışma biçiminin uyanış politikası ayrı seçilir;
 
 ## 3. Veri Modeli (çekirdek tablolar)
 
-Kodda gerçekten var olan 30 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026`): <!-- docs-check: tables.count = 30 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026 -->
+Kodda gerçekten var olan 32 tablo (`supabase/migrations/0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027,0029`): <!-- docs-check: tables.count = 32 --><!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027,0029 -->
 
 ```
 profiles            (id, email, full_name, created_at)
@@ -423,7 +423,7 @@ yapılan sorular, ret istatistiği (tek sayfa).
   **tabloların sahibi olmayan ve `BYPASSRLS` taşımayan `dou_app` rolüyle** bağlanır; oturum
   başına `app.current_user_id` ayarlanır ve politikalar bu değere bakar. Worker ayrı bir rolle
   (`dou_worker`, `BYPASSRLS`) bağlanır çünkü `chunks` tablosuna kullanıcı bağlamı olmadan
-  yazar. Uygulama şemalarında toplam 30 tablo vardır; RLS ve GRANT sınırları tablo bazındadır. <!-- docs-check: tables.count = 30 -->
+  yazar. Uygulama şemalarında toplam 32 tablo vardır; RLS ve GRANT sınırları tablo bazındadır. <!-- docs-check: tables.count = 32 -->
   Çekirdek kullanıcı tablolarında `FORCE ROW LEVEL SECURITY` kullanılır; bütün
   tabloların FORCE olduğu iddia edilmez. Örneğin 0025'in `app.request_rate_policies`
   ve `app.rate_limit_windows` tablolarında RLS etkindir, doğrudan PUBLIC/dou_app/
@@ -521,7 +521,7 @@ DOU-Synapse/
 │                               # kvkk, test-report, security, deployment, images/
 ├── supabase/                   # migrations/ (numaraları §3'te), tests/ (RLS kanıtı),
 │                               # local_dev_setup.sql, seed_demo.sql
-├── .github/workflows/ci.yml    # api: ruff+format+mypy+pytest+RLS · web: lint+tsc · e2e
+├── .github/workflows/ci.yml    # api: ruff+format+mypy+pytest+RLS · web: tip+birim+kontrast+build · e2e
 ├── docker-compose.yml          # db + api + HTTP worker + worker-poller; web ayrı
 └── .env.example
 ```
@@ -578,9 +578,11 @@ anlama gelmez. Tarihli ölçümler daha yeni kaynaklara otomatik taşınmaz.
 
 Bildirilen **üç bayat yorumdan ikisi düzeltildi**; biri duruyor:
 
-- `app/api/chat.py::_opening_question` — "öğrencinin son denemesi üretime geçirilemiyor
-  çünkü `contracts.Generator.generate` imzasında böyle bir alan yok" diyor;
-  `student_attempt` alanı imzada var ve uç onu geçiriyor. **Hâlâ yanlış.**
+- [`api/chat_history.py::_opening_question`](apps/api/app/api/chat_history.py) yorumunda "öğrencinin son denemesi üretime geçirilemiyor
+  çünkü `contracts.Generator.generate` imzasında böyle bir alan yok" deniyor.
+  [`contracts.py::Generator.generate`](apps/api/app/contracts.py) imzasında
+  `student_attempt` bulunuyor ve [`api/chat.py::post_chat`](apps/api/app/api/chat.py)
+  bunu üretim çağrılarına geçiriyor. **Yorum bayat; bu belge düzeltmesinde API kodu değiştirilmedi.**
 
 Bu dosya bu şeridin sahipliğinde değil; gruba iletildi.
 

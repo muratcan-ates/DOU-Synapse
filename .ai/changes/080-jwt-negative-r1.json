@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "change_id": "080-jwt-negative-r1",
+  "lineage_id": "jwt-negative",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "JWT algoritma sınırını kapalı doğrula",
+  "summary": "Gün-1 HS256 sınırı ayar listesiyle genişletilemez; gerçek HTTP negatif JWT ve create_app ayar retleriyle ölçüldü.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T14:43:30.179097+00:00",
+  "review_by": "2026-10-13T14:43:30.179097+00:00",
+  "base_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "model_revision": "unchanged:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "prompt_revision": "unchanged:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "tool_schema_revision": "unchanged:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "guardrail_revision": "l5:080-jwt-negative-r1",
+    "retrieval_revision": "unchanged:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "embedding_revision": "unchanged:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "evaluator_revision": "unchanged:22a85d390f759a77265e624d4d2acdf9b7c3d143"
+  },
+  "data": {
+    "corpus_digest": "dddf2a73881fe5cc42d1e642d96742f9eb4e631b200a6e6b4bcd3c4c71596744",
+    "eval_set_digest": "dddf2a73881fe5cc42d1e642d96742f9eb4e631b200a6e6b4bcd3c4c71596744",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "71810f080619bdeaaecc17428297a3160124b56ca204564a52067918139ee5cd"
+    },
+    {
+      "path": "apps/api/app/core/security.py",
+      "state": "present",
+      "sha256": "0800de252770e0f88c1ba36f42ce605ba72238d540c7c69bb45bf026edb0ace6"
+    },
+    {
+      "path": "apps/api/tests/test_auth_negative.py",
+      "state": "present",
+      "sha256": "dddf2a73881fe5cc42d1e642d96742f9eb4e631b200a6e6b4bcd3c4c71596744"
+    },
+    {
+      "path": "docs/security.md",
+      "state": "present",
+      "sha256": "af9b456cfa9ffe01f86ce2833b0f95eb846842065d96d62aee7134d5ef07bdaa"
+    },
+    {
+      "path": "specs/001-course-assistant-mvp/quickstart.md",
+      "state": "present",
+      "sha256": "6d8f2457008c8cea5d4bc8dc2acc6e81915d1e10ab5c709300c49066c8cef6f1"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "1b83410a79aafb9544a1b80846d59b239f565df6d2e5829471baa40197269849"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/quickstart.md",
+      "state": "present",
+      "sha256": "dd645afc09c2eed312db52ced1679ca3abaf0d5bde6e4edcff8b08e79265e6e6"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "97aa491d74b00aabcb5773dba0f1bd590970049beaee5dc298586b8f83bcda2e"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/080-jwt-negative-r1.json",
+      "report_sha256": "90d6a295d62bc9343df3fbe4de0a30ff910c13cc010a4e418a3cb02c2edf4f5d",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_auth_negative.py",
+    "holdout_ref": "apps/api/tests/test_security.py",
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "jwt_algorithm_matrix_failures",
+        "baseline": 2,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 5
+      }
+    ],
+    "exact_command": ".venv/bin/python -m pytest -q tests/test_auth_negative.py -k algorithm_setting"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "release-gate:080-jwt-negative-r1",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:080-jwt-negative-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "release-gate:080-jwt-negative-r1",
+    "kill_switch": "İhlalde sürümü terfi ettirme; indirme/giriş yüzeyini kapat ve önceki uyumlu sürüme dön.",
+    "assignment": "Sentetik oturum incelenen commit SHA değerine sabitlenir.",
+    "initial_exposure": "Canlı kullanıcı yok; yerel ve sentetik test.",
+    "stop_conditions": [
+      "Yetkisiz kullanıcıya kimlik veya ders belgesi açılması.",
+      "Geçersiz JWT veya gecikmiş yanıtın eski özel oturumu geri açması."
+    ],
+    "expand_conditions": [
+      "Aynı aday kapıları ve gerçek Supabase/Entra kabulü geçer.",
+      "Mühendislik, alan ve güvenlik sorumluları aynı adayı onaylar."
+    ],
+    "active_exam_policy": "Ders ve sınav kilitleri korunur; aktif sınavda öğrenci kaynak erişimi açılmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "procedure": "Uygulama commitini geri al; private bucket ve erişim retlerini koru. Geçmiş göç dosyasını değiştirme.",
+    "max_minutes": 30,
+    "verification": "Negatif auth/Storage/üyelik testlerini tekrar çalıştır; canlı geri alma henüz ölçülmedi.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik kimlikler, komutlar, çıkış kodları ve hashler; gerçek anahtar veya öğrenci içeriği yok.",
+    "retention": "Kanıt özetleri depo geçmişinde korunur; gerçek sağlayıcı saklama politikası yerel kabulün dışındadır."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "archive_sha256": "74bb043d9b6c31e4450c540007ae7048c438748efb039c744a580b37f26e9e36",
+  "files": [
+    {
+      "path": "d1-format/result.json",
+      "bytes": 446,
+      "sha256": "fddc812892ae7df37b202c354186de722928d19c4d683b19d8cd5744ac989181"
+    },
+    {
+      "path": "d1-format/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d1-format/stdout.txt",
+      "bytes": 28,
+      "sha256": "8f485afdff0bd8ee2565c955dd978868c94d264cb548bb6ebcfa0d7a6c6ec864"
+    },
+    {
+      "path": "d1-ruff/result.json",
+      "bytes": 430,
+      "sha256": "9b18ebe10a152f1b1aace7fa9c40ad48aeaa5de5dd57cc69992e5ae7e29e26c3"
+    },
+    {
+      "path": "d1-ruff/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d1-ruff/stdout.txt",
+      "bytes": 19,
+      "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "path": "d1-targeted/result.json",
+      "bytes": 26003,
+      "sha256": "ed0eba16e9ea099419c0dbb9232cae709d48d0847e721697d966a6fd214edfe2"
+    },
+    {
+      "path": "d1-targeted/stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "d1-targeted/stdout.txt",
+      "bytes": 99,
+      "sha256": "cac2629362068b87780e8d73f68115f1d22a3b699b611490bf15efc27c7b09aa"
+    }
+  ],
+  "deterministic_archive": "Sorted USTAR members, uid/gid/mtime zero, mode 0644; gzip filename empty and mtime zero.",
+  "private_secret_bytes_absent": true,
+  "private_files_included": false
+}

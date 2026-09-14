@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "change_id": "052-grounded-explanation-oracles-r1",
+  "lineage_id": "grounded-assessment-feedback",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "B9: kaynaklı yanlış cevap geri bildirimi ve deterministik kod puanlaması",
+  "summary": "Yeni açık uçlu ve kod yanıtları aynı dersin okunabilir belge/kaynak bağıyla puanlanır. Yanlış veya kısmi yanıtta birebir kaynak alıntısı ve sonraki çalışma ipucu gerekir. Kod puanı deterministik oracle tarafından verilir; model yalnız açıklama sağlar. Yerel mekanik sonuçlar hashli makbuzlara bağlıdır; eksik kabul kapıları ENGEL olarak kanıtta korunur.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:41:18.902991+00:00",
+  "review_by": "2026-09-27T15:41:18.902991+00:00",
+  "base_sha": "f465cf6b9ab24e54986a92ca01e9eb348f529939",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Mevcut sağlayıcı seçimi korunur. LLM_SIMULATE_GROUNDED_FEEDBACK=1 yalnız LOCAL, FakeLlmClient ve kapalı değerlendirme çalışma zamanı için etiketli yerel demo üretir.",
+    "model_revision": "Yeni model seçimi yok; kod puanı modelin puan/rubrik alanlarından bağımsızdır. Gerçek sağlayıcı kabulü ölçülmedi.",
+    "prompt_revision": "Essay için kaynaklı alıntı/ipucu şartı; kod için yalnız açıklama istemi. İlgili uygulama dosyalarının tam hashleri artifacts alanındadır.",
+    "tool_schema_revision": "GroundedFeedbackEvidence ve NextHintOut; given:string içinde katı version1 BugHuntSubmission; yeni feedback_version1 kayıtları.",
+    "guardrail_revision": "Ders, belge, kaynak, birebir alıntı ve kayıt sürümü doğrulanır; gösterim ve sınav kilitleri ortak izdüşümde korunur.",
+    "retrieval_revision": "Geri getirme eşikleri değişmez. Değerlendirme geçerli RLS altında sorunun birincil kaynağını ders ve belge bağıyla okur.",
+    "embedding_revision": "Gömme davranışı değişmez; yerel tarayıcı kanıtı hashing ve sentetik kaynaklar kullanır.",
+    "evaluator_revision": "code_trace/bug_hunt için deterministik metin oracle; essay rubrik hesabı korunur. Eksik puanın tümünde kaynaklı alıntı ve ipucu gerekir; yeni kod rubrik dökümü boştur."
+  },
+  "data": {
+    "corpus_digest": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d",
+    "eval_set_digest": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "048151dcfb980e64aeb0eb59160a48b2c9f91ef56ad15b35201293d884d81df0"
+    },
+    {
+      "path": "apps/api/app/api/exams.py",
+      "state": "present",
+      "sha256": "1afb2de5ac760b401403a6e246e30ff9167bd9c120ffff0788f8ad99d5aa0be2"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/code_oracle.py",
+      "state": "present",
+      "sha256": "d774dd4445b58aaa7844e272eba18366bad388c712a0a3a1855ea623d5c219fa"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/grading.py",
+      "state": "present",
+      "sha256": "3bf5e56e80e6843f5fb4094f633d79be8a84aea15c565ceec3e1f6d33a491ace"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/local_grading_fixture.py",
+      "state": "present",
+      "sha256": "4754aed5d0480d96f38e79cea8a6fea4b9c5353bc31bf9ac2f2bf3c966e44f7c"
+    },
+    {
+      "path": "apps/api/app/modules/assessment/question_gen.py",
+      "state": "present",
+      "sha256": "515b6ba6504ec63ea29b47d5c553be3dc3d587a446b0c1fd997e1cd1fe0a326d"
+    },
+    {
+      "path": "apps/api/app/schemas/assessment.py",
+      "state": "present",
+      "sha256": "6eea7012d7b48e54a2aea7f29ededc9736103a66ec3f40145904223b59ec07e7"
+    },
+    {
+      "path": "apps/api/tests/test_assessment.py",
+      "state": "present",
+      "sha256": "a35051b574d52234c0ed9465a0df5ecae81dfb056572296e4e07537f3302a117"
+    },
+    {
+      "path": "apps/api/tests/test_code_grading_criteria.py",
+      "state": "present",
+      "sha256": "81026368ebb41b3525e300b45d4a129416fff986e31eec3ca12fec22452998e4"
+    },
+    {
+      "path": "apps/api/tests/test_code_grading_criteria_api.py",
+      "state": "present",
+      "sha256": "67fe1388ebcf65f401f5dddfa6075b76f49ef07150bb08111158e62cdf691a77"
+    },
+    {
+      "path": "apps/api/tests/test_code_oracle_feedback.py",
+      "state": "present",
+      "sha256": "7aa7a6ec940378023a1205d998608771260547763d97f2b8ab5d67fc7bcd531d"
+    },
+    {
+      "path": "apps/api/tests/test_exams.py",
+      "state": "present",
+      "sha256": "2a1949563981a002a8e3643411ae6435c19cce265a3aa845a3a05613537ced9d"
+    },
+    {
+      "path": "apps/api/tests/test_explanation_feedback_api.py",
+      "state": "present",
+      "sha256": "a9094514554f0784a845824f6a948a27da416a0abbcb690442c079593824b476"
+    },
+    {
+      "path": "apps/api/tests/test_grading_grounding.py",
+      "state": "present",
+      "sha256": "6fad796dd3b0c2edd1c26a946f00271924e108fe54949b9f138ca390d76905c2"
+    },
+    {
+      "path": "apps/web/components/exam/feedback-panel.tsx",
+      "state": "present",
+      "sha256": "21f9fa283a2ee65f052b97e979bf2b52baea475d1aaf4b2a897b8fb6982eb40c"
+    },
+    {
+      "path": "apps/web/components/exam/question-input.tsx",
+      "state": "present",
+      "sha256": "a045cc900ba4f670a566ea92d94575f1e1dcc286473e06b980f54d385299aebd"
+    },
+    {
+      "path": "apps/web/components/exam/running-exam.tsx",
+      "state": "present",
+      "sha256": "9ff9bb036de49282aceb9fa2135de34bd7fdcda095fadf17d0e2596d0eeed6a8"
+    },
+    {
+      "path": "apps/web/e2e/grounded-wrong-feedback.spec.ts",
+      "state": "present",
+      "sha256": "2b8b857c06116658958babbf5fa2368625c8b023f1aba2027dbccf047a36db57"
+    },
+    {
+      "path": "apps/web/lib/assessment-feedback.ts",
+      "state": "present",
+      "sha256": "a0f44b37ef25d81d4c89b9400f9422b3f88d23e0d023ade892d060b1a93386a7"
+    },
+    {
+      "path": "apps/web/lib/exam-answer.test.ts",
+      "state": "present",
+      "sha256": "e6586b6903be7b79d84cdc2614775d8d09469095cec55df6f29826c01ba17cfb"
+    },
+    {
+      "path": "apps/web/lib/exam-answer.ts",
+      "state": "present",
+      "sha256": "87a36907bab36bcc7eede97d363c845799ca6d4f9febac2ea203b0b23fb3e430"
+    },
+    {
+      "path": "apps/web/lib/exam-drafts.ts",
+      "state": "present",
+      "sha256": "7ce8f8e322e21c75ce20600b8691260d06f94b818502bc6df1949df22756c62e"
+    },
+    {
+      "path": "apps/web/lib/exam.ts",
+      "state": "present",
+      "sha256": "61fcc5fc299c190663140ebd62422698f8e0bdb4f0ea866d0dfbcf2a5e221ea4"
+    },
+    {
+      "path": "apps/web/lib/next-hint-feedback.test.ts",
+      "state": "present",
+      "sha256": "65b9a576cabd60dbb035c249936102ba07b92c4948afc92f60f69f4a56405b67"
+    },
+    {
+      "path": "apps/web/lib/types.ts",
+      "state": "present",
+      "sha256": "810c0577fc3a45848698463b364b835c1cc359fb335ad94426852dabec776d93"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/052-grounded-explanation-oracles-r1.json",
+      "report_sha256": "20570c2c4143b5d86a13906a1d00c1aaf2b480c50ab234a5546c7d5c1de1272f",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/api/tests/test_code_oracle_feedback.py",
+    "holdout_ref": "apps/web/e2e/grounded-wrong-feedback.spec.ts",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "metrics": [
+      {
+        "name": "code_trace_provider_score_override_cases_correct",
+        "baseline": 0,
+        "candidate": 2,
+        "operator": "==",
+        "threshold": 2,
+        "sample_size": 2
+      }
+    ],
+    "exact_command": ".venv/bin/python /Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-052/baseline_probe.py --api-root /Users/muratates/code/dou-l2-product-v5/apps/api --expected-head f465cf6b9ab24e54986a92ca01e9eb348f529939 --label baseline\n.venv/bin/python /Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/l2-production-line/runtime/governance-052/baseline_probe.py --api-root /Users/muratates/code/dou-l2-product-v5/apps/api --expected-head f465cf6b9ab24e54986a92ca01e9eb348f529939 --label candidate"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Atanacak bağımsız mühendislik değerlendirici; henüz insan atanmamış",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Atanacak bağımsız pedagojik alan değerlendirici; henüz insan atanmamış",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Atanacak bağımsız güvenlik ve gizlilik değerlendirici; henüz insan atanmamış",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "LLM_SIMULATE_GROUNDED_FEEDBACK",
+    "flag_state": "not-applicable",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:b9-grounded-feedback",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "LLM_SIMULATE_GROUNDED_FEEDBACK (yalnız yerel demo; üretim kapatma anahtarı değil)",
+    "kill_switch": "Yerel demo için bayrağı kaldırın. Gerçek B9 davranışı ancak version1 kayıt okuyucusunu koruyan onaylı uygulama geri dönüşü veya değerlendirme okumalarının operasyonel kapatılmasıyla durdurulabilir; prova yapılmadı.",
+    "assignment": "SELF adayı; yeni B9 tarayıcı akışı ayrılmış yerel demo API'sinde, mevcut regresyon ayrı varsayılan sahte sağlayıcılı API'de ölçülür.",
+    "initial_exposure": "Yalnız sahip olunan yerel sentetik ortamlar; dağıtım veya terfi yapılmadı.",
+    "stop_conditions": [
+      "Yeni yanlış/kısmi sonuç güncel birebir alıntı ve ipucu olmadan görünürse durdur.",
+      "Başka dersin kaynağı veya öğrencinin yanıtı görünürse durdur.",
+      "Sınav kilidi altında puan, çözüm, alıntı veya ipucu görünürse durdur.",
+      "Model puanı kod oracle puanını değiştirirse durdur.",
+      "Yerel demo üretimde, gerçek sağlayıcıda veya değerlendirme çalışma zamanında etkinleşirse durdur.",
+      "Zorunlu kapı başarısızsa veya geri dönüş okuyucusu doğrulanmamışsa yayınlama."
+    ],
+    "expand_conditions": [
+      "Tam aday hashine bağlı gerekli kapılar geçmeli.",
+      "Bağımsız mühendislik, alan ve güvenlik/gizlilik insan onayları kaydedilmeli.",
+      "Gerçek sağlayıcı ve insan pedagojik değerlendirmesi ayrı kaydedilmeli.",
+      "Yeni version1 kayıtlarıyla geri dönüş uyumluluğu prova edilmeli."
+    ],
+    "active_exam_policy": "Mevcut kullanıcı/ders sınav kilitleri ve reveal=False yeni alanları gizler. Devam eden sınav dönüştürülmez; tarihsel yanıt puanları yeniden hesaplanmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "B4 f465cf6b9ab24e54986a92ca01e9eb348f529939; yeni version1 kayıtlarla uyumluluğu henüz kanıtlanmadı.",
+    "procedure": "B9 yazımlarından sonra geri dönüşten önce version1 ders/alıntı/sürüm kontrollerini koruyan incelenmiş okuyucuyu tutun veya ilgili değerlendirme okumalarını kapatın. Sonra yeni puanlama/UI davranışını geri alın. Göç geri alma veya tarihsel puan yeniden yazma yok.",
+    "max_minutes": 30,
+    "verification": "30 dakika yalnız planlanan hedeftir; ölçülmedi. Değişmiş kaynaklı version1 sonuç doğrulanamaz kalmalı; etkin sınavda sonuç görünmemeli; eski rubrik80 kaydı80 kalmalı. Geri yüklenen kaynak/dağıtım kimliği ve gerçek sonuçlar ayrı kaydedilmeli.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik kimlikler, yerel ders kaynakları, sabit demo çıktıları, toplu sayılar ve kaynak/test hashleri kullanıldı. Gerçek öğrenci yanıtı veya sağlayıcı anahtarı yok. Dosya/ders kimliğini model değil veritabanı belirler.",
+    "retention": "İncelenmiş kayıt depoda sürümlenebilir; dış kanıtlar yereldir. Hukuki uyum veya gerçek veri saklama sertifikası iddia edilmez."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

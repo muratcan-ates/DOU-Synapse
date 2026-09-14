@@ -1,14 +1,12 @@
+import { test, teacher as workerTeacher, student, teacherHeaders, studentHeaders, signIn } from "./worker-fixture";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { resolveE2eDatabaseName } from "./cleanup";
 import { createE2eCourseIdentity, isRunScopedE2eCourseCode, requireE2eRunId } from "./fixtures";
 import type { Question, QuestionType } from "../lib/types";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const studentId = "22222222-2222-2222-2222-222222222222";
-const teacherHeaders = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
-const studentHeaders = { Authorization: `Bearer dev:${studentId}` };
 const criterion = "Döngüsel beklemeyi açıklar";
 const quote = "Döngüsel bekleme, süreçlerin birbirinin tuttuğu kaynakları beklediği bir zincirdir.";
 const sourceName = "code-rubric-synthetic.md";
@@ -23,7 +21,7 @@ interface Course { id: string; code: string }
 function fixtureSql(course: Course, sql: string, values: Record<string, string>): string {
   if (!isRunScopedE2eCourseCode(course.code, requireE2eRunId())) throw new Error("Fixture yalnız bu koşunun dersine yazabilir.");
   const database = resolveE2eDatabaseName(undefined);
-  const variables = Object.entries({ ...values, course_id: course.id, course_code: course.code, student_id: studentId });
+  const variables = Object.entries({ ...values, course_id: course.id, course_code: course.code, student_id: student.id });
   return execFileSync(process.env.PG_BIN ? join(process.env.PG_BIN, "psql") : "psql",
     ["-X", "-q", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-d", database, ...variables.flatMap(([name, value]) => ["-v", `${name}=${value}`])],
     { input: sql, encoding: "utf8", env: process.env }).trim();
@@ -52,7 +50,7 @@ async function prepare(request: APIRequestContext, kind: QuestionType) {
   const created = await request.post(`${API}/courses`, { headers: teacherHeaders, data: createE2eCourseIdentity(`KOD-RUBRIK-${kind}`) });
   expect(created.ok(), await created.text()).toBeTruthy(); const course = await created.json() as Course;
   const base = `${API}/courses/${course.id}`;
-  expect((await request.post(`${base}/members`, { headers: teacherHeaders, data: { email: "burak@dogus.edu.tr", role: "student" } })).ok()).toBeTruthy();
+  expect((await request.post(`${base}/members`, { headers: teacherHeaders, data: { email: student.email, role: "student" } })).ok()).toBeTruthy();
   const topicResponse = await request.post(`${base}/topics`, { headers: teacherHeaders, data: { name: "Deadlock" } });
   expect(topicResponse.ok()).toBeTruthy(); const topic = await topicResponse.json();
   const upload = await request.post(`${base}/documents`, { headers: teacherHeaders, multipart: {
@@ -67,13 +65,14 @@ async function prepare(request: APIRequestContext, kind: QuestionType) {
   expect(report.questions).toHaveLength(1);
   return { course, base, question: report.questions[0] as Question };
 }
-async function login(page: Page, teacher: boolean) {
-  await page.goto("/"); await page.getByRole("button", { name: teacher ? /Ayşe Hoca/ : /Burak Yılmaz/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-}
-async function finish(page: Page) {
+async function finish(page: Page, base: string, sessionId: string) {
   await page.getByRole("button", { name: "Sınavı bitir", exact: true }).click();
-  await page.getByRole("button", { name: "Bitir ve sonucu gör", exact: true }).click();
+  // Başlık yükleme sırasında da görünür; kaynağı gerçek sonuç yanıtından sonra denetle.
+  const [result] = await Promise.all([
+    page.waitForResponse((response) => response.url() === `${base}/exams/${sessionId}/results`),
+    page.getByRole("button", { name: "Bitir ve sonucu gör", exact: true }).click(),
+  ]);
+  expect(result.status(), await result.text()).toBe(200);
   await expect(page.getByRole("heading", { name: "Sınav sonucu", exact: true })).toBeVisible();
 }
 const evidencePanel = (page: Page) => page.getByRole("region", { name: "Eksik ölçütün dayanağı", exact: true });
@@ -87,7 +86,7 @@ for (const kind of ["code_trace", "bug_hunt", "open"] as const) {
       // Generation has a complete rubric; only this isolated draft is converted to a legacy record.
       expect(question.payload.rubric).toBeInstanceOf(Array); legacyDraft(course, question);
     }
-    await login(page, true); await page.goto(`/courses/${course.id}/questions`);
+    await signIn(page, workerTeacher); await page.goto(`/courses/${course.id}/questions`);
     await page.getByRole("button", { name: "Taslağı düzenle", exact: true }).click();
     const editor = page.getByRole("form", { name: "Taslak soru düzenleme" });
     const save = page.getByRole("button", { name: "Taslağı kaydet", exact: true });
@@ -123,7 +122,7 @@ for (const kind of ["code_trace", "bug_hunt", "open"] as const) {
     const approved = page.waitForResponse((response) => response.url() === `${base}/questions/${question.id}/approve`);
     await page.getByRole("button", { name: "Onayla ve öğrenciye aç", exact: true }).click(); expect((await approved).ok()).toBeTruthy();
 
-    await login(page, false); await page.goto(`/courses/${course.id}/exam`);
+    await signIn(page, student); await page.goto(`/courses/${course.id}/exam`);
     const started = page.waitForResponse((response) => response.url() === `${base}/exams` && response.request().method() === "POST");
     await page.getByRole("button", { name: "Alıştırma başlat", exact: true }).click();
     const session = await (await started).json();
@@ -157,7 +156,7 @@ for (const kind of ["code_trace", "bug_hunt", "open"] as const) {
     await expect(page).toHaveURL(new RegExp(`/sources/${question.source!.chunk_id}$`));
     await expect(page.getByRole("heading", { name: sourceName, exact: true })).toBeVisible();
     await expect(page.getByText("Atıfta kullanılan pasaj", { exact: true })).toBeVisible();
-    await page.goto(`/courses/${course.id}/exam`); await expect(evidencePanel(page)).toBeVisible(); await finish(page);
+    await page.goto(`/courses/${course.id}/exam`); await expect(evidencePanel(page)).toBeVisible(); await finish(page, base, session.id);
     await expect(evidencePanel(page)).toBeVisible();
     const result = await request.get(`${base}/exams/${session.id}/results`, { headers: studentHeaders });
     expect(result.ok()).toBeTruthy(); expect((await result.json()).results[0].grounded_missing_criterion.source.snippet).toBe(quote);
@@ -186,7 +185,12 @@ for (const kind of ["code_trace", "bug_hunt", "open"] as const) {
       await expect(examTab.getByRole("heading", { name: "Rubrik ölçütleri", exact: true })).toHaveCount(0);
       await expect(examTab.getByText("Cevap anahtarı", { exact: true })).toHaveCount(0);
       expect((await request.get(`${base}/exams/${lockedSession.id}/answers/${question.id}`, { headers: studentHeaders })).status()).toBe(403);
-      await finish(examTab); await expect(evidencePanel(examTab)).toBeVisible(); await expect(evidencePanel(page)).toBeVisible();
+      const [refreshed] = await Promise.all([
+        page.waitForResponse((response) => response.url() === `${base}/exams/${session.id}/results` && response.status() === 200),
+        finish(examTab, base, lockedSession.id),
+      ]);
+      expect(refreshed.status(), await refreshed.text()).toBe(200);
+      await expect(evidencePanel(examTab)).toBeVisible(); await expect(evidencePanel(page)).toBeVisible();
     }
   });
 }

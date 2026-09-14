@@ -795,16 +795,29 @@ class TestDeterministicGrading:
         payload = OpenPayload.model_validate(short_answer_payload())
         source = uuid4()
 
-        assert grade_short_answer(payload, "Döngüsel Bekleme", source_chunk_id=source).score == 100
+        assert (
+            grade_short_answer(
+                payload, "Döngüsel Bekleme", source_chunk_id=source, source_text=DEADLOCK_TEXTS[0]
+            ).score
+            == 100
+        )
         # Cümle içinde verilen doğru cevap da kabul edilir.
         assert (
             grade_short_answer(
-                payload, "Bence buna döngüsel bekleme deniyor.", source_chunk_id=source
+                payload,
+                "Bence buna döngüsel bekleme deniyor.",
+                source_chunk_id=source,
+                source_text=DEADLOCK_TEXTS[0],
             ).score
             == 100
         )
         # İngilizce karşılık listede.
-        assert grade_short_answer(payload, "circular wait", source_chunk_id=source).score == 100
+        assert (
+            grade_short_answer(
+                payload, "circular wait", source_chunk_id=source, source_text=DEADLOCK_TEXTS[0]
+            ).score
+            == 100
+        )
 
     def test_kisa_cevap_aksansiz_yazilsa_da_puan_alir(self) -> None:
         """10 Ağustos ürün kararı: Türkçe klavyesi olmayan öğrenci sıfır almaz.
@@ -818,10 +831,25 @@ class TestDeterministicGrading:
         payload = OpenPayload.model_validate(short_answer_payload())
         source = uuid4()
 
-        assert grade_short_answer(payload, "dongusel bekleme", source_chunk_id=source).score == 100
-        assert grade_short_answer(payload, "Dongusel Bekleme.", source_chunk_id=source).score == 100
+        assert (
+            grade_short_answer(
+                payload, "dongusel bekleme", source_chunk_id=source, source_text=DEADLOCK_TEXTS[0]
+            ).score
+            == 100
+        )
+        assert (
+            grade_short_answer(
+                payload, "Dongusel Bekleme.", source_chunk_id=source, source_text=DEADLOCK_TEXTS[0]
+            ).score
+            == 100
+        )
         # Kelime sınırı şartı katlamadan SONRA da duruyor: "ram" ile "program".
-        assert grade_short_answer(payload, "dongu", source_chunk_id=source).score == 0
+        assert (
+            grade_short_answer(
+                payload, "dongu", source_chunk_id=source, source_text=DEADLOCK_TEXTS[0]
+            ).score
+            == 0
+        )
 
     def test_kisa_cevap_yanlissa_kaynak_gosterilir(self) -> None:
         from app.modules.assessment.grading import grade_short_answer
@@ -829,7 +857,9 @@ class TestDeterministicGrading:
         payload = OpenPayload.model_validate(short_answer_payload())
         source = uuid4()
 
-        outcome = grade_short_answer(payload, "karşılıklı dışlama", source_chunk_id=source)
+        outcome = grade_short_answer(
+            payload, "karşılıklı dışlama", source_chunk_id=source, source_text=DEADLOCK_TEXTS[0]
+        )
 
         assert outcome.score == 0
         assert outcome.is_correct is False
@@ -864,6 +894,11 @@ def _verdict(score: int, chunk_id: UUID | str | None, *, missing: list[str] | No
             "score": score,
             "eksik_noktalar": missing or [],
             "dayanak_chunk_id": str(chunk_id) if chunk_id else None,
+            "grounded_feedback": {
+                "chunk_id": str(chunk_id) if chunk_id else None,
+                "quote": DEADLOCK_TEXTS[0][:300],
+                "next_hint": "Kaynak cümlesini cevabındaki koşullarla karşılaştır.",
+            },
         }
     )
 

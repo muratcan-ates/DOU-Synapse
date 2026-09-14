@@ -11,7 +11,7 @@ const partial: AnswerFeedback = { question_id: "q1", graded: true, is_correct: t
   rubric_breakdown: [{ point: "Karşılıklı dışlamayı açıklar", weight: 60, score: 100, earned: 60 },
     { point: criterion, weight: 40, score: 50, earned: 20 }],
   grounded_missing_criterion: { criterion, source } };
-const render = (feedback: AnswerFeedback) => renderToStaticMarkup(createElement(FeedbackPanel, { courseId: "course/id", feedback }));
+const render = (feedback: AnswerFeedback) => renderToStaticMarkup(createElement(FeedbackPanel, { courseId: "course/id", sessionId: "session/id", feedback }));
 
 describe("kaynaklı eksik ölçüt sunumu", () => {
   test("80 puanla doğru sayılan cevapta gerçek panel eksik ölçütü, alıntıyı ve kaynak yetki yolunu gösterir", () => {

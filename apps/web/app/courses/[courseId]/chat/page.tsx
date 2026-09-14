@@ -51,6 +51,8 @@ import { ChatFeedbackControls } from "@/components/chat-feedback";
 import { AssistantIdentitySummary } from "@/components/course-assistant/course-assistant";
 import { CourseNav } from "@/components/course-nav";
 import { ErrorNote, Loading, LoadMore } from "@/components/page-state";
+import { demoResponseText } from "@/lib/demo-response";
+import { DemoResponseNotice } from "@/components/demo-response-notice";
 import { SocraticLadder } from "@/components/socratic-ladder";
 import { AbstentionNotice, SourceCard } from "@/components/source-card";
 import { Badge, Button, EmptyState, Input } from "@/components/ui";
@@ -230,6 +232,7 @@ function ChatScreen({
         )}
 
         <ChatTranscript
+          sessionId={chat.sessionId}
           courseId={courseId}
           canGiveFeedback={canGiveFeedback}
           blocks={blocks}
@@ -287,6 +290,7 @@ function ChatScreen({
 /** Döküm blokları: soru balonu, kaynaklı cevap, abstention, Sokratik merdiven. */
 function ChatTranscript({
   courseId,
+  sessionId,
   canGiveFeedback,
   blocks,
   feedbackByMessage,
@@ -294,6 +298,7 @@ function ChatTranscript({
 }: {
   courseId: string;
   canGiveFeedback: boolean;
+  sessionId: string | null;
   blocks: ChatBlock[];
   feedbackByMessage: Map<string, TranscriptMessage["feedback"]>;
   onSaveFeedback: (
@@ -316,8 +321,9 @@ function ChatTranscript({
           case "answer":
             return (
               <div key={block.id} className="space-y-3">
+                <DemoResponseNotice fixture={block.fixture} />
                 <p className="prose-tr text-base whitespace-pre-line text-fg">
-                  {block.text}
+                  {demoResponseText(block.text, block.fixture)}
                 </p>
                 {/*
                   Önbellek dipnotu: rozet değil, satır içi soluk bir not.
@@ -334,6 +340,7 @@ function ChatTranscript({
                     key={`${citation.chunk_id}:${index}`}
                     source={citationSource(citation)}
                     href={sourceContextHref(courseId, citation.chunk_id)}
+                    learningContext={{ courseId, chunkId: citation.chunk_id, sessionId }}
                   />
                 ))}
                 {canGiveFeedback && (
@@ -349,7 +356,8 @@ function ChatTranscript({
           case "abstention":
             return (
               <div key={block.id} className="space-y-3">
-                <AbstentionNotice status={block.status} message={block.text} />
+                <DemoResponseNotice fixture={block.fixture} />
+                <AbstentionNotice status={block.status} message={demoResponseText(block.text, block.fixture)} />
                 {canGiveFeedback && (
                   <ChatFeedbackControls
                     courseId={courseId}

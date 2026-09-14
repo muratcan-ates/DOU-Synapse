@@ -1,18 +1,16 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { test, teacher as workerTeacher, student, teacherHeaders, studentHeaders, signIn } from "./worker-fixture";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 import { createE2eCourseIdentity } from "./fixtures";
 
 const API = process.env.E2E_API_URL ?? "http://localhost:8000";
-const teacherHeaders = { Authorization: "Bearer dev:11111111-1111-1111-1111-111111111111" };
-const studentId = "22222222-2222-2222-2222-222222222222";
-const studentHeaders = { Authorization: `Bearer dev:${studentId}` };
-const draftKey = `dou-synapse:exam-drafts:v1:${studentId}:privacy-synthetic:exam`;
+const draftKey = () => `dou-synapse:exam-drafts:v1:${student.id}:privacy-synthetic:exam`;
 
 async function prepareCourse(request: APIRequestContext) {
   const response = await request.post(`${API}/courses`, { headers: teacherHeaders, data: createE2eCourseIdentity("OTURUM-GIZLILIGI") });
   expect(response.ok(), await response.text()).toBeTruthy();
   const course = await response.json();
   const base = `${API}/courses/${course.id}`;
-  expect((await request.post(`${base}/members`, { headers: teacherHeaders, data: { email: "burak@dogus.edu.tr", role: "student" } })).ok()).toBeTruthy();
+  expect((await request.post(`${base}/members`, { headers: teacherHeaders, data: { email: student.email, role: "student" } })).ok()).toBeTruthy();
   const upload = await request.post(`${base}/documents`, { headers: teacherHeaders, multipart: {
     file: { name: "privacy-synthetic.md", mimeType: "text/markdown", buffer: Buffer.from("# Deadlock\nDeadlock iki veya daha fazla sürecin birbirini beklemesidir. Coffman koşulları karşılıklı dışlama, tut ve bekle, kesintisizlik ve dairesel beklemedir.\n") },
   } });
@@ -21,22 +19,17 @@ async function prepareCourse(request: APIRequestContext) {
   return { course, base };
 }
 
-async function login(page: Page, teacher = false) {
-  await page.goto("/");
-  await page.getByRole("button", { name: teacher ? /Ayşe Hoca/ : /Burak Yılmaz/ }).click();
-  await expect(page).toHaveURL(/\/dashboard$/);
-}
 
 async function seedDraft(page: Page, text: string) {
   await page.evaluate(({ key, text }) => {
     sessionStorage.setItem(key, JSON.stringify({ version: 1, updatedAt: Date.now(), drafts: { question: text } }));
     sessionStorage.setItem("privacy-test:unrelated", "keep");
     localStorage.setItem("privacy-test:preference", "keep");
-  }, { key: draftKey, text });
+  }, { key: draftKey(), text });
 }
 
 async function assertDraftGone(page: Page) {
-  expect(await page.evaluate((key) => sessionStorage.getItem(key), draftKey)).toBeNull();
+  expect(await page.evaluate((key) => sessionStorage.getItem(key), draftKey())).toBeNull();
   expect(await page.evaluate(() => sessionStorage.getItem("privacy-test:unrelated"))).toBe("keep");
   expect(await page.evaluate(() => localStorage.getItem("privacy-test:preference"))).toBe("keep");
 }
@@ -69,7 +62,7 @@ async function send(page: Page, text: string) {
 test("çıkış iki sekmenin taslağını ve özel görünümünü kapatır; geç sohbet yanıtı geri yazamaz", async ({ page, context, request }) => {
   test.setTimeout(90_000);
   const { course, base } = await prepareCourse(request);
-  await login(page); await page.goto(`/courses/${course.id}/chat`);
+  await signIn(page, student); await page.goto(`/courses/${course.id}/chat`);
   await expect(page.getByRole("textbox", { name: "Sorun", exact: true })).toBeVisible();
   const second = await context.newPage(); await second.goto("/dashboard");
   await expect(second.getByRole("button", { name: "Çıkış", exact: true }).first()).toBeVisible();
@@ -92,7 +85,7 @@ test("çıkış iki sekmenin taslağını ve özel görünümünü kapatır; ge�
     await expect(page.getByRole("textbox", { name: "Sorun", exact: true })).toHaveCount(0);
     const marker = await page.evaluate(() => localStorage.getItem("dou-synapse:auth-event:v1"));
     expect(marker).toMatch(/^signed-out:[a-f0-9-]+$/);
-    expect(marker).not.toContain(studentId);
+    expect(marker).not.toContain(student.id);
     await page.reload(); await assertDraftGone(page);
   } finally { hold.release(); }
 });
@@ -100,25 +93,25 @@ test("çıkış iki sekmenin taslağını ve özel görünümünü kapatır; ge�
 test("başka sekmede kimlik değişimi eski öğrencinin ekran ve taslaklarını yeni hesaba taşımaz", async ({ page, context, request }) => {
   test.setTimeout(90_000);
   const { course } = await prepareCourse(request);
-  await login(page); await page.goto(`/courses/${course.id}/chat`);
+  await signIn(page, student); await page.goto(`/courses/${course.id}/chat`);
   await page.getByRole("textbox", { name: "Sorun", exact: true }).fill("Sentetik öğrenciye özel gönderilmemiş soru");
   await seedDraft(page, "Sentetik öğrenci cevabı");
   // Normal same-user reload must preserve an unfinished local answer.
   await page.reload();
   await expect(page.getByRole("textbox", { name: "Sorun", exact: true })).toBeVisible();
-  expect(await page.evaluate((key) => sessionStorage.getItem(key), draftKey)).not.toBeNull();
-  const second = await context.newPage(); await login(second, true);
+  expect(await page.evaluate((key) => sessionStorage.getItem(key), draftKey())).not.toBeNull();
+  const second = await context.newPage(); await signIn(second, workerTeacher);
   await expect(page).toHaveURL(/\/$/); await assertDraftGone(page);
   await page.goto(`/courses/${course.id}/chat`);
   await expect(page.getByText("Eğitmen Asistanı", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Sorun", exact: true })).toHaveValue("");
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("dou-synapse-user")!).id)).toBe("11111111-1111-1111-1111-111111111111");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("dou-synapse-user")!).id)).toBe(workerTeacher.id);
 });
 
 test("sohbet sayfasından ayrıldıktan sonra eski yanıt açık oturum anahtarını yeniden oluşturmaz", async ({ page, request }) => {
   test.setTimeout(90_000);
   const { course, base } = await prepareCourse(request);
-  await login(page); await page.goto(`/courses/${course.id}/chat`);
+  await signIn(page, student); await page.goto(`/courses/${course.id}/chat`);
   const hold = await holdChat(page, base);
   await send(page, "Deadlock nedir? Sentetik gecikmeli soru."); await hold.seen;
   try {
@@ -145,7 +138,7 @@ for (const destination of ["new", "other"] as const) {
     await post(privateOlder, first.session_id); await post(latestQuestion, first.session_id);
     const otherQuestion = "Karşılıklı dışlama nedir? Diğer sohbet sorusu.";
     const other = await post(otherQuestion);
-    await login(page);
+    await signIn(page, student);
     // Daha küçük gerçek sayfa kullanılır; içerik/cursor/yetki sunucudan gelir.
     let release!: () => void; let captured!: () => void;
     const gate = new Promise<void>((resolve) => { release = resolve; });
