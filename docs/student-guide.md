@@ -149,6 +149,8 @@ kaynak kontrolü yapma gereğini kaldırmaz.
 
 ![Sınav provası](images/14-ogrenci-sinav-provasi.png)
 
+Not: Bu paketteki **öğrenci başlangıç/aktif/sonuç akışı için EKRAN kanıtı bu turda `koşulmadı`**. `bunx playwright test e2e/student-exam-flow.spec.ts --grep @ekran` ortam kısıtı nedeniyle çalıştırılamadı.
+
 Ders → **Sınav provası**. Sorular hocanızın onayladığı havuzdan gelir.
 
 | Çalışma biçimi | İpucu ve geri bildirim |

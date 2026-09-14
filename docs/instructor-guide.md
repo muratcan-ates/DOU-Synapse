@@ -193,6 +193,8 @@ taslak hazırlayıp onaylayın, sonra kâğıttaki soruyu değiştirin.
 
 ### Öğrencinin sınava ulaşması ve sonuçlar
 
+Not: Bu paketteki **öğrenci kataloğu + yayın + sınav sonuç kanıtı için EKRAN akışı `koşulmadı`**. `EKRAN=1` ile gerçek ekran ölçümü bu turda çalıştırılamadı.
+
 Öğrenci çalışma alanı açıksa sınav, katılım koşulları sağlandığında **Sınav provası → Şu
 anda açık sınavlar** bölümünde görünür. Öğrenci süreyi ve kalan deneme hakkını görür.
 **Oturumlarım** kişiye özeldir; sizin listeniz öğrencilerin oturumlarını göstermez.
