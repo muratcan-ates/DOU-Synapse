@@ -270,7 +270,39 @@ girseydi her sayfa iki kez temsil edilir ve Recall olduğundan yüksek çıkard�
 `fastembed` / `intfloat/multilingual-e5-large` ile gömüldü. **LLM çağrısı yok**,
 dolayısıyla bu bölümdeki her sayı sahte sağlayıcıdan bağımsızdır ve **geçerlidir**.
 
-### 6.1. Metrikler (n=105 puanlanabilir soru, 127 soru soruldu)
+### 6.0. 15 Eylül 2026 yeniden koşusu — güncel ağaçta regresyon kontrolü
+
+**KOŞULDU.** 14–15 Eylül gecesi main'e 20'den fazla commit girdi (GPT'nin kampüs
+tasarımı, P1/P2 birleşmeleri, telefon düzeltmeleri, CI kablolaması). Retrieval'ın
+bozulup bozulmadığını görmek için aynı holdout aynı yapılandırmayla yeniden koşuldu.
+
+| Metrik | 9 Ağustos (hibrit) | **15 Eylül (hibrit)** |
+|---|---:|---:|
+| Recall@5 | 0,971 | **0,9714** |
+| Recall@8 | 0,981 | **0,9810** |
+| MRR | 0,854 | **0,8583** |
+| Tam kapsama@5 | — | 0,8077 |
+| Tam kapsama@8 (n=26) | 0,885 | **0,8846** |
+| p95 gecikme (LLM'siz) | 0,106 sn | **0,1157 sn** |
+
+Kategori (15 Eylül): `direct` n=45 R@5 1,000 · `multi_chunk` n=22 R@5 1,000 ·
+`code_review` n=14 R@5 0,929 (R@8 1,000) · `technical_term` n=24 R@5 0,917.
+
+Sonuç: sayılar ölçüm hassasiyeti içinde aynı; **retrieval hattında regresyon yok.**
+Bu bölüm yeni bir kalite iddiası değil, taban doğrulamasıdır.
+
+Koşu: `2026-09-15T002442878188-holdout-hybrid-fastembed-retrieval.json`,
+git `1d2c610`, korpus `dou_eval` (22 belge, 167 parça),
+embedding `fastembed / intfloat/multilingual-e5-large`. **LLM çağrısı yok.**
+
+**Uçtan uca (e2e) katmanı — GERÇEK modelle kısmen koşuldu, metrik YOK.** Aynı gece
+gerçek Groq modeliyle holdout e2e denendi; 6 soru cevaplandı (1–4 atıf, 1,3–3,0 sn)
+ve koşu ürünün KENDİ günlük jeton kotasında durdu (`agent_quota_exhausted`;
+veritabanı öğrenci başına 50.000 jeton/gün tavanı koyuyor, istek başına ~5.150
+gidiyor). n=6 bir metrik raporlamak için yetersizdir; bu yüzden bu raporda gerçek
+modelli e2e sayısı **yazılmadı**. Ölçüm kotanın yenilendiği gün tekrarlanacak.
+
+### 6.1. Metrikler (n=105 puanlanabilir soru, 127 soru soruldu) — 9 Ağustos
 
 | Metrik | Dense-only | Hibrit (dense+FTS+RRF) |
 |---|---:|---:|
