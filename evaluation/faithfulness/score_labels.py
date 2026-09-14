@@ -28,6 +28,22 @@ if str(EVALUATION_ROOT) not in sys.path:
 import metrics
 
 ALLOWED_LABELS = ("destekleniyor", "kısmen", "desteklenmiyor")
+
+#: Aynı üç etiket, SIRALI hâliyle: destek arttıkça sağa gider.
+#:
+#: Neden ayrı sabit: `ALLOWED_LABELS` bir KÜME sözleşmesidir (form doğrulaması
+#: onu kullanır) ve sırası okunabilirlik için seçilmiş, ölçü için değil. Quadratic
+#: weighted kappa ise anlaşmazlığın uzaklığını ölçeğin sırasından okur; sırayı
+#: yanlış beyan etmek sessizce yanlış bir mesafe matrisi kurar ve kimse fark etmez.
+#: Bu yüzden sıra ayrıca ve açıkça yazılıyor, `ALLOWED_LABELS`'tan türetilmiyor.
+ORDINAL_SCALE = ("desteklenmiyor", "kısmen", "destekleniyor")
+
+# İki sabit ayrı yazıldığı için ayrışabilirler: birine etiket eklenip diğerine
+# eklenmezse QWK "ölçekte olmayan etiket" diye patlar ya da -daha kötüsü- form
+# doğrulaması geçen bir etiket ölçüye hiç girmez. İçe aktarma anında bağlanıyor.
+assert set(ORDINAL_SCALE) == set(ALLOWED_LABELS), (
+    "ORDINAL_SCALE ve ALLOWED_LABELS aynı etiket kümesini taşımalı."
+)
 ITEM_RE = re.compile(r"^##\s+\d+\.\s+([A-Za-z0-9][A-Za-z0-9_-]*)\s+\([^)]+\)\s*$")
 LABEL_RE = re.compile(r"^\*\*Etiket:\*\*.*?→\s*(.*?)\s*$")
 NOTE_RE = re.compile(r"^\*\*Not:\*\*\s*(.*?)\s*$")
@@ -244,7 +260,10 @@ def build_report(
     _validate_alignment(sample, first, second)
     first_labels = [entry.label for entry in first.entries]
     second_labels = [entry.label for entry in second.entries]
-    agreement = metrics.label_agreement(first_labels, second_labels)
+    # Sıralı ölçekte ölçülür: "destekleniyor"a karşı "desteklenmiyor" ile
+    # "destekleniyor"a karşı "kısmen" aynı ağırlıkta anlaşmazlık değildir.
+    # Adsal kappa raporda kalmaya devam eder (geçmişle karşılaştırılabilirlik).
+    agreement = metrics.ordinal_agreement(first_labels, second_labels, ORDINAL_SCALE)
 
     confusion = {
         first_label: {
@@ -291,6 +310,8 @@ def build_report(
             "independent_labeling_attested": True,
             "agreement_basis": "pre_adjudication_labels",
             "allowed_labels": list(ALLOWED_LABELS),
+            "ordinal_scale": list(ORDINAL_SCALE),
+            "agreement_statistic": "quadratic_weighted_kappa (adsal kappa da raporlanır)",
         },
         "sample": {
             "file": sample.file_name,
@@ -332,12 +353,20 @@ def render_adjudication(report: dict[str, Any]) -> str:
     agreement = report["agreement"]
     kappa = agreement["cohens_kappa"]
     kappa_text = "tanımsız" if kappa is None else f"{kappa:.4f}"
+    quadratic = agreement.get("quadratic_weighted_kappa")
+    quadratic_text = "tanımsız" if quadratic is None else f"{quadratic:.4f}"
+    histogram = agreement.get("distance_histogram") or {}
+    histogram_text = (
+        ", ".join(f"{distance} kutucuk: {count}" for distance, count in sorted(histogram.items()))
+        or "—"
+    )
     labelers = report["labelers"]
     lines = [
         "# Faithfulness uyuşmazlık çözümü",
         "",
-        "> Ham uyum ve Cohen's kappa, tartışma öncesi bağımsız etiketlerden",
-        "> dondurulmuştur. Aşağıdaki nihai kararlar bu değerlerin üzerine yazılmaz.",
+        "> Ham uyum, adsal kappa ve quadratic weighted kappa; tartışma öncesi",
+        "> bağımsız etiketlerden dondurulmuştur. Aşağıdaki nihai kararlar bu",
+        "> değerlerin üzerine yazılmaz. Sıralı ölçek: " + " < ".join(ORDINAL_SCALE) + ".",
         "",
         "| Alan | Değer |",
         "|---|---|",
@@ -347,7 +376,9 @@ def render_adjudication(report: dict[str, Any]) -> str:
         f"| Etiketleyici 2 | {_markdown_cell(labelers[1]['name'])} |",
         f"| n | {agreement['n']} |",
         f"| Ham uyum | {agreement['raw_agreement']:.4f} |",
-        f"| Cohen's kappa | {kappa_text} |",
+        f"| Cohen's kappa (adsal) | {kappa_text} |",
+        f"| Quadratic weighted kappa | {quadratic_text} |",
+        f"| Anlaşmazlık uzaklığı | {histogram_text} |",
         f"| Uyuşmazlık | {report['disagreement_count']} |",
         "",
     ]

@@ -136,6 +136,38 @@ def test_gecerli_iki_etiket_agreement_ve_hakem_formu_uretir(tmp_path: Path) -> N
     assert "**Nihai etiket:**" in adjudication
 
 
+def test_rapor_siralı_olcekte_qwk_ve_uzaklik_profili_tasir(tmp_path: Path) -> None:
+    """E4: anlaşmazlığın UZAKLIĞI rapora girer, tek bir adsal sayıya ezilmez.
+
+    İki anlaşmazlık kuruluyor ve ikisi kasten farklı uzaklıkta: biri komşu
+    kutucuk (`destekleniyor` → `kısmen`), biri ölçeğin iki ucu
+    (`destekleniyor` → `desteklenmiyor`). Adsal kappa ikisini aynı ağırlıkta
+    sayardı; QWK ve uzaklık histogramı ayırır.
+    """
+    first = ["destekleniyor"] * 20
+    second = ["kısmen", "desteklenmiyor"] + ["destekleniyor"] * 18
+    paths = _write_inputs(tmp_path, first_values=first, second_values=second)
+
+    assert score_labels.main(_argv(paths)) == 0
+
+    agreement = json.loads(paths[3].read_text(encoding="utf-8"))["agreement"]
+    assert agreement["distance_histogram"] == {"0": 18, "1": 1, "2": 1}
+    assert agreement["scale"] == ["desteklenmiyor", "kısmen", "destekleniyor"]
+    # Adsal kappa iki anlaşmazlığı eşit sayar; QWK uzak olanı daha ağır cezalandırır.
+    assert agreement["quadratic_weighted_kappa"] is not None
+    assert agreement["quadratic_weighted_kappa"] < agreement["raw_agreement"]
+
+    adjudication = paths[4].read_text(encoding="utf-8")
+    assert "Quadratic weighted kappa |" in adjudication
+    assert "Anlaşmazlık uzaklığı | 0 kutucuk: 18, 1 kutucuk: 1, 2 kutucuk: 1" in adjudication
+    assert "desteklenmiyor < kısmen < destekleniyor" in adjudication
+
+
+def test_olcek_ve_izinli_etiket_kumesi_ayrisamaz() -> None:
+    """İki sabit ayrı yazıldı; ayrışırlarsa bir etiket ölçüye hiç girmez."""
+    assert set(score_labels.ORDINAL_SCALE) == set(score_labels.ALLOWED_LABELS)
+
+
 def test_fake_provider_orneklemi_sonuc_uretmeden_reddedilir(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

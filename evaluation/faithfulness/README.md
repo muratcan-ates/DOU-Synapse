@@ -1,7 +1,8 @@
 # T047 — human faithfulness değerlendirmesi
 
 Bu klasör, 20-30 gerçek LLM cevabının iki insan tarafından **birbirinden bağımsız**
-etiketlenip ham uyum ve Cohen's kappa ile raporlanmasını sağlar. Araçlar insan yerine
+etiketlenip ham uyum, quadratic weighted kappa ve adsal Cohen's kappa ile
+raporlanmasını sağlar. Araçlar insan yerine
 etiket vermez; yalnız örneklem/etiket bağını doğrular ve hesabı yeniden üretilebilir
 hâle getirir.
 
@@ -44,7 +45,9 @@ korunan kısmi çıktının yolunu bildirir. Yeniden denemede iki yeni yol kulla
 ## Üretilen kanıt
 
 - JSON sonucu örneklemin ve iki etiket dosyasının SHA-256 özetlerini taşır.
-- Ham uyum ve Cohen's kappa **tartışma öncesi** etiketlerden hesaplanır.
+- Ham uyum, QWK ve adsal Cohen's kappa **tartışma öncesi** etiketlerden hesaplanır.
+- Etiketler **sıralıdır** (`desteklenmiyor < kısmen < destekleniyor`); anlaşmazlığın
+  uzaklığı ölçüye girer ve uzaklık histogramıyla birlikte raporlanır.
 - Uyuşmazlıklar ayrı hakem formuna çıkar; nihai karar ham uyumun üzerine yazılmaz.
 - Fake provider, 20-30 dışı örneklem, `answered` olmayan/boş cevap,
   eksik/geçersiz etiket, farklı item sırası, aynı kişi veya bağımsızlık beyanı

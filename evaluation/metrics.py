@@ -386,3 +386,122 @@ def label_agreement(first: Sequence[str], second: Sequence[str]) -> AgreementRes
     )
     kappa = None if expected >= 1.0 else (raw - expected) / (1 - expected)
     return AgreementResult(n=n, agreed=agreed, raw=raw, kappa=kappa)
+
+
+@dataclass(frozen=True, slots=True)
+class OrdinalAgreementResult:
+    """Sıralı ölçekte iki etiketleyicinin uyumu (E4).
+
+    `label_agreement` etiketleri ADSAL sayar: "destekleniyor"a karşı
+    "desteklenmiyor" ile "destekleniyor"a karşı "kısmen" aynı ağırlıkta bir
+    anlaşmazlıktır. Oysa bu üç etiket sıralıdır ve aradaki fark ölçülebilir:
+    ikincisi komşu kutucuk, birincisi ölçeğin iki ucu. Adsal kappa bu ayrımı
+    siler ve iki farklı kalitedeki uyumu aynı sayıyla raporlar.
+
+    `quadratic_kappa` (QWK) anlaşmazlığı mesafenin KARESİYLE cezalandırır; bu
+    yüzden ölçeğin iki ucundaki bir anlaşmazlık, komşu kutucuklardaki dört
+    anlaşmazlık kadar ağır basar. Rubrik puanları ve üç kademeli kaynak
+    etiketleri gibi sıralı ölçeklerde raporlanması gereken sayı budur.
+
+    `distance_histogram` ham malzemedir: kaç anlaşmazlığın bir kutucuk, kaçının
+    iki kutucuk uzakta olduğu. Tek bir kappa sayısı bunu gizler; iki koşu aynı
+    kappa'yı farklı anlaşmazlık profilleriyle üretebilir.
+
+    `kappa` (adsal) bilinçli olarak birlikte taşınır: geçmiş raporlarla
+    karşılaştırılabilirlik için, ve ikisinin ayrışması tek başına bir bulgudur.
+    """
+
+    n: int
+    agreed: int
+    raw: float
+    kappa: float | None
+    quadratic_kappa: float | None
+    distance_histogram: dict[int, int]
+    scale: tuple[str, ...]
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "n": self.n,
+            "agreed": self.agreed,
+            "raw_agreement": self.raw,
+            "cohens_kappa": self.kappa,
+            "quadratic_weighted_kappa": self.quadratic_kappa,
+            "distance_histogram": {
+                str(key): value for key, value in self.distance_histogram.items()
+            },
+            "scale": list(self.scale),
+        }
+
+
+def ordinal_agreement(
+    first: Sequence[str],
+    second: Sequence[str],
+    scale: Sequence[str],
+) -> OrdinalAgreementResult:
+    """Sıralı ölçekte ham uyum, adsal kappa ve quadratic weighted kappa.
+
+    `scale` ZORUNLUDUR ve sıralamayı çağıran beyan eder. Sıra etiketlerden
+    çıkarılmaz: "kısmen" kelimesinin "destekleniyor" ile "desteklenmiyor"
+    arasında durduğunu bilen tek şey alan bilgisidir, alfabe değil. Sırayı
+    tahmin eden bir uygulama sessizce yanlış bir mesafe matrisi kurar ve
+    kimse fark etmez.
+
+    Ölçekte olmayan bir etiket HATA'dır. Sessizce atılsaydı, bozuk bir etiket
+    dosyası örneklemi küçültür ve uyumu yapay olarak yükseltirdi.
+
+    QWK tanımsız kalabilir: her iki etiketleyici de tek bir kutucuğa yığıldıysa
+    beklenen anlaşmazlık sıfırdır ve bölme tanımsızdır. O durumda `None` döner;
+    ham uyum yine raporlanır (`label_agreement`'ın kararıyla aynı gerekçe).
+    """
+    if len(first) != len(second):
+        raise ValueError("İki etiketleyici aynı sayıda cevabı etiketlemeli.")
+    if not first:
+        raise ValueError("Boş örneklemde uyum hesaplanamaz.")
+    if len(scale) < 2:
+        raise ValueError("Sıralı ölçek en az iki kutucuk içermeli.")
+    if len(set(scale)) != len(scale):
+        raise ValueError("Sıralı ölçekte tekrar eden kutucuk olamaz.")
+
+    index = {label: position for position, label in enumerate(scale)}
+    unknown = sorted({label for label in (*first, *second) if label not in index})
+    if unknown:
+        allowed = ", ".join(scale)
+        raise ValueError(f"Ölçekte olmayan etiket: {', '.join(unknown)}. İzin verilen: {allowed}.")
+
+    n = len(first)
+    size = len(scale)
+    positions = [(index[a], index[b]) for a, b in zip(first, second, strict=True)]
+    agreed = sum(1 for a, b in positions if a == b)
+
+    histogram = {distance: 0 for distance in range(size)}
+    for a, b in positions:
+        histogram[abs(a - b)] += 1
+
+    nominal = label_agreement(list(first), list(second))
+
+    # QWK: 1 - sum(w*O) / sum(w*E); w = (i-j)^2 / (k-1)^2.
+    # Ağırlık normalizasyonu pay ve paydada sadeleşir, ama bölen olarak
+    # bırakılıyor: formül literatürdeki hâliyle okunabilir kalsın.
+    denominator = (size - 1) ** 2
+    first_counts = [sum(1 for a, _ in positions if a == cell) for cell in range(size)]
+    second_counts = [sum(1 for _, b in positions if b == cell) for cell in range(size)]
+
+    observed = 0.0
+    expected = 0.0
+    for row in range(size):
+        for column in range(size):
+            weight = ((row - column) ** 2) / denominator
+            observed += weight * sum(1 for a, b in positions if a == row and b == column)
+            expected += weight * (first_counts[row] * second_counts[column] / n)
+
+    quadratic = None if expected == 0 else 1 - (observed / expected)
+
+    return OrdinalAgreementResult(
+        n=n,
+        agreed=agreed,
+        raw=nominal.raw,
+        kappa=nominal.kappa,
+        quadratic_kappa=quadratic,
+        distance_histogram=histogram,
+        scale=tuple(scale),
+    )
