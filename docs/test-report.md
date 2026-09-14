@@ -325,6 +325,90 @@ alanı hiç yok), bugün tetiklenmiyor ama aynı sınıftan.
 kurulumun koşu dosyaları depoda. Önceki kurulumun dosyaları silindi; iki farklı
 kurulumdan gelen sayıları yan yana koymak karşılaştırmayı geçersiz kılardı.
 
+#### 6.4.1. Kusurun kapatılması (14 Eylül 2026)
+
+Eşitlik bozma kuralı `fts.py` içinde **içerikten türeyen** adrese bağlandı:
+
+```sql
+ORDER BY rank DESC, d.file_hash, c.chunk_index
+```
+
+`documents.file_hash` dosya içeriğinin SHA256'sıdır (`ingestion/pipeline.py`) ve
+aynı materyal yeniden yüklendiğinde **değişmez**; `chunk_index` belge içindeki
+sabit konumdur. Böylece sıralama `gen_random_uuid()` çıktısından tamamen
+bağımsızlaştı. Bu, `dense.py:111`'de zaten kullanılan bağlayıcının aynısıdır;
+iki kolun eşitlik bozma kuralı artık tek desende.
+
+Ara bir düzeltme (`c.id` → `c.document_id`) daha önce denenmiş ve geri
+çekilmişti: `documents.id` de üretilen bir UUID olduğu için kusur yer değiştirmiş,
+kapanmamıştı. Bu tur önce **kusuru deterministik olarak kırmızı yakan** bir test
+yazıldı (`apps/api/tests/test_fts_determinism.py`), sonra düzeltme yapıldı.
+
+Testin kurgusu şansa bırakmıyor: iki yüklemenin belge UUID'leri açıkça, biri
+diğerinin ters sıralamasını verecek şekilde seçiliyor. `gen_random_uuid()`'nin
+yarı olasılıkla ürettiği durum kurulmak yerine **seçiliyor**; kusur varken test
+her koşuda kırmızı yanar. Önceki bir kanıt denemesi rastgele UUID'lere
+güvendiği için "altıda bir şansla" yeşil kalmıştı.
+
+| Kontrol | Komut | Sonuç |
+|---|---|---|
+| Determinizm testi (düzeltme öncesi) | `pytest tests/test_fts_determinism.py` | 3 failed — kusur üretildi |
+| Determinizm testi (düzeltme sonrası) | `pytest tests/test_fts_determinism.py` | 3 passed |
+| FTS regresyonu | `pytest tests/test_fts.py tests/test_fts_determinism.py` | 25 passed |
+| Retrieval regresyonu | `pytest tests/test_retrieval.py tests/test_retrieval_candidates.py` | koşuldu, yeşil |
+
+**Holdout Recall@5 / MRR yeniden ÖLÇÜLMEDİ.** Bu tablodaki sayıların yenilenmesi
+gold-set koşusunu gerektirir ve bu turda koşulmadı; §6'daki sayılar hâlâ eski
+sıralamanın sayılarıdır. Düzeltmenin kaliteyi **düşürmediği** iddiası bu raporda
+yapılmıyor — yalnız sıranın artık ingest'ten bağımsız olduğu kanıtlandı. Holdout
+yeniden koşulana kadar §6.3'teki aralık yorumu açık kalır.
+
+---
+
+## 6c. C2 — bellek/recall anomalisi: göç eklenmedi (karar)
+
+C2 incelemesi INCONCLUSIVE kapandı. Belirli bir kurulum koşulunda recall
+anomalisi gözlendi, ancak **nedensellik kanıtlanmadı**: anomaliyi tek bir
+değişkene bağlayan bir deney kurulamadı.
+
+**Karar:** bu bulgu için **göç eklenmez**. `0021` numarası boş kalır ve
+`migration_check.py --allow-gap 0021` bunu bilerek kabul eder. Nedeni ölçülmemiş
+bir gözlem için şema değiştirmek, geri alınması pahalı ve gerekçesi zayıf bir
+borç üretir.
+
+**Korunan:** anomaliyi yakalayan regresyon testi yerinde bırakıldı. Aynı davranış
+tekrar görülürse elimizde onu gösteren bir koşu olur; bugün elimizde olmayan şey
+nedenin kendisidir.
+
+---
+
+## 6d. Embedding bellek payı (C4) — ölçüldü, kısmen
+
+`scripts/measure_embedding_rss.py` API ve worker süreçlerini ayrı ayrı başlatıp
+soğuk (model yüklenmeden), yüklü ve sıcak (N metin gömüldükten sonra) RSS
+değerlerini okur. Ölçüm 14 Eylül 2026'da bu makinede koşuldu.
+
+| Süreç | Sağlayıcı | Soğuk RSS | Sıcak RSS | Tepe RSS | Sıcak − soğuk |
+|---|---|---:|---:|---:|---:|
+| API (`app.main`) | hashing | 88.506.368 B (~84,4 MiB) | 89.948.160 B (~85,8 MiB) | 89.948.160 B | 1.441.792 B (~1,4 MiB) |
+| Worker (`app.worker`) | hashing | 72.417.280 B (~69,1 MiB) | 73.777.152 B (~70,4 MiB) | 73.777.152 B | 1.359.872 B (~1,3 MiB) |
+
+Koşum: `apps/api/.venv/bin/python scripts/measure_embedding_rss.py --provider hashing --json`
+Ortam: Darwin / arm64 / Python 3.12.13. Tepe RSS `resource.getrusage(RUSAGE_SELF).ru_maxrss`,
+anlık RSS `ps` ile okundu; `psutil` kurulu değil ve bağımlılık **eklenmedi**.
+
+**KOŞULMADI — `fastembed` (e5) ölçümü.** `fastembed` 0.8.0 içe aktarılabiliyor ama
+`intfloat/multilingual-e5-large` yerel önbellekte yok. Betik ölçüm uğruna model
+**indirmez**; bu bilinçli bir karardır (yaklaşık 1 GB indirme, ölçümü yapan kişinin
+beklemediği bir yan etki). Gerçek üretim bellek payı bu tablodan **okunamaz**:
+hashing sağlayıcısı bir sinir ağı yüklemez, dolayısıyla yukarıdaki ~1,4 MiB fark
+yalnız vektör tamponlarıdır, model ağırlıkları değildir.
+
+**Bu ölçümün karara etkisi.** Azure `B2s_v2` (8 GiB) hedefinin yeterliliği ve
+int8 + ARM geçiş kararı ([dağıtım §11.1](deployment.md)) e5 ölçümüne bağlıdır ve
+o ölçüm henüz yok. `qint8` niceleme yolu AVX512-VNNI gerektirir; bu makine arm64
+olduğu için o yol burada ölçülemez ve hedef VM'de ayrıca ölçülmelidir.
+
 ---
 
 ## 6b. Kanıt eşiği kalibrasyonu (T043) — yeniden kalibre edildi

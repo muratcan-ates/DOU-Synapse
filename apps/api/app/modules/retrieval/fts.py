@@ -98,19 +98,22 @@ _SQL = text(
                c.section_title,
                c.text,
                c.chunk_index,
+               d.file_hash,
                ts_rank(c.fts, q.query) AS rank
-        FROM chunks c, q
+        FROM chunks c
+        JOIN documents d ON d.id = c.document_id, q
         WHERE c.course_id = :course_id
           AND (
               NOT CAST(:filter_documents AS boolean)
               OR c.document_id = ANY(CAST(:document_ids AS uuid[]))
           )
           AND c.fts @@ q.query
-        -- Belge UUID'si ve chunk_index, aynı veritabanındaki değişmeyen korpus
-        -- için eşit skorları kararlı sıralar. document_id içerikten türemez;
-        -- yeniden yüklemede UUID değişebileceği için korpuslar arası sıra garantisi yoktur.
-        -- İçerik-hash bağlayıcısı holdout'ta geriletti; bu adayda eski sıra korunur.
-        ORDER BY rank DESC, c.document_id, c.chunk_index
+        -- Eşit skorlar İÇERİKTEN türeyen adresle kırılır: documents.file_hash
+        -- dosyanın SHA256'sıdır ve aynı materyal yeniden yüklendiğinde değişmez;
+        -- chunk_index belge içindeki sabit konumdur. document_id/chunk id ise
+        -- gen_random_uuid() ürünüdür ve yeniden yüklemede sıra değiştiriyordu
+        -- (test_fts_determinism.py). dense.py:111 ile aynı desen.
+        ORDER BY rank DESC, d.file_hash, c.chunk_index
         LIMIT :limit
     )
     SELECT m.id,
@@ -123,7 +126,7 @@ _SQL = text(
            m.rank
     FROM matched m
     JOIN documents d ON d.id = m.document_id
-    ORDER BY m.rank DESC, m.document_id, m.chunk_index
+    ORDER BY m.rank DESC, m.file_hash, m.chunk_index
     """
 )
 
