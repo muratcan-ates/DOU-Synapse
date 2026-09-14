@@ -134,6 +134,79 @@ HTTP kontrol sonuçları ayrıca kaydedilebilir.
 
 ## Bütçe, devam ve insan kabulü
 
+## Gerçek model kabulü (P4): dry-run reçetesi
+
+Bu paket sadece hazırlık odaklıdır; anahtar olmadan canlı koşu yapılmaz.
+Aşağıdaki adımlar **sadece plan çıktısı üretir** ve PR yorumuna eklenmelidir.
+Örnek değerler yalnız değişken adıdır; anahtar veya parola yazılmaz.
+
+### Ortam değişkenleri
+
+İsimler dolu olsun, değer yazılmasın: `EVAL_RUNTIME_ENABLED`, `EVAL_RUNTIME_SECRET`,
+`EVAL_LLM_API_KEY`, `EVAL_ADMIN_DSN`, `EVAL_APP_DSN`, `EVAL_WORKER_DSN`.
+
+```sh
+export EMBEDDING_PROVIDER=fastembed
+export EVAL_RUNTIME_ENABLED=true
+```
+
+### 1) Korpuşu kur ve özetini üret (gerçek kurulum adımı)
+
+```sh
+cd apps/api
+EMBEDDING_PROVIDER=fastembed uv run python ../../evaluation/build_corpus.py \
+  --database dou_eval --out /tmp/dou-corpus.json
+```
+
+Bu adım `--dry-run` almıyor; gerçek DB hedefi üzerinde sadece hazırlık amacıyla
+çalıştırılır.
+
+### 2) Çalıştırmaya hazır mı? (dry-run plan)
+
+```sh
+cd /path/proje
+cd apps/api
+uv run --project apps/api python ../../scripts/real_eval_preflight.py \
+  --corpus /tmp/dou-corpus.json --required-db-name dou_eval --skip-db-connect
+```
+
+`--skip-db-connect` yalnız plan modunda sadece DSN formatını doğrulayıp
+özet üretmek içindir; gerçek koşu için kaldırılır.
+
+### 3) Uçtan uca, injection ve faithfulness (sadece dry-run)
+
+```sh
+cd /path/proje/apps/api
+uv run --project apps/api python ../../evaluation/evaluate.py \
+  --set holdout --layer e2e --require-real --max-requests 30 --dry-run \
+  --api-url http://127.0.0.1:8015 --corpus /tmp/dou-corpus.json \
+  --results-dir /tmp/real-eval/evaluate
+
+uv run --project apps/api python ../../evaluation/injection/run_injection.py \
+  --api-url http://127.0.0.1:8015 --require-real --max-requests 40 --dry-run \
+  --corpus /tmp/dou-corpus.json --output-dir /tmp/real-eval/injection
+
+uv run --project apps/api python ../../evaluation/faithfulness/pull_sample.py \
+  --api-url http://127.0.0.1:8015 --require-real --max-requests 30 --size 25 \
+  --corpus /tmp/dou-corpus.json --dry-run --output-dir /tmp/dou-faithfulness
+
+uv run --project apps/api python ../../evaluation/faithfulness/score_labels.py \
+  --sample /tmp/dou-faithfulness/sample.json \
+  --first /tmp/dou-faithfulness/labeler-a.md --second /tmp/dou-faithfulness/labeler-b.md \
+  --labeler-1 ETIKETLEYICI_A --labeler-2 ETIKETLEYICI_B \
+  --attest-independent --json-out /tmp/dou-faithfulness/score_labels.json \
+  --adjudication-out /tmp/dou-faithfulness/adjudication.md
+```
+
+`score_labels.py` gerçek örnek dosyası ister. `pull_sample.py --dry-run`
+örnek dosyası üretmediği için bu satır yalnız plan dosyası varsa çalışır; aksi halde
+plan notu bırakılır.
+
+### Komut çıktıları nasıl rapora taşınır
+
+Her komutun stdout/stderr çıktısı kısaltılmadan PR açıklamasına eklenir.
+Gerçek model anahtarının gelmediği durumda metrik satırları `KOŞULMADI` olarak bırakılır.
+
 - `--max-requests` bir çalıştırmadaki HTTP POST bütçesidir. Sunucunun model içi
   denemeleri ayrı `calls` kayıtlarıdır; bu bayrak provider çağrısı veya para
   bütçesi diye yorumlanmaz. `429`, `5xx` veya erişim sorunu koşuyu durdurur.

@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "change_id": "150-real-model-acceptance-r1",
+  "lineage_id": "real-model-acceptance",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Gerçek model kabulü P4 hazır adımları (koşulmadı paket)",
+  "summary": "P4 için gerçek model kabulüne geçişten önce bütün dry-run adımları, ön kontrol scripti ve PR formatında dokümantasyon hazırlandı. Kuru çalıştırmada değerler yazılmadı; anahtar yalnız isim olarak listelendi, gerçek metrikler KOŞULMADI olarak bırakıldı.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T16:30:00+03:00",
+  "review_by": "2026-10-14T16:30:00+03:00",
+  "base_sha": "22a85d3ce0ff5a5f2f6a9f9f5d8e6b5f0e9a4c1e",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged-from-base-22a85d3 (değerlendirme akışı, yeni workflow ve preflight hazırlığı)",
+    "model_revision": "unchanged-from-base-22a85d3 (değerlendirme akışı, yeni workflow ve preflight hazırlığı)",
+    "prompt_revision": "unchanged-from-base-22a85d3 (değerlendirme akışı, yeni workflow ve preflight hazırlığı)",
+    "tool_schema_revision": "unchanged-from-base-22a85d3 (değerlendirme akışı, yeni workflow ve preflight hazırlığı)",
+    "guardrail_revision": "real-eval workflow/strict secret-name only + dry-run + preflight",
+    "retrieval_revision": "unchanged-from-base-22a85d3 (değerlendirme akışı, yeni workflow ve preflight hazırlığı)",
+    "embedding_revision": "unchanged-from-base-22a85d3 (değerlendirme akışı, yeni workflow ve preflight hazırlığı)",
+    "evaluator_revision": "p4-preflight-script + dry-run command recipes"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": ".github/workflows/real-eval.yml",
+      "state": "present",
+      "sha256": "d17c3fdfce6f65d77c530f598157d29e49c194b0186456fb60a573656a88cce4"
+    },
+    {
+      "path": "scripts/real_eval_preflight.py",
+      "state": "present",
+      "sha256": "b7d7151594627a3e54788a35288f5ff810b1b457c8f5ebe5517076fa6a3d2df3"
+    },
+    {
+      "path": "scripts/test_real_eval_preflight.py",
+      "state": "present",
+      "sha256": "f036fc81b137a2e685898cfaae548d3462d70fcf2f58045134a2472aded7dab7"
+    },
+    {
+      "path": "evaluation/README.md",
+      "state": "present",
+      "sha256": "cc1b642bab26bf5d7088a7f220b44f7d8bd73307dfb32f980f332872960ab65b"
+    },
+    {
+      "path": "docs/test-report.md",
+      "state": "present",
+      "sha256": "07ea1b5bbf6e70a5e8d668df77e76fd2d0ffc89331c232b077de478fb6120cfb"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "dry-run",
+      "result": "pass",
+      "report_path": ".ai/evidence/150-real-model-acceptance-r1.json",
+      "report_sha256": "e858bf8b52d59120e63e975bb41be19ad80d514fafa8f066b47d4ebefc307541",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "scripts/real_eval_preflight.py",
+    "holdout_ref": "docs/test-report.md#17. gercek-model-bolumu-koşulmadı",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "not-applicable: gerçek LLM anahtarı olmadan kalite kararı verilemez",
+    "metrics": [
+      {
+        "name": "preflight_plan_ready",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": ">=",
+        "threshold": 0,
+        "sample_size": 1
+      },
+      {
+        "name": "dry_run_command_plan_count",
+        "baseline": 0,
+        "candidate": 6,
+        "operator": ">=",
+        "threshold": 6,
+        "sample_size": 6
+      }
+    ],
+    "exact_command": "uv sync --project apps/api --extra dev --frozen && uv run --project apps/api python scripts/real_eval_preflight.py --corpus /tmp/dou-corpus.json --required-db-name dou_eval && uv run --project apps/api python evaluation/evaluate.py --set holdout --layer e2e --require-real --max-requests 30 --dry-run"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending independent domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending independent security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:150-real-model-acceptance-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "EVAL_RUNTIME_ENABLED",
+    "kill_switch": "Gerçek anahtar gelmeden etkinleştirme yapılmaz; gerekirse workflow düzeltmesi ile rollback edilir.",
+    "assignment": "Tekil onaylı PR akışı (draft PR + dry-run çıktıları).",
+    "initial_exposure": "Docs/test-report ve .ai kayıtları: yalnız plan ve kimliksiz özetler.",
+    "stop_conditions": [
+      "Gerçek model anahtarı gelmeden canlı koşu tetiklenirse",
+      "Gerçek korpus ve DSN kimlikleri dışı bir veritabanına bağlanılırsa",
+      "score_labels çıktısı plan dışı değişiklik üretirse"
+    ],
+    "expand_conditions": [
+      "Anahtarlar tanımlanıp gerçek koşu çalışırsa",
+      "İki bağımsız etiket formu ile score_labels sonucu üretilirse",
+      "Evaluation preflight gerçek DB erişimi ile pass olduğunda"
+    ],
+    "active_exam_policy": "Değişiklik yalnız hazırlık pipeline'ını etkiler; aktif sınav davranışı yok."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:22a85d3ce0ff5a5f2f6a9f9f5d8e6b5f0e9a4c1e",
+    "procedure": "Workflow dosyası ve gerçek model scriptleri eski haline döndürülür, evidence güncellenir ve PR metni güncel tutulur.",
+    "max_minutes": 15,
+    "verification": "targeted workflow check ve preflight yeniden koşturularak yalnız plan çıktılarının üretilebildiği doğrulanır.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Anahtarlar gizli tutuldu, yalnız script isimleri, komut adları ve hashler kaydedildi.",
+    "retention": "Kaynak kontrolü üzerinden değişim geçmişi; ham anahtar/veri saklanmaz."
+  },
+  "promotion": {
+    "claim": "koşulmadı",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "change_id": "150-real-model-acceptance-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-14T21:05:00+03:00",
+  "evidence_label": "dry-run",
+  "result": "pass",
+  "command": "uv run --project apps/api python scripts/real_eval_preflight.py --corpus /tmp/dou-corpus.json --required-db-name dou_eval --skip-db-connect && uv run --project apps/api python evaluation/evaluate.py --set holdout --layer e2e --require-real --max-requests 30 --dry-run --api-url http://127.0.0.1:8015 --corpus /tmp/dou-corpus.json --results-dir /tmp/real-eval/evaluate && uv run --project apps/api python evaluation/injection/run_injection.py --api-url http://127.0.0.1:8015 --require-real --max-requests 40 --dry-run --corpus /tmp/dou-corpus.json --output-dir /tmp/real-eval/injection && uv run --project apps/api python evaluation/faithfulness/pull_sample.py --api-url http://127.0.0.1:8015 --require-real --max-requests 30 --size 25 --corpus /tmp/dou-corpus.json --dry-run --output-dir /tmp/dou-faithfulness",
+  "environment": "Yerel macOS; PostgreSQL yoksa preflight DB erişim adımı --skip-db-connect ile dry-run planı modunda çalıştırıldı.",
+  "results": {
+    "preflight_status": "blocker: corpus dosyası olmadan koşu planı tamamlanamaz",
+    "build_corpus_status": "plan",
+    "evaluate_dry_run_status": "planlandı",
+    "injection_dry_run_status": "planlandı",
+    "faithfulness_pull_sample_dry_run_status": "planlandı",
+    "score_labels_status": "örnek dosyası gerektirdiği için plan notu"
+  },
+  "scope": "Dossier 150-159 için gerçek model kabul adımlarının kuru çalıştırma ve dokümantasyon hazırlığı.",
+  "limitations": "EVAL_LLM_API_KEY ve EVAL_RUNTIME_SECRET değerleri yüklenmediği için gerçek kalite metrikleri KOŞULMADI. score_labels.py örnek etiket dosyası olmadan koşmadı.",
+  "privacy": "Anahtar/parola veya ham öğrenci cevabı yok; yalnız komut dizini, dosya yolları ve özet raporları paylaşıldı."
+}

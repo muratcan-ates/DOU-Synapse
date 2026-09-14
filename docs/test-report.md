@@ -920,3 +920,20 @@ Main ve L4 manifest/kilit karşılaştırması, aynı `next@16.3.1` sürümünü
 Ayrı paket/sürüm sorgusu, kilitteki `sharp@0.35.3` için [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c), `nanoid@3.3.17` için [GHSA-2v37-7h3g-55p8](https://github.com/advisories/GHSA-2v37-7h3g-55p8) High eşleşmelerini doğruladı; belirtilen düzeltmeler sırasıyla `0.35.4` ve `3.3.18`. Next görüntü işleme ve sharp bulguları ilişkili olabilir; dört duyuru dört bağımsız saldırı yolu olarak sunulmaz. Kaynakta doğrudan fonksiyon kullanımı bulunmaması veya Security workflow'unun geçmesi bu bağımlılık kayıtlarını kapatmaz.
 
 **ENGEL:** bağımlılık sahibi Next'i düzeltilmiş sürüme taşımalı, yeniden üretilen kilitte sharp ve nanoid düzeltmelerini doğrulamalı, web kabulü ve yeni envanter taramasını çalıştırmalıdır. Web/manifest/kilit değişiklikleri L4 dışında olduğundan bu şeritte paket değiştirilmedi. Yerel inceleme kaydı `DOU-Synapse-L4-2026-09-13/dependency-alert-audit.md`; yalnız paket/sürüm metaverisi sorgulandı. Bu teknik inceleme kişisel veri mevzuatı uyum sertifikası veya bütün açıkların kapandığı iddiası değildir; S11 veri yaşam döngüsü engeli ayrıca yukarıda kayıtlıdır.
+## 17. Gerçek model bölümü (koşulmadı)
+
+Aşağıdaki satırların hepsi gerçek anahtar gelene kadar `KOŞULMADI` olarak kalır.
+Koşulması planlanan komutlar mevcut, PR'da kuru çalıştırma çıktılarıyla birlikte
+yenilenmelidir.
+
+| Ölçüm | Komut | Hedef Sonuç | Durum |
+|---|---|---:|---|
+| Uçtan uca citation precision | `evaluation/evaluate.py --set holdout --layer e2e --require-real --max-requests 30 --dry-run` | — | **KOŞULMADI** |
+| Ret/sızıntı kalitesi (inj/SC-005/9) | `evaluation/injection/run_injection.py --require-real --max-requests 40 --dry-run` | — | **KOŞULMADI** |
+| Faithfulness örneklem planı | `evaluation/faithfulness/pull_sample.py --corpus /tmp/dou-corpus.json --require-real --max-requests 30 --size 25 --dry-run` | — | **KOŞULMADI** |
+| İnsan etiketleme uyumu | `evaluation/faithfulness/score_labels.py --sample … --first … --second …` | — | **KOŞULMADI** |
+| Preflight hazır mı? | `scripts/real_eval_preflight.py --required-db-name dou_eval --corpus /tmp/dou-corpus.json` | — | **KOŞULMADI** |
+| Korpus özeti SHA | `evaluation/build_corpus.py --database dou_eval --out /tmp/dou-corpus.json` | — | **KOŞULMADI** |
+
+`KOŞULMADI` satırları yalnız gerçek anahtar ile güvenli koşu sonrası, canlı değerlerle
+yenilenir; `preflight` sonuçları anahtar yokluğunda deklanşör değildir.
