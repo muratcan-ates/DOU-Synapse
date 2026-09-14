@@ -1,0 +1,430 @@
+{
+  "schema_version": 1,
+  "change_id": "100-campus-ui-r1",
+  "lineage_id": "campus-ui",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Campus interface and learning interaction redesign",
+  "summary": "Giriş, ders ve öğrenme ekranları için yeni kampüs tasarım dili; sohbet bestecisi, kaynak görünürlüğü ve sınav gezinmesi mevcut yetki/sınav sınırlarıyla birlikte yenilenir.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-14T15:23:36.661841+00:00",
+  "review_by": "2026-10-14T15:23:36.661841+00:00",
+  "base_sha": "f4a0952c41232df84f937f05991a417d959a5285",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285",
+    "model_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285",
+    "prompt_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285",
+    "tool_schema_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285",
+    "guardrail_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285",
+    "retrieval_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285",
+    "embedding_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285",
+    "evaluator_revision": "unchanged:f4a0952c41232df84f937f05991a417d959a5285"
+  },
+  "data": {
+    "corpus_digest": "7dc2c4dea492a81a29ab21eabda99f275b72b240adc3a50e2511224ea6d0e59e",
+    "eval_set_digest": "7dc2c4dea492a81a29ab21eabda99f275b72b240adc3a50e2511224ea6d0e59e",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "DESIGN.md",
+      "state": "present",
+      "sha256": "c7a325fa7e031b18694768b0e5f4fd1652bb97e2be12c49b3d5e78ef9866db3f"
+    },
+    {
+      "path": "apps/web/app/(auth)/auth/callback/page.tsx",
+      "state": "present",
+      "sha256": "925f7190acabbc48a4cfab930439224e81e36ff08677d163215a85ad7a48e14a"
+    },
+    {
+      "path": "apps/web/app/(auth)/verify-email/page.tsx",
+      "state": "present",
+      "sha256": "d07017f878060434c713f64b879d54bedfb7349bb0a124f4c7adaba5719ab160"
+    },
+    {
+      "path": "apps/web/app/account/page.tsx",
+      "state": "present",
+      "sha256": "cbbce3046edcd9542fdccee1a12fa8a58258a442d859e78e149bbb3e52d21f36"
+    },
+    {
+      "path": "apps/web/app/admin/page.tsx",
+      "state": "present",
+      "sha256": "5299db70f2d4a412ba0a0a2cfc6ffb02620d0eaab30469245258dcf07fef4fa9"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/analytics/page.tsx",
+      "state": "present",
+      "sha256": "6effc67a7cd66bf4527b08c463226ad57ba03d40e4d11030da73111bfa6f4a71"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/blueprints/page.tsx",
+      "state": "present",
+      "sha256": "bc081feffc15bf3c9cb40fe037e6f39011bc25b95d61f0f4c68232ba78fed8c5"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/chat/page.tsx",
+      "state": "present",
+      "sha256": "f7663499f114e280ec8fdf5531a1ec703e3854ba633d5d70edf17494726418e0"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/members/page.tsx",
+      "state": "present",
+      "sha256": "bd378599a74d6f8b879fcf5dd10272046ea9428ab51bf04710b6bb066ec0db3c"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/page.tsx",
+      "state": "present",
+      "sha256": "0abb85e75983fef732f71e6aa9fd1a3689e9a3de5a140fd6dba8f7afd01bbd46"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/quality/page.tsx",
+      "state": "present",
+      "sha256": "c8230f80f3ab0840b969ba5d9c35e3fca4b038e43ef50d85c35cf792e1ba1a69"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/questions/page.tsx",
+      "state": "present",
+      "sha256": "9518fe20d6c28d9b8350e3b6060e9237396d7353db17c965c3b78322fb6bd0b3"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/settings/page.tsx",
+      "state": "present",
+      "sha256": "cf7ff5a66225bf3622ae9cae66f37e3fc224c2a4aeec280e15e9ff377a973a26"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/sources/[chunkId]/page.tsx",
+      "state": "present",
+      "sha256": "1334ecb8a9706960ec03ecad29e97515e77d8e56e0a29f89788bd409cc290b84"
+    },
+    {
+      "path": "apps/web/app/courses/[courseId]/sources/page.tsx",
+      "state": "present",
+      "sha256": "161eb2f2af70aebbc416ecada72d40bfef69ca321cf341962817046f1f9a7cfe"
+    },
+    {
+      "path": "apps/web/app/courses/page.tsx",
+      "state": "present",
+      "sha256": "353d2858beb21e95f401967f3807f024b779b81ae2204faf0a7778af6e18ba6c"
+    },
+    {
+      "path": "apps/web/app/dashboard/page.tsx",
+      "state": "present",
+      "sha256": "370a68306242d2c972b0e9f5e75300322eab0cca7e86760b1a055e3f0c240997"
+    },
+    {
+      "path": "apps/web/app/error.tsx",
+      "state": "present",
+      "sha256": "23ea184ea54873341753aa8b192862cc636fde0406a53ee53242bbfb0ceb93b3"
+    },
+    {
+      "path": "apps/web/app/forgot-password/page.tsx",
+      "state": "present",
+      "sha256": "d5d600167a1de7c0d5dfad610758c8f48514f168b935d65308c6a0bb316d1b85"
+    },
+    {
+      "path": "apps/web/app/globals.css",
+      "state": "present",
+      "sha256": "53ef8ded899582c3a5e58942d7871064222a3715989e07388e3f52e8f3d1290c"
+    },
+    {
+      "path": "apps/web/app/kvkk/page.tsx",
+      "state": "present",
+      "sha256": "ea88b87f7f12b5942dbbbe73ca06009b63b91f3fb8a255d55192f7b35e84dd48"
+    },
+    {
+      "path": "apps/web/app/not-found.tsx",
+      "state": "present",
+      "sha256": "55b074c254384e255ede9ccc46b3ce173a5d8e75d9bb8e3690ad70ddcd6b8c25"
+    },
+    {
+      "path": "apps/web/app/page.tsx",
+      "state": "present",
+      "sha256": "e3af12d07f45625dbd0c6cf19cc5910e303f168e2a4c2b9b52a5e9c06789f12e"
+    },
+    {
+      "path": "apps/web/app/profile/page.tsx",
+      "state": "present",
+      "sha256": "49be76b72d984b357f41f1f679756444fd8267baa054c917c753af7c08bb53d4"
+    },
+    {
+      "path": "apps/web/app/reset-password/page.tsx",
+      "state": "present",
+      "sha256": "f9833f1e1f6d3c214da9fe9a271569821def8549feec033ae675566520882080"
+    },
+    {
+      "path": "apps/web/components/app-shell.tsx",
+      "state": "present",
+      "sha256": "d975a308aee9ec9f4bf5693b0a42f636a6fc2840d897a0b14df70dd05e832b71"
+    },
+    {
+      "path": "apps/web/components/blueprint/paper-preview.tsx",
+      "state": "present",
+      "sha256": "c0d747c68f9816e8e090b5d9fe6a5ec5fc65a612d5dd943886929ca0771f51b1"
+    },
+    {
+      "path": "apps/web/components/brand-mark.tsx",
+      "state": "present",
+      "sha256": "f36ed9cf60d58fd3ae43569b5b510fbfdb7a50b6a856f7705eb5fd362f4e71da"
+    },
+    {
+      "path": "apps/web/components/chat-feedback.tsx",
+      "state": "present",
+      "sha256": "102f5f9ea4720564021b5632a1f5cf49adf10c536328652ee3de4b1272f98940"
+    },
+    {
+      "path": "apps/web/components/chat/transcript-parts.tsx",
+      "state": "present",
+      "sha256": "2591165246f09a9a05db3481a044bf1e7204b0d44c0b726640fc3fafc3655377"
+    },
+    {
+      "path": "apps/web/components/course-assistant/course-assistant.tsx",
+      "state": "present",
+      "sha256": "64bcd1a938226fe1f7fbb6c9a996bd050845935351df26fcbc578890bf0b2697"
+    },
+    {
+      "path": "apps/web/components/course-nav.tsx",
+      "state": "present",
+      "sha256": "1cbe33c8af76895d53e37c01e7bdaf0553ab67e788b75fbafb4c3a52bed03aa2"
+    },
+    {
+      "path": "apps/web/components/exam/feedback-panel.tsx",
+      "state": "present",
+      "sha256": "7701c9a696b274b46f6857f270823d105270c5c5728f4c509a9522426c15a5f3"
+    },
+    {
+      "path": "apps/web/components/exam/finished-exam.tsx",
+      "state": "present",
+      "sha256": "ca03d9292dbec6fa7345d99c39f216ddd44a8acc94e3458061071d0148306a75"
+    },
+    {
+      "path": "apps/web/components/exam/question-input.tsx",
+      "state": "present",
+      "sha256": "5bdcceb3dfdcd5be12069e96833cdc7692ce628ffcb7816d866d80a181b73d59"
+    },
+    {
+      "path": "apps/web/components/exam/running-exam.tsx",
+      "state": "present",
+      "sha256": "eb43fb9d78910f8bb5af25d14232e92076597286cf11fdccab5f0679ad8393b8"
+    },
+    {
+      "path": "apps/web/components/exam/session-history.tsx",
+      "state": "present",
+      "sha256": "82523dcdf03f226472294ccc1cf97c800da23a864940ea72b239f87183c05a06"
+    },
+    {
+      "path": "apps/web/components/exam/start-panel.tsx",
+      "state": "present",
+      "sha256": "372bccbf186441c795493aa7fbe02923bf6ad5455754656ab119fb0e78a521c6"
+    },
+    {
+      "path": "apps/web/components/learning-summary.tsx",
+      "state": "present",
+      "sha256": "d45b2736c466d86745cf8485586cbc25dc8aa3e53c52d8ccdf2ac08ae26915c6"
+    },
+    {
+      "path": "apps/web/components/page-state.tsx",
+      "state": "present",
+      "sha256": "16e75ee01ef98053c3d4b04e7aa176b6ff3ac2d19754c4775c51aab501fcba20"
+    },
+    {
+      "path": "apps/web/components/policy-history.tsx",
+      "state": "present",
+      "sha256": "9186cd1d43dc29baefa7611639e5b4d342d30a1dff1e1b5a8fcffdfbe9f3bcdc"
+    },
+    {
+      "path": "apps/web/components/portal/admin-data-table.tsx",
+      "state": "present",
+      "sha256": "5f6f0aa5bd76ee113681c764efb99e6ee047e3ce2e9a0b8fc15326a4726a2674"
+    },
+    {
+      "path": "apps/web/components/portal/portal-metrics.tsx",
+      "state": "present",
+      "sha256": "3dce2070055f2962cdb8f021c39f07097f79e20c0888613c980bafab15c0df5d"
+    },
+    {
+      "path": "apps/web/components/question-authoring/classification-fields.tsx",
+      "state": "present",
+      "sha256": "0f349388a7e452724ac627fa232f8a67984479230594e1a56d2ebad567ff8650"
+    },
+    {
+      "path": "apps/web/components/question-authoring/draft-editor.tsx",
+      "state": "present",
+      "sha256": "8cf1dff81b78024a664167a6b508f1c911f329e26f8d46d2ae63d4d170ef3f4c"
+    },
+    {
+      "path": "apps/web/components/question-authoring/generate-panel.tsx",
+      "state": "present",
+      "sha256": "3e33ba81579190c2808595d6a3d2b69a6ae307e5ca6ebf2c9d696fac24249883"
+    },
+    {
+      "path": "apps/web/components/question-authoring/question-detail.tsx",
+      "state": "present",
+      "sha256": "8782011b29b6089e9e9c13b4f0d6ed5582e07c96f2269f889ba7dbfa21116f71"
+    },
+    {
+      "path": "apps/web/components/socratic-ladder.tsx",
+      "state": "present",
+      "sha256": "b4ba2f62e2f5d9baa18649a6d11763efb5fedc55ea7859d3bdfea93978e7dd61"
+    },
+    {
+      "path": "apps/web/components/source-card.tsx",
+      "state": "present",
+      "sha256": "19bc5829922a0a37fa7442f76504345d0b2b85663b26aa955f39d2fe81a8d0aa"
+    },
+    {
+      "path": "apps/web/components/theme-control.tsx",
+      "state": "present",
+      "sha256": "39c7a2070036071c3c3873e31492d97afbce78e650c8fbeb2fcf460b1e485619"
+    },
+    {
+      "path": "apps/web/components/ui.tsx",
+      "state": "present",
+      "sha256": "bfbc7b38a2806f8445b07faef7dbd6d229f259e5c9a9a63dc4ddd763781cb113"
+    },
+    {
+      "path": "apps/web/e2e/flows.spec.ts",
+      "state": "present",
+      "sha256": "27876d3d8e3492951de3d98f690514d5f4afcd1769649075585908cd8bd6e721"
+    },
+    {
+      "path": "apps/web/e2e/portal.spec.ts",
+      "state": "present",
+      "sha256": "3336a10c4561df7144986a5eb349702618dc5cb42b49522aea28ca3dfd71acff"
+    },
+    {
+      "path": "apps/web/e2e/screenshots.spec.ts",
+      "state": "present",
+      "sha256": "b76fc236175f1250a340e8766a06e47cd1f9700809ff113b31d9fa103d8350bb"
+    },
+    {
+      "path": "apps/web/scripts/contrast.mjs",
+      "state": "present",
+      "sha256": "2b4d153b9658f3ca4b9aa98f8b5ba477733a0a845b4c07bd3b1f21f3951838e5"
+    },
+    {
+      "path": "specs/025-campus-ui/plan.md",
+      "state": "present",
+      "sha256": "eecd464c7054a3af843f79378228a86a52ecb5c516652f55e22e16679d68ead4"
+    },
+    {
+      "path": "specs/025-campus-ui/spec.md",
+      "state": "present",
+      "sha256": "b96ff014f5c0b19d926f3de914e8cb81c372c181585f4c829f02a4aa7b1e419c"
+    },
+    {
+      "path": "specs/025-campus-ui/tasks.md",
+      "state": "present",
+      "sha256": "ad920fced3d28a0b2198812a28a0c380a9d56e03cc7ef068e48f9276f8731033"
+    },
+    {
+      "path": "specs/025-campus-ui/verification.md",
+      "state": "present",
+      "sha256": "5d7cc6e2cfb020ed94e4bc6a6bbf3dd8396b03523f52725acb5070164f254e6c"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/100-campus-ui-r1.json",
+      "report_sha256": "c40428feb91a88808abd7858498259d6f117307f5514891c7f3b4b3ab4435fd5",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/web/lib/chat.test.ts",
+    "holdout_ref": "apps/web/lib/chat-availability.test.ts",
+    "human_anchor_ref": "specs/025-campus-ui/spec.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "targeted_web_contract_failures",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 256
+      }
+    ],
+    "exact_command": "cd apps/web && bun test lib/question-page-contracts.test.ts lib/use-chat-turn.test.ts lib/use-chat-session.test.ts lib/chat-availability.test.ts lib/chat-history-deletion.test.ts lib/chat.test.ts lib/exam.test.ts lib/exam-answer.test.ts lib/exam-drafts.test.ts lib/blueprint.test.ts lib/question-authoring.test.ts lib/questions.test.ts"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security_or_privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "release-gate:100-campus-ui-r1",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:100-campus-ui-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "release-gate:100-campus-ui-r1",
+    "kill_switch": "Adayı terfi ettirme; mevcut web sürümünü koru veya aday commitini geri al.",
+    "assignment": "Sticky atama yalnız yerel sentetik incelemede aday commitine sabitlenir; üretim kohortu tanımlanmadı.",
+    "initial_exposure": "İzole yerel önizleme ve sentetik test; canlı öğrenci erişimi yok.",
+    "stop_conditions": [
+      "Sınav kilitliyken asistanın veya cevap kaynağının açılması.",
+      "Rol geçişinde önceki kişiye ait sohbet/verinin kalması.",
+      "375px veya klavye ile temel form ve kaynaklara erişilememesi."
+    ],
+    "expand_conditions": [
+      "Son adayın tür denetimi, mevcut web testleri, kontrast ve üretim derlemesi geçer.",
+      "Öğrenci/eğitmen/Bilgi İşlem ekranları375px ve masaüstünde, açık/koyu temada incelenir.",
+      "Bağımsız mühendislik, alan ve güvenlik/gizlilik sorumluları aynı adayı onaylar."
+    ],
+    "active_exam_policy": "Aktif sınavda asistan ve kaynak kilitleri korunur; canlı sınav sürerken arayüz adayı zorla değiştirilmez."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:f4a0952c41232df84f937f05991a417d959a5285",
+    "procedure": "Yalnız arayüz commitini geri al veya önceki web imajını dağıt; veritabanı göçü ve API değişikliği yok.",
+    "max_minutes": 30,
+    "verification": "Önceki arayüzde rol/sınav kilidi, kaynak görünürlüğü, giriş ve cevap gönderimi doğrulanır; bu kayıt canlı rollback ölçümü içermez.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Kanıt yalnız sentetik test sayısı, komut, çıkış kodu ve dosya hashlerini içerir. Referans ekranlardaki öğrenci bilgileri, telefon ve e-posta kopyalanmadı.",
+    "retention": "Kaynak kodu ve kişisel veri içermeyen test özetleri depo geçmişinde saklanır; gerçek öğrenci içeriği bu kayıtta yok."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

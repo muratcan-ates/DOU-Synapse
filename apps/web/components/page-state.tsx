@@ -54,7 +54,8 @@ export function Loading({ label = "Yükleniyor…" }: { label?: string }) {
   return (
     // Canlı bölge dıştaki kapsayıcıda: ikinci satır sonradan eklendiğinde ekran
     // okuyucu onu da duyursun, ilk satırı yeniden okumak zorunda kalmadan.
-    <div role="status" aria-live="polite">
+    <div role="status" aria-live="polite" className="campus-panel space-y-5 p-6">
+      <span aria-hidden="true" className="campus-loading-mark block" />
       <p className="text-sm text-fg-muted">{label}</p>
       {slow && <p className="prose-tr mt-1 text-xs text-fg-muted">{SLOW_LOAD_NOTICE}</p>}
     </div>
@@ -232,7 +233,7 @@ export function PageHeader({
   compact?: boolean;
 }) {
   return (
-    <div className="rise mb-8 flex flex-wrap items-end justify-between gap-4 pb-6">
+    <div className="rise mb-7 flex flex-wrap items-center justify-between gap-5">
       {/*
        * 14 Eylül 2026: kırmızı dikey ray kaldırıldı. Açık kabukta sayfanın
        * başlangıcı zaten kanvas-kart farkından okunuyor; ray, üniversitenin
@@ -251,13 +252,13 @@ export function PageHeader({
         )}
         <h1
           className={`text-balance font-semibold tracking-tight text-fg ${
-            compact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-[2.75rem] sm:leading-[1.05]"
+            compact ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
           }`}
         >
           {title}
         </h1>
         {description && (
-          <p className="prose-tr mt-2 text-pretty text-sm text-fg-muted">{description}</p>
+          <p className="prose-tr mt-2 max-w-2xl text-pretty text-sm text-fg-muted">{description}</p>
         )}
       </div>
       {action}

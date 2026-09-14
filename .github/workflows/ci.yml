@@ -55,6 +55,8 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
+          # Değişen satır raporu PR tabanını ve main push öncesini karşılaştırır.
+          fetch-depth: 0
 
       - name: PostgreSQL istemcisini kur
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -75,8 +77,32 @@ jobs:
       - name: Tip kontrolü (mypy)
         run: uv run mypy app
 
-      - name: Testler
-        run: uv run pytest -q
+      - name: API testleri ve gerçek satır kapsamı
+        working-directory: .
+        run: |
+          uv run --project apps/api python scripts/diff_coverage_check.py collect \
+            --output /tmp/api-diff-coverage.json -- -q
+
+      - name: Değişen Python satırlarının kapsam raporu
+        working-directory: .
+        env:
+          DIFF_COVERAGE_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          # Mevcut araç rapor kipindedir; ölçülmemiş bir oran geçiş eşiği yapılmaz.
+          # Eksik/bozuk kanıt, taban hatası ve test başarısızlığı yine işi düşürür.
+          uv run --project apps/api python scripts/diff_coverage_check.py report \
+            --coverage /tmp/api-diff-coverage.json \
+            --base "$DIFF_COVERAGE_BASE_SHA" --head "$(git rev-parse HEAD)"
+
+      - name: Kod analizi araçlarının regresyon testleri
+        working-directory: .
+        run: |
+          uv run --project apps/api python -m unittest \
+            scripts.test_dead_code_check scripts.test_diff_coverage_check
+
+      - name: Kullanılmayan Python tanımı adayları (uyarı)
+        working-directory: .
+        run: uv run --project apps/api python scripts/dead_code_check.py apps/api/app --warn-only
 
       - name: Retrieval ölçüm araçlarının çevrimdışı sözleşmeleri
         working-directory: .
@@ -250,19 +276,32 @@ jobs:
 
       - name: Storage RLS kanıtı ve mutasyonu (0029, sentetik storage şeması)
         working-directory: .
+        env:
+          POSTGRES_SERVICE_ID: ${{ job.services.postgres.id }}
         run: |
           set -euo pipefail
-          # Test yalnız `dou_l5*` adlı, çekirdek göçleri uygulanmış ve storage
-          # şeması OLMAYAN bir veritabanında koşar; Supabase şeması testin kendi
-          # içinde sentetik kurulur ve sonunda geri alınır.
-          psql -d postgres -c 'DROP DATABASE IF EXISTS dou_l5_storage_ci'
-          psql -d postgres -c 'CREATE DATABASE dou_l5_storage_ci'
+          # Runner'ın yayımlanmış portu sunucuda Docker ağ adresi olarak görünür.
+          # Yerel hedef korumasını koruyarak kanıtı bu işe ait PG hizmetinin
+          # içinden, 127.0.0.1 üzerinden çalıştır. Yalnız göç ve test dosyaları taşınır.
+          docker exec "$POSTGRES_SERVICE_ID" mkdir -p /tmp/dou-storage-ci/supabase/tests
+          docker cp supabase/migrations "$POSTGRES_SERVICE_ID:/tmp/dou-storage-ci/supabase/"
+          docker cp supabase/tests/rls_storage.sql "$POSTGRES_SERVICE_ID:/tmp/dou-storage-ci/supabase/tests/"
+          docker cp supabase/tests/rls_storage_mutation_check.sh "$POSTGRES_SERVICE_ID:/tmp/dou-storage-ci/supabase/tests/"
+          docker exec -i -e PGHOST=127.0.0.1 -e PGPORT=5432 -e PGUSER=postgres \
+            -e PGPASSWORD -w /tmp/dou-storage-ci "$POSTGRES_SERVICE_ID" bash -se <<'STORAGE'
+          set -euo pipefail
+          # Test yalnız dou_l5* adlı, çekirdek göçleri uygulanmış ve storage
+          # şeması OLMAYAN veritabanında koşar. Sentetik şema her koşuda geri alınır.
+          psql -X -v ON_ERROR_STOP=1 -d postgres -c 'DROP DATABASE IF EXISTS dou_l5_storage_ci'
+          psql -X -v ON_ERROR_STOP=1 -d postgres -c 'CREATE DATABASE dou_l5_storage_ci'
           for f in supabase/migrations/*.sql; do
-            psql -v ON_ERROR_STOP=1 -q -d dou_l5_storage_ci -f "$f"
+            psql -X -v ON_ERROR_STOP=1 -q -d dou_l5_storage_ci -f "$f"
           done
           psql -X -v ON_ERROR_STOP=1 -d dou_l5_storage_ci \
-            -f supabase/tests/rls_storage.sql > /tmp/rls_storage.out 2>&1
-          supabase/tests/rls_storage_mutation_check.sh dou_l5_storage_ci
+            -f supabase/tests/rls_storage.sql 2>&1 | tee /tmp/rls_storage.out
+          grep -qx 'L5_STORAGE_BASELINE_PASS' /tmp/rls_storage.out
+          bash supabase/tests/rls_storage_mutation_check.sh dou_l5_storage_ci
+          STORAGE
 
       - name: Rol farkındalıklı ajan mutasyon aracının çevrimdışı sözleşmeleri
         working-directory: .
@@ -392,6 +431,8 @@ jobs:
           fi
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
+      - name: Tam bağımlılık ağacında yüksek ve kritik güvenlik açıkları
+        run: bun audit --audit-level high
       - run: bun run typecheck
       - run: bun test lib/
       # Kontrast kapısı: DESIGN.md "ölçülmüş AA" iddia ediyor ve bu iddianın tek

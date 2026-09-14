@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { ChevronRightIcon, ShieldIcon, UserIcon } from "@/components/icons";
 import { AppShell } from "@/components/app-shell";
 import { Field } from "@/components/field";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
@@ -16,13 +17,8 @@ import {
 } from "@/lib/profile";
 import { useSubmit } from "@/lib/use-submit";
 
-/**
- * Satır içi bağlantı, `Button variant="secondary" size="sm"` kabuğunda.
- * `Button` bir `<button>` çizer; "Dersi aç" ise gerçek bir sayfa bağlantısıdır
- * ve `href`i korunmalıdır. Kabuk ui.tsx'teki secondary/sm ile aynı ölçüdedir.
- */
 const LINK_BUTTON_SM =
-  "inline-flex h-9 shrink-0 items-center justify-center rounded-xl border border-border-strong bg-surface px-3 text-[0.8125rem] font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+  "inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-xl border border-border-strong bg-surface px-4 text-sm font-medium text-fg motion-safe:transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
 export default function ProfilePage() {
   return (
@@ -104,185 +100,114 @@ function ProfileContent({
   }
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        eyebrow="Kimlik ve erişim"
-        title="Profil"
-        description="Hesap bilgilerinizi ve her dersteki rolünüzü tek yerde görün."
-      />
-
+    <div className="space-y-7">
+      <PageHeader eyebrow="Hesabım" title="Profil" description="Kimlik bilgilerin, derslerin ve kişisel tercihlerin." />
       {(notice || error) && (
         <div aria-live="polite">
-          {notice && (
-            <p role="status" className="text-sm text-success">
-              {notice}
-            </p>
-          )}
+          {notice && <p role="status" className="rounded-xl bg-success-bg px-5 py-4 text-base text-success">{notice}</p>}
           {error && <ErrorNote message={error} />}
         </div>
       )}
 
-      {/*
-       * Hesap bilgileri tek yükselmiş kart: kimlik satırı, `dl` çiftleri ve ad
-       * formu. Önceki hâl iki sütunlu, kırmızı zeminli, kenarlıklı bir paneldi
-       * ve kırmızı mono avatar taşıyordu; kırmızı bu sayfada yalnız "Profili
-       * kaydet"te kalır (DESIGN.md §Components "Aksan disiplini ve katman").
-       */}
-      <section aria-labelledby="profile-identity-title">
-        <Card>
-          <h2 id="profile-identity-title" className="text-lg font-semibold text-fg">
-            Hesap bilgileri
-          </h2>
-          <p className="mt-1 text-sm text-fg-muted">
-            E-posta kimlik sağlayıcınızdan gelir ve burada değiştirilemez.
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-4">
-            <span
-              aria-hidden="true"
-              className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-surface-sunken text-xl font-semibold text-fg"
-            >
-              {profileInitial}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-semibold text-fg">
-                {profile.full_name || "Adsız profil"}
-              </p>
-              <p className="mt-0.5 truncate text-sm text-fg-muted">{profile.email}</p>
+      <section aria-labelledby="profile-identity-title" className="overflow-hidden rounded-[20px] border border-border bg-surface shadow-e1">
+        <div className="flex min-h-14 flex-wrap items-center justify-between gap-2 bg-brand-subtle px-5 py-3 sm:px-7">
+          <p className="text-sm font-semibold text-brand">DOU-Synapse · Doğuş Üniversitesi</p>
+          {profile.is_platform_admin && <Badge tone="info">Bilgi İşlem yöneticisi</Badge>}
+        </div>
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:p-7">
+          <span aria-hidden="true" className="grid h-20 w-20 shrink-0 place-items-center rounded-full border-4 border-surface bg-brand-subtle text-[30px] font-semibold text-brand shadow-e1">{profileInitial}</span>
+          <div className="min-w-0 flex-1">
+            <h2 id="profile-identity-title" className="break-words text-[26px] leading-tight font-semibold tracking-tight text-fg">{profile.full_name || "Adsız profil"}</h2>
+            <p className="mt-2 break-words text-base text-fg-muted">{profile.email}</p>
+            <p className="mt-2 text-sm text-fg-muted">Hesap oluşturma: {createdAt}</p>
+          </div>
+          <Link href="#profile-settings" className={LINK_BUTTON_SM}><UserIcon size={18} />Profili düzenle</Link>
+        </div>
+        <dl className="grid grid-cols-3 border-t border-border bg-bg/50">
+          {[
+            { label: "Toplam ders", value: profile.memberships.length },
+            { label: "Eğitmen olarak", value: instructorCount },
+            { label: "Öğrenci olarak", value: studentCount },
+          ].map(({ label, value }) => (
+            <div key={label} className="px-3 py-5 text-center sm:px-6">
+              <dt className="text-[13px] text-fg-muted sm:text-sm">{label}</dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums text-fg">{value}</dd>
             </div>
-            {profile.is_platform_admin && <Badge tone="info">Bilgi İşlem yöneticisi</Badge>}
-          </div>
+          ))}
+        </dl>
+      </section>
 
-          <dl className="mt-6 divide-y divide-border border-t border-border">
-            <ProfileDatum label="Hesap oluşturma" value={createdAt} />
-            <ProfileDatum label="Toplam ders" value={profile.memberships.length} />
-            <ProfileDatum label="Eğitmen olduğunuz ders" value={instructorCount} />
-            <ProfileDatum label="Öğrenci olduğunuz ders" value={studentCount} />
-          </dl>
+      <div className="grid items-start gap-7 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-7">
+          <section id="profile-settings" aria-labelledby="profile-settings-title" className="scroll-mt-28">
+            <Card>
+              <h2 id="profile-settings-title" className="text-xl font-semibold text-fg">Hesap bilgileri</h2>
+              <p className="mt-2 text-base leading-7 text-fg-muted">E-posta kimlik sağlayıcından gelir ve burada değiştirilemez.</p>
+              <form onSubmit={save} className="mt-6 space-y-5">
+                <Field label="Ad soyad">{(control) => <Input {...control} value={fullName} onChange={(event) => setFullName(event.target.value)} autoComplete="name" minLength={2} maxLength={120} required />}</Field>
+                <Field label="E-posta">{(control) => <Input {...control} value={profile.email} readOnly aria-readonly />}</Field>
+                <div className="border-t border-border pt-5"><Button type="submit" aria-disabled={busy}>{busy ? "Kaydediliyor…" : "Profili kaydet"}</Button></div>
+              </form>
+            </Card>
+          </section>
 
-          <form onSubmit={save} className="mt-6 max-w-2xl space-y-4 border-t border-border pt-6">
-            <Field label="Ad soyad">
-              {(control) => (
-                <Input
-                  {...control}
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  autoComplete="name"
-                  minLength={2}
-                  maxLength={120}
-                  required
-                />
+          <section aria-labelledby="profile-memberships-title">
+            <Card padding="none" className="overflow-hidden">
+              <div className="border-b border-border px-5 py-5 sm:px-6">
+                <h2 id="profile-memberships-title" className="text-xl font-semibold text-fg">Ders rolleri</h2>
+                <p className="mt-1 text-sm leading-6 text-fg-muted">Her dersteki yetkilerin üyelik rolüne göre belirlenir.</p>
+              </div>
+              {profile.memberships.length === 0 ? (
+                <p className="px-6 py-8 text-base text-fg-muted">Aktif ders üyeliğiniz bulunmuyor.</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {profile.memberships.map((membership) => (
+                    <li key={membership.course_id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-6">
+                      <div className="min-w-0 flex-1 basis-[180px]">
+                        <p className="text-sm text-fg-muted">{membership.course_code}</p>
+                        <p className="mt-1 break-words text-base font-semibold text-fg">{membership.course_title}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge tone={membership.role === "instructor" ? "info" : "neutral"}>{roleLabel(membership.role)}</Badge>
+                        <Link href={`/courses/${membership.course_id}`} className={LINK_BUTTON_SM}>Dersi aç<ChevronRightIcon size={16} /></Link>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </Field>
-            <Field label="E-posta">
-              {(control) => (
-                <Input {...control} value={profile.email} readOnly aria-readonly />
-              )}
-            </Field>
-            <Button type="submit" aria-disabled={busy}>
-              {busy ? "Kaydediliyor…" : "Profili kaydet"}
-            </Button>
-          </form>
-        </Card>
-      </section>
+            </Card>
+          </section>
+        </div>
 
-      <section aria-labelledby="profile-memberships-title">
-        <h2 id="profile-memberships-title" className="text-xl font-medium text-fg">
-          Ders rolleri
-        </h2>
-        {profile.memberships.length === 0 ? (
-          <p className="mt-3 text-sm text-fg-muted">Aktif ders üyeliğiniz bulunmuyor.</p>
-        ) : (
-          /* Satır listesi kartın içinde `divide-y`; dolgu satırlara devredilir.
-             Dolgu `padding="none"` ile kapatılır — className ile `p-0` geçmek
-             Tailwind çıktısında `.p-6`'ya yenilir (bkz. Card). */
-          <Card padding="none" className="mt-4">
-            <ul className="divide-y divide-border">
-              {profile.memberships.map((membership) => (
-                <li
-                  key={membership.course_id}
-                  className="flex flex-wrap items-center justify-between gap-3 px-6 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="text-xs text-fg-muted">{membership.course_code}</p>
-                    <p className="mt-1 text-sm font-medium text-fg">
-                      {membership.course_title}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge tone={membership.role === "instructor" ? "info" : "neutral"}>
-                      {roleLabel(membership.role)}
-                    </Badge>
-                    <Link href={`/courses/${membership.course_id}`} className={LINK_BUTTON_SM}>
-                      Dersi aç
-                    </Link>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-      </section>
-
-      {/*
-       * Görünüm tercihi profilde yaşar: ray yalnız masaüstünde görünür, dar
-       * ekranda tercihe ulaşılabilecek tek yer burasıdır. Aynı kontrol iki
-       * yerde de aynı depoyu yazar (lib/theme.ts), iki ayrı durum yoktur.
-       * Tercih kontrolü çukur yüzeyde: bilgi kartlarıyla aynı katmanda değil.
-       */}
-      <section aria-labelledby="appearance-title">
-        <h2 id="appearance-title" className="text-xl font-medium text-fg">
-          Görünüm
-        </h2>
-        <Card variant="soft" className="mt-4">
-          <p className="text-sm text-fg-muted">
-            Tema seçiminiz yalnız bu tarayıcıda saklanır. &ldquo;Sistem&rdquo;
-            seçiliyken cihazınızın gece modu ayarını izler.
-          </p>
-          <div className="mt-4 max-w-xs">
-            <ThemeControl tone="canvas" />
-          </div>
-        </Card>
-      </section>
-
-      <section aria-labelledby="privacy-title">
-        <h2 id="privacy-title" className="text-xl font-medium text-fg">
-          Gizlilik ve hesap
-        </h2>
-        {/* `overflow-hidden`: satır vurgusu kartın yuvarlak köşesinden taşmasın. */}
-        <Card padding="none" className="mt-4 overflow-hidden">
-          <div className="divide-y divide-border">
-            <Link
-              href="/account"
-              className="flex min-h-20 flex-col justify-center px-6 py-4 text-sm font-medium text-fg transition-colors duration-200 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand"
-            >
-              Verilerimi indir veya sil
-              <span className="mt-1 block text-xs font-normal text-fg-muted">
-                Dışa aktarma, sohbet silme ve profil bilgilerini kaldırma
-              </span>
-            </Link>
-            <Link
-              href="/kvkk"
-              className="flex min-h-20 flex-col justify-center px-6 py-4 text-sm font-medium text-fg transition-colors duration-200 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand"
-            >
-              Kişisel veriler ve gizlilik
-              <span className="mt-1 block text-xs font-normal text-fg-muted">
-                İşlenen veri, saklama ve haklarınız
-              </span>
-            </Link>
-          </div>
-        </Card>
-      </section>
-    </div>
-  );
-}
-
-/** `dl` satırı: etiket solda muted, değer sağda `font-medium` ve `tabular-nums`. */
-function ProfileDatum({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
-      <dt className="text-sm text-fg-muted">{label}</dt>
-      <dd className="text-sm font-medium tabular-nums text-fg">{value}</dd>
+        <aside className="space-y-7">
+          <section aria-labelledby="appearance-title">
+            <Card>
+              <h2 id="appearance-title" className="text-xl font-semibold text-fg">Görünüm</h2>
+              <p className="mt-2 text-sm leading-6 text-fg-muted">Tema tercihin bu tarayıcıda saklanır. Sistem seçeneği cihazının görünümünü izler.</p>
+              <div className="mt-5"><ThemeControl tone="canvas" /></div>
+            </Card>
+          </section>
+          <section aria-labelledby="privacy-title">
+            <Card padding="none" className="overflow-hidden">
+              <div className="px-5 py-5 sm:px-6">
+                <ShieldIcon className="mb-3 text-brand" size={24} />
+                <h2 id="privacy-title" className="text-xl font-semibold text-fg">Gizlilik ve hesap</h2>
+              </div>
+              <div className="divide-y divide-border border-t border-border">
+                {[
+                  { href: "/account", title: "Verilerimi indir veya sil", description: "Dışa aktarma, sohbet ve profil bilgileri" },
+                  { href: "/kvkk", title: "Kişisel veriler ve gizlilik", description: "İşlenen veri, saklama ve hakların" },
+                ].map(({ href, title, description }) => (
+                  <Link key={href} href={href} className="group flex min-h-24 items-center gap-3 px-5 py-4 motion-safe:transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand sm:px-6">
+                    <span className="min-w-0 flex-1"><span className="block text-base font-medium text-fg">{title}</span><span className="mt-1 block text-sm leading-6 text-fg-muted">{description}</span></span>
+                    <ChevronRightIcon size={18} className="shrink-0 text-fg-muted" />
+                  </Link>
+                ))}
+              </div>
+            </Card>
+          </section>
+        </aside>
+      </div>
     </div>
   );
 }

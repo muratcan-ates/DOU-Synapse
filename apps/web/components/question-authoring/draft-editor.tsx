@@ -72,8 +72,8 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
     <>
     <form id={formId} onSubmit={save} aria-label="Taslak soru düzenleme" className="mt-6 space-y-6 border-t border-border pt-6">
       <div>
-        <h3 className="text-sm font-medium text-fg">Taslağı düzenle</h3>
-        <p className="prose-tr mt-1 text-xs text-fg-muted">Kaydettiğiniz soru taslak olarak kalır. İçeriği ve kaynağını kontrol ettikten sonra onaylayın.</p>
+        <h3 className="text-base font-semibold text-fg">Taslağı düzenle</h3>
+        <p className="prose-tr mt-1 text-sm text-fg-muted">Kaydettiğiniz soru taslak olarak kalır. İçeriği ve kaynağını kontrol ettikten sonra onaylayın.</p>
       </div>
       <fieldset disabled={busy} className="min-w-0 space-y-6">
         <TextArea label="Soru metni" value={form.stem} onChange={(value) => change("stem", value)}
@@ -84,7 +84,7 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
           <TextArea label="Kod" value={form.code} onChange={(value) => change("code", value)} required maxLength={8000} rows={8} className="font-mono" />
         </div>}
         {question.type === "mcq" ? <div className="space-y-4">
-          <h4 className="text-sm font-medium text-fg">Şıklar ve cevap anahtarı</h4>
+          <h4 className="text-base font-semibold text-fg">Şıklar ve cevap anahtarı</h4>
           {form.options.map((option, index) => <TextArea key={option.key} label={`${option.key} şıkkı`}
             value={option.text} onChange={(value) => change("options", form.options.map((item, i) => i === index ? { ...item, text: value } : item))}
             required maxLength={1000} rows={2} />)}
@@ -93,7 +93,7 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
             <option value="">Şık seçin</option>
             {form.options.map((option) => <option key={option.key} value={option.key}>{option.key}</option>)}
           </Select>}</Field>
-          <p className="prose-tr text-xs text-fg-muted">Her yanlış şık için çeliştiği kaynağı kontrol edin. Doğru şıkkı değiştirince yeni yanlış şık için sorunun üretildiği kaynak seçilir.</p>
+          <p className="prose-tr text-sm text-fg-muted">Her yanlış şık için çeliştiği kaynağı kontrol edin. Doğru şıkkı değiştirince yeni yanlış şık için sorunun üretildiği kaynak seçilir.</p>
           {form.options.filter((option) => option.key !== form.answerKey).map((option) => <Field key={option.key} label={`${option.key} yanlış şıkkının kaynağı`}>
             {(control) => <Select {...control} required value={form.distractorSources[option.key] ?? ""}
               onChange={(event) => change("distractorSources", { ...form.distractorSources, [option.key]: event.target.value })}>
@@ -116,10 +116,10 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
               onChange={(value) => change("keyPoints", value)} required />
           </div>)}
         {(codeQuestion || (question.type === "open" && !shortAnswer)) && <div className="space-y-3">
-              <h4 className="text-sm font-medium text-fg">Puanlama ölçütleri</h4>
-              {codeQuestion && <p className="prose-tr text-xs text-fg-muted">Kaydetmek için en az bir ölçüt tanımlayın. Ölçütler farklı olmalı ve puanlarının toplamı 100 olmalı.</p>}
+              <h4 className="text-base font-semibold text-fg">Puanlama ölçütleri</h4>
+              {codeQuestion && <p className="prose-tr text-sm text-fg-muted">Kaydetmek için en az bir ölçüt tanımlayın. Ölçütler farklı olmalı ve puanlarının toplamı 100 olmalı.</p>}
               {codeQuestion && original.rubric.length === 0 && <p role="status" className="prose-tr text-sm text-fg-muted">Bu eski kod sorusunda puanlama ölçütü yok. Soruyu kaydetmeden önce ölçüt ekleyin.</p>}
-              {legacyRubric && <p className="prose-tr text-xs text-fg-muted">Bu eski sorunun ölçüt kayıtları korunuyor. Ölçüt ekleme, kaldırma ve metin değişikliği kapalı; puanları düzenleyebilirsiniz.</p>}
+              {legacyRubric && <p className="prose-tr text-sm text-fg-muted">Bu eski sorunun ölçüt kayıtları korunuyor. Ölçüt ekleme, kaldırma ve metin değişikliği kapalı; puanları düzenleyebilirsiniz.</p>}
               {form.rubric.map((criterion, index) => <div key={index} className="space-y-2 border-b border-border pb-3">
                 <TextArea label={`Ölçüt ${index + 1}`} value={criterion.point} rows={2} required maxLength={500} readOnly={legacyRubric}
                   onChange={(value) => change("rubric", form.rubric.map((item, i) => i === index ? { ...item, point: value } : item))} />
@@ -132,7 +132,7 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
               <div className="flex flex-wrap items-center gap-3">
                 <Button type="button" variant="secondary" aria-disabled={legacyRubric || form.rubric.length >= 12}
                   onClick={() => change("rubric", [...form.rubric, { point: "", weight: "" }])}>Ölçüt ekle</Button>
-                <p className="text-xs text-fg-muted">Toplam: {form.rubric.reduce((sum, item) => sum + (Number(item.weight) || 0), 0)} / 100 puan</p>
+                <p className="text-sm text-fg-muted">Toplam: {form.rubric.reduce((sum, item) => sum + (Number(item.weight) || 0), 0)} / 100 puan</p>
               </div>
             </div>}
         {question.type !== "open" && <TextArea label="Gerekçe (isteğe bağlı)" value={form.explanation} onChange={(value) => change("explanation", value)} maxLength={4000} />}
@@ -148,7 +148,7 @@ export function DraftEditor({ courseId, question, outcomes, onSaved, onCancel }:
         {dirty && !busy ? <ConfirmAction label="Vazgeç" confirmLabel="Değişiklikleri sil" busyLabel="Kapatılıyor…"
           question="Kaydedilmemiş değişiklikler silinsin mi?" onConfirm={async () => onCancel()} /> :
           <Button type="button" variant="secondary" aria-disabled={busy} onClick={onCancel}>Vazgeç</Button>}
-        <p role="status" className="text-xs text-fg-muted">{busy ? "Taslak kaydediliyor…" : dirty ? "Kaydedilmemiş değişiklikler var." : "Henüz değişiklik yapılmadı."}</p>
+        <p role="status" className="text-sm text-fg-muted">{busy ? "Taslak kaydediliyor…" : dirty ? "Kaydedilmemiş değişiklikler var." : "Henüz değişiklik yapılmadı."}</p>
       </div>
     </>
   );
@@ -158,5 +158,5 @@ function TextArea({ label, value, onChange, className = "", ...props }: Omit<Com
   label: string; value: string; onChange: (value: string) => void;
 }) {
   return <Field label={label}>{(control) => <textarea {...control} rows={4} {...props} value={value}
-    onChange={(event) => onChange(event.target.value)} className={`${AUTHORING_CONTROL_CLASS} h-auto py-2 leading-6 ${className}`} />}</Field>;
+    onChange={(event) => onChange(event.target.value)} className={`${AUTHORING_CONTROL_CLASS} h-auto py-3 leading-7 ${className}`} />}</Field>;
 }

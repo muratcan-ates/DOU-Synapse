@@ -582,14 +582,15 @@ test.describe("gezinme", () => {
       "Asistan",
       "Sınav provası",
       "Soru havuzu",
-      "Sınav blueprint'i",
+      "Sınav planı",
       "İlerleme",
       "AI kalite",
       "Katılımcılar",
       "Materyaller",
     ]) {
       await page.getByRole("link", { name: sekme, exact: true }).click();
-      const beklenen = sekme === "Materyaller" ? "Ders materyalleri" : sekme;
+      const beklenen = sekme === "Materyaller" ? "Ders materyalleri"
+        : sekme === "Sınav planı" ? "Sınav blueprint'i" : sekme;
       await expect(page).toHaveTitle(`${beklenen} · DOU-Synapse`);
     }
   });

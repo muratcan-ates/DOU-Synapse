@@ -42,8 +42,8 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
     sameSourceRef(evidence, nextHint.source));
 
   return (
-    <Card className="mt-6">
-      <div className="flex flex-wrap items-center gap-3">
+    <Card className="mt-6 min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
         {/* Renk tek başına bilgi taşımaz: rozetin metni her zaman vardır. */}
         <Badge tone={spec.tone}>{spec.label}</Badge>
         {/* Puan yoksa yazılmaz — "0" yazmak olmayan bir ölçümü iddia etmektir. */}
@@ -56,11 +56,11 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
       </div>
 
       {feedback.message && (
-        <p className="prose-tr mt-3 text-sm text-fg">{feedback.message}</p>
+        <p className="prose-tr mt-4 text-base leading-7 text-fg">{feedback.message}</p>
       )}
 
       {ungraded && (
-        <p className="prose-tr mt-3 text-sm text-fg-muted">{UNGRADED_NOTICE}</p>
+        <p className="prose-tr mt-4 text-base leading-7 text-fg-muted">{UNGRADED_NOTICE}</p>
       )}
 
       {/*
@@ -77,8 +77,8 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
 
       {feedback.missing_points && feedback.missing_points.length > 0 && (
         <div className="mt-5">
-          <h3 className="text-xs font-medium text-fg-muted">Eksik kalan noktalar</h3>
-          <ul className="mt-2 space-y-1">
+          <h3 className="text-base font-semibold text-fg">Eksik kalan noktalar</h3>
+          <ul className="mt-3 list-disc space-y-2 pl-5">
             {feedback.missing_points.map((point) => (
               <li key={point} className="prose-tr text-sm text-fg">
                 {point}
@@ -90,23 +90,23 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
 
       {scored && feedback.rubric_breakdown && feedback.rubric_breakdown.length > 0 && (
         <div className="mt-5 overflow-x-auto">
-          <h3 className="mb-2 text-xs font-medium text-fg-muted">Rubrik ölçütleri</h3>
+          <h3 className="mb-2 text-base font-semibold text-fg">Rubrik ölçütleri</h3>
           <table className="w-full min-w-[480px] divide-y divide-border text-left text-sm">
-            <thead className="text-xs text-fg-muted">
+            <thead className="text-sm text-fg-muted">
               <tr>
-                <th className="py-2 pr-4 font-medium">Ölçüt</th>
-                <th className="py-2 pr-4 font-medium">Ağırlık</th>
-                <th className="py-2 pr-4 font-medium">Başarı</th>
-                <th className="py-2 font-medium">Katkı</th>
+                <th className="py-3 pr-4 font-medium">Ölçüt</th>
+                <th className="py-3 pr-4 font-medium">Ağırlık</th>
+                <th className="py-3 pr-4 font-medium">Başarı</th>
+                <th className="py-3 font-medium">Katkı</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {feedback.rubric_breakdown.map((item) => (
                 <tr key={item.point}>
-                  <td className="prose-tr py-2 pr-4 text-fg">{item.point}</td>
-                  <td className="py-2 pr-4 tabular-nums text-fg-muted">%{item.weight}</td>
-                  <td className="py-2 pr-4 tabular-nums text-fg-muted">%{item.score}</td>
-                  <td className="py-2 tabular-nums text-fg">{item.earned}</td>
+                  <td className="prose-tr py-3 pr-4 text-fg">{item.point}</td>
+                  <td className="py-3 pr-4 tabular-nums text-fg-muted">%{item.weight}</td>
+                  <td className="py-3 pr-4 tabular-nums text-fg-muted">%{item.score}</td>
+                  <td className="py-3 tabular-nums text-fg">{item.earned}</td>
                 </tr>
               ))}
             </tbody>
@@ -116,21 +116,21 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
 
       {nextHint && (
         <section aria-label="Sonraki adım için ipucu" className="mt-5 space-y-2">
-          <h3 className="text-xs font-medium text-fg-muted">Sonraki adım için ipucu</h3>
-          <p className="prose-tr text-sm whitespace-pre-line text-fg">{nextHint.text}</p>
+          <h3 className="text-base font-semibold text-fg">Sonraki adım için ipucu</h3>
+          <p className="prose-tr text-base leading-7 whitespace-pre-line text-fg">{nextHint.text}</p>
           {!hintSharesSource && <SourceCard source={sourceInfo(nextHint.source)} href={sourceContextHref(courseId, nextHint.source.chunk_id)} learningContext={{ courseId, sessionId, chunkId: nextHint.source.chunk_id }} />}
         </section>
       )}
 
       {missingCriterion && <section aria-label="Eksik ölçütün dayanağı" className="mt-5 space-y-2">
-        <h3 className="text-xs font-medium text-fg-muted">Eksik ölçütün dayanağı</h3>
+        <h3 className="text-base font-semibold text-fg">Eksik ölçütün dayanağı</h3>
         <p className="prose-tr text-sm text-fg">{missingCriterion.criterion}</p>
         <SourceCard source={sourceInfo(missingCriterion.source)} href={sourceContextHref(courseId, missingCriterion.source.chunk_id)} learningContext={{ courseId, sessionId, chunkId: missingCriterion.source.chunk_id }} />
       </section>}
 
       {evidence && !evidenceSharesSource && (
         <div className="mt-5">
-          <h3 className="mb-2 text-xs font-medium text-fg-muted">Değerlendirmenin dayanağı</h3>
+          <h3 className="mb-2 text-base font-semibold text-fg">Değerlendirmenin dayanağı</h3>
           <SourceCard source={sourceInfo(evidence)} href={sourceContextHref(courseId, evidence.chunk_id)} learningContext={{ courseId, sessionId, chunkId: evidence.chunk_id }} />
         </div>
       )}
@@ -139,8 +139,8 @@ export function FeedbackPanel({ courseId, sessionId, feedback }: { courseId: str
         <dl className="mt-5 space-y-2 border-t border-border pt-4">
           {solution.map((line, position) => (
             <div key={`${line.label}-${position}`}>
-              <dt className="text-xs text-fg-muted">{line.label}</dt>
-              <dd className="prose-tr text-sm whitespace-pre-line text-fg">{line.value}</dd>
+              <dt className="text-sm text-fg-muted">{line.label}</dt>
+              <dd className="prose-tr text-base leading-7 whitespace-pre-line text-fg">{line.value}</dd>
             </div>
           ))}
         </dl>

@@ -12,6 +12,7 @@ import { useResource } from "@/lib/use-resource";
 import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
+import { UserIcon } from "@/components/icons";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, ConfirmAction, EmptyState, Input, Select } from "@/components/ui";
@@ -97,6 +98,7 @@ function MemberRoster({
   courseId: string;
   currentUserId?: string;
 }) {
+  const [memberQuery, setMemberQuery] = useState("");
   const fetchMembers = useCallback(
     () => api.get<Member[]>(`/courses/${courseId}/members`),
     [courseId],
@@ -110,6 +112,9 @@ function MemberRoster({
     reload,
   } = useResource(fetchMembers, [courseId]);
 
+  const visibleMembers = members?.filter((member) =>
+    `${member.full_name ?? ""} ${member.email}`.toLocaleLowerCase("tr-TR").includes(memberQuery.trim().toLocaleLowerCase("tr-TR")),
+  );
   return (
     <>
       <AddMemberForm courseId={courseId} onAdded={reload} />
@@ -129,6 +134,15 @@ function MemberRoster({
       )}
 
       {members && members.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div><h2 className="text-xl font-semibold text-fg">Ders katılımcıları</h2><p className="mt-1 text-sm text-fg-muted">{members.length} kayıtlı katılımcı</p></div>
+          <Input aria-label="Katılımcılarda ara" placeholder="Ad veya e-posta ile ara" type="search" className="sm:max-w-72" value={memberQuery} onChange={(event) => setMemberQuery(event.target.value)} />
+        </div>
+      )}
+      {visibleMembers?.length === 0 && members && members.length > 0 && (
+        <EmptyState title="Aramanızla eşleşen katılımcı bulunamadı." action={<Button variant="secondary" onClick={() => setMemberQuery("")}>Aramayı temizle</Button>} />
+      )}
+      {visibleMembers && visibleMembers.length > 0 && (
         /*
          * Giriş animasyonu gecikmesizdir ve bu sayfadaki üç yüzeyde aynıdır:
          * form kartı, bu liste ve boş durum kartı aynı işi yapıyor, farklı
@@ -137,24 +151,27 @@ function MemberRoster({
          * durum aynı yeri paylaştığı için ikisi de `rise`; `EmptyState` bunu
          * kendi içinde sabitlemiş durumda.
          */
-        <ul className="rise divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-          {members.map((member) => (
+        <ul className="rise divide-y divide-border overflow-hidden rounded-[20px] border border-border bg-surface shadow-e1">
+          {visibleMembers.map((member) => (
             <li
               key={member.user_id}
-              className="flex flex-wrap items-center justify-between gap-3 px-6 py-4"
+              className="flex flex-col items-stretch gap-4 px-5 py-5 transition-colors hover:bg-surface-sunken sm:flex-row sm:items-center sm:justify-between sm:px-6"
             >
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-fg">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-fg-muted"><UserIcon size={21} /></span>
+                <div className="min-w-0">
+                <p className="break-words font-medium text-fg">
                   {member.full_name ?? member.email}
                   {member.user_id === currentUserId && (
                     <span className="ml-2 text-xs text-fg-subtle">(siz)</span>
                   )}
                 </p>
-                <p className="mt-0.5 font-mono text-xs text-fg-subtle">
+                <p className="mt-1 break-words text-sm text-fg-subtle">
                   {member.email}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
                 <Badge tone={member.role === "instructor" ? "info" : "neutral"}>
                   {member.role === "instructor" ? "Eğitmen" : "Öğrenci"}
                 </Badge>
@@ -218,16 +235,17 @@ function AddMemberForm({
   }
 
   return (
-    <Card className="rise mb-6">
+    <Card className="rise mb-7">
+      <h2 className="mb-5 text-xl font-semibold text-fg">Katılımcı ekle</h2>
       {/*
        * Etiketler görünür ve `htmlFor` ile bağlı; placeholder yalnız örnek
        * değerdir (DESIGN.md: "Placeholder metni etiket yerine kullanma —
        * odaklanınca kaybolur"). `items-end` etiketli alanlarla butonu aynı
        * taban çizgisine oturtur.
        */}
-      <form onSubmit={submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <form onSubmit={submit} className="grid items-end gap-4 md:grid-cols-[minmax(0,1fr)_180px_auto]">
         <div className="flex-1">
-          <label htmlFor={emailId} className="mb-1 block text-xs text-fg-muted">
+          <label htmlFor={emailId} className="mb-2 block text-sm font-medium text-fg-muted">
             Katılımcı e-postası
           </label>
           <Input
@@ -244,7 +262,7 @@ function AddMemberForm({
           />
         </div>
         <div>
-          <label htmlFor={roleId} className="mb-1 block text-xs text-fg-muted">
+          <label htmlFor={roleId} className="mb-2 block text-sm font-medium text-fg-muted">
             Rol
           </label>
           <Select
@@ -260,7 +278,7 @@ function AddMemberForm({
           {busy ? "Ekleniyor…" : "Derse ekle"}
         </Button>
       </form>
-      <p id={hintId} className="mt-2 text-xs text-fg-subtle">
+      <p id={hintId} className="mt-4 text-sm text-fg-subtle">
         Kullanıcının sisteme daha önce giriş yapmış olması gerekir.
       </p>
       {error && (

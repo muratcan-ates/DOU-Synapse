@@ -75,9 +75,9 @@ export function GeneratePanel({
 
   return (
     <fieldset disabled={editing} className="min-w-0">
-    <Card className="mb-6">
-      <h2 className="text-sm font-medium text-fg">Soru üret</h2>
-      <p className="prose-tr mt-1 text-xs text-fg-muted">
+    <Card className="mb-7">
+      <h2 className="text-xl font-semibold text-fg">Soru üret</h2>
+      <p className="prose-tr mt-2 max-w-3xl text-base leading-7 text-fg-muted">
         Çerçeveyi siz kurarsınız: konu, tip ve biçim sizin seçiminiz. Sistem
         yalnız ders materyalinden üretir ve her soruyu taslak olarak bırakır.
       </p>
@@ -88,7 +88,7 @@ export function GeneratePanel({
         </p>
       ) : (
         <>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             <Field label="Konu">
               {(control) => (
                 <Select
@@ -168,11 +168,11 @@ export function GeneratePanel({
             </Field>
           </div>
 
-          {authoringEnabled && <div className="mt-4">
+          {authoringEnabled && <div className="mt-5 border-t border-border pt-5">
             <ClassificationFields courseId={courseId} topicId={activeTopicId} outcomes={outcomes}
               value={classification} onChange={setClassification} />
           </div>}
-          <div className="mt-3">
+          <div className="mt-5">
             <Field label="Örnek sorular (isteğe bağlı, her satır bir soru)">
               {(control) => (
                 <textarea
@@ -180,21 +180,21 @@ export function GeneratePanel({
                   value={examplesText}
                   onChange={(e) => setExamplesText(e.target.value)}
                   rows={3}
-                  className={`${SELECT_CLASS} h-auto py-2 leading-6`}
+                  className={`${SELECT_CLASS} h-auto py-3 leading-7`}
                 />
               )}
             </Field>
-            <p className="mt-1 text-xs text-fg-subtle">
+            <p className="mt-1 text-sm text-fg-subtle">
               Verirseniz üretim bu üslubu ve zorluk düzeyini taklit eder. En fazla
               beş satır gönderilir.
             </p>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-4">
             <Button variant="primary" aria-disabled={busy || editing || (authoringEnabled && !classificationComplete(classification))} onClick={generate}>
               {busy ? "Üretiliyor…" : "Soru üret"}
             </Button>
-            <p role="status" className="text-xs text-fg-muted">
+            <p role="status" className="text-sm text-fg-muted">
               {busy ? "Materyal taranıyor ve sorular hazırlanıyor…" : ""}
             </p>
           </div>
@@ -243,7 +243,7 @@ function GenerationReport({ summary }: { summary: GenerationSummary }) {
       role="status"
       className="mt-4 rounded-lg border border-border bg-bg px-4 py-3"
     >
-      <h3 className="text-xs font-medium text-fg-muted">Üretim raporu</h3>
+      <h3 className="text-sm font-medium text-fg-muted">Üretim raporu</h3>
       <p className="prose-tr mt-1 text-sm text-fg">{summary.sentence}</p>
 
       {summary.accepted === 0 && (
@@ -258,10 +258,10 @@ function GenerationReport({ summary }: { summary: GenerationSummary }) {
 
       {summary.reasons.length > 0 && (
         <div className="mt-3">
-          <h4 className="text-xs font-medium text-fg-muted">Eleme gerekçeleri</h4>
+          <h4 className="text-sm font-medium text-fg-muted">Eleme gerekçeleri</h4>
           <ul className="mt-1 space-y-0.5">
             {summary.reasons.map((reason) => (
-              <li key={reason.text} className="prose-tr text-xs text-fg-muted">
+              <li key={reason.text} className="prose-tr text-sm text-fg-muted">
                 · {reason.text}
                 {/*
                   Tekrar sayısı yalnız birden büyükse yazılır ve gerekçe

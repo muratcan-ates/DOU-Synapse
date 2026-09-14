@@ -31,7 +31,7 @@ import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 
 /** `Button variant="secondary" size="sm"` kabuğu, `<a>` semantiği ile. */
 const LINK_BUTTON_SM =
-  "inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-[0.8125rem] font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+  "inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface px-3 text-sm font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
 export default function SourcesPage() {
   return (
@@ -50,7 +50,7 @@ function SourcesView() {
       <CourseNav courseId={courseId} />
       <PageHeader
         title="Retrieval laboratuvarı"
-        description="Bir öğrenci sorusunun hangi kaynak parçalarını getirdiğini, kanıt eşiğini ve ret gerekçesini LLM çağırmadan inceleyin."
+        description="Öğrencinin sorusunu ders kaynaklarında deneyin. Hangi pasajların bulunduğunu ve yanıt için yeterli dayanak olup olmadığını görün."
       />
       <InstructorGate
         ready={ready}
@@ -84,7 +84,7 @@ function RetrievalLab({ courseId }: { courseId: string }) {
         limit: 8,
       }),
     );
-  }, "Retrieval testi tamamlanamadı.");
+  }, "Kaynak denemesi tamamlanamadı.");
 
   function inspect() {
     // Uzunluk doğrulaması gönderim ÖNCESİ; çift-gönderim kapısı kancada.
@@ -95,15 +95,17 @@ function RetrievalLab({ courseId }: { courseId: string }) {
   return (
     <>
       {/* Odak alanı: sorgu formu. Tek kırmızı buton sayfanın birincil eylemidir. */}
-      <Card className="mb-6">
+      <Card className="mb-7">
+        <h2 className="mb-2 text-xl font-semibold text-fg">Kaynaklarda dene</h2>
+        <p className="mb-6 max-w-[70ch] text-sm leading-relaxed text-fg-muted">Bir soru yazın; eşleşen pasajları, kaynak konumlarını ve arama sonuçlarını birlikte inceleyin.</p>
         <form
-          className="space-y-3"
+          className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
             void inspect();
           }}
         >
-          <label htmlFor="retrieval-query" className="block text-sm font-medium text-fg">
+          <label htmlFor="retrieval-query" className="block font-medium text-fg">
             Öğrenci sorusu
           </label>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -118,14 +120,20 @@ function RetrievalLab({ courseId }: { courseId: string }) {
               {busy ? "Test ediliyor…" : "Parçaları getir"}
             </Button>
           </div>
-          <p className="prose-tr text-xs text-fg-muted">
-            Bu işlem yalnız embedding ve kelime aramasını çalıştırır; LLM kotası harcamaz.
+          <p className="prose-tr text-sm text-fg-muted">
+            Bu test yanıt üretmez. Ders kaynaklarını arar; yanıt üretme kotasını kullanmaz.
           </p>
         </form>
       </Card>
 
       {error && <ErrorNote message={error} onRetry={() => void inspect()} />}
       {result && <InspectionResult courseId={courseId} result={result} />}
+      {!result && !busy && !error && (
+        <div className="rounded-[20px] border border-border p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-fg">Sonuçları burada inceleyin</h2>
+          <p className="mt-2 max-w-[70ch] text-sm leading-relaxed text-fg-muted">Aramadan sonra her sonucun dosyasını ve konumunu göreceksiniz. “Bağlamı aç” ile pasajı çevresindeki metinle birlikte okuyabilirsiniz.</p>
+        </div>
+      )}
     </>
   );
 }
@@ -139,8 +147,8 @@ function InspectionResult({
 }) {
   const decision = EVIDENCE_LEVEL[result.level];
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="rise space-y-6">
+      <div role="status" className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface-sunken px-5 py-4">
         <Badge tone={decision.tone}>{decision.label}</Badge>
         <p className="prose-tr text-sm text-fg-muted">{decision.explanation}</p>
       </div>
@@ -158,20 +166,20 @@ function InspectionResult({
         <EmptyState title="Bu sorgu için hiçbir kaynak parçası bulunamadı." />
       ) : (
         <Card variant="flat" padding="none">
-          <div className="flex items-center justify-between gap-3 px-5 py-3">
-            <h2 className="text-sm font-medium text-fg">Aday parçalar</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-5 sm:px-6">
+            <h2 className="text-xl font-semibold text-fg">Aday parçalar</h2>
             <span className="text-xs text-fg-muted">sıra · dosya · konum</span>
           </div>
           <ol className="divide-y divide-border border-t border-border">
             {result.candidates.map((candidate) => (
-              <li key={candidate.chunk_id} className="px-5 py-5">
+              <li key={candidate.chunk_id} className="px-5 py-6 sm:px-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-fg">
+                    <p className="break-words text-base font-medium text-fg">
                       <span className="tabular-nums text-fg-subtle">#{candidate.rank}</span>{" "}
                       <span className="text-fg-subtle">·</span> {candidate.file_name}
                     </p>
-                    <p className="mt-1 text-xs text-fg-muted">{candidate.location}</p>
+                    <p className="mt-2 text-sm text-fg-muted">{candidate.location}</p>
                   </div>
                   <Link
                     href={sourceContextHref(courseId, candidate.chunk_id)}
@@ -180,10 +188,10 @@ function InspectionResult({
                     Bağlamı aç
                   </Link>
                 </div>
-                <p className="prose-tr mt-4 max-w-[70ch] text-sm whitespace-pre-line text-fg">
+                <p className="prose-tr mt-5 rounded-xl bg-surface-sunken p-4 text-base leading-relaxed whitespace-pre-line text-fg">
                   {candidate.text}
                 </p>
-                <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-xs">
+                <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-sm">
                   {(
                     [
                       ["Dense", candidate.dense_score],

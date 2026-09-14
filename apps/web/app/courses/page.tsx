@@ -10,19 +10,10 @@ import type { Course } from "@/lib/types";
 import { usePagedResource } from "@/lib/use-paged-resource";
 import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
+import { BookIcon, ChevronRightIcon } from "@/components/icons";
 import { Field } from "@/components/field";
 import { ErrorNote, Loading, LoadMore, PageHeader } from "@/components/page-state";
 import { Badge, Button, Card, EmptyState, Input } from "@/components/ui";
-
-/**
- * Kartın sağındaki "Derse git" işareti. Kartın tamamı zaten bağlantıdır
- * (Playwright dersi bağlantı adındaki ders koduyla bulur); bağlantı içine
- * ikinci bir etkileşimli öğe (`<button>`) koymak geçersiz HTML olurdu. Bu
- * yüzden işaret `Button variant="secondary" size="sm"` ile aynı kabuğu taşıyan
- * dekoratif bir `span`dır ve erişilebilirlik ağacından gizlenir.
- */
-const GO_TO_COURSE_MARK =
-  "inline-flex h-9 shrink-0 items-center justify-center rounded-xl border border-border-strong bg-surface px-3 text-[0.8125rem] font-medium text-fg transition-[color,background,border] duration-200 group-hover:border-fg-subtle group-hover:bg-surface-sunken";
 
 export default function CoursesPage() {
   return (
@@ -34,6 +25,9 @@ export default function CoursesPage() {
 
 function CourseList() {
   const [creating, setCreating] = useState(false);
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "instructor" | "student">("all");
+  const searchId = useId();
   const formId = useId();
   const toggleRef = useRef<HTMLButtonElement>(null);
   const opened = useRef(false);
@@ -81,10 +75,17 @@ function CourseList() {
     );
   if (loading || !courses) return <Loading />;
 
+  const normalizedQuery = query.trim().toLocaleLowerCase("tr-TR");
+  const filteredCourses = courses.filter((course) =>
+    (roleFilter === "all" || course.role === roleFilter) &&
+    `${course.code} ${course.title}`.toLocaleLowerCase("tr-TR").includes(normalizedQuery),
+  );
+
   return (
     <div>
       <PageHeader
         title="Derslerim"
+        description="Dersinizi seçin; kaynaklara, asistana ve sınavlara ulaşın."
         action={
           (
             <Button
@@ -128,40 +129,49 @@ function CourseList() {
         />
       )}
 
+      {courses.length > 0 && (
+        <Card className="mb-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div className="w-full xl:max-w-sm">
+              <label htmlFor={searchId} className="mb-2 block text-sm font-medium text-fg">Derslerde ara</label>
+              <Input id={searchId} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ders adı veya kodu" />
+            </div>
+            <div role="group" aria-label="Ders rolü filtresi" className="flex flex-wrap gap-1 rounded-xl bg-surface-sunken p-1">
+              {([["all", "Tümü"], ["instructor", "Eğitmen"], ["student", "Öğrenci"]] as const).map(([value, label]) => (
+                <Button key={value} variant="ghost" aria-pressed={roleFilter === value} onClick={() => setRoleFilter(value)} className={roleFilter === value ? "bg-surface text-brand shadow-e1" : ""}>{label}</Button>
+              ))}
+            </div>
+          </div>
+          <p role="status" className="mt-3 text-xs text-fg-muted">
+            {filteredCourses.length} ders gösteriliyor{nextCursor !== null ? ". Arama, yüklenen dersler içinde yapılır; diğer dersler için daha fazla yükleyin." : "."}
+          </p>
+        </Card>
+      )}
+
       {courses.length === 0 && !creating ? (
-        <EmptyState
-          title={
-            "Henüz dersiniz yok. Yeni ders açabilir veya eğitmeninizin sizi eklemesini bekleyebilirsiniz."
-          }
-        />
+        <EmptyState title="Henüz dersiniz yok. Yeni ders açabilir veya eğitmeninizin sizi eklemesini bekleyebilirsiniz." />
+      ) : filteredCourses.length === 0 && courses.length > 0 ? (
+        <Card className="py-8 text-center">
+          <p className="text-lg font-semibold text-fg">Aramanıza uygun ders bulunamadı.</p>
+          <p className="mt-2 text-sm text-fg-muted">Başka bir ders adı deneyin veya filtreleri temizleyin.</p>
+          <Button variant="secondary" className="mt-5" onClick={() => { setQuery(""); setRoleFilter("all"); }}>Filtreleri temizle</Button>
+        </Card>
       ) : (
-        /* Kart listesi bir listedir: `ul/li` ekran okuyucuya kaç ders
-           olduğunu söyler, `div` yığını söylemez. Her ders tek satır kart:
-           sol tarafta kod · başlık · rol, sağda "Derse git" işareti. */
-        <ul className="grid gap-4">
-          {courses.map((course, index) => (
-            <li key={course.id} className={`rise rise-${Math.min(index + 1, 3)}`}>
-              <Link
-                href={`/courses/${course.id}`}
-                /* Odak halkası ürünün her tıklanabilir öğesinde aynı: kart
-                   bağlantısı tarayıcı varsayılanına bırakılmaz. */
-                className="group block rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              >
-                <Card className="flex flex-wrap items-center justify-between gap-4 transition-[box-shadow,transform] duration-200 group-hover:shadow-e2 group-active:translate-y-px">
-                  <div className="min-w-0">
-                    <p className="text-xs text-fg-muted">{course.code}</p>
-                    <p className="mt-1 text-lg font-semibold tracking-tight text-fg">
-                      {course.title}
-                    </p>
-                    <div className="mt-3">
-                      <Badge tone={course.role === "instructor" ? "info" : "neutral"}>
-                        {course.role === "instructor" ? "Eğitmen" : "Öğrenci"}
-                      </Badge>
-                    </div>
+        <ul className="grid gap-5 xl:grid-cols-2">
+          {filteredCourses.map((course, index) => (
+            <li key={course.id} className={`min-w-0 rise rise-${Math.min(index + 1, 3)}`}>
+              <Link href={`/courses/${course.id}`} className="group block h-full rounded-[20px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                <Card className="flex h-full flex-col transition-[box-shadow,transform] duration-200 group-hover:-translate-y-0.5 group-hover:shadow-e2 group-active:translate-y-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <span aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-sunken text-brand"><BookIcon size={24} /></span>
+                    <Badge tone={course.role === "instructor" ? "info" : "neutral"}>{course.role === "instructor" ? "Eğitmen" : "Öğrenci"}</Badge>
                   </div>
-                  <span aria-hidden="true" className={GO_TO_COURSE_MARK}>
-                    Derse git
-                  </span>
+                  <p className="mt-5 text-sm font-medium text-fg-muted">{course.code}</p>
+                  <h2 className="mt-1 mb-5 flex-1 text-xl font-semibold leading-snug tracking-tight text-fg">{course.title}</h2>
+                  <div aria-hidden="true" className="flex items-center justify-between border-t border-border pt-4 text-sm text-fg-muted">
+                    <span>{course.role === "instructor" ? "Ders çalışma alanı" : "Öğrenme alanı"}</span>
+                    <span className="inline-flex min-h-11 items-center gap-1 rounded-xl pl-3 font-medium text-brand transition-[gap] group-hover:gap-2">Derse git <ChevronRightIcon size={18} /></span>
+                  </div>
                 </Card>
               </Link>
             </li>
@@ -243,7 +253,7 @@ function CreateCourseForm({ id, onCreated }: { id: string; onCreated: () => void
       <form
         id={id}
         onSubmit={submit}
-        className="flex flex-col gap-3 sm:flex-row sm:items-end"
+        className="flex flex-col gap-4 sm:flex-row sm:items-end"
       >
         <div className="sm:w-40">
           <Field label="Ders kodu" describedBy={describedBy} invalid={invalid}>
