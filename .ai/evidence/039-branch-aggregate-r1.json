@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "change_id": "039-branch-aggregate-r1",
+  "captured_at": "2026-09-14T08:48:32+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app && TEST_DB_NAME=dou_a24_full .venv/bin/python -m pytest -q; cd ../web && bun test lib/ && bunx tsc --noEmit && node scripts/contrast.mjs; cd .. && node scripts/docs_check.mjs && python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023 && apps/api/.venv/bin/python scripts/workflow_policy_check.py",
+  "environment": "Yerel: Darwin arm64, Python 3.12.13, PostgreSQL 16 + pgvector, EMBEDDING_PROVIDER=hashing, DEV_AUTH_ENABLED=true. Gerçek sağlayıcı çağrısı yok.",
+  "results": {
+    "aggregated_files": 5,
+    "pytest_passed": 1715,
+    "pytest_subtests_passed": 38,
+    "pytest_baseline_passed": 1688,
+    "ruff_check": "All checks passed!",
+    "ruff_format_check": "209 files already formatted",
+    "mypy": "Success: no issues found in 114 source files",
+    "bun_test_lib_passed": 573,
+    "bun_test_lib_failed": 0,
+    "tsc_errors": 0,
+    "contrast_mjs": "metin AA 4.5:1 ve metin dışı 3:1 eşikleri geçti",
+    "docs_check_rc": 0,
+    "migration_check": "MIGRATION_CHECK=PASS (22 göç, bildirilen boşluk: [17, 21, 22, 23])",
+    "workflow_policy_check": "WORKFLOW_POLICY_CHECK=PASS",
+    "ai_sdlc_evidence_unreachable": 0,
+    "validator_tests_passed": 87,
+    "validator_subtests_passed": 40
+  },
+  "governance_note": "Bu kayıt kapsam birleştirmesidir: dalın commit'lerine dağılmış hassas dosyaları hedef dal tabanına karşı tek kapsam altında toplar. `results` altındaki sayılar UYDURMA DEĞİL, dalın HEAD'inde gerçekten koşulan kapıların çıktısından alınmıştır. Doğrulayıcı bir dossier'i yalnız HEAD'de tanıtıldığı commit'te uygun saydığı için, dalın üstüne yeni commit geldikçe bu kayıt yenilenmelidir.",
+  "limitations": "Sahte sağlayıcı ve hashing embedding ile koşuldu; gerçek model kalitesi, gerçek sağlayıcı davranışı, staging/üretim kabulü ve insan değerlendirmesi bu kayıtla İLERLEMEZ. Holdout Recall@5/MRR bu turda yeniden ölçülmedi: FTS eşitlik bozma değişikliğinin kalite etkisi ÖLÇÜLMEMİŞTİR (docs/test-report.md §6.4.1). deploy.yml ve rollback.yml hiç koşulmadı. fastembed (e5) bellek ölçümü yapılmadı.",
+  "privacy": "içerik yok; yalnız dosya yolları"
+}
