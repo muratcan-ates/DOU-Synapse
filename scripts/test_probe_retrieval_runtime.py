@@ -155,6 +155,11 @@ async def test_readonly_is_first_and_real_rls_context_is_set() -> None:
     calls = []
 
     class Session:
+        # db.set_rls_context (019, D2') bağlamı yalnız açık işlemde kurar; sahte
+        # oturum gerçek AsyncSession gibi işlem içinde olduğunu bildirir.
+        def in_transaction(self) -> bool:
+            return True
+
         async def execute(self, query: object, params: object = None) -> object:
             calls.append((str(query), params))
             return SimpleNamespace(scalar_one=lambda: "on")
@@ -174,7 +179,8 @@ async def test_readonly_is_first_and_real_rls_context_is_set() -> None:
 @pytest.mark.asyncio
 async def test_readonly_off_aborts_before_runtime_calls() -> None:
     session = SimpleNamespace(
-        execute=AsyncMock(return_value=SimpleNamespace(scalar_one=lambda: "off"))
+        in_transaction=lambda: True,
+        execute=AsyncMock(return_value=SimpleNamespace(scalar_one=lambda: "off")),
     )
     with pytest.raises(ValueError, match="Read-only"):
         await probe.start_readonly(session, "auto", bench.USER_ID)
