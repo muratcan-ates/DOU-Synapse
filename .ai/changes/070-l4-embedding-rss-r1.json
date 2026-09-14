@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "change_id": "070-l4-embedding-rss-r1",
+  "lineage_id": "l4-embedding-rss",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "L4 C4: sınırlı yerel embedding RSS ve hata kanıtı",
+  "summary": "Çökme sonrası kalıcı kanıt üreten RSS ölçücü; query ve küçük ingest profilleri geçti; qint8 vektör üretti ancak son süreç çıkış koşusu zaman aşımına uğradı. IPv6 yerel yoklama yanlış pozitifi ve çıktı kaybı düzeltildi. C4 eşzamanlı kapasitesi ile mevcut tam API zamanlama kapısı açık; üretim değişmedi.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:02:26.739710+00:00",
+  "review_by": "2026-10-13T15:02:26.739710+00:00",
+  "base_sha": "22a85d390f759a77265e624d4d2acdf9b7c3d143",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "Production unchanged from 22a85d390f759a77265e624d4d2acdf9b7c3d143; offline measurement only.",
+    "model_revision": "Existing E5 FP32 cache plus isolated qint8 loadability experiment; upstream qint8 revision 3d7cfbdacd47fdda877c5cd8a79fbcc4f2a574f3; no production switch.",
+    "prompt_revision": "Production unchanged from 22a85d390f759a77265e624d4d2acdf9b7c3d143; offline measurement only.",
+    "tool_schema_revision": "scripts/measure_embedding_rss.py schema 1; bounded RSS and fixed privacy-safe child diagnostics; source SHA256 3b19c4ba3d5eff09155e1e5216e2b40d876da907558c45e84ab0e265bb016f9a",
+    "guardrail_revision": "Production unchanged from 22a85d390f759a77265e624d4d2acdf9b7c3d143; offline measurement only.",
+    "retrieval_revision": "Production unchanged from 22a85d390f759a77265e624d4d2acdf9b7c3d143; offline measurement only.",
+    "embedding_revision": "Production unchanged from 22a85d390f759a77265e624d4d2acdf9b7c3d143; offline measurement only.",
+    "evaluator_revision": "Production unchanged from 22a85d390f759a77265e624d4d2acdf9b7c3d143; offline measurement only."
+  },
+  "data": {
+    "corpus_digest": "b2e09db296b910d442f720764cec7b2c37144b33e9d2fe6368ed5c1f89978914",
+    "eval_set_digest": "b1c09c193031f693ddb2ff1351575d7d186841d066e3de86a3dffba91f8863ca",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "scripts/measure_embedding_rss.py",
+      "state": "present",
+      "sha256": "3b19c4ba3d5eff09155e1e5216e2b40d876da907558c45e84ab0e265bb016f9a"
+    },
+    {
+      "path": "scripts/test_measure_embedding_rss.py",
+      "state": "present",
+      "sha256": "b1c09c193031f693ddb2ff1351575d7d186841d066e3de86a3dffba91f8863ca"
+    },
+    {
+      "path": "docs/test-report.md",
+      "state": "present",
+      "sha256": "8fc46ddd29ea5be97463a882bc4a657f9208ada34a17e24dc59ebabd18b86827"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-c4/evidence.tar.gz",
+      "state": "present",
+      "sha256": "b81cf992707f8dd76f70b55161c102f98b3920bd1b8d2c7b0159f8a476dd8dc9"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-c4/inventory.json",
+      "state": "present",
+      "sha256": "ac28ecada14cba037495be06dbcb73cd555c9845a9119390d9eccc95567406e3"
+    },
+    {
+      "path": "evaluation/results/20260913-l4-c4/summary.json",
+      "state": "present",
+      "sha256": "b5d21f0104dbc32c4c79c780c47e179d952cc22949ca2340b9117e294678e39c"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/070-l4-embedding-rss-r1.json",
+      "report_sha256": "fcc1a2e85520fb49494daedc6b98197177657a1945bf56f9273030ee0e21ccc6",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "scripts/test_measure_embedding_rss.py",
+    "holdout_ref": "evaluation/results/20260913-l4-c4/summary.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "metrics": [
+      {
+        "name": "absolute_mechanics_gate_failures_reference_only",
+        "baseline": 0,
+        "candidate": 0,
+        "operator": "==",
+        "threshold": 0,
+        "sample_size": 90
+      }
+    ],
+    "exact_command": "apps/api/.venv/bin/python -m pytest scripts/test_measure_embedding_rss.py -q; native profile commands are copied exactly in the evidence report. This is not a model-quality calibration/holdout score. Numeric baseline 0 is only the absolute acceptance reference, not a measured historical baseline; the harness is new at this change. No comparative non-regression or quality improvement is claimed."
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable: offline manually invoked measurement CLI; production configuration unchanged",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:070-l4-embedding-rss-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable: offline manually invoked measurement CLI; production configuration unchanged",
+    "kill_switch": "Stop only owned measurement children when RSS/time/source/protocol guard fails; do not interpret incomplete output as capacity acceptance.",
+    "assignment": "Sticky assignment by exact source/model digest for each fresh synthetic offline run; no user cohort or production exposure.",
+    "initial_exposure": "None; public code and synthetic evidence publication authorized by user; no deployment.",
+    "stop_conditions": [
+      "Unexpected network attempt, source/model drift, invalid child protocol or RSS/time budget exceeded.",
+      "Host memory pressure prevents representative capacity acceptance."
+    ],
+    "expand_conditions": [
+      "Resolve concurrent E5 and full API timing acceptance on an appropriate target.",
+      "Obtain separate named engineering/domain/privacy promotion approvals before production."
+    ],
+    "active_exam_policy": "No active exam, academic record, course role or answer policy changes."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:22a85d390f759a77265e624d4d2acdf9b7c3d143",
+    "procedure": "Revert this measurement-only commit; no database migration or deployed behavior rollback required.",
+    "max_minutes": 30,
+    "verification": "Planned operator action; no measured production rollback SLA.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Synthetic fixtures plus operational path/time metadata; private runtime password, environment files, provider keys, storage and model weights excluded. Public source/evidence authorization does not authorize deployment or real student data.",
+    "retention": "Evidence persists in the public repository for traceability. Institutional production retention and privacy compliance remain outside this local measurement."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "change_id": "071-l4-token-quota-concurrency-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T15:29:08.077604+00:00",
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "scope": "Four real isolated-local PostgreSQL synthetic quota-contract tests: course, global_user and platform races plus cancellation before COMMIT. No provider call, new runtime behavior, migration, hosted staging or production acceptance.",
+  "label_semantics": "Repository label for local synthetic test evidence; PostgreSQL transactions were real. This is neither a mocked database result nor externally verified hosted staging.",
+  "commands": [
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_token_quota_concurrency.py"
+      ],
+      "receipt": "d1-targeted/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "receipt": "d1-ruff/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "receipt": "d1-format/result.json"
+    }
+  ],
+  "results": {
+    "targeted_passed": 4,
+    "targeted_failed": 0,
+    "targeted_exit_code": 0,
+    "ruff_exit_code": 0,
+    "format_exit_code": 0,
+    "full_api": "Inherited C4 full API run failed: 1688 passed, 1 failed at the unchanged 100 ms lag threshold. D1 runs only its four targeted tests; the full API suite was not rerun for this delivery and the inherited failure is not closed by this pass."
+  },
+  "archive_path": "evaluation/results/20260913-l4-d1/evidence.tar.gz",
+  "archive_sha256": "74bb043d9b6c31e4450c540007ae7048c438748efb039c744a580b37f26e9e36",
+  "summary_path": "evaluation/results/20260913-l4-d1/summary.json",
+  "summary_sha256": "6fbdcb4eb77aece8378ded9491531d4a9cf7ad647cfeb5ab39f47cc7a9e6b445",
+  "baseline_semantics": "Numeric baseline 0 is the predeclared absolute acceptance reference of zero failing D1 quota-contract tests, not a measured historical baseline. These four tests are new. No comparative quality, performance or non-regression improvement is claimed.",
+  "privacy": "Synthetic records and operational paths/process/cluster metadata. Private administrator secret bytes checked absent from every selected archive member; secret file not archived. Not an anonymous operational archive."
+}

@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "change_id": "073-l4-worker-acceptance-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T15:49:48.757704+00:00",
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "scope": "Two real isolated-local PostgreSQL/worker tests: malformed PDF exhausts three actual worker parser attempts into a retained terminal failed job, with no fourth claim; actual worker.main receives SIGTERM at a cancellable barrier after real parsing and hashing embeddings, then releases its claim and exits 0. Sixteen fake-process launcher mechanics checks are separate. No application or migration change.",
+  "label_semantics": "Repository label for local synthetic evidence. Two real PostgreSQL/worker tests are explicitly distinguished from sixteen fake-process mechanics tests; no hosted staging claim.",
+  "commands": [
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops",
+      "argv": [
+        "apps/api/.venv/bin/python",
+        "scripts/run_l4_worker_acceptance.py",
+        "--private-config",
+        "/Users/muratates/code/.dou-synapse-l4-runtime/d3-private/run-20260913_154709-8fbe6776.json",
+        "--output",
+        "/Users/muratates/.codex/.chatgpt-projects/g-p-6a7ba85af06c8191968907d3148d90a7/outputs/DOU-Synapse-L4-2026-09-13/d3-acceptance-01.json"
+      ],
+      "receipt": "d3-acceptance/result.json",
+      "status": "passed",
+      "exit_code": 0
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops",
+      "argv": [
+        "apps/api/.venv/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_l4_worker_launcher_cleanup.py",
+        "-v"
+      ],
+      "receipt": "d3-mechanics/result.json",
+      "status": "passed",
+      "exit_code": 0
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "--config",
+        "pyproject.toml",
+        "../../scripts/run_l4_worker_acceptance.py",
+        "../../scripts/l4_worker_group_anchor.py",
+        "../../scripts/l4_worker_signal_child.py",
+        "../../scripts/test_worker_process_acceptance.py",
+        "../../scripts/test_l4_worker_launcher_cleanup.py"
+      ],
+      "receipt": "d3-ruff-api/result.json",
+      "status": "passed",
+      "exit_code": 0
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops",
+      "argv": [
+        "apps/api/.venv/bin/ruff",
+        "format",
+        "--check",
+        "--config",
+        "apps/api/pyproject.toml",
+        "scripts/run_l4_worker_acceptance.py",
+        "scripts/l4_worker_group_anchor.py",
+        "scripts/l4_worker_signal_child.py",
+        "scripts/test_worker_process_acceptance.py",
+        "scripts/test_l4_worker_launcher_cleanup.py"
+      ],
+      "receipt": "d3-format/result.json",
+      "status": "passed",
+      "exit_code": 0
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops",
+      "argv": [
+        "apps/api/.venv/bin/ruff",
+        "check",
+        "--config",
+        "apps/api/pyproject.toml",
+        "scripts/run_l4_worker_acceptance.py",
+        "scripts/l4_worker_group_anchor.py",
+        "scripts/l4_worker_signal_child.py",
+        "scripts/test_worker_process_acceptance.py",
+        "scripts/test_l4_worker_launcher_cleanup.py"
+      ],
+      "receipt": "d3-ruff/result.json",
+      "status": "failed",
+      "exit_code": 1
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops",
+      "argv": [
+        "/usr/local/bin/node",
+        "scripts/docs_check.mjs"
+      ],
+      "receipt": "d3-docs/result.json",
+      "status": "passed",
+      "exit_code": 0
+    }
+  ],
+  "results": {
+    "actual_worker_tests_passed": 2,
+    "actual_worker_tests_failed": 0,
+    "actual_worker_tests_errors": 0,
+    "actual_worker_tests_skipped": 0,
+    "fake_process_mechanics_passed": 16,
+    "fake_process_mechanics_failed": 0,
+    "canonical_ruff_exit_code": 0,
+    "format_exit_code": 0,
+    "docs_exit_code": 0,
+    "earlier_root_cwd_ruff_exit_code": 1,
+    "full_local_api": "This targeted package does not establish full API acceptance; the prior local timing failure is preserved as historical evidence. No full API result is included here; earlier Linux CI success and any later full local run are separate evidence."
+  },
+  "archive_path": "evaluation/results/20260913-l4-d3/evidence.tar.gz",
+  "archive_sha256": "c68ae1b48d854868f43e47a471984113e59dc2705867ba7ea5953d9fe6137998",
+  "summary_path": "evaluation/results/20260913-l4-d3/summary.json",
+  "summary_sha256": "800b4efc2639943570323775e783955d3c8b974e0151d6d0a105a68061f7062d",
+  "baseline_semantics": "Numeric baseline 0 is the predeclared absolute reference of zero failed D3 contract tests, not a measured historical baseline. Two real PostgreSQL/worker tests and sixteen fake-process launcher mechanics tests are distinct evidence sets; no before/after or production improvement is claimed.",
+  "privacy": "Synthetic fixtures and operational path/process metadata. Only the explicit public receipt/log whitelist is archived; private admin secret bytes checked absent. Private config, XML and raw child logs are not read or archived. This is not an anonymous operational archive."
+}

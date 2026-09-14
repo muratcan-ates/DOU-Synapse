@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "change_id": "072-l4-transaction-context-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T15:41:40.798279+00:00",
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "scope": "Eight real isolated-local PostgreSQL synthetic transaction-context tests: two production context managers (rls_session and control_rls_session), each across commit, rollback, real SQL error and application-wait cancellation. Same psycopg backend PID is reused across user A, no-user context and user B; RLS identity and local GUCs restore. No provider call, runtime or migration change, asyncpg claim, live pooler or production acceptance.",
+  "label_semantics": "Repository label for local synthetic test evidence; PostgreSQL transactions were real. This is neither a mocked database result nor externally verified hosted staging.",
+  "commands": [
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api/.venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_retrieval_transaction_context.py"
+      ],
+      "receipt": "d2-targeted/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "receipt": "d2-ruff/result.json"
+    },
+    {
+      "cwd": "/Users/muratates/code/dou-synapse-018-l4-retrieval-ops/apps/api",
+      "argv": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "receipt": "d2-format/result.json"
+    }
+  ],
+  "results": {
+    "targeted_passed": 8,
+    "targeted_failed": 0,
+    "targeted_exit_code": 0,
+    "ruff_exit_code": 0,
+    "format_exit_code": 0,
+    "full_api": "Inherited local C4 full API run failed: 1688 passed, 1 failed at the unchanged 100 ms lag threshold. D2 runs only its eight targeted tests; the full local API suite was not rerun for this delivery and the inherited failure is not closed by this pass. The earlier C2 Linux CI success is separate environment evidence, not a replacement Mac run."
+  },
+  "archive_path": "evaluation/results/20260913-l4-d2/evidence.tar.gz",
+  "archive_sha256": "f9e383f3166e6a3da7d51711181c0b1b9c5575560920f0346fbaf8e6d9ed0060",
+  "summary_path": "evaluation/results/20260913-l4-d2/summary.json",
+  "summary_sha256": "67b8059a2f2ea00d37017afc61a67320209a4c9eb4b23ab3fb5c1c5ae819c5f5",
+  "baseline_semantics": "Numeric baseline 0 is the predeclared absolute acceptance reference of zero failing D2 transaction-context tests, not a measured historical baseline. These eight tests are new. No comparative quality, performance or non-regression improvement is claimed.",
+  "privacy": "Synthetic records and operational paths/process/cluster metadata. Private administrator secret bytes checked absent from every selected archive member; secret file not archived. Not an anonymous operational archive."
+}

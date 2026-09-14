@@ -673,3 +673,161 @@ aynı dakikada bitince ikincisi birincinin dosyasının üzerine yazardı.
 
 **Kural:** her sayının yanında hangi koşu dosyasından geldiği yazılır. Kaynağı
 gösterilemeyen sayı rapordan çıkarılır.
+
+
+## 13 Eylül 2026 — L4 C4/1: yerel embedding RSS ölçümü
+
+C4 ölçücü, E5 sorgu ve küçük ingest profilleri doğrulandı; **C4 bütünü kısmi**. API + worker eşzamanlı E5 ölçümü kaynak engeli nedeniyle çalıştırılmadı. Üretim sağlayıcısı, model seçimi ve embedding davranışı değişmedi.
+
+Kaynak: `scripts/measure_embedding_rss.py`; komut makbuzları, ham gözlemler ve başarısız önceki denemeler `evaluation/results/20260913-l4-c4/evidence.tar.gz` içinde. Her üyenin gerçek SHA256 değeri `inventory.json`, özet değerler `summary.json` içinde.
+
+Darwin ARM64, Python 3.12.13, FastEmbed 0.8.0, ONNX Runtime 1.28.0. Soğuk sorgu yeni süreç/model oturumudur; OS dosya önbelleği temizlenmedi. RSS yalnız yerleşik sayfaları gösterir. Tek E5 sorgusundan sonra 16 GiB fiziksel RAM, 6875.94 MiB takas ve bellek baskısı düzeyi 2 kaydedildi. **Aşağıdaki düşük RSS değerleri E5’in bu kadar toplam bellekle çalışabileceğini veya qint8’den az bellek istediğini kanıtlamaz.**
+
+| Profil | Başlangıç RSS (MiB) | Son RSS (MiB) | Örneklenen tepe (MiB) | İşlem süresi (s) | En büyük örnek aralığı (ms) |
+|---|---:|---:|---:|---:|---:|
+| cold_query | 45.078 | 694.453 | 764.609 | 42.040 | 326.150 |
+| warm_query | 679.750 | 353.328 | 838.719 | 2.980 | 326.150 |
+| ingest | 68.875 | 108.938 | 604.750 | 33.692 | 267.154 |
+| qint8_smoke | 41.219 | 60.844 | 317.094 | 43.133 | 683.269 |
+
+Ingest yalnız bir sentetik Markdown bölümü, bir chunk ve bir vektör içerir. Ayardaki batch size 32, bu koşuda 32 öğelik batch işlendiği anlamına gelmez. API/worker bileşenleri gerçek uygulama lifecycle ve `process_document` yollarını kullanır; bu koşular HTTP, DB claim döngüsü veya barındırma kabulü değildir.
+
+Son qint8 koşusu sonlu vektörleri ürettikten sonra 5 saniyelik süreç çıkış sınırını aştı; `CHILD_EXIT_TIMEOUT`, rc 1 ve sonlandırma kaydı korunur. Bu koşu geçmiş sayılmaz. Önceki `b9bb8bfd` ölçücü sürümündeki qint8 koşusu rc 0 ve 1022.359 MiB tepe RSS ile tamamlanmıştı; eski sonuç yeni kaynak sonucu gibi sunulmaz. Qint8 yükleme fazı, upstream `intfloat/multilingual-e5-large` revizyonu `3d7cfbdacd47fdda877c5cd8a79fbcc4f2a574f3`, SHA256 `46f5d13dba7ade0160c67d346087d870162950882be17ff9319f873cf6fedff1` üzerinde CPUExecutionProvider ile sonlu `(2, 17, 1024)` çıktı üretti. AVX512-VNNI adlı dosyanın bu ARM makinede yüklenebilirliği ölçüldü; anlamsal kalite/eşdeğerlik ve varsayılan model değişimi değerlendirilmedi.
+
+İlk E5 denemelerindeki hata, `urllib3` importunun `::1:0` IPv6 yetenek yoklamasının ölçücüde yanlış sınıflanmasıydı. Ayrı import tanısı bunu gösterdi. Bu bind hâlâ engellenir ve ayrı sayaçta görünür; diğer Python socket girişimleri ölçümü başarısız yapar. Bu, işletim sistemi düzeyinde ağ trafiği sertifikası değildir. Çıktı dosyası ölçüm öncesi özel oluşturulur; çakışmada model başlamaz, son yazma arızasında tam rapor stdout üzerinde korunur.
+
+Son ölçücü paketi: **90 test geçti**, Ruff ve biçim kontrolü geçti. Önceki başarısız taklit/hashing denemeleri arşivde korunur; bu sonuç yalnız son kaynak için geçerlidir. <!-- docs-check: tarihsel 90 · 2026-09-13 -->
+
+Tam API: **1688 başarılı, 1 başarısız**; sağlık gecikmesi 131.3197 ms ile sabit 100 ms sınırını aştı. Tek cold tekrar 220.8156 ms ile başarısızdı. Bir defalık tanıda ön/işlem/son sağlık maksimumları 92.899 / 62.182 / 82.979 ms oldu; bu geçiş önceki cold/tam kapıyı kapatmaz. Kök neden INCONCLUSIVE, eşik değiştirilmedi. <!-- docs-check: tarihsel 1688 · 2026-09-13 -->
+
+Ruff, format, mypy, Bun, TypeScript, karşıtlık, göç sırası ve workflow policy makbuzları arşivdedir. Doküman kontrolü ve ebeveyn tabanlı yönetişim kontrolü teslim makbuzunda ayrıca tutulur.
+
+Komutların ortak kökü repo; mevcut API venv Python’ı kullanılır. Cache/model/tokenizer yolları yereldeki doğrulanmış dosyalara işaret etmelidir; her çıktı yeni bir dosya olmalıdır. Tam mutlak komutlar arşivdeki ilgili `result.json` dosyalarındadır:
+
+```text
+python scripts/measure_embedding_rss.py --profiles query --cache-dir <cache> --timeout-seconds 180 --rss-budget-mib 2560 --interval-ms 50 --output <new-query.json>
+python scripts/measure_embedding_rss.py --profiles ingest --paragraphs 1 --cache-dir <cache> --timeout-seconds 180 --rss-budget-mib 2560 --interval-ms 50 --output <new-ingest.json>
+python scripts/measure_embedding_rss.py --profiles qint8 --qint8-model <pinned-model> --qint8-tokenizer <pinned-tokenizer> --timeout-seconds 180 --rss-budget-mib 1536 --interval-ms 50 --output <new-qint8.json>
+```
+
+**ENGEL:** Son qint8 süreç çıkışı kabulü başarısız. Eşzamanlı E5 ve büyük ingest kapasitesi için bellek baskısı olmayan, hedef barındırmayı temsil eden ayrı kabul koşusu gerekli. Tam API zamanlama kapısı henüz doğrulanmadı. Bu dilim barındırma, güvenlik veya üretime hazır olma sertifikası taşımaz.
+
+
+## 13 Eylül 2026 — L4 C1-FTS: reddedilen adayın uzlaştırılması
+
+Bu adım salt okunur kanıt uzlaştırmasıdır; bugün yeni DB/model/holdout koşusu yapılmadı. Önerilen `documents.file_hash, chunk_index` sırası, [önceki geri çekme yamasındaki](../specs/018-codex-production-line/evidence/c1-final/c1-fts-scope-rollback/change.patch.gz) reddedilmiş adayın aynı davranışıdır. Güncel dense/FTS/service dosyalarının SHA256 değerleri [8 Eylül son kabulündeki](../specs/018-codex-production-line/evidence/c1-final-acceptance.md) kaynaklarla aynıdır.
+
+Aşağıdaki **8 Eylül tarihli** sonuçların Recall@5 ve MRR değerleri arşivlenmiş soru bazlı sıralardan yeniden hesaplanarak doğrulandı; yeni ölçüm sonucu değildir:
+
+| Tarihsel holdout | UUID sırası Recall@5 | Hash sırası Recall@5 | UUID sırası MRR | Hash sırası MRR |
+|---|---:|---:|---:|---:|
+| Hashing | 78/105 | 77/105 | 0.618175 | 0.634444 |
+| E5 | 93/105 | 92/105 | 0.737721 | 0.739535 |
+
+[Hashing tanısı](../specs/018-codex-production-line/evidence/c1-final/c1-trace-analysis.md) ve [E5 tanısı](../specs/018-codex-production-line/evidence/c1-final/c1-e5-trace-analysis.md), aynı dense koluyla FTS sırasının bu gerilemeyi ürettiğini ayırır. MRR artışı Recall@5 düşüşünü kapatmaz. Aynı aday yeniden eklenmedi veya körlemesine tekrar çalıştırılmadı; eşik, RRF, aday sayısı ve altın set değiştirilmedi.
+
+**ENGEL:** Yeni UUID'lerle tekrar yüklenen aynı içeriğin FTS sırası için kararlılık açığı sürüyor. Mevcut ters UUID testi yalnız dense kolunda etkin ve doğrudan DB tohumlaması kullanıyor; gerçek upload/worker yeniden ingestion kabulü sayılmıyor. C1-FTS tamamlanmış değildir. Farklı bir sıralama politikası önce genel sentetik/kalibrasyon örnekleriyle tasarlanmalı, ardından iki holdout ve gerçek yeniden yükleme kabulünden geçmelidir.
+
+
+## 13 Eylül 2026 — L4 C2: nedensellik belirsiz, göç eklenmedi
+
+Belirli kurulum koşulunda recall anomalisi gözlendi; indeks kurma belleğinin veya taşmanın buna neden olduğu **kanıtlanmadı**. [Tarihsel kapanış kaydının](team/codex/2026-09-09-window-checkpoint.md) C2 sonucu **INCONCLUSIVE** olarak korunur. Filtrelenmiş konsol özetinde fark görülmemesi, bütün vakaların sıfır farkla ölçüldüğünü kanıtlamaz. Bugün yeni indeks kurma/DB deneyi yapılmadı.
+
+Karar: yeni bellek zorunluluğu veya göç eklenmez; `0021` boş kalır. Mevcut [dense plan/pencere regresyonları](../apps/api/tests/test_retrieval_candidates.py) ve [recall/exact-oracle kontrolleri](../scripts/test_benchmark_retrieval_plan.py) korunur. Bunlar bellek taşmasının recall kaybına neden olduğunu kanıtlayan özel bir test olarak sunulmaz. C4 süreç RSS ölçümü de bu nedensellik açığını kapatmaz.
+
+
+## 13 Eylül 2026 — L4 D1: gerçek işlemlerde kota yarışı ve iptal
+
+`apps/api/tests/test_token_quota_concurrency.py` izole PostgreSQL 16 kümesinde **4 test geçti**, rc 0, 40.93 s. Test boyunca uygulama/göç/test kaynakları değişmedi. Komut: `cd apps/api && .venv/bin/python -m pytest -q tests/test_token_quota_concurrency.py`; küme kimliği, yeni test DB adı ve ham makbuz `evaluation/results/20260913-l4-d1/evidence.tar.gz` içinde korunur. <!-- docs-check: tarihsel 4 · 2026-09-13 -->
+
+Ders, genel kullanıcı ve platform bütçeleri ayrı vakalarda sınandı. İki farklı `dou_app` bağlantısının farklı PostgreSQL süreçleri ve transaction kimlikleri doğrulandı; üçüncü bağlantı gerçekten advisory lock üzerinde bekleyen işlemi gözledi. Limit 5.000 iken örtüşen iki 3.000 token isteğinden tam biri kabul edildi, diğeri `quota_exhausted` aldı; audit tablosu bir satır ve toplam 3.000 token gösterdi. Rol superuser veya BYPASSRLS değildi.
+
+İptal vakasında ilk SQL kabulünden sonra, **COMMIT öncesinde** işlem iptal edildi. Satır ve kilitler geri alındı; farklı bağlantıda yeni rezervasyon kabul edildi ve yalnız yeni satır kaldı. Bu sonuç, sağlayıcıya gönderilmiş ve gerçek tüketimi bilinmeyen isteğe sıfır ücret/iade uygulanması anlamına gelmez.
+
+Mevcut `ai_token_reservations` ve işlem kilitleri kabulü geçti; yeni kota göçü eklenmedi, `0028` kullanılmadı. Ruff ve biçim kontrolü geçti. Bu yeni testler tek başına tam API, canlı pooler veya üretim kapasitesi kabulü değildir; C4 bölümündeki tam API zamanlama hatası ayrıca açık kalır.
+
+
+## 13 Eylül 2026 — L4 D2: aynı bağlantıda kullanıcı ve arama ayarı yalıtımı
+
+`apps/api/tests/test_retrieval_transaction_context.py` izole PostgreSQL kümesinde **8 test geçti**, rc 0, 74.42 s. Kaynaklar koşu boyunca değişmedi. Komut: `cd apps/api && .venv/bin/python -m pytest -q tests/test_retrieval_transaction_context.py`; ham makbuzlar `evaluation/results/20260913-l4-d2/evidence.tar.gz` içinde. <!-- docs-check: tarihsel 8 · 2026-09-13 -->
+
+Üretimdeki `rls_session` ve `control_rls_session` bağlamları, tek bağlantılı gerçek psycopg havuzunda normal COMMIT, uygulama hatasıyla ROLLBACK, PostgreSQL sıfıra bölme hatası ve uygulama sırasında iptal ile sınandı. Her işlem açık `begin` içinde çalıştı; aynı `pg_backend_pid` yeniden kullanıldı. Ders filtresi içermeyen SQL, A bağlamında yalnız A'nın ders/belge/chunk satırlarını, kimliksiz işlemde hiçbir satırı, B bağlamında yalnız B'nin satırlarını gördü. Rol `dou_app`, RLS açık, superuser/BYPASSRLS kapalıydı.
+
+Gerçek dense retrieval kullanıcıya ait parçayı döndürdü; diğer ders sorgusu boş kaldı. Kullanıcı kimliği ile HNSW ve plan ayarları işlem sonrasında başlangıç değerlerine döndü. Testin kendisi elle RESET, oturum genelinde SET veya bağlantı değişimi yaparak sonucu temizlemedi. Uygulama iptali açık transaction içindeki bekleme noktasındadır; çalışan SQL iptalinde sürücü bağlantısı değiştirme davranışını mevcut başka testler kapsar.
+
+Yeni üretim kodu/göç eklenmedi. Kurulu sürücü psycopg olduğu için asyncpg'ye özgü ayar eklenmedi. **ENGEL:** Gerçek Supavisor/PgBouncer sürümü, transaction pooling ve prepared statement yapılandırması bu yerel koşuyla doğrulanmış değildir. Tam yerel API paketinin C4 zamanlama sonucu da bu hedefli geçişle kapatılmaz.
+
+
+## 13 Eylül 2026 — L4 D3: gerçek parser hatası ve worker kapanışı
+
+İzole PostgreSQL kümesinde yeni DB ve yalnız sentetik dosyalarla iki gerçek kabul testi geçti; başlatıcı toplamı 65.768 s, pytest rc 0, hata/atlama yok. `scripts/run_l4_worker_acceptance.py` küme kimliğini, adresi ve yeni DB adını doğrular; `scripts/test_worker_process_acceptance.py` gerçek API yüklemesi, depolama, parser, claim ve worker yollarını sınar. Ayrı süreç temizleme mekaniklerinde 16 test geçti (0.186 s); bu taklit mekanikleri iki gerçek DB/sinyal testiyle aynı kanıt değildir. <!-- docs-check: tarihsel 16 · 2026-09-13 -->
+
+Bozuk PDF gerçek parser tarafından üç kez reddedildi. Bir ve üç saniyelik gerçek geri çekilme aralıklarından sonra aynı iş satırı sırasıyla pending, pending, failed oldu. Son hata satırı saklandı; claim, lease ve revision sahipliği temizlendi, hiç chunk oluşmadı. Dördüncü drain ve doğrudan claim sorgusu işi yeniden almadı. Mevcut failed iş kaydı doğrulandı; yeni dead-letter tablosu veya üretim kodu eklenmedi.
+
+İkinci vakada gerçek `worker.main` üretimdeki SIGTERM işleyicisini kurdu. Sentetik Markdown parse/embedding işleminden sonra finalize öncesi kontrollü async bekleme ve etkin heartbeat sırasında, süreç kimliği/grubu, kaynak özeti ve DB claim sahipliği doğrulanarak gerçek SIGTERM gönderildi. Worker rc 0 ile çıktı; iş tekrar pending/uploaded durumuna döndü, attempt 1 olarak kaldı, claim/lease temizlendi ve chunk oluşmadı. Testte kapanış bekleme ve heartbeat 0.25 saniyeye ayarlanmıştır. Bu sonuç native kod içinde takılmış thread'in kesilebildiğini veya bulut kapanış SLA'sını kanıtlamaz.
+
+Başlatıcıya eklenen gözetici, pytest lideri erken bitse bile sahip olunan süreç grubu boşalmadan temizliği başarılı saymaz. Başlangıç el sıkışması ve zaman aşımı yarışları ayrı mekaniklerde sınandı. Gerçek kabul sonunda gözetici exit 0 ile toplandı, alt süreç grubu boştu; dış temizleyicinin ek TERM/KILL göndermemesi, ikinci testte worker'a gönderilen gerçek SIGTERM'den ayrı kayıttır.
+
+Ham public kabul kaydı, yalnız test adı/zamanı/sonucunu içeren JUnit izdüşümü ve komut makbuzları `evaluation/results/20260913-l4-d3/evidence.tar.gz` içinde; üyelerin SHA256 değerleri `inventory.json` içinde. Özel DB ayarı, ham özel log/XML ve model dosyaları arşivlenmedi. Kabulün dört worker/başlatıcı kaynağı önce/sonra aynıydı; beşinci mekanik test kaynağı ayrıca statik kaynak kaydı ve kendi test koşusuyla bağlandı. API dizini ve ayarlarıyla Ruff ile beş dosyanın biçim kontrolü geçti. İlk repo-kökü Ruff çağrısındaki import sınıflandırma hatası ayrı başarısız makbuz olarak korunur.
+
+Bu script testleri varsayılan API test toplamasına dahil değildir; CI workflow'una ekleme L4 kapsamı dışındadır. API'nin güncel toplama sayısı değişmedi. D3 hedefli kabulü; tam API paketi, canlı pooler, E5 kapasitesi veya üretime çıkış onayı yerine geçmez.
+
+
+## 2026-09-13 — L4 C3 reranker deneyinin önkoşulları
+
+Yerel kurulu fastembed **0.8.0** kayıt dosyası, `jinaai/jina-reranker-v2-base-multilingual` desteğini doğrular: kayıt lisansı `cc-by-nc-4.0`, kayıt büyüklüğü **1,11 GB**, model yolu `onnx/model.onnx`. Bunlar yerel kütüphane kayıt bilgileridir; modelin bu makinede yüklendiği, gerçek RSS tüketimi veya kullanım senaryosuna ilişkin lisans uygunluğu sonucu değildir. Kütüphane paketinin Apache lisansı model lisansının yerine geçmez. Yerel yerleşik kayıtta `BAAI/bge-reranker-v2-m3` bulunmaz.
+
+DOU-Synapse, L4 runtime, fastembed ve Hugging Face için incelenen yerel cache köklerinde Jina/reranker adlı bir model paketi bulunmadı; bu, makinenin bütün özel yollarına ilişkin yokluk iddiası değildir. Model indirilmedi/yüklenmedi; 50 gold sorgu ve sabit top-24 adayla karşılaştırma **not-run**. NDCG@5, MRR@5, Recall@8, p50/p95 ve peak RSS için yeni sonuç üretilmedi. Önceki C4 kaydındaki bellek baskısı reranker için yüzde 20 bellek payını doğrulamaz.
+
+**ENGEL:** revizyonu, model/tokenizer dosya özetleri ve lisans kaydı sabitlenmiş yerel reranker paketi ile hedef bellek bütçesi/uygun koşu ortamı eksik. Bu girdiler sağlandığında aynı 50 sorgu ve aynı 24 aday iki kolda korunarak deney yapılır. Kabul eşikleri birlikte sağlanmalıdır: NDCG@5 en az yüzde 5 göreli artış, en az yüzde 20 bellek payı ve p95 en fazla 500 ms. Üretim varsayılanı değiştirilmedi.
+
+
+## 2026-09-13 — L4 D6 belge/kaynak uzlaştırması
+
+D6 planındaki iki eski iddia mevcut belgelerde zaten düzeltilmiştir. `ARCHITECTURE.md` §6 ve §8, Compose API rolünü `dou_app`, iş yazımı/poller rolünü `dou_worker` olarak ayırır; §10, `POST /internal/drain` ucunu uygulanmış olarak kaydeder. `docs/security.md` §7, sır tanımlı değilken ucun kapalı olduğunu ve sabit zamanlı anahtar karşılaştırmasını açıklar. Bu ifadeler `docker-compose.yml` ile `apps/api/app/api/internal.py` kaynaklarıyla karşılaştırılmıştır; aynı düzeltme tekrar uygulanmamıştır.
+
+**Kapsam:** kaynak ve belge tutarlılığı incelemesi. Bu işte Docker/Compose, canlı bağlantı rolü, RLS veya scale-to-zero uyanışı çalıştırılmadı (`not-run`); kodda yapılandırılmış olmak canlı kabul değildir. D6'nın bu iki eski iddiası için yeni engel bulunmadı.
+
+
+## 2026-09-13 — L4 S11 kurtarılan kaynakların yeniden uzlaştırılması
+
+9 Eylül kurtarma paketindeki **12 kaynak dosyasının tamamının** güncel SHA-256 özeti kurtarma manifestiyle yeniden eşleşti. **11 dosya**, manifestteki bağımsız tarihsel kaynak özetiyle de eşleşir. `test_storage_timeout_contract.py` için bağımsız tarihsel özet yoktur; kurtarma kaydıyla eşleşmesi bu eksikliği kapatmaz. Kurtarılan iki yama metni de kayıtlı özetleriyle eşleşmiştir; bu incelemede uygulanmamıştır.
+
+Bu paket tamamlanmış tek bir aday değildir: reconciler, CLI, storage ve config dosyaları için kayıtlı dört final özet kurtarılan baytlarla eşleşmez; sonraki gerçek-claim regresyon yamasının tam metni eksiktir. Kurtarma paketi özgün/v1/v2/ara sürümleri birlikte içerir. Bu kaynakları yeniden hashlemek, eski test sonuçlarını bugünkü kaynağın kabul kanıtına dönüştürmez.
+
+**ENGEL:** kurtarılan `0027_document_delete_outbox.sql`, L2'ye ayrılmış `0027_learning_events.sql` numarasıyla çakışır. L4'ün `0028` numarası yalnız gerekirse kota işi, L5'in `0029` numarası private storage içindir; S11 için yeni numara atanmalıdır. Ayrıca S11'in storage/config değişiklikleri L5 yüzeyiyle ve L4'ün storage/auth dokunmama sınırıyla çakışır. Entegrasyon sahibi ve göç numarası uzlaştırılmadan eski dosyalar üzerine kopyalanmadı.
+
+**Not-run:** yeni, tutarlı S11 adayı için tam API, gerçek ve yalıtılmış CLI/PostgreSQL kabulü, eksik ham kanıtların yeniden üretimi ve R3 dossier. Sonraki uygulama, güncel kaynak üzerinde eksik regresyonu yeniden kurmalı; yetkili claim, hedef sabitleme, etkin referans koruması, kesinti/tekrar deneme ve dosya sınırlarını yeni koşularla doğrulamalıdır.
+
+
+## 13 Eylül 2026 — L4 bütünleşik yerel API kabulü ve ayrı Linux sonucu
+
+Yeni kota ve bağlantı yalıtımı testlerini içeren yerel tam paket, 15:56:01–16:02:24 UTC arasında yeni `dou_l4_final_20260913_001` veritabanında çalıştırıldı. Pytest sonucu **1700 başarılı, 1 başarısız ve ayrıca 38 subtest başarılı**, 349.55 s, rc 1. Uygulama/test/göç/lock kaynak özetleri koşu boyunca değişmedi. Komut `cd apps/api && .venv/bin/python -m pytest -q`; özel admin bağlantısı yalnız izole kümeye yönlendirilmiştir. Yerel kalıcı makbuz `DOU-Synapse-L4-2026-09-13/l4-final-api/result.json`, stdout SHA256 `83be943fb988898fa098c1873c376d07f64445b2af0be41a15f95d182ab21a2e`. <!-- docs-check: tarihsel 1700 · 2026-09-13 -->
+
+Başarısız vaka `tests/test_role_aware_agent_application_guards.py::test_process_concurrency_gate_rejects_second_same_user_request`: ilk isteğin generator giriş olayını bekleyen mevcut iki saniyelik sınır doldu. Test ikinci isteğin `409 / concurrent_request` reddini kontrol ettiği aşamaya ulaşmadı. Bu sonuç kota aşımını, rol sızıntısını veya yanlış kabulü gözlemlemiş değildir; ilk isteğin neden geciktiği **INCONCLUSIVE**. Önceki C4 tam paketindeki sağlık gecikmesi testi bu yeni tam koşuda geçti; eski başarısız koşular korunur ve kök nedenleri kapanmış sayılmaz.
+
+Aynı özgün eşzamanlılık testi eşik/kod değişmeden, yeni `dou_l4_final_diag_20260913_001` DB üzerinde bir kez ayrıştırılarak çalıştırıldı: **1 test geçti**, toplam 6.76 s, test gövdesi 0.49 s. Bu hedefli geçiş tam paketin rc 1 sonucunu değiştirmez. Makbuz `l4-final-concurrency-diagnostic/result.json`, stdout SHA256 `c5bd33d997a62547f631b640dae691e3f2d060d7f9c109bcff1ace1c6bf75d73`. <!-- docs-check: tarihsel 1 · 2026-09-13 -->
+
+Statik incelemede bu mevcut testin başarısızlık yolunda ilk HTTP görevini `finally` içinde cancel/join etmediği ve bekleme kilidini serbest bırakmadığı görüldü. Ayrıca ilk HTTP görevi erken cevap/hata ile bitmiş olsa bile sonuç yerine yalnız giriş olayını bekliyor. Bunlar tanıyı belirsizleştiren test altyapısı eksikleridir; bu koşudaki gecikmenin nedeni veya fiilî görev sızıntısı kanıtı değildir. **ENGEL:** ilgili L1/test sahibi, ilk görev ile giriş olayını birlikte gözlemleyen ve bütün çıkışlarda temizleyen bir düzen kurmalı; gerekirse ilk giriş öncesi aşama sürelerini ölçmeli. Bu test dosyası L4 yüzeyi dışında olduğundan değiştirilmedi. Zaman eşiği yükseltilmedi.
+
+Ayrı [Linux CI API işi](https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34766623743/job/103748664429), `7316241a28e5eab3b1a021846f60ed02c99d9b18` L4 ucunun hedef dal ile birleşimi olan `778bad7c5f8c319db0609ec6aa0d8420bf6cca5a` checkout'unda **1701 test ve 38 subtest geçişi**, 186.01 s kaydetti. Ortam ve checkout ayrı belirtildiği için bu sonuç yerel rc 1 yerine kullanılmaz. D3 scriptleri bu varsayılan API paketinin dışındadır; kendi gerçek kabul arşivi D3 bölümündedir. <!-- docs-check: tarihsel 1701 · 2026-09-13 -->
+
+
+## 13 Eylül 2026 — L4 C4: Linux CI ek kanıtı ve int8 kaynak belirsizliği
+
+13 Eylül 2026 15:38:48 UTC tarihli CI kaydında [API işi](https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34765622403/job/103745977383) **1689 test ve ayrıca 38 subtest geçişini**, 182,37 saniyede doğruladı. Sınanan kaynak, `5b2f18f279b6b224c3623c976691fd7f73cb3151` dal ucunun `22a85d390f759a77265e624d4d2acdf9b7c3d143` hedefiyle PR birleşimi olan `f32778dbcde20a504c7e00876ea9f37af2c45a2d` checkout'udur; sonraki dört D1 testi bu koşuya dahil değildir. Bu Linux sonucu, C4 bölümündeki başarısız Mac koşusunu değiştirmez veya gecikmenin kök nedenini açıklamaz. Kayıt alınırken bütün CI koşusu hâlâ `in_progress` durumundaydı; iki işin `success` olması bütün PR kapılarının geçtiği anlamına gelmez. <!-- docs-check: tarihsel 1689 · 2026-09-13 -->
+
+[İmaj işi](https://github.com/muratcan-ates/DOU-Synapse/actions/runs/34765622403/job/103745977462) ağsız konteynerde 1024 boyutlu bir sorgu çıktısı üretti. Ayrı bellek adımında tek Python sürecinin sekiz tekrarlı kısa metin için `ru_maxrss` değeri, logda yuvarlatılmış **0,93 GiB** olarak yazıldı ve 4 GiB kontrolü geçti. Bu, eşzamanlı API+worker veya gerçek ingest ölçümü değildir; 5,77 GB imaj boyutu da disk ölçüsüdür. Bu CI kaydı yerel qint8 `CHILD_EXIT_TIMEOUT` sonucunu veya eşzamanlı E5 ölçüm engelini kapatmaz.
+
+**Int8↔FP32 denklik kabulü doğrulanmadı.** Bake logunda int8 dosyası üretildikten sonra ikinci embedding kolu yeniden dosya çözümledi; bozuk HuggingFace dosyası uyarısını alternatif kaynaktan 1,31G indirme izledi. Basılan sekiz örnekte cosine 1,0 ve sıra korunumu gerçek log değerleridir; ancak ikinci kolun ve final runtime'ın yüklediği grafiğin dosya yolu/özeti kaydedilmedi. Kaynak incelemesi ikinci kolun olağan FastEmbed cache çözümleyicisini yeniden kullandığını gösteriyor. **Çıkarım:** değiştirilmiş int8 yerine başka/orijinal model seçilmiş olabilir; hangi grafiğin yüklendiği belirsizdir. Bu değerler int8 denkliği, yerel qint8 dosyasının denkliği veya genel retrieval kalitesi olarak kabul edilmez.
+
+**ENGEL:** L3 bake/dağıtım ve L1 CI sahipleri, iki kolun model revizyonunu ve graph/tokenizer/harici ağırlık özetlerini sabitlemeli; ikinci kolun yeniden indirme/fallback yolunu kapatmalı; yükleme öncesi/sonrası ve final runtime grafiğini doğrulamalıdır. Eksik veya değiştirilmiş int8 dosyası kabulü başarısız yapmalıdır. Gerçek korpus/holdout sıralama kabulü ayrıca gereklidir. Docker/workflow/bake dosyaları L4 kapsamı dışında olduğundan değiştirilmedi. Kaynak kayıt: CI `34765622403`, API log satırları 244–247 ve 617; imaj log satırları 1181–1195, 1363, 1433–1451 ve 1453–1472 (`ci-c4-followup/verified-job-evidence.json`).
+
+
+## 13 Eylül 2026 — L4 incelemesinde doğrulanan bağımlılık açıkları
+
+Main ve L4 manifest/kilit karşılaştırması, aynı `next@16.3.1` sürümünü doğruladı. GitHub'ın açık iki Critical Dependabot kaydı, [GHSA-2xp9-vwfh-vxw4](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4) ve [GHSA-p293-qw3h-jr36](https://github.com/advisories/GHSA-p293-qw3h-jr36), 16.x ailesinde `16.3.3` ile giderilen sürüm eşleşmeleridir. İlk duyuru AVIF görüntü işleme, ikincisi Windows barındırma koşullarını kapsar. Canlı uygulamanın bu yolları saldırgan girdisine açtığı veya ihlal yaşadığı doğrulanmadı.
+
+Ayrı paket/sürüm sorgusu, kilitteki `sharp@0.35.3` için [GHSA-rgj7-g3m4-5g8c](https://github.com/advisories/GHSA-rgj7-g3m4-5g8c), `nanoid@3.3.17` için [GHSA-2v37-7h3g-55p8](https://github.com/advisories/GHSA-2v37-7h3g-55p8) High eşleşmelerini doğruladı; belirtilen düzeltmeler sırasıyla `0.35.4` ve `3.3.18`. Next görüntü işleme ve sharp bulguları ilişkili olabilir; dört duyuru dört bağımsız saldırı yolu olarak sunulmaz. Kaynakta doğrudan fonksiyon kullanımı bulunmaması veya Security workflow'unun geçmesi bu bağımlılık kayıtlarını kapatmaz.
+
+**ENGEL:** bağımlılık sahibi Next'i düzeltilmiş sürüme taşımalı, yeniden üretilen kilitte sharp ve nanoid düzeltmelerini doğrulamalı, web kabulü ve yeni envanter taramasını çalıştırmalıdır. Web/manifest/kilit değişiklikleri L4 dışında olduğundan bu şeritte paket değiştirilmedi. Yerel inceleme kaydı `DOU-Synapse-L4-2026-09-13/dependency-alert-audit.md`; yalnız paket/sürüm metaverisi sorgulandı. Bu teknik inceleme kişisel veri mevzuatı uyum sertifikası veya bütün açıkların kapandığı iddiası değildir; S11 veri yaşam döngüsü engeli ayrıca yukarıda kayıtlıdır.

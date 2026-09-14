@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1819_toplanan-blue) <!-- docs-check: backend.tests = 1819 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-621_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 621 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1701_collected-blue) <!-- docs-check: backend.tests = 1701 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-573_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 573 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -473,11 +473,11 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **1819** <!-- docs-check: backend.tests = 1819 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **621** <!-- docs-check: frontend.tests = 621 --> | 48 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 48 --> |
-| Playwright tarayıcı vakaları | **81** <!-- docs-check: e2e.tests = 81 --> | Sayı `playwright test --list` ile toplanan vakalardır. |
-| Migration | **23** <!-- docs-check: migrations.count = 23 --> | Şema evriminin kaynak dosyası sayısı |
-| CREATE TABLE | **32** <!-- docs-check: tables.count = 32 --> | Migration’larda kurulan benzersiz tablo sayısı |
+| Toplanan backend testleri | **1701** <!-- docs-check: backend.tests = 1701 --> | Koleksiyon sayısıdır; son başarılı/başarısız koşular ve kapsamı [test raporunda](docs/test-report.md) yer alır |
+| Frontend birim testleri | **573** <!-- docs-check: frontend.tests = 573 --> | 45 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 45 --> |
+| Playwright tarayıcı vakaları | **71** <!-- docs-check: e2e.tests = 71 --> | Sayı `playwright test --list` ile toplanan vakalardır. Son yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) |
+| Migration | **22** <!-- docs-check: migrations.count = 22 --> | Şema evriminin kaynak dosyası sayısı |
+| CREATE TABLE | **30** <!-- docs-check: tables.count = 30 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
@@ -800,7 +800,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1819 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1819 -->
+Güncel feature kanıtında backend koleksiyonu 1701 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1701 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
