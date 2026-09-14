@@ -90,10 +90,15 @@ done
 [ $i -lt 90 ] || { echo "HATA: API 180 sn icinde hazir olmadi"; tail -20 "$CIKTI/api.log"; exit 1; }
 echo "[g1] API hazır"
 
-echo "[g1] $KUME kümesi, e2e katmanı, gerçek model, en fazla $MAXREQ istek"
+# Koşu kimliği UUID OLMAK ZORUNDA: sunucu kanıtı (`/internal/evaluation/runtime`)
+# run_id'yi UUID olarak doğruluyor (provenance.py:69-73). Varsayılan zaman damgalı
+# kimlik bu denetimden geçmiyordu.
+RUN_ID="${DOU_EVAL_RUN_ID:-$(uuidgen | tr 'A-Z' 'a-z')}"
+echo "[g1] $KUME kümesi, e2e katmanı, gerçek model, en fazla $MAXREQ istek (koşu $RUN_ID)"
 apps/api/.venv/bin/python evaluation/evaluate.py \
   --set "$KUME" --layer e2e --require-real \
   --max-requests "$MAXREQ" --concurrency 1 \
+  --eval-run-id "$RUN_ID" \
   --api-url "http://127.0.0.1:$PORT" \
   --corpus "$KORPUS" --results-dir "$CIKTI/results" \
   --llm-note "G1 yerel gercek model kosusu ($EVAL_LLM_PROVIDER)"
