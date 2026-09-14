@@ -146,8 +146,34 @@ Bu davranışı değiştirmek (failover'ı açmak) rezervasyon değişmezini etk
 | Çevrimdışı önbellek | **12 soru + 4 ret** | Gerçek modelle dolduruldu; liste `docs/demo-script.md` |
 | Ekran görüntüleri | **16'sı yenilendi** | Kampüs tasarımı + gerçek model; Sokratik tur ısrar sahnesi dahil |
 | P1 · P2 dalları | **Kapandı** | Çakışmalar main lehine çözüldü, 11 tip hatası düzeltildi |
-| Gerçek modelli e2e metrikleri | **n=6, raporlanmadı** | Ürünün kendi jeton kotası durdurdu; sayı yazılmadı |
-| GPT'nin yeni tasarımı | **ALINAMADI** | `origin/025-campus-ui` 19:45'te duruyor; Murat'ın gördüğü "Bilgi, bağlantı kurdukça büyür" hero'lu sürüm commit'lenmemiş |
+| Gerçek modelli e2e metrikleri (G1) | **KOŞULMADI** | Ürünün kendi jeton kotası durdurdu; sayı yazılmadı. Kota matematiği §4.2'de |
+| GPT'nin yeni tasarımı | **ALINDI** (15 Eyl 02:10) | GPT 01:28'de `aba76c2` ile commit'lemiş ama push'lamamıştı; yerel `025-campus-ui` dalından `3f96d43` ile `main`'e alındı. Ayrıntı §4.2 |
+
+## 4.2 Gece yarısından sonra (15 Eylül 01:00–02:30)
+
+**GPT'nin tasarımı alındı.** Dal push'lanmamıştı ama `~/code/dou-synapse-025-campus-ui`
+worktree'sinde commit'liydi (`aba76c2`, 01:28). Beş çakışma çıktı; dördünde GPT'nin
+sürümü aynen alındı. Tek istisna `app-shell.tsx`: tasarım turu mobil gezinmeyi yine
+DOM'un sonuna almıştı, erişilebilirlik düzeltmesi geri taşındı. Gerçek tarayıcıyla
+ölçüldü (375×812, koyu tema): yatay taşma yok (375/375), mobil menüye **4 sekmede**
+ulaşılıyor (regresyonda 30+ sekmede ulaşılamıyordu), odak halkası `2px solid`.
+Izgara düzeltmesi (`minmax(0,1fr)` + `min-w-0`) GPT'nin sürümünde zaten korunmuştu.
+
+`ci.yml`'de iki taraf da kapsam kanıtı adımı eklemişti; birleştirildi — GPT'nin
+`report` adımı (taban SHA'lı) korundu, benim `upload-artifact` kanıt adımım da
+duruyor. Tasarım `gsap` + `@gsap/react` bağımlılığı getiriyor (GPT'nin dossier 102
+kararı). Kapılar: tsc temiz · `bun test lib/` 648/648 · kontrast AA · docs_check
+yeşil (uçtan uca sayacı 82→87 ölçümden düzeltildi) · migration_check PASS.
+
+**G1 hâlâ koşulamıyor — sebep ölçüldü (02:25).** Değerlendirme veritabanındaki
+kullanıcı `course_memberships`'te **öğrenci** rolünde; öğrenci günlük tavanı 50.000
+jeton ve bu tavan `config.py:285`'te `le=50_000` ile sabitli, ders politikasıyla
+aşılamıyor. 15 Eylül 00:00'dan 02:25'e kadar 41.219 jeton harcanmış (gece yarısı
+sonrası kısmi koşu), kalan ~8.781 jeton yaklaşık **iki isteğe** yetiyor; holdout 40
+istek istiyor. Sonraki sıfırlama **16 Eylül 00:00** — yani sunum sabahı. Seçenekler:
+(a) sunum sabahı erken koşmak, (b) demo önbelleği doldururken yapıldığı gibi birden
+çok sentetik öğrenciyle bölmek (her biri kendi 50.000'iyle). Karar Murat'ın; sayı
+koşulmadan rapora **yazılmaz**.
 
 ## 5. Murat'a kalan işler (ben yapamam)
 

@@ -592,7 +592,7 @@ Ret kararı bu koşuda **kanıt kapısından** geliyor (deterministik, geçerli)
 generation katmanı ek ret üretebilir, o kısım ölçülmedi. Kapının 22 kapsam dışı
 sorunun 11'ini durdurması, §6b'deki kalibrasyon bulgusuyla tutarlı.
 
-### ⚠️ SC-005 = %0 — `out_of_scope` etiketi hâlâ hiç üretilmiyor
+### ⚠️ SC-005 = %0 (9 Ağustos, sahte sağlayıcı koşusu) — kanıt kapısı tek başına `out_of_scope` üretmiyor
 
 v1 raporu bunu 3 soruyla gözlemiş ve "doğrulanması gereken bir şüphe" demişti.
 **22 kapsam dışı soruyla doğrulandı:**
@@ -614,6 +614,22 @@ tarafında ve o katman bu koşuda sahte.
 **Çekince:** gerçek generation hattı `out_of_scope` üretebilir; o hâlde bu sayı
 düzelir. Kanıtlanmış olan kısım şudur: **kanıt kapısı tek başına bu etiketi
 üretemez** ve üretmesi de beklenmemeli.
+
+**15 Eylül eki — çekince gerçekleşti, ama bu bir metrik değil.** Yukarıdaki %0,
+161 soruluk sahte sağlayıcı koşusunun kapsam dışı alt kümesinden (n=22) gelir ve
+o koşunun sonucu olarak **geçerli kalır**. 14 Eylül gecesi aynı hat gerçek modelle
+(Groq · `openai/gpt-oss-120b`) çalıştırıldığında dört ret sondasının ikisi
+`out_of_scope` döndü (`docs/demo-script.md:437-440`); `docs/screenshots.md:67`
+altındaki `images/10-sohbet-kapsam-disi-ret.png` bunlardan birinin ekran
+görüntüsüdür. Yani generation katmanı etiketi **üretebiliyor** ve §8b'nin mimari
+teşhisi doğrulanmış oldu: eksik olan kapı değil, katmandı.
+
+**n=4 bir SC-005 ölçümü DEĞİLDİR.** Gerçek modelle holdout koşusu (G1) hâlâ
+koşulmadı; sebebi 15 Eylül 02:25'te ölçüldü — değerlendirme veritabanındaki
+kullanıcı öğrenci rolünde, günlük tavan 50.000 jeton (veritabanı sabiti,
+politikayla aşılamaz) ve o gün 41.219 jeton harcanmıştı, kalan ~8.781 jeton
+yaklaşık iki isteğe yetiyor. Gerçek model altındaki SC-005 sayısı bu rapora
+ancak o koşu tamamlanınca yazılır; o güne kadar **ölçülmedi**.
 
 ---
 
