@@ -475,7 +475,7 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 |---|---:|---|
 | Backend testleri | **2139** <!-- docs-check: backend.tests = 2139 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
 | Frontend birim testleri | **632** <!-- docs-check: frontend.tests = 632 --> | 51 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 51 --> |
-| Playwright tarayıcı vakaları | **82** <!-- docs-check: e2e.tests = 82 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
+| Playwright tarayıcı vakaları | **87** <!-- docs-check: e2e.tests = 87 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
 | Migration | **24** <!-- docs-check: migrations.count = 24 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **32** <!-- docs-check: tables.count = 32 --> | Migration’larda kurulan benzersiz tablo sayısı |
 | Web ekranı | **22** <!-- docs-check: screens.count = 22 --> | Next.js <code>page.tsx</code> sayısı |

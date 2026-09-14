@@ -9,6 +9,12 @@
 
 **Toplam süre: ~9 dakika.** Soru-cevap için ayrıca 3-5 dakika bırakın.
 
+## Gösterim öncesi kontrol (jüri profili)
+
+Jüri koşusundan önce `.env` profilini [docs/jury-demo.md](jury-demo.md#gösterim-öncesi-kontrol)
+ile uygula. Özellikle `question_authoring`, `student_assessment_workspace`,
+`embedding` ve `llm_fake` ayarlarının sadece demosa özel olduğunu doğrula.
+
 ---
 
 ## Sunumdan 10 dakika önce — yığını kaldırma ve kanıt turu

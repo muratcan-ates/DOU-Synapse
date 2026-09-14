@@ -1,4 +1,6 @@
-import { expect, test, type APIRequestContext, type APIResponse, type TestInfo } from "@playwright/test";
+// İki ayrı Response tipi kullanılır: `APIResponse` request context çağrılarının
+// dönüşü, `Response` ise tarayıcının gördüğü ağ yanıtı (`.request()` yalnız onda var).
+import { expect, test, type APIRequestContext, type APIResponse, type Response, type TestInfo } from "@playwright/test";
 
 import { createE2eCourseIdentity } from "./fixtures";
 
@@ -53,7 +55,9 @@ async function expectJsonError(responsePromise: Promise<APIResponse>, status: nu
   return body;
 }
 
-function requestPayload(response: APIResponse): Record<string, unknown> {
+// `page.waitForResponse` tarayıcı `Response`u döndürür; `.request()` yalnız onda
+// vardır. Sandbox sürümü APIResponse yazmıştı ve tip denetimi kırılıyordu.
+function requestPayload(response: Response): Record<string, unknown> {
   const raw = response.request().postData();
   return raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
 }
@@ -62,13 +66,13 @@ async function seedCatalogCourse(
   request: APIRequestContext,
   options: { blueprintTitle: string; durationMinutes?: number; maxAttempts?: number },
 ): Promise<CourseSeed> {
-  const course = await apiPost(request, "/courses", createE2eCourseIdentity("SINAV-FLOW"));
+  const course = await apiPost<{ id: string }>(request, "/courses", createE2eCourseIdentity("SINAV-FLOW"));
   const base = `/courses/${course.id}`;
 
   await apiPost(request, `${base}/members`, { email: student.email, role: "student" });
-  const topic = await apiPost(request, `${base}/topics`, { name: "Deadlock" });
+  const topic = await apiPost<{ id: string }>(request, `${base}/topics`, { name: "Deadlock" });
   await apiPost(request, `${base}/topics`, { name: "Süreçler" });
-  const outcome = await apiPost(request, `${base}/learning-outcomes`, {
+  const outcome = await apiPost<{ id: string }>(request, `${base}/learning-outcomes`, {
     code: "LO-1",
     description: "Deadlock koşullarını açıklar.",
     topic_id: topic.id,
@@ -93,17 +97,21 @@ async function seedCatalogCourse(
     })
     .toBe("completed");
 
-  const topicQuestionResponse = await apiPost(request, `${base}/questions/generate`, {
-    topic_id: topic.id,
-    count: 1,
-    question_type: "mcq",
-    learning_outcome_id: outcome.id,
-    difficulty: "medium",
-  });
+  const topicQuestionResponse = await apiPost<{ questions: CourseSeed["question"][] }>(
+    request,
+    `${base}/questions/generate`,
+    {
+      topic_id: topic.id,
+      count: 1,
+      question_type: "mcq",
+      learning_outcome_id: outcome.id,
+      difficulty: "medium",
+    },
+  );
   const question = topicQuestionResponse.questions[0];
-  await apiPost(request, `${base}/questions/${question.id}/approve`);
+  await apiPost(request, `${base}/questions/${question.id}/approve`, {});
 
-  const blueprint = await apiPost(request, `${base}/blueprints`, {
+  const blueprint = await apiPost<{ id: string; title: string }>(request, `${base}/blueprints`, {
     title: options.blueprintTitle,
     duration_minutes: options.durationMinutes ?? 45,
     max_attempts: options.maxAttempts ?? 2,
@@ -115,9 +123,9 @@ async function seedCatalogCourse(
       points_per_question: 1,
     }],
   });
-  const version = await apiPost(request, `${base}/blueprints/${blueprint.id}/versions`);
+  const version = await apiPost<{ id: string }>(request, `${base}/blueprints/${blueprint.id}/versions`, {});
   await apiPost(request, `${base}/blueprints/${blueprint.id}/versions/${version.id}/items`, [{ question_id: question.id }]);
-  await apiPost(request, `${base}/blueprints/${blueprint.id}/versions/${version.id}/publish`);
+  await apiPost(request, `${base}/blueprints/${blueprint.id}/versions/${version.id}/publish`, {});
 
   return {
     course,

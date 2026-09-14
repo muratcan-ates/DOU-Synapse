@@ -185,3 +185,36 @@ test("başka sekmede başlayan sınav eski sonucu doğrulama boyunca ve kilitte 
     await second.close();
   } finally { releaseOldResult(); }
 });
+
+test("grounded: kaynaksız cevap puansız ve kaynaksız kalır", async ({ page, request }) => {
+  test.setTimeout(90_000);
+  const { course, base } = await prepareCourse(request);
+  // signIn iki argüman alır (worker-fixture); bu dosyadaki diğer üç çağrı da
+  // öyle. P1 sandbox'ında tek argümanla yazılmıştı ve tip denetimi kırılıyordu.
+  await signIn(page, student);
+  await page.goto(`/courses/${course.id}/exam`);
+  const started = page.waitForResponse((response) => response.url() === `${base}/exams` && response.request().method() === "POST");
+  await page.getByRole("button", { name: "Alıştırma başlat", exact: true }).click();
+  const session = await (await started).json();
+  const feedbackQuestionId = session.questions?.[0]?.id ?? "00000000-0000-0000-0000-000000000000";
+
+  await page.route(`**/exams/${session.id}/answers`, async (route) => {
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        question_id: feedbackQuestionId,
+        graded: false,
+        message: "Değerlendirme tamamlanamadı.",
+      }),
+    });
+  });
+
+  await page.getByRole("radio").first().check();
+  await page.getByRole("button", { name: "Cevabı gönder", exact: true }).click();
+  await expect(page.getByText("Bu cevap kaynağa bağlanamadığı için puanlanmadı")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cevabı gönder", exact: true })).toHaveCount(0);
+  await expect(page.getByText("Değerlendirmenin dayanağı", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("Neden yanlış?", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("Cevap anahtarı", { exact: false })).toHaveCount(0);
+});
