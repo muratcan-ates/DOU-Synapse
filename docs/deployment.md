@@ -22,7 +22,7 @@ biçimleridir. Sağlayıcı hesabında uygulanmış kabul olarak okunmamalıdır
 | Parça | Nerede | Ne koşar |
 |---|---|---|
 | Web | Vercel | Next.js arayüzü |
-| API | Azure Container Apps | `uvicorn app.main:app` |
+| API | Azure for Students VM (`B2s_v2`), `docker compose`, imaj digest ile (`.github/workflows/deploy.yml`) | `uvicorn app.main:app` |
 | HTTP worker (uzak tetik seçilirse) | Seçilen dahili HTTP barındırması | `uvicorn app.main:app`; korumalı `POST /internal/drain` |
 | Sürekli worker | Seçilen sürekli süreç barındırması | `python -m app.worker`; HTTP portu yok |
 | Veritabanı + Storage | Supabase | Postgres 16 + pgvector, belge deposu |
@@ -290,14 +290,39 @@ uv run python scripts/measure_latency.py cold --base-url "$API_URL" \
 
 ## 9. Geri alma (rollback)
 
-1. **Uygulama**: Container Apps'te bir önceki revizyona geç. İmajlar
-   sürümlenmiş etiketlerle itilir; `latest` üretimde kullanılmaz.
-2. **Migration**: geri alma betiği YOKTUR. Bir migration üretimde soruna yol
-   açtıysa yol, ileri doğru düzelten yeni bir migration'dır; şema geri sarılmaz.
-   Veri kaybı riski varsa §6'daki yedekten geri yüklenir.
-3. **Sıra önemli**: uygulamayı geri almak, uygulanmış bir migration'ı geri
-   almaz. Yeni sürüm yeni bir sütuna yazıyorduysa eski sürüm o sütunu görmez
-   ama veri orada durur.
+Hedef ortam artık Azure Students VM'i (`.github/workflows/deploy.yml`, digest ile
+`docker compose`); bu bölümdeki Container Apps ifadesi o karara göre güncellendi.
+
+**15 dakika planı** — plan ölçüsüdür, ölçülmüş SLA değildir; ilk gerçek koşuda süre
+`rollback.yml` özetinden okunur ve buraya tarihli olarak yazılır.
+
+1. **Hedefi bul (2 dk).** Dönülecek imaj digest'i üç yerden okunur: son yeşil
+   `deploy.yml` koşusunun özeti ("dağıtılan digest"), VM'deki
+   `/opt/dou-synapse/current-image-digest` (şu an koşan) ya da GHCR paket sürümleri.
+   Etiket DEĞİL, `sha256:` digest kullanılır — etiket yeniden hedeflenebilir.
+2. **Tetikle (1 dk).** GitHub → Actions → **Rollback** → `Run workflow`;
+   `image_digest` ve `reason` girilir. İş `deploy-production` eşzamanlılık grubundadır:
+   süren bir dağıtımla yarışmaz, onu iptal de etmez.
+3. **Bekle (≤10 dk).** İş VM'de hedef digest'i çeker, `up -d` yapar,
+   `/health/ready` 200 görene kadar on kez dener ve koşan digest'in hedefle aynı
+   olduğunu `docker inspect` ile doğrular. Kırmızı yanarsa özet hangi adımda
+   düştüğünü söyler; elle yol aşağıdadır.
+4. **Doğrula (2 dk).** Giriş + ders listesi + kapsam dışı soruda ret (§7 tablosu)
+   elle bir kez geçilir. Otomatik dağıtımın kendi başarısızlık yolu da aynı
+   mekanizmayla önceki digest'e döner (`deploy.yml`, "BAŞARISIZLIKTA önceki
+   digest'e dön").
+
+**Göç geri alınmaz.** Geri alma betiği YOKTUR ve bilerek yazılmamıştır: şema
+ileri-uyumludur (§3), yeni sürümün eklediği sütun/tablo eski sürüme görünmez ama
+zarar vermez. Üretimde soruna yol açan bir göçün yolu, ileri doğru düzelten YENİ
+bir göçtür. Veri kaybı riski varsa §6'daki yedekten geri yüklenir; yedek/geri
+yükleme tatbikatı `scripts/test_backup_restore_drill.sh` ile yerelde koşulur
+(satır sayıları, `EXTENSION vector`, dense arama sonucu aynı olmalı).
+
+**Elle yol** (workflow'un kendisi çalışmıyorsa): VM'e SSH →
+`cd /opt/dou-synapse && printf 'DOU_API_IMAGE=ghcr.io/<owner>/dou-synapse/api@sha256:...\n' > .env.image`
+→ `docker compose --env-file .env.image -f docker-compose.deploy.yml pull && ... up -d`
+→ `curl https://<host>/health/ready`. Sır değeri bu belgeye ve sohbetlere yazılmaz.
 
 ## 10. T050 — üretim doğrulaması (KOŞULMADI)
 

@@ -1,0 +1,206 @@
+# Elle geri alma — bilinen bir imaj digest'ine dönüş (G4).
+#
+# `deploy.yml` başarısız dağıtımı zaten kendi içinde geri alır. Bu dosya öteki
+# durum içindir: dağıtım YEŞİL bitti ama canlıda sonradan kusur görüldü. O anda
+# gereken şey "bir önceki sürüme dön" düğmesidir; düğmenin ne yaptığı bilinmeli:
+#
+#   * İMAJ geri alınır — `sha256:` digest ile, etiketle değil. Etiket yeniden
+#     hedeflenebilir; digest hedeflenemez. Hangi digest'e dönüleceğini operatör
+#     girer (deploy koşusunun özetinde ve VM'deki `current-image-digest`'te yazar).
+#   * GÖÇ geri alınmaz. Şema ileri-uyumludur (docs/deployment.md §3 ve §9): yeni
+#     sürümün eklediği sütun/tablo eski sürüme görünmez ama zarar da vermez. Geri
+#     sarma betiği YOKTUR ve bilerek yazılmamıştır — yarım geri sarılmış şema,
+#     çalışan eski sürümden daha kötü bir durumdur.
+#   * Süre hedefi 15 dakikadır: tetik → SSH → pull → up → /health/ready 200.
+#     Bu bir plan ölçüsüdür, ölçülmüş SLA değildir; ilk gerçek koşuda ölçülür.
+#
+# `deploy.yml` ile aynı `concurrency` grubundadır: geri alma ile dağıtım aynı
+# anda VM'de yarışamaz. Devam eden iş iptal edilmez (yarım `up` bilinmeyen durumdur).
+
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "Dönülecek imaj digest'i (sha256:... — önceki dağıtım özetinden ya da VM'deki current-image-digest)"
+        required: true
+        type: string
+      reason:
+        description: "Neden geri alınıyor (özete yazılır; sır/kişisel veri yazma)"
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+# Depoyu okur (scripts ve compose için); paket listelemez, hiçbir şeye yazmaz.
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    name: Bilinen digest'e dön ve hazırlığı doğrula
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    env:
+      REMOTE_DIR: /opt/dou-synapse
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Girdiyi ve zorunlu sırların VARLIĞINI fail-closed doğrula
+        shell: bash
+        env:
+          INPUT_DIGEST: ${{ inputs.image_digest }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$INPUT_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error title=ROLLBACK_BAD_DIGEST::Digest 'sha256:' + 64 hane olmalı"
+            exit 1
+          fi
+          missing=()
+          for name in DEPLOY_SSH_HOST DEPLOY_SSH_USER DEPLOY_SSH_KEY DEPLOY_SSH_KNOWN_HOSTS; do
+            if [[ -z "${!name}" ]]; then
+              missing+=("$name")
+            fi
+          done
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error title=ROLLBACK_NOT_CONFIGURED::Eksik GitHub Secret: ${missing[*]}"
+            exit 1
+          fi
+          echo "dört sırrın hepsi tanımlı (değerler okunmadı)"
+
+      - name: İmaj adını türet
+        id: identity
+        shell: bash
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # deploy.yml ve release-candidate.yml ile AYNI ad şeması.
+          image_name="ghcr.io/$(printf '%s/api' "$REPOSITORY" | tr '[:upper:]' '[:lower:]')"
+          echo "image_name=$image_name" >> "$GITHUB_OUTPUT"
+
+      - name: SSH anahtarını ve SABİTLENMİŞ host anahtarını kur
+        shell: bash
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # StrictHostKeyChecking=no KULLANILMAZ (deploy.yml ile aynı gerekçe).
+          printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Şu an koşan digest'i kaydet (özet için)
+        id: current
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: |
+          set -euo pipefail
+          current="$(
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+              "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+              "cat ${REMOTE_DIR}/current-image-digest 2>/dev/null; true"
+          )"
+          current="$(printf '%s' "$current" | tr -d '[:space:]')"
+          echo "current_digest=${current}" >> "$GITHUB_OUTPUT"
+          echo "şu an koşan: ${current:-bilinmiyor}"
+
+      - name: VM'de hedef digest'i çek ve ayağa kaldır
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          IMAGE_REF: ${{ steps.identity.outputs.image_name }}@${{ inputs.image_digest }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+            "IMAGE_REF='${IMAGE_REF}' REMOTE_DIR='${REMOTE_DIR}' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd "$REMOTE_DIR"
+          printf 'DOU_API_IMAGE=%s\n' "$IMAGE_REF" > .env.image
+          docker compose --env-file .env.image -f docker-compose.deploy.yml pull
+          docker compose --env-file .env.image -f docker-compose.deploy.yml up -d --remove-orphans
+          printf '%s\n' "$IMAGE_REF" | sed 's/.*@//' > current-image-digest
+          docker compose --env-file .env.image -f docker-compose.deploy.yml ps
+          REMOTE
+
+      - name: /health/ready 200 verene kadar bekle
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            code="$(
+              curl -sS -o /tmp/ready.json -w '%{http_code}' --max-time 20 \
+                "https://${DEPLOY_SSH_HOST}/health/ready" || echo 000
+            )"
+            echo "deneme ${attempt}: HTTP ${code}"
+            if [[ "$code" == "200" ]]; then
+              cat /tmp/ready.json
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=ROLLBACK_NOT_READY::Geri alınan sürüm on denemede 200 vermedi — docs/deployment.md §9 elle yol"
+          exit 1
+
+      - name: Koşan digest hedefle aynı mı
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          EXPECTED_DIGEST: ${{ inputs.image_digest }}
+        run: |
+          set -euo pipefail
+          running="$(
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes -o BatchMode=yes \
+              "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" \
+              "docker inspect --format '{{index .RepoDigests 0}}' \$(docker compose --env-file ${REMOTE_DIR}/.env.image -f ${REMOTE_DIR}/docker-compose.deploy.yml ps -q api)"
+          )"
+          running_digest="${running##*@}"
+          if [[ "$running_digest" != "$EXPECTED_DIGEST" ]]; then
+            echo "::error title=ROLLBACK_DIGEST_MISMATCH::VM'de koşan ${running_digest}, hedef ${EXPECTED_DIGEST}"
+            exit 1
+          fi
+          echo "VM'de hedef digest koşuyor"
+
+      - name: Özeti yaz
+        if: ${{ always() }}
+        shell: bash
+        env:
+          TARGET_DIGEST: ${{ inputs.image_digest }}
+          PREVIOUS_DIGEST: ${{ steps.current.outputs.current_digest }}
+          REASON: ${{ inputs.reason }}
+          OUTCOME: ${{ job.status }}
+        run: |
+          {
+            echo "## Geri alma sonucu: ${OUTCOME}"
+            echo
+            echo "- önceki (geri alınan) digest: \`${PREVIOUS_DIGEST:-bilinmiyor}\`"
+            echo "- hedef digest: \`${TARGET_DIGEST}\`"
+            echo "- gerekçe: ${REASON}"
+            echo
+            echo "Göç geri alınmadı (ileri-uyumlu şema). Kanıt sınırı: bu koşu yalnız"
+            echo "hedef digest'in ayakta ve /health/ready'nin o an 200 olduğunu gösterir."
+          } >> "$GITHUB_STEP_SUMMARY"
