@@ -119,10 +119,19 @@ export function Card({
   children,
   className = "",
   variant = "default",
+  padding = "default",
 }: {
   children: ReactNode;
   className?: string;
   variant?: "default" | "soft" | "flat";
+  /*
+   * "none": kart dolgusuz çizilir; satır ayraçlı listeler (divide-y) kendi
+   * satır dolgusunu verir. className ile `p-0` geçmek İŞE YARAMAZ — Tailwind v4
+   * çıktısında `.p-0`, `.p-6`'dan önce basılır ve kaybeder (derlenmiş CSS'te
+   * ölçüldü, 14 Eylül 2026). Dolgu kararı bu yüzden sınıf çakışmasına değil
+   * açık bir prop'a bağlandı.
+   */
+  padding?: "default" | "none";
 }) {
   const variantClass = {
     // Seviye 1: kanvastan yükselen içerik yüzeyi. Katmanı gölge taşır; 1px saç
@@ -135,8 +144,9 @@ export function Card({
     // Düz: içinde kendi satır ayraçları olan liste kabı; tek ince çerçeve.
     flat: "rounded-2xl border border-border bg-surface",
   }[variant];
+  const paddingClass = padding === "none" ? "" : "p-6";
   return (
-    <div className={`${variantClass} p-6 ${className}`}>
+    <div className={`${variantClass} ${paddingClass} ${className}`.replace(/\s+/g, " ").trim()}>
       {children}
     </div>
   );

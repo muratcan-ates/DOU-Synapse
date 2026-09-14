@@ -427,7 +427,7 @@ export function RunningExam({
 function HintLadder({ courseId, sessionId, rungs }: { courseId: string; sessionId: string; rungs: ExamHint[] }) {
   const reached = rungs.length > 0 ? rungs[rungs.length - 1].hint_level : 0;
   return (
-    <Card variant="flat" className="mt-6 px-0 py-0">
+    <Card variant="flat" padding="none" className="mt-6">
       <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3">
         <p className="text-sm font-medium text-fg">İpuçları</p>
         <div aria-hidden="true" className="flex items-center gap-1">

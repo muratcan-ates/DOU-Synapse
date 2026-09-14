@@ -22,7 +22,7 @@ export function SessionHistory({ courseId, onOpen }: { courseId: string; onOpen:
             {history.refreshError && <ErrorNote message={history.refreshError} onRetry={history.reload} />}
             {history.data?.length === 0 ? <EmptyState title="Bu derste henüz bir oturum başlatmadınız." /> : (
               /* Düz kart: satırlar yalnız saç çizgisiyle bölünür, ayraçlar kenara dayanır. */
-              <Card variant="flat" className="px-0 py-0">
+              <Card variant="flat" padding="none">
                 <ol className="divide-y divide-border">
                   {(history.data ?? []).map((session) => {
                     const state = examHistoryStatus(session);

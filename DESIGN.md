@@ -385,8 +385,9 @@ Uygulama notu (aynı gün, ölçülmüş):
   eşiğin altına düştü; `contrast.mjs` yakaladı. İkisi de koyultuldu: `#6b645f`
   (5.28 / 5.81 / 4.83) ve `#8a5c00` (5.28 / 5.81 / 4.84). Yüzeyler açılmadı.
 - Tailwind v4 çıktısında `.p-0`, `.p-6`'dan **önce** basılıyor: `<Card className="p-0">`
-  kart dolgusunu ezmez (derlenmiş CSS'te ölçüldü). Dolgusuz liste kartı için
-  `px-0 py-0` yazılır — eksen sınıfları `p-*`'dan sonra gelir ve kazanır.
+  kart dolgusunu ezmez (derlenmiş CSS'te ölçüldü). Dolgusuz liste kartı
+  `<Card padding="none">` ile çizilir; dolgu kararı sınıf çakışmasına değil
+  açık bir prop'a bağlıdır. className ile `p-0`/`px-0 py-0` geçilmez.
 - Yüzen ders asistanı düğmesi mobilde alt gezinme çubuğunun üstünde durur
   (`bottom: calc(4.75rem + safe-area)`), `lg`'de köşeye iner.
 

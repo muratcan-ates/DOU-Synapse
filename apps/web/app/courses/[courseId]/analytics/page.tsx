@@ -369,7 +369,7 @@ function TopicList({
   }
 
   return (
-    <Card variant="flat" className="mb-6 px-0 py-0">
+    <Card variant="flat" padding="none" className="mb-6">
       <div className="flex items-center justify-between gap-3 px-5 py-3">
         <h2 className="text-sm font-medium text-fg">
           {isInstructor ? "Konu bazlı sınıf durumu" : "Konularım"}
@@ -444,7 +444,7 @@ function MissedQuestions({
   questions: ClassAnalytics["missed_questions"];
 }) {
   return (
-    <Card variant="flat" className="mb-6 px-0 py-0">
+    <Card variant="flat" padding="none" className="mb-6">
       <div className="flex items-center justify-between gap-3 px-5 py-3">
         <h2 className="text-sm font-medium text-fg">En çok yanlış yapılan sorular</h2>
         {questions.length > 0 && (

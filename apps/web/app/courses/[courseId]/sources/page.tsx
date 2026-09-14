@@ -157,7 +157,7 @@ function InspectionResult({
       {result.candidates.length === 0 ? (
         <EmptyState title="Bu sorgu için hiçbir kaynak parçası bulunamadı." />
       ) : (
-        <Card variant="flat" className="px-0 py-0">
+        <Card variant="flat" padding="none">
           <div className="flex items-center justify-between gap-3 px-5 py-3">
             <h2 className="text-sm font-medium text-fg">Aday parçalar</h2>
             <span className="text-xs text-fg-muted">sıra · dosya · konum</span>

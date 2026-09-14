@@ -194,9 +194,9 @@ function ProfileContent({
           <p className="mt-3 text-sm text-fg-muted">Aktif ders üyeliğiniz bulunmuyor.</p>
         ) : (
           /* Satır listesi kartın içinde `divide-y`; dolgu satırlara devredilir.
-             `p-0` üst sınıfı `p-6`'yı ezmez (Tailwind çıktısında `.p-0` önce
-             gelir); eksen sınıfları `px-0 py-0` ise sonra basılır ve kazanır. */
-          <Card className="mt-4 px-0 py-0">
+             Dolgu `padding="none"` ile kapatılır — className ile `p-0` geçmek
+             Tailwind çıktısında `.p-6`'ya yenilir (bkz. Card). */
+          <Card padding="none" className="mt-4">
             <ul className="divide-y divide-border">
               {profile.memberships.map((membership) => (
                 <li
@@ -250,7 +250,7 @@ function ProfileContent({
           Gizlilik ve hesap
         </h2>
         {/* `overflow-hidden`: satır vurgusu kartın yuvarlak köşesinden taşmasın. */}
-        <Card className="mt-4 overflow-hidden px-0 py-0">
+        <Card padding="none" className="mt-4 overflow-hidden">
           <div className="divide-y divide-border">
             <Link
               href="/account"

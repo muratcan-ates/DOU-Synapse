@@ -335,7 +335,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
         </>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <Card className="h-fit px-0 py-0">
+          <Card padding="none" className="h-fit">
             <h2 className="border-b border-border px-4 py-3 text-sm font-medium text-fg">Üretilen sorular</h2>
             {visible.length === 0 ? (
               <p className="px-4 py-6 text-sm text-fg-muted">

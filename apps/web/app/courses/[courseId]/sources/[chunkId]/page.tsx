@@ -64,7 +64,7 @@ function SourceDetails({ courseId, chunkId }: { courseId: string; chunkId: strin
             title={data.file_name}
             description="Atıfta kullanılan pasaj, belgedeki önceki ve sonraki parçayla birlikte gösteriliyor."
           />
-          <Card variant="flat" className="px-0 py-0">
+          <Card variant="flat" padding="none">
             <div className="flex items-center justify-between gap-3 px-5 py-3">
               <p className="min-w-0 truncate text-sm font-medium text-fg">{data.file_name}</p>
               <span className="shrink-0 text-xs tabular-nums text-fg-muted">{data.chunks.length} parça</span>

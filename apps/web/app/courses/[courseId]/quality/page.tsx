@@ -174,7 +174,7 @@ function SharedReviews({ reports }: { reports: ChatQuality["recent_shared"] }) {
     );
   }
   return (
-    <Card variant="flat" className="px-0 py-0">
+    <Card variant="flat" padding="none">
       <div className="flex items-center justify-between gap-3 px-5 py-3">
         <h2 className="text-sm font-medium text-fg">Paylaşılan inceleme kuyruğu</h2>
         <span className="text-xs tabular-nums text-fg-muted">{reports.length} yanıt</span>
