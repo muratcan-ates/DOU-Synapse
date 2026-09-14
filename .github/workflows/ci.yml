@@ -327,6 +327,26 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false
+
+      # A4' — `test.skip` / `test.fixme` sessiz yeşildir: süit geçer, kanıt yoktur.
+      # Bağımlılık yok, yalnız git. `--untracked` henüz commit'lenmemiş dosyayı da
+      # görür, böylece kapı yerelde de kanıtlanabilir. Tek satırlık `! git grep ...`
+      # `set -e` altında rc>1 (grep hatası) durumunu yeşile çevirirdi; bu yüzden
+      # "eşleşme var" ile "grep patladı" ayrı ayrı ele alınıyor. ESLint eklenmez (H5).
+      - name: E2E süitinde devre dışı bırakılmış test yok
+        shell: bash
+        working-directory: .
+        run: |
+          status=0
+          git grep -n --untracked -E 'test\.(skip|fixme)\(' -- apps/web/e2e || status=$?
+          if [ "$status" -eq 0 ]; then
+            echo "E2E süitinde test.skip/test.fixme var: sessiz yeşil kabul edilmez"
+            exit 1
+          fi
+          if [ "$status" -ne 1 ]; then
+            echo "git grep beklenmedik çıkış kodu verdi: $status"
+            exit 1
+          fi
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - run: bun run typecheck

@@ -10,7 +10,12 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from scripts.ai_sdlc_check import _risk_for_path, validate_repository
+from scripts.ai_sdlc_check import (
+    _dossier_prefix_errors,
+    _evidence_script_errors,
+    _risk_for_path,
+    validate_repository,
+)
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
 
@@ -1600,12 +1605,9 @@ class ProductionPolicyCoverageTests(unittest.TestCase):
                 risk, _ = _risk_for_path(path, policy)
                 self.assertEqual(minimum, risk)
 
-
     def test_delivery_gates_require_a_dossier_in_real_git_commits(self) -> None:
         """Gerçek politika ile dosyasız kapı değişikliği kırmızı yanmalıdır."""
-        policy = json.loads(
-            (SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8")
-        )
+        policy = json.loads((SOURCE_ROOT / ".ai/policy.json").read_text(encoding="utf-8"))
         paths = (
             ".github/workflows/ci.yml",
             ".github/workflows/security.yml",
@@ -1667,6 +1669,146 @@ class WorkflowBindingTests(unittest.TestCase):
             "astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e",
             action_refs,
         )
+
+
+class EvidenceScriptWiringTests(unittest.TestCase):
+    """A5' — kanıt betiği hiçbir iş akışından çağrılmıyorsa kapı kırmızı yanar.
+
+    Sentetik dizin kullanılır: gerçek depoyu taramak testi o günkü iş akışı
+    listesine bağlardı ve kuralı değil, deponun hâlini ölçerdi.
+    """
+
+    def _root(self, workflow: str, *scripts: str) -> Path:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        workflow_path = root / ".github/workflows/ci.yml"
+        workflow_path.parent.mkdir(parents=True, exist_ok=True)
+        workflow_path.write_text(workflow, encoding="utf-8")
+        for relative in scripts:
+            script = root / relative
+            script.parent.mkdir(parents=True, exist_ok=True)
+            script.write_text("-- kanıt\n", encoding="utf-8")
+        return root
+
+    def test_yol_ile_cagrilan_betik_kabul_edilir(self) -> None:
+        root = self._root(
+            "jobs:\n  api:\n    steps:\n      - run: python3 scripts/alfa_check.py\n",
+            "scripts/alfa_check.py",
+        )
+        self.assertEqual([], _evidence_script_errors(root))
+
+    def test_cagri_silinince_kontrol_duser(self) -> None:
+        root = self._root(
+            "jobs:\n  api:\n    steps:\n      - run: echo yok\n",
+            "scripts/alfa_check.py",
+        )
+        self.assertEqual(
+            ["UNWIRED_EVIDENCE_SCRIPT:scripts/alfa_check.py"],
+            _evidence_script_errors(root),
+        )
+
+    def test_nokta_modul_cagrisi_kabul_edilir(self) -> None:
+        root = self._root(
+            "jobs:\n  api:\n    steps:\n      - run: python3 -m unittest scripts.test_alfa_check\n",
+            "scripts/test_alfa_check.py",
+        )
+        self.assertEqual([], _evidence_script_errors(root))
+
+    def test_unittest_toplayicisi_release_testlerini_kapsar(self) -> None:
+        root = self._root(
+            "jobs:\n  api:\n    steps:\n"
+            "      - run: python -m unittest discover -s .release -p 'test_*.py'\n",
+            ".release/test_alfa.py",
+        )
+        self.assertEqual([], _evidence_script_errors(root))
+
+    def test_toplayici_baska_dizini_kapsamaz(self) -> None:
+        root = self._root(
+            "jobs:\n  api:\n    steps:\n"
+            "      - run: python -m unittest discover -s scripts -p 'test_*.py'\n",
+            ".release/test_alfa.py",
+        )
+        self.assertEqual(
+            ["UNWIRED_EVIDENCE_SCRIPT:.release/test_alfa.py"],
+            _evidence_script_errors(root),
+        )
+
+    def test_cagrilmayan_rls_sql_dosyasi_yakalanir(self) -> None:
+        root = self._root(
+            "jobs:\n  api:\n    steps:\n      - run: psql -f supabase/tests/rls_alfa.sql\n",
+            "supabase/tests/rls_alfa.sql",
+            "supabase/tests/rls_beta.sql",
+        )
+        self.assertEqual(
+            ["UNWIRED_EVIDENCE_SCRIPT:supabase/tests/rls_beta.sql"],
+            _evidence_script_errors(root),
+        )
+
+
+class DossierPrefixTests(unittest.TestCase):
+    """I5 — bir numara önekini iki farklı iş paylaşamaz."""
+
+    def test_ayni_onekli_iki_farkli_is_reddedilir(self) -> None:
+        self.assertEqual(
+            [
+                "DOSSIER_PREFIX_COLLISION:039:.ai/changes/039-alfa-r1.json",
+                "DOSSIER_PREFIX_COLLISION:039:.ai/changes/039-beta-r1.json",
+            ],
+            _dossier_prefix_errors(
+                [".ai/changes/039-alfa-r1.json", ".ai/changes/039-beta-r1.json"]
+            ),
+        )
+
+    def test_ayni_isin_revizyonlari_cakisma_sayilmaz(self) -> None:
+        self.assertEqual(
+            [],
+            _dossier_prefix_errors(
+                [
+                    ".ai/changes/039-alfa.json",
+                    ".ai/changes/039-alfa-r2.json",
+                    ".ai/changes/039-alfa-r10.json",
+                ]
+            ),
+        )
+
+    def test_farkli_onekler_serbesttir(self) -> None:
+        self.assertEqual(
+            [],
+            _dossier_prefix_errors(
+                [".ai/changes/039-alfa-r1.json", ".ai/changes/040-beta-r1.json"]
+            ),
+        )
+
+    def test_bilinen_tarihsel_cakisma_beyaz_listede(self) -> None:
+        self.assertEqual(
+            [],
+            _dossier_prefix_errors(
+                [
+                    ".ai/changes/010-branded-api-docs-r1.json",
+                    ".ai/changes/010-dense-tiebreak-determinism-r1.json",
+                ]
+            ),
+        )
+
+    def test_beyaz_liste_ucuncu_dosyaya_uzamaz(self) -> None:
+        self.assertEqual(
+            ["DOSSIER_PREFIX_COLLISION:010:.ai/changes/010-yeni-is-r1.json"],
+            _dossier_prefix_errors(
+                [
+                    ".ai/changes/010-branded-api-docs-r1.json",
+                    ".ai/changes/010-dense-tiebreak-determinism-r1.json",
+                    ".ai/changes/010-yeni-is-r1.json",
+                ]
+            ),
+        )
+
+    def test_gercek_depo_dossierleri_temiz(self) -> None:
+        paths = sorted(
+            f".ai/changes/{item.name}" for item in (SOURCE_ROOT / ".ai/changes").glob("*.json")
+        )
+        self.assertNotEqual([], paths)
+        self.assertEqual([], _dossier_prefix_errors(paths))
 
 
 if __name__ == "__main__":
