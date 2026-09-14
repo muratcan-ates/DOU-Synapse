@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-1701_collected-blue) <!-- docs-check: backend.tests = 1701 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-573_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 573 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-1765_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 1765 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-584_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 584 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -473,12 +473,12 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Toplanan backend testleri | **1701** <!-- docs-check: backend.tests = 1701 --> | Koleksiyon sayısıdır; son başarılı/başarısız koşular ve kapsamı [test raporunda](docs/test-report.md) yer alır |
-| Frontend birim testleri | **573** <!-- docs-check: frontend.tests = 573 --> | 45 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 45 --> |
+| Backend testleri | **1765** <!-- docs-check: backend.tests = 1765 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **584** <!-- docs-check: frontend.tests = 584 --> | 48 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 48 --> |
 | Playwright tarayıcı vakaları | **71** <!-- docs-check: e2e.tests = 71 --> | Sayı `playwright test --list` ile toplanan vakalardır. Son yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) |
-| Migration | **22** <!-- docs-check: migrations.count = 22 --> | Şema evriminin kaynak dosyası sayısı |
+| Migration | **23** <!-- docs-check: migrations.count = 23 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **30** <!-- docs-check: tables.count = 30 --> | Migration’larda kurulan benzersiz tablo sayısı |
-| Web ekranı | **20** <!-- docs-check: screens.count = 20 --> | Next.js <code>page.tsx</code> sayısı |
+| Web ekranı | **22** <!-- docs-check: screens.count = 22 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
 8 Eylül 2026 tarihli yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) <!-- docs-check: tarihsel 71 · 2026-09-08 -->
@@ -509,7 +509,7 @@ provider/staging kanıtı değildir; bu kapılar geçmeden production iddiası k
 
 ### Migration yolculuğu
 
-<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0027 -->
+<code>0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0029</code> <!-- docs-check: migrations.list = 0001,0002,0003,0004,0005,0006,0007,0008,0009,0010,0011,0012,0013,0014,0015,0016,0018,0019,0020,0024,0025,0026,0029 -->
 
 | Migration | Ürüne eklediği katman |
 |---|---|
@@ -800,7 +800,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 1701 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1701 -->
+Güncel feature kanıtında backend koleksiyonu 1765 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 1765 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -814,7 +814,7 @@ Güncel feature kanıtında backend koleksiyonu 1701 testtir; 38 alt vaka ayrıc
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 621 testtir. <!-- docs-check: frontend.tests = 621 -->
+Güncel feature kanıtında frontend kütüphane paketi 584 testtir. <!-- docs-check: frontend.tests = 584 -->
 
 Gerçek tarayıcı testi ayrı sentetik DB ve sahip olunan sunucu gerektirir;
 [E2E çalıştırma sözleşmesini](docs/development/owned-e2e.md) izleyin.

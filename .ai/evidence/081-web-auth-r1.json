@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "change_id": "081-web-auth-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T15:43:53.139144+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "Yerel web oturumu, merkezi 401 temizliği ve geç SDK olayı sınırları; canlı kimlik ve tam API tekrarı kabulü verilmez.",
+  "commands": [
+    {
+      "name": "ruff",
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T15:24:23.650315+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.558,
+      "output_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "name": "format",
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T15:24:24.218220+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.389,
+      "output_sha256": "8f485afdff0bd8ee2565c955dd978868c94d264cb548bb6ebcfa0d7a6c6ec864"
+    },
+    {
+      "name": "mypy",
+      "command": [
+        ".venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T15:24:24.612108+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 45.226,
+      "output_sha256": "0d9882f1f6dd71fa523924801fe936e3519a4e0c1d8ed1d296b549cc336dbcbc"
+    },
+    {
+      "name": "pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T15:25:09.870155+00:00",
+      "status": "finished",
+      "acceptance": "not-run",
+      "reason": "Önceki F3 tam koşuları ortak makine yükünde tamamlanamadı; F3-resumed-02 odak gecikme testi 0.478s > 0.1s. Yeni tam paket kabulü verilmez; ağır paralel tekrar başlatılmadı.",
+      "exit_code": null,
+      "seconds": 0.005,
+      "output_sha256": "56040f6e69bb28af4e07ed1aa00cbe282e4a5fb7b2d79e99b190d1226c0a6616"
+    },
+    {
+      "name": "bun",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T15:25:09.886192+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 29.754,
+      "output_sha256": "be2528c339a5ea198202a59f41ffa458f11a794c3b01cbf8b9dd8eba91bcbeee"
+    },
+    {
+      "name": "tsc",
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T15:25:39.670112+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 184.726,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "contrast",
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T15:28:44.432598+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.402,
+      "output_sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca"
+    },
+    {
+      "name": "docs_refresh",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs",
+        "--duzelt"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T15:28:44.843014+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 73.577,
+      "output_sha256": "90b2f3c9df5c337ed221760d6195d1400129a1c1144f84d3a60ef2fecc5530e3"
+    },
+    {
+      "name": "docs_check",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T15:29:58.458948+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 105.396,
+      "output_sha256": "c4b11ec01898b3ccf6e01b04299fbac4c0df990fc0f5bf8173c99ac8946ff59a"
+    },
+    {
+      "name": "migration_check",
+      "command": [
+        "python3",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T15:31:43.896151+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 1.028,
+      "output_sha256": "35e88ac0adede31b2409b0ba68df482ea909fd0ef706b754ebb6a6f83aa3700b"
+    },
+    {
+      "name": "workflow_policy",
+      "command": [
+        "apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T15:31:44.942510+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 1.955,
+      "output_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+    },
+    {
+      "name": "diff_check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T15:31:46.913206+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.583,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "bun",
+        "run",
+        "next",
+        "build",
+        "--webpack"
+      ],
+      "started_at": "2026-09-13T15:32:06.869255+00:00",
+      "exit_code": 0,
+      "seconds": 414.053,
+      "output_sha256": "825ae730760b3fb0708fce6f799ac91cbbd2fbbdfef5a4885ef2c269db303a8a",
+      "name": "production_build",
+      "status": "finished",
+      "cwd": "apps/web"
+    }
+  ],
+  "results": {
+    "ruff_rc": 0,
+    "format_rc": 0,
+    "mypy_rc": 0,
+    "pytest_rc": null,
+    "bun_rc": 0,
+    "tsc_rc": 0,
+    "contrast_rc": 0,
+    "docs_refresh_rc": 0,
+    "docs_check_rc": 0,
+    "migration_check_rc": 0,
+    "workflow_policy_rc": 0,
+    "diff_check_rc": 0,
+    "production_build_rc": 0,
+    "auth_write_race_failures": 0
+  },
+  "notes": {
+    "evaluation_command": "cd apps/web && NEXT_PUBLIC_DEV_AUTH=true bun test lib/",
+    "acceptance_scope": "Ölçülmüş yerel web auth, production build ve manuel CUA dev smoke; tam API tekrarı ve gerçek Supabase/Entra ayrı not-run.",
+    "web_result": "584 passed, 0 failed, 48 files. Gerçek kurulu SDK üzerinde sentetik taşıma; parola, reset, resend, callback, refresh, dev sınırı, 401/403, eski yanıt, Web Lock mutasyonu ve gecikmiş BroadcastChannel bridge olayları.",
+    "api_acceptance": "not-run (tamamlanamadı): F3-01 tam pytest rc -15 / 963.28s; F3-resumed-02 tam pytest rc -15 / 410.192s. Odak tekrarında sınav sonrası açılma geçti; sağlık gecikmesi 0.477522s > 0.1s ile kaldı. Yoğun ortak host yükü; eşik veya ürün kodu değiştirilmedi. F1 aynı API ağacında 1718 pass / 38 subtest ve uzak CI success ayrı tarihsel kanıttır.",
+    "live_acceptance": "not-run: Supabase proje/anahtarları ve Entra tenant yok. Tenant UUID biçim kapısı gerçek tenant doğrulaması değildir; Supabase Azure Tenant URL ve tek tenant Entra kaydı ayrıca doğrulanmalı.",
+    "role_boundary": "Pedagojik rol e-posta/metadata alanından türetilmez; kurs yetkisi sunucu enrollment verisidir. Provider oturumu authenticated kimliği taşır.",
+    "shared_file_exception": "lib/api.ts auth bloğu auth-session.ts'ye taşındı/re-export edildi; request yoluna yalnız epoch ve merkezi 401 temizliği eklendi. Diğer API davranışları, bağımlılıklar ve workflow değişmedi.",
+    "remaining_limits": "Uygulama Web Lock'u provider yazımlarını ve canonical callback ilk SDK kurulumunu kapsar; SDK'nin tüm arka plan refresh/URL tüketim davranışının bu kilitte olduğu iddia edilmez. Web Locks yoksa provider yazımı kapalıdır.",
+    "rollout": "Draft PR; canlı terfi yok. Gerçek tenant/refresh kabulü ve insan onayları bekliyor.",
+    "metric_definition": "Aynı gerçek SDK iki-istemci yarışı: baseline, auth-lock.ts gerçek kilit satırının kaldırıldığı negatif kontroldür (yeni oturum oracle assertion ile nonzero); candidate kilitli uygulamadır (rc0). Bu değerler tüm API veya canlı kullanıcı başarısı değildir. İki yol bun auth-session.test.ts içinde ayrı alt süreçlerde ölçülür.",
+    "browser": {
+      "recorded_at": "2026-09-13T15:43:51.423457+00:00",
+      "method": "CUA / Codex In-app Browser, actual localhost production build + API + isolated real PostgreSQL dou_l5_e2e",
+      "result": "pass",
+      "observations": [
+        "Ayşe Hoca: klavye Enter girişi, Merhaba Ayşe, yenilemede oturum korunması, çıkış",
+        "Burak Yılmaz: 375x812 giriş, Merhaba Burak, çıkış",
+        "İki gerçek sekmede aynı Ayşe oturumu; ikinci sekme çıkışından sonra ikisi de giriş sayfasına döndü",
+        "Çıkıştan sonra /dashboard açılması giriş sayfasına yönlendirdi",
+        "/auth/callback jetonsuz bağlantı açık hata verdi; özel oturum açılmadı",
+        "/verify-email sağlayıcı yokken etkin olmayan durumu gösterdi",
+        "Giriş açık/koyu 1280x720 ve 375x812; 375 genişlikte DOM scrollWidth=clientWidth=375",
+        "Callback/verify-email açık ve koyu görsel inceleme; keyboard focus Ayşe düğmesinde görünür",
+        "CUA error/warn günlük sorguları boş döndü; viewport sıfırlandı, geçici sekmeler kapatıldı"
+      ],
+      "limitations": [
+        "Manuel CUA smoke; bütün mevcut Playwright paketi çalıştırılmadı",
+        "Reduced-motion emülasyonu not-run; browser capability sunulmadı",
+        "Gerçek Supabase/Entra/e-posta/refresh not-run; sentetik SDK testleri ayrı"
+      ],
+      "screenshot_provenance": "Ekran görüntüleri CUA araç sonuçlarında görsel olarak incelendi; yerel PNG dosyası iddia edilmiyor."
+    }
+  },
+  "limitations": "Yerel/sentetik kanıt. Gerçek Supabase/Entra, gerçek sağlayıcı ve üretim kabulü değildir; insan onayları bekliyor."
+}

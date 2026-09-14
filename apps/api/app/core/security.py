@@ -57,18 +57,14 @@ def _reject(reason: str) -> AuthenticationError:
 
 
 def _verification_algorithms(settings: Settings) -> list[str]:
-    """İmza algoritması izin listesi — `none` her koşulda elenir.
+    """Gün-1 sözleşmesi yalnız HS256'dır; ortam ayarı bu sınırı genişletemez.
 
-    Klasik JWT açığı: `{"alg": "none"}` başlıklı imzasız bir token, izin listesinde
-    `none` varsa doğrulanmış sayılır ve herkes herkes olur. PyJWT bu algoritmayı
-    listede olmadıkça zaten reddeder; buradaki eleme, `JWT_ALGORITHMS` ortam
-    değişkenine yanlışlıkla `none` yazılması durumunu kapatır. Ayar dosyası bu şeridin
-    sahipliğinde değil, dolayısıyla savunma tüketim noktasında duruyor.
+    JWKS/asimetrik geçişi ayrı değişikliktir. Yanlış listeyi sessizce daraltmak
+    yerine tüm isteği reddetmek kurulum hatasını görünür ve kapalı tutar.
     """
-    allowed = [algorithm for algorithm in settings.jwt_algorithms if algorithm.lower() != "none"]
-    if not allowed:
-        raise _reject("imza algoritması listesi boş ya da yalnız 'none' içeriyor")
-    return allowed
+    if settings.jwt_algorithms != ["HS256"]:
+        raise _reject("imza algoritması listesi yalnız HS256 olmalı")
+    return ["HS256"]
 
 
 def _expected_issuer(settings: Settings) -> str | None:

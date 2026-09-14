@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "change_id": "081-web-auth-r1",
+  "lineage_id": "web-auth",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Gated web sessions and stale event isolation",
+  "summary": "Yerel web oturumu, merkezi 401 temizliği ve geç SDK olayı sınırları; canlı kimlik ve tam API tekrarı kabulü verilmez.",
+  "owner": "Muratcan Ateş",
+  "created_at": "2026-09-13T15:43:53.139144+00:00",
+  "review_by": "2026-10-13T15:43:53.139144+00:00",
+  "base_sha": "9e912b5c914fc69b7af3fad50a2883d506438fad",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "evidence-ready",
+  "behavior": {
+    "provider_revision": "unchanged:9e912b5c914fc69b7af3fad50a2883d506438fad",
+    "model_revision": "unchanged:9e912b5c914fc69b7af3fad50a2883d506438fad",
+    "prompt_revision": "unchanged:9e912b5c914fc69b7af3fad50a2883d506438fad",
+    "tool_schema_revision": "unchanged:9e912b5c914fc69b7af3fad50a2883d506438fad",
+    "guardrail_revision": "l5:081-web-auth-r1",
+    "retrieval_revision": "unchanged:9e912b5c914fc69b7af3fad50a2883d506438fad",
+    "embedding_revision": "unchanged:9e912b5c914fc69b7af3fad50a2883d506438fad",
+    "evaluator_revision": "unchanged:9e912b5c914fc69b7af3fad50a2883d506438fad"
+  },
+  "data": {
+    "corpus_digest": "090af2c77708b554c68b161fc6fe21af45177540d6e7286006453e8f9d4d35be",
+    "eval_set_digest": "090af2c77708b554c68b161fc6fe21af45177540d6e7286006453e8f9d4d35be",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "README.md",
+      "state": "present",
+      "sha256": "e6a29561f1326e679df07d138ab9bb46a0d07ccf23cba840947b3d5fbd080a62"
+    },
+    {
+      "path": "apps/web/app/(auth)/auth/callback/page.tsx",
+      "state": "present",
+      "sha256": "533b8f0b2fd75a74c31a933c95df9de7fc4108cd04089cdc2b31c03409000a70"
+    },
+    {
+      "path": "apps/web/app/(auth)/verify-email/page.tsx",
+      "state": "present",
+      "sha256": "df6b1c07d949c2eea8b524482faaa5da29a8ca8159ee8443b352b46edb9ffa3a"
+    },
+    {
+      "path": "apps/web/app/page.tsx",
+      "state": "present",
+      "sha256": "9a6f473865be70c145e781aaeda5206817473316a2b249282287d5ca5df4a13a"
+    },
+    {
+      "path": "apps/web/lib/api.ts",
+      "state": "present",
+      "sha256": "03706b2f8499602c6919020edb3ec1ff54a1bff44268cb76fac3d97a293c856a"
+    },
+    {
+      "path": "apps/web/lib/auth-config.test.ts",
+      "state": "present",
+      "sha256": "f779c2abbda4a7419d5d8bba6aaa3784136012df9415c134f366c909885f25ad"
+    },
+    {
+      "path": "apps/web/lib/auth-config.ts",
+      "state": "present",
+      "sha256": "e1b8400fb999d9bac9ff52b5d233d39972b7094db6aaf79bafc7a5c81ae78fe8"
+    },
+    {
+      "path": "apps/web/lib/auth-events.ts",
+      "state": "present",
+      "sha256": "2194e785d34f8f494631463280b887e0eceac635abcb59231b63455278d18cb8"
+    },
+    {
+      "path": "apps/web/lib/auth-lock.ts",
+      "state": "present",
+      "sha256": "b2e230b700dd97d69623df4acf3079eb9dabf42b7b55a283658c2ec931041354"
+    },
+    {
+      "path": "apps/web/lib/auth-login.test.tsx",
+      "state": "present",
+      "sha256": "b279a6a9beb815d1b981fe0f6fb312d43179ab93b3ebdfdb7e95873499fe53ef"
+    },
+    {
+      "path": "apps/web/lib/auth-provider-scenarios.ts",
+      "state": "present",
+      "sha256": "61477def127050c41078821d1c9377e330346e8c872c0e545c01080d6431af08"
+    },
+    {
+      "path": "apps/web/lib/auth-session.test.ts",
+      "state": "present",
+      "sha256": "090af2c77708b554c68b161fc6fe21af45177540d6e7286006453e8f9d4d35be"
+    },
+    {
+      "path": "apps/web/lib/auth-session.ts",
+      "state": "present",
+      "sha256": "7be4aae96d9c831dafc0a9c72bd87bbdb6160fd8ff20f9a68061d72239600b9c"
+    },
+    {
+      "path": "specs/002-production-hardening/plan.md",
+      "state": "present",
+      "sha256": "86602a0fff387dc22673ef38dcf4d684bd21a62aef56cc26265883eca6549a2c"
+    },
+    {
+      "path": "specs/002-production-hardening/research.md",
+      "state": "present",
+      "sha256": "df1bdf3a7fc42873baac3ea20098e67a4722e3bb79c276e0ed7ef49275c5ac8d"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/research.md",
+      "state": "present",
+      "sha256": "1fa9e2421f2a4ed7c45a9c51cdebd4ddc3696c718485719af672188a0c3c32bb"
+    },
+    {
+      "path": "specs/005-role-aware-course-agent/spec.md",
+      "state": "present",
+      "sha256": "adbd805382e1d48687e252fa9d378f471ccdd209354cfbf443d9597af036f156"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "fake-provider",
+      "result": "pass",
+      "report_path": ".ai/evidence/081-web-auth-r1.json",
+      "report_sha256": "190e4d0a7a45e0ff30c06f3b130493a87921c37bed577516e0b24666ce4806c0",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "apps/web/lib/auth-session.test.ts",
+    "holdout_ref": "apps/web/lib/auth-events.test.ts",
+    "human_anchor_ref": "docs/team/codex/40-BIRLESIK-PLAN.md",
+    "thresholds_declared_before_scoring": true,
+    "metrics": [
+      {
+        "name": "auth_write_race_failures",
+        "baseline": 1,
+        "candidate": 0,
+        "operator": "<=",
+        "threshold": 0,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "cd apps/web && NEXT_PUBLIC_DEV_AUTH=true bun test lib/"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security or privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "release-gate:081-web-auth-r1",
+    "flag_state": "disabled",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:081-web-auth-r1",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "release-gate:081-web-auth-r1",
+    "kill_switch": "İhlalde sürümü terfi ettirme; indirme/giriş yüzeyini kapat ve önceki uyumlu sürüme dön.",
+    "assignment": "Sticky atama: sentetik oturum incelenen commit SHA değerine sabitlenir.",
+    "initial_exposure": "Canlı kullanıcı yok; yerel ve sentetik test.",
+    "stop_conditions": [
+      "Yetkisiz kullanıcıya kimlik veya ders belgesi açılması.",
+      "Geçersiz JWT veya gecikmiş yanıtın eski özel oturumu geri açması."
+    ],
+    "expand_conditions": [
+      "Aynı aday kapıları ve gerçek Supabase/Entra kabulü geçer.",
+      "Mühendislik, alan ve güvenlik sorumluları aynı adayı onaylar."
+    ],
+    "active_exam_policy": "Ders ve sınav kilitleri korunur; aktif sınavda öğrenci kaynak erişimi açılmaz."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:9e912b5c914fc69b7af3fad50a2883d506438fad",
+    "procedure": "Uygulama commitini geri al; private bucket ve erişim retlerini koru. Geçmiş göç dosyasını değiştirme.",
+    "max_minutes": 30,
+    "verification": "Negatif auth/Storage/üyelik testlerini tekrar çalıştır; canlı geri alma henüz ölçülmedi.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Yalnız sentetik kimlikler, komutlar, çıkış kodları ve hashler; gerçek anahtar veya öğrenci içeriği yok.",
+    "retention": "Kanıt özetleri depo geçmişinde korunur; gerçek sağlayıcı saklama politikası yerel kabulün dışındadır."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}

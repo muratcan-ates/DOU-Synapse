@@ -1,0 +1,583 @@
+{
+  "schema_version": 1,
+  "change_id": "082-private-storage-r1",
+  "candidate_sha": "SELF",
+  "captured_at": "2026-09-13T16:12:31.276000+00:00",
+  "evidence_label": "fake-provider",
+  "result": "pass",
+  "scope": "Yerel API üyelik, sınav ve nesne yolu sınırları ile sentetik Storage RLS; canlı ve göç sırası kabulü açık.",
+  "commands": [
+    {
+      "name": "ruff",
+      "command": [
+        ".venv/bin/ruff",
+        "check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:03:12.716624+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.192,
+      "output_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+    },
+    {
+      "name": "format",
+      "command": [
+        ".venv/bin/ruff",
+        "format",
+        "--check",
+        "."
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:03:12.911617+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.047,
+      "output_sha256": "feca25aea532c5d75686bc968f8f8cc0dac429b2ade14ae92e7fd62276ef2992"
+    },
+    {
+      "name": "mypy",
+      "command": [
+        ".venv/bin/mypy",
+        "app"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:03:12.960923+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 3.27,
+      "output_sha256": "0d9882f1f6dd71fa523924801fe936e3519a4e0c1d8ed1d296b549cc336dbcbc"
+    },
+    {
+      "name": "pytest",
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "pytest",
+        "-q"
+      ],
+      "cwd": "apps/api",
+      "started_at": "2026-09-13T16:03:16.232330+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 329.398,
+      "output_sha256": "5c59fc481273b2ea1373ecaff38e9e7ceccb0c90758a2e07061fae9d3f4bb7bb"
+    },
+    {
+      "name": "bun",
+      "command": [
+        "bun",
+        "test",
+        "lib/"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T16:08:45.684661+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 1.124,
+      "output_sha256": "a85a0a3b6fb2219d07e98df988536d751a559f879754df1b5fc516cc13d877cc"
+    },
+    {
+      "name": "tsc",
+      "command": [
+        "bunx",
+        "tsc",
+        "--noEmit"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T16:08:46.810009+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 2.65,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "contrast",
+      "command": [
+        "node",
+        "scripts/contrast.mjs"
+      ],
+      "cwd": "apps/web",
+      "started_at": "2026-09-13T16:08:49.461545+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.091,
+      "output_sha256": "859b394c58e4e1451094f144d269c37bbbc540958487d841a2dadb7ecfe526ca"
+    },
+    {
+      "name": "docs_refresh",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs",
+        "--duzelt"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:08:49.554121+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 8.486,
+      "output_sha256": "f4ae53162ecf00196c6336bb503b29dc339e08b45c8d1e3377afcaa26e50a630"
+    },
+    {
+      "name": "docs_check",
+      "command": [
+        "node",
+        "scripts/docs_check.mjs"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:08:58.041220+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 7.393,
+      "output_sha256": "032f4f813a78a97bf8ce7cb037a2103ddb77432ec5eb61ac68944ae49addfe2e"
+    },
+    {
+      "name": "migration_check",
+      "command": [
+        "python3",
+        "scripts/migration_check.py",
+        "--allow-gap",
+        "0017",
+        "--allow-gap",
+        "0021",
+        "--allow-gap",
+        "0022",
+        "--allow-gap",
+        "0023"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:09:05.436420+00:00",
+      "status": "finished",
+      "exit_code": 1,
+      "seconds": 0.15,
+      "output_sha256": "0b61bf1920bc30ab292cede34ef55856503c54328a551da912e26183d51420d3"
+    },
+    {
+      "name": "workflow_policy",
+      "command": [
+        "apps/api/.venv/bin/python",
+        "scripts/workflow_policy_check.py"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:09:05.588128+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.257,
+      "output_sha256": "7c3be7f6f7462bc84f7bde934e3df3fe12cd6566024610491524871c780fffa2"
+    },
+    {
+      "name": "diff_check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:09:05.846079+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.089,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "sql_storage_baseline",
+      "command": [
+        "/opt/homebrew/opt/postgresql@16/bin/psql",
+        "-X",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-d",
+        "dou_l5_storage",
+        "-v",
+        "storage_mutation=none",
+        "-f",
+        "/Users/muratates/code/DOU-Synapse-l5-runtime/drafts/storage/supabase/tests/rls_storage.sql"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T15:50:51.410557+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 0.905,
+      "output_sha256": "fd1bbe6f23fda2deeb58e667246f9ace4f6230d977d7c12fa14731b55f0cad7b"
+    },
+    {
+      "name": "api_boundary_mutations",
+      "command": [
+        "apps/api/.venv/bin/python",
+        "/Users/muratates/code/DOU-Synapse-l5-runtime/drafts/storage/mutations/run_storage_boundary_mutations.py",
+        "--repo",
+        "/Users/muratates/code/DOU-Synapse-l5-auth",
+        "--port",
+        "55459",
+        "--out",
+        "/Users/muratates/code/DOU-Synapse-l5-runtime/evidence/F4-api-mutations-final/cases"
+      ],
+      "cwd": ".",
+      "started_at": "2026-09-13T16:11:25.266255+00:00",
+      "status": "finished",
+      "exit_code": 0,
+      "seconds": 38.149,
+      "output_sha256": "4d17f8deb5a8111ee588528964d46c25def2e5c915f9574623fb04fc7a6819e7"
+    }
+  ],
+  "results": {
+    "ruff_rc": 0,
+    "format_rc": 0,
+    "mypy_rc": 0,
+    "pytest_rc": 0,
+    "bun_rc": 0,
+    "tsc_rc": 0,
+    "contrast_rc": 0,
+    "docs_refresh_rc": 0,
+    "docs_check_rc": 0,
+    "migration_check_rc": 1,
+    "workflow_policy_rc": 0,
+    "diff_check_rc": 0,
+    "sql_storage_baseline_rc": 0,
+    "api_boundary_mutations_rc": 0,
+    "unauthorized_signed_downloads": 0
+  },
+  "notes": {
+    "evaluation_command": "apps/api/.venv/bin/python /Users/muratates/code/DOU-Synapse-l5-runtime/drafts/storage/mutations/run_storage_boundary_mutations.py --repo /Users/muratates/code/DOU-Synapse-l5-auth --port 55459 --out /Users/muratates/code/DOU-Synapse-l5-runtime/evidence/F4-api-mutations-final/cases",
+    "metric_definition": "Baseline üç tek-kontrol mutantında HTTP 307 ve imzalayıcı=1 üreten negatif kontrol; candidate normal uygulamadaki HTTP403/404 ve imzalayıcı=0. Eski yayımdaki route ile genel başarı oranı karşılaştırması değildir.",
+    "storage_boundary": "Üyelik + sınav kilidi → load_owned ders eşleşmesi → kanonik nesne yolu → service_role imzası. Supabase yalnız course-materials bucket; 60s expiresIn, aynı origin/aynı nesne/tek token yanıtı, 307 no-store/no-referrer. Yerel dosya 200 attachment/no-store.",
+    "sql_boundary": "Gerçek çekirdek göçleri + sentetik modern storage.owner_id text. 0029 NOSUPERUSER CREATEROLE+BYPASSRLS kurucuda iki kez uygulandı. Ayrı storage_private şeması, dar NOLOGIN guard rolü ve geçici yetki geri alımı. Authenticated için app şeması açılmaz. Aktif üyelik, yazma eğitmen, silme sahip/eğitmen; update kapalı; geniş permissive kuralı restrictive sınır aşamaz.",
+    "sql_provenance": "F4 göç doğrulaması için hashleri eşleştirilmiş dış F5 SQL taslağı çalıştırıldı; SQL test dosyası henüz F4 commitinin parçası değildir. Aynı dosya F5 adımında ayrı committe teslim edilir.",
+    "limitations": "Canlı Supabase, gerçek hosted policy yönetim yetkileri, signed URL iptali ve Entra not-run: proje/anahtar yok. service_role Storage RLS atlar; API asıl sınırdır. Önceden verilen URL üyelik iptali/yeni sınav sonrası TTL bitene kadar bearer olabilir. SQL saklanan expires_at kullandığı için API global süre sınırına göre daha uzun kapalı kalabilir.",
+    "prior_attempts": "F4-focus 5 fixture failures /67pass: .invalid e-posta API üyelik doğrulamasına takıldı; sadece test adresleri example.com olarak düzeltildi. F4-focus-corrected72pass. İlk mutation wrapper macOS case-insensitive dizin adı çakışması nedeniyle çalışmadı; ayrı cases alt diziniyle tekrarlandı. İlk Ruff4import uyarısı düzeltildi; import dışı AST eşitliği doğrulandı; eski tam gate durduruldu. Önceki kayıtlar korunur. Son tam API koşusu1764pass/38subtest, bir failure: mevcut genel OpenAPI yol sayacı57 beklerken yeni indirme yoluyla58 oldu. tests/test_error_envelope.py yalnız bu toplamı58 ve bir açıklama satırıyla güncelledi; yeni rota sözleşmesi ayrıca test_storage_download.py içindeki gerçekOpenAPI testiyle sınanır. Son F4-final-r3 tam paket rc0: 1765 geçti, 38 alt vaka; Bun584 geçti. Önceki hatalı koşular korunur.",
+    "migration_order": "ENGEL: strict migration_check rc1; taban dalda0027/0028 yok. Kullanıcı numarası yalnız0029. İzinli boşluk listesine0027/28 eklenmedi, placeholder ve geçmiş göç/checker değişikliği yapılmadı. Aynı0029 gerçekPG üstünde koşullu no-op ve sentetikStorage kurulumu olarak doğrulandı.",
+    "rollout": "Draft PR; gerçek proje kabulü/insan terfisi yok. L1 Storage RLS CI adımını eklemeli.",
+    "shared_file_exception": "Yeni uç nedeniyle tests/test_error_envelope.py toplam yol sayacı57→58; başka hata/blueprint davranışı değiştirilmedi. Docs_check yalnız yeni47APItestinin ve1rotanın zorunlu sayı işaretlerini README/ARCHITECTURE/security/spec belgelerinde güncelledi.",
+    "api_mutation_report": {
+      "created_at": "2026-09-13T16:11:25.355564+00:00",
+      "status": "pass",
+      "source_sha256": {
+        "apps/api/app/api/documents.py": "3704d873af65de015ffd49976a37f78271f2a52760e25bd90067ee4ecf98e126",
+        "apps/api/app/modules/ingestion/storage.py": "67b787cff39251ae546c894a0ca3b7e7d8197b42ab5b59a959b8e39e3f4c9679",
+        "apps/api/tests/test_storage_download.py": "7c577f8e1e1bd2195407384080088341f97b72f2f6e68ccf9f1f5649d2338406"
+      },
+      "dependency_sha256": "77edb1855d0c5d16b1c17d5a383d3ebadb5ffa0b087692c32ba14d8ab1cbb360",
+      "runner_sha256": "3676db45a70f29efbab7ba2dcb727b4a25e4554c96e0723c58d90ef18a0520a0",
+      "plugin_sha256": "fca2a352d8a845721bacbcb2fad7e40c55be5f83458d6176479f91f4b16db2ab",
+      "attempts": [
+        {
+          "case": "exam",
+          "stage": "baseline_before",
+          "database": "dou_l5_storage_exam_b8b8d8fc01",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "exam",
+            "tests/test_storage_download.py::test_download_obeys_exam_lock_with_instructor_exemption[student-active-403]"
+          ],
+          "started_at": "2026-09-13T16:11:25.357154+00:00",
+          "status": "accepted",
+          "exit_code": 0,
+          "observation": [
+            {
+              "case": "exam",
+              "mutated": false,
+              "mutation_applied": false,
+              "nodeid": "tests/test_storage_download.py::test_download_obeys_exam_lock_with_instructor_exemption[student-active-403]",
+              "outcome": "passed",
+              "signed_calls": 0,
+              "statuses": [
+                403
+              ]
+            }
+          ],
+          "log_sha256": "54f300fc6ad9a34a69e8d9fbd3c9ec2205aca5e5520fc0b292101ecc87c2ee23"
+        },
+        {
+          "case": "exam",
+          "stage": "mutant",
+          "database": "dou_l5_storage_exam_e80dd6217f",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "exam",
+            "tests/test_storage_download.py::test_download_obeys_exam_lock_with_instructor_exemption[student-active-403]",
+            "--storage-boundary-mutated"
+          ],
+          "started_at": "2026-09-13T16:11:29.682152+00:00",
+          "status": "accepted",
+          "exit_code": 1,
+          "observation": [
+            {
+              "case": "exam",
+              "mutated": true,
+              "mutation_applied": true,
+              "nodeid": "tests/test_storage_download.py::test_download_obeys_exam_lock_with_instructor_exemption[student-active-403]",
+              "outcome": "failed",
+              "signed_calls": 1,
+              "statuses": [
+                307
+              ]
+            }
+          ],
+          "log_sha256": "6ee346d93570b5f7924ab669c03b1718ef1820c95517d84ac14691edb9596168"
+        },
+        {
+          "case": "exam",
+          "stage": "baseline_after",
+          "database": "dou_l5_storage_exam_6aba4a69ca",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "exam",
+            "tests/test_storage_download.py::test_download_obeys_exam_lock_with_instructor_exemption[student-active-403]"
+          ],
+          "started_at": "2026-09-13T16:11:33.882743+00:00",
+          "status": "accepted",
+          "exit_code": 0,
+          "observation": [
+            {
+              "case": "exam",
+              "mutated": false,
+              "mutation_applied": false,
+              "nodeid": "tests/test_storage_download.py::test_download_obeys_exam_lock_with_instructor_exemption[student-active-403]",
+              "outcome": "passed",
+              "signed_calls": 0,
+              "statuses": [
+                403
+              ]
+            }
+          ],
+          "log_sha256": "4df40b80fe1f386d0a999272425be4007d8bd33140eeeee11e59bd0cace80c67"
+        },
+        {
+          "case": "owned",
+          "stage": "baseline_before",
+          "database": "dou_l5_storage_owned_bd475bea65",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "owned",
+            "tests/test_storage_download.py::test_foreign_document_rejected_even_when_actor_teaches_both_courses"
+          ],
+          "started_at": "2026-09-13T16:11:38.155048+00:00",
+          "status": "accepted",
+          "exit_code": 0,
+          "observation": [
+            {
+              "case": "owned",
+              "mutated": false,
+              "mutation_applied": false,
+              "nodeid": "tests/test_storage_download.py::test_foreign_document_rejected_even_when_actor_teaches_both_courses",
+              "outcome": "passed",
+              "owned_fixture_isolated": true,
+              "signed_calls": 0,
+              "statuses": [
+                404
+              ]
+            }
+          ],
+          "log_sha256": "85f2810af7721c8e9f6d869707f5e8956e5a70f6ee0ef986d59d724773fa71d2"
+        },
+        {
+          "case": "owned",
+          "stage": "mutant",
+          "database": "dou_l5_storage_owned_71c93e769f",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "owned",
+            "tests/test_storage_download.py::test_foreign_document_rejected_even_when_actor_teaches_both_courses",
+            "--storage-boundary-mutated"
+          ],
+          "started_at": "2026-09-13T16:11:42.575150+00:00",
+          "status": "accepted",
+          "exit_code": 1,
+          "observation": [
+            {
+              "case": "owned",
+              "mutated": true,
+              "mutation_applied": true,
+              "nodeid": "tests/test_storage_download.py::test_foreign_document_rejected_even_when_actor_teaches_both_courses",
+              "outcome": "failed",
+              "owned_fixture_isolated": true,
+              "signed_calls": 1,
+              "statuses": [
+                307
+              ]
+            }
+          ],
+          "log_sha256": "877ba5a929a6d39ac6d81a059a1a243e4849d6ac83b25eec0bc5aac60b0de607"
+        },
+        {
+          "case": "owned",
+          "stage": "baseline_after",
+          "database": "dou_l5_storage_owned_b7c4e6bace",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "owned",
+            "tests/test_storage_download.py::test_foreign_document_rejected_even_when_actor_teaches_both_courses"
+          ],
+          "started_at": "2026-09-13T16:11:46.880388+00:00",
+          "status": "accepted",
+          "exit_code": 0,
+          "observation": [
+            {
+              "case": "owned",
+              "mutated": false,
+              "mutation_applied": false,
+              "nodeid": "tests/test_storage_download.py::test_foreign_document_rejected_even_when_actor_teaches_both_courses",
+              "outcome": "passed",
+              "owned_fixture_isolated": true,
+              "signed_calls": 0,
+              "statuses": [
+                404
+              ]
+            }
+          ],
+          "log_sha256": "06989af727b74910a01a9a4ac49905972c410cd10bba108031ef5f369d4eff4d"
+        },
+        {
+          "case": "path",
+          "stage": "baseline_before",
+          "database": "dou_l5_storage_path_761859532c",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "path",
+            "tests/test_storage_download.py::test_tampered_storage_path_never_reaches_service_role[courses/{course}/not-a-server-id.md]"
+          ],
+          "started_at": "2026-09-13T16:11:51.005588+00:00",
+          "status": "accepted",
+          "exit_code": 0,
+          "observation": [
+            {
+              "case": "path",
+              "mutated": false,
+              "mutation_applied": false,
+              "nodeid": "tests/test_storage_download.py::test_tampered_storage_path_never_reaches_service_role[courses/{course}/not-a-server-id.md]",
+              "outcome": "passed",
+              "signed_calls": 0,
+              "statuses": [
+                404
+              ]
+            }
+          ],
+          "log_sha256": "6eae585bec0cae07fcd1b5f43fb9f196535746839898f66731c2fc51d0815af1"
+        },
+        {
+          "case": "path",
+          "stage": "mutant",
+          "database": "dou_l5_storage_path_c892134680",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "path",
+            "tests/test_storage_download.py::test_tampered_storage_path_never_reaches_service_role[courses/{course}/not-a-server-id.md]",
+            "--storage-boundary-mutated"
+          ],
+          "started_at": "2026-09-13T16:11:54.786336+00:00",
+          "status": "accepted",
+          "exit_code": 1,
+          "observation": [
+            {
+              "case": "path",
+              "mutated": true,
+              "mutation_applied": true,
+              "nodeid": "tests/test_storage_download.py::test_tampered_storage_path_never_reaches_service_role[courses/{course}/not-a-server-id.md]",
+              "outcome": "failed",
+              "signed_calls": 1,
+              "statuses": [
+                307
+              ]
+            }
+          ],
+          "log_sha256": "ea0e099430cf600f2544dcb15bb2782effabbd6232b4121ca0cfff7467fd3774"
+        },
+        {
+          "case": "path",
+          "stage": "baseline_after",
+          "database": "dou_l5_storage_path_de4f97e964",
+          "command": [
+            "/Users/muratates/code/DOU-Synapse-l5-auth/apps/api/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "--tb=short",
+            "-p",
+            "storage_boundary_plugin",
+            "--storage-boundary-case",
+            "path",
+            "tests/test_storage_download.py::test_tampered_storage_path_never_reaches_service_role[courses/{course}/not-a-server-id.md]"
+          ],
+          "started_at": "2026-09-13T16:11:59.082786+00:00",
+          "status": "accepted",
+          "exit_code": 0,
+          "observation": [
+            {
+              "case": "path",
+              "mutated": false,
+              "mutation_applied": false,
+              "nodeid": "tests/test_storage_download.py::test_tampered_storage_path_never_reaches_service_role[courses/{course}/not-a-server-id.md]",
+              "outcome": "passed",
+              "signed_calls": 0,
+              "statuses": [
+                404
+              ]
+            }
+          ],
+          "log_sha256": "c6bc06c7906fd89aaad0cd174c6e4bb7cb26e3cb72f89a9394877a72df521ddd"
+        }
+      ]
+    },
+    "full_suite": "F4-final-r3: pytest1765passed/38subtests; Bun584passed; gerçek komut/tarih/hash sonuçları commands alanında.",
+    "gate_acceptance": "incomplete: migration_check gerçekten koştu ve rc1 döndü; 0027/0028 başka şerit/integrasyon görevidir. Başarılı kanıt yalnız ölçülen yerel auth/Storage sözleşmesidir.",
+    "sql_test_draft_sha256": "eab4f4630eac5821ee5e62000a58147afa21cc6ca71c41d8ebcbe1772baffbd3"
+  },
+  "limitations": "Yerel/sentetik kanıt. Gerçek Supabase/Entra, gerçek sağlayıcı ve üretim kabulü değildir; insan onayları bekliyor."
+}

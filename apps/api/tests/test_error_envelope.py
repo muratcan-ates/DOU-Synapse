@@ -203,7 +203,8 @@ class TestBlueprintRouter:
         assert all(
             method in app.openapi()["paths"][path] for path, method in learning_paths.items()
         )
-        assert len(yollar) == 60, f"yol sayısı değişmiş: {len(yollar)}"
+        # L2 üç öğrenme olayı yolu, L5 bir private Storage indirme yolu ekler: 57 + 3 + 1.
+        assert len(yollar) == 61, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:
