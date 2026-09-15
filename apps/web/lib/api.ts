@@ -222,6 +222,13 @@ export function classifyApiError(status: number, code: string): ErrorKind {
   // Yanıt geldi ama okunamadı: hat bozuk, içerik değil.
   if (code === "invalid_response") return "transient";
 
+  // Kota tükendi: 429 ama YENİDEN DENENEBİLİR DEĞİL. Bu satır 429 kuralından
+  // ÖNCE durmak zorunda; altında kalsaydı `transient` olur ve arayüz asla
+  // çalışmayacak bir "Tekrar dene" düğmesi gösterirdi — kota gece yarısına
+  // kadar dolu, tekrar denemek aynı 429'u üretir. `agent_concurrency_limited`
+  // bu kümede DEĞİL: önceki istek bitince gerçekten denenebilir.
+  if (code === "agent_quota_exhausted") return "permanent";
+
   // FR-151'in listesi: 408, 429 ve tüm 5xx.
   if (status === 408 || status === 429 || status >= 500) return "transient";
 

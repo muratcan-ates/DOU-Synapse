@@ -187,6 +187,8 @@ describe("hata sınıfı: durum + kod", () => {
     expect(classifyApiError(0, "timeout")).toBe("transient");
     expect(classifyApiError(408, "app_error")).toBe("transient");
     expect(classifyApiError(429, "app_error")).toBe("transient");
+    // Eşzamanlılık 429'u GERÇEKTEN denenebilir: önceki istek bitince geçer.
+    expect(classifyApiError(429, "agent_concurrency_limited")).toBe("transient");
     expect(classifyApiError(500, "internal_error")).toBe("transient");
     expect(classifyApiError(502, "unknown")).toBe("transient");
     expect(classifyApiError(503, "unknown")).toBe("transient");
@@ -197,6 +199,10 @@ describe("hata sınıfı: durum + kod", () => {
   });
 
   test("kalıcı: 404, 409, 413, 422 ve 403 yetki reddi", () => {
+    // Kota tükendi: 429 ama tekrar denemek gece yarısına kadar aynı 429'u
+    // üretir. `transient` sayılsaydı arayüz asla çalışmayacak bir "Tekrar dene"
+    // düğmesi gösterirdi — kullanıcıya yalan söyleyen tek hata sınıfı buydu.
+    expect(classifyApiError(429, "agent_quota_exhausted")).toBe("permanent");
     expect(classifyApiError(404, "not_found")).toBe("permanent");
     expect(classifyApiError(409, "conflict")).toBe("permanent");
     expect(classifyApiError(413, "payload_too_large")).toBe("permanent");
