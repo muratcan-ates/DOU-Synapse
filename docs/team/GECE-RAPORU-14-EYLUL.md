@@ -271,13 +271,35 @@ yapılmadı. Koşu 34926253846 sonuç JSON'u:
 Matematik: `deadline = test_timeout(720) + RESERVE_TOTAL(470) + PHASE_OVERHEAD(60)
 = OVERALL_BUDGET(1250)`, ana faza tam 720 sn düşüyor ve üç saniyeyle aşıldı.
 
-**Asıl bulgu bütçe değil.** Fazlama ÖNCESİ tek koşuda 87 vakanın tamamı 287 sn
-sürüyordu (koşu 34900228666, iş toplam 6 dk 4 sn). Şimdi ana faz aynı 78 vakayla
-720 sn'yi aşıyor — **2,5 kat yavaşlama** ve sebebi ölçülmedi. Fazlamanın kendisi
-bunu açıklamıyor. İlk şüphe kampüs tasarımının getirdiği `gsap` ve yeni
-sayfaların ağırlaştırdığı `next build`'di; animasyon yolu elendi
-(`playwright.config.ts` `reducedMotion: "reduce"` veriyor ve `campus-motion.tsx`
-buna uyup erken dönüyor). Yani sebep başka ve ölçülmesi gerekiyor.
+**DÜZELTME (15 Eylül 08:20): yukarıdaki iki cümle YANLIŞTI.** Hem "üç saniyeyle
+aştı" okuması hem de "2,5 kat yavaşlama" çıkarımı hatalı; ölçümü ayrı bir oturum
+yaptı ve doğrusu şu:
+
+`seconds=723,145` fazın DUVAR SAATİ, `budget=720,0` ise tarayıcının zaman aşımı.
+Tarayıcı 720 sn'lik tavanın tamamını doldurup uçuş sırasında öldürüldü — "kıl
+payı kaçırdı" değil, "kesildi". Aradaki 3,145 sn yalnız fazın ek yükü.
+
+**Yavaşlama diye bir şey yok.** `api-main.log`'un ISO zaman damgalarından boşluk
+analizi (2675 kayıt):
+
+| Koşu | açıklık | boşluk (≥10 sn) | gerçek iş | vaka |
+|---|---|---|---|---|
+| Fazlı (34926253846) | 720,3 sn | 544,4 sn | **175,7 sn** | 78 |
+| Fazlama öncesi (34900228666) | 284,8 sn | 102,0 sn | **182,8 sn** | 87 |
+
+Gerçek iş neredeyse aynı; eski koşu 9 vaka fazlasını daha az sürede yapmış. Fark
+%100 BEKLEME: 13 düşen testin zaman aşımı. En büyük kalem `admin-readiness.spec.ts:35`
+— 2 × 90,8 sn (test zaman aşımı + tekrarı) = 181,7 sn. Ayrıca 18 × ~11 sn expect
+zaman aşımı, ve 78. vaka 142 sn asılı kalıp hiç sonuçlanmamış. `next build` +
+`next start` yalnız 19,0 sn — suçlu değil.
+
+Bir hata daha: 287 sn'lik "referans" koşu da FAIL'di (14 düşen vaka). Hızlı
+olmasının sebebi yeşil olması değil, düşmelerinin hızlı assertion olmasıydı. Yeşil
+bir tabanla karşılaştırma hiç yapılmamıştı.
+
+**Sonuç:** CI'ın kırmızı sebebi koşucu değil, kampüs tasarımı birleşmesiyle gelen
+13 düşen `apps/web` testi. Koşucu tarafındaki iki kusur (bütçe tavanı, öksüz web
+portu) ayrı oturumda ölçülüp düzeltildi.
 
 İş tavanında yer var: fazlı koşu 13 dk 19 sn sürdü, `ci.yml` sınırı 30 dk.
 Yani bütçeyi büyütmek mümkün — ama 2,5 kat yavaşlamanın sebebi bulunmadan
