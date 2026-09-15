@@ -110,6 +110,8 @@ dönüştü:
 | Kaynak gösterme | Retrieved metadata’dan mekanik citation doğrulaması | Kodlandı; gerçek-model faithfulness örneklemi açık |
 | Web platformu | Next.js öğrenci/eğitmen/admin portalı + FastAPI + PostgreSQL | Yerelde build/test kanıtı |
 | Test raporu ve kılavuz | Speckit, docs-check, öğrenci/eğitmen kılavuzları, test/eval belgeleri | Depoda mevcut |
+| Hızlı tekrar (Murat'ın 15 Eyl isteği) | Öğrencinin **bitirdiği** alıştırmadan kart destesi: ön yüz soru, arka yüz sunucunun sonucu + "neden yanlış" pasajı + çözüm; kaydırma, klavye ve düğme aynı kararı verir; kararlar puan değildir, kaydedilmez | 15 Eyl tarayıcıda ölçüldü: 6 kart, yanlışlar başta, özet 4 biliyordum / 2 tekrar / "bildiğini sandığın 1"; model çağrısı yok; aktif sınavda kilitli |
+| Kavram haritası / özet (Murat'ın 15 Eyl isteği) | Materyalden çıkarılan anahtar terimler, her terimin geçtiği pasaj ve terimlerin birlikte-geçme bağları; Markdown indirme; yapay zekâ yorumu yok | 15 Eyl gerçek korpusta: 28 pasaj → 40 terim, 60 bağ, 13 ms; 25 çıkarım + 13 uç testi (ders izolasyonu, sınav kilidi 403); dossier 160 |
 
 ## Kullanıcı yolculukları
 
@@ -190,6 +192,12 @@ dönüştü:
 - Eğitmen için dense/FTS/RRF adaylarını ve ret gerekçesini LLM çağırmadan gösteren
   retrieval laboratuvarı.
 
+- Kavram haritası: dersin işlenmiş pasajlarından anahtar terimler, her terim için materyaldeki
+  pasaj (birebir alıntı, dosya ve konum) ve terimlerin aynı pasajda birlikte geçme bağları.
+  Model çağrılmaz; sıralama TF-IDF değil pasaj sayısıdır (merkezî kavram çoğu pasajda geçer);
+  Türkçe ekler gövdeleyici olmadan önek kuralıyla birleştirilir ve sınır ekranda yazılıdır.
+  Aktif sınavda kilitli; Markdown olarak indirilebilir.
+
 ### 4. Kaynaklı sohbet ve Sokratik çalışma
 
 - Çok turlu oturumlar ve mesaj geçmişi.
@@ -221,6 +229,12 @@ dönüştü:
 - Çoktan seçmeli, açık uçlu ve kod sorularına uygun değerlendirme.
 - Rubric kırılımı ve “Neden yanlış?” kaynak açıklaması.
 - Değerlendirilemeyen cevapta puan uydurmayan fail-closed davranış.
+
+- Hızlı tekrar: bitmiş alıştırmanın soruları kart destesi olur — ön yüz soru ve şıklar, arka yüz
+  sunucunun sonucu, "neden yanlış" kaynak kartı ve çözüm. Yanlışlar başa sıralanır; kaydırma,
+  klavye (←/→/Enter/Boşluk) ve düğmeler aynı kararı verir. Kararlar oturumda kalır, puana ve
+  mastery'ye girmez; deste sonunda "biliyordum dediğin ama yanlış yaptığın" kartlar ayrı listelenir.
+  Cevap anahtarı yalnız bitmiş oturumdan gelir — onaylı havuz öğrenciye anahtar vermez.
 
 ### 7. İlerleme, analitik ve AI kalite döngüsü
 
@@ -701,6 +715,14 @@ bloklanıp deterministik şablon ipucuna düşülüyor.
 
 **Uçtan uca prova.** 15 Eylül sabahı sıfırdan yeni ders açılıp hiç indekslenmemiş belge
 yüklenerek gerçek tarayıcıda tek oturumda koşuldu: **10/10 adım geçti.**
+
+**İki çalışma özelliği eklendi (15 Eylül öğleden sonra).** *Hızlı tekrar*: planın "onaylı havuzu
+kart yap" tasarımı uygulanamadı — öğrenciye giden havuz cevap anahtarını taşımıyor ve bu bir
+sınav bütünlüğü kararı; deste bu yüzden öğrencinin kendi bitirdiği alıştırmadan kuruldu ve backend
+hiç değişmedi. *Kavram haritası*: materyalden 40 terim, 60 bağ, model çağrısı yok. Aynı gün ölçülen
+bir ders daha: sahne sorularının cevap önbelleği korpus revizyonuna bağlı; sabah bir belge yeniden
+indekslenince gece ısıtılan 13 satır ıskaladı ve akşam provası gerçek modele gitti. Isıtma betiği
+(`scripts/demo/onbellek_isit.py`) ve "ısıtmadan sonra derse belge yüklenmez" kuralı bundan doğdu.
 
 ## Yol boyunca bulunan ve kapatılan gerçek kusurlar
 

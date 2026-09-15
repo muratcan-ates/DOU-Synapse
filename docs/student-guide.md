@@ -98,6 +98,14 @@ birlikte okuyun. Buradaki **Retrieval laboratuvarı** bağlantısı eğitmen ara
 öğrenci olarak bu araca erişiminiz olmayabilir. Kaynak okumaya veya çalışmaya devam
 etmek için dersin **Asistan** ya da **Materyaller** sekmesini kullanın.
 
+### Kavram haritası
+
+**Kavram haritası** sekmesi ders materyalinden çıkarılan anahtar terimleri, en çok pasajda geçenden
+aza doğru listeler. Bir terime tıklayınca materyalde geçtiği pasaj (dosya, sayfa ve birebir alıntı)
+ve aynı pasajda birlikte anlatıldığı terimler görünür; alttaki tablo tüm bağlantıları verir.
+Yapay zekâ yorumu yoktur — her satır materyaldeki bir yere bağlıdır. "Markdown indir" ile
+listeyi dosya olarak alabilirsiniz. Yürüyen bir sınavınız varken bu sekme kapalıdır.
+
 ### Konuşmalara dönme ve silme
 
 **Sohbetlerin** listesinden önceki konuşmanızı açın. **Yeni sohbet**, ayrı bir konuşma başlatır;
@@ -217,6 +225,14 @@ puan ortalamasına alınmaz.
 
 Puan veya açıklama ders materyaliyle uyuşmuyorsa hocanızla değerlendirin. Bu ekranlar
 resmî not yerine çalışma geri bildirimi sunar.
+
+### Hızlı tekrar kartları
+
+Bir alıştırmayı bitirdikten sonra **Hızlı tekrar** sekmesinde o alıştırmanın soruları kart
+destesi olur; yanlış yaptıklarınız başa gelir. Kartı çevirince (Boşluk/Enter ya da "Cevabı göster")
+sonucunuz, "neden yanlış" kaynak pasajı ve çözüm görünür. Sağa kaydırın ya da → : "biliyordum";
+sola ya da ← : "tekrar etmeliyim". Kararlar puan değildir ve kaydedilmez; deste sonunda
+"biliyordum dediğiniz ama yanlış yaptığınız" kartlar ayrı listelenir — tekrara oradan başlayın.
 
 ### Sınav sırasında kapanan alanlar
 

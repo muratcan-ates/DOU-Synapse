@@ -100,7 +100,11 @@ ilk kullanan olur; protokolü o yazar.
 
 ### 2.3 Öğrenme olayı ekleme protokolü (F4, F5, F1)
 
-`learning_events.event_type` sütunu serbest metin (`apps/api/app/models/learning_event.py:27` `Text`) — **göç gerekmez**. Yeni tür eklemek için:
+~~`event_type` serbest metin, göç gerekmez~~ — **YANLIŞTI, 15 Eyl'de ölçüldü.** Serbest metin olan
+yalnız SQLAlchemy modeli. Veritabanı üç yerde kısıtlıyor: `0027_learning_events.sql:58` tablo
+`CHECK (event_type IN (...))` (6 değer), `:131` `app.record_learning_event` içindeki tür listesi ve
+`:180-191` tür başına yapısal kurallar. **Yeni tür yeni göç ister** → numara K1 (160–169 bloğu
+ayrıldı; göç numarası hâlâ açık). F4 bu yüzden olay yazmadan teslim edildi. Yeni tür eklemek için:
 
 1. `apps/api/app/schemas/learning_events.py`'ye istek şeması (`CitationOpenedRequest` emsali: `extra="forbid"`).
 2. `apps/api/app/modules/assessment/learning_events.py` `record_learning_event` ile kayıt; `get_learning_summary` yeni türü konu özetine katar.
@@ -197,6 +201,13 @@ Yeni türler: `card_reviewed` (F4, gövde: `question_id`, `verdict: "knew" | "re
 ### F4 — Hızlı tekrar kartları (kaydırmalı)
 
 **Hoca gereksinimi:** hızlı tekrar ve pekiştirme.
+
+**Uygulandığı hâl (15 Eyl, `20d1700`) — plandan iki sapma, ikisi de ölçümle:** (1) Deste onaylı
+havuzdan DEĞİL öğrencinin bitirdiği alıştırmadan kuruldu: `GET .../questions?status=approved`
+öğrenciye cevap anahtarı vermiyor (`schemas/assessment.py:233` `_PUBLIC_PAYLOAD_KEYS`, yalnız
+`stem`+`options`) ve bu sınav bütünlüğü kararı delinmedi; ön yüz `GET /exams/{sid}`, arka yüz
+`GET /exams/{sid}/results`, ikisi de mevcut ve kilitli — **backend değişmedi**. (2) `card_reviewed`
+olayı yazılmadı (§2.3 düzeltmesi). Aşağıdaki metin özgün plandır; tarihçe için duruyor.
 
 **Lite (Faz 1) — onaylı havuzdan kart:** Yeni soru tipi **yok**. Kaynak: dersin `status=approved` soruları (`GET /courses/{id}/questions?status=approved`, mevcut). Kart önü: soru kökü (+ şıklar MCQ ise); dokunma/Enter → arka yüz: doğru cevap + **kaynak kartı** (`SourceInfo`, mevcut bileşen) + "neden" açıklaması varsa. Sağa kaydır / `→` = "Biliyordum", sola / `←` = "Tekrar". Her karar `card_reviewed` olayı (§2.3). Oturum sonu: X/Y biliyordun, "tekrar"ların konu dağılımı, `/study`'e bağlantı.
 

@@ -117,6 +117,8 @@ Her senaryo gerçek arayüzde uçtan uca çalıştırılmıştır (14 Eylül 202
 | UC-09 | Sınıf analitiği | Eğitmen | Öğrenci etkinliği var | Konu bazlı ilerleme, soru kalitesi, sohbet geri bildirimi özetleri | Veri yoksa boş durum metni | FR-027–029 | `analytics`, `chat-quality` uçları; `learning-events.spec.ts` |
 | UC-10 | Kişisel veri hakları | Öğrenci | Giriş yapılmış | Sohbet geçmişini sil, verimi dışa aktar, hesabı anonimleştir | Aydınlatma metni girişten önce erişilebilir | FR-030–035 | `chat-history-deletion.spec.ts`, `/kvkk` |
 | UC-11 | Taranmış / el yazısı materyal işleme | Eğitmen | Ders var | Metin katmanı olmayan PDF yükle → sistem kendisi görsel okumaya yönlendirir → sayfalar transkribe edilir → "Hazır" | Görsel okuma kapalıysa net mesajla ret, yeniden denenmez; güven eşiğini geçemeyen sayfa atılır, hiçbiri geçmezse belge reddedilir | FR-037–039 | 15 Eyl ölçümü: 4 sayfalık el yazısı ders notu, atılan sayfa 0, 5828 karakter, 5 parça |
+| UC-12 | Hızlı tekrar kartları | Öğrenci | Bitmiş en az bir alıştırma | Hızlı tekrar sekmesi → oturum seç → kart: soru → "Cevabı göster" → sonuç + "neden yanlış" pasajı + çözüm → sağa "biliyordum" / sola "tekrar" → deste sonu özeti | Aktif sınavda sekme kilitli; bitmiş alıştırma yoksa boş durum; kararlar kaydedilmez | FR-040 | 15 Eyl tarayıcıda: 6 kart, yanlışlar başta, özet 4/2/1 |
+| UC-13 | Kavram haritası | Öğrenci / Eğitmen | Derste işlenmiş belge var | Kavram haritası sekmesi → terim listesi (pasaj sayısıyla) → terime tıkla → materyaldeki pasaj + birlikte anlatıldığı terimler → bağlantı tablosu → Markdown indir | Aktif sınavda 403; işlenmiş belge yoksa boş durum; başka dersin pasajı görünmez | FR-041 | 15 Eyl gerçek korpus: 28 pasaj → 40 terim, 60 bağ; 13 uç testi |
 | UC-12 | Platform yönetimi | Bilgi İşlem | Yönetici yetkisi | Genel bakış, kullanıcılar, dersler, istek günlüğü, işleme kuyruğu; API sözleşmesi | Reddedilen erişim de denetim kaydına yazılır | Platform konsolu spec'i | `admin-readiness.spec.ts`, yetki mutasyon kanıtı |
 
 ### 2.5 Arayüzler
@@ -262,6 +264,15 @@ istek ve günlük jeton sınırları; KVKK hakları.
 
 ---
 
+
+**F3. Çalışma araçları (FR-040–041).** FR-040 *Hızlı tekrar*: öğrenci bitirdiği alıştırmanın
+sorularını kart destesi olarak çevirir; arka yüz sunucunun kayıtlı sonucunu, "neden yanlış" kaynak
+pasajını ve çözümü gösterir; yanlışlar başa sıralanır; kararlar puan değildir ve kaydedilmez.
+Kaynak, onaylı soru havuzu DEĞİL bitmiş oturumdur: havuz öğrenciye cevap anahtarı vermez
+(`public_payload` beyaz listesi) ve bu sınav bütünlüğü kararı korunur. FR-041 *Kavram haritası*:
+dersin işlenmiş pasajlarından anahtar terimler, her terimin geçtiği pasaj ve terimlerin birlikte
+geçme bağları; model çağrılmaz, her satır bir pasaja bağlıdır; Markdown olarak indirilir. İki
+özellik de aktif sınavda sunucu kilidiyle kapanır.
 ## 5. Fonksiyonel Olmayan Gereksinimler (kayıt için)
 
 Danışman bu belge için fonksiyonel olmayan gereksinim istemedi; aşağıdaki satırlar teslimin
@@ -293,7 +304,7 @@ kabul ölçütü değil, projenin kendi disiplininin kaydıdır.
 | SC-009 Soru üretiminde şema geçerliliği | ≥ %98 | Şema doğrulama; sahte sağlayıcıda ölçüldü |
 | SC-010 Cevap gecikmesi p95 | < 10 sn | Tekil ölçüm 5,7 sn; p95 15 Eylül |
 | SC-011 Demo akışında kritik hata | 0 | 15 Eylül: sıfırdan ders + yeni belge ile uçtan uca prova **10/10** (§8) |
-| SC-012 Sahne sorularının çevrimdışı çalışması | 16/16, 0 jeton | 15 Eylül ölçüldü: `scripts/demo/sahne_provasi.py` |
+| SC-012 Sahne sorularının çevrimdışı çalışması | 16/16, 0 jeton | 15 Eyl 00:00 ölçümü 16/16, 0 jeton. **16:42 yeniden ölçüm 5/16**: korpus 07:39'da değişti (belge yeniden indekslendi), önbellek anahtarı korpus revizyonunu içerdiği için 13 satır ıskaladı ve 12 soru gerçek modele düştü. Sunum sabahı `scripts/demo/onbellek_isit.py` ile yeniden ısıtılır, `sahne_provasi.py` ile doğrulanır; ısıtmadan sonra derse belge yüklenmez |
 
 Metodoloji notu: değerlendirme seti **yön göstergesidir, kesin hüküm değildir**; gerçek
 modelle koşulmamış her sayı belgede öyle etiketlenir.
