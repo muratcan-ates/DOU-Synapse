@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "change_id": "161-windows-local-dev-fixes-r3",
+  "lineage_id": "windows-local-dev-fixes",
+  "revision": 1,
+  "supersedes": null,
+  "previous_status": null,
+  "governance_record_risk": "R3",
+  "title": "Windows yerel gelistirme ortami icin 3 uyumluluk duzeltmesi",
+  "summary": "Takimin geri kalani macOS/Linux kullandigi icin daha once hic yakalanmamis, Windows'ta yerel gelistirmeyi tamamen engelleyen 3 hata duzeltildi: uvicorn/psycopg event loop uyumsuzlugu, docker-compose read-only mount catismasi, build_corpus.py'nin macOS'a ozel --pg-bin varsayilani ve eksik PGCLIENTENCODING. Model, prompt, provider, embedding, retrieval, guardrail veya esik mantigi DEGISMEDI.",
+  "owner": "Metehan Alphan",
+  "created_at": "2026-09-15T16:30:00+03:00",
+  "review_by": "2026-09-22T16:30:00+03:00",
+  "base_sha": "8522253f051d77b37924a32003ca0e976ee20779",
+  "candidate_sha": "SELF",
+  "risk_tier": "R3",
+  "status": "draft",
+  "behavior": {
+    "provider_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)",
+    "model_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)",
+    "prompt_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)",
+    "tool_schema_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)",
+    "guardrail_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)",
+    "retrieval_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)",
+    "embedding_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)",
+    "evaluator_revision": "unchanged-from-base (yalniz yerel ortam uyumlulugu)"
+  },
+  "data": {
+    "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval_set_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "privacy_classification": "synthetic-non-personal"
+  },
+  "artifacts": [
+    {
+      "path": "apps/api/app/main.py",
+      "state": "present",
+      "sha256": "00a52a8b566c1c0a17314caaac2627ef1cedbc8b2c47ab0a18a687f9427bf876"
+    },
+    {
+      "path": "docker-compose.yml",
+      "state": "present",
+      "sha256": "2788ce6eadfbce67f6016a6f3ce8a77ace8b7e6f02896bcaaa8635c843402002"
+    },
+    {
+      "path": "evaluation/build_corpus.py",
+      "state": "present",
+      "sha256": "f8e97632a9443e398ad2f85e382fdedc6ebf0352377710614f28da7573baa0a9"
+    },
+    {
+      "path": "apps/api/run_dev.py",
+      "state": "present",
+      "sha256": "253770fc3581926ae112578b89ac61b330eccc7fb33f6d7f1ad9c5b8b9fbad73"
+    }
+  ],
+  "evidence": [
+    {
+      "label": "offline-replay",
+      "result": "pass",
+      "report_path": ".ai/evidence/161-windows-local-dev-fixes-r3.json",
+      "report_sha256": "7650eddf7556f71ee64dc5bf669afd05b870b56031cd2b166bd658bc427275e6",
+      "candidate_sha": "SELF"
+    }
+  ],
+  "evaluation": {
+    "calibration_ref": "evaluation/gold_set/calibration.json",
+    "holdout_ref": "evaluation/gold_set/holdout.json",
+    "thresholds_declared_before_scoring": true,
+    "human_anchor_ref": "evaluation/faithfulness/labels_etiketleyici_1.md",
+    "metrics": [
+      {
+        "name": "manual_e2e_chat_request_success",
+        "baseline": 0,
+        "candidate": 1,
+        "operator": ">=",
+        "threshold": 1,
+        "sample_size": 1
+      }
+    ],
+    "exact_command": "cd apps/api && uv run python run_dev.py  # ayri terminalde: curl -X POST http://127.0.0.1:8015/courses/{course_id}/chat"
+  },
+  "approval_requirements": [
+    {
+      "role": "engineering",
+      "actor": "Pending independent engineering reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "domain",
+      "actor": "Pending domain reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    },
+    {
+      "role": "security_or_privacy",
+      "actor": "Pending security/privacy reviewer",
+      "decision": "pending",
+      "approval_ref": null,
+      "approved_at": null,
+      "candidate_sha": "SELF",
+      "independent_of_author": true
+    }
+  ],
+  "deployment": {
+    "feature_flag": "not-applicable:no-flag-local-dev-only",
+    "flag_state": "not-applicable",
+    "candidate_sha": "SELF",
+    "deployment_id": "not-deployed:161-windows-local-dev-fixes-r3",
+    "environment": "not-deployed"
+  },
+  "rollout": {
+    "feature_flag": "not-applicable:no-flag-local-dev-only",
+    "kill_switch": "Dali revert et; run_dev.py, docker-compose.yml ve build_corpus.py base_sha'daki haline doner.",
+    "assignment": "Sticky: kod yolunda ayrim veya feature flag yok; yerel gelistirme ortami mekanigi tum gelistiricilere ayni candidate_sha'ya bagli olarak tek bicimde uygulanir.",
+    "initial_exposure": "Yalnizca yerel gelistirme ortami; production/canli hizmete hic gitmiyor.",
+    "stop_conditions": [
+      "run_dev.py ile sunucu acilamiyor veya /courses/{id}/chat istegi basarisiz oluyor.",
+      "docker compose up supabase migration'larini yuklerken hata veriyor."
+    ],
+    "expand_conditions": [
+      "En az bir baska takim uyesi ayni adimlari Windows'ta tekrarlayip basarili sonuc bildirdi.",
+      "Engineering, domain ve security_or_privacy onaylari kaydedildi."
+    ],
+    "active_exam_policy": "Aktif sinav davranisini etkilemiyor; yalnizca yerel gelistirme ortami mekanigi."
+  },
+  "rollback": {
+    "previous_compatible_artifact": "base:8522253f051d77b37924a32003ca0e976ee20779",
+    "procedure": "Dali revert et; run_dev.py, docker-compose.yml, build_corpus.py ve main.py base_sha'daki halarine doner.",
+    "max_minutes": 15,
+    "verification": "Revert sonrasi mevcut CI paketi (ruff/format/mypy/pytest) degismeden yesil kalir.",
+    "state": "planned",
+    "evidence_report_path": null,
+    "evidence_report_sha256": null,
+    "evidence_candidate_sha": null,
+    "evidence_deployment_id": null
+  },
+  "privacy": {
+    "contains_identifiable_student_content": false,
+    "handling": "Icerik yok; yalnizca yerel gelistirme ortami mekanigi (event loop, docker mount, DB encoding).",
+    "retention": "Repository ile surumlenir; ham prompt, cevap, chunk metni, ogrenci kimligi veya saglayici yuku tasimaz."
+  },
+  "promotion": {
+    "claim": "none",
+    "target": "none",
+    "human_approval_refs": []
+  }
+}
