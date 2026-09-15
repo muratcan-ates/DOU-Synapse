@@ -930,7 +930,7 @@
           "documents"
         ],
         "summary": "Delete Document",
-        "description": "Belgeyi ve ona bağlı tüm chunk'ları siler.\n\nChunk'lar FK cascade ile gider: materyal kaldırıldığında ondan üretilmiş vektörlerin\naramada kalmaması, \"yalnızca yüklenen materyalden cevap\" garantisinin parçasıdır.\n\nAma cascade her yere ulaşmaz: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşır, yani o chunk'tan üretilmiş bir soru havuzdaysa silme veritabanı düzeyinde\nreddedilir. Bu kısıt bilinçlidir — kaynağı silinmiş bir soru, kaynağına karşı\ndoğrulanamayan bir sorudur (Anayasa I). Kısıtı gevşetmek yerine hatayı çeviriyoruz.",
+        "description": "Belgeyi ve ona bağlı tüm chunk'ları siler.\n\nChunk'lar FK cascade ile gider: materyal kaldırıldığında ondan üretilmiş vektörlerin\naramada kalmaması, \"yalnızca yüklenen materyalden cevap\" garantisinin parçasıdır.\n\nAma cascade her yere ulaşmaz: `questions.source_chunk_id` `ON DELETE RESTRICT`\ntaşır, yani o chunk'tan üretilmiş bir soru havuzdaysa silme veritabanı düzeyinde\nreddedilir. Bu kısıt bilinçlidir — kaynağı silinmiş bir soru, kaynağına karşı\ndoğrulanamayan bir sorudur (Anayasa I). Kısıtı gevşetmek yerine hatayı çeviriyoruz.\n\nFiziksel dosya silme artık DAYANIKLI: iş kaydı, satır silmeyle AYNI işlemde\n`app.storage_deletion_queue`'ya yazılır (0027). İşlem geri alınırsa iş kaydı da\ngeri alınır; COMMIT olursa nesnenin silinmesi gereği kalıcı olarak kayıtlıdır ve\nsüreç ölse bile worker onu bulur. `register_document_deletion` yerinde kalıyor\nama artık yalnız bir HIZLANDIRMA: COMMIT'ten hemen sonra süreç içinde bir kez\ndener. İkisinin de silmesi zararsızdır — `LocalFileStorage.delete` `unlink(True)`\nkullanır, `SupabaseStorage.delete` 404'te sessizce döner ve depolama anahtarları\n(uuid4 türevi) asla yeniden kullanılmaz.",
         "operationId": "delete_document_courses__course_id__documents__document_id__delete",
         "parameters": [
           {
@@ -8654,9 +8654,13 @@
                 "$ref": "#/components/schemas/SourceRefOut"
               },
               {
+                "$ref": "#/components/schemas/QuestionSourceRefOut"
+              },
+              {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Source"
           },
           "source_stale": {
             "type": "boolean",
@@ -8700,6 +8704,32 @@
           "created_at"
         ],
         "title": "QuestionOut"
+      },
+      "QuestionSourceRefOut": {
+        "properties": {
+          "chunk_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chunk Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "chunk_id",
+          "file_name",
+          "location"
+        ],
+        "title": "QuestionSourceRefOut",
+        "description": "Kaynağın KİMLİĞİ: hangi materyal, nerede — metni değil.\n\nAyrı bir tip, çünkü ayrı bir yetki seviyesi. `SourceRefOut`'un `snippet`'i chunk\nmetninden 320 karakterdir ve öğrenciye ancak ipucu politikasının izin verdiği\nyerde, sınav kilidinin arkasından gösterilebilir (`exams.request_hint`). Soru\nhavuzu listesi o kapılardan geçmez: `hint_limit: 0` diyen eğitmenin kararını ve\nyürüyen sınavın kilidini aynı anda delerdi.\n\n`extra=\"forbid\"` bilinçli: `SourceRefOut`'a ileride eklenecek bir alan buraya\nsessizce sızmasın. Yeni alan, açıkça buraya yazılmadıkça öğrenciye gitmez."
       },
       "QuestionStatus": {
         "type": "string",
@@ -9136,7 +9166,7 @@
           "snippet"
         ],
         "title": "SourceRefOut",
-        "description": "Kaynak referansı. Dosya adı ve konum **chunk metadata'sından** gelir.\n\nModel metninden üretilmez (Anayasa I); bu yüzden burada bir `text` alanı değil,\nkısaltılmış `snippet` vardır — gösterilen alıntı gerçekten o chunk'ın içindedir."
+        "description": "Kaynak referansı. Dosya adı ve konum **chunk metadata'sından** gelir.\n\nModel metninden üretilmez (Anayasa I); bu yüzden burada bir `text` alanı değil,\nkısaltılmış `snippet` vardır — gösterilen alıntı gerçekten o chunk'ın içindedir.\n\nBu tip materyalin KENDİSİNİ taşır. Öğrenciye giden bir yüzeyde kullanmadan önce\no yüzeyin ipucu politikasından ve sınav kilidinden geçtiğini doğrulayın; geçmiyorsa\n`QuestionSourceRefOut` kullanın."
       },
       "StudentAnalytics": {
         "properties": {
