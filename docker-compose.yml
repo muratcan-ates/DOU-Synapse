@@ -15,7 +15,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       # Migration'lar ilk açılışta alfabetik sırayla çalışır.
-      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+      - ./supabase/migrations:/docker-entrypoint-initdb.d
       # Migration'lar NOLOGIN rollerini oluşturur; bu son yerel adım giriş
       # parolalarını açar. API'nin postgres superuser'ıyla RLS'i atlamasını
       # engellemek için yalnız yerel Compose yığınında kullanılır.

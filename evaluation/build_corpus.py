@@ -33,6 +33,8 @@ import json
 import os
 import subprocess
 import sys
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -94,6 +96,7 @@ def _psql(database: str, *args: str, pg_bin: str, admin_dsn: str) -> None:
     # libpq PGHOSTADDR/PGSERVICE can override the validated DSN. Inherit no PG routing.
     env = {key: value for key, value in os.environ.items() if not key.startswith("PG")}
     env.update({"PGHOST": str(url.host), "PGPORT": str(url.port or 5432)})
+    env["PGCLIENTENCODING"] = "UTF8"
     if url.username:
         env["PGUSER"] = url.username
     if url.password is not None:
