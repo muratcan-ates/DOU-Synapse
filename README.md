@@ -13,7 +13,7 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-2147_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 2147 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-2159_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 2159 -->
 ![Frontend tests](https://img.shields.io/badge/frontend_tests-648_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 648 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
@@ -33,7 +33,7 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 |---|---|---|
 | **Main'e birleşmiş ürün** | `babdb664af6297255ec93fec4e3f4bb3af434fb7` | GitHub main'in güncel başı. Kampüs arayüzü tasarımı (`025-campus-ui`) bu başta birleşiktir |
 | **Etkin geliştirme adayı** | `018-codex-production-line` | Aday ile main aynı başta; şeritlerin (P1–P5, 019, 025) çalışması buraya toplanır |
-| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Yerel süitler: API 2147, web birim 648, tarayıcı 87 vaka toplanıyor <!-- docs-check: backend.tests = 2147 --><!-- docs-check: frontend.tests = 648 --><!-- docs-check: e2e.tests = 87 -->. CI'da uçtan uca iş hâlâ kırmızı: 9 test simülasyon bayrağı gerektiriyor ve koşucu fazlanması henüz birleşmedi. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
+| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Yerel süitler: API 2159, web birim 648, tarayıcı 87 vaka toplanıyor <!-- docs-check: backend.tests = 2159 --><!-- docs-check: frontend.tests = 648 --><!-- docs-check: e2e.tests = 87 -->. CI'da uçtan uca iş hâlâ kırmızı: 9 test simülasyon bayrağı gerektiriyor ve koşucu fazlanması henüz birleşmedi. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
 | **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
 | **Gerçek model ve insan kabulü** | Kısmen ölçüldü | Demo yığını **gerçek Groq** ile koşuyor (`openai/gpt-oss-120b`); kapsam dışı ret, Sokratik merdiven ve atıflı cevap gerçek modelle tek tek doğrulandı (koşu kaydı `docs/team/GECE-RAPORU-14-EYLUL.md`). **Holdout değerlendirmesi (G1) koşulmadı** — sebep ölçüldü, `docs/team/GECE-RAPORU-14-EYLUL.md` §4.2. Öğretmen materyal/rubrik onayı ve bağımsız insan değerlendirmesi hâlâ gerekiyor |
 | **Staging / production** | Kanıtlanmadı | Canlı Auth/Storage/worker, kalite, yedek/geri yükleme ve geri dönüş kabulü tamamlanmadan yayın iddiası yok |
@@ -473,7 +473,7 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **2147** <!-- docs-check: backend.tests = 2147 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Backend testleri | **2159** <!-- docs-check: backend.tests = 2159 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
 | Frontend birim testleri | **648** <!-- docs-check: frontend.tests = 648 --> | 53 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 53 --> |
 | Playwright tarayıcı vakaları | **87** <!-- docs-check: e2e.tests = 87 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
 | Migration | **24** <!-- docs-check: migrations.count = 24 --> | Şema evriminin kaynak dosyası sayısı |
@@ -800,7 +800,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 2147 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 2147 -->
+Güncel feature kanıtında backend koleksiyonu 2159 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 2159 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 

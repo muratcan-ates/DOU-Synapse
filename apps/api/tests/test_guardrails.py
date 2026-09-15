@@ -29,6 +29,7 @@ from app.contracts import (
     RetrievedChunk,
     SocraticStage,
 )
+from app.modules.assessment import socratic as socratic_module
 from app.modules.generation import prompts
 from app.modules.generation.fake import FakeLlmClient, parse_sources
 from app.modules.generation.llm import LlmCompletion
@@ -269,6 +270,106 @@ class TestSizintiDedektorleri:
         assert outcome.blocked
         assert outcome.block_reason is not None
         assert outcome.block_reason.startswith(leakage.REASON_PREFIX)
+
+
+class TestAnlatimSizintisi:
+    """Kalıpsız sızıntı: kod yok, adım yok, ama cevabın kendisi düzyazıyla verilmiş.
+
+    15 Eylül sahne provasında ölçüldü. Öğrenci `DIAGNOSE` kademesinde
+    "Banker's Algorithm bir kaynak isteğini ne zaman onaylar?" diye sordu; model
+    önce cevabı anlattı, sonra soru sordu. Kademe kuralı ise "İpucu verme; ne
+    denediğini ve hangi adımda durduğunu soran tek bir soru sor" diyor. Aynı desen
+    gece koşusunda da vardı ("Dairesel bekleme, süreçlerin birbirini takip eden
+    bir zincir oluşturacak şekilde..."), yani tek seferlik bir kaza değil.
+
+    Mevcut dedektörlerin hiçbiri bunu görmüyor: kod çiti yok, "cevap:" yok, üç
+    adım yok. Sızıntı, MATERYALİ YENİDEN ANLATMAKTAN ibaret.
+    """
+
+    #: Sahne provasından birebir (Banker's Algorithm, DIAGNOSE kademesi).
+    ANLATAN = (
+        "İstek geldiğinde algoritma, isteği geçici olarak onaylayıp ardından "
+        "güvenlik algoritmasıyla sistemin hâlâ güvenli bir durumda olup olmadığını "
+        "kontrol eder; eğer güvenli değilse istek reddedilir. "
+        "Bu kontrolün sonucunda ne karar verilir?"
+    )
+    KAYNAK = (
+        "Bir istek geldiğinde algoritma, isteği geçici olarak onaylayıp sistemin "
+        "hâlâ güvenli bir durumda olup olmadığını kontrol eden bir güvenlik "
+        "algoritması çalıştırır; güvenli değilse istek reddedilip süreç bekletilir."
+    )
+
+    def test_diagnose_kademesinde_materyali_anlatan_yanit_bloklanir(self) -> None:
+        kaynak = chunk(text=self.KAYNAK)
+        yanit = answer_with(
+            kaynak.chunk_id,
+            text=self.ANLATAN,
+            mode=ChatMode.SOCRATIC,
+        )
+        yanit.socratic_stage = SocraticStage.DIAGNOSE
+
+        outcome = screen(yanit, [kaynak])
+
+        assert outcome.blocked, "DIAGNOSE'da cevabı anlatan yanıt geçmemeli"
+        assert outcome.block_reason is not None
+        assert leakage.DETECTOR_EXPOSITION in outcome.block_reason
+
+    def test_diagnose_kademesinde_soru_soran_yanit_gecer(self) -> None:
+        """Karşı kontrol: meşru teşhis sorusu bloklanırsa Sokratik mod ölür."""
+        kaynak = chunk(text=self.KAYNAK)
+        yanit = answer_with(
+            kaynak.chunk_id,
+            text=(
+                "Başlamadan önce nerede olduğunu görelim. Kaynak: OS-Hafta3.pdf, Sayfa 7. "
+                "Sorunun hangi kavramı sorduğunu kendi cümlelerinle yazar mısın?"
+            ),
+            mode=ChatMode.SOCRATIC,
+        )
+        yanit.socratic_stage = SocraticStage.DIAGNOSE
+
+        assert not screen(yanit, [kaynak]).blocked
+
+    def test_sablon_ipucu_kendi_filtresinden_gecer(self) -> None:
+        """Son durak kendi kapısına takılırsa sistem sonsuz döngüye girerdi."""
+        kaynak = chunk(text=self.KAYNAK, section_title="Banker's Algorithm")
+        for stage in (SocraticStage.DIAGNOSE, SocraticStage.NUDGE):
+            metin, _ = socratic_module.template_hint(stage, kaynak)
+            yanit = answer_with(kaynak.chunk_id, text=metin, mode=ChatMode.SOCRATIC)
+            yanit.socratic_stage = stage
+            assert not screen(yanit, [kaynak]).blocked, f"{stage} şablonu kendi filtresine takıldı"
+
+    def test_aciklama_kademesinde_anlatmak_serbesttir(self) -> None:
+        """EXPLAIN_WITH_SOURCE'un kuralı zaten 'kavramı tam olarak açıkla'.
+
+        Dedektör kademeye bağlı olmasaydı merdivenin son basamağını yok ederdi.
+        """
+        kaynak = chunk(text=self.KAYNAK)
+        yanit = answer_with(kaynak.chunk_id, text=self.ANLATAN, mode=ChatMode.SOCRATIC)
+        yanit.socratic_stage = SocraticStage.EXPLAIN_WITH_SOURCE
+
+        assert not screen(yanit, [kaynak]).blocked
+
+    def test_soru_cevap_modunda_anlatmak_serbesttir(self) -> None:
+        """QA'nın işi zaten materyali açıklamak; dedektör oraya hiç girmemeli."""
+        kaynak = chunk(text=self.KAYNAK)
+        yanit = answer_with(kaynak.chunk_id, text=self.ANLATAN, mode=ChatMode.QA)
+
+        assert not screen(yanit, [kaynak]).blocked
+
+    def test_kaynakla_ilgisiz_duzyazi_bloklanmaz(self) -> None:
+        """Ölçülen şey 'materyali yeniden anlatmak'; her düzyazı değil."""
+        kaynak = chunk(text=self.KAYNAK)
+        yanit = answer_with(
+            kaynak.chunk_id,
+            text=(
+                "Bu konuya geçmeden önce bir şey netleşsin. Elindeki notlarda bu "
+                "başlığı bulabildin mi? Bulduysan hangi sayfada olduğunu yazar mısın?"
+            ),
+            mode=ChatMode.SOCRATIC,
+        )
+        yanit.socratic_stage = SocraticStage.NUDGE
+
+        assert not screen(yanit, [kaynak]).blocked
 
 
 class TestRegenVeSablon:

@@ -97,6 +97,10 @@ DETECTOR_ANSWER_KEY = "answer_key"
 DETECTOR_PSEUDOCODE = "pseudocode"
 DETECTOR_CODE_SIGNATURE = "code_signature"
 DETECTOR_STEP_BY_STEP = "step_by_step_solution"
+#: Kalıpsız sızıntı: kod/adım/cevap kalıbı olmadan materyalin yeniden anlatılması.
+#: Ayrı bir dedektör çünkü ayrı bir ölçüm: diğerleri deterministik kalıp yakalar,
+#: bu bir ÖRTÜŞME ölçer ve mitigasyondur (dosya başındaki dürüstlük notu).
+DETECTOR_EXPOSITION = "exposition"
 
 _FENCE = re.compile(r"(?:```|~~~)|<\s*(?:code|pre)\b", re.IGNORECASE)
 
@@ -165,6 +169,73 @@ _SEQUENCE_WORDS = re.compile(
 #: Kaç işaret bir "adım adım çözüm" sayılır. İki adım bir liste, üç adım bir
 #: prosedürdür; sınırın bir yerde olması gerekiyordu ve gerekçesi budur.
 _STEP_THRESHOLD = 3
+
+#: Yalnız SORU sorulması gereken kademeler. Kademe kuralları (prompts.py
+#: `_STAGE_RULES`) burada açıkça "ipucu verme / kavramın adını verme, tek bir
+#: soru sor" diyor. CONCEPT_HINT ve sonrası bilerek DIŞARIDA: merdivenin üst
+#: basamaklarında anlatmak zaten kuralın kendisidir.
+ASK_ONLY_STAGES = frozenset({SocraticStage.DIAGNOSE, SocraticStage.NUDGE})
+#: Soru cümlesi sayılmayan metnin, dedektörü ilgilendirmesi için gereken en az
+#: içerik sözcüğü. Altında kalan kısa meta cümleler ("Başlamadan önce nerede
+#: olduğunu görelim.") ölçüme girmez.
+_EXPOSITION_MIN_WORDS = 8
+#: Anlatım sayılması için, düz cümlelerdeki içerik sözcüklerinin kaynak parçayla
+#: örtüşme oranı. Eşik 0,5: yarıdan fazlası kaynaktan geliyorsa bu bir ipucu
+#: değil, materyalin yeniden anlatımıdır. Oran, sözcük sayısından daha dayanıklı
+#: bir ölçüt — model aynı şeyi uzun ya da kısa anlatabilir.
+_EXPOSITION_OVERLAP = 0.5
+#: Türkçe soru işaretleyicileri: cümle "?" ile bitmiyorsa bile soru olabilir.
+_QUESTION_MARK = re.compile(r"\?\s*$")
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
+
+
+def _declarative_text(text: str) -> str:
+    """Soru olmayan cümleleri döndürür — dedektörün baktığı tek kısım budur."""
+    cumleler = [c.strip() for c in _SENTENCE_SPLIT.split(text) if c.strip()]
+    return " ".join(c for c in cumleler if not _QUESTION_MARK.search(c))
+
+
+def detect_exposition(
+    text: str, retrieved: list[RetrievedChunk], stage: SocraticStage | None
+) -> LeakageFinding | None:
+    """Teşhis/dürtme kademesinde materyali yeniden anlatan yanıtı yakalar.
+
+    Neden kalıp değil örtüşme: bu sızıntının kalıbı YOK. 15 Eylül provasında
+    ölçülen yanıtta ne kod çiti, ne "cevap:", ne üç adım vardı — model yalnızca
+    kaynaktaki cümleyi kendi sözcükleriyle tekrarlayıp sonuna bir soru ekledi.
+    Kalıp aramak bunu hiçbir zaman göremez; ölçülebilir olan tek şey, düz
+    cümlelerin kaynakla ne kadar örtüştüğüdür.
+
+    Soru cümleleri ölçüme GİRMEZ: "Bu kontrolün sonucunda ne karar verilir?"
+    zaten istenen davranıştır. Ölçülen, sorunun ÖNÜNE konan anlatımdır.
+
+    Dürüstlük notu: bu bir mitigasyon, garanti değil. Model kaynağı hiç
+    kullanmadan kendi parametrik bilgisinden anlatırsa örtüşme düşük çıkar ve
+    dedektör görmez. Ölçülen şey "materyali yeniden anlatma", "cevabı verme"
+    değil; SC-007 raporunda böyle yazılmalıdır.
+    """
+    if stage not in ASK_ONLY_STAGES or not retrieved:
+        return None
+
+    duz = _declarative_text(text)
+    duz_sozcukler = text_tr.tokens(duz, min_length=3)
+    if len(duz_sozcukler) < _EXPOSITION_MIN_WORDS:
+        return None
+
+    kaynak_sozcukler: set[str] = set()
+    for parca in retrieved:
+        kaynak_sozcukler.update(text_tr.tokens(parca.text, min_length=3))
+    if not kaynak_sozcukler:
+        return None
+
+    ortak = [s for s in duz_sozcukler if s in kaynak_sozcukler]
+    oran = len(ortak) / len(duz_sozcukler)
+    if oran < _EXPOSITION_OVERLAP:
+        return None
+    return LeakageFinding(
+        DETECTOR_EXPOSITION,
+        f"{len(ortak)}/{len(duz_sozcukler)} sözcük kaynakla örtüşüyor (%{oran * 100:.0f})",
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,11 +324,15 @@ class LeakageGuardrail:
         self._enforced_modes = enforced_modes
 
     def check(self, answer: GeneratedAnswer, retrieved: list[RetrievedChunk]) -> GuardrailVerdict:
-        del retrieved  # bu halka yalnız metne bakar; imza protokol gereği ortaktır
         if answer.mode not in self._enforced_modes:
             return GuardrailVerdict(blocked=False)
 
         findings = detect(answer.text)
+        # Anlatım sızıntısı kaynağa BAKAR: kalıpsız olduğu için tek ölçülebilir
+        # işaret, düz cümlelerin getirilen parçayla örtüşmesidir. Bu yüzden bu
+        # halka artık `retrieved`'i kullanıyor (eskiden `del` ediliyordu).
+        if exposition := detect_exposition(answer.text, retrieved, answer.socratic_stage):
+            findings.append(exposition)
         if not findings:
             return GuardrailVerdict(blocked=False)
 
