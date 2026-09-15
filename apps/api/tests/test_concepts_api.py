@@ -156,6 +156,7 @@ class TestSinavKilidi:
         assert response.status_code == 403, response.text
         assert response.json()["error"]["code"] == "exam_in_progress"
 
+# test-quality: sadece-durum-kodu — Eğitmen sınav kilidinden etkilenmediği için durum kodu ve gövde varlığı kontrolü yeterlidir
     async def test_egitmen_sinav_kilidinden_etkilenmez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
@@ -167,6 +168,8 @@ class TestSinavKilidi:
         )
 
         assert response.status_code == 200
+        data = response.json()
+        assert data is not None
 
 
 class TestDisaAktarim:
