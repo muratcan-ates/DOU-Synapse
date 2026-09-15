@@ -5,7 +5,9 @@ buraya "iyi durur" diye eklenmez; önce belgede ya da kodda ona dayanan bir cüm
 sonra buraya girer. Danışmanın istediği kitap/kaynak bağlantıları için "Murat ekleyecek"
 satırları bilinçli olarak boş bırakılmıştır — uydurma başlık yazılmaz.
 
-Biçim: APA 7'ye yakın; erişim tarihi 14 Eylül 2026. Üniversitenin resmî kaynakça biçimi
+Biçim: APA 7'ye yakın; erişim tarihi 15 Eylül 2026. A2–A5'in künyeleri Crossref ve
+arXiv kayıtlarından tek tek doğrulanmıştır (başlık, yazar sırası, cilt/sayı/madde, DOI);
+ikincil kaynaklardan kopyalanmamıştır. Üniversitenin resmî kaynakça biçimi
 netleşince tek geçişte dönüştürülür (bu listenin kaydı: `docs/team/YOL-HARITASI-16-EYLUL.md`
 satır B3, "Kaynak listesi iskeleti"). `PLAN.md`'de böyle bir madde yok; önceki sürümde
 olmayan bir plan maddesine atıf yapılıyordu.
@@ -15,6 +17,10 @@ olmayan bir plan maddesine atıf yapılıyordu.
 | # | Kaynak | Depoda nerede kullanılıyor |
 |---|---|---|
 | A1 | Liu, R., Zenke, C., Liu, C., Holmes, A., Thornton, P., & Malan, D. J. (2025). *Teaching CS50 with AI: Leveraging generative artificial intelligence in computer science education.* Harvard University. https://cs.harvard.edu/malan/publications/fp0627-liu.pdf | `PLAN.md` §1 ve `docs/requirements-analysis.md` §1.2 — yanıtların %22'sinde doğrudan çalışan kod sızıntısı bulgusu; "kaynak yoksa cevap yok" ve Sokratik fail-closed ilkesinin gerekçesi |
+| A2 | Wallat, J., Heuss, M., de Rijke, M., & Anand, A. (2025). *Correctness is not faithfulness in retrieval augmented generation attributions.* ICTIR '25 — Proceedings of the 2025 ACM SIGIR International Conference on the Theory of Information Retrieval (s. 22–32). ACM. https://doi.org/10.1145/3731120.3744592 | `docs/requirements-analysis.md` §1.2 ve §1.3 — atıfların %57'ye kadarının post-rationalization olabildiği bulgusu; atfı modelin beyanına değil mekanik doğrulamaya bağlama kararının gerekçesi (`apps/api/app/modules/guardrails/citation.py`) |
+| A3 | Tufino, E. (2025). *NotebookLM as a Socratic physics tutor: Design and preliminary observations of a RAG-based tool.* arXiv:2504.09720 [physics.ed-ph]. https://arxiv.org/abs/2504.09720 (The Physics Educator'da yayımlanmak üzere kabul edildi) | `docs/requirements-analysis.md` §1.3 — genel amaçlı RAG aracında Sokratik davranışın kullanıcı istemine bırakılması; bizim kademe otoritesini sunucu tarafı durum makinesine taşıma kararımızın karşıt örneği |
+| A4 | Toskova, A., Georgiev, K., & Glushkova, T. (2026). Dialogical learning support in RAG-based e-learning. *Information, 17*(5), 418. https://doi.org/10.3390/info17050418 | `docs/requirements-analysis.md` §1.3 — eğitmen tarafından doğrulanmış materyale bağlı diyalojik öğrenme desteği; "yalnız öğretmenin kaynakları" ve onay akışının literatür dayanağı |
+| A5 | Vadlapati, P. (2026). *Index-RAG: Storing text locations in vector databases for question-answering tasks* [ön baskı, **hakem değerlendirmesinden geçmemiştir**]. Preprints.org. https://doi.org/10.20944/preprints202603.2025.v1 | `docs/requirements-analysis.md` §1.3 — konum meta verisini (dosya, sayfa, satır) vektör deposunda tutmanın atıf doğruluğuna katkısı; chunk provenance tasarımımızın dayanağı. **Hakemli değildir**, destekleyici kaynak olarak kullanılır |
 
 ## 2. Ders kitapları (danışmanın istediği liste)
 

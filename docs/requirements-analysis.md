@@ -30,12 +30,26 @@ doğrudan vererek öğrenmeyi zedeliyor. Literatürde bu üçüncü problem öl�
 CS50 ders asistanı değerlendirmesinde yanıtların %22'sinde öğrenciye doğrudan çalışan kod
 sızdırıldığı raporlanmıştır (Liu vd., 2025; bkz. `docs/references.md` A1).
 
+Dördüncü bir problem, kaynak gösteren araçlarda bile sürüyor: model cevabı kendi
+parametrik hafızasından üretip atıfı sonradan ekleyebiliyor. Wallat vd. bu davranışı
+*post-rationalization* diye adlandırıyor ve incelenen sistemlerde atıfların **%57'sine
+kadarının** gerçekten dayanmadığını ölçüyor (Wallat vd., 2025; A2). Yani "atıf var"
+demek "cevap o kaynaktan geldi" demek değildir; atfın kendisi doğrulanmalıdır.
+
 ### 1.3 Çözüm yaklaşımı
 
 Eğitmenin yüklediği materyalle **sınırlı** bir RAG (Retrieval-Augmented Generation)
 asistanı. Ayırt edici ilke: **kaynak yoksa cevap yoktur** — her akademik cevap, gerçekten
 getirilmiş bir materyal parçasına mekanik olarak doğrulanan atıfla sunulur; kanıt
 bulunamazsa sistem cevap üretmek yerine bunu açıkça söyler.
+
+Üç tasarım kararı doğrudan bu literatürden çıkmıştır:
+
+| Karar | Gerekçe | Uygulamadaki karşılığı |
+|---|---|---|
+| Atıf, modelin beyanına değil **mekanik doğrulamaya** bağlanır | Post-rationalization ölçülmüş bir davranıştır (A2) | Citation guardrail, cevaptaki her parça kimliğini o istekte gerçekten getirilen küme ile karşılaştırır; eşleşmeyen atıf cevabı reddeder |
+| Her parça **dosya, sayfa/slayt ve konum** bilgisini taşır | Konum meta verisini vektör deposunda tutmak atıf doğruluğunu artırır (A5) | Ingestion her chunk'a provenance yazar; kaynak kartı öğrenciyi tam o pasaja götürür |
+| Sokratik disiplin **sunucu tarafında durum makinesiyle** zorlanır, isteme yazılan bir cümleyle değil | NotebookLM gibi genel araçlar Sokratik davranışı kullanıcının istemine bırakır; ısrar edince cevap gelir (A3). Kurulu literatür de öğretmen tarafından doğrulanmış materyale bağlı diyalojik desteği önerir (A4) | Kademe ilerlemesi sunucuda tutulur; "sadece cevabı söyle" ısrarı kademeyi atlatmaz |
 
 ### 1.4 Tanımlar
 
