@@ -23,10 +23,21 @@ DOCUMENT_FAILURE_MESSAGE = "Belge işlenemedi. Lütfen yeniden deneyin."
 
 class FailureReason(StrEnum):
     COMPUTE_FAILED = "compute_failed"
+    #: İçerik kalıcı olarak işlenemez (ör. metinsiz/taranmış PDF). Yeniden denemek
+    #: sonucu değiştirmez; bu yüzden bu sebep hiç geri çekilmez ve ilk denemede
+    #: `failed` olur. Ölçüldü (15 Eylül): el yazısı bir tarama 3 kez boşuna
+    #: denenip "Lütfen yeniden deneyin" ile bitiyordu — yanlış tavsiye.
+    INVALID_CONTENT = "invalid_content"
     SOURCE_HASH_MISMATCH = "source_hash_mismatch"
     SOURCE_CHANGED = "source_changed"
     LEASE_EXPIRED = "lease_expired"
     CANCELLED = "cancelled"
+
+
+#: Yeniden denemenin anlamsız olduğu sebepler: ilk denemede kalıcı `failed`.
+PERMANENT_REASONS: frozenset[FailureReason] = frozenset({FailureReason.INVALID_CONTENT})
+#: Kullanıcıya gösterilen ayrıntının üst sınırı; mesaj ekrana olduğu gibi basılır.
+FAILURE_DETAIL_MAX_CHARS = 500
 
 
 class LostClaim(Exception):
@@ -176,9 +187,15 @@ async def _record_failure(
     reason: FailureReason,
     expired: bool = False,
     token: UUID | None = None,
+    detail: str | None = None,
 ) -> float | None:
     # Only called while current authority locks are held. No raw exception input.
-    delay = retry_delay(attempt)
+    # `detail` is the ONLY text that reaches the user beyond the generic message,
+    # and callers may pass it solely from `ValidationError` — that class carries
+    # user-facing Turkish copy by construction (the same text a 422 would return).
+    # Generic exceptions stay opaque: they may embed SQL or provider details.
+    permanent = reason in PERMANENT_REASONS
+    delay = None if permanent else retry_delay(attempt)
     released = await session.scalar(
         text(
             "UPDATE public.ingestion_jobs SET status = CAST(:status AS public.job_status), "
@@ -212,10 +229,17 @@ async def _record_failure(
         {
             "id": document_id,
             "status": "failed" if delay is None else "uploaded",
-            "error": DOCUMENT_FAILURE_MESSAGE if delay is None else None,
+            "error": _user_error(detail) if delay is None else None,
         },
     )
     return delay
+
+
+def _user_error(detail: str | None) -> str:
+    """Kalıcı hatada gösterilecek metin: varsa sebebin kendi cümlesi, yoksa genel."""
+    if detail is None or not detail.strip():
+        return DOCUMENT_FAILURE_MESSAGE
+    return detail.strip()[:FAILURE_DETAIL_MAX_CHARS]
 
 
 async def claim_next_job(session: AsyncSession) -> Claim | None:
@@ -346,7 +370,10 @@ async def heartbeat(factory: async_sessionmaker[AsyncSession], claim: Claim) -> 
 
 
 async def fail_claim(
-    factory: async_sessionmaker[AsyncSession], claim: Claim, reason: FailureReason
+    factory: async_sessionmaker[AsyncSession],
+    claim: Claim,
+    reason: FailureReason,
+    detail: str | None = None,
 ) -> float | None:
     if not isinstance(reason, FailureReason):
         raise ValueError("invalid ingestion failure reason")
@@ -359,4 +386,5 @@ async def fail_claim(
             attempt=claim.attempt,
             reason=reason,
             token=claim.token,
+            detail=detail,
         )

@@ -36,4 +36,17 @@ else
   export LLM_FAKE_PROVIDER=true
   echo "[demo] GROQ_API_KEY yok: sahte sağlayıcı — cevaplar gerçek model değil"
 fi
+# Görsel okuma (metinsiz / el yazısı PDF). Çevrimdışı planda KAPALI: ağa çıkar.
+# Anahtar yoksa da açılmaz; ayar açıkken anahtarsız kalmak yapılandırma hatasıdır
+# ve ingestion açıkça hata verir (sessizce kapalıymış gibi davranmaz).
+if [ "${DOU_DEMO_OFFLINE:-0}" != "1" ] && [ -f "$ENV_FILE" ] && grep -qE '^GEMINI_API_KEY=.+' "$ENV_FILE"; then
+  GEMINI_API_KEY="$(grep -E '^GEMINI_API_KEY=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
+  export GEMINI_API_KEY
+  export OCR_VLM_ENABLED="${OCR_VLM_ENABLED:-true}"
+  echo "[demo] görsel okuma: AÇIK (metinsiz PDF sayfaları Gemini ile okunur)"
+else
+  export OCR_VLM_ENABLED=false
+  echo "[demo] görsel okuma: kapalı"
+fi
+
 exec .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8020

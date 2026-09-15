@@ -15,6 +15,7 @@ from __future__ import annotations
 import io
 import itertools
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from app.core.errors import ValidationError
@@ -37,6 +38,13 @@ class ParsedBlock:
 class ParsedDocument:
     blocks: list[ParsedBlock] = field(default_factory=list)
     page_count: int | None = None
+    #: Görsel okumada güven eşiğini geçemediği için ATILAN sayfa sayısı. Sıfırdan
+    #: büyükse belge eksik indekslenmiştir; eğitmene bunu söylemek gerekir.
+    vision_skipped: int = 0
+
+
+#: `(sayfa_no, jpeg_baytları) -> transkript`. Ağ çağrısı `vision_ocr.py`'de kalır.
+PageTranscriber = Callable[[int, bytes], str]
 
 
 def _clean(text: str) -> str:
@@ -47,7 +55,13 @@ def _clean(text: str) -> str:
     return text.strip()
 
 
-def parse_pdf(content: bytes) -> ParsedDocument:
+def parse_pdf(content: bytes, transcriber: PageTranscriber | None = None) -> ParsedDocument:
+    """PDF'ten metin çıkarır; metin katmanı yoksa `transcriber` varsa ona düşer.
+
+    `transcriber` bir geri çağrıdır, ağ çağrısını bu modül YAPMAZ: ayrıştırıcı
+    saf ve ağsız test edilebilir kalsın diye görsel okuma `vision_ocr.py`'de
+    durur ve buraya yalnız `(sayfa_no, jpeg) -> metin` sözleşmesiyle girer.
+    """
     import pymupdf
 
     try:
@@ -72,11 +86,49 @@ def parse_pdf(content: bytes) -> ParsedDocument:
         page_count = document.page_count
 
     if not blocks:
+        if transcriber is not None:
+            return _parse_pdf_by_vision(content, transcriber)
         raise ValidationError(
-            "PDF içinde metin bulunamadı. Taranmış (görüntü tabanlı) PDF'ler için "
-            "önce metin tanıma uygulanmalıdır."
+            "PDF içinde metin bulunamadı. Taranmış ya da el yazısı belgeler için "
+            "görsel okuma gerekir; bu ders için şu an kapalı. Metin katmanı olan "
+            "bir PDF yükleyebilir ya da eğitmeninizden görsel okumayı açmasını "
+            "isteyebilirsiniz."
         )
     return ParsedDocument(blocks=blocks, page_count=page_count)
+
+
+def _parse_pdf_by_vision(content: bytes, transcriber: PageTranscriber) -> ParsedDocument:
+    """Metinsiz sayfaları görsel modelle okur; düşük kaliteli sayfaları ATAR.
+
+    Düşük kaliteli sayfayı almak, anlamsız metni gömüp öğrenciye ona atıf
+    göstermek demekti — "kaynak yoksa cevap yok" garantisinin sessizce delinmesi.
+    Hiçbir sayfa geçemezse belge reddedilir; yani en kötü durum, görsel okuma
+    hiç yokmuş gibi davranmaktır.
+    """
+    from app.modules.ingestion import vision_ocr
+
+    images = vision_ocr.render_pages(content, max_pages=vision_ocr.MAX_VISION_PAGES)
+    blocks: list[ParsedBlock] = []
+    low_quality = 0
+    for index, image in enumerate(images, start=1):
+        assessed = vision_ocr.assess(index, transcriber(index, image))
+        if assessed.low_quality:
+            low_quality += 1
+            continue
+        blocks.append(
+            ParsedBlock(
+                text=assessed.text,
+                page_number=index,
+                section_title=vision_ocr.ORIGIN_LABEL,
+            )
+        )
+    if not blocks:
+        raise ValidationError(
+            "Belge görsel olarak okundu ama hiçbir sayfa güvenilir biçimde "
+            "çözülemedi. El yazısı çok okunaksız olabilir; net bir tarama ya da "
+            "metin katmanı olan bir PDF gerekiyor."
+        )
+    return ParsedDocument(blocks=blocks, page_count=len(images), vision_skipped=low_quality)
 
 
 def parse_pptx(content: bytes) -> ParsedDocument:
@@ -220,10 +272,12 @@ def parse_text(content: bytes) -> ParsedDocument:
     return ParsedDocument(blocks=[ParsedBlock(text=text)])
 
 
-def parse(content: bytes, extension: str) -> ParsedDocument:
+def parse(
+    content: bytes, extension: str, transcriber: PageTranscriber | None = None
+) -> ParsedDocument:
     """Uzantıya göre uygun ayrıştırıcıyı seçer."""
     if extension == ".pdf":
-        return parse_pdf(content)
+        return parse_pdf(content, transcriber)
     if extension == ".pptx":
         return parse_pptx(content)
     if extension == ".md":

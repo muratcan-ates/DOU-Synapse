@@ -92,6 +92,55 @@ class TestParsers:
         with pytest.raises(ValidationError, match="Taranmış"):
             parsers.parse(empty, ".pdf")
 
+    def test_metinsiz_pdf_transkriptci_varsa_gorsel_okunur(self) -> None:
+        """Görsel okuma açıkken metinsiz PDF reddedilmez, sayfa sayfa okunur."""
+        import pymupdf
+
+        from app.modules.ingestion import vision_ocr
+
+        document = pymupdf.open()
+        document.new_page()
+        document.new_page()
+        empty = document.tobytes()
+        document.close()
+
+        gorulen: list[int] = []
+
+        def sahte(page_number: int, image: bytes) -> str:
+            gorulen.append(page_number)
+            assert image[:2] == b"\xff\xd8", "sayfa JPEG olarak render edilmeli"
+            return f"Sayfa {page_number}: $x[n]$ ayrik zamanli sinyal tanimi burada."
+
+        parsed = parsers.parse(empty, ".pdf", sahte)
+
+        assert gorulen == [1, 2]
+        assert parsed.page_count == 2
+        assert parsed.vision_skipped == 0
+        assert [b.page_number for b in parsed.blocks] == [1, 2]
+        assert all(b.section_title == vision_ocr.ORIGIN_LABEL for b in parsed.blocks), (
+            "her görsel blok kökenini taşımalı; atıf yüzeyi bunu gösterir"
+        )
+
+    def test_okunamayan_sayfa_atilir_hicbiri_gecmezse_belge_reddedilir(self) -> None:
+        """Düşük kaliteli transkript GÖMÜLMEZ.
+
+        Bu testin tuttuğu şey şu: anlamsız metni indekslemek, öğrenciye ona atıf
+        göstermek demekti — 'kaynak yoksa cevap yok' garantisinin sessizce
+        delinmesi. En kötü durum, görsel okuma hiç yokmuş gibi davranmaktır.
+        """
+        import pymupdf
+
+        document = pymupdf.open()
+        document.new_page()
+        empty = document.tobytes()
+        document.close()
+
+        def okunamaz(page_number: int, image: bytes) -> str:
+            return " ".join(["[okunamadı]"] * 12)
+
+        with pytest.raises(ValidationError, match="güvenilir biçimde"):
+            parsers.parse(empty, ".pdf", okunamaz)
+
     def test_pptx_slayt_numarasi_ve_basligi_korur(self) -> None:
         parsed = parsers.parse(
             make_pptx([("Deadlock", "Dort kosul"), ("Semafor", "Karsilikli dislama")]),
@@ -159,6 +208,69 @@ class TestChunking:
     def test_token_tahmini_makul(self) -> None:
         assert 1 <= estimate_tokens("kisa") <= 3
         assert estimate_tokens("a" * 370) == pytest.approx(100, abs=5)
+
+
+class TestKaliciIcerikHatasi:
+    """İçerik kalıcı olarak işlenemezse yeniden denemek yanlış tavsiyedir."""
+
+    def test_validation_error_kalici_sayilir_ve_kendi_metnini_tasir(self) -> None:
+        from app.core.errors import ValidationError as VE
+        from app.modules.ingestion import pipeline
+        from app.modules.ingestion.claims import FailureReason
+
+        reason, detail = pipeline.failure_for(VE("PDF içinde metin bulunamadı."))
+
+        assert reason is FailureReason.INVALID_CONTENT
+        assert detail == "PDF içinde metin bulunamadı."
+
+    def test_beklenmedik_istisna_ayrinti_sizdirmaz(self) -> None:
+        """Genel istisna SQL/sağlayıcı ayrıntısı taşıyabilir; kapalı kalmalı."""
+        from app.modules.ingestion import pipeline
+        from app.modules.ingestion.claims import FailureReason
+
+        reason, detail = pipeline.failure_for(RuntimeError("relation users does not exist"))
+
+        assert reason is FailureReason.COMPUTE_FAILED
+        assert detail is None
+
+    async def test_kalici_hata_ilk_denemede_failed_yazar_geri_cekilmez(self) -> None:
+        """Ölçüldü (15 Eylül): el yazısı tarama 3 kez boşuna denenip
+        'Lütfen yeniden deneyin' ile bitiyordu. Artık ilk denemede durur ve
+        ekrana ayrıştırıcının kendi cümlesi çıkar."""
+        from app.modules.ingestion import claims
+
+        session = AsyncMock()
+        delay = await claims._record_failure(
+            session,
+            job_id=uuid4(),
+            document_id=uuid4(),
+            attempt=1,
+            reason=claims.FailureReason.INVALID_CONTENT,
+            detail="PDF içinde metin bulunamadı.",
+        )
+
+        assert delay is None, "kalıcı hata geri çekilmez"
+        job_params = session.scalar.await_args.args[1]
+        assert job_params["status"] == "failed"
+        assert job_params["exhausted"] is True
+        doc_params = session.execute.await_args.args[1]
+        assert doc_params["error"] == "PDF içinde metin bulunamadı."
+
+    async def test_gecici_hata_hala_geri_cekilir(self) -> None:
+        """Karşı kontrol: kalıcı olmayan sebep eski davranışı korur."""
+        from app.modules.ingestion import claims
+
+        session = AsyncMock()
+        delay = await claims._record_failure(
+            session,
+            job_id=uuid4(),
+            document_id=uuid4(),
+            attempt=1,
+            reason=claims.FailureReason.COMPUTE_FAILED,
+        )
+
+        assert delay == claims.RETRY_BACKOFF_SECONDS[0]
+        assert session.scalar.await_args.args[1]["status"] == "pending"
 
 
 class TestRetryBackoff:

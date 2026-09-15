@@ -13,7 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
-from app.core.errors import AppError
+from app.core.errors import AppError, ValidationError
 from app.core.logging import get_logger
 from app.core.vector_space import current_space
 from app.modules.ingestion import parsers
@@ -61,9 +61,28 @@ class SourceHashMismatch(Exception):
     """Uploaded source bytes no longer match the authorized source snapshot."""
 
 
-def _parse_and_chunk(content: bytes, file_type: str) -> tuple[parsers.ParsedDocument, list[Chunk]]:
-    parsed = parsers.parse(content, file_type)
+def _parse_and_chunk(
+    content: bytes, file_type: str, transcriber: parsers.PageTranscriber | None = None
+) -> tuple[parsers.ParsedDocument, list[Chunk]]:
+    parsed = parsers.parse(content, file_type, transcriber)
     return parsed, chunk_blocks(parsed.blocks)
+
+
+def _vision_transcriber() -> parsers.PageTranscriber | None:
+    """Görsel okuma açıksa transkriptçiyi kurar; anahtar yoksa SESSİZCE geçmez.
+
+    Ayar açık ama anahtar yoksa bu bir yapılandırma hatasıdır: kapalıymış gibi
+    davranmak, eğitmene "açtım" dedirtip belgeyi sessizce reddetmek olurdu.
+    """
+    settings = get_settings()
+    if not settings.ocr_vlm_enabled:
+        return None
+    key = settings.gemini_api_key
+    if not key:
+        raise AppError("Görsel okuma açık ama sağlayıcı anahtarı yapılandırılmamış.")
+    from app.modules.ingestion import vision_ocr
+
+    return vision_ocr.gemini_transcriber(model=settings.ocr_vlm_model, api_key=key)
 
 
 async def process_document(storage: DocumentStorage, claim: Claim) -> PreparedDocument:
@@ -71,7 +90,9 @@ async def process_document(storage: DocumentStorage, claim: Claim) -> PreparedDo
     content = await storage.load(claim.storage_path)
     if len(content) != claim.byte_size or hashlib.sha256(content).hexdigest() != claim.file_hash:
         raise SourceHashMismatch()
-    parsed, chunks = await asyncio.to_thread(_parse_and_chunk, content, claim.file_type)
+    parsed, chunks = await asyncio.to_thread(
+        _parse_and_chunk, content, claim.file_type, _vision_transcriber()
+    )
     if not chunks:
         raise AppError("Belgeden aranabilir içerik çıkarılamadı.")
     provider = get_embedding_provider()
@@ -214,6 +235,23 @@ async def _backoff(delay: float, stop_event: asyncio.Event | None) -> None:
             await asyncio.wait_for(stop_event.wait(), timeout=delay)
 
 
+def failure_for(exc: BaseException) -> tuple[FailureReason, str | None]:
+    """İstisnayı (sebep, kullanıcıya gösterilecek ayrıntı) çiftine çevirir.
+
+    Yalnız `ValidationError` ayrıntı taşır: o sınıf kullanıcıya yazılmış metin
+    içerir (aynı metin 422 gövdesinde de döner) ve içerik hatası kalıcıdır —
+    metinsiz bir taramayı üç kez yeniden denemek sonucu değiştirmez, yalnız
+    kullanıcıya "tekrar deneyin" diye yanlış tavsiye verir. Diğer istisnalar
+    SQL/sağlayıcı ayrıntısı taşıyabilir; kapalı kalırlar ve geri çekilme kuralı
+    aynen işler.
+    """
+    if isinstance(exc, SourceHashMismatch):
+        return FailureReason.SOURCE_HASH_MISMATCH, None
+    if isinstance(exc, ValidationError):
+        return FailureReason.INVALID_CONTENT, exc.message
+    return FailureReason.COMPUTE_FAILED, None
+
+
 async def run_pending_jobs(
     session_factory: object,
     storage: DocumentStorage,
@@ -246,17 +284,13 @@ async def run_pending_jobs(
         except LostClaim:
             logger.info("ingestion sahipliği geçersiz", extra={"context": {"stage": "processing"}})
         except Exception as exc:
-            reason = (
-                FailureReason.SOURCE_HASH_MISMATCH
-                if isinstance(exc, SourceHashMismatch)
-                else FailureReason.COMPUTE_FAILED
-            )
+            reason, detail = failure_for(exc)
             logger.warning(
                 "belge işlenemedi",
                 extra={"context": {"reason": reason.value, "attempt": claimed.attempt}},
             )
             try:
-                retry_after = await fail_claim(session_factory, claimed, reason)
+                retry_after = await fail_claim(session_factory, claimed, reason, detail)
             except LostClaim:
                 retry_after = None
             except Exception:
