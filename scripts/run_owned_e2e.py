@@ -18,7 +18,7 @@ import subprocess
 import sys
 import threading
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import NamedTuple
 from urllib.parse import urlsplit
@@ -47,6 +47,14 @@ class Phase(NamedTuple):
 #: Ana faz önce koşar: 87 vakanın 78'ini ve soğuk web derlemesini o taşır.
 #: Simülasyon fazlarının derlemesi artımlıdır (aynı ağaç, aynı NEXT_PUBLIC_API_URL),
 #: bu yüzden payları soğuk derlemeye göre değil gerçek maliyetlerine göre ölçüldü.
+#: DİKKAT — `grounded` ve `ratelimit` satırlarındaki dört sayı (420/260, 300/210)
+#: HÂLÂ ÖLÇÜLMEDİ: ilk fazlı CI koşusunda (34926253846) `grounded` kendi API
+#: sürecine hiç ulaşamadı (`WEB_PORT_BUSY`, 15.052 sn = port sondasının tam zaman
+#: aşımı) ve `ratelimit` hiç başlamadı. Ölçüm için gereken şey bütçe değil, bu
+#: dosyadaki port düzeltmesinin bir CI koşusunda yeşil `phases[].seconds`
+#: üretmesidir; o koşudan sonra bu dört sayı yeniden ayarlanmalıdır.
+#: Referans (fazlama öncesi, tek süreçte ve simülasyon bayrağı KAPALI koştukları
+#: için üst sınır değil yalnız işaret): ikisi toplam 6 vaka taşıyor.
 PHASES = (
     Phase("main", {}, None, 0.0),
     Phase("grounded", {"LLM_SIMULATE_GROUNDED_FEEDBACK": "1"}, 420.0, 260.0),
@@ -55,6 +63,11 @@ PHASES = (
 #: Fazın tarayıcı beklemesi DIŞINDA harcadığı duvar saati için pay. Bu süre
 #: hiçbir fazın `budget`'ine girmez; sayılmazsa sessizce sonraki fazın payından
 #: düşer ve son faz hiç başlamaz.
+#: ÖLÇÜM (koşu 34926253846, `main`): 723.145 sn faz − 720.0 sn tarayıcı = 3.145 sn
+#: gerçek ek yük. Ama o fazın guard baseline'ı BOŞTU (`baselineCount: 0`), yani
+#: 3.145 alt sınırdır; üstelik pay artık `BROWSER_INTERRUPT_GRACE` (25 sn) iptal
+#: zincirini de kapatmak zorunda. 60 bilerek ~2 kat üstte bırakıldı: bu sayı
+#: küçültülürse bütçe aşan bir faz, teardown'u biterken sonraki fazın payını yer.
 PHASE_OVERHEAD = 60.0
 #: Sonraki fazlara ayrılan toplam duvar saati.
 RESERVE_TOTAL = sum(phase.reserve for phase in PHASES)
@@ -62,12 +75,28 @@ RESERVE_TOTAL = sum(phase.reserve for phase in PHASES)
 #: sınırı 30 dk ve apt/uv/bun/playwright kurulumunu da kapsıyor; iş SIGKILL
 #: yerse result.json HİÇ yazılmaz, yani kapıdan önce durmak zorundayız.
 #: Operatör --test-timeout'u yükseltirse son tarih birlikte uzar (aşağıya bak).
-OVERALL_BUDGET = 1250.0
+#: ÖLÇÜM (E2E işini gerçekten koşan 29 CI koşusu): iş kurulumu (iş başlangıcı →
+#: E2E adımı) min 46 · p50 55 · maks 80 sn; adım sonrası kuyruk maks 7 sn;
+#: `provision_ci_e2e.py` maks 2.3 sn. Ham boşluk 1800 − 80 − 7 − 3 = 1710 sn.
+#: Pay 270 sn ayrıldı; ağırlığı SOĞUK bağımlılık önbelleği: 29 koşunun hepsinde
+#: "API ve web bağımlılıkları" adımı 15-32 sn sürdü, yani hepsi sıcak geri
+#: yüklemeydi — önbellek düşünce `bunx playwright install` gerçek indirmeye döner.
+#: 1250 bu boşluğun 460 sn'sini kullanmadan bırakıyordu; ölçülen tavan 1440'tır.
+#: 1440 ile ana faz TAM bütçesini yakarken bile `grounded` tavanının tamamını
+#: (420) alır — 34926253846'da 256.9'a sıkışmış ve `ratelimit` hiç koşmamıştı.
+OVERALL_BUDGET = 1440.0
 #: Bu kadar tarayıcı süresi kalmadıysa faz başlatmak yerine açık kodla durulur.
 #: Anlamlı olması için ısınmış bir `next build` artı birkaç vakayı kapsamalı.
 PHASE_FLOOR = 150.0
 #: --test-timeout için akla yatkın üst sınır; `nan` ve negatif değerleri de eler.
 MAX_TEST_TIMEOUT = 7200.0
+#: Bütçesini aşan tarayıcıya, SIGINT'ten sonra KENDİ web sunucusunu kapatması
+#: için verilen süre. Playwright teardown'u ters sırada koşar ve web sunucusunu
+#: EN SON öldürür: önce çalışanlar durur, sonra `global-teardown.ts` psql
+#: temizliğini yapar. Bu yüzden pay tek bir sinyal gecikmesi değil, o zincirin
+#: tamamıdır. Yalnız bütçe aşımı yolunda harcanır; normal bitişte tarayıcı çoktan
+#: çıkmıştır ve `stop_browser_group` hiç sinyal göndermez.
+BROWSER_INTERRUPT_GRACE = 25.0
 
 
 def source_hashes(repo: Path) -> dict[str, str]:
@@ -185,6 +214,59 @@ def serve_owned(fd: int) -> int:
         and not lifecycle.error_occurred
     )
     return 0 if clean else 1
+
+
+def stop_browser_group(
+    process: subprocess.Popen,
+    *,
+    grace: float = BROWSER_INTERRUPT_GRACE,
+    killpg: Callable[[int, int], None] = os.killpg,
+) -> str:
+    """Bütçeyi aşan tarayıcı sürecini ÖNCE SIGINT ile durdurur.
+
+    Playwright web sunucusunu `detached: true` ile AYRI bir süreç grubu VE
+    oturumunda başlatır (playwright-core/lib/coreBundle.js, `launchProcess`),
+    bu yüzden bizim `killpg`imiz oraya tanım gereği ulaşmaz. Onu kapatan tek
+    yol Playwright'ın KENDİ iptal zinciridir: yalnız SIGINT'in bir işleyicisi
+    vardır (runner'daki `FixedNodeSIGINTHandler`) ve teardown web sunucusu
+    grubunu kendi pid'iyle `process.kill(-pid)` ederek öldürür. SIGTERM'in
+    işleyicisi YOKTUR — süreç anında ölür, 'exit' olayı hiç yayılmaz ve
+    `next start` portta öksüz kalır.
+
+    Ölçüldü (bu depoda, Playwright 1.62.1, üç tekrar): süreç grubuna SIGTERM
+    gönderildiğinde port 20 sn sonra HÂLÂ tutuluyordu; SIGINT gönderildiğinde
+    aynı port anında serbest kaldı. CI'daki iz: koşu 34926253846, `grounded`
+    fazı `WEB_PORT_BUSY` (15.052 sn = `wait_web_port_free`'nin tam zaman aşımı).
+
+    İKİNCİ BİR SIGINT GÖNDERİLMEZ: teardown koşucusunun kendi SIGINT gözcüsü
+    vardır ve ikinci sinyal tam da web sunucusunu öldüren adımı iptal eder.
+    Bu yüzden basamaklar SIGINT → SIGTERM → SIGKILL'dir, SIGINT → SIGINT değil.
+    """
+    if process.poll() is not None:
+        return "exited-before-stop"
+    # Yalnız yukarıda `start_new_session=True` ile yaratılan grup bu koşuya ait.
+    escalation = (
+        (signal.SIGINT, grace, "interrupted"),
+        (signal.SIGTERM, 10.0, "forced-terminate"),
+        (signal.SIGKILL, 10.0, "forced-kill"),
+    )
+    last = len(escalation) - 1
+    for index, (sig, timeout, observation) in enumerate(escalation):
+        try:
+            killpg(process.pid, sig)
+        except ProcessLookupError:
+            # Grup poll() ile killpg arasında ölmüş olabilir. Bu istisna eskiden
+            # dışarı kaçıp bütçe aşımını OWNED_E2E_FAILED diye raporlatıyordu;
+            # çocuğu yine de reap etmek gerekir, o yüzden yutulur.
+            pass
+        try:
+            process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            if index == last:
+                raise
+            continue
+        return observation
+    raise guard.GuardError("BROWSER_ESCALATION_EXHAUSTED")
 
 
 def stop_owned_api(process: subprocess.Popen, timeout: float = 30) -> tuple[int, str]:
@@ -340,6 +422,7 @@ def run_phase(
     playwright_code = 1
     api_code = None
     stop_kind = "not-started"
+    browser_stop = "not-started"
     error_code = None
     api = None
     browser = None
@@ -473,14 +556,8 @@ def run_phase(
                 playwright_code = browser.wait(timeout=budget)
             finally:
                 try:
-                    if browser is not None and browser.poll() is None:
-                        # Only the process group created above belongs to this run.
-                        os.killpg(browser.pid, signal.SIGTERM)
-                        try:
-                            browser.wait(timeout=10)
-                        except subprocess.TimeoutExpired:
-                            os.killpg(browser.pid, signal.SIGKILL)
-                            browser.wait(timeout=10)
+                    if browser is not None:
+                        browser_stop = stop_browser_group(browser)
                 finally:
                     api_code, stop_kind = stop_owned_api(api)
     except guard.GuardError as error:
@@ -540,6 +617,11 @@ def run_phase(
         "ownedApiPid": None if api is None else api.pid,
         "ownedApiExitCode": api_code,
         "stopObservation": stop_kind,
+        # Bütçe aşımında "interrupted" BEKLENİR: Playwright kendi web sunucusunu
+        # kapattı demektir. "forced-terminate"/"forced-kill" görülüyorsa iptal
+        # zinciri bitmemiştir ve port sonraki faza öksüz devredilir; o fazın
+        # WEB_PORT_BUSY'si o zaman bu satırla eşleştirilir.
+        "browserStopObservation": browser_stop,
         "auditFinishExitCode": finish_code,
         "auditReconciled": accounting["reconciled"],
         "rowDamage": damage,
@@ -672,7 +754,21 @@ def main() -> int:
     parser.add_argument("--webpack", action="store_true")
     # Ana fazın tarayıcı bütçesi. Varsayılan 900'den 720'ye indi: tek koşu üç faza
     # bölündü ve üçünün toplamı ci.yml'nin 30 dakikalık iş sınırına sığmalı.
-    # 720 + RESERVE_TOTAL + PHASE_OVERHEAD tam olarak OVERALL_BUDGET'tir.
+    #
+    # 720 ÖLÇÜLDÜ VE KORUNDU. Koşu 34926253846 `PLAYWRIGHT_BUDGET_EXCEEDED`
+    # verdi ama sebebi bütçenin küçüklüğü DEĞİL: api-main.log'un zaman damgaları
+    # 720.3 sn'lik açıklığın 544.4 sn'sinin ≥10 sn'lik BOŞLUK olduğunu gösteriyor
+    # (2 × 90 sn test zaman aşımı + 18 × ~11 sn expect zaman aşımı + kesilen
+    # kuyruk). Gerçek iş yalnız 175.7 sn. Fazlama ÖNCESİ koşuda (34900228666,
+    # 87 vaka) aynı hesap 182.8 sn veriyor — yani vaka başına iş 2.10 → 2.25 sn,
+    # uygulama yavaşlamadı; "2,5 kat yavaşlama" tamamen düşen testlerin bekleme
+    # süresidir. Yeşil bir ana fazın maliyeti ~250 sn (üç bağımsız türetme),
+    # bir flaky tekrarı ve koşucu değişkenliğiyle üst sınır ~550 sn.
+    # Bu yüzden 720 BÜYÜTÜLMEDİ: yeşil maliyetin ~2,9 katı zaten var ve büyütmek
+    # yalnız asılı kalan bir süitin daha uzun yanmasını sağlardı.
+    # Not: `student-exam-flow.spec.ts:259` (durationMinutes 1, expect.poll 95 sn)
+    # yeşilken ~60 sn DÜRÜSTÇE bekler; iki ölçülen koşuda da 10 sn'de düştüğü
+    # için bu bedel hiç ödenmedi, yeşil tahmine ayrıca eklendi.
     parser.add_argument("--test-timeout", type=float, default=720)
     args = parser.parse_args()
     os.umask(0o077)

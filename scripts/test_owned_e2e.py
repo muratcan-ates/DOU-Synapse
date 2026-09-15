@@ -8,6 +8,7 @@ from __future__ import annotations
 import http.client
 import importlib.util
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -145,6 +146,72 @@ class StopOwnedContracts(unittest.TestCase):
         self.assertIn("terminate", process.calls)
         self.assertIn("kill", process.calls)
         self.assertIsNone(process.returncode)
+        self.assertFalse(process.waits)
+
+
+class BrowserGroupStopContracts(unittest.TestCase):
+    """Bütçeyi aşan tarayıcının web sunucusunu öksüz bırakmadan durdurulması.
+
+    Playwright web sunucusunu AYRI bir süreç grubunda başlatır; ona ulaşan tek
+    kapanış yolu Playwright'ın SIGINT iptal zinciridir. SIGTERM'in Node'da
+    işleyicisi yoktur, yani ilk sinyal SIGTERM olursa `next start` portta kalır.
+    Bu testler sinyal SIRASINI sabitler; gerçek süreç grubu sinyallenmez.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.controller = load_controller()
+
+    def stop(self, process, **kwargs):
+        process.pid = 4242
+        sent = []
+        observation = self.controller.stop_browser_group(
+            process, killpg=lambda pgid, sig: sent.append((pgid, sig)), **kwargs
+        )
+        return observation, sent
+
+    def test_interrupt_alone_lets_playwright_close_its_own_web_server(self):
+        observation, sent = self.stop(FakeProcess([130]), grace=0.1)
+        self.assertEqual(observation, "interrupted")
+        self.assertEqual(sent, [(4242, signal.SIGINT)])
+
+    def test_escalation_never_repeats_the_interrupt(self):
+        # İkinci bir SIGINT, teardown'un web sunucusunu öldüren adımını iptal
+        # ederdi; basamak bu yüzden SIGINT → SIGTERM → SIGKILL'dir.
+        observation, sent = self.stop(FakeProcess(["timeout", "timeout", -9]), grace=0.1)
+        self.assertEqual(observation, "forced-kill")
+        self.assertEqual(
+            sent, [(4242, signal.SIGINT), (4242, signal.SIGTERM), (4242, signal.SIGKILL)]
+        )
+
+    def test_terminate_is_reached_only_after_the_interrupt_grace(self):
+        observation, sent = self.stop(FakeProcess(["timeout", -15]), grace=0.1)
+        self.assertEqual(observation, "forced-terminate")
+        self.assertEqual(sent, [(4242, signal.SIGINT), (4242, signal.SIGTERM)])
+
+    def test_already_exited_browser_is_never_signalled(self):
+        observation, sent = self.stop(FakeProcess([0], already_exited=0))
+        self.assertEqual(observation, "exited-before-stop")
+        self.assertEqual(sent, [])
+
+    def test_vanished_group_is_still_reaped_and_reported(self):
+        # killpg ile poll() arasında grup ölebilir. ProcessLookupError eskiden
+        # dışarı kaçıp bütçe aşımını OWNED_E2E_FAILED diye raporlatıyordu.
+        process = FakeProcess([0])
+        process.pid = 4242
+
+        def vanished(pgid, sig):
+            raise ProcessLookupError(pgid, sig)
+
+        observation = self.controller.stop_browser_group(process, killpg=vanished, grace=0.1)
+        self.assertEqual(observation, "interrupted")
+        self.assertIn(("wait", 0.1), process.calls)
+
+    def test_unreapable_browser_cannot_be_reported_as_stopped(self):
+        process = FakeProcess(["timeout", "timeout", "timeout"])
+        process.pid = 4242
+        with self.assertRaises(subprocess.TimeoutExpired):
+            self.controller.stop_browser_group(process, killpg=lambda pgid, sig: None, grace=0.1)
         self.assertFalse(process.waits)
 
 
