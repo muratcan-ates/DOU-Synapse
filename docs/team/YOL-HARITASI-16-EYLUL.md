@@ -150,6 +150,20 @@ kod çalıştırma (hayır, bilinçli) · LMS/LTI · öğrenci self-enroll · ge
       aşılamaz) ve istek başına ~4.500 jeton gidiyor; üstündeyse demo ortasında
       "Günlük kişisel AI kullanım kotan doldu" yazar. Önbellekten dönen cevaplar jeton
       harcamaz — bu yüzden provayı önbellek dolu yapın.
+- [ ] **Web derlemesi taze mi** — `run_web.sh` üretim derlemesi yapar; merge sonrası ESKİ
+      derleme koşuyorsa yeni rotalar 404 verir. 15 Eylül'de tam bunu yaşadık: kampüs
+      tasarımı 02:10'da birleşti ama koşan derleme 00:01'dendi, `/study` ve `/settings`
+      404 dönüyordu — ikisine de ana menüden ve pano düğmesinden link var. Kontrol:
+      ```
+      for r in /study /settings /dashboard /profile; do \
+        printf "%s %s\n" "$r" "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3020$r)"; done
+      ```
+      Dördü de **200** olmalı. Değilse web'i durdurup `sh scripts/demo/run_web.sh` ile yeniden başlat.
+- [ ] **Soru havuzu gerçek sorular içeriyor** — `psql -d dou_demo -Atc "select status, count(*) from questions group by 1"`
+      → `approved|6`. Tohum verisindeki 3 sahte soru (doğru şıkkı ham chunk metni olan,
+      çeldiricileri "Materyalde bu şekilde anlatılmıyor" kalıbında) 15 Eylül'de eğitmen
+      hesabıyla REDDEDİLDİ. Havuzda yine o kalıptan soru görürsen sahnede alıştırma
+      açma — soru üretiminin çalışmadığı izlenimi verir.
 - [ ] Plan C provası yapıldı: Wi-Fi kapalı, senaryo sorusu kopyala-yapıştır → cevap önbellekten
 - [ ] Telefon hotspot bağlı ve şarjda; laptop adaptörde; bildirimler susturuldu; çözünürlük ayarlı
 - [ ] Yedek klasörü (`dou_demo.bundle` + `api.env` + OKU.md) USB'de

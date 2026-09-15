@@ -221,6 +221,43 @@ kapsamsız kalan hassas dosyaları — soy çakışmasını değil.
 Sunumu durduran bir şey değil — ürün, testler ve demo etkilenmiyor. Yalnız
 `AI quality` rozeti kırmızı görünür.
 
+## 4.4 Sabah simülasyonu (15 Eylül 06:50–08:15) — öğrenci ve eğitmen gözünden
+
+27 rota iki rolle gerçek tarayıcıda gezildi (`scratchpad/simulasyon.mjs`). Üç kusur
+bulundu, üçü de ölçümle:
+
+**1. `/study` ve `/settings` her iki rolde 404 idi.** Sebep kod değil bayat derleme:
+kampüs tasarımı 02:10'da birleşti, koşan üretim derlemesi 00:01'dendi. Bu sessiz bir
+sahne riskiydi — ana menüde **"Ayarlar"**, panoda **"Ders tekrarına geç"** düğmesi bu
+rotalara link veriyor. Web yeniden derlendi; 27/27 rota şimdi 200, HTTP/konsol hatası 0.
+Kontrol komutu 16 Eylül listesine eklendi.
+
+**2. Soru havuzundaki 3 tohum sorusu sahteydi.** Alıştırma açılınca çıkan soru şuydu:
+*"Ders materyaline göre aşağıdakilerden hangisi doğrudur?"* — doğru şık, kaynak parçanın
+ham ve kesilmiş kopyası; çeldiriciler "Materyalde bu şekilde anlatılmıyor", "Bu bölümde
+tanımlanmayan bir davranış". Jüri bunu görse soru üretiminin çalışmadığı sonucunu çıkarır.
+
+Gerçek üretim denendi ve **çalışıyor**: eğitmen hesabıyla `POST …/questions/generate`
+(konu: Süreçler ve CPU zamanlama, tip: mcq, adet 6) → **6 istendi, 6 döndü, 6 kabul,
+0 ret**. Örnek: *"Round-Robin zamanlamasında quantum çok büyük seçildiğinde hangi durum
+ortaya çıkar?"* (doğru: FCFS'ye benzer, yanıt süresi kötüleşir), *"Süreçler arası context
+switch neden thread'ler arasından pahalı?"* (MMU sayfa tablosu + TLB flush), *"Öncelik
+açlığına karşı hangi teknik?"* (aging). Her birinde açıklama ve çeldirici kaynakları var.
+
+Altısı onaylandı, üç sahte soru **API üzerinden reddedildi** (`POST …/reject`) — denetim
+izi korunsun ve "eğitmen reddetti" akışı belgelendiği gibi işlesin diye. Havuz artık
+`approved|6 · rejected|3`. Alıştırma altı gerçek soruyla açılıyor.
+
+**3. Demo kotası sunuma hazır değil.** Ana demo öğrencisi (`burak@`) bugün **44.469**
+jeton harcamış; yol haritasının eşiği 35.000. Gece yarısı sıfırlanacağı için 16 Eylül'de
+sorun olmayacak, ama bugün prova yapılacaksa `burak4@` kullanılmalı (26.868, ~5 istek).
+Eğitmen hesabı temiz: 200.000'de 0.
+
+**Çalışan ve dokunulmayanlar:** ders sayfası "5 materyal · 5 hazır" gösteriyor (belgeleri
+dün gece 8'den 5'e düzeltmem doğruymuş), sınav provası boş durumları dürüst, `/study`
+dersi listeliyor, eğitmenin soru üretim formu tam. Sınav planı ve yayımlanmış sınav
+sürümü **0** — "Sınav Mentoru" rolü sahnede yalnız alıştırma moduyla gösterilebilir.
+
 ## 5. Murat'a kalan işler (ben yapamam)
 
 | # | İş | Neden bende değil |
