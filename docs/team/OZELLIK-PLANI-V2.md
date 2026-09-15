@@ -141,7 +141,7 @@ Yeni türler: `card_reviewed` (F4, gövde: `question_id`, `verdict: "knew" | "re
 - Şema: yeni dosya `apps/api/app/schemas/study.py`.
 - Dep: `UnlockedCourseMemberDep`. Eğitmen kendi verisini görebilir; başkasının verisi yok.
 
-**Frontend (lite):** `/study` sayfası zaten var (kampüs birleşmesi). Sayfaya "Çalışma özeti" kartı + indirme düğmesi; önizleme JSON'dan render (`components/study/summary-card.tsx` yeni dosya).
+**Frontend (lite):** `/study` sayfası zaten var ama **ders üstü**: `apps/web/app/study/page.tsx` (kampüs birleşmesi; `courses/[courseId]/study` yok). Özet ders bazlı olduğundan sayfa ders seçtirir (öğrencinin üye olduğu dersler `useSession`'dan) ve seçili ders için "Çalışma özeti" kartı + indirme düğmesi gösterir; önizleme JSON'dan render (`components/study/summary-card.tsx` yeni dosya). Ders sayfasına (`courses/[courseId]/page.tsx`) da "Çalışma özetim" bağlantısı eklenir.
 
 **Full (Faz 2):** Özetin başına LLM'in yazdığı 150–250 kelimelik "bu hafta nerede zorlandın" anlatısı. §2.1 protokolü; anlatı yalnız özetteki pasajlara atıf yapar, citation guardrail'den geçer; atıfsız cümle üretilirse anlatı bölümü düşer, özetin kalanı yine iner.
 
