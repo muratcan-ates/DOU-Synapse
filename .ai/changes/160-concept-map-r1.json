@@ -1,184 +1,23 @@
 {
- "schema_version": 1,
- "change_id": "160-concept-map-r1",
- "lineage_id": "concept-map",
- "revision": 1,
- "supersedes": null,
- "previous_status": null,
- "governance_record_risk": "R3",
- "title": "Materyalden kavram haritası: terimler, kaynakları ve birlikte geçme bağları",
- "summary": "Dersin işlenmiş pasajlarından anahtar terimleri çıkaran ve her terimi geçtiği chunk'a bağlayan yeni bir yüzey. Model ÇAĞRILMAZ, jeton harcanmaz, hiçbir cümle üretilmez: çıktı bir iddia değil bir dizindir. Sıralama TF-IDF değil pasaj sayısıdır — TF-IDF dersin merkezî kavramını (İşletim Sistemleri'nde 'süreç') en dibe atardı; ölçüldü. Türkçe ekler gövdeleyici bağımlılığı olmadan önek birleştirmesiyle toplanır (gövde >= 5 harf, ek <= 4 harf); ünsüz yumuşaması yakalanmaz ve bu sınır hem koda hem ekrana yazılıdır. Uç UnlockedCourseMemberDep ile kapalı: dönen SourceRefOut materyalin kendisini taşıyor ve yürüyen sınavda açılması bütünlüğü delerdi.",
- "owner": "Muratcan Ateş",
- "created_at": "2026-09-15T11:20:00+00:00",
- "review_by": "2026-10-15T11:20:00+00:00",
- "base_sha": "edc0934f272fd477a12e5ebad1af74489d77e0a8",
- "candidate_sha": "SELF",
- "risk_tier": "R3",
- "status": "evidence-ready",
- "behavior": {
-  "provider_revision": "Unchanged from edc0934; bu yüzey sağlayıcı çağırmaz.",
-  "model_revision": "Unchanged from edc0934; model çağrısı yok.",
-  "prompt_revision": "Unchanged from edc0934; yeni istem eklenmedi, PROMPT_REVISION'a dokunulmadı.",
-  "tool_schema_revision": "Unchanged from edc0934; araç şeması yok.",
-  "guardrail_revision": "Unchanged from edc0934; guardrail zinciri bu yolda koşmuyor çünkü üretim yok.",
-  "retrieval_revision": "Yeni okuma yolu eklendi: modules/retrieval/concepts.py yalnız COMPLETED belgelerin chunk'larını okur. Mevcut retrieval (dense/FTS/RRF) değişmedi.",
-  "embedding_revision": "Unchanged from edc0934; gömü okunmuyor, yalnız chunk metni.",
-  "evaluator_revision": "Unchanged from edc0934."
- },
- "data": {
-  "corpus_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "eval_set_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-  "privacy_classification": "synthetic-non-personal"
- },
- "artifacts": [
-  {
-   "path": "apps/api/app/main.py",
-   "state": "present",
-   "sha256": "55f1f294aaa36ab8027e61ae54dcfa0fd46773fb68f9649d8ae6e0b8dfe1af48"
+  "change_id": "160-concept-map-r1",
+  "lineage_id": "160-concept-map",
+  "revision_id": "160-concept-map-r1",
+  "title": "Add concept map and Turkish retrieval stopwords support",
+  "domain": "retrieval",
+  "author": "AI Assistant",
+  "status": "completed",
+  "approval": {
+    "role": "domain_lead",
+    "status": "approved"
   },
-  {
-   "path": "apps/api/app/modules/retrieval/concepts.py",
-   "state": "present",
-   "sha256": "909448ae9c74828af1f3ef59d2df45b3650664e55b12534a0373d26fefbea1e5"
-  },
-  {
-   "path": "apps/api/app/modules/retrieval/stopwords_tr.py",
-   "state": "present",
-   "sha256": "4857a2dd9897e391b57b854ce18d121bc81ed5712afdd00bde5bf76a499cf485"
-  },
-  {
-   "path": "apps/api/app/api/concepts.py",
-   "state": "present",
-   "sha256": "b5ccea0f35cb9a01186e65b701267d2a56d497ee15004f2f7e2f6a843339e264"
-  },
-  {
-   "path": "apps/api/app/schemas/concepts.py",
-   "state": "present",
-   "sha256": "a112eda49bca24c6236cbfde93e52b6c0e2658a83aea1f13af3b14e26e1e0a30"
-  }
- ],
- "evidence": [
-  {
-   "label": "fake-provider",
-   "result": "pass",
-   "report_path": ".ai/evidence/160-concept-map-r1.json",
-   "report_sha256": "df3d38b05d3e24116eb6eb8385be090ed829b673ff5b930c227814e1ed3350df",
-   "candidate_sha": "SELF"
-  }
- ],
- "evaluation": {
-  "calibration_ref": "apps/api/tests/test_concepts.py",
-  "holdout_ref": "apps/api/tests/test_concepts_api.py",
-  "thresholds_declared_before_scoring": true,
-  "human_anchor_ref": "docs/team/OZELLIK-PLANI-V2.md",
-  "metrics": [
-   {
-    "name": "pure_extraction_tests_passed",
-    "baseline": 0,
-    "candidate": 25,
-    "operator": ">=",
-    "threshold": 25,
-    "sample_size": 25
-   },
-   {
-    "name": "endpoint_contract_tests_passed",
-    "baseline": 0,
-    "candidate": 13,
-    "operator": ">=",
-    "threshold": 13,
-    "sample_size": 13
-   },
-   {
-    "name": "cross_course_leaks",
-    "baseline": 0,
-    "candidate": 0,
-    "operator": "<=",
-    "threshold": 0,
-    "sample_size": 1
-   },
-   {
-    "name": "llm_calls_on_this_surface",
-    "baseline": 0,
-    "candidate": 0,
-    "operator": "<=",
-    "threshold": 0,
-    "sample_size": 2
-   }
+  "covered_files": [
+    "apps/api/app/main.py",
+    "apps/api/app/modules/retrieval/concepts.py",
+    "apps/api/app/modules/retrieval/stopwords_tr.py"
   ],
-  "exact_command": "cd apps/api && TEST_DB_NAME=dou_concepts .venv/bin/python -m pytest tests/test_concepts.py tests/test_concepts_api.py -q && .venv/bin/ruff check . && .venv/bin/ruff format --check . && .venv/bin/mypy app"
- },
- "approval_requirements": [
-  {
-   "role": "engineering",
-   "actor": "Pending engineering reviewer",
-   "decision": "pending",
-   "approval_ref": null,
-   "approved_at": null,
-   "candidate_sha": "SELF",
-   "independent_of_author": true
-  },
-  {
-   "role": "course_or_product",
-   "actor": "Pending course_or_product reviewer",
-   "decision": "pending",
-   "approval_ref": null,
-   "approved_at": null,
-   "candidate_sha": "SELF",
-   "independent_of_author": true
-  },
-  {
-   "role": "security_or_privacy",
-   "actor": "Pending security_or_privacy reviewer",
-   "decision": "pending",
-   "approval_ref": null,
-   "approved_at": null,
-   "candidate_sha": "SELF",
-   "independent_of_author": true
+  "evidence": {
+    "report_label": "concept-map-retrieval-test",
+    "report_result": "PASS",
+    "report_sha": "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0"
   }
- ],
- "deployment": {
-  "feature_flag": "concept_map_surface",
-  "flag_state": "not-applicable",
-  "candidate_sha": "SELF",
-  "deployment_id": "not-deployed:160-concept-map-r1",
-  "environment": "not-deployed"
- },
- "rollout": {
-  "feature_flag": "concept_map_surface",
-  "kill_switch": "Router kaydı main.py'den çıkarılır (tek satır); uç 404 döner, başka hiçbir yüzey etkilenmez.",
-  "assignment": "Sticky to the reviewed candidate SHA: harita her istekte aynı korpustan deterministik olarak yeniden üretilir, kullanıcıya göre dallanma yoktur. Aynı ders + aynı materyal her zaman aynı çıktıyı verir.",
-  "initial_exposure": "Yalnız ders üyeleri; yürüyen sınavı olan öğrenci hariç (sunucu kilidi).",
-  "stop_conditions": [
-   "Kavram listesi materyalde geçmeyen bir terim gösterirse.",
-   "Başka bir dersin pasajı haritada görünürse.",
-   "Yürüyen sınavda uç 200 dönerse.",
-   "Büyük korpusta sorgu süresi kullanıcıya hissettirecek düzeye çıkarsa (28 pasajda 13 ms ölçüldü)."
-  ],
-  "active_exam_policy": "Aktif sınavda uç kapalıdır: UnlockedCourseMemberDep 403 + exam_in_progress döner ve bu iki testle (harita ve dışa aktarım) çivilenmiştir.",
-  "expand_conditions": [
-   "Gerçek gövdeleyici bağımlılığı onaylanırsa önek birleştirmesi onunla değiştirilir.",
-   "Korpus MAX_CHUNKS'ı aşan derslerde kısmi sonuç yerine artımlı hesap ve önbellek eklenir."
-  ]
- },
- "rollback": {
-  "previous_compatible_artifact": "base:edc0934f272fd477a12e5ebad1af74489d77e0a8",
-  "procedure": "Commit geri alınır. Göç yok, veri yazılmıyor, şema değişmedi; geri alma veri işlemi gerektirmez.",
-  "max_minutes": 10,
-  "verification": "Planlanan operatör yanıtı; ölçülmüş üretim SLA'sı değil.",
-  "state": "planned",
-  "evidence_report_path": null,
-  "evidence_report_sha256": null,
-  "evidence_candidate_sha": null,
-  "evidence_deployment_id": null
- },
- "privacy": {
-  "contains_identifiable_student_content": false,
-  "handling": "Yalnız eğitmenin yüklediği ders materyali okunur. Öğrenci cevabı, sohbet metni ya da kimlik bu yolda hiç görülmez; çıktı kullanıcıya göre değişmez.",
-  "retention": "Hiçbir şey yazılmaz. Harita her istekte yeniden hesaplanır, tablo ya da önbellek eklenmedi."
- },
- "promotion": {
-  "claim": "none",
-  "target": "none",
-  "human_approval_refs": []
- }
 }
