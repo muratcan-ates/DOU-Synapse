@@ -1,4 +1,14 @@
-# Final Rapor — P5 Demo Delivery
+# P5 şerit kapanış kaydı — jüri demo provası (AŞILDI)
+
+> **Bu, projenin nihai raporu DEĞİLDİR.** P5 şeridinin tek bir oturumdaki kapanış
+> tutanağıdır ve aşağıdaki "KOŞULMADI" satırları **o oturumun** ortam engelini
+> anlatır (`docker` binary'si yoktu), projenin durumunu değil. Hepsi sonradan
+> aşıldı: demo yığını docker'sız çalışır hâle getirildi (`scripts/demo/run_api.sh`),
+> gerçek Groq ile koşuldu, ekran görüntüleri yenilendi <!-- docs-check: tarihsel 16 · 2026-09-15 --> (16 görüntü, 14-15 Eylül).
+>
+> Projenin güncel durumu için: [`README.md`](../README.md) "Güncel durum" tablosu ·
+> ölçümler için [`docs/test-report.md`](test-report.md) · gece koşusu için
+> [`docs/team/GECE-RAPORU-14-EYLUL.md`](team/GECE-RAPORU-14-EYLUL.md).
 
 ## Amaç
 P5 kapsamında jüri demo provası ve iki kayıtlı arayüz kusurunun kapanış raporu.

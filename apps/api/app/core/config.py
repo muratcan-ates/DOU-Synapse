@@ -137,6 +137,15 @@ class Settings(BaseSettings):
 
     # --- Yükleme ve depolama ------------------------------------------------
     max_upload_bytes: int = 20 * 1024 * 1024
+    #: Metinsiz PDF sayfalarını (tarama, el yazısı) görsel modelle okuma. Varsayılan
+    #: KAPALI: açıkken her metinsiz sayfa için bir sağlayıcı çağrısı yapılır ve
+    #: çıktı "AI okuması" etiketiyle parçalanır. Kapalıyken böyle bir belge net
+    #: bir hata mesajıyla reddedilir (uydurmaz). Ayrıntı: ingestion/vision_ocr.py.
+    ocr_vlm_enabled: bool = False
+    #: 2.0-flash 15 Eylül'de emekli oldu (API 404 ile yeni adı söylüyor). Model adı
+    #: ayar olarak duruyor ki bir sonraki emeklilikte kod değişmesin.
+    ocr_vlm_model: str = "gemini/gemini-3.6-flash"
+    ocr_vlm_max_pages: int = Field(default=40, ge=1, le=200)
     #: Yerel geliştirme için ``local``; kalıcı production nesne deposu için
     #: ``supabase``. Seçim çağıran kodu değiştirmez: DocumentStorage arayüzü
     #: aynı kalır.

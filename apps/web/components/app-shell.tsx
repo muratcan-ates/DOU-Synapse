@@ -1,22 +1,6 @@
 "use client";
 
-/**
- * Uygulama iskeleti — 14 Eylül 2026 kabuğu.
- *
- * Önceki kabuk tam boy mürekkep (siyah) rayıydı. Ürün sahibi, üniversitenin
- * kendi mobil uygulamasının (açık gri kanvas, yüzen beyaz kartlar, ikonlu
- * gezinme, tek kırmızı aksan) yanında bunu "kaba ve katı" buldu; DESIGN.md
- * §Components "Kabuk ve kural değişikliği — 14 Eylül" kararıyla kabuk açık
- * grama çevrildi:
- *   - üstte ince beyaz başlık çubuğu (marka kilidi, hesap, çıkış),
- *   - masaüstünde solda yüzen beyaz menü kartı (ikon + etiket satırları),
- *   - mobilde alt gezinme çubuğu.
- * Gezinme bağlantılarının href/etiket/aria değerleri değişmedi; E2E ve kas
- * hafızası korunur.
- *
- * Oturum burada YENİDEN OKUNMAZ. Depoyu kendi state'ine kopyalayan her bileşen,
- * lib/session.ts'in "tek kaynak" iddiasını sessizce boşa çıkarır (Anayasa XI).
- */
+/** Kampüs gezinmesi; kimlik ve profil tek mevcut bağlamdan okunur. */
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -26,9 +10,12 @@ import {
   usePortalProfile,
 } from "@/components/portal/portal-profile-context";
 import { ErrorNote } from "@/components/page-state";
-import { BrandLockup } from "@/components/brand-mark";
-import { BookIcon, HomeIcon, LogOutIcon, ShieldIcon, UserIcon } from "@/components/icons";
+import { BrandLockup, BrandMark } from "@/components/brand-mark";
+import { BookIcon, HomeIcon, LogOutIcon, ShieldIcon, UserIcon, ChevronRightIcon, SettingsIcon } from "@/components/icons";
+import { QuickSwitch } from "@/components/quick-switch";
+import { CampusMotion } from "@/components/campus-motion";
 import { ThemeControl } from "@/components/theme-control";
+import { SynapseFooter } from "@/components/synapse-footer";
 import { subscribeAuthChanges } from "@/lib/auth-events";
 import { signOutCurrent } from "@/lib/api";
 import { describeError, type ErrorInfo } from "@/lib/errors";
@@ -74,16 +61,28 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data: profile } = usePortalProfile();
   const [signingOut, setSigningOut] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [signOutError, setSignOutError] = useState<ErrorInfo | null>(null);
   const displayName = profile?.full_name || "Hesap";
   const displayInitial = displayName.trim().charAt(0).toLocaleUpperCase("tr-TR") || "H";
+  const teachingMemberships = profile?.memberships.filter((membership) => membership.role === "instructor") ?? [];
+  const learningMemberships = profile?.memberships.filter((membership) => membership.role === "student") ?? [];
+  const isPlatformAdmin = profile?.is_platform_admin === true;
+  const isOperationsOnly = isPlatformAdmin && profile.memberships.length === 0;
+  const areaLabel = pathname.startsWith("/admin") && isPlatformAdmin
+    ? "Bilgi İşlem alanı"
+    : teachingMemberships.length > 0 && learningMemberships.length > 0
+      ? "Çalışma alanlarım"
+      : teachingMemberships.length > 0
+        ? "Eğitmen alanı"
+        : learningMemberships.length > 0
+          ? "Öğrenci alanı"
+          : isPlatformAdmin ? "Bilgi İşlem alanı" : "Çalışma alanım";
   const navigation: NavigationItem[] = [
     { href: "/dashboard", label: "Genel bakış", icon: HomeIcon },
-    { href: "/courses", label: "Dersler", icon: BookIcon },
+    ...(!isOperationsOnly ? [{ href: "/courses", label: "Dersler", icon: BookIcon }] : []),
     { href: "/profile", label: "Profil", icon: UserIcon },
-    ...(profile?.is_platform_admin
-      ? [{ href: "/admin", label: "Bilgi İşlem", icon: ShieldIcon }]
-      : []),
+    { href: "/settings", label: "Ayarlar", icon: SettingsIcon },
   ];
 
   async function handleSignOut(): Promise<void> {
@@ -105,144 +104,115 @@ function AuthenticatedShell({ children }: { children: ReactNode }) {
     }
   }
 
+  const currentSection = pathname === "/study" ? "Ders tekrarı" : pathname.startsWith("/admin") && isPlatformAdmin ? "Bilgi İşlem" : navigation.find((item) => pathname === item.href || pathname.startsWith(item.href + "/"))?.label ?? "Çalışma alanı";
+
   return (
-    <div className="min-h-[100dvh]">
-      <a
-        href="#main-content"
-        className="sr-only fixed left-4 top-4 z-30 rounded-xl bg-surface px-4 py-3 text-sm font-medium text-fg shadow-e2 focus:not-sr-only focus:outline-2 focus:outline-offset-2 focus:outline-brand"
-      >
+    <div className="campus-shell min-h-[100dvh]" data-collapsed={collapsed}>
+      <a href="#main-content" className="sr-only fixed left-4 top-4 z-50 rounded-xl bg-surface px-4 py-3 text-sm font-medium text-fg shadow-e2 focus:not-sr-only focus:outline-2 focus:outline-offset-2 focus:outline-brand">
         Ana içeriğe geç
       </a>
-
-      {/* Üst çubuk: marka kilidi, kurum adı, tema, hesap, çıkış. Yapışkan; kaydırıldığında hafif gölge. */}
-      <header className="sticky top-0 z-20 border-b border-border bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-4 lg:px-8">
-          <Link
-            href="/dashboard"
-            aria-label="DOU Synapse"
-            className="flex items-center gap-3 rounded-xl px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            <BrandLockup tone="canvas" />
-            <span className="hidden border-l border-border pl-3 text-sm text-fg-muted sm:block">
-              Doğuş Üniversitesi
-            </span>
+      <header className="campus-topbar sticky top-0 z-30 flex min-w-0 items-center gap-3 px-4 lg:px-9">
+        <Link href="/dashboard" aria-label="DOU Synapse" className="shrink-0 rounded-xl focus-visible:outline-2 focus-visible:outline-brand lg:hidden">
+          <BrandLockup tone="canvas" />
+        </Link>
+        <div className="hidden min-w-0 items-center gap-2.5 text-sm text-fg-subtle lg:flex">
+          <span>{areaLabel}</span><ChevronRightIcon size={14} /><span className="font-medium text-fg">{currentSection}</span>
+        </div>
+        <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-4">
+          <QuickSwitch />
+          <ThemeControl tone="canvas" compact />
+          <div className="mx-1 hidden h-7 w-px bg-border sm:block" />
+          <Link href="/profile" aria-label={`Profil: ${displayName}`} className="group hidden h-11 min-w-0 items-center sm:flex gap-2.5 rounded-full pr-1 transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+            <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-brand/15 bg-brand-subtle text-sm font-semibold text-brand">{displayInitial}</span>
+            <span className="hidden max-w-[10rem] truncate text-sm font-medium text-fg xl:block">{displayName}</span>
           </Link>
-
-          <div className="ml-auto flex items-center gap-2">
-            <div className="hidden md:block">
-              <ThemeControl tone="canvas" />
-            </div>
-            <Link
-              href="/profile"
-              aria-label={`Profil: ${displayName}`}
-              className="flex h-11 items-center gap-2 rounded-full bg-surface-sunken py-1 pl-1 pr-3 text-sm font-medium text-fg transition-colors duration-200 hover:bg-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-            >
-              <span
-                aria-hidden="true"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-subtle text-sm font-semibold text-brand"
-              >
-                {displayInitial}
-              </span>
-              <span className="hidden max-w-[11rem] truncate sm:block">{displayName}</span>
-            </Link>
-            <button
-              type="button"
-              aria-disabled={signingOut}
-              onClick={() => void handleSignOut()}
-              className="inline-flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-medium text-fg-muted transition-colors duration-200 hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand aria-disabled:opacity-50"
-            >
-              <LogOutIcon size={18} />
-              <span>{signingOut ? "Çıkılıyor…" : "Çıkış"}</span>
-            </button>
-          </div>
+          <button type="button" aria-label={signingOut ? "Çıkılıyor…" : "Çıkış"} aria-disabled={signingOut} onClick={() => void handleSignOut()} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-fg-muted transition-colors hover:bg-surface hover:text-fg focus-visible:outline-2 focus-visible:outline-brand aria-disabled:opacity-50">
+            <LogOutIcon size={18} />
+          </button>
         </div>
       </header>
-
-      <div className="mx-auto max-w-[1280px] px-4 py-6 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
-        {/* Masaüstü: yüzen beyaz menü kartı. */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-24 rounded-2xl bg-surface p-3 shadow-e1">
-            <MainNavigation items={navigation} pathname={pathname} />
-          </div>
-        </aside>
-
-        <div className="min-w-0">
-          {signOutError && (
-            <div className="mb-6">
-              <ErrorNote
-                message={signOutError.message}
-                kind={signOutError.kind}
-                requestId={signOutError.requestId}
-                onRetry={() => void handleSignOut()}
-              />
-            </div>
-          )}
-          {/*
-           * Alt dolgu: mobilde alt gezinme çubuğu, masaüstünde sağ altta duran
-           * ders asistanı düğmesi sayfanın son satırlarının üstüne binmesin.
-           */}
-          <main id="main-content" tabIndex={-1} className="pb-32 lg:pb-28">
-            {children}
-          </main>
+      {/*
+       * Mobil alt gezinme DOM'da İÇERİKTEN ÖNCE durur. Çubuk `fixed` olduğu
+       * için tasarım etkilenmez; en sonda kalırsa klavye kullanıcısı ana menüye
+       * ancak sayfadaki bütün bağlantıları geçtikten sonra ulaşır (portal.spec
+       * 30 sekmede ulaşamamıştı → 4 sekme). Masaüstü rayı da `main`'den önce;
+       * iki kırılım aynı sırayı izler. Tasarım turu bu sırayı her seferinde
+       * sona alıyor, birleşmede geri taşınıyor.
+       */}
+      <MainNavigation items={navigation} pathname={pathname} mobile />
+      <aside id="desktop-navigation" className="campus-rail fixed z-40 hidden flex-col overflow-y-auto overscroll-contain px-4 pb-5 pt-6 lg:flex">
+        <div className="mb-8 flex items-center justify-between gap-2 px-2">
+          <Link href="/dashboard" aria-label="DOU Synapse" className="min-w-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
+            {collapsed ? <BrandMark className="h-10 w-10" /> : <BrandLockup tone="canvas" />}
+          </Link>
+          {!collapsed && <button type="button" onClick={() => setCollapsed(true)} aria-label="Menüyü daralt" aria-expanded={!collapsed} aria-controls="desktop-navigation" className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-fg-muted hover:bg-brand-subtle focus-visible:outline-2 focus-visible:outline-brand"><span aria-hidden="true" className="text-lg">«</span></button>}
+        </div>
+        {collapsed && <button type="button" onClick={() => setCollapsed(false)} aria-label="Menüyü genişlet" aria-expanded={false} aria-controls="desktop-navigation" className="mb-4 grid min-h-11 place-items-center rounded-lg text-fg-muted hover:bg-brand-subtle focus-visible:outline-2 focus-visible:outline-brand"><span aria-hidden="true" className="text-lg">»</span></button>}
+        {!collapsed && <p className="mb-3 px-3 text-xs font-medium text-fg-subtle">{areaLabel}</p>}
+        <MainNavigation items={navigation} pathname={pathname} collapsed={collapsed} />
+        {isPlatformAdmin && <div className="mt-5 border-t border-border pt-5">
+          {!collapsed && <p className="mb-2 px-3 text-xs font-medium text-fg-subtle">Platform yönetimi</p>}
+          <nav aria-label="Teknik yönetim">
+            <Link href="/admin" aria-current={pathname.startsWith("/admin") ? "page" : undefined} aria-label="Bilgi İşlem" title={collapsed ? "Bilgi İşlem" : undefined} className={`flex min-h-12 items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${collapsed ? "justify-center" : ""} ${pathname.startsWith("/admin") ? "bg-brand-subtle text-brand" : "text-fg-muted hover:bg-brand-subtle hover:text-fg"}`}>
+              <ShieldIcon size={21} />{!collapsed && <span>Bilgi İşlem</span>}
+            </Link>
+          </nav>
+        </div>}
+        {!collapsed && (teachingMemberships.length > 0 || learningMemberships.length > 0) && <div className="mt-6 space-y-5 border-t border-border pt-5">
+          {[
+            { title: "Eğitmen derslerim", memberships: teachingMemberships },
+            { title: "Öğrenci derslerim", memberships: learningMemberships },
+          ].filter((group) => group.memberships.length > 0).map((group) => <div key={group.title}>
+            <p className="mb-2 px-3 text-xs font-medium text-fg-subtle">{group.title}</p>
+            <nav aria-label={group.title} className="space-y-1">
+              {group.memberships.slice(0, 4).map((membership) => <Link key={membership.course_id} href={`/courses/${membership.course_id}`} className="group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm text-fg-muted transition-colors hover:bg-brand-subtle hover:text-fg focus-visible:outline-2 focus-visible:outline-brand">
+                <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                <span className="truncate">{membership.course_title}</span>
+              </Link>)}
+            </nav>
+          </div>)}
+        </div>}
+        {!collapsed && learningMemberships.length > 0 && <Link href="/study" className="mt-5 flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-brand hover:bg-brand-subtle focus-visible:outline-2 focus-visible:outline-brand"><BookIcon size={19} />Ders tekrarı</Link>}
+        <div className="mt-auto space-y-5 pt-10">
+          {!collapsed && <>
+            <Link href="/kvkk" className="flex min-h-11 items-center gap-2 px-3 text-xs text-fg-muted hover:text-fg focus-visible:outline-2 focus-visible:outline-brand"><ShieldIcon size={16} />Gizlilik ve verileriniz</Link>
+          </>}
+        </div>
+      </aside>
+      <div className="campus-workspace">
+        <div className="campus-main">
+          {signOutError && <div className="mb-6"><ErrorNote message={signOutError.message} kind={signOutError.kind} requestId={signOutError.requestId} onRetry={() => void handleSignOut()} /></div>}
+          {isPlatformAdmin && <nav aria-label="Mobil teknik yönetim" className="mb-5 lg:hidden">
+            <Link href="/admin" aria-current={pathname.startsWith("/admin") ? "page" : undefined} className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"><ShieldIcon size={20} /><span>Bilgi İşlem</span><ChevronRightIcon size={16} className="ml-auto" /></Link>
+          </nav>}
+          <main id="main-content" tabIndex={-1} className="min-w-0 outline-none"><CampusMotion route={pathname}>{children}</CampusMotion>{pathname === "/dashboard" && profile && !isOperationsOnly && <SynapseFooter />}</main>
         </div>
       </div>
-
-      {/* Mobil: alt gezinme çubuğu — ikon üstte, etiket altta. */}
-      <MainNavigation items={navigation} pathname={pathname} mobile />
     </div>
   );
 }
 
-function MainNavigation({
-  items,
-  pathname,
-  mobile = false,
-}: {
-  items: NavigationItem[];
-  pathname: string;
-  mobile?: boolean;
+function MainNavigation({ items, pathname, mobile = false, collapsed = false }: {
+  items: NavigationItem[]; pathname: string; mobile?: boolean; collapsed?: boolean;
 }) {
   return (
-    <nav
-      aria-label={mobile ? "Mobil ana menü" : "Ana menü"}
-      className={
-        mobile
-          ? "fixed inset-x-0 bottom-0 z-20 flex justify-around border-t border-border bg-surface/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden"
-          : "flex flex-col gap-1"
-      }
-    >
+    <nav aria-label={mobile ? "Mobil ana menü" : "Ana menü"} className={mobile
+      ? "campus-dock fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-md items-center justify-around gap-1 rounded-[32px] border border-border bg-surface p-1.5 lg:hidden"
+      : "flex flex-col gap-2"}>
       {items.map((item) => {
-        const current =
-          pathname === item.href ||
-          (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+        const current = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
         const Icon = item.icon;
-        /*
-         * Aktif satır yumuşak kırmızı ton: "aktif gezinme", kırmızının üç meşru
-         * kullanımından biri. Renk tek başına bilgi taşımaz — `aria-current`
-         * her zaman verilir ve aktif etiket kalın yazılır.
-         */
-        const className = mobile
-          ? [
-              "flex min-h-11 min-w-16 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1 text-xs font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
-              current ? "bg-brand-subtle text-brand" : "text-fg-muted hover:text-fg",
-            ].join(" ")
-          : [
-              "flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
-              current
-                ? "bg-brand-subtle text-brand"
-                : "text-fg-muted hover:bg-surface-sunken hover:text-fg",
-            ].join(" ");
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={current ? "page" : undefined}
-            className={className}
-          >
-            <Icon size={mobile ? 22 : 20} />
-            <span>{item.label}</span>
-          </Link>
-        );
+        return <Link key={item.href} href={item.href} aria-current={current ? "page" : undefined} aria-label={collapsed || mobile ? item.label : undefined} title={collapsed ? item.label : undefined} className={[
+          "group relative flex min-h-12 items-center rounded-2xl font-medium transition-[background,color,transform] duration-200 focus-visible:outline-2 active:scale-[.98]",
+          mobile ? "min-w-0 flex-1 flex-col justify-center gap-1 px-1 py-2 text-[0.6875rem] focus-visible:outline-offset-2 focus-visible:outline-fg" : collapsed ? "justify-center px-3 py-3.5 text-sm focus-visible:outline-offset-2 focus-visible:outline-brand" : "gap-3 px-4 py-3.5 text-sm focus-visible:outline-offset-2 focus-visible:outline-brand",
+          mobile
+            ? current ? "bg-brand-subtle text-brand" : "text-fg-muted hover:bg-bg hover:text-fg"
+            : current ? "bg-brand-subtle text-brand" : "text-fg-muted hover:bg-brand-subtle hover:text-fg",
+        ].join(" ")}>
+          <Icon size={mobile ? 23 : 21} />
+          {!collapsed && <span className={mobile ? "whitespace-nowrap text-center" : undefined}>{item.label}</span>}
+          {!mobile && !collapsed && current && <ChevronRightIcon size={15} className="ml-auto" />}
+        </Link>;
       })}
     </nav>
   );

@@ -34,11 +34,14 @@ Operatörün önünde bu belge açık, terminalde üç sekme hazır: API logu, w
 
 | | Plan A | Plan B | Plan C |
 |---|---|---|---|
-| Ne | Canlı bulut | Telefon hotspot + aynı canlı bulut | Tam çevrimdışı, sunum makinesinde |
-| Kimlik | Supabase Auth | Supabase Auth | `DEV_AUTH_ENABLED=true` |
-| Veritabanı | Supabase | Supabase | Yerel Postgres / Compose |
-| LLM | Groq → Gemini failover | aynı | **YOK** — cevaplar `answer_cache`'ten |
-| Ne kaybedilir | — | Birkaç saniye gecikme | Önceden doldurulmamış her soru; soru üretimi |
+| Ne | Sunum makinesinde yerel yığın + Groq (canlı internet) | Telefon hotspot + aynı yerel yığın | Aynı yığın, tam çevrimdışı |
+| Kimlik | `DEV_AUTH_ENABLED=true` (sentetik hesaplar) | aynı | aynı |
+| Veritabanı | Yerel PostgreSQL 16 `dou_demo` (Docker YOK) | aynı | aynı |
+| LLM | Groq: gpt-oss-120b, yedek qwen3.6 (Gemini anahtarı girilirse ikinci sağlayıcı) | aynı | **YOK** — `qa` cevapları `answer_cache`'ten, Sokratik sahne sahte sağlayıcıyla |
+| Ne kaybedilir | — | Birkaç saniye gecikme | Önceden doldurulmamış her soru; gerçek soru üretimi |
+
+14 Eylül 2026 kararı: Supabase (bulut kimlik + depolama) sunuma **alınmadı**; üç plan da
+aynı makinede aynı yerel yığını kullanır, yalnız LLM'e giden ağ değişir.
 
 ### Geçiş ölçütleri — belirtiyle, süreyle
 
@@ -71,11 +74,22 @@ deneyelim" en pahalı hatadır; jüri iki kez bekler ve ikisini de hatırlar.
 Bu plan **kurulu ve prova edilmiş** olmadan sunum gününe girilmez.
 
 ```bash
-# Sunum makinesinde, ağ kapalıyken:
-cd ~/code/DOU-Synapse
-docker compose up -d          # db + api + HTTP worker + worker-poller
-# Frontend Compose'da YOKTUR, ayrıca:
-cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:8000 bun run dev
+# Aynı makine, aynı yığın; Docker YOK. API ve web Plan A'da zaten ayaktaysa
+# `qa` soruları için HİÇBİR ŞEY yapılmaz: chat ucu answer_cache'i LLM'den ÖNCE
+# arar (apps/api/app/api/chat.py), isabet varsa ağa hiç çıkmaz.
+# Sokratik sahne ve soru üretimi için API'yi sahte sağlayıcıyla yeniden başlat:
+cd ~/code/dou-synapse-018-codex-production-line
+DOU_DEMO_OFFLINE=1 sh scripts/demo/run_api.sh   # 127.0.0.1:8020, LLM_FAKE_PROVIDER=true
+sh scripts/demo/run_web.sh                       # 127.0.0.1:3020 — ayaktaysa dokunma
+# Sıfırdan kurulum yalnız provada: scripts/demo/setup_db.sh dou_demo'yu SİLİP
+# yeniden kurar, dolu answer_cache de gider. Demo ortasında ASLA.
+```
+
+Önbelleği doldurma (provadan önce, internet varken, gerçek modelle):
+
+```bash
+cd apps/api && .venv/bin/python scripts/fill_answer_cache.py \
+  --base-url http://127.0.0.1:8020 --questions scripts/demo_questions.json
 ```
 
 Plan C'nin sınırları: aşağıdaki eski süre/akış ölçümleri 9 Ağustos'a aittir;
@@ -95,15 +109,15 @@ Plan C'nin sınırları: aşağıdaki eski süre/akış ölçümleri 9 Ağustos'
   giderildi; soru şemasını doldurabilmesi pedagojik doğruluk kanıtı değildir.
   Gerçek ders gösterimi için soruları önceden eğitmen incelemesinden geçirin;
   sentetik üretimi gerçek LLM başarısı olarak sunmayın.
-- **Compose API bağlantısı `dou_app` rolündedir; işleyici `dou_worker` kullanır.**
+- **`run_api.sh` API bağlantısı `dou_app` rolündedir (BYPASSRLS yok); işleyici `dou_worker`.**
   Yerel dev-auth gerçek Supabase Auth kabulü değildir. İzolasyon sahnesi ancak
   seçilen kurulumda gerçek uygulama rolü ve ikinci kullanıcının ders dışı reddi
-  doğrulandıysa gösterilir. Compose çalıştırma kanıtı mevcut değilse bunu söyleyin;
-  ne süperuser bağlantısı varsayın ne de yalnız ayar dosyasından izolasyon ilan edin.
+  doğrulandıysa gösterilir; ne süperuser bağlantısı varsayın ne de yalnız ayar
+  dosyasından izolasyon ilan edin.
 
-> **R3'ten alınacak:** `docker compose` fallback profilinin gerçekten ağsız koştuğuna dair
-> ölçüm, cold start süresi ve `fill_answer_cache.py` betiği. Bu belge yazılırken R3'ün
-> ölçümü henüz yoktu; yukarıdaki sınırlar **R5'in kendi koşusundan** çıkarıldı.
+> Eski `docker compose` yolu bu makinede hiç koşmadı (`docker: command not found`,
+> bkz. jury-demo.md 14 Eylül P5 kaydı); yukarıdaki betikler onun yerini aldı.
+> Doldurma koşusunun ölçümü jury-demo.md sonundaki 14 Eylül kaydındadır.
 
 ---
 
@@ -164,7 +178,8 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
       psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"
       # request_logs_self_insert VE request_logs_instructor_read görmelisin
       ```
-- [ ] Demo dersinin materyali **hazır** mı: `8 materyal · 8 hazır` (Materyaller ekranı)
+- [ ] Demo dersinin materyali **hazır** mı: `5 materyal · 5 hazır` (Materyaller ekranı).
+      Ölçüldü: `psql -d dou_demo -Atc "select status, count(*) from documents group by 1"` → `completed|5`
 - [ ] Sınav sahnesi için **onaylanmış soru var mı** (öğrenci hesabıyla bak, boş olmamalı).
       Yoksa eğitmen incelemesiyle hazırlayın; sentetik üretimi gerçek ders sorusu diye onaylamayın.
 - [ ] `answer_cache` demo soruları **dolduruldu** mu (Plan C sigortası)

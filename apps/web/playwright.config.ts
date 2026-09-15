@@ -23,6 +23,33 @@ const llmFiles = [
   "exam-assistant-killswitch",
   "privacy-session-guards", "exam-cross-tab-privacy", "screenshots",
 ].map((name) => `**/${name}.spec.ts`);
+
+// FAZ SEÇİMİ. İki dosya kendi API sürecini ister ve bayrakları AYNI ANDA açılamaz:
+// LLM_SIMULATE_RATE_LIMIT açıkken provider_fallback.py her üretim çağrısında 429
+// simüle eder, yani diğer bütün sohbet testleri düşer. `scripts/run_owned_e2e.py`
+// her fazı kendi API sürecinde koşar ve fazı bu değişkenle seçer.
+// Değişken KURULMADIĞINDA liste hiç değişmez (87 vaka / 20 dosya): docs_check.mjs
+// varsayılan listelemeyi ölçüp README'deki sayıyla karşılaştırır.
+const PHASES = ["main", "grounded", "ratelimit"] as const;
+type Phase = (typeof PHASES)[number];
+// Record<Exclude<...>> bilerek: ileride eklenen bir faz globunu unutursa tsc kırmızı yanar.
+const simFiles: Record<Exclude<Phase, "main">, string[]> = {
+  grounded: ["**/grounded-wrong-feedback.spec.ts"],
+  ratelimit: ["**/provider-fallback.spec.ts"],
+};
+const requestedPhase = process.env.E2E_PHASE ?? "";
+if (requestedPhase !== "" && !(PHASES as readonly string[]).includes(requestedPhase)) {
+  throw new Error(
+    `ENGEL: bilinmeyen E2E_PHASE "${requestedPhase}"; beklenen: ${PHASES.join(", ")}.`,
+  );
+}
+// Yazım hatası sessizce ana faza düşerse simülasyon testleri yanlış API'ye koşar;
+// bu yüzden yukarıda fail-fast. Boş dize de kurulmamış sayılır.
+const phase = requestedPhase === "" ? null : (requestedPhase as Phase);
+// Object.values ile TÜRETİLİR, elle sayılmaz: yeni bir simülasyon fazı eklenince
+// `main` fazının dışlama listesi kendiliğinden büyür. Elle yazılsaydı Record tipi
+// globu zorunlu kılar ama `main` onu sessizce dışlamayı unuturdu.
+const simFilesAll = Object.values(simFiles).flat();
 const browser = { ...devices["Desktop Chrome"], channel: process.env.CI ? undefined : "chrome" };
 
 export default defineConfig({
@@ -38,7 +65,14 @@ export default defineConfig({
   fullyParallel: true,
   workers: 2,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // Simülasyon fazlarında tekrar YOK: vakaların kendi tavanları yüksek
+  // (grounded 150 sn, ratelimit 120 sn) ve fazın bütçesi koşucuda sınırlı;
+  // tek bir tekrar bütçeyi kusur olmadan aşırırdı.
+  retries: phase !== null && phase !== "main" ? 0 : process.env.CI ? 1 : 0,
+  // Playwright her koşunun başında projenin outputDir'ini SİLER. Üç faz aynı
+  // dizini paylaşsaydı son faz önceki fazların trace/ekran görüntülerini
+  // götürürdü. Varsayılan değer değişmiyor; `/test-results/` .gitignore'da.
+  outputDir: phase === null ? "test-results" : `test-results/${phase}`,
   reporter: process.env.CI ? "github" : "list",
   webServer: {
     // Public API adresi derleme sırasında gömülür; farklı bir geliştirme
@@ -55,8 +89,18 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  projects: [
-    { name: "chromium", testIgnore: [...llmFiles, ...visualFiles], use: browser },
+  // Simülasyon fazı projects[] dizisini TAMAMEN değiştirir: `llm` projesinin
+  // testMatch'i koşulsuz olduğundan, yanında bırakılsaydı 53 llm vakası da
+  // simülasyon bayrağı açık API'ye koşar ve kusursuz yere kırmızı yanardı.
+  // Proje adları her fazda `chromium`/`llm` kalır; kanıt satırları karşılaştırılabilir olsun.
+  projects: phase !== null && phase !== "main"
+    ? [{ name: "chromium", testMatch: simFiles[phase], use: browser }]
+    : [
+    {
+      name: "chromium",
+      testIgnore: [...llmFiles, ...visualFiles, ...(phase === "main" ? simFilesAll : [])],
+      use: browser,
+    },
     { name: "llm", testMatch: llmFiles, use: browser },
     ...(VISUAL ? [{
       name: "visual", testMatch: visualFiles,

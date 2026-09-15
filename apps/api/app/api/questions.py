@@ -65,6 +65,7 @@ from app.schemas.assessment import (
     QuestionGenerateRequest,
     QuestionGenerationOut,
     QuestionOut,
+    QuestionSourceRefOut,
     SourceRefOut,
     TopicCreate,
     TopicOut,
@@ -176,6 +177,13 @@ def _build_out(
         if context.is_instructor
         else public_payload(question.type, question.payload)
     )
+    # Kaynak da payload gibi süzülür. `SourceRefOut.snippet` chunk metninden 320
+    # karakterdir; bu uç `UnlockedCourseMemberDep`'ten geçmez ve ipucu politikasını
+    # okumaz, dolayısıyla onu öğrenciye vermek `hint_limit: 0` diyen eğitmenin
+    # kararını ve yürüyen sınavın kilidini aynı anda delerdi.
+    visible_source = (
+        source if source is None or context.is_instructor else QuestionSourceRefOut.of(source)
+    )
     return QuestionOut(
         id=question.id,
         course_id=question.course_id,
@@ -189,7 +197,7 @@ def _build_out(
         reviewed_by=question.reviewed_by,
         reviewed_at=question.reviewed_at,
         created_at=question.created_at,
-        source=source,
+        source=visible_source,
         source_stale=source_stale,
     )
 

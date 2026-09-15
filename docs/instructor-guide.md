@@ -16,6 +16,15 @@ kaynakla birlikte inceleyin; kaynak gösterilmesi tek başına pedagojik doğrul
 > [belge görsellerini yenileme koşusunda](screenshots.md) yenilendi. Giriş, ders listesi ve
 > katılımcı görselleri önceki sürüm örnekleridir. Yerel I2 kanıt görüntüleri bunların
 > yerine yayımlanmadı. Bazı özellikler kullandığınız ortamda açılmamış olabilir.
+>
+> **15 Eylül 2026 eki:** Yukarıdaki paragraf 13 Eylül'ün durumudur ve olduğu gibi
+> bırakıldı. 15 Eylül'de bu kılavuzdaki görsellerin **tamamı** gerçek Groq modeli ve
+> yeni kampüs tasarımıyla yeniden çekildi — giriş, ders listesi ve katılımcı görselleri
+> dahil. Yani yukarıdaki "önceki sürüm örnekleridir" uyarısı bu kılavuz için artık
+> geçerli değil. Dosya dosya git ölçümü [screenshots.md](screenshots.md) "15 Eylül eki"
+> bölümündedir. Yeniden çekim; gerçek model kalitesinin, WCAG AA uygunluğunun veya
+> insan kabulünün kanıtı değildir ve yeni PNG'lerin görsel incelemesi yapılmadı
+> (**not-run**); yukarıdaki çekinceler aynen geçerlidir.
 
 ## 1. Giriş ve ders yetkisi
 
@@ -192,6 +201,8 @@ bir soruyla değiştirin. Sınıflandırma açıksa öğrenme çıktısı ve zor
 taslak hazırlayıp onaylayın, sonra kâğıttaki soruyu değiştirin.
 
 ### Öğrencinin sınava ulaşması ve sonuçlar
+
+Not: Bu paketteki **öğrenci kataloğu + yayın + sınav sonuç kanıtı için EKRAN akışı `koşulmadı`**. `EKRAN=1` ile gerçek ekran ölçümü bu turda çalıştırılamadı.
 
 Öğrenci çalışma alanı açıksa sınav, katılım koşulları sağlandığında **Sınav provası → Şu
 anda açık sınavlar** bölümünde görünür. Öğrenci süreyi ve kalan deneme hakkını görür.

@@ -66,7 +66,14 @@ function readThemes(css) {
     throw new Error('koyu tema bloğu bulunamadı (:root[data-theme="dark"])');
   }
   const dark = { ...light, ...declarations(blockAt(css, darkIdx)) };
-  return { light, dark };
+  const lightMoreIdx = css.indexOf(':root[data-contrast="more"]');
+  const darkMoreIdx = css.indexOf(':root[data-theme="dark"][data-contrast="more"]');
+  if (lightMoreIdx === -1 || darkMoreIdx === -1) throw new Error("yüksek kontrast tema bloğu bulunamadı");
+  return {
+    light, dark,
+    "light-more": { ...light, ...declarations(blockAt(css, lightMoreIdx)) },
+    "dark-more": { ...dark, ...declarations(blockAt(css, darkMoreIdx)) },
+  };
 }
 
 // --- Renk ------------------------------------------------------------------
@@ -103,7 +110,7 @@ function flatten([r, g, b, a], [br, bg, bb]) {
 function luminance([r, g, b]) {
   const lin = [r, g, b].map((c) => {
     const s = c / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
 }
@@ -138,12 +145,16 @@ const TEXT_TOKENS = [
 // demektir — `min` üçünün en kötüsünü alır, yani yeni yüzey kapıyı da bağlar.
 const BACKDROPS = ["bg", "surface", "surface-sunken"];
 
-/** Mürekkep rayının kendi metin çiftleri; ray koyu, kanvas açık. */
+/** Sabit lacivert yüzeyler; gezinme rayı ayrıca normal tema yüzeyini kullanır. */
 const INK_PAIRS = [
-  ["ink-fg", "ink", "ray birincil metni"],
-  ["ink-fg-muted", "ink", "ray ikincil metni"],
-  ["ink-fg", "ink-raised", "ray içinde yükseltilmiş yüzey"],
-  ["brand-on-ink", "ink", "rayda marka aksanı"],
+  ["ink-fg", "ink", "sabit lacivert yüzeyde birincil metin"],
+  ["ink-fg-muted", "ink", "sabit lacivert yüzeyde ikincil metin"],
+  ["ink-fg", "ink-raised", "yükseltilmiş lacivert yüzeyde birincil metin"],
+  ["ink-fg-muted", "ink-raised", "yükseltilmiş lacivert yüzeyde ikincil metin"],
+  ["brand-on-ink", "ink", "lacivert üstünde altın marka metni"],
+  ["brand-on-ink", "ink-raised", "yükseltilmiş lacivert üstünde altın marka metni"],
+  ["gold-light", "ink", "altın dekorun lacivert üstündeki kontrastı"],
+  ["gold-light", "ink-raised", "altın dekorun yükseltilmiş lacivert üstündeki kontrastı"],
 ];
 
 /** Rozet çiftleri: metin kendi soluk zemini üstünde (components/ui.tsx Badge). */
@@ -157,8 +168,18 @@ const BADGE_PAIRS = [
 
 /** Birincil buton: metin marka zemini üstünde (light/dark ayrı metin rengi). */
 const BUTTON_PAIRS = {
-  light: [["#ffffff", "brand", "birincil buton metni"]],
-  dark: [["#191715", "brand", "birincil buton metni"]],
+  light: [
+    ["#ffffff", "brand", "mevcut beyaz birincil buton metni"],
+    ["#ffffff", "brand-strong", "mevcut beyaz birincil buton hover metni"],
+    ["brand-fg", "brand", "semantik birincil buton metni"],
+    ["brand-fg", "brand-strong", "semantik birincil buton hover metni"],
+  ],
+  dark: [
+    ["bg", "brand", "mevcut koyu birincil buton metni"],
+    ["bg", "brand-strong", "mevcut koyu birincil buton hover metni"],
+    ["brand-fg", "brand", "lacivert birincil buton metni"],
+    ["brand-fg", "brand-strong", "lacivert birincil buton hover metni"],
+  ],
 };
 
 /**
@@ -221,7 +242,7 @@ function measure(theme, tokens) {
     });
   }
   for (const [fg, bg, note] of BUTTON_PAIRS[theme]) {
-    const ratio = contrast(fg, tokens[bg]);
+    const ratio = contrast(tokens[fg] ?? fg, tokens[bg]);
     rows.push({
       kind: "badge",
       theme,
@@ -248,7 +269,7 @@ function measure(theme, tokens) {
 // --- Çıktı -----------------------------------------------------------------
 
 function printMarkdown(theme, rows, tokens) {
-  console.log(`\n### ${theme === "light" ? "Açık" : "Koyu"} tema\n`);
+  console.log(`\n### ${theme.startsWith("light") ? "Açık" : "Koyu"}${theme.endsWith("more") ? " · yüksek kontrast" : ""} tema\n`);
   console.log(
     `| Token | Değer | \`--bg\` (${tokens.bg}) | \`--surface\` (${tokens.surface}) | \`--surface-sunken\` (${tokens["surface-sunken"]}) |`,
   );
@@ -264,13 +285,13 @@ function printMarkdown(theme, rows, tokens) {
   for (const r of rows.filter((r) => r.kind !== "text")) {
     const need = r.threshold === AA_NORMAL ? "AA 4.5" : "1.4.11 3.0";
     console.log(
-      `| \`${r.token}\` | ${r.value} | ${fmt(r.min)}:1 ${r.min >= r.threshold ? "geçti" : `KALDI (${need})`} |`,
+      `| \`${r.token}\` | ${r.note ? `${r.note} (${r.value})` : r.value} | ${fmt(r.min)}:1 ${r.min >= r.threshold ? "geçti" : `KALDI (${need})`} |`,
     );
   }
 }
 
 function printTable(theme, rows) {
-  console.log(`\n${theme === "light" ? "AÇIK" : "KOYU"} TEMA`);
+  console.log(`\n${theme.startsWith("light") ? "AÇIK" : "KOYU"}${theme.endsWith("more") ? " · YÜKSEK KONTRAST" : ""} TEMA`);
   const line = (r) => {
     const ok = r.min >= r.threshold;
     const detail =
@@ -296,9 +317,9 @@ const asMarkdown = process.argv.includes("--md");
 
 let textFailures = 0;
 let nonTextFailures = 0;
-for (const theme of ["light", "dark"]) {
+for (const theme of ["light", "dark", "light-more", "dark-more"]) {
   const tokens = themes[theme];
-  const rows = measure(theme, tokens);
+  const rows = measure(theme.startsWith("light") ? "light" : "dark", tokens);
   for (const r of rows) {
     if (r.min >= r.threshold) continue;
     if (r.kind === "non-text") nonTextFailures++;

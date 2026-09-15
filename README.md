@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-2139_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 2139 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-632_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 632 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-2197_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 2197 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-684_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 684 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -31,11 +31,11 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 
 | Katman | Durum | Açıklama |
 |---|---|---|
-| **Main'e birleşmiş ürün** | `ba69ff9eec0a2867614dd145eb6e995f6c0af5ac` | GitHub main 7 Eylül'de yeniden doğrulandı; PR #22 dahil önceki ürün ve arayüz çalışmaları burada |
-| **Etkin geliştirme adayı** | `018-codex-production-line` | `017-completion-integration` / `6218159` tabanını korur. Son hosted baş `f79d8a2`; S9/S10 yerel güvenlik kaynaklarının herkese açık gönderimi kullanıcı onayı bekler |
-| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Son yerel API 1571, tarayıcı 71; kontrol noktaları ve kaynak hashleri ayrı. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
+| **Main'e birleşmiş ürün** | `babdb664af6297255ec93fec4e3f4bb3af434fb7` | GitHub main'in güncel başı. Kampüs arayüzü tasarımı (`025-campus-ui`) bu başta birleşiktir |
+| **Etkin geliştirme adayı** | `018-codex-production-line` | Aday ile main aynı başta; şeritlerin (P1–P5, 019, 025) çalışması buraya toplanır |
+| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Yerel süitler: API 2197, web birim 684, tarayıcı 87 vaka toplanıyor <!-- docs-check: backend.tests = 2197 --><!-- docs-check: frontend.tests = 684 --><!-- docs-check: e2e.tests = 87 -->. CI'daki tarayıcı işi hâlâ kırmızı ve sebebi ölçüldü: son fazlı koşuda 78 vakanın 13'ü düşüyor, hepsi kampüs tasarımı birleşmesinin dokunduğu yüzeylerde — koşucu değil, testlerin kendisi. Ayrıca 6 test ayrı API süreci ve iki ayrı simülasyon bayrağı istediği için bu düzenekte hiç koşamıyor; fazlı koşu sunum sonrasına alındı. Kök neden tabloları sunum yol haritasının §2'sinde. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
 | **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
-| **Gerçek model ve insan kabulü** | Bekliyor | [Kabul paketi](evaluation/acceptance/README.md) hazır; öğretmen materyal/rubrik onayı, gerçek yanıtlar ve bağımsız insan değerlendirmesi gerekiyor |
+| **Gerçek model ve insan kabulü** | Kısmen ölçüldü | Demo yığını **gerçek Groq** ile koşuyor (`openai/gpt-oss-120b`); kapsam dışı ret, Sokratik merdiven ve atıflı cevap gerçek modelle tek tek doğrulandı (koşu kaydı `docs/team/GECE-RAPORU-14-EYLUL.md`). 16 soruluk sahne provası gerçek modelle uçtan uca koştu: kapsam dışı ret 4/4, atıflı cevap kaynak kartıyla, Sokratik merdiven ısrara rağmen ilerlemedi. **Holdout değerlendirmesi (G1) koşulmadı** — sebep ölçüldü, `docs/team/GECE-RAPORU-14-EYLUL.md` §4.2. Öğretmen materyal/rubrik onayı ve bağımsız insan değerlendirmesi hâlâ gerekiyor |
 | **Staging / production** | Kanıtlanmadı | Canlı Auth/Storage/worker, kalite, yedek/geri yükleme ve geri dönüş kabulü tamamlanmadan yayın iddiası yok |
 
 Adayın kesin commit kimliği, kirli kaynak sınırı ve yeni test kayıtları [018 doğrulamasında](specs/018-codex-production-line/verification.md) ve [tamamlanma defterinde](docs/completion-program.md) bulunur. Aşağıdaki gelişim günlüğü geçmiş aşamaları anlatır; bu tablo yeni main veya canlı dağıtım iddiası taşımaz.
@@ -98,15 +98,15 @@ dönüştü:
 
 | Danışman gereksinimi | Uygulamadaki karşılığı | Kanıt sınırı |
 |---|---|---|
-| PDF, Markdown ve kod yükleme | PDF, PPTX, MD, TXT ve yaygın kod türleri; doğrulama, parçalama, provenance, worker | Kodlandı ve testli |
+| PDF, Markdown ve kod yükleme | PDF, PPTX, MD, TXT ve yaygın kod türleri; doğrulama, parçalama, provenance, worker. **Taranmış ve el yazısı PDF** görsel modelle okunur | 15 Eyl: el yazısı ders notu 4 sayfa, atılan sayfa 0, 5 parça |
 | Yalnız öğretmenin kaynakları | Ders üyeliği + PostgreSQL RLS + seçili kaynak politikası | Yerel RLS ve mutasyon kanıtı |
-| Sokratik mod | Deneme bekleyen, kademeli ve kaynaklı ipucu merdiveni | Deterministik mekanik kanıt; gerçek pedagojik ölçüm açık |
-| Sınav prova modu | Sunucu süreli practice/exam oturumları, puanlama ve geri bildirim | Kodlandı; önceki E2E kanıtı var |
-| AI soru üretimi | Çoktan seçmeli, açık uçlu, kısa cevap, kod izleme ve hata bulma; öğrenme çıktısı, zorluk, cevap anahtarı ve kaynak | Fake provider mekanik akışı kanıtlıyor; gerçek model kabul oranı açık |
+| Sokratik mod | Deneme bekleyen, kademeli ve kaynaklı ipucu merdiveni; teşhis kademesinde materyali yeniden anlatan yanıt bloklanır | 15 Eyl gerçek modelle: ısrarda merdiven ilerlemedi, anlatım sızıntısı yakalandı. Geniş örneklemli pedagojik ölçüm açık |
+| Sınav prova modu | Sunucu süreli practice/exam oturumları, puanlama ve geri bildirim | 15 Eyl uçtan uca prova: alıştırma açıldı, cevap puanlandı, "neden yanlış" kaynak kartıyla geldi. Yayımlanmış sınav akışı demo verisinde yok |
+| AI soru üretimi | Çoktan seçmeli, açık uçlu, kısa cevap, kod izleme ve hata bulma; öğrenme çıktısı, zorluk, cevap anahtarı ve kaynak | 15 Eyl gerçek modelle iki koşu: 6 istendi/6 kabul/0 ret ve 3 istendi/3 kabul/0 ret. Geniş örneklemli kabul oranı açık |
 | Öğretmen onayı | Taslak → onay/red → öğrenciye yayın akışı; RLS yalnız onaylı soruları açar | API, DB ve testlerle zorunlu |
 | “Neden yanlış?” | Yanlış şık/cevap ile çelişen kaynak ve rubric kırılımı | Kodlandı |
 | Kod/senaryo inceleme | <code>code_trace</code> ve <code>bug_hunt</code>; statik değerlendirme | Kod hiçbir zaman çalıştırılmaz |
-| Kapsam dışı ret | <code>out_of_scope</code> ve <code>insufficient_context</code> ayrı sinyaller | LLM öncesi ret yolu mevcut |
+| Kapsam dışı ret | <code>out_of_scope</code> ve <code>insufficient_context</code> ayrı sinyaller | 15 Eyl gerçek modelle 4/4 doğru ret (2 kapsam dışı, 2 kanıt yetersiz); LLM öncesi ret yolu mevcut |
 | Kaynak gösterme | Retrieved metadata’dan mekanik citation doğrulaması | Kodlandı; gerçek-model faithfulness örneklemi açık |
 | Web platformu | Next.js öğrenci/eğitmen/admin portalı + FastAPI + PostgreSQL | Yerelde build/test kanıtı |
 | Test raporu ve kılavuz | Speckit, docs-check, öğrenci/eğitmen kılavuzları, test/eval belgeleri | Depoda mevcut |
@@ -169,6 +169,12 @@ dönüştü:
 - İş durumu, retry zamanı, hata özeti ve güvenli silme.
 - Her chunk için dosya, sayfa, slayt, bölüm ve kod satırı provenance bilgisi.
 - Embedding sağlayıcı/sürüm damgası; korpus-sorgu uzayı uyuşmazlığında fail-closed.
+- Metin katmanı olmayan PDF (tarama, el yazısı) görsel modelle transkribe edilir; eğitmenin
+  "bu tarama, önce OCR'dan geçireyim" demesi beklenmez. Görsel okuma kapalıysa belge net bir
+  mesajla ve **yeniden denenmeden** reddedilir — içerik hatası kalıcıdır.
+- Görsel okumada üç koruma: transkripsiyon istemi harfi harfine aktarım ister ve tahmini
+  yasaklar (`[okunamadı]`, çizimler transkribe edilmez); güven eşiğini geçemeyen sayfa
+  atılır ve hiçbiri geçemezse belge reddedilir; her parça "AI okuması" köken etiketi taşır.
 
 ### 3. Hibrit RAG ve kaynak laboratuvarı
 
@@ -314,7 +320,8 @@ ders sohbetinin, seçili dersteki üyelik rolüne göre güvenli şekilde özell
 - Belge, soru, sınav, not, üyelik veya politika değiştirmez.
 - Başka derse veya başka kullanıcının özel verisine erişmez.
 - Platform admin yetkisi kazanmaz.
-- Fake provider sonucu gerçek pedagojik kalite kanıtı sayılmaz.
+- Tekil demo koşuları pedagojik kalite kanıtı sayılmaz; geniş örneklemli insan
+  değerlendirmesinin yerini tutmaz.
 
 ## Güvenlik, sınav bütünlüğü ve KVKK
 
@@ -341,6 +348,11 @@ grant’i bilinçli zayıflatır; izolasyon testi kırmızıya dönmezse kanıt 
 
 - Eğitmen yalnız kendi dersinin agregalarını görür.
 - Öğretmen öğrencinin özel sohbet metnini varsayılan olarak okuyamaz.
+- Sohbet oturumu yalnız sahibine açılır: liste sorgusu ve iki yükleme yolu da
+  <code>user_id</code> eşleşmesi arar, aynı derste kayıtlı başka bir öğrenci oturum
+  kimliğini bilse bile geçmişi okuyamaz.
+- Öğrenciye dönen soru kaynakları yalnız dosya adı, konum ve chunk kimliğidir; ham pasaj
+  metni eğitmen yüzeyinde kalır, böylece soru kartı cevabı ele vermez.
 - AI kalite incelemesinde metin paylaşımı öğrenci onayına bağlıdır.
 - Platform admin akademik içeriğe admin sıfatıyla erişemez.
 - Teknik kayıtlar request ID, durum ve süre gibi metadata taşır; genel anonimlik
@@ -473,12 +485,12 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **2139** <!-- docs-check: backend.tests = 2139 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **632** <!-- docs-check: frontend.tests = 632 --> | 51 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 51 --> |
-| Playwright tarayıcı vakaları | **82** <!-- docs-check: e2e.tests = 82 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
+| Backend testleri | **2197** <!-- docs-check: backend.tests = 2197 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **684** <!-- docs-check: frontend.tests = 684 --> | 55 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 55 --> |
+| Playwright tarayıcı vakaları | **87** <!-- docs-check: e2e.tests = 87 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
 | Migration | **24** <!-- docs-check: migrations.count = 24 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **32** <!-- docs-check: tables.count = 32 --> | Migration’larda kurulan benzersiz tablo sayısı |
-| Web ekranı | **22** <!-- docs-check: screens.count = 22 --> | Next.js <code>page.tsx</code> sayısı |
+| Web ekranı | **26** <!-- docs-check: screens.count = 26 --> | Next.js <code>page.tsx</code> sayısı |
 | Örnek teslim dosyası | **22** <!-- docs-check: sampleData.files = 22 --> | İşletim Sistemleri örnek materyal paketi |
 
 8 Eylül 2026 yerel OPS turunda 71 geçti; yeni 3 vakanın 1’i gerçek yetkili API yanıtı, 2’si kontrollü dependency yanıtını gösteren UI sözleşmesidir. c45 hosted 68 sonucu yeni kaynağı kapsamaz. [018 doğrulaması](specs/018-codex-production-line/verification.md) <!-- docs-check: tarihsel 71 · 2026-09-08 -->
@@ -637,18 +649,58 @@ ekledi. Dal uzak repoya gönderildi fakat PR/CI/main birleşmesi açık.
 **Öğrenilen:** Bir eğitim ajanının değeri “daha otonom” olmasından değil, yetkisi,
 kaynağı, maliyeti ve pedagojik davranışının sınırlarının görünür olmasından gelir.
 
-### 10. Bugün — AI slop’tan uzak ürün tasarımı
+### 10. 11 Ağustos — AI slop’tan uzak ürün tasarımı
 
 <code>design/product-ui-refresh</code> adayı giriş, AppShell, dashboard,
 ders ana sayfası, profil ve admin yüzeylerini daha editoryal bir akademik stüdyoya
-dönüştürüyor. Tek kırmızı aksan, daha net tipografik hiyerarşi, düz veri rayları,
-responsive/dark-mode davranışı ve dürüst durum dili kullanılıyor.
+dönüştürdü. Tek kırmızı aksan, daha net tipografik hiyerarşi, düz veri rayları,
+responsive/dark-mode davranışı ve dürüst durum dili kullanıldı.
 
 11 Ağustos adayında 325 frontend testi, typecheck, açık/koyu tema kontrast kontrolü ve <!-- docs-check: tarihsel 325 · 2026-08-11 -->
 production build geçti. Benzersiz PostgreSQL ile gerçek API’ye karşı seri Playwright
 paketi 35/35 geçti; ders/audit kalıntısı 0/0 ölçüldü. <!-- docs-check: tarihsel 35 · 2026-08-11 --><!-- docs-check: tarihsel 0 · 2026-08-11 --> Manuel ekran okuyucu ve
 <code>prefers-reduced-motion</code> gözlemi ile bütün uygulama-katmanı mutasyon matrisi
-ayrı kapılar olarak açık tutulur. Dal main’e henüz birleşmedi.
+ayrı kapılar olarak açık tutuldu.
+
+### 11. 14–15 Eylül — gerçek modelle çalışan sisteme
+
+Ağustos'ta altyapı ve arayüz kuruldu; Eylül'ün iki günü sistemi **gerçek modelle
+çalıştırmaya** ve kanıtlamaya gitti.
+
+**Gerçek sağlayıcı bağlandı.** Demo yığını sahte sağlayıcıdan gerçek Groq'a
+(`openai/gpt-oss-120b`) geçti. Kapsam dışı ret, Sokratik merdiven ve atıflı cevap tek tek
+gerçek modelle doğrulandı. Sahnede sorulacak 16 soru ölçülüp sabitlendi ve
+`answer_cache`'e yazıldı — bu sorular modele hiç gitmediği için hem jeton harcamıyor hem de
+ağ kesilse bile geliyor (Plan C).
+
+**Kampüs arayüzü birleşti.** Sinaps kapakları, erişilebilirlik sağlayıcısı, hızlı geçiş ve
+ayarlar/çalışma sayfaları ürüne girdi. Birleşmede tek istisna yapıldı: tasarım turu mobil
+gezinmeyi DOM'un sonuna almıştı; `fixed` konumlandığı için görünüm aynı kalıyor ama klavye
+kullanıcısı ana menüye ancak bütün sayfayı geçerek ulaşıyordu. Geri taşındı ve gerçek
+tarayıcıyla ölçüldü: **4 sekme** (regresyonda 30+ sekmede ulaşılamıyordu), odak halkası
+`2px solid`, 375×812'de yatay taşma yok.
+
+**İki güvenlik açığı kapatıldı.** Soru havuzu, öğrenciye her sorunun kaynak pasajından 320
+karakter veriyordu — yürüyen sınavdaki öğrenci tek istekle kâğıdındaki her sorunun kaynağını
+okuyabiliyordu. Öğrenci projeksiyonu artık yalnız dosya adı ve konum taşıyor. Ayrıca sohbet
+oturumu sahipliği yalnız RLS'e bağlıydı; depo "iki bağımsız katman" doktrinini yazılı ilan
+ederken sohbet yolunda ikinci katman yoktu. Üç yerde eklendi — biri yazma yolu.
+
+**Taranmış ve el yazısı materyal okunur oldu.** Gerçek bir el yazısı ders notu (tablet
+üzerine, matematik notasyonu ve çizimlerle) yüklendiğinde ayrıştırıcı doğru olarak "metin
+yok" diyordu ama üç kez boşuna deniyor ve "Lütfen yeniden deneyin" yazıyordu. İçerik hatası
+artık kalıcı sayılıyor; metinsiz sayfalar görsel modelle transkribe ediliyor, düşük güvenli
+sayfa atılıyor, her parça "AI okuması" köken etiketi taşıyor. Ölçüldü: 4 sayfa, atılan
+sayfa 0, 5828 karakter.
+
+**Pedagojik filtre güçlendi.** Uçtan uca provada görüldü ki teşhis kademesinde model, soru
+sormadan önce cevabı düzyazıyla anlatıyor; mevcut dedektörler bunu göremiyordu çünkü kod,
+adım ya da "cevap:" kalıbı yoktu. Yeni `exposition` dedektörü kalıp değil **örtüşme**
+ölçüyor: soru cümleleri hariç, düz cümlelerin kaynakla örtüşmesi yarıyı geçerse yanıt
+bloklanıp deterministik şablon ipucuna düşülüyor.
+
+**Uçtan uca prova.** 15 Eylül sabahı sıfırdan yeni ders açılıp hiç indekslenmemiş belge
+yüklenerek gerçek tarayıcıda tek oturumda koşuldu: **10/10 adım geçti.**
 
 ## Yol boyunca bulunan ve kapatılan gerçek kusurlar
 
@@ -671,12 +723,13 @@ ayrı kapılar olarak açık tutulur. Dal main’e henüz birleşmedi.
 
 ## Ekran görüntüleri
 
-Aşağıdaki görseller **9 Ağustos 2026 işlevsel baseline’ına** aittir. Kaynak yükleme,
-atıf, Sokratik davranış, sınav, analitik ve izolasyonun çalıştığını gösterir; bugünkü
-yerel UI refresh’inin güncel görünümü olarak sunulmaz.
+Aşağıdaki görseller **15 Eylül 2026'da güncel kampüs arayüzüyle ve gerçek modelle**
+yeniden çekilmiştir; bugünkü ürünün görünümüdür. Kaynak yükleme, atıf, Sokratik davranış,
+sınav, analitik ve izolasyonun çalıştığını gösterir. Çekim kaydı ve hangi görüntünün
+hangi akışı gösterdiği: [`docs/screenshots.md`](docs/screenshots.md).
 
 <details>
-<summary><b>Tarihsel ürün galerisi</b></summary>
+<summary><b>Ürün galerisi</b></summary>
 
 <br/>
 
@@ -716,26 +769,28 @@ yerel UI refresh’inin güncel görünümü olarak sunulmaz.
 
 ![İzolasyon](docs/screenshots/08-izolasyon-404.png)
 
+*(Bu tek görsel 8 Ağustos tarihlidir ve eski kabuğu gösterir; izolasyonun 404 davranışı
+değişmediği için tarihsel hâliyle bırakıldı. Diğer sekiz görsel 15 Eylül'dendir.)*
+
 </details>
 
-Güncel tasarımın ekran görüntüleri, feature dalı review edildikten ve aday kimliği
-sabitlendikten sonra yeniden üretilmelidir. Tarihsel PNG’ler sessizce “güncel”
-etiketine taşınmaz.
+Tarihsel PNG'ler sessizce "güncel" etiketine taşınmaz: yukarıdaki galeri, tasarım
+birleştikten sonra gerçek demo yığınına karşı yeniden çekildiği için güncel sayılır.
 
 ## Production’a giden açık yol
 
 ### Kod/repo seviyesinde açık kapılar
 
-- 018→017 taslak PR26 için yeni OPS/D6 adayının kesin kaynak/commit/CI kabulü; ardından017→main ve terfi ayrı inceleme gerektirir.
+- CI'da uçtan uca tarayıcı işi yeşile dönmeli. Fazlı koşuda 78 vakanın 13'ü düşüyor; koşucu tarafındaki iki kusur (faz bütçesi, öksüz web portu) ölçülüp düzeltildi, kalan iş kampüs tasarımı birleşmesinin dokunduğu bu 13 testin kendisi. Ayrı bir kalem: simülasyon bayrağı isteyen 6 test için fazlı koşucu (`run_owned_e2e.py`) gerekiyor; `ci.yml` hassas yol olduğu için fazlama koşucunun içinde yapılmalı.
 - Öğretmenin izin verdiği kaynak/kapsam ve rubrikle gerçek kabul.
 - Hedef ortamda özellik bayraklarının kontrollü açılması ve gerçek rol yolculukları.
 - Manuel VoiceOver/Safari kabulü; yerel Chromium testi bunun yerine geçmez.
-- Güncel durum ve komutlar: [018 doğrulaması](specs/018-codex-production-line/verification.md), [tamamlama programı](docs/completion-program.md), taban kurulumu için [017 quickstart](specs/017-completion-integration/quickstart.md).
+- Güncel durum ve komutlar: [018 doğrulaması](specs/018-codex-production-line/verification.md), [yol haritası](docs/team/YOL-HARITASI-16-EYLUL.md), [gereksinim analizi](docs/requirements-analysis.md).
 
 ### Gerçek model ve ürün kalitesi
 
-- Groq/Gemini ile dondurulmuş holdout.
-- Kaynak faithfulness ve citation precision örneklemi.
+- Groq/Gemini ile dondurulmuş holdout. **Hâlâ koşulmadı**; rapordaki Recall/atıf sayıları sahte sağlayıcı koşusundan geliyor ve belgede öyle etiketli.
+- Kaynak faithfulness ve citation precision örneklemi. Mekanik atıf geçerliliği mimari olarak garantili (atıf model metninden değil parça meta verisinden üretiliyor), ama "atıf iddiayı gerçekten destekliyor mu" ayrı bir ölçümdür ve yapılmadı.
 - Öğrenci için cevap sızıntısı / ipucu yararlılığı insan değerlendirmesi.
 - Eğitmen için doğruluk, kaynak bağlılığı ve taslak yararlılığı.
 - Soru üretiminde öğretmen kabul/red oranı.
@@ -800,7 +855,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 2139 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 2139 -->
+Güncel feature kanıtında backend koleksiyonu 2197 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 2197 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -814,7 +869,7 @@ Güncel feature kanıtında backend koleksiyonu 2139 testtir; 38 alt vaka ayrıc
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 632 testtir. <!-- docs-check: frontend.tests = 632 -->
+Güncel feature kanıtında frontend kütüphane paketi 684 testtir. <!-- docs-check: frontend.tests = 684 -->
 
 Gerçek tarayıcı testi ayrı sentetik DB ve sahip olunan sunucu gerektirir;
 [E2E çalıştırma sözleşmesini](docs/development/owned-e2e.md) izleyin.

@@ -26,6 +26,7 @@ from app.api import (
     analytics,
     blueprints,
     chat,
+    concepts,
     courses,
     dashboard,
     documents,
@@ -225,6 +226,7 @@ def create_app() -> FastAPI:
     app.include_router(exams.router)
     app.include_router(blueprints.router)
     app.include_router(analytics.router)
+    app.include_router(concepts.router)
     # İç worker tetiği OpenAPI'den bilinçli olarak gizlidir; sır yoksa 404,
     # doğru sırla bir ingestion turu çalıştırır.
     app.include_router(internal.router)

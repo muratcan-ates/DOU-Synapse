@@ -274,12 +274,40 @@ class SourceRefOut(BaseModel):
 
     Model metninden üretilmez (Anayasa I); bu yüzden burada bir `text` alanı değil,
     kısaltılmış `snippet` vardır — gösterilen alıntı gerçekten o chunk'ın içindedir.
+
+    Bu tip materyalin KENDİSİNİ taşır. Öğrenciye giden bir yüzeyde kullanmadan önce
+    o yüzeyin ipucu politikasından ve sınav kilidinden geçtiğini doğrulayın; geçmiyorsa
+    `QuestionSourceRefOut` kullanın.
     """
 
     chunk_id: UUID
     file_name: str
     location: str
     snippet: str
+
+
+class QuestionSourceRefOut(BaseModel):
+    """Kaynağın KİMLİĞİ: hangi materyal, nerede — metni değil.
+
+    Ayrı bir tip, çünkü ayrı bir yetki seviyesi. `SourceRefOut`'un `snippet`'i chunk
+    metninden 320 karakterdir ve öğrenciye ancak ipucu politikasının izin verdiği
+    yerde, sınav kilidinin arkasından gösterilebilir (`exams.request_hint`). Soru
+    havuzu listesi o kapılardan geçmez: `hint_limit: 0` diyen eğitmenin kararını ve
+    yürüyen sınavın kilidini aynı anda delerdi.
+
+    `extra="forbid"` bilinçli: `SourceRefOut`'a ileride eklenecek bir alan buraya
+    sessizce sızmasın. Yeni alan, açıkça buraya yazılmadıkça öğrenciye gitmez.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    chunk_id: UUID
+    file_name: str
+    location: str
+
+    @classmethod
+    def of(cls, source: SourceRefOut) -> QuestionSourceRefOut:
+        return cls(chunk_id=source.chunk_id, file_name=source.file_name, location=source.location)
 
 
 class GroundedCriterionEvidence(BaseModel):
@@ -337,9 +365,11 @@ class QuestionOut(BaseModel):
     reviewed_by: UUID | None
     reviewed_at: datetime | None
     created_at: datetime
-    #: Eğitmen soruyu kaynağını görerek onaylar (FR-023). Öğrenciye de gösterilir:
-    #: onaylı sorunun hangi materyalden geldiği gizli değildir.
-    source: SourceRefOut | None = None
+    #: Eğitmen soruyu kaynağını görerek onaylar (FR-023) ve `snippet`'i görür.
+    #: Öğrenciye yalnız kaynağın KİMLİĞİ gider (`QuestionSourceRefOut`): hangi
+    #: materyalden geldiği gizli değildir, materyalin metni ise bu ucun arkasında
+    #: değildir — o, ipucu politikasının ve sınav kilidinin konusudur.
+    source: SourceRefOut | QuestionSourceRefOut | None = None
     #: Sorunun dayandığı belgenin yerine açıkça yeni bir sürüm yüklendiyse true.
     #: Bayatlık ayrı bir bayrak olarak saklanmaz; belge sürüm zincirinden türetilir.
     source_stale: bool = False

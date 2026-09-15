@@ -10,9 +10,9 @@ import { ErrorNote, Loading } from "@/components/page-state";
 export function PaperPreview({ base }: { base: string }) {
   const items = useResource<ExamItem[]>(() => api.get(`${base}/items`), [base]);
   return (
-    <section className="mt-4 rounded-lg border border-border bg-surface-sunken p-4" aria-label="Kâğıt önizlemesi">
-      <h4 className="text-sm font-semibold text-fg">Kâğıt önizlemesi</h4>
-      <p className="mt-1 text-xs text-fg-muted">Bu görünüm salt okunurdur.</p>
+    <section className="mt-5 rounded-2xl border border-border bg-bg p-5 sm:p-7" aria-label="Kâğıt önizlemesi">
+      <h4 className="text-lg font-semibold text-fg">Kâğıt önizlemesi</h4>
+      <p className="mt-1 text-sm text-fg-muted">Bu görünüm salt okunurdur.</p>
       {items.loading ? <div className="mt-3"><Loading label="Kâğıt yükleniyor…" /></div> : items.error ? (
         <ErrorNote message={items.error} onRetry={items.reload} />
       ) : (
@@ -21,9 +21,9 @@ export function PaperPreview({ base }: { base: string }) {
           {items.data?.length === 0 ? <p className="mt-3 text-sm text-fg-muted">Bu sürüme henüz soru eklenmemiş.</p> : (
             <ol className="mt-3 divide-y divide-border">
               {(items.data ?? []).map((item) => (
-                <li key={item.id} className="py-3">
-                  <p className="prose-tr text-sm text-fg">{item.position}. {item.stem}</p>
-                  <p className="mt-1 text-xs text-fg-muted">{QUESTION_TYPE[item.question_type]} · {item.points} puan{item.difficulty ? ` · ${DIFFICULTY_LABEL[item.difficulty]}` : ""}</p>
+                <li key={item.id} className="py-5">
+                  <p className="prose-tr text-base leading-7 text-fg">{item.position}. {item.stem}</p>
+                  <p className="mt-1 text-sm text-fg-muted">{QUESTION_TYPE[item.question_type]} · {item.points} puan{item.difficulty ? ` · ${DIFFICULTY_LABEL[item.difficulty]}` : ""}</p>
                 </li>
               ))}
             </ol>

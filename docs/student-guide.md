@@ -14,6 +14,16 @@ bağlantısı, açıklamanın veya puanın mutlaka doğru olduğu anlamına gelm
 > Bu belgede kullanılan görsellerden [ekran görüntüsü kaydında](screenshots.md)
 > listelenenler H7 kapsamında yenilendi; diğer görseller önceki sürüm örnekleridir.
 > Bazı özellikler kullandığınız ortamda açılmamış olabilir.
+>
+> **15 Eylül 2026 eki:** Yukarıdaki iki satır 13 Eylül'ün durumudur ve olduğu gibi
+> bırakıldı. 15 Eylül'de `docs/images` yeniden çekildi ve "listelenenler yenilendi"
+> ayrımı tersine döndü: bu belgedeki görsellerin neredeyse tamamı — çoğu H7 listesinde
+> olmayanlar dahil — gerçek Groq modeli ve yeni kampüs tasarımıyla yenilendi.
+> Yenilenmeyen tek görsel, H7 listesinde **bulunan** `images/10-sohbet-kapsam-disi-ret.png`;
+> o hâlâ 13 Eylül çekimidir ve komşularından farklı kabuk tasarımı gösterir. Dosya dosya
+> git ölçümü [screenshots.md](screenshots.md) "15 Eylül eki" bölümündedir. Yeniden çekim;
+> gerçek model kalitesinin, WCAG AA uygunluğunun veya insan kabulünün kanıtı değildir ve
+> yeni PNG'lerin görsel incelemesi yapılmadı (**not-run**).
 
 ## 1. Giriş ve derse katılım
 
@@ -133,6 +143,10 @@ tekrarlamak yerine denemenizi açıklayın. Başka bir soruya geçerken **Yeni s
 
 ![Kapsam dışı uyarısı](images/10-sohbet-kapsam-disi-ret.png)
 
+*Bu görsel 13 Eylül 2026 çekimidir (son commit `5cce5ea`); 15 Eylül yeniden çekiminde
+üretilmedi, bu yüzden kabuk tasarımı aşağıdaki görselden farklı görünür. Ekrandaki
+uyarı metni ve davranış değişmedi.*
+
 ![Dayanak bulunamadı](images/10-sohbet-nazik-ret.png)
 
 | Uyarı veya durum | Yapılacak işlem |
@@ -148,6 +162,8 @@ kaynak kontrolü yapma gereğini kaldırmaz.
 ## 5. Sınav provası
 
 ![Sınav provası](images/14-ogrenci-sinav-provasi.png)
+
+Not: Bu paketteki **öğrenci başlangıç/aktif/sonuç akışı için EKRAN kanıtı bu turda `koşulmadı`**. `bunx playwright test e2e/student-exam-flow.spec.ts --grep @ekran` ortam kısıtı nedeniyle çalıştırılamadı.
 
 Ders → **Sınav provası**. Sorular hocanızın onayladığı havuzdan gelir.
 

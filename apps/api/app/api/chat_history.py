@@ -54,7 +54,15 @@ async def _load_or_create_session(
     # ChatSession | None döndürüyor. Aynı ada yazmak mypy'ı kırıyordu ve
     # okuyucuya da iki farklı şeyin aynı değişken olduğunu ima ediyordu.
     existing = await session.get(ChatSession, payload.session_id)
-    if existing is None or existing.course_id != context.course_id:
+    # Sahiplik de ders kadar açık kontrol edilir. Yeni oturum yukarıda zaten
+    # `user_id=context.user_id` ile açılıyor; var olana BAĞLANIRKEN o kontrol
+    # eksikti, yani başkasının oturumuna mesaj yazmayı durduran tek şey RLS'ti
+    # (`chat_sessions_self_update`). Bu bir yazma yolu: okuma yolundan daha ağır.
+    if (
+        existing is None
+        or existing.course_id != context.course_id
+        or existing.user_id != context.user_id
+    ):
         raise NotFoundError("Sohbet oturumu bulunamadı.")
     if existing.mode is not payload.mode:
         # Mod ortasında değiştirilemez: Sokratik durum moda aittir, QA'ya geçip geri

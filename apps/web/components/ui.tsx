@@ -1,14 +1,7 @@
 /**
- * Temel arayüz bileşenleri — tek otorite DESIGN.md.
- *
- * Şekil kilidi (DESIGN.md §Shapes): rozet/etiket 4px · buton, girdi, kart 8px ·
- * modal ve geniş panel 12px. `rounded-full` yalnız avatar ve durum noktasında
- * kullanılır; rozet pill DEĞİLDİR.
- * Elevation (DESIGN.md §Elevation): seviyeler artık token (`shadow-e1/e2/e3`).
- * Kart seviye 1'dir — kenarlık tek başına katman sinyali taşımıyordu; her yüzey
- * aynı beyazdı ve hiyerarşi yalnız 1px saç çizgisinden okunuyordu. Gölge sıcak
- * tonludur (metin renginden), saf siyah değil.
- * Dokunma hedefi en az 44×44px (DESIGN.md §Responsive Behavior).
+ * Temel arayüz bileşenleri — güncel tasarım otoritesi DESIGN.md.
+ * Panel 20px, buton/girdi 12px, rozet 6px; dokunma hedefi en az 44×44px.
+ * Yüzey, gölge ve kontrast açık/koyu tema token'larından gelir.
  */
 "use client";
 
@@ -40,7 +33,7 @@ export function Button({
   const styles = {
     // Kırmızı tek aksandır ve birincil eylemde kullanılır (DESIGN.md renk kilidi).
     primary:
-      "bg-brand text-white shadow-e1 hover:bg-brand-strong active:translate-y-px active:shadow-none dark:text-[#191715]",
+      "bg-brand text-white shadow-e1 hover:bg-brand-strong active:translate-y-px active:shadow-none dark:text-bg",
     secondary:
       "border border-border-strong bg-surface text-fg hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px",
     ghost:
@@ -48,13 +41,8 @@ export function Button({
     danger:
       "border border-border-strong text-danger hover:bg-danger-bg hover:border-danger active:translate-y-px",
   }[variant];
-  /*
-   * Küçük boy, satır içi eylemler için: liste satırındaki "Sil"/"Önizle" düz
-   * metin gibi duruyordu ve tıklanabilir olduğu yalnız imleçten anlaşılıyordu.
-   * 44px dokunma hedefi korunur — yükseklik 36px, dikey dolgu ile hedef alanı
-   * satırın kendisidir; `sm` yalnız masaüstü yoğunluğunda kullanılır.
-   */
-  const sizing = { md: "h-11 min-w-11 px-4 text-sm", sm: "h-9 px-3 text-[0.8125rem]" }[size];
+  // Satır içi küçük boyda da 44px dokunma hedefi korunur.
+  const sizing = { md: "h-11 min-w-11 px-4 text-sm", sm: "h-11 min-w-11 px-3 text-sm" }[size];
   return (
     <button
       ref={ref}
@@ -67,7 +55,7 @@ export function Button({
         }
         onClick?.(event);
       }}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-[color,background,border,transform,box-shadow] duration-200 ${sizing} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${styles} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-[color,background,border,transform,box-shadow] duration-150 ${sizing} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-40 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 ${styles} ${className}`}
       {...props}
     />
   );
@@ -138,13 +126,13 @@ export function Card({
     // çizgisi kaldırıldı (14 Eylül 2026): kenarlık + gölge birlikte "kutu içinde
     // kutu" okunuyordu ve üniversite portalının kart gramerini tekrarlıyordu.
     // Koyu temada gölge görünmez; katmanı --elev-1'deki iç aydınlatma taşır.
-    default: "rounded-2xl bg-surface shadow-e1",
+    default: "rounded-[20px] bg-surface shadow-e1",
     // Çukur: kanvasın ALTINDA duran açıklama/meta bloğu — gölge ve kenarlık almaz.
-    soft: "rounded-2xl bg-surface-sunken",
+    soft: "rounded-[20px] bg-surface-sunken",
     // Düz: içinde kendi satır ayraçları olan liste kabı; tek ince çerçeve.
-    flat: "rounded-2xl border border-border bg-surface",
+    flat: "rounded-[20px] border border-border bg-surface",
   }[variant];
-  const paddingClass = padding === "none" ? "" : "p-6";
+  const paddingClass = padding === "none" ? "" : "p-5 sm:p-6";
   return (
     <div className={`${variantClass} ${paddingClass} ${className}`.replace(/\s+/g, " ").trim()}>
       {children}
@@ -172,7 +160,7 @@ const BADGE_STYLES: Record<Tone, string> = {
 export function Badge({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-sm px-2.5 py-0.5 text-xs font-medium tracking-wide ${BADGE_STYLES[tone]}`}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium tracking-wide ${BADGE_STYLES[tone]}`}
     >
       {children}
     </span>
@@ -329,7 +317,7 @@ export function EmptyState({
 }) {
   return (
     // 14 Eylül 2026: kesikli kenarlık gitti — boş durum da bir çukur yüzeydir, "eksik parça" değil.
-    <div className="rise flex flex-col items-center gap-4 rounded-2xl bg-surface-sunken px-6 py-16 text-center">
+    <div className="rise flex flex-col items-center gap-4 rounded-[20px] bg-surface-sunken px-6 py-12 text-center">
       <p className="prose-tr text-sm text-fg-muted">{title}</p>
       {action}
     </div>

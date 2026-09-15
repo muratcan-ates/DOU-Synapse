@@ -94,7 +94,7 @@ class Connection:
         if statement == provision.MEMBERSHIPS:
             return Cursor(self.backend.memberships)
         if statement == provision.SUMMARY:
-            return Cursor({"vector": "0.8.6", "profiles": 2, "admins": 1, "auditRows": 0})
+            return Cursor({"vector": "0.8.6", "profiles": 3, "admins": 1, "auditRows": 0})
         if statement == provision.ROLE_IDENTITY:
             value = identity(self.database)
             value.pop("cluster")

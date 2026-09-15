@@ -309,7 +309,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
         />
       )}
 
-      <div className="mb-4 flex flex-wrap items-end gap-3">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4 rounded-[20px] border border-border bg-surface p-5">
         <StatusTabs value={statusFilter} disabled={filtersBusy}
           onChange={(status) => changeFilters(status, topicFilter)} />
         <Field label="Konu süzgeci">
@@ -320,7 +320,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
           </Select>}
         </Field>
       </div>
-      <p className="mb-4 text-xs text-fg-subtle">
+      <p className="mb-5 text-sm text-fg-subtle">
         Süzgeçler tüm soru havuzunda uygulanır. Bu sonuçtan {visible.length} soru gösteriliyor.
         {questionsResource.nextCursor && " Devamını aşağıdan yükleyebilirsin."}
       </p>
@@ -334,15 +334,15 @@ function QuestionPool({ courseId }: { courseId: string }) {
             : "Bu süzgeçte soru yok. Başka bir durum veya konu seçebilirsin."} />
         </>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <Card padding="none" className="h-fit">
-            <h2 className="border-b border-border px-4 py-3 text-sm font-medium text-fg">Üretilen sorular</h2>
+        <div className="grid items-start gap-6 xl:grid-cols-[310px_minmax(0,1fr)]">
+          <Card padding="none" className="h-fit min-w-0 overflow-hidden">
+            <h2 className="border-b border-border bg-surface-sunken px-5 py-5 text-base font-semibold text-fg">Üretilen sorular</h2>
             {visible.length === 0 ? (
               <p className="px-4 py-6 text-sm text-fg-muted">
                 Bu süzgeçte soru yok.
               </p>
             ) : (
-              <ul aria-label="Soru havuzu">
+              <ul aria-label="Soru havuzu" className="max-h-[32rem] overflow-y-auto overscroll-contain">
                 {visible.map((question) => (
                   <QuestionRow
                     key={question.id}
@@ -354,6 +354,7 @@ function QuestionPool({ courseId }: { courseId: string }) {
                       setSelectedId(question.id);
                       setNotice(null);
                       setDecisionError(null);
+                      setFocusRequest((request) => request + 1);
                     }}
                   />
                 ))}
@@ -419,7 +420,7 @@ function StatusTabs({ value, disabled, onChange }: {
    * üçüncüsü yazılırken ortak bileşene çıkmalı (Anayasa XI, raporda).
    */
   return (
-    <div role="group" aria-label="Soruların durum süzgeci" className="flex w-fit flex-wrap gap-1 rounded-lg border border-border p-1">
+    <div role="group" aria-label="Soruların durum süzgeci" className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-surface-sunken p-1">
       {STATUS_FILTERS.map((filter) => {
         const active = filter.value === value;
         return (
@@ -429,9 +430,9 @@ function StatusTabs({ value, disabled, onChange }: {
             onClick={() => { if (!disabled) onChange(filter.value); }}
             aria-disabled={disabled}
             aria-pressed={active}
-            className={`min-h-11 rounded-md border px-3 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+            className={`min-h-11 rounded-lg border px-3 text-sm transition-colors duration-200 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
               active
-                ? "border-border-strong bg-surface font-medium text-fg"
+                ? "border-transparent bg-surface font-semibold text-fg shadow-e1"
                 : "border-transparent text-fg-muted hover:text-fg"
             }`}
           >
@@ -467,7 +468,7 @@ function QuestionRow({
         onClick={() => { if (!disabled) onSelect(); }}
         aria-disabled={disabled}
         aria-current={active ? "true" : undefined}
-        className={`w-full border-b border-l-2 border-border px-4 py-3 text-left transition-colors last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
+        className={`w-full border-b border-l-[3px] border-border px-5 py-5 text-left transition-colors duration-200 motion-reduce:transition-none last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
           active
             ? "border-l-brand bg-brand-subtle/40"
             : "border-l-transparent hover:bg-brand-subtle/20"
@@ -477,7 +478,7 @@ function QuestionRow({
           <span className="text-xs text-fg-subtle">{QUESTION_TYPE[question.type]}</span>
           <Badge tone={status.tone}>{status.label}</Badge>
         </div>
-        <p className="prose-tr mt-1.5 line-clamp-2 text-sm text-fg">
+        <p className="prose-tr mt-3 line-clamp-3 text-base leading-7 text-fg">
           {view.stem ?? "Soru metni bu kayıtta yok."}
         </p>
         <p className="mt-1 text-xs text-fg-subtle">{topic}</p>

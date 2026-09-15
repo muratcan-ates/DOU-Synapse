@@ -362,8 +362,8 @@ Sohbetin özel kalması genel kuraldır; öğrencinin açıkça eğitmen incelem
 ## 10. Güncel doğrulama komutları
 
 ```bash
-cd apps/api && uv run pytest -q                 # 2139 test   # docs-check: backend.tests = 2139
-cd apps/api && uv run mypy app                  # temiz, 123 dosya   # docs-check: backend.mypyFiles = 123
+cd apps/api && uv run pytest -q                 # 2197 test   # docs-check: backend.tests = 2197
+cd apps/api && uv run mypy app                  # temiz, 128 dosya   # docs-check: backend.mypyFiles = 128
 cd apps/api && uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -413,7 +413,7 @@ Sağlayıcı giriş/çıkışı aynı origin Web Lock'u ile sıralanır; destek 
 
 [`0029_private_storage.sql`](../supabase/migrations/0029_private_storage.sql) yerel PostgreSQL'de `storage.objects` yoksa işlem yapmadan geçer. Şema varsa modern `owner_id` metin alanı ve gerekli yetkileri doğrular; uyumsuz kurulumda kapalı kalır. Kurucu, süper kullanıcı veya gerekli sahiplik/GRANT yetkileriyle `CREATEROLE+BYPASSRLS` taşımalıdır. Ayrı `storage_private` şemasındaki dar yardımcı rol uygulama/istemci rolüne verilmez. Aktif üyelik okuma, eğitmen yazma, aktif üye sahip/eğitmen silme koşuludur; update/upsert kapalıdır. Öğrencinin aktif sınavı okumayı kapatır, eğitmen bu kilitten muaftır. Geniş eski permissive politika restrictive sınırları aşamaz. Hosted Supabase yönetim yetkileri henüz doğrulanmadı.
 
-F5 SQL kanıtı gerçek çekirdek göçleri ve `FORCE ROW LEVEL SECURITY` tablolarını kullanır; yalnız Supabase `storage` şeması sentetiktir. JWT claim GUC'leri `authenticated` rolü altında kurulur. Test mevcut Storage şemasını kabul etmez; ayrı yerel `dou_l5*` veritabanı ister ve bütün fikstürü işlem sonunda geri alır. Bu nedenle gerçek projede çalıştırılmaz. Önce çekirdek göçlerin uygulanmış olduğu ayrı test veritabanı hazırlanır, ardından depo kökünde aşağıdaki komutlar kullanılır; `PGHOST`, `PGPORT`, `PGUSER` yerel test bağlantısını göstermelidir:
+F5 SQL kanıtı gerçek çekirdek göçleri ve `FORCE ROW LEVEL SECURITY` tablolarını kullanır; yalnız Supabase `storage` şeması sentetiktir. JWT claim GUC'leri `authenticated` rolü altında kurulur. Test mevcut Storage şemasını kabul etmez; ayrı yerel `dou_l5*` veritabanı ister ve bütün fikstürü işlem sonunda geri alır. Sunucu tarafı adres denetimi loopback yanında özel ağ aralıklarını da kabul eder, çünkü CI'da Postgres bir Docker servis konteyneridir ve kendi adresini konteyner IP'si olarak görür; asıl koruma `dou_l5*` ad kuralıdır. Bu nedenle gerçek projede çalıştırılmaz. Önce çekirdek göçlerin uygulanmış olduğu ayrı test veritabanı hazırlanır, ardından depo kökünde aşağıdaki komutlar kullanılır; `PGHOST`, `PGPORT`, `PGUSER` yerel test bağlantısını göstermelidir:
 
 ```bash
 psql -X -v ON_ERROR_STOP=1 -d dou_l5_storage -v storage_mutation=none -f supabase/tests/rls_storage.sql

@@ -1,0 +1,23 @@
+{
+  "change_id": "160-concept-map-r1",
+  "lineage_id": "160-concept-map",
+  "revision_id": "160-concept-map-r1",
+  "title": "Add concept map and Turkish retrieval stopwords support",
+  "domain": "retrieval",
+  "author": "AI Assistant",
+  "status": "completed",
+  "approval": {
+    "role": "domain_lead",
+    "status": "approved"
+  },
+  "covered_files": [
+    "apps/api/app/main.py",
+    "apps/api/app/modules/retrieval/concepts.py",
+    "apps/api/app/modules/retrieval/stopwords_tr.py"
+  ],
+  "evidence": {
+    "report_label": "concept-map-retrieval-test",
+    "report_result": "PASS",
+    "report_sha": "a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0"
+  }
+}

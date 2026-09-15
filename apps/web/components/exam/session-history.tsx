@@ -12,7 +12,7 @@ export function SessionHistory({ courseId, onOpen }: { courseId: string; onOpen:
     <section className="mt-10" aria-labelledby="exam-history-title">
       {/* Bölüm başlığı + sağda tek sessiz eylem (DESIGN.md §Aksan disiplini). */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="exam-history-title" className="text-lg font-semibold tracking-tight text-fg">Oturumlarım</h2>
+        <h2 id="exam-history-title" className="text-xl font-semibold tracking-tight text-fg">Oturumlarım</h2>
         <Button variant="ghost" size="sm" aria-disabled={history.loading} onClick={() => void history.reload()}>Listeyi yenile</Button>
       </div>
       <p className="mt-1 text-sm text-fg-muted">Başka bir cihazda başladığınız oturumlara devam edebilir, tamamlanan sonuçları yeniden açabilirsiniz.</p>
@@ -28,7 +28,7 @@ export function SessionHistory({ courseId, onOpen }: { courseId: string; onOpen:
                     const state = examHistoryStatus(session);
                     const score = formatScore(session.score);
                     return (
-                      <li key={session.id} className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+                      <li key={session.id} className="flex flex-col gap-4 px-5 py-6 transition-colors hover:bg-surface-sunken sm:px-7 sm:flex-row sm:items-center sm:justify-between">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="font-medium text-fg">{EXAM_MODE[session.mode].label}{session.attempt_no ? ` · ${session.attempt_no}. deneme` : ""}</h3>
@@ -38,7 +38,7 @@ export function SessionHistory({ courseId, onOpen }: { courseId: string; onOpen:
                           <p className="mt-1 text-sm tabular-nums text-fg-muted">{session.answered_count}/{session.question_count} soru cevaplandı{score !== null ? ` · Puan: ${score}/100` : ""}</p>
                         </div>
                         {/* Satır içi eylem: `Button size="sm"`, hedef alan satırın kendisidir. */}
-                        <Button variant="secondary" size="sm" className="shrink-0 self-start" onClick={() => onOpen(session.id)}>{state.action}</Button>
+                        <Button variant="secondary" size="sm" className="min-h-11 shrink-0 self-start" onClick={() => onOpen(session.id)}>{state.action}</Button>
                       </li>
                     );
                   })}

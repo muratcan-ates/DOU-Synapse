@@ -41,7 +41,9 @@ export default function AccountPage() {
 
   return (
     <AppShell>
+      <div className="mx-auto max-w-5xl space-y-7">
       <PageHeader
+        eyebrow="Hesabım"
         title="Verilerim"
         description="Uygulamadaki kayıtlarınızı indirebilir, sohbet geçmişinizi silebilir veya profilinizdeki ad ve e-postayı kaldırabilirsiniz."
       />
@@ -57,15 +59,9 @@ export default function AccountPage() {
         </div>
       )}
 
-      {/*
-       * Üç işlem tek kartta `divide-y` satırları: üç ayrı kutu, üçüncüsü
-       * kırmızımsı kenarlıklı — "kutu içinde kutu" ve kırmızının dördüncü
-       * kullanımıydı. Yıkıcı eylemler `ConfirmAction` üzerinden gider: tetik
-       * secondary, onay `danger` (kenarlıklı, dolgusuz). Sayfada kırmızı dolgu yok.
-       */}
-      <Card>
-        <div className="divide-y divide-border">
+      <div className="space-y-5">
           <AccountAction
+            step="01"
             title="Verilerimi indir"
             description="Profiliniz, ders üyelikleriniz, sohbetleriniz, sınav yanıtlarınız ve öğrenme ilerlemeniz tek bir JSON dosyasında hazırlanır. Yalnız size ait kayıtlar dışa aktarılır. Kota ve güvenlik operasyon kayıtları bu dosyaya dahil edilmez; kapsam açıklaması dosyada yer alır."
             action={
@@ -80,6 +76,7 @@ export default function AccountPage() {
           />
 
           <AccountAction
+            step="02"
             title="Sohbet geçmişi"
             description="Tüm derslerdeki sohbet oturumlarınız, bağlı mesajlar ve geri bildirimler uygulama veritabanından silinir. Sınav ve ilerleme kayıtları etkilenmez. Daha önce indirdiğiniz dosyalar bu işlemle silinmez."
             action={
@@ -98,6 +95,7 @@ export default function AccountPage() {
           />
 
           <AccountAction
+            step="03"
             title="Profil bilgilerimi kaldır"
             description="Uygulama profilinizdeki ad ve e-posta kaldırılır, sohbetleriniz silinir ve ders üyelikleriniz kapatılır. Sınav yanıtları, öğrenme ilerlemesi ve yüklediğiniz ders materyalleri mevcut profil kaydıyla bağlantılı kalır. Bu işlem bütün verilerinizi silmez ve kimliğinizle bağlantıyı tamamen kaldırmaz. Üniversite giriş hesabınız açık kalır; kapatılması için ayrıca işlem gerekir."
             action={
@@ -125,11 +123,9 @@ export default function AccountPage() {
               />
             }
           />
-        </div>
-      </Card>
+      </div>
 
-      {/* Satır içi bağlantı muted: kırmızı bu sayfada yalnız onay adımında görünür. */}
-      <p className="mt-6 text-sm text-fg-muted">
+      <p className="rounded-xl bg-surface-sunken px-5 py-4 text-base leading-7 text-fg-muted">
         Verilerin nasıl işlendiğini ayrıntılı görmek için{" "}
         <Link
           href="/kvkk"
@@ -139,25 +135,36 @@ export default function AccountPage() {
         </Link>{" "}
         okuyabilirsiniz.
       </p>
+      <Link href="/profile" className="inline-flex min-h-11 items-center text-sm font-medium text-brand underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">Profile dön</Link>
+      </div>
     </AppShell>
   );
 }
 
-/** Kart içi işlem satırı: başlık, kapsam açıklaması, altında eylem. */
+/** Keep the exact data scope beside each existing confirmed action. */
 function AccountAction({
+  step,
   title,
   description,
   action,
 }: {
+  step: string;
   title: string;
   description: string;
   action: ReactNode;
 }) {
   return (
-    <section className="py-6 first:pt-0 last:pb-0">
-      <h2 className="text-lg font-semibold text-fg">{title}</h2>
-      <p className="prose-tr mt-2 max-w-prose text-sm leading-6 text-fg-muted">{description}</p>
-      <div className="mt-4">{action}</div>
-    </section>
+    <Card>
+      <section className="grid gap-5 md:grid-cols-[200px_minmax(0,1fr)] md:gap-8">
+        <div>
+          <span aria-hidden className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-surface-sunken text-sm font-semibold tabular-nums text-fg-muted">{step}</span>
+          <h2 className="text-xl leading-7 font-semibold text-fg">{title}</h2>
+        </div>
+        <div className="min-w-0">
+          <p className="max-w-prose text-base leading-7 text-fg-muted">{description}</p>
+          <div className="mt-5 border-t border-border pt-5">{action}</div>
+        </div>
+      </section>
+    </Card>
   );
 }

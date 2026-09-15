@@ -4,6 +4,11 @@ Yeni dosya: `docs/jury-demo.md`. Hazırlama ve dış kaynak kontrol tarihi: 13 E
 Bu belge bir prova planıdır; süreler hedef akıştır, ölçülmüş çalışma süresi değildir.
 Canlı prova ve aşağıdaki kalite ölçümleri bu belge hazırlanırken **koşulmadı**.
 
+> **15 Eylül notu:** Yukarıdaki cümle 13 Eylül'ün durumudur ve olduğu gibi bırakıldı.
+> O tarihten sonra demo yığını çalıştırıldı ve ölçüldü; ne aşıldı ne hâlâ geçerli,
+> belgenin sonundaki **"15 Eylül eki"** bölümünde tek tek yazılıdır. Sunum öncesi
+> önce o bölümü okuyun.
+
 ## Gösterim öncesi kontrol
 
 - Yalnız sentetik demo kullanıcıları ve izinli ders materyali kullanılır. Öğrenci ile eğitmen ayrı tarayıcı oturumlarında açılır.
@@ -127,3 +132,32 @@ Sahte sağlayıcıyla yapılan prova gerçek model kanıtı değildir; jüriye h
 - Soru üretimi: konu `Süreçler ve CPU zamanlama`, 3 MCQ istendi, 3 döndü, 3 kabul, 0 ret; üçü onaylandı.
 - Öğrenci konu filtreli alıştırma sınavını 3 soruyla başlattı; yanlış şıkla verilen cevap `is_correct=false`, `score=0`, "neden yanlış" kartı `02-cpu-scheduling.pdf` sayfa 1.
 - Ölçülmeyen: gerçek model cevap kalitesi (anahtar yok), süreli sınav, yayımlanmış blueprint kataloğu, prova süresi, ekran görüntüleri. Bunlar 15 Eylül provasının işi.
+
+## 15 Eylül eki — neyin aşıldığı, neyin hâlâ geçerli olduğu
+
+Bu bölüm yukarıdaki tarihsel kayıtları **değiştirmez**; sonrasında ölçülenleri ekler.
+
+### Aşıldı
+
+| 13–14 Eylül kaydı | 15 Eylül durumu |
+|---|---|
+| `docker: command not found` → demo yığını ayağa kalkmadı | Yığın **docker'sız** koşuyor: yerel PostgreSQL + `sh scripts/demo/run_api.sh` (:8020) + `run_web.sh` (:3020). Belgenin §"Koşum" bölümü zaten bu komutları veriyor |
+| Gerçek model koşusu yapılamadı | Gerçek **Groq** (`openai/gpt-oss-120b`) ile koşuldu; kapsam dışı ret, Sokratik merdiven ve atıflı cevap tek tek doğrulandı (kayıt: `docs/team/GECE-RAPORU-14-EYLUL.md`) |
+| Ekran görüntüsü üretilemedi | 16 görüntü <!-- docs-check: tarihsel 16 · 2026-09-15 --> gerçek model ve güncel kampüs tasarımıyla çekildi (`docs/screenshots.md`) |
+| Senaryo adımları ölçülmedi | Sahnede sorulacak sorular gerçek modelle ölçüldü ve sabitlendi; `answer_cache` dolduruldu. Liste ve **sorulmaması gerekenler** `docs/demo-script.md` |
+
+### Hâlâ geçerli — sahnede iddia edilmeyecek
+
+- **Sağlayıcı failover gösterilmez.** Yukarıdaki ENGEL maddesi duruyor ve sebebi
+  artık ölçülü: `apps/api/app/modules/generation/service.py` rol farkındalıklı
+  sohbet yolunda `provider_attempt_limit=1` kuruyor, yani ikinci sağlayıcı
+  **bilinçli olarak denenmiyor** — jeton rezervasyonu atomik kalsın diye. Yani bu
+  yalnız "doğrulanmadı" değil, tasarım gereği kapalı. `LLM_FALLBACK_MODEL` ayarlı
+  olsa bile sohbet isteğinde devreye girmez.
+- **Groq'ta anlık hata olursa kurtarıcı yedek yoktur.** Tek gerçek koruma
+  `answer_cache`'tir: önbellekteki soru modele hiç gitmez. Bu yüzden canlı
+  sahnelerde yalnız `docs/demo-script.md`'deki ölçülmüş liste sorulur.
+- **`provider-fallback` uçtan uca testleri CI'da hâlâ koşmuyor** (simülasyon
+  bayrağı koşucuya bağlanmadı; fazlı koşucu henüz birleşmedi).
+- **`learning_events` eğitmen özeti** bu tabanda doğrulanmadı; yukarıdaki madde
+  aynen geçerli.

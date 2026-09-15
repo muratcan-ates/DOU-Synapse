@@ -13,10 +13,10 @@ export function PolicyHistory(props: Props) {
   const [offset, setOffset] = useState(0);
   const [refresh, setRefresh] = useState(0);
   return (
-    <section aria-labelledby="policy-history-title" className="border-t border-border pt-8">
+    <section aria-labelledby="policy-history-title" className="rounded-[20px] border border-border bg-surface p-5 shadow-e1 sm:p-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 id="policy-history-title" className="text-base font-semibold text-fg">Politika geçmişi</h2>
+          <h2 id="policy-history-title" className="scroll-mt-28 text-xl font-semibold text-fg">Politika geçmişi</h2>
           <p className="mt-1 text-sm text-fg-muted">Kaydedilen değişiklikleri önceki ve yeni değerleriyle inceleyin.</p>
         </div>
         <Button variant="ghost" size="sm" onClick={() => { setOffset(0); setRefresh((value) => value + 1); }}>Geçmişi yenile</Button>
@@ -41,12 +41,12 @@ function HistoryPage({ courseId, viewerId, documentNames, offset, older }: Props
             return (
               <li key={entry.id}>
                 <details>
-                  <summary aria-label={`Politika kaydı ${offset + index + 1}`} className="min-h-11 cursor-pointer py-4 text-sm text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                  <summary aria-label={`Politika kaydı ${offset + index + 1}`} className="min-h-14 cursor-pointer rounded-lg py-5 text-base text-fg transition-colors hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                     <span className="font-medium">{policyHistoryTitle(entry)}</span>
-                    <span className="mt-1 block text-xs tabular-nums text-fg-muted sm:ml-4 sm:inline">{policyHistoryDate(entry.changed_at)} · {policyHistoryActor(entry.changed_by, viewerId)}</span>
+                    <span className="mt-2 block text-sm tabular-nums text-fg-muted sm:ml-4 sm:inline">{policyHistoryDate(entry.changed_at)} · {policyHistoryActor(entry.changed_by, viewerId)}</span>
                   </summary>
                   {changes.length === 0 ? <p className="pb-4 text-sm text-fg-muted">Değerler değişmeden kaydedildi.</p> : (
-                    <dl className="space-y-4 pb-5">
+                    <dl className="mb-5 space-y-4 rounded-xl bg-surface-sunken p-4">
                       {changes.map((change) => <div key={change.field} className="grid gap-1 text-sm sm:grid-cols-[minmax(10rem,1fr)_2fr]">
                         <dt className="font-medium text-fg">{change.label}</dt>
                         <dd className="min-w-0 break-words text-fg-muted"><p>Önce: {change.before}</p><p className="mt-1 text-fg">Sonra: {change.after}</p></dd>

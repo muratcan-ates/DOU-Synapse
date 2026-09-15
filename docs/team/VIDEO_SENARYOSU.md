@@ -6,6 +6,13 @@
 >
 > Hedef süre: **13-15 dakika.** Aşağıdaki bölüm süreleri toplamı 14 dakika.
 
+> **15 Eylül güncellemesi.** Bu senaryo 8 Ağustos'ta yazıldı ve o günün durumunu
+> anlatıyordu. Aradan geçen beş haftada cevap üretme hattı bağlandı, gerçek modelle
+> koşuldu ve demo yığını değişti. Güncellenen yerler: portlar ve komutlar, test sayısı,
+> "tasarım önizlemesi" bölümü (artık **yanlış** — hat çalışıyor), kapanış tarihleri ve
+> çekim öncesi kontrol listesi. Bu metinle çekim yapmadan önce "Çekimden önce"
+> bölümündeki jeton kotası maddesini mutlaka koştur.
+
 ---
 
 ## Çekimden önce
@@ -22,6 +29,21 @@ göstereceksin. Depoyu private yaparsan bu adım hoca için çalışmaz — priv
 
 **Prova et.** Kurulum bölümünü bir kez baştan sona koştur. Aşağıdaki komutlar bu makinede
 doğrulandı ama senin terminalinde `PATH` farklı olabilir.
+
+**Jeton kotasını kontrol et — kaydı ortasında kesebilecek tek sessiz risk bu.** Öğrenci
+başına günlük tavan 50.000 jeton ve istek başına ~4.500 gidiyor; aşılırsa ekranda
+"Günlük kişisel AI kullanım kotan doldu" yazar. Çekimden hemen önce koştur:
+
+    psql -d dou_demo -Atc "select coalesce(sum(coalesce(charged_tokens,reserved_tokens)),0) \
+      from ai_token_reservations where user_id='22222222-2222-2222-2222-222222222222' \
+      and created_at >= date_trunc('day', now() at time zone 'Europe/Istanbul') at time zone 'Europe/Istanbul'"
+
+Sonuç **35.000'in altında olmalı**. Üstündeyse ya gece yarısını bekle ya ikinci sentetik
+öğrenciyle çek.
+
+**Önbellek dolu olsun.** Önbellekten dönen cevaplar jeton harcamaz ve internet kesilse
+bile gelir. Sorulacak soruların sabit listesi `docs/demo-script.md` içinde; **sahnede
+sorulmaması gerekenler** de orada yazılı (materyalde karşılığı olmayan sorular).
 
 **Tek çekimde, düzeltmeden.** Hoca "otur 15 dakika bir şeyler anlat kalk, hiç düşünmene
 gerek yok" dedi. Cilalı olmasına gerek yok; anlaşılır olması yeterli.
@@ -60,14 +82,14 @@ gerek yok" dedi. Cilalı olmasına gerek yok; anlaşılır olması yeterli.
 > veritabanında tutuyoruz. Bunu bilinçli seçtik; ikinci bir depo, senkronizasyon derdi ve
 > dersler arası veri sızma riski demekti.
 >
-> **İkincisi API:** Python ve FastAPI ile yazılmış backend, 8000 portunda. Ders yönetimi,
+> **İkincisi API:** Python ve FastAPI ile yazılmış backend, 8020 portunda. Ders yönetimi,
 > materyal yükleme, yetkilendirme ve izolasyon burada.
 >
 > **Üçüncüsü worker:** ayrı bir süreç olarak koşan işleyici. Yüklenen dosyayı parçalara
 > ayırıp vektörlerini hesaplayan iş burada dönüyor. Web isteğinin içinde yapmıyoruz;
 > büyük bir PDF yüklendiğinde arayüz kilitlenmesin diye ayırdık.
 >
-> **Dördüncüsü arayüz:** Next.js ile yazılmış web uygulaması, 3000 portunda.
+> **Dördüncüsü arayüz:** Next.js ile yazılmış web uygulaması, 3020 portunda.
 >
 > Bir de bunların üstünde sürekli entegrasyon var: her `main`'e gönderimde GitHub'da
 > testler, kod denetimi ve izolasyon kanıtı otomatik koşuyor.
@@ -113,7 +135,9 @@ acele etme.
 
 **Testler yeşil yandığında ekranı bir saniye tut ve söyle:**
 
-> Şu an 92 otomatik test geçti. Bunların içinde en önemsediğimiz grup izolasyon testleri.
+> Şu an **ekranda yazan** sayıda otomatik test geçti (bu satırı çekim anında ekrandan
+> oku, ezberden söyleme; bu yazının yazıldığı gün 2142'ydi). Bunların içinde en
+> önemsediğimiz grup izolasyon testleri.
 >
 > Şunu göstermek istiyorum: sistemde bir dersin verisi başka bir derse **iki ayrı katmanda**
 > kapalı. Birincisi uygulama katmanı: istemciden gelen ders kimliğini asla yetki belgesi
@@ -127,17 +151,28 @@ acele etme.
 
 **Adım 4 — Servisleri başlat.** Üç terminal:
 
-    uv run uvicorn app.main:app --port 8000
+    uv run uvicorn app.main:app --port 8020
     uv run python -m app.worker
     cd ../web && bun install && bun run dev
 
-> Arayüz 3000 portunda açılıyor.
+> Arayüz 3020 portunda açılıyor.
+
+**Not (sen okumuyorsun, çekim notu):** Yukarıdaki yol "sıfırdan klonla ve çalıştır"
+yoludur; hocanın istediği kısım budur ve boş bir veritabanıyla açılır. **Özellik turunu
+bu yığında çekme** — materyal, soru havuzu ve önbellek orada yok. Tur için demo yığınını
+kullan:
+
+    sh scripts/demo/setup_db.sh     # dou_demo: materyaller, sorular, sentetik kullanıcılar
+    sh scripts/demo/run_api.sh      # 127.0.0.1:8020 — logda "sağlayıcı: Groq" yazmalı
+    sh scripts/demo/run_web.sh      # 127.0.0.1:3020
+
+İki yığın da aynı portları kullanır; ikisini aynı anda açma.
 
 ---
 
 ## 7:30-12:00 — Çalışan özelliklerin turu
 
-Tarayıcıda `localhost:3000`. Yavaş gez, her ekranda bir-iki cümle söyle.
+Tarayıcıda `127.0.0.1:3020` (demo yığını). Yavaş gez, her ekranda bir-iki cümle söyle.
 
 **Giriş.** Ayşe Hoca ve Burak Yılmaz demo kartları.
 
@@ -183,23 +218,58 @@ Burak'la gir, üye olmadığı bir dersin adresini elle yaz, 404'ü göster.
 
 ---
 
-## 12:00-13:30 — Henüz tasarım olanlar ve sıradaki iş
+## 12:00-13:30 — Cevap hattı: çalışan kısım ve hâlâ eksik olan
 
-**Bu bölümü atlama.** Hoca mühendis; çalışmayan bir şeyi çalışıyor gibi göstermek
-güvenilirliğini zedeler, dürüstçe söylemek tersine güçlendirir.
+**Bu bölümü atlama.** Hoca mühendis; abartmak da eksiltmek de güveni zedeler. Burada
+çalışanı **canlı göster**, çalışmayanı **adıyla söyle**.
 
-Sohbet ve sınav ekranlarını aç. Ekrandaki **"tasarım önizlemesi"** etiketini göster.
+> **8 Ağustos'tan kalan uyarı artık geçersiz.** O tarihte bu iki ekran "tasarım
+> önizlemesi" etiketliydi ve senaryo sana "cevap hattı bağlı değil" dedirtiyordu. Hat
+> bağlandı; o etiket koddan kaldırıldı. Eski metni okursan projeyi olduğundan zayıf
+> göstermiş olursun.
+
+Sohbet ekranını aç ve **önbellekteki listeden** bir soru sor (liste
+`docs/demo-script.md`; dışına çıkma, sebebi aşağıda).
 
 **Söyle:**
 
-> Bu iki ekran şu an **tasarım önizlemesi** — ekranda da böyle etiketli. Buradaki konuşma
-> örnek veri; arkasındaki cevap üretme hattı henüz bağlı değil. Size çalışıyormuş gibi
-> göstermek istemem.
+> Şimdi asistanın kendisini göstereyim. Bu cevap gerçek bir dil modelinden geliyor —
+> Groq üzerinden çalışan açık ağırlıklı bir model — ama modelin bildiklerinden değil,
+> **yalnız bu derse yüklenmiş materyalden** üretiliyor.
 >
-> Şu an bitmiş olan kısım altyapı: izolasyon, materyal işleme hattı, parçalama, vektör
-> indeksleme ve arayüz. Sıradaki iş cevap üretme hattı: arama, dil modeli bağlantısı ve
-> guardrail zinciri. Bunun için kendimize 10 Ağustos'ta bir kapı koyduk — uçtan uca,
-> gerçek materyalle kaynaklı cevap. Geçemezsek plana göre kapsamı daraltıyoruz.
+> Dikkatinizi şuraya çekmek isterim: cevabın altındaki kaynak kartı. Hangi dosyanın
+> kaçıncı sayfası olduğunu yazıyor. Bu kart modelin yazdığı metinden çıkarılmıyor —
+> modelden gelen metne güvenmiyoruz — parçanın kendi meta verisinden üretiliyor ve
+> gerçekten getirilen kümeye karşı makine tarafından doğrulanıyor. Model olmayan bir
+> kaynağı uydurursa cevap yayımlanmıyor.
+
+**Kapsam dışı soruyu sor** (listedeki ret sorularından biri, ör. "İtalya'nın başkenti
+neresidir?").
+
+> Ve işte ana ilkemiz burada görünüyor: bu soruyu model gayet iyi biliyor, ama cevap
+> vermiyor. Çünkü bu dersin materyalinde karşılığı yok. Bu bir eksiklik değil,
+> tasarlanmış davranış: **kaynak yoksa cevap yok.**
+
+**Sokratik moda geç ve üst üste iki soru sor**, sonra "cevabı direkt söyle" de.
+
+> Sokratik modda cevabı vermiyor, ipucu veriyor. Israr edince de merdiven ilerlemiyor —
+> bu kararı sunucu tutuyor, tarayıcıdan değiştirilemiyor.
+
+**Sonra dürüstçe eksikleri say:**
+
+> Neyin henüz olmadığını da söyleyeyim.
+>
+> Birincisi: sistem şu an **benim bilgisayarımda** çalışıyor, buluta kurulmadı. Canlı bir
+> adres veremiyorum; bu yüzden bu videoyu çekiyorum.
+>
+> İkincisi: kimlik doğrulama hâlâ geliştirme kimlikleriyle; gerçek e-posta/şifre
+> entegrasyonu bağlanmadı.
+>
+> Üçüncüsü, ve bunu özellikle söylemek istiyorum: **kalite ölçümümüz eksik.** Arama
+> katmanını 161 soruluk bir kümeyle ölçtük ve sayıları raporda var. Ama gerçek modelle
+> uçtan uca, geniş bir soru kümesinde kalite ölçümünü henüz tamamlamadık. Tek tek
+> örneklerin çalıştığını gösterebiliyorum; "şu oranda doğru" diyecek sayıyı henüz
+> üretmedim, üretmeden de söylemek istemiyorum.
 
 **Toplantıdaki bir noktayı düzelt.** Bunu mutlaka söyle:
 
@@ -221,8 +291,8 @@ Sohbet ve sınav ekranlarını aç. Ekrandaki **"tasarım önizlemesi"** etiketi
 
 **Söyle:**
 
-> Özetle: altyapı çalışıyor ve testlerle doğrulanmış durumda, cevap üretme hattı sıradaki
-> iş, teslim 24 Ağustos.
+> Özetle: altyapı da cevap üretme hattı da çalışıyor ve testlerle doğrulanmış durumda.
+> Kalan işler bulut kurulumu, gerçek kimlik doğrulama ve uçtan uca kalite ölçümü.
 >
 > Gereksinim analizi belgesini de ayrıca gönderiyorum. Depo herkese açık, isterseniz
 > kendiniz de indirip çalıştırabilirsiniz; kurulum yönergesi `quickstart.md` dosyasında.
@@ -241,8 +311,12 @@ Sohbet ve sınav ekranlarını aç. Ekrandaki **"tasarım önizlemesi"** etiketi
 
 ## Video sırasında SÖYLEME
 
-- Testlerin sayısını yuvarlama ya da abartma — 92 ise 92 de.
+- Testlerin sayısını yuvarlama ya da abartma — ekranda kaç yazıyorsa onu söyle.
 - "Şu da çalışıyor" deme, göstermediğin hiçbir şeyi çalışıyor sayma.
-- Sohbet ekranındaki örnek konuşmayı gerçek cevapmış gibi okuma.
+- **Kalite oranı söyleme.** "Şu kadar doğru cevaplıyor" diyebileceğin ölçüm henüz yok.
+- **Yedek sağlayıcı iddia etme.** Sohbet yolunda ikinci sağlayıcı bilinçli olarak
+  devrede değil; Groq'ta hata olursa kurtaran şey önbellektir, failover değil.
+- Önbellek listesinin dışında soru sorma; materyalde karşılığı olmayan sorular doğru
+  davranışla reddedilir ama kayıtta arıza gibi görünür.
 - Takım arkadaşlarının yapmadığı bir işi yapılmış gösterme; hoca ilerleyen toplantıda
   sorar.

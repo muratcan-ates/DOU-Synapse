@@ -1,27 +1,18 @@
 "use client";
 
-/**
- * Giriş — split-screen editoryal yerleşim (taste-skill anti-center kuralı).
- * Sol panel: ürün tezi, display tipografi. Sağ panel: kanvas üstünde yüzen tek
- * oturum kartı. Backend DEV_AUTH_ENABLED=true iken `Bearer dev:<uuid>` kabul
- * eder; iki demo kullanıcı supabase/seed_demo.sql ile oluşturulur. Canlıda
- * yerini Supabase Auth alır.
- *
- * 14 Eylül 2026 turu (DESIGN.md §Components "Aksan disiplini ve katman"):
- * kırmızı bu ekranda yalnız marka işareti ve "Oturum aç" düğmesindedir. Kırmızı
- * blok rayı, kırmızı üst satır, kırmızı mono avatar ve kırmızı satır içi
- * bağlantılar kaldırıldı; sütun ayrımı çizgiyle değil kartın gölgesiyle kurulur.
- */
+/** Academic portal entry; all sign-in availability comes from the existing auth configuration. */
 
 import Link from "next/link";
+import { ChevronRightIcon, ShieldIcon } from "@/components/icons";
 import { BrandLockup } from "@/components/brand-mark";
+import { SynapseIllustration } from "@/components/synapse-illustration";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { signIn, signInWithPassword, type DemoUser } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import { useSubmit } from "@/lib/use-submit";
 import { ErrorNote } from "@/components/page-state";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 import { Field } from "@/components/field";
 import { ThemeControl } from "@/components/theme-control";
 import { supabaseConfigured } from "@/lib/supabase";
@@ -41,21 +32,26 @@ const DEMO_USERS: DemoUser[] = [
     fullName: "Burak Yılmaz",
     role: "student",
   },
+  {
+    id: "33333333-3333-3333-3333-333333333333",
+    email: "bilgi-islem@demo.dogus.edu.tr",
+    fullName: "Bilgi İşlem",
+    role: "operator",
+  },
 ];
 
-/** Bir yanıtın izlediği üç adım; sıra numarası rakamdır, kod değil. */
-const EVIDENCE_STEPS: { step: string; text: string }[] = [
-  { step: "01", text: "Ders kaynağını bulur" },
-  { step: "02", text: "İlgili sayfayı gösterir" },
-  { step: "03", text: "Adım adım çalıştırır" },
-];
-
-/** Muted satır içi bağlantı: kırmızı yalnız birincil eylemde kalır. */
 const QUIET_LINK =
-  "text-fg-muted underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+  "inline-flex min-h-11 items-center text-sm font-medium text-fg-muted underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+
+const STUDY_STEPS = [
+  { label: "Kaynak", title: "Bilgi, dersinden başlar.", description: "Eğitmeninin paylaştığı notlarla çalış. Yanıtların dayandığı sayfalara dönerek konuyu yerinde incele." },
+  { label: "İpucu", title: "Cevaba adım adım yaklaş.", description: "Düşündüren ipuçlarıyla soruyu çözmeye çalış. Takıldığın noktadan devam et, kendi çözümünü geliştir." },
+  { label: "Pratik", title: "Öğrendiğini kendin gör.", description: "Dersine ait soruları yanıtla ve geri bildirimleri incele. Sınav provalarıyla öğrendiklerini pekiştir." },
+];
 
 export default function LoginPage() {
   const router = useRouter();
+  const [activeStep, setActiveStep] = useState(0);
   const devAuthEnabled = isDevAuthEnabled();
   const entraAvailable = supabaseConfigured && entraTenantId() !== null;
   const entra = useSubmit(signInWithEntra, "Üniversite hesabıyla giriş başlatılamadı.");
@@ -95,185 +91,113 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-[100dvh] lg:grid-cols-[minmax(0,1.18fr)_minmax(28rem,0.82fr)]">
-      {/* Sol: ürün tezi ve tek kanıt zinciri. */}
-      <section className="flex flex-col justify-between p-8 lg:p-14">
-        <div className="rise">
-          <BrandLockup tone="canvas" className="mb-2" />
-          <p className="text-sm font-medium text-fg">Doğuş Üniversitesi</p>
-          <p className="text-xs text-fg-subtle">COME 492 · Bitirme projesi</p>
-        </div>
+    <main className="min-h-[100dvh] bg-bg lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)]">
+      <section aria-labelledby="welcome-title" className="relative flex min-w-0 flex-col border-b border-border bg-bg text-fg lg:min-h-[100dvh] lg:border-r lg:border-b-0">
+        <div className="mx-auto flex w-full min-w-0 max-w-[760px] flex-1 flex-col px-6 pt-6 pb-3 sm:px-10 lg:px-12 lg:py-9 xl:px-16">
+          <header className="flex min-w-0 items-center justify-between gap-4">
+            <BrandLockup tone="canvas" />
+            <ThemeControl tone="canvas" compact />
+          </header>
 
-        <div className="py-16 lg:py-12">
-          <p className="rise rise-1 mb-4 max-w-md text-sm font-medium text-fg-muted">
-            Kaynağı görünen ders çalışma alanı
-          </p>
-          <h1 className="rise rise-1 max-w-2xl text-5xl font-semibold tracking-tighter text-fg md:text-6xl">
-            DOU-Synapse
-          </h1>
-          <p className="rise rise-2 prose-tr mt-6 text-lg leading-relaxed text-fg-muted">
-            Ders materyalinizle sınırlı yapay zekâ asistanı. Her cevap dayandığı
-            sayfayla birlikte gelir; kaynak yoksa cevap da yoktur.
-          </p>
+          <div className="rise pt-7 lg:my-auto lg:py-8">
+            <p className="mb-3 hidden text-sm font-medium text-brand lg:block">Ders ve sınav asistanın</p>
+            <h1 id="welcome-title" className="max-w-[20ch] text-[2rem] font-semibold leading-[1.12] tracking-[-0.04em] [overflow-wrap:anywhere] sm:text-[2.5rem] xl:text-[2.75rem]">
+              Bilgi, bağlantı<br />kurdukça büyür.
+            </h1>
+            <p className="mt-4 hidden max-w-[43ch] text-base leading-7 text-fg-muted lg:block">
+              Ders notlarından ilk ipucuna, kendi çözümünden sınav provasına. Öğrenmenin her adımında Synapse yanında.
+            </p>
 
-          {/*
-           * Üç adım üç çukur kart: kanvasın altında duran açıklama bloğu.
-           * Önceki hâl `border-y` + sütun başı saç çizgileriydi ve portalın
-           * "çizgiyle bölünmüş ızgara" gramerini tekrarlıyordu.
-           */}
-          <section
-            aria-labelledby="evidence-rail-title"
-            className="rise rise-3 mt-12 max-w-2xl"
-          >
-            <p className="text-xs font-medium text-fg-muted">Kaynak zinciri</p>
-            <h2 id="evidence-rail-title" className="mt-1 text-sm font-medium text-fg">
-              Bir yanıtın izlediği yol
-            </h2>
-            <ol className="mt-4 grid gap-3 sm:grid-cols-3">
-              {EVIDENCE_STEPS.map(({ step, text }) => (
-                <li key={step}>
-                  <Card variant="soft" className="h-full">
-                    <span className="block text-xs tabular-nums text-fg-subtle">{step}</span>
-                    <span className="mt-2 block text-sm text-fg">{text}</span>
-                  </Card>
-                </li>
-              ))}
-            </ol>
-          </section>
-        </div>
+            <SynapseIllustration variant="neuron" prominent className="mt-3 rounded-2xl lg:mt-5" />
 
-        {/*
-         * Tema seçici giriş ekranında da var: kullanıcı ürünün ilk karesinde
-         * karar verebilsin, gece modu için önce giriş yapmak zorunda kalmasın.
-         */}
-        <div className="rise rise-3 hidden items-center gap-4 lg:flex">
-          <p className="text-xs text-fg-subtle">Bilgisayar Mühendisliği · 2026</p>
-          <div className="ml-auto w-48">
-            <ThemeControl tone="canvas" />
+            <div className="mt-5 hidden lg:block">
+              <div className="flex flex-wrap gap-1 border-b border-border" role="group" aria-label="Synapse ile çalışma adımları">
+                {STUDY_STEPS.map((step, index) => (
+                  <button
+                    key={step.label}
+                    type="button"
+                    aria-pressed={activeStep === index}
+                    aria-controls="study-step-content"
+                    onClick={() => setActiveStep(index)}
+                    className={`-mb-px flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 border-b-2 px-2 py-2 text-sm font-medium motion-safe:transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${activeStep === index ? "border-brand text-brand" : "border-transparent text-fg-muted hover:text-fg"}`}
+                  >
+                    <span aria-hidden="true" className="text-xs text-fg-subtle">0{index + 1}</span>{step.label}
+                  </button>
+                ))}
+              </div>
+              <div id="study-step-content" className="pt-4" aria-live="polite" aria-atomic="true">
+                <h2 className="text-lg font-semibold leading-snug tracking-tight text-fg">{STUDY_STEPS[activeStep].title}</h2>
+                <p className="mt-2 max-w-[44ch] text-sm leading-6 text-fg-muted">{STUDY_STEPS[activeStep].description}</p>
+              </div>
+            </div>
           </div>
+
+          <p className="hidden text-sm leading-6 text-fg-muted lg:block">Bilgisayar Mühendisliği · COME 492 bitirme projesi</p>
         </div>
       </section>
 
-      {/* Sağ: oturum kartı. Katmanı gölge taşır; kenarlık ya da ayrı yüzey tonu yok. */}
-      <section className="flex items-center p-8 lg:p-14">
-        <Card className="mx-auto w-full max-w-md sm:p-8">
-          <p className="rise text-xs font-medium text-fg-muted">Ders alanına giriş</p>
-          <h2 className="rise rise-1 mt-2 text-2xl font-semibold tracking-tight text-fg">
-            Oturum aç
-          </h2>
-          <p className="rise rise-1 mt-2 text-sm text-fg-muted">
+      <div className="flex min-w-0 flex-col px-6 pt-7 pb-8 sm:px-10 lg:justify-center lg:px-12 lg:pt-12 xl:px-16">
+        <section aria-labelledby="sign-in-title" className="rise rise-1 mx-auto w-full min-w-0 max-w-[448px] py-2 lg:py-5">
+          <p className="text-sm font-semibold text-brand">Çalışma alanına hoş geldin</p>
+          <h2 id="sign-in-title" className="mt-3 text-[2rem] font-semibold leading-[1.1] tracking-[-0.04em] text-fg [overflow-wrap:anywhere] sm:text-[2.5rem]">Oturum aç</h2>
+          <p className="mt-4 text-base leading-7 text-fg-muted">
             {supabaseConfigured
-              ? "Üniversite hesabınızla devam edin"
-              : devAuthEnabled ? "Geliştirme ortamı girişi; canlıda üniversite hesabı kullanılır" : "Oturum açma henüz yapılandırılmadı"}
+              ? "Hesabınla derslerine ve çalışma alanına ulaş."
+              : devAuthEnabled ? "Demo hesaplarından biriyle çalışma alanını keşfet." : "Oturum açma henüz etkin değil."}
           </p>
 
           {supabaseConfigured ? (
-            <form onSubmit={enterWithPassword} className="mt-6 space-y-4">
+            <form onSubmit={enterWithPassword} className="mt-8 space-y-5 [&_input]:text-base">
               <Field label="E-posta">
-                {(control) => (
-                  <Input
-                    {...control}
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    required
-                  />
-                )}
+                {(control) => <Input {...control} className="min-h-14 rounded-xl bg-surface" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />}
               </Field>
               <Field label="Parola">
-                {(control) => (
-                  <Input
-                    {...control}
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                  />
-                )}
+                {(control) => <Input {...control} className="min-h-14 rounded-xl bg-surface" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />}
               </Field>
-              {/* Sayfadaki tek kırmızı eylem. */}
-              <Button type="submit" className="w-full" aria-disabled={busy}>
-                {busy ? "Oturum açılıyor…" : "Oturum aç"}
-              </Button>
-              <p className="text-right">
-                <Link href="/forgot-password" className={`text-xs ${QUIET_LINK}`}>
-                  Parolamı unuttum
-                </Link>
-              </p>
+              <div className="text-right"><Link href="/forgot-password" className={QUIET_LINK}>Parolamı unuttum</Link></div>
+              <Button type="submit" className="min-h-14 w-full rounded-xl text-base" aria-disabled={busy}>{busy ? "Oturum açılıyor…" : "Oturum aç"}</Button>
             </form>
           ) : null}
 
-          <div className="mt-5 space-y-3">
-            <Button type="button" variant="secondary" className="w-full" disabled={!entraAvailable || entra.busy} onClick={() => void entra.submit()}>
+          <div className="mt-6 space-y-2">
+            <Button type="button" variant="secondary" className="min-h-14 w-full rounded-xl text-base" disabled={!entraAvailable || entra.busy} onClick={() => void entra.submit()}>
               {entra.busy ? "Yönlendiriliyor…" : "Üniversite hesabıyla devam et"}
             </Button>
-            {!entraAvailable && <p className="text-xs text-fg-muted">Üniversite hesabıyla giriş henüz etkin değil.</p>}
-            {supabaseConfigured && <Link href="/verify-email" className={`block text-sm ${QUIET_LINK}`}>E-posta doğrulama bağlantısı iste</Link>}
+            {!entraAvailable && <p className="text-sm leading-6 text-fg-muted">Üniversite hesabıyla giriş henüz etkin değil.</p>}
+            {supabaseConfigured && <Link href="/verify-email" className={QUIET_LINK}>E-posta doğrulama bağlantısı iste</Link>}
           </div>
 
           {devAuthEnabled && (
-            /* Kimlik seçenekleri bir listedir: ekran okuyucu kaç seçenek
-               olduğunu peşinen söyler. Satırlar kart içinde `divide-y`;
-               ikinci bir çerçeve yok. */
-            <ul className="mt-6 divide-y divide-border">
-              {DEMO_USERS.map((user, index) => (
-                <li key={user.id}>
-                  <button
-                    onClick={() => enter(user)}
-                    className={`rise rise-${index + 2} group flex min-h-16 w-full items-center gap-4 rounded-lg px-2 py-3 text-left transition-colors duration-200 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand`}
-                  >
-                    <span
-                      aria-hidden
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-sm font-semibold text-fg"
-                    >
-                      {user.fullName.charAt(0)}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-fg">
-                        {user.fullName}
+            <section aria-labelledby="demo-users-title" className="mt-8 border-t border-border pt-6">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                <h3 id="demo-users-title" className="text-base font-semibold text-fg">Demo hesapları</h3>
+                <span className="text-sm text-fg-muted">Üç ayrı çalışma alanı</span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-fg-muted">Öğrenci, eğitmen ve teknik yönetim deneyimlerini incele.</p>
+              <ul className="mt-4 space-y-3">
+                {DEMO_USERS.map((user) => (
+                  <li key={user.id}>
+                    <button type="button" onClick={() => enter(user)} className="group flex min-h-24 w-full items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-4 text-left shadow-e1 motion-safe:transition-[transform,border-color,box-shadow] hover:border-brand hover:shadow-e2 motion-safe:hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand sm:px-5">
+                      <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-brand/15 bg-brand-subtle text-lg font-semibold text-brand">{user.fullName.charAt(0)}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-base font-semibold text-fg">{user.fullName}</span>
+                        <span className="mt-1 block break-words text-sm text-fg-muted">{user.role === "operator" ? "Teknik yönetim" : user.role === "instructor" ? "Eğitmen" : "Öğrenci"} · {user.email}</span>
                       </span>
-                      <span className="mt-0.5 block text-xs text-fg-muted">
-                        {user.role === "instructor" ? "Eğitmen" : "Öğrenci"} ·{" "}
-                        {user.email}
-                      </span>
-                    </span>
-                    <span
-                      aria-hidden
-                      className="ml-auto text-fg-subtle transition-transform duration-200 group-hover:translate-x-0.5"
-                    >
-                      →
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+                      <ChevronRightIcon size={20} className="shrink-0 text-fg-muted motion-safe:transition-transform group-hover:translate-x-1 group-hover:text-brand" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
           )}
-
-          {(error || entra.error) && (
-            <div className="mt-4">
-              <ErrorNote message={error ?? entra.error!} />
-            </div>
-          )}
-
-          {/*
-            Aydınlatma metni GİRİŞTEN ÖNCE erişilebilir. Kişisel verisinin nasıl
-            işleneceğini öğrenmek için önce hesap açmak zorunda kalmak, metnin
-            amacını tersine çevirirdi.
-          */}
-          <p className="mt-8 text-xs text-fg-muted">
-            <Link
-              href="/kvkk"
-              className="underline underline-offset-2 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-            >
-              Kişisel veriler ve gizlilik
-            </Link>{" "}
-            hangi verilerinizin işlendiğini, nerede saklandığını ve kimlerle
-            paylaşıldığını açıklar.
-          </p>
-        </Card>
-      </section>
+          {(error || entra.error) && <div className="mt-5"><ErrorNote message={error ?? entra.error!} /></div>}
+          <div className="mt-8 border-t border-border pt-5">
+            <Link href="/kvkk" className={QUIET_LINK}><ShieldIcon size={17} className="mr-2 shrink-0" />Kişisel veriler ve gizlilik</Link>
+            <p className="text-sm leading-6 text-fg-muted">Verilerinin nasıl işlendiğini giriş yapmadan okuyabilirsin.</p>
+          </div>
+        </section>
+        <footer className="mx-auto mt-7 w-full max-w-[448px] text-sm text-fg-muted">DOU-Synapse · Doğuş Üniversitesi</footer>
+      </div>
     </main>
   );
 }

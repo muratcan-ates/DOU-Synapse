@@ -98,9 +98,12 @@ async def _client(base_url: str | None) -> httpx.AsyncClient:
 async def _resolve_course(
     client: httpx.AsyncClient, headers: dict[str, str], code: str
 ) -> str | None:
-    response = await client.get("/courses", headers=headers)
+    response = await client.get("/courses", headers=headers, params={"limit": 100})
     response.raise_for_status()
-    for course in response.json():
+    payload = response.json()
+    # Uç artık `{"items": [...]}` zarfı döndürüyor; eski düz liste biçimi de kabul edilir.
+    courses = payload.get("items", []) if isinstance(payload, dict) else payload
+    for course in courses:
         if course["code"] == code:
             course_id: str = course["id"]
             return course_id

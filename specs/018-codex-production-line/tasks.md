@@ -24,7 +24,7 @@
 - [x] C — eş projeksiyon ve gerçek RLS/prepared runtime ölçümünü arşivle.
 - [x] C — eski üç retrieval kaynağıyla aynı hashing holdout'u gerçekten çalıştır; olumsuz sonucu koru.
 - [x] C1 dar kabul — FTS eşitlik sırasından gelen gerilemeyi çapraz deneyle ayır; yalnız FTS değişikliğini geri çek; son hashing/E5 non-regression ve prepared runtime tekrarını doğrula.
-- [ ] C1 FTS — yeniden yüklemede UUID sırasına bağımlılığı kaliteyi düşürmeden çöz; bu kontrol noktasında açık.
+- [ ] C1 FTS — yeniden yüklemede UUID sırasına bağımlılığı kaliteyi düşürmeden çöz. 15 Eylül doğrulaması: **kod yarısı kapandı**, `4ed9a7a` FTS sırasını `rank DESC, documents.file_hash, chunk_index`'e taşıdı ve `tests/test_fts_determinism.py` yeşil koştu. **Kalite yarısı açık:** L4 kabulünün istediği hashing ve E5 holdout bu anahtarla koşulmadı; üstelik aynı sıranın izole 2×2 tanısı daha önce Recall@5 hashing 78→77/105 ve E5 93→92/105 düşüşü ölçmüş, aday bu yüzden reddedilip geri çekilmişti (`docs/test-report.md` 13 Eylül kaydı). Yani HEAD, ölçülerek reddedilmiş sıralamayı kabul kapısı yeniden koşulmadan taşıyor.
 - [ ] C — RLS kapalı karşılaştırma ve pgvector0.8.6 ölçüm eşdeğerliği.
 - [ ] C2 — bellek/recall nedenselliğini kontrollü deneyle çöz; gerek yoksa göç eklememe kararını kaydet.
 - [x] C3 — önceki başarısız aday ile son dar kabulü, açık kalan matris hücrelerini ve kaynak hashlerini ayrı raporla.
@@ -51,7 +51,7 @@
 
 - [x] S9/S9B/S9C yerel — hata zinciri, düz sunucu/lifespan mesajı, çıktı arızası ve bilinen destek kimliği maskesi;84 DB/ağsız kontrol,1655 API/38 alt vaka,71 E2E ve son16 gerçek süreç geçti. [Kanıt](evidence/s9-local/README.md).
 - [x] S9 own034 e19dc8c ve aggregate035 deb83e1 kesin commit kapıları PASS.
-- [ ] S9 GitHub gönderimi: otomatik inceleme kod+sentetik arşiv için açık paylaşım onayı istedi; iki commit için kullanıcı yanıtı bekleniyor. Bu içerikleri taşıyan sonraki commitler de onaysız gönderilmez.
+- [ ] S9 GitHub gönderimi: otomatik inceleme kod+sentetik arşiv için açık paylaşım onayı istedi; iki commit için kullanıcı yanıtı bekleniyor. Bu içerikleri taşıyan sonraki commitler de onaysız gönderilmez. 15 Eylül ölçümü: `e19dc8c`, `deb83e1` ve `d870c26` artık `origin/018-codex-production-line` atasıdır (uzak depo herkese açık), yani gönderim fiilen olmuş; paylaşım onayının verilip verilmediği koddan görülemez. **ENGEL:** kaydı insan kararıyla Murat kapatmalı; kutucuk otomatik açılmadı.
 - [x] S10 yerel — sunucu kaynaklı destek kimliği, makbuz/aynı-kayıt sahipliği, tam audit muhasebesi ve owned süreç kapanışı;1688 API/38,573 web,134 DB/ağsız kontrol,56 gerçek HTTP ve son71 E2E. [Kanıt](evidence/s10-local/README.md).
 - [x] S10 kesin yerel commit d870c261 / own036; deb83→d870 yönetişim denetimi 9 Eylül yeniden PASS. Yeni hosted kabul paylaşım onayı bekler.
 - [ ] S11 — aday PG/izole kontrolleri görevde geçti; son kaynak entegrasyonu, tam API ve gerçek CLI kabulü tamamlanmadı. 9 Eylül geçici paketler bulunamadı; kurtarılan kaynak/kanıt durumunu [kapanış kaydıyla](../../docs/team/codex/2026-09-09-window-checkpoint.md) uzlaştır.

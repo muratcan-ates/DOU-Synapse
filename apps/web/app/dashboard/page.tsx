@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useCallback } from "react";
 import { AppShell } from "@/components/app-shell";
 import { CourseAssistant } from "@/components/course-assistant/course-assistant";
-import { PortalMetrics } from "@/components/portal/portal-metrics";
-import { ErrorNote, Loading, PageHeader } from "@/components/page-state";
+import { ChevronRightIcon, ShieldIcon } from "@/components/icons";
+import { usePortalProfile } from "@/components/portal/portal-profile-context";
+import { CourseCover } from "@/components/course-cover";
+import { ErrorNote, Loading } from "@/components/page-state";
 import { Badge, EmptyState } from "@/components/ui";
 import {
   coursePrimaryHref,
@@ -20,324 +22,288 @@ import {
 import { roleLabel } from "@/lib/profile";
 import { useResource } from "@/lib/use-resource";
 
-/*
- * Pano, 14 Eylül tasarım turu: "üniversite portalı" hissinin üç ölçülmüş kaynağı
- * kaldırıldı — kutu-içinde-kutu (kenarlık + iç kenarlık + saç çizgili sütun),
- * kırmızı enflasyonu (ray + mono kod + buton + yedi kırmızı bağlantı aynı blokta)
- * ve etiket enflasyonu (eyebrow, "En yeni ders alanı", "Çalışma bağlamı").
- *
- * Kırmızı bu sayfada yalnız odak kartındaki birincil eylemde kalır (DESIGN.md
- * renk kilidi). Katman sinyali kenarlıktan değil `shadow-e1`'den gelir; rakamlar
- * `font-mono` yerine `tabular-nums` ile hizalanır (Türkçe ondalık ayracı kopmaz).
- *
- * Erişilebilirlik sözleşmesi DEĞİŞMEDİ: `aria-labelledby`/`id` çiftleri, `nav`
- * etiketi, bağlantı metinleri ve href'ler e2e testlerinin bulduğu hâliyle durur;
- * yalnız sunum değişti.
- */
-
-/** İkincil eylem: `Button variant="secondary"` ile aynı gramer, `<a>` gövdesinde. */
 const SECONDARY_ACTION =
-  "inline-flex min-h-11 items-center justify-center rounded-lg border border-border-strong bg-surface px-4 text-sm font-medium text-fg transition-[color,background,border,transform] duration-200 hover:border-fg-subtle hover:bg-surface-sunken active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-
-/** Birincil eylem: sayfadaki TEK kırmızı yüzey. `Button variant="primary"` grameri. */
-const PRIMARY_ACTION =
-  "inline-flex min-h-11 items-center justify-center rounded-lg bg-brand px-5 text-sm font-medium text-bg shadow-e1 transition-[color,background,transform,box-shadow] duration-200 hover:bg-brand-strong active:translate-y-px active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
-
-/**
- * Hızlı araç bağlantısı: ikincil metin bağlantısı, aksan rengi taşımaz.
- * Önceki hâlde satır başına yedi `text-brand` bağlantı vardı ve kırmızı
- * "buraya bas" demeyi bırakmıştı. 44px dokunma hedefi `min-h-11` ile korunur.
- */
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-fg transition-colors duration-250 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 const QUICK_LINK =
-  "inline-flex min-h-11 items-center text-sm text-fg-muted underline-offset-4 transition-colors duration-200 hover:text-fg hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
+  "inline-flex min-h-11 items-center rounded-lg px-3 text-sm text-fg-muted transition-colors duration-250 hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand";
 
 export default function DashboardPage() {
-  return (
-    <AppShell>
-      <DashboardContent />
-    </AppShell>
-  );
+  return <AppShell><DashboardContent /></AppShell>;
 }
 
 function DashboardContent() {
+  const { data: profile } = usePortalProfile();
   const fetchDashboard = useCallback(() => getDashboard(), []);
-  const {
-    data,
-    error,
-    refreshError,
-    errorKind,
-    errorRequestId,
-    loading,
-    reload,
-  } = useResource(fetchDashboard, []);
+  const { data, error, refreshError, errorKind, errorRequestId, loading, reload } =
+    useResource(fetchDashboard, []);
 
   if (error) {
-    return (
-      <ErrorNote
-        message={error}
-        kind={errorKind}
-        requestId={errorRequestId}
-        onRetry={reload}
-      />
-    );
+    return <ErrorNote message={error} kind={errorKind} requestId={errorRequestId} onRetry={reload} />;
   }
   if (loading || !data) return <Loading label="Çalışma alanınız hazırlanıyor…" />;
 
   const firstName = data.viewer.full_name?.trim().split(/\s+/)[0] ?? "";
-  const focusCourse = data.courses[0] ?? null;
+  const isOperationsOnly = profile?.is_platform_admin === true && profile.memberships.length === 0;
+  const instructorCourses = data.courses.filter((course) => course.role === "instructor");
+  const studentCourses = data.courses.filter((course) => course.role === "student");
+  const description = instructorCourses.length > 0 && studentCourses.length > 0
+    ? "Derslerinize göre eğitmen ve öğrenci alanlarınız."
+    : instructorCourses.length > 0
+      ? "Dersleriniz, içerikleriniz ve sınıf çalışmaları."
+      : studentCourses.length > 0
+        ? "Ders tekrarı, ilerlemeniz ve sınavlarınız."
+        : profile?.is_platform_admin
+          ? "Sistem durumu ve teknik yönetim."
+          : "Ders üyelikleriniz burada görünecek.";
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title={firstName ? `Merhaba, ${firstName}` : "Genel bakış"}
-        description="Rolünüze göre güncel işi görün, kaynaklara dönün ve kaldığınız yerden devam edin."
-        action={
-          <Link href="/courses" className={SECONDARY_ACTION}>
-            Tüm dersler
-          </Link>
-        }
-      />
+    <div className="space-y-7 sm:space-y-8">
+      <header>
+        <h1 className="min-w-0 text-[2rem] font-semibold leading-tight tracking-[-0.035em] text-fg [overflow-wrap:anywhere] sm:text-[2.25rem]">
+          {isOperationsOnly ? "Bilgi İşlem çalışma alanı" : firstName ? `Merhaba, ${firstName}` : "Genel bakış"}
+        </h1>
+        <p className="mt-1.5 text-base text-fg-muted">{description}</p>
+      </header>
 
-      {refreshError && (
-        <ErrorNote
-          message={refreshError}
-          kind={errorKind}
-          requestId={errorRequestId}
-          onRetry={reload}
-        />
-      )}
+      {refreshError && <ErrorNote message={refreshError} kind={errorKind} requestId={errorRequestId} onRetry={reload} />}
 
-      {focusCourse && (
-        /*
-         * Odak kartı: tek yükselmiş yüzey (DESIGN.md §Elevation seviye 1),
-         * kenarlık yok, iç ray yok. Sağdaki bağlam paneli kanvasın altında
-         * duran çukur yüzeydir; sütunlar saç çizgisiyle değil boşlukla ayrılır.
-         */
-        <section
-          aria-labelledby="dashboard-focus-title"
-          className="rounded-xl bg-surface p-5 shadow-e1 sm:p-8"
-        >
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(240px,18rem)] lg:gap-8">
-            <div className="min-w-0">
-              <p className="flex flex-wrap items-center gap-x-3 text-sm text-fg-muted">
-                <span>{focusCourse.code}</span>
-                <span>{roleLabel(focusCourse.role)}</span>
-              </p>
-              <h2
-                id="dashboard-focus-title"
-                className="mt-2 max-w-2xl text-balance text-2xl font-semibold tracking-tight text-fg sm:text-3xl"
-              >
-                {focusCourse.title}
-              </h2>
-              <p className="prose-tr mt-3 text-sm text-fg-muted">
-                {focusCourse.role === "instructor"
-                  ? "Kaynak, soru ve sınav akışını bu çalışma alanından yönetin."
-                  : focusCourse.assistant_locked
-                    ? focusCourse.assistant_lock_message ||
-                      "Aktif sınav sürerken asistan kullanılamaz."
-                    : "Bu dersin kaynaklara dayalı asistanını açın ve çalışma araçlarına ulaşın."}
-              </p>
-              <Link
-                href={coursePrimaryHref(focusCourse)}
-                className={`mt-6 ${PRIMARY_ACTION}`}
-              >
-                {coursePrimaryLabel(focusCourse)}
-              </Link>
-            </div>
-
-            {/*
-             * DOM sırası etiket → değer (ekran okuyucu "Son etkinlik: …" okur);
-             * `flex-col-reverse` görselde sayıyı üste, etiketi alta koyar — metrik
-             * şeridiyle aynı okuma düzeni.
-             */}
-            <dl className="grid grid-cols-2 gap-4 rounded-lg bg-surface-sunken p-5 lg:grid-cols-1 lg:content-start lg:gap-6">
-              <div className="flex flex-col-reverse gap-1">
-                <dt className="text-xs text-fg-muted">Son etkinlik</dt>
-                <dd className="text-sm font-medium tabular-nums text-fg">
-                  {lastActivityLabel(focusCourse.last_activity_at)}
-                </dd>
-              </div>
-              <div className="flex flex-col-reverse gap-1">
-                <dt className="text-xs text-fg-muted">Tüm derslerdeki iş</dt>
-                <dd className="text-2xl leading-none font-semibold tracking-tight tabular-nums text-fg">
-                  {data.summary.action_items}
-                </dd>
-              </div>
-            </dl>
+      {profile?.is_platform_admin && (
+        <section aria-labelledby="dashboard-operations-title" className="flex flex-wrap items-center gap-4 rounded-[20px] border border-border bg-surface p-5 shadow-e1 sm:p-6">
+          <span aria-hidden="true" className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-subtle text-brand"><ShieldIcon size={24} /></span>
+          <div className="min-w-0 flex-1 basis-56">
+            <h2 id="dashboard-operations-title" className="text-xl font-semibold tracking-tight text-fg">Bilgi İşlem paneli</h2>
+            <p className="mt-1 text-sm leading-relaxed text-fg-muted">Servis sağlığı, kullanım kayıtları ve kaynak işleme süreçleri.</p>
           </div>
+          <Link href="/admin" className={SECONDARY_ACTION}>Teknik paneli aç <ChevronRightIcon size={17} /></Link>
         </section>
       )}
 
-      <PortalMetrics
-        items={[
-          { label: "Toplam ders", value: data.summary.total_courses },
-          { label: "Eğitmen olduğunuz", value: data.summary.instructor_courses },
-          { label: "Öğrenci olduğunuz", value: data.summary.student_courses },
-          {
-            label: "İlgilenilecek iş",
-            value: data.summary.action_items,
-            detail: "İşlenen kaynak, hata ve onay bekleyen soru",
-          },
-        ]}
-      />
+      {instructorCourses.length > 0 && <InstructorPanel courses={instructorCourses} />}
+      {studentCourses.length > 0 && <StudentPanel courses={studentCourses} />}
 
-      <section aria-labelledby="course-workspaces-title">
-        <div className="mb-4">
-          <h2 id="course-workspaces-title" className="text-lg font-semibold tracking-tight text-fg">
-            Tüm çalışma alanları
-          </h2>
-          <p className="mt-1 text-sm text-fg-muted">
-            Her satır yalnız o dersteki rolünüze uygun araçları ve gerçek durumu gösterir.
-          </p>
+      {(data.courses.length > 0 || !profile?.is_platform_admin) && <section aria-labelledby="course-workspaces-title">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 id="course-workspaces-title" className="text-xl font-semibold tracking-tight text-fg">Tüm çalışma alanları <span className="ml-1 text-base font-normal text-fg-muted">({data.summary.total_courses})</span></h2>
+          <Link href="/courses" className={`${SECONDARY_ACTION} -mr-3`}>Tüm dersler <ChevronRightIcon size={17} /></Link>
         </div>
-
         {data.courses.length === 0 ? (
           <EmptyState title="Henüz bağlı olduğunuz bir ders bulunmuyor." />
         ) : (
-          <ul className="space-y-4">
-            {data.courses.map((course) => (
-              <li key={course.id}>
-                <WorkspaceRow course={course} />
-              </li>
-            ))}
+          <ul className="space-y-3">
+            {data.courses.map((course) => <li key={course.id} className="min-w-0"><WorkspaceRow course={course} /></li>)}
           </ul>
         )}
-      </section>
+      </section>}
     </div>
   );
 }
 
-/**
- * Çalışma alanı satırı: kendi başına yükselen kart, içinde kutu yok.
- *
- * Üç bölge yan yana: kimlik + araçlar (esner) · kompakt sayı ızgarası · tek
- * ikincil eylem. Önceki satır ortası boştu, sağda saç çizgili bir sayı bloğu
- * vardı ve araç bağlantıları kırmızıydı. Sayılar artık sol bloğun hemen yanında
- * durur, eylem en sağda; kırmızı hiçbir yerde yok.
- */
+function StudentPanel({ courses }: { courses: DashboardCourse[] }) {
+  const focusCourse = courses[0]!;
+  const examCourses = courses.filter((course) => course.assistant_locked || course.published_exams > 0);
+
+  return (
+    <section aria-labelledby="student-panel-title" className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 id="student-panel-title" className="text-xl font-semibold tracking-tight text-fg">Öğrenci paneli</h2>
+          <p className="mt-1 text-sm text-fg-muted">Kaldığınız yerden çalışmaya devam edin.</p>
+        </div>
+        <Link href="/study" className={`${SECONDARY_ACTION} -mr-3`}>Ders tekrarı <ChevronRightIcon size={17} /></Link>
+      </div>
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <FocusCourse course={focusCourse} />
+        <div className="overflow-hidden rounded-[20px] bg-surface px-5 shadow-e1 sm:px-6">
+          <h3 className="pt-5 text-base font-semibold text-fg">İlerlemem ve sınavlarım</h3>
+          <ul className="divide-y divide-border">
+            {courses.slice(0, 3).map((course) => (
+              <li key={course.id} className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3">
+                <div className="min-w-0 flex-1 basis-36">
+                  <p className="text-sm font-semibold text-fg [overflow-wrap:anywhere]">{course.code}</p>
+                  <p className="mt-0.5 text-sm text-fg-muted">Konu hâkimiyeti: {masteryLabel(course.mastery_score)}</p>
+                </div>
+                <Link href={`/courses/${course.id}/analytics`} className={`${QUICK_LINK} -mr-3`}>İlerleme <ChevronRightIcon size={15} className="ml-1" /></Link>
+              </li>
+            ))}
+          </ul>
+          <div className="border-t border-border py-4">
+            {examCourses.length > 0 ? (
+              <ul className="space-y-1">
+                {examCourses.slice(0, 3).map((course) => (
+                  <li key={course.id}>
+                    <Link href={`/courses/${course.id}/exam`} className="flex min-h-11 min-w-0 items-center justify-between gap-3 rounded-lg py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                      <span className="min-w-0 text-fg [overflow-wrap:anywhere]">{course.code} <span className="text-fg-muted">· {course.assistant_locked ? "Aktif sınav" : `${course.published_exams} yayındaki sınav`}</span></span>
+                      <ChevronRightIcon size={17} className="shrink-0 text-brand" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="text-sm text-fg-muted">Derslerinizde yayında bir sınav yok.</p>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InstructorPanel({ courses }: { courses: DashboardCourse[] }) {
+  const pending = courses.flatMap((course) => {
+    const messages = instructorAttentionMessages(course);
+    if (course.documents_processing > 0) messages.push(`${course.documents_processing} kaynak işleniyor.`);
+    return messages.length > 0 ? [{ course, messages }] : [];
+  });
+  const recentCourses = courses
+    .filter((course) => course.last_activity_at !== null && Number.isFinite(Date.parse(course.last_activity_at)))
+    .toSorted((first, second) => Date.parse(second.last_activity_at!) - Date.parse(first.last_activity_at!))
+    .slice(0, 3);
+
+  return (
+    <section aria-labelledby="instructor-panel-title" className="space-y-3">
+      <div>
+        <h2 id="instructor-panel-title" className="text-xl font-semibold tracking-tight text-fg">Eğitmen paneli</h2>
+        <p className="mt-1 text-sm text-fg-muted">Ders içerikleri, soru onayları ve sınıf etkinliği.</p>
+      </div>
+      <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        <div className="overflow-hidden rounded-[20px] bg-surface px-5 shadow-e1 sm:px-6">
+          <h3 className="pt-5 text-base font-semibold text-fg">{pending.length > 0 ? "İlgilenilecek işler" : "Son ders etkinliği"}</h3>
+          {pending.length > 0 ? (
+            <>
+              <ul className="divide-y divide-border">
+                {pending.slice(0, 3).map(({ course, messages }) => (
+                  <li key={course.id}>
+                    <Link href={coursePrimaryHref(course)} className="group flex min-h-16 items-center gap-3 rounded-lg py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-fg [overflow-wrap:anywhere]">{course.code}</p>
+                        <p className="mt-0.5 text-sm leading-relaxed text-fg-muted">{messages.join(" ")}</p>
+                      </div>
+                      <ChevronRightIcon size={18} className="shrink-0 text-brand" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {pending.length > 3 && <p className="border-t border-border py-3 text-sm text-fg-muted">Diğer {pending.length - 3} dersin işleri aşağıdaki listede.</p>}
+            </>
+          ) : recentCourses.length > 0 ? (
+            <ul className="divide-y divide-border">
+              {recentCourses.map((course) => (
+                <li key={course.id}>
+                  <Link href={`/courses/${course.id}/analytics`} className="flex min-h-16 items-center justify-between gap-4 rounded-lg py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-fg [overflow-wrap:anywhere]">{course.code}</p>
+                      <p className="mt-0.5 text-sm text-fg-muted">{lastActivityLabel(course.last_activity_at)}</p>
+                    </div>
+                    <ChevronRightIcon size={18} className="shrink-0 text-fg-muted" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="py-5 text-sm text-fg-muted">Onay bekleyen soru veya işleme sorunu yok. Henüz kayıtlı ders etkinliği bulunmuyor.</p>}
+        </div>
+        <FocusCourse course={courses[0]!} />
+      </div>
+    </section>
+  );
+}
+
+function FocusCourse({ course }: { course: DashboardCourse }) {
+  const instructor = course.role === "instructor";
+  return (
+    <div className="rounded-[20px] bg-surface p-5 shadow-e1 sm:p-6">
+      <div className="flex min-w-0 items-start gap-4">
+        <CourseCover title={course.title} code={course.code} size="compact" />
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-fg-muted">
+            <span className="font-medium text-brand [overflow-wrap:anywhere]">{course.code}</span>
+            <span>{roleLabel(course.role)}</span>
+          </p>
+          <h3 className="mt-1 text-[1.375rem] font-semibold leading-snug tracking-tight text-fg [overflow-wrap:anywhere]">{course.title}</h3>
+        </div>
+      </div>
+      {!instructor && course.assistant_locked && (
+        <p role="status" className="mt-4 text-sm leading-relaxed text-warning">{course.assistant_lock_message || "Aktif sınav sürerken asistan kullanılamaz."}</p>
+      )}
+      {instructor && <nav aria-label={`${course.code} eğitmen kısayolları`} className="-mx-3 mt-3 flex flex-wrap gap-1">
+        <Link href={`/courses/${course.id}/sources`} className={QUICK_LINK}>Kaynaklar</Link>
+        <Link href={`/courses/${course.id}/questions`} className={QUICK_LINK}>Soru havuzu</Link>
+        <Link href={`/courses/${course.id}/analytics`} className={QUICK_LINK}>Sınıf analitiği</Link>
+      </nav>}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <p className="text-sm text-fg-muted">Son etkinlik: {lastActivityLabel(course.last_activity_at)}</p>
+        <Link href={coursePrimaryHref(course)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-brand-fg transition-colors duration-250 hover:bg-brand-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          {coursePrimaryLabel(course)} <ChevronRightIcon size={17} />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function WorkspaceRow({ course }: { course: DashboardCourse }) {
   const instructor = course.role === "instructor";
   const quickTools = courseQuickTools(course);
   const attentionMessages = instructorAttentionMessages(course);
 
   return (
-    <article className="flex flex-col gap-5 rounded-xl bg-surface p-5 shadow-e1 lg:flex-row lg:items-start lg:gap-8">
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p className="text-sm text-fg-muted">{course.code}</p>
-          <Badge tone={instructor ? "info" : "neutral"}>{roleLabel(course.role)}</Badge>
+    <article className="min-w-0 overflow-hidden rounded-[20px] bg-surface shadow-e1">
+      <div className="px-5 py-4 sm:px-6">
+        <div className="grid min-w-0 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="flex min-w-0 items-start gap-3.5">
+            <CourseCover title={course.title} code={course.code} size="compact" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="min-w-0 max-w-full text-sm font-medium text-brand [overflow-wrap:anywhere]">{course.code}</span>
+                <Badge tone={instructor ? "info" : "neutral"}>{roleLabel(course.role)}</Badge>
+              </div>
+              <h3 className="mt-1 text-xl font-semibold leading-snug tracking-tight text-fg [overflow-wrap:anywhere]">{course.title}</h3>
+              <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+                <CourseDatum inline label={instructor ? "Kaynak" : "Çalışma sorusu"} value={instructor ? course.documents_total : course.questions_total} />
+                <CourseDatum inline label="Yayındaki sınav" value={course.published_exams} />
+              </dl>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 xl:justify-end">
+            <Link href={coursePrimaryHref(course)} className={SECONDARY_ACTION}>{coursePrimaryLabel(course)} <ChevronRightIcon size={17} /></Link>
+            <CourseAssistant courseId={course.id} courseLabel={course.code} placement="inline" />
+          </div>
         </div>
-        <h3 className="mt-1 text-lg font-semibold tracking-tight text-fg">{course.title}</h3>
 
         {attentionMessages.length > 0 && (
-          <div role="status" className="mt-3 text-sm text-warning">
-            {attentionMessages.map((message) => (
-              <p key={message}>{message}</p>
-            ))}
+          <div role="status" className="mt-3 border-l-2 border-warning pl-3 text-sm leading-relaxed text-warning">
+            {attentionMessages.map((message) => <p key={message}>{message}</p>)}
           </div>
         )}
-
-        {/*
-         * `[&>button]` seçicileri satır içi asistan tetikleyicisi içindir:
-         * bileşen (`course-assistant.tsx`) inline yerleşimde `text-xs text-brand`
-         * yazar ve bu sayfanın yüzeyi değildir. Aksan kilidi (yalnız odak kartı
-         * kırmızı) ebeveynden kurulur; tetikleyicinin davranışı, adı ve dialog'u
-         * olduğu gibi kalır. Yalnız doğrudan çocuk buton hedeflenir, dialog
-         * içindeki butonlar etkilenmez.
-         */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 [&>button]:text-sm [&>button]:text-fg-muted [&>button:hover]:text-fg">
-          <CourseAssistant
-            courseId={course.id}
-            courseLabel={course.code}
-            placement="inline"
-          />
-          <nav
-            aria-label={course.code + " hızlı araçları"}
-            className="flex flex-wrap gap-x-4 gap-y-1"
-          >
-            {quickTools.map((tool) => (
-              <Link key={tool.href} href={tool.href} className={QUICK_LINK}>
-                {tool.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
         {!instructor && course.assistant_locked && course.assistant_lock_message && (
-          <p role="status" className="mt-2 text-sm text-warning">
-            {course.assistant_lock_message}
-          </p>
+          <p role="status" className="mt-3 border-l-2 border-warning pl-3 text-sm leading-relaxed text-warning">{course.assistant_lock_message}</p>
         )}
-
-        <p className="mt-3 text-xs text-fg-subtle">
-          Son etkinlik: {lastActivityLabel(course.last_activity_at)}
-        </p>
       </div>
 
-      {/*
-       * Sayı ızgarası: kenarlıksız, saç çizgisiz; eğitmende beş, öğrencide dört
-       * ölçüm. Eğitmen ızgarası geniş ekranda üç sütun (5 → 3+2), öğrenci 2×2.
-       */}
-      {instructor ? (
-        <dl className="grid shrink-0 grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:w-72">
-          <CourseDatum label="Kaynak" value={course.documents_total} />
-          <CourseDatum label="İşleniyor" value={course.documents_processing} />
-          <CourseDatum label="İşlenemedi" value={course.documents_failed} />
-          <CourseDatum label="Taslak soru" value={course.draft_questions} />
-          <CourseDatum label="Yayındaki sınav" value={course.published_exams} />
-        </dl>
-      ) : (
-        <dl className="grid shrink-0 grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4 lg:w-56 lg:grid-cols-2">
-          <CourseDatum label="Çalışma sorusu" value={course.questions_total} />
-          <CourseDatum label="Yayındaki sınav" value={course.published_exams} />
-          <CourseDatum
-            label="Konu hâkimiyeti"
-            value={masteryLabel(course.mastery_score)}
-            emphasis={course.mastery_score !== null}
-          />
-          <CourseDatum label="Kaynak" value={course.documents_total} />
-        </dl>
-      )}
-
-      <div className="shrink-0">
-        <Link href={coursePrimaryHref(course)} className={SECONDARY_ACTION}>
-          {coursePrimaryLabel(course)}
-        </Link>
-      </div>
+      <details className="border-t border-border">
+        <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-fg-muted transition-colors duration-250 hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand sm:px-6">Araçlar ve ders ayrıntıları</summary>
+        <div className="px-5 pb-5 sm:px-6">
+          <nav aria-label={course.code + " hızlı araçları"} className="-mx-3 flex flex-wrap gap-x-1 gap-y-0.5">
+            {quickTools.map((tool) => <Link key={tool.href} href={tool.href} className={QUICK_LINK}>{tool.label}</Link>)}
+          </nav>
+          <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-border pt-4 sm:grid-cols-3">
+            {instructor ? <>
+              <CourseDatum label="İşleniyor" value={course.documents_processing} />
+              <CourseDatum label="İşlenemedi" value={course.documents_failed} />
+              <CourseDatum label="Taslak soru" value={course.draft_questions} />
+            </> : <>
+              <CourseDatum label="Konu hâkimiyeti" value={masteryLabel(course.mastery_score)} />
+              <CourseDatum label="Kaynak" value={course.documents_total} />
+            </>}
+          </dl>
+          <p className="mt-4 text-xs text-fg-subtle">Son etkinlik: {lastActivityLabel(course.last_activity_at)}</p>
+        </div>
+      </details>
     </article>
   );
 }
 
-/**
- * Tek ölçüm: değer üstte, etiket altında (görsel); DOM'da `dt` önce gelir ki
- * ekran okuyucu "Kaynak: 0" okusun ve `dt`'nin kardeşi `dd` olsun (e2e bu
- * kardeşliği XPath ile bulur).
- *
- * `emphasis=false` sayı olmayan değer içindir ("Henüz ölçülmedi"): metin bir
- * ölçüm değil, ölçümün yokluğudur; display boyunda basılırsa uydurma bir skor
- * gibi ağırlık kazanır.
- */
-function CourseDatum({
-  label,
-  value,
-  emphasis = true,
-}: {
-  label: string;
-  value: string | number;
-  emphasis?: boolean;
-}) {
+function CourseDatum({ label, value, inline = false }: { label: string; value: string | number; inline?: boolean }) {
   return (
-    <div className="flex flex-col-reverse gap-0.5">
-      <dt className="text-xs text-fg-muted">{label}</dt>
-      <dd
-        className={
-          emphasis
-            ? "text-lg leading-tight font-semibold tracking-tight tabular-nums text-fg"
-            : "text-sm leading-tight font-medium text-fg"
-        }
-      >
-        {value}
-      </dd>
+    <div className={inline ? "flex min-w-0 items-baseline gap-2" : "min-w-0"}>
+      <dt className="text-sm text-fg-muted">{label}</dt>
+      <dd className={`${inline ? "text-sm" : "mt-1 text-lg"} font-semibold tabular-nums text-fg [overflow-wrap:anywhere]`}>{value}</dd>
     </div>
   );
 }

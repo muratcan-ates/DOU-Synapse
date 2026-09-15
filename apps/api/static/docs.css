@@ -65,7 +65,11 @@ body {
   line-height: 1.625;
 }
 
-/* --- Üst ray: uygulamanın mürekkep rayının yatay hâli ------------------- */
+/* --- Üst çubuk: uygulamanın 14 Eylül açık kabuğunun yatay hâli ----------
+   Önceki sürüm mürekkep (siyah) raydı; web kabuğu açık grama geçince
+   (DESIGN.md "Kabuk ve kural değişikliği — 14 Eylül") belge sayfası geride
+   kalmıştı. Şimdi aynı dil: beyaz yüzey, ince alt çizgi, koyu yazı, tek
+   kırmızı vurgu (yalnız "buradasın" göstergesinde). */
 
 .rail {
   position: sticky;
@@ -76,7 +80,9 @@ body {
   gap: 28px;
   padding: 0 24px;
   min-height: 64px;
-  background: var(--ink);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
   /* Sarma YOK: ray sarınca "API" göstergesi tek başına üçüncü satıra düşüyordu
      ve bozuk görünüyordu. Dar ekranda etiketler yatay kayar, ray tek satır
      kalır (uygulamanın mobil şeridiyle aynı davranış). */
@@ -92,20 +98,20 @@ body {
   padding: 8px 0;
 }
 
-.mark { width: 24px; height: 24px; flex: none; }
+.mark { width: 24px; height: 24px; flex: none; color: var(--fg); }
 
 .wordmark {
-  color: var(--ink-fg);
+  color: var(--fg);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .unit {
-  color: var(--ink-fg-muted);
-  font-size: 12px;
-  padding-left: 10px;
-  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--fg-muted);
+  font-size: 13px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
 }
 
 .tags {
@@ -119,7 +125,7 @@ body {
 .tags::-webkit-scrollbar { display: none; }
 
 .tags a {
-  color: var(--ink-fg-muted);
+  color: var(--fg-muted);
   white-space: nowrap;
   font-size: 14px;
   text-decoration: none;
@@ -128,15 +134,16 @@ body {
   transition: background 200ms, color 200ms;
 }
 
-.tags a:hover { background: var(--ink-raised); color: var(--ink-fg); }
+.tags a:hover { background: var(--surface-sunken); color: var(--fg); }
 
 .tags a:focus-visible,
 .brand:focus-visible {
-  outline: 2px solid var(--brand-on-ink);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
-/* Tema seçici: uygulamanın segment kontrolüyle aynı gramer, mürekkep tonunda. */
+/* Tema seçici: uygulamanın segment kontrolüyle aynı gramer — çökük zemin,
+   seçili parça yüzey rengine kalkar. */
 .theme {
   display: flex;
   gap: 2px;
@@ -144,7 +151,7 @@ body {
   flex: none;
   padding: 2px;
   border-radius: 8px;
-  background: var(--ink-raised);
+  background: var(--surface-sunken);
 }
 
 .theme button {
@@ -153,35 +160,36 @@ body {
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--ink-fg-muted);
+  color: var(--fg-muted);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
   transition: background 200ms, color 200ms;
 }
 
-.theme button:hover { color: var(--ink-fg); }
+.theme button:hover { color: var(--fg); }
 
 .theme button[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--ink-fg);
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--elev-1);
 }
 
 .theme button:focus-visible {
-  outline: 2px solid var(--brand-on-ink);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
+/* "Buradasın" göstergesi: sayfadaki tek kırmızı vurgu. */
 .here {
   margin-left: 16px;
   flex: none;
-  color: var(--ink-fg);
+  color: var(--brand);
   font-size: 13px;
   font-weight: 600;
   padding: 6px 12px;
-  border-radius: 8px;
-  background: var(--ink-raised);
-  border-left: 2px solid var(--brand-on-ink);
+  border-radius: 999px;
+  background: var(--brand-subtle);
 }
 
 /* --- Giriş bloğu -------------------------------------------------------- */

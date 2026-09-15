@@ -2,8 +2,7 @@
 
 /**
  * Ders içi sekme navigasyonu.
- * Aktif sekme kırmızı alt çizgiyle işaretlenir — kırmızının üç meşru kullanımından
- * biri (DESIGN.md: aktif navigasyon göstergesi).
+ * Aktif sekme açık kırmızı yüzeyle işaretlenir; dar ekranda şerit kaydırılır.
  *
  * Rol doğrudan `localStorage`'dan değil `useSession()`'dan okunur: depo okuması
  * tek yerde yaşar (Anayasa XI) ve render gövdesinde sunucuda var olmayan bir
@@ -23,9 +22,15 @@ const TABS = [
   // görünür kalsın diye koşul bileşen gövdesine yazılmadı.
   { slug: "/chat", label: "Asistan", locksWithAssistant: true },
   { slug: "/exam", label: "Sınav provası" },
+  // Kartlar kendi bitmiş provandan kurulur, bu yüzden sınav sekmesinin hemen
+  // ardında durur. Yürüyen sınav onu da kapatır: destenin arka yüzü cevap
+  // anahtarı ve "neden yanlış" pasajı taşıyor.
+  { slug: "/cards", label: "Hızlı tekrar", locksWithAssistant: true },
   { slug: "/questions", label: "Soru havuzu", instructorOnly: true },
-  { slug: "/blueprints", label: "Sınav blueprint'i", instructorOnly: true },
+  { slug: "/blueprints", label: "Sınav planı", instructorOnly: true },
   { slug: "/settings", label: "AI politikası", instructorOnly: true },
+  // Kavram haritası materyal alıntısı taşır, bu yüzden sınav kilidine bağlı.
+  { slug: "/concepts", label: "Kavram haritası", locksWithAssistant: true },
   { slug: "/analytics", label: "İlerleme" },
   { slug: "/quality", label: "AI kalite", instructorOnly: true },
   { slug: "/members", label: "Katılımcılar", instructorOnly: true },
@@ -69,7 +74,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
        * şerit tamamen kalkar, sayfa dikey olarak zıplar.
        */}
       <nav
-        className={`mb-8 flex gap-1 overflow-x-auto rounded-2xl bg-surface-sunken p-1.5 [scrollbar-width:none] lg:flex-wrap [&::-webkit-scrollbar]:hidden ${
+        className={`mb-8 flex min-w-0 max-w-full gap-1 overflow-x-auto border-b border-border pb-1 [scrollbar-width:thin] xl:flex-wrap ${
           ready ? "" : "invisible"
         }`}
         aria-label={lock.locked ? lock.message ?? undefined : undefined}
@@ -89,7 +94,7 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
               key={tab.slug}
               aria-disabled="true"
               title={lock.message ?? undefined}
-              className="flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm text-fg-subtle"
+              className="flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-3 text-sm text-fg-subtle"
             >
               {tab.label}
               <span className="rounded-sm border border-border px-1.5 py-0.5 text-xs text-fg-muted">
@@ -110,10 +115,10 @@ export function CourseNav({ courseId, lock: providedLock }: { courseId: string; 
             key={tab.slug}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
+            className={`relative flex shrink-0 items-center whitespace-nowrap rounded-t-xl px-3.5 py-3 text-sm font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand ${
               active
-                ? "bg-surface font-medium text-fg shadow-e1"
-                : "text-fg-muted hover:bg-surface/70 hover:text-fg"
+                ? "bg-brand-subtle font-semibold text-brand after:absolute after:inset-x-3.5 after:bottom-0 after:h-0.5 after:rounded-full after:bg-brand"
+                : "text-fg-muted hover:bg-bg hover:text-fg"
             }`}
           >
             {tab.label}

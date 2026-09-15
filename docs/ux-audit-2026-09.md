@@ -1,4 +1,8 @@
-# UX Audit — 2026-09-14 (P5)
+# UX Audit — 2026-09-14 (P5 şeridi)
+
+> Kapsam: P5 şeridinin iki kayıtlı arayüz kusuru. Proje geneli erişilebilirlik
+> denetimi değildir. §2'deki "KOŞULMADI" satırları o oturumun ortam engelini
+> anlatır; §5 daha sonra ölçülen sonucu ayrı kayıt olarak ekler.
 
 ## 1) Kayıtlı kusurlar
 
@@ -22,3 +26,22 @@
 
 ## 4) Ek not
 - Yeni bağımlılık eklenmedi, ikon kütüphanesi değişikliği yapılmadı.
+
+## 5) 15 Eylül eki — §2'deki tur koşuldu (AYRI ÖLÇÜM)
+
+§2'deki "KOŞULMADI" satırları **değiştirilmedi**; o oturumun kaydıdır. Aşağıdaki
+ölçüm 15 Eylül 02:10'da, GPT'nin kampüs tasarımı birleştikten sonraki ağaçta
+(`3f96d43`) yapıldı — yani P5 dönemindeki ağaç değil, daha yenisi.
+
+Gerçek tarayıcı (Chrome), 375×812, koyu tema, `prefers-reduced-motion`:
+
+| Ölçüm | Sonuç |
+|---|---|
+| Sohbet sayfası yatay taşma (onay kapalı) | yok — `scrollWidth` 375 / `innerWidth` 375 |
+| Sohbet sayfası yatay taşma (onay açık) | yok — 375 / 375 |
+| `/dashboard` mobil ana menüye klavyeyle erişim | **4 sekme** (regresyonda 30+ sekmede ulaşılamıyordu) |
+| `/profile` mobil ana menüye klavyeyle erişim | 4 sekme |
+| Odak halkası | `2px solid` |
+
+§3'teki "ekran görüntüsü üretilemedi" satırı da aşıldı:
+`docs/images/` altındaki 16 görüntü <!-- docs-check: tarihsel 16 · 2026-09-15 --> 14-15 Eylül'de gerçek model ve güncel kampüs tasarımıyla yeniden çekildi (kayıt: `docs/screenshots.md`).

@@ -30,21 +30,14 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import {
-  buildLearningOutcomeRequest,
-  DIFFICULTIES,
   DIFFICULTY_LABEL,
   editingNoticeFor,
   readinessCounts,
-  splitByShares,
-  totalPoints,
-  totalQuestions,
   VERSION_STATUS_LABEL,
   type Blueprint,
-  type BlueprintCellInput,
-  type Difficulty,
   type ExamItem,
   type ExamVersion,
   type LearningOutcome,
@@ -53,19 +46,18 @@ import {
 } from "@/lib/blueprint";
 import { QUESTION_TYPE } from "@/lib/labels";
 import { useSession } from "@/lib/session";
-import type { Topic } from "@/lib/types";
 import { usePagedResource } from "@/lib/use-paged-resource";
 import { useResource } from "@/lib/use-resource";
 import { useSubmit } from "@/lib/use-submit";
 import { AppShell } from "@/components/app-shell";
 import { CourseNav } from "@/components/course-nav";
-import { Field } from "@/components/field";
 import { PaperPreview } from "@/components/blueprint/paper-preview";
 import { InstructorGate } from "@/components/instructor-gate";
 import { ErrorNote, Loading, LoadMore, MetricRow, PageHeader } from "@/components/page-state";
-import { Badge, Button, Card, ConfirmAction, EmptyState, Input, Select } from "@/components/ui";
-
-const DEFAULT_TYPE = "mcq" as const;
+import { Badge, Button, Card, ConfirmAction, EmptyState } from "@/components/ui";
+import { OutcomesCard } from "@/components/blueprint/outcomes-card";
+import { BlueprintListCard } from "@/components/blueprint/blueprint-list-card";
+import { BlueprintEditor } from "@/components/blueprint/blueprint-editor";
 
 export default function BlueprintsPage() {
   return <Suspense fallback={<Loading />}><BlueprintScreen /></Suspense>;
@@ -119,6 +111,16 @@ function BlueprintScreen() {
         description="Sınavın çatısını sorulardan önce çiz: hangi öğrenme çıktısından, hangi zorlukta, kaç soru."
       />
 
+      <nav aria-label="Sınav hazırlama aşamaları" className="mb-6 grid gap-2 sm:grid-cols-3">
+        {[{ href: "#learning-outcomes", label: "Öğrenme çıktılarını belirle" },
+          { href: "#exam-plans", label: "Sınav dağılımını kur" },
+          { href: selected ? "#exam-paper" : "#exam-plans", label: "Soruları seç ve yayımla" }].map((step, index) => (
+          <a key={step.label} href={step.href} className="group flex min-h-16 items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-medium text-fg transition-colors duration-200 hover:border-border-strong hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none">
+            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-sunken text-sm text-fg-muted">{index + 1}</span>
+            {step.label}
+          </a>
+        ))}
+      </nav>
       <MetricRow
         items={[
           { label: "Öğrenme çıktısı", value: String(outcomes.data?.length ?? 0) },
@@ -136,12 +138,12 @@ function BlueprintScreen() {
         ]}
       />
 
-      <OutcomesCard courseId={courseId} outcomes={outcomes} />
+      <section id="learning-outcomes" className="scroll-mt-28"><OutcomesCard courseId={courseId} outcomes={outcomes} /></section>
       {(authoring.error ?? authoring.refreshError) && <ErrorNote
         message={authoring.error ?? authoring.refreshError ?? ""} kind={authoring.errorKind}
         requestId={authoring.errorRequestId} onRetry={authoring.reload} />}
 
-
+      <section id="exam-plans" className="scroll-mt-28">
       <BlueprintListCard
         courseId={courseId}
         blueprints={blueprints}
@@ -149,11 +151,13 @@ function BlueprintScreen() {
         selectedId={selectedId}
         onSelect={setSelectedId}
       />
+      </section>
 
       {linkedBlueprintId && !selected && blueprints.data && (
         <p role="status" className="mb-4 text-sm text-fg-muted">Bağlantıdaki sınav bu listede bulunmuyor.</p>
       )}
       {selected && (
+        <section id="exam-paper" className="scroll-mt-28">
         <BlueprintDetail
           courseId={courseId}
           blueprint={selected}
@@ -162,6 +166,7 @@ function BlueprintScreen() {
           outcomes={outcomes.data ?? []}
           onChanged={blueprints.reload}
         />
+        </section>
       )}
       </InstructorGate>
     </AppShell>
@@ -169,544 +174,8 @@ function BlueprintScreen() {
 }
 
 /* -------------------------------------------------------------------------
- * Öğrenme çıktıları (FR-110)
- * ---------------------------------------------------------------------- */
-
-function OutcomesCard({
-  courseId,
-  outcomes,
-}: {
-  courseId: string;
-  outcomes: ReturnType<typeof useResource<LearningOutcome[]>>;
-}) {
-  const [code, setCode] = useState("");
-  const [description, setDescription] = useState("");
-  const [topicId, setTopicId] = useState("");
-  const topics = useResource<Topic[]>(() => api.get(`/courses/${courseId}/topics`), [courseId]);
-
-  const { busy, error, submit } = useSubmit(async () => {
-    await api.post(`/courses/${courseId}/learning-outcomes`,
-      buildLearningOutcomeRequest(code, description, topicId));
-    setCode("");
-    setDescription("");
-    outcomes.reload();
-  });
-
-  return (
-    <Card className="mb-6">
-      <h2 className="mb-1 text-lg font-semibold text-fg">Öğrenme çıktıları</h2>
-      <p className="prose-tr mb-4 text-sm text-fg-muted">
-        Dağılımın ekseni budur: her hücre bir çıktıya bağlanır. Konu dağılımı ayrıca
-        girilmez, çıktının konusundan türetilir.
-      </p>
-
-      {outcomes.loading && !outcomes.data && <Loading label="Çıktılar yükleniyor…" />}
-      {outcomes.error && (
-        <ErrorNote
-          message={outcomes.error}
-          kind={outcomes.errorKind}
-          requestId={outcomes.errorRequestId}
-          onRetry={outcomes.reload}
-        />
-      )}
-
-      {outcomes.data && outcomes.data.length > 0 && (
-        <ul className="mb-4 flex flex-col gap-2">
-          {outcomes.data.map((outcome) => (
-            <li
-              key={outcome.id}
-              className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border border-border px-3 py-2"
-            >
-              <span className="font-mono text-sm text-fg">{outcome.code}</span>
-              <span className="prose-tr text-sm text-fg-muted">{outcome.description}</span>
-              <Badge tone="neutral">{outcome.topic_id === null
-                ? "Konu atanmadı; dağılımda ayrı gösterilir"
-                : topics.data?.find((topic) => topic.id === outcome.topic_id)?.name ?? (topics.loading ? "Konu bilgisi yükleniyor…" : "Konu bilgisi bulunamadı")}</Badge>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {(topics.error ?? topics.refreshError) && <ErrorNote
-        message={topics.error ?? topics.refreshError ?? ""} kind={topics.errorKind}
-        requestId={topics.errorRequestId} onRetry={topics.reload} />}
-      <div className="flex flex-wrap items-end gap-3">
-        <Field label="Çıktının konusu">
-          {(control) => <Select {...control} value={topicId} disabled={busy || !topics.data}
-            onChange={(event) => setTopicId(event.target.value)}>
-            <option value="">Konu atama</option>
-            {(topics.data ?? []).map((topic) => <option key={topic.id} value={topic.id}>{topic.name}</option>)}
-          </Select>}
-        </Field>
-        <Field label="Kod">
-          {(control) => (
-            <Input
-              {...control}
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="CO1"
-              className="w-28"
-            />
-          )}
-        </Field>
-        <Field label="Açıklama">
-          {(control) => (
-            <Input
-              {...control}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Kilitlenmenin dört koşulunu sayar"
-              className="w-full sm:w-80"
-            />
-          )}
-        </Field>
-        <Button
-          onClick={submit}
-          aria-disabled={busy || code.trim() === "" || description.trim() === ""}
-        >
-          {busy ? "Ekleniyor…" : "Çıktı ekle"}
-        </Button>
-      </div>
-
-      {error && <div className="mt-3">{<ErrorNote message={error} />}</div>}
-    </Card>
-  );
-}
-
-/* -------------------------------------------------------------------------
- * Blueprint listesi ve kurma (FR-111, FR-112)
- * ---------------------------------------------------------------------- */
-
-function BlueprintListCard({
-  courseId,
-  blueprints,
-  outcomes,
-  selectedId,
-  onSelect,
-}: {
-  courseId: string;
-  blueprints: ReturnType<typeof useResource<Blueprint[]>>;
-  outcomes: LearningOutcome[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
-}) {
-  const [creating, setCreating] = useState(false);
-
-  return (
-    <Card className="mb-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-fg">Sınavlar</h2>
-        <Button
-          variant="secondary"
-          onClick={() => setCreating((value) => !value)}
-          aria-disabled={outcomes.length === 0}
-        >
-          {creating ? "Vazgeç" : "Yeni sınav kur"}
-        </Button>
-      </div>
-
-      {outcomes.length === 0 && (
-        <p className="prose-tr mb-4 text-sm text-fg-muted">
-          Önce en az bir öğrenme çıktısı tanımla: dağılım hücreleri çıktılara bağlanır.
-        </p>
-      )}
-
-      {creating && (
-        <CreateBlueprintForm
-          courseId={courseId}
-          outcomes={outcomes}
-          onCreated={(id) => {
-            setCreating(false);
-            blueprints.reload();
-            onSelect(id);
-          }}
-        />
-      )}
-
-      {blueprints.loading && !blueprints.data && <Loading label="Sınavlar yükleniyor…" />}
-      {blueprints.error && (
-        <ErrorNote
-          message={blueprints.error}
-          kind={blueprints.errorKind}
-          requestId={blueprints.errorRequestId}
-          onRetry={blueprints.reload}
-        />
-      )}
-
-      {blueprints.data && blueprints.data.length === 0 && !creating && (
-        <EmptyState title="Henüz sınav kurulmadı." />
-      )}
-
-      {blueprints.data && blueprints.data.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {blueprints.data.map((blueprint) => (
-            <li key={blueprint.id}>
-              <button
-                type="button"
-                onClick={() => onSelect(blueprint.id)}
-                aria-current={blueprint.id === selectedId ? "true" : undefined}
-                className={`flex w-full flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${
-                  blueprint.id === selectedId
-                    ? "border-border-strong bg-brand-subtle/30"
-                    : "border-border hover:border-border-strong"
-                }`}
-              >
-                <span className="font-medium text-fg">{blueprint.title}</span>
-                <span className="text-sm text-fg-muted">
-                  {blueprint.total_questions} soru · {blueprint.total_points} puan ·{" "}
-                  {blueprint.duration_minutes} dk
-                </span>
-                {blueprint.published_version_no === null ? (
-                  <Badge tone="neutral">Yayında değil</Badge>
-                ) : (
-                  <Badge tone="success">
-                    {blueprint.published_version_no}. sürüm yayında
-                  </Badge>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
-  );
-}
-
-function CreateBlueprintForm({
-  courseId,
-  outcomes,
-  onCreated,
-}: {
-  courseId: string;
-  outcomes: LearningOutcome[];
-  onCreated: (id: string) => void;
-}) {
-  const [title, setTitle] = useState("");
-  const [duration, setDuration] = useState("60");
-  const [attempts, setAttempts] = useState("1");
-  const [cells, setCells] = useState<BlueprintCellInput[]>([]);
-
-  const { busy, error, submit } = useSubmit(async () => {
-    const created = await api.post<Blueprint>(`/courses/${courseId}/blueprints`, {
-      title: title.trim(),
-      duration_minutes: Number(duration),
-      max_attempts: Number(attempts),
-      cells,
-      // Sunucu ayrıca doğrulasın diye toplamı da gönderiyoruz: yuvarlamayı ekran
-      // yaptı, ama tuttuğunu ekranın kendisi ilan etmemeli (Anayasa III).
-      targets: { total_questions: totalQuestions(cells) },
-    });
-    onCreated(created.id);
-  });
-
-  return (
-    <div className="mb-6 rounded-lg border border-border-strong p-4">
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <Field label="Sınav adı">
-          {(control) => (
-            <Input
-              {...control}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="Vize"
-              className="w-64"
-            />
-          )}
-        </Field>
-        <Field label="Süre (dakika)">
-          {(control) => (
-            <Input
-              {...control}
-              type="number"
-              min={1}
-              max={600}
-              value={duration}
-              onChange={(event) => setDuration(event.target.value)}
-              className="w-28"
-            />
-          )}
-        </Field>
-        <Field label="Deneme hakkı">
-          {(control) => (
-            <Input
-              {...control}
-              type="number"
-              min={1}
-              value={attempts}
-              onChange={(event) => setAttempts(event.target.value)}
-              className="w-28"
-            />
-          )}
-        </Field>
-      </div>
-
-      <CellEditor outcomes={outcomes} cells={cells} onChange={setCells} />
-
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button onClick={submit} aria-disabled={busy || title.trim() === "" || cells.length === 0}>
-          {busy ? "Kaydediliyor…" : "Sınavı kur"}
-        </Button>
-        <span className="text-sm text-fg-muted">
-          {totalQuestions(cells)} soru · {totalPoints(cells)} puan
-        </span>
-      </div>
-
-      {error && <div className="mt-3">{<ErrorNote message={error} />}</div>}
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------
- * Hücre düzenleyici — dağılımın atomik birimi
- * ---------------------------------------------------------------------- */
-
-function CellEditor({
-  outcomes,
-  cells,
-  onChange,
-}: {
-  outcomes: LearningOutcome[];
-  cells: BlueprintCellInput[];
-  onChange: (cells: BlueprintCellInput[]) => void;
-}) {
-  const [outcomeId, setOutcomeId] = useState(outcomes[0]?.id ?? "");
-  const [total, setTotal] = useState("10");
-  const [shares, setShares] = useState<Record<Difficulty, string>>({
-    easy: "40",
-    medium: "40",
-    hard: "20",
-  });
-
-  const spread = useCallback(() => {
-    const outcome = outcomeId || outcomes[0]?.id;
-    if (!outcome) return;
-    const counts = splitByShares(
-      Number(total) || 0,
-      DIFFICULTIES.map((level) => Number(shares[level]) || 0),
-    );
-    const fresh = DIFFICULTIES.map((level, index) => ({
-      learning_outcome_id: outcome,
-      difficulty: level,
-      question_type: DEFAULT_TYPE,
-      question_count: counts[index],
-      points_per_question: 5,
-    })).filter((cell) => cell.question_count > 0);
-
-    const others = cells.filter((cell) => cell.learning_outcome_id !== outcome);
-    onChange([...others, ...fresh]);
-  }, [cells, onChange, outcomeId, outcomes, shares, total]);
-
-  return (
-    <div>
-      <h3 className="mb-1 text-sm font-semibold text-fg">Dağılım</h3>
-      <p className="prose-tr mb-3 text-sm text-fg-muted">
-        Yüzde gir, adete çevrilsin. Saklanan gerçek adettir; yuvarlama artığı en büyük
-        paya eklenir, böylece toplam her zaman tam tutar.
-      </p>
-
-      <div className="mb-3 flex flex-wrap items-end gap-3">
-        <Field label="Öğrenme çıktısı">
-          {(control) => (
-            <Select
-              {...control}
-              value={outcomeId}
-              onChange={(event) => setOutcomeId(event.target.value)}
-            >
-              {outcomes.map((outcome) => (
-                <option key={outcome.id} value={outcome.id}>
-                  {outcome.code}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label="Soru sayısı">
-          {(control) => (
-            <Input
-              {...control}
-              type="number"
-              min={1}
-              value={total}
-              onChange={(event) => setTotal(event.target.value)}
-              className="w-24"
-            />
-          )}
-        </Field>
-        {DIFFICULTIES.map((level) => (
-          <Field key={level} label={`${DIFFICULTY_LABEL[level]} %`}>
-            {(control) => (
-              <Input
-                {...control}
-                type="number"
-                min={0}
-                max={100}
-                value={shares[level]}
-                onChange={(event) =>
-                  setShares((current) => ({ ...current, [level]: event.target.value }))
-                }
-                className="w-20"
-              />
-            )}
-          </Field>
-        ))}
-        <Button variant="secondary" onClick={spread}>
-          Hücrelere aç
-        </Button>
-      </div>
-
-      {cells.length === 0 ? (
-        <p className="prose-tr text-sm text-fg-muted">Henüz hücre yok.</p>
-      ) : (
-        <ul className="flex flex-col gap-1">
-          {cells.map((cell, index) => {
-            const outcome = outcomes.find((item) => item.id === cell.learning_outcome_id);
-            return (
-              <li
-                key={`${cell.learning_outcome_id}-${cell.difficulty}-${cell.question_type}`}
-                className="flex flex-wrap items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm"
-              >
-                <span className="font-mono text-fg">{outcome?.code ?? "?"}</span>
-                <span className="text-fg-muted">{DIFFICULTY_LABEL[cell.difficulty]}</span>
-                <span className="text-fg-muted">{QUESTION_TYPE[cell.question_type]}</span>
-                <span className="text-fg">{cell.question_count} soru</span>
-                <span className="text-fg-muted">{cell.points_per_question} puan</span>
-                <Button
-                  variant="ghost"
-                  className="ml-auto"
-                  onClick={() => onChange(cells.filter((_, i) => i !== index))}
-                >
-                  Kaldır
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------
  * Seçili blueprint: sürümler, kapı, yayın (FR-114, FR-115)
  * ---------------------------------------------------------------------- */
-
-/**
- * Var olan blueprint'in meta verisini ve hücre kümesini günceller.
- *
- * Hücreler KÜME OLARAK gönderilir (sil + yaz): `BlueprintUpdate` şeması tek
- * hücrelik güncellemeyi bilerek dışarıda bırakıyor, çünkü FR-112 doğrulaması
- * küme üzerinde yapılıyor ve tekil bir UPDATE doğrulamayı atlayıp tutarsız bir
- * dağılım bırakabilirdi. Veritabanı da aynı kararı taşıyor: `blueprint_cells`
- * üzerinde UPDATE ne politikası ne yetkisi var.
- *
- * Yayınlanmış sürüm varken düzenleme SERBEST: o sürümün dağılım kanıtı kendi
- * `blueprint_snapshot`'ında dondurulmuştur (data-model.md §8 madde 1). Ekranın
- * gösterdiği uyarı (`editingNoticeFor`) tam olarak bunu anlatıyor — bu form
- * gelene kadar o uyarı var olmayan bir yeteneğin tavsiyesiydi.
- */
-function BlueprintEditor({
-  courseId,
-  blueprint,
-  outcomes,
-  onCancel,
-  onSaved,
-}: {
-  courseId: string;
-  blueprint: Blueprint;
-  outcomes: LearningOutcome[];
-  onCancel: () => void;
-  onSaved: () => void;
-}) {
-  const [title, setTitle] = useState(blueprint.title);
-  const [duration, setDuration] = useState(String(blueprint.duration_minutes));
-  const [attempts, setAttempts] = useState(String(blueprint.max_attempts));
-  const [cells, setCells] = useState<BlueprintCellInput[]>(() =>
-    // `BlueprintCell`, `BlueprintCellInput`'i genişletir; sunucudan gelen
-    // `id`/`label` alanları güncelleme gövdesine girmez, o yüzden alanlar
-    // tek tek seçilir.
-    blueprint.cells.map((cell) => ({
-      learning_outcome_id: cell.learning_outcome_id,
-      difficulty: cell.difficulty,
-      question_type: cell.question_type,
-      question_count: cell.question_count,
-      points_per_question: cell.points_per_question,
-    })),
-  );
-
-  const { busy, error, submit } = useSubmit(async () => {
-    await api.post(`/courses/${courseId}/blueprints/${blueprint.id}`, {
-      title: title.trim(),
-      duration_minutes: Number(duration),
-      max_attempts: Number(attempts),
-      cells,
-      targets: { total_questions: totalQuestions(cells) },
-    });
-    onSaved();
-  }, "Blueprint güncellenemedi.");
-
-  return (
-    <div className="mb-4 rounded-lg border border-border-strong p-4">
-      <h3 className="mb-3 text-sm font-semibold text-fg">Dağılımı düzenle</h3>
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <Field label="Sınav adı">
-          {(control) => (
-            <Input
-              {...control}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="w-64"
-            />
-          )}
-        </Field>
-        <Field label="Süre (dakika)">
-          {(control) => (
-            <Input
-              {...control}
-              type="number"
-              min={1}
-              max={600}
-              value={duration}
-              onChange={(event) => setDuration(event.target.value)}
-              className="w-32"
-            />
-          )}
-        </Field>
-        <Field label="Deneme hakkı">
-          {(control) => (
-            <Input
-              {...control}
-              type="number"
-              min={1}
-              max={100}
-              value={attempts}
-              onChange={(event) => setAttempts(event.target.value)}
-              className="w-32"
-            />
-          )}
-        </Field>
-      </div>
-
-      <CellEditor outcomes={outcomes} cells={cells} onChange={setCells} />
-
-      {error && <div className="mt-3">{<ErrorNote message={error} />}</div>}
-
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button
-          onClick={submit}
-          aria-disabled={busy || title.trim() === "" || cells.length === 0}
-        >
-          {busy ? "Kaydediliyor…" : "Değişikliği kaydet"}
-        </Button>
-        <Button variant="ghost" aria-disabled={busy} onClick={onCancel}>
-          Vazgeç
-        </Button>
-        <span className="text-sm text-fg-muted">
-          {totalQuestions(cells)} soru · {totalPoints(cells)} puan
-        </span>
-      </div>
-    </div>
-  );
-}
 
 function BlueprintDetail({
   authoringEnabled,
@@ -737,9 +206,9 @@ function BlueprintDetail({
 
   return (
     <>
-      <Card className="mb-6">
+      <Card className="mb-7">
         <div className="mb-1 flex flex-wrap items-center gap-3">
-          <h2 className="text-lg font-semibold text-fg">{blueprint.title} · dağılım</h2>
+          <h2 className="text-xl font-semibold text-fg">{blueprint.title} · dağılım</h2>
           {/*
             Düzenleme ve silme, uçları (POST/DELETE .../blueprints/{bid}) zaten
             varken ekranda yoktu; üstelik aşağıdaki `notice` öğretmene tam da bu
@@ -792,7 +261,7 @@ function BlueprintDetail({
           {blueprint.cells.map((cell) => (
             <li
               key={cell.id}
-              className="flex flex-wrap items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm"
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-border px-4 py-4 text-sm"
             >
               {/* Etiket sunucudan gelir; ekran kendi hücre adını kurmaz. */}
               <span className="text-fg">{cell.label}</span>
@@ -817,7 +286,7 @@ function BlueprintDetail({
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-fg">Sürümler</h2>
+          <h2 className="text-xl font-semibold text-fg">Sürümler</h2>
           <Button variant="secondary" onClick={createVersion} aria-disabled={busy}>
             {busy ? "Açılıyor…" : "Yeni taslak sürüm"}
           </Button>
@@ -909,7 +378,7 @@ function VersionRow({
   const publish = () => submit("publish");
 
   return (
-    <li ref={versionRef} tabIndex={linked ? -1 : undefined} aria-label={`${blueprint.title} · ${version.version_no}. sürüm`} className="rounded-lg border border-border p-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+    <li ref={versionRef} tabIndex={linked ? -1 : undefined} aria-label={`${blueprint.title} · ${version.version_no}. sürüm`} className="rounded-2xl border border-border p-5 sm:p-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
       <div className="flex flex-wrap items-center gap-3">
         <span className="font-medium text-fg">{version.version_no}. sürüm</span>
         <Badge
@@ -965,7 +434,7 @@ function VersionRow({
                 {readiness.missing_cells.map((cell) => (
                   <li
                     key={`${cell.learning_outcome_id}-${cell.difficulty}-${cell.question_type}`}
-                    className="prose-tr rounded-lg border border-border px-3 py-2 text-sm text-fg-muted"
+                    className="prose-tr rounded-xl border border-border px-4 py-4 text-sm text-fg-muted"
                   >
                     {cell.label}
                   </li>
@@ -984,7 +453,7 @@ function VersionRow({
               <h4 className="mb-1 text-sm font-semibold text-fg">
                 Sınıflandırılmamış sorular
               </h4>
-              <p className="prose-tr mb-1 text-xs text-fg-muted">
+              <p className="prose-tr mb-1 text-sm text-fg-muted">
                 Bunlar hiçbir hücreye sayılmıyor. Havuzda öğrenme çıktısı ve zorluk
                 atanmadan duran sorulardır.
               </p>
@@ -1001,7 +470,7 @@ function VersionRow({
                 {readiness.unclassified_items.map((item) => (
                   <li
                     key={item.question_id}
-                    className="prose-tr rounded-lg border border-border px-3 py-2 text-sm text-fg-muted"
+                    className="prose-tr rounded-xl border border-border px-4 py-4 text-sm text-fg-muted"
                   >
                     {item.label}
                   </li>
@@ -1063,7 +532,7 @@ function PaperEditor({
   });
 
   return (
-    <div className="mt-4 rounded-lg border border-border-strong p-4">
+    <div className="mt-4 rounded-2xl border border-border bg-surface-sunken p-5 sm:p-6">
       <h4 className="mb-1 text-sm font-semibold text-fg">Kâğıt</h4>
       <p className="prose-tr mb-3 text-sm text-fg-muted">
         Yalnız onaylanmış sorular konulabilir. Onay kapısı sunucudadır; bu liste onu
@@ -1094,7 +563,7 @@ function PaperEditor({
           const outcome = outcomes.find((item) => item.id === question.learning_outcome_id);
           return (
             <li key={question.id}>
-              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border px-4 py-4 text-sm">
                 <input
                   type="checkbox"
                   checked={checked}
@@ -1111,7 +580,7 @@ function PaperEditor({
                   <span className="text-fg">
                     {String(question.payload?.stem ?? question.payload?.prompt ?? question.id)}
                   </span>
-                  <span className="flex flex-wrap gap-2 text-xs text-fg-muted">
+                  <span className="flex flex-wrap gap-2 text-sm text-fg-muted">
                     <span>{QUESTION_TYPE[question.type]}</span>
                     {question.difficulty ? (
                       <span>{DIFFICULTY_LABEL[question.difficulty]}</span>

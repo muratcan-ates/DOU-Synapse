@@ -683,8 +683,19 @@ async def list_sessions(
     session: SessionDep,
     page: PageDep,
 ) -> PageOut[ChatSessionOut]:
-    """Kullanıcının bu dersteki sohbet oturumları. RLS başkasınınkini zaten göstermez."""
-    query = select(ChatSession).where(ChatSession.course_id == context.course_id)
+    """Kullanıcının bu dersteki sohbet oturumları.
+
+    Sahiplik süzgeci uygulama katmanında AÇIKÇA duruyor. RLS
+    (`chat_sessions_self_read`, 0003_chat.sql:171) başkasınınkini zaten gizler, ama
+    doktrin iki katmanın bağımsız olarak doğru davranmasını istiyor (`deps.py`,
+    `exams.py:160`) ve bu uçta ikinci katman yoktu: tek savunma politikaydı.
+    Sohbet geçmişi ürünün en mahrem verisi — 0003_chat.sql'in kendi yorumu
+    "öğrencinin çekindiği soruyu sorabilmesi ürünün gerekçelerinden biri" diyor.
+    """
+    query = select(ChatSession).where(
+        ChatSession.course_id == context.course_id,
+        ChatSession.user_id == context.user_id,
+    )
     result = await paginate_keyset(
         session,
         query,
@@ -704,9 +715,17 @@ async def list_messages(
     page: PageDep,
 ) -> PageOut[ChatMessageOut]:
     chat_session = await session.get(ChatSession, session_id)
-    # RLS başka kullanıcının/dersin oturumunu zaten gizler; ders eşleşmesi ayrıca
-    # kontrol edilir — iki katman da bağımsız olarak doğru davranmalı.
-    if chat_session is None or chat_session.course_id != context.course_id:
+    # RLS başka kullanıcının/dersin oturumunu zaten gizler; ders VE sahiplik ayrıca
+    # kontrol edilir — iki katman da bağımsız olarak doğru davranmalı. Sahiplik
+    # kontrolü uzun süre eksikti: yorum iki katmanı vaat ederken kod yalnız dersi
+    # bakıyordu, yani bu uçta tek savunma politikaydı (`exams.py:160` emsali
+    # `user_id`'yi de karşılaştırıyor). Oturum yokken de başkasınınken de AYNI 404
+    # döner: yabancı oturumun varlığı sızdırılmaz.
+    if (
+        chat_session is None
+        or chat_session.course_id != context.course_id
+        or chat_session.user_id != context.user_id
+    ):
         raise NotFoundError("Sohbet oturumu bulunamadı.")
 
     query = select(ChatMessage).where(ChatMessage.session_id == session_id)
