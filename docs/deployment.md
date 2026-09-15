@@ -88,12 +88,14 @@ kayıtlarını ve dosya hash'lerini karşılaştırın. Repository sırasının 
 kontrolü:
 
 ```bash
-python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023
+python3 scripts/migration_check.py --allow-gap 0017 --allow-gap 0021 --allow-gap 0022 --allow-gap 0023 --allow-gap 0028
 ```
 
-Bu kontrol DB'ye hangi dosyanın uygulandığını ölçmez. Güncel kaynak 22 göç içerir:
-`0001`–`0016`, `0018`–`0020`, `0024`–`0026`. `0017`, `0021`–`0023` ayrılmış
-boşluklardır; dosyalar yeniden numaralandırılmaz. `0016` artık mevcuttur.
+Bu kontrol DB'ye hangi dosyanın uygulandığını ölçmez. Güncel kaynak 24 göç içerir: <!-- docs-check: migrations.count = 24 -->
+`0001`–`0016`, `0018`–`0020`, `0024`–`0027`, `0029`. `0017`, `0021`–`0023` ve `0028`
+ayrılmış boşluklardır; dosyalar yeniden numaralandırılmaz. `0016` artık mevcuttur.
+Bildirilmeyen her boşluk kapıyı kırmızı yakar: `0028` L4'e ayrıldı, henüz kullanılmadı
+ve bu yüzden komutta açıkça bildirilir.
 
 | Göç | Sonraki sürüm için ilgili sınır |
 |---|---|
@@ -103,6 +105,8 @@ boşluklardır; dosyalar yeniden numaralandırılmaz. `0016` artık mevcuttur.
 | `0024` | Kullanıcı/ders kapsamlı sohbet silme revizyonları |
 | `0025` | Ortak istek politikaları, kota pencereleri ve dar SQL işlevleri |
 | `0026` | Kaynak revizyonu, sonlu iş claim/lease ve eski writer engeli |
+| `0027` | Kimliksiz/içeriksiz öğrenme olayları; eğitmene yalnız konu toplamı görünümü |
+| `0029` | Private Storage: `course-materials` bucket'ının kapatılması ve dar nesne erişimi |
 
 Yeni ve gerçekten boş hedefte başlangıç kurulumunun uygulanacak listesi tüm
 dosyalar olabilir; yine hedefe ve incelemiş sürüme bağlı tek uygulama kaydı alınır.
