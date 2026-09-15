@@ -258,6 +258,36 @@ dün gece 8'den 5'e düzeltmem doğruymuş), sınav provası boş durumları dü
 dersi listeliyor, eğitmenin soru üretim formu tam. Sınav planı ve yayımlanmış sınav
 sürümü **0** — "Sınav Mentoru" rolü sahnede yalnız alıştırma moduyla gösterilebilir.
 
+## 4.5 CI uçtan uca — kök neden ölçüldü, düzeltme SUNUM SONRASINA park edildi
+
+Jüri ve danışman CI'a bakmıyor; bu yüzden ölçüm kaydedildi ama düzeltme
+yapılmadı. Koşu 34926253846 sonuç JSON'u:
+
+| Faz | Durum | Süre | Bütçe | Hata |
+|---|---|---|---|---|
+| main | FAIL | 723,1 sn | 720,0 | `PLAYWRIGHT_BUDGET_EXCEEDED` |
+| grounded | FAIL | 15,1 sn | 256,9 | `WEB_PORT_BUSY` |
+
+Matematik: `deadline = test_timeout(720) + RESERVE_TOTAL(470) + PHASE_OVERHEAD(60)
+= OVERALL_BUDGET(1250)`, ana faza tam 720 sn düşüyor ve üç saniyeyle aşıldı.
+
+**Asıl bulgu bütçe değil.** Fazlama ÖNCESİ tek koşuda 87 vakanın tamamı 287 sn
+sürüyordu (koşu 34900228666, iş toplam 6 dk 4 sn). Şimdi ana faz aynı 78 vakayla
+720 sn'yi aşıyor — **2,5 kat yavaşlama** ve sebebi ölçülmedi. Fazlamanın kendisi
+bunu açıklamıyor. İlk şüphe kampüs tasarımının getirdiği `gsap` ve yeni
+sayfaların ağırlaştırdığı `next build`'di; animasyon yolu elendi
+(`playwright.config.ts` `reducedMotion: "reduce"` veriyor ve `campus-motion.tsx`
+buna uyup erken dönüyor). Yani sebep başka ve ölçülmesi gerekiyor.
+
+İş tavanında yer var: fazlı koşu 13 dk 19 sn sürdü, `ci.yml` sınırı 30 dk.
+Yani bütçeyi büyütmek mümkün — ama 2,5 kat yavaşlamanın sebebi bulunmadan
+bütçeyi büyütmek kusuru gizlemek olurdu.
+
+`grounded` fazının `WEB_PORT_BUSY` hatası ayrı ve gerçek bir kusur: ana fazın
+`next start`'ı öksüz kalıyor. Kod bunu biliyor (satır 355-361: Playwright
+webServer'ı `detached: true` başlatır, `killpg` ulaşmaz) ama bütçe aşımında
+portu gerçekten boşaltmıyor.
+
 ## 5. Murat'a kalan işler (ben yapamam)
 
 | # | İş | Neden bende değil |
