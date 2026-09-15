@@ -166,9 +166,45 @@ class BrowserGroupStopContracts(unittest.TestCase):
         process.pid = 4242
         sent = []
         observation = self.controller.stop_browser_group(
-            process, killpg=lambda pgid, sig: sent.append((pgid, sig)), **kwargs
+            process,
+            killpg=lambda pgid, sig: sent.append((pgid, sig)),
+            getpgid=lambda pid: pid,
+            **kwargs,
         )
         return observation, sent
+
+    def test_child_that_does_not_lead_its_own_group_is_never_signalled(self):
+        # `start_new_session=True` düşerse killpg koşucunun KENDİ grubuna gider.
+        process = FakeProcess([0])
+        process.pid = 4242
+        sent = []
+        with self.assertRaises(Exception) as caught:
+            self.controller.stop_browser_group(
+                process,
+                killpg=lambda pgid, sig: sent.append((pgid, sig)),
+                getpgid=lambda pid: 1,
+                grace=0.1,
+            )
+        self.assertEqual(str(caught.exception), "BROWSER_NOT_GROUP_LEADER")
+        self.assertEqual(sent, [])
+
+    def test_process_that_dies_before_the_group_probe_is_reaped(self):
+        process = FakeProcess([0])
+        process.pid = 4242
+        sent = []
+
+        def vanished(pid):
+            raise ProcessLookupError(pid)
+
+        observation = self.controller.stop_browser_group(
+            process,
+            killpg=lambda pgid, sig: sent.append((pgid, sig)),
+            getpgid=vanished,
+            grace=0.1,
+        )
+        self.assertEqual(observation, "exited-before-stop")
+        self.assertEqual(sent, [])
+        self.assertIn(("wait", 10.0), process.calls)
 
     def test_interrupt_alone_lets_playwright_close_its_own_web_server(self):
         observation, sent = self.stop(FakeProcess([130]), grace=0.1)
@@ -203,7 +239,9 @@ class BrowserGroupStopContracts(unittest.TestCase):
         def vanished(pgid, sig):
             raise ProcessLookupError(pgid, sig)
 
-        observation = self.controller.stop_browser_group(process, killpg=vanished, grace=0.1)
+        observation = self.controller.stop_browser_group(
+            process, killpg=vanished, getpgid=lambda pid: pid, grace=0.1
+        )
         self.assertEqual(observation, "interrupted")
         self.assertIn(("wait", 0.1), process.calls)
 
@@ -211,7 +249,9 @@ class BrowserGroupStopContracts(unittest.TestCase):
         process = FakeProcess(["timeout", "timeout", "timeout"])
         process.pid = 4242
         with self.assertRaises(subprocess.TimeoutExpired):
-            self.controller.stop_browser_group(process, killpg=lambda pgid, sig: None, grace=0.1)
+            self.controller.stop_browser_group(
+                process, killpg=lambda pgid, sig: None, getpgid=lambda pid: pid, grace=0.1
+            )
         self.assertFalse(process.waits)
 
 

@@ -222,6 +222,7 @@ def stop_browser_group(
     *,
     grace: float = BROWSER_INTERRUPT_GRACE,
     killpg: Callable[[int, int], None] = os.killpg,
+    getpgid: Callable[[int], int] = os.getpgid,
 ) -> str:
     """Bütçeyi aşan tarayıcı sürecini ÖNCE SIGINT ile durdurur.
 
@@ -245,7 +246,17 @@ def stop_browser_group(
     """
     if process.poll() is not None:
         return "exited-before-stop"
-    # Yalnız yukarıda `start_new_session=True` ile yaratılan grup bu koşuya ait.
+    # Grup sinyali YALNIZ çocuk kendi grubunun lideriyse bu koşuya aittir; bunu
+    # sağlayan tek şey tarayıcıyı başlatan `start_new_session=True` kwarg'ıdır.
+    # O kwarg bir gün düşerse killpg koşucunun KENDİ grubuna gider ve CI adımını
+    # öldürür — sahiplik iddiası buna dayandığı için varsayılmaz, ÖLÇÜLÜR.
+    try:
+        leads_own_group = getpgid(process.pid) == process.pid
+    except ProcessLookupError:
+        # Süreç poll() ile buranın arasında öldü; sinyal değil, reap gerekir.
+        process.wait(timeout=10.0)
+        return "exited-before-stop"
+    guard.require(leads_own_group, "BROWSER_NOT_GROUP_LEADER")
     escalation = (
         (signal.SIGINT, grace, "interrupted"),
         (signal.SIGTERM, 10.0, "forced-terminate"),
