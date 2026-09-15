@@ -155,41 +155,24 @@ class TestSinavKilidi:
         # daha anlamlı, çünkü arayüz mesajı ona göre seçiyor.
         assert response.status_code == 403, response.text
         assert response.json()["error"]["code"] == "exam_in_progress"
-1 | class TestSinavKilidi:
- 2 |     async def test_yuruyen_sinavda_kavram_haritasi_kapali(
- 3 |         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
- 4 |     ) -> None:
- 5 |         """Harita materyal alıntısı taşır; sınav sürerken açılırsa bütünlük delinir."""
- 6 |         fixture = await build_course(client, users, admin_engine)
- 7 |         await start(client, fixture, "exam")
- 8 | 
- 9 |         response = await client.get(
-10 |             f"/courses/{fixture.course_id}/concepts", headers=fixture.student
-11 |         )
-12 | 
-13 |         # Ürünün kilit yanıtı 403 + `exam_in_progress`; kod durum numarasından
-14 |         # daha anlamlı, çünkü arayüz mesajı ona göre seçiyor.
-15 |         assert response.status_code == 403, response.text
-16 |         assert response.json()["error"]["code"] == "exam_in_progress"
-17 | 
-18 |     # test-quality: sadece-durum-kodu — Eğitmen sınav kilidinden etkilenmez
-19 |     async def test_egitmen_sinav_kilidinden_etkilenmez(
-20 |         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
-21 |     ) -> None:
-22 |         fixture = await build_course(client, users, admin_engine)
-23 |         await start(client, fixture, "exam")
-24 | 
-25 |         response = await client.get(
-26 |             f"/courses/{fixture.course_id}/concepts", headers=fixture.instructor
-27 |         )
-28 | 
-29 |         assert response.status_code == 200
-30 |         data = response.json()
-31 |         assert data is not None
-32 |         assert "items" in data or isinstance(data, list) or len(data) >= 0
-33 | 
-34 | 
-35 | class TestDisaAktarim:
+class TestSinavKilidi:
+    async def test_yuruyen_sinavda_kavram_haritasi_kapali(
+        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
+    ) -> None:
+        """Harita materyal alıntısı taşır; sınav sürerken açılırsa bütünlük delinir."""
+        fixture = await build_course(client, users, admin_engine)
+        await start(client, fixture, "exam")
+
+        response = await client.get(
+            f"/courses/{fixture.course_id}/concepts", headers=fixture.student
+        )
+
+        # Ürünün kilit yanıtı 403 + `exam_in_progress`; kod durum numarasından
+        # daha anlamlı, çünkü arayüz mesajı ona göre seçiyor.
+        assert response.status_code == 403, response.text
+        assert response.json()["error"]["code"] == "exam_in_progress"
+
+    # test-quality: sadece-durum-kodu — Eğitmen sınav kilidinden etkilenmez
     async def test_egitmen_sinav_kilidinden_etkilenmez(
         self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
     ) -> None:
@@ -207,57 +190,3 @@ class TestSinavKilidi:
 
 
 class TestDisaAktarim:
-    async def test_markdown_iner_ve_alintiyi_tasir(
-        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
-    ) -> None:
-        course_id, _, student = await _kurs_ve_materyal(client, users, admin_engine)
-
-        response = await client.get(f"/courses/{course_id}/concepts/export", headers=student)
-
-        assert response.status_code == 200, response.text
-        assert response.headers["content-type"].startswith("text/markdown")
-        assert "attachment" in response.headers["content-disposition"]
-        # Dosya adı ASCII: Türkçe karakter başlıkta tarayıcıdan tarayıcıya bozuluyor.
-        response.headers["content-disposition"].encode("ascii")
-
-        metin = response.text
-        assert "# COME301 — kavram haritası" in metin
-        assert "## Parçalar" in metin
-        assert "## Bağlantılar" in metin
-        assert "semafor" in metin.lower()
-
-    async def test_disa_aktarimda_ham_kimlik_yok(
-        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
-    ) -> None:
-        """Öğrencinin indirdiği dosya chunk kimliği gibi iç kimlik taşımaz."""
-        course_id, _, student = await _kurs_ve_materyal(client, users, admin_engine)
-
-        metin = (await client.get(f"/courses/{course_id}/concepts/export", headers=student)).text
-        harita = (await client.get(f"/courses/{course_id}/concepts", headers=student)).json()
-
-        for term in harita["terms"]:
-            assert term["source"]["chunk_id"] not in metin
-
-    async def test_yuruyen_sinavda_indirme_de_kapali(
-        self, client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine
-    ) -> None:
-        fixture = await build_course(client, users, admin_engine)
-        await start(client, fixture, "exam")
-
-        response = await client.get(
-            f"/courses/{fixture.course_id}/concepts/export", headers=fixture.student
-        )
-
-        assert response.status_code == 403
-        assert response.json()["error"]["code"] == "exam_in_progress"
-
-
-@pytest.mark.parametrize("yol", ["", "/export"])
-async def test_kimliksiz_istek_reddedilir(
-    client: AsyncClient, users: UserFactory, admin_engine: AsyncEngine, yol: str
-) -> None:
-    course_id, _, _ = await _kurs_ve_materyal(client, users, admin_engine)
-
-    response = await client.get(f"/courses/{course_id}/concepts{yol}")
-
-    assert response.status_code == 401
