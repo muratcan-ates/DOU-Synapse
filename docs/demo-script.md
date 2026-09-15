@@ -407,6 +407,29 @@ Plan C (tam çevrimdışı) için `answer_cache` **birebir eşleşmeyle** çalı
 harfi harfine aşağıdaki gibi olmalı. Yalnız `qa` modu önbelleğe girer; Sokratik sahneler
 (3 ve 4) önbelleğe **girmez** ve sahte sağlayıcıyla koşar.
 
+### 15 Eylül 07:40 — SAHNE PROVASI: 16 sorunun 16'sı geçti, jeton harcanmadı
+
+Liste yalnız doldurulmakla kalmadı, **demo yığınına karşı baştan sona koşuldu**
+(`scripts/demo/sahne_provasi.py`, öğrenci `burak4@`). Sonuç:
+
+| Ölçüm | Sonuç |
+|---|---|
+| Kaynaklı cevap veren | **12 / 12** — atıf sayıları aşağıdaki listeyle birebir |
+| Doğru reddeden | **4 / 4** — 2 `out_of_scope`, 2 `insufficient_context` |
+| Yanıt süresi | 0,02 – 0,61 sn |
+| **Harcanan jeton** | **0** (26.868 → 26.868) |
+
+Jeton farkının sıfır olması üç şeyi aynı anda kanıtlıyor:
+
+1. **Sahne soruları modele hiç gitmiyor** — hepsi `answer_cache`'ten dönüyor.
+2. **Kota sahnede sorun olamaz.** Öğrencinin günlük tavanı bu akışta hiç
+   tüketilmiyor; kota riski yalnız listenin DIŞINA çıkılırsa doğar.
+3. **Plan C çalışıyor.** İnternet kesilse bile bu 16 sahnenin hepsi gelir,
+   çünkü hiçbiri sağlayıcıya bağlı değil.
+
+Provayı tekrar koşmak istersen: `python3 scripts/demo/sahne_provasi.py` — jeton harcamaz,
+yaklaşık 2 saniye sürer, 16 satırın hepsi ✓ olmalı.
+
 ### 15 Eylül 00:00 — GERÇEK modelle ölçülmüş liste
 
 Aşağıdaki liste tahmin değil: `fill_answer_cache.py` 24 soruyu gerçek modele sordu ve
