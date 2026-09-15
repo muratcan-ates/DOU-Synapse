@@ -2,6 +2,11 @@
 
 Yeni dosya: `docs/screenshots.md`. Hazırlık kaydı: 13 Eylül 2026.
 
+> **15 Eylül notu:** Aşağıdaki kayıtların tamamı 13 Eylül'ün durumudur ve olduğu gibi
+> bırakıldı. O tarihten sonra `docs/images` yeniden çekildi; hangi dosyanın yenilendiği
+> ve hangisinin yenilenmediği belgenin sonundaki **"15 Eylül eki"** bölümünde git
+> ölçümüyle yazılıdır. Bu belgeye bakıp "son çekim" kararı vermeden önce o bölümü okuyun.
+
 [`screenshots.spec.ts`](../apps/web/e2e/screenshots.spec.ts), belge PNG'lerini
 gerçek arayüzden alır. Ders, üyelik, materyal ve soru verisi yerel API'de yeni
 kurulur; eski COME 331 dersinin veya sabit Ayşe/Burak profillerinin verisi
@@ -60,11 +65,11 @@ referans görüntüleri değildir.
 
 ## Çıktılar ve veri anlamı
 
-| Dosya | Görünen sahne | Verinin kaynağı | 13 Eylül 2026 son koşu |
+| Dosya | Görünen sahne | Verinin kaynağı | 13 Eylül 2026 H7 koşusu |
 |---|---|---|---|
 | `images/09-sohbet-kaynakli-cevap.png` | Kaynak kartlı yanıt | Sentetik Markdown materyali, gerçek sohbet yanıtı; konum bölüm adı olabilir | Üretildi; gözle incelendi |
 | `images/10-sohbet-nazik-ret.png` | Materyalde dayanak bulunamadı | Bu koşunun materyalsiz dersi, gerçek `insufficient_context` yanıtı | Üretildi; gözle incelendi |
-| `images/10-sohbet-kapsam-disi-ret.png` | Dersin kapsamı dışında | Materyalli sentetik derste gerçek `out_of_scope` yanıtı | Üretildi; gözle incelendi |
+| `images/10-sohbet-kapsam-disi-ret.png` | Dersin kapsamı dışında (15 Eylül'de yeniden çekilmedi — bkz. 15 Eylül eki) | Materyalli sentetik derste gerçek `out_of_scope` yanıtı | Üretildi; gözle incelendi |
 | `images/05-egitmen-soru-havuzu.png` | Onaylı soru ve kaynak incelemesi | API'de üretilip onaylanan sentetik soru; ekranda üretim raporu olduğu iddia edilmez | Üretildi; gözle incelendi |
 | `images/06-egitmen-sinif-analitigi.png` | Konu bazlı sınıf durumu | Gerçek API'ye gönderilen sentetik yanlış MCQ cevabı ve kapanmış alıştırma | Üretildi; gözle incelendi |
 | `images/15-ogrenci-ilerleme.png` | Öğrencinin konu göstergesi | Aynı tür sentetik alıştırmanın gerçek kaydı; öğrenme başarısı ölçümü değildir | Üretildi; gözle incelendi |
@@ -80,6 +85,13 @@ Bu üreticinin kapsamadığı mevcut giriş, ders listesi, katılımcı, boş so
 Sokratik kademe/ısrar ve sınav provası görselleri yenilenmiş sayılmaz. Kılavuz
 denetimi bunları ayrıca ele alır. Başarısız bir sahnenin eski PNG'si dizinde
 kalabilir; dosyanın varlığı son koşuda üretildiğine kanıt değildir.
+
+**15 Eylül 2026 notu:** Yukarıdaki paragraf 13 Eylül'ün H7 üreticisi için doğrudur ve
+olduğu gibi bırakıldı; H7 hâlâ yalnız sekiz sahne üretir. Ama sayılan görsellerin
+tamamı — giriş, ders listesi, katılımcı, boş sohbet, Sokratik kademe/ısrar ve sınav
+provası — 15 Eylül çekiminde H7 dışında yenilendi. Dosya dosya git ölçümü aşağıdaki
+"15 Eylül eki" bölümündedir. Paragrafın son cümlesi aynen geçerlidir: dosyanın dizinde
+bulunması son koşuda üretildiğine kanıt değildir.
 
 ## Üretim sonrası kayıt
 
@@ -102,3 +114,48 @@ son görüntülerde form kontrolleri okunur durumdadır.
 [Gerçek dosya özetleri ve görsel gözlemler](evidence/l6-h7-images.json),
 her PNG'nin boyutunu, sentetik kapsamını ve koşu kaydını içerir. Gerçek
 sağlayıcı kabulü, hukuki uygunluk veya H2 Linux referans üretimi yapılmış sayılmaz.
+
+## 15 Eylül eki — git ile ölçülen yeniden çekim
+
+Bu bölüm yukarıdaki 13 Eylül kayıtlarını **değiştirmez**; sonrasında ölçülenleri ekler.
+Ölçüm, çekimin kendisi değil git geçmişidir: her dosya için
+`git log -1 --format='%h|%ad|%s' --date=iso -- <PNG>`. Dosya sisteminin zaman damgası
+checkout anını gösterdiği için kanıt sayılmadı.
+
+`docs/images` altındaki 17 PNG'nin 16'sı <!-- docs-check: tarihsel 16 · 2026-09-15 -->
+15 Eylül 2026'da üç commit'te yeniden çekildi: `1d2c610` (00:19, kampüs tasarımı),
+`ba98117` (00:34, Sokratik merdiven ve boş sohbet, gerçek model), `df60275` (00:41,
+sabit kabuk çakışması olmadan yeniden çekim). Çekim gerçek Groq sağlayıcısı ve yeni
+kampüs tasarımıyla yapıldı.
+
+| Dosya | 15 Eylül 2026 son commit |
+|---|---|
+| `images/01-giris.png` | `1d2c610` |
+| `images/02-egitmen-ders-listesi.png` | `1d2c610` |
+| `images/03-egitmen-materyaller.png` | `df60275` |
+| `images/04-egitmen-katilimcilar.png` | `df60275` |
+| `images/05-egitmen-soru-havuzu.png` | `df60275` |
+| `images/06-egitmen-sinif-analitigi.png` | `df60275` |
+| `images/07-ogrenci-ders-listesi.png` | `1d2c610` |
+| `images/08-sohbet-bos.png` | `df60275` |
+| `images/09-sohbet-kaynakli-cevap.png` | `df60275` |
+| `images/10-sohbet-kapsam-disi-ret.png` | **yenilenmedi** — son commit `5cce5ea`, 13 Eylül 2026 |
+| `images/10-sohbet-nazik-ret.png` | `df60275` |
+| `images/11-sokratik-kademe-1.png` | `df60275` |
+| `images/12-sokratik-kademe-2.png` | `df60275` |
+| `images/13-sokratik-israr-ilerlemiyor.png` | `df60275` |
+| `images/14-ogrenci-sinav-provasi.png` | `df60275` |
+| `images/15-ogrenci-ilerleme.png` | `1d2c610` |
+| `images/16-kvkk.png` | `df60275` |
+
+Yenilenmeyen tek dosya `images/10-sohbet-kapsam-disi-ret.png`. Sahnesi
+[`screenshots.spec.ts`](../apps/web/e2e/screenshots.spec.ts) içinde hâlâ tanımlıdır,
+yani "üretici kapsamıyor" açıklaması bu dosya için geçerli değil; neden atlandığı
+git'ten ölçülemedi. `docs/student-guide.md` ve `docs/demo-script.md` bu dosyayı hâlâ
+gösterdiği için o iki belgede 13 Eylül kabuğu ile 15 Eylül kampüs kabuğu yan yana görünür.
+
+Bu ekin kapsamı **yalnız hangi dosyanın yeniden yazıldığıdır.** Yeni PNG'ler bu belge
+işi kapsamında tek tek açılıp gözle incelenmedi; yukarıdaki 13 Eylül "Üretim sonrası
+kayıt" bölümünün istediği görsel inceleme 15 Eylül çekimi için **not-run**. Yeniden
+çekim; gerçek model kalitesinin, hukuki uygunluğun, WCAG AA uygunluğunun veya insan
+kabulünün kanıtı değildir.

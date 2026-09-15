@@ -2,6 +2,10 @@
 
 13 Eylül 2026. `i2-browser-02`, yeni üretim derlemesi ve sahipli yerel API ile tamamlandı. Playwright, API kapanışı ve audit sonucu başarılı; ürün ve ayrı runtime girdilerinin koşu öncesi/sonrası özetleri aynı kaldı.
 
+> **15 Eylül notu:** Bu belgedeki bütün tarih, sayı ve görsel bulguları 13 Eylül
+> `i2-browser-02` koşusunundur ve değiştirilmedi. `docs/images` 15 Eylül'de yeniden
+> çekildi; belgenin sonundaki **"15 Eylül 2026 eki"** paragrafını önce okuyun.
+
 Gerçek kayıtlarda 44 ekran gözlemi, aşağıdaki 31 denetim maddesine bağlandı. <!-- docs-check: tarihsel 44 · 2026-09-13 --> Beş tarayıcı vakası iki worker ile geçti. Bu sayılar kaynak koleksiyonu veya bütün iş akışlarının kabulü değildir. Ekran görüntülerinin ayrı görsel incelemesi aşağıda kaydedilir.
 
 ## Ekran matrisi
@@ -52,7 +56,7 @@ durumunu yakalamasıdır. İnceleme, insan kabulü veya WCAG sertifikası değil
 | Kayıt | Açık görsel bulgu |
 |---|---|
 | `student-profile-dark-mobile` | 375px koyu profilin tam sayfa görüntüsünde sabit menü profil özetiyle örtüşüyor; sağ kenarda rol etiketi ve bazı metinler kesiliyor. Yatay taşma kontrolünün geçmesi bu bulguyu ortadan kaldırmaz. |
-| `teacher-course` | 1440×1000 görünümde sabit Eğitmen Asistanı, İçerik önizle/Sil düğmelerinin alt kenarını kısmen örtüyor. Bu özel I2 görüntüsü, ayrı yenilenen H7 materyal görselinin yerine geçmez. |
+| `teacher-course` | 1440×1000 görünümde sabit Eğitmen Asistanı, İçerik önizle/Sil düğmelerinin alt kenarını kısmen örtüyor. Bu özel I2 görüntüsü, ayrı yenilenen H7 materyal görselinin yerine geçmez. 15 Eylül'de o materyal görseli `df60275` ile yeniden çekildi ("sabit kabuk çakışması olmadan"); çakışmanın giderilip giderilmediği bu belgede ölçülmedi — **not-run**, bkz. [screenshots.md](screenshots.md) 15 Eylül eki. |
 
 Uzun tam sayfa görüntülerinde sabit menü ve asistan, çekim anındaki kaydırma
 konumuna göre sayfanın ortasında kalabilir. Bulgular belirtilen çekim durumuna
@@ -66,3 +70,16 @@ Gerçek Supabase girişi, parola e-postası ve kurtarma işlemi koşulmadı; ort
 İlk `i2-browser-01` denemesi, aynı hedefe giden iki bağlantı ve açıklamalı alan adları ile form dışında `form` niteliğiyle bağlanan kaydet düğmesinin seçicileri nedeniyle başarısızdı. Gerçek ekran ve kaynak yapısına göre runtime seçicileri düzeltildi; ürün kodu ve test kapıları değişmedi. İlk sonuç arşivde korunur.
 
 [H7 görüntü üretim kaydı](screenshots.md), bu kılavuzlarda yenilenen seçili belge görsellerini listeler. I2 özel kanıt PNG’leri kılavuz görseli olarak yayımlanmadı; H7 dışındaki önceki görseller yenilenmiş sayılmaz.
+
+**15 Eylül 2026 eki:** Yukarıdaki cümle 13 Eylül'ün durumudur ve olduğu gibi bırakıldı;
+o tarihte doğruydu. 15 Eylül'de `docs/images` yeniden çekildi ve ayrım iki yönden de
+geçerliliğini yitirdi: H7'nin sekiz sahnesi **dışındaki** kılavuz görselleri de
+yenilendi, buna karşılık H7 kapsamı **içindeki** `images/10-sohbet-kapsam-disi-ret.png`
+yenilenmedi. Yani "H7 dışındakiler yenilenmiş sayılmaz" cümlesi artık hangi görselin
+güncel olduğunu belirlemek için kullanılamaz; dosya dosya git ölçümü
+[screenshots.md](screenshots.md) "15 Eylül eki" bölümündedir.
+
+Bu belgedeki ekran matrisi, sayılar ve görsel inceleme bulguları 13 Eylül I2 kanıt
+PNG'lerine aittir ve 15 Eylül çekimi üzerinde **tekrarlanmadı**. Yenileme; insan kabulü,
+WCAG AA uygunluğu veya erişilebilirlik kabulü değildir — yukarıdaki "Sınırlar ve önceki
+deneme" bölümü aynen geçerlidir.
