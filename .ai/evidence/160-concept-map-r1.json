@@ -1,0 +1,37 @@
+{
+  "change_id": "160-concept-map-r1",
+  "generated_at": "2026-09-15T11:20:00+00:00",
+  "environment": "local",
+  "provider": "none",
+  "note": "Kavram haritası model çağırmaz; kanıt tamamen deterministik test koşusudur.",
+  "commands": [
+    {
+      "label": "saf çıkarım birim testleri",
+      "command": "TEST_DB_NAME=dou_concepts .venv/bin/python -m pytest tests/test_concepts.py -q",
+      "result": "pass",
+      "observed": "25 passed"
+    },
+    {
+      "label": "uç sözleşmesi testleri (yetki, ders izolasyonu, sınav kilidi, dışa aktarım)",
+      "command": "TEST_DB_NAME=dou_concepts .venv/bin/python -m pytest tests/test_concepts_api.py -q",
+      "result": "pass",
+      "observed": "13 passed"
+    },
+    {
+      "label": "openapi yeniden üretimi",
+      "command": "ENVIRONMENT=local DEV_AUTH_ENABLED=true DATABASE_URL=postgresql+psycopg://localhost/dou_demo .venv/bin/python -c \"from app.main import create_app; s=create_app().openapi(); print(len(s['paths']))\"",
+      "result": "pass",
+      "observed": "61 -> 63 yol; eklenenler /courses/{course_id}/concepts ve /concepts/export"
+    },
+    {
+      "label": "gerçek korpusta ölçüm (demo dersi COME302)",
+      "command": "scratchpad betiği: dou_demo chunks -> analyze()",
+      "result": "pass",
+      "observed": "28 pasaj, 40 terim, 60 kenar, 13 ms; ilk terimler sistem/süreç/zaman/bekle/tablosu/thread"
+    }
+  ],
+  "not_run": [
+    "Playwright e2e: bu şeritte spec yazılmadı; tarayıcı doğrulaması elle yapıldı (demo yığını, 15 Eylül).",
+    "Gerçek model karşılaştırması: bu özellik model çağırmıyor, karşılaştırılacak sağlayıcı çıktısı yok."
+  ]
+}

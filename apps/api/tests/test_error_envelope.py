@@ -203,8 +203,18 @@ class TestBlueprintRouter:
         assert all(
             method in app.openapi()["paths"][path] for path, method in learning_paths.items()
         )
+        # Kavram haritası iki yol ekler: harita ve Markdown dışa aktarımı. İkisi de
+        # `UnlockedCourseMemberDep` ile kapalı, çünkü dönen `SourceRefOut`
+        # materyalin kendisini taşıyor (dossier 160).
+        concept_paths = {
+            "/courses/{course_id}/concepts": "get",
+            "/courses/{course_id}/concepts/export": "get",
+        }
+        assert concept_paths.keys() <= yollar
+        assert all(method in app.openapi()["paths"][path] for path, method in concept_paths.items())
         # L2 üç öğrenme olayı yolu, L5 bir private Storage indirme yolu ekler: 57 + 3 + 1.
-        assert len(yollar) == 61, f"yol sayısı değişmiş: {len(yollar)}"
+        # Kavram haritası 15 Eylül'de iki yol daha ekledi: 61 + 2.
+        assert len(yollar) == 63, f"yol sayısı değişmiş: {len(yollar)}"
 
 
 class TestAyarAdlari:
