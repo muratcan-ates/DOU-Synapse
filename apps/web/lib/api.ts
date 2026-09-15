@@ -255,7 +255,7 @@ const TIMEOUT_MESSAGE = "Sunucu zamanında yanıt vermedi. Lütfen tekrar deneyi
  * Zamanlayıcı gövde okunana kadar yaşar: yanıt başlıkları hızlı gelip gövdesi
  * asılı kalan bir sunucu da bütçeyi aşmış sayılır.
  */
-async function attempt<T>(path: string, init: RequestInit | undefined, budgetMs: number, requestedEpoch: AuthEpochSnapshot): Promise<T> {
+async function attempt<T>(path: string, init: RequestInit | undefined, budgetMs: number, requestedEpoch: AuthEpochSnapshot, mode: BodyMode): Promise<T> {
   const token = await accessToken();
   if (!isAuthEpochCurrent(requestedEpoch)) throw new ApiError("Oturum değişti. Yeniden deneyin.", "unauthenticated", 401);
   const headers = new Headers(init?.headers);
@@ -267,7 +267,7 @@ async function attempt<T>(path: string, init: RequestInit | undefined, budgetMs:
     const response = await fetch(`${API_URL}${path}`, { ...init, headers, signal: controller.signal });
     // Gövde gecikse/bozulsa da 401 özel görünümü hemen kapatır; 403 kapatmaz.
     if (response.status === 401) expireAuthSession(requestedEpoch);
-    const result = await readResponse<T>(response);
+    const result = await readResponse<T>(response, mode);
     if (!isAuthEpochCurrent(requestedEpoch)) throw new ApiError("Oturum değişti. Yeniden deneyin.", "unauthenticated", 401);
     return result;
   } catch (e) {
@@ -281,7 +281,13 @@ async function attempt<T>(path: string, init: RequestInit | undefined, budgetMs:
   }
 }
 
-async function readResponse<T>(response: Response): Promise<T> {
+/**
+ * Gövde biçimi. Varsayılan JSON; `text` yalnız sunucunun bilerek metin
+ * döndürdüğü indirme uçları içindir (`text/markdown`).
+ */
+type BodyMode = "json" | "text";
+
+async function readResponse<T>(response: Response, mode: BodyMode = "json"): Promise<T> {
   if (response.status === 204) return undefined as T;
 
   const raw = await response.text();
@@ -316,6 +322,13 @@ async function readResponse<T>(response: Response): Promise<T> {
    * Gövdesiz başarılı yanıt da buraya düşer; 204 yukarıda zaten ayrıldı ve
    * başka hiçbir uç boş gövdeyle 2xx dönmüyor (contracts/openapi.json).
    */
+  /*
+   * Metin uçları buraya JSON beklentisiyle gelmemeli: `text/markdown` yanıtı
+   * ayrıştırılamaz ve aşağıdaki fail-closed dal onu "bozuk yanıt" sayardı.
+   * Hata yolu YUKARIDA ortak kalıyor — hata zarfı her uçta JSON'dur.
+   */
+  if (mode === "text") return raw as T;
+
   if (!parsed || body === null) {
     throw new ApiError(
       "Sunucudan beklenmeyen bir yanıt geldi. Lütfen tekrar deneyin.",
@@ -334,10 +347,10 @@ async function readResponse<T>(response: Response): Promise<T> {
  * bugünkü kural tek satırda okunabilir: güvenli metot yeniden denenir, diğerleri
  * denenmez.
  */
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, mode: BodyMode = "json"): Promise<T> {
   const budgetMs = BUDGET_MS[budgetFor(path, init)];
   const requestedEpoch = captureAuthEpoch();
-  return withRetry(() => attempt<T>(path, init, budgetMs, requestedEpoch), {
+  return withRetry(() => attempt<T>(path, init, budgetMs, requestedEpoch, mode), {
     retries: retriesFor(init),
     sleep,
     random: Math.random,
@@ -376,6 +389,12 @@ function errorEnvelope(
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
+  /**
+   * Metin döndüren uçlar (Markdown dışa aktarımı). Ayrı bir `fetch` AÇMAZ:
+   * yetki başlığı, zaman bütçesi, yeniden deneme ve hata zarfı aynı yoldan
+   * geçer — deponun tek fetch çağrı yeri kuralı korunur.
+   */
+  text: (path: string) => request<string>(path, undefined, "text"),
   patch: <T>(path: string, payload: unknown) =>
     request<T>(path, {
       method: "PATCH",

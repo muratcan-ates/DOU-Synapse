@@ -13,8 +13,8 @@ Takım: Muratcan Ateş · Eren Onur · Metehan Alphan
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16_+_pgvector-4169E1?logo=postgresql&logoColor=white)
-![Backend tests](https://img.shields.io/badge/backend_tests-2159_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 2159 -->
-![Frontend tests](https://img.shields.io/badge/frontend_tests-672_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 672 -->
+![Backend tests](https://img.shields.io/badge/backend_tests-2197_ge%C3%A7ti-brightgreen) <!-- docs-check: backend.tests = 2197 -->
+![Frontend tests](https://img.shields.io/badge/frontend_tests-660_ge%C3%A7ti-brightgreen) <!-- docs-check: frontend.tests = 660 -->
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 **Ders materyalini güvenilir öğrenme döngüsüne dönüştüren; öğrenci, eğitmen ve Bilgi İşlem
@@ -33,7 +33,7 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. “Ko
 |---|---|---|
 | **Main'e birleşmiş ürün** | `babdb664af6297255ec93fec4e3f4bb3af434fb7` | GitHub main'in güncel başı. Kampüs arayüzü tasarımı (`025-campus-ui`) bu başta birleşiktir |
 | **Etkin geliştirme adayı** | `018-codex-production-line` | Aday ile main aynı başta; şeritlerin (P1–P5, 019, 025) çalışması buraya toplanır |
-| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Yerel süitler: API 2159, web birim 672, tarayıcı 87 vaka toplanıyor <!-- docs-check: backend.tests = 2159 --><!-- docs-check: frontend.tests = 672 --><!-- docs-check: e2e.tests = 87 -->. CI'daki tarayıcı işi hâlâ kırmızı ve sebebi ölçüldü: son fazlı koşuda 78 vakanın 13'ü düşüyor, hepsi kampüs tasarımı birleşmesinin dokunduğu yüzeylerde — koşucu değil, testlerin kendisi. Ayrıca 6 test ayrı API süreci ve iki ayrı simülasyon bayrağı istediği için bu düzenekte hiç koşamıyor; fazlı koşu sunum sonrasına alındı. Kök neden tabloları sunum yol haritasının §2'sinde. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
+| **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Yerel süitler: API 2197, web birim 660, tarayıcı 87 vaka toplanıyor <!-- docs-check: backend.tests = 2197 --><!-- docs-check: frontend.tests = 660 --><!-- docs-check: e2e.tests = 87 -->. CI'daki tarayıcı işi hâlâ kırmızı ve sebebi ölçüldü: son fazlı koşuda 78 vakanın 13'ü düşüyor, hepsi kampüs tasarımı birleşmesinin dokunduğu yüzeylerde — koşucu değil, testlerin kendisi. Ayrıca 6 test ayrı API süreci ve iki ayrı simülasyon bayrağı istediği için bu düzenekte hiç koşamıyor; fazlı koşu sunum sonrasına alındı. Kök neden tabloları sunum yol haritasının §2'sinde. Önceki [017 doğrulaması](specs/017-completion-integration/verification.md) taban kanıtıdır |
 | **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
 | **Gerçek model ve insan kabulü** | Kısmen ölçüldü | Demo yığını **gerçek Groq** ile koşuyor (`openai/gpt-oss-120b`); kapsam dışı ret, Sokratik merdiven ve atıflı cevap gerçek modelle tek tek doğrulandı (koşu kaydı `docs/team/GECE-RAPORU-14-EYLUL.md`). 16 soruluk sahne provası gerçek modelle uçtan uca koştu: kapsam dışı ret 4/4, atıflı cevap kaynak kartıyla, Sokratik merdiven ısrara rağmen ilerlemedi. **Holdout değerlendirmesi (G1) koşulmadı** — sebep ölçüldü, `docs/team/GECE-RAPORU-14-EYLUL.md` §4.2. Öğretmen materyal/rubrik onayı ve bağımsız insan değerlendirmesi hâlâ gerekiyor |
 | **Staging / production** | Kanıtlanmadı | Canlı Auth/Storage/worker, kalite, yedek/geri yükleme ve geri dönüş kabulü tamamlanmadan yayın iddiası yok |
@@ -485,8 +485,8 @@ environment, gerçek release ve production gözlemi olmadan “enforced” denme
 
 | Ölçüm | Güncel kaynak değeri | Ne kanıtlar / neyi kanıtlamaz |
 |---|---:|---|
-| Backend testleri | **2159** <!-- docs-check: backend.tests = 2159 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
-| Frontend birim testleri | **672** <!-- docs-check: frontend.tests = 672 --> | 54 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 54 --> |
+| Backend testleri | **2197** <!-- docs-check: backend.tests = 2197 --> | Repo sözleşmeleri ve deterministik mekanik davranış; gerçek LLM kalitesi değil |
+| Frontend birim testleri | **660** <!-- docs-check: frontend.tests = 660 --> | 54 test dosyasındaki UI yardımcıları/sözleşmeleri; tek başına pedagojik kalite kanıtı değil <!-- docs-check: frontend.testFiles = 54 --> |
 | Playwright tarayıcı vakaları | **87** <!-- docs-check: e2e.tests = 87 --> | Sayı `playwright test --list` ile toplanan vakalardır; başarılı koşu sayısı değildir. |
 | Migration | **24** <!-- docs-check: migrations.count = 24 --> | Şema evriminin kaynak dosyası sayısı |
 | CREATE TABLE | **32** <!-- docs-check: tables.count = 32 --> | Migration’larda kurulan benzersiz tablo sayısı |
@@ -855,7 +855,7 @@ psql -d dou_synapse -f supabase/seed_demo.sql
 )
 ~~~
 
-Güncel feature kanıtında backend koleksiyonu 2159 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 2159 -->
+Güncel feature kanıtında backend koleksiyonu 2197 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 2197 -->
 
 ### 4. Web bağımlılıklarını kur ve test et
 
@@ -869,7 +869,7 @@ Güncel feature kanıtında backend koleksiyonu 2159 testtir; 38 alt vaka ayrıc
 )
 ~~~
 
-Güncel feature kanıtında frontend kütüphane paketi 672 testtir. <!-- docs-check: frontend.tests = 672 -->
+Güncel feature kanıtında frontend kütüphane paketi 660 testtir. <!-- docs-check: frontend.tests = 660 -->
 
 Gerçek tarayıcı testi ayrı sentetik DB ve sahip olunan sunucu gerektirir;
 [E2E çalıştırma sözleşmesini](docs/development/owned-e2e.md) izleyin.

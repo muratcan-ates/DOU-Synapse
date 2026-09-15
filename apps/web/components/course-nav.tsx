@@ -29,6 +29,8 @@ const TABS = [
   { slug: "/questions", label: "Soru havuzu", instructorOnly: true },
   { slug: "/blueprints", label: "Sınav planı", instructorOnly: true },
   { slug: "/settings", label: "AI politikası", instructorOnly: true },
+  // Kavram haritası materyal alıntısı taşır, bu yüzden sınav kilidine bağlı.
+  { slug: "/concepts", label: "Kavram haritası", locksWithAssistant: true },
   { slug: "/analytics", label: "İlerleme" },
   { slug: "/quality", label: "AI kalite", instructorOnly: true },
   { slug: "/members", label: "Katılımcılar", instructorOnly: true },
