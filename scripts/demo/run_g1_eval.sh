@@ -68,6 +68,23 @@ fi
 export PYTHONPATH="$KOK/apps/api"
 cd "$KOK"
 
+# Değerlendirme önbelleği DOLUYSA koşma. Sebebi ölçüldü (15 Eylül 07:40): gece
+# yarısı yarım kalan koşu `answer_cache`'e 10 kayıt bırakmıştı ve yeni koşuda o
+# sorular modele HİÇ gitmedi — sıfır jeton, sıfır rezervasyon, 0,0 sn gecikme.
+# Cevaplar gerçek modelden gelmişti ama BU koşudan değil: koşunun kendi
+# provenance'ı (candidate_sha, runtime_id) onları kapsamıyor ve gecikme ölçümü
+# sahte çıkıyor. "Gerçek model koşusu" demek için her cevabın o koşuda üretilmesi
+# gerekir. Betik kendisi SİLMİYOR; kanıt üreten bir veritabanında ne silineceğine
+# insan karar verir.
+ONBELLEK="$(psql -d "$DB" -Atc 'select count(*) from answer_cache' 2>/dev/null || echo 0)"
+if [ "${ONBELLEK:-0}" -gt 0 ]; then
+  echo "HATA: $DB içinde $ONBELLEK önbellek kaydı var."
+  echo "  Bu kayıtlar bu koşuda ÜRETİLMEMİŞ cevaplardır; ölçüme karışırlarsa"
+  echo "  'gerçek model' iddiası ve gecikme sayıları geçersiz olur."
+  echo "  Temizlemek için:  psql -d $DB -c 'delete from answer_cache'"
+  exit 1
+fi
+
 echo "[g1] ön kontrol"
 apps/api/.venv/bin/python scripts/real_eval_preflight.py \
   --repo "$KOK" --corpus "$KORPUS" --required-db-name "$DB" \
