@@ -102,7 +102,8 @@ Her senaryo gerçek arayüzde uçtan uca çalıştırılmıştır (14 Eylül 202
 | UC-08 | Alıştırma ve sınav provası | Öğrenci | Onaylı soru var | Alıştırma: anında geri bildirim; Sınav: süreli, tek deneme, geri bildirim sonda; yanlış çoktan seçmelide "neden yanlış" kaynak bölümü | Süre dolunca boş sorular puana katılmaz; sınav modunda asistan kilitli | FR-017–021 | `exam-completion-guards`, `grounded-wrong-feedback`, `exam-assistant-killswitch` spec'leri |
 | UC-09 | Sınıf analitiği | Eğitmen | Öğrenci etkinliği var | Konu bazlı ilerleme, soru kalitesi, sohbet geri bildirimi özetleri | Veri yoksa boş durum metni | FR-027–029 | `analytics`, `chat-quality` uçları; `learning-events.spec.ts` |
 | UC-10 | Kişisel veri hakları | Öğrenci | Giriş yapılmış | Sohbet geçmişini sil, verimi dışa aktar, hesabı anonimleştir | Aydınlatma metni girişten önce erişilebilir | FR-030–035 | `chat-history-deletion.spec.ts`, `/kvkk` |
-| UC-11 | Platform yönetimi | Bilgi İşlem | Yönetici yetkisi | Genel bakış, kullanıcılar, dersler, istek günlüğü, işleme kuyruğu; API sözleşmesi | Reddedilen erişim de denetim kaydına yazılır | Platform konsolu spec'i | `admin-readiness.spec.ts`, yetki mutasyon kanıtı |
+| UC-11 | Taranmış / el yazısı materyal işleme | Eğitmen | Ders var | Metin katmanı olmayan PDF yükle → sistem kendisi görsel okumaya yönlendirir → sayfalar transkribe edilir → "Hazır" | Görsel okuma kapalıysa net mesajla ret, yeniden denenmez; güven eşiğini geçemeyen sayfa atılır, hiçbiri geçmezse belge reddedilir | FR-037–039 | 15 Eyl ölçümü: 4 sayfalık el yazısı ders notu, atılan sayfa 0, 5828 karakter, 5 parça |
+| UC-12 | Platform yönetimi | Bilgi İşlem | Yönetici yetkisi | Genel bakış, kullanıcılar, dersler, istek günlüğü, işleme kuyruğu; API sözleşmesi | Reddedilen erişim de denetim kaydına yazılır | Platform konsolu spec'i | `admin-readiness.spec.ts`, yetki mutasyon kanıtı |
 
 ### 2.5 Arayüzler
 
@@ -223,6 +224,20 @@ buldurma). Eğitmen çerçeveyi kurar (konu, tip, biçim, isterse örnek sorular
 hedef × zorluk × tip). Üretilenler taslak düşer; **eğitmen onayı olmadan öğrenciye
 gösterilmez**. Kod hiçbir koşulda çalıştırılmaz — değerlendirme statiktir.
 
+**F2. Taranmış ve el yazısı materyal (FR-037–039).** PDF'te metin katmanı varsa doğrudan
+okunur. Yoksa eğitmenin "bu tarama, önce OCR'dan geçireyim" demesi beklenmez: sistem
+kendisi karar verir. Görsel okuma AÇIKSA sayfa görüntüye çevrilip görsel modele
+transkribe ettirilir; KAPALIYSA belge net bir mesajla reddedilir ("Taranmış ya da el yazısı
+belgeler için görsel okuma gerekir; bu ders için şu an kapalı") ve **yeniden denenmez** —
+içerik hatası kalıcıdır, üç kez denemek yalnız yanlış tavsiye verir.
+
+Görsel okumanın üç koruması vardır: (a) transkripsiyon istemi harfi harfine aktarım ister,
+düzeltmeyi ve tahmini yasaklar; okunamayan yer `[okunamadı]`, çizimler transkribe edilmez,
+`[çizim: …]` diye işaretlenir; (b) `[okunamadı]` sayısı/oranı eşiği aşan sayfa ATILIR ve
+hiçbir sayfa geçemezse belge reddedilir — yani en kötü durum "görsel okuma hiç yokmuş gibi"
+davranmaktır, anlamsız metin asla indekslenmez; (c) görsel okumadan gelen her parça
+**"AI okuması" köken etiketi** taşır ve atıf yüzeyinde bu etiket görünür.
+
 **G. İlerleme ve analitik (FR-027–029).** Konu bazlı performans izlenir; öğrenme olayları
 kaydedilir; eğitmen tek sayfalık sınıf özeti ve yapay zekâ kalite göstergelerini görür.
 
@@ -251,7 +266,7 @@ kabul ölçütü değil, projenin kendi disiplininin kaydıdır.
 
 ## 6. Kabul Kriterleri (ölçülebilir)
 
-| Kriter | Hedef | Durum (14 Eylül) |
+| Kriter | Hedef | Durum (15 Eylül) |
 |---|---|---|
 | SC-001 Dersler arası veri sızıntısı | 0 vaka | RLS kanıtları CI'da yeşil |
 | SC-002 Kaynaksız akademik cevap (ipuçları dahil) | %0 | Mekanik atıf doğrulama; test kümesi |
@@ -263,7 +278,8 @@ kabul ölçütü değil, projenin kendi disiplininin kaydıdır.
 | SC-008 Prompt injection (≥15 vaka) | Geçer | `evaluation/` injection kümesi |
 | SC-009 Soru üretiminde şema geçerliliği | ≥ %98 | Şema doğrulama; sahte sağlayıcıda ölçüldü |
 | SC-010 Cevap gecikmesi p95 | < 10 sn | Tekil ölçüm 5,7 sn; p95 15 Eylül |
-| SC-011 Demo akışında kritik hata | 0 | 14 Eylül duman koşusu 10/10 |
+| SC-011 Demo akışında kritik hata | 0 | 15 Eylül: sıfırdan ders + yeni belge ile uçtan uca prova **10/10** (§8) |
+| SC-012 Sahne sorularının çevrimdışı çalışması | 16/16, 0 jeton | 15 Eylül ölçüldü: `scripts/demo/sahne_provasi.py` |
 
 Metodoloji notu: değerlendirme seti **yön göstergesidir, kesin hüküm değildir**; gerçek
 modelle koşulmamış her sayı belgede öyle etiketlenir.
@@ -275,15 +291,38 @@ Dış internet kaynakları (taslaktaki "internet bilgisi karışmaz" şartı ger
 gerçek zamanlı işbirliği · izlenceden otomatik konu çıkarımı (v2) · bulut barındırma ve
 kurum kimliğiyle giriş (sunum sonrası).
 
-## 8. Mevcut Durum (14 Eylül 2026)
+## 8. Mevcut Durum (15 Eylül 2026)
 
-Ölçülen: 2139 otomatik API testi toplanıyor <!-- docs-check: tarihsel 2139 · 2026-09-14 -->,
-24 veritabanı göçü <!-- docs-check: tarihsel 24 · 2026-09-14 -->,
-21 gerçek tarayıcı (Playwright) test dosyası <!-- docs-check: tarihsel 21 · 2026-09-14 -->,
-22 web rotası <!-- docs-check: tarihsel 22 · 2026-09-14 -->,
-61 API yolu <!-- docs-check: tarihsel 61 · 2026-09-14 --> / 77 işlem <!-- docs-check: tarihsel 77 · 2026-09-14 -->.
-Demo kurulumu tek makinede: İşletim Sistemleri dersi, 5 belge, 22 parça; gerçek Groq
-modeliyle kaynaklı cevap, kapsam dışı ret ve Sokratik ısrar reddi doğrulandı; jüri
-senaryosunun soruları çevrimdışı önbelleğe yazılıyor. CI'da API kapıları yeşil; uçtan uca
-tarayıcı süiti entegre ağaçta ilk kez koşuyor. Eksikler ve saatli plan:
+**Danışmanın istediği uçtan uca akış ölçüldü: 10/10.** 15 Eylül sabahı, sıfırdan yeni bir
+ders açılıp hiç indekslenmemiş bir belge yüklenerek gerçek tarayıcıda tek oturumda koşuldu
+(`scratchpad/prova/hoca-provasi.mjs`): ders açma · öğrenci ekleme · yapay zekâ politikası ·
+materyal yükleme ("Hazır", 6 parça) · kaynaklı cevap (atıf `05-deadlock-demo.md`) · kapsam
+dışı ret (`out_of_scope`) · Sokratik ipucu ve ısrarda merdivenin ilerlememesi · soru üretimi
+(3 istendi, 3 kabul, 0 ret) · eğitmen onayı · alıştırma ve "neden yanlış" geri bildirimi.
+
+**Sahne provası ayrıca ölçüldü** (`scripts/demo/sahne_provasi.py`): 12 kaynaklı cevap +
+4 ret sorusunun 16'sı da beklendiği gibi; harcanan jeton **0** — sahne soruları
+`answer_cache`'ten döndüğü için modele hiç gitmiyor. Bu aynı zamanda çevrimdışı planın
+(Plan C) kanıtıdır.
+
+**Provanın bulduğu kusur kapatıldı.** Teşhis kademesinde model, soru sormadan önce cevabı
+düzyazıyla anlatıyordu; mevcut sızıntı dedektörleri bunu göremiyordu (kod yok, adım yok,
+"cevap:" kalıbı yok). Yeni `exposition` dedektörü kalıp değil **örtüşme** ölçüyor: soru
+cümleleri hariç tutuluyor, düz cümlelerin içerik sözcükleri getirilen parçayla
+karşılaştırılıyor ve yarıdan fazlası kaynaktan geliyorsa yanıt bloklanıp aynı kademenin
+deterministik şablon ipucuna düşülüyor. Yalnız `DIAGNOSE` ve `NUDGE` kademelerinde geçerli —
+üst basamaklarda açıklamak zaten kuralın kendisi.
+
+Ölçülen: 2159 otomatik API testi toplanıyor <!-- docs-check: tarihsel 2159 · 2026-09-15 -->,
+24 veritabanı göçü <!-- docs-check: tarihsel 24 · 2026-09-15 -->,
+22 web rotası <!-- docs-check: tarihsel 22 · 2026-09-15 -->,
+61 API yolu <!-- docs-check: tarihsel 61 · 2026-09-15 --> / 77 işlem <!-- docs-check: tarihsel 77 · 2026-09-15 -->.
+
+**Dürüstçe eksik olanlar.** Gerçek modelle holdout değerlendirmesi (SC-003/004/005) hâlâ
+koşulmadı; sayılar sahte sağlayıcı koşusundan geliyor ve belgede öyle etiketli. Faithfulness
+(SC-006) ve atıf hassasiyeti ayrı ayrı ölçülmedi — mekanik atıf geçerliliği mimari olarak
+garantili, ama "atıf iddiayı gerçekten destekliyor mu" ayrı bir ölçümdür ve yapılmadı.
+Sistem tek makinede çalışıyor, bulut kurulumu ve kurum kimliğiyle giriş yok. Sınav planı ve
+yayımlanmış sınav sürümü demo veritabanında bulunmadığı için "Sınav Mentoru" rolü sahnede
+yalnız alıştırma moduyla gösterilebilir. Eksikler ve saatli plan:
 `docs/team/YOL-HARITASI-16-EYLUL.md`.
