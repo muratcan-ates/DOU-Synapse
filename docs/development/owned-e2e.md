@@ -82,9 +82,12 @@ sonraki faz sessizce kısalmaz, açıkça `PHASE_BUDGET_EXHAUSTED` ile FAIL olur
   açıklığın 544,4 sn'si ≥10 sn'lik BOŞLUK (2 × 90 sn test zaman aşımı,
   18 × ~11 sn expect zaman aşımı, kesilen kuyruk). Gerçek iş 175,7 sn; fazlama
   öncesi koşuda (34900228666, 87 vaka) aynı hesap 182,8 sn. Vaka başına iş
-  2,10 → 2,25 sn, yani uygulama yavaşlamadı. Yeşil bir ana faz ~250 sn,
-  üst sınır ~550 sn; 720 zaten ~2,9 kat pay ve büyütmek yalnız asılı kalan
-  bir süitin daha uzun yanmasını sağlardı.
+  2,10 → 2,25 sn, yani uygulama yavaşlamadı. Yeşil bir ana faz ~250 sn.
+  Üst sınırda vaka tavanı 90 sn DEĞİL: süitte `test.setTimeout` 120_000 (14
+  vaka), 150_000 (5) ve 180_000 (2) ile yükseltiliyor ve ana fazda `retries: 1`
+  var, yani tek bir asılı ağır vaka 2 × 180 = 360 sn yiyebilir. Yeşil ~250 +
+  bir asılı ağır vaka ~360 = ~610 sn, hâlâ 720'nin altında; iki tanesi sığmaz
+  ve bütçe aşılır — istenen işaret de budur.
 - `OVERALL_BUDGET` 1250 → **1440**. E2E işini gerçekten koşan 29 CI koşusunda
   iş kurulumu maks 80 sn, adım sonrası kuyruk maks 7 sn, provision maks 2,3 sn;
   30 dk sınırından ham boşluk 1710 sn, soğuk bağımlılık önbelleği için 270 sn

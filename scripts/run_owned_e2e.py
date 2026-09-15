@@ -53,8 +53,9 @@ class Phase(NamedTuple):
 #: aşımı) ve `ratelimit` hiç başlamadı. Ölçüm için gereken şey bütçe değil, bu
 #: dosyadaki port düzeltmesinin bir CI koşusunda yeşil `phases[].seconds`
 #: üretmesidir; o koşudan sonra bu dört sayı yeniden ayarlanmalıdır.
-#: Referans (fazlama öncesi, tek süreçte ve simülasyon bayrağı KAPALI koştukları
-#: için üst sınır değil yalnız işaret): ikisi toplam 6 vaka taşıyor.
+#: Kapsam (ölçüldü, `playwright test --list`): `grounded` 6 vaka (üç `kind` ×
+#: iki test), `ratelimit` 3 vaka; toplam 9. Varsayılan listeleme 87, ana faz 78,
+#: fark tam 9 — yani iki dosyanın tamamı simülasyon fazlarında koşar.
 PHASES = (
     Phase("main", {}, None, 0.0),
     Phase("grounded", {"LLM_SIMULATE_GROUNDED_FEEDBACK": "1"}, 420.0, 260.0),
@@ -762,10 +763,15 @@ def main() -> int:
     # kuyruk). Gerçek iş yalnız 175.7 sn. Fazlama ÖNCESİ koşuda (34900228666,
     # 87 vaka) aynı hesap 182.8 sn veriyor — yani vaka başına iş 2.10 → 2.25 sn,
     # uygulama yavaşlamadı; "2,5 kat yavaşlama" tamamen düşen testlerin bekleme
-    # süresidir. Yeşil bir ana fazın maliyeti ~250 sn (üç bağımsız türetme),
-    # bir flaky tekrarı ve koşucu değişkenliğiyle üst sınır ~550 sn.
-    # Bu yüzden 720 BÜYÜTÜLMEDİ: yeşil maliyetin ~2,9 katı zaten var ve büyütmek
-    # yalnız asılı kalan bir süitin daha uzun yanmasını sağlardı.
+    # süresidir. Yeşil bir ana fazın maliyeti ~250 sn (üç bağımsız türetme).
+    # Üst sınır hesabında vaka tavanının 90 sn OLMADIĞINA dikkat: süit içinde
+    # `test.setTimeout` 120_000 (14 vaka), 150_000 (5) ve 180_000 (2) ile
+    # yükseltiliyor ve ana fazda `retries: 1` var, yani TEK bir asılı ağır vaka
+    # 2 × 180 = 360 sn yiyebilir. Yeşil ~250 + bir asılı ağır vaka ~360 = ~610 sn,
+    # hâlâ 720'nin altında; İKİ asılı ağır vaka sığmaz ve `budget` aşılır —
+    # istenen işaret de budur.
+    # Bu yüzden 720 BÜYÜTÜLMEDİ: büyütmek yalnız asılı kalan bir süitin daha
+    # uzun yanmasını sağlar, kusuru göstermez.
     # Not: `student-exam-flow.spec.ts:259` (durationMinutes 1, expect.poll 95 sn)
     # yeşilken ~60 sn DÜRÜSTÇE bekler; iki ölçülen koşuda da 10 sn'de düştüğü
     # için bu bedel hiç ödenmedi, yeşil tahmine ayrıca eklendi.
