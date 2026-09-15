@@ -22,6 +22,10 @@ const TABS = [
   // görünür kalsın diye koşul bileşen gövdesine yazılmadı.
   { slug: "/chat", label: "Asistan", locksWithAssistant: true },
   { slug: "/exam", label: "Sınav provası" },
+  // Kartlar kendi bitmiş provandan kurulur, bu yüzden sınav sekmesinin hemen
+  // ardında durur. Yürüyen sınav onu da kapatır: destenin arka yüzü cevap
+  // anahtarı ve "neden yanlış" pasajı taşıyor.
+  { slug: "/cards", label: "Hızlı tekrar", locksWithAssistant: true },
   { slug: "/questions", label: "Soru havuzu", instructorOnly: true },
   { slug: "/blueprints", label: "Sınav planı", instructorOnly: true },
   { slug: "/settings", label: "AI politikası", instructorOnly: true },
