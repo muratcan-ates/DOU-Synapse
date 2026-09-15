@@ -1,0 +1,7 @@
+{
+  "change_id": "160-concept-map-r1",
+  "label": "concept-map-retrieval-test",
+  "result": "PASS",
+  "timestamp": "2026-09-15T14:20:00Z",
+  "details": "Tests for main.py, concepts.py and Turkish stopwords passed successfully."
+}
