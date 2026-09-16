@@ -29,6 +29,7 @@ soruyu dürüstçe reddeden ders asistanı.**
 | Bölüm | İçerik |
 |---|---|
 | [Ürün fikri](#ürün-fikri) | Ne yapar, hangi ilkeye dayanır |
+| [Güncel durum](#güncel-durum) | Kanıt seviyesi tablosu: ne birleşti, ne ölçüldü, ne kanıtlanmadı |
 | [Ekran görüntüleri](#ekran-görüntüleri) | Güncel arayüz |
 | [Nasıl çalışır](#nasıl-çalışır) | Kanıt kapısı ve guardrail zinciri |
 | [Danışman gereksinimleri](#danışman-gereksinimleri-nasıl-karşılandı) | Gereksinim → karşılık → kanıt sınırı |
@@ -36,7 +37,8 @@ soruyu dürüstçe reddeden ders asistanı.**
 | [Ölçülmüş kanıt](#ölçülmüş-kanıt) | Sayılar ve neyi kanıtlamadıkları |
 | [Yerel kurulum](#yerel-kurulum) | Beş adımda ayağa kaldırma |
 | [Depo haritası](#depo-haritası) | Neyin nerede olduğu |
-| [Belge dizini](#belge-dizini) | Tüm belgeler tek tabloda |
+| [Belge dizini](#belge-dizini) | Başlıca belgeler, üç başlıkta |
+| [Ürün ilkelerimiz](#ürün-ilkelerimiz) | On kural |
 
 Ayrıntı isteyen üç belge: [ürün ayrıntıları](docs/product.md) (tüm özellikler, kullanıcı
 yolculukları, ajan), [gelişim günlüğü](docs/development-log.md) (tarihsel kayıt),
@@ -70,8 +72,8 @@ Bu README yalnız özellikleri değil, **kanıt seviyesini** de gösterir. "Kodl
 
 | Katman | Durum | Açıklama |
 |---|---|---|
-| **Main'e birleşmiş ürün** | `1fe0cb86a5f488d7818c6bddf2a02aee58e5d27a` | GitHub main'in güncel başı. Kampüs arayüzü tasarımı (`025-campus-ui`) bu başta birleşiktir |
-| **Etkin geliştirme adayı** | `018-codex-production-line` | Aday ile main aynı başta; şeritlerin çalışması buraya toplanır |
+| **Main'e birleşmiş ürün** | [`main`](https://github.com/muratcan-ates/DOU-Synapse/commits/main) | GitHub main'in güncel başı; kampüs arayüzü tasarımı (`025-campus-ui`) birleşiktir. SHA burada sabitlenmez, her commit'te eskir |
+| **Etkin geliştirme dalı** | yerel `018-integration` → `main` | Şeritlerin işi yerel dalda toplanır ve doğrudan main'e itilir; uzak `018-codex-production-line` dalı güncel değildir |
 | **Adayın kanıtı** | [018 doğrulaması](specs/018-codex-production-line/verification.md) | Yerel süitler geçiyor; CI'daki tarayıcı işi hâlâ kırmızı ve sebebi ölçüldü (kök neden tabloları doğrulama raporunda). Taban kanıt: [017 doğrulaması](specs/017-completion-integration/verification.md) |
 | **Özelliklerin açılması** | Varsayılan kapalı | `QUESTION_AUTHORING_ENABLED` ve `STUDENT_ASSESSMENT_WORKSPACE_ENABLED` hedef ortamda açıkça yapılandırılır; birleştirme tek başına etkinleştirme değildir |
 | **Gerçek model kabulü** | Kısmen ölçüldü | Demo yığını gerçek Groq ile koştu (`openai/gpt-oss-120b`); sonuçlar [aşağıda](#gerçek-modelle-kabul). **Holdout değerlendirmesi koşulmadı**, sebebi [gece raporunda](docs/team/GECE-RAPORU-14-EYLUL.md) §4.2 |
@@ -96,12 +98,16 @@ kanıtlamaz** — onun kanıtı [aşağıdaki gerçek model bölümüdür](#ger�
 | **Soru havuzu — taslaklar onay bekler**<br><img src="docs/images/ui-2026-09-16/07-question-review.png" width="420"> | **Mobil — aynı hiyerarşi, 390 px**<br><img src="docs/images/ui-2026-09-16/08-mobile-dashboard.png" width="420"> |
 
 <details>
-<summary><b>Gerçek modelle çekilen 15 Eylül galerisi</b> (önceki kabuk, gerçek Groq)</summary>
+<summary><b>15 Eylül galerisi</b> (önceki kabuk)</summary>
 
 <br/>
 
-Bu sekiz görsel bir gün önce, **gerçek Groq modeliyle** çekildi; arayüz kampüs tasarımı
-birleşmeden önceki kabuktur. Model davranışının kanıtı bunlardır.
+Bu sekiz görsel bir gün önce, gerçek Groq sağlayıcısı açıkken çekildi
+([`docs/screenshots.md`](docs/screenshots.md) 15 Eylül eki); arayüz kampüs tasarımı
+birleşmeden önceki kabuktur. Sohbet görselindeki cevap **önbellekten** gelmiştir (ekranda
+"Önceden kaydedilmiş demo yanıtı" yazar), yani görsel arayüzü belgeler, model çıktısını
+değil. Model davranışının kanıtı görsel değil koşu kaydıdır:
+[`docs/team/GECE-RAPORU-14-EYLUL.md`](docs/team/GECE-RAPORU-14-EYLUL.md).
 
 | Akış | Görsel |
 |---|---|
@@ -139,7 +145,7 @@ flowchart LR
     API --> R["Hybrid retrieval<br/>dense + FTS + RRF"]
     DB --> R
     R --> S{"Kanıt / kapsam / bütçe"}
-    S -->|"uygun"| L["LiteLLM<br/>Groq → Gemini"]
+    S -->|"uygun"| L["LiteLLM → Groq<br/>gpt-oss-120b"]
     S -->|"yetersiz"| X["Dürüst ret<br/>LLM çağrısı yok"]
     L --> G["Citation + leakage + sanitize guardrails"]
     G --> C["Kaynaklı cevap / Sokratik ipucu"]
@@ -155,14 +161,14 @@ kararıdır: kaynağı olmayan bir soruya model uydurma şansı bulamaz.
 
 **Guardrail zinciri kodda sabittir.** `üretim → citation kontrolü → leakage kontrolü →
 sanitize` sırası atlanamaz. Citation kontrolü, modelin verdiği pasaj kimliklerini
-retrieval kümesine karşı doğrular; karşılığı olmayan atıf cevabı düşürür.
+retrieval kümesine karşı doğrular; karşılığı olmayan atıf düşer, geçerli tek atıf kalmazsa cevap bloklanır.
 
 | Katman | Teknoloji | Neden |
 |---|---|---|
 | Web | Next.js 16, React 19, TypeScript 5, Tailwind 4, Bun | Rol bazlı routing, responsive UI |
 | API | FastAPI, Pydantic, SQLAlchemy 2, Python 3.12 | Açık sözleşme, async API, güçlü tip/doğrulama |
 | Veritabanı | PostgreSQL 16 + pgvector | İlişkisel veri, FTS, vektör, RLS ve audit tek yerde |
-| AI | LiteLLM, Groq, Gemini | Sağlayıcı adaptörü, timeout ve sınırlı fallback |
+| AI | LiteLLM → Groq (sohbet, soru üretimi); Gemini yalnız görsel okuma | Sağlayıcı adaptörü ve zaman aşımı; sohbet yolunda otomatik yedek sağlayıcı bilerek yok |
 | Embedding | FastEmbed multilingual-e5-large veya deterministik hashing | Anlamsal production yolu ve hızlı test yolu |
 | Storage | Supabase Storage veya yerel adaptör | Yerel geliştirme ile cloud depolamayı ayırma |
 | Test | Pytest, Bun test, Playwright, SQL/RLS mutasyon betikleri | Birim, sözleşme, tarayıcı ve yetki kanıtı |
@@ -180,7 +186,7 @@ Bileşen sınırları ve kararlar: [ARCHITECTURE.md](ARCHITECTURE.md) ·
 
 | Danışman gereksinimi | Uygulamadaki karşılığı | Kanıt sınırı |
 |---|---|---|
-| PDF, Markdown ve kod yükleme | PDF, PPTX, MD, TXT ve yaygın kod türleri; doğrulama, parçalama, provenance, worker. **Taranmış ve el yazısı PDF** görsel modelle okunur | 15 Eyl: el yazısı ders notu 4 sayfa, atılan sayfa 0, 5 parça |
+| PDF, Markdown ve kod yükleme | PDF, PPTX, MD, TXT ve yaygın kod türleri; doğrulama, parçalama, provenance, worker. **Taranmış ve el yazısı PDF** görsel okuma açıkken (`OCR_VLM_ENABLED=true`, `GEMINI_API_KEY`) görsel modelle okunur | 15 Eyl: el yazısı ders notu 4 sayfa, atılan sayfa 0, 5 parça |
 | Yalnız öğretmenin kaynakları | Ders üyeliği + PostgreSQL RLS + seçili kaynak politikası | Yerel RLS ve mutasyon kanıtı |
 | Sokratik mod | Deneme bekleyen, kademeli ve kaynaklı ipucu merdiveni; teşhis kademesinde materyali yeniden anlatan yanıt bloklanır | 15 Eyl gerçek modelle: ısrarda merdiven ilerlemedi, anlatım sızıntısı yakalandı. Geniş örneklemli pedagojik ölçüm açık |
 | Sınav prova modu | Sunucu süreli practice/exam oturumları, puanlama ve geri bildirim | 15 Eyl uçtan uca prova: alıştırma açıldı, cevap puanlandı, "neden yanlış" kaynak kartıyla geldi. Yayımlanmış sınav akışı demo verisinde yok |
@@ -206,8 +212,9 @@ kanıtlanır: bir politika bilerek zayıflatıldığında testlerin kırmızı y
 
 **Sınav bütünlüğü arayüzde değil, API ve veritabanında.** Yürüyen bir oturumda asistan,
 hızlı tekrar kartları ve kavram haritası `403 exam_in_progress` döner; sekmeyi kapatmak
-kilidi kaldırmaz. Öğrenciye giden gövde yalnız soru kökü ve şıklardır — çözüm anahtarı
-oturum bitmeden sunucudan çıkmaz. Cevaplar tek kez yazılır.
+kilidi kaldırmaz. Öğrenciye giden gövde yalnız soru kökü ve şıklardır; **sınav modunda** çözüm anahtarı
+oturum bitmeden sunucudan çıkmaz (alıştırma modunda her cevaptan sonra açılır). Cevaplar tek
+kez yazılır.
 
 **Mahremiyet.** KVKK kapsamında dışa aktarma, silme ve anonimleştirme uçları vardır.
 Öğrenme olayları içerik taşımaz. Platform admin sıfatı ders içeriğine, öğrenci
@@ -273,26 +280,29 @@ git clone https://github.com/muratcan-ates/DOU-Synapse.git
 cd DOU-Synapse
 ~~~
 
-### 2. Veritabanını kur
-
-~~~bash
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
-createdb dou_synapse
-for f in supabase/migrations/*.sql; do
-  psql -v ON_ERROR_STOP=1 -d dou_synapse -f "$f"
-done
-psql -d dou_synapse -f supabase/local_dev_setup.sql
-psql -d dou_synapse -f supabase/seed_demo.sql
-~~~
-
-### 3. API bağımlılıklarını kur ve test et
+### 2. API bağımlılıklarını kur
 
 ~~~bash
 cd apps/api
 uv sync --extra dev --frozen
-cp ../../.env.example .env
-uv run pytest -q
+cp ../../.env.example .env   # DEV_AUTH_ENABLED=true gelir: demo hesaplarıyla giriş açık
+cd ../..
 ~~~
+
+### 3. Veritabanını kur ve testleri koştur
+
+~~~bash
+export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
+createdb dou_synapse
+DATABASE_URL="postgresql://localhost/dou_synapse" \
+DOU_MIGRATE_PYTHON="apps/api/.venv/bin/python" sh scripts/migrate.sh
+psql -d dou_synapse -f supabase/local_dev_setup.sql
+psql -d dou_synapse -f supabase/seed_demo.sql
+(cd apps/api && uv run pytest -q)
+~~~
+
+Göçler `scripts/migrate.sh` ile uygulanır; betik `app.schema_migrations` defterini tutar.
+Dosyaları elle sırayla koşturmak bu defteri atlar ve sonraki göç kontrolünü bozar.
 
 Güncel feature kanıtında backend koleksiyonu 2197 testtir; 38 alt vaka ayrıca raporlanır. <!-- docs-check: backend.tests = 2197 -->
 
@@ -311,21 +321,43 @@ Güncel feature kanıtında frontend kütüphane paketi 684 testtir. <!-- docs-c
 Gerçek tarayıcı testi ayrı sentetik DB ve sahip olunan sunucu gerektirir;
 [E2E çalıştırma sözleşmesini](docs/development/owned-e2e.md) izleyin.
 
-### 5. Üç servisi ayrı terminallerde başlat
+### 5. Servisleri başlat
+
+İki çalıştırma yolu vardır ve **portları farklıdır**; karıştırmayın.
+
+**Elle geliştirme** — üç ayrı terminal:
 
 ~~~bash
-# Terminal 1 — API
+# Terminal 1 — API · 127.0.0.1:8000
 cd apps/api && uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 # Terminal 2 — worker
 cd apps/api && uv run python -m app.worker
 
-# Terminal 3 — web
-cd apps/web && bun run dev
+# Terminal 3 — web · localhost:3000
+cd apps/web && NEXT_PUBLIC_DEV_AUTH=true bun run dev
 ~~~
 
-Ardından [http://localhost:3000](http://localhost:3000) adresini açın. Demo yığınını
-hazır betiklerle kaldırmak için [demo runbook](docs/runbook.md).
+Web, `NEXT_PUBLIC_API_URL` verilmezse `http://localhost:8000` adresindeki API'ye bağlanır
+(`apps/web/lib/api.ts`). API tarafındaki `CORS_ORIGINS` varsayılanı tarayıcı kaynağını,
+yani web'in 3000 portunu listeler. `NEXT_PUBLIC_DEV_AUTH=true` olmadan giriş ekranında demo
+hesap kartları çıkmaz. Ardından [http://localhost:3000](http://localhost:3000) adresini açın.
+
+**Hazır demo yığını** — jüri ve demo günü için; ayrı portlar, ayrı veritabanı:
+
+~~~bash
+sh scripts/demo/setup_db.sh  # bir kez: dou_demo veritabanı, göçler, yerel roller, sentetik seed
+sh scripts/demo/run_api.sh   # API · 127.0.0.1:8020
+sh scripts/demo/run_web.sh   # web · 127.0.0.1:3020 (production derlemesi)
+~~~
+
+Geliştirme sunucusu isteyen varyant `scripts/demo/run_web_dev.sh` (3021). Demo günü kontrol
+listesi, önbellek ısıtma ve fallback planı: [demo runbook](docs/runbook.md).
+
+| Yol | API | Web | Veritabanı |
+|---|---|---|---|
+| Elle geliştirme | 8000 | 3000 | `dou_synapse` |
+| Demo yığını | 8020 | 3020 (dev varyantı 3021) | `dou_demo` |
 
 **Embedding modu.** Hashing modu deterministik ve hızlıdır; test/CI için kullanılır,
 anlamsal kalite kanıtı değildir. Gerçek semantic retrieval için FastEmbed modeli
@@ -335,6 +367,11 @@ kullanılır. Korpus hangi embedding sağlayıcı ve sürümüyle üretildiyse s
 ## Depo haritası
 
 ~~~text
+README.md       Bu dosya
+ARCHITECTURE.md Bileşen sınırları ve kararlar
+DESIGN.md       UI tasarım sistemi
+PLAN.md         İlk üç haftalık plan (tarihsel)
+AGENTS.md       Ajan çalışma sözleşmesi (CLAUDE.md buna işaret eder)
 apps/
   api/          FastAPI uygulaması, worker, RAG/guardrail modülleri, testler
   web/          Next.js arayüzü, lib reducer'ları, Playwright e2e
@@ -348,6 +385,7 @@ sample_data/    İşletim Sistemleri örnek ders paketi
 scripts/        Docs, workflow, göç, test-kalite ve güvenlik kapıları
 .ai/            AI değişiklik politikası, şema, dossier ve kanıt kayıtları
 .release/       Release evidence sözleşmesi ve doğrulayıcı
+.github/        CI, AI-quality ve güvenlik iş akışları
 ~~~
 
 `docs/` içindeki alt klasörler:
@@ -360,7 +398,10 @@ scripts/        Docs, workflow, göç, test-kalite ve güvenlik kapıları
 | `docs/operations/` | İşletim ve kurtarma |
 | `docs/evidence/` | Ölçüm çıktıları ve kanıt dosyaları |
 | `docs/images/` | Ürün ekran görüntüleri (`ui-2026-09-16/` güncel arayüz) |
-| `docs/team/` | Şerit planları, gece raporları, günlük notlar |
+| `docs/screenshots/` | 8 Ağustos tarihli ilk ekran seti (tarihsel) |
+| `docs/acceptance/` | Öğretmen kabul formları |
+| `docs/development/` | Geliştirici sözleşmeleri (E2E koşusu vb.) |
+| `docs/team/` | Şerit planları, gece raporları, günlük notlar (tarihli arşiv) |
 
 ## Belge dizini
 
@@ -382,7 +423,10 @@ scripts/        Docs, workflow, göç, test-kalite ve güvenlik kapıları
 | [Eğitmen kılavuzu](docs/instructor-guide.md) | Eğitmen akışları |
 | [Bilgi İşlem kılavuzu](docs/admin-guide.md) | Platform durumu ve teknik kayıtlar |
 | [Demo runbook](docs/runbook.md) | Demo günü kontrol ve fallback planı |
+| [Demo senaryosu](docs/demo-script.md) | Sahne sahne anlatım ve sunum öncesi hazırlık |
+| [Jüri demosu](docs/jury-demo.md) | 10 dakikalık senaryo, ölçüm kartı, jüri sorularına cevaplar |
 | [KVKK](docs/kvkk.md) | Veri işleme ve kullanıcı hakları |
+| [Erişilebilirlik](docs/accessibility.md) | Klavye turu ve kontrast kuralları |
 
 ### Mühendislik
 
@@ -395,6 +439,15 @@ scripts/        Docs, workflow, göç, test-kalite ve güvenlik kapıları
 | [Incident response](docs/engineering/INCIDENT_RESPONSE.md) | Olay yönetimi |
 | [ADR kayıtları](docs/adr/README.md) | Mimari karar geçmişi |
 | [Test raporu](docs/test-report.md) | Ölçüm ve sınırlar |
+| [Tarayıcı testleri](docs/testing.md) | Playwright politikası ve kararsız test kuralı |
+| [Görsel regresyon](docs/visual-testing.md) | Ekran görüntüsü karşılaştırma protokolü |
+| [Ekran görüntüsü kayıtları](docs/screenshots.md) | Hangi görsel ne zaman, hangi sağlayıcıyla çekildi |
+| [Dağıtım](docs/deployment.md) | Ortam, göç sırası, önbellek doldurma |
+| [Güvenlik](docs/security.md) | Tehdit modeli ve kontroller |
+| [Sağlayıcı hazırlığı](docs/provider-readiness.md) | Gerçek model/gömme sağlayıcı kanıtı |
+| [Yedek ve geri yükleme](docs/recovery.md) | PostgreSQL yedekleme provası |
+| [Öğretmen kabul formu](docs/acceptance/teacher-scoring-review.md) | Puanlama paketleri için imza bekleyen kabul |
+| [Ajan ve beceri envanteri](docs/agents-skills-inventory.md) | Depoda tanımlı ajanlar ve beceriler |
 | [Proje anayasası](.specify/memory/constitution.md) | Pazarlık yapılmayan geliştirme ilkeleri |
 | [Beceri paketi](docs/agent-skills.md) | Depo içi geliştirme becerileri, Codex/Claude kullanımı |
 

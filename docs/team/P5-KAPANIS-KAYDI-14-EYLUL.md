@@ -6,9 +6,9 @@
 > aşıldı: demo yığını docker'sız çalışır hâle getirildi (`scripts/demo/run_api.sh`),
 > gerçek Groq ile koşuldu, ekran görüntüleri yenilendi <!-- docs-check: tarihsel 16 · 2026-09-15 --> (16 görüntü, 14-15 Eylül).
 >
-> Projenin güncel durumu için: [`README.md`](../README.md) "Güncel durum" tablosu ·
-> ölçümler için [`docs/test-report.md`](test-report.md) · gece koşusu için
-> [`docs/team/GECE-RAPORU-14-EYLUL.md`](team/GECE-RAPORU-14-EYLUL.md).
+> Projenin güncel durumu için: [`README.md`](../../README.md) "Güncel durum" tablosu ·
+> ölçümler için [`docs/test-report.md`](../test-report.md) · gece koşusu için
+> [`docs/team/GECE-RAPORU-14-EYLUL.md`](GECE-RAPORU-14-EYLUL.md).
 
 ## Amaç
 P5 kapsamında jüri demo provası ve iki kayıtlı arayüz kusurunun kapanış raporu.
@@ -39,5 +39,5 @@ P5 kapsamında jüri demo provası ve iki kayıtlı arayüz kusurunun kapanış 
 - Commit 3: Jüri demo deneme notu ve UX/audit günlüklerinin eklenmesi (`62a5d74`).
 
 ## Not-rastgele
-- Dosyalar: `docs/jury-demo.md`, `docs/ux-audit-2026-09.md`, `docs/final-report.md`, `docs/images/jury-2026-09/`.
+- Dosyalar: `docs/jury-demo.md`, `docs/ux-audit-2026-09.md`, `docs/team/P5-KAPANIS-KAYDI-14-EYLUL.md` (eski adı `docs/final-report.md`), `docs/images/jury-2026-09/`.
 - Dossier aralığı: **160–169**.

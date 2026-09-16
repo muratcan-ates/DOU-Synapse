@@ -11,9 +11,10 @@
 
 ## Gösterim öncesi kontrol (jüri profili)
 
-Jüri koşusundan önce `.env` profilini [docs/jury-demo.md](jury-demo.md#gösterim-öncesi-kontrol)
-ile uygula. Özellikle `question_authoring`, `student_assessment_workspace`,
-`embedding` ve `llm_fake` ayarlarının sadece demosa özel olduğunu doğrula.
+Jüri koşusu **demo yığını betikleriyle** kaldırılır; ortam değişkenlerini betikler sabitler
+(`scripts/demo/run_api.sh`: `DEV_AUTH_ENABLED`, `QUESTION_AUTHORING_ENABLED`,
+`STUDENT_ASSESSMENT_WORKSPACE_ENABLED`, `EMBEDDING_PROVIDER`, `LLM_FAKE_PROVIDER`).
+Elle `.env` düzenlemeye gerek yok; kurulum adımları için [jury-demo.md](jury-demo.md#yerel-demo-kurulumu-14-eylül-2026).
 
 ---
 
@@ -21,6 +22,11 @@ ile uygula. Özellikle `question_authoring`, `student_assessment_workspace`,
 
 Aşağıdaki sıra **20 Ağustos 2026'da bu makinede birebir koşuldu**; her madde o koşuda
 ölçülmüş bir tuzağı kapatır (hepsi gerçekten yaşandı, hiçbiri varsayım değil).
+
+> **Bu bölümdeki bütün `psql` komutları demo veritabanına gider: `dou_demo`**
+> (`scripts/demo/setup_db.sh`, `scripts/demo/run_api.sh`). Elle geliştirmenin `dou_synapse`
+> veritabanıyla karıştırma: ikisi de kurulu olduğu için yanlış olanı sorgulamak hata
+> vermez, sessizce yanlış sayı döndürür.
 
 1. **PostgreSQL ayakta mı?**
    ```bash
@@ -34,26 +40,31 @@ Aşağıdaki sıra **20 Ağustos 2026'da bu makinede birebir koşuldu**; her mad
    ```bash
    psql -d postgres -tAc "select rolname, rolcanlogin from pg_roles where rolname like 'dou_%'"
    ```
-   `f` görürsen: `psql -q -d dou_synapse -f supabase/local_dev_setup.sql`.
+   `f` görürsen: `psql -q -d dou_demo -f supabase/local_dev_setup.sql`.
 
 3. **Model önbelleği gösteriliyor mu?** `apps/api/.env` içinde `EMBEDDING_CACHE_DIR`
    dolu olmalı. Boşsa fastembed ~2 GB'ı yeniden indirmeye çalışır; dolu diskte açılış
    `No space left on device` ile düşer ve asistan sunumda hiç cevap veremez. Doğru
    ayarla ilk hazırlık **~5 saniye** sürer.
 
-4. **API ve web'i başlat** (ayrı iki terminal ya da Claude'un sunucu profilleri):
+4. **API ve web'i başlat** — demo yığını betikleri, ayrı iki terminalde:
    ```bash
-   cd apps/api && EMBEDDING_PROVIDER=fastembed uv run uvicorn app.main:app --port 8030
+   sh scripts/demo/run_api.sh    # 127.0.0.1:8020 · CORS 3020/3021 · dou_demo
    ```
    ```bash
-   cd apps/web && NEXT_PUBLIC_API_URL=http://localhost:8030 bun run dev --port 3030
+   sh scripts/demo/run_web.sh    # 127.0.0.1:3020 · production derlemesi · API :8020
    ```
+   Portları elle değiştirme: API'nin izin verdiği tarayıcı kaynakları
+   `scripts/demo/run_api.sh` içinde sabittir (3020/3021). Web'i başka portta açarsan
+   arayüzden gelen her istek CORS'a takılır; `curl` yine `ok` döndüğü için hata sahnede
+   fark edilir.
 
-5. **Hazırlık kanıtı — üçü de `ok` olmadan sahneye çıkma:**
+5. **Hazırlık kanıtı — dördü de `ok` olmadan sahneye çıkma:**
    ```bash
-   curl -s http://localhost:8030/health/ready
+   curl -s http://127.0.0.1:8020/health/ready
    ```
-   Beklenen: `{"status":"ok","checks":{"database":"ok","pgvector":"ok","embedding":"ok"}}`
+   Beklenen: `"status":"ok"` ve `checks` içinde `database`, `pgvector`, `embedding`,
+   `request_quota` alanlarının hepsi `ok`.
 
 6. **Sağlayıcı dürüstlüğü.** `GROQ_API_KEY` doluysa cevaplar gerçek modelden gelir.
    Boşsa uygulama **deterministik sahte sağlayıcıya** düşer (log: "llm anahtarı yok"),
@@ -67,9 +78,11 @@ Aşağıdaki sıra **20 Ağustos 2026'da bu makinede birebir koşuldu**; her mad
 8. **Ders listesi temiz mi?** Demo veritabanında yalnız gerçek dersler olmalı
    (`COME 331` ve arkadaşları). Test artığı ders birikirse liste çöplük görünür:
    ```bash
-   psql -d dou_synapse -tAc "select count(*) from courses"
+   psql -d dou_demo -tAc "select code from courses order by code"
    ```
-   20 Ağustos'ta bu sayı 204'tü ve 197'si test artığıydı; temizlendi, **7 kaldı**.
+   Yalnız demo dersleri görünmeli (COME302 ve seed'in kurduğu diğerleri). 20 Ağustos'ta
+   paylaşılan veritabanında 204 ders vardı ve 197'si test artığıydı; `dou_demo` ayrı
+   kurulduğu için o kirlilik buraya taşınmaz.
 
 9. **LLM modeli hâlâ geçerli mi?** Sağlayıcılar model adlarını kullanımdan
    kaldırır. 20 Ağustos'ta `groq/llama-3.3-70b-versatile` Groq'ta artık yoktu ve
@@ -84,16 +97,16 @@ Aşağıdaki sıra **20 Ağustos 2026'da bu makinede birebir koşuldu**; her mad
     prova sırasında dolarsa sunumda "Günlük kişisel AI kullanım kotan doldu"
     hatası çıkar. Provadan sonra sıfırlayın:
     ```bash
-    psql -d dou_synapse -c "delete from ai_token_reservations"
+    psql -d dou_demo -c "delete from ai_token_reservations"
     ```
 
-11. **Bilgi İşlem konsolu görünüyor mu?** Ayşe Hoca platform yöneticisi değilse
-    admin sekmesi hiç çizilmez (20 Ağustos'ta paylaşılan veritabanında bu satır
-    eksikti ve üç E2E testi de bu yüzden düşüyordu):
+11. **Bilgi İşlem konsolu görünüyor mu?** Platform yöneticisi **Bilgi İşlem** hesabıdır
+    (`bilgi-islem@demo.dogus.edu.tr`); Ayşe Hoca eğitmendir ve seed onu bilerek
+    `platform_admins`'ten çıkarır. Yönetici satırı yoksa admin sekmesi hiç çizilmez:
     ```bash
-    psql -d dou_synapse -tAc "select count(*) from platform_admins"
+    psql -d dou_demo -tAc "select count(*) from platform_admins"
     ```
-    `0` ise: `psql -d dou_synapse -f supabase/seed_demo.sql`
+    `0` ise: `psql -d dou_demo -f supabase/seed_demo.sql`
 
 **Demoda gösterilecek ders:** `COME 331 · İşletim Sistemleri` — üç materyali işlenmiş
 durumda (`producer_consumer.py`, `04-synchronization.pdf`, `01-processes.pdf`).

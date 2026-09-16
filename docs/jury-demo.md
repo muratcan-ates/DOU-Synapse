@@ -141,7 +141,7 @@ Bu bölüm yukarıdaki tarihsel kayıtları **değiştirmez**; sonrasında ölç
 
 | 13–14 Eylül kaydı | 15 Eylül durumu |
 |---|---|
-| `docker: command not found` → demo yığını ayağa kalkmadı | Yığın **docker'sız** koşuyor: yerel PostgreSQL + `sh scripts/demo/run_api.sh` (:8020) + `run_web.sh` (:3020). Belgenin §"Koşum" bölümü zaten bu komutları veriyor |
+| `docker: command not found` → demo yığını ayağa kalkmadı | Yığın **docker'sız** koşuyor: yerel PostgreSQL + `sh scripts/demo/run_api.sh` (:8020) + `run_web.sh` (:3020). Belgenin "Yerel demo kurulumu (14 Eylül 2026)" bölümü aynı komutları veriyor |
 | Gerçek model koşusu yapılamadı | Gerçek **Groq** (`openai/gpt-oss-120b`) ile koşuldu; kapsam dışı ret, Sokratik merdiven ve atıflı cevap tek tek doğrulandı (kayıt: `docs/team/GECE-RAPORU-14-EYLUL.md`) |
 | Ekran görüntüsü üretilemedi | 16 görüntü <!-- docs-check: tarihsel 16 · 2026-09-15 --> gerçek model ve güncel kampüs tasarımıyla çekildi (`docs/screenshots.md`) |
 | Senaryo adımları ölçülmedi | Sahnede sorulacak sorular gerçek modelle ölçüldü ve sabitlendi; `answer_cache` dolduruldu. Liste ve **sorulmaması gerekenler** `docs/demo-script.md` |

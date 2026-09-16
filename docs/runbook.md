@@ -37,7 +37,7 @@ Operatörün önünde bu belge açık, terminalde üç sekme hazır: API logu, w
 | Ne | Sunum makinesinde yerel yığın + Groq (canlı internet) | Telefon hotspot + aynı yerel yığın | Aynı yığın, tam çevrimdışı |
 | Kimlik | `DEV_AUTH_ENABLED=true` (sentetik hesaplar) | aynı | aynı |
 | Veritabanı | Yerel PostgreSQL 16 `dou_demo` (Docker YOK) | aynı | aynı |
-| LLM | Groq: gpt-oss-120b, yedek qwen3.6 (Gemini anahtarı girilirse ikinci sağlayıcı) | aynı | **YOK** — `qa` cevapları `answer_cache`'ten, Sokratik sahne sahte sağlayıcıyla |
+| LLM | Groq: gpt-oss-120b (sohbet yolunda otomatik yedek sağlayıcı yok; Gemini yalnız görsel okuma) | aynı | **YOK** — `qa` cevapları `answer_cache`'ten, Sokratik sahne sahte sağlayıcıyla |
 | Ne kaybedilir | — | Birkaç saniye gecikme | Önceden doldurulmamış her soru; gerçek soru üretimi |
 
 14 Eylül 2026 kararı: Supabase (bulut kimlik + depolama) sunuma **alınmadı**; üç plan da
@@ -175,7 +175,7 @@ Bu cümle **doğru** olduğu için söylenebilir; ikinci soruda gerçekten 0,1 s
       ve 0025/0026 geçiş protokolüyle yalnız eksik, incelenmiş adımları belirleyin.
 - [ ] **Analitik politikası var mı?** (`0005` uygulanmamışsa eğitmen analitiği boş görünür)
       ```bash
-      psql -d dou_synapse -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"
+      psql -d dou_demo -tAc "select polname from pg_policy p join pg_class c on c.oid=p.polrelid where c.relname='request_logs'"
       # request_logs_self_insert VE request_logs_instructor_read görmelisin
       ```
 - [ ] Demo dersinin materyali **hazır** mı: `5 materyal · 5 hazır` (Materyaller ekranı).
@@ -246,9 +246,13 @@ du -sh "$EMBEDDING_CACHE_DIR"     # 2,1G
 
 ### 5.2 Sistem ayakta mı
 
+Demo yığını 8020'de koşar (§1 Plan C: `scripts/demo/run_api.sh`). Elle geliştirmede API
+8000'dedir; o durumda `export API=http://localhost:8000` de.
+
 ```bash
-curl -si localhost:8000/health/live    # süreç
-curl -si localhost:8000/health/ready   # bağımlılıkların salt okunur anlık durumu
+API="${API:-http://127.0.0.1:8020}"
+curl -si "$API/health/live"    # süreç
+curl -si "$API/health/ready"   # bağımlılıkların salt okunur anlık durumu
 ```
 
 Kaynak işleme veya kota sorunu için ilk inceleme sırası:
@@ -276,7 +280,7 @@ Sonraki sohbet denemesi de gerçek iş üretir; salt okunur kontrol değildir.
 ### 5.3 Bir soru gerçekten cevaplanıyor mu (arayüzsüz)
 
 ```bash
-curl -s -X POST "http://localhost:8000/courses/<COURSE_ID>/chat" \
+curl -s -X POST "${API:-http://127.0.0.1:8020}/courses/<COURSE_ID>/chat" \
   -H "Authorization: Bearer dev:22222222-2222-2222-2222-222222222222" \
   -H "Content-Type: application/json" \
   -d '{"question":"Semafor nedir?","mode":"qa"}'
@@ -286,11 +290,9 @@ curl -s -X POST "http://localhost:8000/courses/<COURSE_ID>/chat" \
 
 ### 5.4 Sahte sağlayıcıda mıyız (gerçek LLM var mı)
 
-```bash
-grep "sahte sağlayıcı" /tmp/api.log
-```
-
-Satır varsa gerçek LLM **yok** — bu Plan C'de beklenen, Plan A'da bir arızadır.
+`run_api.sh`'i başlattığın terminalin çıktısına bak: **"sahte sağlayıcı"** satırı varsa
+gerçek LLM **yok**. `DOU_DEMO_OFFLINE=1` ile başlattıysan bu Plan C'de beklenen durumdur;
+anahtar girili Plan A'da ise arızadır (`GROQ_API_KEY` boş ya da model adı geçersiz).
 
 ---
 

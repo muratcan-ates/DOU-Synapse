@@ -223,7 +223,7 @@ Sunumdan **önce**, ağ hâlâ varken:
    gerçek sağlayıcı başarısı sayılmaz.
 2. Önbelleği doldur:
    ```bash
-   uv run python scripts/fill_answer_cache.py --base-url "$API_URL"
+   cd apps/api && uv run python scripts/fill_answer_cache.py --base-url "$API_URL"
    ```
    Çıktıdaki her `✗` çevrimdışı sorulmaması gereken bir sorudur.
 3. Yedeği al (§6) ve **geri yüklemeyi bir kez prova et** — provası yapılmamış
@@ -286,9 +286,9 @@ sınırdır**.
 Tekrarlamak için:
 
 ```bash
-uv run python scripts/measure_latency.py warm --base-url "$API_URL" \
+cd apps/api && uv run python scripts/measure_latency.py warm --base-url "$API_URL" \
     --course-id <uuid> --user-id <uuid> --count 30
-uv run python scripts/measure_latency.py cold --base-url "$API_URL" \
+cd apps/api && uv run python scripts/measure_latency.py cold --base-url "$API_URL" \
     --repeat 5 --idle-wait 900
 ```
 

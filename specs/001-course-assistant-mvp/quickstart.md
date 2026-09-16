@@ -104,7 +104,7 @@ yazmayın. `public` tek başına yeterli değildir: ortak istek kotasının tabl
 `app` şemasındadır ([`0025`](../../supabase/migrations/0025_shared_request_quota.sql)).
 Bu belge düzeltmesinde canlı veritabanı sorgusu **koşulmadı**.
 
-Göç listesi aralıksız değildir; `0017`, `0021`, `0022` ve `0023` ayrılmış boşluklardır.
+Göç listesi aralıksız değildir; `0017`, `0021`, `0022`, `0023` ve `0028` ayrılmış boşluklardır.
 Dosya envanteri [gelişim günlüğünün göç yolculuğunda](../../docs/development-log.md#migration-yolculuğu) ve
 [`supabase/migrations/`](../../supabase/migrations/) dizininde izlenir. Her göç
 tablo oluşturmaz: `0005` analitik okuma politikasını, `0006` embedding provenance
@@ -234,7 +234,7 @@ gerekmez.
 
 ## 6. Demo kullanıcıları ile giriş
 
-Giriş sayfası (`app/page.tsx`) iki geliştirme kimliği kartı sunar; kart
+Giriş sayfası (`app/page.tsx`) üç geliştirme kimliği kartı sunar (eğitmen, öğrenci, Bilgi İşlem); kart
 tıklandığında tarayıcıya `Bearer dev:<uuid>` token'ı yazılır ve backend bunu
 `DEV_AUTH_ENABLED=true` iken kabul eder:
 
