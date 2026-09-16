@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "evidence_label": "offline-replay",
+  "result": "pass",
+  "change_id": "161-windows-local-dev-fixes-r3",
+  "captured_at": "2026-09-15T16:30:00+00:00",
+  "candidate_sha": "SELF",
+  "command": "cd apps/api && uv run python run_dev.py  (ayri terminalde) curl -X POST http://127.0.0.1:8015/courses/{course_id}/chat",
+  "environment": "Windows 11, gercek yerel PostgreSQL 16 + pgvector (Docker), gercek Groq LLM anahtari, DEV_AUTH_ENABLED=true ile yerel ornek kimlik.",
+  "results": {
+    "backend_tests_passed": null,
+    "typecheck_errors": null,
+    "manual_e2e_passed": true
+  },
+  "governance_note": "Takimin geri kalani macOS/Linux kullandigi icin daha once hic yakalanmamis, Windows'ta yerel gelistirmeyi tamamen engelleyen 3 hata duzeltildi: (1) apps/api/run_dev.py -- psycopg'nin async surucusu Windows'un varsayilan ProactorEventLoop'uyla calismiyordu (psycopg.InterfaceError); app/main.py'a policy eklemek tek basina yetmedi cunku uvicorn kendi loop'unu app modulu import edilmeden once kuruyor; asyncio.run(main(), loop_factory=asyncio.SelectorEventLoop) kullanan ayri baslatici eklendi. (2) docker-compose.yml -- ./supabase/migrations:/docker-entrypoint-initdb.d baglamasindaki :ro ifadesi, icine daha spesifik dosya baglanmaya calisilinca Docker'in ayaga kalkmasini engelliyordu. (3) evaluation/build_corpus.py -- --pg-bin varsayilani macOS'a ozel bir Homebrew yolu; PGCLIENTENCODING=UTF8 subprocess'e hic ulasmiyordu, Turkce icerikli migration dosyalarinda encoding hatasi veriyordu. Uctan uca dogrulama: run_dev.py ile acilan sunucuya gercek curl POST /courses/{id}/chat istegi atildi, gercek Postgres/pgvector + gercek Groq cevabi + gercek kaynak alintisi alindi.",
+  "limitations": "Otomatik pytest paketi bu PR icin zaman kisitindan calistirilmadi; yalnizca manuel uctan uca dogrulama yapildi. Model/prompt/provider/embedding/esik mantigi DEGISMEDI, yalnizca yerel gelistirme ortami uyumlulugu duzeltildi.",
+  "privacy": "Icerik yok; yalnizca yerel gelistirme ortami mekanigi (event loop, docker mount, DB encoding)."
+}
