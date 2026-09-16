@@ -159,3 +159,42 @@ işi kapsamında tek tek açılıp gözle incelenmedi; yukarıdaki 13 Eylül "Ü
 kayıt" bölümünün istediği görsel inceleme 15 Eylül çekimi için **not-run**. Yeniden
 çekim; gerçek model kalitesinin, hukuki uygunluğun, WCAG AA uygunluğunun veya insan
 kabulünün kanıtı değildir.
+
+---
+
+## 16 Eylül eki — güncel kampüs arayüzü galerisi
+
+`docs/images/ui-2026-09-16/` klasöründeki sekiz PNG, README'nin ana galerisidir. Bu
+dosyalar **bu depodaki `screenshots.spec.ts` koşusundan gelmez**; ayrı bir çalışma
+ağacında, tarayıcıdan doğrudan çekilmiştir. Kaynak kaydı aşağıdadır.
+
+| Alan | Değer |
+|---|---|
+| Çekim tarihi | 16 Eylül 2026 |
+| Çalışma ağacı | `dou-synapse-025-campus-ui` |
+| Kaynak commit | `aba76c266a15ee7d9524b73f273bca21d81d3f1a` |
+| Adres | `http://127.0.0.1:3125` (yerel demo yığını) |
+| Sağlayıcı | `LLM_FAKE_PROVIDER=true`, `EMBEDDING_PROVIDER=hashing` |
+| Veri | Yerel sentetik demo kayıtları |
+| Yöntem | Tarayıcı ekran görüntüsü, responsive viewport; arayüz içeriğine müdahale yok |
+
+| Dosya | Sahne | Rol |
+|---|---|---|
+| `01-login.png` | Giriş ekranı, yerel demo hesapları | oturum yok |
+| `02-student-dashboard.png` | Öğrenci paneli, genel bakış | öğrenci |
+| `03-course-chat.png` | Ders Koçu, kaydedilmiş demo yanıtı ve kaynak kartı | öğrenci |
+| `04-citation-context.png` | Atıf yapılan pasajın kaynak bağlamı | öğrenci |
+| `05-instructor-dashboard.png` | Eğitmen paneli, bekleyen onaylar | eğitmen |
+| `06-course-materials.png` | Ders materyalleri ve işlenme durumu | eğitmen |
+| `07-question-review.png` | Soru havuzu, onay bekleyen taslaklar | eğitmen |
+| `08-mobile-dashboard.png` | Mobil öğrenci paneli (390 px) | öğrenci |
+
+### Bu galerinin kanıtlamadıkları
+
+Çekim sahte sağlayıcıyla yapıldığı için sohbet ekranındaki yanıt **kaydedilmiş bir demo
+cevabıdır**; canlı model kalitesinin kanıtı değildir. Model davranışının kanıtı, bir gün
+önce gerçek Groq ile çekilen 15 Eylül galerisi ve
+[`docs/team/GECE-RAPORU-14-EYLUL.md`](team/GECE-RAPORU-14-EYLUL.md) koşu kayıtlarıdır.
+
+İki galeri bilinçli olarak yan yana durur: **16 Eylül dosyaları bugünkü arayüzü**,
+**15 Eylül dosyaları gerçek model davranışını** gösterir. Biri diğerinin yerine geçmez.

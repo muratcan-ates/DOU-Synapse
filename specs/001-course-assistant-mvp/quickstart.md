@@ -105,7 +105,7 @@ yazmayın. `public` tek başına yeterli değildir: ortak istek kotasının tabl
 Bu belge düzeltmesinde canlı veritabanı sorgusu **koşulmadı**.
 
 Göç listesi aralıksız değildir; `0017`, `0021`, `0022` ve `0023` ayrılmış boşluklardır.
-Dosya envanteri [README göç yolculuğunda](../../README.md#migration-yolculuğu) ve
+Dosya envanteri [gelişim günlüğünün göç yolculuğunda](../../docs/development-log.md#migration-yolculuğu) ve
 [`supabase/migrations/`](../../supabase/migrations/) dizininde izlenir. Her göç
 tablo oluşturmaz: `0005` analitik okuma politikasını, `0006` embedding provenance
 sütununu, `0007` silme/yetki politikalarını ekler. `0002` Supabase Auth köprüsüdür;
